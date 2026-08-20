@@ -112,6 +112,30 @@ ARM_STYLE = {
 }
 COLOR_DTRUE = "#e8b23a"  # Δ_true rides arm7's colour (the treatment read)
 COLOR_DSHUF = "#9A9A9A"  # Δ_shuf rides the control gray
+# Reader-facing labels (clean-result-critic round: figures must not expose
+# rung/protocol slugs — plain-English names only; slugs stay in artifacts).
+RUNG_LABEL = {
+    "evil_mhj": "multi-turn human jailbreaks",
+    "evil_pair": "PAIR optimizer attacks",
+    "evil_tomgibbs": "Tom Gibbs multi-turn",
+    "hhrt": "HH red-team",
+    "toxicchat": "ToxicChat",
+    "aita": "AITA slot (held-out Reddit)",
+    "sycoans": "answer",
+    "sycoays": "are-you-sure",
+    "sycofb": "feedback",
+    "sycomim": "mimicry",
+    "sycomwe": "model-written evaluations",
+    "nqopen": "NQ-Open",
+    "simpleqa": "SimpleQA",
+}
+PANEL_LABEL = {"P-A": "single-dataset pool", "P-B": "fair-allocation pool"}
+SERIES_TRUE_LABEL = "true-map advantage (mapped-answer minus context probe)"
+SERIES_SHUF_LABEL = "shuffled-map advantage (pairing-shuffled map)"
+
+
+def rung_label(behavior: str, rung: str) -> str:
+    return f"{behavior}: {RUNG_LABEL.get(rung, rung)}"
 
 
 def _log(msg: str) -> None:
@@ -821,14 +845,14 @@ def render_figures(table: dict, fig_dir: Path, seeds) -> list[str]:
     if rows:
         # ---- HERO: per-rung forest, Δ_true vs Δ_shuf with seed t-CIs -------
         order = sorted(rows, key=lambda r: (r["behavior"], r["eval_rung"]))
-        labels = [f"{r['behavior']}: {r['eval_rung']}" for r in order]
+        labels = [rung_label(r["behavior"], r["eval_rung"]) for r in order]
         flag = [(r["behavior"], r["eval_rung"]) in set(FLAGSHIPS) for r in order]
         y = list(range(len(order)))[::-1]
         fig, ax = plt.subplots(figsize=(7.2, 0.42 * len(order) + 1.6))
         for dy, r, fl in zip(y, order, flag, strict=True):
             for q, color, off, lbl in (
-                ("dtrue", COLOR_DTRUE, 0.16, "Δ_true (map−context probe)"),
-                ("margin_dshuf", COLOR_DSHUF, -0.16, "Δ_shuf (shuffled-pairing map)"),
+                ("dtrue", COLOR_DTRUE, 0.16, SERIES_TRUE_LABEL),
+                ("margin_dshuf", COLOR_DSHUF, -0.16, SERIES_SHUF_LABEL),
             ):
                 stat = r["dtrue"] if q == "dtrue" else r["dshuf"]
                 if stat["mean"] is None:
@@ -849,30 +873,37 @@ def render_figures(table: dict, fig_dir: Path, seeds) -> list[str]:
         ax.set_yticks(y)
         ax.set_yticklabels([f"{lb} ★" if fl else lb for lb, fl in zip(labels, flag, strict=True)])
         ax.set_xlabel("Spearman ρ delta at the frozen layer (seed mean ± seed t-CI)")
-        ax.set_title("Claim-4 controls: probe-on-mapped-answer gain, true vs shuffled-pairing map")
-        ax.legend(loc="lower right")
+        ax.set_title("Probe-on-mapped-answer gain per rung: true map vs shuffled-pairing map")
+        ax.legend(loc="upper left", fontsize=7)
         savefig_paper(fig, "claim4_forest", dir=fig_dir)
         plt.close(fig)
         written.append("claim4_forest")
 
-        # ---- exploratory: per-seed spaghetti of Δ_true ----------------------
-        fig, ax = plt.subplots(figsize=(7.2, 4.2))
+        # ---- low-level companion: per-seed values behind BOTH forest series --
+        # (supersedes the true-map-only claim4_spaghetti draft; the sidecar
+        # carries all 5 per-seed observations for both control-relevant
+        # series on every rung)
         xs = list(range(len(order)))
-        for s in seeds:
-            ys = []
-            for r in order:
-                per_seed = dict(zip(map(int, r["seeds_used"]), r["dtrue"]["per_seed"], strict=True))
-                ys.append(per_seed.get(int(s)))
-            ax.plot(xs, ys, marker="o", ms=3, lw=0.9, alpha=0.7, label=f"seed {s}")
-        ax.axhline(0.0, color="#444444", lw=0.8)
-        ax.set_xticks(xs)
-        ax.set_xticklabels(labels, rotation=45, ha="right")
-        ax.set_ylabel("Δ_true per seed")
-        ax.set_title("Per-seed spaghetti: Δ_true by rung (exploratory)")
-        ax.legend()
-        savefig_paper(fig, "claim4_spaghetti", dir=fig_dir)
+        fig, axes = plt.subplots(1, 2, figsize=(11.5, 4.6), sharey=True)
+        for ax, key, panel_title in (
+            (axes[0], "dtrue", "true-map advantage per seed"),
+            (axes[1], "dshuf", "shuffled-map advantage per seed"),
+        ):
+            for s in seeds:
+                ys = []
+                for r in order:
+                    per_seed = dict(zip(map(int, r["seeds_used"]), r[key]["per_seed"], strict=True))
+                    ys.append(per_seed.get(int(s)))
+                ax.plot(xs, ys, marker="o", ms=3, lw=0.9, alpha=0.7, label=f"seed {s}")
+            ax.axhline(0.0, color="#444444", lw=0.8)
+            ax.set_xticks(xs)
+            ax.set_xticklabels(labels, rotation=45, ha="right")
+            ax.set_title(panel_title)
+        axes[0].set_ylabel("ρ delta per seed")
+        axes[0].legend(fontsize=7)
+        savefig_paper(fig, "claim4_per_seed", dir=fig_dir)
         plt.close(fig)
-        written.append("claim4_spaghetti")
+        written.append("claim4_per_seed")
 
         # ---- exploratory: arm2 vs roster per-rung bars (true pass) ---------
         arm_cols = ["arm1_ctx_e1", ARM_CTXDIR, ARM_CTX, ARM_MAP, ARM_WSHUF]
@@ -908,7 +939,7 @@ def render_figures(table: dict, fig_dir: Path, seeds) -> list[str]:
             ax.set_xticks([x + 0.4 for x in xs])
             ax.set_xticklabels(labels, rotation=45, ha="right")
             ax.set_ylabel("Spearman ρ (seed mean, true map)")
-            ax.set_title("arm2 comparator vs roster per rung (exploratory)")
+            ax.set_title("Context-native direction comparator vs roster per rung (true map)")
             ax.legend(fontsize=7)
             savefig_paper(fig, "claim4_arm2_bars", dir=fig_dir)
             plt.close(fig)
@@ -958,11 +989,11 @@ def render_figures(table: dict, fig_dir: Path, seeds) -> list[str]:
                 )
             ax.axhline(0.0, color="#444444", lw=0.8)
             ax.set_xticks([x + 0.4 for x in range(len(rungs))])
-            ax.set_xticklabels(rungs, rotation=45, ha="right")
-            ax.set_title(f"{panel} (banked, single seed)")
+            ax.set_xticklabels([RUNG_LABEL.get(rg, rg) for rg in rungs], rotation=45, ha="right")
+            ax.set_title(f"{PANEL_LABEL.get(panel, panel)} (banked, single seed)")
         axes[0].set_ylabel("Spearman ρ (frozen layer)")
         axes[0].legend(fontsize=6)
-        fig.suptitle("Corrected sycophancy OOD rungs (item 4 — banked rows)")
+        fig.suptitle("Corrected sycophancy OOD rungs (banked single-seed rows)")
         savefig_paper(fig, "claim4_syco_ood", dir=fig_dir)
         plt.close(fig)
         written.append("claim4_syco_ood")
@@ -981,7 +1012,8 @@ def render_figures(table: dict, fig_dir: Path, seeds) -> list[str]:
                         color=color,
                         alpha=0.8,
                         lw=1.2,
-                        label=f"{b} {variant}",
+                        label=f"{b} — "
+                        + ("true map" if variant == "true" else "shuffled-pairing map"),
                         ls={"evil": "-", "sycophancy": "--", "hallucination": ":"}[b],
                     )
         ax.set_xlabel("layer index")
@@ -1021,6 +1053,58 @@ def render_figures(table: dict, fig_dir: Path, seeds) -> list[str]:
         plt.close(fig)
         written.append("claim4_companion")
     return written
+
+
+def render_syco_percontext(
+    preds_root: Path,
+    fig_dir: Path,
+    rungs: tuple[str, ...] = ("sycomwe", "sycomim"),
+    seed: int = 0,
+) -> str:
+    """Per-context low-level view behind the corrected-sycophancy correlations.
+
+    Scatters the mapped-answer probe's and the context probe's per-context
+    predictions against the judge-scored DV on the two extreme rungs, from
+    the fair-allocation refit preds (seed 0). Fails loud on a preds gap —
+    never an empty panel.
+    """
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from scipy.stats import spearmanr
+
+    from explore_persona_space.analysis.paper_plots import savefig_paper, set_paper_style
+
+    set_paper_style("blog")
+    fig_dir.mkdir(parents=True, exist_ok=True)
+    fig, axes = plt.subplots(1, len(rungs), figsize=(5.2 * len(rungs), 4.4), sharex=True)
+    for ax, rung in zip(axes, rungs, strict=True):
+        series, dv, _groups, note = load_preds_series(
+            preds_root, "sycophancy", rung, [seed], variants=("true",)
+        )
+        if series is None:
+            raise RuntimeError(f"per-context preds unavailable for {rung}: {note}")
+        for arm in (ARM_MAP, ARM_CTX):
+            preds = series[("true", arm, seed)]
+            rho = spearmanr(preds, dv)[0]
+            ax.scatter(
+                dv,
+                preds,
+                s=9,
+                alpha=0.45,
+                linewidths=0,
+                color=ARM_STYLE[arm][1],
+                label=f"{ARM_STYLE[arm][0]} (ρ {rho:+.2f})",
+            )
+        ax.set_xlabel("judge-scored sycophancy DV (per-context mean)")
+        ax.set_title(f"{RUNG_LABEL.get(rung, rung)} (n={len(dv)} contexts, seed {seed})")
+        ax.legend(fontsize=7)
+    axes[0].set_ylabel("arm prediction (per-context)")
+    fig.suptitle("Per-context predictions behind the sycophancy extremes (fair-allocation refit)")
+    savefig_paper(fig, "claim4_syco_percontext", dir=fig_dir)
+    plt.close(fig)
+    return "claim4_syco_percontext"
 
 
 # ---------------------------------------------------------------------------

@@ -1,11 +1,27 @@
 {
-  "commit": "067bd030",
-  "render_id": "aa47137545284ba3",
-  "git_commit": "067bd030",
-  "git_dirty": false,
-  "git_argv0_state": "tracked",
-  "git_argv0_path": "scripts/issue1739_claim4_fold.py",
-  "created": "2026-08-19T23:28:45Z",
+  "commit": "12cfdbf3+dirty",
+  "render_id": "5af8c2dd989c42a6",
+  "git_commit": "12cfdbf3",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue1739_claim4_relabel_figs.py",
+    "figures/issue_1739/claim4_controls/claim4_arm2_bars.meta.json",
+    "figures/issue_1739/claim4_controls/claim4_arm2_bars.pdf",
+    "figures/issue_1739/claim4_controls/claim4_arm2_bars.png",
+    "figures/issue_1739/claim4_controls/claim4_forest.meta.json",
+    "figures/issue_1739/claim4_controls/claim4_forest.pdf",
+    "figures/issue_1739/claim4_controls/claim4_forest.png",
+    "figures/issue_1739/claim4_controls/claim4_map_knn.meta.json",
+    "figures/issue_1739/claim4_controls/claim4_map_knn.pdf",
+    "figures/issue_1739/claim4_controls/claim4_map_knn.png",
+    "figures/issue_1739/claim4_controls/claim4_syco_ood.meta.json",
+    "figures/issue_1739/claim4_controls/claim4_syco_ood.pdf",
+    "figures/issue_1739/claim4_controls/claim4_syco_ood.png",
+    "scripts/issue1739_claim4_fold.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue1739_claim4_relabel_figs.py",
+  "created": "2026-08-20T00:40:31Z",
   "figsize": [
     8.0,
     4.2
@@ -409,7 +425,7 @@
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "arm2 comparator vs roster per rung (exploratory)",
+        "title_left": "Context-native direction comparator vs roster per rung (true map)",
         "ylabel": "Spearman \u03c1 (seed mean, true map)",
         "legend_labels": [
           "Persona vector on context",
@@ -419,19 +435,19 @@
           "control: weight-permuted map ridge"
         ],
         "xticklabels": [
-          "evil: evil_mhj",
-          "evil: evil_pair",
-          "evil: evil_tomgibbs",
-          "evil: hhrt",
-          "evil: toxicchat",
-          "hallucination: nqopen",
-          "hallucination: simpleqa",
-          "sycophancy: aita",
-          "sycophancy: sycoans",
-          "sycophancy: sycoays",
-          "sycophancy: sycofb",
-          "sycophancy: sycomim",
-          "sycophancy: sycomwe"
+          "evil: multi-turn human jailbreaks",
+          "evil: PAIR optimizer attacks",
+          "evil: Tom Gibbs multi-turn",
+          "evil: HH red-team",
+          "evil: ToxicChat",
+          "hallucination: NQ-Open",
+          "hallucination: SimpleQA",
+          "sycophancy: AITA slot (held-out Reddit)",
+          "sycophancy: answer",
+          "sycophancy: are-you-sure",
+          "sycophancy: feedback",
+          "sycophancy: mimicry",
+          "sycophancy: model-written evaluations"
         ],
         "yticklabels": [
           "\u22120.4",

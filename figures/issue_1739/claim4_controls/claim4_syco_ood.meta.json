@@ -1,11 +1,27 @@
 {
-  "commit": "067bd030",
-  "render_id": "62a6b7d86c7b4d0f",
-  "git_commit": "067bd030",
-  "git_dirty": false,
-  "git_argv0_state": "tracked",
-  "git_argv0_path": "scripts/issue1739_claim4_fold.py",
-  "created": "2026-08-19T23:28:48Z",
+  "commit": "12cfdbf3+dirty",
+  "render_id": "3ea982871e254c0a",
+  "git_commit": "12cfdbf3",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue1739_claim4_relabel_figs.py",
+    "figures/issue_1739/claim4_controls/claim4_arm2_bars.meta.json",
+    "figures/issue_1739/claim4_controls/claim4_arm2_bars.pdf",
+    "figures/issue_1739/claim4_controls/claim4_arm2_bars.png",
+    "figures/issue_1739/claim4_controls/claim4_forest.meta.json",
+    "figures/issue_1739/claim4_controls/claim4_forest.pdf",
+    "figures/issue_1739/claim4_controls/claim4_forest.png",
+    "figures/issue_1739/claim4_controls/claim4_map_knn.meta.json",
+    "figures/issue_1739/claim4_controls/claim4_map_knn.pdf",
+    "figures/issue_1739/claim4_controls/claim4_map_knn.png",
+    "figures/issue_1739/claim4_controls/claim4_syco_ood.meta.json",
+    "figures/issue_1739/claim4_controls/claim4_syco_ood.pdf",
+    "figures/issue_1739/claim4_controls/claim4_syco_ood.png",
+    "scripts/issue1739_claim4_fold.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue1739_claim4_relabel_figs.py",
+  "created": "2026-08-20T00:40:35Z",
   "figsize": [
     10.0,
     4.0
@@ -965,11 +981,11 @@
   "n_series": 30,
   "total_points": 150,
   "text": {
-    "suptitle": "Corrected sycophancy OOD rungs (item 4 \u2014 banked rows)",
+    "suptitle": "Corrected sycophancy OOD rungs (banked single-seed rows)",
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "P-A (banked, single seed)",
+        "title_left": "single-dataset pool (banked, single seed)",
         "ylabel": "Spearman \u03c1 (frozen layer)",
         "legend_labels": [
           "Persona vector on context",
@@ -979,34 +995,30 @@
           "Persona vector on real answer (oracle)"
         ],
         "xticklabels": [
-          "sycoans",
-          "sycoays",
-          "sycofb",
-          "sycomim",
-          "sycomwe"
+          "answer",
+          "are-you-sure",
+          "feedback",
+          "mimicry",
+          "model-written evaluations"
         ],
         "yticklabels": [
-          "\u22120.3",
+          "\u22120.4",
           "\u22120.2",
-          "\u22120.1",
           "0.0",
-          "0.1",
           "0.2",
-          "0.3",
           "0.4",
-          "0.5",
           "0.6",
-          "0.7"
+          "0.8"
         ]
       },
       {
-        "title_left": "P-B (banked, single seed)",
+        "title_left": "fair-allocation pool (banked, single seed)",
         "xticklabels": [
-          "sycoans",
-          "sycoays",
-          "sycofb",
-          "sycomim",
-          "sycomwe"
+          "answer",
+          "are-you-sure",
+          "feedback",
+          "mimicry",
+          "model-written evaluations"
         ]
       }
     ],

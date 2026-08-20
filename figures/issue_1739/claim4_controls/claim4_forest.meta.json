@@ -1,11 +1,27 @@
 {
-  "commit": "067bd030",
-  "render_id": "c83abaa61d5d4ea2",
-  "git_commit": "067bd030",
-  "git_dirty": false,
-  "git_argv0_state": "tracked",
-  "git_argv0_path": "scripts/issue1739_claim4_fold.py",
-  "created": "2026-08-19T23:28:39Z",
+  "commit": "12cfdbf3+dirty",
+  "render_id": "02bb01f2330f48c1",
+  "git_commit": "12cfdbf3",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue1739_claim4_relabel_figs.py",
+    "figures/issue_1739/claim4_controls/claim4_arm2_bars.meta.json",
+    "figures/issue_1739/claim4_controls/claim4_arm2_bars.pdf",
+    "figures/issue_1739/claim4_controls/claim4_arm2_bars.png",
+    "figures/issue_1739/claim4_controls/claim4_forest.meta.json",
+    "figures/issue_1739/claim4_controls/claim4_forest.pdf",
+    "figures/issue_1739/claim4_controls/claim4_forest.png",
+    "figures/issue_1739/claim4_controls/claim4_map_knn.meta.json",
+    "figures/issue_1739/claim4_controls/claim4_map_knn.pdf",
+    "figures/issue_1739/claim4_controls/claim4_map_knn.png",
+    "figures/issue_1739/claim4_controls/claim4_syco_ood.meta.json",
+    "figures/issue_1739/claim4_controls/claim4_syco_ood.pdf",
+    "figures/issue_1739/claim4_controls/claim4_syco_ood.png",
+    "scripts/issue1739_claim4_fold.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue1739_claim4_relabel_figs.py",
+  "created": "2026-08-20T00:40:24Z",
   "figsize": [
     7.2,
     7.0600000000000005
@@ -14,14 +30,14 @@
     {
       "Spearman \u03c1 delta at the frozen layer (seed mean \u00b1 seed t-CI)": 0.08295003199437437,
       "y": 12.16,
-      "series": "\u0394_true (map\u2212context probe)",
+      "series": "true-map advantage (mapped-answer minus context probe)",
       "_kind": "errorbar",
       "_group": 0
     },
     {
       "Spearman \u03c1 delta at the frozen layer (seed mean \u00b1 seed t-CI)": 0.04839764871299204,
       "y": 11.84,
-      "series": "\u0394_shuf (shuffled-pairing map)",
+      "series": "shuffled-map advantage (pairing-shuffled map)",
       "_kind": "errorbar",
       "_group": 1
     },
@@ -177,11 +193,11 @@
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "Claim-4 controls: probe-on-mapped-answer gain, true vs shuffled-pairing map",
+        "title_left": "Probe-on-mapped-answer gain per rung: true map vs shuffled-pairing map",
         "xlabel": "Spearman \u03c1 delta at the frozen layer (seed mean \u00b1 seed t-CI)",
         "legend_labels": [
-          "\u0394_true (map\u2212context probe)",
-          "\u0394_shuf (shuffled-pairing map)"
+          "true-map advantage (mapped-answer minus context probe)",
+          "shuffled-map advantage (pairing-shuffled map)"
         ],
         "xticklabels": [
           "\u22121.0",
@@ -195,25 +211,25 @@
           "0.6"
         ],
         "yticklabels": [
-          "evil: evil_mhj",
-          "evil: evil_pair \u2605",
-          "evil: evil_tomgibbs",
-          "evil: hhrt",
-          "evil: toxicchat",
-          "hallucination: nqopen",
-          "hallucination: simpleqa",
-          "sycophancy: aita",
-          "sycophancy: sycoans",
-          "sycophancy: sycoays",
-          "sycophancy: sycofb",
-          "sycophancy: sycomim",
-          "sycophancy: sycomwe \u2605"
+          "evil: multi-turn human jailbreaks",
+          "evil: PAIR optimizer attacks \u2605",
+          "evil: Tom Gibbs multi-turn",
+          "evil: HH red-team",
+          "evil: ToxicChat",
+          "hallucination: NQ-Open",
+          "hallucination: SimpleQA",
+          "sycophancy: AITA slot (held-out Reddit)",
+          "sycophancy: answer",
+          "sycophancy: are-you-sure",
+          "sycophancy: feedback",
+          "sycophancy: mimicry",
+          "sycophancy: model-written evaluations \u2605"
         ]
       }
     ],
     "series": [
-      "\u0394_true (map\u2212context probe)",
-      "\u0394_shuf (shuffled-pairing map)"
+      "true-map advantage (mapped-answer minus context probe)",
+      "shuffled-map advantage (pairing-shuffled map)"
     ]
   },
   "formats_written": [
