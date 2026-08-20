@@ -479,6 +479,7 @@ def phase_upload(args) -> None:
         agg = dv_root / surface / "tf_margin.json"
         if agg.exists():
             dest_agg = f"{dv_prefix}/{surface}/tf_margin.json"
+            # UPLOAD_LOOP_EXEMPT: bounded — one aggregate JSON per surface (<=4), never a storm
             out = hub._upload(
                 agg,
                 hub.DEFAULT_DATASET_REPO,

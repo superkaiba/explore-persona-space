@@ -2473,6 +2473,7 @@ def phase_upload(args) -> None:
     for local, prefix in jobs:
         if local.is_file():
             # file jobs compose prefix as the FULL file destination above
+            # UPLOAD_LOOP_EXEMPT: bounded — top-level summary JSONs only (<=~6); dirs batch
             out = hub._upload(
                 local,
                 hub.DEFAULT_DATASET_REPO,
