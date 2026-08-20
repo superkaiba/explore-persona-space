@@ -373,8 +373,8 @@ def test_require_consumer_probe_local_report_needs_anchor_binding(
 # ---- R6 (r2 review): the gate is tested THROUGH the protected entrypoints ----
 
 
-def _judge_cfg(tmp_path: Path, anchors_dir: Path, bank: Path, report: Path):
-    return P.J.JudgeConfig(
+def _judge_cfg(tmp_path: Path, anchors_dir: Path, bank: Path, report: Path, **over):
+    kw = dict(
         work_root=tmp_path / "work",
         cache_root=tmp_path / "cache",
         rollouts_dir=tmp_path / "rollouts",
@@ -383,14 +383,30 @@ def _judge_cfg(tmp_path: Path, anchors_dir: Path, bank: Path, report: Path):
         bank_json=bank,
         consumer_probe_report=report,
     )
+    kw.update(over)
+    return P.J.JudgeConfig(**kw)
 
 
 def _boundary_fake_judge(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Fake ONLY the pre-gate file loaders (signature-mirroring defs); the
+    """Fake ONLY the non-probe gate reads (signature-mirroring def); the
     entrypoint body up to and past the M1-iv gate is REAL."""
-    monkeypatch.setattr(P.J, "surviving_pairs", lambda bank_json: [])
-    monkeypatch.setattr(P.J, "load_grid_rows", lambda rollouts_dir: [])
     monkeypatch.setattr(P.J, "_require_gates", lambda cfg, names=(): None)
+
+
+def _loader_sentinel_judge(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Round-5 D (concern m1iv-entrypoint-test-detached): the sentinels sit
+    on the FIRST REAL LOADERS — reaching surviving_pairs / load_grid_rows
+    means the M1-iv gate did not refuse first (the r4 defect: the gate ran
+    only AFTER both loaders had already read banked artifacts)."""
+
+    def _boom_pairs(bank_json):
+        raise AssertionError("banked artifact loaded before the M1-iv gate (surviving_pairs)")
+
+    def _boom_rows(rollouts_dir):
+        raise AssertionError("banked artifact loaded before the M1-iv gate (load_grid_rows)")
+
+    monkeypatch.setattr(P.J, "surviving_pairs", _boom_pairs)
+    monkeypatch.setattr(P.J, "load_grid_rows", _boom_rows)
 
 
 def _spend_sentinel_judge(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -403,11 +419,12 @@ def _spend_sentinel_judge(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_phase_waves_refuses_before_spend_without_probe(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """R6: the REAL phase_waves entrypoint refuses at the M1-iv gate BEFORE
-    any downstream spend when the probe report is absent. Deleting (or
-    reordering after the waves) the require_consumer_probe call makes the
-    spend sentinel fire instead — the round-1 detached-probe defect."""
+    """R6 + round-5 D: the REAL phase_waves entrypoint refuses at the M1-iv
+    gate BEFORE the first banked-artifact loader (and a fortiori before any
+    spend) when the probe report is absent. Reordering the gate after the
+    loaders fires the loader sentinel; deleting it fires the spend sentinel."""
     _boundary_fake_judge(monkeypatch)
+    _loader_sentinel_judge(monkeypatch)
     _spend_sentinel_judge(monkeypatch)
     cfg = _judge_cfg(
         tmp_path, tmp_path / "anchors", tmp_path / "bank.json", tmp_path / "missing_report.json"
@@ -419,8 +436,8 @@ def test_phase_waves_refuses_before_spend_without_probe(
 def test_phase_waves_refuses_stale_source_before_spend(
     anchors_dir: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """R4 x R6: a PASS produced for run A (different shard bytes) presented
-    to phase_waves for run B refuses BEFORE the spend sentinel."""
+    """R4 x R6 + round-5 D: a PASS produced for run A (different shard bytes)
+    presented to phase_waves for run B refuses BEFORE the first loader."""
     _write_jsonl(anchors_dir, ROWS)
     _write_pt(anchors_dir, ROWS, empty_rows=[])
     bank = _bank_file(tmp_path)
@@ -429,10 +446,31 @@ def test_phase_waves_refuses_stale_source_before_spend(
     dir_b.mkdir()
     _write_jsonl(dir_b, ROWS[:1])
     _boundary_fake_judge(monkeypatch)
+    _loader_sentinel_judge(monkeypatch)
     _spend_sentinel_judge(monkeypatch)
     cfg = _judge_cfg(tmp_path, dir_b, bank, report)
     with pytest.raises(RuntimeError, match="NOT BOUND"):
         P.J.phase_waves(cfg)
+
+
+def test_phase_waves_dry_run_not_gated_by_probe(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Round-5 D trap guard: --dry-run is a zero-API construction check and
+    needs NO probe — hoisting the M1-iv gate wholesale above the dry-run
+    split would break the sanctioned no-probe dry run. The loaders DO run
+    (they feed the dry-run unit construction); the gate does not."""
+    monkeypatch.setattr(P.J, "surviving_pairs", lambda bank_json: [])
+    monkeypatch.setattr(P.J, "load_grid_rows", lambda rollouts_dir: [])
+    _spend_sentinel_judge(monkeypatch)
+    cfg = _judge_cfg(
+        tmp_path,
+        tmp_path / "anchors",
+        tmp_path / "bank.json",
+        tmp_path / "missing_report.json",
+        dry_run=True,
+    )
+    assert P.J.phase_waves(cfg) == P.J.RC_OK
 
 
 def _analysis_args(tmp_path: Path, **over):

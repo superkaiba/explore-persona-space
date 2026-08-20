@@ -1462,6 +1462,23 @@ def phase_waves(cfg: JudgeConfig) -> int:
     """Production grid waves (coherence + dual-rubric behavior), gate-guarded.
     ``--dry-run``: construction check at entry, zero API calls, nothing
     persisted."""
+    if not cfg.dry_run:
+        # Round-5 D (concern m1iv-entrypoint-test-detached): the M1-iv gate
+        # refuses BEFORE the first real loader touches banked artifacts — a
+        # stale/foreign probe report stops the phase before surviving_pairs /
+        # load_grid_rows read anything. The loaders below still serve the
+        # --dry-run construction check, which needs no probe (do NOT hoist
+        # the gate above the dry-run split wholesale).
+        _require_gates(cfg)
+        require_consumer_probe(
+            cfg.consumer_probe_report,
+            "judge",
+            skip=cfg.skip_consumer_probe,
+            # R4: bind the PASS to THIS run — staged anchors bytes (when the
+            # anchors mirror is local) + the frozen bank identity.
+            anchors_dir=cfg.anchors_file if cfg.anchors_file.is_dir() else None,
+            bank_json=cfg.bank_json,
+        )
     pairs = surviving_pairs(cfg.bank_json)
     pairs_by_id = {p.pair_id: p for p in pairs}
     grid_rows = load_grid_rows(cfg.rollouts_dir)
@@ -1474,16 +1491,6 @@ def phase_waves(cfg: JudgeConfig) -> int:
                 **{f"{rid}.grid": us for rid, us in beh.items()},
             },
         )
-    _require_gates(cfg)
-    require_consumer_probe(
-        cfg.consumer_probe_report,
-        "judge",
-        skip=cfg.skip_consumer_probe,
-        # R4: bind the PASS to THIS run — staged anchors bytes (when the
-        # anchors mirror is local) + the frozen bank identity.
-        anchors_dir=cfg.anchors_file if cfg.anchors_file.is_dir() else None,
-        bank_json=cfg.bank_json,
-    )
     registry = rubric_registry(pairs)
     J94.run_audits("grid", grid_rows, cfg.audits_dir)
     coh_units = build_coherence_items(grid_rows, None)
