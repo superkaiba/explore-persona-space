@@ -11039,8 +11039,8 @@
     "2429": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2429",
-      "status": "proposed",
+      "path": "tasks/archived/2429",
+      "status": "archived",
       "title": "workflow-fix: issue worktrees run an unpinned Python (19/25 at 3.12.13 vs root 3.11.15) \u2014 Step 9c verdicts flip on interpreter"
     },
     "244": {
