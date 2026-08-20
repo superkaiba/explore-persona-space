@@ -3174,10 +3174,24 @@ def _load_cap_recalibration(cfg: RunConfig, regime_fp: str | None = None) -> dic
     ``_sharded_done_record`` warn+``None`` idiom; the report records
     ``regime_fp`` precisely so adoption can check it — a smoke/tiny run's
     realized cap-hit evidence must never stand in for a production run's).
-    Consumption-only sites (grid / stage2 / the vLLM anchors leg) read
-    content-blind by design: they resolve their own fp domains (family
-    freeze / ``stage2_regime_fp``), which legitimately differ from the
-    anchors-phase fp the recording site validated under."""
+
+    Round-5 F (concern ``cap-recal-consumer-regime-bypass``): the
+    consumption-only readers (grid / stage2 / the vLLM anchors rest leg)
+    resolve their OWN fp domains (family freeze / ``stage2_regime_fp``),
+    which legitimately differ from the anchors-phase fp the recording site
+    validated under — so they cannot compare ``regime_fp``. But the fp
+    DOMAIN is orthogonal to the smoke/tiny REGIME bit: dispatch.sh provides
+    standalone surgical-resume arms (``grid)`` / ``stage2)`` / the vLLM
+    legs) that never traverse the recording barrier, and OUT_ROOT defaults
+    to a shared path, so a prior ``--smoke``/``--tiny`` recalibration sits
+    there un-overwritten. Every reader therefore ALSO validates the
+    report's recorded ``repro`` REGIME identity (model id@revision +
+    tiny/smoke bits) against THIS run's cfg — this loader is the single
+    accessor for all four readers, so the guard covers each. A
+    regime-foreign (or repro-less, pre-round-5 shape) report is NOT
+    adopted: warn + None — consumers fall back to the table caps, and the
+    standing >2%/cell capregen trigger backstops any genuinely-needed
+    raise, exactly the documented ``partial`` semantics."""
     path = cfg.gates_dir / "cap_recalibration.json"
     if not path.exists():
         return None
@@ -3189,6 +3203,25 @@ def _load_cap_recalibration(cfg: RunConfig, regime_fp: str | None = None) -> dic
             "cap evidence)",
             rec.get("regime_fp"),
             regime_fp,
+        )
+        return None
+    repro = rec.get("repro") or {}
+    regime_problems = []
+    if repro.get("model_id") != cfg.model_id or repro.get("model_revision") != cfg.model_revision:
+        regime_problems.append(
+            f"model {repro.get('model_id')}@{repro.get('model_revision')} != "
+            f"this run's {cfg.model_id}@{cfg.model_revision}"
+        )
+    if bool(repro.get("tiny")) != bool(cfg.tiny) or bool(repro.get("smoke")) != bool(cfg.smoke):
+        regime_problems.append(
+            f"regime (tiny={repro.get('tiny')}, smoke={repro.get('smoke')}) != "
+            f"this run's (tiny={cfg.tiny}, smoke={cfg.smoke})"
+        )
+    if regime_problems:
+        logger.warning(
+            "[cap-recal] existing report is REGIME-FOREIGN (%s) — not adopted; running at "
+            "table caps (the >2%%/cell capregen trigger backstops; round-5 F)",
+            "; ".join(regime_problems),
         )
         return None
     return {str(k): int(v) for k, v in rec.get("recalibrated", {}).items()}

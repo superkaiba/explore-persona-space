@@ -712,6 +712,18 @@ def test_cap_recalibration_foreign_regime_report_recomputes(tmp_path, monkeypatc
     assert rep["regime_fp"] == fp  # overwritten under THIS regime
 
 
+def _cap_recal_repro(cfg: R.RunConfig, **over) -> dict:
+    """The repro regime subset the round-5 F consumption guard reads."""
+    rep = {
+        "model_id": cfg.model_id,
+        "model_revision": cfg.model_revision,
+        "tiny": cfg.tiny,
+        "smoke": cfg.smoke,
+    }
+    rep.update(over)
+    return rep
+
+
 def test_cap_recalibration_same_regime_report_adopted(tmp_path, monkeypatch):
     """Positive control for round-5 B: a SAME-regime report IS adopted
     verbatim (idempotent resume — no recompute, no rewrite)."""
@@ -720,12 +732,68 @@ def test_cap_recalibration_same_regime_report_adopted(tmp_path, monkeypatch):
     cell, fp = "query_topic", "fp"
     path = cfg.gates_dir / "cap_recalibration.json"
     cfg.gates_dir.mkdir(parents=True, exist_ok=True)
-    R._write_json_atomic(path, {"regime_fp": fp, "recalibrated": {cell: 1234}})
+    R._write_json_atomic(
+        path,
+        {"regime_fp": fp, "recalibrated": {cell: 1234}, "repro": _cap_recal_repro(cfg)},
+    )
     before = path.read_bytes()
     # deliberately NO staged shards: adoption must return BEFORE the barrier
     recal = R._gate_slice_cap_recalibration(cfg, fp, 1, [cell])
     assert recal == {cell: 1234}
     assert path.read_bytes() == before
+
+
+def test_r5f_cap_recal_consumption_rejects_regime_foreign_report(tmp_path):
+    """Round-5 F (concern cap-recal-consumer-regime-bypass): the CONSUMPTION
+    signature — ``_load_cap_recalibration(cfg)`` with no regime_fp, the exact
+    call grid (:4084) / stage2 (:7123) / the vLLM rest leg
+    (vllm_anchors.py:604) make — must NOT adopt a report whose recorded
+    repro REGIME differs from this run's. dispatch.sh's standalone ``grid)``
+    / ``stage2)`` arms never traverse the recording barrier and OUT_ROOT
+    defaults to a shared path, so a prior --smoke/--tiny recalibration sits
+    there un-overwritten. FAILED at HEAD~: all three consumption sites
+    adopted the smoke-regime {cell: 99999} verbatim."""
+    prod = _mk_cfg(tmp_path, tiny=False, smoke=False)
+    cell = "query_topic"
+    prod.gates_dir.mkdir(parents=True, exist_ok=True)
+    path = prod.gates_dir / "cap_recalibration.json"
+    # (a) smoke/tiny-regime evidence in a shared out_root
+    smoke_cfg = _mk_cfg(tmp_path, tiny=True, smoke=True)
+    R._write_json_atomic(
+        path,
+        {
+            "regime_fp": "smoke_fp",
+            "recalibrated": {cell: 99999},
+            "repro": _cap_recal_repro(smoke_cfg),
+        },
+    )
+    assert R._load_cap_recalibration(prod) is None
+    # (b) foreign model@revision
+    R._write_json_atomic(
+        path,
+        {
+            "regime_fp": "fp",
+            "recalibrated": {cell: 99999},
+            "repro": _cap_recal_repro(prod, model_id="other/model"),
+        },
+    )
+    assert R._load_cap_recalibration(prod) is None
+    # (c) a repro-less (pre-round-5) report cannot prove its regime
+    R._write_json_atomic(path, {"regime_fp": "fp", "recalibrated": {cell: 99999}})
+    assert R._load_cap_recalibration(prod) is None
+
+
+def test_r5f_cap_recal_consumption_adopts_same_regime_report(tmp_path):
+    """Positive control for round-5 F: a regime-matched report IS adopted by
+    the consumption signature (no false refusal on the healthy path)."""
+    cfg = _mk_cfg(tmp_path)
+    cell = "query_topic"
+    cfg.gates_dir.mkdir(parents=True, exist_ok=True)
+    R._write_json_atomic(
+        cfg.gates_dir / "cap_recalibration.json",
+        {"regime_fp": "any_fp", "recalibrated": {cell: 4096}, "repro": _cap_recal_repro(cfg)},
+    )
+    assert R._load_cap_recalibration(cfg) == {cell: 4096}
 
 
 def test_gate_shard_paths_skips_row_count_mismatched_manifest(tmp_path):
