@@ -825,23 +825,33 @@ def test_b7_chunk_size_median_regression(tmp_path):
 # ----------------------------- R5 (r2 review): pilot re-entry is LOSSLESS
 
 
-def _pilot_report(cfg: R.RunConfig, verdict: str = "ACCEPT", sel: int = 16, **repro_over) -> None:
+def _pilot_report(
+    cfg: R.RunConfig,
+    verdict: str = "ACCEPT",
+    sel: int = 16,
+    report_over: dict | None = None,
+    **repro_over,
+) -> None:
     cfg.gates_dir.mkdir(parents=True, exist_ok=True)
-    R._write_json_atomic(
-        cfg.gates_dir / "pilot_gate_report.json",
-        {
-            "verdict": verdict,
-            "gen_batch_selected": sel,
-            "gen_batch_candidates": [16, 32],
-            "repro": {
-                "model_id": cfg.model_id,
-                "model_revision": cfg.model_revision,
-                "smoke": cfg.smoke,
-                "tiny": cfg.tiny,
-                **repro_over,
-            },
+    rec = {
+        "verdict": verdict,
+        "gen_batch_selected": sel,
+        "gen_batch_candidates": [16, 32],
+        # round-5 C: the runtime-domain fields _reusable_pilot_report checks
+        "num_workers": max(1, cfg.num_workers),
+        "gpu_name": R._pilot_gpu_name(),
+        "planned_total_wall_h": cfg.planned_wall_h,
+        "accept_threshold_h": R.PILOT_ACCEPT_WALL_H,
+        "repro": {
+            "model_id": cfg.model_id,
+            "model_revision": cfg.model_revision,
+            "smoke": cfg.smoke,
+            "tiny": cfg.tiny,
+            **repro_over,
         },
-    )
+    }
+    rec.update(report_over or {})
+    R._write_json_atomic(cfg.gates_dir / "pilot_gate_report.json", rec)
 
 
 def _bank_sentinel(monkeypatch):
@@ -897,4 +907,38 @@ def test_r5_pilot_force_remeasures(tmp_path, monkeypatch):
     _pilot_report(cfg)
     _bank_sentinel(monkeypatch)
     with pytest.raises(AssertionError, match="re-measurement reached"):
+        R.phase_grid(cfg)
+
+
+def test_r5_pilot_runtime_domain_mismatch_raises(tmp_path, monkeypatch):
+    """Round-5 C (concern pilot-reuse-runtime-domain): a report measured at a
+    different worker width / GPU lane / candidate set / wall threshold /
+    planned wall is FOREIGN — its per-phase wall projections, argmin
+    selection, and verdict banding do not transfer. FAILED at HEAD~: all
+    five mismatches adopted silently."""
+    _bank_sentinel(monkeypatch)
+    for over in (
+        {"num_workers": 8},
+        {"gpu_name": "NVIDIA H200"},
+        {"gen_batch_candidates": [8, 64]},
+        {"accept_threshold_h": 80.0},
+        {"planned_total_wall_h": 77.0},
+    ):
+        cfg = _mk_cfg(tmp_path, pilot=True)
+        _pilot_report(cfg, report_over=over)
+        with pytest.raises(RuntimeError, match="FOREIGN"):
+            R.phase_grid(cfg)
+
+
+def test_r5_pilot_unrecorded_gpu_lane_raises(tmp_path, monkeypatch):
+    """A report predating the runtime-domain fields cannot prove its lane —
+    FOREIGN (a deliberate re-measure needs --force), never a silent adopt."""
+    cfg = _mk_cfg(tmp_path, pilot=True)
+    _pilot_report(cfg)
+    path = cfg.gates_dir / "pilot_gate_report.json"
+    rec = json.loads(path.read_text())
+    rec.pop("gpu_name")
+    R._write_json_atomic(path, rec)
+    _bank_sentinel(monkeypatch)
+    with pytest.raises(RuntimeError, match="gpu_name"):
         R.phase_grid(cfg)

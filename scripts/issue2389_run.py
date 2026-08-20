@@ -3032,6 +3032,15 @@ def _pilot_selected_gen_batch(cfg: RunConfig) -> int | None:
     return sel
 
 
+def _pilot_gpu_name() -> str | None:
+    """GPU lane identity for pilot-report reuse checks (None on a CPU host).
+
+    Round-5 C (r4 review): the pilot's s/rollout and HBM-headroom readings
+    are properties of the DEVICE lane — an H100-measured report must never
+    drive an H200 (or CPU) run's batching and poll fences."""
+    return torch.cuda.get_device_name(0) if torch.cuda.is_available() else None
+
+
 def _reusable_pilot_report(cfg: RunConfig) -> dict | None:
     """An existing pilot report THIS run may ADOPT instead of re-measuring
     (R5 r2 review). Plan §9 pre-registers same-command resume as a LOSSLESS
@@ -3040,8 +3049,14 @@ def _reusable_pilot_report(cfg: RunConfig) -> dict | None:
     rewrite the fingerprint and read every banked anchors/grid done shard
     as NOT-done (quarantine + regeneration, 40+ GPU-h at risk). Returns
     None when no report exists (measure); the record when the report's
-    regime matches this run (model id@revision + smoke/tiny); RAISES on a
-    present-but-foreign report — a deliberate re-measure needs ``--force``.
+    regime matches this run — model id@revision + smoke/tiny AND, round-5 C
+    (concern ``pilot-reuse-runtime-domain``), the RUNTIME DOMAIN the
+    measurements are functions of: worker width (per-phase walls divide by
+    it), GPU lane (s/rollout + HBM headroom are device properties),
+    candidate set (the argmin selection is only valid over the same band),
+    and the wall thresholds the verdict was banded against. RAISES on a
+    present-but-foreign report — a deliberate re-measure needs ``--force``;
+    a report predating these fields cannot prove its domain and is foreign.
     """
     path = cfg.gates_dir / "pilot_gate_report.json"
     if not path.exists():
@@ -3061,6 +3076,35 @@ def _reusable_pilot_report(cfg: RunConfig) -> dict | None:
         )
     if rec.get("verdict") not in ("ACCEPT", "SPLIT", "REFUSE"):
         problems.append(f"unrecognized verdict {rec.get('verdict')!r}")
+    width = max(1, cfg.num_workers)
+    if int(rec.get("num_workers", -1)) != width:
+        problems.append(
+            f"report num_workers={rec.get('num_workers')} != this run's {width} "
+            "(per-phase wall projections divide by worker width)"
+        )
+    gpu = _pilot_gpu_name()
+    if rec.get("gpu_name", "<unrecorded>") != gpu:
+        problems.append(
+            f"report gpu_name={rec.get('gpu_name', '<unrecorded>')!r} != this run's {gpu!r} "
+            "(s/rollout + HBM headroom are lane properties)"
+        )
+    want_cands = sorted([cfg.gen_batch] if cfg.gen_batch_explicit else PILOT_GEN_BATCH_CANDIDATES)
+    got_cands = sorted(int(b) for b in rec.get("gen_batch_candidates") or [])
+    if got_cands != want_cands:
+        problems.append(
+            f"report gen_batch_candidates={got_cands} != this run's {want_cands} "
+            "(the argmin selection is only valid over the same candidate set)"
+        )
+    if float(rec.get("accept_threshold_h", -1.0)) != PILOT_ACCEPT_WALL_H:
+        problems.append(
+            f"report accept_threshold_h={rec.get('accept_threshold_h')} != "
+            f"{PILOT_ACCEPT_WALL_H} (the verdict was banded against a different threshold)"
+        )
+    if float(rec.get("planned_total_wall_h", -1.0)) != float(cfg.planned_wall_h):
+        problems.append(
+            f"report planned_total_wall_h={rec.get('planned_total_wall_h')} != this run's "
+            f"{cfg.planned_wall_h} (the SPLIT/REFUSE bands scale with the planned wall)"
+        )
     if problems:
         raise RuntimeError(
             f"existing {path} is FOREIGN to this run: "
@@ -3942,9 +3986,10 @@ def phase_grid(cfg: RunConfig) -> int:
                 if not cfg.force_past_halt_gates:
                     logger.error(
                         "[pilot] existing pilot_gate_report.json verdict=REFUSE at this "
-                        "regime — the refusal STANDS on re-entry (re-measuring cannot "
-                        "change it; --force-past-halt-gates overrides, --force "
-                        "re-measures)"
+                        "regime — the refusal STANDS on re-entry (an unchanged setup "
+                        "re-measures to the same verdict; after a throughput fix — the "
+                        "plan's kernel-install prepared response — pass --force to "
+                        "re-pilot; --force-past-halt-gates overrides)"
                     )
                     return RC_PILOT_GATE
                 logger.warning(
@@ -4410,6 +4455,7 @@ def _enforce_pilot_gate(
         "hbm_headroom_floor_gib": PILOT_HBM_HEADROOM_GIB,
         "headroom_ok": headroom_ok,
         "num_workers": width,
+        "gpu_name": _pilot_gpu_name(),  # round-5 C: reuse checks the device lane
         "phases": phases,
         "projected_total_wall_h": projected_total_h,
         "planned_total_wall_h": cfg.planned_wall_h,
