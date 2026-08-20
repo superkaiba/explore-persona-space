@@ -1207,7 +1207,11 @@ PHASES = {
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap = argparse.ArgumentParser(description="Issue #2329 q35_ladder_decay Leg B (L7) driver.")
-    ap.add_argument("--phase", required=True, choices=tuple(PHASES))
+    ap.add_argument(
+        "--phase",
+        choices=tuple(PHASES),
+        help="pipeline phase to run (required unless --import-check)",
+    )
     ap.add_argument("--q25-in-root", type=Path, default=Path("data/issue_2329/decay_parent_inputs"))
     ap.add_argument("--q35-in-root", type=Path, default=Path("data/issue_2329/ladder_judge_inputs"))
     ap.add_argument(
@@ -1299,6 +1303,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.import_check:
         _import_check()
         return RC_OK
+    if args.phase is None:
+        raise SystemExit("--phase is required unless --import-check")
     cfg = DecayConfig(
         q25_in_root=args.q25_in_root,
         q35_in_root=args.q35_in_root,

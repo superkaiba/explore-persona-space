@@ -930,7 +930,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         description="Issue #2329 ladder VM-side judge driver "
         "(persona-specificity ladder ported to Qwen3.5-9B)."
     )
-    ap.add_argument("--phase", required=True, choices=tuple(PHASES))
+    ap.add_argument(
+        "--phase",
+        choices=tuple(PHASES),
+        help="pipeline phase to run (required unless --import-check)",
+    )
     ap.add_argument(
         "--in-root",
         type=Path,
@@ -1027,6 +1031,8 @@ def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     if args.import_check:
         return _import_check()
+    if args.phase is None:
+        raise SystemExit("--phase is required unless --import-check")
     if args.stage_from_hf:
         _stage_inputs(args)
     cfg = build_config(args)
