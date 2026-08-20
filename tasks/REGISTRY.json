@@ -9627,8 +9627,8 @@
     "2246": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2246",
-      "status": "planning",
+      "path": "tasks/approved/2246",
+      "status": "approved",
       "title": "Step 10d merge window runs on a reap-eligible worktree; a mid-gate reap makes the pre-push lint gate certify pass vacuously"
     },
     "2247": {
