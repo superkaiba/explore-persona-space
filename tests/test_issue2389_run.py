@@ -286,6 +286,56 @@ def test_validate_breach_basis_no_breach_needs_no_cap_floor(tmp_path):
     R._validate_breach_basis(rep, tmp_path / "r.json", "anchors", cfg)
 
 
+# ------------------------------------- capregen owning record (B11/B3 r1)
+
+
+def _done_manifest(cfg: R.RunConfig, bid: str, w: int = 0, fp: str = "fp", **extra) -> None:
+    cfg.manifest_dir.mkdir(parents=True, exist_ok=True)
+    R._write_json_atomic(
+        cfg.manifest_dir / f"anchors_{bid}_w{w}_done.json",
+        {"regime_fp": fp, "worker_index": w, "n_rows": 1, **extra},
+    )
+
+
+def test_capregen_owning_record_engine_aware(tmp_path):
+    """B11: capregen units are CELLS resolved to their OWNING engine record —
+    a rest cell lives in exactly one of rest_/parity_/vllm_; gate cells only
+    in gate_. The strided per-worker re-derivation (which mis-aligned against
+    the generation-time vLLM exclusion) is gone."""
+    cfg = _mk_cfg(tmp_path)
+    _done_manifest(cfg, "vllm_filler_swap")
+    bid, path, rec = R._capregen_owning_record(cfg, "filler_swap", "rest")
+    assert bid == "vllm_filler_swap" and path.exists() and rec["n_rows"] == 1
+    # the gate batch never resolves to a rest/parity/vllm record
+    with pytest.raises(RuntimeError, match="no done record"):
+        R._capregen_owning_record(cfg, "filler_swap", "gate")
+    _done_manifest(cfg, "gate_filler_swap")
+    assert R._capregen_owning_record(cfg, "filler_swap", "gate")[0] == "gate_filler_swap"
+
+
+def test_capregen_owning_record_refuses_multiple_owners(tmp_path):
+    cfg = _mk_cfg(tmp_path)
+    _done_manifest(cfg, "rest_filler_swap")
+    _done_manifest(cfg, "vllm_filler_swap")
+    with pytest.raises(RuntimeError, match="owning done records"):
+        R._capregen_owning_record(cfg, "filler_swap", "rest")
+
+
+def test_capregen_owning_record_ignores_gen_done_sentinels(tmp_path):
+    """A vLLM pre-capture `*_gen_done.json` sentinel is NOT a done record —
+    it must neither satisfy ownership nor manufacture a double-owner error
+    beside the real record."""
+    cfg = _mk_cfg(tmp_path)
+    cfg.manifest_dir.mkdir(parents=True, exist_ok=True)
+    R._write_json_atomic(
+        cfg.manifest_dir / "anchors_vllm_filler_swap_w0_gen_done.json", {"regime_fp": "fp"}
+    )
+    with pytest.raises(RuntimeError, match="no done record"):
+        R._capregen_owning_record(cfg, "filler_swap", "rest")
+    _done_manifest(cfg, "vllm_filler_swap")
+    assert R._capregen_owning_record(cfg, "filler_swap", "rest")[0] == "vllm_filler_swap"
+
+
 # ------------------------------------------------------- bank2389 identity
 
 

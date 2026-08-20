@@ -1,18 +1,23 @@
-"""Issue #2389 — vLLM anchor leg + anchor-rest routing unit tests (CPU, no engine).
+"""Issue #2389 — vLLM anchor leg + per-cell anchor routing unit tests (CPU, no engine).
 
 Covers the plan §4.7 item-4 seams that no smoke can reach cheaply:
 
-- the atomic rest-routing freeze (`issue2389_run._resolve_rest_routing`):
-  single decision point, frozen against later `vllm_cells.json` edits,
-  regime-fingerprint + unknown-cell fail-loud;
+- per-cell claim-time routing (B8 r1 review): the live `vllm_cells.json`
+  claim set is re-read every scan, a late parity PASS re-routes exactly the
+  not-yet-claimed / not-yet-done rest cells, and HF-done cells are never
+  regenerated (work conservation both ways);
+- cell-grain sharding keeps every generate chunk at full ``gen_batch``
+  (B7 r1 review — the strided pre-fix shape fails the median-chunk floor);
 - the step-3 pin-1 filename contract: vLLM production shards land INSIDE both
   consumer globs, parity-side shards land OUTSIDE them, and none of the
   cell-grained shard stems are visible to the width sweeps;
 - worker-independent done predicates + claim-queue work conservation over
   `CellBlock`s;
-- `leg_claim` verdict handling (PASS extends the claim; FAIL / frozen routing
-  are inert);
-- run-config composition through run.py's OWN parser (reused-module contract).
+- `leg_claim` verdict handling (PASS always extends the claim; FAIL/timeout
+  leave the parity-only claim);
+- run-config composition through run.py's OWN parser (reused-module
+  contract), incl. the B9 pilot gen_batch adoption + family-frozen
+  share-prefill resolution.
 
 No vLLM engine, no model, no tokenizer download — pure filesystem + logic.
 """
@@ -52,48 +57,22 @@ def _write_cells(cfg: R.RunConfig, cells: list[str]) -> None:
 SOME_CELLS = sorted(R.BANK.all_cells())[:2]
 
 
-# ── _resolve_rest_routing: atomic freeze ──────────────────────────────
+# ── per-cell claim-time routing (B8) ──────────────────────────────────
 
 
-def test_routing_freezes_current_claim(tmp_path):
+def test_vllm_claimed_cells_reads_live_claim(tmp_path):
+    """B8: the claim set is LIVE — run.py's rest workers re-read it every
+    scan (via the `mine` predicate), so a later claim edit IS visible. The
+    pre-fix `_resolve_rest_routing` one-shot global freeze (which made a
+    late PASS inert for every cell) is GONE."""
     cfg = _cfg(tmp_path)
-    _write_cells(cfg, SOME_CELLS)
-    frozen = R._resolve_rest_routing(cfg, "fp-a")
-    assert frozen == frozenset(SOME_CELLS)
-    assert (cfg.gates_dir / R.ANCHOR_REST_ROUTING_NAME).exists()
-
-
-def test_routing_ignores_later_claim_edits(tmp_path):
-    """A vllm_cells.json edit AFTER the freeze is inert — the frozen decision wins."""
-    cfg = _cfg(tmp_path)
+    assert R._vllm_claimed_cells(cfg) == frozenset()
     _write_cells(cfg, SOME_CELLS[:1])
-    frozen1 = R._resolve_rest_routing(cfg, "fp-a")
-    _write_cells(cfg, sorted(R.BANK.all_cells()))  # late claim
-    frozen2 = R._resolve_rest_routing(cfg, "fp-a")
-    assert frozen1 == frozen2 == frozenset(SOME_CELLS[:1])
-
-
-def test_routing_empty_claim_freezes_empty(tmp_path):
-    """No vllm_cells.json at freeze time -> empty exclusion, HF owns everything."""
-    cfg = _cfg(tmp_path)
-    assert R._resolve_rest_routing(cfg, "fp-a") == frozenset()
-    # A later claim cannot re-open the decision.
-    _write_cells(cfg, SOME_CELLS)
-    assert R._resolve_rest_routing(cfg, "fp-a") == frozenset()
-
-
-def test_routing_regime_mismatch_fails_loud(tmp_path):
-    cfg = _cfg(tmp_path)
-    R._resolve_rest_routing(cfg, "fp-a")
-    with pytest.raises(RuntimeError, match="regime_fp"):
-        R._resolve_rest_routing(cfg, "fp-b")
-
-
-def test_routing_unknown_cell_fails_loud(tmp_path):
-    cfg = _cfg(tmp_path)
-    _write_cells(cfg, ["not_a_cell"])
-    with pytest.raises(RuntimeError, match="unknown cells"):
-        R._resolve_rest_routing(cfg, "fp-a")
+    assert R._vllm_claimed_cells(cfg) == frozenset(SOME_CELLS[:1])
+    _write_cells(cfg, sorted(R.BANK.all_cells()))  # late PASS extension
+    assert R._vllm_claimed_cells(cfg) == frozenset(R.BANK.all_cells())
+    assert not hasattr(R, "_resolve_rest_routing")
+    assert not hasattr(R, "ANCHOR_REST_ROUTING_NAME")
 
 
 def test_vllm_claimed_cells_unknown_cell_fails_loud(tmp_path):
@@ -101,6 +80,90 @@ def test_vllm_claimed_cells_unknown_cell_fails_loud(tmp_path):
     _write_cells(cfg, ["not_a_cell"])
     with pytest.raises(RuntimeError, match="unknown cells"):
         R._vllm_claimed_cells(cfg)
+
+
+def test_b8_late_pass_reroutes_only_unclaimed_cells(tmp_path, monkeypatch):
+    """B8 mechanizable check (r1 review verbatim): simulate HF claiming +
+    finishing cell A, land a late PASS, assert untouched B/C route to the
+    vLLM leg WITHOUT regenerating A — on both sides of the seam."""
+    cfg = _cfg(tmp_path)
+    draws = cfg.anchor_draws
+    all_cells = sorted(set(R.BANK.all_cells()) - set(V.PARITY_CELLS))
+    cell_a, cell_b, cell_c = all_cells[:3]
+    # HF completed cell A before the verdict (worker-independent done shard).
+    _fake_done_shard(cfg, f"rest_{cell_a}", w=0, regime_fp="fp", draws=draws)
+
+    # Late PASS: leg_claim extends the claim set to every bank cell.
+    monkeypatch.setattr(V, "_read_parity_report", lambda _cfg: {"verdict": "PASS"})
+    assert V.leg_claim(cfg, timeout_s=1.0) == R.RC_OK
+    assert R._vllm_claimed_cells(cfg) == frozenset(R.BANK.all_cells())
+
+    # HF side: the rest queue (mine = not vllm-claimed) regenerates NOTHING —
+    # A is done, B/C are claimed away.
+    ran: list[str] = []
+    blocks = [R.AnchorCellBlock(cell=c, batch="rest") for c in (cell_a, cell_b, cell_c)]
+    R.run_claim_queue(
+        cfg,
+        blocks,
+        "fp",
+        "anchor_rest_cells",
+        lambda b: ran.append(b.cell),
+        is_done=lambda _root, b, fp, _ns: R._anchor_cell_done(cfg, fp, b.batch_id, draws),
+        mine=lambda b: b.cell not in R._vllm_claimed_cells(cfg),
+    )
+    assert ran == []
+
+    # vLLM side: ownership = claimed − parity − HF-done − empty.
+    by_cell = {cell_a: ["x1", "x2"], cell_b: ["x3", "x4"], cell_c: ["x5"]}
+    rest_by_cell, gen_cells = V._owned_rest_cells(cfg, "fp", draws, by_cell, gate_id_set=set())
+    assert sorted(gen_cells) == sorted([cell_b, cell_c])
+    assert cell_a not in gen_cells  # HF-done: never regenerated
+    assert not set(gen_cells) & set(V.PARITY_CELLS)
+    assert rest_by_cell[cell_b] == ["x3", "x4"]
+
+
+def test_b7_cell_grain_chunks_reach_full_gen_batch(tmp_path):
+    """B7 mechanizable check (r1 review verbatim): realized MEDIAN generate
+    chunk size >= min(gen_batch, 8) under cell-grain sharding over the real
+    bank enumeration — while the pre-fix worker-strided shape (order[w::W]
+    per cell) fails the same floor."""
+    cfg = _cfg(tmp_path)  # gen_batch default (16)
+    pairs = R.BANK.build_pairs()  # full bank: CPU-pure, no tokenizer
+    contexts = R.BANK.build_contexts()
+    gate_pairs = R.BANK.gate_slice_pairs(pairs)
+    gate_ids: list[str] = []
+    seen: set[str] = set()
+    for p in gate_pairs:
+        for cid in (p.a, p.b):
+            if cid not in seen:
+                seen.add(cid)
+                gate_ids.append(cid)
+    rest_ids = [cid for cid in contexts if cid not in seen]
+
+    def chunk_sizes(orders: list[list[str]]) -> list[int]:
+        sizes = []
+        for order in orders:
+            n = len(order)
+            sizes += [min(cfg.gen_batch, n - i) for i in range(0, n, cfg.gen_batch)]
+        return sizes
+
+    def median(xs: list[int]) -> float:
+        s = sorted(xs)
+        m = len(s) // 2
+        return float(s[m]) if len(s) % 2 else (s[m - 1] + s[m]) / 2.0
+
+    # Cell-grain (post-fix): one order per (batch, cell), never split by worker.
+    cell_orders = [
+        order
+        for group in (R._group_by_cell(gate_ids, contexts), R._group_by_cell(rest_ids, contexts))
+        for order in group.values()
+    ]
+    assert median(chunk_sizes(cell_orders)) >= min(cfg.gen_batch, 8)
+
+    # Pre-fix strided shape: every cell's order split w::8 across 8 workers —
+    # the de-batching the review measured (chunks of 1-3 contexts).
+    strided_orders = [order[w::8] for order in cell_orders for w in range(8) if order[w::8]]
+    assert median(chunk_sizes(strided_orders)) < min(cfg.gen_batch, 8)
 
 
 # ── pin 1: filename/glob contract ─────────────────────────────────────
@@ -131,28 +194,42 @@ def test_parity_side_artifacts_outside_consumer_globs():
 
 def test_cell_grained_shards_invisible_to_width_sweeps():
     """`_shard_stem_index`'s strict allowlist must not see cell-grained shards
-    (they are claim-queue cell shards, not width-strided families)."""
+    (they are claim-queue cell shards, not width-strided families). B7: the
+    whole anchors family left the width-sweep universe — HF gate/rest cell
+    shards included — leaving only the strided margin family."""
     for name in (
         "anchors_vllm_filler_swap_w0.jsonl",
         "anchors_parity_filler_swap_w2.jsonl",
         "va_anchors_vllm_filler_swap_w0.pt",
+        "anchors_gate_filler_swap_w1.jsonl",
+        "anchors_rest_filler_swap_w7.jsonl",
+        "anchors_rest_w3.jsonl",  # the RETIRED strided stem: no longer sweepable
     ):
         assert R._shard_stem_index(name) is None, name
-    # sanity: the width-strided families ARE visible
-    assert R._shard_stem_index("anchors_rest_w3.jsonl") == ("anchors_rest", 3)
+    # sanity: the one remaining width-strided family IS visible
+    assert R._shard_stem_index("anchor_margin_w3.jsonl") == ("anchor_margin", 3)
+    assert set(R._ARTIFACT_FAMILIES) == {"margin"}
 
 
 # ── done predicates + claim-queue work conservation ───────────────────
 
 
-def _fake_done_shard(cfg: R.RunConfig, batch: str, w: int, regime_fp: str, n_rows: int = 2):
+def _fake_done_shard(
+    cfg: R.RunConfig, batch: str, w: int, regime_fp: str, n_rows: int = 2, draws: int = 2
+):
     cfg.anchors_dir.mkdir(parents=True, exist_ok=True)
     cfg.manifest_dir.mkdir(parents=True, exist_ok=True)
     (cfg.anchors_dir / f"anchors_{batch}_w{w}.jsonl").write_text('{"x": 1}\n' * n_rows)
     (cfg.anchors_dir / f"va_anchors_{batch}_w{w}.pt").write_bytes(b"pt")
     R._write_json_atomic(
         cfg.manifest_dir / f"anchors_{batch}_w{w}_done.json",
-        {"regime_fp": regime_fp, "batch": batch, "worker_index": w, "n_rows": n_rows},
+        {
+            "regime_fp": regime_fp,
+            "batch": batch,
+            "worker_index": w,
+            "n_rows": n_rows,
+            "draws": draws,
+        },
     )
 
 
@@ -230,12 +307,17 @@ def test_leg_claim_pass_extends_claim_to_all_cells(tmp_path, monkeypatch):
     assert rec["reason"] == "parity-pass-full-claim"
 
 
-def test_leg_claim_pass_after_freeze_is_inert(tmp_path, monkeypatch):
+def test_leg_claim_late_pass_still_extends(tmp_path, monkeypatch):
+    """B8 correction of the r1 routing tests: a PASS landing AFTER HF work
+    started (parity claim already on disk) still extends the claim set —
+    routing is per cell at claim time, so a late PASS is work-conserving,
+    never inert."""
     cfg = _cfg(tmp_path)
-    R._resolve_rest_routing(cfg, "fp")  # freeze (empty claim)
+    _write_cells(cfg, list(V.PARITY_CELLS))  # the parity leg's t0 claim
     monkeypatch.setattr(V, "_read_parity_report", lambda _cfg: {"verdict": "PASS"})
     assert V.leg_claim(cfg, timeout_s=1.0) == R.RC_OK
-    assert not (cfg.gates_dir / "vllm_cells.json").exists()
+    rec = json.loads((cfg.gates_dir / "vllm_cells.json").read_text())
+    assert set(rec["cells"]) == set(R.BANK.all_cells())
 
 
 def test_leg_claim_fail_writes_nothing(tmp_path, monkeypatch):
@@ -301,6 +383,60 @@ def test_compose_run_cfg_default_upload_binds(tmp_path):
     assert args.upload == "hf"
     cfg = V._compose_run_cfg(args)
     assert cfg.upload_mode == "hf"
+
+
+def test_compose_run_cfg_adopts_pilot_gen_batch_and_matching_fp(tmp_path):
+    """B9: the vLLM legs adopt the pilot-selected gen_batch and resolve the
+    family-frozen share-prefill decision exactly as phase_anchors does, so
+    both sides compute the SAME regime fingerprint over one shard family."""
+    ref = R.build_config(R.parse_args(["--phase", "anchors", "--out-root", str(tmp_path / "out")]))
+    ref.gates_dir.mkdir(parents=True, exist_ok=True)
+    (ref.gates_dir / "pilot_gate_report.json").write_text(
+        json.dumps(
+            {
+                "verdict": "ACCEPT",
+                "gen_batch_selected": 32,
+                "gen_batch_candidates": [16, 32],
+                "repro": {
+                    "model_id": ref.model_id,
+                    "model_revision": ref.model_revision,
+                    "smoke": False,
+                    "tiny": False,
+                },
+            }
+        )
+    )
+    args = V.parse_args(["--leg", "production", "--out-root", str(tmp_path / "out")])
+    cfg = V._compose_run_cfg(args)
+    assert cfg.gen_batch == 32  # pilot adoption threaded (B9)
+    # And the fingerprint matches what an HF anchors worker computes.
+    ref = R._adopt_pilot_gen_batch(ref)
+    ref = R._resolve_share_prefill(ref, "anchors")
+    assert R.regime_fingerprint(cfg, "sha") == R.regime_fingerprint(ref, "sha")
+
+
+def test_share_prefill_family_freeze_pins_first_decision(tmp_path):
+    """B9: the share-prefill decision is FROZEN per (out_root, family) — a
+    battery PASS landing after the first resolver (the mid-anchors worker-1
+    chain) is adopted as the frozen value, never a fresh re-resolution, so
+    one shard family can never mix fingerprints."""
+    argv = ["--phase", "anchors", "--out-root", str(tmp_path / "out"), "--share-prefill", "auto"]
+    early = R._resolve_share_prefill(R.build_config(R.parse_args(argv)), "anchors")
+    assert early.share_prefill_armed is False  # artifact absent at t0
+    # The gate-4b battery lands a production PASS mid-phase...
+    early.gates_dir.mkdir(parents=True, exist_ok=True)
+    (early.gates_dir / R.SHARE_PREFILL_GATE_NAME).write_text(
+        json.dumps({"verdict": "PASS", "mode": "production"})
+    )
+    # ...and every later participant (worker 1, the vLLM legs, capregen)
+    # adopts the FROZEN decision instead of arming mid-family.
+    late = R._resolve_share_prefill(R.build_config(R.parse_args(argv)), "anchors")
+    assert late.share_prefill_armed is False
+    capregen = R._resolve_share_prefill(R.build_config(R.parse_args(argv)), "capregen_anchors")
+    assert capregen.share_prefill_armed is False
+    # A DIFFERENT family (grid, resolving after the PASS landed) arms fresh.
+    grid = R._resolve_share_prefill(R.build_config(R.parse_args(argv)), "grid")
+    assert grid.share_prefill_armed is True
 
 
 def test_vllm_chunk_env_validated():

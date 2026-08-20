@@ -16,11 +16,11 @@
 #                   worker 0 runs the item-4 vLLM parity leg THEN joins anchors;
 #                   worker 1 runs the item-5 shared-prefill equivalence battery
 #                   THEN joins anchors; a DETACHED CPU `--leg claim` poll runs
-#                   concurrently (killed after anchors — late verdict is inert
-#                   by design: the rest-entry routing freeze). All anchors
-#                   invocations use the SAME --num-workers so the stripe layout
-#                   is consistent; the recal barrier waits for the late-joining
-#                   workers' gate stripes (bounded delay, accepted).
+#                   concurrently (killed after anchors — a PASS landing mid-P2
+#                   re-routes exactly the not-yet-claimed rest cells: routing
+#                   is per CELL at claim time, B8). Anchors shard at CELL
+#                   grain via the claim queue (any worker may own any cell);
+#                   the recal barrier waits for the full gate-cell slice.
 #   anchors-plain   resume path: HF anchors fanout WITHOUT re-running the gate
 #                   legs (parity/battery artifacts already staged or waived)
 #   vllm-parity / vllm-claim / vllm-production / share-prefill-gate
@@ -118,7 +118,9 @@ COMMON=(--out-root "$OUT_ROOT" --log-dir "$LOG_DIR" "$@")
 
 # Thread the smoke flag into the vLLM / battery legs when the dispatch args
 # carry --smoke (their CLIs differ from run.py's).
-VLLM_EXTRA=()
+# B9: the vLLM legs' HF sub-legs share the anchors regime fingerprint with
+# run.py's workers — the share-prefill mode MUST match the HF workers'.
+VLLM_EXTRA=(--share-prefill "$SHARE_PREFILL_MODE")
 GATE4B_EXTRA=()
 case " ${COMMON[*]} " in
   *" --smoke "*)
@@ -255,8 +257,10 @@ _vllm_parity() {
 }
 
 _vllm_claim() {
-  # CPU-only poll of the write repo for the (VM-judged) parity verdict;
-  # extends the vLLM routing before the rest-entry freeze. Late = inert.
+  # CPU-only poll of the write repo for the (VM-judged) parity verdict; on
+  # PASS extends gates/vllm_cells.json to every cell. Routing is per cell at
+  # CLAIM time (B8): a late PASS re-routes exactly the not-yet-HF-claimed
+  # cells — work-conserving, never inert.
   CUDA_VISIBLE_DEVICES="" uv run python "$VLLM_DRIVER" --leg claim \
     --out-root "$OUT_ROOT" --num-workers "$NUM_WORKERS" "${VLLM_EXTRA[@]}" \
     > "$LOG_DIR/issue-2389-vllm-claim.log" 2>&1
@@ -298,7 +302,8 @@ run_anchors_with_gate4b() {
       exit "$rc"
     fi
     run_fanout_phase anchors --share-prefill "$SHARE_PREFILL_MODE"
-    echo "[dispatch] claim leg skipped (anchors complete — routing frozen; late claim is inert)"
+    echo "[dispatch] claim leg skipped (anchors complete — every rest cell already HF-done," \
+      "so a later PASS would find nothing to generate; vllm-production still runs post-anchors)"
     return 0
   fi
 
@@ -362,7 +367,7 @@ run_anchors_with_gate4b() {
 run_vllm_production() {
   # Post-anchors: engaged workers generate their claimed anchor cells via
   # vLLM (two sweeps: vLLM gen -> engines down -> HF capture); a worker
-  # with no owned cells in the frozen routing exits quickly.
+  # with no owned cells in the claim set exits quickly.
   : > "$PIDFILE"
   local pids=()
   local g

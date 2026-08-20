@@ -33,8 +33,9 @@ scientific change.** Fork-base flips (the plan §4.6 mechanical review gate):
   ACCEPT <= 40 h, SPLIT <= 3x planned (~91.5 h; 80 h sbatch TIMEOUT is a
   planned claim-queue-resume boundary), REFUSE > 3x.
 - Optional vLLM engine for UNHOOKED anchors behind the measured HF-parity
-  gate (plan §4.7 item 4, FAIL-OPEN): ``--anchor-engine`` + the
-  work-conserving parity-PASS re-route of REMAINING cells; vLLM-generated
+  gate (plan §4.7 item 4, FAIL-OPEN): PER-CELL claim-time routing — a cell's
+  HF-vs-vLLM ownership freezes when it is claimed, so a parity PASS re-routes
+  exactly the REMAINING (unclaimed) cells (work-conserving); vLLM-generated
   cells still get HF teacher-forced ``capture_answer_states`` in a second
   sweep (engines never co-resident). The vLLM leg itself lives in
   ``scripts/issue2389_vllm_anchors.py``.
@@ -234,8 +235,8 @@ PILOT_HBM_HEADROOM_GIB = 10.0
 CLAIM_STALE_S = float(os.environ.get("EPM_2389_CLAIM_STALE_S", "14400"))
 CLAIM_POLL_S = float(os.environ.get("EPM_2389_CLAIM_POLL_S", "30"))
 # Gate-slice cap-recalibration barrier (plan §4.7 item 1): how long a worker
-# waits for ALL workers' anchors_gate done manifests before computing a
-# PARTIAL recalibration (up-only; the standing capregen trigger backstops).
+# waits for EVERY gate CELL's done manifest before computing a PARTIAL
+# recalibration (up-only; the standing capregen trigger backstops).
 CAP_RECAL_TIMEOUT_S = float(os.environ.get("EPM_2389_CAP_RECAL_TIMEOUT_S", "7200"))
 
 # Distinct rcs: a designed halt is never an anonymous rc=1 (#1415).
@@ -622,6 +623,7 @@ def run_claim_queue(
     namespace: str,
     run_one,
     is_done=block_is_done,
+    mine=None,
 ) -> dict:
     """Work-conserving queue: pull the next unclaimed pending block until every
     block is done (crashed workers' claims go stale and are reclaimed).
@@ -629,7 +631,16 @@ def run_claim_queue(
     ``is_done`` defaults to :func:`block_is_done` (the #722 r3 hard-refusal
     resume predicate). ``phase_capregen_grid`` passes
     :func:`_capregen_block_done`, which PRESERVES that hard refusal and
-    additionally treats a pre-regen done record as PENDING."""
+    additionally treats a pre-regen done record as PENDING.
+
+    ``mine`` (optional, re-evaluated EVERY scan): a predicate naming which
+    pending blocks THIS participant may claim. A pending block that is not
+    mine is neither claimed nor counted open — when only not-mine blocks
+    remain the loop EXITS (their owner finishes them). This is the per-cell
+    anchor routing seam (B8 r1 review): an HF worker's ``mine`` excludes
+    vLLM-claimed cells read fresh from ``gates/vllm_cells.json``, so a
+    parity-PASS landing mid-phase re-routes exactly the not-yet-claimed
+    cells and never an already-claimed one."""
     cdir = claims_dir(cfg.out_root, namespace)
     stats = {"ran": 0, "skipped_done": 0, "waits": 0}
     while True:
@@ -637,6 +648,8 @@ def run_claim_queue(
         n_open = 0
         for block in blocks:
             if is_done(cfg.out_root, block, regime_fp, namespace):
+                continue
+            if mine is not None and not mine(block):
                 continue
             n_open += 1
             token = uuid.uuid4().hex
@@ -770,6 +783,16 @@ def regime_fingerprint(cfg: RunConfig, bank_sha: str) -> str:
             "seed_base": cfg.seed_base,
             "smoke": cfg.smoke,
             "bank_seed": BANK.SEED,
+            # B9 (r1 review): the REALIZED generation batch + the frozen
+            # share-prefill execution mode are output-affecting (batched HF
+            # sampling consumes RNG jointly per chunk; shared-prefill reuses
+            # the prompt KV cache), so a resume must never mix shards
+            # produced under different values. Generation phases resolve
+            # BOTH at entry (_adopt_pilot_gen_batch / _resolve_share_prefill)
+            # BEFORE computing their fingerprint; non-generation phases carry
+            # the stable CLI defaults (gen_batch=16, armed=False).
+            "gen_batch": cfg.gen_batch,
+            "share_prefill_armed": cfg.share_prefill_armed,
         },
         sort_keys=True,
     )
@@ -833,33 +856,114 @@ def _sharded_done_record(cfg: RunConfig, phase: str, regime_fp: str) -> dict | N
     return rec
 
 
-def _anchor_batch_done(cfg: RunConfig, regime_fp: str, batch: str, expected_draws: int) -> bool:
-    """Per-worker per-batch anchors resume predicate (gate slice vs rest)."""
-    rec = _sharded_done_record(cfg, f"anchors_{batch}_w{cfg.worker_index}", regime_fp)
-    if rec is None:
-        return False
-    if int(rec.get("draws", -1)) != expected_draws:
-        logger.warning(
-            "[anchors:%s] done draws=%s != %d — re-running", batch, rec.get("draws"), expected_draws
-        )
-        return False
-    jsonl = cfg.anchors_dir / f"anchors_{batch}_w{cfg.worker_index}.jsonl"
-    va = cfg.anchors_dir / f"va_anchors_{batch}_w{cfg.worker_index}.pt"
-    if not (jsonl.exists() and va.exists()):
-        logger.warning(
-            "[anchors:%s] done-manifest present but artifacts missing — re-running", batch
-        )
-        return False
-    n_rows = sum(1 for line in jsonl.open(encoding="utf-8") if line.strip())
-    if n_rows != int(rec.get("n_rows", -1)):
-        logger.warning(
-            "[anchors:%s] done n_rows=%s but jsonl has %d — re-running",
-            batch,
-            rec.get("n_rows"),
-            n_rows,
-        )
-        return False
-    return True
+@dataclass(frozen=True)
+class AnchorCellBlock:
+    """One bank cell x anchor batch as a claim-queue unit (plan §9: 'P2 ...
+    via the claim queue'; B7 r1 review — cell-grain claims keep every
+    generate chunk at full ``gen_batch`` because a cell's contexts are never
+    strided across workers)."""
+
+    cell: str
+    batch: str  # "gate" | "rest"
+
+    @property
+    def batch_id(self) -> str:
+        """The shard batch-id slot: ``anchors_{batch_id}_w{w}.jsonl``."""
+        return f"{self.batch}_{self.cell}"
+
+    @property
+    def slug(self) -> str:
+        return f"anchor_{self.batch}_{self.cell}"
+
+    @property
+    def key(self) -> str:
+        return f"anchors:{self.batch}:{self.cell}"
+
+
+def _group_by_cell(order: list[str], contexts: dict[str, dict]) -> dict[str, list[str]]:
+    """Cell -> ORDERED context ids (first-appearance cell order preserved)."""
+    by_cell: dict[str, list[str]] = {}
+    for cid in order:
+        by_cell.setdefault(contexts[cid]["cell"], []).append(cid)
+    return by_cell
+
+
+def _anchor_cell_done(
+    cfg: RunConfig, regime_fp: str, batch_id: str, expected_draws: int | None = None
+) -> bool:
+    """Worker-INDEPENDENT per-cell anchors done predicate (claim-queue grain).
+
+    Any worker may own any cell, so the predicate scans every worker's done
+    manifest for this cell-batch and validates regime, draws, artifacts, and
+    row count — the #722 r3 hard-refusal shape at cell grain. Excludes the
+    vLLM leg's ``*_gen_done.json`` sentinels (generation-complete but
+    pre-capture — NOT done)."""
+    for m in sorted(cfg.manifest_dir.glob(f"anchors_{batch_id}_w*_done.json")):
+        if m.name.endswith("_gen_done.json"):
+            continue
+        rec = json.loads(m.read_text())
+        if rec.get("regime_fp") != regime_fp:
+            continue
+        if expected_draws is not None and int(rec.get("draws", -1)) != expected_draws:
+            logger.warning(
+                "[anchors:%s] done draws=%s != %d — treating as NOT done",
+                batch_id,
+                rec.get("draws"),
+                expected_draws,
+            )
+            continue
+        w = int(rec["worker_index"])
+        jsonl = cfg.anchors_dir / f"anchors_{batch_id}_w{w}.jsonl"
+        va = cfg.anchors_dir / f"va_anchors_{batch_id}_w{w}.pt"
+        if not (jsonl.exists() and va.exists()):
+            logger.warning(
+                "[anchors:%s] done-manifest %s present but artifacts missing", batch_id, m.name
+            )
+            continue
+        n_rows = sum(1 for line in jsonl.open(encoding="utf-8") if line.strip())
+        if n_rows != int(rec.get("n_rows", -1)):
+            logger.warning(
+                "[anchors:%s] done n_rows=%s but jsonl has %d — treating as NOT done",
+                batch_id,
+                rec.get("n_rows"),
+                n_rows,
+            )
+            continue
+        return True
+    return False
+
+
+def _quarantine_orphan_cell_shards(cfg: RunConfig, batch_id: str) -> int:
+    """Move crash-orphaned / stale artifacts for one cell-batch OUT of every
+    consumer glob before a claim-queue reclaim regenerates it.
+
+    Called ONLY under a held claim whose ``is_done`` read was False, so any
+    artifact present for this cell-batch is invalid (partial crash residue, a
+    stale regime, or a draws mismatch) — without the sweep a reclaimed cell
+    would leave TWO ``anchors_{batch_id}_w*`` shards and trip the judge's
+    duplicate-(context_id, draw) assert (the g3 r1 manual-cleanup wedge).
+    Destination sits OUTSIDE the uploaded dirs (hub allow_patterns are
+    fnmatch and cross "/", so a subdir of anchors_dir would still ride P5)."""
+    qroot = cfg.out_root / "stale_anchor_quarantine"
+    moved = 0
+    globs = (
+        (cfg.anchors_dir, f"anchors_{batch_id}_w*.jsonl"),
+        (cfg.anchors_dir, f"va_anchors_{batch_id}_w*.pt"),
+        (cfg.manifest_dir, f"anchors_{batch_id}_w*_done.json"),
+    )
+    for d, pat in globs:
+        if not d.exists():
+            continue
+        for p in sorted(d.glob(pat)):
+            dest = qroot / d.name / f"{p.name}.orphan-{int(time.time())}-{uuid.uuid4().hex[:8]}"
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            try:
+                p.rename(dest)
+            except FileNotFoundError:
+                continue  # a sibling's rename won — nothing left to move
+            moved += 1
+            logger.warning("[anchors:%s] quarantined orphan %s -> %s", batch_id, p.name, dest)
+    return moved
 
 
 # r3 C1: width-sharded artifacts are grouped into FAMILIES; a sweep is scoped
@@ -868,15 +972,19 @@ def _anchor_batch_done(cfg: RunConfig, regime_fp: str, batch: str, expected_draw
 # family — a 1-wide deferred margin leg would have quarantined 7/8 of a valid
 # 8-wide anchor store, and the width-less upload leg quarantined w1..wN at
 # implicit width 1 before the bulk upload).
+# B7 (r1 review): the "anchors" family is GONE from the width-sweep universe —
+# anchors now shard at CELL grain via the claim queue (any worker may own any
+# cell; the worker index in ``anchors_{batch}_{cell}_w{w}`` is provenance, not
+# a stripe), so anchor shards are width-INVARIANT by construction, exactly
+# like the vLLM leg's ``anchors_vllm_{cell}`` shards. Only the strided margin
+# family still needs the stale-width machinery.
 _ARTIFACT_FAMILIES: dict[str, frozenset[str]] = {
-    "anchors": frozenset({"anchors_gate", "anchors_rest", "va_anchors_gate", "va_anchors_rest"}),
     "margin": frozenset({"anchor_margin", "margin_anchors"}),
 }
 _WIDTH_SHARDED_STEMS = frozenset().union(*_ARTIFACT_FAMILIES.values())
 # Done-record stems whose per-width index coverage DEFINES a family's realized
 # width (every kind must be complete at the same W).
 _FAMILY_DONE_KINDS: dict[str, tuple[str, ...]] = {
-    "anchors": ("anchors_gate", "anchors_rest"),
     "margin": ("margin_anchors",),
 }
 
@@ -2746,6 +2854,12 @@ def _finalize_anchor_batch(
             "n_empty": len(states["empty_rows"]),
             "max_new_tokens": cfg.max_new_tokens,
             "cell_caps": [{"cell": c, "max_new_tokens": m} for c, m in cell_caps],
+            # B9: the realized generation regime, recorded per shard so a
+            # later consumer (capregen's per-shard base-fp reconstruction)
+            # can recover the EXACT fingerprint inputs without guessing.
+            "gen_batch": cfg.gen_batch,
+            "share_prefill_armed": cfg.share_prefill_armed,
+            "engine": rows[0].get("engine", "hf") if rows else "hf",
             "repro": _repro(cfg),
         },
     )
@@ -2786,13 +2900,55 @@ def _run_anchor_batch(
 
 
 def _pilot_selected_gen_batch(cfg: RunConfig) -> int | None:
-    """The r2-selected gen_batch from the three-regime pilot gate (§4.7 item 3)."""
+    """The r2-selected gen_batch from the three-regime pilot gate (§4.7 item 3),
+    VALIDATED before adoption (B9 r1 review): a stale / refused / foreign /
+    out-of-band pilot report must FAIL LOUD, never silently drive production
+    batching. Absent report (pre-pilot phases, smokes without a pilot) ->
+    None; a present-but-invalid report raises."""
     path = cfg.gates_dir / "pilot_gate_report.json"
     if not path.exists():
         return None
     rec = json.loads(path.read_text())
     sel = rec.get("gen_batch_selected")
-    return int(sel) if sel is not None else None
+    if sel is None:
+        return None
+    sel = int(sel)
+    problems: list[str] = []
+    verdict = rec.get("verdict")
+    if verdict not in ("ACCEPT", "SPLIT"):
+        problems.append(
+            f"verdict={verdict!r} (need ACCEPT|SPLIT — a REFUSE/absent verdict never "
+            "drives adoption)"
+        )
+    if sel not in PILOT_GEN_BATCH_CANDIDATES:
+        problems.append(
+            f"gen_batch_selected={sel} outside the registered auto-selection band "
+            f"{PILOT_GEN_BATCH_CANDIDATES} (an explicit-candidate pilot needs the same "
+            "explicit --gen-batch on every consuming phase)"
+        )
+    report_cands = [int(b) for b in rec.get("gen_batch_candidates") or []]
+    if sel not in report_cands:
+        problems.append(
+            f"gen_batch_selected={sel} not among the report's own candidates {report_cands}"
+        )
+    repro = rec.get("repro") or {}
+    if repro.get("model_id") != cfg.model_id or repro.get("model_revision") != cfg.model_revision:
+        problems.append(
+            f"report model {repro.get('model_id')}@{repro.get('model_revision')} != "
+            f"this run's {cfg.model_id}@{cfg.model_revision}"
+        )
+    if bool(repro.get("smoke")) != bool(cfg.smoke) or bool(repro.get("tiny")) != bool(cfg.tiny):
+        problems.append(
+            f"report regime (smoke={repro.get('smoke')}, tiny={repro.get('tiny')}) != "
+            f"this run's (smoke={cfg.smoke}, tiny={cfg.tiny})"
+        )
+    if problems:
+        raise RuntimeError(
+            "pilot_gate_report.json cannot drive gen_batch adoption: "
+            + "; ".join(problems)
+            + " — re-run the pilot (or pass an explicit --gen-batch)"
+        )
+    return sel
 
 
 def _adopt_pilot_gen_batch(cfg: RunConfig) -> RunConfig:
@@ -2833,53 +2989,15 @@ def _vllm_claimed_cells(cfg: RunConfig) -> frozenset[str]:
     return cells
 
 
-ANCHOR_REST_ROUTING_NAME = "anchor_rest_routing.json"
-
-
-def _resolve_rest_routing(cfg: RunConfig, regime_fp: str) -> frozenset[str]:
-    """Freeze (or read) the anchor-rest vLLM exclusion set — one atomic decision.
-
-    The FIRST participant to reach the anchor-rest phase (any run.py worker,
-    or the vLLM script's production leg) freezes the then-current
-    ``gates/vllm_cells.json`` claim into ``gates/anchor_rest_routing.json``
-    via write-tmp + ``os.link`` (atomic exclusive create with COMPLETE
-    content — a bare O_CREAT|O_EXCL then write would let a concurrent reader
-    see a partial file). Losers read the winner's frozen decision. This makes
-    the HF-vs-vLLM cell split race-free: a vLLM claim landing AFTER the
-    freeze is simply not honored (the vLLM production leg reads the frozen
-    set and generates only cells inside it), so no cell is ever generated by
-    both engines. Unknown cell names fail loud.
-    """
-    path = cfg.gates_dir / ANCHOR_REST_ROUTING_NAME
-    cfg.gates_dir.mkdir(parents=True, exist_ok=True)
-    if not path.exists():
-        payload = {
-            "regime_fp": regime_fp,
-            "vllm_cells": sorted(_vllm_claimed_cells(cfg)),
-            "decided_by": f"worker{cfg.worker_index}",
-            "decided_at": datetime.now(UTC).isoformat(),
-            "repro": _repro(cfg),
-        }
-        tmp = path.with_name(f".{path.name}.w{cfg.worker_index}.{os.getpid()}.tmp")
-        tmp.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n")
-        try:
-            os.link(tmp, path)  # atomic exclusive create, full content
-            logger.info("[anchors] rest routing FROZEN by worker %d", cfg.worker_index)
-        except FileExistsError:
-            pass  # another participant froze first — read theirs below
-        finally:
-            tmp.unlink(missing_ok=True)
-    rec = json.loads(path.read_text())
-    if rec.get("regime_fp") != regime_fp:
-        raise RuntimeError(
-            f"{path} regime_fp={rec.get('regime_fp')} != current {regime_fp} — stale routing "
-            "file from a different regime; remove it deliberately before re-running"
-        )
-    cells = frozenset(str(c) for c in rec.get("vllm_cells", []))
-    unknown = cells - set(BANK.all_cells())
-    if unknown:
-        raise RuntimeError(f"{path} names unknown cells: {sorted(unknown)}")
-    return cells
+# B8 (r1 review): the one-shot ``anchor_rest_routing.json`` global freeze is
+# GONE — it forfeited a late parity PASS for every cell the moment the first
+# participant entered the rest batch. Routing is now PER CELL at CLAIM time:
+# the claim file in the shared ``anchor_rest_cells`` namespace IS the freeze
+# (atomic O_CREAT|O_EXCL), HF workers claim only cells outside the live
+# ``gates/vllm_cells.json`` set (re-read every scan), and the vLLM production
+# leg generates exactly the claimed-but-not-HF-done remainder — plan §4.7
+# item 4's "a PASS re-routes only the REMAINING cells", work-conserving by
+# construction.
 
 
 def _load_cap_recalibration(cfg: RunConfig) -> dict[str, int] | None:
@@ -2891,17 +3009,22 @@ def _load_cap_recalibration(cfg: RunConfig) -> dict[str, int] | None:
     return {str(k): int(v) for k, v in rec.get("recalibrated", {}).items()}
 
 
-def _gate_slice_cap_recalibration(cfg: RunConfig, regime_fp: str, draws: int) -> dict[str, int]:
+def _gate_slice_cap_recalibration(
+    cfg: RunConfig, regime_fp: str, draws: int, gate_cells: list[str]
+) -> dict[str, int]:
     """Plan §4.7 item 1: recalibrate per-cell caps from the REALIZED gate slice.
 
     Barrier: waits (poll CLAIM_POLL_S, timeout CAP_RECAL_TIMEOUT_S) for EVERY
-    worker's ``anchors_gate_w{w}_done.json`` at this regime, then aggregates
-    ALL workers' ``anchors_gate_w*.jsonl`` rows: any cell whose realized
-    cap-hit fraction (against each row's OWN recorded cap) exceeds
-    CAP_HIT_REGEN_TRIGGER_PCT gets its table cap DOUBLED (up-only) BEFORE the
-    bulk rest/grid generation. On timeout the recalibration is computed from
-    the workers that finished, labeled ``partial`` — up-only, so a missed cell
-    is caught by the standing >2%/cell capregen trigger downstream.
+    gate CELL's done manifest at this regime (cell-keyed — the claim queue
+    lets ANY worker own any gate cell, so the barrier lifts as soon as the
+    slice is done rather than waiting on a specific worker's stripe; the r1
+    recal-barrier idle dissolves with it), then aggregates ALL
+    ``anchors_gate_*.jsonl`` rows: any cell whose realized cap-hit fraction
+    (against each row's OWN recorded cap) exceeds CAP_HIT_REGEN_TRIGGER_PCT
+    gets its table cap DOUBLED (up-only) BEFORE the bulk rest/grid
+    generation. On timeout the recalibration is computed from the cells that
+    finished, labeled ``partial`` — up-only, so a missed cell is caught by
+    the standing >2%/cell capregen trigger downstream.
 
     Concurrent workers computing this independently write IDENTICAL content
     (deterministic aggregate of the same shards) via atomic replace — benign.
@@ -2911,28 +3034,24 @@ def _gate_slice_cap_recalibration(cfg: RunConfig, regime_fp: str, draws: int) ->
     if existing is not None and not cfg.force:
         return existing
     t0 = time.monotonic()
-    pending = set(range(cfg.num_workers))
+    pending = set(gate_cells)
     while pending:
-        for w in sorted(pending):
-            mpath = cfg.manifest_dir / f"anchors_gate_w{w}_done.json"
-            if not mpath.exists():
-                continue
-            rec = json.loads(mpath.read_text())
-            if rec.get("regime_fp") == regime_fp and int(rec.get("draws", -1)) == draws:
-                pending.discard(w)
+        for cell in sorted(pending):
+            if _anchor_cell_done(cfg, regime_fp, f"gate_{cell}", draws):
+                pending.discard(cell)
         if not pending:
             break
         if time.monotonic() - t0 > CAP_RECAL_TIMEOUT_S:
             logger.warning(
-                "[cap-recal] TIMEOUT after %.0fs waiting for gate workers %s — "
+                "[cap-recal] TIMEOUT after %.0fs waiting for gate cells %s — "
                 "computing PARTIAL recalibration (up-only; capregen backstops)",
                 CAP_RECAL_TIMEOUT_S,
                 sorted(pending),
             )
             break
         logger.info(
-            "[cap-recal] waiting for gate-slice workers %s (%.0fs elapsed)",
-            sorted(pending),
+            "[cap-recal] waiting for %d gate-slice cell(s) (%.0fs elapsed)",
+            len(pending),
             time.monotonic() - t0,
         )
         time.sleep(CLAIM_POLL_S)
@@ -2969,7 +3088,7 @@ def _gate_slice_cap_recalibration(cfg: RunConfig, regime_fp: str, draws: int) ->
             ),
             "regime_fp": regime_fp,
             "partial": bool(pending),
-            "workers_missing": sorted(pending),
+            "cells_missing": sorted(pending),
             "per_cell": {
                 cell: {
                     "n_rows": c["n"],
@@ -2994,29 +3113,58 @@ def _gate_slice_cap_recalibration(cfg: RunConfig, regime_fp: str, draws: int) ->
 SHARE_PREFILL_GATE_NAME = "share_prefill_equivalence.json"
 
 
+def _share_prefill_family(phase: str) -> str:
+    """Shard FAMILY a phase's share-prefill decision binds to: capregen and
+    the vLLM legs share the base family's freeze (a regenerated / re-routed
+    shard must not mix execution modes inside one consumed store)."""
+    return phase.removeprefix("capregen_").removeprefix("vllm_")
+
+
 def _resolve_share_prefill(cfg: RunConfig, phase: str) -> RunConfig:
-    """Freeze the share_prefill arming for THIS phase run (plan §4.7 item 5
+    """Freeze the share_prefill arming for THIS phase FAMILY (plan §4.7 item 5
     pin 2): armed <=> --share-prefill auto AND the gate-4b battery artifact
     (gates/share_prefill_equivalence.json, written by
     scripts/issue2389_share_prefill_gate.py) carries verdict PASS. Absent /
-    FAIL / "off" => serial (FAIL-OPEN); the decision is logged either way and
-    never re-read mid-phase."""
+    FAIL / "off" => serial (FAIL-OPEN).
+
+    B9 (r1 review): the decision is part of `regime_fingerprint`, so every
+    participant in one shard family MUST resolve the SAME value even when
+    they enter at different times (the dispatcher's worker-1 chain enters
+    anchors AFTER the gate-4b battery lands; the vLLM legs enter
+    post-anchors; capregen enters last). The FIRST resolver writes
+    ``gates/share_prefill_frozen_<family>.json`` atomically
+    (first-writer-wins via os.link); every later resolver ADOPTS the frozen
+    value. Re-arming a family deliberately requires a fresh out_root."""
     if cfg.share_prefill_mode != "auto":
         cfg.share_prefill_armed = False
         return cfg
+    family = _share_prefill_family(phase)
+    freeze = cfg.gates_dir / f"share_prefill_frozen_{family}.json"
+    if freeze.exists():
+        rec = json.loads(freeze.read_text())
+        cfg.share_prefill_armed = bool(rec["armed"])
+        logger.info(
+            "[share-prefill:%s] adopting FROZEN family decision share_prefill=%s (%s)",
+            phase,
+            cfg.share_prefill_armed,
+            freeze.name,
+        )
+        return cfg
     path = cfg.gates_dir / SHARE_PREFILL_GATE_NAME
+    verdict: str | None = None
+    mode: str | None = None
     if not path.exists():
         logger.info(
             "[share-prefill:%s] mode=auto but gate artifact missing at %s — staying serial",
             phase,
             path,
         )
-        cfg.share_prefill_armed = False
-        return cfg
-    rec = json.loads(path.read_text())
-    verdict = rec.get("verdict")
-    mode = rec.get("mode")
-    armed = verdict == "PASS"
+        armed = False
+    else:
+        rec = json.loads(path.read_text())
+        verdict = rec.get("verdict")
+        mode = rec.get("mode")
+        armed = verdict == "PASS"
     # B6 (r1 review / pin 2): a NON-tiny run arms ONLY on a PRODUCTION-mode
     # battery artifact. The dispatcher's --smoke branch runs the gate-4b
     # battery --tiny into the SAME gates/ path + HF prefix, so a default
@@ -3032,134 +3180,165 @@ def _resolve_share_prefill(cfg: RunConfig, phase: str) -> RunConfig:
             mode,
         )
         armed = False
+    # First-writer-wins freeze: write via tmp + os.link (link fails EEXIST
+    # when a concurrent resolver won); on a lost race ADOPT the winner.
+    cfg.gates_dir.mkdir(parents=True, exist_ok=True)
+    tmp = freeze.with_name(f".{freeze.name}.{os.getpid()}.{uuid.uuid4().hex[:8]}.tmp")
+    tmp.write_text(
+        json.dumps(
+            {
+                "armed": armed,
+                "verdict": verdict,
+                "mode": mode,
+                "family": family,
+                "frozen_by_phase": phase,
+                "ts": datetime.now(UTC).isoformat(),
+                "repro": _repro(cfg),
+            },
+            indent=2,
+        )
+    )
+    try:
+        os.link(tmp, freeze)
+    except FileExistsError:
+        rec = json.loads(freeze.read_text())
+        armed = bool(rec["armed"])
+        logger.info(
+            "[share-prefill:%s] lost the freeze race — adopting share_prefill=%s", phase, armed
+        )
+    finally:
+        tmp.unlink(missing_ok=True)
     cfg.share_prefill_armed = armed
     logger.info(
-        "[share-prefill:%s] gate verdict=%s mode=%s -> share_prefill=%s (%s)",
+        "[share-prefill:%s] gate verdict=%s mode=%s -> share_prefill=%s (frozen: %s)",
         phase,
         verdict,
         mode,
         cfg.share_prefill_armed,
-        path,
+        freeze.name,
     )
     return cfg
 
 
 def phase_anchors(cfg: RunConfig) -> int:
-    """P2: unpatched temp-1.0 anchors, contexts SHARDED across workers, the
-    gate-3 slice generated + uploaded FIRST so the SYNC judge overlaps the
-    remaining generation (plan §9)."""
+    """P2: unpatched temp-1.0 anchors at CELL grain via the claim queue (plan
+    §9 "P2 ... via the claim queue"; B7/B8 r1 review).
+
+    Gate-3 slice cells generate + upload FIRST (per cell, so the SYNC judge
+    overlaps the remaining generation); after the cap-recalibration barrier
+    the rest cells run through the per-cell routing seam: a cell's HF-vs-vLLM
+    ownership freezes when it is CLAIMED, so a parity PASS landing mid-phase
+    re-routes exactly the REMAINING (unclaimed) cells to the vLLM leg
+    (work-conserving, plan §4.7 item 4). Cell-grain claims keep every
+    generate chunk at full ``gen_batch`` (a cell's contexts are never strided
+    across workers — the B7 de-batching fix), and cell shards are
+    width-invariant (any worker may own any cell), so the anchors family
+    needs no stale-width entry sweep."""
     logger.info(
         "[phase=anchors] worker=%d/%d smoke=%s", cfg.worker_index, cfg.num_workers, cfg.smoke
     )
     cfg = _adopt_pilot_gen_batch(cfg)  # plan §4.7 item 3
     cfg = _resolve_share_prefill(cfg, "anchors")  # plan §4.7 item 5 (pin 2)
-    _entry_sweep(cfg, "anchors")
     # >= 2 draws even under --smoke: the disjoint-half floor F_act needs k >= 2.
     draws = 2 if cfg.smoke else cfg.anchor_draws
     _manifest, bank_sha = bank_manifest_and_sha()
     regime_fp = regime_fingerprint(cfg, bank_sha)
     gate_ids, rest_ids, contexts = _anchor_context_order(cfg)
-    my_gate = gate_ids[cfg.worker_index :: cfg.num_workers]
-    model, tok = (None, None)
+    gate_by_cell = _group_by_cell(gate_ids, contexts)
+    rest_by_cell = _group_by_cell(rest_ids, contexts)
 
-    if cfg.force or not _anchor_batch_done(cfg, regime_fp, "gate", draws):
-        model, tok = load_model_and_tokenizer(cfg)
-        if my_gate:
-            res = _run_anchor_batch(cfg, model, tok, contexts, my_gate, draws, "gate", regime_fp)
-            # Immediate upload of the gate slice so the VM judge can start.
-            _upload_dir(
-                cfg,
-                cfg.anchors_dir,
-                f"{HF_PREFIX}/raw_completions/anchors_gate",
-                [res["jsonl"].name],
-            )
-        else:
-            _write_json_atomic(
-                cfg.manifest_dir / f"anchors_gate_w{cfg.worker_index}_done.json",
-                {
-                    "regime_fp": regime_fp,
-                    "batch": "gate",
-                    "worker_index": cfg.worker_index,
-                    "num_workers": cfg.num_workers,  # shard identity (r1 M2)
-                    "n_contexts": 0,
-                    "draws": draws,
-                    "n_rows": 0,
-                    "n_cap_hit": 0,
-                    "n_empty": 0,
-                    "max_new_tokens": cfg.max_new_tokens,
-                    "repro": _repro(cfg),
-                },
-            )
-    else:
-        logger.info("[anchors:gate] already done for this regime — skipping")
+    if cfg.force and cfg.worker_index == 0:
+        # One-shot deliberate re-run (mirrors phase_bank's --force shape):
+        # quarantine every same-regime-or-not cell artifact so the queue's
+        # done predicates read pending and regenerate exactly once.
+        for batch, cells in (("gate", gate_by_cell), ("rest", rest_by_cell)):
+            for cell in cells:
+                _quarantine_orphan_cell_shards(cfg, f"{batch}_{cell}")
+
+    model_tok: list = [None, None]
+
+    def _run_cell(block: AnchorCellBlock, order: list[str], recal: dict[str, int] | None) -> dict:
+        if model_tok[0] is None:
+            model_tok[0], model_tok[1] = load_model_and_tokenizer(cfg)
+        _quarantine_orphan_cell_shards(cfg, block.batch_id)
+        return _run_anchor_batch(
+            cfg,
+            model_tok[0],
+            model_tok[1],
+            contexts,
+            order,
+            draws,
+            block.batch_id,
+            regime_fp,
+            recalibrated=recal,
+        )
+
+    # GATE cells first (always HF — the parity/judge critical path), with an
+    # immediate per-cell upload so the VM judge can start in the P2 window.
+    gate_blocks = [AnchorCellBlock(cell=c, batch="gate") for c in gate_by_cell]
+
+    def _run_gate_cell(block: AnchorCellBlock) -> None:
+        res = _run_cell(block, gate_by_cell[block.cell], None)
+        _upload_dir(
+            cfg, cfg.anchors_dir, f"{HF_PREFIX}/raw_completions/anchors_gate", [res["jsonl"].name]
+        )
+
+    run_claim_queue(
+        cfg,
+        gate_blocks,
+        regime_fp,
+        "anchor_gate_cells",
+        _run_gate_cell,
+        is_done=lambda _root, b, fp, _ns: _anchor_cell_done(cfg, fp, b.batch_id, draws),
+    )
 
     # Cap-recalibration barrier (plan §4.7 item 1): every worker waits for
-    # the FULL gate slice, recalibrates >2%-cap-hit cells to 2x, and only
-    # then generates the bulk rest batch at the (possibly raised) caps.
-    recal = _gate_slice_cap_recalibration(cfg, regime_fp, draws)
+    # the FULL gate slice (cell-keyed), recalibrates >2%-cap-hit cells to 2x,
+    # and only then generates the bulk rest batch at the (possibly raised)
+    # caps. Resolving after the barrier maximizes the window for the vLLM
+    # parity verdict to land before the first rest claims.
+    recal = _gate_slice_cap_recalibration(cfg, regime_fp, draws, sorted(gate_by_cell))
 
-    # Anchor-rest routing (plan §4.7 item 4, work-conservation): the vLLM
-    # exclusion set is FROZEN at the first participant's rest entry via an
-    # atomic O_EXCL routing file — one decision point shared by every run.py
-    # worker AND the vLLM script, so a late-landing vLLM claim can never
-    # split a cell across engines mid-batch (the judge's duplicate
-    # (context_id, draw, engine) assert stays the fail-loud backstop). The
-    # GATE slice always stays HF (parity/judge critical path); resolving
-    # AFTER the recal barrier maximizes the window for the vLLM parity
-    # verdict to land and claim cells.
-    vllm_cells = _resolve_rest_routing(cfg, regime_fp)
-    if vllm_cells:
-        n_before = len(rest_ids)
-        rest_ids = [cid for cid in rest_ids if contexts[cid]["cell"] not in vllm_cells]
+    # REST cells: per-cell engine routing (plan §4.7 item 4 / B8). ``mine``
+    # excludes cells in the LIVE vLLM claim set (gates/vllm_cells.json,
+    # re-read every scan: the parity leg claims its 3 cells at t0; leg_claim
+    # extends the claim to every cell on a parity PASS — a late PASS
+    # re-routes exactly the not-yet-claimed cells). Cells this queue leaves
+    # unclaimed belong to the vLLM production leg (post-anchors, GPU
+    # released); the claim files + worker-independent done predicates make
+    # double generation impossible by construction, with the judge's
+    # duplicate-(context_id, draw) assert as the fail-loud backstop.
+    rest_blocks = [AnchorCellBlock(cell=c, batch="rest") for c in rest_by_cell]
+
+    def _run_rest_cell(block: AnchorCellBlock) -> None:
+        _run_cell(block, rest_by_cell[block.cell], recal)
+
+    stats = run_claim_queue(
+        cfg,
+        rest_blocks,
+        regime_fp,
+        "anchor_rest_cells",
+        _run_rest_cell,
+        is_done=lambda _root, b, fp, _ns: _anchor_cell_done(cfg, fp, b.batch_id, draws),
+        mine=lambda b: b.cell not in _vllm_claimed_cells(cfg),
+    )
+    routed = sorted(
+        b.cell
+        for b in rest_blocks
+        if b.cell in _vllm_claimed_cells(cfg)
+        and not _anchor_cell_done(cfg, regime_fp, b.batch_id, draws)
+    )
+    if routed:
         logger.info(
-            "[anchors] vLLM leg owns cells %s — excluded %d/%d rest contexts",
-            sorted(vllm_cells),
-            n_before - len(rest_ids),
-            n_before,
+            "[anchors] %d rest cell(s) routed to the vLLM leg (claimed, not HF-generated): %s",
+            len(routed),
+            routed,
         )
-        _write_json_atomic(
-            cfg.manifest_dir / f"anchors_vllm_exclusion_w{cfg.worker_index}.json",
-            {
-                "regime_fp": regime_fp,
-                "vllm_cells": sorted(vllm_cells),
-                "n_rest_before": n_before,
-                "n_rest_after": len(rest_ids),
-                "repro": _repro(cfg),
-            },
-        )
-    my_rest = rest_ids[cfg.worker_index :: cfg.num_workers]
-
-    if cfg.force or not _anchor_batch_done(cfg, regime_fp, "rest", draws):
-        if model is None:
-            model, tok = load_model_and_tokenizer(cfg)
-        if my_rest:
-            _run_anchor_batch(
-                cfg, model, tok, contexts, my_rest, draws, "rest", regime_fp, recalibrated=recal
-            )
-        else:
-            _write_json_atomic(
-                cfg.manifest_dir / f"anchors_rest_w{cfg.worker_index}_done.json",
-                {
-                    "regime_fp": regime_fp,
-                    "batch": "rest",
-                    "worker_index": cfg.worker_index,
-                    "num_workers": cfg.num_workers,  # shard identity (r1 M2)
-                    "n_contexts": 0,
-                    "draws": draws,
-                    "n_rows": 0,
-                    "n_cap_hit": 0,
-                    "n_empty": 0,
-                    "max_new_tokens": cfg.max_new_tokens,
-                    "repro": _repro(cfg),
-                },
-            )
-    else:
-        logger.info("[anchors:rest] already done for this regime — skipping")
     # Registered cap-hit>2%/cell trigger, MEASURED at phase end (plan
     # registration; the trigger previously had no enforcing code). Partial
-    # snapshots (other workers still generating) are labeled partial.
+    # snapshots (cells still pending on either engine) are labeled partial.
     _emit_cap_hit_snapshot(cfg, "anchors")
-    logger.info("[phase=anchors_done] worker=%d", cfg.worker_index)
+    logger.info("[phase=anchors_done] worker=%d queue=%s", cfg.worker_index, stats)
     return RC_OK
 
 
@@ -4152,32 +4331,63 @@ def _cap_report_inputs(
     set derived mechanically from the frozen bank (smoke_blocks under
     --smoke, mirroring phase_grid's enumeration); bank absent => partial."""
     if scope == "anchors":
-        # vLLM-leg shards (anchors_vllm_* — engine marker in the BATCH-ID
-        # slot, plan pin 1) carry the same per-row cap telemetry but are
-        # cap-reported by scripts/issue2389_vllm_anchors.py against ITS OWN
-        # done manifests; counting them here would trip the v11 M2
-        # unexpected-shard refusal against the HF gate/rest expected set.
-        paths = sorted(
-            p
-            for p in cfg.anchors_dir.glob("anchors_*_w*.jsonl")
-            if not p.name.startswith("anchors_vllm_")
-        )
-        width = _family_realized_width(cfg.manifest_dir, "anchors")
-        if width is None:
+        # B3 (r1 review): ONE aggregate over EVERY engine/batch namespace —
+        # HF gate/rest cell shards, parity-HF cell shards, AND production-
+        # vLLM cell shards (the pre-fix version excluded anchors_vllm_*
+        # entirely — vLLM cells vanished from the >2% trigger — and refused
+        # anchors_parity_* as foreign, aborting the phase-end snapshot).
+        # Expectations derive from the completed engine/batch done manifests
+        # (worker-independent cell grain); a vLLM gen-done sentinel expects
+        # its text-persisted shard, which stays in pending_capture_shards
+        # until the capture pass enriches it. Completeness = every planned
+        # cell-batch unit (gate cells; rest cells under ANY of rest_/parity_/
+        # vllm_ ownership) carries a manifest; short of that the expected set
+        # is underivable and the report is PARTIAL (the unexpected-shard
+        # refusal stays armed only on a fully-derived set).
+        paths = sorted(cfg.anchors_dir.glob("anchors_*_w*.jsonl"))
+        expected: set[str] = set()
+        covered: set[str] = set()  # batch_ids: gate_X / rest_X / parity_X / vllm_X
+
+        def _batch_id_of(stem: str) -> str | None:
+            head, sep, idx = stem.rpartition("_w")
+            if not sep or not idx.isdigit() or not head.startswith("anchors_"):
+                return None
+            return head[len("anchors_") :]
+
+        for m in sorted(cfg.manifest_dir.glob("anchors_*_w*_done.json")):
+            if m.name.endswith("_gen_done.json"):
+                stem = m.name[: -len("_gen_done.json")]
+                bid = _batch_id_of(stem)
+                if bid is not None:
+                    expected.add(f"{stem}.jsonl")
+                    covered.add(bid)
+                continue
+            stem = m.name[: -len("_done.json")]
+            bid = _batch_id_of(stem)
+            if bid is None:
+                continue
+            rec = json.loads(m.read_text())
+            if int(rec.get("n_rows", 0)) > 0:
+                expected.add(f"{stem}.jsonl")
+            covered.add(bid)
+        gate_ids, rest_ids, contexts = _anchor_context_order(cfg)
+        uncovered = [
+            f"gate_{c}" for c in _group_by_cell(gate_ids, contexts) if f"gate_{c}" not in covered
+        ] + [
+            c
+            for c in _group_by_cell(rest_ids, contexts)
+            if not ({f"rest_{c}", f"parity_{c}", f"vllm_{c}"} & covered)
+        ]
+        if uncovered:
             return (
                 paths,
                 None,
                 (
-                    "anchors family width unresolved (phase incomplete) — "
-                    "expected shard set underivable"
+                    f"{len(uncovered)} anchor cell-batch unit(s) lack done manifests "
+                    f"(phase incomplete; first: {uncovered[:6]}) — expected shard set "
+                    "underivable"
                 ),
             )
-        expected: set[str] = set()
-        for batch in ("gate", "rest"):
-            for w in range(width):
-                rec = json.loads((cfg.manifest_dir / f"anchors_{batch}_w{w}_done.json").read_text())
-                if int(rec.get("n_rows", 0)) > 0:
-                    expected.add(f"anchors_{batch}_w{w}.jsonl")
         return paths, expected, None
     assert scope == "grid", scope
     paths = sorted(cfg.rollouts_dir.glob("shard_*.jsonl"))
@@ -4817,17 +5027,54 @@ def _merge_anchor_capregen(
     return new_done
 
 
+def _capregen_owning_record(cfg: RunConfig, cell: str, batch: str) -> tuple[str, Path, dict]:
+    """(batch_id, done_path, record) of the COMPLETED store owning this cell's
+    ``batch`` contexts — engine-aware (B3/B11 r1 review): a rest cell lives in
+    exactly ONE of ``rest_{cell}`` (HF bulk), ``parity_{cell}`` (parity-leg
+    HF), or ``vllm_{cell}`` (vLLM production leg); a gate cell always in
+    ``gate_{cell}``. Zero owners = phase incomplete (raise); multiple owners =
+    an inconsistent store (raise) — never a guess."""
+    candidates = (
+        (f"gate_{cell}",) if batch == "gate" else (f"rest_{cell}", f"parity_{cell}", f"vllm_{cell}")
+    )
+    hits: list[tuple[str, Path, dict]] = []
+    for bid in candidates:
+        for m in sorted(cfg.manifest_dir.glob(f"anchors_{bid}_w*_done.json")):
+            if m.name.endswith("_gen_done.json"):
+                continue  # vLLM pre-capture sentinel, not a done record
+            hits.append((bid, m, json.loads(m.read_text())))
+    if not hits:
+        raise RuntimeError(
+            f"capregen(anchors:{batch}): no done record for cell {cell!r} under any of "
+            f"{candidates} — the anchors phase is incomplete; capregen amends a "
+            "COMPLETED store only"
+        )
+    if len(hits) > 1:
+        raise RuntimeError(
+            f"capregen(anchors:{batch}): cell {cell!r} has {len(hits)} owning done "
+            f"records ({[h[1].name for h in hits]}) — inconsistent store; quarantine "
+            "the stale one before re-running"
+        )
+    return hits[0]
+
+
 def phase_capregen_anchors(cfg: RunConfig) -> int:
     """Cell-restricted anchors re-gen at a raised cap (registered >2% remedy).
 
-    Same sharding as the anchors phase (``order[w::W]`` at the REALIZED
-    width, asserted), same generation core (``_generate_anchor_rows``), same
-    per-(batch, worker) done records — breaching cells' rows are regenerated
-    wholesale and MERGED into the existing per-worker shard + va store, so
-    every downstream consumer reads the same files it always did. The done
-    record keeps the BASE regime_fp (post-regen re-entries of the standard
-    anchors command skip cleanly) and gains a ``capregen`` sub-record; the
-    #722 r3 cross-regime hard refusal is preserved via the base-fp check."""
+    CELL-GRAIN via the claim queue (B11 r1 review — the strided re-derivation
+    that mis-aligned against the generation-time vLLM exclusion is GONE): one
+    claim unit per breaching cell, its regen set = that cell's OWN batch
+    contexts, merged wholesale into the cell's OWN shard + va store at the
+    shard's recorded worker index, so every downstream consumer reads the
+    same files it always did. ENGINE-AWARE (B3): a vLLM- or parity-owned
+    breach cell is regenerated HF-side (the parity PASS that engaged those
+    engines certifies HF/vLLM equivalence; every regen row carries
+    ``engine="hf"`` and the capregen record names the superseded engine).
+    The merged done record keeps the shard's BASE regime_fp (post-regen
+    re-entries of the standard anchors command skip cleanly) and gains a
+    ``capregen`` sub-record; the #722 r3 cross-regime hard refusal is
+    preserved via the per-shard base-fp check (reconstructed from the
+    record's OWN gen_batch/share_prefill_armed — B9)."""
     if cfg.capregen_batch not in ("gate", "rest"):
         raise RuntimeError(
             "--capregen-batch gate|rest is required for --capregen-scope anchors: the "
@@ -4842,6 +5089,8 @@ def phase_capregen_anchors(cfg: RunConfig) -> int:
         cfg.num_workers,
         cfg.smoke,
     )
+    cfg = _adopt_pilot_gen_batch(cfg)  # regen at the pilot-selected B (item 3)
+    cfg = _resolve_share_prefill(cfg, "capregen_anchors")  # honest regen_fp (B9)
     rep, rep_path = _load_breach_report(cfg, "anchors")
     breach = set(rep["breaching_cells"])
     if not breach:
@@ -4852,45 +5101,51 @@ def phase_capregen_anchors(cfg: RunConfig) -> int:
         return RC_OK
     base_cap = int(rep["max_new_tokens"])
     _manifest, bank_sha = bank_manifest_and_sha()
-    base_fp = regime_fingerprint(replace(cfg, max_new_tokens=base_cap), bank_sha)
     regen_fp = regime_fingerprint(cfg, bank_sha)
-    width = _family_realized_width(cfg.manifest_dir, "anchors")
-    if width is None:
-        raise RuntimeError(
-            "anchors family width unresolved — the anchors phase is incomplete; "
-            "capregen amends a COMPLETED store only"
-        )
-    if not cfg.num_workers_explicit or cfg.num_workers != width:
-        raise RuntimeError(
-            f"anchors capregen must run at the realized width {width} for shard "
-            f"alignment (pass --num-workers {width} --worker-index <i>); got "
-            f"num_workers={cfg.num_workers} explicit={cfg.num_workers_explicit}"
-        )
+    batch = cfg.capregen_batch
     gate_ids, rest_ids, contexts = _anchor_context_order(cfg)
+    by_cell = _group_by_cell(gate_ids if batch == "gate" else rest_ids, contexts)
     cell_of = {cid: ctx["cell"] for cid, ctx in contexts.items()}
-    model, tok, eot = None, None, None
-    # ONE batch per invocation (second scope addendum): Phase A = gate (the
-    # gate-3 critical path), Phase B = rest (deferrable). The per-(batch,
-    # worker) done records already resume the two legs independently.
-    selected = gate_ids if cfg.capregen_batch == "gate" else rest_ids
-    for batch, order in ((cfg.capregen_batch, selected),):
-        done_path = cfg.manifest_dir / f"anchors_{batch}_w{cfg.worker_index}_done.json"
-        if not done_path.exists():
-            raise RuntimeError(
-                f"{done_path} missing — anchors {batch} incomplete for worker "
-                f"{cfg.worker_index}; capregen amends a COMPLETED store only"
-            )
-        done_rec = json.loads(done_path.read_text())
+    units = [c for c in sorted(breach) if by_cell.get(c)]
+    for c in sorted(breach - set(units)):
+        logger.info("[capregen:anchors:%s] breach cell %s has no %s contexts — N/A", batch, c, c)
+    model_tok: list = [None, None, None]  # model, tok, eot
+
+    def _base_fp_for(rec: dict) -> str:
+        """The shard's OWN base fingerprint (B9: per-shard generation regime)."""
+        return regime_fingerprint(
+            replace(
+                cfg,
+                max_new_tokens=base_cap,
+                gen_batch=int(rec.get("gen_batch", cfg.gen_batch)),
+                share_prefill_armed=bool(rec.get("share_prefill_armed", False)),
+            ),
+            bank_sha,
+        )
+
+    def _unit_done(cell: str) -> bool:
+        try:
+            _bid, _mp, rec = _capregen_owning_record(cfg, cell, batch)
+        except RuntimeError:
+            return False
+        cr = rec.get("capregen")
+        return (
+            cr is not None
+            and int(cr.get("max_new_tokens", -1)) == cfg.max_new_tokens
+            and set(cr.get("cells", [])) == breach
+        )
+
+    def _run_unit(block: AnchorCellBlock) -> None:
+        cell = block.cell
+        batch_id, done_path, done_rec = _capregen_owning_record(cfg, cell, batch)
+        base_fp = _base_fp_for(done_rec)
         if done_rec.get("regime_fp") != base_fp:
             raise RuntimeError(
-                f"anchors {batch} w{cfg.worker_index} done-record carries "
-                f"regime_fp={done_rec.get('regime_fp')!r} but the capregen BASE "
-                f"regime_fp={base_fp!r} — refusing to re-gen across regimes "
+                f"anchors capregen {batch_id}: done-record carries "
+                f"regime_fp={done_rec.get('regime_fp')!r} but the shard's reconstructed "
+                f"BASE regime_fp={base_fp!r} — refusing to re-gen across regimes "
                 "(quarantine or use a fresh --out-root)"
             )
-        pending_file = (
-            cfg.manifest_dir / f"capregen_pending_anchors_{batch}_w{cfg.worker_index}.jsonl"
-        )
         cr = done_rec.get("capregen")
         if cr is not None:
             if (
@@ -4898,79 +5153,71 @@ def phase_capregen_anchors(cfg: RunConfig) -> int:
                 or set(cr.get("cells", [])) != breach
             ):
                 raise RuntimeError(
-                    f"anchors {batch} w{cfg.worker_index} already merged a capregen at "
+                    f"anchors {batch_id} already merged a capregen at "
                     f"cap={cr.get('max_new_tokens')} cells={sorted(cr.get('cells', []))} "
                     f"!= this invocation's cap={cfg.max_new_tokens} "
                     f"cells={sorted(breach)} — refusing to stack re-gens "
                     "(fresh --out-root to redo)"
                 )
+            return  # raced completion — idempotent skip
+        w = int(done_rec["worker_index"])
+        cap_cfg = replace(cfg, worker_index=w)
+        pending_file = cfg.manifest_dir / f"capregen_pending_anchors_{batch_id}.jsonl"
+        my_regen = by_cell[cell]
+        capregen_record = {
+            "cells": sorted(breach),
+            "max_new_tokens": cfg.max_new_tokens,
+            "base_max_new_tokens": base_cap,
+            "regen_regime_fp": regen_fp,
+            "regen_engine": "hf",
+            "superseded_engine": done_rec.get("engine", "hf"),
+            "source_report": rep_path.name,
+            "source_report_sha256": _sha256_bytes(rep_path.read_bytes()),
+            "n_rows_regen": 0,
+            "ts": datetime.now(UTC).isoformat(),
+        }
+        draws = int(done_rec["draws"])  # match the ORIGINAL shard's draws exactly
+        if model_tok[0] is None:
+            model_tok[0], model_tok[1] = load_model_and_tokenizer(cfg)
+            model_tok[2] = eot_tail_ids(model_tok[1])
+        model, tok, eot = model_tok
+        if done_rec.get("engine", "hf") != "hf":
             logger.info(
-                "[capregen:anchors:%s] already merged for this breach list — skipping to "
-                "the idempotent upload retry",
+                "[capregen:anchors:%s] cell %s superseding %s-generated rows with an HF "
+                "re-gen at cap=%d (parity-PASS-certified equivalence; per-row engine "
+                "field is authoritative)",
                 batch,
+                cell,
+                done_rec.get("engine"),
+                cfg.max_new_tokens,
             )
-        else:
-            my = order[cfg.worker_index :: cfg.num_workers]
-            my_regen = [cid for cid in my if cell_of[cid] in breach]
-            capregen_record = {
-                "cells": sorted(breach),
-                "max_new_tokens": cfg.max_new_tokens,
-                "base_max_new_tokens": base_cap,
-                "regen_regime_fp": regen_fp,
-                "source_report": rep_path.name,
-                "source_report_sha256": _sha256_bytes(rep_path.read_bytes()),
-                "n_rows_regen": 0,
-                "ts": datetime.now(UTC).isoformat(),
-            }
-            if not my_regen:
-                _write_json_atomic(
-                    done_path, {**done_rec, "capregen": capregen_record, "repro": _repro(cfg)}
-                )
-                logger.info(
-                    "[capregen:anchors:%s] no breaching contexts in this worker's shard — "
-                    "stamped done record",
-                    batch,
-                )
-            else:
-                draws = int(done_rec["draws"])  # match the ORIGINAL shard's draws exactly
-                if model is None:
-                    model, tok = load_model_and_tokenizer(cfg)
-                    eot = eot_tail_ids(tok)
-                rows, flat_ctx, flat_text = _generate_anchor_rows(
-                    cfg, model, tok, contexts, my_regen, draws, batch
-                )
-                # Rollout text durable BEFORE the capture reduce (#779 two-write
-                # pattern); side file so no shard glob / upload pattern matches it.
-                _write_jsonl_atomic(pending_file, rows)
-                states = capture_answer_states(cfg, model, tok, flat_ctx, flat_text, eot)
-                _enrich_rows_with_capture(rows, states, cfg.max_new_tokens)
-                capregen_record["n_rows_regen"] = len(rows)
-                _merge_anchor_capregen(
-                    cfg, batch, base_cap, breach, cell_of, rows, states, done_rec, capregen_record
-                )
-                logger.info(
-                    "[capregen:anchors:%s] merged %d regenerated rows (%d contexts x %d draws)",
-                    batch,
-                    len(rows),
-                    len(my_regen),
-                    draws,
-                )
-        # EVERY path (merged / no-breach / already-merged re-entry) falls
-        # through here: the pending-side-file unlink and the uploads sit AFTER
-        # the done-record commit point, so a crash between commit and upload is
-        # retried on re-entry instead of skipped (v11 minors: orphaned pending
-        # file; upload never retried), and a no-breach worker still uploads its
-        # (unchanged) shard so the consumer-facing prefixes converge COMPLETE
-        # (v11 MAJOR 1).
+        rows, flat_ctx, flat_text = _generate_anchor_rows(
+            cfg, model, tok, contexts, my_regen, draws, batch_id
+        )
+        # Rollout text durable BEFORE the capture reduce (#779 two-write
+        # pattern); side file so no shard glob / upload pattern matches it.
+        _write_jsonl_atomic(pending_file, rows)
+        states = capture_answer_states(cfg, model, tok, flat_ctx, flat_text, eot)
+        _enrich_rows_with_capture(rows, states, cfg.max_new_tokens)
+        capregen_record["n_rows_regen"] = len(rows)
+        _merge_anchor_capregen(
+            cap_cfg, batch_id, base_cap, breach, cell_of, rows, states, done_rec, capregen_record
+        )
+        logger.info(
+            "[capregen:anchors:%s] cell %s merged %d regenerated rows (%d contexts x %d draws)",
+            batch,
+            cell,
+            len(rows),
+            len(my_regen),
+            draws,
+        )
+        # Uploads sit AFTER the done-record commit point, so a crash between
+        # commit and upload is retried on re-entry instead of skipped. The
+        # same-filename overwrite keeps the judge-visible prefixes complete
+        # AND fresh (v11 MAJOR 1): without it _resolve_anchors_dir could
+        # prefer STALE truncated rows over the regenerated ones.
         pending_file.unlink(missing_ok=True)
-        jsonl_name = f"anchors_{batch}_w{cfg.worker_index}.jsonl"
-        # v11 MAJOR 1: same-filename overwrites keep BOTH judge-visible
-        # prefixes complete AND fresh. raw_completions/anchors currently holds
-        # the complete PRE-regen store (P5 upload) — without the overwrite the
-        # judge's _resolve_anchors_dir would silently prefer STALE truncated
-        # gate rows over the regenerated ones; anchors_gate is the early gate
-        # mirror gate-3 stages from before the full prefix exists, refreshed
-        # here so a fallback can never score stale rows either.
+        jsonl_name = f"anchors_{batch_id}_w{w}.jsonl"
         _upload_dir(cfg, cfg.anchors_dir, f"{HF_PREFIX}/raw_completions/anchors", [jsonl_name])
         if batch == "gate":
             _upload_dir(
@@ -4980,7 +5227,7 @@ def phase_capregen_anchors(cfg: RunConfig) -> int:
             cfg,
             cfg.anchors_dir,
             f"{HF_PREFIX}/analysis_tensors/anchors",
-            [f"va_anchors_{batch}_w{cfg.worker_index}.pt"],
+            [f"va_anchors_{batch_id}_w{w}.pt"],
         )
         pre_dir = preregen_superseded_dir(cfg, "anchors")
         if (pre_dir / jsonl_name).exists():
@@ -4992,19 +5239,37 @@ def phase_capregen_anchors(cfg: RunConfig) -> int:
                 f"{HF_PREFIX}/raw_completions/preregen_superseded/anchors",
                 [jsonl_name],
             )
+
+    blocks = [AnchorCellBlock(cell=c, batch=batch) for c in units]
+    run_claim_queue(
+        cfg,
+        blocks,
+        regen_fp,
+        f"capregen_anchors_{batch}",
+        _run_unit,
+        is_done=lambda _root, b, _fp, _ns: _unit_done(b.cell),
+    )
     # Post-regen measurement over the mixed-cap store (v11 C1): BASE-cap row
     # attribution + the *_postregen SIBLING path — the frozen driving basis is
-    # never touched; units (either batch, any worker) whose merge has not
-    # landed keep the report partial (a mid-fleet emit never claims final).
-    pending_units = [
-        f"anchors_{b}_w{w}"
-        for b in ("gate", "rest")
-        for w in range(width)
-        if json.loads((cfg.manifest_dir / f"anchors_{b}_w{w}_done.json").read_text()).get(
-            "capregen"
-        )
-        is None
-    ]
+    # never touched; breach units (either batch) whose merge has not landed
+    # keep the report partial (a mid-fleet emit never claims final).
+    pending_units: list[str] = []
+    gate_cells_all = set(_group_by_cell(gate_ids, contexts))
+    rest_cells_all = set(_group_by_cell(rest_ids, contexts))
+    for b, cells_all in (("gate", gate_cells_all), ("rest", rest_cells_all)):
+        for c in sorted(breach & cells_all):
+            try:
+                _bid, _mp, rec = _capregen_owning_record(cfg, c, b)
+            except RuntimeError:
+                pending_units.append(f"anchors_{b}:{c} (no owning done record)")
+                continue
+            cr = rec.get("capregen")
+            if (
+                cr is None
+                or int(cr.get("max_new_tokens", -1)) != cfg.max_new_tokens
+                or set(cr.get("cells", [])) != breach
+            ):
+                pending_units.append(f"anchors_{_bid}")
     emit_cap_hit_report(
         cfg, "anchors", postregen=True, base_cap=base_cap, capregen_pending=pending_units
     )

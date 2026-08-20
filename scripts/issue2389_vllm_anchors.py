@@ -23,13 +23,16 @@ launcher; one engine per GPU, TP=1 — 27.78B bf16 fits one H100/H200 card):
   anchors must exist either way.
 - ``--leg claim`` (worker 0, after its parity leg): polls the WRITE repo for
   the judge fork's ``vllm_parity_report.json``; on verdict PASS extends
-  ``gates/vllm_cells.json`` to every bank cell BEFORE run.py's rest-entry
-  routing freeze (`issue2389_run._resolve_rest_routing`). A late verdict is
-  INERT (the frozen routing wins — work-conserving either way).
+  ``gates/vllm_cells.json`` to every bank cell. Routing is PER CELL at CLAIM
+  time (B8 r1 review): run.py's rest workers re-read the claim set every
+  scan and skip claimed cells, so a PASS landing mid-P2 re-routes exactly
+  the REMAINING (not-yet-HF-claimed) cells — a late PASS is work-conserving,
+  never inert; cells HF already claimed/finished stay HF.
 - ``--leg production`` (all workers, after run.py's anchors phase releases
-  the GPU): reads the FROZEN routing file, owns = frozen − parity cells; per
-  claimed cell (claim-file queue, DP across workers): vLLM generation of the
-  cell's REST contexts (gate contexts are always HF — run.py's gate batch) →
+  the GPU): owns = claimed cells (``gates/vllm_cells.json``) − parity cells
+  − cells the HF rest queue already completed; per claimed cell (claim-file
+  queue, DP across workers): vLLM generation of the cell's REST contexts
+  (gate contexts are always HF — run.py's gate batch) →
   text-persist ``anchors/anchors_vllm_<cell>_w{w}.jsonl`` + gen-done
   sentinel; then engine teardown, HF model load, and the inherited
   teacher-forced ``capture_answer_states`` pass (M1-v two-sweep: HF model and
@@ -294,18 +297,13 @@ def _parity_vllm_done(cfg: R.RunConfig, regime_fp: str, cell: str) -> bool:
     return False
 
 
-def _anchor_cell_done(cfg: R.RunConfig, regime_fp: str, batch: str) -> bool:
-    """Worker-independent `_anchor_batch_done` twin for claim-queue cells."""
-    for m in cfg.manifest_dir.glob(f"anchors_{batch}_w*_done.json"):
-        rec = json.loads(m.read_text())
-        if rec.get("regime_fp") != regime_fp:
-            continue
-        w = rec["worker_index"]
-        jsonl = cfg.anchors_dir / f"anchors_{batch}_w{w}.jsonl"
-        va = cfg.anchors_dir / f"va_anchors_{batch}_w{w}.pt"
-        if jsonl.exists() and va.exists():
-            return True
-    return False
+def _anchor_cell_done(
+    cfg: R.RunConfig, regime_fp: str, batch: str, expected_draws: int | None = None
+) -> bool:
+    """Worker-independent per-cell done read — DELEGATES to run.py's own
+    predicate (regime + draws + artifacts + row-count checks), so the HF and
+    vLLM sides share ONE definition of done."""
+    return R._anchor_cell_done(cfg, regime_fp, batch, expected_draws)
 
 
 def _prod_gen_done(cfg: R.RunConfig, regime_fp: str, cell: str) -> bool:
@@ -491,7 +489,7 @@ def leg_parity(cfg: R.RunConfig) -> int:
             regime_fp,
             "vllm_parity_hf",
             _run_hf_cell,
-            is_done=lambda _root, b, fp, _ns: _anchor_cell_done(cfg, fp, f"parity_{b.cell}"),
+            is_done=lambda _root, b, fp, _ns: _anchor_cell_done(cfg, fp, f"parity_{b.cell}", draws),
         )
     logger.info("[phase=vllm_parity_done] worker=%d engine_err=%s", cfg.worker_index, engine_err)
     return R.RC_OK
@@ -530,9 +528,11 @@ def _read_parity_report(cfg: R.RunConfig) -> dict | None:
 
 def leg_claim(cfg: R.RunConfig, timeout_s: float) -> int:
     """Poll for the parity verdict; on PASS extend vllm_cells.json to every
-    bank cell BEFORE the rest-entry routing freeze. Late/FAIL/timeout are all
-    inert-by-construction (the frozen routing file wins; HF generates)."""
-    routing = cfg.gates_dir / R.ANCHOR_REST_ROUTING_NAME
+    bank cell. B8 (r1 review): routing is per cell at CLAIM time — run.py's
+    rest workers re-read the claim set every scan, so a PASS landing mid-P2
+    re-routes exactly the not-yet-claimed cells (work-conserving; a late PASS
+    is never inert). FAIL/timeout leave the parity-only claim in place
+    (fail-open: HF generates everything)."""
     t0 = time.monotonic()
     while True:
         report = _read_parity_report(cfg)
@@ -540,59 +540,79 @@ def leg_claim(cfg: R.RunConfig, timeout_s: float) -> int:
             verdict = str(report.get("verdict", "")).upper()
             logger.info("[claim] parity report verdict=%s", verdict)
             if verdict == "PASS":
-                if routing.exists():
-                    logger.info("[claim] routing already FROZEN — PASS is late, claim inert")
-                    return R.RC_OK
                 _write_vllm_cells(cfg, list(R.BANK.all_cells()), "parity-pass-full-claim")
             else:
                 logger.info("[claim] verdict != PASS — vLLM path stays disabled (fail-open)")
             return R.RC_OK
-        if routing.exists():
-            logger.info("[claim] routing FROZEN before any verdict — claim window closed")
-            return R.RC_OK
         if time.monotonic() - t0 > timeout_s:
             logger.warning(
-                "[claim] timeout (%.0fs) with no verdict — claim window closed", timeout_s
+                "[claim] timeout (%.0fs) with no verdict — claim stays parity-only", timeout_s
             )
             return R.RC_OK
         time.sleep(REPORT_POLL_S)
 
 
-# ── leg: production (frozen-routing cells, minus parity) ──────────────
+# ── leg: production (claimed cells, minus parity, minus HF-done) ──────
+
+
+def _owned_rest_cells(
+    cfg: R.RunConfig,
+    regime_fp: str,
+    draws: int,
+    by_cell: dict[str, list[str]],
+    gate_id_set: set[str],
+) -> tuple[dict[str, list[str]], list[str]]:
+    """Production-leg ownership (B8): claimed cells (gates/vllm_cells.json)
+    minus parity cells, minus cells the HF rest queue already completed
+    (per-cell claim-time freeze: a claim extension landing after an HF worker
+    claimed/finished a cell leaves it HF), minus cells with no REST contexts.
+    Returns (rest contexts per owned cell, cells this leg must generate)."""
+    claimed = R._vllm_claimed_cells(cfg)
+    owned = sorted(claimed - set(PARITY_CELLS))
+    rest_by_cell = {c: [cid for cid in by_cell.get(c, []) if cid not in gate_id_set] for c in owned}
+    gen_cells = [
+        c
+        for c in owned
+        if rest_by_cell[c] and not _anchor_cell_done(cfg, regime_fp, f"rest_{c}", draws)
+    ]
+    return rest_by_cell, gen_cells
 
 
 def leg_production(cfg: R.RunConfig, routing_wait_s: float) -> int:
-    """vLLM generation + HF capture for the FROZEN re-routed cells."""
+    """vLLM generation + HF capture for the claimed, not-HF-done rest cells.
+
+    B8 (r1 review): ownership is per cell at claim time — this leg runs
+    post-anchors, so every rest cell is either HF-done (an HF worker claimed
+    it before the parity PASS extended the claim set) or belongs to this
+    leg. HF-done cells are skipped (work-conserving); crash-orphaned partial
+    shards from EITHER engine are quarantined under the held claim before
+    regeneration."""
     _manifest, bank_sha = R.bank_manifest_and_sha()
     regime_fp = R.regime_fingerprint(cfg, bank_sha)
-    routing = cfg.gates_dir / R.ANCHOR_REST_ROUTING_NAME
+    claim_path = cfg.gates_dir / "vllm_cells.json"
     t0 = time.monotonic()
-    while not routing.exists():
+    while not claim_path.exists():
         if time.monotonic() - t0 > routing_wait_s:
-            logger.warning("[prod] no routing file after %.0fs — nothing re-routed", routing_wait_s)
+            logger.warning(
+                "[prod] no vllm_cells.json after %.0fs — nothing claimed", routing_wait_s
+            )
             return R.RC_OK
-        logger.info("[prod] waiting for rest-entry routing freeze (%s)", routing.name)
+        logger.info("[prod] waiting for the parity leg's claim file (%s)", claim_path.name)
         time.sleep(R.CLAIM_POLL_S)
-    frozen = R._resolve_rest_routing(cfg, regime_fp)  # reads (never re-creates: it exists)
-    owned_cells = sorted(frozen - set(PARITY_CELLS))
-    if not owned_cells:
-        logger.info("[prod] frozen routing carries no re-routed cells — HF owns the rest; done")
-        return R.RC_OK
     contexts, by_cell, gate_id_set = _cell_targets(cfg)
-    owned_cells = [c for c in owned_cells if by_cell.get(c)]
     draws = 2 if cfg.smoke else cfg.anchor_draws
     recal = R._load_cap_recalibration(cfg)  # rest runs at recalibrated caps (item 1)
-    caps = {c: R._resolve_cap(cfg, c, recal) for c in owned_cells}
+    rest_by_cell, gen_cells = _owned_rest_cells(cfg, regime_fp, draws, by_cell, gate_id_set)
+    if not gen_cells:
+        logger.info("[prod] every claimed rest cell is HF-done or empty — nothing to generate")
+        return R.RC_OK
+    logger.info("[prod] %d vLLM-owned rest cell(s): %s", len(gen_cells), gen_cells)
+    caps = {c: R._resolve_cap(cfg, c, recal) for c in gen_cells}
     tok = _load_tokenizer(cfg)
     eos_ids = _eos_ids(cfg, tok)
 
     # Sweep 1 — vLLM generation, text-persisted per cell (#779) + gen-done
     # sentinel (NOT the final done manifest — M1-v: that lands after capture).
-    rest_by_cell = {c: [cid for cid in by_cell[c] if cid not in gate_id_set] for c in owned_cells}
-    gen_cells = [c for c in owned_cells if rest_by_cell[c]]
-    if not gen_cells:
-        logger.info("[prod] re-routed cells have no REST contexts under this config — done")
-        return R.RC_OK
     mml = _max_model_len_for(
         tok, contexts, [cid for c in gen_cells for cid in rest_by_cell[c]], list(caps.values())
     )
@@ -600,6 +620,13 @@ def leg_production(cfg: R.RunConfig, routing_wait_s: float) -> int:
 
     def _run_prod_gen(block: CellBlock) -> None:
         cell = block.cell
+        # Reclaim hygiene under the held claim (is_done read False): sweep
+        # crash-orphaned partials from BOTH engines — a dead vLLM worker's
+        # partial gen shard (would trip capture's exactly-one assert) and a
+        # dead HF worker's text-persisted partial (would double rows under
+        # the judge's anchors_*.jsonl glob).
+        R._quarantine_orphan_cell_shards(cfg, f"vllm_{cell}")
+        R._quarantine_orphan_cell_shards(cfg, f"rest_{cell}")
         rows = _vllm_generate_cell_rows(
             cfg,
             llm,
@@ -673,7 +700,7 @@ def leg_production(cfg: R.RunConfig, routing_wait_s: float) -> int:
         regime_fp,
         "vllm_prod_capture",
         _run_prod_capture,
-        is_done=lambda _root, b, fp, _ns: _anchor_cell_done(cfg, fp, f"vllm_{b.cell}"),
+        is_done=lambda _root, b, fp, _ns: _anchor_cell_done(cfg, fp, f"vllm_{b.cell}", draws),
     )
     logger.info("[phase=vllm_production_done] worker=%d cells=%s", cfg.worker_index, gen_cells)
     return R.RC_OK
@@ -696,6 +723,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     # (`hf|local-mirror|none`) — the prior `full` default could not bind
     # through `_compose_run_cfg` and every real invocation died in argparse.
     ap.add_argument("--upload", choices=("hf", "local-mirror", "none"), default="hf")
+    # B9: threaded verbatim into run.py's parser — the HF sub-legs write into
+    # the SAME anchors family as run.py's workers, and share_prefill_armed is
+    # part of regime_fingerprint, so the mode MUST match the HF workers'.
+    ap.add_argument("--share-prefill", choices=("off", "auto"), default="off")
     ap.add_argument("--claim-timeout-s", type=float, default=7200.0)
     ap.add_argument("--routing-wait-s", type=float, default=1800.0)
     ap.add_argument(
@@ -721,12 +752,22 @@ def _compose_run_cfg(args: argparse.Namespace) -> R.RunConfig:
         str(args.num_workers),
         "--upload",
         args.upload,
+        "--share-prefill",
+        args.share_prefill,
     ]
     if args.smoke:
         argv.append("--smoke")
     if args.gen_batch is not None:
         argv += ["--gen-batch", str(args.gen_batch)]
-    return R.build_config(R.parse_args(argv))
+    cfg = R.build_config(R.parse_args(argv))
+    # B9 (r1 review): this leg's HF sub-legs write shards into the SAME
+    # anchors family as run.py's workers, and `regime_fingerprint` now covers
+    # gen_batch + share_prefill_armed — resolve BOTH exactly as phase_anchors
+    # does (pilot adoption; the family-FROZEN share-prefill decision), or the
+    # two sides' done predicates stop recognizing each other's manifests.
+    cfg = R._adopt_pilot_gen_batch(cfg)
+    cfg = R._resolve_share_prefill(cfg, "vllm_anchors")
+    return cfg
 
 
 def _import_check() -> int:
