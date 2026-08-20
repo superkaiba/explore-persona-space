@@ -1,0 +1,601 @@
+#!/usr/bin/env python3
+"""Issue #2389 — gate-4b item-5 pod-side ``share_prefill`` equivalence battery (M-N2).
+
+Produces ``gates/share_prefill_equivalence.json`` — the ONLY artifact that can
+arm ``share_prefill=True`` in production generation (plan §4.7 item 5 pin 2:
+``issue2389_run.py --share-prefill auto`` reads this verdict at phase entry;
+no artifact / FAIL / ``off`` ⇒ serial, FAIL-OPEN). Runs on ONE GPU inside the
+gate-4b window (workers 0–2, concurrent with gate-3-slice generation).
+
+Battery legs (pre-registered, plan §4.7 item 5; per batch × {unhooked, hooked}):
+
+- **leg 0 — identical-run nondeterminism, measured FIRST:** two IDENTICAL
+  unperturbed shared-prefill greedy runs, per-step logits compared bitwise.
+  This is the plan's mandated precondition for leg (e2)'s exactness read and
+  the calibration basis for leg (b)'s bf16 tolerance.
+- **leg (b) — per-step logit equivalence (K_eq = 8):** the shared-prefill
+  path vs the REAL per-draw-prefill ``model.generate()`` reference, greedy,
+  hooked AND unhooked, unequal-length LEFT-padded batches. Exactness regime:
+  fp32 rigs (``--offline-tiny`` / ``--tiny``) require BITWISE equality; the
+  production bf16 rig uses the calibrated two-tier convention (gotchas.md
+  #779/#1005 family) — binding tier: per-step argmax agreement == 100% AND
+  max |Δ log-softmax| <= max(0.05, 10 × the leg-0 measured identical-run
+  log-softmax drift); reported tier: raw fp32 max-abs logit diff.
+- **leg (e2) — BRANCH INDEPENDENCE (the direct aliasing probe):** perturb
+  draw 0's first decode token (``_force_first_token``); sibling draws'
+  per-step logits must be BITWISE unchanged through decode steps 2..K_eq —
+  EXACT on every rig, tolerance NEVER permitted here. When leg 0 measures
+  the rig NOT bitwise-deterministic, (e2) falls back to the direct
+  cache-byte / storage-isolation assert (deepcopied per-draw cache storage
+  pointers disjoint from the base cache's) — never a widened threshold.
+- **storage isolation (always recorded):** the per-draw ``copy.deepcopy``
+  cache's reachable tensor storages are disjoint from the base prefill
+  cache's.
+- **leg (f) — measured wall (reported, non-binding):** public
+  ``generate_batch`` serial vs ``share_prefill=True`` at temp 1.0, one
+  LONG-context and one SHORT-context cell batch (``--skip-wall`` for smoke).
+
+Verdict: PASS ⇔ every (batch × variant) leg (b) AND leg (e2) passed. The
+script always exits 0 on a completed battery (FAIL-OPEN — the verdict rides
+the artifact; the run proceeds serial on FAIL). Legs (a)/(c)/(d) are covered
+by the CPU acceptance battery (``tests/test_issue2389_steering_share_prefill``)
+and steering's own asserts; this script is their production-device sibling.
+
+Modes:
+  --offline-tiny   no-network CPU rig (offline WordLevel tokenizer + tiny
+                   random-config qwen3_next hybrid) — the tiny-real CPU e2e
+                   smoke; writes the same artifact shape to --out-root.
+  --tiny           run.py's tiny from-config model over the REAL bank
+                   contexts (fetches config/tokenizer at the pinned revision).
+  (default)        the production bf16 27B at the pinned revision (CUDA).
+"""
+
+from __future__ import annotations
+
+import argparse
+import copy
+import logging
+import sys
+import time
+from datetime import UTC, datetime
+from pathlib import Path
+
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()
+
+import torch  # noqa: E402
+import torch.nn.functional as tF  # noqa: E402
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import issue2389_run as R  # noqa: E402
+from explore_persona_space.experiments.issue1415.steering import (  # noqa: E402
+    DeltaHook,
+    _encode_left_padded,
+    _generate_batch_shared_prefill,
+    _shared_prefill_forward,
+    generate_batch,
+)
+
+logger = logging.getLogger("issue2389.share_prefill_gate")
+
+GATE_NAME = "share_prefill_equivalence.json"
+K_EQ_DEFAULT = 8
+# Binding leg-(b) bf16 tier: max |Δ log-softmax| floor (probability-space,
+# scale-free) — the realized tolerance is max(this, 10 × leg-0 drift).
+LOGSOFTMAX_TOL_FLOOR = 0.05
+
+
+# ── offline tiny rig (no network; mirrors the CPU acceptance battery) ──
+
+_WORDS = [
+    "hello", "world", "tell", "me", "about", "cats", "dogs", "the", "a",
+    "story", "you", "are", "helpful", "pirate", "short", "long", "answer",
+    "question", "sky", "blue", "green", "red", "one", "two", "three", "four",
+    "user", "system", "assistant",
+]  # fmt: skip
+
+OFFLINE_BATCHES = {
+    "short": [
+        {"system": None, "user": "tell me about cats"},
+        {"system": None, "user": "one two three four question"},
+    ],
+    "long": [
+        {"system": "you are a helpful pirate", "user": "tell me a long story about the blue sky"},
+        {"system": None, "user": "tell me about dogs and cats and the green sky"},
+        {"system": None, "user": "hello world"},
+    ],
+}
+
+
+def _offline_tiny_model_and_tok():
+    """Offline WordLevel chat tokenizer + tiny random qwen3_next hybrid
+    (3 linear + 1 full-attention layers) — no HF fetch, fp32 CPU."""
+    from tokenizers import Tokenizer, pre_tokenizers
+    from tokenizers import models as tmodels
+    from transformers import PreTrainedTokenizerFast
+    from transformers.models.qwen3_next import Qwen3NextConfig, Qwen3NextForCausalLM
+
+    vocab = {"<|pad|>": 0, "<|im_end|>": 1, "<|im_start|>": 2, "<unk>": 3}
+    for w in _WORDS:
+        vocab[w] = len(vocab)
+    tok_obj = Tokenizer(tmodels.WordLevel(vocab, unk_token="<unk>"))
+    tok_obj.pre_tokenizer = pre_tokenizers.WhitespaceSplit()
+    tok = PreTrainedTokenizerFast(
+        tokenizer_object=tok_obj,
+        pad_token="<|pad|>",
+        eos_token="<|im_end|>",
+        unk_token="<unk>",
+        additional_special_tokens=["<|im_start|>"],
+    )
+    tok.chat_template = (
+        "{% for m in messages %}<|im_start|> {{ m['role'] }} {{ m['content'] }} <|im_end|> "
+        "{% endfor %}{% if add_generation_prompt %}<|im_start|> assistant{% endif %}"
+    )
+    mcfg = Qwen3NextConfig(
+        vocab_size=len(tok),
+        hidden_size=32,
+        intermediate_size=64,
+        num_hidden_layers=4,
+        num_attention_heads=4,
+        num_key_value_heads=2,
+        head_dim=8,
+        max_position_embeddings=256,
+        linear_num_value_heads=4,
+        linear_num_key_heads=2,
+        linear_key_head_dim=8,
+        linear_value_head_dim=8,
+        linear_conv_kernel_dim=2,
+        full_attention_interval=4,
+        num_experts=2,
+        num_experts_per_tok=1,
+        decoder_sparse_step=1,
+        moe_intermediate_size=32,
+        shared_expert_intermediate_size=32,
+    )
+    torch.manual_seed(20260819)
+    model = Qwen3NextForCausalLM(mcfg).eval()
+    model.generation_config.eos_token_id = tok.eos_token_id
+    model.generation_config.pad_token_id = tok.pad_token_id
+    return model, tok
+
+
+# ── battery legs ───────────────────────────────────────────────────────
+
+
+@torch.no_grad()
+def _serial_step_logits(model, tok, ctxs, hook, k, render_fn, ids_fn) -> list[torch.Tensor]:
+    """Per-draw-prefill reference: REAL ``model.generate()`` raw per-step logits."""
+    input_ids, attention_mask, _ = _encode_left_padded(model, tok, ctxs, render_fn, ids_fn)
+    if hook is not None:
+        hook.arm(expected_prompt_len=input_ids.shape[1])
+    out = model.generate(
+        input_ids=input_ids,
+        attention_mask=attention_mask,
+        do_sample=False,
+        temperature=None,
+        top_p=None,
+        top_k=None,
+        max_new_tokens=k,
+        pad_token_id=tok.pad_token_id,
+        output_logits=True,
+        return_dict_in_generate=True,
+    )
+    return [step.float() for step in out.logits]
+
+
+def _shared_step_logits(
+    model, tok, ctxs, hook, k, draws, render_fn, ids_fn, force_first: dict | None = None
+) -> list[list[torch.Tensor]]:
+    """Shared-prefill greedy per-step logits via the battery seams."""
+    _, step_logits = _generate_batch_shared_prefill(
+        model,
+        tok,
+        ctxs,
+        n=draws,
+        hook=hook,
+        max_new_tokens=k,
+        temperature=0.0,
+        render_fn=render_fn,
+        ids_fn=ids_fn,
+        _collect_step_logits=k,
+        _force_first_token=force_first,
+    )
+    return step_logits
+
+
+def _pairwise_drift(a: list[list[torch.Tensor]], b: list[list[torch.Tensor]]) -> dict:
+    """Max abs logit + log-softmax drift and bitwise flag between two shared runs."""
+    max_abs = 0.0
+    max_dls = 0.0
+    bitwise = True
+    for da, db in zip(a, b, strict=True):
+        for sa, sb in zip(da, db, strict=True):
+            if not torch.equal(sa, sb):
+                bitwise = False
+            max_abs = max(max_abs, float((sa - sb).abs().max()))
+            max_dls = max(
+                max_dls,
+                float((tF.log_softmax(sa, dim=-1) - tF.log_softmax(sb, dim=-1)).abs().max()),
+            )
+    return {"bitwise": bitwise, "max_abs_logit": max_abs, "max_abs_log_softmax": max_dls}
+
+
+def _cache_storage_ptrs(obj, seen: set[int] | None = None, depth: int = 0) -> set[int]:
+    """Reachable tensor storage pointers (cache-byte / storage-isolation probe)."""
+    if seen is None:
+        seen = set()
+    ptrs: set[int] = set()
+    if depth > 6 or id(obj) in seen:
+        return ptrs
+    seen.add(id(obj))
+    if isinstance(obj, torch.Tensor):
+        ptrs.add(obj.untyped_storage().data_ptr())
+        return ptrs
+    if isinstance(obj, (list, tuple, set)):
+        for v in obj:
+            ptrs |= _cache_storage_ptrs(v, seen, depth + 1)
+    elif isinstance(obj, dict):
+        for v in obj.values():
+            ptrs |= _cache_storage_ptrs(v, seen, depth + 1)
+    elif hasattr(obj, "__dict__"):
+        for v in vars(obj).values():
+            ptrs |= _cache_storage_ptrs(v, seen, depth + 1)
+    return ptrs
+
+
+@torch.no_grad()
+def _storage_isolation(model, tok, ctxs, hook, render_fn, ids_fn) -> dict:
+    """Deepcopied per-draw cache storages disjoint from the base prefill cache."""
+    input_ids, attention_mask, _ = _encode_left_padded(model, tok, ctxs, render_fn, ids_fn)
+    _, base_past = _shared_prefill_forward(model, input_ids, attention_mask, hook)
+    base = _cache_storage_ptrs(base_past)
+    dup = _cache_storage_ptrs(copy.deepcopy(base_past))
+    shared = base & dup
+    return {
+        "n_base_storages": len(base),
+        "n_copy_storages": len(dup),
+        "n_shared_storages": len(shared),
+        "disjoint": not shared,
+    }
+
+
+def _run_variant(
+    model, tok, ctxs, *, hook_factory, k: int, draws: int, exact: bool, render_fn, ids_fn
+) -> dict:
+    """One (batch × {unhooked|hooked}) battery pass; hooks freshly installed
+    per run (a prefill consumes the armed edit)."""
+    assert draws >= 2, "leg (e2) needs >= 2 draws (a sibling must exist)"
+
+    def _with_hook(fn, *fargs, **fkw):
+        hook = hook_factory(model) if hook_factory else None
+        if hook is not None:
+            hook.install()
+        try:
+            return fn(*fargs, hook=hook, **fkw)
+        finally:
+            if hook is not None:
+                hook.remove()
+
+    # leg 0 — identical-run nondeterminism, measured FIRST.
+    run1 = _with_hook(
+        _shared_step_logits, model, tok, ctxs, k=k, draws=2, render_fn=render_fn, ids_fn=ids_fn
+    )
+    run2 = _with_hook(
+        _shared_step_logits, model, tok, ctxs, k=k, draws=2, render_fn=render_fn, ids_fn=ids_fn
+    )
+    leg0 = _pairwise_drift(run1, run2)
+
+    # leg (b) — shared vs the REAL generate() per-draw-prefill reference.
+    serial = _with_hook(
+        _serial_step_logits, model, tok, ctxs, k=k, render_fn=render_fn, ids_fn=ids_fn
+    )
+    shared = _with_hook(
+        _shared_step_logits, model, tok, ctxs, k=k, draws=draws, render_fn=render_fn, ids_fn=ids_fn
+    )
+    n_common = min(len(serial), min(len(s) for s in shared))
+    assert n_common >= 2, (len(serial), [len(s) for s in shared])
+    b_bitwise = True
+    b_max_abs = 0.0
+    b_max_dls = 0.0
+    b_argmax_agree = 0
+    b_argmax_total = 0
+    for i in range(draws):
+        for t in range(n_common):
+            sa, sb = shared[i][t], serial[t]
+            if not torch.equal(sa, sb):
+                b_bitwise = False
+            b_max_abs = max(b_max_abs, float((sa - sb).abs().max()))
+            b_max_dls = max(
+                b_max_dls,
+                float((tF.log_softmax(sa, dim=-1) - tF.log_softmax(sb, dim=-1)).abs().max()),
+            )
+            agree = (sa.argmax(dim=-1) == sb.argmax(dim=-1)).all()
+            b_argmax_agree += int(bool(agree))
+            b_argmax_total += 1
+    tol = max(LOGSOFTMAX_TOL_FLOOR, 10.0 * leg0["max_abs_log_softmax"])
+    if exact:
+        b_pass = b_bitwise
+    else:
+        b_pass = (b_argmax_agree == b_argmax_total) and (b_max_dls <= tol)
+    leg_b = {
+        "n_steps_compared": n_common,
+        "draws": draws,
+        "bitwise": b_bitwise,
+        "max_abs_logit": b_max_abs,
+        "max_abs_log_softmax": b_max_dls,
+        "argmax_agreement": f"{b_argmax_agree}/{b_argmax_total}",
+        "tolerance_regime": "exact-bitwise" if exact else "bf16-two-tier",
+        "log_softmax_tol": None if exact else tol,
+        "passed": bool(b_pass),
+    }
+
+    # leg (e2) — branch independence, EXACT (fallback: storage isolation).
+    isolation = _with_hook(_storage_isolation, model, tok, ctxs, render_fn=render_fn, ids_fn=ids_fn)
+    if leg0["bitwise"]:
+        base = shared  # the unperturbed run above
+        vocab = base[0][0].shape[-1]
+        forced = (base[0][0].argmax(dim=-1) + 1) % vocab
+        perturbed = _with_hook(
+            _shared_step_logits,
+            model,
+            tok,
+            ctxs,
+            k=k,
+            draws=draws,
+            render_fn=render_fn,
+            ids_fn=ids_fn,
+            force_first={0: forced},
+        )
+        # Draw 0 must actually have been perturbed (steps > 0 diverge or texts
+        # differ); siblings must be BITWISE unchanged through steps 2..k.
+        perturb_took = any(not torch.equal(base[0][t], perturbed[0][t]) for t in range(1, n_common))
+        sib_exact = all(
+            torch.equal(base[i][t], perturbed[i][t])
+            for i in range(1, draws)
+            for t in range(n_common)
+        )
+        leg_e2 = {
+            "mode": "bitwise-sibling",
+            "perturbation_effective": bool(perturb_took),
+            "siblings_bitwise_through_steps": n_common,
+            "passed": bool(sib_exact and perturb_took),
+        }
+    else:
+        # Plan-sanctioned fallback (never a widened threshold): the rig is not
+        # bitwise-deterministic across identical runs, so the sibling read is
+        # replaced by the direct cache-byte / storage-isolation assert.
+        leg_e2 = {
+            "mode": "cache-isolation-fallback",
+            "identical_run_drift": leg0,
+            "passed": bool(isolation["disjoint"]),
+        }
+
+    return {
+        "leg0_identical_run": leg0,
+        "leg_b": leg_b,
+        "leg_e2": leg_e2,
+        "storage_isolation": isolation,
+        "passed": bool(leg_b["passed"] and leg_e2["passed"]),
+    }
+
+
+def _leg_f_wall(model, tok, ctxs, *, draws: int, max_new_tokens: int, render_fn, ids_fn) -> dict:
+    """Reported-only wall comparison through the PUBLIC generate_batch surface."""
+    t0 = time.monotonic()
+    generate_batch(
+        model, tok, ctxs, n=draws, max_new_tokens=max_new_tokens, temperature=1.0,
+        seed_base=2389, render_fn=render_fn, ids_fn=ids_fn, share_prefill=False,
+    )  # fmt: skip
+    serial_s = time.monotonic() - t0
+    t0 = time.monotonic()
+    generate_batch(
+        model, tok, ctxs, n=draws, max_new_tokens=max_new_tokens, temperature=1.0,
+        seed_base=2389, render_fn=render_fn, ids_fn=ids_fn, share_prefill=True,
+    )  # fmt: skip
+    shared_s = time.monotonic() - t0
+    return {
+        "draws": draws,
+        "max_new_tokens": max_new_tokens,
+        "serial_s": serial_s,
+        "shared_s": shared_s,
+        "speedup": (serial_s / shared_s) if shared_s > 0 else None,
+    }
+
+
+def run_battery(
+    model,
+    tok,
+    batches: dict[str, list[dict]],
+    *,
+    k_eq: int,
+    draws: int,
+    exact: bool,
+    render_fn=None,
+    ids_fn=None,
+    hook_layer: int | None = None,
+    wall_draws: int = 0,
+    wall_max_new_tokens: int = 256,
+) -> dict:
+    """The full battery over every (batch × {unhooked, hooked}) variant."""
+    n_layers = model.config.num_hidden_layers
+
+    def _hook_factory(m) -> DeltaHook:
+        torch.manual_seed(7)
+        delta = torch.randn(m.config.hidden_size, dtype=torch.float32)
+        layer = hook_layer if hook_layer is not None else max(0, n_layers // 2 - 1)
+        return DeltaHook(m, layer=layer, delta=delta, alpha=1.0)
+
+    variants: dict[str, dict] = {}
+    walls: dict[str, dict] = {}
+    for name, ctxs in batches.items():
+        for variant, factory in (("unhooked", None), ("hooked", _hook_factory)):
+            logger.info("[battery] batch=%s variant=%s n_ctx=%d", name, variant, len(ctxs))
+            variants[f"{name}.{variant}"] = _run_variant(
+                model,
+                tok,
+                ctxs,
+                hook_factory=factory,
+                k=k_eq,
+                draws=draws,
+                exact=exact,
+                render_fn=render_fn,
+                ids_fn=ids_fn,
+            )
+        if wall_draws > 0:
+            walls[name] = _leg_f_wall(
+                model,
+                tok,
+                ctxs,
+                draws=wall_draws,
+                max_new_tokens=wall_max_new_tokens,
+                render_fn=render_fn,
+                ids_fn=ids_fn,
+            )
+    verdict = "PASS" if all(v["passed"] for v in variants.values()) else "FAIL"
+    return {
+        "verdict": verdict,
+        "criterion": (
+            "PASS <=> leg (b) AND leg (e2) pass for every (batch x {unhooked, hooked}) "
+            "variant; leg (b) exact-bitwise on fp32 rigs, bf16 two-tier (argmax agreement "
+            "== 100% AND max |dlog-softmax| <= max(0.05, 10x leg-0 drift)) on the "
+            "production rig; leg (e2) EXACT always (cache-isolation fallback only when "
+            "leg 0 measures the rig non-bitwise); FAIL-OPEN — run proceeds serial"
+        ),
+        "k_eq": k_eq,
+        "draws": draws,
+        "exact_regime": exact,
+        "variants": variants,
+        "wall_leg_f": walls or None,
+    }
+
+
+# ── batch selection over the real bank ────────────────────────────────
+
+
+def _select_cell_batches(tok, contexts: dict, batch_size: int) -> dict[str, list[dict]]:
+    """One LONG-context and one SHORT-context cell batch (leg f, plan item 5),
+    picked mechanically by rendered token length of each cell's first context;
+    batches keep unequal lengths so LEFT padding is engaged."""
+    by_cell: dict[str, list[str]] = {}
+    for cid in sorted(contexts):
+        by_cell.setdefault(contexts[cid]["cell"], []).append(cid)
+    probe_len = {
+        cell: len(R.BANK29.context_token_ids_2389(tok, contexts[cids[0]]))
+        for cell, cids in by_cell.items()
+    }
+    long_cell = max(probe_len, key=lambda c: probe_len[c])
+    short_cell = min(probe_len, key=lambda c: probe_len[c])
+    out: dict[str, list[dict]] = {}
+    for name, cell in (("long", long_cell), ("short", short_cell)):
+        ctxs = [contexts[cid] for cid in by_cell[cell][: max(batch_size, 2)]]
+        lens = {len(R.BANK29.context_token_ids_2389(tok, c)) for c in ctxs}
+        for cid in by_cell[cell][max(batch_size, 2) :]:
+            if len(lens) >= 2:
+                break
+            c = contexts[cid]
+            ctxs.append(c)
+            lens.add(len(R.BANK29.context_token_ids_2389(tok, c)))
+        assert len(lens) >= 2, f"{cell}: could not build an unequal-length batch"
+        out[name] = ctxs
+    logger.info(
+        "[battery] cells: long=%s (%d tok) short=%s (%d tok)",
+        long_cell,
+        probe_len[long_cell],
+        short_cell,
+        probe_len[short_cell],
+    )
+    return out
+
+
+# ── CLI ────────────────────────────────────────────────────────────────
+
+
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    ap = argparse.ArgumentParser(description="Issue #2389 gate-4b share_prefill battery (M-N2).")
+    ap.add_argument("--out-root", type=Path, default=None)
+    ap.add_argument("--offline-tiny", action="store_true", help="no-network CPU tiny rig")
+    ap.add_argument("--tiny", action="store_true", help="run.py tiny model over real contexts")
+    ap.add_argument("--k-eq", type=int, default=K_EQ_DEFAULT)
+    ap.add_argument("--draws", type=int, default=3)
+    ap.add_argument("--batch-size", type=int, default=4)
+    ap.add_argument("--f-draws", type=int, default=10, help="leg (f) draw count (production K)")
+    ap.add_argument("--f-max-new-tokens", type=int, default=256)
+    ap.add_argument("--skip-wall", action="store_true", help="skip leg (f) (smoke)")
+    ap.add_argument("--upload", choices=("full", "none", "local-mirror"), default="full")
+    ap.add_argument(
+        "--import-check",
+        action="store_true",
+        help="resolve deferred imports + args-attribute completeness, then exit 0",
+    )
+    return ap.parse_args(argv)
+
+
+def _import_check() -> int:
+    from tokenizers import Tokenizer  # noqa: F401
+    from transformers import PreTrainedTokenizerFast  # noqa: F401
+    from transformers.models.qwen3_next import Qwen3NextConfig  # noqa: F401
+
+    from explore_persona_space.orchestrate.argcheck import assert_args_attributes_defined
+
+    assert_args_attributes_defined(__file__)
+    print("[import-check] OK")
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
+    args = parse_args(argv)
+    if args.import_check:
+        return _import_check()
+    if args.out_root is None:
+        raise SystemExit("--out-root is required (unless --import-check)")
+
+    cfg = None
+    if args.offline_tiny:
+        model, tok = _offline_tiny_model_and_tok()
+        batches = OFFLINE_BATCHES
+        render_fn = ids_fn = None
+        exact = True
+        mode = "offline-tiny"
+    else:
+        rargv = ["--phase", "anchors", "--out-root", str(args.out_root), "--upload", args.upload]
+        if args.tiny:
+            rargv.append("--tiny")
+        cfg = R.build_config(R.parse_args(rargv))
+        model, tok = R.load_model_and_tokenizer(cfg)
+        batches = _select_cell_batches(tok, R.BANK.build_contexts(), args.batch_size)
+        render_fn, ids_fn = R.BANK29.render_context_2389, R.BANK29.context_token_ids_2389
+        exact = bool(args.tiny)  # tiny = fp32 CPU; production = bf16 CUDA
+        mode = "tiny" if args.tiny else "production"
+
+    report = run_battery(
+        model,
+        tok,
+        batches,
+        k_eq=args.k_eq,
+        draws=args.draws,
+        exact=exact,
+        render_fn=render_fn,
+        ids_fn=ids_fn,
+        wall_draws=0 if args.skip_wall else args.f_draws,
+        wall_max_new_tokens=args.f_max_new_tokens,
+    )
+    report["mode"] = mode
+    report["ts"] = datetime.now(UTC).isoformat()
+    report["repro"] = R._repro(cfg) if cfg is not None else {"mode": mode}
+
+    gates_dir = Path(args.out_root) / "gates"
+    gates_dir.mkdir(parents=True, exist_ok=True)
+    out_path = gates_dir / GATE_NAME
+    R._write_json_atomic(out_path, report)
+    logger.info("[battery] verdict=%s -> %s", report["verdict"], out_path)
+    if cfg is not None and args.upload != "none":
+        R._upload_dir(cfg, cfg.gates_dir, f"{R.HF_PREFIX}/analysis_tensors/gates", [GATE_NAME])
+    # FAIL-OPEN: the verdict rides the artifact; a completed battery exits 0.
+    print(f"[phase=share_prefill_gate_done] verdict={report['verdict']}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

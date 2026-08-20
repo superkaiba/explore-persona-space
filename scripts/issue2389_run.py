@@ -1185,6 +1185,13 @@ class RunConfig:
     # capregen raised-cap contract). Default False so the per-cell cap table
     # (CELL_MAX_NEW_TOKENS + gate-slice recalibration) governs generation.
     max_new_tokens_explicit: bool = False
+    # Plan §4.7 item 5 (pin 2): "off" (default) keeps every generation call
+    # on the serial per-draw-prefill path; "auto" arms share_prefill=True
+    # ONLY when gates/share_prefill_equivalence.json carries verdict PASS.
+    # Resolved ONCE per phase at entry into share_prefill_armed (the freeze
+    # point) — FAIL-OPEN: absent/FAIL artifact => serial.
+    share_prefill_mode: str = "off"
+    share_prefill_armed: bool = False
 
     @property
     def rollouts_dir(self) -> Path:
@@ -1324,6 +1331,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--smoke", action="store_true", help="tiny per-arm-class slice")
     ap.add_argument("--pilot", action="store_true", help="grid: timing pilot only")
     ap.add_argument(
+        "--share-prefill",
+        choices=("off", "auto"),
+        default="off",
+        help="plan §4.7 item 5 (pin 2): 'auto' arms share_prefill=True in the anchors/grid "
+        "generation calls ONLY when gates/share_prefill_equivalence.json (the gate-4b "
+        "pod-side battery artifact) carries verdict PASS; 'off' (default) stays serial. "
+        "There is deliberately NO unconditional 'on' — the gate artifact is the only "
+        "arming path (FAIL-OPEN).",
+    )
+    ap.add_argument(
         "--force",
         action="store_true",
         help="re-run a completed bank/anchors/margin phase (resume override ONLY — "
@@ -1391,6 +1408,7 @@ def build_config(args: argparse.Namespace) -> RunConfig:
         capture_batch=args.capture_batch,
         max_new_tokens=args.max_new_tokens if args.max_new_tokens is not None else MAX_NEW_TOKENS,
         max_new_tokens_explicit=args.max_new_tokens is not None,
+        share_prefill_mode=args.share_prefill,
         anchor_draws=args.anchor_draws,
         grid_draws=args.grid_draws,
         seed_base=args.seed_base,
@@ -2632,6 +2650,7 @@ def _generate_anchor_rows(
             seed_base=cfg.seed_base,
             render_fn=BANK29.render_context_2389,
             ids_fn=BANK29.context_token_ids_2389,
+            share_prefill=cfg.share_prefill_armed,
         )
         for b, cid in enumerate(chunk):
             ctx = contexts[cid]
@@ -2963,6 +2982,40 @@ def _gate_slice_cap_recalibration(cfg: RunConfig, regime_fp: str, draws: int) ->
     return recalibrated
 
 
+SHARE_PREFILL_GATE_NAME = "share_prefill_equivalence.json"
+
+
+def _resolve_share_prefill(cfg: RunConfig, phase: str) -> RunConfig:
+    """Freeze the share_prefill arming for THIS phase run (plan §4.7 item 5
+    pin 2): armed <=> --share-prefill auto AND the gate-4b battery artifact
+    (gates/share_prefill_equivalence.json, written by
+    scripts/issue2389_share_prefill_gate.py) carries verdict PASS. Absent /
+    FAIL / "off" => serial (FAIL-OPEN); the decision is logged either way and
+    never re-read mid-phase."""
+    if cfg.share_prefill_mode != "auto":
+        cfg.share_prefill_armed = False
+        return cfg
+    path = cfg.gates_dir / SHARE_PREFILL_GATE_NAME
+    if not path.exists():
+        logger.info(
+            "[share-prefill:%s] mode=auto but gate artifact missing at %s — staying serial",
+            phase,
+            path,
+        )
+        cfg.share_prefill_armed = False
+        return cfg
+    verdict = json.loads(path.read_text()).get("verdict")
+    cfg.share_prefill_armed = verdict == "PASS"
+    logger.info(
+        "[share-prefill:%s] gate verdict=%s -> share_prefill=%s (%s)",
+        phase,
+        verdict,
+        cfg.share_prefill_armed,
+        path,
+    )
+    return cfg
+
+
 def phase_anchors(cfg: RunConfig) -> int:
     """P2: unpatched temp-1.0 anchors, contexts SHARDED across workers, the
     gate-3 slice generated + uploaded FIRST so the SYNC judge overlaps the
@@ -2971,6 +3024,7 @@ def phase_anchors(cfg: RunConfig) -> int:
         "[phase=anchors] worker=%d/%d smoke=%s", cfg.worker_index, cfg.num_workers, cfg.smoke
     )
     cfg = _adopt_pilot_gen_batch(cfg)  # plan §4.7 item 3
+    cfg = _resolve_share_prefill(cfg, "anchors")  # plan §4.7 item 5 (pin 2)
     _entry_sweep(cfg, "anchors")
     # >= 2 draws even under --smoke: the disjoint-half floor F_act needs k >= 2.
     draws = 2 if cfg.smoke else cfg.anchor_draws
@@ -3263,6 +3317,7 @@ def run_block(
                 seed_base=cfg.seed_base,
                 render_fn=BANK29.render_context_2389,
                 ids_fn=BANK29.context_token_ids_2389,
+                share_prefill=cfg.share_prefill_armed,
             )
         finally:
             stack.remove()
@@ -3376,6 +3431,7 @@ def phase_grid(cfg: RunConfig) -> int:
     if not cfg.pilot:
         # plan §4.7 item 3 (the pilot itself sweeps its own candidate set)
         cfg = _adopt_pilot_gen_batch(cfg)
+        cfg = _resolve_share_prefill(cfg, "grid")  # plan §4.7 item 5 (pin 2)
     bank = _load_bank(cfg)
     manifest = _load_frozen_manifest(cfg)
     frozen_sha = _sha256_bytes(json.dumps(manifest, sort_keys=True, ensure_ascii=False).encode())
