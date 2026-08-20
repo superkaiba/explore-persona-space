@@ -65,11 +65,14 @@ commit_results() { # commit_results <msg> <path>...
 # ---------------------------------------------------------------- P0: env ---
 echo "[phase=p0_env]"
 if [ ! -x "$BCB_PY" ]; then
-  uv venv /opt/bcb-venv --python 3.11
-  # BigCodeBench eval requirement set (plan section 11 fork 1). pip warns-and-
-  # proceeds on an unknown extra; the G1 control 25/25 gate below is the
-  # binding completeness check, plus the pilot's named misses explicitly.
-  uv pip install --python "$BCB_PY" "bigcodebench[eval]" scikit-learn matplotlib flask
+  # BigCodeBench's own pinned eval requirement set (plan section 11 fork 1;
+  # 73 pins targeting the py3.10 era — the `bigcodebench` PyPI package has NO
+  # `eval` extra, and the base install left the G1 control at 18/25). The
+  # python-levenshtein pin compiles against Python.h (apt python3.10-dev).
+  apt-get update -qq && apt-get install -y -qq python3.10-dev
+  uv venv /opt/bcb-venv --python 3.10
+  curl -sSfL https://raw.githubusercontent.com/bigcode-project/bigcodebench/main/Requirements/requirements-eval.txt -o /tmp/bcb-eval-reqs.txt
+  uv pip install --python "$BCB_PY" -r /tmp/bcb-eval-reqs.txt bigcodebench
 fi
 "$BCB_PY" -c "import bigcodebench" || { echo "[p0] bcb-venv import failed"; exit 1; }
 
