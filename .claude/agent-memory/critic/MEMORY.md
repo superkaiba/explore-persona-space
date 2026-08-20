@@ -27,6 +27,7 @@
 - [Absolute floor on re-anchored baseline](feedback_absolute_floor_on_reanchored_baseline.md) — multiply floor through min pre (#570)
 - [Stale-serve gate calibration](feedback_stale_serve_identity_threshold.md) — threshold BETWEEN bug ~19-27% and clean ~0 (#585)
 - [Unsatisfiable-gate re-spec](feedback_unsatisfiable_gate_respec_review.md) — two-arm fix + grain re-spec, keep cap (#1336)
+- [Amendment old-value residual grep](feedback_amendment_old_value_residual_grep.md) — N-anchor byte-exact ≠ site-set complete; grep old value plan-wide (#823 v11)
 - [Row-quarantine containment](feedback_row_quarantine_containment_review.md) — exact-at-threshold; common-mode residual; zero-edge (#1336)
 - [Twin-gate band below leak onset](feedback_twin_gate_band_below_leak_onset.md) — band below onset = uninformative; recheck flat panels (#591)
 - [Seed-ceiling within-vs-cross-seed](feedback_seed_ceiling_within_vs_cross_seed.md) — 0.96-0.98 = within-seed, not cross-seed (#602)

@@ -100,4 +100,6 @@
 - [Seeded vLLM sampling not reproducible cross-config](feedback_vllm_seeded_sampling_not_reproducible_cross_config.md) — same seed ≠ same output across batch/engine shape; prefill-continuation, never subset-resample (#1336)
 - [vLLM FA3-on-H100 lacks tanh softcap — gemma-2 dies at init](feedback_vllm_fa3_gemma2_softcap_fa2_pin.md) — pin VLLM_FLASH_ATTN_VERSION=2 per-model before LLM(); envs lazily read (#2221)
 - [Adoptable tests: repo-root paths + no live HF fetch](feedback_adoptable_tests_no_worktree_paths_no_network.md) — /tmp evidence suites still need adoption shape; Step 9c runs tests/ fleet-wide (#1491)
+- [worktree registration for deletion gates: parse-free, never the porcelain](feedback_worktree_porcelain_newline_fail_closed.md) — candidate gitfile + admin gitdir-file enumeration (byte-exact); hardened listing = defence-in-depth only after 3 reproducible parser fail-opens (#2147 r4/r5/r6)
 - [Synthetic ridge fixtures: shared map + noise floor](feedback_synthetic_ridge_fixture_edge_lambda.md) — noiseless→low-edge / unrelated→high-edge λ exhausts edge-extension dispositions; probe fixture through the real fit first (#2330)
+- [Batch-path smokes hand off via checkpoint](feedback_batch_api_smoke_sla_handoff.md) — 48-req batch queued >75 min (24h SLA); verify re-attach once, then record batch id + resume command, orchestrator owns the watch (#823)
