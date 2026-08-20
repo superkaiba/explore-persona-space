@@ -107,6 +107,7 @@
 
 ## Infra-plan reviews
 - [Infra-plan checklist](feedback_infra_plan_review_checklist.md) — protection-illusion holes, choke-point greps, TOCTOU (#564-#884)
+- [Kill-criterion grep hits override branch](feedback_kill_criterion_grep_matches_override_branch.md) — replay grep-shaped falsifiers; env-gated legacy branches self-trigger them (#2212)
 - [Literal-sweep prose-anchor pins](feedback_literal_sweep_prose_anchor_pins.md) — cap-raise sweeps: `.index()` prose anchors escape token greps; replay expected residuals (#2391)
 - [Lexicon live-fire inflection gap](feedback_lexicon_livefire_inflection_gap.md) — replay the exact in-repo regex on the incident artifact; "confirmed"≠"confirms" (#2198)
 - [Preferred-channel fixture discrimination](feedback_preferred_channel_fixture_discrimination.md) — legacy path may already resolve the demo fixture; demand legacy-fails fixture or channel-naming counter (#2194)
