@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2422,
+  "highest_id": 2423,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10993,6 +10993,13 @@
       "path": "tasks/running/2422",
       "status": "running",
       "title": "Briefs pointing a worktree-based reviewer at task state must pin the absolute main-checkout path (worktree plans/plan.md resolves to a stale version)"
+    },
+    "2423": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2423",
+      "status": "proposed",
+      "title": "Step 5a sibling sync: the #2208 satisfiability probe never runs on a SCRIPT-only sync, so a synced sibling script's branch-era-unsatisfiable src/ import reds the gate"
     },
     "244": {
       "has_clean_result": false,
