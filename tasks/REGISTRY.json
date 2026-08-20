@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2432,
+  "highest_id": 2433,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11063,6 +11063,13 @@
       "path": "tasks/proposed/2432",
       "status": "proposed",
       "title": "Step 10d pre-push lint gate: 900s per-leg fence is under the measured 799-1085s wall, crashing gates fleet-wide"
+    },
+    "2433": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2433",
+      "status": "proposed",
+      "title": "workflow_lint size-ratchet: 09-step-5.md + 18-step-10d.md regrew past SKILL_DOC_SIZE_GRANDFATHER caps \u2014 fleet-wide no-flags rc=1"
     },
     "244": {
       "has_clean_result": false,
