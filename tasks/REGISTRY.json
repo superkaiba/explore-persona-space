@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2417,
+  "highest_id": 2418,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10958,6 +10958,13 @@
       "path": "tasks/proposed/2417",
       "status": "proposed",
       "title": "Infra: version-brittle [Pp]ickle assertion reds the gate on py3.12 worktrees + worktree/main interpreter divergence"
+    },
+    "2418": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2418",
+      "status": "proposed",
+      "title": "Infra: worktree plans/plan.md symlink resolves to a STALE plan \u2014 briefs following the plan-handoff convention can review against a superseded plan"
     },
     "244": {
       "has_clean_result": false,
