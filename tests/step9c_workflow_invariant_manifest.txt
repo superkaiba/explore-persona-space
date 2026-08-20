@@ -83,6 +83,7 @@ tests/test_mapping_baselines_wiring_pins.py
 tests/test_no_auto_runpod_path_under_any_failure.py
 tests/test_no_direct_task_path_construction.py
 tests/test_no_dollar_budget_caps.py
+tests/test_no_import_time_registry_mutation.py
 tests/test_no_per_file_raw_completions_loop.py
 tests/test_no_pod_side_task_py_shellout.py
 tests/test_no_progress_respawn.py

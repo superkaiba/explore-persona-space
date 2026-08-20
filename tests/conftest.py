@@ -454,6 +454,85 @@ def _stub_fleet_mutating_passes(asw, monkeypatch):
         monkeypatch.setattr(asw, pass_name, lambda *a, **kw: None)
 
 
+# ── #2217: import-time registry-mutation guard (collection-time measurement) ──
+# pytest imports every COLLECTED module before running any test, so a module-
+# level registration into the global CONTEXTS / NEGATIVE_PANELS registries
+# poisons every other module's view for the whole run — invisible to the Step
+# 9c paired-PREFIX replay when the offender sorts after the victim (#2059's
+# residual blind class; incident #2217). Measure at collection: snapshot the
+# key-sets at pytest_configure (== the fresh-import baseline — conftest
+# imports the registry modules eagerly, before any test module; NEVER a
+# hardcoded count), diff after every collector finishes (attributing ADDITION
+# growth to that collector's nodeid), and snapshot again at
+# pytest_collection_finish — post-collection, pre-run — so the assertion arm
+# can check full key-set EQUALITY with the baseline (removals included)
+# without false-positiving on RUNTIME leaks from tests that run earlier in
+# the session. The assertion arm is
+# tests/test_no_import_time_registry_mutation.py (a NORMAL failing test names
+# offenders; a collection abort would exit rc=2 — indeterminate at the Step
+# 9c compare — instead of a named NEW failure).
+from explore_persona_space.artifacts.context import CONTEXTS as _GUARD_CONTEXTS  # noqa: E402
+from explore_persona_space.artifacts.negatives import (  # noqa: E402
+    NEGATIVE_PANELS as _GUARD_PANELS,
+)
+
+IMPORT_TIME_REGISTRY_DELTAS: dict[str, dict[str, list[str]]] = {}
+_guard_baseline: dict[str, frozenset[str]] = {}
+_guard_prev: dict[str, set[str]] = {}
+_guard_post_collection: dict[str, frozenset[str]] = {}
+
+
+def pytest_configure(config):
+    """#2217 guard: snapshot the fresh-import registry key-sets (the baseline)."""
+    _guard_baseline["CONTEXTS"] = frozenset(_GUARD_CONTEXTS)
+    _guard_baseline["NEGATIVE_PANELS"] = frozenset(_GUARD_PANELS)
+    _guard_prev["contexts"] = set(_GUARD_CONTEXTS)
+    _guard_prev["panels"] = set(_GUARD_PANELS)
+
+
+def pytest_collectreport(report):
+    """#2217 guard: attribute registry ADDITION growth to the finishing collector."""
+    ctx, pan = set(_GUARD_CONTEXTS), set(_GUARD_PANELS)
+    dctx = ctx - _guard_prev["contexts"]
+    dpan = pan - _guard_prev["panels"]
+    if dctx or dpan:
+        IMPORT_TIME_REGISTRY_DELTAS[report.nodeid] = {
+            "CONTEXTS": sorted(dctx),
+            "NEGATIVE_PANELS": sorted(dpan),
+        }
+    _guard_prev["contexts"], _guard_prev["panels"] = ctx, pan
+
+
+def pytest_collection_finish(session):
+    """#2217 guard: post-collection, pre-run key-set snapshot (equality anchor)."""
+    _guard_post_collection["CONTEXTS"] = frozenset(_GUARD_CONTEXTS)
+    _guard_post_collection["NEGATIVE_PANELS"] = frozenset(_GUARD_PANELS)
+
+
+@pytest.fixture
+def import_time_registry_deltas():
+    """Per-collector registry ADDITION growth recorded during THIS run's
+    collection (#2217). A DEEP copy — mutating it cannot corrupt the record."""
+    return {
+        k: {kk: list(vv) for kk, vv in v.items()} for k, v in IMPORT_TIME_REGISTRY_DELTAS.items()
+    }
+
+
+@pytest.fixture
+def registry_collection_snapshots():
+    """(configure-time fresh-import baseline, post-collection snapshot) for the
+    guard test's key-set EQUALITY assert (#2217 SF1). Frozensets — immutable."""
+    return dict(_guard_baseline), dict(_guard_post_collection)
+
+
+@pytest.fixture
+def _registry_guard_internals():
+    """TEST-ONLY seam: the LIVE deltas dict + hook fns, so the guard's own
+    negative control executes the real hook body (#906 one-production-body-
+    test rule), never a copy."""
+    return IMPORT_TIME_REGISTRY_DELTAS, pytest_collectreport, _guard_prev
+
+
 @pytest.fixture
 def registry_hygiene():
     """`ensure_context` -> `register_fu3_contexts()` and `panel_name_for` both
