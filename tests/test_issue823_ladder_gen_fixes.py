@@ -898,6 +898,25 @@ def _mk_p0_artifacts(n: int = 4):
     return roster_obj, assignment_obj, by_persona, questions
 
 
+def _stage_p0_artifacts(stage: pathlib.Path, n: int = 4):
+    """Write a healthy P0 artifact set (persona files + roster + assignment) into ``stage``.
+
+    Module-level so both the ``run_p0_verify`` tests (stage under
+    ``tmp_path/stage``) and the ``main()`` fork tests (stage under
+    ``<out_root>/hf_stage/ladder`` — the exact path main composes) share one
+    staging shape. Returns ``(by_persona, questions)``.
+    """
+    roster_obj, assignment_obj, by_persona, questions = _mk_p0_artifacts(n)
+    stage.mkdir(parents=True)
+    for p in range(lg.N_PERSONAS):
+        (stage / f"persona{p:02d}_seed42.json").write_text(
+            json.dumps({"metadata": {}, "records": by_persona[p]})
+        )
+    (stage / "roster.json").write_text(json.dumps(roster_obj))
+    (stage / "assignment.json").write_text(json.dumps(assignment_obj))
+    return by_persona, questions
+
+
 class TestP0PromptIntegrityGate:
     def test_reconstruction_agrees_with_dispatch_serializer_when_healthy(self):
         # Transcription fidelity: the independent §4.1 transcription and the
@@ -1068,6 +1087,19 @@ class TestP0PromptIntegrityGate:
         f = next(x for x in report["failures_first50"] if x.get("field") == "arm_key")
         assert f["generated"] == repr("x")
 
+    def test_zero_arm_key_routes_to_report_not_crash(self, tmp_path):
+        # Round-6 BLOCKER 3: a nonempty UNREGISTERED integer arm key "0"
+        # previously reached the per-arm modulo (i % k with k == 0) and raised
+        # ZeroDivisionError BEFORE the designed rc-5 report. Parsed arm keys
+        # are now validated against the registered K_ARMS before any modulo,
+        # and an unregistered key routes to the (b) report path.
+        roster_obj, assignment_obj, by_persona, questions = _mk_p0_artifacts()
+        assignment_obj["arms"]["0"] = [0, 0, 0, 0]
+        report = self._expect_halt(tmp_path, roster_obj, assignment_obj, by_persona, questions, "b")
+        f = next(x for x in report["failures_first50"] if x.get("field") == "arm_key_unregistered")
+        assert f["generated"] == 0
+        assert f["registered"] == list(lg.K_ARMS)
+
     def test_non_dict_roster_root_routes_to_report_not_crash(self, tmp_path):
         # Round-5 BLOCKER 3: a non-dict roster.json root previously died on
         # .get (AttributeError) before the report machinery ran.
@@ -1213,15 +1245,8 @@ class TestP0PromptIntegrityGate:
                 )
 
     def _stage_artifacts(self, tmp_path, n: int = 4):
-        roster_obj, assignment_obj, by_persona, questions = _mk_p0_artifacts(n)
         stage = tmp_path / "stage"
-        stage.mkdir()
-        for p in range(lg.N_PERSONAS):
-            (stage / f"persona{p:02d}_seed42.json").write_text(
-                json.dumps({"metadata": {}, "records": by_persona[p]})
-            )
-        (stage / "roster.json").write_text(json.dumps(roster_obj))
-        (stage / "assignment.json").write_text(json.dumps(assignment_obj))
+        by_persona, questions = _stage_p0_artifacts(stage, n)
         return stage, by_persona, questions
 
     def test_run_p0_verify_roundtrip(self, tmp_path, monkeypatch):
@@ -1357,6 +1382,173 @@ class TestP0VerifyCheckpointRestart:
         self._counting(monkeypatch, calls)
         lg.run_p0_verify(stage, reports, tmp_path / "dl", 4)
         assert sorted(calls) == list(range(lg.N_PERSONAS))
+
+
+class TestP0VerifierSchemaCheckpointKey:
+    """Round-6 BLOCKER 1: the P0 checkpoint is keyed on the VERIFIER schema.
+
+    The generation fingerprint keys WHAT was generated; it says nothing about
+    which VERIFIER validated it. A checkpoint written by the round-4 verifier
+    (isinstance-int schema — records ``n_failures: 0`` for a
+    ``context_id: true`` record) must never be reused by the round-5+
+    verifier: a missing or differing ``verifier_schema_version`` discards the
+    WHOLE checkpoint (exactly like a fingerprint mismatch) and re-verifies
+    from scratch.
+    """
+
+    def _clean_run(self, tmp_path, monkeypatch):
+        b2, cv = _write_frozen_fixture(tmp_path, permute=False)
+        TestFrozenQuestionLoader._patch(monkeypatch, b2, cv)
+        stage, by_persona, _q = TestP0PromptIntegrityGate()._stage_artifacts(tmp_path)
+        reports = tmp_path / "reports"
+        lg.run_p0_verify(stage, reports, tmp_path / "dl", 4)
+        return stage, reports, by_persona
+
+    def test_checkpoint_written_with_current_schema_version(self, tmp_path, monkeypatch):
+        _stage, reports, _bp = self._clean_run(tmp_path, monkeypatch)
+        ckpt = json.loads((reports / "p0_verify_progress.json").read_text())
+        assert ckpt["verifier_schema_version"] == lg.P0_VERIFIER_SCHEMA_VERSION == 2
+
+    def test_missing_schema_key_discards_checkpoint(self, tmp_path, monkeypatch):
+        # Fixture (a): a checkpoint lacking the schema key (the round-4
+        # verifier never wrote one) is NOT reused — every persona is
+        # re-verified from scratch.
+        stage, reports, _bp = self._clean_run(tmp_path, monkeypatch)
+        ckpt_path = reports / "p0_verify_progress.json"
+        ckpt = json.loads(ckpt_path.read_text())
+        ckpt.pop("verifier_schema_version", None)
+        ckpt_path.write_text(json.dumps(ckpt))
+        calls: list[int] = []
+        TestP0VerifyCheckpointRestart._counting(monkeypatch, calls)
+        lg.run_p0_verify(stage, reports, tmp_path / "dl", 4)
+        assert sorted(calls) == list(range(lg.N_PERSONAS))
+
+    def test_old_schema_key_discards_checkpoint(self, tmp_path, monkeypatch):
+        # Fixture (b): an OLD schema version (1 == the round-4 isinstance-int
+        # contract) is treated exactly like a sha mismatch — re-verify.
+        stage, reports, _bp = self._clean_run(tmp_path, monkeypatch)
+        ckpt_path = reports / "p0_verify_progress.json"
+        ckpt = json.loads(ckpt_path.read_text())
+        ckpt["verifier_schema_version"] = 1
+        ckpt_path.write_text(json.dumps(ckpt))
+        calls: list[int] = []
+        TestP0VerifyCheckpointRestart._counting(monkeypatch, calls)
+        lg.run_p0_verify(stage, reports, tmp_path / "dl", 4)
+        assert sorted(calls) == list(range(lg.N_PERSONAS))
+
+    def test_round4_checkpoint_cannot_mask_boolean_context_id(self, tmp_path, monkeypatch):
+        # Fixture (c), end-to-end: a persona file carrying context_id: true
+        # WITH a clean prior checkpoint (correct file sha256, n_failures: 0,
+        # NO schema key — exactly what the round-4 verifier persisted for
+        # such a record) must be RE-verified and halt rc 5. Pre-fix, the
+        # reuse branch reconstructed seen pairs from the cached context ids,
+        # the boolean never reached the round-5 type-is-int check, and the
+        # gate PASSed — round 4's cache bypassed round 5's schema fix.
+        b2, cv = _write_frozen_fixture(tmp_path, permute=False)
+        TestFrozenQuestionLoader._patch(monkeypatch, b2, cv)
+        stage, _bp, _q = TestP0PromptIntegrityGate()._stage_artifacts(tmp_path)
+        blob = json.loads((stage / "persona01_seed42.json").read_text())
+        assert blob["records"][0]["context_id"] == 1  # the pair True aliases
+        blob["records"][0]["context_id"] = True
+        (stage / "persona01_seed42.json").write_text(json.dumps(blob))
+        reports = tmp_path / "reports"
+        reports.mkdir()
+        personas = {}
+        for p in range(lg.N_PERSONAS):
+            f = stage / f"persona{p:02d}_seed42.json"
+            recs = json.loads(f.read_text())["records"]
+            personas[str(p)] = {
+                "file_sha256": lg._sha256_file(f),
+                "n_records": len(recs),
+                "n_failures": 0,
+                "context_ids": sorted(r["context_id"] for r in recs),
+                "verified_at": "2026-08-01T00:00:00Z",
+            }
+        (reports / "p0_verify_progress.json").write_text(
+            json.dumps(
+                {
+                    "fingerprint": lg.generation_config_fingerprint()["sha256"],
+                    "personas": personas,
+                }
+            )
+        )
+        with pytest.raises(SystemExit) as excinfo:
+            lg.run_p0_verify(stage, reports, tmp_path / "dl", 4)
+        assert excinfo.value.code == lg.EXIT_P0_INTEGRITY == 5
+        report = json.loads((reports / "p0_integrity_report.json").read_text())
+        assert any(
+            x.get("kind") == "malformed_record" and x.get("persona_bucket") == 1
+            for x in report["failures_first50"]
+        )
+
+
+class TestMainP0VerifyForkAuthority:
+    """Round-6 BLOCKER 2: main()'s --p0-verify fork threads the domain authority.
+
+    Every prior authority-provenance test drove ``run_p0_verify`` directly, so
+    the WIRING in ``main()`` — production pinning ``N_CONTEXTS_FULL``, smoke
+    deriving the explicit ``--n-contexts`` override, the ``--p0-verify``
+    branch passing that value through — could regress while every direct
+    fixture stayed green. These tests drive ``main()`` itself. Offline: the
+    banked HF download is monkeypatched; no live calls.
+    """
+
+    def test_production_fork_pins_full_domain_and_halts_on_truncated_stage(
+        self, tmp_path, monkeypatch
+    ):
+        # Production main() pins the 5000-context domain; a coherent
+        # TRUNCATED (n=100) stage must halt rc 5 through the fork. In
+        # production mode main composes report_dir from the REPO's committed
+        # eval_results path, so the wrapper redirects ONLY report_dir to
+        # tmp_path (tests never write canonical paths) while the REAL
+        # run_p0_verify body executes with the threaded authority verbatim.
+        b2, cv = _write_frozen_fixture(tmp_path, permute=False)
+        TestFrozenQuestionLoader._patch(monkeypatch, b2, cv)
+        root = tmp_path / "prod_root"
+        _stage_p0_artifacts(root / "hf_stage" / "ladder", n=100)
+        reports = tmp_path / "reports"
+        real = lg.run_p0_verify
+        seen: dict = {}
+
+        def redirecting(stage_dir, report_dir, dl_dir, expected_n_contexts):
+            seen["args"] = (stage_dir, report_dir, dl_dir, expected_n_contexts)
+            return real(stage_dir, reports, dl_dir, expected_n_contexts)
+
+        monkeypatch.setattr(lg, "run_p0_verify", redirecting)
+        with pytest.raises(SystemExit) as excinfo:
+            lg.main(["--p0-verify", "--out-root", str(root)])
+        assert excinfo.value.code == lg.EXIT_P0_INTEGRITY == 5
+        stage_dir, report_dir, dl_dir, expected_n = seen["args"]
+        assert expected_n == lg.N_CONTEXTS_FULL == 5000  # caller-pinned, not the artifact's 100
+        assert stage_dir == root / "hf_stage" / "ladder"
+        assert dl_dir == root / "parent_inputs"
+        repo_root = pathlib.Path(lg.__file__).resolve().parents[1]
+        assert report_dir == repo_root / "eval_results" / "issue_823" / (
+            "inconsistent_origin_ladder"
+        )
+        report = json.loads((reports / "p0_integrity_report.json").read_text())
+        f = next(x for x in report["failures_first50"] if x.get("field") == "n_contexts_authority")
+        assert f["generated"] == 100 and f["expected"] == 5000
+
+    def test_smoke_fork_threads_explicit_count_and_passes_own_domain(self, tmp_path, monkeypatch):
+        # Smoke main() derives the authority from the EXPLICIT --n-contexts
+        # override. n=12 (NOT the smoke default 16) is load-bearing: if main
+        # ignored the override and pinned the default, the 12-context stage
+        # would halt on an authority mismatch — the PASS proves the explicit
+        # count threaded through the fork. Smoke report_dir lives under
+        # out_root, so no redirect is needed: the full real path runs.
+        b2, cv = _write_frozen_fixture(tmp_path, permute=False)
+        TestFrozenQuestionLoader._patch(monkeypatch, b2, cv)
+        root = tmp_path / "smoke_root"
+        _stage_p0_artifacts(root / "hf_stage" / "ladder", n=12)
+        lg.main(["--p0-verify", "--smoke", "--n-contexts", "12", "--out-root", str(root)])
+        ckpt_path = root / "eval_results" / "inconsistent_origin_ladder" / "p0_verify_progress.json"
+        ckpt = json.loads(ckpt_path.read_text())
+        assert len(ckpt["personas"]) == lg.N_PERSONAS
+        assert all(e["n_failures"] == 0 for e in ckpt["personas"].values())
+        assert not (
+            root / "eval_results" / "inconsistent_origin_ladder" / "p0_integrity_report.json"
+        ).exists()
 
 
 # ── Round-4 BLOCKER 3: offline cap-ladder state-machine pin over main() ──────
