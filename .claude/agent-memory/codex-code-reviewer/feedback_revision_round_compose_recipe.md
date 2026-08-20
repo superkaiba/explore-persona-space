@@ -1579,3 +1579,62 @@ raise matching a plan FAIL-OPEN pin; REFUSE-stands resume semantics) get a
 variant-adjudication instruction with the settled half named (direction =
 plan-consistent, settled) and the open half scoped (visibility, over-disarm,
 family consistency).
+
+**Numbering-correction round + sentinel collision with the PRIOR posted twin
+marker (#2389 review r4, 2026-08-20):** when an orchestrator off-by-one is
+corrected mid-task (impl marker carries a "Round accounting — CORRECTION"
+section), the PRIOR posted `epm:code-review-codex` marker's head sentinel can
+EQUAL the round digit the brief now demands (both "v4" here: the old
+numbering ran one ahead). Consequences: (a) tag-stripping the inlined prior
+verdict is NON-NEGOTIABLE — an unstripped copy would carry a head tag
+byte-identical to the new round's output tag, and any tag-anchored extraction
+could grab the PRIOR verdict; assert final `<!--` count == 2; (b) add a
+"Round numbering — read this FIRST" block naming every surface the old
+numbering touches (marker titles, "round-5 blockers"/"last round under the
+cap" cap-posture text, in-code "Round-5 X" comment labels — declare the
+labels not-a-defect), else the twin mis-frames cap pressure or flags the
+comments; (c) flag in the return that the posted prior marker shares the
+sentinel so the orchestrator extracts strictly from the round's OUTPUT FILE.
+Orchestrator-composed impl marker (429-killed implementer): frame it as
+verified-for-PRESENCE / unverified-for-CORRECTNESS, enumerate the MISSING
+self-reported evidence (pre-fix counterfactual table, a required safety
+confirmation) as explicit duties — the missing-confirmation seam plus a
+per-new-test would-fail-pre-fix classification (read control flow vs the
+round-parent blob; no pytest). Ledger dedup-vs-event-log discrepancy: when
+the context claims "0 open" but two ids' LATEST event is `raised` (re-raised
+by the twin, no addressed row after), do not resolve it — hand the twin a
+dedicated `## Ledger adjudication` output section with per-id
+VERIFIED-ADDRESSED/NOT-ADDRESSED lines (NOT-ADDRESSED re-raises under the
+EXACT persisted id), state that ledger bookkeeping is orchestrator business,
+and report the discrepancy in the return.
+
+**Guard-consolidation fix round → chokepoint-audit section + raise-vs-None
+seam (#2389 review r5 FINAL, 2026-08-20):** when a round answers a
+"guard-at-one-reader, other-readers-unguarded" blocker family by moving the
+guards INTO shared accessors (F inside `_load_cap_recalibration`, J inside
+`_pilot_selected_gen_batch → _reusable_pilot_report`), give the twin a
+dedicated `## Chokepoint audit` output section: per guarded artifact, an
+OWN-grep mandate (hand the compose-time reader inventory with HEAD-verified
+line anchors as STARTING inventory, plus grep command lines incl. a
+`json.load|read_text` direct-read hunt), three disposition buckets
+(guarded / exempt-with-reason — verify the stated reason / UNGUARDED-READER
+= finding), a per-artifact header verdict field (`COMPLETE | GAP`), and
+NAMED open questions the composer pre-traced but did not resolve (e.g. a
+same-named artifact in a DIFFERENT gates_dir read by another module's
+`_require_gates`; a test fixture that previously PINNED the bypass). Two
+sibling seams that ride along: (a) **raise-vs-None direction change** — a
+fix that converts a fail-open None return into a raise needs PER-CALLER
+adjudication across input shapes (absent / REFUSE-verdict / legacy
+pre-fix report missing new fields — every EXISTING out_root! / genuinely
+foreign): loud stop on foreign = designed; raise on merely-legacy/absent =
+resume wedge; (b) **adoption-predicate field-direction audit** — for each
+newly compared evidence field, verify the operator direction (`>=` lets
+stronger serve weaker; `==` on a coverage field risks perpetual re-measure;
+runtime `==` prices a re-measure per env rebuild) and hunt the invocation
+shape that can NEVER adopt (throughput wedge). Compose-time verify the
+implementer's exempt-reader claims yourself where cheap (the literal-`None`
+argument read) and mark them "compose-time confirmed; you confirm
+soundness". Also: line numbers in an impl marker captured mid-round drift
+tens of lines below HEAD for later sites in the same file — disclose the
+drift + hand HEAD-verified anchors, declare stale marker line numbers
+not-a-finding (symbols are the contract).
