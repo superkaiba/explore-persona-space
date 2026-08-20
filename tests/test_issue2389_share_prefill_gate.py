@@ -297,6 +297,115 @@ def test_battery_main_mode_mismatch_remeasures_and_overwrites(tmp_path):
     assert rec["mode"] == "offline-tiny" and "ts" in rec
 
 
+# ------- Round-5 H: adoption is evidence-strength-aware (domain-blind fix)
+
+
+_H_ARGV = [
+    "--offline-tiny",
+    "--skip-wall",
+    "--k-eq",
+    "2",
+    "--draws",
+    "2",
+    "--f-max-new-tokens",
+    "4",
+]
+
+
+def _h_args(tmp_path, extra=(), drop_skip_wall=False):
+    argv = [a for a in _H_ARGV if not (drop_skip_wall and a == "--skip-wall")]
+    return G.parse_args([*argv, "--out-root", str(tmp_path / "out"), *extra])
+
+
+def _h_report(**over) -> dict:
+    rec = {
+        "verdict": "PASS",
+        "mode": "offline-tiny",
+        "k_eq": 2,
+        "draws": 2,
+        "protocol_version": G.GATE_PROTOCOL_VERSION,
+        "batch_size": None,
+        "wall_draws": 0,
+        "wall_max_new_tokens": 4,
+        "wall_leg_f": None,
+        "repro": {"mode": "offline-tiny", **G._runtime_identity()},
+    }
+    rec.update(over)
+    return rec
+
+
+def _h_path(tmp_path, rec: dict):
+    p = tmp_path / "gates" / G.GATE_NAME
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(rec))
+    return p
+
+
+def test_r5h_adoption_positive_control(tmp_path):
+    """A report at equal-or-stronger evidence than this invocation IS adopted
+    (no over-refusal: the round-5 A idempotence is preserved)."""
+    path = _h_path(tmp_path, _h_report())
+    assert G._adoptable_gate_report(path, "offline-tiny", None, _h_args(tmp_path)) is not None
+    # STRONGER evidence (more equivalence steps/draws) is also adoptable.
+    path.write_text(json.dumps(_h_report(k_eq=8, draws=5)))
+    assert G._adoptable_gate_report(path, "offline-tiny", None, _h_args(tmp_path)) is not None
+
+
+def test_r5h_weaker_k_eq_or_draws_not_adoptable(tmp_path):
+    """Round-5 H (concern share-prefill-battery-domain-blind): a report with
+    FEWER equivalence steps / draws than this invocation is WEAKER evidence
+    and must not be called matching. FAILED at HEAD~: adopted."""
+    path = _h_path(tmp_path, _h_report(k_eq=1))
+    assert G._adoptable_gate_report(path, "offline-tiny", None, _h_args(tmp_path)) is None
+    path.write_text(json.dumps(_h_report(draws=1)))
+    assert G._adoptable_gate_report(path, "offline-tiny", None, _h_args(tmp_path)) is None
+
+
+def test_r5h_skip_wall_report_not_adoptable_by_wall_invocation(tmp_path):
+    """The canonical round-5 H example: a PASS produced under --skip-wall
+    (no wall measured) must NOT satisfy an invocation that would measure the
+    wall. FAILED at HEAD~: adopted, and the wall leg silently never ran."""
+    path = _h_path(tmp_path, _h_report())  # wall_draws=0, wall_leg_f absent
+    wall_args = _h_args(tmp_path, extra=["--f-draws", "1"], drop_skip_wall=True)
+    assert G._adoptable_gate_report(path, "offline-tiny", None, wall_args) is None
+    # A report that DID measure the wall at this shape serves the invocation.
+    path.write_text(
+        json.dumps(_h_report(wall_draws=1, wall_max_new_tokens=4, wall_leg_f={"short": {"ok": 1}}))
+    )
+    assert G._adoptable_gate_report(path, "offline-tiny", None, wall_args) is not None
+    # ...but a wall measured at a DIFFERENT decode shape does not.
+    path.write_text(
+        json.dumps(
+            _h_report(wall_draws=1, wall_max_new_tokens=256, wall_leg_f={"short": {"ok": 1}})
+        )
+    )
+    assert G._adoptable_gate_report(path, "offline-tiny", None, wall_args) is None
+
+
+def test_r5h_runtime_or_protocol_or_batch_mismatch_not_adoptable(tmp_path):
+    """torch/transformers identity (bf16 tolerance calibration is a
+    kernel-version property), the battery protocol version, and the batch
+    shape are all part of the adoption domain."""
+    args = _h_args(tmp_path)
+    for over in (
+        {"repro": {"mode": "offline-tiny", **G._runtime_identity(), "torch": "0.0.0"}},
+        {"protocol_version": 999},
+        {"batch_size": 4},  # offline invocation records/wants None
+    ):
+        path = _h_path(tmp_path, _h_report(**over))
+        assert G._adoptable_gate_report(path, "offline-tiny", None, args) is None, over
+
+
+def test_r5h_legacy_report_without_strength_fields_not_adoptable(tmp_path):
+    """A pre-round-5H report (no protocol/batch/wall/runtime fields) cannot
+    prove its evidence strength — re-measure, never adopt."""
+    path = _h_path(
+        tmp_path,
+        {"verdict": "PASS", "mode": "offline-tiny", "k_eq": 2, "draws": 2, "ts": "t"},
+    )
+    assert G._adoptable_gate_report(path, "offline-tiny", None, _h_args(tmp_path)) is None
+
+
 def test_early_separate_battery_sequence_keeps_family_arming_consistent(tmp_path):
     # Round-5 A orchestrator constraint: the B9-family standing remedy — run
     # the gate-4b battery as an EARLIER SEPARATE dispatch, then the anchors

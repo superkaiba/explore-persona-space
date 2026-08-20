@@ -81,6 +81,10 @@ from explore_persona_space.experiments.issue1415.steering import (  # noqa: E402
 logger = logging.getLogger("issue2389.share_prefill_gate")
 
 GATE_NAME = "share_prefill_equivalence.json"
+# Round-5 H (concern share-prefill-battery-domain-blind): bump on ANY change
+# to the battery's legs / tolerance convention / verdict criterion — adoption
+# refuses a report from a different protocol (re-measure, never adopt).
+GATE_PROTOCOL_VERSION = 1
 K_EQ_DEFAULT = 8
 # Binding leg-(b) bf16 tier: max |Δ log-softmax| floor (probability-space,
 # scale-free) — the realized tolerance is max(this, 10 × leg-0 drift).
@@ -557,7 +561,18 @@ def _compose_run_cfg(args: argparse.Namespace) -> "R.RunConfig":
     return R.build_config(R.parse_args(rargv))
 
 
-def _adoptable_gate_report(out_path: Path, mode: str, cfg: "R.RunConfig | None") -> dict | None:
+def _runtime_identity() -> dict[str, str]:
+    """torch/transformers versions — the kernel-level runtime identity the
+    battery's bf16 numerics + tolerance calibration are functions of
+    (round-5 H)."""
+    import transformers
+
+    return {"torch": str(torch.__version__), "transformers": str(transformers.__version__)}
+
+
+def _adoptable_gate_report(
+    out_path: Path, mode: str, cfg: "R.RunConfig | None", args: argparse.Namespace
+) -> dict | None:
     """An existing gate report THIS invocation may ADOPT instead of re-measuring.
 
     Round-5 A (r4 review) — the ``_reusable_pilot_report`` idiom applied to
@@ -570,8 +585,23 @@ def _adoptable_gate_report(out_path: Path, mode: str, cfg: "R.RunConfig | None")
     production — a mode mismatch is the designed B6 smoke->production
     upgrade path and re-measures + overwrites, never raises) and, for
     non-offline modes, the same regime (model id@revision + tiny/smoke
-    bits); an unrecognized verdict re-measures. Returns the adoptable record
-    or None (= run the battery)."""
+    bits); an unrecognized verdict re-measures.
+
+    Round-5 H (concern ``share-prefill-battery-domain-blind``): adoption is
+    additionally EVIDENCE-STRENGTH-aware — a report whose recorded battery
+    inputs are WEAKER than this invocation's (fewer equivalence steps /
+    draws, a different batch shape, no wall leg when this invocation would
+    measure one — the canonical ``--skip-wall``-produced PASS), a different
+    battery protocol version, or a different torch/transformers runtime
+    (the bf16 tolerance calibration is a kernel-version property) is NOT
+    called "matching": the battery re-measures + overwrites (a same-decision
+    overwrite keeps the verdict+mode digest, so live freezes are unaffected
+    — round-5 A). A recorded git commit differing from this checkout's is
+    WARN-only: crash-fix commits legitimately land between a battery run
+    and the plan §9 same-command resume, and a hard git pin would force a
+    re-measure on every resume — the runtime the numerics depend on is
+    pinned by the torch/transformers legs above. Returns the adoptable
+    record or None (= run the battery)."""
     if not out_path.exists():
         return None
     rec = json.loads(out_path.read_text())
@@ -588,6 +618,55 @@ def _adoptable_gate_report(out_path: Path, mode: str, cfg: "R.RunConfig | None")
             return None
         if bool(repro.get("tiny")) != bool(cfg.tiny) or bool(repro.get("smoke")) != bool(cfg.smoke):
             return None
+    weaker: list[str] = []
+    if rec.get("protocol_version") != GATE_PROTOCOL_VERSION:
+        weaker.append(
+            f"protocol_version={rec.get('protocol_version')!r} != {GATE_PROTOCOL_VERSION}"
+        )
+    if int(rec.get("k_eq") or -1) < int(args.k_eq):
+        weaker.append(f"k_eq={rec.get('k_eq')} < this invocation's {args.k_eq}")
+    if int(rec.get("draws") or -1) < int(args.draws):
+        weaker.append(f"draws={rec.get('draws')} < this invocation's {args.draws}")
+    want_batch = None if args.offline_tiny else int(args.batch_size)
+    if rec.get("batch_size", "<unrecorded>") != want_batch:
+        weaker.append(
+            f"batch_size={rec.get('batch_size', '<unrecorded>')!r} != this invocation's "
+            f"{want_batch!r} (padding shape is part of what the legs certify)"
+        )
+    if not args.skip_wall:
+        if int(rec.get("wall_draws") or -1) < int(args.f_draws) or not rec.get("wall_leg_f"):
+            weaker.append(
+                f"wall evidence weaker/absent (wall_draws={rec.get('wall_draws')}, "
+                f"wall_leg_f={'present' if rec.get('wall_leg_f') else 'absent'}) — a "
+                f"--skip-wall PASS must not stand in for a wall-measuring invocation"
+            )
+        elif int(rec.get("wall_max_new_tokens") or -1) != int(args.f_max_new_tokens):
+            weaker.append(
+                f"wall_max_new_tokens={rec.get('wall_max_new_tokens')} != this invocation's "
+                f"{args.f_max_new_tokens} (leg f is a production-shape wall comparison)"
+            )
+    repro = rec.get("repro") or {}
+    cur_rt = _runtime_identity()
+    if repro.get("torch") != cur_rt["torch"] or repro.get("transformers") != cur_rt["transformers"]:
+        weaker.append(
+            f"runtime torch={repro.get('torch')}/transformers={repro.get('transformers')} != "
+            f"this env's {cur_rt['torch']}/{cur_rt['transformers']} (bf16 tolerance "
+            "calibration is kernel-version-dependent)"
+        )
+    if weaker:
+        logger.info(
+            "[battery] existing %s-mode report NOT adoptable (%s) — re-measuring",
+            mode,
+            "; ".join(weaker),
+        )
+        return None
+    if cfg is not None and repro.get("git_commit") != R._git_sha():
+        logger.warning(
+            "[battery] adopting a report recorded at git %s != this checkout %s "
+            "(WARN-only: runtime identity is pinned by torch/transformers; --force re-measures)",
+            repro.get("git_commit"),
+            R._git_sha(),
+        )
     return rec
 
 
@@ -616,7 +695,7 @@ def main(argv: list[str] | None = None) -> int:
     gates_dir = Path(args.out_root) / "gates"
     out_path = gates_dir / GATE_NAME
     if not args.force:
-        existing = _adoptable_gate_report(out_path, mode, cfg)
+        existing = _adoptable_gate_report(out_path, mode, cfg, args)
         if existing is not None:
             # Round-5 A: idempotent same-command resume — NO model load, NO
             # re-measure, and crucially NO artifact rewrite (a fresh-``ts``
@@ -662,7 +741,15 @@ def main(argv: list[str] | None = None) -> int:
     )
     report["mode"] = mode
     report["ts"] = datetime.now(UTC).isoformat()
-    report["repro"] = R._repro(cfg) if cfg is not None else {"mode": mode}
+    # Round-5 H: the evidence-strength inputs _adoptable_gate_report compares
+    # (protocol version, batch shape, wall-leg strength; k_eq/draws are
+    # already inside run_battery's report). repro carries torch/transformers
+    # in EVERY mode so runtime identity is always checkable.
+    report["protocol_version"] = GATE_PROTOCOL_VERSION
+    report["batch_size"] = None if args.offline_tiny else int(args.batch_size)
+    report["wall_draws"] = 0 if args.skip_wall else int(args.f_draws)
+    report["wall_max_new_tokens"] = int(args.f_max_new_tokens)
+    report["repro"] = R._repro(cfg) if cfg is not None else {"mode": mode, **_runtime_identity()}
 
     gates_dir.mkdir(parents=True, exist_ok=True)
     R._write_json_atomic(out_path, report)
