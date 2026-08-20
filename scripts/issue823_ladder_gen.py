@@ -1138,8 +1138,12 @@ def p0_verify_persona_records(
     Per-record checks here:
 
     - strict schema: a record must be a dict with int ``context_id`` +
-      int ``persona_idx`` (malformed shapes become "c"/malformed_record
-      failures on the rc-5 report path, never an unhandled exception);
+      int ``persona_idx`` — exact ``int``, JSON booleans REJECTED
+      (``isinstance(True, int)`` is True and ``True == 1`` /
+      ``hash(True) == hash(1)``, so a boolean identity field would ALIAS a
+      legitimate pair in indexing, hashing, and expected-set equality;
+      round-5 BLOCKER 2). Malformed shapes become "c"/malformed_record
+      failures on the rc-5 report path, never an unhandled exception;
     - bucket agreement: ``persona_idx`` must equal the bucket the record is
       persisted under;
     - within-bucket duplicate pair detection;
@@ -1171,8 +1175,12 @@ def p0_verify_persona_records(
     for pos, rec in enumerate(recs):
         if (
             not isinstance(rec, dict)
-            or not isinstance(rec.get("context_id"), int)
-            or not isinstance(rec.get("persona_idx"), int)
+            # type-is-int, NOT isinstance (round-5 BLOCKER 2): bool is an int
+            # subclass and True aliases 1 in indexing / hashing / tuple
+            # equality, so a boolean identity could impersonate pair (1, p)
+            # and satisfy the exact expected-set reconciliation.
+            or type(rec.get("context_id")) is not int
+            or type(rec.get("persona_idx")) is not int
         ):
             failures.append(
                 {
@@ -1180,7 +1188,10 @@ def p0_verify_persona_records(
                     "kind": "malformed_record",
                     "persona_bucket": p,
                     "record_pos": pos,
-                    "detail": "record is not a dict with int context_id + int persona_idx",
+                    "detail": (
+                        "record is not a dict with int context_id + int persona_idx "
+                        "(bool rejected: True aliases 1)"
+                    ),
                 }
             )
             continue
@@ -1251,6 +1262,8 @@ def p0_prompt_integrity_gate(
     by_persona: dict[int, list[dict]],
     report_dir: pathlib.Path,
     questions: list[str],
+    *,
+    expected_n_contexts: int,
     verify_persona=None,
 ) -> None:
     """P0 prompt-integrity gate: designed halt on ANY mismatch, over its OWN domain.
@@ -1263,8 +1276,15 @@ def p0_prompt_integrity_gate(
         context order), so a consistently-wrong question cannot pass;
     (b) ``assignment.json`` reproduces persona(i, k) = i mod k by this
         gate's OWN arithmetic over every arm, with structural validation
-        first: arm keys == K_ARMS, every arm list length == ``n_contexts``,
-        ``n_contexts`` a positive int;
+        first: arm keys == K_ARMS, every arm list length == the pinned
+        domain, and the artifact-declared ``n_contexts`` a positive exact
+        int (bool rejected) EQUAL to ``expected_n_contexts`` — the
+        CALLER-pinned domain authority (production 5000 / the explicit
+        smoke count; round-5 BLOCKER 1). The equality is checked in this
+        (b) section, BEFORE the (a) coverage read and the (c)
+        expected-pair derivation, and every domain-derived check below
+        uses the caller's value — the artifact under test never defines
+        the authority it is verified against;
     (c) per-pair prompt integrity over the EXACT expected pair DOMAIN —
         presence + byte equality (plan section 7: "presence + byte equality
         for EVERY pair"): the expected pair set is derived INDEPENDENTLY
@@ -1293,7 +1313,38 @@ def p0_prompt_integrity_gate(
     """
     if verify_persona is None:
         verify_persona = p0_verify_persona_records
+    # Caller contract (not artifact input): the pinned domain must itself be
+    # a positive exact int — a wrong caller is a code bug, fail loud.
+    if type(expected_n_contexts) is not int or expected_n_contexts <= 0:
+        raise ValueError(
+            f"expected_n_contexts must be a positive int, got {expected_n_contexts!r} — "
+            "the caller pins the domain authority (production 5000 / explicit smoke count)"
+        )
     failures: list[dict] = []
+
+    # Container roots (round-5 BLOCKER 3): a malformed root becomes a
+    # RECORDED failure routed through the rc-5 report path below — never a
+    # raw AttributeError on .get before the report machinery runs.
+    if not isinstance(roster_obj, dict):
+        failures.append(
+            {
+                "assert": "c",
+                "field": "roster_root",
+                "generated": type(roster_obj).__name__,
+                "detail": "roster.json root is not an object",
+            }
+        )
+        roster_obj = {}
+    if not isinstance(assignment_obj, dict):
+        failures.append(
+            {
+                "assert": "b",
+                "field": "assignment_root",
+                "generated": type(assignment_obj).__name__,
+                "detail": "assignment.json root is not an object",
+            }
+        )
+        assignment_obj = {}
 
     # (c) precondition: roster/template equality vs the independent
     # section-4.1 transcription (the reconstruction authority).
@@ -1307,6 +1358,16 @@ def p0_prompt_integrity_gate(
             }
         )
     gen_personas = roster_obj.get("personas") or []
+    if not isinstance(gen_personas, list):
+        failures.append(
+            {
+                "assert": "c",
+                "field": "personas_type",
+                "generated": type(gen_personas).__name__,
+                "detail": "roster.json personas is not a list",
+            }
+        )
+        gen_personas = []
     if len(gen_personas) != len(_P0_ROSTER):
         failures.append(
             {
@@ -1319,7 +1380,11 @@ def p0_prompt_integrity_gate(
     else:
         for p, (name, card) in enumerate(_P0_ROSTER):
             got = gen_personas[p]
-            if (got.get("idx"), got.get("name"), got.get("card")) != (p, name, card):
+            if not isinstance(got, dict) or (got.get("idx"), got.get("name"), got.get("card")) != (
+                p,
+                name,
+                card,
+            ):
                 failures.append(
                     {
                         "assert": "c",
@@ -1330,36 +1395,81 @@ def p0_prompt_integrity_gate(
                 )
 
     # (b) structural validation FIRST: the gate verifies its own domain
-    # inputs before trusting them (round-4 BLOCKER 2).
-    n_contexts = assignment_obj.get("n_contexts")
-    if not isinstance(n_contexts, int) or n_contexts <= 0:
+    # inputs before trusting them (round-4 BLOCKER 2), and the DOMAIN
+    # AUTHORITY is the caller-pinned expected_n_contexts (round-5
+    # BLOCKER 1): the artifact-declared n_contexts is checked for EQUALITY
+    # here — before the (a) coverage read and the (c) expected-pair
+    # derivation — and every domain-derived check below uses the CALLER's
+    # value, never the artifact's.
+    declared_n = assignment_obj.get("n_contexts")
+    if type(declared_n) is not int or declared_n <= 0:
         failures.append(
             {
                 "assert": "b",
                 "field": "n_contexts",
-                "generated": n_contexts,
-                "detail": "assignment.json n_contexts missing or not a positive int",
+                "generated": declared_n,
+                "detail": (
+                    "assignment.json n_contexts missing or not a positive int "
+                    "(bool rejected: True aliases 1)"
+                ),
             }
         )
-        n_contexts = None
+    elif declared_n != expected_n_contexts:
+        failures.append(
+            {
+                "assert": "b",
+                "field": "n_contexts_authority",
+                "generated": declared_n,
+                "expected": expected_n_contexts,
+                "detail": (
+                    "assignment.json n_contexts must EQUAL the caller-pinned domain "
+                    "(production 5000 / the explicit smoke count) — a coherent "
+                    "smaller artifact must never certify a subset of the domain"
+                ),
+            }
+        )
+    n_contexts = expected_n_contexts
     arms = assignment_obj.get("arms") or {}
-    if sorted(arms) != sorted(str(k) for k in K_ARMS):
+    if not isinstance(arms, dict):
+        failures.append(
+            {
+                "assert": "b",
+                "field": "arms_type",
+                "generated": type(arms).__name__,
+                "detail": "assignment.json arms is not an object of arm-k -> persona list",
+            }
+        )
+        arms = {}
+    if sorted(str(k) for k in arms) != sorted(str(k) for k in K_ARMS):
         failures.append(
             {
                 "assert": "b",
                 "field": "arms_keys",
-                "generated": sorted(arms),
+                "generated": sorted(str(k) for k in arms),
                 "reconstructed": sorted(str(k) for k in K_ARMS),
             }
         )
-    for k_str, per in sorted(arms.items(), key=lambda kv: int(kv[0])):
-        k = int(k_str)
+    for k_str, per in sorted(arms.items(), key=lambda kv: str(kv[0])):
+        try:
+            k = int(k_str)
+        except (TypeError, ValueError):
+            # Round-5 BLOCKER 3: a nonnumeric arm key is a RECORDED (b)
+            # failure, never an unhandled ValueError at int().
+            failures.append(
+                {
+                    "assert": "b",
+                    "field": "arm_key",
+                    "generated": repr(k_str),
+                    "detail": "arm key is not an integer string",
+                }
+            )
+            continue
         if not isinstance(per, list):
             failures.append(
                 {"assert": "b", "arm_k": k, "field": "arm_type", "generated": type(per).__name__}
             )
             continue
-        if n_contexts is not None and len(per) != n_contexts:
+        if len(per) != n_contexts:
             failures.append(
                 {
                     "assert": "b",
@@ -1377,8 +1487,9 @@ def p0_prompt_integrity_gate(
         if len(bad) > 20:
             failures.append({"assert": "b", "arm_k": k, "n_bad_total": len(bad)})
 
-    # (a) authority coverage: the pinned bundle must cover the domain.
-    if n_contexts is not None and len(questions) < n_contexts:
+    # (a) authority coverage: the pinned bundle must cover the DOMAIN —
+    # expected_n_contexts, never the artifact-declared value.
+    if len(questions) < n_contexts:
         failures.append(
             {
                 "assert": "a",
@@ -1394,7 +1505,7 @@ def p0_prompt_integrity_gate(
     seen_pairs: set[tuple[int, int]] = set()
     buckets = sorted(by_persona.items())
     for idx, (p, recs) in enumerate(buckets, start=1):
-        p_failures, p_seen = verify_persona(p, recs, questions, n_contexts or 0)
+        p_failures, p_seen = verify_persona(p, recs, questions, n_contexts)
         failures.extend(p_failures)
         for i, pi in sorted(seen_pairs & p_seen)[:20]:
             failures.append(
@@ -1414,27 +1525,25 @@ def p0_prompt_integrity_gate(
         )
 
     # (c) domain: EXACT set equality against the INDEPENDENTLY-derived
-    # expected pair set (persona(i, k) = i mod k over range(n_contexts)).
-    if n_contexts is not None:
-        expected_pairs = {(i, i % k) for k in K_ARMS for i in range(n_contexts)}
-        missing = sorted(expected_pairs - seen_pairs)
-        extra = sorted(seen_pairs - expected_pairs)
-        for i, pi in missing[:20]:
-            failures.append(
-                {"assert": "c", "kind": "missing_pair", "context_id": i, "persona_idx": pi}
-            )
-        if len(missing) > 20:
-            failures.append(
-                {"assert": "c", "kind": "missing_pairs_total", "n_missing_total": len(missing)}
-            )
-        for i, pi in extra[:20]:
-            failures.append(
-                {"assert": "c", "kind": "unexpected_pair", "context_id": i, "persona_idx": pi}
-            )
-        if len(extra) > 20:
-            failures.append(
-                {"assert": "c", "kind": "unexpected_pairs_total", "n_extra_total": len(extra)}
-            )
+    # expected pair set — persona(i, k) = i mod k over range(n_contexts),
+    # where n_contexts is the CALLER-pinned authority (round-5 BLOCKER 1).
+    expected_pairs = {(i, i % k) for k in K_ARMS for i in range(n_contexts)}
+    missing = sorted(expected_pairs - seen_pairs)
+    extra = sorted(seen_pairs - expected_pairs)
+    for i, pi in missing[:20]:
+        failures.append({"assert": "c", "kind": "missing_pair", "context_id": i, "persona_idx": pi})
+    if len(missing) > 20:
+        failures.append(
+            {"assert": "c", "kind": "missing_pairs_total", "n_missing_total": len(missing)}
+        )
+    for i, pi in extra[:20]:
+        failures.append(
+            {"assert": "c", "kind": "unexpected_pair", "context_id": i, "persona_idx": pi}
+        )
+    if len(extra) > 20:
+        failures.append(
+            {"assert": "c", "kind": "unexpected_pairs_total", "n_extra_total": len(extra)}
+        )
 
     if not failures:
         n_records = sum(len(recs) for recs in by_persona.values())
@@ -1464,7 +1573,12 @@ def p0_prompt_integrity_gate(
     sys.exit(EXIT_P0_INTEGRITY)
 
 
-def run_p0_verify(stage_dir: pathlib.Path, report_dir: pathlib.Path, dl_dir: pathlib.Path) -> None:
+def run_p0_verify(
+    stage_dir: pathlib.Path,
+    report_dir: pathlib.Path,
+    dl_dir: pathlib.Path,
+    expected_n_contexts: int,
+) -> None:
     """Standalone P0 gate over already-persisted P-Gen artifacts (``--p0-verify``).
 
     The pod-side P0 phase stages the P-Gen artifacts from HF and runs this
@@ -1474,6 +1588,16 @@ def run_p0_verify(stage_dir: pathlib.Path, report_dir: pathlib.Path, dl_dir: pat
     :func:`load_frozen_questions` (the same pinned loader P-Gen dispatched
     from), so assert (a) compares against the bundle, never against the
     records themselves.
+
+    Domain authority (round-5 BLOCKER 1): ``expected_n_contexts`` is pinned
+    by the CALLER (``main``'s ``--p0-verify`` branch: ``N_CONTEXTS_FULL`` in
+    production, the explicit smoke count under ``--smoke``) — the question
+    authority is sliced by THIS value, never by the artifact-declared
+    ``assignment.json`` ``n_contexts``, and the gate records any
+    declared-vs-pinned mismatch as a (b)-class rc-5 failure. A coherent
+    smaller artifact (e.g. a 100-context assignment with exactly matching
+    records) therefore can no longer certify 2% of the registered domain
+    as a production PASS.
 
     Restartability (round-4 BLOCKER 4): per-persona completion is DURABLE —
     ``report_dir / "p0_verify_progress.json"`` records, per persona file,
@@ -1485,11 +1609,15 @@ def run_p0_verify(stage_dir: pathlib.Path, report_dir: pathlib.Path, dl_dir: pat
     the moment it completes (atomic tmp+rename), and the gate emits one
     FLUSHED ``[p0] persona k/16 ...`` progress line per bucket.
     """
+    if type(expected_n_contexts) is not int or expected_n_contexts <= 0:
+        raise ValueError(f"expected_n_contexts must be a positive int, got {expected_n_contexts!r}")
     roster_obj = json.loads((stage_dir / "roster.json").read_text())
     assignment_obj = json.loads((stage_dir / "assignment.json").read_text())
-    n_ctx = assignment_obj.get("n_contexts")
     questions_full, _, _ = load_frozen_questions(dl_dir)
-    questions = questions_full[: n_ctx if isinstance(n_ctx, int) and n_ctx > 0 else None]
+    # Round-5 BLOCKER 1: slice the question AUTHORITY by the CALLER-pinned
+    # domain — never by the artifact-declared n_contexts (the artifact under
+    # test must not define the authority it is verified against).
+    questions = questions_full[:expected_n_contexts]
 
     fp = None
     sentinel_path = stage_dir / "_gen_complete.json"
@@ -1520,7 +1648,12 @@ def run_p0_verify(stage_dir: pathlib.Path, report_dir: pathlib.Path, dl_dir: pat
         f = stage_dir / f"persona{p:02d}_seed42.json"
         assert f.is_file(), f"--p0-verify: missing persisted persona file {f}"
         file_sha[p] = _sha256_file(f)
-        by_persona[p] = json.loads(f.read_text())["records"]
+        payload = json.loads(f.read_text())
+        # Round-5 BLOCKER 3: a non-dict persona-file root or a missing
+        # "records" container becomes a non-list bucket the gate RECORDS as
+        # a "c"/malformed_bucket failure on the rc-5 report path — never a
+        # raw KeyError/TypeError at ["records"].
+        by_persona[p] = payload.get("records") if isinstance(payload, dict) else None
 
     def cached_verify(
         p: int, recs: list, qs: list[str], n_contexts: int
@@ -1548,6 +1681,7 @@ def run_p0_verify(stage_dir: pathlib.Path, report_dir: pathlib.Path, dl_dir: pat
         by_persona,
         report_dir,
         questions,
+        expected_n_contexts=expected_n_contexts,
         verify_persona=cached_verify,
     )
     logger.info("P0 prompt-integrity verify PASS over %s", stage_dir)
@@ -1623,7 +1757,11 @@ def main(argv: list[str] | None = None) -> None:
     )
 
     if args.p0_verify:
-        run_p0_verify(stage_dir, eval_dir, root / "parent_inputs")
+        # Round-5 BLOCKER 1: the verifier's domain authority is the value
+        # THIS caller just pinned above — N_CONTEXTS_FULL (5000) in
+        # production, the explicit --n-contexts smoke count under --smoke —
+        # never the artifact-declared assignment.json n_contexts.
+        run_p0_verify(stage_dir, eval_dir, root / "parent_inputs", n_contexts)
         return
 
     # 1. Frozen questions (full-grain validation, then slice for smoke).
@@ -1834,7 +1972,14 @@ def main(argv: list[str] | None = None) -> None:
     # serializer/roster/assignment defect halts BEFORE upload; the pod-side
     # P0 phase re-runs the same gate over the staged artifacts (--p0-verify)
     # before mask construction.
-    p0_prompt_integrity_gate(roster_obj, assignment_obj, by_persona, eval_dir, questions)
+    p0_prompt_integrity_gate(
+        roster_obj,
+        assignment_obj,
+        by_persona,
+        eval_dir,
+        questions,
+        expected_n_contexts=n_contexts,
+    )
 
     digest = build_digest(
         n_contexts,
