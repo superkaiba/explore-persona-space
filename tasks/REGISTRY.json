@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2409,
+  "highest_id": 2410,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10902,6 +10902,13 @@
       "path": "tasks/archived/241",
       "status": "archived",
       "title": "Prefix-completion dissociation with base-model answers (control for finetuning artifacts)"
+    },
+    "2410": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2410",
+      "status": "proposed",
+      "title": "Lint: truthy upload URL accepted as canonical completion (3 instances in one round) + hoist _require_canonical_upload into hub"
     },
     "244": {
       "has_clean_result": false,
