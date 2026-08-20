@@ -1854,3 +1854,27 @@ re-raises its own settled finding; (c) a verifier's re-run instrument tree
 outs) is a REUSE input — instruct read-first + cross-check-report-claims-
 against-outputs, copy-to-own-scratch before re-execution, and never edit
 the evidence trees in place.
+
+**Gate-mandated merge-reconciliation round WITH an r1 impl marker (#2217 r2,
+2026-08-20):** three deltas on the #2201-r3 shape. (a) When the task HAS a
+round-1 `epm:results` (unlike #2201 r3's no-marker case), inline it in the
+STANDARD `---BEGIN IMPLEMENTATION MARKER BODY---` envelope framed CONTEXT-ONLY
+(do-not-score-shape, adjudicated r1) — satisfies the Step 3 envelope guard
+while `marker-shape`/`smoke-run-missing` stay declared INVALID; Step 0.5 +
+4.6-presence get explicit N/A-this-round lines in a `## Gate-step record`
+section. (b) The rubric-currency check can hit a commit that is ITSELF main's
+side of the divergence (here `1f22cfed7f` added code-reviewer.md's "Main-side
+divergence list (#2201)" paragraph AFTER the r1 extraction): skip template
+reuse entirely, compose the TIGHT shape, and inline that paragraph VERBATIM
+from the POST-merge worktree spec (anchor `**Main-side divergence list
+(#2201).**` → `clean.`) — the worktree is current post-merge, no main-root
+read needed. (c) Q3 lost-update recipe: per-path branch-ownership probe
+`git log --format='%h %s' <pre-merge-tip> --not <pin> -- <path>` over EVERY
+own-diff path (EMPTY history + present in own-diff = merge-created difference
+= Critical), with the `--cc`-emptiness caveat stated (--cc suppresses
+one-side reverts — result==branch-parent hunks are invisible; 253-byte --cc
+attests only "no novel typed line"). The composer's OWN memory file can sit in
+the own-diff (a prior session committed it to the branch) — it is in scope for
+the ownership probe, stat-only otherwise. Also: r1's output file was the
+UNSUFFIXED `/tmp/codex-output-issue-2217.md` — name the r2 output
+round-suffixed and flag the collision hazard in the return.
