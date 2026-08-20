@@ -958,6 +958,22 @@ def test_tracked_data_include_paths_derived_from_index(tmp_path) -> None:
         tracked_data_include_paths(notgit)
 
 
+def test_tracked_data_include_paths_timeout_reraises_runtimeerror(tmp_path, monkeypatch) -> None:
+    """#2212 round 2: a HUNG ls-files probe (``subprocess.TimeoutExpired``)
+    surfaces as the helper's own descriptive ``RuntimeError`` shape — the same
+    fail-loud contract as a failed probe (rc != 0), never a raw
+    ``TimeoutExpired`` and never a silent partial/empty include set (a silent
+    fallback would resurrect either the flood or the #2203 crash class)."""
+
+    def _hang(cmd, **kwargs):
+        raise subprocess.TimeoutExpired(cmd=cmd, timeout=kwargs.get("timeout", 60))
+
+    monkeypatch.setattr(subprocess, "run", _hang)
+    with pytest.raises(RuntimeError, match=r"tracked_data_include_paths.*timed out") as excinfo:
+        tracked_data_include_paths(tmp_path)
+    assert isinstance(excinfo.value.__cause__, subprocess.TimeoutExpired)
+
+
 @pytest.mark.skipif(not _GIT_AVAILABLE, reason="git not available")
 def test_override_untracked_toplevel_data_never_ships(tmp_path, monkeypatch) -> None:
     """#2212 Must-Fix override regression: under ``EPS_SLURM_LIVE_TREE_RSYNC=1``

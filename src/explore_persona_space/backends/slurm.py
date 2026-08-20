@@ -952,12 +952,15 @@ RSYNC_EXCLUDE_PATTERNS: tuple[str, ...] = (
     # Re-downloadable staging caches + durable per-issue stores, matched at
     # every depth (rsync applies slash-free patterns at all depths). Two
     # functions (#2212): (1) SEND-side, under the EPS_SLURM_LIVE_TREE_RSYNC=1
-    # live-tree override these are the only filter stopping untracked
-    # cache/store DESCENDANTS of a tracked ``./data/<component>`` include
-    # entry from transferring (the index-derived entries exclude untracked
-    # TOP-LEVEL ``data/`` entries from the argv, but rsync recurses each
-    # include entry and knows nothing of .gitignore); on the DEFAULT
-    # committed-snapshot source they can never match anything sendable.
+    # live-tree override an untracked cache/store DESCENDANT of a tracked
+    # ``./data/<component>`` include entry transfers only when it matches NO
+    # RSYNC_EXCLUDE_PATTERNS entry — these two patterns extend the set to the
+    # conventional cache/store shapes, and the pre-existing entries above
+    # (``archive/``, ``wandb/``, ...) already match at every depth too (the
+    # index-derived entries exclude untracked TOP-LEVEL ``data/`` entries
+    # from the argv, but rsync recurses each include entry and knows nothing
+    # of .gitignore); on the DEFAULT committed-snapshot source they can
+    # never match anything sendable.
     # (2) RECEIVER-side, they protect a cluster-side
     # ``$SCRATCH/data/<tracked>/{*_dl,store}`` tree from the ``--delete``
     # pass on a re-dispatch (no ``--delete-excluded`` is passed). No
@@ -994,11 +997,13 @@ def tracked_data_include_paths(src_root: Path, *, timeout: int = 60) -> tuple[st
     shipping every tracked input, so the override does not reintroduce the
     #2203 FileNotFoundError class.
 
-    SCOPE OF THE GUARANTEE — top-level only. Untracked DESCENDANTS of a
-    tracked component still transfer under the override: rsync passes each
-    include entry as a bare recursive source and knows nothing of
-    ``.gitignore``, so ``*_dl/`` / ``store/`` (conventional caches, matched at
-    every depth) are the only filter. Measured at #2212: 6 MB / 13 gitignored
+    SCOPE OF THE GUARANTEE — top-level only. An untracked DESCENDANT of a
+    tracked component still transfers under the override whenever it matches
+    NO ``RSYNC_EXCLUDE_PATTERNS`` entry: rsync passes each include entry as a
+    bare recursive source and knows nothing of ``.gitignore``, so the exclude
+    list — the new ``*_dl/`` / ``store/`` patterns (conventional caches) plus
+    the pre-existing entries (``archive/``, ``wandb/``, ...), all matched at
+    every depth — is the whole filter. Measured at #2212: 6 MB / 13 gitignored
     files, all under ``data/sft`` — an EMPIRICAL this-checkout figure, NOT a
     bound. This residual is include-set-wide and pre-existing, not introduced
     here: under the same override ``./scripts`` already ships 39 untracked
@@ -1009,16 +1014,28 @@ def tracked_data_include_paths(src_root: Path, *, timeout: int = 60) -> tuple[st
     pre-scan that would refuse at HEAD today (none of the 13 files matches an
     exclude pattern).
 
-    Fails LOUD (``RuntimeError``) if the ls-files probe fails: a silent
-    fallback would resurrect either the flood or the crash class.
+    Fails LOUD (``RuntimeError``) if the ls-files probe fails OR hangs past
+    ``timeout`` (``subprocess.TimeoutExpired`` is re-raised as the same
+    descriptive ``RuntimeError`` shape): a silent fallback would resurrect
+    either the flood or the crash class.
     """
-    proc = subprocess.run(
-        ["git", "-C", str(src_root), "ls-files", "-z", "--", RSYNC_DATA_INCLUDE_ROOT],
-        capture_output=True,
-        text=True,
-        timeout=timeout,
-        check=False,
-    )
+    argv = ["git", "-C", str(src_root), "ls-files", "-z", "--", RSYNC_DATA_INCLUDE_ROOT]
+    try:
+        proc = subprocess.run(
+            argv,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            check=False,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise RuntimeError(
+            f"tracked_data_include_paths: `git -C {src_root} ls-files -- "
+            f"{RSYNC_DATA_INCLUDE_ROOT}` timed out after {timeout}s — refusing a "
+            f"silent fallback (a bare './{RSYNC_DATA_INCLUDE_ROOT}' include would "
+            "sweep untracked caches under EPS_SLURM_LIVE_TREE_RSYNC=1; an empty "
+            "include set would re-create the #2203 FileNotFoundError class)."
+        ) from exc
     if proc.returncode != 0:
         raise RuntimeError(
             f"tracked_data_include_paths: `git -C {src_root} ls-files -- "
