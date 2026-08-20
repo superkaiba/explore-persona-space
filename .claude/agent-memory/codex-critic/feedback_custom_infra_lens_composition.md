@@ -420,6 +420,25 @@ standard 3-lens enum gate does not apply: the brief's verbatim lens list IS
   (emptiness holds only for letter-ADJACENT forms like `003e...fcbb`,
   where the both-sides guards suppress the match).
 
+- **Mutation-scoped service ban (#2241 round one, statistics): when the plan's
+  OWN verification recipe requires read-only external-service probes (`gh pr
+  list` / `gh pr view` / `gh help exit-codes` / `gh pr create --help` — the
+  plan's §-assumptions each carry a "Verify: re-run the probe" line), the
+  #2332 live-service ban scopes to MUTATIONS, not all calls**: explicitly
+  permit the plan's read-only probes and ban the mutating forms by name
+  ("no gh pr create other than its --help form, no git push"). Also proven
+  again: the #2360 statistics-on-infra shape with the brief's lettered items
+  as their own span + `### Answers to the review questions` with
+  SOUND|CONCERN|MUST-FIX|UNVERIFIED verdict words; compose-time
+  pre-verification of ALL the plan's measured byte/count/anchor constants
+  (wc -c, cap-line grep, literal-baseline grep -c, heading line, test count,
+  corridor arithmetic) stated in the brief span as "existence settled — your
+  job is grain + decision adjudication". Numcheck PASS at ~115 KB (spans =
+  briefnote + plan + lensitems + empty prior). Self-test gotcha: `8-hex`
+  DOES produce atom 8.0 (hyphen-adjacent digit) — the #2194 "not
+  scaffold-safe" list means NOT-ALLOWLISTED digits (40-hex, §12.15); do not
+  assert `atoms("8-hex") == Counter()`.
+
 **Why:** first custom-lens infra compose (#2324) — these choices made the
 numeric gate pass first try on a 68 KB prompt; round 2 (REVISE-round
 re-review) passed on the second numcheck run, the only failures being the
