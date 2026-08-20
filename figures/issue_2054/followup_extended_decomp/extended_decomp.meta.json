@@ -1,0 +1,672 @@
+{
+  "commit": "353ee089+dirty",
+  "render_id": "082a0595299b4541",
+  "git_commit": "353ee089f32337ccad4c5c1aa50eb311075a1f5d",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2054_extended_decomp.py",
+    "eval_results/issue_666/headline/predictor_headline.json",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue2054_extended_decomp.py",
+  "created": "2026-08-20T22:51:16Z",
+  "figsize": [
+    18.0,
+    7.2
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "Held-out $R^2$ (context \u2192 answer)": 0.18560041415702078,
+      "error": 0.006662032245326688,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "Held-out $R^2$ (context \u2192 answer)": 0.18560118612960463,
+      "error": 0.006660520781740856,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
+      "Held-out $R^2$ (context \u2192 answer)": 0.20736087733279018,
+      "error": 0.001894516854633238,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.81,
+      "Held-out $R^2$ (context \u2192 answer)": 0.20775067858357488,
+      "error": 0.006327543150020015,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "Held-out $R^2$ (context \u2192 answer)": 0.5479916385058416,
+      "error": 0.004425664086165848,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.19,
+      "Held-out $R^2$ (context \u2192 answer)": 0.5479937207857656,
+      "error": 0.004425429585130369,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.19,
+      "Held-out $R^2$ (context \u2192 answer)": 0.5796996369279679,
+      "error": 0.0054725358300933835,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.19,
+      "Held-out $R^2$ (context \u2192 answer)": 0.5799141326455874,
+      "error": 0.004745518212764144,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.19,
+      "y": 0.30732803777609496,
+      "error": 0.004161363874315399,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.81,
+      "y": 0.3073206330739784,
+      "error": 0.004160106326691476,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.81,
+      "y": 0.2830236426880387,
+      "error": 0.002961628131043309,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.81,
+      "y": -0.18116974443924483,
+      "error": 0.005488216959530154,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.19,
+      "y": 0.4033195428615258,
+      "error": 0.004048831775584516,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.19,
+      "y": 0.4033245859967838,
+      "error": 0.004046925910218324,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.19,
+      "y": 0.3790039749146514,
+      "error": 0.0030845482212067676,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 3.19,
+      "y": -0.11923853500998005,
+      "error": 0.006520743032492893,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": -0.19,
+      "y": 0.3010151776943819,
+      "error": 0.004792230620834392,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.81,
+      "y": 0.3011061506039956,
+      "error": 0.004774332793014979,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 1.81,
+      "y": 0.27988210680548775,
+      "error": 0.002542885545775503,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.81,
+      "y": -0.25423419772321165,
+      "error": 0.007213550677833941,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.19,
+      "y": 0.39499008741727804,
+      "error": 0.0044822365669795194,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 1.19,
+      "y": 0.3950663740147947,
+      "error": 0.004493617611370793,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.19,
+      "y": 0.36960715629310803,
+      "error": 0.001042007523544941,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 3.19,
+      "y": -0.1705370859866826,
+      "error": 0.005963996741543701,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": -0.19,
+      "y": 0.2887374286275458,
+      "error": 0.004933449282125635,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.81,
+      "y": 0.28881489368632063,
+      "error": 0.004892108594844957,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 1.81,
+      "y": 0.26435334458909887,
+      "error": 0.0031060650215714025,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 2.81,
+      "y": -0.2941578164891805,
+      "error": 0.006283793536714294,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.19,
+      "y": 0.3806971607352658,
+      "error": 0.004451963317308766,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 1.19,
+      "y": 0.3807111164832394,
+      "error": 0.004463619076908176,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 2.19,
+      "y": 0.3559185425108692,
+      "error": 0.00336970671836484,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 3.19,
+      "y": -0.20751188672429444,
+      "error": 0.005893420583642797,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": -0.19,
+      "y": 0.30486148285470716,
+      "error": 0.004115705272832171,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 0.81,
+      "y": 0.3048678950892778,
+      "error": 0.0041099835424531495,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 1.81,
+      "y": 0.27919295858458054,
+      "error": 0.0030935880284183315,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 2.81,
+      "y": -0.2744120846292779,
+      "error": 0.006196982483631125,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 0.19,
+      "y": 0.38249502832554216,
+      "error": 0.003410072039790435,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 1.19,
+      "y": 0.3825271174922643,
+      "error": 0.003420147615084579,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 2.19,
+      "y": 0.3609899231388926,
+      "error": 0.0031712477817978924,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 3.19,
+      "y": -0.20758395331623491,
+      "error": 0.005612748764407316,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": -0.19,
+      "y": 0.22786015401424475,
+      "error": 0.004040998387161862,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 0.81,
+      "y": 0.22797463264160767,
+      "error": 0.004058300205091764,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 1.81,
+      "y": 0.2185863641514155,
+      "error": 0.0016512471212176139,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 2.81,
+      "y": -0.4613928766548352,
+      "error": 0.009681461275456715,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 0.19,
+      "y": 0.3138681488119708,
+      "error": 0.005001781546913192,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 1.19,
+      "y": 0.3139255243959699,
+      "error": 0.004991732866753196,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 2.19,
+      "y": 0.2962172010567693,
+      "error": 0.004683194338629765,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 3.19,
+      "y": -0.3772049498095147,
+      "error": 0.007961348534654328,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "category": "Pooled map\n(shared W,\nglobal offset)",
+      "Instruct \u2212 base $\\Delta R^2$": 0.3623912243488209,
+      "error": 0.00676655837796869,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "Pooled map\n+ per-cell\noffset",
+      "Instruct \u2212 base $\\Delta R^2$": 0.36239253465616095,
+      "error": 0.006769900158245051,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "Own-map\nceiling\n(per-cell W)",
+      "Instruct \u2212 base $\\Delta R^2$": 0.3723387595951777,
+      "error": 0.006918131834289631,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "Direct from\nassistant-chat\nmap",
+      "Instruct \u2212 base $\\Delta R^2$": 0.37216345406201257,
+      "error": 0.006907439758502415,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "Pooled map\n(shared W,\nglobal offset)",
+      "y": 0.09599150508543086,
+      "error": 0.004298847060957303,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "Pooled map\n+ per-cell\noffset",
+      "y": 0.09600395292280539,
+      "error": 0.004291703101321452,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "Own-map\nceiling\n(per-cell W)",
+      "y": 0.09598033222661267,
+      "error": 0.002719011245251937,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "Direct from\nassistant-chat\nmap",
+      "y": 0.06193120942926478,
+      "error": 0.005554513479203573,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "Pooled map\n(shared W,\nglobal offset)",
+      "y": 0.09397490972289613,
+      "error": 0.004600393856576651,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "category": "Pooled map\n+ per-cell\noffset",
+      "y": 0.09396022341079913,
+      "error": 0.004592648621862469,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "category": "Own-map\nceiling\n(per-cell W)",
+      "y": 0.08972504948762028,
+      "error": 0.0033276011201040373,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "category": "Direct from\nassistant-chat\nmap",
+      "y": 0.08369711173652905,
+      "error": 0.0072597515579088945,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "category": "Pooled map\n(shared W,\nglobal offset)",
+      "y": 0.09195973210772002,
+      "error": 0.005197866271919822,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "category": "Pooled map\n+ per-cell\noffset",
+      "y": 0.09189622279691878,
+      "error": 0.005242390666014916,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "category": "Own-map\nceiling\n(per-cell W)",
+      "y": 0.09156519792177031,
+      "error": 0.004631393162098638,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "category": "Direct from\nassistant-chat\nmap",
+      "y": 0.08664592976488605,
+      "error": 0.007074998262509007,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "category": "Pooled map\n(shared W,\nglobal offset)",
+      "y": 0.07763354547083501,
+      "error": 0.004259767587705458,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "category": "Pooled map\n+ per-cell\noffset",
+      "y": 0.0776592224029865,
+      "error": 0.004235508284862272,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "category": "Own-map\nceiling\n(per-cell W)",
+      "y": 0.08179696455431207,
+      "error": 0.003935400666184495,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "category": "Direct from\nassistant-chat\nmap",
+      "y": 0.066828131313043,
+      "error": 0.0059729931752008775,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "category": "Pooled map\n(shared W,\nglobal offset)",
+      "y": 0.08600799479772603,
+      "error": 0.005466504209748882,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "category": "Pooled map\n+ per-cell\noffset",
+      "y": 0.08595089175436221,
+      "error": 0.005451595683542254,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "category": "Own-map\nceiling\n(per-cell W)",
+      "y": 0.0776308369053538,
+      "error": 0.005445991398389312,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "category": "Direct from\nassistant-chat\nmap",
+      "y": 0.0841879268453205,
+      "error": 0.008857471511391622,
+      "_kind": "bar",
+      "_group": 17
+    }
+  ],
+  "n_series": 18,
+  "total_points": 72,
+  "text": {
+    "suptitle": "Shared-vs-specific decomposition over assistant + story characters (on-policy, layer 19, context arm)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Assistant\n(chat template)",
+        "ylabel": "Held-out $R^2$ (context \u2192 answer)",
+        "legend_labels": [
+          "Base (Qwen2.5-7B)",
+          "Instruct (Qwen2.5-7B-Instruct)"
+        ],
+        "xticklabels": [
+          "Pooled map\n(shared W,\nglobal offset)",
+          "Pooled map\n+ per-cell\noffset",
+          "Own-map\nceiling\n(per-cell W)",
+          "Direct from\nassistant-chat\nmap"
+        ],
+        "yticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "Assistant\n(in story, quoted)",
+        "xticklabels": [
+          "Pooled map\n(shared W,\nglobal offset)",
+          "Pooled map\n+ per-cell\noffset",
+          "Own-map\nceiling\n(per-cell W)",
+          "Direct from\nassistant-chat\nmap"
+        ]
+      },
+      {
+        "title_left": "HELIOS\n(story character)",
+        "xticklabels": [
+          "Pooled map\n(shared W,\nglobal offset)",
+          "Pooled map\n+ per-cell\noffset",
+          "Own-map\nceiling\n(per-cell W)",
+          "Direct from\nassistant-chat\nmap"
+        ]
+      },
+      {
+        "title_left": "Wren\n(story character)",
+        "xticklabels": [
+          "Pooled map\n(shared W,\nglobal offset)",
+          "Pooled map\n+ per-cell\noffset",
+          "Own-map\nceiling\n(per-cell W)",
+          "Direct from\nassistant-chat\nmap"
+        ]
+      },
+      {
+        "title_left": "Dana\n(story character)",
+        "xticklabels": [
+          "Pooled map\n(shared W,\nglobal offset)",
+          "Pooled map\n+ per-cell\noffset",
+          "Own-map\nceiling\n(per-cell W)",
+          "Direct from\nassistant-chat\nmap"
+        ]
+      },
+      {
+        "title_left": "Vex\n(story character)",
+        "xticklabels": [
+          "Pooled map\n(shared W,\nglobal offset)",
+          "Pooled map\n+ per-cell\noffset",
+          "Own-map\nceiling\n(per-cell W)",
+          "Direct from\nassistant-chat\nmap"
+        ]
+      },
+      {
+        "ylabel": "Instruct \u2212 base $\\Delta R^2$",
+        "xticklabels": [
+          "Pooled map\n(shared W,\nglobal offset)",
+          "Pooled map\n+ per-cell\noffset",
+          "Own-map\nceiling\n(per-cell W)",
+          "Direct from\nassistant-chat\nmap"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40"
+        ]
+      },
+      {
+        "xticklabels": [
+          "Pooled map\n(shared W,\nglobal offset)",
+          "Pooled map\n+ per-cell\noffset",
+          "Own-map\nceiling\n(per-cell W)",
+          "Direct from\nassistant-chat\nmap"
+        ]
+      },
+      {
+        "xticklabels": [
+          "Pooled map\n(shared W,\nglobal offset)",
+          "Pooled map\n+ per-cell\noffset",
+          "Own-map\nceiling\n(per-cell W)",
+          "Direct from\nassistant-chat\nmap"
+        ]
+      },
+      {
+        "xticklabels": [
+          "Pooled map\n(shared W,\nglobal offset)",
+          "Pooled map\n+ per-cell\noffset",
+          "Own-map\nceiling\n(per-cell W)",
+          "Direct from\nassistant-chat\nmap"
+        ]
+      },
+      {
+        "xticklabels": [
+          "Pooled map\n(shared W,\nglobal offset)",
+          "Pooled map\n+ per-cell\noffset",
+          "Own-map\nceiling\n(per-cell W)",
+          "Direct from\nassistant-chat\nmap"
+        ]
+      },
+      {
+        "xticklabels": [
+          "Pooled map\n(shared W,\nglobal offset)",
+          "Pooled map\n+ per-cell\noffset",
+          "Own-map\nceiling\n(per-cell W)",
+          "Direct from\nassistant-chat\nmap"
+        ]
+      }
+    ],
+    "series": [
+      "Base (Qwen2.5-7B)",
+      "Instruct (Qwen2.5-7B-Instruct)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
