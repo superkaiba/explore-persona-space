@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2419,
+  "highest_id": 2420,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10972,6 +10972,13 @@
       "path": "tasks/proposed/2419",
       "status": "proposed",
       "title": "Infra: add two mechanizable plan-claim checks \u2014 inheritance-claim grep + manifest-figure producer check"
+    },
+    "2420": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2420",
+      "status": "proposed",
+      "title": "Step 5a FAMILY_workflow misses workflow.yaml pin test tests/test_ensemble_review_cap.py \u2014 half-sync vintage skew failed 4 gate nodes on #2205"
     },
     "244": {
       "has_clean_result": false,
