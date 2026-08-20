@@ -593,8 +593,12 @@ Both reviewers see the same brief:
 - `issue_number` — the task number (`<N>`)
 - `target_marker_kind` — exactly one of `experiment-implementation` (for
   `experiment`) or `results` (for `infra` / `batch` / `analysis` /
-  `survey`). The reviewers read the highest-version row with this kind
-  from `events.jsonl` as the implementer's report.
+  `survey`). The implementer's report — the highest-version row with
+  this kind — is fetched at COMPOSE time from canonical main state via
+  `uv run python "$REPO_ROOT"/scripts/task.py view <N> --json` (or
+  `latest-marker <N>`); the brief hands over the resolved report (or
+  the canonical ABSOLUTE `$TASK_DIR/events.jsonl` path) — never a
+  worktree-relative `events.jsonl` (frozen at base, #2422).
 - `revision_round` — 1-indexed integer. `1` on first review; loops up to
   `10`. The cap is **per reviewer** — reconcile invocations are free.
 - `previous_critique_summaries` — one-line summaries of every prior

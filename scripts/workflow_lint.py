@@ -13387,7 +13387,10 @@ def check_worktree_task_state_briefs(*, repo_root: Path | None = None) -> list[s
     (1) issue steps/09-step-5.md — the ``Both reviewers see the same
         brief:`` region (ends at ``**Neutral gate vocabulary``) names
         ``task.py find``, ``plan_version=``, ``planned_manifest.json``,
-        and the never-read-``tasks/``-from-the-worktree read bar;
+        ``task.py view`` (the compose-time canonical fetch of the
+        implementer's report — never a worktree-relative
+        ``events.jsonl``; plan v4 Edit 14), and the
+        never-read-``tasks/``-from-the-worktree read bar;
     (2) code-reviewer.md — the ``## Context budget`` section names
         ``task.py find``, ``plan_version=``, and the read bar;
     (3) issue steps/04-step-2.md — the ``Subagent briefs always pass``
@@ -13399,8 +13402,10 @@ def check_worktree_task_state_briefs(*, repo_root: Path | None = None) -> list[s
         names ``task.py find`` + ``frozen``;
     (6) issue steps/08-step-4.md — the ``Brief passed to the implementer:``
         region (FIRST resolving end anchor of the ordered fallback: the
-        gate-scope verification-duty bullet, then ``Move status to ``,
-        else EOF) names ``task.py find`` + ``plan_version=``.
+        gate-scope verification-duty bullet, then ``Move status to ``;
+        when NEITHER resolves the check fails CLOSED with the descriptive
+        missing-end-anchor error — no EOF fallback, plan v4) names
+        ``task.py find`` + ``plan_version=``.
 
     ``repo_root`` is a unit-test override hook; production callers pass None
     (canonical repo root; behavioral subprocess tests may point the check at
@@ -13414,33 +13419,35 @@ def check_worktree_task_state_briefs(*, repo_root: Path | None = None) -> list[s
         root = Path(env_root) if env_root else _REPO_ROOT
     errors: list[str] = []
     read_bar = "never read `tasks/` from inside the worktree"
-    surfaces: tuple[tuple[str, str, tuple[str, ...], bool, tuple[str, ...]], ...] = (
+    surfaces: tuple[tuple[str, str, tuple[str, ...], tuple[str, ...]], ...] = (
         (
             ".claude/skills/issue/steps/09-step-5.md",
             "Both reviewers see the same brief:",
             ("**Neutral gate vocabulary",),
-            False,
-            ("task.py find", "plan_version=", "planned_manifest.json", read_bar),
+            (
+                "task.py find",
+                "plan_version=",
+                "planned_manifest.json",
+                "task.py view",
+                read_bar,
+            ),
         ),
         (
             ".claude/agents/code-reviewer.md",
             "## Context budget",
             ("\n## ",),
-            False,
             ("task.py find", "plan_version=", read_bar),
         ),
         (
             ".claude/skills/issue/steps/04-step-2.md",
             "Subagent briefs always pass",
             ("Also include estimated cost",),
-            False,
             ("task.py find", "frozen"),
         ),
         (
             ".claude/skills/issue-v2/SKILL.md",
             "### Step 4: Implement + review",
             ("### Step 5: Run",),
-            False,
             ("task.py find", "plan_version=", "planned_manifest.json"),
         ),
         (
@@ -13450,11 +13457,10 @@ def check_worktree_task_state_briefs(*, repo_root: Path | None = None) -> list[s
                 "- The brief MUST also carry the gate-scope verification duty",
                 "Move status to ",
             ),
-            True,
             ("task.py find", "plan_version="),
         ),
     )
-    for rel, start, ends, eof_ok, tokens in surfaces:
+    for rel, start, ends, tokens in surfaces:
         path = root / rel
         if not path.is_file():
             errors.append(
@@ -13478,7 +13484,12 @@ def check_worktree_task_state_briefs(*, repo_root: Path | None = None) -> list[s
             nxt = text.find(end, idx + 1)
             if nxt != -1:
                 break
-        if nxt == -1 and not eof_ok:
+        if nxt == -1:
+            # Fail CLOSED (plan v4, round-1 concern fail-open-surface6-region):
+            # NO surface may silently widen its region to EOF — the error
+            # fires, and the EOF-widened token scan below is a diagnostic
+            # aid only (it can suppress redundant token errors, never the
+            # missing-end-anchor error itself).
             errors.append(
                 f"{path}: no end anchor for the {start!r} region resolves "
                 f"after the start anchor (tried {ends!r}; #2422) — re-derive "

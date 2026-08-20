@@ -22,7 +22,11 @@ the Edit-7 wait-mechanism pin — lives in
    kill-criterion 3).
 2. ``test_passes_on_complete_corpus`` + ``test_fails_per_missing_surface``
    — fixed-shape corpus, one surface/anchor/token dropped per case (the
-   smoke-blind-spots ``_DROP_CASES`` pattern).
+   smoke-blind-spots ``_DROP_CASES`` pattern). The v4 ``s1-events`` case
+   RETAINS the bare ``events.jsonl`` instruction while OMITTING the
+   canonical-fetch token ``task.py view`` (round-1 concern
+   ``worktree-events-path-gap`` — a deletion-only fixture would not
+   discriminate that defect).
 3. ``test_worktree_task_state_briefs_passes_on_live_tree`` — binds the
    landed unit-1 edits; the standing Durability pin.
 4. ``test_check_worktree_task_state_briefs_bundled_in_no_flags`` — the
@@ -36,8 +40,11 @@ the Edit-7 wait-mechanism pin — lives in
    ``diff -q``) fires; and the #550 ABSENT shape (worktree cut before the
    task folder existed) fails ``test -f`` loud.
 6. ``test_surface6_end_anchor_ordered_fallback`` — surface 6's ordered end
-   anchors (gate-scope duty bullet, then ``Move status to ``, else EOF)
-   each resolve without an error (the v3 round-1 anchor correction).
+   anchors (gate-scope duty bullet, then ``Move status to ``): missing only
+   the preferred anchor is absorbed without an error (the v3 round-1 anchor
+   correction); missing BOTH fails CLOSED with the descriptive
+   missing-end-anchor error, never a silent EOF-widened region (v4,
+   round-1 concern ``fail-open-surface6-region``).
 """
 
 from __future__ import annotations
@@ -292,13 +299,27 @@ def _write_corpus(root: Path, *, drop: str | None = None) -> Path:
             if drop == "s1-readbar"
             else "- never read `tasks/` from inside the worktree (frozen at base)\n"
         )
+        # v4 Edit 14 (round-1 concern worktree-events-path-gap): the negative
+        # case RETAINS the bare `events.jsonl` instruction while OMITTING the
+        # canonical-fetch token — a deletion-only fixture would not
+        # discriminate the defect (the very sentence being removed carries
+        # `events.jsonl`).
+        ev1 = (
+            "- reviewers read the highest-version row from `events.jsonl`\n"
+            if drop == "s1-events"
+            else (
+                "- implementer report fetched at compose time via `uv run "
+                'python "$REPO_ROOT"/scripts/task.py view <N> --json` from '
+                "canonical main state\n"
+            )
+        )
         end1 = (
             "Closing prose without the bolded vocabulary header.\n"
             if drop == "s1-end"
             else "**Neutral gate vocabulary in EVERY brief**\n\nOther content.\n"
         )
         (steps / "09-step-5.md").write_text(
-            "# Step 5\n\n" + start1 + "\n" + find1 + ver1 + man1 + bar1 + "\n" + end1,
+            "# Step 5\n\n" + start1 + "\n" + find1 + ver1 + man1 + bar1 + ev1 + "\n" + end1,
             encoding="utf-8",
         )
 
@@ -406,6 +427,7 @@ _DROP_CASES: list[tuple[str, str, str]] = [
     ("s1-version", "plan_version=", "09-step-5.md"),
     ("s1-manifest", "planned_manifest.json", "09-step-5.md"),
     ("s1-readbar", "never read", "09-step-5.md"),
+    ("s1-events", "task.py view", "09-step-5.md"),
     ("s1-end", "no end anchor", "09-step-5.md"),
     ("s2-find", "task.py find", "code-reviewer.md"),
     ("s2-version", "plan_version=", "code-reviewer.md"),
@@ -436,12 +458,19 @@ def test_fails_per_missing_surface(tmp_path: Path, drop: str, token: str, path_f
 @pytest.mark.parametrize("drop", ["s6-end-preferred", "s6-end-both"])
 def test_surface6_end_anchor_ordered_fallback(tmp_path: Path, drop: str) -> None:
     """Surface 6's end anchor is an ordered fallback (v3 round-1
-    correction): the preferred gate-scope bullet, then ``Move status to ``,
-    else EOF. A corpus missing the preferred anchor (or both) but carrying
-    the tokens inside the region must NOT error."""
+    correction): the preferred gate-scope bullet, then ``Move status to ``.
+    Missing only the preferred anchor is ordinary churn the fallback
+    absorbs — no error. Missing BOTH fails CLOSED with the descriptive
+    missing-end-anchor error, never a silent EOF-widened region (v4,
+    round-1 concern ``fail-open-surface6-region``)."""
     _write_corpus(tmp_path, drop=drop)
     errors = check_worktree_task_state_briefs(repo_root=tmp_path)
-    assert errors == [], f"drop={drop}: fallback end anchor should pass; got: {errors}"
+    if drop == "s6-end-both":
+        assert any("no end anchor" in e and "08-step-4.md" in e for e in errors), (
+            f"drop={drop}: expected the descriptive missing-end-anchor error; got: {errors}"
+        )
+    else:
+        assert errors == [], f"drop={drop}: fallback end anchor should pass; got: {errors}"
 
 
 def test_worktree_task_state_briefs_passes_on_live_tree(
