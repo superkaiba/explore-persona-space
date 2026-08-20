@@ -1591,3 +1591,46 @@ the scan's file enumeration, exemption exactness + the dead-control proof,
 the lookbehind/word-adjacency claim behind a compose test, kwarg-default
 behavior preservation) — with fabricated-falsifiability (claimed-red that
 stays green) named as substantive FAIL.
+
+**CONCERNS→polish round; brief can ORDER the whole-branch body back in (#2212
+r2, 2026-08-20):** the round-scope BAN on the whole-branch three-dot BODY is
+the DEFAULT, not a law — when the brief mandates re-verifying reconciler
+binding conditions + the plan §10 fence "on the FULL round diff, not
+inherited from round 1's PASS", compose BOTH reads: three-dot full-round
+body (size it first; 55 KB here) for the conditions re-check, `git show
+<round-sha>` as the deep-dive focus. Milder sibling of #2329 rclose: prior
+round Claude-PASS + Codex-CONCERNS (no reconciler — CONCERNS advances), one
+persisted NIT (the twin's own) + one un-persisted Claude Minor closed;
+closure ledger = the real concern id + a pseudo-id, author-neutrality line,
+addressed-id NEVER re-emitted as a `CONCERN:: ` row unless NOT-ADDRESSED.
+A brief-supplied "state plainly a clean PASS is expected if the fixes are
+sound" composes as BOTH-directions calibration (expected ≠ thumb on scale;
+wording-preference blockers unwanted on a wording-correction round, real
+defects at full severity). Over-correction duty on wording fixes: the new
+text can be wrong the OTHER way (eliding the argv-structural top-level
+guarantee / overstating exclude-list protection) — hand Codex both failure
+directions plus survival checks for the honest-scope figures. Re-measure
+brief-supplied base-drift figures at compose (136→295 commits between
+rounds; use fresh).
+
+**FAIL+FAIL union round with a self-resolving union note + brief-ordered
+mutation probes (#2329 q35 r2 = sentinel v2, 2026-08-20):** when the union
+work order ITSELF resolves every overlap to the stronger form AND records
+the reviewer splits, inline the union as the PRIMARY acceptance contract +
+the twin's own verdict (tags stripped, rows blockquoted) for per-finding
+Evidence/Fix — the Claude verdicts stay by-path context (this task's
+review-r1 artifacts dir on main); the union's RECORDED SPLITS section
+becomes a do-not-relitigate item (round 2 scores fresh against the new
+marker, never re-grades r1 gate records). Scratch recipe refinement for
+mutation probes on this repo: build the scratch tree with a SCOPED
+`git archive <round-sha> scripts tests src configs pyproject.toml uv.lock |
+tar -x` — NEVER a full-tree archive (tracked eval_results are GB-scale in
+this repo) — and copy in the single committed artifact a chosen nodeid
+reads (here the parent #2162 stats.json) only when that probe needs it;
+carry the UV_CACHE_DIR=/tmp/... rc=2 read-only-cache precedent. A
+raised-only ledger (0 addressed rows) on a fix round composes per
+#2379-r2(b): identical closure duty, absent rows attested as orchestrator
+bookkeeping. Sentinel convention is SERIES-local: this review series' r1
+head was v1 (round-based) even though the same task's earlier crash-fix
+series used sentinel==impl-version — read the r1 marker's own head, never
+assume the task-wide convention.

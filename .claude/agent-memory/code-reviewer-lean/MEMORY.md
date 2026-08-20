@@ -47,3 +47,4 @@
 - [Twin-transcription parity tautology](twin_transcription_parity_tautology.md) — a registered parity/round-trip gate comparing identical transcriptions on ONE loaded object certifies nothing; demand pre-persist vs post-reload + gate falsification (#2379 R1 g3)
 - [Marker success-command verbatim rerun](marker_success_command_verbatim_rerun.md) — run (c)'s success command AS PASTED; missing-flag exit≠0 with green phase = digest Minor; Path(x or "") dir-guard is dead (#2379 R2 g2)
 - [--force not reaching resume state](force_flag_not_reaching_resume_state.md) — a redo flag gating only the final-output skip while sidecars/chunks resume on count-only fingerprints silently half-redoes post-retrain (#2379 R2 g1)
+- [Two-sided size-corridor review](two_sided_size_corridor_review.md) — blob-at-SHA wc -c + HEAD identity, round-scoped grandfather probe (never diff vs origin/main), hunk-gap pin-unedited proof (#2412 R1 g2)
