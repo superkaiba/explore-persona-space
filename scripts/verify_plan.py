@@ -13190,22 +13190,28 @@ _C68_A1_RE = re.compile(
     r"(?P<n>\d+(?:\.\d+)?)\s*(?:pp\b|percentage[-\s]?points?)"
 )
 #: A2 — "baseline - <arm> ≥ N pp". Middle bounded at 40 chars. BARRED
-#: set (EXHAUSTIVE — `_C68_A2_MIDDLE_BARRED` below is the single source
-#: of truth, and the r3 comment<->class sync test asserts it equals the
-#: negated character class char-for-char, so a comment/class divergence
-#: is test-breaking rather than review-detected; #2228 r3): newline; the
-#: comparator glyphs < > ≤ ≥ plus bare "=" (#2228 r2: round 1 permitted
-#: "=", so the lazy middle skipped past a satisfiable "= 2pp" equality
-#: and bound an unrelated later ">= 10pp" — a fabricated cross-clause
-#: harvest, false WARN on a healthy plan; genuine ">=" comparators
-#: survive by construction: the middle can never consume their leading
-#: ">", barred since round 1); the clause boundaries ";" ")" "," (r2 —
-#: an "="-only fix would NOT have killed the comma form) and "?" "!"
-#: "|" (#2228 r3: the same live-FP species crossing a sentence boundary
+#: set: membership is defined SOLELY by `_C68_A2_MIDDLE_BARRED` below —
+#: this comment deliberately carries NO membership enumeration (#2228
+#: r4: rounds 1-3 each bounced on a prose restatement of a set the code
+#: already owned diverging from the implementation, so the duplicate is
+#: deleted rather than re-audited). What the sync test
+#: (test_c68_a2_middle_barred_set_syncs_comment_class_and_behavior)
+#: actually guarantees: it asserts the CONSTANT below equals the regex's
+#: negated character class char-for-char, so a constant/class divergence
+#: is test-breaking; it reads no prose, which is exactly why membership
+#: must not be restated here. Rationale for the members, by round: the
+#: newline, comparator-glyph, ";" and ")" bars are round 1's structural
+#: boundaries (genuine ">=" comparators survive by construction — the
+#: middle can never consume their leading ">"); bare "=" and "," were
+#: barred in r2 after round 1's middle skipped past a satisfiable
+#: "= 2pp" equality and bound an unrelated later ">= 10pp" — a
+#: fabricated cross-clause harvest, false WARN on a healthy plan (and an
+#: "="-only fix would NOT have killed the comma form); "?" "!" "|" were
+#: barred in r3 (the same live-FP species crossing a sentence boundary
 #: or a Markdown table-cell pipe — the likeliest plan shape, since
 #: decision lattices are routinely tables). RESIDUAL, stated as the
 #: COMPLEMENT (never an implicitly-exhaustive enumeration — #2228 r3):
-#: EVERY character outside the barred set above remains permitted within
+#: EVERY character outside the barred set remains permitted within
 #: the 40-char budget — e.g. ".", ":", "(", quotes, and dash glyphs (the
 #: "." form can cross a sentence boundary the same way); WARN-only
 #: posture + the two escapes are the mitigation for whatever crossings

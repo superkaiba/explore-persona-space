@@ -14117,12 +14117,20 @@ def test_c68_a2_middle_barred_set_syncs_comment_class_and_behavior():
     # (`verify_plan._C68_A2_MIDDLE_BARRED`, the constant the disclosure
     # comment defers to as its single source of truth) equals the regex
     # class's negated character set, character by character — a future
-    # comment/class divergence is test-breaking instead of
-    # review-detected. (2) BEHAVIORAL: every barred char kills a middle
-    # crossing it (end-to-end SKIP on the healthy 2pp-gate geometry), and
-    # every residual example the complement-form disclosure names (".",
-    # ":", "(", quotes, dash glyphs) is permitted (end-to-end WARN on the
-    # same geometry: 10pp vs the ~9.7% baseline).
+    # constant/class divergence is test-breaking instead of
+    # review-detected. This test reads the CONSTANT and the compiled
+    # PATTERN only — never comment prose — which is why the disclosure
+    # comment carries no membership enumeration (#2228 r4).
+    # (2) BEHAVIORAL: every barred char EXCEPT "\n" kills a middle
+    # crossing it (end-to-end SKIP on the healthy 2pp-gate geometry).
+    # "\n" is structurally unreachable end-to-end: `_c68_margins`
+    # iterates `plan.splitlines()`, so no candidate line ever contains a
+    # newline and an end-to-end row would SKIP from the line split, not
+    # the class (a vacuous row, #2228 r4) — its class membership is
+    # instead pinned by the direct regex-level differential below.
+    # (3) Every residual example the complement-form disclosure names
+    # (".", ":", "(", quotes, dash glyphs) is permitted (end-to-end WARN
+    # on the same geometry: 10pp vs the ~9.7% baseline).
     m = re.search(r"\[\^((?:\\.|[^\]\\])+)\]", verify_plan._C68_A2_RE.pattern)
     assert m, verify_plan._C68_A2_RE.pattern
     body = m.group(1)
@@ -14140,9 +14148,22 @@ def test_c68_a2_middle_barred_set_syncs_comment_class_and_behavior():
         sorted(verify_plan._C68_A2_MIDDLE_BARRED),
     )
     for ch in sorted(verify_plan._C68_A2_MIDDLE_BARRED):
+        if ch == "\n":
+            continue  # structural-only: pinned by the regex-level differential below
         line = f"- *H1-confirm:* baseline − cap{ch} accuracy >= 10pp."
         r = _run(_c68_plan(line))[1][C68]
         assert r.status == "SKIP", (repr(ch), r.status, r.detail)
+    # Direct regex-level differential for "\n" (#2228 r4): on a multiline
+    # subject the shipped class must NOT match (the middle cannot cross a
+    # line break), while a counterfactual class with "\n" unbarred DOES
+    # match — so the class's "\n" member is load-bearing at the regex
+    # level, independently of the splitlines() production boundary. The
+    # inequality assert makes a silent replace no-op impossible.
+    subject = "baseline − cap\naccuracy >= 10pp."
+    assert verify_plan._C68_A2_RE.search(subject) is None
+    cf_pattern = verify_plan._C68_A2_RE.pattern.replace(r"[^\n", "[^", 1)
+    assert cf_pattern != verify_plan._C68_A2_RE.pattern
+    assert re.compile(cf_pattern).search(subject) is not None
     for ch in sorted({".", ":", "(", '"', "'", "-", "−", "–", "—"}):
         line = f"- *H1-confirm:* baseline − cap{ch} accuracy >= 10pp."
         r = _run(_c68_plan(line))[1][C68]
