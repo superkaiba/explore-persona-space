@@ -10920,8 +10920,8 @@
     "2412": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2412",
-      "status": "running",
+      "path": "tasks/completed/2412",
+      "status": "completed",
       "title": "Step 5a sibling-sync satisfiability probe is --collect-only, so runtime API skew and function-body imports pass it"
     },
     "2413": {
