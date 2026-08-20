@@ -27,6 +27,7 @@ import subprocess
 import sys
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import create_autospec
 
 import numpy as np
 import pytest
@@ -746,8 +747,98 @@ def test_anchor_only_side_refused_when_all_steered_under_floor(decay_cfg):
         return rows
 
     _rewrite_shard(p, shorten)
-    with pytest.raises(RuntimeError, match="ANCHOR-ONLY"):
+    with pytest.raises(RuntimeError, match=r"EMPTY REQUIRED ARM\(S\) \['steered'\]"):
         DEC._build_sides(cfg)
+
+
+def _shorten_steered_grid(rows):
+    """Push every selected steered grid completion under the 48-token floor."""
+    for r in rows:
+        if r["cell"].startswith("install_") and r["arm"] == "steered":
+            r["text"] = SHORT_TEXT
+            r["n_completion_tokens"] = len(SHORT_TEXT.split())
+    return rows
+
+
+def _shorten_anchors(only_ceiling: bool = False):
+    """Rewriter pushing anchor completions under the 48-token floor
+    (optionally only the ceiling-arm contexts, leaving floor/plain intact)."""
+    ceiling_cids = {LB.context_id(V, c) for c in CARRIERS}
+
+    def fn(rows):
+        for r in rows:
+            if only_ceiling and r["context_id"] not in ceiling_cids:
+                continue
+            r["text"] = SHORT_TEXT
+        return rows
+
+    return fn
+
+
+def test_side_refused_when_all_arms_under_floor(decay_cfg):
+    # Review r4 reconciler MF-2(i), executed scenario A (both-zero side): every
+    # q25 completion — steered grid rows AND anchors — under the 48-token floor
+    # emits zero units of BOTH kinds. The r3 guard's `n_anchor_units > 0`
+    # conjunct could not fire here (phase_wave dispatched a 144-unit q35-only
+    # wave and returned RC_OK); the unconditional per-arm refusal must raise,
+    # naming all three arms.
+    cfg = decay_cfg
+    _rewrite_shard(
+        cfg.q25_in_root / PLJ.LADDER_RAW / "grid" / "shard_000.jsonl", _shorten_steered_grid
+    )
+    _rewrite_shard(
+        cfg.q25_in_root / PLJ.LADDER_RAW / "anchors" / "anchors_gate_w0.jsonl",
+        _shorten_anchors(),
+    )
+    with pytest.raises(
+        RuntimeError, match=r"EMPTY REQUIRED ARM\(S\) \['steered', 'ceiling', 'floor'\]"
+    ):
+        DEC._build_sides(cfg)
+
+
+def test_steered_only_side_refused_when_all_anchors_under_floor(decay_cfg):
+    # Review r4 reconciler MF-2(ii), executed scenario B (steered-only side,
+    # retention 48/0/0): every q25 ANCHOR completion under the floor while the
+    # steered grid stays intact — the r3 guard keyed only on steered-empty and
+    # built 48 uncontrastable steered units. Must refuse naming both anchor
+    # arms.
+    cfg = decay_cfg
+    _rewrite_shard(
+        cfg.q25_in_root / PLJ.LADDER_RAW / "anchors" / "anchors_gate_w0.jsonl",
+        _shorten_anchors(),
+    )
+    with pytest.raises(RuntimeError, match=r"EMPTY REQUIRED ARM\(S\) \['ceiling', 'floor'\]"):
+        DEC._build_sides(cfg)
+
+
+@pytest.mark.parametrize("scenario", ["both_zero", "steered_only", "ceiling_empty"])
+def test_stale_pilot_wave_refuses_before_any_dispatch(decay_cfg, monkeypatch, scenario):
+    # Review r4 reconciler (recommended pin): on the stale-pilot phase_wave
+    # path — a passed pilot_gate_report.json already on disk, artifacts
+    # re-staged degenerate — a refused side must raise BEFORE any J94.run_wave
+    # call. Pins the property the reconciler MEASURED (pre-fix: one real wave
+    # of 144 / 192 / 240 units dispatched for these scenarios), not the
+    # guard's source shape.
+    cfg = decay_cfg
+    grid_p = cfg.q25_in_root / PLJ.LADDER_RAW / "grid" / "shard_000.jsonl"
+    anch_p = cfg.q25_in_root / PLJ.LADDER_RAW / "anchors" / "anchors_gate_w0.jsonl"
+    if scenario == "both_zero":
+        _rewrite_shard(grid_p, _shorten_steered_grid)
+        _rewrite_shard(anch_p, _shorten_anchors())
+    elif scenario == "steered_only":
+        _rewrite_shard(anch_p, _shorten_anchors())
+    else:  # ceiling_empty: retention 48/0/48
+        _rewrite_shard(anch_p, _shorten_anchors(only_ceiling=True))
+    gates_dir = cfg.j94().gates_dir
+    gates_dir.mkdir(parents=True, exist_ok=True)
+    (gates_dir / "pilot_gate_report.json").write_text(
+        json.dumps({"passed": True}), encoding="utf-8"
+    )
+    run_wave = create_autospec(DEC.J94.run_wave)
+    monkeypatch.setattr(DEC.J94, "run_wave", run_wave)
+    with pytest.raises(RuntimeError, match=r"EMPTY REQUIRED ARM"):
+        DEC.phase_wave(cfg)
+    assert run_wave.call_count == 0
 
 
 def test_absent_pair_slot_registers_missing(decay_cfg):

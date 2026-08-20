@@ -635,29 +635,40 @@ def build_side(cfg: DecayConfig, key: str) -> SideData:
                 r.get("cap_hit"),
             )
 
-    # Review r3 item 1 (Door A): the r2 empty-selection guard closes the
-    # SELECTION door; this closes the EMIT door — a NONEMPTY selection whose
-    # every steered row fails _segment's 48-token floor emits zero steered
-    # units while anchors survive, building the same ANCHOR-ONLY judge units
-    # the reconciler ruled binding (it measured 192), via a different filter.
-    st = retention["steered"]
-    n_anchor_units = retention["ceiling"]["n_items"] + retention["floor"]["n_items"]
-    if st["n_items"] == 0 and n_anchor_units > 0:
-        dropped = sorted(st["tokens_dropped"])
-        dist = (
-            f"min={dropped[0]} median={dropped[len(dropped) // 2]} max={dropped[-1]}"
-            if dropped
-            else "none observed"
-        )
+    # Review r3 item 1 (Door A) + r4 reconciler MF-1: the r2 empty-selection
+    # guard closes the SELECTION door; this closes the EMIT door at ARM grain,
+    # UNCONDITIONALLY. The r3 form (`steered == 0 and anchors > 0`) could not
+    # fire when a side emitted zero units of BOTH kinds (executed scenario A:
+    # phase_wave dispatched a 144-unit q35-only wave and returned RC_OK) and
+    # never covered an empty ANCHOR arm (B: 48/0/0; D: 48/0/48). Plan v8 §4.1
+    # registers all three per-arm row files; the §3 lattice needs ceiling for
+    # every dD branch and floor for patch-more-persistent; G4b already makes
+    # all six (arm x model) cells a pilot-dispatch precondition. ANY required
+    # arm with zero post-floor items => refuse before phase_pilot/phase_wave/
+    # phase_reduce builds on or dispatches a single unit.
+    empty_arms = [arm for arm in ARM_KEYS if retention[arm]["n_items"] == 0]
+    if empty_arms:
+        diags = []
+        for arm in ARM_KEYS:
+            c = retention[arm]
+            dropped = sorted(c["tokens_dropped"])
+            dist = (
+                f"min={dropped[0]} median={dropped[len(dropped) // 2]} max={dropped[-1]}"
+                if dropped
+                else "none observed"
+            )
+            diags.append(
+                f"{arm}: n_items={c['n_items']}, seen={c['n_completions_seen']}, "
+                f"eligible={c['n_len_eligible']}, len_dropped={c['n_len_dropped']}, "
+                f"dropped-token dist {dist}"
+            )
         raise RuntimeError(
-            f"[{key}] ANCHOR-ONLY side: 0 of {st['n_completions_seen']} selected steered "
-            f"completions passed the {MIN_COMPLETION_TOKENS}-token segment floor "
-            f"(n_len_eligible={st['n_len_eligible']}, n_len_dropped={st['n_len_dropped']}; "
-            f"observed steered completion token counts, all below the floor: {dist}), "
-            f"while {n_anchor_units} anchor judge units survive "
-            f"(ceiling={retention['ceiling']['n_items']}, floor={retention['floor']['n_items']}). "
-            "Anchor-only units cannot define the registered steered-vs-ceiling contrast — "
-            "refusing before phase_wave/phase_reduce (review r3 item 1)."
+            f"[{key}] EMPTY REQUIRED ARM(S) {empty_arms}: zero judge units survive the "
+            f"{MIN_COMPLETION_TOKENS}-token segment floor for the named arm(s) "
+            f"({'; '.join(diags)}). All three arms (steered/ceiling/floor) are required "
+            "to define the registered steered-vs-ceiling contrast and the dD/dD_F "
+            "verdict lattice (plan v8 §3/§4.1) — refusing before "
+            "phase_pilot/phase_wave/phase_reduce (review r3 item 1; r4 reconciler MF-1)."
         )
     for arm, c in retention.items():
         c["mean_tokens_retained"] = (
