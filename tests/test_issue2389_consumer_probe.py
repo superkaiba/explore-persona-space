@@ -13,6 +13,7 @@ is exercised against reports the real ``main()`` writes.
 
 from __future__ import annotations
 
+import hashlib
 import inspect
 import json
 import sys
@@ -21,6 +22,7 @@ from unittest.mock import create_autospec
 
 import pytest
 import torch
+from huggingface_hub.utils import EntryNotFoundError
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = REPO_ROOT / "scripts"
@@ -529,3 +531,141 @@ def test_step_f_tables_refuses_stale_source_before_load(
     )
     with pytest.raises(RuntimeError, match="NOT BOUND"):
         A.step_f_tables(args)
+
+
+# ---- Round-5 E: staged-path source-STATE binding (no local anchors mirror) ----
+
+
+def _staged_report(tmp_path: Path, shards: dict[str, str], name: str = "report.json") -> Path:
+    """A staged-mode PASS report shaped like the production probe's output
+    (repo/prefix/va_prefix + pinned revision + recorded shard hashes)."""
+    report = tmp_path / name
+    report.write_text(
+        json.dumps(
+            {
+                "verdict": "PASS",
+                "legs": {"judge": {"n_rows": 3}},
+                "source": {
+                    "staged": True,
+                    "repo": P.J.DATASET_REPO,
+                    "prefix": P.J._STAGE_ANCHORS_GATE,
+                    "va_prefix": P._VA_ANCHORS_REMOTE_PREFIX,
+                    "revision": "c" * 40,
+                    "shards": shards,
+                    "bank_json": None,
+                    "bank_sha256": None,
+                },
+            }
+        )
+    )
+    return report
+
+
+def test_staged_probe_binds_current_hub_state(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Round-5 E (concern staged-probe-binding-content-unique): the frozen
+    bank.json is deterministic BY DESIGN (no timestamps — its sha IS the
+    regime key), so the bank digest is content-unique and a stale
+    same-config PASS carries this run's exact digest. With NO local anchors
+    mirror (the fresh waves mirror stages only grid), the staged PASS now
+    binds to the Hub's CURRENT shard bytes: match accepts; a regenerated or
+    vanished shard refuses. FAILED at HEAD~: the staged path never looked at
+    shard bytes when anchors_dir was None."""
+    shards = {"anchors_gate_x_w0.jsonl": "0" * 64}
+    report = _staged_report(tmp_path, shards)
+    monkeypatch.setattr(P.J, "_current_hub_shard_sha256s", lambda src: dict(shards))
+    P.J.require_consumer_probe(report, "judge")  # current bytes match -> accepted
+    monkeypatch.setattr(
+        P.J, "_current_hub_shard_sha256s", lambda src: {"anchors_gate_x_w0.jsonl": "f" * 64}
+    )
+    with pytest.raises(RuntimeError, match="current-Hub hash != probe-recorded"):
+        P.J.require_consumer_probe(report, "judge")
+    monkeypatch.setattr(
+        P.J, "_current_hub_shard_sha256s", lambda src: {"anchors_gate_x_w0.jsonl": None}
+    )
+    with pytest.raises(RuntimeError, match="no longer present"):
+        P.J.require_consumer_probe(report, "judge")
+
+
+def test_staged_probe_refetch_scoped_to_no_mirror_and_clean_cheap_checks(
+    anchors_dir: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The Hub re-fetch fires ONLY when the consumer has no local mirror and
+    every cheap check passed: a supplied anchors_dir byte-binds LOCALLY
+    (helper never called), and an already-refused report (wrong prefix)
+    never reaches the network."""
+
+    def _boom(src):
+        raise AssertionError("network re-fetch reached")
+
+    monkeypatch.setattr(P.J, "_current_hub_shard_sha256s", _boom)
+    _write_jsonl(anchors_dir, ROWS)
+    sha = hashlib.sha256(
+        (anchors_dir / "anchors_gate_fact_user_name_w0.jsonl").read_bytes()
+    ).hexdigest()
+    report = _staged_report(tmp_path, {"anchors_gate_fact_user_name_w0.jsonl": sha})
+    P.J.require_consumer_probe(report, "judge", anchors_dir=anchors_dir)  # local bind, no net
+    bad = json.loads(report.read_text())
+    bad["source"]["prefix"] = "wrong/prefix"
+    report_bad = tmp_path / "report_bad.json"
+    report_bad.write_text(json.dumps(bad))
+    with pytest.raises(RuntimeError, match="probed prefix"):
+        P.J.require_consumer_probe(report_bad, "judge")
+
+
+def test_current_hub_shard_sha256s_real_body(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Round-5 E production-body test (code-style § one production-body test
+    per seam-stubbed function): the REAL _current_hub_shard_sha256s body runs
+    — deferred imports resolve, the revision resolves through
+    hub.retry_transient, va_ names route to va_prefix, staged bytes are
+    hashed, and a vanished shard maps to None. Fakes sit ONLY at the network
+    boundary (hub.retry_transient / hub.stage_hub_file), signature-conformant
+    via create_autospec."""
+    staged_paths: list[tuple[str, str]] = []
+
+    def _fake_stage(
+        repo_id,
+        path_in_repo,
+        target,
+        *,
+        repo_type="dataset",
+        revision=None,
+        token=None,
+        overwrite=False,
+        size_bytes=None,
+    ):
+        staged_paths.append((path_in_repo, revision))
+        name = path_in_repo.rsplit("/", 1)[-1]
+        if name.endswith(".pt"):
+            raise EntryNotFoundError("gone")
+        Path(target).parent.mkdir(parents=True, exist_ok=True)
+        Path(target).write_bytes(b"payload-" + name.encode())
+        return Path(target)
+
+    monkeypatch.setattr(
+        hub, "stage_hub_file", create_autospec(hub.stage_hub_file, side_effect=_fake_stage)
+    )
+    monkeypatch.setattr(
+        hub,
+        "retry_transient",
+        create_autospec(hub.retry_transient, side_effect=lambda fn, *, what: "d" * 40),
+    )
+    src = {
+        "repo": "org/data",
+        "prefix": "pfx/raw_completions/anchors_gate",
+        "va_prefix": "pfx/analysis_tensors/anchors",
+        "shards": {
+            "anchors_gate_x_w0.jsonl": "0" * 64,
+            "va_anchors_gate_x_w0.pt": "1" * 64,
+        },
+    }
+    out = P.J._current_hub_shard_sha256s(src)
+    assert out == {
+        "anchors_gate_x_w0.jsonl": hashlib.sha256(b"payload-anchors_gate_x_w0.jsonl").hexdigest(),
+        "va_anchors_gate_x_w0.pt": None,
+    }
+    assert ("pfx/raw_completions/anchors_gate/anchors_gate_x_w0.jsonl", "d" * 40) in staged_paths
+    assert ("pfx/analysis_tensors/anchors/va_anchors_gate_x_w0.pt", "d" * 40) in staged_paths

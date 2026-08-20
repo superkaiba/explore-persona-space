@@ -182,6 +182,55 @@ _CONSUMER_PROBE_REPORT_DEFAULT = Path(
 )
 
 
+def _current_hub_shard_sha256s(src: dict) -> dict[str, str | None]:
+    """CURRENT-Hub sha256 of every shard a STAGED probe recorded (round-5 E).
+
+    The frozen bank.json is DELIBERATELY byte-deterministic — no timestamps;
+    its sha IS the regime key (``bank2389.bank_manifest_2389``) — so the
+    probe's ``bank_sha256`` is CONTENT-unique, not run-unique: a stale
+    same-config probe PASS carries this run's exact bank digest. And on the
+    fresh waves mirror (``_PHASE_STAGE_PLAN['waves']`` stages only grid)
+    there is no local anchors dir to byte-bind against, so the staged-path
+    binding otherwise reduces to verdict + leg + repo/prefix + non-empty
+    revision + bank CONTENT. This helper restores a source-STATE binding:
+    re-fetch each probe-recorded shard at the Hub's CURRENT state of the
+    recorded repo (revision resolved now, retried) and hash it — a probe
+    whose certified bytes are no longer what the Hub serves (regenerated /
+    renamed / deleted shards) is stale. Returns ``{name: sha256}`` with
+    ``None`` for a shard absent from the current Hub state."""
+    import tempfile
+
+    from huggingface_hub import HfApi
+    from huggingface_hub.utils import EntryNotFoundError
+
+    from explore_persona_space.orchestrate import hub
+
+    repo = src["repo"]
+    revision = hub.retry_transient(
+        lambda: HfApi().repo_info(repo, repo_type="dataset").sha,
+        what="m1iv staged-probe current-revision resolution",
+    )
+    out: dict[str, str | None] = {}
+    with tempfile.TemporaryDirectory(prefix="i2389_probe_refetch_") as td:
+        for name in sorted(src.get("shards") or {}):
+            prefix = src.get("va_prefix") if name.startswith("va_") else src.get("prefix")
+            target = Path(td) / name
+            try:
+                hub.stage_hub_file(
+                    repo,
+                    f"{prefix}/{name}",
+                    target,
+                    repo_type="dataset",
+                    revision=revision,
+                    overwrite=True,
+                )
+            except EntryNotFoundError:
+                out[name] = None
+                continue
+            out[name] = hashlib.sha256(target.read_bytes()).hexdigest()
+    return out
+
+
 def require_consumer_probe(
     report_path: Path,
     leg: str,
@@ -202,11 +251,14 @@ def require_consumer_probe(
     R4 (r2 review): a PASS is additionally BOUND to the run it certifies via
     the report's recorded ``source`` identity — repo/prefix + PINNED
     revision (staged probes), the sha256 of every probed shard (validated
-    against ``anchors_dir`` when the consumer supplies one), and the frozen
-    bank.json digest (validated against ``bank_json``). Absent or
-    incompatible fields REFUSE: a stale PASS from pre-rename shards or
-    another experiment root must never unlock the ~145k-call P6 wave or
-    P7's silent anchor joins.
+    against ``anchors_dir`` when the consumer supplies one; round-5 E:
+    validated against the Hub's CURRENT bytes via
+    ``_current_hub_shard_sha256s`` when the consumer has NO local anchors
+    mirror — the bank digest is content-unique by design and cannot carry
+    run identity alone), and the frozen bank.json digest (validated against
+    ``bank_json``). Absent or incompatible fields REFUSE: a stale PASS from
+    pre-rename shards or another experiment root must never unlock the
+    ~145k-call P6 wave or P7's silent anchor joins.
     """
     probe_cmd = f"uv run python scripts/issue2389_consumer_probe.py --probe {leg}" + (
         f" --bank-json {bank_json}" if bank_json is not None else ""
@@ -276,6 +328,25 @@ def require_consumer_probe(
                 problems.append(
                     f"probed shard {name} hash != this run's staged copy "
                     "(stale probe or foreign root)"
+                )
+    elif src.get("staged") and shards and not problems:
+        # Round-5 E: no local anchors mirror to byte-bind against (the fresh
+        # waves mirror stages only grid), and the bank digest is
+        # content-unique BY DESIGN (deterministic bank.json), so bind the
+        # PASS to the Hub's CURRENT source state instead: every probed shard
+        # must still be served with the probe-recorded bytes. Cheap checks
+        # above run first — the re-fetch is one small shard pair, skipped
+        # when the report is already refused.
+        for name, cur in sorted(_current_hub_shard_sha256s(src).items()):
+            if cur is None:
+                problems.append(
+                    f"probed shard {name} no longer present at the Hub's current state "
+                    "(regenerated/renamed since the probe — stale PASS)"
+                )
+            elif cur != shards.get(name):
+                problems.append(
+                    f"probed shard {name} current-Hub hash != probe-recorded hash "
+                    "(shards regenerated since the probe — stale PASS)"
                 )
     if bank_json is not None:
         rec_bank = src.get("bank_sha256")
