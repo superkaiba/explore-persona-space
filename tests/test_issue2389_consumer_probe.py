@@ -321,7 +321,7 @@ def test_require_consumer_probe_refuses_sourceless_report(tmp_path: Path) -> Non
     # A pre-R4 / hand-built PASS with no source identity never unlocks spend.
     rp = tmp_path / "consumer_probe_report.json"
     rp.write_text(json.dumps({"verdict": "PASS", "legs": {"judge": {}}}))
-    with pytest.raises(RuntimeError, match="NOT BOUND.*no source identity"):
+    with pytest.raises(RuntimeError, match=r"NOT BOUND.*no source identity"):
         P.J.require_consumer_probe(rp, "judge")
 
 
@@ -336,7 +336,7 @@ def test_require_consumer_probe_refuses_stale_shard_hash(anchors_dir: Path, tmp_
     dir_b.mkdir()
     _write_jsonl(dir_b, ROWS[:2])  # same filename, different bytes
     _write_pt(dir_b, ROWS[:2], empty_rows=[])
-    with pytest.raises(RuntimeError, match="NOT BOUND.*hash != this run's staged copy"):
+    with pytest.raises(RuntimeError, match=r"NOT BOUND.*hash != this run's staged copy"):
         P.J.require_consumer_probe(report_path, "judge", anchors_dir=dir_b, bank_json=bank)
 
 
@@ -349,12 +349,12 @@ def test_require_consumer_probe_refuses_foreign_or_unrecorded_bank(
     report_path = _pass_report(anchors_dir, tmp_path, bank_a)
     bank_b = tmp_path / "bank_b.json"
     bank_b.write_text(json.dumps({"frozen": "bank-B"}))
-    with pytest.raises(RuntimeError, match="NOT BOUND.*bank_sha256 != this run's bank"):
+    with pytest.raises(RuntimeError, match=r"NOT BOUND.*bank_sha256 != this run's bank"):
         P.J.require_consumer_probe(report_path, "judge", anchors_dir=anchors_dir, bank_json=bank_b)
     # a report that never recorded a bank digest is refused by a bank-passing
     # consumer (forces production probes to run with --bank-json).
     unbound = _pass_report(anchors_dir, tmp_path / "unbound", bank=None)
-    with pytest.raises(RuntimeError, match="NOT BOUND.*recorded no bank_sha256"):
+    with pytest.raises(RuntimeError, match=r"NOT BOUND.*recorded no bank_sha256"):
         P.J.require_consumer_probe(unbound, "judge", anchors_dir=anchors_dir, bank_json=bank_a)
 
 
@@ -366,7 +366,7 @@ def test_require_consumer_probe_local_report_needs_anchor_binding(
     _write_jsonl(anchors_dir, ROWS)
     _write_pt(anchors_dir, ROWS, empty_rows=[])
     report_path = _pass_report(anchors_dir, tmp_path, _bank_file(tmp_path))
-    with pytest.raises(RuntimeError, match="NOT BOUND.*no anchors dir to bind"):
+    with pytest.raises(RuntimeError, match=r"NOT BOUND.*no anchors dir to bind"):
         P.J.require_consumer_probe(report_path, "judge")
 
 
