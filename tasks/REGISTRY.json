@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2429,
+  "highest_id": 2430,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11042,6 +11042,13 @@
       "path": "tasks/archived/2429",
       "status": "archived",
       "title": "workflow-fix: issue worktrees run an unpinned Python (19/25 at 3.12.13 vs root 3.11.15) \u2014 Step 9c verdicts flip on interpreter"
+    },
+    "2430": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2430",
+      "status": "proposed",
+      "title": "Step 9c paired oracle: add a SUFFIX-replay arm so later-sorting-file contamination is attributed mechanically"
     },
     "244": {
       "has_clean_result": false,
