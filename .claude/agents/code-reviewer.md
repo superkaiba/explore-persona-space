@@ -126,6 +126,25 @@ section wins on invocation form.
 
 Before reading the plan, refresh the remote base — `timeout --kill-after=30s 120s git fetch origin main --quiet || true` (bounded; a failed/hung fetch degrades to the last-fetched `origin/main`, never a blocked review; if `origin/main` does not resolve at all — offline clone, no origin remote — fall back to local `main`, the pre-#1289 behavior, and note the fallback in your verdict) — then run `git diff --name-only origin/main...HEAD` (or against the brief's stated base) and classify the diff. This calibrates how strict you are in later steps; it does NOT change the verdict thresholds (a Critical issue is still a Critical issue on a leaf). **Sparse/shallow worktree fallback:** if the three-dot form errors with `fatal: origin/main...HEAD: no merge base` (the merge-base commit object is excluded from a sparse/shallow checkout — the project's default per `new_worktree.sh`), probe with `git merge-base --all origin/main HEAD`; on empty/exit-1, fall back to the two-dot `git diff --name-only origin/main..HEAD` (or the round's implementer-commit SHA range). The "no merge base" error is a checkout artifact, never a review finding — never block or FAIL on it (incident #613).
 
+**Main-side divergence list (#2201).** When your brief carries a
+`diverged_on_main` list, the orchestrator's Step 5a probe found these
+round-deliverable files ALSO changed on `origin/main` since the merge-base
+(sync-imports and already-converged files pre-excluded), measured at the
+brief's pinned `main=<sha>`. For EACH named file: read main's side —
+`git log --oneline $(git merge-base <main-sha> HEAD)..<main-sha> -- <path>`
+(with `<main-sha>` = the brief's `main=` value, so you inspect the exact
+main state the probe measured; fall back to `origin/main` only when the
+brief carries no `main=` token) plus a bounded diff read — and check the
+round's edits do not revert or semantically contradict what landed on main
+(the #1771/#2164 shape: the same function rewritten in opposite directions
+on the two sides). A contradiction or silent revert is a Major finding
+under Plan Adherence naming both commits; textual adjacency with no
+semantic interaction is a one-line verdict note, not a finding. No list
+AND no probe-failed line = the probe found nothing; do not re-derive it. A
+`divergence probe FAILED` brief line means main-side divergence is UNKNOWN
+this round — record that in the verdict body rather than treating it as
+clean.
+
 **Size the diff BEFORE reading its body.** Before ANY diff BODY read:
 `git diff origin/main...HEAD | wc -c` (streams; error/0 = over). Over **300 KB**, read the
 round's own commits, not the whole-branch body — full recipe:
