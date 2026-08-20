@@ -726,6 +726,41 @@ def payload_for_arm_ladder(
     return BANK94.norm_match(donor_state, recipient), donor_cid
 
 
+def pe_second_row_ok_ladder(
+    pair: LB.LadderPair,
+    arm: str,
+    ladder_np_ids: frozenset[str] | set[str],
+    donor_maps: dict[str, dict[str, str]],
+) -> bool:
+    """Ladder analogue of ``RUN.pe_excluded_reason(...) is None`` for the
+    injection gate's pe-slot SECOND-ROW filter (the ``pe_second_row_ok``
+    seam on :func:`RUN.run_injection_gate`).
+
+    The parent default expects donor_maps keys ``{"shuffled", "crosstype"}``
+    with PAIR-id values; the ladder's maps are ``{"null_sameval",
+    "null_xtype", "null_xtype_pe"}`` with CONTEXT-id values, so the default
+    ``KeyError``s on any ladder null arm. Semantics mirror the parent:
+
+    - recipient contexts ``pair.a`` / ``pair.b`` must have a pe token
+      (LADDER-bank ``no_prefix`` flags);
+    - ``steered``: donor IS ``pair.b`` — already covered;
+    - ``null_sameval``: the frozen LADDER donor must exist and have a pe
+      token;
+    - ``null_xtype``: pe-runnable iff the pair is in the pre-filtered
+      pe-viable subset ``donor_maps["null_xtype_pe"]`` (F4: a no-prefix
+      PARENT donor has no pe state).
+    """
+    if pair.a in ladder_np_ids or pair.b in ladder_np_ids:
+        return False
+    if arm == "null_sameval":
+        donor = donor_maps["null_sameval"].get(pair.pair_id)
+        return donor is not None and donor not in ladder_np_ids
+    if arm == "null_xtype":
+        return pair.pair_id in donor_maps["null_xtype_pe"]
+    assert arm == "steered", arm
+    return True
+
+
 def _ladder_gate_spots(pairs: list[LB.LadderPair]) -> list[dict]:
     """12 injection-gate spot cells spanning all 12 directions, both slots,
     all 3 arms, and hand-written + WildChat carriers (plan §4.5 gate shape)."""
@@ -950,8 +985,18 @@ def run_donor_identity_assert(
       the cosine leg is skipped and recorded ``cos_leg_skipped_tiny: true``
       (declared smoke blind spot); the derivation-equality leg stays binding.
     """
-    resolved = sorted({row["primary"]["b"] for row in manifest["crosstype_donor_plan"].values()})
-    expected = sorted(DONOR_IDENTITY_CONTEXT_IDS)
+    # Plan-time derivation reproduced literally (plan v8 §4.4): the first
+    # len(DONOR_IDENTITY_CONTEXT_IDS) DISTINCT primary donor B-contexts in
+    # build_ladder_pairs order (the manifest dict preserves build order) —
+    # NOT the full distinct donor set (30 ids at the pin; comparing that set
+    # against the frozen three false-HALTed a healthy bank).
+    seen: list[str] = []
+    for row in manifest["crosstype_donor_plan"].values():
+        b = row["primary"]["b"]
+        if b not in seen:
+            seen.append(b)
+    resolved = seen[: len(DONOR_IDENTITY_CONTEXT_IDS)]
+    expected = list(DONOR_IDENTITY_CONTEXT_IDS)
     derivation = {"expected": expected, "resolved": resolved, "equal": resolved == expected}
     report: dict = {
         "criterion": (
@@ -1244,6 +1289,7 @@ def phase_bank(cfg: LadderConfig) -> int:
     donor_maps, _dropped, _pe_excluded = donor_maps_ladder(
         manifest, pairs, survivors=None, screen=None
     )
+    ladder_np_ids = frozenset(cid for cid, r in bank["per_context"].items() if r.get("no_prefix"))
     report = RUN.run_injection_gate(
         cfg,
         model,
@@ -1255,6 +1301,9 @@ def phase_bank(cfg: LadderConfig) -> int:
         ids_fn=_CTX_IDS,
         spots=_ladder_gate_spots(pairs),
         payload_fn=functools.partial(payload_for_arm_ladder, parent_recs=parent_recs),
+        pe_second_row_ok=functools.partial(
+            pe_second_row_ok_ladder, ladder_np_ids=ladder_np_ids, donor_maps=donor_maps
+        ),
     )
     RUN._write_json_atomic(cfg.gates_dir / "injection_gate_report.json", report)
     if not report["passed"]:

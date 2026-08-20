@@ -1935,17 +1935,25 @@ def run_injection_gate(
     ids_fn=None,
     spots: list[dict] | None = None,
     payload_fn=None,
+    pe_second_row_ok=None,
 ) -> dict:
     """Plan §7 gate 1 — the realized edit equals the intended donor state at
     the intended (row, position, layer) and NOWHERE else.
 
-    The keyword-only ``contexts`` / ``ids_fn`` / ``spots`` / ``payload_fn``
-    seams (defaults = this module's own registries — byte-equivalent for every
-    existing caller) let the #2162 LADDER driver reuse this gate verbatim over
-    its own bank (``scripts/issue2162_ladder.py``; ladder-plan §4.6 "IMPORTS,
-    never re-implements, the injection-gate helper"). ``spots`` rows keep the
+    The keyword-only ``contexts`` / ``ids_fn`` / ``spots`` / ``payload_fn`` /
+    ``pe_second_row_ok`` seams (defaults = this module's own registries —
+    byte-equivalent for every existing caller) let the #2162 LADDER driver
+    reuse this gate verbatim over its own bank
+    (``scripts/issue2162_ladder.py``; ladder-plan §4.6 "IMPORTS, never
+    re-implements, the injection-gate helper"). ``spots`` rows keep the
     ``{"cell", "slot", "arm", "pair"}`` shape; ``payload_fn`` keeps
-    :func:`payload_for_arm`'s call signature.
+    :func:`payload_for_arm`'s call signature. ``pe_second_row_ok(p, arm)``
+    is the pe-slot second-row runnability predicate — the default binds this
+    module's :func:`pe_excluded_reason` (parent donor-map keys
+    ``{"shuffled", "crosstype"}`` with PAIR-id values); a caller whose
+    ``donor_maps`` uses a DIFFERENT key/value convention (the #2329 ladder:
+    ``{"null_sameval", "null_xtype", "null_xtype_pe"}`` with CONTEXT-id
+    values) MUST pass its own predicate, or the default ``KeyError``s.
 
     Stage 1 is REPLACE at every layer, so the exactness read is ABSOLUTE (the
     hooked state at the edited position IS the payload — no incremental
@@ -1969,6 +1977,11 @@ def run_injection_gate(
     # No-prefix set (unit-1 flag) from the captured bank records: pe spots and
     # pe second rows must stay pe-runnable.
     np_ids = frozenset(cid for cid, r in recs.items() if r.get("no_prefix"))
+    if pe_second_row_ok is None:
+
+        def pe_second_row_ok(p, arm):
+            return pe_excluded_reason(p, arm, np_ids, donor_maps, pairs_by_id) is None
+
     spots = _gate_spot_specs(pairs, np_ids, donor_maps, pairs_by_id) if spots is None else spots
     results: list[dict] = []
     for spot in spots:
@@ -1982,9 +1995,7 @@ def run_injection_gate(
             for p in pairs
             if p.pair_id != pair.pair_id
             and len(ctx_ids[p.a]) != len(ctx_ids[pair.a])
-            and (
-                slot != "pe" or pe_excluded_reason(p, arm, np_ids, donor_maps, pairs_by_id) is None
-            )
+            and (slot != "pe" or pe_second_row_ok(p, arm))
         ]
         batch_pairs = [pair] + ([others[0]] if others else [])
         rows = [ctx_ids[p.a] for p in batch_pairs]

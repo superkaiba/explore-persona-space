@@ -271,11 +271,20 @@ def test_donor_identity_derivation_mismatch_fails():
 
 
 def test_donor_identity_tiny_skips_cos_leg():
+    # extra donors BEYOND the first three must not break the derivation leg:
+    # the plan derivation is "first 3 DISTINCT primary donors in build order",
+    # never the full distinct donor set (30 at the pin — the false-HALT bug).
+    donor_bs = [
+        *LAD.DONOR_IDENTITY_CONTEXT_IDS,
+        "instr_format::v1::n3",
+        "verbosity::v2::d2",
+        LAD.DONOR_IDENTITY_CONTEXT_IDS[0],  # repeat: distinctness, not count
+    ]
     report = LAD.run_donor_identity_assert(
         _g1_cfg(tiny=True),
         None,
         None,
-        _donor_manifest(list(LAD.DONOR_IDENTITY_CONTEXT_IDS)),
+        _donor_manifest(donor_bs),
         {},
     )
     assert report["passed"] is True
@@ -545,3 +554,68 @@ def test_reduce_shared_index_bootstrap_deterministic(decay_cfg):
         np.array([[0.6, 0.6], [0.6, 0.6]]), n_boot=64, seed=DEC.DECAY_BOOT_SEED
     )
     assert np.allclose(const, 0.6)
+
+
+# ── injection-gate pe second-row seam (ladder donor-map convention) ────
+
+
+def _mk_ladder_pair(pair_id="install_r1_pirate::d1", a="ctxA", b="ctxB"):
+    return LB.LadderPair(
+        pair_id=pair_id,
+        cell="install_r1_pirate",
+        kind="install",
+        persona="pirate",
+        carrier="d1",
+        value_a="neutral",
+        value_b="pirate",
+        a=a,
+        b=b,
+    )
+
+
+def test_parent_pe_default_keyerrors_on_ladder_donor_maps():
+    # The pre-fix crash shape: RUN.run_injection_gate's DEFAULT second-row
+    # predicate hard-calls pe_excluded_reason, which expects parent keys
+    # {"shuffled","crosstype"} — the ladder maps {"null_sameval","null_xtype",
+    # "null_xtype_pe"} KeyError on any null arm (observed live at the tiny
+    # bank smoke: KeyError 'crosstype' at issue2329_run.py pe_excluded_reason).
+    pair = _mk_ladder_pair()
+    ladder_maps = {"null_sameval": {}, "null_xtype": {}, "null_xtype_pe": {}}
+    with pytest.raises(KeyError, match="crosstype"):
+        RUN.pe_excluded_reason(pair, "null_xtype", frozenset(), ladder_maps, {})
+
+
+def test_injection_gate_exposes_pe_second_row_seam_and_ladder_threads_it():
+    # (a) the gate exposes the keyword-only seam (pre-fix: absent)
+    params = inspect.signature(RUN.run_injection_gate).parameters
+    assert "pe_second_row_ok" in params
+    assert params["pe_second_row_ok"].kind is inspect.Parameter.KEYWORD_ONLY
+    # (b) the ladder bank phase threads a ladder-aware predicate into it
+    src = inspect.getsource(LAD.phase_bank)
+    assert "pe_second_row_ok=" in src and "pe_second_row_ok_ladder" in src
+
+
+def test_pe_second_row_ok_ladder_semantics():
+    p = _mk_ladder_pair()
+    maps = {
+        "null_sameval": {p.pair_id: "donorL"},
+        "null_xtype": {p.pair_id: "parentB"},
+        "null_xtype_pe": {p.pair_id: "parentB"},
+    }
+    ok = LAD.pe_second_row_ok_ladder
+    # steered: recipient np-ness is the only constraint
+    assert ok(p, "steered", frozenset(), maps) is True
+    assert ok(p, "steered", frozenset({p.a}), maps) is False
+    assert ok(p, "steered", frozenset({p.b}), maps) is False
+    # null_sameval: ladder donor must exist and carry a pe token
+    assert ok(p, "null_sameval", frozenset(), maps) is True
+    assert ok(p, "null_sameval", frozenset({"donorL"}), maps) is False
+    no_donor = {**maps, "null_sameval": {}}
+    assert ok(p, "null_sameval", frozenset(), no_donor) is False
+    # null_xtype: membership in the pre-filtered pe-viable subset
+    assert ok(p, "null_xtype", frozenset(), maps) is True
+    pe_excluded = {**maps, "null_xtype_pe": {}}
+    assert ok(p, "null_xtype", frozenset(), pe_excluded) is False
+    # unknown arm fails loud
+    with pytest.raises(AssertionError):
+        ok(p, "shuffled", frozenset(), maps)

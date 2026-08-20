@@ -61,14 +61,20 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
 
-import numpy as np
+# load_dotenv BEFORE any heavy/HF import (lint: --check-dotenv-before-hf-import;
+# shared-VM thread caps #847 bind in-process only if set before numpy/torch load).
+from explore_persona_space.orchestrate.env import load_dotenv
 
-import issue2094_judge as J94
-import issue2162_ladder_judge as PLJ
-import issue2329_ladder_analysis as LA
-import issue2329_ladder_judge as LJ
-from explore_persona_space.experiments.issue2162 import ladder_bank as LB
-from issue2094_analysis import bootstrap_family_means_batched
+load_dotenv()
+
+import numpy as np  # noqa: E402
+
+import issue2094_judge as J94  # noqa: E402
+import issue2162_ladder_judge as PLJ  # noqa: E402
+import issue2329_ladder_analysis as LA  # noqa: E402
+import issue2329_ladder_judge as LJ  # noqa: E402
+from explore_persona_space.experiments.issue2162 import ladder_bank as LB  # noqa: E402
+from issue2094_analysis import bootstrap_family_means_batched  # noqa: E402
 
 logger = logging.getLogger("issue2329.decay")
 
@@ -115,7 +121,7 @@ def fragment_eval_prompt(descriptor: str) -> str:
     substitution slots — ``graded_judge.format_user_msg`` substitutes both —
     plus a score-ONLY-the-fragment instruction and the shared
     ``LB.REASON_THEN_SCORE`` JSON contract (rule-27 round-trip pinned in
-    tests/test_issue2329_decay.py).
+    tests/test_issue2329_ladder_decay.py).
     """
     return (
         "You will see a QUESTION (for context only) and a FRAGMENT — one "
