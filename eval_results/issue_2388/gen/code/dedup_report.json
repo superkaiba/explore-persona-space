@@ -389,20 +389,10 @@
   "test4.jsonl",
   "test5.jsonl"
  ],
- "ts": "2026-08-20T06:38:28Z",
- "git_commit": "e138885414a6c8e6876c0024eff0695228c9112b",
- "git_dirty": true,
+ "ts": "2026-08-20T07:23:26Z",
+ "git_commit": "b8f7c5bd1c2743ec5f4ff5b3080ddccf90917272",
+ "git_dirty": false,
  "phase": "gen-dedup",
- "git_dirty_paths": [
-  "scripts/issue2388_capture.py",
-  "scripts/issue2388_code_control.py",
-  "scripts/issue2388_dv_build.py",
-  "scripts/issue2388_fits.py",
-  "scripts/issue2388_gen.py",
-  "scripts/issue2388_spread_pilot.py",
-  "src/explore_persona_space/experiments/issue_1739/capture.py",
-  "tests/test_issue2388_capture_kinds.py"
- ],
- "git_argv0_state": "modified",
+ "git_argv0_state": "tracked",
  "git_argv0_path": "scripts/issue2388_gen.py"
 }
