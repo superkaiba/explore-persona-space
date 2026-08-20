@@ -355,6 +355,30 @@ standard 3-lens enum gate does not apply: the brief's verbatim lens list IS
   (no yaml) and the leg WARN-degraded to spans-only; run the numcheck from the
   repo root for the full two-leg check.
 
+- **Detector/check-addition plan, standard statistics lens with a brief FP/FN
+  translation (#2228 round one, a new verify_plan WARN-only check): the
+  brief's detector translation ("measurement = the check's true/false-positive
+  behavior") composes as a digit-free DETECTOR TRANSLATION header block
+  (instruments = the pin-test suite + the corpus calibration scan; constructs
+  = the check's FP/FN rates), the brief's numbered questions ride verbatim in
+  the brief span (the #2360 shape), and the tail mandates `### Answers to the
+  review questions` with per-question disposition words (SOUND | CONCERN |
+  MUST-FIX | UNVERIFIED; an UNVERIFIED would-be blocker files as Concern) plus
+  quoted-command grounding for the brief's spot-check question.** Infra bar
+  gains a detector clause: fires-on-healthy-plans (quote the plan's own
+  worse-than-no-check kill criterion) or misses-the-founding-incident =
+  Must-Fix; test VACUITY and gratuitous-vs-load-bearing brittleness under
+  KNOWN concurrent sibling edits get their own bar bullet. Carve-outs that
+  worked: gag "make it FAIL not WARN" (the verifier file's own WARN-only
+  doctrine), guard clarifier-recorded scope (new-check-not-widening,
+  in-plan-baselines-only) and the plan's measured-and-rejected harvest arm;
+  allow one-or-two bounded corpus-grep spot-checks but "do not exhaustively
+  duplicate the concurrent fact-checker". Numcheck PASS first try at ~107 KB
+  (spans = brief + lensitems + plan, no prior round; unsigned both-sides-guard
+  atoms + a comma-grouping alternative FIRST in the atom regex so a
+  thousands-grouped count canons as ONE atom instead of splitting at the
+  comma — symmetric either way, but one-atom canon is the robust form).
+
 **Why:** first custom-lens infra compose (#2324) — these choices made the
 numeric gate pass first try on a 68 KB prompt; round 2 (REVISE-round
 re-review) passed on the second numcheck run, the only failures being the
