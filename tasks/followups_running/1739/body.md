@@ -243,7 +243,7 @@ What is plotted: held-out Spearman rho for five banked roster arms on the five c
 
 > **Figure.** *The per-context view behind the fair-allocation bars.* Mapped-answer and context-probe predictions against the judge-scored DV per context — fair-allocation refit rows, seed 0 — on all five corrected rungs.
 
-The five rungs replace the same-platform Reddit fallback with a split the 5-seed table confirms: the mapped-answer probe gains on model-written-evals (+0.33; rho 0.40 versus 0.06, seed means), is +0.05 on answer — seed interval above zero, context-bootstrap interval crossing it — flat on feedback (+0.03), and loses on are-you-sure (-0.11, seed interval crossing zero) and mimicry (-0.20, the one interval-separated loss; rho -0.01 versus 0.19). The banked real-answer oracle reads 0.48 there, so the mapped answer recovers most answer-side signal. Where the probe loses, the shuffled map loses as much (mimicry margin +0.03) — the loss traces to the map's output distribution, not its learned pairing.
+The five rungs replace the same-platform Reddit fallback with a split the 5-seed table confirms: the mapped-answer probe gains on model-written-evals (+0.33; rho 0.40 versus 0.06, seed means), is +0.05 on answer (seed interval above zero, context-bootstrap crossing it), flat on feedback (+0.03), loses on are-you-sure (-0.11, seed interval crossing zero) and mimicry (-0.20, the one interval-separated loss; rho -0.01 versus 0.19). The banked real-answer oracle reads 0.48 there, so the mapped answer recovers most answer-side signal. Where the probe loses, the shuffled map loses as much (mimicry margin +0.03) — the loss traces to the map's output distribution, not its learned pairing.
 
 ---
 
