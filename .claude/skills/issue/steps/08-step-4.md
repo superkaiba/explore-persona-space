@@ -95,12 +95,13 @@ if [ "$(git -C "$REPO_ROOT" rev-list --count origin/main..issue-<N>)" -gt 0 ]; t
     --body "Closes task #<N>."
 else
   # This arm fires by construction on a fresh branch: Step 4a runs at the
-  # approved->running transition, BEFORE the implementer's first commit, and
-  # no later step re-runs this create (#2240 root cause). Step 10d's
-  # payload-aware no-usable-PR arm is the backstop that opens the PR for a
-  # code-bearing branch at merge time, posting a [step10d-no-pr-anomaly]
-  # epm:progress note when it does.
-  echo "issue-<N> has no commits ahead of origin/main yet; skipping draft PR — Step 10d's payload-aware arm (#2240) opens it at merge time if the branch carries novel payload."
+  # approved->running transition, BEFORE the implementer's first commit.
+  # The Step 5 draft-PR ensure (#2241) re-runs the create at the first
+  # review round — the first point where commits exist — so this skip is
+  # EXPECTED, not a defect. Step 10d's payload-aware no-usable-PR arm
+  # remains the merge-time backstop, posting a [step10d-no-pr-anomaly]
+  # epm:progress note when it fires.
+  echo "issue-<N> has no commits ahead of origin/main yet; skipping draft PR — the Step 5 draft-PR ensure (#2241) opens it at the first review round; Step 10d's payload-aware arm (#2240) opens it at merge time if the branch carries novel payload."
 fi
 ```
 

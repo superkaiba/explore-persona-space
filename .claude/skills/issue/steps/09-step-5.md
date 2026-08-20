@@ -42,6 +42,58 @@ push/merge through `tail`/`grep`/`head` (the `guard_piped_git_push.sh`
 PreToolUse hook blocks the piped shape; a pipe masks a rejected push).
 Copy the verbatim forms from Step 10d § "Bare push / merge snippets".
 
+**Draft-PR ensure (#2241; once per branch, memoized).** Step 4a's
+draft-PR create is gated on commits-ahead > 0 but runs BEFORE the
+implementer's first commit, so its else arm fires by construction —
+THIS block is the site that actually opens the draft PR on the normal
+path; Step 10d's payload-aware arm (#2240) stays the merge-time
+backstop. At each round entry that proceeds past the pre-split guard:
+IF an open PR for issue-<N> has already been confirmed this session,
+SKIP (zero cost — the common case after round 1); otherwise run the
+probe+create below and remember a confirmed outcome. Both commands are
+timeout-bounded and the whole block is FAIL-OPEN: no probe or create
+failure may block, delay, or fail the round beyond the bounded timeout
+fences (probe <= 75 s, create <= 150 s) — log the one line, proceed to
+5a, retry at the next round entry. NEVER pipe the create
+(guard_piped_git_push.sh blocks the piped shape; a pipe masks the exit
+code).
+
+```bash
+# Any-state existence probe (deterministic tri-state; measured ~0.4 s):
+# rc!=0             -> probe failed (network/auth): skip, retry next round
+# "0"               -> no PR object at all = the #2241 zero-PR class: create
+# ">=1" (any state) -> a PR object exists: OPEN -> done; MERGED/CLOSED is
+#                      the #1897 follow-up class, owned by Step 10d's
+#                      payload-aware arm at merge time — do NOT create here.
+N_PR=$(timeout --kill-after=15s 60s gh pr list --head issue-<N> --state all --json number --jq length) || N_PR=probe-failed
+if [ "$N_PR" = "0" ]; then
+  if timeout --kill-after=30s 120s gh pr create --draft --head issue-<N> \
+       --title "issue-<N>: <task title>" --body "Closes task #<N>."; then
+    echo "[step5-pr-ensure] opened draft PR for issue-<N> (#2241)"
+  else
+    echo "[step5-pr-ensure] gh pr create failed (rc!=0) — round proceeds; retry at next round entry; Step 10d's payload-aware arm (#2240) is the backstop"
+  fi
+elif [ "$N_PR" = "probe-failed" ]; then
+  echo "[step5-pr-ensure] PR-existence probe failed — round proceeds; retry at next round entry"
+fi
+```
+
+The ensure deliberately carries NO push and NO ancestry guard. The
+branch is normally on origin by Step 5 entry on EVERY work-producing
+path: the implementer brief's #2041 fan-out completion contract
+restatement mandates commit+push by explicit path IN the producing
+turn (Step 4b § Fan-out completion contract), and the experiment
+implementer's spec additionally pins the pre-marker push. The PR is
+opened DRAFT-only; every merge-time guard (#2312 stale-ref, #2296
+parity) still runs at Step 10d before any merge. If the branch is NOT
+on origin (a non-compliant brief or implementer), the create fails
+rc!=0 and the fail-open arm retries at the next round entry — and when
+no later round occurs (a single-round PASS), the run ends with no PR
+and Step 10d's payload-aware arm (#2240) opens it at merge time:
+exactly the backstop's job. NEVER push from this block: a new push
+site would owe the #2312 stale-ref guard pair (see
+tests/test_issue_skill_step10d_rewritten_branch.py::test_all_copy_sites_guarded).
+
 **Per-commit split-review dispatch (large rounds; #2074).** Evaluate BEFORE
 the 5a fan-out, and RE-EVALUATE per round from that round's own commit set +
 diff bytes (typical revision rounds are small → no split). Resolve

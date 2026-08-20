@@ -22,8 +22,20 @@ These tests fail the suite if a later SKILL.md editor re-introduces the
 silent skip, narrows the predicate back to a ``PR_STATE != OPEN``-only arm,
 drops a fail-safe layer, or removes the loud-failure routing (plan #2240
 durability pins; 8 pins per plan section (D)).
+
+Task #2241 (2026-08-20) moved PRIMARY draft-PR creation to Step 5 round
+entry: the "Draft-PR ensure (#2241)" block probes any-state PR existence
+and runs an rc-gated, timeout-fenced, fail-open ``gh pr create --draft``
+at the first review round — the first point where commits exist — so
+Step 10d's payload-aware arm is now the pinned merge-time BACKSTOP, not
+the normal path. Pins 9-12 below bind the ensure: presence + rc-gated
+create + pinned ordering after Round-push-hygiene (9), fail-open echo
+sites + timeout fences (10), the no-executable-git-push INVARIANT over
+the block's fenced Bash (11 — a regex scan with in-test mutation
+controls, not one literal), and the Step 4a else-arm routing prose (12).
 """
 
+import re
 from pathlib import Path
 
 from tests.issue_skill_source import issue_skill_text
@@ -44,6 +56,34 @@ def _step10d_span() -> str:
 GUARDS_COMMENT = "# Run guards 1-3 above first."
 USABLE_GATE = 'if [ "$USABLE_PR" != yes ]; then'
 NOVEL_GATE = 'if [ "$NOVEL_PAYLOAD" = "yes" ]; then'
+
+#: Every executable git-push form the workflow's own snippets use: bare
+#: `git push`, the `-C`-form `git -C "$WT" push`, a `timeout`-prefixed
+#: wrapper of either, and `push -u`. Exotic wrappers (`env VAR=1 git push`,
+#: `command git push`, `git -c cfg push`, `$GIT push`) escape the anchored
+#: regex by design — the block's prose ban + code review catch those.
+_GIT_PUSH_LINE = re.compile(r"^\s*(?:timeout\b.*\s+)?git(?:\s+-C\s+\S+)?\s+push\b")
+
+
+def _step5_span() -> str:
+    """The composed text between the unique `### Step 5:` and `### Step 6:` anchors."""
+    text = _text()
+    start = text.index("### Step 5:")
+    return text[start : text.index("### Step 6:", start)]
+
+
+def _ensure_block() -> str:
+    """The #2241 Draft-PR ensure block (heading to the split-review right anchor)."""
+    span = _step5_span()
+    start = span.index("Draft-PR ensure (#2241")
+    return span[start : span.index("Per-commit split-review dispatch", start)]
+
+
+def _ensure_block_bash() -> str:
+    """The ensure block's fenced Bash snippet (```bash ... ```)."""
+    block = _ensure_block()
+    start = block.index("```bash")
+    return block[start : block.index("\n```", start + len("```bash"))]
 
 
 def test_no_pr_arm_is_payload_aware():
@@ -173,3 +213,67 @@ def test_nothing_to_merge_guarded_on_novel_payload():
     flat = " ".join(span.split())
     assert "NOVEL PAYLOAD ON issue-<N> COULD NOT BE MERGED" in flat
     assert "this is a stranding risk, not a no-op" in flat
+
+
+def test_step5_draft_pr_ensure_present_and_rc_gated():
+    """Pin 9 (#2241): the ensure lives in Step 5 AFTER the Round-push-hygiene
+    block — a PINNED ordering/stability choice (conservative distance from
+    the pre-split-guard lint region, stable _ensure_block() anchoring,
+    readable order: push hygiene -> PR ensure -> split-review dispatch), NOT
+    lint protection (the check_pre_split_review_guard region was verified
+    byte-identical under the adjacent slots — #2241 v4 replay) — probes
+    ANY-state existence deterministically, and the create is rc-gated +
+    timeout-bounded."""
+    span = _step5_span()
+    block = _ensure_block()
+    assert span.index("**Round push hygiene.**") < span.index("Draft-PR ensure (#2241")
+    assert "gh pr list --head issue-<N> --state all --json number --jq length" in block
+    assert (
+        "if timeout --kill-after=30s 120s gh pr create --draft --head issue-<N>" in block
+    )  # rc-gated: the create is an `if` condition, never bare
+    assert block.index("gh pr list") < block.index("gh pr create")
+    assert (
+        block.count("gh pr create --draft --head issue-<N>") == 1
+    )  # 1 in insert + 0 pre-existing in Step 5
+
+
+def test_step5_ensure_fail_open_and_bounded():
+    """Pin 10 (#2241): every failure arm logs + proceeds (3 echo sites), both
+    gh calls are timeout-fenced, and probe failure never blind-creates."""
+    block = _ensure_block()
+    assert (
+        block.count("[step5-pr-ensure]") == 3
+    )  # success + create-fail + probe-fail (3 in insert + 0 elsewhere)
+    assert block.count("timeout --kill-after=") == 2
+    assert "N_PR=probe-failed" in block and '"$N_PR" = "0"' in block
+
+
+def test_step5_ensure_adds_no_push_site():
+    """Pin 11 (#2241, v4 — the INVARIANT, not one literal; MF4): the ensure
+    block's fenced Bash carries NO executable git-push form. v3 pinned only
+    `push -u origin issue-<N>`; the workflow's canonical bare form
+    `git -C "$WT" push origin issue-<N>` would have evaded that literal while
+    leaving the #2312 count-5 pins green — silently creating the sixth
+    unguarded push site the design forbids. Also: no ancestry legs. Any
+    future pre-ensure push site must live OUTSIDE _ensure_block()."""
+    bash = _ensure_block_bash()
+    for line in bash.splitlines():
+        assert not _GIT_PUSH_LINE.match(line), f"executable git-push form in ensure block: {line!r}"
+    block = _ensure_block()
+    assert "merge-base --is-ancestor" not in block
+    # Mutation controls: the regex itself MUST catch every canonical form,
+    # so it can never silently rot into matching nothing.
+    assert _GIT_PUSH_LINE.match('git -C "$WT" push origin issue-<N>')
+    assert _GIT_PUSH_LINE.match("timeout --kill-after=30s 120s git push origin issue-<N>")
+    assert _GIT_PUSH_LINE.match("git push -u origin issue-<N>")
+
+
+def test_step4a_else_arm_names_step5_ensure():
+    """Pin 12 (#2241): Step 4a's else arm routes the reader to the Step 5
+    ensure as the primary site (backstop naming from #2240 retained — the
+    two #2240 literals stay pinned by test_no_pr_arm_is_payload_aware).
+    Right boundary tightened to `### Step 5:` (v4, non-blocking item) so the
+    Step-5 insert itself can never satisfy the pin."""
+    text = _text()
+    step4a_region = text[: text.index("### Step 5:")]
+    assert "Step 5 draft-PR ensure (#2241)" in step4a_region
