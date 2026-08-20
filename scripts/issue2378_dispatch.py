@@ -262,7 +262,13 @@ class Runner:
         self.walls[name] = wall
         _log(f"[step] {name} rc={rc} wall={wall:.1f}s log={log_path}")
         if rc not in ok_rcs:
-            tail = "\n".join(log_path.read_text(encoding="utf-8").split("\n")[-25:])
+            # split("\n") (never splitlines() — #950 U+2028 safety) keeps a
+            # terminal empty element on newline-terminated logs; drop it so the
+            # tail carries 25 REAL lines (r5 review NIT runner-log-tail-trailing-empty).
+            lines = log_path.read_text(encoding="utf-8").split("\n")
+            if lines and lines[-1] == "":
+                lines.pop()
+            tail = "\n".join(lines[-25:])
             raise RuntimeError(f"step {name} failed rc={rc} (log tail below)\n{tail}")
         if rc == 0:
             self._ok_path(name).write_text(_argv_sha(argv))
@@ -487,7 +493,15 @@ def git_harvest(paths: list[str], message: str, *, force_add: bool = False) -> N
         _log("[harvest] nothing new to commit (idempotent resume)")
     for attempt in (1, 2):
         _git(["fetch", "origin", BRANCH], check=False)
-        reb = _git(["rebase", f"origin/{BRANCH}"], check=False)
+        # --autostash (r6 hardening, reconciler-suggested): a RESIDUAL unstaged
+        # tracked modification outside this harvest's declared paths (e.g. a
+        # crashed sibling phase's partial write) stashes across the rebase and
+        # re-applies, instead of the unconditional "cannot rebase: You have
+        # unstaged changes" refusal (git default autoStash=off; pod clones set
+        # no rebase config). The PRIMARY fix for the r5 BLOCKER is the
+        # content-stable pins record in ensure_model_venv — this is
+        # defense-in-depth; a genuine rebase CONFLICT still fails loud below.
+        reb = _git(["rebase", "--autostash", f"origin/{BRANCH}"], check=False)
         if reb.returncode != 0:
             _git(["rebase", "--abort"], check=False)
             raise RuntimeError(
@@ -537,7 +551,10 @@ def _git_wait_for(paths: list[str], *, poll_s: int, timeout_s: int, what: str) -
 
 def _git_pull_rebase() -> None:
     _git(["fetch", "origin", BRANCH])
-    reb = _git(["rebase", f"origin/{BRANCH}"], check=False)
+    # --autostash: same r6 defense-in-depth as git_harvest's rebase (see the
+    # comment there) — the P6 consumers of this helper run on clones whose
+    # tracked tree may carry residue a prior phase left unstaged.
+    reb = _git(["rebase", "--autostash", f"origin/{BRANCH}"], check=False)
     if reb.returncode != 0:
         _git(["rebase", "--abort"], check=False)
         raise RuntimeError(f"git pull-rebase onto origin/{BRANCH} conflicted:\n{reb.stderr}")
@@ -608,6 +625,64 @@ def _model_probe(py: str) -> dict | None:
     return json.loads(r.stdout.strip().split("\n")[-1])
 
 
+def _assert_driver_compat(compat_dir: str | None = None) -> None:
+    """Fail the MODEL-phase gate on a host driver too old for the CUDA-13
+    wheel stack (r5 review CONCERN model-venv-driver-compat-unguarded; the
+    #2330 crash shape). ensure_model_venv/env_smoke are CPU-only and
+    structurally cannot catch this: a pre-580 driver under torch 2.13/vllm
+    0.27.1 passes both and dies per-shard at vLLM engine init ("driver too
+    old"). One nvidia-smi read at gate time fails in seconds instead.
+
+    Passes when: driver major >= cm.MODEL_DRIVER_FLOOR_MAJOR, OR the NVIDIA
+    forward-compat package is ACTIVE (compat libcuda present AND on
+    LD_LIBRARY_PATH — presence alone does not reach the loader). No-GPU hosts
+    (VM fixture/dry runs) skip with a log line — a GPU-less real pod still
+    fails loud at the fan-out's visible_gpus() gate. Deliberate waiver:
+    $EPM_I2378_SKIP_DRIVER_PROBE=1 (logged loud)."""
+    import shutil
+
+    compat = compat_dir or cm.CUDA_COMPAT_DIR
+    if os.environ.get(cm.SKIP_DRIVER_PROBE_ENV) == "1":
+        _log(f"[model-venv] driver probe SKIPPED (${cm.SKIP_DRIVER_PROBE_ENV}=1 waiver)")
+        return
+    smi = shutil.which("nvidia-smi")
+    if smi is None:
+        _log("[model-venv] driver probe skipped: nvidia-smi not on PATH (no-GPU host)")
+        return
+    r = subprocess.run(
+        [smi, "--query-gpu=driver_version", "--format=csv,noheader"],
+        capture_output=True,
+        text=True,
+        env={**os.environ},
+        check=False,
+    )
+    versions = [ln.strip() for ln in r.stdout.split("\n") if ln.strip()]
+    if r.returncode != 0 or not versions:
+        raise RuntimeError(
+            f"driver probe: nvidia-smi failed rc={r.returncode}: {(r.stderr or '').strip()[-300:]}"
+        )
+    major = min(int(v.split(".")[0]) for v in versions)
+    floor = cm.MODEL_DRIVER_FLOOR_MAJOR
+    if major >= floor:
+        _log(f"[model-venv] driver OK {versions[0]} (floor {floor}, CUDA-13 wheel stack)")
+        return
+    compat_lib = Path(compat).is_dir() and any(Path(compat).glob("libcuda.so*"))
+    compat_on_ld = compat in os.environ.get("LD_LIBRARY_PATH", "").split(":")
+    if compat_lib and compat_on_ld:
+        _log(
+            f"[model-venv] driver OK {versions[0]} < {floor} via active cuda-compat "
+            f"({compat} on LD_LIBRARY_PATH — the #2330 recipe)"
+        )
+        return
+    raise RuntimeError(
+        f"host driver {versions[0]} is too old for the CUDA-13 wheel stack "
+        f"(vllm {cm.MODEL_VENV_PINS['vllm']} / torch {cm.MODEL_VENV_PINS['torch']} "
+        f"need driver >= {floor}); fix (gotchas.md #2330): apt-get install -y "
+        f"cuda-compat-13-0 && export LD_LIBRARY_PATH={compat}:$LD_LIBRARY_PATH in the "
+        f"LAUNCHER env (compat lib present: {compat_lib}; on LD_LIBRARY_PATH: {compat_on_ld})"
+    )
+
+
 def _build_model_venv(logs_dir: Path) -> None:
     """Idempotent build/repair of cm.MODEL_VENV_DEFAULT via uv (pins from cm).
     Recognizes an already-built venv: `uv venv` is skipped when the
@@ -640,12 +715,15 @@ def _build_model_venv(logs_dir: Path) -> None:
 
 def ensure_model_venv(args, runner: Runner) -> None:
     """MODEL-phase entry gate (r5 fix for the P1 qwen3_5 engine-init crash):
+    assert host-driver compat for the CUDA-13 wheels (r6, #2330 shape) ->
     probe the model interpreter -> build/repair when deficient (never over an
     explicit $EPM_I2378_MODEL_PY override) -> assert the exact
-    cm.MODEL_VENV_PINS -> record realized pins to <ledger>/model_venv_pins.json
-    (plan Repro card "exact pin at P1") -> run `--phase env_smoke` UNDER the
-    model interpreter, so the next env mismatch fails in seconds pre-fan-out
-    instead of per-shard at vLLM engine init."""
+    cm.MODEL_VENV_PINS -> record realized pins CONTENT-STABLY to
+    <ledger>/model_venv_pins.json (plan Repro card "exact pin at P1"; volatile
+    provenance goes to an untracked sidecar — r6 P4-harvest fix) -> run
+    `--phase env_smoke` UNDER the model interpreter (re-run forced after a
+    rebuild), so the next env mismatch fails in seconds pre-fan-out instead of
+    per-shard at vLLM engine init."""
     py = _model_python()
     if runner.dry:
         _log(
@@ -654,6 +732,8 @@ def ensure_model_venv(args, runner: Runner) -> None:
         )
         runner.run("model_env_smoke", _model_py("issue2378_dispatch.py", "--phase", "env_smoke"))
         return
+    _assert_driver_compat()  # fail fast BEFORE any ~4-min build on a bad host (#2330)
+    built = False
     realized = _model_probe(py)
     if realized is None:
         if os.environ.get(cm.MODEL_PY_ENV):
@@ -662,6 +742,7 @@ def ensure_model_venv(args, runner: Runner) -> None:
                 "refusing to build over an explicit override; unset it or repair that venv"
             )
         _build_model_venv(runner.logs_dir)
+        built = True
         realized = _model_probe(py)
         if realized is None:
             raise RuntimeError(
@@ -678,22 +759,51 @@ def ensure_model_venv(args, runner: Runner) -> None:
             f"{cm.MODEL_VENV_DEFAULT} or update cm.MODEL_VENV_PINS deliberately "
             "(plan Repro card 'exact pin at P1')"
         )
+    # CONTENT-STABLE pins record (r5 reconciler BLOCKER
+    # model-venv-pins-rewrite-breaks-p4-harvest): the tracked record carries
+    # ONLY stable pin content — volatile run_metadata (timestamp/argv/git) goes
+    # to the UNTRACKED sidecar below — and an unchanged record is never
+    # rewritten. A P2/P4/p4_topup re-ensure on a clone that materialized P1's
+    # committed copy therefore leaves the tracked file byte-identical + clean,
+    # so the scoped git_harvest rebase and _git_pull_rebase consumers cannot
+    # refuse on it. A prior record in any OTHER shape (the r5 metadata-bearing
+    # format included) is normalized to this clean form once.
     pins_path = Path(args.ledger_root) / "model_venv_pins.json"
+    record = {
+        "interpreter": py,
+        "realized": realized,
+        "pinned": dict(cm.MODEL_VENV_PINS),
+        "extra_pins": list(cm.MODEL_VENV_EXTRA_PINS),
+    }
+    prior = json.loads(pins_path.read_text(encoding="utf-8")) if pins_path.exists() else None
+    if prior == record:
+        _log(
+            f"[model-venv] pins record unchanged — rewrite skipped (P4-harvest safety) {pins_path}"
+        )
+    else:
+        cm.atomic_write_json(pins_path, record)
+    # Volatile ensure provenance (timestamp + argv + git) — untracked sidecar
+    # under the gitignored dispatch-logs root, never the tracked ledger.
     cm.atomic_write_json(
-        pins_path,
-        {
-            "interpreter": py,
-            "realized": realized,
-            "pinned": dict(cm.MODEL_VENV_PINS),
-            "extra_pins": list(cm.MODEL_VENV_EXTRA_PINS),
-            "metadata": cm.run_metadata(),
-        },
+        runner.logs_dir / "model_venv_ensure_meta.json",
+        {"pins_record": str(pins_path), "content": record, "metadata": cm.run_metadata()},
     )
     _log(
         f"[model-venv] OK {py} vllm={realized['vllm']} "
         f"transformers={realized['transformers']} torch={realized['torch']} "
         f"record={pins_path}"
     )
+    if built:
+        # A fresh/repaired venv invalidates any prior env_smoke ok-flag (the
+        # r5-disclosed overlay-wipe residue: the argv sha is unchanged across a
+        # rebuild, so the resume skip would silently reuse the OLD verdict) —
+        # force the render asserts to re-run under the rebuilt interpreter.
+        stale_ok = runner._ok_path("model_env_smoke")
+        if stale_ok.exists():
+            stale_ok.unlink()
+            _log(
+                "[model-venv] rebuilt venv — stale model_env_smoke ok-flag cleared (re-run forced)"
+            )
     runner.run("model_env_smoke", _model_py("issue2378_dispatch.py", "--phase", "env_smoke"))
 
 

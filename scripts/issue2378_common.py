@@ -49,6 +49,14 @@ MODEL_VENV_DEFAULT = "/root/eps-model-venv"
 MODEL_VENV_PINS = {"vllm": "0.27.1", "transformers": "5.15.1", "torch": "2.13.0"}
 MODEL_VENV_EXTRA_PINS = ("python-dotenv==1.2.2",)
 MODEL_PY_ENV = "EPM_I2378_MODEL_PY"  # explicit model-interpreter override
+# Host-driver floor for the CUDA-13 wheel stack above (torch 2.13.0 ships
+# cu130-linked binaries; vllm 0.27.1 links libcudart.so.13). A pre-580 host
+# driver passes every CPU-only gate and dies at vLLM engine init — the #2330
+# crash shape (gotchas.md "RunPod host driver vs CUDA-major wheel mismatch").
+# The forward-compat escape is cuda-compat-13-0 + LD_LIBRARY_PATH.
+MODEL_DRIVER_FLOOR_MAJOR = 580
+CUDA_COMPAT_DIR = "/usr/local/cuda-13.0/compat"
+SKIP_DRIVER_PROBE_ENV = "EPM_I2378_SKIP_DRIVER_PROBE"  # deliberate waiver, logged loud
 
 SEED = 137
 FRESH_SEEDS = (138, 139, 140, 141)
