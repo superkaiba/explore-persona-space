@@ -1,10 +1,11 @@
 {
-  "commit": "579b1493+dirty",
-  "render_id": "d177c740e0054afc",
-  "git_commit": "579b1493864bd908d6469d96a9332ef095383cdd",
+  "commit": "af994dfb+dirty",
+  "render_id": "d222032263ae44b8",
+  "git_commit": "af994dfbce4d9009bc9cffa7c9513250e5ee16fe",
   "git_dirty": true,
   "git_dirty_paths": [
     "scripts/issue1901_body_figures.py",
+    "scripts/issue722_figures.py",
     "tasks/proposed/2416/body.md",
     "tasks/proposed/2416/comments.jsonl",
     "tasks/proposed/2416/events.jsonl",
@@ -12,7 +13,7 @@
   ],
   "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue1901_body_figures.py",
-  "created": "2026-08-20T16:04:45Z",
+  "created": "2026-08-20T16:36:46Z",
   "figsize": [
     5.5,
     2.3
