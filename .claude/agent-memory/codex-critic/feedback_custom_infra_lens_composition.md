@@ -379,6 +379,24 @@ standard 3-lens enum gate does not apply: the brief's verbatim lens list IS
   thousands-grouped count canons as ONE atom instead of splitting at the
   comma — symmetric either way, but one-atom canon is the robust form).
 
+- **Verifier-check plan, standard alternatives lens + REQUIRED attack lines
+  (#2228 round one, a new-`verify_plan.py`-check plan): brief-supplied
+  numbered "required lines of attack" compose as their own span with a
+  mandated `### Press-point dispositions` section (one block per line, label
+  words FATAL / RECOVERABLE / NO-FINDING; the evading-phrasings line gets
+  per-phrasing `acceptable-residual` vs `guts-the-check` sub-verdicts).
+  NEW move that generalizes: when the plan's protective value turns on
+  what phrasings a harvest regex misses, EXPLICITLY ENCOURAGE the twin to
+  run bounded targeted greps over the archived plans corpus
+  (`tasks/*/*/plans/`) — "an empirical 'this phrasing exists in the corpus
+  today and the harvest misses it' beats a hypothetical". Guard the plan's
+  disclosed exclusions from auto-safe-harbor when the brief orders them
+  judged ("disclosures are NOT automatic safe harbor here"). Brief verdict
+  contract (`**Verdict:**` line, Must-Fix/Concern marks) nests inside the
+  standard epm marker tags. Numcheck PASS first try at ~70 KB (spans =
+  inputs + press + lensitems + plan + empty prior; unsigned both-sides-guard
+  atoms + pair-split + isfinite canon + collect-all).
+
 **Why:** first custom-lens infra compose (#2324) — these choices made the
 numeric gate pass first try on a 68 KB prompt; round 2 (REVISE-round
 re-review) passed on the second numcheck run, the only failures being the
