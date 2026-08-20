@@ -23,3 +23,4 @@
 - [envelope brace residue + intra-round rename](feedback_envelope_brace_residue_and_intraround_rename.md) — residue check excludes marker envelope (git ^{{commit}} is content); same-round add-then-rename ⇒ 3.75 N/A attested (#2198 r1)
 - [new helpers ≠ new file (#1805)](feedback_new_helpers_not_new_file_1805.md) — `--name-status` M-vs-A decides the round-new-script duty, never marker prose or +K/−0 numstat (#2378 r4)
 - [deferred event: two semantics](feedback_deferred_event_two_semantics.md) — read deferral_rationale: reconciler downgrade-with-recommended-fix arms full closure duties; rejected-binding does not (#2198 r2 vs #2332 r4)
+- [mid-compose correction + sentinel conflict](feedback_midcompose_correction_and_sentinel_conflict.md) — absolute main-checkout plan paths (verify + no-fallback BLOCKED rule); injected sibling lead worded unverified + grounded; brief-vs-task sentinel conflict composed per-brief and flagged (#2329 r1)
