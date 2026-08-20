@@ -71,6 +71,7 @@ LIVE_WORKFLOW_HELPERS = [
     "scripts/session_resolver.py",
     "scripts/session_summarize.py",
     "scripts/spawn_session.py",
+    "scripts/step5a_sibling_probe.py",
     "scripts/step9c_baseline.py",
     "scripts/sync_repo_root.py",
     "scripts/task.py",

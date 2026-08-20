@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2427,
+  "highest_id": 2428,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9536,8 +9536,8 @@
     "2234": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2234",
-      "status": "proposed",
+      "path": "tasks/archived/2234",
+      "status": "archived",
       "title": "parse_judge_json step 4: add labeled trailing score-line recovery (Score: N) \u2014 measured #2222 pilot shape missing from the landed #2109 recovery"
     },
     "2235": {
@@ -10479,11 +10479,11 @@
     },
     "2356": {
       "goal": "Predict Qwen2.5-7B-Instruct's binary refuse-vs-comply/answer decision across TWO behavioral regimes \u2014 (A) harmful-compliance flip-pairs and (B) over-refusal on borderline dual-use prompts \u2014 and compare four predictors of that behavior under a fair group-level train/eval split, run separately on each arm (the headline must hold in BOTH) plus a cross-regime transfer check: (1) LLM judge on context text, (2) linear probe on the context activation, (3) linear probe on the mapped (predicted) answer activation under a label-blind map-training ablation (#3a generic-only vs #3b generic + train-split in-domain), (4) linear probe on the actual answer activation (ceiling); additionally evaluate whether the context->answer map DISCRIMINATES answers via the #2202 whitened-cosine retrieval battery (which doubles as the map-quality gate for predictor 3).",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/2356",
       "status": "interpreting",
-      "title": "Predicting Qwen2.5-7B-Instruct refuse/comply behavior from internal representations vs an LLM judge, across harmful-compliance and over-refusal regimes (context / mapped-answer / actual-answer probes)"
+      "title": "A linear probe on Qwen2.5-7B-Instruct's pre-generation prompt activations predicts its refuse-vs-comply decision better than a strong LLM judge, in both a harmful-compliance and an over-refusal regime (MODERATE confidence)"
     },
     "2357": {
       "has_clean_result": false,
@@ -10920,8 +10920,8 @@
     "2412": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2412",
-      "status": "running",
+      "path": "tasks/completed/2412",
+      "status": "completed",
       "title": "Step 5a sibling-sync satisfiability probe is --collect-only, so runtime API skew and function-body imports pass it"
     },
     "2413": {
@@ -11028,6 +11028,13 @@
       "path": "tasks/proposed/2427",
       "status": "proposed",
       "title": "Gates must not read private transformers attributes \u2014 per-issue version pins turn config._commit_hash into a false-alarm crash (#2329)"
+    },
+    "2428": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/2428",
+      "status": "running",
+      "title": "Step 10d Guard 4 (lost-update refusal) is vacuous on the prescribed call path \u2014 --main-sha passes the main TIP, helper reads it as the merge-base"
     },
     "244": {
       "has_clean_result": false,

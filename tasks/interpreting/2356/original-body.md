@@ -3,27 +3,32 @@ title: Predicting Qwen2.5-7B-Instruct refuse/comply behavior from internal repre
   vs an LLM judge, across harmful-compliance and over-refusal regimes (context / mapped-answer
   / actual-answer probes)
 kind: experiment
-tags: []
+tags:
+- trigger-dense
 created_at: '2026-08-17T22:23:49Z'
 has_clean_result: false
 origin_prompt: 'run the full experiment i talked about earlier on the overrefusal
   (4-way: LLM judge on context, probe on context vector, probe on mapped answer vector,
   probe on actual answer vector, fair train/eval split)'
 workflow: v1
-goal: 'On borderline (dual-use) prompts, determine whether Qwen2.5-7B-Instruct''s
-  over-refuse-vs-answer decision is predictable from its INTERNAL representation of
-  the context when it is NOT predictable from the prompt text by a strong LLM judge,
-  and whether a fitted context->answer map recovers the behavior-relevant signal that
-  only the actual-answer representation contains. Compare four predictors under a
-  fair group-level split: (1) LLM judge on context text, (2) linear probe on the context
-  activation, (3) linear probe on the mapped (predicted) answer activation, (4) linear
-  probe on the actual answer activation (ceiling).'
+goal: 'Predict Qwen2.5-7B-Instruct''s binary refuse-vs-comply/answer decision across
+  TWO behavioral regimes — (A) harmful-compliance flip-pairs and (B) over-refusal
+  on borderline dual-use prompts — and compare four predictors of that behavior under
+  a fair group-level train/eval split, run separately on each arm (the headline must
+  hold in BOTH) plus a cross-regime transfer check: (1) LLM judge on context text,
+  (2) linear probe on the context activation, (3) linear probe on the mapped (predicted)
+  answer activation under a label-blind map-training ablation (#3a generic-only vs
+  #3b generic + train-split in-domain), (4) linear probe on the actual answer activation
+  (ceiling); additionally evaluate whether the context->answer map DISCRIMINATES answers
+  via the #2202 whitened-cosine retrieval battery (which doubles as the map-quality
+  gate for predictor 3).'
 relates_to:
 - spec-context-as-vector
+backend: runpod
 ---
 ## Goal
 
-Predict Qwen2.5-7B-Instruct's binary decision (RELIABLY-COMPLY/ANSWER vs RELIABLY-REFUSE) across TWO behavioral regimes — (A) harmful-compliance flip-pairs and (B) over-refusal on borderline dual-use prompts — and compare four predictors of that behavior under a fair, group-level train/eval split, run separately on each arm (robustness) plus a cross-regime transfer check:
+Predict Qwen2.5-7B-Instruct's binary refuse-vs-comply/answer decision across TWO behavioral regimes — (A) harmful-compliance flip-pairs and (B) over-refusal on borderline dual-use prompts — and compare four predictors of that behavior under a fair group-level train/eval split, run separately on each arm (the headline must hold in BOTH) plus a cross-regime transfer check: (1) LLM judge on context text, (2) linear probe on the context activation, (3) linear probe on the mapped (predicted) answer activation under a label-blind map-training ablation (#3a generic-only vs #3b generic + train-split in-domain), (4) linear probe on the actual answer activation (ceiling); additionally evaluate whether the context->answer map DISCRIMINATES answers via the #2202 whitened-cosine retrieval battery (which doubles as the map-quality gate for predictor 3).
 
 1. **LLM judge on context** — Sonnet (`claude-sonnet-4-5-20250929`) reads only the prompt text and predicts behavior (few-shot, calibrated, returns P). Surface baseline; expected near chance if behavior is surface-unpredictable.
 2. **Probe on context vector** — linear probe on Qwen's residual-stream activation at the last prompt token → behavior.
@@ -55,6 +60,15 @@ Predict Qwen2.5-7B-Instruct's binary decision (RELIABLY-COMPLY/ANSWER vs RELIABL
 - **Predictors:** train 1–4 above; report accuracy AND AUROC vs the majority-class baseline.
 - **Fair split:** GROUP-LEVEL by seed/topic — all paraphrases/near-duplicates of one seed stay on the same side of train/eval (no leakage). Report LODO-style generalization too.
 - **Two-arm robustness + cross-regime transfer:** run the full 4-predictor comparison (with the #3a/#3b map ablation) SEPARATELY on Arm A (harmful) and Arm B (over-refusal) — the headline claim (judge-on-text ≈ chance ≪ context-probe ≤ mapped-answer ≤ actual-answer ceiling) is only robust if it holds in BOTH regimes. Then a CROSS-REGIME transfer check: train the context-probe on one arm, evaluate on the other — does the behavior-prediction signal generalize across the harmful↔over-refusal regimes, or is it regime-specific? (Report; do not gate the headline on it.)
+
+## Map-discrimination evaluation (methods from #2202 — user ask)
+
+Beyond using the map for the behavior probe (#3), evaluate whether the context→answer map can DISCRIMINATE ANSWERS — whether each predicted answer vector singles out its TRUE answer among the held-out answer pool — using the #2202 retrieval battery. REUSE, do not reimplement:
+- **Reuse:** `scripts/issue2202_failchar.py` conventions (`ranks_of_targets` — mid-rank with tie tolerance; chunked-GEMM retrieval battery; whitening transform) + the #1738 ridge-map machinery (`scripts/issue1738_characterize.py`), following `scripts/issue2202_freshwhiten_avg.py` as the pattern. Compute #2356's OWN whiten stats (z = L^-1(x − mu_A); shrunk train-ANSWER covariance Cholesky; lam=0.1) on #2356 train answers — do NOT reuse #1738's `whiten_stats.npz` (different corpus).
+- **Metrics:** rank-1 retrieval acc@1 of the true answer under WHITENED cosine (primary) AND raw euclidean, plus `r2_cand_norm` and `pearson_r`; chance = 1/n_pool; and per the project mapping-baselines rule report the identity + learned-bias baseline (v̂ = x + b) alongside kNN retrieval.
+- **Draw-averaged targets:** denoise each answer with K≈4 fresh on-policy draws (mean of original + draws); report acc@1 under single-draw AND draw-averaged targets.
+- **Behavior-conditioned read:** split retrieval acc@1 by behavior (comply-answers vs refuse-answers), and test whether the predicted answer's whitened nearest-neighbor's BEHAVIOR matches the true behavior — a mapping-based behavior discriminator, complementary to the probe.
+- Run on BOTH arms and BOTH map conditions (#3a/#3b). This doubles as a MAP-QUALITY gate for predictor #3: if the map cannot discriminate answers above chance, the mapped-answer probe is reading noise.
 
 ## Design risks to resolve in planning (flagged)
 
