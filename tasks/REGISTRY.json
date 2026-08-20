@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2406,
+  "highest_id": 2407,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10874,6 +10874,13 @@
       "path": "tasks/proposed/2406",
       "status": "proposed",
       "title": "Lens 6 banned-vocab family: add bit-identity / bit-tolerance noun forms to audit + lens-reference + SPEC (5th coinage-drift instance)"
+    },
+    "2407": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2407",
+      "status": "proposed",
+      "title": "Step 6b canonical launch snippet is provision-only \u2014 add the required workload leg + time-budget guidance"
     },
     "241": {
       "has_clean_result": false,
