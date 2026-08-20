@@ -752,11 +752,19 @@ def phase_gate(out_root: Path, *, control_report: Path | None = None) -> dict:
         bcb = ctrl.get("bigcodebench")
         g1["harness_ok"] = bool(bcb["harness_ok"]) if bcb else None
         g1["flaky_mismatch_fraction"] = bcb.get("flaky_mismatch_fraction") if bcb else None
+        # Row-grain freshness (r4 code-control-preserved-row-freshness): the
+        # gate CONSUMES each control row's own run timestamp, so a merged
+        # report's preserved (not re-run) BCB/APPS row is auditable in the
+        # gate verdict rather than silently indistinguishable from fresh.
+        g1["bcb_control_ts"] = bcb.get("control_ts") if bcb else None
         apps_ctrl = ctrl.get("apps_intro")
         g1["apps_harness_ok"] = bool(apps_ctrl["harness_ok"]) if apps_ctrl else None
+        g1["apps_control_ts"] = apps_ctrl.get("control_ts") if apps_ctrl else None
     else:
         g1["harness_ok"] = None
         g1["apps_harness_ok"] = None
+        g1["bcb_control_ts"] = None
+        g1["apps_control_ts"] = None
 
     spread_p = out_root / "code" / "bigcodebench_full.json"
     g3: dict = {"available": spread_p.exists(), "provenance": str(spread_p)}

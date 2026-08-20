@@ -978,19 +978,76 @@ def _encoder_features(table: SurfaceTable, cache_dir: Path, device: str) -> np.n
     return emb.astype(np.float64)[None, :, :]
 
 
+QA_SHARDS_HF_PREFIX = "issue1739_ctxmap/raw_completions"
+_QA_SHARD_GLOB = "labeling_hallucination.shard*.jsonl"
+_QA_SHARD_SRC_RE = re.compile(r"^labeling/hallucination/(.+)_seed\d+\.json$")
+
+
+def _qa_questions_from_shards(shards_dir: Path) -> tuple[dict[str, str], dict[str, int]]:
+    """context_id -> question text (+ gold-alias counts) from the banked #1739
+    packed labeling raw-completion shards (concern qa-question-text-source).
+
+    Probe-verified schema (``{QA_SHARDS_HF_PREFIX}/labeling_hallucination.
+    shard00.jsonl``, 26 shards, ~9 MB each): packed rows ``{"src", "doc"}``;
+    the per-rollout docs (``src == labeling/hallucination/<context_id>_seed<k>
+    .json``) carry ``context_id`` + ``query`` + ``prefix_text`` +
+    ``answer_aliases``; the one ``_manifest.json`` row is FILTERED OUT on the
+    ``src`` discriminator (packed-format consumer rule). The join to the
+    banked labeling.json rows is EXACT on ``context_id`` — both minted by the
+    same producer (``experiments/issue_1739/corpus_staging._to_contexts``).
+    Question text follows the #1739 features convention (prefix_text + query,
+    newline-joined). Rollouts of one context must agree — a conflict is a
+    corrupted shard set, refused."""
+    shard_paths = sorted(Path(shards_dir).glob(_QA_SHARD_GLOB))
+    if not shard_paths:
+        raise RuntimeError(
+            f"no {_QA_SHARD_GLOB} under {shards_dir} — stage the banked #1739 labeling "
+            f"raw-completion shards (HF data repo: {QA_SHARDS_HF_PREFIX}/) first"
+        )
+    q_by_ctx: dict[str, str] = {}
+    alias_by_ctx: dict[str, int] = {}
+    for sp in shard_paths:
+        with sp.open(encoding="utf-8") as fh:
+            for line in fh:
+                if not line.strip():
+                    continue
+                r = json.loads(line)
+                if not _QA_SHARD_SRC_RE.match(str(r.get("src", ""))):
+                    continue  # manifest / foreign-source rows never join
+                d = r["doc"]
+                cid = str(d["context_id"])
+                text = "\n".join(p for p in (d.get("prefix_text"), d.get("query")) if p)
+                prior = q_by_ctx.get(cid)
+                if prior is not None and prior != text:
+                    raise RuntimeError(f"conflicting question text across rollouts for {cid}")
+                q_by_ctx[cid] = text
+                alias_by_ctx[cid] = len(d.get("answer_aliases") or [])
+    return q_by_ctx, alias_by_ctx
+
+
 def _attach_questions(args, table: SurfaceTable) -> None:
-    """Question text per context (feature baselines), from the gen loaders."""
+    """Question text per context (feature baselines): gen loaders on the new
+    surfaces; the banked #1739 labeling raw-completion shards on QA
+    (``--qa-questions-shards`` — concern qa-question-text-source)."""
     if "questions" in table.meta:
         return
-    sys.path.insert(0, str(REPO_ROOT / "scripts"))
-    import issue2388_gen as G
-
-    q_by_id: dict[str, str] = {}
-    for bench in _surface_benchmarks(args, table.surface):
-        for it in G.LOADERS[bench]():
-            q_by_id[it["item_id"]] = it.get("question") or it.get("prompt") or ""
     if table.surface == "qa":
-        raise RuntimeError("QA question text rides the banked labeling — attach upstream")
+        if not args.qa_questions_shards:
+            raise RuntimeError(
+                "QA question text rides the banked #1739 labeling raw-completion shards — "
+                f"pass --qa-questions-shards <dir with {_QA_SHARD_GLOB}> "
+                f"(HF data repo: {QA_SHARDS_HF_PREFIX}/)"
+            )
+        q_by_id, alias_by_id = _qa_questions_from_shards(Path(args.qa_questions_shards))
+        table.meta["alias_counts"] = [alias_by_id.get(c, 0) for c in table.ctx_ids]
+    else:
+        sys.path.insert(0, str(REPO_ROOT / "scripts"))
+        import issue2388_gen as G
+
+        q_by_id = {}
+        for bench in _surface_benchmarks(args, table.surface):
+            for it in G.LOADERS[bench]():
+                q_by_id[it["item_id"]] = it.get("question") or it.get("prompt") or ""
     table.meta["questions"] = [q_by_id.get(c, "") for c in table.ctx_ids]
     n_empty = sum(1 for q in table.meta["questions"] if not q)
     if n_empty / len(table.ctx_ids) > 0.01:
@@ -1038,6 +1095,48 @@ def _rung1_fit_filter(
             raise RuntimeError("mcq rung1 fit filter requires the held-out category set")
         return rows[~np.isin(table.category[rows], heldout_categories)]
     return rows
+
+
+def _rung1_realization(table: SurfaceTable) -> dict | None:
+    """Code-surface rung-1 PLANNED-vs-REALIZED benchmark disclosure.
+
+    r4 Major / reconciler-binding ``code-rung1-realization-undisclosed``: under
+    the fork-5 BCB-DROP gate the registered ``{bigcodebench_full, lcb_v5}``
+    rung-1 eval realizes as LCB-only, and ``_rung_eval_sets`` would silently
+    label the reduced cohort ``rung1``. This dict rides every code cell row and
+    both select-phase aggregates so no downstream read mistakes the reduced
+    cohort for the registered transfer read. Counts are PARTITION-level
+    (rung-1 eval rows in test; rung-1-fit-eligible rows in train — per-draw fit
+    rows are budget-subsampled from the latter). None on non-code surfaces
+    (their rung-1 sets are not benchmark-roster-conditional)."""
+    if table.surface != "code":
+        return None
+    test = np.flatnonzero(table.split == "test")
+    r1 = test[np.isin(table.benchmark[test], sorted(CODE_RUNG1_EVAL))]
+    train = np.flatnonzero(table.split == "train")
+    fit = train[np.isin(table.benchmark[train], sorted(CODE_RUNG1_FIT))]
+    realized_eval = sorted(set(table.benchmark[r1].tolist()))
+    realized_fit = sorted(set(table.benchmark[fit].tolist()))
+    bcb_dropped = "bigcodebench_full" not in realized_eval
+    return {
+        "planned_fit": sorted(CODE_RUNG1_FIT),
+        "planned_eval": sorted(CODE_RUNG1_EVAL),
+        "realized_fit": realized_fit,
+        "realized_eval": realized_eval,
+        "n_eval_rows_by_benchmark": {
+            b: int((table.benchmark[r1] == b).sum()) for b in realized_eval
+        },
+        "n_fit_rows_by_benchmark": {
+            b: int((table.benchmark[fit] == b).sum()) for b in realized_fit
+        },
+        "bcb_dropped_by_gate": bcb_dropped,
+        "reason": (
+            "bigcodebench_full absent from realized rows — dropped by the fork-5 gate "
+            "(bcb_fit_allowed=False); the rung-1 transfer eval is LCB-only"
+            if bcb_dropped
+            else None
+        ),
+    }
 
 
 RUNG1_REFIT_MIN_N = 20  # production draws always clear this (see arithmetic in the r2 report)
@@ -1217,6 +1316,40 @@ def _file_sha(path: Path) -> str | None:
     return h.hexdigest()[:12]
 
 
+def _pin_map_payloads(
+    out_root: Path, maps_dir: Path, filenames: tuple[str, ...], *, force: bool
+) -> None:
+    """UPSTREAM payload digests (reconciler r3 deferral
+    long-loop-restartability-upstream-digests, sweep half).
+
+    The regime sentinel pins the map MANIFEST bytes but not the consumed map
+    payload files, so a refit map under an unchanged manifest (or a
+    hand-swapped payload) would silently ride a stale-cell resume. A MERGED
+    per-file registry (``map_payload_shas.json``) keeps cross-map_cell
+    incremental fills legal (different invocations consume different keys):
+    only payloads that EXIST are recorded, a recorded payload whose bytes
+    changed REFUSES the resume, and ``--force`` overwrites the entries
+    alongside the cells it recomputes."""
+    payload_reg_p = out_root / "map_payload_shas.json"
+    current = {
+        fname: sha for fname in filenames if (sha := _file_sha(maps_dir / fname)) is not None
+    }
+    prior: dict[str, str] = json.loads(payload_reg_p.read_text()) if payload_reg_p.exists() else {}
+    if not force:
+        stale = {
+            f: {"prior": prior[f], "current": s}
+            for f, s in current.items()
+            if f in prior and prior[f] != s
+        }
+        if stale:
+            raise RuntimeError(
+                f"map payload bytes changed under {payload_reg_p}: {stale} — a refit map "
+                "invalidates the persisted cells; use a fresh --fits-root (or --force to "
+                "recompute)"
+            )
+    payload_reg_p.write_text(json.dumps({**prior, **current}, indent=1))
+
+
 def phase_sweep(args) -> None:  # noqa: C901 — single dispatch block over the arm registry
     surface = args.surface
     if not surface:
@@ -1237,6 +1370,9 @@ def phase_sweep(args) -> None:  # noqa: C901 — single dispatch block over the 
     if dev_idx.size == 0:
         raise RuntimeError(f"{surface}: empty dev partition — selection impossible")
     rungs = _rung_eval_sets(table)
+    rung1_meta = _rung1_realization(table)
+    if rung1_meta is not None and rung1_meta["bcb_dropped_by_gate"]:
+        print(f"[sweep] rung-1 realization: {rung1_meta['reason']}", flush=True)
     eval_names = ["dev", "rung0"] + (["rung1"] if "rung1" in rungs else [])
     n_train, n_dev = len(train_idx), len(dev_idx)
     d_model = int(table.z_ctx.shape[2])
@@ -1331,6 +1467,7 @@ def phase_sweep(args) -> None:  # noqa: C901 — single dispatch block over the 
         fu = {"fu0": 0.0, "fu05": 0.5, "fu1": 1.0}[map_cell]
         lin_key = resolve_map_key(surface, "linear", fu)
         mlp_key = resolve_map_key(surface, "mlp", fu)
+    _pin_map_payloads(out_root, maps_dir, (f"{lin_key}.npz", f"{mlp_key}.pt"), force=args.force)
     lin_map = _load_map(maps_dir, lin_key, device=args.device)
     mlp_map = _load_map(maps_dir, mlp_key, device=args.device)
     x_ctx = table.z_ctx
@@ -1360,18 +1497,22 @@ def phase_sweep(args) -> None:  # noqa: C901 — single dispatch block over the 
     # feature baselines (single-slice bases; TF-IDF refit per draw is
     # deliberately NOT done — fit on the full train partition once, a
     # disclosed simplification recorded in the cell rows). QA: the banked
-    # labeling carries no question text — bl_feats/bl_extemb unavailable
-    # (fail loud on request; persisted concern qa-question-text-source).
+    # labeling carries no question text — question text joins from the banked
+    # #1739 labeling raw-completion shards via --qa-questions-shards (exact
+    # context_id key; concern qa-question-text-source), fail loud on request
+    # without them.
     dir_available = table.spread_roll_t1 is not None
+    qa_text_available = surface != "qa" or bool(args.qa_questions_shards)
     feature_arms: list[str] = []
     if args.arms is None:
-        feature_arms = [] if surface == "qa" else ["bl_feats", "bl_extemb"]
+        feature_arms = ["bl_feats", "bl_extemb"] if qa_text_available else []
     else:
         feature_arms = [a for a in args.arms if a in ("bl_feats", "bl_extemb")]
-        if feature_arms and surface == "qa":
+        if feature_arms and not qa_text_available:
             raise RuntimeError(
                 "bl_feats/bl_extemb need question text; the banked QA labeling carries "
-                "none (concern qa-question-text-source)"
+                "none — pass --qa-questions-shards <staged shards dir> (HF data repo: "
+                f"{QA_SHARDS_HF_PREFIX}/; concern qa-question-text-source)"
             )
         bad_dir = [a for a in args.arms if a.startswith("arm_dir_") and not dir_available]
         if bad_dir:
@@ -1513,6 +1654,10 @@ def phase_sweep(args) -> None:  # noqa: C901 — single dispatch block over the 
                     },
                     "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                 }
+                if rung1_meta is not None:
+                    # r4 Major code-rung1-realization-undisclosed: every code
+                    # cell names the PLANNED vs REALIZED rung-1 benchmark sets.
+                    row["rung1_realization"] = rung1_meta
                 if arm == "bl_const":
                     mu = float(table.dv[draw_rows].mean())
                     per_eval = {}
@@ -1829,10 +1974,10 @@ def phase_select(args) -> None:
     aggregated test read (selection lives in the persisted cell rows)."""
     surface = args.surface
     out_root = Path(args.fits_root) / surface
-    sel: dict[str, dict] = {}
-    for cell in sorted((out_root / "cells").glob("*.json")):
-        row = json.loads(cell.read_text())
-        sel[cell.stem] = {
+    cell_paths = sorted((out_root / "cells").glob("*.json"))
+    arm_rows = [json.loads(c.read_text()) for c in cell_paths]
+    sel: dict[str, dict] = {
+        cell.stem: {
             k: row.get(k)
             for k in (
                 "arm",
@@ -1846,14 +1991,29 @@ def phase_select(args) -> None:
                 "qa_disjoint",
             )
         }
+        for cell, row in zip(cell_paths, arm_rows, strict=True)
+    }
     if not sel:
         raise RuntimeError(f"no cells under {out_root / 'cells'} — run --phase sweep first")
+    # r4 Major code-rung1-realization-undisclosed: surface the sweep-persisted
+    # PLANNED-vs-REALIZED rung-1 disclosure top-level in BOTH aggregates (code
+    # rows carry it; other surfaces aggregate to None). Inconsistent rows would
+    # mean cells from two different gate realizations share one root — refuse.
+    r1_metas = [r["rung1_realization"] for r in arm_rows if r.get("rung1_realization")]
+    rung1_realization = r1_metas[0] if r1_metas else None
+    for m in r1_metas[1:]:
+        if m != rung1_realization:
+            raise RuntimeError(
+                f"inconsistent rung1_realization across cell rows under {out_root / 'cells'} — "
+                "cells span two gate realizations; use a fresh --fits-root"
+            )
     path = out_root / "selection.json"
     path.write_text(
         json.dumps(
             {
                 "surface": surface,
                 "cells": sel,
+                "rung1_realization": rung1_realization,
                 "frozen_ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                 "metadata": _provenance("select"),
             },
@@ -1864,9 +2024,6 @@ def phase_select(args) -> None:
     # Plan-contract aggregate (section 6.5: fits/<surface>/all_arms.json) —
     # the FULL cell rows in one file (selection.json above stays the thin
     # frozen-selection view).
-    arm_rows = [
-        json.loads(cell.read_text()) for cell in sorted((out_root / "cells").glob("*.json"))
-    ]
     agg_path = out_root / "all_arms.json"
     agg_path.write_text(
         json.dumps(
@@ -1874,6 +2031,7 @@ def phase_select(args) -> None:
                 "surface": surface,
                 "n_rows": len(arm_rows),
                 "arm_rows": arm_rows,
+                "rung1_realization": rung1_realization,
                 "metadata": _provenance("select-all-arms"),
             },
             default=float,
@@ -1927,12 +2085,21 @@ def phase_bootstrap(args) -> None:
     preds_files = sorted((out_root / "preds").glob("preds_*.jsonl"))
     if not preds_files:
         raise RuntimeError(f"no preds under {out_root / 'preds'}")
+    # UPSTREAM content digests (reconciler r3 deferral long-loop-
+    # restartability-upstream-digests, bootstrap half): the resume key below
+    # additionally pins the CONSUMED labeling + per-arm preds file bytes, so a
+    # regenerated DV or re-swept preds set recomputes instead of silently
+    # reusing stale units. File bytes read from disk — hash-safe (never a
+    # recomputed float array) per the float-key rule.
+    lab_sha = _file_sha(Path(args.dv_root) / surface / "labeling.json")
+    unit_file_shas: dict[tuple[str, str], dict[str, str | None]] = {}
     cells: dict[tuple[str, str], dict[str, dict[str, tuple[list, list]]]] = {}
     for pf in preds_files:
         m = re.match(r"preds_(.+)_L(.+)_draw(\d+)\.jsonl$", pf.name)
         if not m:
             continue
         arm, budget, draw = m.group(1), m.group(2), m.group(3)
+        unit_file_shas.setdefault((budget, draw), {})[arm] = _file_sha(pf)
         per_eval: dict[str, tuple[list, list, list]] = {}
         with pf.open(encoding="utf-8") as fh:
             for line in fh:
@@ -1972,17 +2139,25 @@ def phase_bootstrap(args) -> None:
         # rng would give resume-order-dependent draws).
         ref_arm = next(iter(arms))
         arm_names = sorted(arms)
+        inputs_sha = hashlib.sha256(
+            json.dumps(
+                {"labeling": lab_sha, "preds": unit_file_shas[(budget, draw)]},
+                sort_keys=True,
+            ).encode()
+        ).hexdigest()[:12]
         for ev in arms[ref_arm]:
             key = (budget, int(draw), ev)
             prior = persisted_by_key.get(key)
             if prior is not None:
-                if prior.get("arms") == arm_names:
+                if prior.get("arms") == arm_names and prior.get("inputs_sha") == inputs_sha:
                     out.append(prior)
                     consumed.add(key)
                     continue
                 print(
                     f"[bootstrap] RECOMPUTE {key}: persisted arms {prior.get('arms')} != "
-                    f"current {arm_names} (arm-roster change invalidates the unit)",
+                    f"current {arm_names} or inputs_sha {prior.get('inputs_sha')} != "
+                    f"{inputs_sha} (arm-roster / upstream-content change invalidates "
+                    "the unit)",
                     flush=True,
                 )
                 consumed.add(key)
@@ -2040,6 +2215,7 @@ def phase_bootstrap(args) -> None:
                 # the H3 gap CI is the selection-inherited counterpart).
                 "ci_kind": "frozen-config",
                 "arms": arm_names,
+                "inputs_sha": inputs_sha,
                 "rho_point": spearman_rows(preds_mat, y_true).tolist(),
                 "rho_ci": [
                     [
@@ -2720,6 +2896,13 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--maps-out", default=str(MAPS_OUT))
     ap.add_argument("--store-root", default="/workspace/store_2388")
     ap.add_argument("--qa-store-dir", default="/workspace/store")
+    ap.add_argument(
+        "--qa-questions-shards",
+        default=None,
+        help="dir holding the staged banked #1739 labeling raw-completion shards "
+        f"({_QA_SHARD_GLOB}; HF data repo: {QA_SHARDS_HF_PREFIX}/) — enables the QA "
+        "question-text baselines bl_feats/bl_extemb (concern qa-question-text-source)",
+    )
     ap.add_argument("--u-store-dir", default="/workspace/u_store")
     ap.add_argument(
         "--h3-store-root",

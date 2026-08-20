@@ -349,6 +349,7 @@ def _upload_env(cap, tmp_path, *, gate: dict, store_benches: list[str]):
         dv_root=str(tmp_path / "dv"),
         store_root=str(store_root),
         smoke=False,
+        force_upload=False,  # r5: the upload-sentinel skip contract's override flag
     )
 
 

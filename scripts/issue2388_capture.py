@@ -436,13 +436,49 @@ def phase_tf_margin(args) -> None:
 # ---------------------------------------------------------------------------
 
 
+def _upload_state_descriptor(
+    store_root: Path, dv_root: Path, benchmarks: list[str], hf_root: str
+) -> dict:
+    """Local-file state the upload phase is a pure function of (r4 Minor
+    capture-upload-phase-not-skippable): per-benchmark capture manifest + tar,
+    tf_margin dir files, per-surface aggregates — each as (size, mtime_ns).
+    A sentinel written after a VERIFIED upload that exact-matches this
+    descriptor at re-entry means a rerun would re-transfer identical bytes,
+    so the phase may skip (``--force-upload`` overrides)."""
+
+    def _stat(p: Path) -> list[int]:
+        st = p.stat()
+        return [int(st.st_size), int(st.st_mtime_ns)]
+
+    state: dict = {"hf_root": hf_root, "benchmarks": sorted(benchmarks), "files": {}}
+    for benchmark in benchmarks:
+        surface = G.surface_of(benchmark)
+        for p in (
+            store_root / benchmark / "_capture_manifest.json",
+            store_root / f"{benchmark}.tar",
+        ):
+            if p.exists():
+                state["files"][str(p)] = _stat(p)
+        tf_dir = _tf_out_dir(dv_root, benchmark)
+        if tf_dir.exists():
+            for p in sorted(tf_dir.iterdir()):
+                state["files"][str(p)] = _stat(p)
+        agg = dv_root / surface / "tf_margin.json"
+        if agg.exists():
+            state["files"][str(agg)] = _stat(agg)
+    return state
+
+
 def phase_upload(args) -> None:
     """Tar + upload each benchmark's store; folder-upload the tf_margin dirs.
 
     Smoke runs land under a ``_smoke``-suffixed HF ROOT (same rule as gen's
     phase_upload: HF prefixes are production artifacts). A tar older than the
     store's manifest is REBUILT — a presence-only tar resume would upload
-    pre-repair bytes (r1 g5 Minor 2).
+    pre-repair bytes (r1 g5 Minor 2). A rerun whose local inputs are byte-
+    stat-identical to the last VERIFIED upload SKIPS the multi-GB Hub
+    transfers via the ``_upload_state*.json`` sentinel; ``--force-upload``
+    re-uploads regardless (r4 Minor capture-upload-phase-not-skippable).
     """
     import tarfile
 
@@ -466,6 +502,17 @@ def phase_upload(args) -> None:
         benchmarks = G.code_roster_from_gate_fields(G.load_gate(Path(args.out_root)))
     else:
         benchmarks = sorted(G.SURFACES[args.surface])
+    sentinel_p = store_root / ("_upload_state" + ("_smoke" if args.smoke else "") + ".json")
+    if sentinel_p.exists() and not args.force_upload:
+        prior_state = json.loads(sentinel_p.read_text())
+        if prior_state == _upload_state_descriptor(store_root, dv_root, benchmarks, hf_root):
+            print(
+                f"[upload] {sentinel_p.name} matches local state — verified upload already "
+                "landed; skip (re-run with --force-upload to re-transfer)",
+                flush=True,
+            )
+            return
+        print("[upload] upload sentinel present but local state changed — re-uploading", flush=True)
     expected: list[str] = []
     for benchmark in benchmarks:
         surface = G.surface_of(benchmark)
@@ -527,6 +574,11 @@ def phase_upload(args) -> None:
     )
     if missing:
         raise RuntimeError(f"post-upload verify: {len(missing)} paths missing: {missing[:5]}")
+    # Sentinel AFTER the exact-set verify, recomputed post-tar-rebuild so the
+    # recorded stats are the uploaded tars' — the skip contract above.
+    sentinel_p.write_text(
+        json.dumps(_upload_state_descriptor(store_root, dv_root, benchmarks, hf_root), indent=1)
+    )
     print(f"[upload] verified {len(set(expected))} paths on the Hub", flush=True)
 
 
@@ -548,6 +600,11 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--device", default="cuda")
     ap.add_argument("--batch-size", type=int, default=8)
     ap.add_argument("--smoke", action="store_true", help="cap items to SMOKE_N + smoke roots")
+    ap.add_argument(
+        "--force-upload",
+        action="store_true",
+        help="re-run Hub transfers even when the verified-upload sentinel matches local state",
+    )
     ap.add_argument("--import-check", action="store_true")
     ap.add_argument("--list-phases", action="store_true")
     args = ap.parse_args(argv)

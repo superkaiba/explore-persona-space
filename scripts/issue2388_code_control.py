@@ -242,6 +242,7 @@ def main(argv: list[str] | None = None) -> int:
     # apps_required, and deadlock the documented DROP->APPS sequence. Prior
     # rows not re-run this invocation are preserved verbatim; per-invocation
     # provenance rides the `invocations` list.
+    run_ts = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     merged: dict[str, dict] = {}
     invocations: list[dict] = []
     if args.out.exists():
@@ -250,20 +251,39 @@ def main(argv: list[str] | None = None) -> int:
         invocations = list(prior.get("invocations", []))
         if not invocations and merged:
             # pre-merge single-shot report: preserve its provenance as an entry
+            # (r4 NIT code-control-invocation-provenance-partial: carry the
+            # prior top-level dirty flag too, when present).
             invocations.append(
                 {
                     "benchmarks": sorted(merged),
                     "git_commit": prior.get("git_commit"),
+                    "git_dirty": prior.get("git_dirty"),
                     "ts": prior.get("ts"),
                 }
             )
+        # Row-grain freshness backfill (r4 code-control-preserved-row-freshness):
+        # a legacy preserved row without its own control_ts inherits the prior
+        # report's top-level ts, so every row carries WHEN it was actually run.
+        for row in merged.values():
+            row.setdefault("control_ts", prior.get("ts"))
+            row.setdefault("control_git_commit", prior.get("git_commit"))
+    # Freshness stamp on THIS invocation's rows (r4 code-control-preserved-row-
+    # freshness): preserved rows keep their own control_ts — phase_gate surfaces
+    # both rows' control_ts into the gate verdict so a resumed out-root's stale
+    # APPS/BCB control is auditable at every gate read, never silently fresh.
+    for row in report.values():
+        row["control_ts"] = run_ts
+        row["control_git_commit"] = meta.get("git_commit")
     merged.update(report)
     invocations.append(
         {
             "benchmarks": sorted(report),
+            "phase": "code-harness-control",
+            "argv": list(argv) if argv is not None else sys.argv[1:],
             "git_commit": meta.get("git_commit"),
             "git_dirty": meta.get("git_dirty"),
-            "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "git_dirty_paths": meta.get("git_dirty_paths"),
+            "ts": run_ts,
         }
     )
     payload = {"benchmarks": merged, "invocations": invocations}
