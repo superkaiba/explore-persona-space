@@ -1,0 +1,8 @@
+# Raw rollout text is an HF-data-repo artifact (issue2388_correctness/
+# raw_completions/), NEVER a git artifact: the two big-surface files exceed
+# GitHub's 100 MB blob limit (math 107 MB / mmlu 110 MB, 2026-08-20) and
+# MB-scale free text is barred from git regardless (#1739 — gitleaks does not
+# scale on free text). Aggregates (genmeta, verdict summaries, labeling,
+# gate/dedup/feasibility reports) stay committable.
+gen/*/rollouts/*.jsonl
+gen_smoke/*/rollouts/*.jsonl

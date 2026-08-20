@@ -151,8 +151,14 @@ uv run python scripts/issue2388_gen.py --phase dedup
 uv run python scripts/issue2388_fits.py --phase feasibility --pre-gen
 echo "[phase=p1_gate]"
 uv run python scripts/issue2388_gen.py --phase gate --bcb-python "$BCB_PY" --control-report "$CONTROL_REPORT"
+# Explicit small-aggregate paths ONLY — a directory pathspec swept the raw
+# rollout JSONLs into git (218 MB; GitHub rejects >100 MB blobs and MB-scale
+# free text is barred from git, #1739). Rollout text rides the HF upload
+# phase; eval_results/issue_2388/.gitignore hard-bars the rollouts globs.
 commit_results "issue #2388: P1 dedup report + gate verdict + pre-gen feasibility" \
-  eval_results/issue_2388/gen eval_results/issue_2388/fits
+  eval_results/issue_2388/gen/code/dedup_report.json \
+  eval_results/issue_2388/gen/code/code_gate.json \
+  eval_results/issue_2388/fits/feasibility_report_pregen.json
 sentinel p1-gate "P1 gate verdict written (G1 BCB allowance + G3 pool arithmetic + apps_required)"
 
 echo "[phase=p1_gen]"
@@ -207,8 +213,9 @@ echo "[phase=p1_dv]"
 for s in math mcq code; do
   uv run python scripts/issue2388_dv_build.py --surface "$s"
 done
-commit_results "issue #2388: P1 labeling.json per surface + gen eval JSONs" \
-  eval_results/issue_2388/dv eval_results/issue_2388/gen
+commit_results "issue #2388: P1 labeling.json per surface (+ small gen aggregates via .gitignore-filtered add)" \
+  eval_results/issue_2388/dv eval_results/issue_2388/gen/code/dedup_report.json \
+  eval_results/issue_2388/gen/code/code_gate.json
 sentinel p1-done "P1 complete: 7-benchmark gen+verify done, rollout text uploaded, DV labeling.json built for math/mcq/code"
 
 # --------------------------------------------------- P2: capture + margins ---
