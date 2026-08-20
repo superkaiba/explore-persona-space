@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2423,
+  "highest_id": 2424,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11000,6 +11000,13 @@
       "path": "tasks/proposed/2423",
       "status": "proposed",
       "title": "Step 5a sibling sync: the #2208 satisfiability probe never runs on a SCRIPT-only sync, so a synced sibling script's branch-era-unsatisfiable src/ import reds the gate"
+    },
+    "2424": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2424",
+      "status": "proposed",
+      "title": "Step 5a sibling-sync probe INPUT-SET gap: synced sibling SCRIPTS are never import-probed, breaking UNSYNCED covering tests at collection (fork-era src symbol; #2205 issue2094 crash)"
     },
     "244": {
       "has_clean_result": false,
