@@ -11032,8 +11032,8 @@
     "2428": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2428",
-      "status": "proposed",
+      "path": "tasks/planning/2428",
+      "status": "planning",
       "title": "Step 10d Guard 4 (lost-update refusal) is vacuous on the prescribed call path \u2014 --main-sha passes the main TIP, helper reads it as the merge-base"
     },
     "244": {
