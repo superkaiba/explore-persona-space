@@ -9487,8 +9487,8 @@
     "2228": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2228",
-      "status": "planning",
+      "path": "tasks/approved/2228",
+      "status": "approved",
       "title": "Extend verify_plan.py with a decision-margin satisfiability probe (margin-vs-baseline ceiling)"
     },
     "2229": {
