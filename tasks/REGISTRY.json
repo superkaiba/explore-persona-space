@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2408,
+  "highest_id": 2409,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10888,6 +10888,13 @@
       "path": "tasks/proposed/2408",
       "status": "proposed",
       "title": "verify_plan c46: cover the remaining launch post-parse refusals (execute-workload, no-runpod-fallback+runpod pin, env-pin)"
+    },
+    "2409": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2409",
+      "status": "proposed",
+      "title": "Step 10d pre-push lint gate: 900s per-leg fence is sized off the IDLE range the same section forbids (rc 124 reads as a payload crash)"
     },
     "241": {
       "has_clean_result": false,
