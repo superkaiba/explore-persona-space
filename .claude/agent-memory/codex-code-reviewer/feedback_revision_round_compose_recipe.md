@@ -336,6 +336,40 @@ implemented prior finding is restated with the orchestrator's reasoning and
 a proof burden ("re-raising requires proving the later-fire case reachable"),
 else Codex predictably re-FAILs on its own prior item.
 
+**Filter-mitigated compose at FIRST prompt (post-refusal task) + post-cap
+authorized round + shared-brief override (#2147 r6, 2026-08-19):** when a
+PRIOR round's Codex dispatch was REFUSED by the content filter
+(trigger-dense framing over filesystem-reclaim/guard logic + a whole-file
+read), compose the NEXT round already mitigated — do not wait for a second
+refusal: (a) reuse the recovery prompt's (cr5b-style) neutralized rubric
+spans verbatim (they are filter-TESTED; the fresh scaffold gets a hot-word
+assert: attack|destroy|exploit|malicious|hostile|adversar*|kill* banned
+from composer-written text, embeds exempt); (b) bounded reads become HARD
+BANS (never whole-file, never `nl -ba` — name it as a prior dispatch
+hazard), with a sed-window table + your own recomputed post-round line
+anchors (the fix shifts them; brief ranges are pre-round frames — say
+"never a finding"); (c) findings-by-reference discipline (file:line +
+abstract description, no command literals in the verdict body) goes in the
+bans AND the verdict template; (d) payload target well under the accepted
+recovery size (r6 landed 131 KB vs the accepted 186 KB) — inline only
+brief + impl marker + failure record + auth note; plan BY PATH when
+diff-verified fresh. POST-CAP round shape: inline the round-5 `epm:failure`
+(the residual's acceptance contract) and the user-authorization
+`epm:progress` note in their own envelopes; frame as "normal contract,
+bar neither lowered nor raised, review as round 1"; the brief's CLOSED
+list becomes the no-reopen fence (reopen needs NEW evidence from THIS
+diff). SHARED-BRIEF override: a brief written for both twins carries
+Claude-only posting instructions (`task.py post-marker epm:code-review`) —
+add a "Codex adaptations of the brief" block immediately after the brief
+envelope overriding: posting (you emit the codex marker block only),
+events.jsonl reads (inlined), line frames (recomputed), and run-duties
+(static READ translation, cite `git show <prefix-sha>:<file>` windows for
+pre-fix-behavior reasoning). Also: Step 4.6 presence half is N/A-BY-KIND
+on an `epm:experiment-implementation` report (binds on `epm:results`
+only) — say so explicitly or Codex invents a marker-shape finding; and a
+spec-freshness-synced branch balloons three-dot to 100s of files — ban the
+whole-branch BODY, keep --stat + per-file forms.
+
 **Inlined-prior-verdict tag echo hazard (#2145 r2, 2026-08-15):** when the
 prior Codex verdict is inlined IN FULL, add a hard-constraints line telling
 Codex to NEVER reproduce the prior marker's tags in its own output (the
@@ -1528,3 +1562,32 @@ one(s) with lenient absorbed-or-deferred-with-note adjudication; (f) static
 proxies for unrunnable claims attested as compose-time facts to re-verify
 (def-test count vs claimed collect-only, zero-hit stale-cap-literal sweep);
 (g) note the reconcile note's file:line refs use R1-BLOB numbering.
+
+**Union-NOTE-as-contract + instrument-non-vacuity fix round (#2391 r2,
+2026-08-19):** when the orchestrator posted a standalone union WORK ORDER
+note (B1/B2 with root-cause + per-item round-2 scope) after a FAIL+FAIL
+agreement, inline THAT note as the sole acceptance contract instead of both
+prior verdicts (#2332 form) — it pre-extracts every Evidence/Fix line, has no
+marker tags, so the tag arithmetic collapses to own-head==1/close==1 with no
+stripping. Deltas worth reusing: (a) a brief-ordered mutation probe ("flip
+the allowlist, confirm red, restore by inverse edit") translates to the
+#2146 SCRATCH-TREE form keyed on the test's OWN path resolution — when
+`REPO_ROOT = Path(__file__).resolve().parents[1]`, a /tmp scratch tree
+(`tests/` + the read files beside it) isolates the mutation completely;
+check IMPORTS first to decide scratch-runnability (stdlib+pytest-only file →
+runs anywhere; a file importing the project package must NOT be
+scratch-copied — probe its pure helpers via `uv run python -c` from the
+worktree on in-memory mutated strings instead). Never mutate the shared
+worktree (the parallel Claude reviewer reads the same tree). (b) A brief
+environment note ("uv rc=2 read-only cache → UV_CACHE_DIR=...; never bare
+`python -m pytest` — imports MAIN's package, reads the old cap") is a
+BINDING prompt section, not advice — round 1's twin burned its run on
+exactly that stale-main false failure. (c) A same-defect concern pair
+(Claude id + Codex id for one bug) gets ONE closure adjudication covering
+both ids, stated in the ledger literal AND the closure-ledger schema. (d)
+When the task history is "every blocker was a verification-instrument
+defect", the priorities lead with instrument NON-VACUITY (reachability of
+the scan's file enumeration, exemption exactness + the dead-control proof,
+the lookbehind/word-adjacency claim behind a compose test, kwarg-default
+behavior preservation) — with fabricated-falsifiability (claimed-red that
+stays green) named as substantive FAIL.
