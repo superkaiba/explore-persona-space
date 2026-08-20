@@ -43,14 +43,6 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
-import numpy as np
-
-
-def _stable_seed(text: str) -> int:
-    """PYTHONHASHSEED-independent seed component (str hash() is salted per
-    process — a hash(surface) seed part makes draws irreproducible)."""
-    return int(hashlib.sha256(text.encode()).hexdigest()[:8], 16)
-
 
 def _ensure_repo_root_on_syspath() -> Path:
     root = Path(__file__).resolve().parents[1]
@@ -66,6 +58,8 @@ from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()
 
+import numpy as np  # noqa: E402
+
 from explore_persona_space.experiments.issue_1739 import fits as F  # noqa: E402
 from explore_persona_space.experiments.issue_1739.arms import (  # noqa: E402
     auroc_rows,
@@ -76,6 +70,13 @@ from explore_persona_space.experiments.issue_1739.constants import (  # noqa: E4
     N_LAYERS,
     U_STORE_CELL,
 )
+
+
+def _stable_seed(text: str) -> int:
+    """PYTHONHASHSEED-independent seed component (str hash() is salted per
+    process — a hash(surface) seed part makes draws irreproducible)."""
+    return int(hashlib.sha256(text.encode()).hexdigest()[:8], 16)
+
 
 # --- Registered grid (plan sections 4-6) ---
 L_GRID = (250, 500, 1000, 2000, 4000, 8000)  # + "full" appended per surface
