@@ -576,6 +576,53 @@ FAIL). (Named residual: a detached scratch-worktree merge commit — CLAUDE.md
 branch that deletes a still-referenced script is caught post-merge on main
 by the strict main-tree lint.)
 
+**Deliverable-divergence probe (#1771→#2201) — run AFTER the sync above and
+BEFORE composing the reviewer briefs, EVERY review round (worktree sessions;
+the helper self-skips on main).** The sync classification above protects
+deliberately branch-edited files but silently drops their complement: a
+protected file that ALSO moved on origin/main since the merge-base — the
+#1771 shape (#2164 rewrote the same function + test on main in the opposite
+direction; round-1 review never saw it). Scope: the probe reads the ISSUE
+WORKTREE whenever it exists (deliverable rounds build there — the feature's
+dominant topology; the orchestrator's Bash cwd resets to the repo root, so
+the helper never binds to the invoking checkout), which means an on-main
+round beside a RETAINED stale worktree posts that worktree's divergence as
+a noise disclosure — cap-bounded, resolved by the stale worktree's removal.
+Surface that set to BOTH reviewers:
+
+```bash
+DIVOUT=/tmp/issue-<N>-divergence-r<round>.txt
+rm -f "$DIVOUT"   # stale-output hygiene: never read a prior invocation's list
+# Two-step rc-capture (the Guard-4 caller form — a one-step eval "$(...)"
+# evaluates the emitted assignments, always rc 0, DISCARDING the helper's exit 2):
+DIV_OUT=$(bash "$REPO_ROOT"/scripts/step10d_guards.sh <N> --guard divergence --out "$DIVOUT"); DIV_RC=$?
+eval "$DIV_OUT"
+# DIVERGENCE=clean|diverged|skipped; DIVERGED_COUNT=<n>; MAIN_SHA=<probed
+# origin/main sha>; paths in $DIVOUT. Resolve every note field into a shell
+# variable FIRST (#1722 — no $( ) inside --note):
+DIV_FILES=$(paste -sd, "$DIVOUT" 2>/dev/null)
+if [ "$DIV_RC" -ne 0 ]; then
+  # ERROR-shaped note — NEVER a clean count= note from a failed probe:
+  DIV_NOTE="[divergence-probe] r<round> ERROR rc=$DIV_RC ${ERROR:-probe-failed}"
+else
+  # Durable record EVERY round, count=0 included — the Step 10d delta gate
+  # reads the LATEST clean note as "what the final review round saw", and
+  # main=$MAIN_SHA is the content key its re-touch arm diffs from:
+  DIV_NOTE="[divergence-probe] r<round> count=$DIVERGED_COUNT main=$MAIN_SHA files=$DIV_FILES"
+fi
+uv run python "$REPO_ROOT"/scripts/task.py post-marker <N> epm:progress --note "$DIV_NOTE"
+```
+
+`DIV_RC` != 0 → BOTH reviewer briefs carry one probe-failed line —
+`divergence probe FAILED this round (rc=<rc>): main-side divergence NOT
+computed; treat protected-file divergence as unknown` — never a fabricated
+clean claim. `DIV_RC` = 0 and `DIVERGED_COUNT` > 0 → append the
+`diverged_on_main` bullet (brief list below) to BOTH reviewer briefs. The
+refined set is small by construction (sync-subject exclusion +
+content-identical drop + tasks/ + agent-memory carve-outs — measured
+2026-08-19: 0-2 files on healthy live branches; the #1771 incident replay
+reads 16), so the brief lists every path verbatim.
+
 > **429 pacing at every ensemble fan-out (applies here, to the Step 9
 > critic ensembles, and to /adversarial-planner Phase 2):** when MORE than
 > two agent prompts go out at once (e.g. 3 critic lenses x 2 models), pause
@@ -598,6 +645,14 @@ Both reviewers see the same brief:
   (empty on round 1). Lets each reviewer notice patterns.
 - The diff vs `main`, the approved plan (via the `plans/plan.md`
   symlink), the existing codebase.
+- `diverged_on_main` — OPTIONAL (present only when the Step 5a
+  deliverable-divergence probe found a non-empty set): the verbatim path
+  list from `/tmp/issue-<N>-divergence-r<round>.txt`, plus the round's
+  probed pin as `main=<sha>` (the same value the round's
+  `[divergence-probe]` note carries). Reviewers handle each named file
+  per code-reviewer.md § Main-side divergence list (read main's delta
+  since the merge-base AT the brief's pinned `main=<sha>`; a semantic
+  contradiction is a Major finding).
 
 The Claude reviewer additionally receives:
 - `worktree` path, `base` ref (typically fetched `origin/main` — #1289).

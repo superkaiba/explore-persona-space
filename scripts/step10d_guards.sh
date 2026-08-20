@@ -19,6 +19,31 @@
 # fences (transcribed at implementation time; the ``.py`` pin tests exercise
 # every behavioral arm to catch drift).
 #
+# Fourth subcommand (task #2201, not a SKILL.md extraction -- a NEW probe):
+#
+#   * ``--guard divergence`` : the #1771->#2201 deliverable-divergence probe.
+#                           Lists round-deliverable files ALSO changed on the
+#                           remote main since the merge-base, refined by the
+#                           sync-subject exclusion (#1560/#1789 anchor), the
+#                           content-identical drop, and the ``tasks/`` +
+#                           ``.claude/agent-memory/`` carve-outs. TWO call
+#                           sites (both use the two-step rc-capture caller
+#                           form + ``rm -f`` the ``--out`` path first):
+#                           the Step 5a post-sync probe
+#                           (``.claude/skills/issue/steps/09-step-5.md`` --
+#                           reviewer-brief disclosure, every review round)
+#                           and the Step 10d pre-merge divergence delta gate
+#                           (``.claude/skills/issue/steps/18-step-10d.md``).
+#                           MAIN_SHA is captured ONCE (rev-parse) BEFORE the
+#                           merge-base and every later read uses the capture
+#                           (Guard 1's pin precedent, steps/18-step-10d.md
+#                           :293-313: "pinned to ONE SHA so a concurrent
+#                           session's fetch cannot advance origin/main
+#                           mid-guard"). NO fetch inside the helper -- both
+#                           call sites already run the bounded
+#                           ``timeout --kill-after=30s 120s git fetch origin
+#                           main --quiet || true`` first.
+#
 # Guards 1, 2, 3, 5 stay as SKILL.md prose this round -- state-coupling and
 # recovery-machinery coupling make their extraction the parked follow-up
 # (plan §5.5). See ``tasks/*/1978/plans/plan.md`` for the staging rationale.
@@ -50,7 +75,7 @@
 
 _usage() {
     cat <<'USAGE' >&2
-Usage: bash scripts/step10d_guards.sh <issue-number> --guard {prelude|0|4} [--main-sha <sha>]
+Usage: bash scripts/step10d_guards.sh <issue-number> --guard {prelude|0|4|divergence} [--main-sha <sha>] [--out <file>]
 
 Emits KEY=VALUE lines on stdout for `eval` in the caller. Diagnostics on stderr.
 
@@ -63,8 +88,22 @@ Emits KEY=VALUE lines on stdout for `eval` in the caller. Diagnostics on stderr.
                          refusal. Exit 0 on pass/skipped, 1 on refused, 2 on
                          infra error. Honors EPM_SKIP_LOST_UPDATE_GUARD=1
                          (checked FIRST).
+  --guard divergence     Deliverable-divergence probe (#1771->#2201): emits
+                         DIVERGENCE=clean|diverged|skipped, DIVERGED_COUNT,
+                         MAIN_SHA (the remote-main tip pinned by ONE
+                         rev-parse BEFORE the merge-base -- no fetch inside
+                         the helper; both call sites run the bounded fetch
+                         first), and DIVERGED_FILE (path of the
+                         one-path-per-line survivors list; empty when
+                         skipped). Exit 0 always (a probe, never a refusal);
+                         2 + ERROR=<reason> on infra error. Callers (Step 5a
+                         post-sync probe; Step 10d pre-merge delta gate) use
+                         the two-step rc-capture form and rm -f the --out
+                         path BEFORE invoking (stale-output hygiene).
   --main-sha <sha>       Guard 4 only: pinned merge-base (falls back to
                          `git merge-base HEAD origin/main` in the worktree).
+  --out <file>           divergence only: survivors list path (default
+                         /tmp/issue-<N>-divergence.txt).
 USAGE
     exit 2
 }
@@ -87,6 +126,7 @@ N="$ISSUE"
 
 GUARD=""
 MAIN_SHA=""
+OUT=""
 while [ "$#" -gt 0 ]; do
     case "$1" in
         --guard)
@@ -97,6 +137,11 @@ while [ "$#" -gt 0 ]; do
         --main-sha)
             [ "$#" -ge 2 ] || _die_usage missing-main-sha-value
             MAIN_SHA="$2"
+            shift 2
+            ;;
+        --out)
+            [ "$#" -ge 2 ] || _die_usage missing-out-value
+            OUT="$2"
             shift 2
             ;;
         *) _die_usage "unknown-arg-$1" ;;
@@ -266,6 +311,118 @@ case "$GUARD" in
             exit 1
         fi
         printf 'GUARD4=%s\n' pass
+        exit 0
+        ;;
+
+    divergence)
+        # Deliverable-divergence probe (#1771 -> #2201).
+        #
+        # Emits the refined branch-AND-main changed-file set since the
+        # merge-base: files this round deliberately edited that ALSO moved on
+        # the remote main -- the #1771 shape (#2164 rewrote the same function
+        # + test on main in the opposite direction; round-1 review never saw
+        # it). A PROBE, never a refusal: exit 0 on clean/diverged/skipped,
+        # 2 + ERROR= on infra error (matching guards 0/4).
+        REPO_ROOT=$(_derive_repo_root) || { printf 'ERROR=%s\n' derivation-failed; exit 2; }
+        WT="$REPO_ROOT/.claude/worktrees/issue-$N"
+        # No issue worktree -> evaluate the CURRENT checkout (a main-checkout
+        # session then self-skips below -- the Step 5a on-main skip).
+        if [ ! -d "$WT" ]; then
+            WT="$REPO_ROOT"
+        fi
+        if [ "$(git -C "$WT" rev-parse --abbrev-ref HEAD 2>/dev/null)" = "main" ]; then
+            printf 'DIVERGENCE=%s\n' skipped
+            printf 'DIVERGED_COUNT=%s\n' 0
+            printf 'DIVERGED_FILE=\n'
+            exit 0
+        fi
+        # Pin ONE main snapshot FIRST (MF-A) -- Guard 1's capture precedent
+        # (steps/18-step-10d.md:293-313): rev-parse ONCE so a concurrent
+        # session's fetch cannot advance origin/main mid-probe; every later
+        # read below uses ONLY the captured sha. No fetch here -- both call
+        # sites already ran the bounded fetch.
+        # --verify --quiet: an unresolvable name yields EMPTY + rc 1 (a bare
+        # rev-parse would echo the literal name to stdout and fake a sha).
+        MAIN_SHA=$(git -C "$WT" rev-parse --verify --quiet origin/main 2>/dev/null)
+        if [ -z "$MAIN_SHA" ]; then
+            printf 'ERROR=%s\n' no-origin-main
+            exit 2
+        fi
+        if ! MB=$(git -C "$WT" merge-base HEAD "$MAIN_SHA" 2>/dev/null) || [ -z "$MB" ]; then
+            printf 'ERROR=%s\n' no-merge-base
+            exit 2
+        fi
+        OUT="${OUT:-/tmp/issue-$N-divergence.txt}"
+        _tmp_div=$(mktemp -d -t step10d-guards-2201-divergence.XXXXXXXX) || {
+            printf 'ERROR=%s\n' mktemp-failed
+            exit 2
+        }
+        # shellcheck disable=SC2064
+        trap "rm -rf '$_tmp_div'" EXIT
+        # Branch side + main side name lists (each vs the merge-base), then
+        # the intersection. Fail LOUD on a diff failure -- an empty list from
+        # a failed diff would silently read as clean.
+        if ! git -C "$WT" -c core.quotePath=false diff --name-only "$MB" HEAD \
+                > "$_tmp_div/branch.raw" 2>/dev/null; then
+            printf 'ERROR=%s\n' branch-diff-failed
+            exit 2
+        fi
+        if ! git -C "$WT" -c core.quotePath=false diff --name-only "$MB" "$MAIN_SHA" \
+                > "$_tmp_div/mainside.raw" 2>/dev/null; then
+            printf 'ERROR=%s\n' main-diff-failed
+            exit 2
+        fi
+        sort -u "$_tmp_div/branch.raw" > "$_tmp_div/branch.txt"
+        sort -u "$_tmp_div/mainside.raw" > "$_tmp_div/mainside.txt"
+        comm -12 "$_tmp_div/branch.txt" "$_tmp_div/mainside.txt" > "$_tmp_div/isect.txt"
+        if ! : > "$OUT"; then
+            printf 'ERROR=%s\n' out-unwritable
+            exit 2
+        fi
+        DIV_COUNT=0
+        while IFS= read -r P; do
+            [ -z "$P" ] && continue
+            # Carve-outs: task-state + review-round bookkeeping (Guard 3
+            # precedent -- "always in-scope, never an UNSAFE trigger";
+            # tasks/ churn has its own machinery + Guard 1).
+            case "$P" in
+                tasks/*|.claude/agent-memory/*) continue ;;
+            esac
+            # Sync-import-only drop: a path whose branch-side commits ALL
+            # carry the spec-freshness sync subject anchor is not a
+            # deliberate branch edit (#1560/#1789 subject-scoped exclusion,
+            # awk idiom from steps/09-step-5.md:234-235). Materialized with
+            # an rc check (review r1 MF-1a): a failed log piped straight
+            # into awk exits through awk rc 0, reads as "sync-only"
+            # (empty), and silently DROPS a real divergence. No stderr
+            # redirect -- diagnostics stay on stderr (guards 0/4 contract).
+            if ! git -C "$WT" log --format='%H %s' "$MB"..HEAD -- "$P" \
+                    > "$_tmp_div/plog.txt"; then
+                printf 'ERROR=%s\n' log-failed
+                exit 2
+            fi
+            NONSYNC=$(awk 'index($0, "sync workflow-surface specs from") == 0' \
+                "$_tmp_div/plog.txt")
+            [ -z "$NONSYNC" ] && continue
+            # Content-identical drop: already converged with the pinned main
+            # tip (also catches every freshly-synced file -- defense in
+            # depth on top of the subject exclusion).
+            if git -C "$WT" diff --quiet HEAD "$MAIN_SHA" -- "$P" 2>/dev/null; then
+                continue
+            fi
+            printf '%s\n' "$P" >> "$OUT"
+            DIV_COUNT=$((DIV_COUNT + 1))
+        done < "$_tmp_div/isect.txt"
+        if [ "$DIV_COUNT" -gt 0 ]; then
+            printf 'DIVERGENCE=%s\n' diverged
+        else
+            printf 'DIVERGENCE=%s\n' clean
+        fi
+        printf 'DIVERGED_COUNT=%s\n' "$DIV_COUNT"
+        printf 'MAIN_SHA=%s\n' "$MAIN_SHA"
+        # %q: eval-safe under the two-step caller form even for a space-
+        # bearing --out path (plain paths print unchanged).
+        printf 'DIVERGED_FILE=%q\n' "$OUT"
         exit 0
         ;;
 
