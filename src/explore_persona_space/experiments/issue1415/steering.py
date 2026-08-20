@@ -30,6 +30,9 @@ Conventions (fail fast; shape asserts at boundaries):
 
 from __future__ import annotations
 
+import copy
+import inspect
+
 import torch
 
 from explore_persona_space.analysis.extraction import (
@@ -391,6 +394,7 @@ def generate_batch(
     render_fn=None,
     ids_fn=None,
     top_p: float | None = None,
+    share_prefill: bool = False,
 ) -> list[list[str]]:
     """Batched HF ``generate()``: N draws for each context, optional DeltaHook.
 
@@ -415,9 +419,34 @@ def generate_batch(
     ``temperature > 0`` (the paper's 32B setting is temp 0.7 / top_p 0.9; #2203
     Fix C). It is ignored under greedy decoding.
 
+    ``share_prefill`` (optional, DEFAULT ``False`` = the serial per-draw path
+    below, byte-unchanged for every existing caller — issue #2389 plan §4.7
+    item 5) runs the (optionally hooked) prefill ONCE per batch and samples
+    the N continuations from per-draw copies of the resulting
+    ``past_key_values`` (``_generate_batch_shared_prefill``). Outputs are
+    DISTRIBUTIONALLY — not bit- — identical to the serial path (declared RNG
+    caveat: the per-draw seed stream is consumed differently); equivalence is
+    bound by the pre-registered M2-extended acceptance battery, and production
+    arming is FAIL-OPEN behind the gate-4b equivalence artifact.
+
     Returns ``results[b][i]`` = draw ``i`` of context ``b`` (new tokens only,
     special tokens skipped).
     """
+    if share_prefill:
+        results, _ = _generate_batch_shared_prefill(
+            model,
+            tokenizer,
+            contexts,
+            n=n,
+            hook=hook,
+            max_new_tokens=max_new_tokens,
+            temperature=temperature,
+            seed_base=seed_base,
+            render_fn=render_fn,
+            ids_fn=ids_fn,
+            top_p=top_p,
+        )
+        return results
     assert len(contexts) >= 1 and n >= 1
     assert max_new_tokens >= 1
     if tokenizer.pad_token_id is None:
@@ -468,6 +497,380 @@ def generate_batch(
         for b in range(B):
             results[b].append(tokenizer.decode(out[b, T:], skip_special_tokens=True))
     return results
+
+
+# ── shared-prefill multi-draw generation (issue #2389, plan §4.7 item 5) ──
+#
+# One (optionally hooked) prefill per batch; N continuations sampled from
+# per-draw ``copy.deepcopy`` copies of the resulting ``past_key_values``.
+# The serial ``generate_batch`` body above stays byte-identical (acceptance
+# leg (a)); the encode/assert code is deliberately DUPLICATED here rather
+# than factored out of the serial path.
+
+
+def _encode_left_padded(model, tokenizer, contexts: list[dict], render_fn, ids_fn) -> tuple:
+    """Render + LEFT-pad contexts exactly as ``generate_batch``'s serial path.
+
+    Returns ``(input_ids, attention_mask, per_ctx_ids)`` on the model device
+    after the same per-row exactness asserts (each row's unpadded tail equals
+    its individually tokenized context ids — acceptance leg (d))."""
+    if tokenizer.pad_token_id is None:
+        tokenizer.pad_token = tokenizer.eos_token
+    per_ctx_ids = [(ids_fn or context_token_ids)(tokenizer, c) for c in contexts]
+    texts = [(render_fn or render_context)(tokenizer, c) for c in contexts]
+    prev_side = tokenizer.padding_side
+    tokenizer.padding_side = "left"
+    try:
+        enc = tokenizer(texts, add_special_tokens=False, padding=True, return_tensors="pt")
+    finally:
+        tokenizer.padding_side = prev_side
+    device = next(model.parameters()).device
+    input_ids = enc["input_ids"].to(device)
+    attention_mask = enc["attention_mask"].to(device)
+    B, T = input_ids.shape
+    assert len(contexts) == B
+    assert max(len(ids) for ids in per_ctx_ids) == T, (T, [len(i) for i in per_ctx_ids])
+    for b, ids in enumerate(per_ctx_ids):
+        row_len = int(attention_mask[b].sum().item())
+        assert row_len == len(ids), (b, row_len, len(ids))
+        assert input_ids[b, T - len(ids) :].tolist() == ids, f"row {b}: padded ids != ctx ids"
+    return input_ids, attention_mask, per_ctx_ids
+
+
+# (field, inactive value) pairs — any OTHER active value on the effective
+# generation config is a distribution-shaping feature the shared-prefill
+# sampler does not replicate; ``_effective_generation_config`` REFUSES it
+# (fail loud → the caller's FAIL-OPEN gate keeps the serial path).
+_UNSUPPORTED_SAMPLING_FIELDS: tuple[tuple[str, object], ...] = (
+    ("min_p", None),
+    ("typical_p", 1.0),
+    ("epsilon_cutoff", 0.0),
+    ("eta_cutoff", 0.0),
+    ("no_repeat_ngram_size", 0),
+    ("encoder_repetition_penalty", 1.0),
+    ("bad_words_ids", None),
+    ("sequence_bias", None),
+    ("suppress_tokens", None),
+    ("begin_suppress_tokens", None),
+    ("forced_bos_token_id", None),
+    ("forced_eos_token_id", None),
+    ("min_new_tokens", None),
+    ("min_length", 0),
+    ("num_beams", 1),
+    ("num_beam_groups", 1),
+    ("penalty_alpha", None),
+    ("renormalize_logits", False),
+    ("exponential_decay_length_penalty", None),
+    ("watermarking_config", None),
+    ("guidance_scale", None),
+)
+
+
+def _effective_generation_config(
+    model, *, do_sample: bool, temperature, top_p, max_new_tokens: int, pad_token_id
+):
+    """The generation config the SERIAL ``generate()`` call would run under.
+
+    Reproduces ``generate()``'s own merge — ``deepcopy(model.generation_config)``
+    then ``update(**kwargs)`` with EXACTLY the kwargs the serial branch passes
+    (explicit ``None`` values OVERRIDE, so the serial call's ``top_k=None`` /
+    ``top_p=None`` disable config defaults like Qwen's ``top_k=20``) — then
+    REFUSES any active distribution-shaping feature ``_warp_scores`` does not
+    replicate (RuntimeError; the caller's FAIL-OPEN gate keeps the serial path).
+    """
+    gen_cfg = copy.deepcopy(model.generation_config)
+    gen_cfg.update(
+        do_sample=do_sample,
+        temperature=temperature if do_sample else None,
+        top_p=(top_p if do_sample else None),
+        top_k=None,
+        max_new_tokens=max_new_tokens,
+        pad_token_id=pad_token_id,
+    )
+    active = [
+        f"{field}={getattr(gen_cfg, field, None)!r}"
+        for field, inactive in _UNSUPPORTED_SAMPLING_FIELDS
+        if getattr(gen_cfg, field, None) not in (inactive, None)
+    ]
+    if active:
+        raise RuntimeError(
+            "share_prefill: unsupported distribution-shaping generation-config feature(s) "
+            f"active: {', '.join(active)} — the shared-prefill sampler replicates only "
+            "repetition_penalty/temperature/top_k/top_p. Use share_prefill=False."
+        )
+    return gen_cfg
+
+
+def _eos_id_set(model, tokenizer) -> set[int]:
+    """EOS ids the serial ``generate()`` path would stop on (config over tokenizer)."""
+    eos = model.generation_config.eos_token_id
+    if eos is None:
+        eos = tokenizer.eos_token_id
+    if eos is None:
+        return set()
+    if isinstance(eos, int):
+        return {int(eos)}
+    return {int(e) for e in eos}
+
+
+def _warp_scores(seq: torch.Tensor, scores: torch.Tensor, gen_cfg) -> torch.Tensor:
+    """Apply the serial path's logits-processor chain to one step's fp32 logits.
+
+    Replicates transformers ``_get_logits_processor`` order + inclusion
+    conditions for the SUPPORTED features (everything else is refused by
+    ``_effective_generation_config``): RepetitionPenalty -> (if sampling)
+    Temperature -> TopK -> TopP, each with HF's exact math
+    (``min_tokens_to_keep=1``, ``filter_value=-inf``). Version-proof by
+    construction — semantics are pinned against the installed ``generate()``
+    by the warp-oracle unit test, not by importing HF warper classes.
+    """
+    rep = getattr(gen_cfg, "repetition_penalty", None)
+    if rep is not None and rep != 1.0:
+        gathered = torch.gather(scores, 1, seq)
+        gathered = torch.where(gathered < 0, gathered * rep, gathered / rep)
+        scores = scores.scatter(1, seq, gathered)
+    if not gen_cfg.do_sample:
+        return scores
+    temp = gen_cfg.temperature
+    if temp is not None and temp != 1.0:
+        scores = scores / temp
+    top_k = gen_cfg.top_k
+    if top_k is not None and top_k != 0:
+        k = min(int(top_k), scores.shape[-1])
+        kth = torch.topk(scores, k)[0][..., -1, None]
+        scores = scores.masked_fill(scores < kth, float("-inf"))
+    top_p = gen_cfg.top_p
+    if top_p is not None and top_p < 1.0:
+        sorted_logits, sorted_indices = torch.sort(scores, descending=False)
+        cumulative_probs = sorted_logits.softmax(dim=-1).cumsum(dim=-1)
+        sorted_remove = cumulative_probs <= (1 - float(top_p))
+        sorted_remove[..., -1:] = False  # min_tokens_to_keep=1
+        remove = sorted_remove.scatter(1, sorted_indices, sorted_remove)
+        scores = scores.masked_fill(remove, float("-inf"))
+    return scores
+
+
+def _position_ids_full(attention_mask: torch.Tensor) -> torch.Tensor:
+    """Padding-aware position ids, exactly as ``prepare_inputs_for_generation``."""
+    position_ids = attention_mask.long().cumsum(-1) - 1
+    position_ids.masked_fill_(attention_mask == 0, 1)
+    return position_ids
+
+
+def _shared_prefill_forward(model, input_ids, attention_mask, hook) -> tuple:
+    """ONE (optionally hooked) prefill -> (fp32 last-position logits, past_key_values).
+
+    Mirrors the serial ``generate()`` prefill for the same batch: padding-aware
+    ``position_ids`` (created iff the forward signature accepts them — the
+    ``prepare_inputs_for_generation`` rule), ``use_cache=True``, and the hook
+    armed ONCE for the whole batch, so the edit lands exactly once and is
+    inherited by every draw through the cache (acceptance leg (c)).
+    ``logits_to_keep=1`` is passed when the forward names it (only the last
+    position's logits are read; the edit's effect on them is unchanged).
+    """
+    B, T = input_ids.shape
+    fwd_params = inspect.signature(model.forward).parameters
+    kwargs: dict = {}
+    if "position_ids" in fwd_params:
+        kwargs["position_ids"] = _position_ids_full(attention_mask)
+    if "logits_to_keep" in fwd_params:
+        kwargs["logits_to_keep"] = 1
+    if hook is not None:
+        assert hook._handle is not None, "install the DeltaHook before generate_batch (use `with`)"
+        hook.arm(expected_prompt_len=T)
+    out = model(input_ids=input_ids, attention_mask=attention_mask, use_cache=True, **kwargs)
+    last_logits = out.logits[:, -1, :].to(copy=True, dtype=torch.float32)
+    past = out.past_key_values
+    assert past is not None, "model returned no past_key_values under use_cache=True"
+    assert last_logits.shape[0] == B, (last_logits.shape, B)
+    return last_logits, past
+
+
+@torch.no_grad()
+def _generate_batch_shared_prefill(
+    model,
+    tokenizer,
+    contexts: list[dict],
+    *,
+    n: int = 10,
+    hook: DeltaHook | None = None,
+    max_new_tokens: int = 1024,
+    temperature: float = 1.0,
+    seed_base: int = 42,
+    render_fn=None,
+    ids_fn=None,
+    top_p: float | None = None,
+    _collect_step_logits: int = 0,
+    _teacher_force: torch.Tensor | None = None,
+    _force_first_token: dict[int, torch.Tensor] | None = None,
+) -> tuple[list[list[str]], list[list[torch.Tensor]]]:
+    """Shared-prefill multi-draw generation (issue #2389, plan §4.7 item 5).
+
+    Runs the (optionally hooked) prefill ONCE per batch and samples the N
+    continuations from per-draw ``copy.deepcopy`` copies of the resulting
+    ``past_key_values`` — aliasing-safe on the qwen3_5 hybrid KV+recurrent
+    cache, where a shared/expanded view would fail branch-independence
+    (acceptance leg (e)) from decode step 2 onward. The per-step decode
+    replicates the serial ``generate()`` semantics: fp32 logits, the supported
+    logits-processor chain (``_warp_scores``), ``multinomial``/``argmax``
+    selection, finished rows padded with ``pad_token_id``, EOS-set stopping,
+    and padding-aware ``position_ids``.
+
+    RNG caveat (declared in the plan): draws are seeded per draw exactly like
+    the serial path, but the stream is consumed differently, so outputs are
+    DISTRIBUTIONALLY — not bit- — identical to the serial path.
+
+    Private seams (acceptance battery + gate-4b only; production callers pass
+    none of them): ``_collect_step_logits=K`` collects each draw's first K
+    decode steps' RAW fp32 ``(B, vocab)`` logits (leg (b));
+    ``_teacher_force`` (``(K,)`` or ``(B, K)`` token ids) forces every draw's
+    first K tokens — teacher-forced leg (b) — bypassing sampling AND the
+    finished-row pad substitution for the forced steps;
+    ``_force_first_token`` maps draw index -> ``(B,)`` token ids substituted
+    at that draw's step 0 (branch-independence leg (e)).
+
+    Returns ``(results, step_logits)``: ``results[b][i]`` as in
+    ``generate_batch``; ``step_logits[i][t]`` = draw ``i``'s raw fp32 logits
+    at decode step ``t`` (empty lists unless collected).
+    """
+    assert len(contexts) >= 1 and n >= 1
+    assert max_new_tokens >= 1
+    input_ids, attention_mask, _ = _encode_left_padded(
+        model, tokenizer, contexts, render_fn, ids_fn
+    )
+    B = input_ids.shape[0]
+    do_sample = temperature > 0
+    gen_cfg = _effective_generation_config(
+        model,
+        do_sample=do_sample,
+        temperature=temperature,
+        top_p=top_p,
+        max_new_tokens=max_new_tokens,
+        pad_token_id=tokenizer.pad_token_id,
+    )
+    eos_ids = _eos_id_set(model, tokenizer)
+    pad_id = int(tokenizer.pad_token_id)
+    device = input_ids.device
+    eos_tensor = torch.tensor(sorted(eos_ids), dtype=torch.long, device=device) if eos_ids else None
+
+    tf = None
+    if _teacher_force is not None:
+        tf = _teacher_force.to(device=device, dtype=torch.long)
+        if tf.dim() == 1:
+            tf = tf.unsqueeze(0).expand(B, -1)
+        assert tf.dim() == 2 and tf.shape[0] == B, (tf.shape, B)
+        assert tf.shape[1] <= max_new_tokens, (tf.shape, max_new_tokens)
+
+    last_logits, base_past = _shared_prefill_forward(model, input_ids, attention_mask, hook)
+
+    results: list[list[str]] = [[] for _ in range(B)]
+    step_logits: list[list[torch.Tensor]] = [[] for _ in range(n)]
+    for i in range(n):
+        torch.manual_seed(seed_base + i)
+        new_ids, collected = _decode_draw_from_cache(
+            model,
+            gen_cfg,
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+            last_logits=last_logits,
+            past=copy.deepcopy(base_past),
+            pad_id=pad_id,
+            eos_tensor=eos_tensor,
+            max_new_tokens=max_new_tokens,
+            collect_step_logits=_collect_step_logits,
+            teacher_force=tf,
+            force_first_token=(
+                _force_first_token.get(i) if _force_first_token is not None else None
+            ),
+        )
+        step_logits[i] = collected
+        assert new_ids.shape[0] == B and new_ids.shape[1] >= 1, new_ids.shape
+        for b in range(B):
+            row = new_ids[b].tolist()
+            if eos_ids:
+                for j, t in enumerate(row):
+                    if t in eos_ids:
+                        row = row[:j]
+                        break
+            results[b].append(tokenizer.decode(row, skip_special_tokens=True))
+    return results, step_logits
+
+
+def _decode_draw_from_cache(
+    model,
+    gen_cfg,
+    *,
+    input_ids: torch.Tensor,
+    attention_mask: torch.Tensor,
+    last_logits: torch.Tensor,
+    past,
+    pad_id: int,
+    eos_tensor: torch.Tensor | None,
+    max_new_tokens: int,
+    collect_step_logits: int = 0,
+    teacher_force: torch.Tensor | None = None,
+    force_first_token: torch.Tensor | None = None,
+) -> tuple[torch.Tensor, list[torch.Tensor]]:
+    """ONE draw's decode loop from a (per-draw) cache copy.
+
+    Serial-``generate()`` semantics per step: ``_warp_scores`` on fp32 logits,
+    ``multinomial``/``argmax``, finished rows padded with ``pad_id``, EOS-set
+    stopping, padding-aware ``position_ids``. ``past`` MUST be this draw's own
+    copy — the loop mutates it in place. Returns ``(new_ids (B, S), collected
+    raw fp32 step logits)``; ``teacher_force`` ``(B, K)`` forces the first K
+    tokens (bypassing sampling AND the finished-row pad substitution);
+    ``force_first_token`` ``(B,)`` substitutes step 0's sampled token.
+    """
+    B = input_ids.shape[0]
+    device = input_ids.device
+    do_sample = bool(gen_cfg.do_sample)
+    has_position_ids = "position_ids" in inspect.signature(model.forward).parameters
+    seq = input_ids
+    mask = attention_mask
+    cur_logits = last_logits
+    finished = torch.zeros(B, dtype=torch.bool, device=device)
+    cols: list[torch.Tensor] = []
+    collected: list[torch.Tensor] = []
+    for step in range(max_new_tokens):
+        if step < collect_step_logits:
+            collected.append(cur_logits.clone())
+        forced_step = teacher_force is not None and step < teacher_force.shape[1]
+        if forced_step:
+            next_tok = teacher_force[:, step]
+        else:
+            scores = _warp_scores(seq, cur_logits, gen_cfg)
+            if do_sample:
+                probs = torch.nn.functional.softmax(scores, dim=-1)
+                next_tok = torch.multinomial(probs, num_samples=1).squeeze(1)
+            else:
+                next_tok = torch.argmax(scores, dim=-1)
+            if force_first_token is not None and step == 0:
+                forced = force_first_token.to(device=device, dtype=torch.long)
+                assert forced.shape == (B,), (forced.shape, B)
+                next_tok = forced
+            # Finished rows emit pad_token_id, exactly as generate() does.
+            next_tok = torch.where(finished, torch.full_like(next_tok, pad_id), next_tok)
+        cols.append(next_tok)
+        if eos_tensor is not None:
+            finished = finished | torch.isin(next_tok, eos_tensor)
+        want_more_logits = (step + 1) < collect_step_logits
+        if (bool(finished.all()) and not want_more_logits) or step == max_new_tokens - 1:
+            break
+        seq = torch.cat([seq, next_tok.unsqueeze(1)], dim=1)
+        mask = torch.cat([mask, torch.ones((B, 1), dtype=mask.dtype, device=device)], dim=1)
+        step_kwargs: dict = {}
+        if has_position_ids:
+            step_kwargs["position_ids"] = _position_ids_full(mask)[:, -1:]
+        out = model(
+            input_ids=next_tok.unsqueeze(1),
+            attention_mask=mask,
+            past_key_values=past,
+            use_cache=True,
+            **step_kwargs,
+        )
+        cur_logits = out.logits[:, -1, :].to(copy=True, dtype=torch.float32)
+        past = out.past_key_values
+    return torch.stack(cols, dim=1), collected
 
 
 # ── activation capture (V_c both arms + V_a) ──────────────────────────
