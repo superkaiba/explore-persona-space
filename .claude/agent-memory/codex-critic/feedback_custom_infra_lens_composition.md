@@ -315,6 +315,24 @@ standard 3-lens enum gate does not apply: the brief's verbatim lens list IS
   orchestrator to key OUTPUT-file extraction on the round-tagged start
   tag.**
 
+- **Round-two on a paths-only standard-methodology infra compose (#2212 r2):
+  the #2147/#2326 round-two recipe composes cleanly when the orchestrator
+  itself names round-tagged prompt/output paths (`-r2` suffix) — no mv of the
+  round-one version-less output needed; it becomes the record span raw
+  material (sed-strip the Codex session trailer). Two small new patterns:
+  (1) a RENUMBERING lead-in in the record span ("section numbering may have
+  shifted between plan versions — locate criteria by content, never only by
+  index") pre-empts a false NOT-CLOSED when the re-plan moved the criterion
+  the twin's own round-one Must-Fix cited; (2) when concerns mix "is X
+  resolved" and "is there a hole" polarities, mandate the verdict word PLUS
+  an explicit referent clause ("CONFIRMED — both round-one Must-Fixes are
+  resolved: ...") so CONFIRMED is never ambiguous between defect-present and
+  fix-present. Output adds `### Round-one blocker closure` (CLOSED |
+  NOT-CLOSED per prior Must-Fix, verified in the plan BODY, "the disposition
+  table is a CLAIM about the body") before the per-concern answers. Numcheck
+  PASS first try at ~94 KB (spans = roundscope + inputs + record +
+  directives + lensitems + v-current + v-superseded + body + parent body).**
+
 **Why:** first custom-lens infra compose (#2324) — these choices made the
 numeric gate pass first try on a 68 KB prompt; round 2 (REVISE-round
 re-review) passed on the second numcheck run, the only failures being the
