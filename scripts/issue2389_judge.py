@@ -89,6 +89,7 @@ import json
 import logging
 import os
 import sys
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -184,6 +185,11 @@ class JudgeConfig(J94.JudgeConfig):
     # shards mirror + the staged pod-side engine-status record (or None).
     vllm_parity_dir: Path | None = None
     engine_status_json: Path | None = None
+    # B5 (r1 review): the parity phase's HF side spans TWO Hub prefixes in
+    # the P2 window (gate rows only in anchors_gate, parity-HF-rest rows only
+    # in anchors until P5) — the union the phase's loader reads. None (every
+    # other phase, or an explicit --anchors-dir) => single-dir load.
+    anchors_union_dirs: tuple[Path, ...] | None = None
     # rule-28 remediation seam (#2151/#1739): route production waves over the
     # SYNC transport instead of Batch. Default False => every existing caller
     # routes byte-identically. Set only for an api-refusal RE-ISSUE pass: the
@@ -290,9 +296,24 @@ def load_grid_rows(rollouts_dir: Path) -> list[dict]:
     return rows
 
 
-def load_anchor_rows(anchors_dir: Path) -> list[dict]:
-    files = sorted(anchors_dir.glob("anchors_*.jsonl"))
-    assert files, f"no anchor shards under {anchors_dir}"
+def load_anchor_rows(anchors_dirs: Path | Sequence[Path]) -> list[dict]:
+    """Anchor rows from one dir — or the UNION of several (B5 r1 review):
+    in the P2 window gate rows live only under the ``anchors_gate`` mirror
+    (early per-cell uploads) while parity-HF-rest rows live only under
+    ``anchors`` (bulk upload lands at P5), so the vllm-parity phase reads
+    BOTH. Filename-keyed dedup, first dir wins: post-P5 both mirrors hold
+    the gate shards, and a naive concat would trip the (context_id, draw)
+    duplicate assert below."""
+    dirs = [anchors_dirs] if isinstance(anchors_dirs, Path) else list(anchors_dirs)
+    files: list[Path] = []
+    seen_names: set[str] = set()
+    for d in dirs:
+        for f in sorted(d.glob("anchors_*.jsonl")):
+            if f.name in seen_names:
+                continue
+            seen_names.add(f.name)
+            files.append(f)
+    assert files, f"no anchor shards under any of {[str(d) for d in dirs]}"
     rows: list[dict] = []
     for f in files:
         for r in J94._iter_jsonl(f):
@@ -314,9 +335,9 @@ def load_anchor_rows(anchors_dir: Path) -> list[dict]:
     for r in rows:
         unit = (r["context_id"], r["draw"])
         assert unit not in seen, (
-            f"duplicate anchor row {unit} across {anchors_dir}/anchors_*.jsonl — "
-            "stale prior-width shard (the run driver quarantines these at phase "
-            "entry; sweep the staged/HF copy before judging)"
+            f"duplicate anchor row {unit} across anchors_*.jsonl under "
+            f"{[str(d) for d in dirs]} — stale/orphan shard (the run driver "
+            "quarantines these at claim time; sweep the staged/HF copy before judging)"
         )
         seen.add(unit)
     return rows
@@ -1921,9 +1942,13 @@ def phase_vllm_parity(cfg: JudgeConfig) -> int:
     registry = rubric_registry(pairs)
     need_ctx = {c for p in parity_pairs for c in (p.a, p.b)}
 
+    # B5: union of both anchor mirrors — in the P2 window the gate rows and
+    # the parity-HF-rest rows live in DISJOINT prefixes; a single-dir read
+    # raises missing_hf on every retry until P5, silently forfeiting item 4.
+    anchor_src: Path | tuple[Path, ...] = cfg.anchors_union_dirs or cfg.anchors_file
     hf_rows = [
         r
-        for r in load_anchor_rows(cfg.anchors_file)
+        for r in load_anchor_rows(anchor_src)
         if r["cell"] in PARITY_CELLS and r.get("engine", "hf") != "vllm"
     ]
     missing_hf = sorted(need_ctx - {r["context_id"] for r in hf_rows})
@@ -2165,7 +2190,11 @@ def _stage_inputs(args: argparse.Namespace) -> None:
     for prefix in plan.get("required", ()):
         _stage(prefix, tolerate_missing=False)
     anchors_any = plan.get("anchors_any", ())
-    if anchors_any and not any(_stage(p, tolerate_missing=True) for p in anchors_any):
+    # LIST-materialized (B5): `any(generator)` would short-circuit after the
+    # first non-empty prefix and skip staging the sibling mirror — the
+    # vllm-parity union loader (and _resolve_anchors_dir's coverage check)
+    # need BOTH mirrors staged when both exist on the Hub.
+    if anchors_any and not any([_stage(p, tolerate_missing=True) for p in anchors_any]):
         raise FileNotFoundError(
             f"--phase {args.phase} needs anchor rows but none of {list(anchors_any)} "
             f"exist on {DATASET_REPO} — the pod-side anchor uploads (P2 gate slice / "
@@ -2255,6 +2284,14 @@ def build_config(args: argparse.Namespace) -> JudgeConfig:
     vllm_parity = (
         args.vllm_parity_dir if args.vllm_parity_dir is not None else mirror / "vllm_parity"
     )
+    # B5: the parity phase reads the UNION of both anchor mirrors (gate rows
+    # upload early to anchors_gate; parity-HF-rest rows to anchors) — unless
+    # the caller pinned --anchors-dir, which then owns the whole HF side.
+    union_dirs = (
+        (mirror / "anchors", mirror / "anchors_gate")
+        if args.phase == "vllm-parity" and args.anchors_dir is None
+        else None
+    )
     return JudgeConfig(
         work_root=args.work_root,
         cache_root=args.cache_root,
@@ -2269,6 +2306,7 @@ def build_config(args: argparse.Namespace) -> JudgeConfig:
         force_sync_routing=args.force_sync_routing,
         vllm_parity_dir=vllm_parity,
         engine_status_json=args.in_root / _ENGINE_STATUS_REL,
+        anchors_union_dirs=union_dirs,
     )
 
 

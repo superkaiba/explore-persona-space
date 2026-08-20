@@ -344,6 +344,79 @@ def test_load_vllm_parity_rows_roundtrip_and_guards(tmp_path):
         J.load_vllm_parity_rows(tmp_path)
 
 
+# ── B5: union anchor loader (vllm-parity two-prefix P2 window) ────────
+
+
+def _anchor_row(cid: str, cell: str, draw: int = 0, **over) -> dict:
+    r = {
+        "context_id": cid,
+        "cell": cell,
+        "value_id": "v",
+        "carrier": "c",
+        "draw": draw,
+        "text": "t",
+        "engine": "hf",
+    }
+    r.update(over)
+    return r
+
+
+def _write_anchor_shard(d: Path, name: str, rows: list[dict]) -> None:
+    d.mkdir(parents=True, exist_ok=True)
+    (d / name).write_text("\n".join(json.dumps(r) for r in rows) + "\n", encoding="utf-8")
+
+
+def test_load_anchor_rows_union_two_prefix_window(tmp_path):
+    """B5 mechanizable check (g3 r1 verbatim): gate shards staged under the
+    gate mirror + parity-HF-rest shards under the full mirror — the union
+    read assembles BOTH row classes, while either single-dir read sees only
+    its half (the pre-fix missing_hf-on-every-retry shape)."""
+    full, gate = tmp_path / "anchors", tmp_path / "anchors_gate"
+    _write_anchor_shard(
+        gate, "anchors_gate_fact_user_name_w0.jsonl", [_anchor_row("g1", "fact_user_name")]
+    )
+    _write_anchor_shard(
+        full, "anchors_parity_fact_user_name_w0.jsonl", [_anchor_row("r1", "fact_user_name")]
+    )
+    rows = J.load_anchor_rows((full, gate))
+    assert {r["context_id"] for r in rows} == {"g1", "r1"}
+    assert {r["context_id"] for r in J.load_anchor_rows(full)} == {"r1"}
+    assert {r["context_id"] for r in J.load_anchor_rows(gate)} == {"g1"}
+
+
+def test_load_anchor_rows_union_filename_dedup_post_p5(tmp_path):
+    """Post-P5 the bulk upload lands the gate shards in the full prefix too —
+    filename-keyed dedup keeps ONE copy (naive concat would trip the
+    (context_id, draw) duplicate assert); a DISTINCT-name duplicate unit
+    still fails loud."""
+    full, gate = tmp_path / "anchors", tmp_path / "anchors_gate"
+    shard_rows = [_anchor_row("g1", "fact_user_name")]
+    _write_anchor_shard(gate, "anchors_gate_fact_user_name_w0.jsonl", shard_rows)
+    _write_anchor_shard(full, "anchors_gate_fact_user_name_w0.jsonl", shard_rows)
+    rows = J.load_anchor_rows((full, gate))
+    assert len(rows) == 1
+    # distinct filename, same (context_id, draw): stale/orphan — fail loud
+    _write_anchor_shard(full, "anchors_rest_fact_user_name_w1.jsonl", shard_rows)
+    with pytest.raises(AssertionError, match="duplicate anchor row"):
+        J.load_anchor_rows((full, gate))
+
+
+def test_build_config_union_dirs_wired_for_vllm_parity_only(tmp_path):
+    base = ["--in-root", str(tmp_path)]
+    cfg = J.build_config(J.parse_args(["--phase", "vllm-parity", *base]))
+    mirror = tmp_path / J.HF_PREFIX / "raw_completions"
+    assert cfg.anchors_union_dirs == (mirror / "anchors", mirror / "anchors_gate")
+    # every other phase keeps the single-dir contract
+    cfg2 = J.build_config(J.parse_args(["--phase", "anchors", *base]))
+    assert cfg2.anchors_union_dirs is None
+    # an explicit --anchors-dir owns the whole HF side (no union)
+    cfg3 = J.build_config(
+        J.parse_args(["--phase", "vllm-parity", *base, "--anchors-dir", str(tmp_path / "own")])
+    )
+    assert cfg3.anchors_union_dirs is None
+    assert cfg3.anchors_file == tmp_path / "own"
+
+
 # ── gate-3 capregen staleness (per-cell cap regime) ───────────────────
 
 
