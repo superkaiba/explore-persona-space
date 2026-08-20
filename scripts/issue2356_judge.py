@@ -114,8 +114,9 @@ PREDICTOR_WAVE_N_CALLS = 10_500
 # instrument (r9 pilot: armB 10/75 = 13.3% >= the 0.10 gate; armA 0.0 —
 # OR-Bench/PHTest benign-but-toxic-LOOKING prompts trip the judge's safety
 # classifier). BOTH arms are waived: the remediation is arm-agnostic (a fresh
-# pilot can censor either arm). Plan §9's risk table cites exactly this
-# "pilot clause (d)" waiver path. Truncation and the effective-draws floor
+# pilot can censor either arm). Plan §8's "Risks and Failure Modes" table
+# cites exactly this "pilot clause (d)" waiver path. Truncation and the
+# effective-draws floor
 # stay UNWAIVABLE (the waiver reaches only rule 26(d)), and the production
 # wave's frac_items_complete floor (0.95, rule 29) + drop-class triage remain
 # the catastrophic-censoring backstop.
