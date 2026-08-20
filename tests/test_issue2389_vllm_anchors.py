@@ -391,17 +391,29 @@ def test_compose_run_cfg_adopts_pilot_gen_batch_and_matching_fp(tmp_path):
     both sides compute the SAME regime fingerprint over one shard family."""
     ref = R.build_config(R.parse_args(["--phase", "anchors", "--out-root", str(tmp_path / "out")]))
     ref.gates_dir.mkdir(parents=True, exist_ok=True)
+    cur = R._repro(ref)
     (ref.gates_dir / "pilot_gate_report.json").write_text(
         json.dumps(
             {
                 "verdict": "ACCEPT",
                 "gen_batch_selected": 32,
                 "gen_batch_candidates": [16, 32],
+                # round-5 C/J: the full runtime-domain record adoption validates
+                "num_workers": max(1, ref.num_workers),
+                "gpu_name": R._pilot_gpu_name(),
+                "gpu_total_mem_gib": R._pilot_gpu_mem_gib(),
+                "hbm_headroom_floor_gib": R.PILOT_HBM_HEADROOM_GIB,
+                "refusal_threshold_h": R.PILOT_REFUSAL_MULT * ref.planned_wall_h,
+                "planned_total_wall_h": ref.planned_wall_h,
+                "accept_threshold_h": R.PILOT_ACCEPT_WALL_H,
                 "repro": {
                     "model_id": ref.model_id,
                     "model_revision": ref.model_revision,
                     "smoke": False,
                     "tiny": False,
+                    "torch": cur["torch"],
+                    "transformers": cur["transformers"],
+                    "git_commit": cur["git_commit"],
                 },
             }
         )

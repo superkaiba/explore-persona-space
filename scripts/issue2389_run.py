@@ -2985,11 +2985,21 @@ def _pilot_selected_gen_batch(cfg: RunConfig) -> int | None:
     VALIDATED before adoption (B9 r1 review): a stale / refused / foreign /
     out-of-band pilot report must FAIL LOUD, never silently drive production
     batching. Absent report (pre-pilot phases, smokes without a pilot) ->
-    None; a present-but-invalid report raises."""
-    path = cfg.gates_dir / "pilot_gate_report.json"
-    if not path.exists():
+    None; a present-but-invalid report raises.
+
+    Round-5 J (concern ``pilot-reuse-runtime-domain``): this is the NORMAL
+    adoption path — ``_adopt_pilot_gen_batch`` routes phase_anchors / grid /
+    capregen / stage2 (run.py) AND the vLLM legs
+    (vllm_anchors._compose_run_cfg) through here — so it routes through the
+    strengthened ``_reusable_pilot_report`` reader: the full runtime-domain
+    validation (regime + model@rev + worker width + GPU name/memory +
+    candidate set + thresholds/floors + torch/transformers identity) guards
+    EVERY consumer, not only the pilot phase's own reuse decision. The
+    checks kept here are adoption-specific: a REFUSE report or an
+    out-of-band selection must never drive production batching."""
+    rec = _reusable_pilot_report(cfg)  # round-5 J: raises on a FOREIGN report
+    if rec is None:
         return None
-    rec = json.loads(path.read_text())
     sel = rec.get("gen_batch_selected")
     if sel is None:
         return None
@@ -3012,17 +3022,6 @@ def _pilot_selected_gen_batch(cfg: RunConfig) -> int | None:
         problems.append(
             f"gen_batch_selected={sel} not among the report's own candidates {report_cands}"
         )
-    repro = rec.get("repro") or {}
-    if repro.get("model_id") != cfg.model_id or repro.get("model_revision") != cfg.model_revision:
-        problems.append(
-            f"report model {repro.get('model_id')}@{repro.get('model_revision')} != "
-            f"this run's {cfg.model_id}@{cfg.model_revision}"
-        )
-    if bool(repro.get("smoke")) != bool(cfg.smoke) or bool(repro.get("tiny")) != bool(cfg.tiny):
-        problems.append(
-            f"report regime (smoke={repro.get('smoke')}, tiny={repro.get('tiny')}) != "
-            f"this run's (smoke={cfg.smoke}, tiny={cfg.tiny})"
-        )
     if problems:
         raise RuntimeError(
             "pilot_gate_report.json cannot drive gen_batch adoption: "
@@ -3041,6 +3040,18 @@ def _pilot_gpu_name() -> str | None:
     return torch.cuda.get_device_name(0) if torch.cuda.is_available() else None
 
 
+def _pilot_gpu_mem_gib() -> float | None:
+    """Device MEMORY identity (total GiB, 0.1 grain; None on a CPU host).
+
+    Round-5 J (concern ``pilot-reuse-runtime-domain``): the HBM-headroom
+    eligibility read is a function of the device's TOTAL memory, not just
+    its marketing name — the reuse contract requires the memory identity
+    alongside ``gpu_name``."""
+    if not torch.cuda.is_available():
+        return None
+    return round(torch.cuda.get_device_properties(0).total_memory / 2**30, 1)
+
+
 def _reusable_pilot_report(cfg: RunConfig) -> dict | None:
     """An existing pilot report THIS run may ADOPT instead of re-measuring
     (R5 r2 review). Plan §9 pre-registers same-command resume as a LOSSLESS
@@ -3054,9 +3065,16 @@ def _reusable_pilot_report(cfg: RunConfig) -> dict | None:
     measurements are functions of: worker width (per-phase walls divide by
     it), GPU lane (s/rollout + HBM headroom are device properties),
     candidate set (the argmin selection is only valid over the same band),
-    and the wall thresholds the verdict was banded against. RAISES on a
+    and the wall thresholds the verdict was banded against — extended in
+    round-5 J with the device MEMORY identity (``gpu_total_mem_gib``), the
+    recorded floor constants (``hbm_headroom_floor_gib`` /
+    ``refusal_threshold_h``), and the torch/transformers runtime identity
+    (git commit WARN-only; see the inline comment). RAISES on a
     present-but-foreign report — a deliberate re-measure needs ``--force``;
     a report predating these fields cannot prove its domain and is foreign.
+    Round-5 J: this reader is ALSO the validation the NORMAL adoption path
+    runs — ``_pilot_selected_gen_batch`` routes through it, so grid /
+    capregen / stage2 / the vLLM legs inherit every check here.
     """
     path = cfg.gates_dir / "pilot_gate_report.json"
     if not path.exists():
@@ -3088,6 +3106,13 @@ def _reusable_pilot_report(cfg: RunConfig) -> dict | None:
             f"report gpu_name={rec.get('gpu_name', '<unrecorded>')!r} != this run's {gpu!r} "
             "(s/rollout + HBM headroom are lane properties)"
         )
+    gpu_mem = _pilot_gpu_mem_gib()
+    if rec.get("gpu_total_mem_gib", "<unrecorded>") != gpu_mem:
+        problems.append(
+            f"report gpu_total_mem_gib={rec.get('gpu_total_mem_gib', '<unrecorded>')!r} != "
+            f"this run's {gpu_mem!r} (round-5 J: the headroom eligibility read is a "
+            "function of the device's TOTAL memory, not just its name)"
+        )
     want_cands = sorted([cfg.gen_batch] if cfg.gen_batch_explicit else PILOT_GEN_BATCH_CANDIDATES)
     got_cands = sorted(int(b) for b in rec.get("gen_batch_candidates") or [])
     if got_cands != want_cands:
@@ -3105,12 +3130,50 @@ def _reusable_pilot_report(cfg: RunConfig) -> dict | None:
             f"report planned_total_wall_h={rec.get('planned_total_wall_h')} != this run's "
             f"{cfg.planned_wall_h} (the SPLIT/REFUSE bands scale with the planned wall)"
         )
+    # Round-5 minor (r4 review): the floor constants were recorded but never
+    # re-checked — asymmetric with accept_threshold_h. A changed
+    # PILOT_HBM_HEADROOM_GIB across a resume could adopt a stale-eligibility
+    # B=32 (OOM channel); a changed PILOT_REFUSAL_MULT re-bands the verdict.
+    if float(rec.get("hbm_headroom_floor_gib", -1.0)) != PILOT_HBM_HEADROOM_GIB:
+        problems.append(
+            f"report hbm_headroom_floor_gib={rec.get('hbm_headroom_floor_gib')} != "
+            f"{PILOT_HBM_HEADROOM_GIB} (the B eligibility was screened at a different floor)"
+        )
+    if float(rec.get("refusal_threshold_h", -1.0)) != PILOT_REFUSAL_MULT * float(
+        cfg.planned_wall_h
+    ):
+        problems.append(
+            f"report refusal_threshold_h={rec.get('refusal_threshold_h')} != "
+            f"{PILOT_REFUSAL_MULT * float(cfg.planned_wall_h)} (the SPLIT/REFUSE boundary "
+            "was banded against a different multiple)"
+        )
+    # Round-5 J: the measurements are ALSO functions of the kernel-level
+    # runtime — torch/transformers versions bind HARD. The git commit is
+    # WARN-only by design: crash-fix commits legitimately land between the
+    # pilot and the plan §9 same-command resume, and a hard git pin would
+    # force --force re-measures on every resume — the exact 16<->32
+    # fingerprint-flip risk this reuse path exists to avoid.
+    cur = _repro(cfg)
+    repro = rec.get("repro") or {}
+    for key in ("torch", "transformers"):
+        if repro.get(key, "<unrecorded>") != cur[key]:
+            problems.append(
+                f"report repro.{key}={repro.get(key, '<unrecorded>')!r} != this env's "
+                f"{cur[key]!r} (throughput + memory footprint are kernel-version properties)"
+            )
     if problems:
         raise RuntimeError(
             f"existing {path} is FOREIGN to this run: "
             + "; ".join(problems)
             + " — quarantine it / use a fresh --out-root, or pass --force to "
             "deliberately re-measure"
+        )
+    if repro.get("git_commit") != cur["git_commit"]:
+        logger.warning(
+            "[pilot] adopting a report recorded at git %s != this checkout %s (WARN-only: "
+            "the runtime identity is pinned by torch/transformers; --force re-measures)",
+            repro.get("git_commit"),
+            cur["git_commit"],
         )
     return rec
 
@@ -4518,6 +4581,7 @@ def _enforce_pilot_gate(
         "headroom_ok": headroom_ok,
         "num_workers": width,
         "gpu_name": _pilot_gpu_name(),  # round-5 C: reuse checks the device lane
+        "gpu_total_mem_gib": _pilot_gpu_mem_gib(),  # round-5 J: memory identity
         "phases": phases,
         "projected_total_wall_h": projected_total_h,
         "planned_total_wall_h": cfg.planned_wall_h,

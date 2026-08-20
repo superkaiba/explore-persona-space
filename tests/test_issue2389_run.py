@@ -901,6 +901,7 @@ def _pilot_report(
     **repro_over,
 ) -> None:
     cfg.gates_dir.mkdir(parents=True, exist_ok=True)
+    cur = R._repro(cfg)
     rec = {
         "verdict": verdict,
         "gen_batch_selected": sel,
@@ -908,6 +909,10 @@ def _pilot_report(
         # round-5 C: the runtime-domain fields _reusable_pilot_report checks
         "num_workers": max(1, cfg.num_workers),
         "gpu_name": R._pilot_gpu_name(),
+        # round-5 J: memory identity + floor constants + runtime identity
+        "gpu_total_mem_gib": R._pilot_gpu_mem_gib(),
+        "hbm_headroom_floor_gib": R.PILOT_HBM_HEADROOM_GIB,
+        "refusal_threshold_h": R.PILOT_REFUSAL_MULT * cfg.planned_wall_h,
         "planned_total_wall_h": cfg.planned_wall_h,
         "accept_threshold_h": R.PILOT_ACCEPT_WALL_H,
         "repro": {
@@ -915,6 +920,9 @@ def _pilot_report(
             "model_revision": cfg.model_revision,
             "smoke": cfg.smoke,
             "tiny": cfg.tiny,
+            "torch": cur["torch"],
+            "transformers": cur["transformers"],
+            "git_commit": cur["git_commit"],
             **repro_over,
         },
     }
@@ -983,7 +991,10 @@ def test_r5_pilot_runtime_domain_mismatch_raises(tmp_path, monkeypatch):
     different worker width / GPU lane / candidate set / wall threshold /
     planned wall is FOREIGN — its per-phase wall projections, argmin
     selection, and verdict banding do not transfer. FAILED at HEAD~: all
-    five mismatches adopted silently."""
+    five mismatches adopted silently. Round-5 J extends the domain: device
+    MEMORY identity, the recorded floor constants, and torch/transformers
+    runtime identity (candidates {gen_batch_candidates: [8, 64]} would now
+    also fail the sel-in-band check — the FOREIGN raise fires first)."""
     _bank_sentinel(monkeypatch)
     for over in (
         {"num_workers": 8},
@@ -991,11 +1002,51 @@ def test_r5_pilot_runtime_domain_mismatch_raises(tmp_path, monkeypatch):
         {"gen_batch_candidates": [8, 64]},
         {"accept_threshold_h": 80.0},
         {"planned_total_wall_h": 77.0},
+        # round-5 J + the r4 floor-recheck minor
+        {"gpu_total_mem_gib": 141.1},
+        {"hbm_headroom_floor_gib": 20.0},
+        {"refusal_threshold_h": 1.0},
     ):
         cfg = _mk_cfg(tmp_path, pilot=True)
         _pilot_report(cfg, report_over=over)
         with pytest.raises(RuntimeError, match="FOREIGN"):
             R.phase_grid(cfg)
+    # runtime identity (repro fields, round-5 J): torch/transformers bind HARD
+    for repro_over in ({"torch": "0.0.0+other"}, {"transformers": "0.0.0"}):
+        cfg = _mk_cfg(tmp_path, pilot=True)
+        _pilot_report(cfg, **repro_over)
+        with pytest.raises(RuntimeError, match="FOREIGN"):
+            R.phase_grid(cfg)
+
+
+def test_r5j_adoption_path_validates_runtime_domain(tmp_path):
+    """Round-5 J (concern pilot-reuse-runtime-domain): the NORMAL adoption
+    path — _adopt_pilot_gen_batch, the route grid/capregen/stage2 and the
+    vLLM legs take — runs the SAME runtime-domain validation as the pilot
+    phase's own reuse decision. FAILED at HEAD~: _pilot_selected_gen_batch
+    read the report directly and adopted a foreign-width/lane report's
+    gen_batch silently."""
+    cfg = _mk_cfg(tmp_path, pilot=False, gen_batch=16)
+    _pilot_report(cfg, sel=32, report_over={"num_workers": 8})  # cfg width is 1
+    with pytest.raises(RuntimeError, match="FOREIGN"):
+        R._adopt_pilot_gen_batch(cfg)
+
+
+def test_r5j_adoption_path_adopts_domain_matched_report(tmp_path, caplog):
+    """Positive control for round-5 J: a full domain-matched report still
+    drives adoption through the normal path (no false refusal), and a git
+    commit delta alone is WARN-only (crash-fix commits legitimately land
+    between the pilot and a same-command resume)."""
+    cfg = _mk_cfg(tmp_path, pilot=False, gen_batch=16)
+    _pilot_report(cfg, sel=32)
+    adopted = R._adopt_pilot_gen_batch(cfg)
+    assert adopted.gen_batch == 32
+    cfg2 = _mk_cfg(tmp_path, pilot=False, gen_batch=16)
+    _pilot_report(cfg2, sel=32, git_commit="0" * 40)
+    with caplog.at_level("WARNING"):
+        adopted2 = R._adopt_pilot_gen_batch(cfg2)
+    assert adopted2.gen_batch == 32
+    assert any("WARN-only" in r.message for r in caplog.records)
 
 
 def test_r5_pilot_unrecorded_gpu_lane_raises(tmp_path, monkeypatch):
