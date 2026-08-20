@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2416,
+  "highest_id": 2417,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -10951,6 +10951,13 @@
       "path": "tasks/proposed/2416",
       "status": "proposed",
       "title": "Step 5a sibling-sync runtime-signature-skew residual + Step 10d TG classify-new-nodes missing #2302 base-identity exclusion (false-blocking gate verdict on #2205)"
+    },
+    "2417": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2417",
+      "status": "proposed",
+      "title": "Infra: version-brittle [Pp]ickle assertion reds the gate on py3.12 worktrees + worktree/main interpreter divergence"
     },
     "244": {
       "has_clean_result": false,
