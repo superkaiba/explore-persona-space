@@ -93,6 +93,10 @@ QA_DISJOINT_ANCHORS = (250, 2000)
 SURFACE_BENCHMARKS = {
     "math": ("math_full",),
     "mcq": ("mmlu_pro_full",),
+    # code is the CANDIDATE list only — the REALIZED roster is gate-derived per
+    # run via _surface_benchmarks (BCB only on bcb_fit_allowed, apps_intro only
+    # on apps_activated; plan fork 5 / r3 Critical 2). Non-code consumers and
+    # the surface-name key set read this dict directly.
     "code": ("humaneval", "mbpp_full", "bigcodebench_full", "lcb_v5", "leetcode"),
     "qa": (),  # banked #1739 store + derived labeling
 }
@@ -703,6 +707,45 @@ def _layer_tuple(args) -> tuple[int, ...]:
 
 
 _TABLE_CACHE: dict[str, SurfaceTable] = {}
+_ROSTER_CACHE: dict[str, list[str]] = {}
+
+
+def _surface_benchmarks(args, surface: str) -> list[str]:
+    """Realized benchmark roster per surface (store loading + question attach).
+
+    code is GATE-CONDITIONAL (plan fork 5, r3 Critical 2): derived from the
+    labeling.json ``gate_decisions`` echo through the ONE shared resolution
+    rule (``issue2388_gen.code_roster_from_gate_fields`` — BCB only on
+    ``bcb_fit_allowed``, apps_intro only on ``apps_activated``), then
+    cross-validated EXACT-SET against the realized row benchmarks, so the
+    stores loaded / questions attached cover exactly the rows the DV dealt —
+    never the static candidate tuple (which would demand a dropped BCB store
+    and omit an activated APPS store). Other surfaces keep the static rosters.
+    """
+    if surface != "code":
+        return list(SURFACE_BENCHMARKS[surface])
+    if "code" in _ROSTER_CACHE:
+        return list(_ROSTER_CACHE["code"])
+    lab = _load_labeling(Path(args.dv_root) / "code" / "labeling.json", surface="code")
+    decisions = lab["payload"].get("gate_decisions") or {}
+    if decisions.get("bcb_fit_allowed") is None:
+        raise RuntimeError(
+            "code labeling.json carries no resolved gate_decisions — rebuild the DV "
+            "(issue2388_dv_build.py --surface code embeds the binding code_gate.json verdict)"
+        )
+    sys.path.insert(0, str(REPO_ROOT / "scripts"))
+    import issue2388_gen as G
+
+    roster = G.code_roster_from_gate_fields(decisions)
+    realized = {str(r["benchmark"]) for r in lab["rows"]}
+    if realized != set(roster):
+        raise RuntimeError(
+            "code labeling rows disagree with the gate roster (store coverage would be "
+            f"wrong): rows-only={sorted(realized - set(roster))} "
+            f"gate-only={sorted(set(roster) - realized)}"
+        )
+    _ROSTER_CACHE["code"] = roster
+    return list(roster)
 
 
 def _get_table(args, surface: str) -> SurfaceTable:
@@ -713,7 +756,7 @@ def _get_table(args, surface: str) -> SurfaceTable:
         store_dirs = [Path(args.qa_store_dir)]
         with_tlast = False
     else:
-        store_dirs = [Path(args.store_root) / b for b in SURFACE_BENCHMARKS[surface]]
+        store_dirs = [Path(args.store_root) / b for b in _surface_benchmarks(args, surface)]
         with_tlast = True
     table = load_surface_table(
         surface,
@@ -943,7 +986,7 @@ def _attach_questions(args, table: SurfaceTable) -> None:
     import issue2388_gen as G
 
     q_by_id: dict[str, str] = {}
-    for bench in SURFACE_BENCHMARKS[table.surface]:
+    for bench in _surface_benchmarks(args, table.surface):
         for it in G.LOADERS[bench]():
             q_by_id[it["item_id"]] = it.get("question") or it.get("prompt") or ""
     if table.surface == "qa":

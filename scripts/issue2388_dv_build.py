@@ -96,16 +96,11 @@ def _code_benchmarks_from_gate(gen_root: Path) -> tuple[list[str], dict]:
             f"code gate verdict missing at {gate_p} — run issue2388_gen.py --phase gate first"
         )
     gate = json.loads(gate_p.read_text())
-    if gate.get("bcb_fit_allowed") is None:
-        raise RuntimeError(
-            "bcb_fit_allowed unresolved in code_gate.json (G1 control or G3 full-pool spread "
-            "missing) — re-run issue2388_gen.py --phase gate after the control + full verify"
-        )
-    benches = ["humaneval", "mbpp_full", "lcb_v5", "leetcode"]
-    if gate["bcb_fit_allowed"]:
-        benches.insert(2, "bigcodebench_full")
-    if gate.get("apps_activated"):
-        benches.append("apps_intro")
+    # ONE shared resolution rule (r4: gen/dv_build/capture/fits all derive the
+    # realized roster through code_roster_from_gate_fields, never ad-hoc).
+    from scripts.issue2388_gen import code_roster_from_gate_fields
+
+    benches = code_roster_from_gate_fields(gate)
     decisions = {
         "gate_path": str(gate_p),
         "bcb_fit_allowed": gate["bcb_fit_allowed"],

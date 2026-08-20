@@ -687,6 +687,30 @@ def load_gate(out_root: Path) -> dict:
     return json.loads(path.read_text())
 
 
+def code_roster_from_gate_fields(gate: dict) -> list[str]:
+    """Realized code-surface benchmark roster from gate-verdict fields.
+
+    The ONE resolution rule shared by every downstream consumer (dv_build /
+    capture upload / fits — r3 Critical family "contingency state not carried
+    across persisted producers and consumers"): BCB enters ONLY on
+    ``bcb_fit_allowed``; apps_intro enters ONLY on ``apps_activated`` (fork 5);
+    neither rides any bare default roster. Accepts the ``code_gate.json``
+    verdict OR a labeling.json ``gate_decisions`` echo — both carry the two
+    keys. Fail-loud on an unresolved BCB verdict.
+    """
+    if gate.get("bcb_fit_allowed") is None:
+        raise RuntimeError(
+            "bcb_fit_allowed unresolved in code_gate.json (G1 control or G3 full-pool spread "
+            "missing) — re-run issue2388_gen.py --phase gate after the control + full verify"
+        )
+    benches = ["humaneval", "mbpp_full", "lcb_v5", "leetcode"]
+    if gate["bcb_fit_allowed"]:
+        benches.insert(2, "bigcodebench_full")
+    if gate.get("apps_activated"):
+        benches.append("apps_intro")
+    return benches
+
+
 def phase_gate(out_root: Path, *, control_report: Path | None = None) -> dict:
     """Consolidate the code-surface gate verdicts into the BINDING code_gate.json.
 
@@ -1509,6 +1533,10 @@ def phase_verify(
     the gate's binding full-pool g3_apps read must be structurally unable to
     consume a pilot slice.
     """
+    # Stage gate FIRST (r3 bug-class sweep: gen was gated, verify was not —
+    # stale/manually-supplied rollouts could otherwise write fresh-looking
+    # gate inputs before the preceding stage was authorized).
+    _require_gate_for(benchmark, out_root, apps_pilot=apps_pilot)
     if benchmark in CODE_BENCHMARKS:
         _require_sandbox_net_isolation()  # fail BEFORE dispatching pool workers
     items = LOADERS[benchmark]()

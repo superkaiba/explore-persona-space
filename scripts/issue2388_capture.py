@@ -455,14 +455,17 @@ def phase_upload(args) -> None:
     hf_root = "issue2388_correctness" + ("_smoke" if args.smoke else "")
     store_prefix = HF_STORE_PREFIX.replace("issue2388_correctness", hf_root, 1)
     dv_prefix = HF_DV_PREFIX.replace("issue2388_correctness", hf_root, 1)
-    benchmarks = [args.benchmark] if args.benchmark else sorted(G.SURFACES[args.surface])
-    if not args.benchmark and args.surface == "code":
-        # Contingency sibling (r2 bug-class sweep): a bare `--surface code`
-        # upload must not silently omit an ACTIVATED apps_intro store — include
-        # it whenever its capture manifest exists on disk.
-        apps_manifest = store_root / "apps_intro" / "_capture_manifest.json"
-        if apps_manifest.exists():
-            benchmarks.append("apps_intro")
+    if args.benchmark:
+        benchmarks = [args.benchmark]
+    elif args.surface == "code":
+        # Fork-5 contingency roster (r3 Critical 3): the exact upload set comes
+        # from the BINDING gate verdict — never the static surface roster (a
+        # DROPPED BCB has no store, so requiring its manifest deadlocks the
+        # DROP->APPS branch) and never file existence (a stale APPS manifest
+        # must not ride a KEEP-branch upload).
+        benchmarks = G.code_roster_from_gate_fields(G.load_gate(Path(args.out_root)))
+    else:
+        benchmarks = sorted(G.SURFACES[args.surface])
     expected: list[str] = []
     for benchmark in benchmarks:
         surface = G.surface_of(benchmark)

@@ -159,6 +159,12 @@ def _fake_apps_items(n: int) -> list[dict]:
     return [{"item_id": f"apps-{i}", "benchmark": "apps_intro"} for i in range(n)]
 
 
+def _write_gate(out_root: Path, **fields) -> None:
+    """Minimal code_gate.json (phase_verify is stage-gated as of r4)."""
+    (out_root / "code").mkdir(parents=True, exist_ok=True)
+    (out_root / "code" / "code_gate.json").write_text(json.dumps(fields))
+
+
 def _write_rollouts(gen, out_root: Path, items: list[dict]) -> Path:
     roll_path = gen._rollouts_path(out_root, "apps_intro")
     roll_path.parent.mkdir(parents=True, exist_ok=True)
@@ -183,6 +189,7 @@ def test_verify_apps_pilot_writes_own_report(gen, tmp_path, monkeypatch):
     monkeypatch.setattr(gen, "_unshare_net_available", lambda: True)
     monkeypatch.setattr(gen, "_verdict_one", lambda t: (t[0]["item_id"], t[1], True))
     out_root = tmp_path / "gen"
+    _write_gate(out_root, apps_pilot_gen_allowed=True)
     # rollouts exist ONLY for the pilot slice — full verify must refuse below
     _write_rollouts(gen, out_root, items[: gen.APPS_PILOT_N])
     gen.phase_verify(
@@ -205,6 +212,7 @@ def test_verify_apps_full_pool_requires_all_rollouts(gen, tmp_path, monkeypatch)
     monkeypatch.setitem(gen.LOADERS, "apps_intro", lambda: items)
     monkeypatch.setattr(gen, "_unshare_net_available", lambda: True)
     out_root = tmp_path / "gen"
+    _write_gate(out_root, apps_full_gen_allowed=True)
     _write_rollouts(gen, out_root, items[: gen.APPS_PILOT_N])
     with pytest.raises(RuntimeError, match="lack rollouts"):
         gen.phase_verify("apps_intro", out_root, smoke=False, bcb_python=None, workers=1)
@@ -253,6 +261,7 @@ def test_sandbox_net_isolation_fail_loud(gen, monkeypatch):
 def test_verify_refuses_before_workers_when_sandbox_missing(gen, tmp_path, monkeypatch):
     monkeypatch.setattr(gen, "_unshare_net_available", lambda: False)
     monkeypatch.delenv(gen._SANDBOX_ALLOW_NET_ENV, raising=False)
+    _write_gate(tmp_path, apps_full_gen_allowed=True)  # stage gate passes; sandbox refuses
     with pytest.raises(RuntimeError, match="network"):
         gen.phase_verify("apps_intro", tmp_path, smoke=False, bcb_python=None, workers=4)
 

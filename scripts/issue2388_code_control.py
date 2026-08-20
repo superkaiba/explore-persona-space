@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -233,11 +234,47 @@ def main(argv: list[str] | None = None) -> int:
 
     from explore_persona_space.orchestrate.provenance import as_metadata_dict, git_provenance
 
-    payload = {"benchmarks": report}
-    payload.update(as_metadata_dict(git_provenance(), phase="code-harness-control"))
+    meta = as_metadata_dict(git_provenance(), phase="code-harness-control")
+    # MERGE-don't-clobber (r3 Critical 1): phase_gate reads the BCB *and* APPS
+    # control rows from THIS ONE report, and the fork-5 chain runs the APPS
+    # control as a SEPARATE `--benchmarks apps_intro` invocation — a whole-file
+    # rewrite would erase the BCB verdict, unresolve bcb_fit_allowed /
+    # apps_required, and deadlock the documented DROP->APPS sequence. Prior
+    # rows not re-run this invocation are preserved verbatim; per-invocation
+    # provenance rides the `invocations` list.
+    merged: dict[str, dict] = {}
+    invocations: list[dict] = []
+    if args.out.exists():
+        prior = json.loads(args.out.read_text())
+        merged.update(prior.get("benchmarks", {}))
+        invocations = list(prior.get("invocations", []))
+        if not invocations and merged:
+            # pre-merge single-shot report: preserve its provenance as an entry
+            invocations.append(
+                {
+                    "benchmarks": sorted(merged),
+                    "git_commit": prior.get("git_commit"),
+                    "ts": prior.get("ts"),
+                }
+            )
+    merged.update(report)
+    invocations.append(
+        {
+            "benchmarks": sorted(report),
+            "git_commit": meta.get("git_commit"),
+            "git_dirty": meta.get("git_dirty"),
+            "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        }
+    )
+    payload = {"benchmarks": merged, "invocations": invocations}
+    payload.update(meta)
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(json.dumps(payload, indent=2))
-    print(f"wrote {args.out}")
+    tmp = args.out.with_name(args.out.name + ".tmp")
+    tmp.write_text(json.dumps(payload, indent=2))
+    os.replace(tmp, args.out)
+    print(f"wrote {args.out} (benchmarks now: {', '.join(sorted(merged))})")
+    # rc reflects THIS invocation's benchmarks only — a preserved prior FAIL
+    # row (e.g. the dropped-BCB verdict) must not fail a passing APPS control.
     return 0 if all(v["harness_ok"] for v in report.values()) else 1
 
 
