@@ -1,0 +1,1622 @@
+{
+  "armA_fold3": [
+    {
+      "row_id": "5cf323349a4bb61bbbff62f5a039e0e092c1a00805e0e6e106b4cec41936de6a",
+      "label": "engage",
+      "group_id": 194
+    },
+    {
+      "row_id": "f9a648beb9d589ad9a25c2f5e6e14d22cb0274adb145d78bffe9313296d7d6db",
+      "label": "refuse",
+      "group_id": 394
+    },
+    {
+      "row_id": "257e75b13008b6a466e425f6202cb9922cea998206090a05a5a69a5e6cea9d6f",
+      "label": "engage",
+      "group_id": 377
+    },
+    {
+      "row_id": "1d020799b7adc2316b8c09dc5663b43ee37ad76c1eb15e26fff8d51625c26be6",
+      "label": "refuse",
+      "group_id": 115
+    },
+    {
+      "row_id": "3fa2a94f23298dba84d92ce323f6dbcbe838a3ab1c75f315764b386b6f0e5d51",
+      "label": "engage",
+      "group_id": 162
+    },
+    {
+      "row_id": "7ed5784cae64f186bfced464de87481e1238c4ebfdb3071c9aada285ba04aeb2",
+      "label": "refuse",
+      "group_id": 306
+    },
+    {
+      "row_id": "54fa2847a529a0b2d9f4566cb0db531a3a8b59255df2bae5907a03875fe75b78",
+      "label": "refuse",
+      "group_id": 216
+    },
+    {
+      "row_id": "c7dd9f532e967a92af0a5437bf673233e2ca61d486f7fcd1c7d5f8e07450ecfa",
+      "label": "refuse",
+      "group_id": 263
+    },
+    {
+      "row_id": "bd05c1670186fdded9fc3b492e3e3b9887f2e5810f58718f1410974cea5461d8",
+      "label": "refuse",
+      "group_id": 274
+    },
+    {
+      "row_id": "d0184849aeadc2dcfe241dcd00d65abc0cdc6054dda6503af55da5724435eb9b",
+      "label": "engage",
+      "group_id": 237
+    },
+    {
+      "row_id": "2d87aa82e73064f2289140d643a471ba5ace0a44d94ce3076b667d2e7a680b25",
+      "label": "refuse",
+      "group_id": 357
+    },
+    {
+      "row_id": "f9dd75fd023f950e5f7df56da2e472744023dd96362915cae574b693144fb602",
+      "label": "refuse",
+      "group_id": 151
+    },
+    {
+      "row_id": "58106707940ceadaa141c43396dd49152c8889a8121d13737e603e9c75c53da0",
+      "label": "refuse",
+      "group_id": 73
+    },
+    {
+      "row_id": "bae129285380ce3fe156a6dd82baf9387af78833eb16c981eebc40455e0df913",
+      "label": "engage",
+      "group_id": 28
+    },
+    {
+      "row_id": "ee2f30021e0180977bfbe34fe6b7d704c7191c638c540c125be8debc8169084e",
+      "label": "engage",
+      "group_id": 361
+    },
+    {
+      "row_id": "659204c59e946b1e3a9dc6d5f493d05716625183d1abacedbd8db1255c5a0123",
+      "label": "engage",
+      "group_id": 210
+    },
+    {
+      "row_id": "20e4d2e0e2faa399db836f4bfad24769cf20c469fbf8a4ed146af948a1fa3d98",
+      "label": "refuse",
+      "group_id": 110
+    },
+    {
+      "row_id": "9f7057b4676b5583ea38e321eeda7a7ccc7c25bb34169d07d51d422c7ec8e2db",
+      "label": "refuse",
+      "group_id": 29
+    },
+    {
+      "row_id": "e555bae7c81ba24bfd09ae94f52f0ec7e45787bf4ef56f960921a25a7a1f46b4",
+      "label": "engage",
+      "group_id": 89
+    },
+    {
+      "row_id": "11b61ef471607b02403a3ef96fef99b6fa61437911279b17c5e70a061273f741",
+      "label": "engage",
+      "group_id": 276
+    },
+    {
+      "row_id": "5e43c915f86671672f526e457df7b8d5bfea225e33c9f11eebb19ce3c454ed15",
+      "label": "engage",
+      "group_id": 368
+    },
+    {
+      "row_id": "c69cae41e3350d9d97642dad58ed9a52d82cee6425a50a39db071b03dad2c8ad",
+      "label": "refuse",
+      "group_id": 115
+    },
+    {
+      "row_id": "a21f54c61eb68d14f9aba6d94b7021b5319643b22d47d860a6bd3fd9aed180de",
+      "label": "refuse",
+      "group_id": 287
+    },
+    {
+      "row_id": "998d4e4fa58f0e340db24628ceb4b4a02dfae2a86ba8d093b7751a00d5844896",
+      "label": "engage",
+      "group_id": 289
+    },
+    {
+      "row_id": "1bb069b453ce5aa743d2f57187206a1046a47e88fba05b23476e92c868b79a1a",
+      "label": "engage",
+      "group_id": 9
+    },
+    {
+      "row_id": "1ad0cb21d33e0eeec84cf0b52faa91ae3002aaf5defb4d0a3c572c1c6dee4b24",
+      "label": "refuse",
+      "group_id": 369
+    },
+    {
+      "row_id": "b30cbaa1d4ba0fdda70331cd99fd8291f9709d724a4c241437f7e70ffde3025f",
+      "label": "engage",
+      "group_id": 224
+    },
+    {
+      "row_id": "d6ac317ee41a2bf93792ac3d126135b2be467b28bcc2777d06eb8f36cce80175",
+      "label": "engage",
+      "group_id": 325
+    },
+    {
+      "row_id": "ef0bbb2e1474d18de9f03cde36358f964f1fa934f8bab57bad0bef57a1ca288a",
+      "label": "refuse",
+      "group_id": 314
+    },
+    {
+      "row_id": "cd1aa7d8c7371e46389364c8b695980c8ec89e6925f57950e3c99d920fd3ee67",
+      "label": "engage",
+      "group_id": 156
+    },
+    {
+      "row_id": "ebb5e7e40992875398f525bc5b71ff3fe144a26696e02fea8c6a675e2c05c821",
+      "label": "refuse",
+      "group_id": 325
+    },
+    {
+      "row_id": "2e26c8b0f2921314bf1c7cdbf071b0b70273546ffbac4827a4ce269473ec4e7d",
+      "label": "engage",
+      "group_id": 64
+    }
+  ],
+  "armA_fold4": [
+    {
+      "row_id": "df95d9874c7baaf089e6a0ff02d0ed030c133d43542796f85689f3808c8b0fab",
+      "label": "engage",
+      "group_id": 103
+    },
+    {
+      "row_id": "a17ca48f1ddf4936c13d8dc2137422aa10929d913e6be175a7a86b2fdec5965f",
+      "label": "refuse",
+      "group_id": 217
+    },
+    {
+      "row_id": "cf04961d9898b61e911e77a4b5a6b9661ff9ec73a7caeb430f13da7ed0fe8c2f",
+      "label": "refuse",
+      "group_id": 46
+    },
+    {
+      "row_id": "7ad297b39be311aecfcbbcc24c324d0031ec0d48ebb3a989b514aefd572ad956",
+      "label": "refuse",
+      "group_id": 131
+    },
+    {
+      "row_id": "cc1bb20da21a830dc684cdad6bdc009f0d783d3d6452db7872dd2aa20e21ff75",
+      "label": "refuse",
+      "group_id": 210
+    },
+    {
+      "row_id": "a9aa45b49f156bf2402e1b28635b22e6bc8cca58cf2c55981406596a5c31cf17",
+      "label": "engage",
+      "group_id": 88
+    },
+    {
+      "row_id": "b4ff5536f1dd734fc6638208e7c2946e5c0aef472bcb37a7e6ab878479299e49",
+      "label": "engage",
+      "group_id": 4
+    },
+    {
+      "row_id": "01b3e3c0e53a2b88d72c393c0d440c09882f8bd3213d60afd284619a18c2fc21",
+      "label": "engage",
+      "group_id": 257
+    },
+    {
+      "row_id": "96d303506d99e454e0e2939918a2c25a1815f091e483fb83abd8ab77028497bd",
+      "label": "refuse",
+      "group_id": 230
+    },
+    {
+      "row_id": "3ca1cb45a8043feb36a8142947de3dd2e47fe3003c8853e91e9a6fe70c980a07",
+      "label": "refuse",
+      "group_id": 28
+    },
+    {
+      "row_id": "0cc1eb94537716298af789628cf0341e62d4c3379d473bc0b5c0bec86a6d1fba",
+      "label": "refuse",
+      "group_id": 387
+    },
+    {
+      "row_id": "e555bae7c81ba24bfd09ae94f52f0ec7e45787bf4ef56f960921a25a7a1f46b4",
+      "label": "engage",
+      "group_id": 89
+    },
+    {
+      "row_id": "b570985b9bdbe4234495dd52d8fe4f6c1789a8172e5d82f49069b6d8a5136d07",
+      "label": "engage",
+      "group_id": 270
+    },
+    {
+      "row_id": "81fbf6e9e1fd816283270e4d4d87261b87eaaf3563ee32c483ec6e4c08047b6f",
+      "label": "engage",
+      "group_id": 386
+    },
+    {
+      "row_id": "55c975934033ec772e73c6aaa52729d43667541ceb7f28102fb8d922bb0f1f7e",
+      "label": "engage",
+      "group_id": 224
+    },
+    {
+      "row_id": "1c90ac88866424822909c2b84fd01f599750bfa1a5c0b03f568439e0844dab69",
+      "label": "refuse",
+      "group_id": 137
+    },
+    {
+      "row_id": "463c4a749eb7309d902249e6f2ed76df1ea10ca9f71617f45a632cd9ea917b15",
+      "label": "refuse",
+      "group_id": 338
+    },
+    {
+      "row_id": "218eb1dafcbe86571a7c2c1b7dec82c3b23f275ee65a5e597a953be83602741e",
+      "label": "engage",
+      "group_id": 361
+    },
+    {
+      "row_id": "8e606001f954cd53a472bee4682257730374b7fe832ec28aaa226a1707c8121c",
+      "label": "engage",
+      "group_id": 102
+    },
+    {
+      "row_id": "8a4e000921a0d1a75989b694f9b685ea5e02eb789e55e93e25c4f9f9a960819f",
+      "label": "refuse",
+      "group_id": 57
+    },
+    {
+      "row_id": "2d87aa82e73064f2289140d643a471ba5ace0a44d94ce3076b667d2e7a680b25",
+      "label": "refuse",
+      "group_id": 357
+    },
+    {
+      "row_id": "e447afeeea99352d6c4d07815c34bf01f560c5e81e87c5d3fb17144a3616671a",
+      "label": "engage",
+      "group_id": 330
+    },
+    {
+      "row_id": "f8dacedde19cba76fbb5fd5d3f13cc6721e86dcc45c34038148459c0b58a5467",
+      "label": "refuse",
+      "group_id": 350
+    },
+    {
+      "row_id": "e13bad5e3d81566f06ac555239e884475e1b89d7db2e48b51bfd1921a92cece4",
+      "label": "refuse",
+      "group_id": 254
+    },
+    {
+      "row_id": "797bd158f77a996e81e42591ad8c385845b822680f28f26d73741236e133486c",
+      "label": "engage",
+      "group_id": 89
+    },
+    {
+      "row_id": "2993a8f078ddb50cdeb715c3b0e524bf8eb97a8dd842e567f48e02b029f62d2d",
+      "label": "engage",
+      "group_id": 36
+    },
+    {
+      "row_id": "6d8b51f6204275d21251a2da956e662d826d5dea571b8e6e0446db51f58e122a",
+      "label": "refuse",
+      "group_id": 254
+    },
+    {
+      "row_id": "9f7057b4676b5583ea38e321eeda7a7ccc7c25bb34169d07d51d422c7ec8e2db",
+      "label": "refuse",
+      "group_id": 29
+    },
+    {
+      "row_id": "230a7896001da4b6794d326eb6608a1cee6ff2e672889ee72d334ed8eaa8a1ce",
+      "label": "engage",
+      "group_id": 65
+    },
+    {
+      "row_id": "7d8b8091d89bcb81424ea34916161e4dcf937f3419772e5f70a60f35e483915b",
+      "label": "engage",
+      "group_id": 386
+    },
+    {
+      "row_id": "475bf1e78df69393556bd3fc3786c5ff6f66b551d55cb50ee76cd416dfadf362",
+      "label": "refuse",
+      "group_id": 85
+    },
+    {
+      "row_id": "95ca903b0d5e71406f71dbd7163be0f96035bcaccf73607b41f26dedd37eeaeb",
+      "label": "engage",
+      "group_id": 191
+    }
+  ],
+  "armA_fold0": [
+    {
+      "row_id": "3731a52ce17d2f0908cd102e9ab863a400a3cd324de649327b8d7fa8bb57588e",
+      "label": "engage",
+      "group_id": 172
+    },
+    {
+      "row_id": "e23230c4e3d53b39a8d98559714022147ad9e09f4ade8a2c04a213fbdcdb963d",
+      "label": "refuse",
+      "group_id": 224
+    },
+    {
+      "row_id": "841097ad1263b7d9a3f0c9cf9b2fb9b2292262a4557c6a2377f4a98554fe20fb",
+      "label": "refuse",
+      "group_id": 51
+    },
+    {
+      "row_id": "9bf3701170d8eda3776da9cd91afbc67899d24834c76331080ff43de0eb88dd9",
+      "label": "engage",
+      "group_id": 64
+    },
+    {
+      "row_id": "564443f4cf6b6d0c44fc8f2e4dff1ce962155387dffb85f169f31f5f5d73ca5b",
+      "label": "engage",
+      "group_id": 199
+    },
+    {
+      "row_id": "efaae1a392de495327ffc3b4df86aea1540d914e4cb7e54e5d751b6f1b6a419b",
+      "label": "refuse",
+      "group_id": 313
+    },
+    {
+      "row_id": "9614acc6c7ca9092f29ab3c748e43591457f49e769e7b24afe1b0066002da8a9",
+      "label": "engage",
+      "group_id": 307
+    },
+    {
+      "row_id": "c841e474b4566c2079da62608b8fb25fe89e7bb73df4e76b75d01bc0f92c893a",
+      "label": "refuse",
+      "group_id": 235
+    },
+    {
+      "row_id": "b9bc0ec35a0bb253f45561499ad11103943c976b0c10a9842db52bdd75736a3d",
+      "label": "refuse",
+      "group_id": 64
+    },
+    {
+      "row_id": "4bf7418713f5acc452078b10c568e611e50e16958b1e7b1fd7d056ae2fffc08f",
+      "label": "engage",
+      "group_id": 105
+    },
+    {
+      "row_id": "17ea7119d2fd57d87910d3b6d1961055ded4c2162c2abaa522fe512aa881bd2b",
+      "label": "refuse",
+      "group_id": 395
+    },
+    {
+      "row_id": "21e093549d3affe22a5862ee6682decaba513d7defb8711da4e1a84ee6ca426b",
+      "label": "engage",
+      "group_id": 110
+    },
+    {
+      "row_id": "ca1c2c81a2357bccf75cfbbf443a1d7009aba9ffd9a065eae8a91f6996779d7b",
+      "label": "refuse",
+      "group_id": 392
+    },
+    {
+      "row_id": "df66a2ff0b431765f1fabd01ef0302db837b22bd31f2997a5f71c08b5cc6b3cf",
+      "label": "engage",
+      "group_id": 183
+    },
+    {
+      "row_id": "cf789f5b4d528d9933b375154ffb68ee2cd9ba37bf07baf47ffdde41d4cb4ff8",
+      "label": "engage",
+      "group_id": 274
+    },
+    {
+      "row_id": "14b0176e8cd240b768c0a3f2e79e4ad0094d46792f961777655f8770cb742778",
+      "label": "engage",
+      "group_id": 276
+    },
+    {
+      "row_id": "bd05c1670186fdded9fc3b492e3e3b9887f2e5810f58718f1410974cea5461d8",
+      "label": "refuse",
+      "group_id": 274
+    },
+    {
+      "row_id": "d0b8e2d18bbbd3c000a6985b847220d157797f852dd0d1cc349b27c7f86226e4",
+      "label": "refuse",
+      "group_id": 183
+    },
+    {
+      "row_id": "1501cbecf991cef40669e4e1c102b5cc812048273994908794b7d8254563541a",
+      "label": "engage",
+      "group_id": 264
+    },
+    {
+      "row_id": "f697ca7466cdf8ea72e85178c1a3338d022cf4424d2ffd9f3f069954e476fdea",
+      "label": "refuse",
+      "group_id": 340
+    },
+    {
+      "row_id": "ac5db72aeed08e5e76eca7039084054fb6af47e9b50a871512df8bd814d25f7e",
+      "label": "refuse",
+      "group_id": 54
+    },
+    {
+      "row_id": "d89c686bacf1657f491a9609786eb0542fab2c0648d021efc6020d3593c62b63",
+      "label": "refuse",
+      "group_id": 347
+    },
+    {
+      "row_id": "0404776faa7cc8af544c359d501d394df3448ab9e07fa7fbbf2b7fb904c11498",
+      "label": "engage",
+      "group_id": 318
+    },
+    {
+      "row_id": "ecd93de5291523a10a96df99fe6e0231a99ebe1a4395f01a79e9e7057a136792",
+      "label": "engage",
+      "group_id": 13
+    },
+    {
+      "row_id": "46e724d0e56ad3cab3a571cd0b18e0959cde5b7eff465e9284a86e83ebfb7206",
+      "label": "refuse",
+      "group_id": 389
+    },
+    {
+      "row_id": "998d4e4fa58f0e340db24628ceb4b4a02dfae2a86ba8d093b7751a00d5844896",
+      "label": "engage",
+      "group_id": 289
+    },
+    {
+      "row_id": "969ed8b9c531f585d76a43992a8875e1c23534d14ff1b73cc5a4e705c900b362",
+      "label": "refuse",
+      "group_id": 369
+    },
+    {
+      "row_id": "966f2b59dbdb87ae150bd1537d45c9b759ae97fa6e0d359edbabbf05daaf8487",
+      "label": "engage",
+      "group_id": 73
+    },
+    {
+      "row_id": "00bd0dcb42ff974aa51de7d81505c2d3b60d55ce2486c023ac058e03457ca890",
+      "label": "engage",
+      "group_id": 338
+    },
+    {
+      "row_id": "a481a8e9f684dbfc4b07b9f939599daa0526a83dc5c533cc28beba92bf67ce57",
+      "label": "engage",
+      "group_id": 91
+    },
+    {
+      "row_id": "04c032c5bf120a449a8750323471e803d5a80645bf73f753c08999a1215e214b",
+      "label": "refuse",
+      "group_id": 269
+    },
+    {
+      "row_id": "1c90ac88866424822909c2b84fd01f599750bfa1a5c0b03f568439e0844dab69",
+      "label": "refuse",
+      "group_id": 137
+    }
+  ],
+  "armA_fold2": [
+    {
+      "row_id": "b808856c05ac26ba4af6fd781a247ba78fba779b421724d017463c4779ff00b2",
+      "label": "refuse",
+      "group_id": 191
+    },
+    {
+      "row_id": "8bbc4af76c29c83689dedc39e3118609d61533c0b0391dc311ce9043ab08dce8",
+      "label": "engage",
+      "group_id": 2
+    },
+    {
+      "row_id": "06958a166432978d36db41e69a639bae1dd68b1610c034c750c9780f23ded2ce",
+      "label": "engage",
+      "group_id": 105
+    },
+    {
+      "row_id": "8215f2fefb5fa15cf3c6f31d2000ad0d851553b51b22e01c33d531315cbd05fe",
+      "label": "engage",
+      "group_id": 383
+    },
+    {
+      "row_id": "82391810c7097bd75755f45a807a14a0305a4a557484b80c3e14b2d5ef730f6b",
+      "label": "engage",
+      "group_id": 212
+    },
+    {
+      "row_id": "6fccd2e66d1268c539e34bb1c4c87958d71eadc83c01bbb2eb6b082504c78656",
+      "label": "refuse",
+      "group_id": 237
+    },
+    {
+      "row_id": "7c8471cc7cc743e5c202997681f76d8955e1c801ddeacd0864ad049a6f605277",
+      "label": "refuse",
+      "group_id": 10
+    },
+    {
+      "row_id": "1d01b77c79d88762057182a076790d7dfe3843ed88897a8bf4fc773056d9c90c",
+      "label": "refuse",
+      "group_id": 103
+    },
+    {
+      "row_id": "cf49de7f0638cdc0884cc310682639be4724e00a366316f807cb748a226270ec",
+      "label": "engage",
+      "group_id": 37
+    },
+    {
+      "row_id": "797bd158f77a996e81e42591ad8c385845b822680f28f26d73741236e133486c",
+      "label": "engage",
+      "group_id": 89
+    },
+    {
+      "row_id": "4a3f898a7422eb77b9b3884282aa158f08e2253332fd9a00c19ade9e689f64d8",
+      "label": "engage",
+      "group_id": 320
+    },
+    {
+      "row_id": "ba565a3f44b042981651b109b22ac3397405cdf527d29965fee1dd34707380ac",
+      "label": "refuse",
+      "group_id": 325
+    },
+    {
+      "row_id": "3d59b7cbf44014c84dd0e837cf19daebb3d4be3f5416deb115a6a6b14b8155cb",
+      "label": "refuse",
+      "group_id": 65
+    },
+    {
+      "row_id": "42a65ab8e1811d5da1bb5f0f9f3d38c012ea1dd6ffd0bff7c8e71dc842d0baeb",
+      "label": "refuse",
+      "group_id": 64
+    },
+    {
+      "row_id": "55c975934033ec772e73c6aaa52729d43667541ceb7f28102fb8d922bb0f1f7e",
+      "label": "engage",
+      "group_id": 224
+    },
+    {
+      "row_id": "dd4123500103ea15f28f969f3e8bc3ff1aa41450224f045d851a1a267a596015",
+      "label": "refuse",
+      "group_id": 68
+    },
+    {
+      "row_id": "1bb069b453ce5aa743d2f57187206a1046a47e88fba05b23476e92c868b79a1a",
+      "label": "engage",
+      "group_id": 9
+    },
+    {
+      "row_id": "263548d6852bd6eab8e452af982e20b5e7ec37c8c2496821316360f6b12a1e1f",
+      "label": "engage",
+      "group_id": 76
+    },
+    {
+      "row_id": "9e5e3063d99c205a57c6c36f05df1e1331c0573832bd80728eda284c4b0ae0af",
+      "label": "refuse",
+      "group_id": 127
+    },
+    {
+      "row_id": "a9aa45b49f156bf2402e1b28635b22e6bc8cca58cf2c55981406596a5c31cf17",
+      "label": "engage",
+      "group_id": 88
+    },
+    {
+      "row_id": "6ea4fa4e241917332655447ca3162478dc4a31198ad8374980f53d0d58c6dd87",
+      "label": "refuse",
+      "group_id": 36
+    },
+    {
+      "row_id": "a67cbc415f01c86c42430668bc1a25c7583e06765146befeac007e5a825aadb6",
+      "label": "refuse",
+      "group_id": 240
+    },
+    {
+      "row_id": "03776ca3b0631119305eb27e1946d29665d828fc975d569d91f416efb0ffc242",
+      "label": "refuse",
+      "group_id": 198
+    },
+    {
+      "row_id": "7a95699cd2b13462cac43259b8dd87c4fa9f14728a3cf1b47d675260aa2e7311",
+      "label": "engage",
+      "group_id": 286
+    },
+    {
+      "row_id": "30143bec2534cd903df019166d0277dd2046ba49da54e5cd3ea29e42183e4449",
+      "label": "refuse",
+      "group_id": 254
+    },
+    {
+      "row_id": "6eb2b7fe96b9323ba647a0f6b019d11569031b8b53e8c5490962774bd3e49a15",
+      "label": "engage",
+      "group_id": 310
+    },
+    {
+      "row_id": "68e9d6da77b98ac77050200b999d8965b35331703edd6ef32fbbc44402d84f0e",
+      "label": "engage",
+      "group_id": 92
+    },
+    {
+      "row_id": "ebaea60b7e96d232d96bf3a5d602cce1f222ee1e7330fcdaf0c7921daccb9d4d",
+      "label": "refuse",
+      "group_id": 72
+    },
+    {
+      "row_id": "716727c8653a0e34c387b89b1e7ec023e34f8da28cffce82f23fe0873e84f729",
+      "label": "refuse",
+      "group_id": 297
+    },
+    {
+      "row_id": "0676eb281b5370203b7e5265f013370131ac0cc01cafcd6479b79d40b147399f",
+      "label": "engage",
+      "group_id": 290
+    },
+    {
+      "row_id": "8693e1ba27a850421eff932f87a1509402be74b02793f5a6032e1065ceb519a4",
+      "label": "engage",
+      "group_id": 48
+    },
+    {
+      "row_id": "0915a53f53208a3b96986501c1e10f6aa56899a11b5b98a2c67315eb1b190c3a",
+      "label": "refuse",
+      "group_id": 13
+    }
+  ],
+  "armA_fold1": [
+    {
+      "row_id": "a3b013b31e772abdc0a5d6a95c3151f0860cff72c0bb5e919a260b35719bfcc7",
+      "label": "engage",
+      "group_id": 318
+    },
+    {
+      "row_id": "e5ce6bba1c9ee577a4430da6ae71c2122dd9035a33a07e4fdc2250457f346071",
+      "label": "refuse",
+      "group_id": 126
+    },
+    {
+      "row_id": "f8dacedde19cba76fbb5fd5d3f13cc6721e86dcc45c34038148459c0b58a5467",
+      "label": "refuse",
+      "group_id": 350
+    },
+    {
+      "row_id": "8a0c5399c3b7504796d3a282364bdfb5e4260c57f2f256e1297e0c6945342ab6",
+      "label": "engage",
+      "group_id": 274
+    },
+    {
+      "row_id": "a1c800e58f89756886e007371005fc11ad9740049a8d84f88499ff3af3a473d9",
+      "label": "engage",
+      "group_id": 306
+    },
+    {
+      "row_id": "5ac557a9336112344fb73d6691adc74cc3aa7c6dddd5677413e5677713256983",
+      "label": "refuse",
+      "group_id": 354
+    },
+    {
+      "row_id": "429fcc3203394a0968550beea021a6032d1bc34e53dec4c7acdf17c93ba54265",
+      "label": "refuse",
+      "group_id": 102
+    },
+    {
+      "row_id": "fb3d15d42faad5ab42e8cd604886c4b0bc3fb1afc811359de274a24aa5923005",
+      "label": "engage",
+      "group_id": 91
+    },
+    {
+      "row_id": "43be5790cae5791dd867fb525362ce18e7f7266dbaaf3b85aa1481599f0f8d30",
+      "label": "engage",
+      "group_id": 261
+    },
+    {
+      "row_id": "312aa23eee634e8eab7820782ee63b8dea78c8dd909cecc84561f09a2368a0f5",
+      "label": "engage",
+      "group_id": 171
+    },
+    {
+      "row_id": "7c8471cc7cc743e5c202997681f76d8955e1c801ddeacd0864ad049a6f605277",
+      "label": "refuse",
+      "group_id": 10
+    },
+    {
+      "row_id": "8e44644cafa2333aa0f59bcaddf4ca5e1affc8dc5f72e29b104cc7bc6d22602d",
+      "label": "engage",
+      "group_id": 46
+    },
+    {
+      "row_id": "8bea6e2ab4588ddc9fb30e70b8ddc301c9b65a005826907ea233882a9e9bdfcf",
+      "label": "refuse",
+      "group_id": 330
+    },
+    {
+      "row_id": "f3427339270c528ba4317737d789292c3d2dcc66bf3f0587168c1e8fe9c963a9",
+      "label": "engage",
+      "group_id": 306
+    },
+    {
+      "row_id": "0f41924bfa8b142ee5dd05c44b86b2f9547f402db52585832d4e82b06b07b164",
+      "label": "engage",
+      "group_id": 308
+    },
+    {
+      "row_id": "34b0a38e45f3320f331b43ea534a0bfd27b4d31005be9ef021cde3025a2a1c35",
+      "label": "engage",
+      "group_id": 256
+    },
+    {
+      "row_id": "2447fd1c088e2606a59600078ed6955bf4f5a618ea7176cf7646309958c13049",
+      "label": "refuse",
+      "group_id": 141
+    },
+    {
+      "row_id": "d0d52ed24a6e2c71439fcce78527f29cac5554c3adb3a6ecbdaae4f7905c7022",
+      "label": "refuse",
+      "group_id": 291
+    },
+    {
+      "row_id": "12399dd4255b324816e336b545ec6d0d4401c388044482145d423ba4560bdebe",
+      "label": "refuse",
+      "group_id": 314
+    },
+    {
+      "row_id": "c69cae41e3350d9d97642dad58ed9a52d82cee6425a50a39db071b03dad2c8ad",
+      "label": "refuse",
+      "group_id": 115
+    },
+    {
+      "row_id": "2d2bba17430309e052fd3bb3dd0f765b7fcb1e4fd6c44af2aafa7d1afc6515f6",
+      "label": "refuse",
+      "group_id": 393
+    },
+    {
+      "row_id": "01b3e3c0e53a2b88d72c393c0d440c09882f8bd3213d60afd284619a18c2fc21",
+      "label": "engage",
+      "group_id": 257
+    },
+    {
+      "row_id": "ed5ac4605c787f313c6f19c50b519b24ef47fdf91d983804a3f3b0385c84913b",
+      "label": "engage",
+      "group_id": 364
+    },
+    {
+      "row_id": "341cef9dc6b84a0873359405937bcce4afce5e9bd843e814040496bbee01020e",
+      "label": "engage",
+      "group_id": 274
+    },
+    {
+      "row_id": "5c0947da98b4c7c86909ed2e9136508621c036f53520cdcaf152d62d44588718",
+      "label": "refuse",
+      "group_id": 338
+    },
+    {
+      "row_id": "e416a7cac2b82a7bf13411e1553d1735b1c4372a80f1137737f439ed71f9f166",
+      "label": "refuse",
+      "group_id": 320
+    },
+    {
+      "row_id": "53c2e4fe906eebba7cfc402fe1039c1b351a1a717873ee24b5a4b490ecab18d3",
+      "label": "engage",
+      "group_id": 48
+    },
+    {
+      "row_id": "cf49de7f0638cdc0884cc310682639be4724e00a366316f807cb748a226270ec",
+      "label": "engage",
+      "group_id": 37
+    },
+    {
+      "row_id": "ba565a3f44b042981651b109b22ac3397405cdf527d29965fee1dd34707380ac",
+      "label": "refuse",
+      "group_id": 325
+    },
+    {
+      "row_id": "b7370ef665921ce2a134a67ed326dab3f7fe83085054fa4b1ff3b9c79677ebd9",
+      "label": "refuse",
+      "group_id": 210
+    },
+    {
+      "row_id": "0fa3c5c7e094fc940ba9a2f827e1fd97c2819ef21a74d54f868688a725a1a466",
+      "label": "refuse",
+      "group_id": 282
+    },
+    {
+      "row_id": "2dbb92cfc3a8762c6d07eb941ea23cd225128bc16554f6c719d1559ca4e4efb5",
+      "label": "engage",
+      "group_id": 217
+    }
+  ],
+  "armB_fold4": [
+    {
+      "row_id": "0f1a21ce0ad5bdda9d85e14f3830ce659b01002b051f635d1cc4bb935aac7689",
+      "label": "engage",
+      "group_id": "B_g00942"
+    },
+    {
+      "row_id": "807dfd9066fe2758d1a6204832e70d474bc5969a0ef58d2ce7c1a268faa4690a",
+      "label": "refuse",
+      "group_id": "B_g00628"
+    },
+    {
+      "row_id": "0f1ad22106d541f41964140ce73de507c7a17b002d86ac60e2699b2cf280f6d4",
+      "label": "engage",
+      "group_id": "B_g00137"
+    },
+    {
+      "row_id": "21adbacf9dd11010314bebadd525548a9f5be31dc909786d04140a81070a737f",
+      "label": "engage",
+      "group_id": "B_g00011"
+    },
+    {
+      "row_id": "b953d549cc0782f8e3bff5ec187b63b6985bf82ebb8da63e12be40d0c6dc9a84",
+      "label": "refuse",
+      "group_id": "B_g00645"
+    },
+    {
+      "row_id": "18ba64f1d51ba2605b5f03b45fae08f6666ca53fb78982f70422c9700513e88d",
+      "label": "engage",
+      "group_id": "B_g02304"
+    },
+    {
+      "row_id": "b604f64e4513b698f117c6c1e8b810c34d9bfe1c5bf4972c2c40b7ccc1dee645",
+      "label": "engage",
+      "group_id": "B_g02086"
+    },
+    {
+      "row_id": "cb3cfb43716c5a79015d261063afc6b85158c6a635568748908fec1fefe882f4",
+      "label": "refuse",
+      "group_id": "B_g00716"
+    },
+    {
+      "row_id": "490efcddc91d4c0d354f4e0f4b9a3451319a7db6f2b8e1d2e7317b525187eb02",
+      "label": "engage",
+      "group_id": "B_g01675"
+    },
+    {
+      "row_id": "f93049d2cd55edec19a9ba047aa022100eea16d104d2547b35a22ad06425138e",
+      "label": "engage",
+      "group_id": "B_g02320"
+    },
+    {
+      "row_id": "33b08b0c2aa4b0dc45014001c45ee8b91b65c062a0257a362e4b3c45b80693fa",
+      "label": "refuse",
+      "group_id": "B_g01661"
+    },
+    {
+      "row_id": "07cbcf2d0b20b330271707d8b1c0c78bd5d6c94e055f42a20ecad09920d3ed7e",
+      "label": "refuse",
+      "group_id": "B_g00000"
+    },
+    {
+      "row_id": "ec0eaee04170e717e626009afdae20e0f33a099bc7c868f26d41cdb5029dcb66",
+      "label": "refuse",
+      "group_id": "B_g00753"
+    },
+    {
+      "row_id": "427d85cde716dbf3f1e76df1c4ca06b5b5dd6c736d32b36d02164cca4cb5bf88",
+      "label": "engage",
+      "group_id": "B_g01097"
+    },
+    {
+      "row_id": "681dfc2b2e6f8950ca9d5eea73bef5e1ab20f9ce7e2747badfba25aef020481f",
+      "label": "refuse",
+      "group_id": "B_g01347"
+    },
+    {
+      "row_id": "20d198f7fc0df34b25e8e76f4ea544c821f64a52977153ed631dc1a06206320f",
+      "label": "refuse",
+      "group_id": "B_g01286"
+    },
+    {
+      "row_id": "5657650350a630952dee05c2f567a031fa5e7c525bb652fad08c7c2a0d8e23a3",
+      "label": "refuse",
+      "group_id": "B_g00708"
+    },
+    {
+      "row_id": "b4879ec9d2dbb90a7001b8da703bfdd5eeeb88dfc8ad657c6c90cf2eb53822dc",
+      "label": "engage",
+      "group_id": "B_g00048"
+    },
+    {
+      "row_id": "1776592f67f19c632043765a283b94668d02c7f7b4e8e132610d7fb21d6c5de3",
+      "label": "refuse",
+      "group_id": "B_g00976"
+    },
+    {
+      "row_id": "36590e18989ccca8988846fa378e82d95872a7435383be9ad08f98ed75f428a9",
+      "label": "engage",
+      "group_id": "B_g01888"
+    },
+    {
+      "row_id": "b10556750fae96ed6741c44d9dd6813828c236801ddf1738998fd80e7d4baf48",
+      "label": "refuse",
+      "group_id": "B_g00205"
+    },
+    {
+      "row_id": "41d230077094e8bdc540e72140b2576043be0df64b1ca074501e993408ef9fa0",
+      "label": "refuse",
+      "group_id": "B_g01405"
+    },
+    {
+      "row_id": "a8cbae44b36479e15a5f88be033bc64ec0ebb363479ae2e8b3f71ad12b88aea1",
+      "label": "refuse",
+      "group_id": "B_g00653"
+    },
+    {
+      "row_id": "f51ac62aca79d62b7efb8fb101618bde3cff7986c23c052b6c73c3339da3fa68",
+      "label": "engage",
+      "group_id": "B_g00002"
+    },
+    {
+      "row_id": "d6fc0d6764e3e5f2fa4103243e8ec31263e4dee992ffc4de9ceadf5acca4d9e2",
+      "label": "engage",
+      "group_id": "B_g01104"
+    },
+    {
+      "row_id": "74ecb0508493e20fc7d16ae1fd0bbaed4a9806a301bee2a09f2419d5410adb14",
+      "label": "engage",
+      "group_id": "B_g00282"
+    },
+    {
+      "row_id": "26f371918d3efdfac26d5ddff1e971fdea36eb82af0ec473a9a58dd71a23b773",
+      "label": "refuse",
+      "group_id": "B_g00049"
+    },
+    {
+      "row_id": "990f9f3001f218823cfbe707e33b38d55a8accbecefb5d1684959c96df9b3f04",
+      "label": "engage",
+      "group_id": "B_g01546"
+    },
+    {
+      "row_id": "3480641fea3bcd4b19d45c36976e44ba305fb3d23dd24563527a26f57702a122",
+      "label": "refuse",
+      "group_id": "B_g00625"
+    },
+    {
+      "row_id": "a44d0fd70d4b4c26910749662ff3610fef2ec86d0a12a3567a2f158bd89e90d3",
+      "label": "refuse",
+      "group_id": "B_g01709"
+    },
+    {
+      "row_id": "d0c458e6e28aed6be5d23ea73ba6dee98b52035a75d11de0566dbcbea5032c21",
+      "label": "engage",
+      "group_id": "B_g00499"
+    },
+    {
+      "row_id": "d031c7df5574b55f1abd95badb45ec9455385b5f6c8edb786c0bdd0238f4e542",
+      "label": "engage",
+      "group_id": "B_g01819"
+    }
+  ],
+  "armB_fold0": [
+    {
+      "row_id": "5a94f10eb5c4d36954f493c04ae8bef1710f0e805b5e02f05edddfe6c73ff634",
+      "label": "refuse",
+      "group_id": "B_g01556"
+    },
+    {
+      "row_id": "64a79d320bb6f2def387f10fd342e1def3a1c7edcb165b44f7b64dd4ac8c53cf",
+      "label": "engage",
+      "group_id": "B_g00091"
+    },
+    {
+      "row_id": "6c07b23013d006fa3c2f76823878367e36055441aa6db9482dea2004f9e487e7",
+      "label": "refuse",
+      "group_id": "B_g01207"
+    },
+    {
+      "row_id": "19e7696ba58c5659e733846ad52c0350cadb623a8f7b23cbd5d689bd87f6f4b1",
+      "label": "engage",
+      "group_id": "B_g00897"
+    },
+    {
+      "row_id": "c9ac03eb3325bc3120553cb16965f6bb501e5ed593c18a57a4ca0a178e51b6a1",
+      "label": "engage",
+      "group_id": "B_g01460"
+    },
+    {
+      "row_id": "08c5581969f6ed2de6b67d2f37664d5687a56f6dc804f40d1aeca1ffa23a5115",
+      "label": "engage",
+      "group_id": "B_g02205"
+    },
+    {
+      "row_id": "d6b3ab06c609c95081964ed367b1414974ad9d2cd533872a46dead0bd3c78ca8",
+      "label": "engage",
+      "group_id": "B_g00699"
+    },
+    {
+      "row_id": "48c8bcf155e552af8bfd0aeb5214a2648f2129fdde68d583b88e11a4a528c09b",
+      "label": "refuse",
+      "group_id": "B_g00390"
+    },
+    {
+      "row_id": "99648b43380cc0754210c18692f7fa387672d3c80e62ebf770cbe63d65995edd",
+      "label": "engage",
+      "group_id": "B_g01879"
+    },
+    {
+      "row_id": "6f4d52cfeb0f26594e30c28bc564f30d6cc1ffa35f458784f1e32487e46aaa87",
+      "label": "engage",
+      "group_id": "B_g01423"
+    },
+    {
+      "row_id": "d031c7df5574b55f1abd95badb45ec9455385b5f6c8edb786c0bdd0238f4e542",
+      "label": "engage",
+      "group_id": "B_g01819"
+    },
+    {
+      "row_id": "2dc916b6393af66855562db667bc4b9ebaed79dd27fdf76e7689a32ce36fb821",
+      "label": "engage",
+      "group_id": "B_g01817"
+    },
+    {
+      "row_id": "3fe101f972a00e09fb8e456f5ab7f1e4fc0b5e462c66b6ba61802ba6a513133b",
+      "label": "refuse",
+      "group_id": "B_g01523"
+    },
+    {
+      "row_id": "51017021f87f51a613fb8a8639464ee6105b4ee17351ad46d868cf957c6a9c09",
+      "label": "refuse",
+      "group_id": "B_g02279"
+    },
+    {
+      "row_id": "01e50aeec546982a49bd36007480453201de2c15164a2195ba50f7f59eacbe75",
+      "label": "refuse",
+      "group_id": "B_g00270"
+    },
+    {
+      "row_id": "dc92f5b9b30e5db320f8b998b790e0396e12e0a82c98c1bc4ae76f9366f97077",
+      "label": "refuse",
+      "group_id": "B_g00094"
+    },
+    {
+      "row_id": "82a21b39157f99c72b2f37131f6ae486399541c2b9e4f8c14d2b1d45f874a73a",
+      "label": "refuse",
+      "group_id": "B_g00938"
+    },
+    {
+      "row_id": "6fa04a539c49738ab75a70fada59f0e6fdb50b634b60b72c815de4b4c8b5fbfa",
+      "label": "engage",
+      "group_id": "B_g01470"
+    },
+    {
+      "row_id": "7dad6fa83e3009c5b243a30c2a5b77d1b7b9ea05b84fbf75640055e2811ece00",
+      "label": "refuse",
+      "group_id": "B_g01949"
+    },
+    {
+      "row_id": "9018386d3f793d11a14c51bf4328bd23756e053ab331ab7d343d4754dee1af8a",
+      "label": "refuse",
+      "group_id": "B_g00193"
+    },
+    {
+      "row_id": "e24a824f2ef20622aee583d18764b439d8a2864ee80ba89ac029062a46074b98",
+      "label": "engage",
+      "group_id": "B_g01363"
+    },
+    {
+      "row_id": "6a195d810ec1c2d3a6e0a8073a398eea9e0a17f9e1844f11ca5c73c1310db291",
+      "label": "engage",
+      "group_id": "B_g01159"
+    },
+    {
+      "row_id": "0e444d161e4614cd680261b69e944814db5dce6fcd412b13b6e9e05eaff2a20d",
+      "label": "refuse",
+      "group_id": "B_g00188"
+    },
+    {
+      "row_id": "f8617090361b5fb6f5661c91c363705ec51c054d796fd7ed7e5f928a2dec04fe",
+      "label": "refuse",
+      "group_id": "B_g00942"
+    },
+    {
+      "row_id": "54da0b8fdb279c4acb33073320dc7964a5fd2f01098bb69218f3f75101f75aba",
+      "label": "engage",
+      "group_id": "B_g01981"
+    },
+    {
+      "row_id": "140f8a3c8e0dc9b1ae5ef6e9b5cd2085b35bc82ab24d4e5ceab1575c1400f12c",
+      "label": "engage",
+      "group_id": "B_g00782"
+    },
+    {
+      "row_id": "d17e961e7e4f78fbfa3aa44b23a2d703cae64343ac6b9b5b48d23939d6250b97",
+      "label": "refuse",
+      "group_id": "B_g00826"
+    },
+    {
+      "row_id": "d98fa876cbb394e2410ab1ce601860f720dc704828989614a304a771ab4e5554",
+      "label": "refuse",
+      "group_id": "B_g00000"
+    },
+    {
+      "row_id": "6cf7373a7fd9595aa58dc1cb7dc1f15c75b812da197bfc8cabfba383e04fbfbc",
+      "label": "refuse",
+      "group_id": "B_g00108"
+    },
+    {
+      "row_id": "87f83820296a0473c1ccef1b59ffeaf9c067447b2b29f830cd5ae79cc8022eb4",
+      "label": "engage",
+      "group_id": "B_g02375"
+    },
+    {
+      "row_id": "2dfc21efe46e95a42cdd146c088a58f053d0c0e7795e1274974c426dd68f933a",
+      "label": "refuse",
+      "group_id": "B_g00912"
+    },
+    {
+      "row_id": "d80de37d3740984bab85497c222f0d8bb1aab376236a31e4e98530db7fd62289",
+      "label": "engage",
+      "group_id": "B_g01904"
+    }
+  ],
+  "armB_fold2": [
+    {
+      "row_id": "1a8df1476331d06c26ad5c39bde16a1da91fd24ea4bb09be6f2c66e40421a4c8",
+      "label": "refuse",
+      "group_id": "B_g01470"
+    },
+    {
+      "row_id": "8c83f2eff0a99d049b4714c957b236e0dd20d3dd17525ab1e837e3ac8caabb95",
+      "label": "refuse",
+      "group_id": "B_g00355"
+    },
+    {
+      "row_id": "d80de37d3740984bab85497c222f0d8bb1aab376236a31e4e98530db7fd62289",
+      "label": "engage",
+      "group_id": "B_g01904"
+    },
+    {
+      "row_id": "61d393ad79124cc3c6ab8d2e3c2d9ce8d2d36bd6aab9e40826b2efea8debf884",
+      "label": "refuse",
+      "group_id": "B_g01225"
+    },
+    {
+      "row_id": "82335f8e9dd65a0e144f4f01ca0801f78605e0351632e931295724099859df7b",
+      "label": "refuse",
+      "group_id": "B_g00515"
+    },
+    {
+      "row_id": "825897a3930bb3452fe1846235e6ddb37147ff65c9a8977862d1e9ec620d778f",
+      "label": "refuse",
+      "group_id": "B_g00891"
+    },
+    {
+      "row_id": "f3244fcb2d057bd48bd4ff68895b805b914ee77beddb4c51ecbf9320a8e143e0",
+      "label": "refuse",
+      "group_id": "B_g01353"
+    },
+    {
+      "row_id": "c984d2701cfea771217ae27ba6c20f3ddcd85114790a3d79df4fe57654575f69",
+      "label": "engage",
+      "group_id": "B_g00169"
+    },
+    {
+      "row_id": "555fd728a481a45865a9576bd61d30f0e280c6c6ceb0a60f6aefeeed5d3fd990",
+      "label": "refuse",
+      "group_id": "B_g02262"
+    },
+    {
+      "row_id": "829f549c2a67b3e3497cb6dcfb3788b22671444291e6af180f5e9f4d804df167",
+      "label": "engage",
+      "group_id": "B_g02206"
+    },
+    {
+      "row_id": "b2ea779aca3addcb8fd645d9088615ffe79b272c684c7cc4b691a7999338c776",
+      "label": "refuse",
+      "group_id": "B_g01360"
+    },
+    {
+      "row_id": "a44d0fd70d4b4c26910749662ff3610fef2ec86d0a12a3567a2f158bd89e90d3",
+      "label": "refuse",
+      "group_id": "B_g01709"
+    },
+    {
+      "row_id": "a3520ecb5cbc59bb32b0d05732b552b7bed59a613d064eafdf05c537ed5a87f6",
+      "label": "refuse",
+      "group_id": "B_g00598"
+    },
+    {
+      "row_id": "306c57ba962393ba5d7dcb557fcae30aec25e972f230dd80f0b33d734c869f79",
+      "label": "engage",
+      "group_id": "B_g01672"
+    },
+    {
+      "row_id": "13d8b71d544da04ff5d6e08fa1e43f8333a8d944c2ebfda7760a9d0c1480b8ce",
+      "label": "engage",
+      "group_id": "B_g02180"
+    },
+    {
+      "row_id": "313ca9731868a5fb700bfbb83dd2165522acf4272393a0b168ca0a9e0f62574c",
+      "label": "engage",
+      "group_id": "B_g00214"
+    },
+    {
+      "row_id": "2dfc21efe46e95a42cdd146c088a58f053d0c0e7795e1274974c426dd68f933a",
+      "label": "refuse",
+      "group_id": "B_g00912"
+    },
+    {
+      "row_id": "307b23317d454d9d0a50c4a14cecf224dd7f69bbd19bcb83ca1e993095ef8ee4",
+      "label": "engage",
+      "group_id": "B_g01574"
+    },
+    {
+      "row_id": "99648b43380cc0754210c18692f7fa387672d3c80e62ebf770cbe63d65995edd",
+      "label": "engage",
+      "group_id": "B_g01879"
+    },
+    {
+      "row_id": "08973bb7b3fdb0ec6195efd3218630c6b6884286f7f89262749792d2c3a8d8e5",
+      "label": "engage",
+      "group_id": "B_g01449"
+    },
+    {
+      "row_id": "9f491ecd466f7557f8c613a8ac664e8ca852d54ad2d1d626c8dea98d1486fc06",
+      "label": "engage",
+      "group_id": "B_g00871"
+    },
+    {
+      "row_id": "fd3436c3b8fb264f92d513af6b7a10aa3c207b51fb1e39d400ee7e2c07308b77",
+      "label": "refuse",
+      "group_id": "B_g01194"
+    },
+    {
+      "row_id": "fef42d7a9b5afbe8e889a771584048ab3a43901340e25f984de9859d9a959d71",
+      "label": "refuse",
+      "group_id": "B_g01011"
+    },
+    {
+      "row_id": "eac6198daf86f4fc519dc189cbff723d002b595355dc6c9665f1d1c00d72af30",
+      "label": "refuse",
+      "group_id": "B_g00061"
+    },
+    {
+      "row_id": "27d9207d54446465aef73eace6f7430010f8ae3a0c330517ca48333428d9f773",
+      "label": "refuse",
+      "group_id": "B_g01252"
+    },
+    {
+      "row_id": "9d4594c0f918701006d73bc30e23919c8afe4b6b923dd775ce085dcfebf0a5b8",
+      "label": "refuse",
+      "group_id": "B_g00538"
+    },
+    {
+      "row_id": "21adbacf9dd11010314bebadd525548a9f5be31dc909786d04140a81070a737f",
+      "label": "engage",
+      "group_id": "B_g00011"
+    },
+    {
+      "row_id": "25411889292fabefe91d37f3c782966a4a1e3d9eb91053b4959b64769a04c851",
+      "label": "engage",
+      "group_id": "B_g01337"
+    },
+    {
+      "row_id": "47785a443b60214b554fecd7c892f780b1c2ac969cd5800055085b6564313605",
+      "label": "engage",
+      "group_id": "B_g00824"
+    },
+    {
+      "row_id": "0e9654a012780066e45c5fdfac3988b8eaa013499e204513fd3a1d69b0401d2d",
+      "label": "engage",
+      "group_id": "B_g01015"
+    },
+    {
+      "row_id": "b4879ec9d2dbb90a7001b8da703bfdd5eeeb88dfc8ad657c6c90cf2eb53822dc",
+      "label": "engage",
+      "group_id": "B_g00048"
+    },
+    {
+      "row_id": "74ecb0508493e20fc7d16ae1fd0bbaed4a9806a301bee2a09f2419d5410adb14",
+      "label": "engage",
+      "group_id": "B_g00282"
+    }
+  ],
+  "armB_fold3": [
+    {
+      "row_id": "f2dee3b10e9c2dcca6d74871ab0bf82d084d2dd7ca180053907fb5e1c1f7bc6e",
+      "label": "engage",
+      "group_id": "B_g01635"
+    },
+    {
+      "row_id": "b953d549cc0782f8e3bff5ec187b63b6985bf82ebb8da63e12be40d0c6dc9a84",
+      "label": "refuse",
+      "group_id": "B_g00645"
+    },
+    {
+      "row_id": "f93049d2cd55edec19a9ba047aa022100eea16d104d2547b35a22ad06425138e",
+      "label": "engage",
+      "group_id": "B_g02320"
+    },
+    {
+      "row_id": "74ecb0508493e20fc7d16ae1fd0bbaed4a9806a301bee2a09f2419d5410adb14",
+      "label": "engage",
+      "group_id": "B_g00282"
+    },
+    {
+      "row_id": "01cbd655887870f218dfe9b7502fa318486dceffafdcbd7502ddc4b08e540af8",
+      "label": "engage",
+      "group_id": "B_g02335"
+    },
+    {
+      "row_id": "90ffcfa0a49cdb04a13dc6d63d134d3c4edf9ac7f4de3101133a8a136dedb595",
+      "label": "engage",
+      "group_id": "B_g01776"
+    },
+    {
+      "row_id": "27c8cda1a7cc1ffb3b83cdf5f9d290b776eac359f2843689dadb202149d3e5a7",
+      "label": "refuse",
+      "group_id": "B_g01691"
+    },
+    {
+      "row_id": "3f87317bf28931a35068401a300649809b91dab3cacb0b8b696a391ee4511a8b",
+      "label": "engage",
+      "group_id": "B_g01935"
+    },
+    {
+      "row_id": "9ff83ff18d5f91da52b6efddc4138f0d14a9e5aeb5debcec6ea7981572581d5c",
+      "label": "refuse",
+      "group_id": "B_g00775"
+    },
+    {
+      "row_id": "a889ac64341a5db33fce0c0354b7ad1c500e2b0cc43266a3621f806cf9469132",
+      "label": "refuse",
+      "group_id": "B_g01676"
+    },
+    {
+      "row_id": "f3601afa0ae8075d9c8f15c2476289f35c7872e62e26277f25723709eb3dedd9",
+      "label": "engage",
+      "group_id": "B_g01776"
+    },
+    {
+      "row_id": "82a21b39157f99c72b2f37131f6ae486399541c2b9e4f8c14d2b1d45f874a73a",
+      "label": "refuse",
+      "group_id": "B_g00938"
+    },
+    {
+      "row_id": "6f4d52cfeb0f26594e30c28bc564f30d6cc1ffa35f458784f1e32487e46aaa87",
+      "label": "engage",
+      "group_id": "B_g01423"
+    },
+    {
+      "row_id": "1cdd2814e0480a72420d6aa02fe31d6799e4f3423164c647ab4f17b526ea1edb",
+      "label": "engage",
+      "group_id": "B_g02125"
+    },
+    {
+      "row_id": "2f64e5d995b13d8b9191f9a0df102dd80288b5f22b24dcf5cc5fc910186583ef",
+      "label": "engage",
+      "group_id": "B_g02028"
+    },
+    {
+      "row_id": "140f8a3c8e0dc9b1ae5ef6e9b5cd2085b35bc82ab24d4e5ceab1575c1400f12c",
+      "label": "engage",
+      "group_id": "B_g00782"
+    },
+    {
+      "row_id": "7d5464b014e68fdb95da1c83427f2a07070cb3f05a7df665e70580456be1e10d",
+      "label": "engage",
+      "group_id": "B_g01546"
+    },
+    {
+      "row_id": "ee160a865b075c5a09e38787a7a29e6bfb707a5b0652e1c4d605768613d4952b",
+      "label": "refuse",
+      "group_id": "B_g02252"
+    },
+    {
+      "row_id": "f51ac62aca79d62b7efb8fb101618bde3cff7986c23c052b6c73c3339da3fa68",
+      "label": "engage",
+      "group_id": "B_g00002"
+    },
+    {
+      "row_id": "8c53350200b7ca5d7e493d1d2292e1eeb4fd84205926ccf03b2cb2294f718cbb",
+      "label": "refuse",
+      "group_id": "B_g00920"
+    },
+    {
+      "row_id": "467903a354888c40720de0ba947abc697d6ea6db90d4bbe81d2725e59aaaf551",
+      "label": "engage",
+      "group_id": "B_g01327"
+    },
+    {
+      "row_id": "0b4f2b2e6f00282acc0a7025e72665c28c2d445a792c027f2ce3e99da5de40c7",
+      "label": "engage",
+      "group_id": "B_g01504"
+    },
+    {
+      "row_id": "94ca8886163a8122aff1436eff66cc9445f502af2c6a763166afb50e2e3d7590",
+      "label": "refuse",
+      "group_id": "B_g02282"
+    },
+    {
+      "row_id": "0726e4f1be3f8effa273762be4058fe25c3146e01fc4986aeb0f217ca4c636ad",
+      "label": "refuse",
+      "group_id": "B_g00592"
+    },
+    {
+      "row_id": "5f9ce7b32725bd5fe57bfed082e1ab1b12a29581cb86d3046f70ddabf2af411b",
+      "label": "engage",
+      "group_id": "B_g00330"
+    },
+    {
+      "row_id": "c96374598d307e722d984b8838ea1290020f523120a53189a0ddc835d6d931df",
+      "label": "refuse",
+      "group_id": "B_g00090"
+    },
+    {
+      "row_id": "fed95463025b727d2a62101a812dac745f36ea7068d65a8d3cca24a324c9e06a",
+      "label": "refuse",
+      "group_id": "B_g00404"
+    },
+    {
+      "row_id": "cd0ca816ab02846678592c5d0cb0a24c07e6abf6b80028620c887e722990f665",
+      "label": "refuse",
+      "group_id": "B_g01123"
+    },
+    {
+      "row_id": "eac6198daf86f4fc519dc189cbff723d002b595355dc6c9665f1d1c00d72af30",
+      "label": "refuse",
+      "group_id": "B_g00061"
+    },
+    {
+      "row_id": "7847709da1ef1131f19a388f9489c07c0982173dada5d70cf7dbdcaba8c14e6d",
+      "label": "refuse",
+      "group_id": "B_g00105"
+    },
+    {
+      "row_id": "4b3b9380d7c20eb580e49881dbc6fa9f86faf03f0096be740d7e5d9fa933da43",
+      "label": "refuse",
+      "group_id": "B_g00260"
+    },
+    {
+      "row_id": "58726ecededcd7da436c21f756629e7461474229f4428e4c8d819095557c48c5",
+      "label": "refuse",
+      "group_id": "B_g02185"
+    }
+  ],
+  "armB_fold1": [
+    {
+      "row_id": "36590e18989ccca8988846fa378e82d95872a7435383be9ad08f98ed75f428a9",
+      "label": "engage",
+      "group_id": "B_g01888"
+    },
+    {
+      "row_id": "09611c129b654cbbe684cda6254b83210108e30de466b3273122884b966b5d9b",
+      "label": "engage",
+      "group_id": "B_g01395"
+    },
+    {
+      "row_id": "01d061f66e245dd345bab9cbf3208233a242bba08fc973f403def22f8194bd91",
+      "label": "engage",
+      "group_id": "B_g01259"
+    },
+    {
+      "row_id": "467903a354888c40720de0ba947abc697d6ea6db90d4bbe81d2725e59aaaf551",
+      "label": "engage",
+      "group_id": "B_g01327"
+    },
+    {
+      "row_id": "40b7b66f5acaf1fe5368dd5c99a102865e1849fca9537fc66799e94d91df17bd",
+      "label": "engage",
+      "group_id": "B_g02299"
+    },
+    {
+      "row_id": "d148a5f066e1d33be3b9995916a99795696b23eaf7dd81bb9595d1c53b8273b5",
+      "label": "refuse",
+      "group_id": "B_g00189"
+    },
+    {
+      "row_id": "ad6cefe1673284d3279a8a2bb4131fc88711244dd1b6fe07075aadf91da67281",
+      "label": "refuse",
+      "group_id": "B_g02371"
+    },
+    {
+      "row_id": "9d4594c0f918701006d73bc30e23919c8afe4b6b923dd775ce085dcfebf0a5b8",
+      "label": "refuse",
+      "group_id": "B_g00538"
+    },
+    {
+      "row_id": "5a94f10eb5c4d36954f493c04ae8bef1710f0e805b5e02f05edddfe6c73ff634",
+      "label": "refuse",
+      "group_id": "B_g01556"
+    },
+    {
+      "row_id": "36f99752865e7b92ae3041f1d9d09087314bb9a39e879eb6d94008444d2c877b",
+      "label": "refuse",
+      "group_id": "B_g00580"
+    },
+    {
+      "row_id": "1d50bd38dd9a2722fe3f99031d16872da7a022ed19abdb5598c318124edf5013",
+      "label": "engage",
+      "group_id": "B_g00633"
+    },
+    {
+      "row_id": "d5e2e3b528299c75fe13a199ea10b895191fa5f17d6a415fd275be5cc9741846",
+      "label": "engage",
+      "group_id": "B_g02180"
+    },
+    {
+      "row_id": "e728c4d0367901eff28386cee424104a87f3e23d7a47ff7662e987635abe98d6",
+      "label": "engage",
+      "group_id": "B_g01291"
+    },
+    {
+      "row_id": "306c57ba962393ba5d7dcb557fcae30aec25e972f230dd80f0b33d734c869f79",
+      "label": "engage",
+      "group_id": "B_g01672"
+    },
+    {
+      "row_id": "82335f8e9dd65a0e144f4f01ca0801f78605e0351632e931295724099859df7b",
+      "label": "refuse",
+      "group_id": "B_g00515"
+    },
+    {
+      "row_id": "307b23317d454d9d0a50c4a14cecf224dd7f69bbd19bcb83ca1e993095ef8ee4",
+      "label": "engage",
+      "group_id": "B_g01574"
+    },
+    {
+      "row_id": "232bf461e54cefa82000d626d067d2cf916231f2c346a80ef48087e9addfc091",
+      "label": "refuse",
+      "group_id": "B_g00560"
+    },
+    {
+      "row_id": "d6fc0d6764e3e5f2fa4103243e8ec31263e4dee992ffc4de9ceadf5acca4d9e2",
+      "label": "engage",
+      "group_id": "B_g01104"
+    },
+    {
+      "row_id": "31857d1ae8664a8caa0d23a98ab7ded2d0cd59142b25862afba7ae959ddc126e",
+      "label": "engage",
+      "group_id": "B_g01696"
+    },
+    {
+      "row_id": "ee160a865b075c5a09e38787a7a29e6bfb707a5b0652e1c4d605768613d4952b",
+      "label": "refuse",
+      "group_id": "B_g02252"
+    },
+    {
+      "row_id": "0f1a21ce0ad5bdda9d85e14f3830ce659b01002b051f635d1cc4bb935aac7689",
+      "label": "engage",
+      "group_id": "B_g00942"
+    },
+    {
+      "row_id": "82a21b39157f99c72b2f37131f6ae486399541c2b9e4f8c14d2b1d45f874a73a",
+      "label": "refuse",
+      "group_id": "B_g00938"
+    },
+    {
+      "row_id": "f3f8069ecb14316726fcd74c32453a5b9a53e163ca0cdfef27440da940a9d090",
+      "label": "refuse",
+      "group_id": "B_g01017"
+    },
+    {
+      "row_id": "1a0b9f37aa8578d2bd892931d3b7ba3a827198d79bf0911a324c086eb1443fe8",
+      "label": "refuse",
+      "group_id": "B_g02358"
+    },
+    {
+      "row_id": "c5b01c60adbb5d6769172581ad8dc3909db3064c0711a53a619703a0c7ecfb0a",
+      "label": "engage",
+      "group_id": "B_g00715"
+    },
+    {
+      "row_id": "04ab2cf80daf2e67889ca0086ec5f8be1665f4add43ca89e15eec7e71f4b6a63",
+      "label": "engage",
+      "group_id": "B_g00749"
+    },
+    {
+      "row_id": "5d7398c9fdb82b21abfc6079a9f67df85079006b7957eb32e994b6ed336547d7",
+      "label": "refuse",
+      "group_id": "B_g01183"
+    },
+    {
+      "row_id": "4fbb7b52e7bb66749a2bb753455da068e4e9fa6b0bac8336d734340d63349828",
+      "label": "refuse",
+      "group_id": "B_g02265"
+    },
+    {
+      "row_id": "a8baa9d11bea53534d6ed6df2bee64fe918d2dac85649535dd41b73ffdce5c07",
+      "label": "refuse",
+      "group_id": "B_g00198"
+    },
+    {
+      "row_id": "01cbd655887870f218dfe9b7502fa318486dceffafdcbd7502ddc4b08e540af8",
+      "label": "engage",
+      "group_id": "B_g02335"
+    },
+    {
+      "row_id": "1ccc790fd693b55a492e633b9bbb226a367e9ba586329b0296f309f009c16d91",
+      "label": "refuse",
+      "group_id": "B_g00707"
+    },
+    {
+      "row_id": "80a9c3de297db46804443aec163105392742adb3779d042892d08f58329e5a60",
+      "label": "refuse",
+      "group_id": "B_g00293"
+    }
+  ]
+}
