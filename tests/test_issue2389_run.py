@@ -23,6 +23,7 @@ sparse-cone additions needed).
 
 from __future__ import annotations
 
+import json
 import logging
 import sys
 from pathlib import Path
@@ -556,3 +557,187 @@ def test_b12_cap_report_inputs_partial_without_full_cell_coverage(tmp_path):
     assert expected is None
     assert why is not None and "underivable" in why
     assert rest_cells[-1] in why
+
+
+# ---------------- R1+R2 (r2 review): cap recalibration + gate_slice labeling
+
+
+def _fake_generate_batch(
+    model,
+    tokenizer,
+    contexts,
+    n=10,
+    hook=None,
+    max_new_tokens=1024,
+    temperature=1.0,
+    seed_base=42,
+    render_fn=None,
+    ids_fn=None,
+    top_p=None,
+    share_prefill=False,
+):
+    """Signature-conformant boundary fake of steering.generate_batch."""
+    return [["out"] * n for _ in contexts]
+
+
+def _patch_generation(monkeypatch):
+    monkeypatch.setattr(R, "generate_batch", _fake_generate_batch)
+    monkeypatch.setattr(R.BANK29, "context_token_ids_2389", lambda tok, ctx: [1, 2, 3])
+
+
+_R12_CONTEXTS = {
+    "ctx_a": {"cell": "query_topic", "value_id": "v0", "carrier": "c"},
+    "ctx_b": {"cell": "query_topic", "value_id": "v1", "carrier": "c"},
+}
+
+
+def test_r2_batch_kind_parses_cell_grain_batch_ids():
+    assert R._batch_kind("gate_filler_swap") == "gate"
+    assert R._batch_kind("rest_filler_swap") == "rest"
+    assert R._batch_kind("parity_query_topic") == "parity"
+    assert R._batch_kind("vllm_query_topic") == "vllm"
+
+
+def test_r2_generate_anchor_rows_labels_gate_slice_by_batch_kind(tmp_path, monkeypatch):
+    """R2 (r2 review): rows carry gate_slice=True exactly for gate_{cell}
+    batches (the cell-grain batch_id domain) — parity with the vLLM leg's
+    ``cid in gate_id_set``. FAILED at HEAD~: ``batch == "gate"`` was
+    permanently False, so every HF anchors row persisted gate_slice=False."""
+    cfg = _mk_cfg(tmp_path)
+    _patch_generation(monkeypatch)
+    for batch, want in (
+        ("gate_query_topic", True),
+        ("rest_query_topic", False),
+        ("parity_query_topic", False),
+        ("vllm_query_topic", False),
+    ):
+        rows, _ctx, _txt = R._generate_anchor_rows(
+            cfg, None, None, _R12_CONTEXTS, ["ctx_a", "ctx_b"], 2, batch
+        )
+        assert rows, batch
+        assert all(r["gate_slice"] is want for r in rows), batch
+
+
+def test_r1_cap_recalibration_reads_cell_grain_shards(tmp_path):
+    """R1 (r2 review): the recalibration aggregates the CELL-GRAIN gate
+    shards the producers actually write, with paths derived from the done
+    manifests. FAILED at HEAD~: the retired ``anchors_gate_w*`` glob matched
+    0 of 37 cells, per_cell stayed empty, and a FALSE-COMPLETE report
+    (partial: false, zero recalibrations) was adopted downstream."""
+    cfg = _mk_cfg(tmp_path)
+    cfg.anchors_dir.mkdir(parents=True, exist_ok=True)
+    cell, fp, draws = "query_topic", "fp", 1
+    rows = [
+        {
+            "context_id": f"c{i}",
+            "cell": cell,
+            "value_id": "v0",
+            "draw": 0,
+            "gate_slice": True,
+            "max_new_tokens": R.cell_max_new_tokens(cell),
+            "n_completion_tokens": R.cell_max_new_tokens(cell),
+            "cap_hit": True,
+            "engine": "hf",
+            "text": "t",
+        }
+        for i in range(4)
+    ]
+    R._write_jsonl_atomic(cfg.anchors_dir / f"anchors_gate_{cell}_w0.jsonl", rows)
+    (cfg.anchors_dir / f"va_anchors_gate_{cell}_w0.pt").write_bytes(b"pt")
+    _done_manifest(cfg, f"gate_{cell}", draws=draws, n_rows=4)
+    # A stray LEGACY-named worker-stripe file must never enter the aggregate
+    # (the HEAD~ glob would have read ONLY this, diluting the trigger).
+    R._write_jsonl_atomic(
+        cfg.anchors_dir / "anchors_gate_w0.jsonl",
+        [{**rows[0], "cap_hit": False, "n_completion_tokens": 1}] * 100,
+    )
+    recal = R._gate_slice_cap_recalibration(cfg, fp, draws, [cell])
+    assert recal == {cell: 2 * R.cell_max_new_tokens(cell)}
+    rep = json.loads((cfg.gates_dir / "cap_recalibration.json").read_text())
+    assert rep["partial"] is False
+    assert rep["per_cell"][cell]["n_rows"] == 4
+    assert rep["per_cell"][cell]["n_cap_hit"] == 4
+
+
+def test_r1_cap_recalibration_missing_shard_fails_loud(tmp_path):
+    """A cell that passed the barrier but resolves no manifest+shard is an
+    inconsistent store — RuntimeError, never a silent zero-row aggregate."""
+    cfg = _mk_cfg(tmp_path)
+    cfg.anchors_dir.mkdir(parents=True, exist_ok=True)
+    with pytest.raises(RuntimeError, match="inconsistent store"):
+        R._gate_shard_paths(cfg, "fp", ["query_topic"], 1)
+
+
+def test_r1_r2_post_recalibration_two_cap_store_is_valid_capregen_basis(tmp_path, monkeypatch):
+    """The R1<->R2 interaction (r2 review ORDERING constraint): after a
+    gate-slice recalibration one cell legitimately holds the RAISED cap in
+    its gate batch and the BASE cap in its rest batch. With correct
+    gate_slice labeling each (cell, batch) bucket holds exactly ONE cap and
+    ``_validate_breach_basis`` ACCEPTS the report. At HEAD~ (R1 fixed alone)
+    both caps collapsed into the single "rest" bucket -> mixed-bucket
+    refusal -> the anchors capregen basis WEDGED on the plan's designed
+    path."""
+    cfg = _mk_cfg(tmp_path)
+    cfg.anchors_dir.mkdir(parents=True, exist_ok=True)
+    _patch_generation(monkeypatch)
+    cell = "query_topic"
+    base_cap = R.cell_max_new_tokens(cell)
+    raised = 2 * base_cap
+    gate_rows, _c, _t = R._generate_anchor_rows(
+        cfg, None, None, _R12_CONTEXTS, ["ctx_a", "ctx_b"], 2, f"gate_{cell}", {cell: raised}
+    )
+    rest_rows, _c, _t = R._generate_anchor_rows(
+        cfg, None, None, _R12_CONTEXTS, ["ctx_a", "ctx_b"], 2, f"rest_{cell}"
+    )
+    for r in gate_rows + rest_rows:
+        r["n_completion_tokens"] = 5
+        r["cap_hit"] = False
+    p_gate = cfg.anchors_dir / f"anchors_gate_{cell}_w0.jsonl"
+    p_rest = cfg.anchors_dir / f"anchors_rest_{cell}_w0.jsonl"
+    R._write_jsonl_atomic(p_gate, gate_rows)
+    R._write_jsonl_atomic(p_rest, rest_rows)
+    rep = R.compute_cap_hit_report(
+        [p_gate, p_rest],
+        R.MAX_NEW_TOKENS,
+        scope="anchors",
+        expected_shards={p_gate.name, p_rest.name},
+    )
+    assert rep["per_cell"][cell]["realized_caps_by_batch"] == {
+        "gate": [raised],
+        "rest": [base_cap],
+    }
+    # The wedge check: a post-recalibration two-cap store is a VALID basis.
+    R._validate_breach_basis(rep, tmp_path / "rep.json", "anchors", cfg)
+    # Counterfactual (R1 fixed WITHOUT R2 — the banned intermediate state):
+    # mislabel the gate rows the way the pre-R2 writer did and the SAME store
+    # trips the mixed-bucket refusal, i.e. the capregen basis wedges.
+    for r in gate_rows:
+        r["gate_slice"] = False
+    R._write_jsonl_atomic(p_gate, gate_rows)
+    rep_bad = R.compute_cap_hit_report(
+        [p_gate, p_rest],
+        R.MAX_NEW_TOKENS,
+        scope="anchors",
+        expected_shards={p_gate.name, p_rest.name},
+    )
+    with pytest.raises(RuntimeError, match="MIXED realized caps"):
+        R._validate_breach_basis(rep_bad, tmp_path / "rep.json", "anchors", cfg)
+
+
+def test_b7_chunk_size_median_regression(tmp_path):
+    """B7 (r1) realized-property pin: cell-bucketed generate chunks stay near
+    full batch — median chunk size >= min(B, 8) for gate AND rest context
+    orders at both pilot candidates (round-2 live enumeration: gate median
+    11; rest 16 @ B=16 / 25 @ B=32). A future re-fragmentation of the claim
+    grain cannot land silently."""
+    cfg = _mk_cfg(tmp_path, smoke=False)
+    _frozen_manifest(cfg)
+    gate_ids, rest_ids, contexts = R._anchor_context_order(cfg)
+    for order in (gate_ids, rest_ids):
+        assert order
+        for b in R.PILOT_GEN_BATCH_CANDIDATES:
+            sizes = sorted(
+                len(chunk) for _cell, chunk in R._cell_bucketed_chunks(contexts, order, b)
+            )
+            median = sizes[len(sizes) // 2]
+            assert median >= min(b, 8), (b, median, sizes[:8])

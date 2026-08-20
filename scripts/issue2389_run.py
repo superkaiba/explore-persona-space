@@ -888,6 +888,23 @@ def _group_by_cell(order: list[str], contexts: dict[str, dict]) -> dict[str, lis
     return by_cell
 
 
+def _batch_kind(batch_id: str) -> str:
+    """Leading batch-kind token of a claim-queue ``batch_id``.
+
+    The batch domain at generation time is ``{gate|rest|parity|vllm}_{cell}``
+    (``AnchorCellBlock.batch_id``; capregen passes the OWNING record's
+    batch_id verbatim). R2 (r2 review): the row-level ``gate_slice`` label
+    derives from this kind — ``batch == "gate"`` could never be true once
+    the domain moved to cell grain, so every HF row was written
+    ``gate_slice: False`` while the vLLM leg labeled correctly via
+    ``cid in gate_id_set`` (the two engines disagreed on one durable field
+    in one store). Batch-kind == "gate" is EXACTLY gate-slice context
+    membership: gate blocks enumerate gate-slice context ids only, and a
+    gate-batch capregen regenerates only that cell's gate contexts.
+    """
+    return batch_id.split("_", 1)[0]
+
+
 def _anchor_cell_done(
     cfg: RunConfig, regime_fp: str, batch_id: str, expected_draws: int | None = None
 ) -> bool:
@@ -2843,7 +2860,11 @@ def _generate_anchor_rows(
                         "draw": i,
                         "seed": cfg.seed_base + i,
                         "temperature": ANCHOR_TEMPERATURE,
-                        "gate_slice": batch == "gate",
+                        # R2 (r2 review): kind-derived — `batch` carries the
+                        # cell-grain batch_id domain (gate_{cell}/rest_{cell}/
+                        # parity_{cell}/vllm_{cell}), matching the vLLM leg's
+                        # `cid in gate_id_set` semantics (vllm_anchors.py).
+                        "gate_slice": _batch_kind(batch) == "gate",
                         "max_new_tokens": cap,
                         "engine": "hf",
                         "text": text,
@@ -3069,6 +3090,47 @@ def _load_cap_recalibration(cfg: RunConfig) -> dict[str, int] | None:
     return {str(k): int(v) for k, v in rec.get("recalibrated", {}).items()}
 
 
+def _gate_shard_paths(cfg: RunConfig, regime_fp: str, cells: list[str], draws: int) -> list[Path]:
+    """EXACT gate-cell shard paths, derived from the validated done manifests.
+
+    R1 (r2 review): the retired worker-stripe glob ``anchors_gate_w*.jsonl``
+    matched 0 of the cell-grain shards (producers write
+    ``anchors_gate_{cell}_w{w}.jsonl``), so the recalibration silently
+    aggregated NOTHING and wrote a FALSE-COMPLETE report that
+    ``_load_cap_recalibration`` then adopted. Deriving the paths from the
+    done manifests — as ``_cap_report_inputs`` already does — cannot drift
+    on the next rename. Mirrors ``_anchor_cell_done``'s validation (regime +
+    draws + artifact presence); the FIRST valid manifest per cell wins,
+    exactly the record the barrier's done predicate accepted. A cell that
+    passed the barrier but resolves no manifest+shard is an inconsistent
+    store — fail loud, never a silent zero-row aggregate.
+    """
+    paths: list[Path] = []
+    for cell in sorted(cells):
+        batch_id = f"gate_{cell}"
+        shard: Path | None = None
+        for m in sorted(cfg.manifest_dir.glob(f"anchors_{batch_id}_w*_done.json")):
+            if m.name.endswith("_gen_done.json"):
+                continue
+            rec = json.loads(m.read_text())
+            if rec.get("regime_fp") != regime_fp:
+                continue
+            if int(rec.get("draws", -1)) != draws:
+                continue
+            jsonl = cfg.anchors_dir / f"anchors_{batch_id}_w{int(rec['worker_index'])}.jsonl"
+            if jsonl.exists():
+                shard = jsonl
+                break
+        if shard is None:
+            raise RuntimeError(
+                f"[cap-recal] gate cell {cell!r} passed the done barrier but no "
+                f"regime-matched done manifest + shard resolve under "
+                f"{cfg.manifest_dir} / {cfg.anchors_dir} — inconsistent store"
+            )
+        paths.append(shard)
+    return paths
+
+
 def _gate_slice_cap_recalibration(
     cfg: RunConfig, regime_fp: str, draws: int, gate_cells: list[str]
 ) -> dict[str, int]:
@@ -3078,8 +3140,10 @@ def _gate_slice_cap_recalibration(
     gate CELL's done manifest at this regime (cell-keyed — the claim queue
     lets ANY worker own any gate cell, so the barrier lifts as soon as the
     slice is done rather than waiting on a specific worker's stripe; the r1
-    recal-barrier idle dissolves with it), then aggregates ALL
-    ``anchors_gate_*.jsonl`` rows: any cell whose realized cap-hit fraction
+    recal-barrier idle dissolves with it), then aggregates the done cells'
+    gate shard rows — shard paths derived from the validated done manifests
+    (``_gate_shard_paths``; R1 r2 review), never a filename glob: any cell
+    whose realized cap-hit fraction
     (against each row's OWN recorded cap) exceeds CAP_HIT_REGEN_TRIGGER_PCT
     gets its table cap DOUBLED (up-only) BEFORE the bulk rest/grid
     generation. On timeout the recalibration is computed from the cells that
@@ -3116,7 +3180,8 @@ def _gate_slice_cap_recalibration(
         )
         time.sleep(CLAIM_POLL_S)
     per_cell: dict[str, dict[str, int]] = {}
-    for shard in sorted(cfg.anchors_dir.glob("anchors_gate_w*.jsonl")):
+    done_cells = [c for c in gate_cells if c not in pending]
+    for shard in _gate_shard_paths(cfg, regime_fp, done_cells, draws):
         for line in shard.open(encoding="utf-8"):
             if not line.strip():
                 continue
