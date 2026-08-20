@@ -3,8 +3,7 @@ title: Prefilling the first three answer tokens reproduces most of the context-e
   patch's effect on format cells, but the patch's own opening carries reliably less
   than the full effect on Qwen3.5 language cells (MODERATE confidence)
 kind: experiment
-tags:
-- followup-manual
+tags: []
 created_at: '2026-08-16T19:44:45Z'
 has_clean_result: true
 parent_id: 2162
