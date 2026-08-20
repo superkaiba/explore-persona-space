@@ -103,6 +103,23 @@ GLOBAL_SEED = 42
 LABELING_WAVE_N_CALLS_ARMA = 30_338  # 27,580 samples + 2,758 greedy
 LABELING_WAVE_N_CALLS_ARMB = 27_621  # 25,110 samples + 2,511 greedy
 PREDICTOR_WAVE_N_CALLS = 10_500
+# Rule-26(d) api-refusal waiver for the PREDICTOR PILOT (llm-judging.md rules
+# 26(d)/28, #2152; the #2091 caller-site-constant pattern). REASON (audit
+# record): run_predictor performs the plan-S3 / rule-28 targeted SYNC re-issue
+# of api-refusal-censored predictor rows at the IDENTICAL instrument (R8,
+# commit 3295f7afb5), recovering ~98% (0 sync re-refusals, #1739), with
+# residual still-censored rows excluded via the plan-§3 common-row-mask and
+# reported by drop-class next to Δ_int — so a batch-path api-refusal rate at
+# pilot scale is a REMEDIATED transport-conditional censor, not a broken
+# instrument (r9 pilot: armB 10/75 = 13.3% >= the 0.10 gate; armA 0.0 —
+# OR-Bench/PHTest benign-but-toxic-LOOKING prompts trip the judge's safety
+# classifier). BOTH arms are waived: the remediation is arm-agnostic (a fresh
+# pilot can censor either arm). Plan §9's risk table cites exactly this
+# "pilot clause (d)" waiver path. Truncation and the effective-draws floor
+# stay UNWAIVABLE (the waiver reaches only rule 26(d)), and the production
+# wave's frac_items_complete floor (0.95, rule 29) + drop-class triage remain
+# the catastrophic-censoring backstop.
+PREDICTOR_PILOT_WAIVE_API_REFUSAL_ARMS = ("armA", "armB")
 
 CORPORA_JUDGED = ("armA", "armB")
 
@@ -576,6 +593,13 @@ def run_predictor_pilot(args: argparse.Namespace) -> int:
         temperature=PREDICTOR_TEMPERATURE,
         parse_fail_threshold=0.02,
         api_refusal_threshold=0.10,
+        # Rule-26(d) waiver: the production wave's rule-28 SYNC re-issue
+        # remediates this censor class — reason recorded verbatim at
+        # PREDICTOR_PILOT_WAIVE_API_REFUSAL_ARMS. Filtered to arms PRESENT in
+        # this pilot (the gate refuses waivers naming absent arms).
+        waive_api_refusal_arms=tuple(
+            a for a in PREDICTOR_PILOT_WAIVE_API_REFUSAL_ARMS if a in arms
+        ),
         report_path=out / "pilot_report.json",
         seed=GLOBAL_SEED,
         wave_n_calls=PREDICTOR_WAVE_N_CALLS,
