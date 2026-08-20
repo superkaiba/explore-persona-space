@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2415,
+  "highest_id": 2416,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9361,8 +9361,8 @@
     "2212": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2212",
-      "status": "planning",
+      "path": "tasks/approved/2212",
+      "status": "approved",
       "title": "SLURM rsync lanes omit tracked data/ inputs \u2014 lane sibling of #2211"
     },
     "2213": {
@@ -10944,6 +10944,13 @@
       "path": "tasks/proposed/2415",
       "status": "proposed",
       "title": "Bracketed pgrep ownership probe self-matches when the same command references the unbracketed literal (blinds death detection)"
+    },
+    "2416": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2416",
+      "status": "proposed",
+      "title": "Step 5a sibling-sync runtime-signature-skew residual + Step 10d TG classify-new-nodes missing #2302 base-identity exclusion (false-blocking gate verdict on #2205)"
     },
     "244": {
       "has_clean_result": false,
