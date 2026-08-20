@@ -376,6 +376,7 @@ def phase_upload(args) -> None:
                 tf.add(store_dir, arcname=benchmark)
             tmp.replace(tar_path)
         dest = f"{HF_STORE_PREFIX}/{surface}/{benchmark}.tar"
+        # UPLOAD_LOOP_EXEMPT: bounded — at most 5 multi-GB benchmark tars, never a per-file storm
         out = hub._upload(
             tar_path,
             hub.DEFAULT_DATASET_REPO,

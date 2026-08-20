@@ -318,13 +318,18 @@ def load_lcb_v5() -> list[dict]:
 
     from huggingface_hub import hf_hub_download
 
+    from explore_persona_space.orchestrate.hub import retry_transient
+
     raw_rows: list[dict] = []
     for fname in LCB_V5_FILES:
-        path = hf_hub_download(
-            "livecodebench/code_generation_lite",
-            fname,
-            repo_type="dataset",
-            revision=LCB_REVISION,
+        path = retry_transient(
+            lambda fname=fname: hf_hub_download(
+                "livecodebench/code_generation_lite",
+                fname,
+                repo_type="dataset",
+                revision=LCB_REVISION,
+            ),
+            what=f"hf_hub_download(lcb_v5/{fname})",
         )
         with open(path, encoding="utf-8") as fh:  # text-mode iteration, never splitlines()
             for line in fh:
