@@ -681,6 +681,11 @@ def regime_fingerprint(cfg: RunConfig, bank_sha: str) -> str:
         {
             "bank_sha": bank_sha,
             "model_id": cfg.model_id,
+            # #2329 q35_ladder_decay M1/R2-M1 edit 3: the model-repo revision is an
+            # output-affecting knob (fork plan divergence 11). None for legacy
+            # RunConfig objects that carry no pin (pre-fork resume keys unchanged
+            # only for cfgs WITHOUT the attribute -- the fork's out-root is fresh).
+            "model_revision": getattr(cfg, "model_revision", None),
             "tiny": cfg.tiny,
             "n_layers": cfg.n_layers,
             "hidden": cfg.hidden,
@@ -1401,6 +1406,9 @@ def _repro(cfg: RunConfig) -> dict:
     return {
         **_REPRO_CACHE,
         "model_id": cfg.model_id,
+        # None when the config carries no pin (parent grid run); the ladder fork
+        # (issue2329_ladder) always pins (plan divergence 11).
+        "model_revision": getattr(cfg, "model_revision", None),
         "tiny": cfg.tiny,
         "smoke": cfg.smoke,
         "n_layers": cfg.n_layers,
@@ -1442,22 +1450,33 @@ def _shrink_config(mcfg, hidden: int, n_layers: int):
     return mcfg
 
 
-def load_model_and_tokenizer(cfg: RunConfig):
+def load_model_and_tokenizer(cfg: RunConfig, revision: str | None = None):
     """Production: bf16 Qwen3.5-9B pinned to one device (never
     ``device_map='auto'`` — silent CPU offload, gotchas). Tiny: a from-config
-    same-arch model on CPU over the REAL vocab-id space."""
+    same-arch model on CPU over the REAL vocab-id space.
+
+    ``revision`` (additive, default None == legacy behavior) pins BOTH the
+    tokenizer and the model to a model-repo commit (#2329 q35_ladder_decay
+    fork, plan divergence 11). The ``--tiny`` branch builds from config, so
+    the pin reaches only the tokenizer + AutoConfig there.
+    """
     from transformers import AutoConfig, AutoModelForCausalLM, AutoTokenizer
 
-    tok = AutoTokenizer.from_pretrained(cfg.model_id)  # loaded ONCE (HF-429 gotcha)
+    # loaded ONCE (HF-429 gotcha)
+    tok = AutoTokenizer.from_pretrained(cfg.model_id, revision=revision)
     if tok.pad_token_id is None:
         tok.pad_token = tok.eos_token
     if cfg.tiny:
-        mcfg = _shrink_config(AutoConfig.from_pretrained(cfg.model_id), cfg.hidden, cfg.n_layers)
+        mcfg = _shrink_config(
+            AutoConfig.from_pretrained(cfg.model_id, revision=revision), cfg.hidden, cfg.n_layers
+        )
         torch.manual_seed(0)
         model = AutoModelForCausalLM.from_config(mcfg).to(torch.float32)
     else:
         assert torch.cuda.is_available(), "the full grid requires CUDA (use --tiny for CPU smoke)"
-        model = AutoModelForCausalLM.from_pretrained(cfg.model_id, dtype=torch.bfloat16)
+        model = AutoModelForCausalLM.from_pretrained(
+            cfg.model_id, dtype=torch.bfloat16, revision=revision
+        )
     model = model.to(cfg.device)
     realized = _model_text_config(model.config)
     assert realized.hidden_size == cfg.hidden, (realized.hidden_size, cfg.hidden)
