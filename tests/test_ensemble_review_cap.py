@@ -244,7 +244,17 @@ def test_exemption_scope_is_exactly_the_three_history_clauses():
 # scope: memory notes narrate past rounds under the then-cap).
 # --------------------------------------------------------------------------- #
 _SPELLED_CAP_PATTERNS: tuple[re.Pattern[str], ...] = (
-    re.compile(r"\bfive rounds\b", re.IGNORECASE),
+    # r3 (#2391): the bare `\bfive rounds\b` form is widened to a bounded
+    # family covering the hyphenated compound ("Five-round maximum" — the
+    # natural rewrite of the exact B1 offender string, invisible to
+    # `\bfive rounds\b`) and the qualified forms ("five review rounds",
+    # "five code-review rounds", "five ensemble rounds" — all live on the
+    # doc surface as #906/#823 incident narrations, each carried by an exact
+    # line-local exemption below).
+    re.compile(
+        r"\bfive[-\s]+(?:(?:code-review|review|ensemble)[-\s]+)?rounds?\b",
+        re.IGNORECASE,
+    ),
     re.compile(r"\bround five\b", re.IGNORECASE),
     re.compile(r"\bfifth round\b", re.IGNORECASE),
     re.compile(r"\bfive revision\b", re.IGNORECASE),
@@ -258,6 +268,19 @@ _SPELLED_EXEMPT_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"#906: five rounds PASSed"),
     # codex-code-reviewer.md — the #823 incident narration.
     re.compile(r"#823: five rounds PASSed"),
+    # experiment-implementer.md + implementer.md — the #906 producer-side
+    # narrations ("five review rounds shipped"; r3 family widening).
+    re.compile(r"#906: five review rounds shipped"),
+    # code-reviewer.md Step 3.8 + code-style.md § seam-stubbed — the #906
+    # review-side narrations ("five ensemble rounds PASSed/shipped"; r3).
+    re.compile(r"#906: five ensemble rounds"),
+    # code-style.md checkpoint-per-phase bullet — the #823 narration tail
+    # ("five code-review rounds never flagged it"; r3).
+    re.compile(r"five code-review rounds never flagged it"),
+    # code-reviewer.md Step 3.6 — the #823 narration wrapped across lines
+    # 887-888 ("... Five / code-review rounds PASSed it ..."), caught only
+    # in PAIR mode; the exemption matches the joined pair unit (r3).
+    re.compile(r"Five code-review rounds PASSed it"),
 )
 
 
@@ -295,6 +318,17 @@ def test_spelled_cap_scan_negative_controls():
     assert _stale_cap5_hits(
         offender, patterns=_SPELLED_CAP_PATTERNS, exemptions=_SPELLED_EXEMPT_PATTERNS
     ), "must-HIT spelled control produced no hit (the B1 offender line)"
+    # r3 must-HIT variants: the hyphenated compound (the natural rewrite of
+    # the exact B1 offender string) and the review-word form — each was
+    # pattern-INVISIBLE to the r2 bank (observed red before the r3 family
+    # widening landed).
+    for name, fixture in (
+        ("hyphenated compound", "Five-round maximum per `/issue` invocation.\n"),
+        ("review-word form", "Five review rounds maximum per `/issue` invocation.\n"),
+    ):
+        assert _stale_cap5_hits(
+            fixture, patterns=_SPELLED_CAP_PATTERNS, exemptions=_SPELLED_EXEMPT_PATTERNS
+        ), f"must-HIT spelled r3 control produced no hit: {name}"
     exempt_controls = (
         (
             "code-correctness-critic.md #906 narration",
@@ -303,6 +337,23 @@ def test_spelled_cap_scan_negative_controls():
         (
             "codex-code-reviewer.md #823 narration",
             "  carve-outs (#823: five rounds PASSed a ~20h accumulate-and-write-at-end\n",
+        ),
+        (
+            "experiment-implementer.md / implementer.md #906 review-word narration (r3)",
+            "   the test it will demand (incident #906: five review rounds shipped\n",
+        ),
+        (
+            "code-reviewer.md / code-style.md #906 ensemble-word narration (r3)",
+            "    (never stripped by Step 5c-bis). (Incident #906: five ensemble rounds\n",
+        ),
+        (
+            "code-style.md #823 code-review-word narration tail (r3)",
+            "  whole loop; five code-review rounds never flagged it). Review-side gate:\n",
+        ),
+        (
+            "code-reviewer.md #823 wrapped narration, PAIR mode (r3)",
+            "  single terminal write (lines 1704\u20131706). Five\n"
+            "  code-review rounds PASSed it; both GCE crashes forfeited\n",
         ),
     )
     for name, fixture in exempt_controls:
@@ -320,6 +371,25 @@ def test_spelled_cap_scan_negative_controls():
     assert _stale_cap5_hits(
         mutant, patterns=_SPELLED_CAP_PATTERNS, exemptions=_SPELLED_EXEMPT_PATTERNS
     ), "spelled mutant control was wrongly exempted"
+    # r3 mutants — one per r3 exemption, each perturbing the exemption-keyed
+    # fragment (issue id removed / tail reworded) while keeping the pattern
+    # match, so a broadened exemption regex is caught.
+    r3_mutants = (
+        ("review-word, issue id removed", "  demand (incident: five review rounds shipped\n"),
+        ("ensemble-word, issue id removed", "  5c-bis). (Incident: five ensemble rounds\n"),
+        (
+            "code-review-word, tail reworded",
+            "  whole loop; five code-review rounds never caught it).\n",
+        ),
+        (
+            "pair-wrapped code-review-word, tail reworded",
+            "  single terminal write. Five\n  code-review rounds PASSed the diff; both\n",
+        ),
+    )
+    for name, fixture in r3_mutants:
+        assert _stale_cap5_hits(
+            fixture, patterns=_SPELLED_CAP_PATTERNS, exemptions=_SPELLED_EXEMPT_PATTERNS
+        ), f"r3 spelled mutant control was wrongly exempted: {name}"
 
 
 # --------------------------------------------------------------------------- #

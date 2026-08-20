@@ -444,11 +444,13 @@ class TestAllowlistCoversFinalTemplate:
         # which this file's reference tokenizer skips via its `(?<![\w.])`
         # lookbehind — but a compose-time verifier regex without that
         # lookbehind extracts `10` from `v10`, and orchestrator round-frame
-        # prose states the digit bare. Under a stale 5-era scaffold set the
-        # bare digit residuals for rounds 4-10 — the exact B2 false-BLOCKER
-        # ("composer-authored number 10") that silently voided the cap raise
-        # for Loop C — so this is the assertion that catches a scaffold-set
-        # regression.
+        # prose states the digit bare. Under the stale 5-era scaffold set
+        # {0,1,2,3,4,5,500} the bare digit residuals for rounds 6-10
+        # (flip-verified, r3: rounds 1-5 green / 6-10 red; the older 3-era
+        # set {0,1,2,3,500} residuals rounds 4-10) — the exact B2
+        # false-BLOCKER ("composer-authored number 10") that silently voided
+        # the cap raise for Loop C — so this is the assertion that catches a
+        # scaffold-set regression.
         text = AGENT_FILE.read_text(encoding="utf-8")
         step3 = text.index("### Step 3: Compose the lens-specific prompt")
         after = text[step3:]
