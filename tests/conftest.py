@@ -452,3 +452,25 @@ def _stub_fleet_mutating_passes(asw, monkeypatch):
     stubs its own seams instead and does not call this helper."""
     for pass_name in _FLEET_MUTATING_PASS_NAMES:
         monkeypatch.setattr(asw, pass_name, lambda *a, **kw: None)
+
+
+@pytest.fixture
+def registry_hygiene():
+    """`ensure_context` -> `register_fu3_contexts()` and `panel_name_for` both
+    mutate GLOBAL registries (CONTEXTS / NEGATIVE_PANELS) at runtime — correct
+    in production, but test-order-poisoning for the registry-purity pins.
+    Snapshot the key sets and remove anything a test added. Shared here since
+    #2217 (moved verbatim from tests/test_issue1090_fu5_round.py); consumers:
+    the fu5 ladder-organism tests and
+    test_issue1090_fu3_dispatcher.py::test_conv_context_is_wildchat_family."""
+    from explore_persona_space.artifacts.context import CONTEXTS
+    from explore_persona_space.artifacts.negatives import NEGATIVE_PANELS
+
+    ctx_before, panel_before = set(CONTEXTS), set(NEGATIVE_PANELS)
+    try:
+        yield
+    finally:
+        for k in set(CONTEXTS) - ctx_before:
+            CONTEXTS.pop(k, None)
+        for k in set(NEGATIVE_PANELS) - panel_before:
+            NEGATIVE_PANELS.pop(k, None)

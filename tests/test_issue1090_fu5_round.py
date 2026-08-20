@@ -103,26 +103,6 @@ def test_fu5_run_matrix_plan_d1(fu5_round):
     ]
 
 
-@pytest.fixture
-def registry_hygiene():
-    """`ensure_context` -> `register_fu3_contexts()` and `panel_name_for` both
-    mutate GLOBAL registries (CONTEXTS / NEGATIVE_PANELS) at runtime — correct
-    in production, but test-order-poisoning for the registry-purity pins
-    (test_conv_context_is_wildchat_family asserts the conv prefix is NOT
-    pre-registered). Snapshot the key sets and remove anything a test added."""
-    from explore_persona_space.artifacts.context import CONTEXTS
-    from explore_persona_space.artifacts.negatives import NEGATIVE_PANELS
-
-    ctx_before, panel_before = set(CONTEXTS), set(NEGATIVE_PANELS)
-    try:
-        yield
-    finally:
-        for k in set(CONTEXTS) - ctx_before:
-            CONTEXTS.pop(k, None)
-        for k in set(NEGATIVE_PANELS) - panel_before:
-            NEGATIVE_PANELS.pop(k, None)
-
-
 def test_ladder_organism_imp_bare_threads_filtered_panel(fu5_round, registry_hygiene):
     """Crash pin (att-20260715-081917, all 3 imp-bare arms rc=2): the ladder's
     organism at the BARE ``default`` source must thread fu3's source-filtered
