@@ -1533,6 +1533,11 @@ def _repro(cfg: RunConfig) -> dict:
     return {
         **_REPRO_CACHE,
         "model_id": cfg.model_id,
+        # #2389: the pinned HF revision is RECORDED in every artifact — the
+        # parent #2329's report named this exact forward fix ("record the
+        # resolved sha into the run digest"); regime_fingerprint already
+        # keys on it, this makes it human-readable per artifact.
+        "model_revision": cfg.model_revision,
         "tiny": cfg.tiny,
         "smoke": cfg.smoke,
         "n_layers": cfg.n_layers,
