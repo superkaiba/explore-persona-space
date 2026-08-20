@@ -53,3 +53,4 @@
 - [Sequential runs overwrite shared summary](sequential_runs_overwrite_shared_summary.md) — N reused-CLI runs into ONE out-root + an os.replace summary writer keep only the LAST run's rows; aggregate from the append-only percell sidecar (#2388 R1 g6)
 - [Shift-rung eval without fit restriction](shift_rung_eval_without_fit_restriction.md) — a registered A→B transfer rung needs a rung-specific FIT-side restriction; a zero-call-site fit-filter helper is the tell (#2388 R1 g6)
 - [Lint-waiver commit certification](lint_waiver_commit_certification.md) — check FUNCTION on parent blobs vs HEAD with legacy_allowlist={}: pre-fix red at exact lines + waiver-attributed PASS (#2388 R2 g3)
+- [Claimed concern-raise not on ledger](claimed_concern_raise_not_on_ledger.md) — grep list-concerns for every marker-claimed raised id; prose-only persistence is gate-invisible; cure via reviewer raise-concern (#2388 R2 g4)
