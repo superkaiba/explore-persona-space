@@ -122,6 +122,18 @@ MASK_GATE_SCHEMA_ID = "issue823_mask_gate_v11_stop_reason_precedence"
 EXIT_CONFIG_MISMATCH = 4  # resume fingerprint mismatch (section 4.3 step 3b(ii))
 EXIT_P0_INTEGRITY = 5  # P0 prompt-integrity halt (section 4.3 P0 asserts (a)-(d))
 GEN_CONFIG_FILENAME = "gen_config.json"  # per-checkpoint fingerprint + dispatch cap
+# P0 VERIFIER schema version (round-6 BLOCKER 1): keys the --p0-verify
+# per-persona checkpoint on the VERIFIER's own record-validation contract, not
+# only the GENERATION fingerprint (which says what was generated, not which
+# verifier judged it). A checkpoint written by an older verifier — e.g. the
+# round-4 isinstance-int schema, which recorded n_failures: 0 for a
+# `context_id: true` record — must never be reused by a newer one: a missing
+# or differing value discards the WHOLE checkpoint (exactly like a generation-
+# fingerprint mismatch) and re-verifies from scratch. BUMP this constant on
+# ANY change to the verifier's record-validation contract. Version 2 == the
+# round-5 strict type-is-int schema (version 1 was the round-4 isinstance-int
+# schema, which never wrote this key).
+P0_VERIFIER_SCHEMA_VERSION = 2
 CAP_HIT_REGEN_FRACTION = 0.02  # per-(arm x persona) CELL stop-and-regen trigger (v13 §7)
 MAX_TRANSPORT_REDRIVES = 2  # bounded caller-side re-drive of transport-class rows
 # FIX C: cumulative ceiling on fresh PAID re-drive rounds across ALL process
@@ -1464,6 +1476,22 @@ def p0_prompt_integrity_gate(
                 }
             )
             continue
+        if k not in K_ARMS:
+            # Round-6 BLOCKER 3: an UNREGISTERED integer arm key (e.g. "0")
+            # must route to the rc-5 (b) report — never reach the modulo
+            # below (i % 0 raises ZeroDivisionError before the designed
+            # report; the arms_keys set-equality entry above records the
+            # discrepancy but cannot stop this loop from crashing on it).
+            failures.append(
+                {
+                    "assert": "b",
+                    "field": "arm_key_unregistered",
+                    "generated": k,
+                    "registered": list(K_ARMS),
+                    "detail": "arm key is not a registered K_ARMS member",
+                }
+            )
+            continue
         if not isinstance(per, list):
             failures.append(
                 {"assert": "b", "arm_k": k, "field": "arm_type", "generated": type(per).__name__}
@@ -1603,7 +1631,10 @@ def run_p0_verify(
     ``report_dir / "p0_verify_progress.json"`` records, per persona file,
     its sha256 + verification outcome, keyed on the generation-config
     fingerprint (from the persisted ``_gen_complete.json`` sentinel when
-    present, else the live fingerprint). A re-run reuses byte-identical,
+    present, else the live fingerprint) AND on
+    ``P0_VERIFIER_SCHEMA_VERSION`` — the VERIFIER's own record-validation
+    contract (round-6 BLOCKER 1: a checkpoint a superseded verifier wrote
+    is discarded whole, never reused). A re-run reuses byte-identical,
     previously-CLEAN persona files (content-addressed by sha256) and
     re-verifies everything else; each persona flushes its checkpoint entry
     the moment it completes (atomic tmp+rename), and the gate emits one
@@ -1628,18 +1659,36 @@ def run_p0_verify(
         fp = generation_config_fingerprint()["sha256"]
 
     ckpt_path = report_dir / "p0_verify_progress.json"
-    ckpt: dict = {"fingerprint": fp, "personas": {}}
+    ckpt: dict = {
+        "fingerprint": fp,
+        "verifier_schema_version": P0_VERIFIER_SCHEMA_VERSION,
+        "personas": {},
+    }
     if ckpt_path.is_file():
         prior = json.loads(ckpt_path.read_text())
-        if prior.get("fingerprint") == fp and isinstance(prior.get("personas"), dict):
+        # Round-6 BLOCKER 1: reuse requires the GENERATION fingerprint AND the
+        # P0-VERIFIER schema version to match — a checkpoint written by an
+        # older verifier (round-4 isinstance-int schema: n_failures 0 for a
+        # `context_id: true` record) would otherwise bypass the round-5
+        # type-is-int fix via the per-persona reuse branch. A missing or
+        # differing key is treated exactly like a fingerprint mismatch:
+        # discard the whole checkpoint, re-verify from scratch.
+        if (
+            prior.get("fingerprint") == fp
+            and prior.get("verifier_schema_version") == P0_VERIFIER_SCHEMA_VERSION
+            and isinstance(prior.get("personas"), dict)
+        ):
             ckpt = prior
         else:
             logger.warning(
                 "P0 verify checkpoint at %s keyed to a DIFFERENT generation fingerprint "
-                "(%s != %s) — restarting verification fresh",
+                "or P0-verifier schema (fingerprint %s != %s, or verifier_schema_version "
+                "%r != %r) — restarting verification fresh",
                 ckpt_path,
                 prior.get("fingerprint"),
                 fp,
+                prior.get("verifier_schema_version"),
+                P0_VERIFIER_SCHEMA_VERSION,
             )
 
     by_persona: dict[int, list[dict]] = {}
