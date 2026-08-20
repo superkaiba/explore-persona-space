@@ -179,7 +179,10 @@ orchestrator bg-runs via `scripts/codex_task.py`:
 
 Efficiency EARNS its Codex twin here (Thomas's multi-GPU emphasis).
 Consistency-checker + the (implementation-side) plan-adherence lens are
-Claude-only. Pass each subagent the PATH to `plans/vN.md` + `planned_manifest.json`,
+Claude-only. Pass each subagent the ABSOLUTE canonical main-checkout PATH to
+`plans/vN.md` + `planned_manifest.json` (resolve via
+`$(uv run python scripts/task.py find <N>)`; never a worktree-relative
+`tasks/` path — frozen at base, #2422),
 never the bodies (429 pacing); each Codex composer reads the plan from the handed
 path at compose time and inlines the verbatim plan text into its composed Codex
 prompt — `{{plan_body}}` is a compose-time substitution, not a brief field.
@@ -218,7 +221,7 @@ uv run python scripts/task.py post-marker <N> epm:plan-revision-log \
 The log names, per critic, WHAT changed and WHY, plus a one-line manifest-diff
 summary. It is Thomas's audit surface for post-approval drift (surfaced in chat +
 the sessions digest). Then re-run the panel (step 1) on the revised plan. **Round
-cap 5** per lens; reconciler invocations do not count.
+cap 10** per lens; reconciler invocations do not count.
 
 ### 4. Resurface / block triggers (the ONLY ways a human re-enters)
 
@@ -237,7 +240,7 @@ silently.** (Canonical statement: issue-v2 Step 3.)
   family, **manifest condition-set membership**, or backend lane class changes.
   These are what the approval protected; they cannot land silently.
 - **(d) Round cap hit with an unresolved SUBSTANTIVE blocker** — the panel hit
-  its round-5 cap and a non-mechanical-strip blocker remains. (Mechanical-contract
+  its round-10 cap and a non-mechanical-strip blocker remains. (Mechanical-contract
   blockers are stripped per CLAUDE.md § Codex ensemble review, not surfaced.)
 - **(e) REJECT-level verdict** — a critic (or reconciler) judges the plan
   fundamentally unsound (not fixable by a bounded revision). Route to a re-plan,
@@ -260,7 +263,7 @@ DRAFT (Step 1):
   → hand to Step 2 (park at plan_pending)
 
 CRITIQUE (Step 3, post-approval):
-  loop (cap 5):
+  loop (cap 10):
     # pre: #1204 quota-sentinel check (CLAUDE.md § Codex ensemble review) —
     #      if LIVE, spawn Claude critics + consistency-checker only;
     #      codex twins = instant no-show per lens.
