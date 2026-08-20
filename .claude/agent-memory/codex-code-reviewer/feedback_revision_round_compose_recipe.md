@@ -1662,3 +1662,29 @@ severity never pre-resolved. Landing-note round record (no impl marker)
 composes per the #823 P-Gen v13 variant unchanged; a fix round whose tests
 span FOUR files patches every "both files"/"two files" rubric span and
 asserts zero residual occurrences.
+
+**Reconciler-UPHELD minimal-set round (all twin blockers upheld; #2329 r3 =
+sentinel v3, 2026-08-20):** when the prior round ended Claude-CONCERNS /
+Codex-FAIL and the reconciler ruled FAIL BINDING upholding ALL the twin's
+blockers with a "Must-fix (minimal set)" section: (a) the acceptance contract
+is the RECONCILER RULING inlined in its own envelope — the twin's own prior
+verdict is demoted to context ("the ruling, not your prose, is the contract";
+author-neutrality = don't demand more than the ruling's minimal set, don't
+wave through); (b) items the ruling classifies as TEST-hollowness where
+production was already correct get an explicit "verify the PINS BIND, not
+that production changed — a production-behavior change on those paths is an
+Unintended Change" frame; (c) implementer-reported self-mutation probes become
+the reviewer's REPRODUCTION duty with per-probe expected red/green patterns
+incl. a healthy-control-stays-green expectation (a bypass redding the control
+= weaker-but-binding pin, note not FAIL; all-green = hollow-pin FAIL), plus
+one encouraged own-construction variant per pin; (d) aim the recurring-class
+hunt at the round's OWN fix ("vacuous-guard hunt": nonempty-but-corrupted
+states, what expected/present derive FROM, raise-skipped paths, per-side
+grain, over-tightening) — this task shipped a cannot-fail gate inside a fix
+for a cannot-fail gate once already; (e) recompute the brief's/ruling's
+PRE-round line frames against the NEW blob and say shifted lines are never a
+finding; (f) a marker-arithmetic item (rows-vs-registry) gets a compute-it-
+yourself instruction naming each registry symbol — the prior round FAILed on
+29-vs-32 with three reviewers computing three ways; residual mismatch =
+substantive per the ruling (non-conforming redo of an explicit item), not
+strippable marker-shape.
