@@ -370,10 +370,22 @@ def leg_parity(cfg: R.RunConfig) -> int:
             },
         )
         logger.error("[parity] vLLM engine init FAILED (fail-open, HF sub-leg proceeds): %s", e)
+        R._upload_dir(
+            cfg,
+            cfg.gates_dir,
+            f"{R.HF_PREFIX}/analysis_tensors/gates",
+            [_engine_status_path(cfg).name],
+        )
     if engine_err is None:
         R._write_json_atomic(
             _engine_status_path(cfg),
             {"status": "ok", "ts": datetime.now(UTC).isoformat(), "repro": R._repro(cfg)},
+        )
+        R._upload_dir(
+            cfg,
+            cfg.gates_dir,
+            f"{R.HF_PREFIX}/analysis_tensors/gates",
+            [_engine_status_path(cfg).name],
         )
 
         def _run_vllm_cell(block: CellBlock) -> None:
