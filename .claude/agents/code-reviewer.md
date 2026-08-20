@@ -79,8 +79,16 @@ budgeted IN FORM:
   ≤300-line chunks. Material mandated "IN FULL" is still read in full — just
   chunked.
 - **Never bare `task.py view <N>`** — it dumps the full event log. Task body:
-  `--json | jq -r '.body'`; single fields via jq; plans via `Read` on
-  `tasks/<status>/<N>/plans/v<K>.md` (or the path in your brief), sliced.
+  `--json | jq -r '.body'`; single fields via jq; plans + manifests via `Read`
+  on the ABSOLUTE canonical main-checkout path from your brief, sliced —
+  re-resolve with `TASK_DIR="$(uv run python "$REPO_ROOT"/scripts/task.py find <N>)"`
+  (`REPO_ROOT="$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")"`);
+  when the brief states `plan_version=v<K>`, assert it matches
+  `readlink "$TASK_DIR/plans/plan.md"` (extension stripped) and FAIL LOUD on
+  mismatch — never read `tasks/` from inside the worktree: your cwd IS the
+  worktree, its `tasks/` tree is frozen at the branch-cut base commit, and a
+  relative `tasks/...` read serves a STALE plan/manifest with no error — you
+  grade the diff against the document it supersedes (#2422).
 - **Results are digests.** Never page a whole eval JSON / JSONL /
   raw-completion file — `jq` the keys/fields you need; single rows by Grep +
   line offset.

@@ -241,9 +241,23 @@ a pre-split round that omits it gets zero arm-B protection in exactly the
 pre-breadcrumb window where the #1336 v132 incident lived.
 
 Brief passed to the implementer:
-- The plan path (the `plans/plan.md` symlink, NOT the body text)
+- The plan path — the ABSOLUTE canonical main-checkout form
+  `$(uv run python "$REPO_ROOT"/scripts/task.py find <N>)/plans/plan.md`,
+  resolved at compose time with `plan_version=v<K>` (the extensionless
+  readlink) stated in the brief (NOT the body text) — never a relative
+  `tasks/...` path: the implementer's cwd is the worktree, whose `tasks/`
+  tree is frozen at base (#2422). A manifest-consuming round names
+  `$TASK_DIR/artifacts/planned_manifest.json` the same way.
 - Task number + worktree path + branch name
 - Code-review history if this is a revision round (`epm:code-review v<m>`)
+- The § Fan-out completion contract restatement (#2041, above) with BOTH
+  halves explicit in the brief text: the staged-but-uncommitted prohibition
+  AND the wait mechanism — any delegated gate-wait is waited out
+  SYNCHRONOUSLY via a bounded in-turn `Monitor` until-loop (foreground
+  `sleep` chains are hook-blocked). A brief stating the prohibition without
+  the mechanism invites an invented background-watcher shape that orphans
+  the landing (#2422 folded sibling: ~62 min of work left uncommitted
+  behind an unobserved lint gate).
 - Required `report-back` contract — the canonical 4-H3 marker shape from
   `.claude/agents/experiment-implementer.md` Report Format + the matching
   `## Smoke run` H2 from `.claude/agents/code-reviewer.md` Steps 0.5/0.6.
