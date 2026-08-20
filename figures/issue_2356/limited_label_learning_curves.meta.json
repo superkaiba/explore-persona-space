@@ -1,12 +1,61 @@
 {
-  "commit": "e4d1bacb+dirty",
-  "render_id": "fca77399c43f4eb4",
-  "git_commit": "e4d1bacb",
+  "commit": "22e6823b+dirty",
+  "render_id": "88a7531d3b974c65",
+  "git_commit": "22e6823b",
   "git_dirty": true,
   "git_dirty_paths": [
-    ".claude/agent-memory/codex-code-reviewer/feedback_revision_round_compose_recipe.md"
+    ".claude/agent-memory/codex-code-reviewer/feedback_revision_round_compose_recipe.md",
+    "figures/issue_2356/armA_text_surface_indicator.meta.json",
+    "figures/issue_2356/armA_text_surface_indicator.png",
+    "figures/issue_2356/auroc_by_layer.meta.json",
+    "figures/issue_2356/auroc_by_layer.png",
+    "figures/issue_2356/battery_3a_layer_curve.meta.json",
+    "figures/issue_2356/battery_3a_layer_curve.png",
+    "figures/issue_2356/battery_acc1_draw_avg.meta.json",
+    "figures/issue_2356/battery_acc1_draw_avg.png",
+    "figures/issue_2356/battery_acc1_greedy.meta.json",
+    "figures/issue_2356/battery_acc1_greedy.png",
+    "figures/issue_2356/battery_behavior_split.meta.json",
+    "figures/issue_2356/battery_behavior_split.png",
+    "figures/issue_2356/battery_rank_summary.meta.json",
+    "figures/issue_2356/battery_rank_summary.png",
+    "figures/issue_2356/captions.json",
+    "figures/issue_2356/contrast_paired_ci.meta.json",
+    "figures/issue_2356/contrast_paired_ci.png",
+    "figures/issue_2356/dim_vs_ridge.meta.json",
+    "figures/issue_2356/dim_vs_ridge.png",
+    "figures/issue_2356/group_size_histograms.meta.json",
+    "figures/issue_2356/group_size_histograms.png",
+    "figures/issue_2356/hero_auroc_by_predictor.meta.json",
+    "figures/issue_2356/hero_auroc_by_predictor.png",
+    "figures/issue_2356/judge_calibration.meta.json",
+    "figures/issue_2356/judge_calibration.png",
+    "figures/issue_2356/limited_label_learning_curves.meta.json",
+    "figures/issue_2356/limited_label_learning_curves.png",
+    "figures/issue_2356/lodo_armB.meta.json",
+    "figures/issue_2356/lodo_armB.png",
+    "figures/issue_2356/map_quality_by_layer.meta.json",
+    "figures/issue_2356/map_quality_by_layer.png",
+    "figures/issue_2356/nn_behavior_match.meta.json",
+    "figures/issue_2356/nn_behavior_match.png",
+    "figures/issue_2356/permutation_band.meta.json",
+    "figures/issue_2356/permutation_band.png",
+    "figures/issue_2356/rank_ladder_selected.meta.json",
+    "figures/issue_2356/rank_ladder_selected.png",
+    "figures/issue_2356/rate_histograms.meta.json",
+    "figures/issue_2356/rate_histograms.png",
+    "figures/issue_2356/render_manifest.json",
+    "figures/issue_2356/roc_curves.meta.json",
+    "figures/issue_2356/roc_curves.png",
+    "figures/issue_2356/score_scatter_map_vs_ctx.meta.json",
+    "figures/issue_2356/score_scatter_map_vs_ctx.png",
+    "figures/issue_2356/transfer_2x2.meta.json",
+    "figures/issue_2356/transfer_2x2.png",
+    "figures/issue_2356/w_spectra_effective_rank.meta.json",
+    "figures/issue_2356/w_spectra_effective_rank.png",
+    "scripts/issue2356_figures.py"
   ],
-  "created": "2026-08-20T17:53:26Z",
+  "created": "2026-08-20T20:35:04Z",
   "figsize": [
     11.0,
     3.4
@@ -16,7 +65,7 @@
       "labeled groups per class": 0.0,
       "AUROC (mean +- sd over subsample seeds)": 0.9888807781613769,
       "error": 0.004072981302531975,
-      "series": "ctx probe",
+      "series": "context probe",
       "_kind": "errorbar",
       "_group": 0
     },
@@ -24,7 +73,7 @@
       "labeled groups per class": 1.0,
       "AUROC (mean +- sd over subsample seeds)": 0.9924474905387898,
       "error": 0.004502751390326076,
-      "series": "ctx probe",
+      "series": "context probe",
       "_kind": "errorbar",
       "_group": 0
     },
@@ -32,7 +81,7 @@
       "labeled groups per class": 2.0,
       "AUROC (mean +- sd over subsample seeds)": 0.9942409136038639,
       "error": 0.0010880715048120493,
-      "series": "ctx probe",
+      "series": "context probe",
       "_kind": "errorbar",
       "_group": 0
     },
@@ -40,7 +89,7 @@
       "labeled groups per class": 3.0,
       "AUROC (mean +- sd over subsample seeds)": 0.9952349977703839,
       "error": 0.0,
-      "series": "ctx probe",
+      "series": "context probe",
       "_kind": "errorbar",
       "_group": 0
     },
@@ -48,7 +97,7 @@
       "labeled groups per class": 4.0,
       "AUROC (mean +- sd over subsample seeds)": 0.9952349977703839,
       "error": 0.0,
-      "series": "ctx probe",
+      "series": "context probe",
       "_kind": "errorbar",
       "_group": 0
     },
@@ -56,7 +105,7 @@
       "labeled groups per class": 0.0,
       "AUROC (mean +- sd over subsample seeds)": 0.9891978379699887,
       "error": 0.004072981302531975,
-      "series": "mapped (generic)",
+      "series": "answer map (generic)",
       "_kind": "errorbar",
       "_group": 1
     },
@@ -64,7 +113,7 @@
       "labeled groups per class": 1.0,
       "AUROC (mean +- sd over subsample seeds)": 0.9909223545745729,
       "error": 0.004502751390326076,
-      "series": "mapped (generic)",
+      "series": "answer map (generic)",
       "_kind": "errorbar",
       "_group": 1
     },
@@ -72,7 +121,7 @@
       "labeled groups per class": 2.0,
       "AUROC (mean +- sd over subsample seeds)": 0.9932965732192078,
       "error": 0.0010880715048120493,
-      "series": "mapped (generic)",
+      "series": "answer map (generic)",
       "_kind": "errorbar",
       "_group": 1
     },
@@ -80,7 +129,7 @@
       "labeled groups per class": 3.0,
       "AUROC (mean +- sd over subsample seeds)": 0.9928016672928244,
       "error": 0.0,
-      "series": "mapped (generic)",
+      "series": "answer map (generic)",
       "_kind": "errorbar",
       "_group": 1
     },
@@ -88,7 +137,7 @@
       "labeled groups per class": 4.0,
       "AUROC (mean +- sd over subsample seeds)": 0.9928016672928246,
       "error": 0.0,
-      "series": "mapped (generic)",
+      "series": "answer map (generic)",
       "_kind": "errorbar",
       "_group": 1
     },
@@ -96,7 +145,7 @@
       "labeled groups per class": 0.0,
       "AUROC (mean +- sd over subsample seeds)": 0.9837961619476593,
       "error": 0.004072981302531975,
-      "series": "PCA-ctx control",
+      "series": "PCA context control",
       "_kind": "errorbar",
       "_group": 2
     },
@@ -104,7 +153,7 @@
       "labeled groups per class": 1.0,
       "AUROC (mean +- sd over subsample seeds)": 0.989472469400128,
       "error": 0.004502751390326076,
-      "series": "PCA-ctx control",
+      "series": "PCA context control",
       "_kind": "errorbar",
       "_group": 2
     },
@@ -112,7 +161,7 @@
       "labeled groups per class": 2.0,
       "AUROC (mean +- sd over subsample seeds)": 0.9940775455521462,
       "error": 0.0010880715048120493,
-      "series": "PCA-ctx control",
+      "series": "PCA context control",
       "_kind": "errorbar",
       "_group": 2
     },
@@ -120,7 +169,7 @@
       "labeled groups per class": 3.0,
       "AUROC (mean +- sd over subsample seeds)": 0.9945556042924988,
       "error": 0.0,
-      "series": "PCA-ctx control",
+      "series": "PCA context control",
       "_kind": "errorbar",
       "_group": 2
     },
@@ -128,7 +177,7 @@
       "labeled groups per class": 4.0,
       "AUROC (mean +- sd over subsample seeds)": 0.9945556042924988,
       "error": 0.0,
-      "series": "PCA-ctx control",
+      "series": "PCA context control",
       "_kind": "errorbar",
       "_group": 2
     },
@@ -406,7 +455,7 @@
       "labeled groups per class": 0.0,
       "y": 0.9311873647926603,
       "error": 0.01828860058803994,
-      "series": "ctx probe",
+      "series": "context probe",
       "_kind": "errorbar",
       "_group": 12
     },
@@ -414,7 +463,7 @@
       "labeled groups per class": 1.0,
       "y": 0.9418136842859749,
       "error": 0.008655779535025387,
-      "series": "ctx probe",
+      "series": "context probe",
       "_kind": "errorbar",
       "_group": 12
     },
@@ -422,7 +471,7 @@
       "labeled groups per class": 2.0,
       "y": 0.9532224958949097,
       "error": 0.0012123169408565504,
-      "series": "ctx probe",
+      "series": "context probe",
       "_kind": "errorbar",
       "_group": 12
     },
@@ -430,7 +479,7 @@
       "labeled groups per class": 3.0,
       "y": 0.9543766452941329,
       "error": 0.0,
-      "series": "ctx probe",
+      "series": "context probe",
       "_kind": "errorbar",
       "_group": 12
     },
@@ -438,7 +487,7 @@
       "labeled groups per class": 4.0,
       "y": 0.9543766452941329,
       "error": 0.0,
-      "series": "ctx probe",
+      "series": "context probe",
       "_kind": "errorbar",
       "_group": 12
     },
@@ -446,7 +495,7 @@
       "labeled groups per class": 0.0,
       "y": 0.9097424707430866,
       "error": 0.01828860058803994,
-      "series": "mapped (generic)",
+      "series": "answer map (generic)",
       "_kind": "errorbar",
       "_group": 13
     },
@@ -454,7 +503,7 @@
       "labeled groups per class": 1.0,
       "y": 0.9315454036020538,
       "error": 0.008655779535025387,
-      "series": "mapped (generic)",
+      "series": "answer map (generic)",
       "_kind": "errorbar",
       "_group": 13
     },
@@ -462,7 +511,7 @@
       "labeled groups per class": 2.0,
       "y": 0.9417309797482212,
       "error": 0.0012123169408565504,
-      "series": "mapped (generic)",
+      "series": "answer map (generic)",
       "_kind": "errorbar",
       "_group": 13
     },
@@ -470,7 +519,7 @@
       "labeled groups per class": 3.0,
       "y": 0.9434033479292102,
       "error": 0.0,
-      "series": "mapped (generic)",
+      "series": "answer map (generic)",
       "_kind": "errorbar",
       "_group": 13
     },
@@ -478,7 +527,7 @@
       "labeled groups per class": 4.0,
       "y": 0.9434033479292101,
       "error": 0.0,
-      "series": "mapped (generic)",
+      "series": "answer map (generic)",
       "_kind": "errorbar",
       "_group": 13
     },
@@ -486,7 +535,7 @@
       "labeled groups per class": 0.0,
       "y": 0.8896110264028984,
       "error": 0.01828860058803994,
-      "series": "PCA-ctx control",
+      "series": "PCA context control",
       "_kind": "errorbar",
       "_group": 14
     },
@@ -494,7 +543,7 @@
       "labeled groups per class": 1.0,
       "y": 0.9294716976829047,
       "error": 0.008655779535025387,
-      "series": "PCA-ctx control",
+      "series": "PCA context control",
       "_kind": "errorbar",
       "_group": 14
     },
@@ -502,7 +551,7 @@
       "labeled groups per class": 2.0,
       "y": 0.9458817473349492,
       "error": 0.0012123169408565504,
-      "series": "PCA-ctx control",
+      "series": "PCA context control",
       "_kind": "errorbar",
       "_group": 14
     },
@@ -510,7 +559,7 @@
       "labeled groups per class": 3.0,
       "y": 0.9469768942059582,
       "error": 0.0,
-      "series": "PCA-ctx control",
+      "series": "PCA context control",
       "_kind": "errorbar",
       "_group": 14
     },
@@ -518,7 +567,7 @@
       "labeled groups per class": 4.0,
       "y": 0.9469768942059582,
       "error": 0.0,
-      "series": "PCA-ctx control",
+      "series": "PCA context control",
       "_kind": "errorbar",
       "_group": 14
     },
@@ -804,9 +853,9 @@
         "xlabel": "labeled groups per class",
         "ylabel": "AUROC (mean +- sd over subsample seeds)",
         "legend_labels": [
-          "ctx probe",
-          "mapped (generic)",
-          "PCA-ctx control"
+          "context probe",
+          "answer map (generic)",
+          "PCA context control"
         ],
         "xticklabels": [
           "25",
@@ -839,9 +888,9 @@
       }
     ],
     "series": [
-      "ctx probe",
-      "mapped (generic)",
-      "PCA-ctx control"
+      "context probe",
+      "answer map (generic)",
+      "PCA context control"
     ]
   },
   "formats_written": [

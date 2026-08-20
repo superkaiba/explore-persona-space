@@ -1,110 +1,159 @@
 {
-  "commit": "e4d1bacb+dirty",
-  "render_id": "bc9d5e7446b74c30",
-  "git_commit": "e4d1bacb",
+  "commit": "22e6823b+dirty",
+  "render_id": "876901d15d7d458d",
+  "git_commit": "22e6823b",
   "git_dirty": true,
   "git_dirty_paths": [
-    ".claude/agent-memory/codex-code-reviewer/feedback_revision_round_compose_recipe.md"
+    ".claude/agent-memory/codex-code-reviewer/feedback_revision_round_compose_recipe.md",
+    "figures/issue_2356/armA_text_surface_indicator.meta.json",
+    "figures/issue_2356/armA_text_surface_indicator.png",
+    "figures/issue_2356/auroc_by_layer.meta.json",
+    "figures/issue_2356/auroc_by_layer.png",
+    "figures/issue_2356/battery_3a_layer_curve.meta.json",
+    "figures/issue_2356/battery_3a_layer_curve.png",
+    "figures/issue_2356/battery_acc1_draw_avg.meta.json",
+    "figures/issue_2356/battery_acc1_draw_avg.png",
+    "figures/issue_2356/battery_acc1_greedy.meta.json",
+    "figures/issue_2356/battery_acc1_greedy.png",
+    "figures/issue_2356/battery_behavior_split.meta.json",
+    "figures/issue_2356/battery_behavior_split.png",
+    "figures/issue_2356/battery_rank_summary.meta.json",
+    "figures/issue_2356/battery_rank_summary.png",
+    "figures/issue_2356/captions.json",
+    "figures/issue_2356/contrast_paired_ci.meta.json",
+    "figures/issue_2356/contrast_paired_ci.png",
+    "figures/issue_2356/dim_vs_ridge.meta.json",
+    "figures/issue_2356/dim_vs_ridge.png",
+    "figures/issue_2356/group_size_histograms.meta.json",
+    "figures/issue_2356/group_size_histograms.png",
+    "figures/issue_2356/hero_auroc_by_predictor.meta.json",
+    "figures/issue_2356/hero_auroc_by_predictor.png",
+    "figures/issue_2356/judge_calibration.meta.json",
+    "figures/issue_2356/judge_calibration.png",
+    "figures/issue_2356/limited_label_learning_curves.meta.json",
+    "figures/issue_2356/limited_label_learning_curves.png",
+    "figures/issue_2356/lodo_armB.meta.json",
+    "figures/issue_2356/lodo_armB.png",
+    "figures/issue_2356/map_quality_by_layer.meta.json",
+    "figures/issue_2356/map_quality_by_layer.png",
+    "figures/issue_2356/nn_behavior_match.meta.json",
+    "figures/issue_2356/nn_behavior_match.png",
+    "figures/issue_2356/permutation_band.meta.json",
+    "figures/issue_2356/permutation_band.png",
+    "figures/issue_2356/rank_ladder_selected.meta.json",
+    "figures/issue_2356/rank_ladder_selected.png",
+    "figures/issue_2356/rate_histograms.meta.json",
+    "figures/issue_2356/rate_histograms.png",
+    "figures/issue_2356/render_manifest.json",
+    "figures/issue_2356/roc_curves.meta.json",
+    "figures/issue_2356/roc_curves.png",
+    "figures/issue_2356/score_scatter_map_vs_ctx.meta.json",
+    "figures/issue_2356/score_scatter_map_vs_ctx.png",
+    "figures/issue_2356/transfer_2x2.meta.json",
+    "figures/issue_2356/transfer_2x2.png",
+    "figures/issue_2356/w_spectra_effective_rank.meta.json",
+    "figures/issue_2356/w_spectra_effective_rank.png",
+    "scripts/issue2356_figures.py"
   ],
-  "created": "2026-08-20T17:53:20Z",
+  "created": "2026-08-20T20:35:00Z",
   "figsize": [
     11.0,
     3.8
   ],
   "points": [
     {
-      "category": "judge (few-shot)",
-      "pooled OOF AUROC": 0.8955601497780797,
+      "category": "LLM judge (few-shot)",
+      "pooled out-of-fold AUROC": 0.8955601497780797,
       "error": 0.023031282605482706,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "ctx probe",
-      "pooled OOF AUROC": 0.9946507828651564,
+      "category": "context probe",
+      "pooled out-of-fold AUROC": 0.9946507828651564,
       "error": 0.004402634747878276,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "category": "mapped (generic)",
-      "pooled OOF AUROC": 0.9927713281961572,
+      "category": "answer map (generic)",
+      "pooled out-of-fold AUROC": 0.9927713281961572,
       "error": 0.006050515705255999,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "category": "mapped (in-domain)",
-      "pooled OOF AUROC": 0.9904436958753199,
+      "category": "answer map (generic+in-domain)",
+      "pooled out-of-fold AUROC": 0.9904436958753199,
       "error": 0.006980522162789271,
       "_kind": "bar",
       "_group": 3
     },
     {
-      "category": "answer probe",
-      "pooled OOF AUROC": 0.9881883502725209,
+      "category": "answer probe (greedy)",
+      "pooled out-of-fold AUROC": 0.9881883502725209,
       "error": 0.00816479390130026,
       "_kind": "bar",
       "_group": 4
     },
     {
-      "category": "PCA-ctx control",
-      "pooled OOF AUROC": 0.9942893492749643,
+      "category": "PCA context control",
+      "pooled out-of-fold AUROC": 0.9942893492749643,
       "error": 0.0038169127765332878,
       "_kind": "bar",
       "_group": 5
     },
     {
-      "category": "text-surface (fitted)",
-      "pooled OOF AUROC": 0.9513799534473536,
+      "category": "fitted text-surface",
+      "pooled out-of-fold AUROC": 0.9513799534473536,
       "error": 0.017680281546631593,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "category": "judge (few-shot)",
+      "category": "LLM judge (few-shot)",
       "y": 0.742603550295858,
       "error": 0.05827643997530019,
       "_kind": "bar",
       "_group": 7
     },
     {
-      "category": "ctx probe",
+      "category": "context probe",
       "y": 0.9506577338745171,
       "error": 0.024145757253371147,
       "_kind": "bar",
       "_group": 8
     },
     {
-      "category": "mapped (generic)",
+      "category": "answer map (generic)",
       "y": 0.9414152281285149,
       "error": 0.026046872111213593,
       "_kind": "bar",
       "_group": 9
     },
     {
-      "category": "mapped (in-domain)",
+      "category": "answer map (generic+in-domain)",
       "y": 0.9567705022250477,
       "error": 0.022530399234388432,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "category": "answer probe",
+      "category": "answer probe (greedy)",
       "y": 0.9494840823512152,
       "error": 0.025463047443613385,
       "_kind": "bar",
       "_group": 11
     },
     {
-      "category": "PCA-ctx control",
+      "category": "PCA context control",
       "y": 0.9405349894860384,
       "error": 0.026401803877523722,
       "_kind": "bar",
       "_group": 12
     },
     {
-      "category": "text-surface (fitted)",
+      "category": "fitted text-surface",
       "y": 0.6959753533180106,
       "error": 0.0626665184301714,
       "_kind": "bar",
@@ -119,15 +168,15 @@
     "axes": [
       {
         "title_left": "Arm A - harmful flip-pairs",
-        "ylabel": "pooled OOF AUROC",
+        "ylabel": "pooled out-of-fold AUROC",
         "xticklabels": [
-          "judge (few-shot)",
-          "ctx probe",
-          "mapped (generic)",
-          "mapped (in-domain)",
-          "answer probe",
-          "PCA-ctx control",
-          "text-surface (fitted)"
+          "LLM judge (few-shot)",
+          "context probe",
+          "answer map (generic)",
+          "answer map (generic+in-domain)",
+          "answer probe (greedy)",
+          "PCA context control",
+          "fitted text-surface"
         ],
         "yticklabels": [
           "0.4",
@@ -143,24 +192,24 @@
       {
         "title_left": "Arm B - over-refusal",
         "xticklabels": [
-          "judge (few-shot)",
-          "ctx probe",
-          "mapped (generic)",
-          "mapped (in-domain)",
-          "answer probe",
-          "PCA-ctx control",
-          "text-surface (fitted)"
+          "LLM judge (few-shot)",
+          "context probe",
+          "answer map (generic)",
+          "answer map (generic+in-domain)",
+          "answer probe (greedy)",
+          "PCA context control",
+          "fitted text-surface"
         ]
       }
     ],
     "series": [
-      "judge (few-shot)",
-      "ctx probe",
-      "mapped (generic)",
-      "mapped (in-domain)",
-      "answer probe",
-      "PCA-ctx control",
-      "text-surface (fitted)"
+      "LLM judge (few-shot)",
+      "context probe",
+      "answer map (generic)",
+      "answer map (generic+in-domain)",
+      "answer probe (greedy)",
+      "PCA context control",
+      "fitted text-surface"
     ]
   },
   "formats_written": [

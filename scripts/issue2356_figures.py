@@ -107,22 +107,22 @@ ARM_LABEL = {"armA": "Arm A - harmful flip-pairs", "armB": "Arm B - over-refusal
 
 # Hero order + plain-English predictor names (plan section 6 "Figures to produce").
 HERO_ORDER: list[tuple[str, str]] = [
-    (PRED_JUDGE, "judge (few-shot)"),
-    (PRED_CTX, "ctx probe"),
-    (PRED_3A, "mapped (generic)"),
-    (PRED_3B, "mapped (in-domain)"),
-    (PRED_ANS, "answer probe"),
-    (PRED_PCA, "PCA-ctx control"),
-    (PRED_TEXT, "text-surface (fitted)"),
+    (PRED_JUDGE, "LLM judge (few-shot)"),
+    (PRED_CTX, "context probe"),
+    (PRED_3A, "answer map (generic)"),
+    (PRED_3B, "answer map (generic+in-domain)"),
+    (PRED_ANS, "answer probe (greedy)"),
+    (PRED_PCA, "PCA context control"),
+    (PRED_TEXT, "fitted text-surface"),
 ]
 PRED_NAME = dict(
     HERO_ORDER
     + [
-        (PRED_DIM, "ctx diff-in-means"),
-        (PRED_ANS_RM, "answer probe (rollout mean)"),
+        (PRED_DIM, "difference-in-means"),
+        (PRED_ANS_RM, "answer probe (rollout-mean)"),
         (PRED_TEXT_NOIND, "text-surface (no indicators)"),
         (PRED_ISREW, "is-rewrite indicator"),
-        (PRED_LODO, "ctx probe (LODO)"),
+        (PRED_LODO, "context probe (leave-one-dataset-out)"),
     ]
 )
 _HERO_PREDS = [p for p, _ in HERO_ORDER]
@@ -132,19 +132,19 @@ BATTERY_SPACES = ["whitened_cosine", "raw_euclidean", "r2_cand_norm", "pearson"]
 SPACE_NAME = {
     "whitened_cosine": "whitened cosine",
     "raw_euclidean": "raw euclidean",
-    "r2_cand_norm": "r2 cand-norm",
+    "r2_cand_norm": "normalized R²",
     "pearson": "pearson",
 }
 SPACE_COLOR = dict(zip(BATTERY_SPACES, paper_palette(len(BATTERY_SPACES))))
 
 CONTRASTS: list[tuple[str, str]] = [
-    ("delta_int", "ctx - judge (delta_int)"),
-    ("ctx_minus_text_surface", "ctx - text-surface"),
-    ("map3a_minus_ctx", "map3a - ctx"),
-    ("map3a_minus_pca", "map3a - PCA"),
-    ("map3b_minus_map3a", "map3b - map3a"),
-    ("ans_minus_map3a", "answer - map3a"),
-    ("ans_minus_ctx", "answer - ctx (unregistered)"),
+    ("delta_int", "context - LLM judge"),
+    ("ctx_minus_text_surface", "context - fitted text-surface"),
+    ("map3a_minus_ctx", "answer map (generic) - context"),
+    ("map3a_minus_pca", "answer map (generic) - PCA control"),
+    ("map3b_minus_map3a", "map (gen.+in-domain) - map (generic)"),
+    ("ans_minus_map3a", "answer probe - answer map (generic)"),
+    ("ans_minus_ctx", "answer probe - context (unregistered)"),
 ]
 
 # Input registry: ctx key -> path relative to --eval-root.
@@ -232,8 +232,8 @@ def _battery_conds(arm_results: dict[str, Any]) -> list[str]:
 
 def _cond_label(cond: str) -> str:
     if cond == "3a_generic":
-        return "3a"
-    return "3b f" + cond.rsplit("fold", 1)[1]
+        return "generic map"
+    return "in-domain (fold " + cond.rsplit("fold", 1)[1] + ")"
 
 
 def _acc_at_1(knn_metric: dict[str, Any]) -> float | None:
@@ -287,11 +287,11 @@ def fig_hero(ctx: dict[str, Any]) -> list[tuple[str, Any, str]]:
         ax.set_title(ARM_LABEL[arm])
     for j in range(len(ARMS)):
         axes[0][j].set_ylim(max(0.0, y_lo), 1.02)
-    axes[0][0].set_ylabel("pooled OOF AUROC")
+    axes[0][0].set_ylabel("pooled out-of-fold AUROC")
     cap = (
-        "HERO: pooled out-of-fold AUROC per predictor (group 5-fold scheme), one panel per "
-        "arm; error bars = paired group-bootstrap 95% CIs from stats.json; dashed line = "
-        "chance (0.5). All scores oriented as P(REFUSE)."
+        "Pooled out-of-fold AUROC per predictor (group 5-fold scheme), one panel per "
+        "arm; error bars = paired group-bootstrap 95% intervals from stats.json; dashed line = "
+        "chance (0.5). All scores oriented as P(refuse)."
     )
     return [("hero_auroc_by_predictor", fig, cap)]
 
@@ -450,10 +450,18 @@ def fig_transfer(ctx: dict[str, Any]) -> list[tuple[str, Any, str]]:
     dirs = ctx["transfer"].get("directions", {})
     if not dirs:
         return []
-    fig, ax = plt.subplots(figsize=(6.0, 3.6))
+    fig, ax = plt.subplots(figsize=(8.0, 4.2))
     keys = sorted(dirs)
     vals = [dirs[k]["auroc"] for k in keys]
-    labels = [k.replace("armA", "A").replace("armB", "B").replace("|", "\n") for k in keys]
+    dir_name = {
+        "armA->armB": "harmful → over-refusal",
+        "armB->armA": "over-refusal → harmful",
+    }
+    est_name = {"ridge": "ridge probe", "dim": "difference-in-means"}
+    labels = []
+    for k in keys:
+        direction, _, est = k.partition("|")
+        labels.append(f"{dir_name.get(direction, direction)}\n({est_name.get(est, est)})")
     colors = [
         paper_palette_role("primary") if k.endswith("ridge") else paper_palette_role("control")
         for k in keys
@@ -469,12 +477,12 @@ def fig_transfer(ctx: dict[str, Any]) -> list[tuple[str, Any, str]]:
     ax.bar(range(len(vals)), vals, color=colors, yerr=yerr, capsize=3)
     ax.axhline(0.5, ls="--", lw=1, color="grey")
     ax.set_xticks(range(len(labels)))
-    ax.set_xticklabels(labels)
+    ax.set_xticklabels(labels, rotation=20, ha="right", fontsize=8)
     ax.set_ylabel("AUROC on the other arm")
     ax.set_title("Cross-regime transfer (report-only)")
     cap = (
-        "Cross-regime transfer 2x2: ctx probe (ridge) and diff-in-means trained on one "
-        "arm's full balanced set, evaluated on the other arm's balanced set; both "
+        "Cross-regime transfer 2x2: context probe (ridge) and difference-in-means trained on "
+        "one arm's full balanced set, evaluated on the other arm's balanced set; both "
         "directions. Report-only (plan Step G / H4); dashed = chance."
     )
     return [("transfer_2x2", fig, cap)]
@@ -723,9 +731,9 @@ def fig_contrasts(ctx: dict[str, Any]) -> list[tuple[str, Any, str]]:
         return []
     cap = (
         "Registered paired contrasts per arm: AUROC differences with paired group-bootstrap "
-        "95% CIs over the common per-arm row mask (identical draw indices per contrast). "
-        "Includes the F2 estimator-class control (ctx - text-surface) and delta_int "
-        "(ctx - judge); dashed = zero."
+        "95% intervals over the common per-arm row mask (identical draw indices per contrast). "
+        "Includes the fitted text-surface control (context - text-surface) and the headline "
+        "context-minus-judge gap; dashed = zero."
     )
     return [("contrast_paired_ci", fig, cap)]
 
