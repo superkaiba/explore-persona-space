@@ -63,6 +63,29 @@ lens. Open ledger rows (all main-pipeline scope) get regression-duty-ONLY
 framing + one named look-hardest row where the diff grazes a concern's
 neighborhood (donor STAGING edit vs the generate-side donor-cache concern).
 
+**Variant (#823 P-Gen ladder round, 2026-08-19): the placeholder pattern
+also fires on a 9b PAID/GPU same-issue follow-up round, not only 9a-ter.**
+After the round-1 implementer died to autocompact thrash and was respawned
+micro-scoped, its report existed only in-session — `latest-marker` returned
+the PARENT's July v5 marker (round-mismatched; never inline it) and the
+race re-probe + epm:results probe + branch-events probe all confirmed no
+round marker. Placeholder + "ORCHESTRATOR ACTION REQUIRED" return applies
+unchanged. Three additions: (a) the smoke-arch marker CAN be round-matched
+even when the impl marker is absent (the respawned implementer posted v5
+naming the unit) — inline it, and route its DISCLOSED pending-harvest leg
+(batch in_progress inside SLA; synthetic probes for assert/selection fns)
+via Step 0.6 as present-but-limited/CONCERNS, never `smoke-run-missing`
+fabrication; (b) when the brief hands a SPEC SLICE (thrash-killed prior
+agent; "use the slice, not the ~120KB plan"), inline the slice as the
+authoritative plan envelope AND instruct Codex not to open the full plan
+or the ~111KB parent driver (bounded greps of the parent allowed for
+parity claims only); (c) brief-enumerated registered requirements get a
+dedicated `## Registered requirements` verdict-body section with an
+INDEPENDENT-recompute duty — e.g. "confirm the asserts catch
+persona(i,k)=(i+1) mod k by your own arithmetic; a shifted modulo
+PRESERVES per-persona counts, so count/balance asserts alone cannot catch
+it" — never trusting the smoke-arch marker's "FIRED" claims.
+
 **Variant (#2203 full-rerun-bugfix CJK-producer review, 2026-08-11): a
 follow-up ANALYSIS commit with NO marker and NO orchestrator-held report.**
 When the round's target is a post-rerun analysis-producer commit landed by
