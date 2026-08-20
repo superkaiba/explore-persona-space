@@ -255,6 +255,109 @@ def test_step_transfer_two_legs_end_to_end(tmp_path):
     assert out["family_m_ceilings"] == A.FAMILY_CEILING_M
 
 
+def test_step_fact_profile_end_to_end(tmp_path):
+    """Full-layer F_act profile (plan §6 fact_profile.jsonl): a pair whose
+    steered V_a equals the ceiling mean scores f_act == 1.0 at EVERY layer
+    (vectorized batch dim = layers); a pair with < 2 floor draws is skipped."""
+    cell = "fact_user_name"
+    p = next(q for q in BANK.build_pairs() if q.cell == cell)
+    # A DIFFERENT cell for the skipped pair — same-cell pairs share anchor
+    # contexts (p.b can equal a sibling's .a), which would trip the
+    # duplicate-key assert in the fixture.
+    p2 = next(q for q in BANK.build_pairs() if q.cell == "persona_prompted")
+    layers = [0, 59, 61, 63]
+    ll, hh = len(layers), 8
+
+    bank_json = tmp_path / "bank.json"
+    bank_json.write_text(
+        json.dumps({"dropped_pairs": [], "token_identity": {"n_intact": len(BANK.build_pairs())}}),
+        encoding="utf-8",
+    )
+    rollouts = tmp_path / "rollouts"
+    va_dir = tmp_path / "va"
+    anchors = tmp_path / "anchors"
+    out_dir = tmp_path / "out"
+    for d in (rollouts, va_dir, anchors, out_dir):
+        d.mkdir()
+
+    def _grid_row(pair, draw):
+        return {
+            "block_key": "blk0",
+            "pair_id": pair.pair_id,
+            "cell": pair.cell,
+            "slot": "ce",
+            "arm": "steered",
+            "draw": draw,
+            "text": "t",
+            "context_id": pair.a,
+        }
+
+    grid = [_grid_row(p, 0), _grid_row(p, 1), _grid_row(p2, 0)]
+    (rollouts / "shard_0.jsonl").write_text(
+        "".join(json.dumps(r) + "\n" for r in grid), encoding="utf-8"
+    )
+
+    f_vec = torch.full((ll, hh), 0.5)
+    c_vec = torch.full((ll, hh), 1.0)
+    torch.save(
+        {
+            "block_key": "blk0",
+            "layers": layers,
+            "va_span": torch.stack([c_vec, c_vec, c_vec]).to(torch.float16),
+            "index": [
+                {"pair_id": p.pair_id, "context_a": p.a, "draw": 0},
+                {"pair_id": p.pair_id, "context_a": p.a, "draw": 1},
+                {"pair_id": p2.pair_id, "context_a": p2.a, "draw": 0},
+            ],
+            "empty_rows": [],
+        },
+        va_dir / "shard_0.pt",
+    )
+    # p: 2 floor + 2 ceiling draws; p2: only 1 floor draw (skipped, < 2).
+    torch.save(
+        {
+            "layers": layers,
+            "va_span": torch.stack([f_vec, f_vec, c_vec, c_vec, f_vec]).to(torch.float16),
+            "index": [
+                {"context_id": p.a, "draw": 0},
+                {"context_id": p.a, "draw": 1},
+                {"context_id": p.b, "draw": 0},
+                {"context_id": p.b, "draw": 1},
+                {"context_id": p2.a, "draw": 0},
+            ],
+            "empty_rows": [],
+        },
+        anchors / "va_anchors_0.pt",
+    )
+
+    args = argparse.Namespace(
+        bank_json=bank_json,
+        rollouts_dir=rollouts,
+        anchors_dir=anchors,
+        va_dir=va_dir,
+        out_dir=out_dir,
+    )
+    A.step_fact_profile(args)
+    rows = [
+        json.loads(line)
+        for line in (out_dir / "fact_profile.jsonl").read_text().splitlines()
+        if line.strip()
+    ]
+    assert len(rows) == 1  # p2 skipped (1 floor draw)
+    row = rows[0]
+    assert (row["cell"], row["slot"], row["n_pairs"]) == (cell, "ce", 1)
+    assert row["layers"] == layers
+    assert len(row["f_act_mean_per_layer"]) == len(layers)
+    for v in row["f_act_mean_per_layer"]:
+        assert v == pytest.approx(1.0, abs=1e-6)
+    assert row["read_layer"] == 59 and row["companion_layer"] == 61
+    per_pair = row["per_pair"]
+    assert per_pair[0]["pair_id"] == p.pair_id
+    assert per_pair[0]["f_act_read"] == pytest.approx(1.0, abs=1e-6)
+    assert per_pair[0]["f_act_companion"] == pytest.approx(1.0, abs=1e-6)
+    assert "fact-profile" in A.STEPS
+
+
 def test_step_transfer_asserts_parent_unit_count(tmp_path):
     p1_ce, _ = _p1_units()
     parent_dir = tmp_path / "parent"

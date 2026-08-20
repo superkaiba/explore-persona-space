@@ -14,7 +14,9 @@ parent analysis (plan §4/§6; everything else verbatim):
   26/27 convention -> linear-attention) is the labelled EXPLORATORY
   companion, recomputable from the all-64 capture (figures-side). V_a is
   captured at ALL 64 layers so the read layer stays analysis-time-
-  recomputable.
+  recomputable; ``--step fact-profile`` materializes the FULL per-layer
+  F_act profile (steered arm) to ``fact_profile.jsonl`` — vectorized across
+  the layer axis via ``fmetrics.f_act``'s batch dim.
 - **ce-only (plan §4.1, user ruling 1):** ``issue2389_run.SLOTS == ("ce",)``
   — the probe iterates the run driver's slot set; the pe-exclusion machinery
   is kept INERT (the pod still writes an empty ``pe_exclusions.json``).
@@ -1697,8 +1699,176 @@ def step_stage2(args: argparse.Namespace) -> None:
 
 # ── CLI ───────────────────────────────────────────────────────────────
 
+
+def _load_anchor_va_profile(
+    anchors_dir: Path,
+) -> tuple[dict[tuple[str, int], torch.Tensor], list[int]]:
+    """(context_id, draw) -> ALL-layer span-mean anchor V_a (L, H), stored dtype.
+
+    Full-profile sibling of ``_load_anchor_va`` (which selects the layer-59 row
+    at load): keeps EVERY captured layer for the plan §6 full 64-layer F_act
+    profile. Same empty-row exclusion + duplicate-key assert + one-registry
+    pin. ~9 GB fp16 at production shape (1,404 contexts x 10 draws x 64 x
+    5120) — the profile step runs where step_f_tables runs (P7c cpu-bigmem).
+    Returns (store, layers)."""
+    out: dict[tuple[str, int], torch.Tensor] = {}
+    n_empty = 0
+    registry: dict = {}
+    for shard in sorted(anchors_dir.glob("va_anchors_*.pt")):
+        payload = torch.load(shard, map_location="cpu", weights_only=False)
+        layers = list(payload["layers"])
+        if "layers" in registry:
+            assert registry["layers"] == layers, (
+                f"inconsistent layer registry across anchor shards: {shard} has {layers} vs "
+                f"{registry['first_shard']}'s {registry['layers']}"
+            )
+        else:
+            registry.update(layers=layers, first_shard=str(shard))
+        va = payload["va_span"]
+        empty = set(payload.get("empty_rows", []))
+        n_empty += len(empty)
+        for j, meta in enumerate(payload["index"]):
+            if j in empty:
+                continue
+            key = (meta["context_id"], meta["draw"])
+            assert key not in out, (
+                f"duplicate anchor V_a row {key} in {shard} — stale prior-width "
+                "va_anchors shard? (the run driver quarantines these at phase entry)"
+            )
+            out[key] = va[j]
+    assert out, f"no anchor V_a shards under {anchors_dir}"
+    if n_empty:
+        logger.info("[fact-profile] excluded %d empty-completion anchor rows", n_empty)
+    return out, registry["layers"]
+
+
+def step_fact_profile(args: argparse.Namespace) -> None:
+    """Plan §6 FULL-profile F_act table -> ``fact_profile.jsonl`` (steered arm).
+
+    Per rubric-bearing (cell x ce) unit: each pair's steered span-mean V_a
+    (mean over its steered grid rows, all layers) is scored with
+    ``fmetrics.f_act`` (disjoint-half floors) VECTORIZED across layers — the
+    layer axis rides f_act's batch dim, one call per pair. Output rows carry
+    the per-layer mean/sd across pairs plus per-pair values at the
+    pre-registered comparison row (READ_LAYER = 59, full-attention) and the
+    labelled EXPLORATORY companion (61, linear) for the figures fork.
+    Pairs with < 2 floor draws or no ceiling draws are skipped with a named
+    count (same condition as step_f_tables' per-cell f_act); ``filler_swap``
+    (rubric-free) is excluded for parity with ``f_cells.jsonl``. Memory is
+    bounded by per-pair SUM accumulation over streamed grid shards (never the
+    full steered store) + the fp16 all-layer anchor store."""
+    pairs = _pairs(args)
+    grid_rows = J.load_grid_rows(args.rollouts_dir)
+    va_anchor, anchor_layers = _load_anchor_va_profile(args.anchors_dir)
+
+    steered_keys: dict[tuple[str, str, str, int], tuple[str, str]] = {
+        (r["block_key"], r["pair_id"], r["context_id"], r["draw"]): (r["pair_id"], r["slot"])
+        for r in grid_rows
+        if r["arm"] == "steered"
+    }
+    sums: dict[tuple[str, str], torch.Tensor] = {}
+    counts: dict[tuple[str, str], int] = defaultdict(int)
+    registry: dict = {}
+    for shard in sorted(args.va_dir.glob("shard_*.pt")):
+        payload = torch.load(shard, map_location="cpu", weights_only=False)
+        layers = list(payload["layers"])
+        if "layers" in registry:
+            assert registry["layers"] == layers, (
+                f"inconsistent layer registry across grid shards: {shard} has {layers} vs "
+                f"{registry['first_shard']}'s {registry['layers']}"
+            )
+        else:
+            registry.update(layers=layers, first_shard=str(shard))
+        empty = set(payload.get("empty_rows", []))
+        va = payload["va_span"]
+        for j, meta in enumerate(payload["index"]):
+            if j in empty:
+                continue
+            ps = steered_keys.get(
+                (payload["block_key"], meta["pair_id"], meta["context_a"], meta["draw"])
+            )
+            if ps is None:
+                continue
+            v = va[j].float()  # (L, H)
+            prev = sums.get(ps)
+            sums[ps] = v if prev is None else prev + v
+            counts[ps] += 1
+    assert sums, f"no steered V_a rows under {args.va_dir} matching {args.rollouts_dir}"
+    layers = registry["layers"]
+    assert layers == anchor_layers, (
+        f"grid/anchor layer registries diverge: {layers} vs {anchor_layers}"
+    )
+
+    anchor_draws_by_ctx: dict[str, list[int]] = defaultdict(list)
+    for ctx, d in va_anchor:
+        anchor_draws_by_ctx[ctx].append(d)
+
+    per_cell: dict[tuple[str, str], list[dict]] = defaultdict(list)
+    n_skipped = 0
+    for p in pairs:
+        if J.pair_rubric_cores(p) is None:
+            continue  # filler_swap parity with f_cells.jsonl
+        for slot in R.SLOTS:
+            key = (p.pair_id, slot)
+            if key not in sums:
+                continue
+            floors = [va_anchor[(p.a, d)] for d in sorted(anchor_draws_by_ctx.get(p.a, []))]
+            ceils = [va_anchor[(p.b, d)] for d in sorted(anchor_draws_by_ctx.get(p.b, []))]
+            if len(floors) < 2 or not ceils:
+                n_skipped += 1
+                continue
+            vp = sums[key] / counts[key]  # (L, H) fp32
+            fl = torch.stack(floors).float().permute(1, 0, 2)  # (L, K_f, H)
+            ce = torch.stack(ceils).float().permute(1, 0, 2)  # (L, K_c, H)
+            res = FM.f_act(vp, fl, ce)  # batch dim = layers
+            profile = [float(x) for x in res.f_act]
+            assert len(profile) == len(layers), (len(profile), len(layers))
+            per_cell[(p.cell, slot)].append({"pair_id": p.pair_id, "profile": profile})
+
+    def _idx(layer: int) -> int | None:
+        return layers.index(layer) if layer in layers else None
+
+    ri, ci = _idx(READ_LAYER), _idx(COMPANION_READ_LAYER)
+    rows_out: list[dict] = []
+    for (cell, slot), items in sorted(per_cell.items()):
+        mat = np.array([it["profile"] for it in items])  # (n_pairs, L)
+        rows_out.append(
+            {
+                "cell": cell,
+                "slot": slot,
+                "layers": layers,
+                "n_pairs": len(items),
+                "f_act_mean_per_layer": mat.mean(axis=0).tolist(),
+                "f_act_sd_per_layer": (
+                    mat.std(axis=0, ddof=1).tolist() if len(items) > 1 else None
+                ),
+                "read_layer": READ_LAYER if ri is not None else None,
+                "companion_layer": COMPANION_READ_LAYER if ci is not None else None,
+                "per_pair": [
+                    {
+                        "pair_id": it["pair_id"],
+                        "f_act_read": it["profile"][ri] if ri is not None else None,
+                        "f_act_companion": it["profile"][ci] if ci is not None else None,
+                    }
+                    for it in items
+                ],
+            }
+        )
+    assert rows_out, "fact-profile: zero (cell x slot) rows survived — wrong inputs?"
+    _write_jsonl_atomic(args.out_dir / "fact_profile.jsonl", rows_out)
+    logger.info(
+        "[fact-profile] %d (cell x slot) rows over %d layers (skipped %d pairs "
+        "with <2 floor / 0 ceiling draws) -> %s",
+        len(rows_out),
+        len(layers),
+        n_skipped,
+        args.out_dir / "fact_profile.jsonl",
+    )
+
+
 STEPS = {
     "f-tables": step_f_tables,
+    "fact-profile": step_fact_profile,
     "stats": step_stats,
     "margin": step_margin,
     "probe": step_probe,
