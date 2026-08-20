@@ -389,8 +389,8 @@
   "test4.jsonl",
   "test5.jsonl"
  ],
- "ts": "2026-08-20T20:29:45Z",
- "git_commit": "a27acd68daa8845558aaa0898609b657d32db05e",
+ "ts": "2026-08-20T23:21:53Z",
+ "git_commit": "f88b53d1f6161e18df3b80e868c6592cbe14c7f5",
  "git_dirty": false,
  "phase": "gen-dedup",
  "git_argv0_state": "tracked",

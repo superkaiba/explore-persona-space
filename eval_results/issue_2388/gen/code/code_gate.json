@@ -3,8 +3,8 @@
   "available": true,
   "path": "eval_results/issue_2388/gen/code_harness_control.json",
   "harness_ok": true,
-  "flaky_mismatch_fraction": 0.0,
-  "bcb_control_ts": "2026-08-20T20:17:55Z",
+  "flaky_mismatch_fraction": 0.013333333333333334,
+  "bcb_control_ts": "2026-08-20T23:10:25Z",
   "apps_harness_ok": null,
   "apps_control_ts": null
  },
@@ -42,10 +42,14 @@
   "est_train_without_bcb": 3160,
   "code_train_floor_d": 3584
  },
- "ts": "2026-08-20T20:33:25Z",
- "git_commit": "ac0eca2a7ada4478799a2d9aa3ad9103a7e47680",
- "git_dirty": false,
+ "ts": "2026-08-20T23:21:55Z",
+ "git_commit": "f88b53d1f6161e18df3b80e868c6592cbe14c7f5",
+ "git_dirty": true,
  "phase": "gen-gate",
+ "git_dirty_paths": [
+  "eval_results/issue_2388/fits/feasibility_report_pregen.json",
+  "eval_results/issue_2388/gen/code/dedup_report.json"
+ ],
  "git_argv0_state": "tracked",
  "git_argv0_path": "scripts/issue2388_gen.py"
 }

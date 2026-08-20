@@ -30,8 +30,8 @@
       "resolved_keys": {}
     },
     "code": {
-      "n_train": 3160,
-      "pool": 3160,
+      "n_train": 3958,
+      "pool": 3958,
       "budgets": [
         250,
         500,
@@ -57,7 +57,7 @@
     }
   },
   "metadata": {
-    "git_commit": "a27acd68daa8845558aaa0898609b657d32db05e",
+    "git_commit": "f88b53d1f6161e18df3b80e868c6592cbe14c7f5",
     "git_dirty": true,
     "phase": "feasibility",
     "git_dirty_paths": [
