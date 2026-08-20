@@ -10962,8 +10962,8 @@
     "2418": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2418",
-      "status": "proposed",
+      "path": "tasks/archived/2418",
+      "status": "archived",
       "title": "Infra: worktree plans/plan.md symlink resolves to a STALE plan \u2014 briefs following the plan-handoff convention can review against a superseded plan"
     },
     "2419": {
