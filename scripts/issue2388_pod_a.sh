@@ -104,6 +104,10 @@ commit_results() { # commit_results <msg> <path>...
 
 # ---------------------------------------------------------------- P0: env ---
 echo "[phase=p0_env]"
+# Defensive top-of-launch reap: a crash-relaunch after any engine-leaving
+# failure must start on clean GPUs (nothing legitimate holds a GPU when this
+# launcher starts).
+reap_gpus
 if [ ! -x "$BCB_PY" ]; then
   # BigCodeBench's own pinned eval requirement set (plan section 11 fork 1;
   # 73 pins targeting the py3.10 era — the `bigcodebench` PyPI package has NO
