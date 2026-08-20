@@ -35,7 +35,13 @@ Two rulings from #2329 `q35_ladder_decay` round 2 (2026-08-20), both confirmed w
    **How to apply:** when grep-verifying a claimed count over roster-style markers, split
    multi-member bullets on "/" (or equivalent) and reconcile members before grading the literal.
 
-3. **Additive HF persistence beyond declared destinations is not a deviation.** Ride-along
+3. **Line-order is not execution-order when grading "before any X" ordering claims** (round 3,
+   same task). A guard claimed to fire "before any unit is appended" had a `units.append` at an
+   EARLIER line number — but inside a closure DEFINITION invoked only after the guard. Check
+   invocation order (who calls what, when), not textual order, before minting a false-ordering
+   finding or blessing a true one.
+
+4. **Additive HF persistence beyond declared destinations is not a deviation.** Ride-along
    artifacts (gates/pools/pilot files) uploaded into a plan-declared prefix whose §10 row names
    only a subset (scores), while their own declared git home is unchanged, is persist-by-default
    conformant when the ambiguity + reason are stated in the report — flag only a forward note for
