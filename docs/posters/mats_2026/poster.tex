@@ -159,11 +159,14 @@ We train another map from the context to the answer's \textbf{SAE features}, the
 
 \postersec{4.\ What does it fail to retrieve?}
 \begin{center}
-\IfFileExists{figures/plot4_failures.pdf}{\includegraphics[width=0.88\linewidth]{plot4_failures.pdf}}{\includegraphics[width=0.95\linewidth]{c3_failure_attribution.pdf}}
+\IfFileExists{figures/plot4b_failure_modes.pdf}{\includegraphics[width=0.99\linewidth]{plot4b_failure_modes.pdf}}{\includegraphics[width=0.88\linewidth]{plot4_failures.pdf}}
 \end{center}
-\figcap{6}{Failures against 5-draw-averaged answer targets, raw euclidean: $n=1{,}988$, pool 9{,}941, 180 failures, rank-1 0.909. Blue clears BH FDR at $q\!=\!0.05$. Right: what the misses are.}
+\figcap{6}{Rate of each failure mode among retrieval failures minus its rate among controls matched on turns $\times$ corpus $\times$ language, in percentage points; lines are 95\% CIs. Colored bars clear BH FDR $q\!=\!0.05$. $n\!=\!1{,}815$ failures vs $1{,}809$ controls.}
 \begin{itemize}
-  \item \takeaways{Failures concentrate in identifiable kinds of context:} code answers ($+11.2$pp), refusal-adjacent requests ($+8.5$), coding ($+7.0$) and English ($+5.6$) fail most; factual QA ($-3.5$) and advice ($-5.8$) fail least.
+  \item \takeaways{It fails when the last turn does not pin the answer:} a bare ``why?'' / ``continue'' ($+7.7$pp), a fill-in-the-blank genre request ($+3.1$), or an answer that drifts back to earlier history ($+3.1$).
+  \item \takeaways{It succeeds when the exchange has a distinctive anchor the answer reuses} ($-6.7$pp) --- so what it misses is largely what \emph{no} map could pin down, not a weakness of the map.
+  \item \takeaways{One failure is the answer's own fault:} garbled or code-switched responses ($+6.8$pp).
+  \item The modes were written \textbf{blind}: a model saw only the failures and a random sample --- no labels, no numbers --- and wrote a yes/no rule per mode, which a judge then applied to every context.
 \end{itemize}
 
 \end{column}
@@ -210,6 +213,8 @@ We train another map from the context to the answer's \textbf{SAE features}, the
 \end{center}
 \figcap{9}{Spearman $\rho$ between readout and judged behavior, per regime. Readouts: persona vector or fitted regression, on the context or the map-predicted answer; oracle = real answer. Muted bars fail the spread gate.}
 \begin{itemize}
+  \item \takeaways{Persona vectors projected on the context vector fail to generalize to realistic contexts}
+  \item \takeaways{Regression on the mapped answer does better than regression from the}
   \item \takeaways{The best pre-inference readout is on the \emph{mapped answer} in every trustworthy generic-chat and OOD cell,} by $+0.01$ to $+0.07$ over the best context-side readout — two sycophancy margins sit inside overlapping CIs.
   \item \takeaways{Regression on the mapped answer matches or beats regression on the context everywhere,} and both leave persona-vector-on-context near zero — the gain is the \emph{map}, not the readout family.
   \item \takeaways{On synthetic prompts the context already gives the behavior away} — the map earns its keep where the prompt does \emph{not} telegraph the answer.
