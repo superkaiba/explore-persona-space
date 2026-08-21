@@ -61,10 +61,26 @@ commit_results() { # commit_results <msg> <path>...
   fi
 }
 
-stream_tar() { # stream_tar <hf-relpath> <dest-dir>  (plan section 9 stream form)
-  echo "[stage] stream-extract $1 -> $2 start $(date -u +%H:%M:%SZ)"
-  curl -sSfL -H "Authorization: Bearer $HF_TOKEN" "$HF_DATA_URL/$1" | tar -x -C "$2"
-  echo "[stage] stream-extract $1 done $(date -u +%H:%M:%SZ)"
+stream_tar() { # stream_tar <hf-relpath> <dest-dir> — plan section 9 stream form,
+  # retriable: an HF CDN HTTP/2 stream CANCEL killed Pod B's 32 GB extract
+  # 4.8 h in and a pipe cannot resume, so reap the partial store root between
+  # bounded retries. Stream-only (never download-then-untar): MooseFS df
+  # reports the SHARE size, not the ~130 GB per-pod quota, so a
+  # disk-headroom-keyed download branch is unsafe on this pod class.
+  local rel="$1" dest="$2" root n=0
+  root="$(basename "$rel" .tar)"
+  while :; do
+    echo "[stage] stream-extract $rel -> $dest start $(date -u +%H:%M:%SZ) (attempt $((n+1)))"
+    if curl -sSfL -H "Authorization: Bearer $HF_TOKEN" "$HF_DATA_URL/$rel" | tar -x -C "$dest"; then
+      echo "[stage] stream-extract $rel done $(date -u +%H:%M:%SZ)"
+      return 0
+    fi
+    n=$((n+1))
+    [ "$n" -ge 5 ] && { echo "[stage] stream-extract $rel FAILED after $n attempts"; return 1; }
+    echo "[stage] stream-extract $rel attempt $n failed; reaping partial $dest/$root and retrying"
+    rm -rf "${dest:?}/${root:?}"
+    sleep 30
+  done
 }
 
 # ------------------------------------------------------------- P3 staging ---
