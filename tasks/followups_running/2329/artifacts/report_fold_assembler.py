@@ -231,7 +231,9 @@ def main() -> int:
     # Re-pin the detailed-companion link: the companion gained this round's 16
     # views, so the body's pin must move to the commit that carries them.
     OLD_DET = "60e1c290fd1a65cd9de1101f85c7971756270a61"
-    NEW_DET = "950ca60a0c1225148a25b0a419a4660f86a00dcd"
+    # Moves with every companion regeneration; currently the round-2 fix pass
+    # (corrected writer blocks + corrected captions).
+    NEW_DET = "4e0954129c52e48c4233fe8c86bd6026e1c8a2f0"
     repins = 0
     for i, ln in enumerate(out):
         if ln.startswith("**Detailed writeup:**") and OLD_DET in ln:
