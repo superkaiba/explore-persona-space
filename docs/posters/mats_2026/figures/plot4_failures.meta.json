@@ -1,0 +1,337 @@
+{
+  "commit": "44b56018+dirty",
+  "render_id": "15359c638caa4859",
+  "git_commit": "44b56018d623567791ef737b846ab9afad0ba12e",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "docs/posters/mats_2026/make_plot4_failures.py",
+    "docs/posters/mats_2026/figures/c4_story_vs_chat.pdf",
+    "docs/posters/mats_2026/poster.pdf",
+    "docs/posters/mats_2026/poster.tex",
+    "eval_results/issue_666/headline/predictor_headline.json",
+    "scripts/issue1345_analyzer_figs.py",
+    "scripts/issue1901_body_figures.py",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "docs/posters/mats_2026/make_plot4_failures.py",
+  "created": "2026-08-21T00:40:29Z",
+  "figsize": [
+    7.4,
+    3.3
+  ],
+  "points": [
+    {
+      "failure-rate difference (pp)": -3.175671,
+      "y": -6.351342238897509,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure-rate difference (pp)": -2.919648,
+      "y": -5.83929520618324,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure-rate difference (pp)": -1.692701,
+      "y": -3.385402245808336,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure-rate difference (pp)": -1.445483,
+      "y": -2.890965012560903,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure-rate difference (pp)": 2.775853,
+      "y": 5.551705665236472,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure-rate difference (pp)": 2.933266,
+      "y": 5.866532639349545,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure-rate difference (pp)": 4.118481,
+      "y": 8.236962568581443,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure-rate difference (pp)": 4.865246,
+      "y": 9.730492628995671,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure-rate difference (pp)": 5.524971,
+      "y": 11.049942108852658,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure-rate difference (pp)": 6.518883,
+      "y": 13.037765228857765,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure-rate difference (pp)": 8.183661,
+      "y": 16.36732216527628,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure-rate difference (pp)": 10.886052,
+      "y": 21.772104850176106,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure-rate difference (pp)": 12.378269,
+      "y": 24.756538129270396,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure-rate difference (pp)": -8.353902352675636,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure-rate difference (pp)": -7.387017343566017,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure-rate difference (pp)": -4.8938766592558824,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure-rate difference (pp)": -4.59106086392061,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure-rate difference (pp)": 0.3833507865389496,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure-rate difference (pp)": 3.639794539620744,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure-rate difference (pp)": 6.727721604361415,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure-rate difference (pp)": 0.22526304629896288,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure-rate difference (pp)": 7.782462871207078,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure-rate difference (pp)": 7.429139371966302,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure-rate difference (pp)": 12.250849603954032,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure-rate difference (pp)": 15.159997912505876,
+      "y": 11.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure-rate difference (pp)": 17.942807875684924,
+      "y": 12.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure-rate difference (pp)": -4.3434424490045895,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure-rate difference (pp)": -4.277713108398632,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure-rate difference (pp)": -1.85372990972369,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure-rate difference (pp)": -1.1907174064679973,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure-rate difference (pp)": 10.905446310979682,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure-rate difference (pp)": 8.108380001867983,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure-rate difference (pp)": 9.747580325806474,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure-rate difference (pp)": 19.620424836770894,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure-rate difference (pp)": 14.501331695767602,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure-rate difference (pp)": 18.73279079048755,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure-rate difference (pp)": 20.53881048860009,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure-rate difference (pp)": 28.75836984681879,
+      "y": 11.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure-rate difference (pp)": 31.70135826100383,
+      "y": 12.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "share of covered failures (%)": 80.70652173913044,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "share of covered failures (%)": 5.706521739130437,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "share of covered failures (%)": 13.586956521739125,
+      "_kind": "bar",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 42,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "failure-rate difference (pp)",
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20"
+        ],
+        "yticklabels": [
+          "advice / how-to topic",
+          "factual QA topic",
+          "WildChat corpus",
+          "deep conversation (5+ turns)",
+          "roleplay / persona topic",
+          "coding topic",
+          "English",
+          "'other' topic",
+          "code-formatted answer",
+          "harmful-request topic",
+          "refusal-adjacent request",
+          "NSFW topic",
+          "answer is a refusal"
+        ]
+      },
+      {
+        "ylabel": "share of covered failures (%)",
+        "legend_labels": [
+          "map error",
+          "ambiguous",
+          "answer degeneracy"
+        ],
+        "yticklabels": [
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100"
+        ]
+      }
+    ],
+    "series": [
+      "map error",
+      "ambiguous",
+      "answer degeneracy"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

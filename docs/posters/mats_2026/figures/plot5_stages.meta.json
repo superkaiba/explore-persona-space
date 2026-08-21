@@ -1,0 +1,82 @@
+{
+  "commit": "44b56018+dirty",
+  "render_id": "cc896927cb09481b",
+  "git_commit": "44b56018d623567791ef737b846ab9afad0ba12e",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "docs/posters/mats_2026/make_plot5_stages.py",
+    "eval_results/issue_666/headline/predictor_headline.json",
+    "scripts/issue1345_analyzer_figs.py",
+    "scripts/issue1901_body_figures.py",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "docs/posters/mats_2026/make_plot5_stages.py",
+  "created": "2026-08-21T00:39:49Z",
+  "figsize": [
+    4.6,
+    3.1
+  ],
+  "points": [
+    {
+      "category": "Base",
+      "held-out $R^2$ (pooled, layer 30)": 0.412577163534647,
+      "_kind": "bar"
+    },
+    {
+      "category": "SFT",
+      "held-out $R^2$ (pooled, layer 30)": 0.5778464737384732,
+      "_kind": "bar"
+    },
+    {
+      "category": "DPO",
+      "held-out $R^2$ (pooled, layer 30)": 0.597919828039505,
+      "_kind": "bar"
+    },
+    {
+      "category": "RLVR",
+      "held-out $R^2$ (pooled, layer 30)": 0.6022832271021715,
+      "_kind": "bar"
+    },
+    {
+      "category": "RLVR\n(longer)",
+      "held-out $R^2$ (pooled, layer 30)": 0.6194515549193196,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 5,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "held-out $R^2$ (pooled, layer 30)",
+        "xticklabels": [
+          "Base",
+          "SFT",
+          "DPO",
+          "RLVR",
+          "RLVR\n(longer)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

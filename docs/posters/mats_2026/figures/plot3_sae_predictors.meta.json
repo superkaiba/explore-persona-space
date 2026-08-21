@@ -1,0 +1,147 @@
+{
+  "commit": "716a5868+dirty",
+  "render_id": "c9226e1faa3a4910",
+  "git_commit": "716a5868ee0d89fd5971d42c8296f1355a9d728f",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "docs/posters/mats_2026/make_plot3_predictors.py",
+    "docs/posters/mats_2026/figures/method_diagram.pdf",
+    "docs/posters/mats_2026/figures/method_diagram.tex",
+    "docs/posters/mats_2026/figures/plot1_scaling_boundary.meta.json",
+    "docs/posters/mats_2026/figures/plot1_scaling_boundary.pdf",
+    "docs/posters/mats_2026/figures/plot1_scaling_boundary.png",
+    "docs/posters/mats_2026/poster.pdf",
+    "docs/posters/mats_2026/poster.tex",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "docs/posters/mats_2026/make_plot3_predictors.py",
+  "created": "2026-08-21T00:38:35Z",
+  "figsize": [
+    6.4,
+    2.5
+  ],
+  "points": [
+    {
+      "Spearman $\\rho$ vs per-feature held-out $R^2$": 0.2026850791309682,
+      "y": 0.13,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Spearman $\\rho$ vs per-feature held-out $R^2$": 0.2928978790994351,
+      "y": 1.13,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Spearman $\\rho$ vs per-feature held-out $R^2$": 0.4037234821122649,
+      "y": 2.13,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "Spearman $\\rho$ vs per-feature held-out $R^2$": 0.600322591610094,
+      "y": 3.13,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "AUROC (labeled vs rest, by $R^2$)": 0.45114074522593295,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "AUROC (labeled vs rest, by $R^2$)": 0.5538372639472557,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "AUROC (labeled vs rest, by $R^2$)": 0.4088995951712881,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "AUROC (labeled vs rest, by $R^2$)": 0.5814855041511922,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "AUROC (labeled vs rest, by $R^2$)": 0.5058480973843419,
+      "y": 4.0,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "AUROC (labeled vs rest, by $R^2$)": 0.6797630714862143,
+      "y": 5.0,
+      "_kind": "errorbar",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 10,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "Continuous properties (16,384-feature panel)",
+        "xlabel": "Spearman $\\rho$ vs per-feature held-out $R^2$",
+        "legend_labels": [
+          "raw $\\rho$",
+          "$\\rho\\,|\\,$firing activity"
+        ],
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ],
+        "yticklabels": [
+          "decoder alignment with\npersona directions $r_B$",
+          "firing activity",
+          "dense variance along\ndecoder direction",
+          "within-answer consistency"
+        ]
+      },
+      {
+        "title": "Judged label classes (full dictionary)",
+        "xlabel": "AUROC (labeled vs rest, by $R^2$)",
+        "legend_labels": [
+          "observed",
+          "stratified null (95%)"
+        ],
+        "xticklabels": [
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ],
+        "yticklabels": [
+          "topic",
+          "language",
+          "named entity",
+          "high abstraction",
+          "task format",
+          "speaker identity\n(persona)"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

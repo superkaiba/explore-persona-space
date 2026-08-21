@@ -159,10 +159,10 @@ To ask \emph{what} it predicts, we fit maps to the answer's \textbf{SAE features
 \begin{center}
 \IfFileExists{figures/plot5_stages.pdf}{\includegraphics[width=0.95\linewidth]{plot5_stages.pdf}}{\includegraphics[width=0.74\linewidth]{c1_stage_retention.pdf}}
 \end{center}
-\figcap{6}{Held-out $R^2$ of the fitted map at each post-training stage of one open ladder (base $\to$ SFT $\to$ DPO $\to$ RLVR), each stage fit and evaluated on its own on-policy answers.}
+\figcap{6}{Pooled held-out $R^2$ of the fitted map at each stage of the open Llama/T\"ulu post-training ladder (layer 30), each stage fit and evaluated on its \emph{own} on-policy answers.}
 \begin{itemize}
-  \item \takeaways{Already largely present in the base model:} the base stage sits well above chance before any post-training (Qwen base $R^2$ 0.588 vs.\ instruct 0.673 — $\sim$87\% — on identical corpus, text, and recipe).
-  \item \takeaways{SFT is the largest step}, and \takeaways{DPO $\to$ RLVR barely moves it} — post-training \emph{refines and reparameterizes} the mapping rather than creating it.
+  \item \takeaways{Already largely present in the base model:} the base bar reads $R^2$ 0.41 before any post-training. On Qwen, with corpus, answer text, and recipe held identical, base reaches $\sim$87\% of instruct (0.588 vs.\ 0.673).
+  \item \takeaways{SFT is by far the largest step} ($+0.17$), and \takeaways{DPO $\to$ RLVR barely moves it} ($+0.004$) — post-training \emph{refines and reparameterizes} the mapping rather than creating it.
 \end{itemize}
 
 \postersec{6.\ Is it a persona mapping?}
