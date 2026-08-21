@@ -3014,9 +3014,15 @@ def _resolve_suffix_candidates(
         if not suffix:
             _suffix_skip(ctx, node, "no-successors")
             continue
-        if len(prefix) + 1 + len(suffix) > args.max_suffix_files:
-            # Refuse-to-spend guard, NOT a truncation (B1 parity): truncating
-            # the suffix would silently exclude the real offender.
+        if len(suffix) > args.max_suffix_files:
+            # Refuse-to-spend guard on the SUFFIX budget alone (#2430 plan
+            # §4.3/§4.4: S=400 sizes the bisection pool; the prefix+candidate
+            # are the gate context the replay must carry, not the spend being
+            # capped — a small-suffix candidate that merely sorts late in a
+            # wide gate stays admissible). NOT a truncation (B1 parity):
+            # truncating the suffix would silently exclude the real offender.
+            # Collection cost of the full ordered width is bounded separately
+            # by --suffix-wall-budget-s + the min-capped per-replay timeout.
             _suffix_skip(ctx, node, "suffix-over-cap")
             continue
         replay = _make_suffix_replayer(
@@ -4234,11 +4240,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--max-suffix-files",
         type=int,
         default=400,
-        help="refuse-to-spend cap on one suffix replay's TOTAL collection width "
-        "(prefix + candidate + suffix; #2430, B1 parity): over-cap SKIPs the arm for "
-        "that node (keeps NEW) — NEVER truncates the suffix (a truncation would "
-        "silently exclude the real offender). Default sits above 2x the current "
-        "~171-file full selection: a runaway guard, not a behavior knob.",
+        help="refuse-to-spend cap on a node's SUFFIX length alone (len(suffix); #2430, "
+        "B1 parity) — the prefix + candidate gate context rides free, so a small-suffix "
+        "candidate that merely sorts late in a wide gate stays admissible: over-cap "
+        "SKIPs the arm for that node (keeps NEW) — NEVER truncates the suffix (a "
+        "truncation would silently exclude the real offender). Default sits above 2x "
+        "the current ~171-file full selection: a runaway guard, not a behavior knob.",
     )
     p_compare.add_argument(
         "--suffix-wall-budget-s",

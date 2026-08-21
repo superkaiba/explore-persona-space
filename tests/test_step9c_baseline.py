@@ -5870,7 +5870,7 @@ def test_suffix_over_cap_refuses_never_truncates(tmp_path: Path, monkeypatch, ca
         order=order,
         failing_nodes=(victim,),
         contaminated_by={victim: ("tests/test_s03.py",)},
-        extra_args=("--max-suffix-files", "3"),  # width 5 > 3
+        extra_args=("--max-suffix-files", "3"),  # len(suffix) 4 > 3
     )
     rc, out, _err = _run_json(argv, capsys)
     assert rc == 1
@@ -5879,6 +5879,41 @@ def test_suffix_over_cap_refuses_never_truncates(tmp_path: Path, monkeypatch, ca
         {"node_id": f"{victim.file}::{victim.name}", "reason": "suffix-over-cap"}
     ]
     assert calls["suffix"] == []
+
+
+def test_suffix_cap_is_suffix_only_not_total_width(tmp_path: Path, monkeypatch, capsys):
+    """Node 8b (r2, reconciler-upheld suffix-cap-axis-mismatch): the
+    --max-suffix-files cap binds len(suffix) ALONE (plan §4.3/§4.4 — S sizes
+    the bisection pool), never the total replay width. A small-suffix
+    candidate that merely sorts late in a wide gate (len(suffix) == cap but
+    prefix + candidate + suffix > cap) MUST launch its confirmation — the r1
+    total-width reading refused exactly this shape."""
+    prefix_files = [f"tests/test_p{i}.py" for i in range(3)]
+    order = [*prefix_files, "tests/test_victim.py", SUFFIX_CONTAM, "tests/test_zz_tail.py"]
+    victim = _fnode("tests/test_victim.py")
+    argv, calls, _r, _w = _suffix_env(
+        tmp_path,
+        monkeypatch,
+        order=order,
+        failing_nodes=(victim,),
+        contaminated_by={victim: (SUFFIX_CONTAM,)},
+        extra_args=("--max-suffix-files", "2"),  # len(suffix)=2 == cap; total width 6 > cap
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert calls["suffix"] != []  # the confirmation LAUNCHED (no suffix-over-cap refusal)
+    assert out["suffix_skipped"] == []
+    assert rc == 0
+    assert out["suffix_attributed"] == [
+        {
+            "node_id": f"{victim.file}::{victim.name}",
+            "offender": SUFFIX_CONTAM,
+            "prefix_len": 3,
+            "suffix_len": 2,
+            "licensed_by": "full-suffix-confirmation",
+            "replays_used": 2,  # confirmation + one bisection probe of the 2-file suffix
+            "attribution_stopped": None,
+        }
+    ]
 
 
 def test_suffix_budget_below_floor_refuses_pre_launch(tmp_path: Path, monkeypatch, capsys):
@@ -5987,6 +6022,10 @@ def test_suffix_replay_abort_is_typed_skip_not_exit2(tmp_path: Path, monkeypatch
         {"node_id": f"{victim.file}::{victim.name}", "reason": "suffix-replay-error"}
     ]
     assert len(calls["suffix"]) == 1  # the aborted confirmation attempt
+    # Completed-vs-attempted semantics (plan §4.4, reconciler-affirmed): the
+    # counter counts COMPLETED replays by design; the aborted attempt is
+    # visible via the skip row above, never via suffix_replays.
+    assert out["suffix_replays"] == 0
 
 
 def test_real_pytest_suffix_replay_collects_deselected_contaminator(tmp_path: Path):
@@ -5995,7 +6034,13 @@ def test_real_pytest_suffix_replay_collects_deselected_contaminator(tmp_path: Pa
     IMPORT (collection) time; the victim fails when the contaminator is
     collected-but-deselected and passes when it is absent — pinning the #2430
     causal-channel assumption (pytest imports every argv file before running
-    any test; --deselect removes tests post-collection, not the import)."""
+    any test; --deselect removes tests post-collection, not the import).
+    EXERCISING pin (r2, reconciler-upheld suffix-deselect-pin-nonexercising):
+    the contaminator's ONLY test is a guaranteed FAILURE, so a regressed
+    deselect (contaminator test EXECUTED) lands its node in ``run.failing``
+    and breaks the equality below — present-and-passing is no longer
+    indistinguishable from deselected (PristineRun exposes failing nodes
+    only; the r1 always-passing body could not discriminate)."""
     tree = tmp_path / "tree"
     (tree / "tests").mkdir(parents=True)
     _write_python_shim(tree, tmp_path / "suffix-shim-invocations.txt")
@@ -6006,19 +6051,29 @@ def test_real_pytest_suffix_replay_collects_deselected_contaminator(tmp_path: Pa
     )
     (tree / "tests" / "test_zz_contam.py").write_text(
         "import reg\n\nreg.VALUE = 1  # collection-time mutation\n\n\n"
-        "def test_contam_ok():\n    assert True\n"
+        "def test_contam_executed():\n"
+        '    raise AssertionError("contaminator test body EXECUTED - deselect regressed")\n'
     )
     victim = sb.Node(
         file="tests/test_aa_victim.py", classname="tests.test_aa_victim", name="test_victim"
     )
-    # WITH the contaminator collected (deselected): the victim reproduces.
+    contam = sb.Node(
+        file="tests/test_zz_contam.py",
+        classname="tests.test_zz_contam",
+        name="test_contam_executed",
+    )
+    # WITH the contaminator collected (deselected): the victim reproduces, and
+    # the contaminator's guaranteed-failing test is ABSENT from the junit
+    # failure set — the strict equality is the deselection proof (dropping
+    # --deselect would execute test_contam_executed and add its node here).
     run = sb.run_suffix_replay(
         ["tests/test_aa_victim.py", "tests/test_zz_contam.py"],
         ["tests/test_aa_victim.py"],
         cwd=tree,
         timeout_s=180.0,
     )
-    assert run.failing == {victim}  # and NO contaminator testcases in the junit
+    assert run.failing == {victim}
+    assert contam not in run.failing  # implied by the equality; stated for intent
     # WITHOUT it: the victim passes — the deselected import IS the mechanism.
     clean = sb.run_suffix_replay(
         ["tests/test_aa_victim.py"], ["tests/test_aa_victim.py"], cwd=tree, timeout_s=180.0
@@ -6259,3 +6314,48 @@ def test_suffix_confirmed_then_stopped_keeps_strip(tmp_path: Path, monkeypatch, 
     assert row["licensed_by"] == "full-suffix-confirmation"
     assert out["suffix_skipped"] == []
     assert len(calls["suffix"]) == 1  # confirmation only; bisection refused pre-launch
+
+
+def test_suffix_attributed_human_rendering(tmp_path: Path, monkeypatch, capsys):
+    """Node 22 (r2 NIT suffix-human-output-unpinned): without --json, a suffix
+    strip renders the human `SUFFIX-ATTRIBUTED:` line (node <- offender)."""
+    order = ["tests/test_pred.py", "tests/test_victim.py", SUFFIX_CONTAM]
+    victim = _fnode("tests/test_victim.py")
+    argv, _calls, _r, _w = _suffix_env(
+        tmp_path,
+        monkeypatch,
+        order=order,
+        failing_nodes=(victim,),
+        contaminated_by={victim: (SUFFIX_CONTAM,)},
+    )
+    argv.remove("--json")
+    rc = sb.main(argv)
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert not out.strip().startswith("{")  # human rendering, not JSON
+    assert f"SUFFIX-ATTRIBUTED: {victim.file}::{victim.name} <- {SUFFIX_CONTAM}" in out
+
+
+def test_suffix_dropped_files_recorded_for_absent_on_main(tmp_path: Path, monkeypatch, capsys):
+    """Node 23 (r2 NIT suffix-dropped-files-unpinned): a co-selected suffix
+    file ABSENT on pristine main (branch-new — uncollectable on the
+    HEAD-pinned tree) is dropped from the replay context and recorded in
+    suffix_dropped_files; the remaining suffix still confirms + attributes."""
+    absent = "tests/test_zz_branch_new.py"
+    order = ["tests/test_victim.py", SUFFIX_CONTAM, absent]
+    victim = _fnode("tests/test_victim.py")
+    argv, calls, _r, _w = _suffix_env(
+        tmp_path,
+        monkeypatch,
+        order=order,
+        failing_nodes=(victim,),
+        contaminated_by={victim: (SUFFIX_CONTAM,)},
+        root_test_files=[f for f in order if f != absent],  # absent on pristine main
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 0
+    assert out["suffix_dropped_files"] == [absent]
+    assert calls["suffix_ordered"][0] == [f for f in order if f != absent]  # never collected
+    row = out["suffix_attributed"][0]
+    assert row["offender"] == SUFFIX_CONTAM
+    assert row["suffix_len"] == 1  # post-drop suffix
