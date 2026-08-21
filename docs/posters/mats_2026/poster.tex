@@ -4,7 +4,7 @@
 %
 % Reading order is strictly left-to-right, top-to-bottom:
 %   col 1 setup -> col 2 results 1-2 -> col 3 results 3-4
-%   -> col 4 results 5-6, then Is this useful? / Limitations / Implications
+%   -> col 4 results 5-6, then Is this useful? / Implications
 %      & future work / References.
 % Terminology contract (paper intro rev 7): "the model's mapping" = the true
 % context -> answer-distribution function; "the residual context-answer
@@ -95,9 +95,6 @@
 \IfFileExists{figures/method_diagram.pdf}{\includegraphics[width=0.99\linewidth]{method_diagram.pdf}}{\includegraphics[width=0.99\linewidth]{fig1_schematic.pdf}}
 \end{center}
 \figcap{1}{The \textbf{context vector} \vC{} is the residual-stream state at the last context token (layer $\ell$); the \textbf{answer vector} \vA{} is the mean answer-token state. Both summaries follow prior work. \emph{Fitted maps} $\vC \mapsto \vA$ approximate the mapping; readouts consume $\hat{\vA}$.}
-\postersec{Experiments}
-Qwen2.5-7B(-Instruct) headline; Llama/T\"ulu post-training ladder. Real-user contexts (LMSYS-Chat-1M, WildChat), up to 963k pairs. Ridge maps per layer, cross-validated $\lambda$. Behaviors LLM-judged. Retrieval is reported raw-euclidean unless stated; the whitened-cosine + CSLS read is strictly higher.
-
 \end{column}
 
 % ==================== COLUMN 2: results 1-2 ====================
@@ -147,8 +144,6 @@ We map the context to the answer's \textbf{SAE features}, then rank feature prop
 \figcap{5}{Retrieval failures against \emph{sampling-noise-free} answer targets (each answer averaged over 5 on-policy draws), raw-euclidean read: $n=1{,}988$ held-out contexts, pool 9{,}941, 180 failures, rank-1 0.909. Left: category failure rate minus the rest, 10{,}000-draw bootstrap CIs; \emph{significant} = clears Benjamini--Hochberg FDR at $q\!=\!0.05$. ``Refusal answer'' trends high but misses FDR ($n\!=\!30$). Right: what the 180 misses are — \emph{map error} = the answer is still retrievable from a fresh draw of itself.}
 \begin{itemize}
   \item \takeaways{Failures concentrate in identifiable kinds of context:} code answers ($+11.2$pp), refusal-adjacent requests ($+8.5$), coding ($+7.0$) and English ($+5.6$) fail most; factual QA ($-3.5$) and advice ($-5.8$) fail least.
-  \item \takeaways{Almost all of it is map error, not answer degeneracy:} 91\% of misses stay retrievable from a fresh draw of the same answer; only 6\% are genuinely degenerate answers.
-  \item \takeaways{And the metric itself hides most failures:} whitened cosine $+$ CSLS lifts rank-1 to 0.976 on the 9{,}941 pool — at the 0.973 fresh-draw ceiling — leaving 11 residual misses, all near-misses.
 \end{itemize}
 
 \end{column}
@@ -162,7 +157,7 @@ We map the context to the answer's \textbf{SAE features}, then rank feature prop
 \end{center}
 \figcap{6}{Pooled held-out $R^2$ of the fitted map at each stage of the open Llama/T\"ulu post-training ladder (layer 30), each stage fit and evaluated on its \emph{own} on-policy answers.}
 \begin{itemize}
-  \item \takeaways{Already largely present in the base model:} the base bar reads $R^2$ 0.41 before any post-training. On Qwen, with corpus, answer text, and recipe held identical, base reaches $\sim$87\% of instruct (0.588 vs.\ 0.673).
+  \item \takeaways{Already largely present in the base model:} the base bar reads $R^2$ 0.41 before any post-training.
   \item \takeaways{SFT is by far the largest step} ($+0.17$), and \takeaways{DPO $\to$ RLVR barely moves it} ($+0.004$) — post-training \emph{refines and reparameterizes} the mapping rather than creating it.
 \end{itemize}
 
@@ -200,12 +195,6 @@ We map the context to the answer's \textbf{SAE features}, then rank feature prop
   \item \takeaways{On realistic evaluation data — generic chat and OOD — reading the \emph{mapped} answer beats reading the context in all six behavior\,$\times$\,regime cells,} often reaching the real-answer oracle (misalignment, generic chat: 0.23 mapped, 0.07 context, 0.23 oracle).
   \item \takeaways{On synthetic prompts the context already gives the behavior away} ($\rho$ 0.65--0.79), so the map buys nothing there — the gain appears exactly where the prompt does \emph{not} telegraph the answer.
   \item \takeaways{It also exploits unlabelled data:} with the map fitted on in-domain \emph{unjudged} text, the mapped-answer readout beats a context probe at every labelled budget — $\sim$$3\times$ at 250 labels (misalignment, single-seed cells).
-\end{itemize}
-
-\postersec{Limitations}
-\begin{itemize}
-  \item \takeaways{Prediction $\ne$ control:} the fitted map's read direction does not steer behavior, while the mean-difference persona vector does.
-  \item $R^2$ and retrieval dissociate across estimators, so map-strength claims are metric-specific; results are per model family and correlational.
 \end{itemize}
 
 \postersec{Implications \& future work}
