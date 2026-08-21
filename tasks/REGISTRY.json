@@ -10971,7 +10971,7 @@
       "kind": "infra",
       "path": "tasks/proposed/2419",
       "status": "proposed",
-      "title": "Infra: add two mechanizable plan-claim checks \u2014 inheritance-claim grep + manifest-figure producer check"
+      "title": "Infra: add three mechanizable plan-claim checks \u2014 inheritance-claim grep, manifest-figure producer, and multi-panel figure completeness"
     },
     "2420": {
       "has_clean_result": false,

@@ -1,6 +1,6 @@
 ---
-title: 'Infra: add two mechanizable plan-claim checks — inheritance-claim grep + manifest-figure
-  producer check'
+title: 'Infra: add three mechanizable plan-claim checks — inheritance-claim grep,
+  manifest-figure producer, and multi-panel figure completeness'
 kind: infra
 tags: []
 created_at: '2026-08-20T06:10:39Z'
