@@ -1,14 +1,13 @@
 {
-  "commit": "1b6acdc5+dirty",
-  "render_id": "a5a064edc9e64092",
-  "git_commit": "1b6acdc5275172da01f0ae48a8e025418af8fe92",
+  "commit": "75bb4d90+dirty",
+  "render_id": "ac4ec0e8c2d741e8",
+  "git_commit": "75bb4d90294cab8d21cb8aab9cf96d804736ff99",
   "git_dirty": true,
   "git_dirty_paths": [
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.meta.json",
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.pdf",
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.png",
     "docs/posters/mats_2026/make_plot3_sae.py",
-    "docs/posters/mats_2026/figures/plot7_application.meta.json",
-    "docs/posters/mats_2026/figures/plot7_application.pdf",
-    "docs/posters/mats_2026/figures/plot7_application.png",
-    "docs/posters/mats_2026/make_plot7_application.py",
     "eval_results/issue_666/headline/predictor_headline.json",
     "scripts/issue1901_body_figures.py",
     "tasks/completed/2214/body.md",
@@ -30,226 +29,153 @@
     "tasks/running/2214/plans/v1.md",
     "tasks/running/2214/plans/v2.md",
     "tasks/running/2214/plans/v3.md",
+    "tasks/running/2388/events.jsonl",
     "tests/test_issue2094_rev_butler.py"
   ],
-  "git_argv0_state": "untracked",
+  "git_argv0_state": "modified",
   "git_argv0_path": "docs/posters/mats_2026/make_plot3_sae.py",
-  "created": "2026-08-21T01:18:04Z",
+  "created": "2026-08-21T01:39:22Z",
   "figsize": [
-    6.8,
-    3.0
+    5.6,
+    2.55
   ],
   "points": [
     {
-      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.130622,
-      "y": 0.2612449439388537,
-      "_kind": "bar",
+      "activity-matched concordance with per-feature $R^2$": 0.7700144038003292,
+      "y": 12.0,
+      "series": "judged label class",
+      "_kind": "scatter",
       "_group": 0
     },
     {
-      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.119973,
-      "y": 0.23994696065646076,
-      "_kind": "bar",
+      "activity-matched concordance with per-feature $R^2$": 0.5987402429434353,
+      "y": 10.0,
+      "series": "judged label class",
+      "_kind": "scatter",
       "_group": 0
     },
     {
-      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.100362,
-      "y": 0.20072353885054434,
-      "_kind": "bar",
-      "_group": 0
-    },
-    {
-      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.099456,
-      "y": 0.19891200233605816,
-      "_kind": "bar",
-      "_group": 0
-    },
-    {
-      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.094375,
-      "y": 0.18874974730222535,
-      "_kind": "bar",
-      "_group": 0
-    },
-    {
-      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.083612,
-      "y": 0.1672249040989027,
-      "_kind": "bar",
-      "_group": 0
-    },
-    {
-      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.078627,
-      "y": 0.15725478927288233,
-      "_kind": "bar",
-      "_group": 0
-    },
-    {
-      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": -0.072598,
-      "y": -0.1451963502568627,
-      "_kind": "bar",
-      "_group": 0
-    },
-    {
-      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": -0.07055,
-      "y": -0.14110059017825133,
-      "_kind": "bar",
-      "_group": 0
-    },
-    {
-      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.065142,
-      "y": 0.13028328565884018,
-      "_kind": "bar",
-      "_group": 0
-    },
-    {
-      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.2546019723114666,
+      "activity-matched concordance with per-feature $R^2$": 0.5716013810121809,
       "y": 9.0,
-      "_kind": "line",
-      "_group": 1
+      "series": "judged label class",
+      "_kind": "scatter",
+      "_group": 0
     },
     {
-      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.23375661683618068,
+      "activity-matched concordance with per-feature $R^2$": 0.5606901143306997,
       "y": 8.0,
-      "_kind": "line",
-      "_group": 1
+      "series": "judged label class",
+      "_kind": "scatter",
+      "_group": 0
     },
     {
-      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.1948478373431781,
+      "activity-matched concordance with per-feature $R^2$": 0.536714294128562,
       "y": 7.0,
-      "_kind": "line",
-      "_group": 1
+      "series": "judged label class",
+      "_kind": "scatter",
+      "_group": 0
     },
     {
-      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.19287600111539313,
+      "activity-matched concordance with per-feature $R^2$": 0.5255061688867846,
       "y": 6.0,
-      "_kind": "line",
-      "_group": 1
+      "series": "judged label class",
+      "_kind": "scatter",
+      "_group": 0
     },
     {
-      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.18238062843478717,
+      "activity-matched concordance with per-feature $R^2$": 0.5078933699927226,
       "y": 5.0,
-      "_kind": "line",
-      "_group": 1
+      "series": "judged label class",
+      "_kind": "scatter",
+      "_group": 0
     },
     {
-      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.16215038936896203,
+      "activity-matched concordance with per-feature $R^2$": 0.5054559972240857,
       "y": 4.0,
-      "_kind": "line",
-      "_group": 1
+      "series": "judged label class",
+      "_kind": "scatter",
+      "_group": 0
     },
     {
-      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.15109864354870717,
+      "activity-matched concordance with per-feature $R^2$": 0.4909926366861035,
       "y": 3.0,
-      "_kind": "line",
-      "_group": 1
+      "series": "judged label class",
+      "_kind": "scatter",
+      "_group": 0
     },
     {
-      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": -0.15132980432312854,
+      "activity-matched concordance with per-feature $R^2$": 0.48522567682766343,
       "y": 2.0,
-      "_kind": "line",
-      "_group": 1
+      "series": "judged label class",
+      "_kind": "scatter",
+      "_group": 0
     },
     {
-      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": -0.14647066431225897,
+      "activity-matched concordance with per-feature $R^2$": 0.47249373637037356,
       "y": 1.0,
-      "_kind": "line",
-      "_group": 1
+      "series": "judged label class",
+      "_kind": "scatter",
+      "_group": 0
     },
     {
-      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.12466732631497314,
+      "activity-matched concordance with per-feature $R^2$": 0.38011249915806533,
       "y": 0.0,
-      "_kind": "line",
+      "series": "judged label class",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "activity-matched concordance with per-feature $R^2$": 0.6376335568667659,
+      "y": 11.0,
+      "series": "matryoshka tier (L20 dict.)",
+      "_kind": "scatter",
       "_group": 1
-    },
-    {
-      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.2679613813459187,
-      "y": 9.0,
-      "_kind": "line",
-      "_group": 2
-    },
-    {
-      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.2461981969676359,
-      "y": 8.0,
-      "_kind": "line",
-      "_group": 2
-    },
-    {
-      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.20685388713005226,
-      "y": 7.0,
-      "_kind": "line",
-      "_group": 2
-    },
-    {
-      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.2046115441920851,
-      "y": 6.0,
-      "_kind": "line",
-      "_group": 2
-    },
-    {
-      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.1947321656848418,
-      "y": 5.0,
-      "_kind": "line",
-      "_group": 2
-    },
-    {
-      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.17262316143825518,
-      "y": 4.0,
-      "_kind": "line",
-      "_group": 2
-    },
-    {
-      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.16308888422861798,
-      "y": 3.0,
-      "_kind": "line",
-      "_group": 2
-    },
-    {
-      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": -0.13934527784401443,
-      "y": 2.0,
-      "_kind": "line",
-      "_group": 2
-    },
-    {
-      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": -0.13546837209768176,
-      "y": 1.0,
-      "_kind": "line",
-      "_group": 2
-    },
-    {
-      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.13618127340300287,
-      "y": 0.0,
-      "_kind": "line",
-      "_group": 2
     }
   ],
-  "n_series": 3,
-  "total_points": 30,
+  "n_series": 2,
+  "total_points": 13,
   "text": {
     "suptitle": null,
     "fig_texts": [],
     "axes": [
       {
-        "xlabel": "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)",
+        "xlabel": "activity-matched concordance with per-feature $R^2$",
+        "legend_labels": [
+          "judged label class",
+          "matryoshka tier (L20 dict.)"
+        ],
         "xticklabels": [
-          "\u22120.2",
-          "\u22120.1",
-          "0.0",
-          "0.1",
-          "0.2",
-          "0.3"
+          "0.35",
+          "0.40",
+          "0.45",
+          "0.50",
+          "0.55",
+          "0.60",
+          "0.65",
+          "0.70",
+          "0.75",
+          "0.80"
         ],
         "yticklabels": [
-          "mean activation",
-          "firing freq. / token",
-          "mean act. (active)",
-          "var. on decoder dir.",
-          "consistency",
-          "# active answers",
-          "answer-side share",
-          "footprint kurt.",
-          "enc-dec cosine",
-          "scaffold mass"
+          "speaker identity",
+          "matryoshka: general tier",
+          "interpretable",
+          "task format",
+          "syntax",
+          "token surface",
+          "entity",
+          "register",
+          "operation",
+          "language",
+          "abstract contextual",
+          "lexical semantic",
+          "topic"
         ]
       }
+    ],
+    "series": [
+      "judged label class",
+      "matryoshka tier (L20 dict.)"
     ]
   },
   "formats_written": [

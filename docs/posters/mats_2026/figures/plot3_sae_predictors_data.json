@@ -1,119 +1,139 @@
 {
- "source": "eval_results/issue_1482/predictor_battery/continuous_predictors_densesae_ridge.json",
- "target": "per-feature held-out R^2, full-width dense-context -> SAE-feature ridge map (ridge__mean, 131,072-feature dictionary, n_features_used=113,262)",
- "partial_on": "activity = firing frequency (per answer)",
- "ci": "percentile 95% over 2,000 bootstrap draws (ranks fixed at the full sample)",
- "selection": "|partial rho| >= 0.1, ranked by |partial rho|",
+ "source": "figures/issue_1482/concordance/writeup_concordance.meta.json",
+ "statistic": "Harrell concordance c (AUROC scale) between the class indicator and per-feature held-out R^2; pairs formed only WITHIN per-token firing-rate deciles (activity-matched). 0.5 = chance. No confidence intervals exist for this statistic in the source artifact; differences under ~0.02 should not be read.",
+ "battery_target": "per-feature held-out R^2 of the full-width dense-context -> SAE-feature ridge map (ridge__mean, layer-19 BatchTopK k=64 dictionary, 131,072 features, n=120,716 with finite R^2 + covariates; splits 120,000 train / 2,000 val / 20,000 holdout answers, #1482 single-turn corpus; data/issue_1482/densesae_target/ridge__mean_r2_fullwidth.npy)",
+ "matryoshka_arm": "layer-20 SAELens matryoshka jumprelu k=100 lmsys dictionary, 16,384-feature tier-stratified panel (24k fit / 6k score answers); the row is concordance of COARSER tier with R^2, activity-decile-matched within the panel (eval_results/issue_1482/matryoshka_tier/perfeature_m_lmsys_default.npz). DIFFERENT dictionary/layer/panel: same-direction claim only, never row-to-row magnitude comparison.",
+ "iterative_partialling_agreement": "The forward-stepwise (iterative) concordance series (figures/issue_1482/concordance/writeup_stepwise.meta.json) conditions on {fires-both-sides, mean activation} by round 2 and agrees: 'Speaker: identity / disposition' is the round-2 winner (c=0.671); 'Content type: topic' (c=0.374) and the logit-footprint classes (c~0.35-0.37) land below 0.5. Matryoshka tier is structurally EXCLUDED from the stepwise series (different dictionary), hence the matched-concordance consolidation here.",
  "rows": [
   {
-   "key": "mean_act_uncond",
-   "label_full": "mean activation over all answers",
-   "label_short": "mean activation",
-   "spearman_raw": 0.7303136868898906,
-   "partial_on_activity": 0.2612449439388537,
-   "partial_on_activity_ci95": [
-    0.2546019723114666,
-    0.2679613813459187
-   ]
+   "name": "Speaker: identity / disposition",
+   "label_short": "speaker identity",
+   "matched": 0.7700144038003292,
+   "pooled": 0.691917706883058,
+   "m_both": 0.7602931394217236,
+   "n_pos": 1399,
+   "arm": "battery-l19-fullwidth",
+   "is_matryoshka": false
   },
   {
-   "key": "firing_freq_per_token",
-   "label_full": "firing frequency (per token)",
-   "label_short": "firing freq. / token",
-   "spearman_raw": 0.7270627933385344,
-   "partial_on_activity": 0.23994696065646076,
-   "partial_on_activity_ci95": [
-    0.23375661683618068,
-    0.2461981969676359
-   ]
+   "name": "Matryoshka dictionary tier (coarser = earlier tier)",
+   "label_short": "matryoshka: general tier",
+   "matched": 0.6376335568667659,
+   "pooled": 0.710304347419635,
+   "m_both": 0.6376335568667659,
+   "n_pos": 16384,
+   "arm": "matryoshka-l20-lmsys",
+   "is_matryoshka": true
   },
   {
-   "key": "mean_act_cond",
-   "label_full": "mean activation when active",
-   "label_short": "mean act. (active)",
-   "spearman_raw": 0.31199815373664963,
-   "partial_on_activity": 0.20072353885054434,
-   "partial_on_activity_ci95": [
-    0.1948478373431781,
-    0.20685388713005226
-   ]
+   "name": "Interpretable (autointerp)",
+   "label_short": "interpretable",
+   "matched": 0.5987402429434353,
+   "pooled": 0.567898296678018,
+   "m_both": 0.6028534224810447,
+   "n_pos": 95412,
+   "arm": "battery-l19-fullwidth",
+   "is_matryoshka": false
   },
   {
-   "key": "proj_var",
-   "label_full": "dense variance along decoder direction",
-   "label_short": "var. on decoder dir.",
-   "spearman_raw": 0.2879551459070197,
-   "partial_on_activity": 0.19891200233605816,
-   "partial_on_activity_ci95": [
-    0.19287600111539313,
-    0.2046115441920851
-   ]
+   "name": "Content type: task format",
+   "label_short": "task format",
+   "matched": 0.5716013810121809,
+   "pooled": 0.5223571055645457,
+   "m_both": 0.5740004479579898,
+   "n_pos": 1724,
+   "arm": "battery-l19-fullwidth",
+   "is_matryoshka": false
   },
   {
-   "key": "consistency",
-   "label_full": "within-answer consistency",
-   "label_short": "consistency",
-   "spearman_raw": 0.3465543595802684,
-   "partial_on_activity": 0.18874974730222535,
-   "partial_on_activity_ci95": [
-    0.18238062843478717,
-    0.1947321656848418
-   ]
+   "name": "Content type: syntax",
+   "label_short": "syntax",
+   "matched": 0.5606901143306997,
+   "pooled": 0.5883184588229405,
+   "m_both": 0.5613187515867408,
+   "n_pos": 71248,
+   "arm": "battery-l19-fullwidth",
+   "is_matryoshka": false
   },
   {
-   "key": "n_active_holdout",
-   "label_full": "holdout answers active (count)",
-   "label_short": "# active answers",
-   "spearman_raw": 0.7147936595833038,
-   "partial_on_activity": 0.1672249040989027,
-   "partial_on_activity_ci95": [
-    0.16215038936896203,
-    0.17262316143825518
-   ]
+   "name": "Abstraction: token surface",
+   "label_short": "token surface",
+   "matched": 0.536714294128562,
+   "pooled": 0.4666967562909285,
+   "m_both": 0.5399164399965758,
+   "n_pos": 41104,
+   "arm": "battery-l19-fullwidth",
+   "is_matryoshka": false
   },
   {
-   "key": "side_ratio",
-   "label_full": "answer-side share of firings",
-   "label_short": "answer-side share",
-   "spearman_raw": 0.2926578125691659,
-   "partial_on_activity": 0.15725478927288233,
-   "partial_on_activity_ci95": [
-    0.15109864354870717,
-    0.16308888422861798
-   ]
+   "name": "Content type: entity",
+   "label_short": "entity",
+   "matched": 0.5255061688867846,
+   "pooled": 0.4305953620706773,
+   "m_both": 0.5274970076299652,
+   "n_pos": 5544,
+   "arm": "battery-l19-fullwidth",
+   "is_matryoshka": false
   },
   {
-   "key": "footprint_kurt",
-   "label_full": "footprint kurtosis",
-   "label_short": "footprint kurt.",
-   "spearman_raw": 0.2043928110331011,
-   "partial_on_activity": -0.1451963502568627,
-   "partial_on_activity_ci95": [
-    -0.15132980432312854,
-    -0.13934527784401443
-   ]
+   "name": "Speaker: register / style",
+   "label_short": "register",
+   "matched": 0.5078933699927226,
+   "pooled": 0.5349140727487272,
+   "m_both": 0.5137217978303332,
+   "n_pos": 9136,
+   "arm": "battery-l19-fullwidth",
+   "is_matryoshka": false
   },
   {
-   "key": "enc_dec_cos",
-   "label_full": "encoder-decoder cosine",
-   "label_short": "enc-dec cosine",
-   "spearman_raw": 0.26471102251583206,
-   "partial_on_activity": -0.14110059017825133,
-   "partial_on_activity_ci95": [
-    -0.14647066431225897,
-    -0.13546837209768176
-   ]
+   "name": "Content type: operation",
+   "label_short": "operation",
+   "matched": 0.5054559972240857,
+   "pooled": 0.5225723636141912,
+   "m_both": 0.5012233289609439,
+   "n_pos": 10762,
+   "arm": "battery-l19-fullwidth",
+   "is_matryoshka": false
   },
   {
-   "key": "scaffold_frac",
-   "label_full": "decoder mass in prefix-covariance top-48 subspace (geometric)",
-   "label_short": "scaffold mass",
-   "spearman_raw": 0.16351771257488326,
-   "partial_on_activity": 0.13028328565884018,
-   "partial_on_activity_ci95": [
-    0.12466732631497314,
-    0.13618127340300287
-   ]
+   "name": "Speaker: language of the text",
+   "label_short": "language",
+   "matched": 0.4909926366861035,
+   "pooled": 0.5705868618289237,
+   "m_both": 0.48415529818918995,
+   "n_pos": 6438,
+   "arm": "battery-l19-fullwidth",
+   "is_matryoshka": false
+  },
+  {
+   "name": "Abstraction: abstract contextual",
+   "label_short": "abstract contextual",
+   "matched": 0.48522567682766343,
+   "pooled": 0.6042324784774353,
+   "m_both": 0.48995560352328277,
+   "n_pos": 39489,
+   "arm": "battery-l19-fullwidth",
+   "is_matryoshka": false
+  },
+  {
+   "name": "Abstraction: lexical semantic",
+   "label_short": "lexical semantic",
+   "matched": 0.47249373637037356,
+   "pooled": 0.5099769496533002,
+   "m_both": 0.4647533776835986,
+   "n_pos": 29863,
+   "arm": "battery-l19-fullwidth",
+   "is_matryoshka": false
+  },
+  {
+   "name": "Content type: topic",
+   "label_short": "topic",
+   "matched": 0.38011249915806533,
+   "pooled": 0.47770733938964555,
+   "m_both": 0.384041995613715,
+   "n_pos": 20676,
+   "arm": "battery-l19-fullwidth",
+   "is_matryoshka": false
   }
  ]
 }

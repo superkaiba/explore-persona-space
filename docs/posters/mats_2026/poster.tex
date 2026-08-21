@@ -127,14 +127,15 @@
 \begin{column}{0.1555\textwidth}
 
 \postersec{3.\ What makes a feature predictable?}
-We map the context to the answer's \textbf{SAE features}, then rank feature properties by how well they predict a feature's held-out $R^2$.
+We map the context to the answer's \textbf{SAE features}, then ask which kinds of feature the map predicts well.
 \begin{center}
-\IfFileExists{figures/plot3_sae_predictors.pdf}{\includegraphics[width=0.80\linewidth]{plot3_sae_predictors.pdf}}{\includegraphics[width=0.78\linewidth]{c3_sae_tier_gradient.pdf}}
+\includegraphics[width=0.95\linewidth]{plot3_sae_predictors.pdf}
 \end{center}
-\figcap{4}{Partial Spearman $\rho$ between each feature property and that feature's held-out $R^2$, \emph{controlling for the feature's firing frequency per answer}. 113{,}262 features scored; 95\% bootstrap CIs (2{,}000 draws); rows with $|\rho|\!\ge\!0.10$.}
+\figcap{4}{Concordance $c$ (AUROC scale) between a feature's class and its held-out $R^2$, with pairs formed \emph{only within per-token firing-rate deciles} — so activity is matched, not just regressed out. $0.5$ = chance. Circles: 12 judge-assigned classes over 120{,}716 features. Diamond: the matryoshka \emph{general} tier — a different dictionary and layer, so read its \emph{direction} only, never its distance from the circles. No CIs exist for this statistic; gaps under $\sim$0.02 are not readable.}
 \begin{itemize}
-  \item \takeaways{Even with firing frequency held constant, activation-family properties lead:} mean activation ($\rho$ 0.26), per-token firing frequency (0.24), mean activation when active (0.20).
-  \item \takeaways{Within-answer consistency remains a strong correlate (0.19)} — tonic, context-determined properties are predicted better than phasic, token-level ones.
+  \item \takeaways{High-level features are predicted best, low-level ones worst:} speaker/persona identity tops the ranking ($c$ 0.77) and the matryoshka \emph{general} tier sits high (0.64), while topic-content features fall \emph{below chance} (0.38).
+  \item \takeaways{Iterative partialling agrees:} after stepwise removal of both activity controls, speaker identity is the strongest \emph{surviving} predictor ($c$ 0.67), with topic and logit-footprint classes below chance.
+  \item \takeaways{Concretely:} best-predicted are abstract nouns and nominalized concepts ($R^2$ 0.95); worst are 2--4-character word fragments and single-letter detectors ($R^2\!<\!0$). Across matryoshka tiers median $R^2$ falls 0.43 $\to$ 0.04 general $\to$ specific (raw, activity-confounded).
 \end{itemize}
 
 \postersec{4.\ What does it fail to retrieve?}
