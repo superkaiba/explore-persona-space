@@ -110,13 +110,18 @@
   \item \takeaways{Mostly linear:} the nonlinear (MLP) map adds only $\sim$$0.06$ $R^2$ over the linear map, and only at large $n$.
   \item \takeaways{Far above the baselines:} identity + bias never leaves the negative-$R^2$ regime; a generic boundary-token (punctuation) $\to$ next-segment map reads $R^2\!\approx\!0.11$ (dashed) — so this is not just residual-stream smoothness.
   \item We study the \textbf{linear} map here; we are most excited about what it is \emph{useful} for.
+  \item \takeaways{Strongest at mid-depth:} held-out $R^2$ peaks at \textbf{layers 19--20 of 28} (0.76), well above the first layer (0.49) and the last (0.70).
 \end{itemize}
+\begin{center}
+\IfFileExists{figures/plot10_layer_sweep.pdf}{\includegraphics[width=0.95\linewidth]{plot10_layer_sweep.pdf}}{}
+\end{center}
+\figcap{3}{Held-out $R^2$ against the layer at which \emph{both} $v_C$ and $v_A$ are taken (swept together). Band: bootstrap 95\% CI over test rows. Star: argmax, layer 19 — 19 and 20 overlap. $n_{\mathrm{train}}\!=\!50{,}000$, $n_{\mathrm{test}}\!=\!1{,}000$.}
 
 \postersec{2.\ It predicts the persona-vector directions}
 \begin{center}
 \IfFileExists{figures/plot2_persona_directions.pdf}{\includegraphics[width=0.92\linewidth]{plot2_persona_directions.pdf}}{\includegraphics[width=0.88\linewidth]{c3_persona_direction_spectrum.pdf}}
 \end{center}
-\figcap{3}{Held-out $R^2$ along the persona direction $r_B$ against 50 random unit directions (mean $\pm$ 1 SD). Fold 0 of 5; layers 14 / 26 / 17.}
+\figcap{4}{Held-out $R^2$ along the persona direction $r_B$ against 50 random unit directions (mean $\pm$ 1 SD). Fold 0 of 5; layers 14 / 26 / 17.}
 \begin{itemize}
   \item \takeaways{Persona-vector directions are among the best-predicted directions of the answer:} $r_B$ reads $R^2$ \textbf{0.79 / 0.87 / 0.80} (misalignment / sycophancy / hallucination) against a random-direction band of \textbf{0.56--0.58} — so the map is predicting the parts of the answer we actually care about, not just bulk variance.
 \end{itemize}
@@ -131,7 +136,7 @@ We map the context to the answer's \textbf{SAE features}, then partial out predi
 \begin{center}
 \includegraphics[width=0.95\linewidth]{plot3_sae_predictors.pdf}
 \end{center}
-\figcap{4}{Forward-stepwise partialling: each row conditions on all rows above. $c$ = concordance (AUROC scale), $0.5$ = chance. Gray: activity controls. Diamond: matryoshka general tier — different dictionary, direction only. No CIs; rounds 7--13 omitted.}
+\figcap{5}{Forward-stepwise partialling: each row conditions on all rows above. $c$ = concordance (AUROC scale), $0.5$ = chance. Gray: activity controls. Diamond: matryoshka general tier — different dictionary, direction only. No CIs; rounds 7--13 omitted.}
 \begin{itemize}
   \item \takeaways{Persona survives the partialling:} once both activity controls are removed, \textbf{speaker identity} is the strongest surviving predictor ($c$ 0.67), and the matryoshka \emph{general} tier points the same way (0.64).
   \item \takeaways{Low-level and content features are predicted \emph{worse} than chance:} logit-footprint (0.35, 0.36) and topic (0.37) all fall below 0.5.
@@ -142,7 +147,7 @@ We map the context to the answer's \textbf{SAE features}, then partial out predi
 \begin{center}
 \IfFileExists{figures/plot4_failures.pdf}{\includegraphics[width=0.88\linewidth]{plot4_failures.pdf}}{\includegraphics[width=0.95\linewidth]{c3_failure_attribution.pdf}}
 \end{center}
-\figcap{5}{Failures against 5-draw-averaged answer targets, raw euclidean: $n=1{,}988$, pool 9{,}941, 180 failures, rank-1 0.909. Blue clears BH FDR at $q\!=\!0.05$. Right: what the misses are.}
+\figcap{6}{Failures against 5-draw-averaged answer targets, raw euclidean: $n=1{,}988$, pool 9{,}941, 180 failures, rank-1 0.909. Blue clears BH FDR at $q\!=\!0.05$. Right: what the misses are.}
 \begin{itemize}
   \item \takeaways{Failures concentrate in identifiable kinds of context:} code answers ($+11.2$pp), refusal-adjacent requests ($+8.5$), coding ($+7.0$) and English ($+5.6$) fail most; factual QA ($-3.5$) and advice ($-5.8$) fail least.
 \end{itemize}
@@ -156,7 +161,7 @@ We map the context to the answer's \textbf{SAE features}, then partial out predi
 \begin{center}
 \IfFileExists{figures/plot5_stages.pdf}{\includegraphics[width=0.86\linewidth]{plot5_stages.pdf}}{\includegraphics[width=0.74\linewidth]{c1_stage_retention.pdf}}
 \end{center}
-\figcap{6}{Pooled held-out $R^2$ at each stage of the Llama/T\"ulu ladder (layer 30), each stage fit and evaluated on its own on-policy answers.}
+\figcap{7}{Pooled held-out $R^2$ at each stage of the Llama/T\"ulu ladder (layer 30), each stage fit and evaluated on its own on-policy answers.}
 \begin{itemize}
   \item \takeaways{Already largely present in the base model:} the base bar reads $R^2$ 0.41 before any post-training.
   \item \takeaways{SFT is by far the largest step} ($+0.17$); everything after it is essentially flat — post-training \emph{refines and reparameterizes} the mapping rather than creating it.
@@ -167,7 +172,7 @@ We map the context to the answer's \textbf{SAE features}, then partial out predi
 \begin{center}
 \includegraphics[width=0.95\linewidth]{plot6b_specialization.pdf}
 \end{center}
-\figcap{7}{Held-out $R^2$ per character: one map pooled over all four (1{,}200 pts) against that character's own 300-pt map. \textbf{assistant*} = separate lattice (rows, $n\!=\!4{,}375$) — reference only, not comparable.}
+\figcap{8}{Held-out $R^2$ per character: one map pooled over all four (1{,}200 pts) against that character's own 300-pt map. \textbf{assistant*} = separate lattice (rows, $n\!=\!4{,}375$) — reference only, not comparable.}
 \begin{itemize}
   \item \takeaways{Pooling across characters costs almost nothing:} a single map fitted on all four captures \textbf{90--98\%} of what each character's own map achieves — four characters, close to one shared operator.
   \item \takeaways{The assistant behaves the same way inside its own lattice:} one pooled map captures \textbf{$\sim$81\%} of its own-map ceiling, against 82\% and 86\% for the Wren cells sharing that pool — unremarkable, not privileged.
@@ -183,7 +188,7 @@ We map the context to the answer's \textbf{SAE features}, then partial out predi
 \begin{center}
 \IfFileExists{figures/plot9_application_arms.pdf}{\includegraphics[width=0.99\linewidth]{plot9_application_arms.pdf}}{\includegraphics[width=0.99\linewidth]{c5_pv_methods_regimes.pdf}}
 \end{center}
-\figcap{8}{Spearman $\rho$ between readout and judged behavior, per regime. Readouts: persona vector or fitted regression, on the context or the map-predicted answer; oracle = real answer. Muted bars fail the spread gate.}
+\figcap{9}{Spearman $\rho$ between readout and judged behavior, per regime. Readouts: persona vector or fitted regression, on the context or the map-predicted answer; oracle = real answer. Muted bars fail the spread gate.}
 \begin{itemize}
   \item \takeaways{The best pre-inference readout is one on the \emph{mapped answer} in every trustworthy generic-chat and OOD cell,} beating the best context-side readout by $+0.01$ to $+0.07$ — though the two sycophancy margins sit inside overlapping CIs.
   \item \takeaways{Regression on the mapped answer matches or beats regression on the context everywhere,} and both leave the standard persona-vector-on-context readout near zero or negative throughout — so the gain is the \emph{map}, not the readout family.
