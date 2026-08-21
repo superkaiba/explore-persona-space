@@ -54,7 +54,7 @@ def main() -> None:
         levels.append(d["test"]["r2_pooled"][HEADLINE_LAYER])
     levels = np.asarray(levels)
 
-    fig, ax = plt.subplots(figsize=(5.4, 2.7))
+    fig, ax = plt.subplots(figsize=(5.4, 2.3))
     xs = np.arange(len(STAGES))
     colors = [paper_color("base")] + [paper_color("instruct")] * (len(STAGES) - 1)
     ax.bar(xs, levels, width=0.62, color=colors)

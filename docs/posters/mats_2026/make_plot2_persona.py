@@ -99,7 +99,7 @@ def main() -> None:
     c_rb = paper_color("persona_vector")
     c_rand = paper_color("null")
 
-    fig, ax = plt.subplots(figsize=(6.8, 3.2), constrained_layout=True)
+    fig, ax = plt.subplots(figsize=(6.8, 2.7), constrained_layout=True)
 
     # highest trait at the top; random reference set apart below the group
     n = len(rows)

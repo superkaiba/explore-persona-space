@@ -1,67 +1,34 @@
 {
-  "commit": "6dcb98c3+dirty",
-  "render_id": "c94c1aeeef294d0d",
-  "git_commit": "6dcb98c33b2ab5493a985d298147e66ad0265b88",
+  "commit": "8add0009+dirty",
+  "render_id": "d1bbbbe0760a437b",
+  "git_commit": "8add0009e5265054e84037875be5184374201fce",
   "git_dirty": true,
   "git_dirty_paths": [
-    "docs/posters/mats_2026/figures/plot11_scaling_cot.meta.json",
-    "docs/posters/mats_2026/figures/plot11_scaling_cot.pdf",
-    "docs/posters/mats_2026/figures/plot11_scaling_cot.png",
-    "docs/posters/mats_2026/figures/plot11b_cot_reasoning.meta.json",
-    "docs/posters/mats_2026/figures/plot11b_cot_reasoning.pdf",
-    "docs/posters/mats_2026/figures/plot11b_cot_reasoning.png",
-    "docs/posters/mats_2026/figures/plot1_scaling_boundary.meta.json",
-    "docs/posters/mats_2026/figures/plot1_scaling_boundary.pdf",
-    "docs/posters/mats_2026/figures/plot1_scaling_boundary.png",
-    "docs/posters/mats_2026/figures/plot2_persona_directions.meta.json",
-    "docs/posters/mats_2026/figures/plot2_persona_directions.pdf",
-    "docs/posters/mats_2026/figures/plot2_persona_directions.png",
-    "docs/posters/mats_2026/figures/plot3_sae_predictors.meta.json",
-    "docs/posters/mats_2026/figures/plot3_sae_predictors.pdf",
-    "docs/posters/mats_2026/figures/plot3_sae_predictors.png",
-    "docs/posters/mats_2026/figures/plot4b_failure_modes.meta.json",
-    "docs/posters/mats_2026/figures/plot4b_failure_modes.pdf",
-    "docs/posters/mats_2026/figures/plot4b_failure_modes.png",
-    "docs/posters/mats_2026/figures/plot5_stages.meta.json",
-    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.meta.json",
-    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.pdf",
-    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.png",
-    "docs/posters/mats_2026/figures/plot6c_pooled_lattice.meta.json",
-    "docs/posters/mats_2026/figures/plot6c_pooled_lattice.pdf",
-    "docs/posters/mats_2026/figures/plot6c_pooled_lattice.png",
-    "docs/posters/mats_2026/figures/plot9_application_arms.meta.json",
-    "docs/posters/mats_2026/figures/plot9_application_arms.pdf",
-    "docs/posters/mats_2026/figures/plot9_application_arms.png",
-    "docs/posters/mats_2026/make_plot10_layer_sweep.py",
-    "docs/posters/mats_2026/make_plot11_scaling_cot.py",
-    "docs/posters/mats_2026/make_plot12_cot_spans.py",
-    "docs/posters/mats_2026/make_plot13_cot_gain.py",
     "docs/posters/mats_2026/make_plot1_scaling.py",
     "docs/posters/mats_2026/make_plot2_persona.py",
-    "docs/posters/mats_2026/make_plot3_predictors.py",
     "docs/posters/mats_2026/make_plot3_sae.py",
-    "docs/posters/mats_2026/make_plot4_failures.py",
-    "docs/posters/mats_2026/make_plot4b_failure_modes.py",
     "docs/posters/mats_2026/make_plot5_stages.py",
-    "docs/posters/mats_2026/make_plot6_persona.py",
-    "docs/posters/mats_2026/make_plot6c_pooled_lattice.py",
-    "docs/posters/mats_2026/make_plot7_application.py",
     "docs/posters/mats_2026/make_plot9_application_arms.py",
-    "docs/posters/mats_2026/poster.pdf",
     "docs/posters/mats_2026/poster.tex",
-    "eval_results/issue_2223/casestudy_replay/qwen3-32b/native_axis_fidelity_preimage/judged/judge_complete_delusion.json",
-    "eval_results/issue_2223/casestudy_replay/qwen3-32b/native_axis_fidelity_preimage/judged/judge_complete_selfharm.json",
-    "eval_results/issue_666/headline/predictor_headline.json",
-    "scripts/issue1901_body_figures.py",
     "tasks/completed/2214/body.md",
-    "... 19 more"
+    "tasks/completed/2214/comments.jsonl",
+    "tasks/completed/2214/concerns.jsonl",
+    "tasks/completed/2214/events.jsonl",
+    "tasks/completed/2214/plans/plan.md",
+    "tasks/completed/2214/plans/v1.md",
+    "tasks/completed/2214/plans/v2.md",
+    "tasks/completed/2214/plans/v3.md",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
   ],
   "git_argv0_state": "modified",
   "git_argv0_path": "docs/posters/mats_2026/make_plot1_scaling.py",
-  "created": "2026-08-21T09:56:48Z",
+  "created": "2026-08-21T10:32:54Z",
   "figsize": [
     7.6,
-    4.4
+    3.6
   ],
   "points": [
     {
@@ -2039,12 +2006,10 @@
           "$\\mathdefault{10^{9}}$"
         ],
         "yticklabels": [
-          "\u22121.5",
-          "\u22121.0",
-          "\u22120.5",
-          "0.0",
-          "0.5",
-          "1.0"
+          "\u22122",
+          "\u22121",
+          "0",
+          "1"
         ]
       },
       {
@@ -2059,12 +2024,11 @@
           "$\\mathdefault{10^{9}}$"
         ],
         "yticklabels": [
-          "0.0",
-          "0.2",
-          "0.4",
-          "0.6",
-          "0.8",
-          "1.0"
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00"
         ]
       }
     ],

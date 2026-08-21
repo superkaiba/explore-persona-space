@@ -132,7 +132,7 @@ def main() -> None:
     # wider canvas than the other panels: the tick labels are long sentences, so
     # at poster font size a 6.8in canvas left the data region narrow enough that
     # consecutive x tick labels ran into each other
-    fig, ax = plt.subplots(figsize=(8.6, 3.0), constrained_layout=True)
+    fig, ax = plt.subplots(figsize=(8.6, 2.6), constrained_layout=True)
 
     # stepwise rounds top -> bottom in round order; matryoshka detached below
     ys = [float(n_shown) + 0.5 - i for i in range(n_shown)]

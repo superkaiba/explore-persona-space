@@ -52,7 +52,7 @@ FONT_SCALE = 1.9
 # font bump exactly — this is ~1.9/1.4, so text lands ~1.4x the paper size and
 # the layout still has room. The height is set by the right panel's long y
 # label, which must fit inside the axes without reaching the legend band.
-FIGSIZE = (7.6, 4.4)
+FIGSIZE = (7.6, 3.6)
 
 
 def main() -> None:

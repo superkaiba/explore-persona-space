@@ -210,7 +210,7 @@ def main() -> None:
     ylim = (min(-0.05, min(vals) - 0.04), max(vals) + 0.04)
 
     set_paper_style("iclr", font_scale=1.9)
-    fig, axes = plt.subplots(1, 3, figsize=(7.6, 3.25), sharey=True, constrained_layout=True)
+    fig, axes = plt.subplots(1, 3, figsize=(7.6, 2.95), sharey=True, constrained_layout=True)
     n_bars = 0
     for ax, panel in zip(axes, panels, strict=True):
         xs = list(range(len(panel["groups"])))
