@@ -23,11 +23,16 @@ other closely everywhere except sycophancy, where the MLP map is stronger —
 see the data JSON for its values). reg_map_mlp / arm19 (MLP readouts) are
 likewise excluded.
 
-Color encodes the readout family x location: blues = persona-vector readout
-(light = context, dark = mapped answer), warm = ridge regression (light =
-context, dark = mapped answer), purple = oracle. Spread-gate-failed cells
+Bars within a group are ordered BY READOUT FAMILY -- the three persona-vector
+arms (context, mapped answer, real answer/oracle), then the two regression arms
+(context, mapped answer) -- so each family reads as one contiguous block.
+Color follows the same split: blues for the persona-vector readout (light =
+context, dark = mapped answer) with purple for its oracle, warm for the ridge
+regression (light = context, dark = mapped answer). Spread-gate-failed cells
 (evil: generic chat + both OOD rungs, per the committed Result 1 gate) are
-alpha-muted, never deleted.
+alpha-muted, never deleted; the poster legend renders that gate in reader terms
+("behavior almost never occurs here") because all three failing cells are cells
+where 92-99% of contexts sit at the floor of the judged score.
 
 Every number is read from the committed fair-protocol points table
 eval_results/issue_1739/result2_fair/result2_fair_points.json (output of
@@ -70,12 +75,16 @@ BEHAVIORS = ["evil", "sycophancy", "hallucination"]
 # Legend labels are spelled out rather than abbreviated: this is the poster's
 # application figure and "PV · mapped ans." is unreadable to anyone who has not
 # already read the methods.
+# Bars are grouped BY READOUT FAMILY -- all three persona-vector arms, then both
+# regression arms -- rather than interleaved by location. Interleaving made the
+# reader alternate families to compare within one, which is the comparison the
+# figure is for; contiguous families let each be read as a block.
 METHODS = [
     ("pv_context", "persona vector on the context", "#56B4E9"),
-    ("regression_ctx", "regression on the context", "#E69F00"),
     ("pv_map_linear", "persona vector on the mapped answer", "#0072B2"),
-    ("reg_map_linear", "regression on the mapped answer", "#D55E00"),
     ("oracle", "persona vector on the real answer (oracle)", "#CC79A7"),
+    ("regression_ctx", "regression on the context", "#E69F00"),
+    ("reg_map_linear", "regression on the mapped answer", "#D55E00"),
 ]
 METHOD_SLOTS = [m for m, _l, _c in METHODS]
 LABEL = {m: lbl for m, lbl, _c in METHODS}
@@ -247,7 +256,15 @@ def main() -> None:
 
     handles = [Patch(facecolor=COLOR[m], label=LABEL[m]) for m in METHOD_SLOTS]
     handles.append(
-        Patch(facecolor="#999999", alpha=FAIL_ALPHA, label="faded = fails the spread gate")
+        # "spread gate" named the internal criterion, not what it means to a
+        # reader. All three faded cells fail it the same way: 92-99% of contexts
+        # sit at the floor of the judged score, so there is essentially no
+        # behavior to predict and rho is uninformative.
+        Patch(
+            facecolor="#999999",
+            alpha=FAIL_ALPHA,
+            label="faded = behavior almost never occurs here",
+        )
     )
     # two columns, not three: the labels are now spelled out and no longer fit
     # three-across at this width
@@ -284,7 +301,12 @@ def main() -> None:
         ),
         "spread_note": (
             "Alpha-muted groups FAIL the committed Result 1 spread gate (evil: "
-            "wildchat_rung, hhrt, toxicchat) — kept for completeness, not interpretable."
+            "wildchat_rung, hhrt, toxicchat) — kept for completeness, not interpretable. "
+            "The poster legend states the failure in reader terms ('behavior almost "
+            "never occurs here') rather than naming the gate: all three cells fail the "
+            "floor_ceiling_mass clause with 91.9%/98.7%/99.4% of contexts pinned at the "
+            "floor of the judged score (evil/hhrt additionally fails reliability, "
+            "r_yy=0.481), so there is essentially no behavior variation for rho to track."
         ),
         "bars": [b for p in panels for g in p["groups"] for b in g["bars"]],
     }
