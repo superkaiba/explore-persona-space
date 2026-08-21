@@ -11235,8 +11235,8 @@
     "2455": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2455",
-      "status": "proposed",
+      "path": "tasks/archived/2455",
+      "status": "archived",
       "title": "workflow-fix: scripts/issue1739_r2v2_run.py has ungated HfApi upload call sites \u2014 test_no_ungated_upload_call_sites RED on origin/main"
     },
     "246": {
