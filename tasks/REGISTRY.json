@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2452,
+  "highest_id": 2453,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11217,6 +11217,13 @@
       "path": "tasks/proposed/2452",
       "status": "proposed",
       "title": "verify_report.py: blob-identity check for body-linked captions.json pins (sibling of image-pin-blob-identity)"
+    },
+    "2453": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2453",
+      "status": "proposed",
+      "title": "Step 5a spec-freshness sync silently no-ops when invoked with cwd at the repo root (cwd-derived WT trips the on-main guard; certified a gate against stale main twice on #2205)"
     },
     "246": {
       "has_clean_result": false,
