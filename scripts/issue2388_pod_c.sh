@@ -38,6 +38,11 @@ headroom() { # headroom <need_gb> <phase>
   uv run python -c "from explore_persona_space.orchestrate.preflight import assert_out_root_headroom; assert_out_root_headroom('/workspace', float('$1'), phase='$2')"
 }
 
+phase_done() { [ -f "$LOGDIR/issue-2388-$1.json" ]; } # R3: pod_b idiom — a
+  # crash-fix re-entry must SKIP completed phases; without this the p3-stage
+  # headroom floor (sized for FRESH staging) re-fires against a disk that
+  # legitimately holds the 91 GB staged store (the Pod A R10 class).
+
 commit_results() { # commit_results <msg> <path>...
   # NON-FATAL variant (deviation from pod_b, documented): Pod B and Pod C
   # write the SAME branch concurrently and both touch maps/key_manifest.json,
@@ -95,6 +100,7 @@ stream_tar() { # stream_tar <hf-relpath> <dest-dir> — R2: hf_transfer download
 }
 
 # ------------------------------------------------------------- P3 staging ---
+if phase_done p3-stage-done; then echo "[phase=p3_stage] SKIP (done-sentinel)"; else
 echo "[phase=p3_stage]"
 headroom 115 p3-stage
 # (a) The P2 capture store: the tar set is read from a SCOPED listing of the
@@ -148,19 +154,27 @@ for name in ("linear__shared__fu0.npz", "mlp__shared__fu0.pt"):
     print(f"[stage] {name} staged")
 PY
 sentinel p3-stage-done "P3: store tars extracted (gate-derived set), u_store staged, shared f_U=0 map weights staged"
+fi
 
 # ------------------------------- P3 smoke (G2 device-domain, per surface) ---
 # One tiny maps fit + one tiny sweep per SURFACE loader class (math/mcq/code
 # table loaders + code's gate-roster branch are per-class code paths; the
 # REGIME/CLASS coverage rule). Smoke writes land in *_smoke out-roots only.
+if phase_done p3-smoke-done; then echo "[phase=p3_smoke] SKIP (done-sentinel)"; else
 echo "[phase=p3_smoke]"
 for s in math mcq code; do
-  CUDA_VISIBLE_DEVICES=0 uv run python scripts/issue2388_fits.py --smoke --phase maps --surface "$s" --keys "linear__${s}__fu1" --device cuda
+  # R3: fit BOTH map kinds in the smoke — phase_sweep pins + loads the linear
+  # AND mlp payloads for its --map-cell unconditionally (fits.py
+  # _pin_map_payloads), so the R2 linear-only smoke maps fit died at
+  # maps_smoke/mlp__math__fu1.pt.
+  CUDA_VISIBLE_DEVICES=0 uv run python scripts/issue2388_fits.py --smoke --phase maps --surface "$s" --keys "linear__${s}__fu1" "mlp__${s}__fu1" --device cuda
   CUDA_VISIBLE_DEVICES=0 uv run python scripts/issue2388_fits.py --smoke --phase sweep --surface "$s" --map-cell fu1 --device cuda
 done
 sentinel p3-smoke-done "P3 smoke: per-surface maps+sweep smoke green (math/mcq/code loader classes)"
+fi
 
 # --------------------------------------- P3 map fits (14 keys, 2 GPU lanes) ---
+if phase_done p3-done; then echo "[phase=p3_maps] SKIP (done-sentinel)"; else
 echo "[phase=p3_maps]"
 map_lane() { # map_lane <gpu> <surface> <key>...
   local gpu="$1" s="$2"; shift 2
@@ -179,8 +193,10 @@ wait "$L1" || { echo "[p3] lane1 FAILED (see lane log)"; fail=1; }
 uv run python scripts/issue2388_fits.py --phase upload
 commit_results "issue #2388: P3 new-surface map fits (14 keys) + diagnostics" "$MAPS_DIR"
 sentinel p3-done "P3: 14 map keys fit (math/mcq cells + code cells + code generic-only pair) + uploaded to HF"
+fi
 
 # ------------------------- P5 readout sweeps (surface-sharded, 2 GPU lanes) ---
+if phase_done p5-sweep-done; then echo "[phase=p5_sweep] SKIP (done-sentinel)"; else
 echo "[phase=p5_sweep]"
 sweep_surface() { # sweep_surface <gpu> <surface>  — primary + f_U cells
   local gpu="$1" s="$2"
@@ -200,8 +216,10 @@ wait "$S1" || { echo "[p5] lane1 FAILED (see lane log)"; fail=1; }
 [ "$fail" -eq 0 ] || exit 1
 commit_results "issue #2388: P5 L-sweeps + f_U cells (math/mcq/code, dof-capped primary)" "$FITS_DIR"
 sentinel p5-sweep-done "P5: primary + fu0/fu05 sweeps done for math/mcq/code"
+fi
 
 # ----------------------------------------- P5 select + bootstrap + upload ---
+if phase_done p5-done; then echo "[phase=p5_aggregate] SKIP (done-sentinel)"; else
 echo "[phase=p5_aggregate]"
 for s in math mcq code; do
   CUDA_VISIBLE_DEVICES=0 uv run python scripts/issue2388_fits.py --phase select --surface "$s" --device cuda
@@ -210,5 +228,6 @@ done
 uv run python scripts/issue2388_fits.py --phase upload
 commit_results "issue #2388: P5 all_arms + bootstrap (math/mcq/code)" "$FITS_DIR"
 sentinel p5-done "P5 complete: fits + f_U + nulls + bootstrap committed and uploaded for math/mcq/code"
+fi
 
 echo "[phase=done]"
