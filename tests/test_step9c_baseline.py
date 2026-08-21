@@ -280,6 +280,8 @@ def _install_compare_fakes(
     root_head: str = "f" * 40,
     pristine_failure_texts: dict | None = None,
     paired_failure_texts: dict | None = None,
+    contaminated_by: dict | None = None,
+    suffix_exc: Exception | None = None,
 ) -> dict[str, list]:
     """Monkeypatch signature-conformant fakes onto the module; return the call recorder.
 
@@ -305,6 +307,14 @@ def _install_compare_fakes(
     ``paired_failure_texts`` (Node -> failure text) feed the fakes'
     ``PristineRun.failure_texts`` — the fakes stay signature-conformant with
     the #2316 return-type change (no duck-typed set tolerance).
+    #2430 knobs: ``contaminated_by`` (Node -> tuple of contaminator FILES)
+    steers ``fake_run_suffix_replay``'s POLARITY CONTRACT — a listed node
+    FAILS iff its file is in *run_files* (actually run) AND EVERY named
+    contaminator file is in ``set(ordered_files)`` (collected in this
+    replay); an unlisted node NEVER fails. That models pure collection-time
+    contamination exactly: presence in the argv (collection) suffices, run
+    membership of the contaminator is irrelevant. ``suffix_exc`` makes the
+    fake raise instead (the aborted-replay arm).
     """
     calls: dict[str, list] = {
         "pristine": [],
@@ -319,6 +329,11 @@ def _install_compare_fakes(
         "paired_timeout": [],  # timeout_s per paired call (#2024)
         "paired_pythonpath": [],  # pythonpath kwarg per paired call (#2024)
         "merge_base": [],  # (base, wt) per git_merge_base call (#2293 oracle resolution)
+        "suffix": [],  # run_files list per suffix replay call (#2430)
+        "suffix_ordered": [],  # full ordered argv (collect set) per suffix replay call (#2430)
+        "suffix_detail": [],  # (ordered_files, run_files, cwd, venv_root) per call (#2430)
+        "suffix_timeout": [],  # timeout_s per suffix replay call (#2430 admission pin)
+        "suffix_pythonpath": [],  # pythonpath kwarg per suffix replay call (#2430)
     }
     _install_scratch_fakes(
         monkeypatch,
@@ -400,6 +415,7 @@ def _install_compare_fakes(
         texts = {n: t for n, t in (paired_failure_texts or {}).items() if n.file in file_set}
         return sb.PristineRun(failing=failing, failure_texts=texts)
 
+    _install_suffix_fake(monkeypatch, calls, contaminated_by=contaminated_by, suffix_exc=suffix_exc)
     monkeypatch.setattr(sb, "load_selector_module", fake_load_selector_module)
     monkeypatch.setattr(sb, "changed_test_files_since", fake_changed_test_files_since)
     monkeypatch.setattr(sb, "dirty_code_paths", fake_dirty_code_paths)
@@ -409,6 +425,45 @@ def _install_compare_fakes(
     monkeypatch.setattr(sb, "ruff_error_count", fake_ruff_error_count)
     monkeypatch.setattr(sb, "ruff_format_count", fake_ruff_format_count)
     return calls
+
+
+def _install_suffix_fake(
+    monkeypatch,
+    calls: dict[str, list],
+    *,
+    contaminated_by: dict | None,
+    suffix_exc: Exception | None,
+) -> None:
+    """Install the #2430 ``run_suffix_replay`` fake (polarity contract: see
+    ``_install_compare_fakes``'s docstring — a listed node FAILS iff run AND
+    every named contaminator is collected in the replay's ordered argv)."""
+
+    def fake_run_suffix_replay(
+        ordered_files: list,
+        run_files: list,
+        cwd: Path,
+        timeout_s: float,
+        *,
+        venv_root: Path | None = None,
+        pythonpath: str | None = None,
+    ) -> sb.PristineRun:
+        calls["suffix"].append(list(run_files))
+        calls["suffix_ordered"].append(list(ordered_files))
+        calls["suffix_detail"].append((list(ordered_files), list(run_files), cwd, venv_root))
+        calls["suffix_timeout"].append(timeout_s)
+        calls["suffix_pythonpath"].append(pythonpath)
+        if suffix_exc is not None:
+            raise suffix_exc
+        run_set = set(run_files)
+        ordered_set = set(ordered_files)
+        failing = {
+            n
+            for n, contaminators in (contaminated_by or {}).items()
+            if n.file in run_set and all(c in ordered_set for c in contaminators)
+        }
+        return sb.PristineRun(failing=failing, failure_texts={})
+
+    monkeypatch.setattr(sb, "run_suffix_replay", fake_run_suffix_replay)
 
 
 def _install_scratch_fakes(
@@ -493,6 +548,8 @@ def _compare_env(
     root_head: str = "f" * 40,
     pristine_failure_texts: dict | None = None,
     paired_failure_texts: dict | None = None,
+    contaminated_by: dict | None = None,
+    suffix_exc: Exception | None = None,
     sel_attrs: dict | None = None,
     extra_args=(),
 ):
@@ -540,6 +597,8 @@ def _compare_env(
         root_head=root_head,
         pristine_failure_texts=pristine_failure_texts,
         paired_failure_texts=paired_failure_texts,
+        contaminated_by=contaminated_by,
+        suffix_exc=suffix_exc,
     )
     argv = [
         "compare",
@@ -5557,3 +5616,746 @@ def test_acquire_refresh_lock_fdopen_raise_closes_raw_fd(tmp_path: Path, monkeyp
     with pytest.raises(OSError) as ei2:
         os.fstat(seen[0])  # EBADF = the fd was closed, not leaked
     assert ei2.value.errno == errno.EBADF
+
+
+# --- #2430 suffix-replay arm (later-sorting-file collection contamination) --------
+
+
+SUFFIX_CONTAM = "tests/test_zz_contam.py"
+
+
+def _suffix_env(
+    tmp_path: Path,
+    monkeypatch,
+    *,
+    order: list[str],
+    failing_nodes: tuple,
+    contaminated_by: dict | None = None,
+    suffix_exc: Exception | None = None,
+    extra_args=(),
+    **kw,
+):
+    """A #2430 fixture: *failing_nodes* fail the run junit, every other order
+    file passes; single-file AND paired pristine runs PASS by default, so the
+    failing nodes reach the suffix arm as ELIGIBLE (paired-PASS kept NEW, or
+    no-predecessors when first in *order*)."""
+    fail_files = {n.file for n in failing_nodes}
+    junit_cases = [(n.file, n.classname, n.name, "failed") for n in failing_nodes] + [
+        _passed_row(f) for f in order if f not in fail_files
+    ]
+    sel_attrs = kw.pop("sel_attrs", None) or _order_sel_attrs(order)
+    return _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=junit_cases,
+        ledger_kw={"failing": ()},
+        contaminated_by=contaminated_by,
+        suffix_exc=suffix_exc,
+        sel_attrs=sel_attrs,
+        extra_args=("--run-pristine", *extra_args),
+        **kw,
+    )
+
+
+def test_suffix_contaminator_attributed_and_stripped(tmp_path: Path, monkeypatch, capsys):
+    """Node 1 (headline): a later-sorting contaminator reproduces the failure in
+    the gate-faithful collection context — stripped ordering_suspect via
+    pristine-suffix-ordering, offender attributed, exit flips 1 -> 0. The
+    confirmation replay carries the FULL gate context: every predecessor AND
+    every successor collected (ordered argv), only the candidate run."""
+    order = ["tests/test_pred.py", "tests/test_victim.py", SUFFIX_CONTAM]
+    victim = _fnode("tests/test_victim.py")
+    argv, calls, _r, _w = _suffix_env(
+        tmp_path,
+        monkeypatch,
+        order=order,
+        failing_nodes=(victim,),
+        contaminated_by={victim: (SUFFIX_CONTAM,)},
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 0
+    assert out["new"] == []
+    assert out["ordering_suspect"] == [
+        {**victim._asdict(), "via": "pristine-suffix-ordering", "suffix_offender": SUFFIX_CONTAM}
+    ]
+    assert any(w.startswith("SUFFIX-ORDERING WARN:") for w in out["warns"])
+    # Context partition: full selector order collected, only the candidate run.
+    assert calls["suffix_ordered"][0] == order
+    assert calls["suffix"][0] == [victim.file]
+    # Singleton suffix: the confirmation IS the attribution — exactly 1 replay.
+    assert out["suffix_replays"] == 1
+    assert out["suffix_attributed"] == [
+        {
+            "node_id": f"{victim.file}::{victim.name}",
+            "offender": SUFFIX_CONTAM,
+            "prefix_len": 1,
+            "suffix_len": 1,
+            "licensed_by": "full-suffix-confirmation",
+            "replays_used": 1,
+            "attribution_stopped": None,
+        }
+    ]
+    assert out["suffix_skipped"] == [] and out["suffix_dropped_files"] == []
+
+
+def test_suffix_arm_green_gate_spends_nothing(tmp_path: Path, monkeypatch, capsys):
+    """Node 2a: a green gate (no failing nodes) never reaches the arm — zero
+    replay subprocesses, empty audit lists."""
+    order = ["tests/test_a.py", "tests/test_b.py"]
+    argv, calls, _r, _w = _suffix_env(tmp_path, monkeypatch, order=order, failing_nodes=())
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 0
+    assert calls["suffix"] == []
+    assert out["suffix_attributed"] == [] and out["suffix_skipped"] == []
+    assert out["suffix_replays"] == 0
+
+
+def test_suffix_no_reproduction_keeps_new(tmp_path: Path, monkeypatch, capsys):
+    """Node 2b (fail-closed direction): a genuine branch-caused failure does NOT
+    reproduce on the confirmation replay — NEW stays blocking (rc 1) with a
+    suffix-no-reproduction audit row; never a strip without a reproduction."""
+    order = ["tests/test_pred.py", "tests/test_victim.py", SUFFIX_CONTAM]
+    victim = _fnode("tests/test_victim.py")
+    argv, calls, _r, _w = _suffix_env(
+        tmp_path, monkeypatch, order=order, failing_nodes=(victim,), contaminated_by={}
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 1
+    assert out["new"] == [victim._asdict()]
+    assert out["ordering_suspect"] == []
+    assert out["suffix_skipped"] == [
+        {"node_id": f"{victim.file}::{victim.name}", "reason": "suffix-no-reproduction"}
+    ]
+    assert out["suffix_attributed"] == []
+    assert calls["suffix"] == [[victim.file]]  # exactly the one confirmation replay
+
+
+def test_prefix_attributed_node_never_reaches_suffix_arm(tmp_path: Path, monkeypatch, capsys):
+    """Node 3: a node the #2024 prefix arm already stripped is NOT suffix-eligible
+    — the arm spends nothing on it (the prefix reproduction fully explains it)."""
+    order = ["tests/test_pred.py", "tests/test_victim.py", SUFFIX_CONTAM]
+    victim = _fnode("tests/test_victim.py")
+    argv, calls, _r, _w = _suffix_env(
+        tmp_path,
+        monkeypatch,
+        order=order,
+        failing_nodes=(victim,),
+        contaminated_by={victim: (SUFFIX_CONTAM,)},
+        paired_failing=(victim,),  # the PREFIX run reproduces it
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 0
+    assert [o["via"] for o in out["ordering_suspect"]] == ["pristine-paired-ordering"]
+    assert calls["suffix"] == []
+    assert out["suffix_attributed"] == [] and out["suffix_skipped"] == []
+
+
+@pytest.mark.parametrize("skip_shape", ["file-in-branch-diff", "paired-pristine-disabled"])
+def test_prefix_arm_refusals_bind_suffix_arm(tmp_path: Path, monkeypatch, capsys, skip_shape):
+    """Node 4: a prefix-arm trust/spend refusal (branch-diff membership;
+    --no-paired-pristine) binds the suffix arm identically — the node is NOT
+    eligible and the arm spends nothing (NEW stays, rc 1)."""
+    order = ["tests/test_pred.py", "tests/test_victim.py", SUFFIX_CONTAM]
+    victim = _fnode("tests/test_victim.py")
+    kw: dict = {}
+    extra: tuple = ()
+    if skip_shape == "file-in-branch-diff":
+        kw["touched"] = (victim.file,)
+    else:
+        extra = ("--no-paired-pristine",)
+    argv, calls, _r, _w = _suffix_env(
+        tmp_path,
+        monkeypatch,
+        order=order,
+        failing_nodes=(victim,),
+        contaminated_by={victim: (SUFFIX_CONTAM,)},
+        extra_args=extra,
+        **kw,
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 1
+    assert out["new"] == [victim._asdict()]
+    assert out["paired_skipped"] == [
+        {"node_id": f"{victim.file}::{victim.name}", "reason": skip_shape}
+    ]
+    assert calls["suffix"] == []
+    assert out["suffix_attributed"] == [] and out["suffix_skipped"] == []
+
+
+@pytest.mark.parametrize("offender_pos", list(range(8)))
+def test_suffix_bisection_attributes_any_position(
+    tmp_path: Path, monkeypatch, capsys, offender_pos
+):
+    """Node 5: bisection finds a single offender at ANY position of an 8-file
+    suffix within the 1 + 2*ceil(log2(8)) = 7 replay bound."""
+    fillers = [f"tests/test_s{i:02d}.py" for i in range(8)]
+    offender = fillers[offender_pos]
+    order = ["tests/test_victim.py", *fillers]  # candidate FIRST -> no-predecessors eligible
+    victim = _fnode("tests/test_victim.py")
+    argv, calls, _r, _w = _suffix_env(
+        tmp_path,
+        monkeypatch,
+        order=order,
+        failing_nodes=(victim,),
+        contaminated_by={victim: (offender,)},
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 0
+    assert out["new"] == []
+    assert out["suffix_attributed"][0]["offender"] == offender
+    assert 2 <= out["suffix_replays"] <= 7
+    assert out["suffix_attributed"][0]["replays_used"] == out["suffix_replays"]
+    assert calls["paired"] == []  # no-predecessors: the prefix arm spent nothing
+
+
+def test_suffix_two_file_contamination_strips_unattributed(tmp_path: Path, monkeypatch, capsys):
+    """Node 6: contamination needing TWO suffix files reproduces on the full
+    confirmation but on neither bisection half — the strip stands with
+    offender None (unattributed), never a false single-file attribution."""
+    c1, c2 = "tests/test_s0.py", "tests/test_s3.py"  # opposite halves of a 4-file suffix
+    suffix = [c1, "tests/test_s1.py", "tests/test_s2.py", c2]
+    order = ["tests/test_victim.py", *suffix]
+    victim = _fnode("tests/test_victim.py")
+    argv, _calls, _r, _w = _suffix_env(
+        tmp_path,
+        monkeypatch,
+        order=order,
+        failing_nodes=(victim,),
+        contaminated_by={victim: (c1, c2)},
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 0
+    assert out["new"] == []
+    row = out["suffix_attributed"][0]
+    assert row["offender"] is None
+    assert row["licensed_by"] == "full-suffix-confirmation"
+    assert row["attribution_stopped"] is None  # bisection COMPLETED, just unattributed
+    assert any("unattributed" in w for w in out["warns"])
+    assert out["ordering_suspect"][0]["suffix_offender"] is None
+
+
+def test_no_predecessors_node_is_suffix_eligible(tmp_path: Path, monkeypatch, capsys):
+    """Node 7: a first-in-order candidate (prefix arm skipped no-predecessors,
+    spending nothing) IS suffix-eligible — the paired_skipped audit row stays
+    (historically true) while the suffix strip lands."""
+    order = ["tests/test_victim.py", SUFFIX_CONTAM]
+    victim = _fnode("tests/test_victim.py")
+    argv, calls, _r, _w = _suffix_env(
+        tmp_path,
+        monkeypatch,
+        order=order,
+        failing_nodes=(victim,),
+        contaminated_by={victim: (SUFFIX_CONTAM,)},
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 0
+    assert out["new"] == []
+    assert out["paired_skipped"] == [
+        {"node_id": f"{victim.file}::{victim.name}", "reason": "no-predecessors"}
+    ]
+    assert calls["paired"] == []
+    assert out["suffix_attributed"][0]["offender"] == SUFFIX_CONTAM
+    assert out["suffix_attributed"][0]["prefix_len"] == 0
+
+
+def test_suffix_over_cap_refuses_never_truncates(tmp_path: Path, monkeypatch, capsys):
+    """Node 8 (B1 parity): over --max-suffix-files the arm SKIPs (keeps NEW)
+    with zero replays — never a truncated suffix that could silently exclude
+    the real offender."""
+    order = ["tests/test_victim.py", *[f"tests/test_s{i:02d}.py" for i in range(4)]]
+    victim = _fnode("tests/test_victim.py")
+    argv, calls, _r, _w = _suffix_env(
+        tmp_path,
+        monkeypatch,
+        order=order,
+        failing_nodes=(victim,),
+        contaminated_by={victim: ("tests/test_s03.py",)},
+        extra_args=("--max-suffix-files", "3"),  # len(suffix) 4 > 3
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 1
+    assert out["new"] == [victim._asdict()]
+    assert out["suffix_skipped"] == [
+        {"node_id": f"{victim.file}::{victim.name}", "reason": "suffix-over-cap"}
+    ]
+    assert calls["suffix"] == []
+
+
+def test_suffix_cap_is_suffix_only_not_total_width(tmp_path: Path, monkeypatch, capsys):
+    """Node 8b (r2, reconciler-upheld suffix-cap-axis-mismatch): the
+    --max-suffix-files cap binds len(suffix) ALONE (plan §4.3/§4.4 — S sizes
+    the bisection pool), never the total replay width. A small-suffix
+    candidate that merely sorts late in a wide gate (len(suffix) == cap but
+    prefix + candidate + suffix > cap) MUST launch its confirmation — the r1
+    total-width reading refused exactly this shape."""
+    prefix_files = [f"tests/test_p{i}.py" for i in range(3)]
+    order = [*prefix_files, "tests/test_victim.py", SUFFIX_CONTAM, "tests/test_zz_tail.py"]
+    victim = _fnode("tests/test_victim.py")
+    argv, calls, _r, _w = _suffix_env(
+        tmp_path,
+        monkeypatch,
+        order=order,
+        failing_nodes=(victim,),
+        contaminated_by={victim: (SUFFIX_CONTAM,)},
+        extra_args=("--max-suffix-files", "2"),  # len(suffix)=2 == cap; total width 6 > cap
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert calls["suffix"] != []  # the confirmation LAUNCHED (no suffix-over-cap refusal)
+    assert out["suffix_skipped"] == []
+    assert rc == 0
+    assert out["suffix_attributed"] == [
+        {
+            "node_id": f"{victim.file}::{victim.name}",
+            "offender": SUFFIX_CONTAM,
+            "prefix_len": 3,
+            "suffix_len": 2,
+            "licensed_by": "full-suffix-confirmation",
+            "replays_used": 2,  # confirmation + one bisection probe of the 2-file suffix
+            "attribution_stopped": None,
+        }
+    ]
+
+
+def test_suffix_budget_below_floor_refuses_pre_launch(tmp_path: Path, monkeypatch, capsys):
+    """Node 9 (v5 admission): a wall budget below SUFFIX_LAUNCH_FLOOR_S (240 s)
+    refuses BEFORE launching any replay — suffix-budget-exhausted, NEW kept."""
+    order = ["tests/test_victim.py", SUFFIX_CONTAM]
+    victim = _fnode("tests/test_victim.py")
+    argv, calls, _r, _w = _suffix_env(
+        tmp_path,
+        monkeypatch,
+        order=order,
+        failing_nodes=(victim,),
+        contaminated_by={victim: (SUFFIX_CONTAM,)},
+        extra_args=("--suffix-wall-budget-s", "100"),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 1
+    assert out["new"] == [victim._asdict()]
+    assert out["suffix_skipped"] == [
+        {"node_id": f"{victim.file}::{victim.name}", "reason": "suffix-budget-exhausted"}
+    ]
+    assert calls["suffix"] == []
+
+
+@pytest.mark.parametrize("venue", ["root-dirty", "scratch-residual"])
+def test_suffix_oracle_distrust_refuses_pre_spend(tmp_path: Path, monkeypatch, capsys, venue):
+    """Node 10: oracle distrust appearing at the SUFFIX-stage re-probe (clean
+    through the per-file + paired probes) refuses the replay as a typed skip —
+    kept NEW, exit 1, NEVER exit 2 (no prior suffix verdict to contradict)."""
+    order = ["tests/test_pred.py", "tests/test_victim.py", SUFFIX_CONTAM]
+    victim = _fnode("tests/test_victim.py")
+    probes = {"n": 0}
+    if venue == "root-dirty":
+        # dirty_code_paths calls: per-file probe, paired re-probe, THEN suffix.
+        def live_dirty():
+            probes["n"] += 1
+            return [] if probes["n"] <= 2 else ["scripts/dirt.py"]
+
+        kw = {"live_dirty": live_dirty, "wt_cones": None}
+        extra = ("--no-scratch-fallback",)
+        reason = "suffix-dirty-oracle"
+    else:
+        # scratch_contamination_probe calls: eligibility, paired re-probe, THEN suffix.
+        def contamination():
+            probes["n"] += 1
+            return [] if probes["n"] <= 2 else ["pyproject.toml"]
+
+        kw = {"contamination_paths": contamination}
+        extra = ()
+        reason = "suffix-scratch-residual-contamination"
+    argv, calls, _r, _w = _suffix_env(
+        tmp_path,
+        monkeypatch,
+        order=order,
+        failing_nodes=(victim,),
+        contaminated_by={victim: (SUFFIX_CONTAM,)},
+        extra_args=extra,
+        **kw,
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 1
+    assert out["indeterminate"] is False  # typed skip, never exit 2
+    assert out["new"] == [victim._asdict()]
+    assert out["suffix_skipped"] == [{"node_id": f"{victim.file}::{victim.name}", "reason": reason}]
+    assert calls["suffix"] == []  # refused BEFORE the subprocess spend
+
+
+def test_no_suffix_replay_flag_disarms_the_arm(tmp_path: Path, monkeypatch, capsys):
+    """Node 11: --no-suffix-replay restores the pre-#2430 classification exactly
+    — no replays, no audit rows (the hook never invokes the arm), NEW stays."""
+    order = ["tests/test_pred.py", "tests/test_victim.py", SUFFIX_CONTAM]
+    victim = _fnode("tests/test_victim.py")
+    argv, calls, _r, _w = _suffix_env(
+        tmp_path,
+        monkeypatch,
+        order=order,
+        failing_nodes=(victim,),
+        contaminated_by={victim: (SUFFIX_CONTAM,)},
+        extra_args=("--no-suffix-replay",),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 1
+    assert out["new"] == [victim._asdict()]
+    assert calls["suffix"] == []
+    assert out["suffix_attributed"] == [] and out["suffix_skipped"] == []
+
+
+def test_suffix_replay_abort_is_typed_skip_not_exit2(tmp_path: Path, monkeypatch, capsys):
+    """Node 12: an aborted replay subprocess (PristineRunError — timeout, rc>1,
+    zero-collected) maps to the suffix-replay-error skip: NEW stays, exit 1,
+    never _Indeterminate/exit 2 (v5 upheld Must-Fix)."""
+    order = ["tests/test_pred.py", "tests/test_victim.py", SUFFIX_CONTAM]
+    victim = _fnode("tests/test_victim.py")
+    argv, calls, _r, _w = _suffix_env(
+        tmp_path,
+        monkeypatch,
+        order=order,
+        failing_nodes=(victim,),
+        suffix_exc=sb.PristineRunError("suffix replay for tests/test_victim.py timed out"),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 1
+    assert out["indeterminate"] is False
+    assert out["new"] == [victim._asdict()]
+    assert out["suffix_skipped"] == [
+        {"node_id": f"{victim.file}::{victim.name}", "reason": "suffix-replay-error"}
+    ]
+    assert len(calls["suffix"]) == 1  # the aborted confirmation attempt
+    # Completed-vs-attempted semantics (plan §4.4, reconciler-affirmed): the
+    # counter counts COMPLETED replays by design; the aborted attempt is
+    # visible via the skip row above, never via suffix_replays.
+    assert out["suffix_replays"] == 0
+
+
+def test_real_pytest_suffix_replay_collects_deselected_contaminator(tmp_path: Path):
+    """Node 13 (production body, code-style.md #906): REAL pytest through
+    run_suffix_replay. A later-sorting file mutates shared module state AT
+    IMPORT (collection) time; the victim fails when the contaminator is
+    collected-but-deselected and passes when it is absent — pinning the #2430
+    causal-channel assumption (pytest imports every argv file before running
+    any test; --deselect removes tests post-collection, not the import).
+    EXERCISING pin (r2, reconciler-upheld suffix-deselect-pin-nonexercising):
+    the contaminator's ONLY test is a guaranteed FAILURE, so a regressed
+    deselect (contaminator test EXECUTED) lands its node in ``run.failing``
+    and breaks the equality below — present-and-passing is no longer
+    indistinguishable from deselected (PristineRun exposes failing nodes
+    only; the r1 always-passing body could not discriminate)."""
+    tree = tmp_path / "tree"
+    (tree / "tests").mkdir(parents=True)
+    _write_python_shim(tree, tmp_path / "suffix-shim-invocations.txt")
+    (tree / "pyproject.toml").write_text('[tool.pytest.ini_options]\naddopts = ""\n')
+    (tree / "tests" / "reg.py").write_text("VALUE = 0\n")
+    (tree / "tests" / "test_aa_victim.py").write_text(
+        "import reg\n\n\ndef test_victim():\n    assert reg.VALUE == 0\n"
+    )
+    (tree / "tests" / "test_zz_contam.py").write_text(
+        "import reg\n\nreg.VALUE = 1  # collection-time mutation\n\n\n"
+        "def test_contam_executed():\n"
+        '    raise AssertionError("contaminator test body EXECUTED - deselect regressed")\n'
+    )
+    victim = sb.Node(
+        file="tests/test_aa_victim.py", classname="tests.test_aa_victim", name="test_victim"
+    )
+    contam = sb.Node(
+        file="tests/test_zz_contam.py",
+        classname="tests.test_zz_contam",
+        name="test_contam_executed",
+    )
+    # WITH the contaminator collected (deselected): the victim reproduces, and
+    # the contaminator's guaranteed-failing test is ABSENT from the junit
+    # failure set — the strict equality is the deselection proof (dropping
+    # --deselect would execute test_contam_executed and add its node here).
+    run = sb.run_suffix_replay(
+        ["tests/test_aa_victim.py", "tests/test_zz_contam.py"],
+        ["tests/test_aa_victim.py"],
+        cwd=tree,
+        timeout_s=180.0,
+    )
+    assert run.failing == {victim}
+    assert contam not in run.failing  # implied by the equality; stated for intent
+    # WITHOUT it: the victim passes — the deselected import IS the mechanism.
+    clean = sb.run_suffix_replay(
+        ["tests/test_aa_victim.py"], ["tests/test_aa_victim.py"], cwd=tree, timeout_s=180.0
+    )
+    assert clean.failing == set()
+
+
+def test_suffix_strip_beside_genuine_new_keeps_exit1(tmp_path: Path, monkeypatch, capsys):
+    """Node 14: one node strips (suffix-attributed), a second is genuinely NEW —
+    exit stays 1 and ctx.new removal is surgical (only the stripped node)."""
+    v1 = _fnode("tests/test_v1.py")
+    v2 = _fnode("tests/test_v2.py")
+    order = ["tests/test_pred.py", v1.file, v2.file, SUFFIX_CONTAM]
+    argv, _calls, _r, _w = _suffix_env(
+        tmp_path,
+        monkeypatch,
+        order=order,
+        failing_nodes=(v1, v2),
+        contaminated_by={v1: (SUFFIX_CONTAM,)},
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 1
+    assert out["new"] == [v2._asdict()]
+    assert [o["file"] for o in out["ordering_suspect"]] == [v1.file]
+    assert {r["reason"] for r in out["suffix_skipped"]} == {"suffix-no-reproduction"}
+    assert [r["node_id"] for r in out["suffix_attributed"]] == [f"{v1.file}::{v1.name}"]
+
+
+def test_suffix_context_follows_selector_order_not_lexical(tmp_path: Path, monkeypatch, capsys):
+    """Node 15: the replay argv follows the SELECTOR's deterministic order —
+    never lexical sort, never junit document order (B3 parity)."""
+    order = [
+        "tests/test_zeta.py",  # lexically LAST, selector-FIRST
+        "tests/test_victim.py",
+        "tests/test_alpha.py",  # lexically FIRST, selector-LAST
+    ]
+    victim = _fnode("tests/test_victim.py")
+    argv, calls, _r, _w = _suffix_env(
+        tmp_path,
+        monkeypatch,
+        order=order,
+        failing_nodes=(victim,),
+        contaminated_by={victim: ("tests/test_alpha.py",)},
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 0
+    assert calls["suffix_ordered"][0] == order  # selector order verbatim
+    assert out["suffix_attributed"][0]["offender"] == "tests/test_alpha.py"
+    assert out["suffix_attributed"][0]["prefix_len"] == 1  # zeta, the selector-first file
+
+
+def test_suffix_prior_offender_accelerator_hit_and_miss(tmp_path: Path, monkeypatch, capsys):
+    """Node 16: an attributed offender accelerates LATER candidates — a hit
+    resolves in confirmation + 1 singleton probe (2 replays); a miss falls
+    back to bisection. Probes run only AFTER each candidate's confirmation."""
+    v1, v2, v3 = (_fnode(f"tests/test_v{i}.py") for i in (1, 2, 3))
+    ca, cb = "tests/test_zz_ca.py", "tests/test_zz_cb.py"
+    order = [v1.file, v2.file, v3.file, ca, cb]
+    argv, _calls, _r, _w = _suffix_env(
+        tmp_path,
+        monkeypatch,
+        order=order,
+        failing_nodes=(v1, v2, v3),
+        contaminated_by={v1: (ca,), v2: (ca,), v3: (cb,)},
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 0
+    assert out["new"] == []
+    rows = {r["node_id"].split("::")[0]: r for r in out["suffix_attributed"]}
+    assert rows[v1.file]["offender"] == ca  # bisection (first candidate, no prior)
+    assert rows[v2.file]["offender"] == ca
+    assert rows[v2.file]["replays_used"] == 2  # confirmation + accelerator HIT
+    assert rows[v3.file]["offender"] == cb  # accelerator MISS -> bisection
+    assert rows[v3.file]["replays_used"] > 2
+
+
+def test_suffix_confirmation_gates_accelerator_probes(tmp_path: Path, monkeypatch, capsys):
+    """Node 17 (strip licensing, v5 upheld Must-Fix): a candidate whose FULL
+    confirmation does NOT reproduce keeps NEW even when a prior-offender
+    singleton probe WOULD have failed — the accelerator never runs before (or
+    instead of) the confirmation, so it can never license a strip."""
+    v1, v2 = _fnode("tests/test_v1.py"), _fnode("tests/test_v2.py")
+    ca = "tests/test_zz_ca.py"
+    order = [v1.file, v2.file, ca, "tests/test_zz_pad.py"]
+    argv, calls, _r, _w = _suffix_env(tmp_path, monkeypatch, order=order, failing_nodes=(v1, v2))
+    seen: list[tuple[list[str], list[str]]] = []
+
+    def stateful_replay(
+        ordered_files: list,
+        run_files: list,
+        cwd: Path,
+        timeout_s: float,
+        *,
+        venv_root: Path | None = None,
+        pythonpath: str | None = None,
+    ) -> sb.PristineRun:
+        seen.append((list(ordered_files), list(run_files)))
+        run_set = set(run_files)
+        failing = set()
+        if v1.file in run_set and ca in ordered_files:
+            failing.add(v1)  # v1: honest contamination by ca (monotone)
+        if v2.file in run_set and list(ordered_files) == [v1.file, v2.file, ca]:
+            failing.add(v2)  # v2: fails ONLY on the singleton-probe shape
+        return sb.PristineRun(failing=failing, failure_texts={})
+
+    monkeypatch.setattr(sb, "run_suffix_replay", stateful_replay)
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 1
+    assert out["new"] == [v2._asdict()]  # confirmation PASSed -> kept NEW
+    assert {r["node_id"] for r in out["suffix_skipped"]} == {f"{v2.file}::{v2.name}"}
+    assert out["suffix_skipped"][0]["reason"] == "suffix-no-reproduction"
+    # v2 got EXACTLY one replay (its full confirmation) — no singleton probe ran.
+    v2_calls = [(o, r) for o, r in seen if r == [v2.file]]
+    assert len(v2_calls) == 1
+    assert v2_calls[0][0] == [v1.file, v2.file, ca, "tests/test_zz_pad.py"]
+    assert calls["suffix"] == []  # the harness fake was replaced wholesale
+
+
+def test_suffix_last_in_order_has_no_successors(tmp_path: Path, monkeypatch, capsys):
+    """Node 18: a candidate LAST in the selection has no suffix — typed
+    no-successors skip, zero replay spend."""
+    order = ["tests/test_pred.py", "tests/test_victim.py"]
+    victim = _fnode("tests/test_victim.py")
+    argv, calls, _r, _w = _suffix_env(tmp_path, monkeypatch, order=order, failing_nodes=(victim,))
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 1
+    assert out["new"] == [victim._asdict()]
+    assert out["suffix_skipped"] == [
+        {"node_id": f"{victim.file}::{victim.name}", "reason": "no-successors"}
+    ]
+    assert calls["suffix"] == []
+
+
+def test_suffix_dirt_probe_failure_is_typed_skip(tmp_path: Path, monkeypatch, capsys):
+    """Node 19: the trust probe ITSELF failing (CalledProcessError) at the
+    suffix stage maps to suffix-dirt-probe-failed — kept NEW, exit 1, valid
+    JSON; the arm never converts a probe crash into exit 2."""
+    order = ["tests/test_pred.py", "tests/test_victim.py", SUFFIX_CONTAM]
+    victim = _fnode("tests/test_victim.py")
+    probes = {"n": 0}
+
+    def live_dirty():
+        probes["n"] += 1
+        if probes["n"] >= 3:  # per-file probe, paired re-probe, THEN suffix
+            raise subprocess.CalledProcessError(128, ["git", "status"])
+        return []
+
+    argv, calls, _r, _w = _suffix_env(
+        tmp_path,
+        monkeypatch,
+        order=order,
+        failing_nodes=(victim,),
+        contaminated_by={victim: (SUFFIX_CONTAM,)},
+        live_dirty=live_dirty,
+        wt_cones=None,
+        extra_args=("--no-scratch-fallback",),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 1
+    assert out["indeterminate"] is False
+    assert out["new"] == [victim._asdict()]
+    assert out["suffix_skipped"] == [
+        {"node_id": f"{victim.file}::{victim.name}", "reason": "suffix-dirt-probe-failed"}
+    ]
+    assert calls["suffix"] == []
+
+
+def test_suffix_admission_at_incident_width_real_selector_constants(
+    tmp_path: Path, monkeypatch, capsys
+):
+    """Node 20 (v5 upheld Must-Fix 1, admission semantics at the #2059 shape):
+    with the REAL selector's timeout constants, a 206-file replay's DERIVED
+    ceiling exceeds the whole default wall budget — ceiling-gated admission
+    would refuse every replay. The arm must LAUNCH with subprocess timeout =
+    min(ceiling, remaining) ~= remaining (< the budget), never refuse."""
+    repo_root = Path(__file__).resolve().parents[1]
+    real_sel = sb.load_selector_module(repo_root)  # BEFORE the harness patches it
+    fillers = [f"tests/test_w{i:03d}.py" for i in range(205)]
+    order = ["tests/test_victim.py", *fillers]  # candidate FIRST: S=205 suffix
+    victim = _fnode("tests/test_victim.py")
+    argv, calls, _r, _w = _suffix_env(
+        tmp_path,
+        monkeypatch,
+        order=order,
+        failing_nodes=(victim,),
+        sel_attrs={
+            "select_tests_with_reasons": _order_sel_attrs(order)["select_tests_with_reasons"],
+            "TIMEOUT_BASE_S": real_sel.TIMEOUT_BASE_S,
+            "TIMEOUT_PER_FILE_S": real_sel.TIMEOUT_PER_FILE_S,
+            "SLOW_TESTS": real_sel.SLOW_TESTS,
+            "recommended_timeout_s": real_sel.recommended_timeout_s,
+        },
+    )
+    rc, _out, _err = _run_json(argv, capsys)
+    assert rc == 1  # no reproduction — the ADMISSION is the thing under test
+    assert len(calls["suffix"]) == 1  # the replay LAUNCHED (never ceiling-refused)
+    derived = sb.derive_paired_timeout_s(real_sel, calls["suffix_ordered"][0])
+    assert derived > 5400.0  # the #2059-shape ceiling exceeds the whole budget
+    assert 5000.0 < calls["suffix_timeout"][0] <= 5400.0  # timeout = remaining budget
+
+
+def test_suffix_confirmed_then_stopped_keeps_strip(tmp_path: Path, monkeypatch, capsys):
+    """Node 21 (post-confirmation stop): dirt appearing AFTER a completed
+    confirmation stops ATTRIBUTION only — the licensed strip stands with
+    offender None + attribution_stopped naming the refusal; NO suffix_skipped
+    row (the node is not kept NEW)."""
+    order = [
+        "tests/test_pred.py",
+        "tests/test_victim.py",
+        "tests/test_zz_a.py",
+        "tests/test_zz_b.py",
+    ]
+    victim = _fnode("tests/test_victim.py")
+    probes = {"n": 0}
+
+    def live_dirty():
+        probes["n"] += 1
+        # per-file probe, paired re-probe, suffix CONFIRMATION probe: clean;
+        # the first BISECTION probe (call 4) sees dirt.
+        return [] if probes["n"] <= 3 else ["scripts/dirt.py"]
+
+    argv, calls, _r, _w = _suffix_env(
+        tmp_path,
+        monkeypatch,
+        order=order,
+        failing_nodes=(victim,),
+        contaminated_by={victim: ("tests/test_zz_a.py",)},
+        live_dirty=live_dirty,
+        wt_cones=None,
+        extra_args=("--no-scratch-fallback",),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 0  # the confirmed strip stands and flips the exit
+    assert out["new"] == []
+    row = out["suffix_attributed"][0]
+    assert row["offender"] is None
+    assert row["attribution_stopped"] == "suffix-dirty-oracle"
+    assert row["licensed_by"] == "full-suffix-confirmation"
+    assert out["suffix_skipped"] == []
+    assert len(calls["suffix"]) == 1  # confirmation only; bisection refused pre-launch
+
+
+def test_suffix_attributed_human_rendering(tmp_path: Path, monkeypatch, capsys):
+    """Node 22 (r2 NIT suffix-human-output-unpinned): without --json, a suffix
+    strip renders the human `SUFFIX-ATTRIBUTED:` line (node <- offender)."""
+    order = ["tests/test_pred.py", "tests/test_victim.py", SUFFIX_CONTAM]
+    victim = _fnode("tests/test_victim.py")
+    argv, _calls, _r, _w = _suffix_env(
+        tmp_path,
+        monkeypatch,
+        order=order,
+        failing_nodes=(victim,),
+        contaminated_by={victim: (SUFFIX_CONTAM,)},
+    )
+    argv.remove("--json")
+    rc = sb.main(argv)
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert not out.strip().startswith("{")  # human rendering, not JSON
+    assert f"SUFFIX-ATTRIBUTED: {victim.file}::{victim.name} <- {SUFFIX_CONTAM}" in out
+
+
+def test_suffix_dropped_files_recorded_for_absent_on_main(tmp_path: Path, monkeypatch, capsys):
+    """Node 23 (r2 NIT suffix-dropped-files-unpinned): a co-selected suffix
+    file ABSENT on pristine main (branch-new — uncollectable on the
+    HEAD-pinned tree) is dropped from the replay context and recorded in
+    suffix_dropped_files; the remaining suffix still confirms + attributes."""
+    absent = "tests/test_zz_branch_new.py"
+    order = ["tests/test_victim.py", SUFFIX_CONTAM, absent]
+    victim = _fnode("tests/test_victim.py")
+    argv, calls, _r, _w = _suffix_env(
+        tmp_path,
+        monkeypatch,
+        order=order,
+        failing_nodes=(victim,),
+        contaminated_by={victim: (SUFFIX_CONTAM,)},
+        root_test_files=[f for f in order if f != absent],  # absent on pristine main
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 0
+    assert out["suffix_dropped_files"] == [absent]
+    assert calls["suffix_ordered"][0] == [f for f in order if f != absent]  # never collected
+    row = out["suffix_attributed"][0]
+    assert row["offender"] == SUFFIX_CONTAM
+    assert row["suffix_len"] == 1  # post-drop suffix

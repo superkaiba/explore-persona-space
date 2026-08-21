@@ -107,3 +107,4 @@
 - [Mutation scratch = pathspec-limited git archive](feedback_mutation_scratch_pathspec_archive.md) — full-tree archive is multi-GB (eval_results); data-repo pulls need scoped list_repo_tree, snapshot_download hangs (#2329 r17)
 - [Gate domain authority + bool-int aliasing](feedback_gate_domain_authority_and_bool_int_aliasing.md) — verifier domain comes from the CALLER, never the artifact; type-is-int for identity fields (True aliases 1 through exact-set reconciliation) (#823 r5)
 - [Unconditional per-arm empty guard](feedback_unconditional_per_arm_empty_guard.md) — any cross-arm conjunct leaves the all-empty cell dispatching; pin measured zero-dispatch, not guard source shape (#2329 r18)
+- [Model venvs pin the full accel-dep closure](feedback_model_venv_pin_full_dep_closure_flashinfer.md) — floating flashinfer 0.6.16.post3 TypeErrors past vLLM ImportError-only guard on py3.11; smoke the compile-backend import path (#2378)

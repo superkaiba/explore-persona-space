@@ -1,0 +1,116 @@
+{
+  "commit": "de40d0fb+dirty",
+  "render_id": "434ab194841a47bf",
+  "git_commit": "de40d0fb",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2379_analysis.py"
+  ],
+  "git_argv0_state": null,
+  "created": "2026-08-21T01:31:13Z",
+  "figsize": [
+    5.0,
+    6.4
+  ],
+  "points": [
+    {
+      "delta rho (answer-side minus context-side)": -0.472652,
+      "y": 9.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "delta rho (answer-side minus context-side)": -1.102952,
+      "y": 8.0,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "delta rho (answer-side minus context-side)": -0.592363,
+      "y": 7.0,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "delta rho (answer-side minus context-side)": -1.023339,
+      "y": 6.0,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "delta rho (answer-side minus context-side)": -1.103987,
+      "y": 5.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "delta rho (answer-side minus context-side)": -0.859059,
+      "y": 4.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "delta rho (answer-side minus context-side)": -0.14156,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "delta rho (answer-side minus context-side)": -0.615265,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "delta rho (answer-side minus context-side)": -0.115089,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "delta rho (answer-side minus context-side)": -0.290638,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 10,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Paired delta-rho (95% CI)",
+        "xlabel": "delta rho (answer-side minus context-side)",
+        "xticklabels": [
+          "\u22121.75",
+          "\u22121.50",
+          "\u22121.25",
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25"
+        ],
+        "yticklabels": [
+          "EM: bad legal advice",
+          "EM: bad medical advice",
+          "EM: bad security advice",
+          "EM: extreme sports",
+          "EM: risky financial",
+          "Pooled EM (5 datasets)",
+          "Caps: French",
+          "Caps: German",
+          "Caps: Spanish",
+          "Pooled caps (3 languages)"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

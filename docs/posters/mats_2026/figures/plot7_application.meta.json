@@ -1,0 +1,289 @@
+{
+  "commit": "68edfc7d+dirty",
+  "render_id": "2af3e3e035f64826",
+  "git_commit": "68edfc7dc1cb5f46445d36df06c0ab02373aab5f",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "docs/posters/mats_2026/figures/plot7_application.meta.json",
+    "docs/posters/mats_2026/make_plot7_application.py",
+    "docs/posters/mats_2026/poster.pdf",
+    "docs/posters/mats_2026/poster.tex",
+    "eval_results/issue_666/headline/predictor_headline.json",
+    "scripts/issue1901_body_figures.py",
+    "tasks/completed/2214/body.md",
+    "tasks/completed/2214/comments.jsonl",
+    "tasks/completed/2214/concerns.jsonl",
+    "tasks/completed/2214/events.jsonl",
+    "tasks/completed/2214/plans/plan.md",
+    "tasks/completed/2214/plans/v1.md",
+    "tasks/completed/2214/plans/v2.md",
+    "tasks/completed/2214/plans/v3.md",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tasks/running/2214/body.md",
+    "tasks/running/2214/comments.jsonl",
+    "tasks/running/2214/concerns.jsonl",
+    "tasks/running/2214/events.jsonl",
+    "tasks/running/2214/plans/plan.md",
+    "tasks/running/2214/plans/v1.md",
+    "tasks/running/2214/plans/v2.md",
+    "tasks/running/2214/plans/v3.md",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "docs/posters/mats_2026/make_plot7_application.py",
+  "created": "2026-08-21T01:16:57Z",
+  "figsize": [
+    6.8,
+    2.8
+  ],
+  "points": [
+    {
+      "labeled (judged) examples": 250.0,
+      "held-out Spearman $\\rho$": 0.5635501329484952,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "labeled (judged) examples": 250.0,
+      "held-out Spearman $\\rho$": 0.532531649605273,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "labeled (judged) examples": 2500.0,
+      "held-out Spearman $\\rho$": 0.5619500554509158,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "labeled (judged) examples": 2500.0,
+      "held-out Spearman $\\rho$": 0.6391939430483696,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "labeled (judged) examples": 8000.0,
+      "held-out Spearman $\\rho$": 0.6476746041134177,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "labeled (judged) examples": 250.0,
+      "held-out Spearman $\\rho$": 0.16992854795501217,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "labeled (judged) examples": 250.0,
+      "held-out Spearman $\\rho$": 0.19109720953014525,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "labeled (judged) examples": 2500.0,
+      "held-out Spearman $\\rho$": 0.3107266359703379,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "labeled (judged) examples": 2500.0,
+      "held-out Spearman $\\rho$": 0.3182915998076748,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "labeled (judged) examples": 8000.0,
+      "held-out Spearman $\\rho$": 0.6080123532477583,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "labeled (judged) examples": 250.0,
+      "held-out Spearman $\\rho$": 0.3298067467710112,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "labeled (judged) examples": 250.0,
+      "held-out Spearman $\\rho$": 0.18017446296298836,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "labeled (judged) examples": 2500.0,
+      "held-out Spearman $\\rho$": 0.18621390907647503,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "labeled (judged) examples": 2500.0,
+      "held-out Spearman $\\rho$": 0.12660042384912185,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "labeled (judged) examples": 8000.0,
+      "held-out Spearman $\\rho$": 0.07071388196464408,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "labeled (judged) examples": 250.0,
+      "held-out Spearman $\\rho$": 0.5821470826738397,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "labeled (judged) examples": 250.0,
+      "held-out Spearman $\\rho$": 0.5789923943436327,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "labeled (judged) examples": 2500.0,
+      "held-out Spearman $\\rho$": 0.6894387917351279,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "labeled (judged) examples": 2500.0,
+      "held-out Spearman $\\rho$": 0.6831717131313959,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "labeled (judged) examples": 8000.0,
+      "held-out Spearman $\\rho$": 0.6883726941913553,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "labeled (judged) examples": 250.0,
+      "held-out Spearman $\\rho$": 0.5480408912768842,
+      "series": "PV readout, mapped answer $\\hat{v}_A$",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "labeled (judged) examples": 2500.0,
+      "held-out Spearman $\\rho$": 0.6005719992496428,
+      "series": "PV readout, mapped answer $\\hat{v}_A$",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "labeled (judged) examples": 8000.0,
+      "held-out Spearman $\\rho$": 0.6476746041134177,
+      "series": "PV readout, mapped answer $\\hat{v}_A$",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "labeled (judged) examples": 250.0,
+      "held-out Spearman $\\rho$": 0.1805128787425787,
+      "series": "ridge probe, context $v_C$ (no map)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "labeled (judged) examples": 2500.0,
+      "held-out Spearman $\\rho$": 0.3145091178890064,
+      "series": "ridge probe, context $v_C$ (no map)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "labeled (judged) examples": 8000.0,
+      "held-out Spearman $\\rho$": 0.6080123532477583,
+      "series": "ridge probe, context $v_C$ (no map)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "labeled (judged) examples": 250.0,
+      "held-out Spearman $\\rho$": 0.25499060486699976,
+      "series": "PV readout, context $v_C$",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "labeled (judged) examples": 2500.0,
+      "held-out Spearman $\\rho$": 0.15640716646279845,
+      "series": "PV readout, context $v_C$",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "labeled (judged) examples": 8000.0,
+      "held-out Spearman $\\rho$": 0.07071388196464408,
+      "series": "PV readout, context $v_C$",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "labeled (judged) examples": 250.0,
+      "held-out Spearman $\\rho$": 0.5805697385087363,
+      "series": "PV readout, real answer (oracle)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "labeled (judged) examples": 2500.0,
+      "held-out Spearman $\\rho$": 0.6863052524332619,
+      "series": "PV readout, real answer (oracle)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "labeled (judged) examples": 8000.0,
+      "held-out Spearman $\\rho$": 0.6883726941913553,
+      "series": "PV readout, real answer (oracle)",
+      "_kind": "line",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 32,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "Misalignment prediction vs. label budget",
+        "xlabel": "labeled (judged) examples",
+        "ylabel": "held-out Spearman $\\rho$",
+        "legend_labels": [
+          "PV readout, mapped answer $\\hat{v}_A$",
+          "ridge probe, context $v_C$ (no map)",
+          "PV readout, context $v_C$",
+          "PV readout, real answer (oracle)"
+        ],
+        "xticklabels": [
+          "250",
+          "2,500",
+          "8,000"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "PV readout, mapped answer $\\hat{v}_A$",
+      "ridge probe, context $v_C$ (no map)",
+      "PV readout, context $v_C$",
+      "PV readout, real answer (oracle)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

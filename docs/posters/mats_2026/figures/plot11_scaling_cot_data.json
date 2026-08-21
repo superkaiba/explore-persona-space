@@ -1,0 +1,255 @@
+{
+ "figure_plot11_scaling_cot": {
+  "dv": "held-out test R^2 (variance-weighted, #779 metric) of the ridge context->answer map; LMSYS+WildChat contexts, each rung's own on-policy responses; matched train n=25,000, test n=1,000; error bars = 95% bootstrap CI (n_boot=1,000); ceiling = two-draw reliability (n_pairs=1,000); issue #1491",
+  "rungs": [
+   {
+    "slug": "scale05",
+    "model": "Qwen/Qwen2.5-0.5B-Instruct",
+    "params_b": 0.5,
+    "label": "0.5B",
+    "ridge_test_r2": 0.5644583416498618,
+    "ridge_ci95": [
+     0.5467262583755204,
+     0.5810465248957226
+    ],
+    "ceiling_two_draw": 0.7502639889717102,
+    "shuffled_pairing_null": -0.018554009929075077,
+    "n_train": 25000,
+    "n_test": 1000,
+    "source_fits": "eval_results/issue_1491/scale_ladder/fits_scale05.json",
+    "source_ci": "eval_results/issue_1491/scale_ladder/caphit_restriction_scale05.json"
+   },
+   {
+    "slug": "scale15",
+    "model": "Qwen/Qwen2.5-1.5B-Instruct",
+    "params_b": 1.5,
+    "label": "1.5B",
+    "ridge_test_r2": 0.6183419910830361,
+    "ridge_ci95": [
+     0.6018079124026412,
+     0.6336334827180515
+    ],
+    "ceiling_two_draw": 0.7815544009208679,
+    "shuffled_pairing_null": -0.016204901329062826,
+    "n_train": 25000,
+    "n_test": 1000,
+    "source_fits": "eval_results/issue_1491/scale_ladder/fits_scale15.json",
+    "source_ci": "eval_results/issue_1491/scale_ladder/caphit_restriction_scale15.json"
+   },
+   {
+    "slug": "scale3",
+    "model": "Qwen/Qwen2.5-3B-Instruct",
+    "params_b": 3.0,
+    "label": "3B",
+    "ridge_test_r2": 0.6833027870690999,
+    "ridge_ci95": [
+     0.6706501371848079,
+     0.6938524722932189
+    ],
+    "ceiling_two_draw": 0.8774885535240173,
+    "shuffled_pairing_null": -0.021554875432593157,
+    "n_train": 25000,
+    "n_test": 1000,
+    "source_fits": "eval_results/issue_1491/scale_ladder/fits_scale3.json",
+    "source_ci": "eval_results/issue_1491/scale_ladder/caphit_restriction_scale3.json"
+   },
+   {
+    "slug": "scale7_refit",
+    "model": "Qwen/Qwen2.5-7B-Instruct",
+    "params_b": 7.0,
+    "label": "7B",
+    "ridge_test_r2": 0.7250873220237555,
+    "ridge_ci95": [
+     0.7153906212609854,
+     0.7342481629141749
+    ],
+    "ceiling_two_draw": 0.9243655204772949,
+    "shuffled_pairing_null": -0.025733266251398268,
+    "n_train": 25000,
+    "n_test": 1000,
+    "source_fits": "eval_results/issue_1491/scale_ladder/fits_scale7_refit.json",
+    "source_ci": "eval_results/issue_1491/scale_ladder/caphit_restriction_scale7_refit.json"
+   },
+   {
+    "slug": "scale14",
+    "model": "Qwen/Qwen2.5-14B-Instruct",
+    "params_b": 14.0,
+    "label": "14B",
+    "ridge_test_r2": 0.7208959113702715,
+    "ridge_ci95": [
+     0.7112154690228353,
+     0.7302580690234564
+    ],
+    "ceiling_two_draw": 0.9297826886177063,
+    "shuffled_pairing_null": -0.026009391747558785,
+    "n_train": 25000,
+    "n_test": 1000,
+    "source_fits": "eval_results/issue_1491/scale_ladder/fits_scale14.json",
+    "source_ci": "eval_results/issue_1491/scale_ladder/caphit_restriction_scale14.json"
+   },
+   {
+    "slug": "scale32",
+    "model": "Qwen/Qwen2.5-32B-Instruct",
+    "params_b": 32.0,
+    "label": "32B",
+    "ridge_test_r2": 0.6452054952195454,
+    "ridge_ci95": [
+     0.6324414285387633,
+     0.6568383720188259
+    ],
+    "ceiling_two_draw": 0.9282152056694031,
+    "shuffled_pairing_null": -0.026453727155507423,
+    "n_train": 25000,
+    "n_test": 1000,
+    "source_fits": "eval_results/issue_1491/scale_ladder/fits_scale32.json",
+    "source_ci": "eval_results/issue_1491/scale_ladder/caphit_restriction_scale32.json"
+   }
+  ]
+ },
+ "figure_plot11b_cot_reasoning": {
+  "dv": "held-out skill-over-mean R^2 on the shared answer-REMAINDER target, per-question regime, frozen primary layer (context-only baseline's full-data best LOCO layer), LOCO folds over 50 shared contexts x 48 probes; 95% paired-bootstrap CIs (n_boot=2,000, seed 42); issues #928 / #1005 / #1426",
+  "models": [
+   {
+    "issue": 928,
+    "model": "open-thoughts/OpenThinker2-7B",
+    "label": "OpenThinker2\n7B",
+    "arms": {
+     "mlc_ctx": {
+      "observed": 0.6738555449936019,
+      "ci95": [
+       0.596498244752719,
+       0.7386467489375138
+      ],
+      "n_draws": 2000
+     },
+     "mlc_ctx_apfx": {
+      "observed": 0.9221606759960925,
+      "ci95": [
+       0.9086432306211771,
+       0.9334072042087417
+      ],
+      "n_draws": 2000
+     },
+     "mlc_ctx_cotK": {
+      "observed": 0.8699014860446739,
+      "ci95": [
+       0.8490349833744948,
+       0.8871693464502046
+      ],
+      "n_draws": 2000
+     },
+     "mlc_ctx_cotfull": {
+      "observed": 0.8751807225811389,
+      "ci95": [
+       0.8530741131845502,
+       0.8934003228565753
+      ],
+      "n_draws": 2000
+     }
+    },
+    "cot_minus_prefix": {
+     "observed": -0.05225918995141865,
+     "ci95": [
+      -0.0615307988678863,
+      -0.0449231126080372
+     ]
+    },
+    "source": "eval_results/issue_928/matched-length-answer-span-control/mlc_bootstrap_deltaskill.json"
+   },
+   {
+    "issue": 1005,
+    "model": "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B",
+    "label": "R1-Distill\nQwen-7B",
+    "arms": {
+     "mlc_ctx": {
+      "observed": 0.5161951464364439,
+      "ci95": [
+       0.449116063666167,
+       0.5778736976622924
+      ],
+      "n_draws": 2000
+     },
+     "mlc_ctx_apfx": {
+      "observed": 0.8840847076137723,
+      "ci95": [
+       0.8665876787055569,
+       0.8985517947236428
+      ],
+      "n_draws": 2000
+     },
+     "mlc_ctx_cotK": {
+      "observed": 0.8360747326258379,
+      "ci95": [
+       0.8143239981942071,
+       0.8534862405156025
+      ],
+      "n_draws": 2000
+     },
+     "mlc_ctx_cotfull": {
+      "observed": 0.8426264941227013,
+      "ci95": [
+       0.8197833179140085,
+       0.8608354451949408
+      ],
+      "n_draws": 2000
+     }
+    },
+    "cot_minus_prefix": {
+     "observed": -0.04800997498793447,
+     "ci95": [
+      -0.05582747635208034,
+      -0.04107427780678534
+     ]
+    },
+    "source": "eval_results/issue_1005/mlc_bootstrap_deltaskill.json"
+   },
+   {
+    "issue": 1426,
+    "model": "deepseek-ai/DeepSeek-R1-Distill-Llama-8B",
+    "label": "R1-Distill\nLlama-8B",
+    "arms": {
+     "mlc_ctx": {
+      "observed": 0.5390331522416637,
+      "ci95": [
+       0.46890842070609673,
+       0.6059891921028977
+      ],
+      "n_draws": 2000
+     },
+     "mlc_ctx_apfx": {
+      "observed": 0.894341780978985,
+      "ci95": [
+       0.8713316942649774,
+       0.9111785956232513
+      ],
+      "n_draws": 2000
+     },
+     "mlc_ctx_cotK": {
+      "observed": 0.8579592328391267,
+      "ci95": [
+       0.8317682531762348,
+       0.8790519163985875
+      ],
+      "n_draws": 2000
+     },
+     "mlc_ctx_cotfull": {
+      "observed": 0.8646344636845017,
+      "ci95": [
+       0.8392248207204369,
+       0.8847385265558838
+      ],
+      "n_draws": 2000
+     }
+    },
+    "cot_minus_prefix": {
+     "observed": -0.036382548139858306,
+     "ci95": [
+      -0.04571035280243638,
+      -0.028831132912491033
+     ]
+    },
+    "source": "eval_results/issue_1426/mlc_bootstrap_deltaskill.json"
+   }
+  ]
+ }
+}

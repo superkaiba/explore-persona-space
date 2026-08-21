@@ -610,6 +610,7 @@ def fig_paper_c1_scaling(
     neural_label: str = "neural map (w=8,192)",
     figsize: tuple[float, float] | None = None,
     acc_label: str = "retrieval acc@1 (pool 1,000)",
+    legend_rect_top: float | None = None,
 ) -> None:
     """ICLR paper figure (c1_linear R1), densified (#1901 paper_densify round).
 
@@ -631,6 +632,12 @@ def fig_paper_c1_scaling(
     overruns the axis and collides with the legend — so a caller that shortens
     the canvas passes the same text broken over two lines. Default is the
     paper's, byte-unchanged.
+
+    legend_rect_top: opt-in tight_layout headroom for the figure legend. With
+    boundary_hline set the legend runs to two rows, and on a canvas short
+    enough the second row descends onto the retrieval panel's top y-tick
+    label. Lower this to reserve more space. None keeps the paper's
+    0.91 / 0.86 defaults.
 
     Held-out R^2 (left) + euclidean retrieval acc@1, pool 1,000 (right) against
     training contexts (log x). Ridge (blue) and identity+bias (green) are DENSE
@@ -853,7 +860,12 @@ def fig_paper_c1_scaling(
         handlelength=1.6,
         columnspacing=1.2,
     )
-    fig.tight_layout(rect=(0, 0, 1, 0.91) if boundary_hline is None else (0, 0, 1, 0.86))
+    _rect_top = (
+        legend_rect_top
+        if legend_rect_top is not None
+        else (0.91 if boundary_hline is None else 0.86)
+    )
+    fig.tight_layout(rect=(0, 0, 1, _rect_top))
     dest = out_dir if out_dir is not None else PAPER_OUT
     dest.mkdir(parents=True, exist_ok=True)
     savefig_paper(fig, stem, dir=dest)

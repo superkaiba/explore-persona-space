@@ -1,0 +1,599 @@
+{
+  "commit": "8762977a",
+  "render_id": "10380892955d4a9b",
+  "git_commit": "8762977adc6e5e29030698bad8670c946f12263e",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue823_ladder_figures.py",
+  "created": "2026-08-20T19:55:24Z",
+  "figsize": [
+    10.5,
+    4.6
+  ],
+  "points": [
+    {
+      "x": 1.0,
+      "pooled held-out R$^2$": 0.5011191924602317,
+      "error": 0.010698755210296035,
+      "series": "persona mixture (k mixed personas)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "pooled held-out R$^2$": 0.4453970890599481,
+      "error": 0.008886264099040364,
+      "series": "persona mixture (k mixed personas)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "pooled held-out R$^2$": 0.40116531721865534,
+      "error": 0.008989439813137684,
+      "series": "persona mixture (k mixed personas)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 8.0,
+      "pooled held-out R$^2$": 0.3543233295921272,
+      "error": 0.008448473737522333,
+      "series": "persona mixture (k mixed personas)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 16.0,
+      "pooled held-out R$^2$": 0.34494406423650004,
+      "error": 0.008306020849415258,
+      "series": "persona mixture (k mixed personas)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "pooled held-out R$^2$": 0.5011191924602317,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "pooled held-out R$^2$": 0.4453970890599481,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "pooled held-out R$^2$": 0.40116531721865534,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "pooled held-out R$^2$": 0.3543233295921272,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 16.0,
+      "pooled held-out R$^2$": 0.34494406423650004,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "pooled held-out R$^2$": 0.49036597168437385,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "pooled held-out R$^2$": 0.43653472546634675,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "pooled held-out R$^2$": 0.3921769159358652,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 8.0,
+      "pooled held-out R$^2$": 0.34581469368496387,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 16.0,
+      "pooled held-out R$^2$": 0.3365819659101324,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "pooled held-out R$^2$": 0.5117634821049659,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "pooled held-out R$^2$": 0.4543072536644275,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "pooled held-out R$^2$": 0.41015579556214055,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 8.0,
+      "pooled held-out R$^2$": 0.36271164116000854,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 16.0,
+      "pooled held-out R$^2$": 0.3531940076089629,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "y": 0.4827920967675693,
+      "error": 0.013919048860984079,
+      "series": "persona mixture (k mixed personas)",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "y": 0.46193012672316114,
+      "error": 0.012851167503156541,
+      "series": "persona mixture (k mixed personas)",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "y": 0.3853137927442071,
+      "error": 0.013003738846550955,
+      "series": "persona mixture (k mixed personas)",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "x": 8.0,
+      "y": 0.30168036646415786,
+      "error": 0.012281368575361634,
+      "series": "persona mixture (k mixed personas)",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "x": 16.0,
+      "y": 0.28100225650159627,
+      "error": 0.011761828550830022,
+      "series": "persona mixture (k mixed personas)",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "y": 0.4827920967675693,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "y": 0.46193012672316114,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "y": 0.3853137927442071,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 8.0,
+      "y": 0.30168036646415786,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 16.0,
+      "y": 0.28100225650159627,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "y": 0.46845603887521753,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "y": 0.44887614512911456,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.0,
+      "y": 0.37226712867630374,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 8.0,
+      "y": 0.28942292472319264,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 16.0,
+      "y": 0.26916940932730454,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "y": 0.4962941365971857,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "y": 0.47457848013542764,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "y": 0.39827460636940565,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 8.0,
+      "y": 0.3139856618739159,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 16.0,
+      "y": 0.2926930664289646,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "y": 0.516369927040901,
+      "error": 0.011605982087583622,
+      "series": "persona mixture (k mixed personas)",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "y": 0.47115684435851923,
+      "error": 0.010330383644739927,
+      "series": "persona mixture (k mixed personas)",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "x": 4.0,
+      "y": 0.43057487271691375,
+      "error": 0.010685827295857098,
+      "series": "persona mixture (k mixed personas)",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "x": 8.0,
+      "y": 0.3773520142732434,
+      "error": 0.010005404610590907,
+      "series": "persona mixture (k mixed personas)",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "x": 16.0,
+      "y": 0.3662143591546658,
+      "error": 0.00952780397458483,
+      "series": "persona mixture (k mixed personas)",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "y": 0.516369927040901,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.0,
+      "y": 0.47115684435851923,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 4.0,
+      "y": 0.43057487271691375,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 8.0,
+      "y": 0.3773520142732434,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 16.0,
+      "y": 0.3662143591546658,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "y": 0.5047264324162355,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.0,
+      "y": 0.46087065707221603,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 4.0,
+      "y": 0.41988742788929384,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 8.0,
+      "y": 0.36729308468319105,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 16.0,
+      "y": 0.35666170367538463,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.0,
+      "y": 0.5279383965914027,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.0,
+      "y": 0.4815314243616959,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 4.0,
+      "y": 0.44125908248100804,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 8.0,
+      "y": 0.38730389390437286,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 16.0,
+      "y": 0.3757173116245543,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "number of mixed personas k": 0.0,
+      "anchor arms\n(same axis units)": -9.996844451034674,
+      "series": "own answer (regenerated)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "number of mixed personas k": 1.0,
+      "anchor arms\n(same axis units)": -9.996844451034674,
+      "series": "own answer (regenerated)",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "number of mixed personas k": 0.0,
+      "anchor arms\n(same axis units)": -10.04192654473697,
+      "series": "external answer (plain style)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "number of mixed personas k": 1.0,
+      "anchor arms\n(same axis units)": -10.04192654473697,
+      "series": "external answer (plain style)",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "number of mixed personas k": 0.0,
+      "y": -10.826550389685346,
+      "series": "own answer (regenerated)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "number of mixed personas k": 1.0,
+      "y": -10.826550389685346,
+      "series": "own answer (regenerated)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "number of mixed personas k": 0.0,
+      "y": -10.69707730496791,
+      "series": "external answer (plain style)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "number of mixed personas k": 1.0,
+      "y": -10.69707730496791,
+      "series": "external answer (plain style)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "number of mixed personas k": 0.0,
+      "y": -8.947462856945211,
+      "series": "own answer (regenerated)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "number of mixed personas k": 1.0,
+      "y": -8.947462856945211,
+      "series": "own answer (regenerated)",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "number of mixed personas k": 0.0,
+      "y": -8.44924646008655,
+      "series": "external answer (plain style)",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "number of mixed personas k": 1.0,
+      "y": -8.44924646008655,
+      "series": "external answer (plain style)",
+      "_kind": "line",
+      "_group": 17
+    }
+  ],
+  "n_series": 18,
+  "total_points": 72,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "layer 14 (evil read-out)",
+        "ylabel": "pooled held-out R$^2$",
+        "legend_labels": [
+          "persona mixture (k mixed personas)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ]
+      },
+      {
+        "title_left": "layer 26 (sycophancy read-out)",
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ]
+      },
+      {
+        "title_left": "layer 17 (hallucination read-out)",
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ]
+      },
+      {
+        "xlabel": "number of mixed personas k",
+        "ylabel": "anchor arms\n(same axis units)",
+        "legend_labels": [
+          "own answer (regenerated)",
+          "external answer (plain style)"
+        ],
+        "xticklabels": [
+          "1",
+          "2",
+          "4",
+          "8",
+          "16"
+        ],
+        "yticklabels": [
+          "\u221212",
+          "\u221210",
+          "\u22128",
+          "\u22126"
+        ]
+      },
+      {
+        "xlabel": "number of mixed personas k",
+        "xticklabels": [
+          "1",
+          "2",
+          "4",
+          "8",
+          "16"
+        ],
+        "yticklabels": [
+          "\u221212",
+          "\u221210",
+          "\u22128",
+          "\u22126"
+        ]
+      },
+      {
+        "xlabel": "number of mixed personas k",
+        "xticklabels": [
+          "1",
+          "2",
+          "4",
+          "8",
+          "16"
+        ],
+        "yticklabels": [
+          "\u221212",
+          "\u221210",
+          "\u22128",
+          "\u22126"
+        ]
+      }
+    ],
+    "series": [
+      "persona mixture (k mixed personas)",
+      "own answer (regenerated)",
+      "external answer (plain style)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

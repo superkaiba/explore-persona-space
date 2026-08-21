@@ -1,0 +1,97 @@
+{
+  "commit": "44b56018+dirty",
+  "render_id": "2b4b472d96984be1",
+  "git_commit": "44b56018d623567791ef737b846ab9afad0ba12e",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "docs/posters/mats_2026/poster.pdf",
+    "docs/posters/mats_2026/poster.tex",
+    "eval_results/issue_666/headline/predictor_headline.json",
+    "scripts/issue1345_analyzer_figs.py",
+    "scripts/issue1901_body_figures.py",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue1345_analyzer_figs.py",
+  "created": "2026-08-21T00:39:58Z",
+  "figsize": [
+    5.5,
+    3.0250000000000004
+  ],
+  "points": [
+    {
+      "category": "chat template",
+      "held-out $R^2$ (layer 19, matched rows)": 0.5671182126027223,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "plain text",
+      "held-out $R^2$ (layer 19, matched rows)": 0.5312841118823967,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "narrative story",
+      "held-out $R^2$ (layer 19, matched rows)": 0.26182284500999675,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (layer 19, matched rows)": 0.6004551646667929,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (layer 19, matched rows)": 0.5685074715928503,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (layer 19, matched rows)": 0.32095614119663696,
+      "_kind": "line",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 6,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "held-out $R^2$ (layer 19, matched rows)",
+        "legend_labels": [
+          "model's own answer",
+          "companion estimator (inner-group CV)"
+        ],
+        "xticklabels": [
+          "chat template",
+          "plain text",
+          "narrative story"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

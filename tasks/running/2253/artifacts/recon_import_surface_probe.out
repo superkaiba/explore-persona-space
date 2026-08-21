@@ -1,0 +1,35 @@
+files scanned           : 2416
+parse failures          : 0
+uv.lock dists           : 226
+distinct import roots   : 584
+third-party roots       : 59
+  resolved (name match) : 36
+  resolved via venv map : 6
+  UNRESOLVED            : 17
+
+--- mapped only via venv metadata (import-name != dist-name) ---
+  PIL                          -> pillow
+  dotenv                       -> python-dotenv
+  hydra                        -> hydra-core
+  sklearn                      -> scikit-learn
+  umap                         -> umap-learn
+  yaml                         -> pyyaml
+
+--- UNRESOLVED (candidate FAIL hits) ---
+  _issue506_common                4 site(s)  e.g. ['scripts/eval_issue506.py', 'scripts/fetch_issue506_phase1_dataset.py', 'scripts/rollup_issue506_survival.py', 'scripts/run_issue506_install.py']
+  adjustText                      1 site(s)  e.g. ['scripts/issue657_sycophancy_scatter.py']
+  analyze_issue396                1 site(s)  e.g. ['scripts/i396_make_figures.py']
+  issue500_predictors             2 site(s)  e.g. ['scripts/issue541_geometry_extract.py', 'scripts/issue541_geometry_joint.py']
+  issue541_personas               1 site(s)  e.g. ['scripts/issue541_geometry_extract.py']
+  issue541_predictors             1 site(s)  e.g. ['scripts/issue541_geometry_joint.py']
+  issue541_upload_lib             1 site(s)  e.g. ['scripts/issue541_geometry_extract.py']
+  issue621_analyze                1 site(s)  e.g. ['scripts/issue621_checkpoint_ladder.py']
+  issue_521_prep_turner_corpus    1 site(s)  e.g. ['scripts/issue_552_prep_good_corpus.py']
+  jlens                           5 site(s)  e.g. ['scripts/issue1776_jlens_fit.py', 'scripts/issue1776_phase4.py']
+  math_verify                     1 site(s)  e.g. ['scripts/issue2388_spread_pilot.py']
+  open_instruct                   7 site(s)  e.g. ['scripts/train_stage_dpo.py']
+  pingouin                        2 site(s)  e.g. ['scripts/i460_phase5_analyze.py', 'scripts/i474_phase5_analyze.py']
+  scripts                       402 site(s)  e.g. ['scripts/_issue_370_shared.py', 'scripts/backend_poll.py', 'scripts/dispatch_issue.py', 'scripts/issue1072_figures.py']
+  sparsify                        2 site(s)  e.g. ['scripts/issue2061_sae_encode.py']
+  speculators                     1 site(s)  e.g. ['scripts/project_corpus_v2.py']
+  src                            53 site(s)  e.g. ['scripts/archive/generate_sdf_documents.py', 'scripts/archive/generate_sdf_documents_v2.py', 'scripts/archive/merge_and_eval.py', 'scripts/archive/run_alignment_only.py']

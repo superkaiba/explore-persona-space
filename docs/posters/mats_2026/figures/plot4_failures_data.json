@@ -1,0 +1,252 @@
+{
+  "condition": "deterministic answers = 5-draw-averaged targets (original + 4 fresh on-policy draws), raw-euclidean retrieval, 1,988 resample-covered held-out rows, pool 9,941",
+  "n_covered": 1988,
+  "n_failures": 180,
+  "acc1_covered_avg_target": 0.9094567404426559,
+  "battery": [
+    {
+      "contrast": "language=en",
+      "n_group": 1174,
+      "fail_rate_group": 0.11328790459965929,
+      "fail_rate_rest": 0.05773955773955774,
+      "delta": 0.05554834686010155,
+      "ci_lo": 0.031207967461306333,
+      "ci_hi": 0.07932558117837657,
+      "ci_width": 0.04811761371707024,
+      "p_perm": 9.999000099990002e-05,
+      "bh_significant": true
+    },
+    {
+      "contrast": "topic=factual_qa",
+      "n_group": 620,
+      "fail_rate_group": 0.06612903225806452,
+      "fail_rate_rest": 0.10160818713450293,
+      "delta": -0.03547915487643841,
+      "ci_lo": -0.060042744901976794,
+      "ci_hi": -0.009656552283430417,
+      "ci_width": 0.05038619261854638,
+      "p_perm": 0.0103989601039896,
+      "bh_significant": true
+    },
+    {
+      "contrast": "topic=creative_writing",
+      "n_group": 333,
+      "fail_rate_group": 0.07207207207207207,
+      "fail_rate_rest": 0.09425981873111783,
+      "delta": -0.022187746659045757,
+      "ci_lo": -0.05196799508092931,
+      "ci_hi": 0.010331838618417558,
+      "ci_width": 0.062299833699346864,
+      "p_perm": 0.21727827217278273,
+      "bh_significant": false
+    },
+    {
+      "contrast": "topic=coding",
+      "n_group": 328,
+      "fail_rate_group": 0.14939024390243902,
+      "fail_rate_rest": 0.0789156626506024,
+      "delta": 0.07047458125183662,
+      "ci_lo": 0.030498936918568992,
+      "ci_hi": 0.11236038798647759,
+      "ci_width": 0.0818614510679086,
+      "p_perm": 0.00019998000199980003,
+      "bh_significant": true
+    },
+    {
+      "contrast": "topic=advice_howto",
+      "n_group": 230,
+      "fail_rate_group": 0.0391304347826087,
+      "fail_rate_rest": 0.09726962457337884,
+      "delta": -0.058139189790770145,
+      "ci_lo": -0.08556672118641999,
+      "ci_hi": -0.028168649444748853,
+      "ci_width": 0.057398071741671136,
+      "p_perm": 0.006299370062993701,
+      "bh_significant": true
+    },
+    {
+      "contrast": "topic=chitchat_social",
+      "n_group": 122,
+      "fail_rate_group": 0.07377049180327869,
+      "fail_rate_rest": 0.09163987138263666,
+      "delta": -0.01786937957935797,
+      "ci_lo": -0.06396659824249855,
+      "ci_hi": 0.03404099750796068,
+      "ci_width": 0.09800759575045923,
+      "p_perm": 0.41345865413458655,
+      "bh_significant": false
+    },
+    {
+      "contrast": "topic=translation",
+      "n_group": 82,
+      "fail_rate_group": 0.10975609756097561,
+      "fail_rate_rest": 0.08971668415529906,
+      "delta": 0.020039413405676554,
+      "ci_lo": -0.04528262790152538,
+      "ci_hi": 0.09463457204210463,
+      "ci_width": 0.13991719994363,
+      "p_perm": 0.43545645435456454,
+      "bh_significant": false
+    },
+    {
+      "contrast": "topic=summarization_extraction",
+      "n_group": 55,
+      "fail_rate_group": 0.12727272727272726,
+      "fail_rate_rest": 0.08949818934299017,
+      "delta": 0.03777453792973709,
+      "ci_lo": -0.044552673600729356,
+      "ci_hi": 0.1365213663807494,
+      "ci_width": 0.18107403998147875,
+      "p_perm": 0.22857714228577142,
+      "bh_significant": false
+    },
+    {
+      "contrast": "topic=roleplay_persona",
+      "n_group": 53,
+      "fail_rate_group": 0.09433962264150944,
+      "fail_rate_rest": 0.09043927648578812,
+      "delta": 0.0039003461557213237,
+      "ci_lo": -0.07064526382708201,
+      "ci_hi": 0.09025439580995137,
+      "ci_width": 0.1608996596370334,
+      "p_perm": 1.0,
+      "bh_significant": false
+    },
+    {
+      "contrast": "topic=math",
+      "n_group": 53,
+      "fail_rate_group": 0.03773584905660377,
+      "fail_rate_rest": 0.09198966408268734,
+      "delta": -0.05425381502608357,
+      "ci_lo": -0.09815084555732037,
+      "ci_hi": 0.006662490216856769,
+      "ci_width": 0.10481333577417715,
+      "p_perm": 0.2308769123087691,
+      "bh_significant": false
+    },
+    {
+      "contrast": "refusal_adjacent=yes",
+      "n_group": 93,
+      "fail_rate_group": 0.17204301075268819,
+      "fail_rate_rest": 0.08654353562005276,
+      "delta": 0.08549947513263542,
+      "ci_lo": 0.011450124109211078,
+      "ci_hi": 0.1666302641851351,
+      "ci_width": 0.155180140075924,
+      "p_perm": 0.0034996500349965005,
+      "bh_significant": true
+    },
+    {
+      "contrast": "answer_is_refusal=yes",
+      "n_group": 30,
+      "fail_rate_group": 0.2,
+      "fail_rate_rest": 0.0888661899897855,
+      "delta": 0.11113381001021451,
+      "ci_lo": -0.020356826475051874,
+      "ci_hi": 0.26843790566262354,
+      "ci_width": 0.2887947321376754,
+      "p_perm": 0.043995600439956005,
+      "bh_significant": false
+    },
+    {
+      "contrast": "format=code",
+      "n_group": 182,
+      "fail_rate_group": 0.19230769230769232,
+      "fail_rate_rest": 0.08028792912513842,
+      "delta": 0.1120197631825539,
+      "ci_lo": 0.05406330811989049,
+      "ci_hi": 0.1725300451377793,
+      "ci_width": 0.11846673701788882,
+      "p_perm": 9.999000099990002e-05,
+      "bh_significant": true
+    },
+    {
+      "contrast": "format=list",
+      "n_group": 283,
+      "fail_rate_group": 0.10600706713780919,
+      "fail_rate_rest": 0.08797653958944282,
+      "delta": 0.01803052754836637,
+      "ci_lo": -0.019191352209110887,
+      "ci_hi": 0.057965939509147205,
+      "ci_width": 0.0771572917182581,
+      "p_perm": 0.37176282371762825,
+      "bh_significant": false
+    },
+    {
+      "contrast": "format=prose",
+      "n_group": 1073,
+      "fail_rate_group": 0.07735321528424977,
+      "fail_rate_rest": 0.10601092896174863,
+      "delta": -0.028657713677498864,
+      "ci_lo": -0.055072194671145165,
+      "ci_hi": -0.0031053590953831747,
+      "ci_width": 0.05196683557576199,
+      "p_perm": 0.0230976902309769,
+      "bh_significant": false
+    },
+    {
+      "contrast": "depth=2-2",
+      "n_group": 830,
+      "fail_rate_group": 0.0963855421686747,
+      "fail_rate_rest": 0.08635578583765112,
+      "delta": 0.010029756331023584,
+      "ci_lo": -0.015438370370191403,
+      "ci_hi": 0.036358681995429534,
+      "ci_width": 0.05179705236562094,
+      "p_perm": 0.42705729427057293,
+      "bh_significant": false
+    },
+    {
+      "contrast": "depth=3-4",
+      "n_group": 660,
+      "fail_rate_group": 0.09545454545454546,
+      "fail_rate_rest": 0.08810240963855422,
+      "delta": 0.0073521358159912426,
+      "ci_lo": -0.018884980889194696,
+      "ci_hi": 0.034738391321713906,
+      "ci_width": 0.0536233722109086,
+      "p_perm": 0.6197380261973803,
+      "bh_significant": false
+    },
+    {
+      "contrast": "depth=>=5",
+      "n_group": 498,
+      "fail_rate_group": 0.07429718875502007,
+      "fail_rate_rest": 0.0959731543624161,
+      "delta": -0.021675965607396028,
+      "ci_lo": -0.049029285825957745,
+      "ci_hi": 0.006049097677014129,
+      "ci_width": 0.055078383502971874,
+      "p_perm": 0.15328467153284672,
+      "bh_significant": false
+    },
+    {
+      "contrast": "corpus=wildchat",
+      "n_group": 985,
+      "fail_rate_group": 0.07918781725888324,
+      "fail_rate_rest": 0.1016949152542373,
+      "delta": -0.022507097995354053,
+      "ci_lo": -0.047473377422640226,
+      "ci_hi": 0.0028810692670644335,
+      "ci_width": 0.05035444668970466,
+      "p_perm": 0.0746925307469253,
+      "bh_significant": false
+    }
+  ],
+  "attribution_counts": {
+    "MAP_ATTRIBUTABLE": 163,
+    "AMBIGUOUS": 6,
+    "IRREDUCIBLE": 11
+  },
+  "attribution_shares": {
+    "MAP_ATTRIBUTABLE": 0.9055555555555556,
+    "AMBIGUOUS": 0.03333333333333333,
+    "IRREDUCIBLE": 0.06111111111111111
+  },
+  "sources": {
+    "fail_indicator": "eval_results/issue_2202/residual_read/percontext_ranks_margins.npz field rank_raw_euclidean_avg (> 1)",
+    "attribution": "eval_results/issue_2202/percontext_ranks.csv field kres_class",
+    "labels": "eval_results/issue_1738/judge_labels/labels.json",
+    "fields": "HF issue2202_ctxfail/analysis_tensors/ci_fields.json"
+  }
+}

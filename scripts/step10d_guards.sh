@@ -13,7 +13,9 @@
 #                           (dirty-tree fix for the merge-conflict recovery,
 #                           #906).
 #   * ``--guard 4``       : the Guard 4 LOST-UPDATE refusal predicate
-#                           (silent whole-file-snapshot revert, #1701 -> #1713).
+#                           (silent whole-file-snapshot revert, #1701 -> #1713;
+#                           ``--main-sha`` is the pinned origin/main TIP from
+#                           which the merge-base is DERIVED, #2428).
 #
 # All three fragments are byte-equivalent in effect to the current SKILL.md
 # fences (transcribed at implementation time; the ``.py`` pin tests exercise
@@ -53,8 +55,10 @@
 # Guards must expose the caller-side variables the downstream SKILL.md blocks
 # read (``MEM_COMMITTED``, ``LOST_UPDATE_PATHS``, etc.). Approach: each guard
 # subcommand emits ``KEY=VALUE`` shell-assignment lines on **stdout**, one per
-# line, values shell-safe (word/sha/``yes|no`` tokens only -- no user text on
-# stdout; diagnostics go to stderr). Callers consume via::
+# line, values shell-safe: word/sha/``yes|no`` tokens print via ``%s``;
+# path-bearing values (``LOST_UPDATE_PATHS``, ``DIVERGED_FILE``) print via
+# ``printf %q`` so ``eval`` recovers them exactly (no user text on stdout;
+# diagnostics go to stderr). Callers consume via::
 #
 #     eval "$(bash scripts/step10d_guards.sh <N> --guard 0)"
 #
@@ -84,7 +88,9 @@ Emits KEY=VALUE lines on stdout for `eval` in the caller. Diagnostics on stderr.
                          MEM_COMMITTED=yes|no. Exit 0 on success, 2 on infra
                          error (ERROR=<reason>).
   --guard 4              Runs Guard 4 (LOST-UPDATE refusal); emits
-                         GUARD4=pass|refused|skipped and LOST_UPDATE_PATHS on
+                         GUARD4=pass|refused|skipped, GUARD4_MERGE_BASE (the
+                         merge-base derived from the pinned tip; emitted on
+                         both pass and refusal), and LOST_UPDATE_PATHS on
                          refusal. Exit 0 on pass/skipped, 1 on refused, 2 on
                          infra error. Honors EPM_SKIP_LOST_UPDATE_GUARD=1
                          (checked FIRST).
@@ -100,8 +106,13 @@ Emits KEY=VALUE lines on stdout for `eval` in the caller. Diagnostics on stderr.
                          post-sync probe; Step 10d pre-merge delta gate) use
                          the two-step rc-capture form and rm -f the --out
                          path BEFORE invoking (stale-output hygiene).
-  --main-sha <sha>       Guard 4 only: pinned merge-base (falls back to
-                         `git merge-base HEAD origin/main` in the worktree).
+  --main-sha <sha>       Guard 4 only: the pinned origin/main TIP (the Step
+                         10d caller's Guard-1 capture) -- NOT the merge-base.
+                         The helper derives the merge-base from it
+                         (git merge-base HEAD <sha>); defaults to the live
+                         origin/main ref when omitted. Rejected (exit 2,
+                         ERROR=main-sha-not-supported-for-guard-*) for every
+                         other guard (#2428).
   --out <file>           divergence only: survivors list path (default
                          /tmp/issue-<N>-divergence.txt).
 USAGE
@@ -150,6 +161,13 @@ done
 
 if [ -z "$GUARD" ]; then
     _die_usage missing-guard
+fi
+
+# --main-sha is Guard 4-only: divergence pins its OWN main snapshot and would
+# silently shadow a passed value; prelude/0 never read it. Reject rather than
+# accept an inert flag (#2428 acceptance criterion 4).
+if [ -n "$MAIN_SHA" ] && [ "$GUARD" != "4" ]; then
+    _die_usage "main-sha-not-supported-for-guard-$GUARD"
 fi
 
 # --- PRELUDE derivation (used by every guard subcommand). ------------------
@@ -231,6 +249,8 @@ case "$GUARD" in
         # Refuses the merge when the branch's whole-file snapshot silently
         # DROPS lines that landed on ``origin/main`` after the branch's
         # merge-base -- no conflict, no warning. Kill switch checked FIRST.
+        # ``--main-sha`` is the pinned origin/main TIP; the merge-base is
+        # DERIVED from it below (#2428).
         if [ -n "${EPM_SKIP_LOST_UPDATE_GUARD:-}" ]; then
             printf 'GUARD4=%s\n' skipped
             exit 0
@@ -241,13 +261,15 @@ case "$GUARD" in
             printf 'ERROR=%s\n' worktree-missing
             exit 2
         fi
-        if [ -n "$MAIN_SHA" ]; then
-            MB="$MAIN_SHA"
-        else
-            if ! MB=$(git -C "$WT" merge-base HEAD origin/main 2>/dev/null); then
-                printf 'ERROR=%s\n' merge-base-failed
-                exit 2
-            fi
+        # --main-sha is the PINNED origin/main TIP (the Step 10d caller's Guard-1
+        # capture: MAIN_SHA=$(git -C "$WT" rev-parse origin/main),
+        # steps/18-step-10d.md:304) -- NOT the merge-base. Derive the merge-base
+        # FROM it and use the SAME pinned tip as the main side of every diff
+        # below, so the pinned path and the no-flag path agree (#2428).
+        MAIN_REF="${MAIN_SHA:-origin/main}"
+        if ! MB=$(git -C "$WT" merge-base HEAD "$MAIN_REF" 2>/dev/null) || [ -z "$MB" ]; then
+            printf 'ERROR=%s\n' merge-base-failed
+            exit 2
         fi
         # Per-invocation temp file (byte-equivalent-in-effect to the fence's
         # ``/tmp/1713-main-adds.txt`` shared name; using ``mktemp`` avoids
@@ -267,10 +289,10 @@ case "$GUARD" in
         while IFS= read -r P; do
             case "$P" in
                 scripts/workflow_lint.py|.claude/skills/*|.claude/rules/*|.claude/workflow.yaml|CLAUDE.md)
-                    MAIN_ADDS=$(git -C "$WT" diff --numstat "$MB" origin/main -- "$P" 2>/dev/null \
+                    MAIN_ADDS=$(git -C "$WT" diff --numstat "$MB" "$MAIN_REF" -- "$P" 2>/dev/null \
                         | awk '{print $1+0}')
                     if [ "${MAIN_ADDS:-0}" -gt 0 ]; then
-                        if ! git -C "$WT" diff "$MB" origin/main -- "$P" 2>/dev/null \
+                        if ! git -C "$WT" diff "$MB" "$MAIN_REF" -- "$P" 2>/dev/null \
                                 | grep -E '^\+[^+]' | sed 's/^\+//' > "$_tmp_adds"; then
                             # A grep failure with an empty adds file means "no
                             # matching '+' lines"; treat as MAIN_ADDS=0 rather
@@ -307,10 +329,17 @@ case "$GUARD" in
             printf 'Recovery: rebase onto origin/main and re-apply the intended edits by explicit path; post epm:merge-failed v1 (reason: lost-update, paths=%s).\n' \
                 "$LOST_UPDATE_PATHS" >&2
             printf 'GUARD4=%s\n' refused
-            printf 'LOST_UPDATE_PATHS=%s\n' "$LOST_UPDATE_PATHS"
+            printf 'GUARD4_MERGE_BASE=%s\n' "$MB"
+            # %q: eval-safe under the two-step caller form -- the value
+            # carries ``path(count)`` entries whose bare parens are a bash
+            # syntax error inside ``eval "$GUARD4_OUT"`` (and paths may bear
+            # spaces/metachars). Same encoding as DIVERGED_FILE below; the
+            # token/sha keys stay %s like the divergence guard's.
+            printf 'LOST_UPDATE_PATHS=%q\n' "$LOST_UPDATE_PATHS"
             exit 1
         fi
         printf 'GUARD4=%s\n' pass
+        printf 'GUARD4_MERGE_BASE=%s\n' "$MB"
         exit 0
         ;;
 

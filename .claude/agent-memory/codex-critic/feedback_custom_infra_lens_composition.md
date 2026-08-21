@@ -397,6 +397,24 @@ standard 3-lens enum gate does not apply: the brief's verbatim lens list IS
   inputs + press + lensitems + plan + empty prior; unsigned both-sides-guard
   atoms + pair-split + isfinite canon + collect-all).
 
+- **Lint-addition plan whose TOP press point attacks the task body's OWN spec
+  choice (#2253 round one, alternatives on the prod-import-lockfile lint): add
+  a digit-free CALIBRATION paragraph before the lens span** splitting
+  spec-infidelity from claim-fragility ("the body's Goal pins the oracle —
+  'the lockfile is not the installed set' is not by itself a design
+  infidelity; judge whether the plan's CLAIMS — zero false positives, catches
+  the incident class pre-pod — survive the declared-vs-installed gap; route
+  FATAL / RECOVERABLE-with-a-named-home / already-handled"). Brief verbatim as
+  its own span carried all brief digits; per-press-point dispositions mandated
+  the oracle point answered BOTH directions (in-lock-not-installed /
+  installed-not-in-lock) and forced a stated prior-art position under the
+  dominating-alternative bar (rejection rationale misstates facts AND silent
+  failure class). Read discipline banned the full no-flags lint run (slow; the
+  check doesn't exist yet) while ENCOURAGING tomllib parses of uv.lock +
+  bootstrap install-command reads + targeted import-shape greps. Fully
+  digit-free scaffold → numcheck PASS first try at ~75 KB with ZERO
+  scaffold-cleared atoms.
+
 - **verify_plan check-ADDITION with a brief-supplied seven-question infra
   translation (#2228 round one, methodology): the 19p mechanical-verifier
   reframe + WARN-only blend composes as lettered questions (the brief's
@@ -526,6 +544,70 @@ standard 3-lens enum gate does not apply: the brief's verbatim lens list IS
   prior; scaffold digit-free — "v3"/"Step 10d"/"9c" are atom-free under
   both-sides guards; ISO-timestamp examples and :line refs confined to the
   questions SPAN where they balance).
+
+- **workflow_lint FAIL-level check-ADDITION with grandfathered-offender
+  dispositions, standard methodology lens + brief-supplied five press points
+  (#2253 round one — the 19aw/#930 shape, brief-translated): the brief's five
+  bulleted press points ride verbatim in the brief span labeled "(a)-(e) in
+  order", and the composer adds the 19aw earned probes as lettered (f)-(k):
+  motivating-class fire check via imagine-the-dispositions-absent (walk the
+  predicate against the plan's own site inventory + verify its
+  detection-predicate trace's logic, noting the fixture reproduces the
+  incident's HISTORICAL state when the live site is remediated);
+  seed-absorption at the mandated implementation-start probe re-run (does
+  "extend dispositions" license auto-waivering genuinely-new offenders,
+  especially when the must-ask list bars lockfile adds); waiver GRAIN
+  (per-(file,root) exempts future sites) + placement grammar vs multi-line
+  parenthesized imports; first-party resolver FALSE-NEGATIVE direction (a
+  script stem colliding with a third-party root exempts it repo-wide — the
+  inverse of the class-A FP fix); registration/wiring completeness (dispatch
+  regex, no-flags detection, chain order, scope classification, WARN-line
+  path-free contract); fail-loud arms + constant grounding. Bar = the infra
+  translation with a fires-on-healthy / motivating-class-miss /
+  posture-flip / lands-red / acceptance-fail / unimplementable clause set
+  plus the 19p no-gate-today baseline; disclosed accepted residues judged
+  only for materially-understated holes. Fact-check-complete brief clause →
+  digit-free FACT-CHECK STATUS header block pointing at the brief span + the
+  plan's own dispositions section ("design critique, not fact
+  re-verification"). Scaffold digit gotchas confirmed: "PEP-503" DOES atom
+  (503, hyphen-adjacent) — keep it span-only, write "the name-normalization
+  standard"; "Phase 1.5"/"§13" span-only. Read discipline allowed re-running
+  the plan's committed read-only recon probe (seconds) alongside bounded
+  greps. Numcheck PASS first try at ~148 KB (spans = briefnote + lensitems +
+  plan + body + empty prior; unsigned both-sides-guard atoms + comma-grouping
+  first + pair-split + isfinite canon + collect-all + registry leg from repo
+  root; version-suffixed workspace `-v2` keyed to PLAN version).**
+
+- **Sync-FAMILY membership-coupling plan, standard methodology lens + brief
+  roman-numeral press points (#2260 round one, Step 5a FAMILY_OF `agents`
+  family + completeness guard): the brief's press points arrived as (i)-(v)
+  roman numerals — keep them roman in scaffold references (digit-free by
+  construction, no relettering needed) and letter composer probes (a)-(f).**
+  Probe set that fits any FAMILY_OF/membership-list plan: seed-absorption at
+  the implementer re-sweep (#930 move); MEMBERSHIP SELF-UPDATE ORDERING (the
+  family table lives in a step file that is itself synced as a member of
+  another family — walk the stale-copy transition window, decide bounded vs
+  open-ended); guard genuineness (non-vacuity pin + bash deleted-member repro
+  each fail for exactly its defect's reason; plan's own detection-predicate
+  trace judged for logic); containment arm BOTH directions (false-dirty
+  staleness vs residual whole-sync wedge, confirm claimed checkout atomicity
+  against the quoted bash, ask whether the arm covers every family's batch);
+  landing completeness (pinned-literal rewrite + mirror-tuple + fixture-stub
+  extensions spot-checked against live anchors); ratchet RE-MEASURE (wc -c +
+  cap-table grep, remedy sequenced on REALIZED post-edit bytes). Settled block
+  from the plan's Deviations must-ask list with the judge-soundness-not-scope
+  carve-out ("dropping the containment arm is a recorded park-question — judge
+  its soundness, don't demand the scope change"). Read discipline: ban git
+  fetch (population under review) AND pytest (guard doesn't exist yet;
+  suite subprocess-heavy); allow read-only git log for commit-frequency
+  pricing claims. Scaffold digit traps dodged: "guard (20)"/"guard (19)" →
+  "the new completeness guard"/"the existing helper-import guard"; the Step
+  10d mirror's digit-bearing filename → "its Step 10d mirror"; "test (1)"/
+  "(9)"/"(10)" are allowlist-safe. Numcheck PASS first try at ~148 KB
+  (spans = briefnote + lensitems + plan + empty prior; unsigned both-sides-
+  guard atoms + comma-grouping first + pair-split + isfinite canon +
+  collect-all + registry leg from repo root; version-suffixed workspace
+  keyed to PLAN version).
 
 **Why:** first custom-lens infra compose (#2324) — these choices made the
 numeric gate pass first try on a 68 KB prompt; round 2 (REVISE-round

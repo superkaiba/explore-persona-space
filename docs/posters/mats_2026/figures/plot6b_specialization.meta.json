@@ -1,0 +1,146 @@
+{
+  "commit": "03b6c256+dirty",
+  "render_id": "1fbf29727aa54a5d",
+  "git_commit": "03b6c2568c9620cf9606c6825e0a4efe39c72b6a",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "docs/posters/mats_2026/figures/plot6_persona_data.json",
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.meta.json",
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.pdf",
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.png",
+    "docs/posters/mats_2026/figures/plot6b_specialization.meta.json",
+    "docs/posters/mats_2026/figures/plot6b_specialization.pdf",
+    "docs/posters/mats_2026/figures/plot6b_specialization.png",
+    "docs/posters/mats_2026/make_plot6_persona.py",
+    "eval_results/issue_666/headline/predictor_headline.json",
+    "scripts/issue1901_body_figures.py",
+    "tasks/completed/2214/body.md",
+    "tasks/completed/2214/comments.jsonl",
+    "tasks/completed/2214/concerns.jsonl",
+    "tasks/completed/2214/events.jsonl",
+    "tasks/completed/2214/plans/plan.md",
+    "tasks/completed/2214/plans/v1.md",
+    "tasks/completed/2214/plans/v2.md",
+    "tasks/completed/2214/plans/v3.md",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tasks/running/2214/body.md",
+    "tasks/running/2214/comments.jsonl",
+    "tasks/running/2214/concerns.jsonl",
+    "tasks/running/2214/events.jsonl",
+    "tasks/running/2214/plans/plan.md",
+    "tasks/running/2214/plans/v1.md",
+    "tasks/running/2214/plans/v2.md",
+    "tasks/running/2214/plans/v3.md",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "docs/posters/mats_2026/make_plot6_persona.py",
+  "created": "2026-08-21T01:45:23Z",
+  "figsize": [
+    6.8,
+    2.8
+  ],
+  "points": [
+    {
+      "x": -0.17,
+      "held-out $R^2$": 0.35074089227915894,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.83,
+      "held-out $R^2$": 0.3875027483153908,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.83,
+      "held-out $R^2$": 0.3171977807434766,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.83,
+      "held-out $R^2$": 0.21206553425629815,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.17,
+      "held-out $R^2$": 0.3548299086061537,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.17,
+      "held-out $R^2$": 0.40107670413358276,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.17,
+      "held-out $R^2$": 0.3285635376004241,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.17,
+      "held-out $R^2$": 0.2328833350537587,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.53,
+      "held-out $R^2$": 0.4051153063211188,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.87,
+      "held-out $R^2$": 0.49891139167802057,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 10,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "Pooled vs persona-specific fit, evaluated per persona",
+        "ylabel": "held-out $R^2$",
+        "legend_labels": [
+          "one map, personas pooled",
+          "persona-specific map",
+          "*different pool + grain"
+        ],
+        "xticklabels": [
+          "Wren",
+          "HELIOS",
+          "Dana",
+          "Vex",
+          "assistant*"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      }
+    ],
+    "series": [
+      "one map, personas pooled",
+      "persona-specific map"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

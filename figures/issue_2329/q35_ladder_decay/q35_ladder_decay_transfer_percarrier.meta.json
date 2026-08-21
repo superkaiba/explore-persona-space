@@ -1,0 +1,591 @@
+{
+  "commit": "unknown",
+  "render_id": "90ba82c6c40141a4",
+  "git_commit": "unknown",
+  "git_dirty": null,
+  "git_argv0_state": null,
+  "created": "2026-08-21T11:34:10Z",
+  "figsize": [
+    8.0,
+    7.5
+  ],
+  "points": [
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.10488505747126418,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": -0.00873362445414848,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": -0.15862068965517262,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": -0.013100436681222597,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.22953271028037395,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.2462526766595289,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": -0.20785046728971937,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.025695931477516084,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": -0.18735224586288396,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": -0.07619047619047599,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.26524822695035455,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": -0.014285714285714166,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.15010060362173044,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.3110367892976588,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.23380281690140858,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": -0.023411371237458217,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.5208333333333335,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.5107102593010147,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.14930555555555594,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.1431792559188274,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.28143712574850294,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.1258278145695364,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": -0.623952095808383,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.09713024282560714,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.14129244249726178,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.08767471410419321,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.033953997809419524,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": -0.04447268106734438,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": -0.09782971619365569,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.042362002567394134,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.00901502504173642,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": -0.07573812580231043,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": -0.1797566371681416,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": -0.19937205651491366,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.23539823008849559,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": -0.2715855572998429,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.3930481283422459,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.616685456595265,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": -0.013368983957219414,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.07102593010146543,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.8298906439854192,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.1449814126394053,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": -0.15431348724179816,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.2639405204460967,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.6737100737100736,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.410958904109589,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.3120393120393121,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.28219178082191776,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.32901833872707636,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.014580801944106807,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.018338727076590934,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.007290400972053336,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.6542893725992317,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.035714285714285754,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.08578745198463489,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": -0.007142857142856886,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.2923898531375164,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.6959374999999999,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.13084112149532695,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.07718749999999984,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.5818584070796459,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.05320435308343415,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.4623893805309734,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.0169286577992745,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.73305954825462,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.14199029126213594,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.06365503080082119,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.00849514563106797,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 1.0256410256410255,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.27683890577507597,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": -0.6386946386946387,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": -0.013677811550152049,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.21641791044776112,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.16666666666666669,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": -0.006349206349206355,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.34782608695652173,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.010504201680672164,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.5152173913043477,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.0042016806722687955,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.14734774066797662,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.045120671563483775,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.819253438113949,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": -0.022035676810073474,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.16256157635468008,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.0036839950880066885,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.5073891625615765,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.00859598853868209,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.1421455938697318,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.185589519650655,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.2220560747663551,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.017130620985010708,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.06950354609929077,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.0,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.26961770623742454,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.16722408026755853,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.34722222222222215,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.07891770011273957,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.15329341317365264,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.05518763796909493,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.3242059145673603,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.05844980940279542,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.21368948247078462,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.10269576379974325,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.12444690265486726,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.015698587127158554,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.005347593582887701,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.0,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.05589307411907654,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.022304832713754642,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.05896805896805896,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.13698630136986303,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.9449838187702266,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.9684082624544351,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.04314994606256744,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.6622114216281896,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.4545454545454546,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.9785714285714285,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.0,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.5166666666666667,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.5140186915887852,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.3968750000000001,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": -0.04672897196261681,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.14375000000000002,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": -0.05530973451327439,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.8887545344619106,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": -0.1880530973451328,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.1946795646916566,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.3901437371663245,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.9332524271844662,
+      "_kind": "scatter",
+      "_group": 64
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.0410677618069815,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.042475728155339815,
+      "_kind": "scatter",
+      "_group": 65
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.2074592074592073,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.8238297872340427,
+      "_kind": "scatter",
+      "_group": 66
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.08158508158508151,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.49775075987841944,
+      "_kind": "scatter",
+      "_group": 67
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.04975124378109453,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.060317460317460325,
+      "_kind": "scatter",
+      "_group": 68
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.012437810945273632,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.0814814814814815,
+      "_kind": "scatter",
+      "_group": 69
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.0,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": -0.03781512605042017,
+      "_kind": "scatter",
+      "_group": 70
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.0,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.06092436974789917,
+      "_kind": "scatter",
+      "_group": 71
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": -0.04926108374384235,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.7900122799836266,
+      "_kind": "scatter",
+      "_group": 72
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target": 0.08374384236453199,
+      "this run (Qwen3.5-9B) per-carrier steered F_target": 0.20057306590257873,
+      "_kind": "scatter",
+      "_group": 73
+    }
+  ],
+  "n_series": 74,
+  "total_points": 74,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Ladder transfer \u2014 per-carrier companion (88 carrier pairs, 16 both-testable cells)",
+        "xlabel": "parent #2162 (Qwen2.5-7B-Instruct) per-carrier steered F_target",
+        "ylabel": "this run (Qwen3.5-9B) per-carrier steered F_target",
+        "legend_labels": [
+          "verdict unchanged",
+          "verdict flip cell"
+        ],
+        "annotations": [
+          "er_r1|ce\u00b7d1",
+          "er_r1|pe\u00b7d1",
+          "er_r1|ce\u00b7d2",
+          "er_r1|pe\u00b7d2",
+          "er_r1|ce\u00b7n3",
+          "er_r1|pe\u00b7n3",
+          "er_r1|ce\u00b7n4",
+          "er_r1|pe\u00b7n4",
+          "er_r1|ce\u00b7n7",
+          "er_r1|pe\u00b7n7",
+          "er_r1|ce\u00b7n9",
+          "er_r1|pe\u00b7n9",
+          "er_r2|ce\u00b7d1",
+          "er_r2|pe\u00b7d1",
+          "er_r2|ce\u00b7d2",
+          "er_r2|pe\u00b7d2",
+          "er_r2|ce\u00b7n3",
+          "er_r2|pe\u00b7n3",
+          "er_r2|ce\u00b7n4",
+          "er_r2|pe\u00b7n4",
+          "er_r2|ce\u00b7n7",
+          "er_r2|pe\u00b7n7",
+          "er_r2|ce\u00b7n9",
+          "er_r2|pe\u00b7n9",
+          "er_r3|ce\u00b7d1",
+          "er_r3|pe\u00b7d1",
+          "er_r3|ce\u00b7d2",
+          "er_r3|pe\u00b7d2",
+          "er_r3|ce\u00b7n3",
+          "er_r3|pe\u00b7n3",
+          "er_r3|ce\u00b7n4",
+          "er_r3|pe\u00b7n4",
+          "er_r3|ce\u00b7n7",
+          "er_r3|pe\u00b7n7",
+          "er_r3|ce\u00b7n9",
+          "er_r3|pe\u00b7n9",
+          "er_r5b|ce\u00b7d1",
+          "er_r5b|pe\u00b7d1",
+          "er_r5b|ce\u00b7d2",
+          "er_r5b|pe\u00b7d2",
+          "er_r5b|ce\u00b7n3",
+          "er_r5b|pe\u00b7n3",
+          "er_r5b|ce\u00b7n9",
+          "er_r5b|pe\u00b7n9",
+          "in_r1|ce\u00b7d1",
+          "in_r1|pe\u00b7d1",
+          "in_r1|ce\u00b7d2",
+          "in_r1|pe\u00b7d2",
+          "in_r1|ce\u00b7n3",
+          "in_r1|pe\u00b7n3",
+          "in_r1|ce\u00b7n4",
+          "in_r1|pe\u00b7n4",
+          "in_r1|ce\u00b7n7",
+          "in_r1|pe\u00b7n7",
+          "in_r1|ce\u00b7n9",
+          "in_r1|pe\u00b7n9",
+          "in_r2|ce\u00b7d1",
+          "in_r2|pe\u00b7d1",
+          "in_r2|ce\u00b7d2",
+          "in_r2|pe\u00b7d2",
+          "in_r2|ce\u00b7n3",
+          "in_r2|pe\u00b7n3",
+          "in_r2|ce\u00b7n4",
+          "in_r2|pe\u00b7n4",
+          "in_r2|ce\u00b7n7",
+          "in_r2|pe\u00b7n7",
+          "in_r2|ce\u00b7n9",
+          "in_r2|pe\u00b7n9",
+          "in_r3|ce\u00b7d1",
+          "in_r3|pe\u00b7d1",
+          "in_r3|ce\u00b7d2",
+          "in_r3|pe\u00b7d2",
+          "in_r3|ce\u00b7n3",
+          "in_r3|pe\u00b7n3",
+          "in_r3|ce\u00b7n4",
+          "in_r3|pe\u00b7n4",
+          "in_r3|ce\u00b7n7",
+          "in_r3|pe\u00b7n7",
+          "in_r3|ce\u00b7n9",
+          "in_r3|pe\u00b7n9",
+          "in_r5b|ce\u00b7d1",
+          "in_r5b|pe\u00b7d1",
+          "in_r5b|ce\u00b7d2",
+          "in_r5b|pe\u00b7d2",
+          "in_r5b|ce\u00b7n3",
+          "in_r5b|pe\u00b7n3",
+          "in_r5b|ce\u00b7n9",
+          "in_r5b|pe\u00b7n9"
+        ],
+        "xticklabels": [
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

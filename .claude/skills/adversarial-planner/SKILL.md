@@ -469,7 +469,16 @@ Run the structural verifier against the plan version just persisted:
   test-retest κ demotion gate; a plan genuinely registering the gate
   instead runs the retest at the parent instrument's sampling temperature,
   or re-grounds the κ threshold for a deterministic surface; #2204,
-  incident #2202 v1).
+  incident #2202 v1), and
+  `N/A — no absolute-margin decision gate` (check 68 — declare only when
+  the plan genuinely registers no absolute-pp reduction margin: the
+  pp-margin/baseline vocabulary is incidental or quotes an
+  incident/sibling), and
+  `N/A — harvested percentage baseline is unrelated to this absolute-margin gate`
+  (check 68 — the plan DOES register an absolute-pp margin but every
+  %-stated baseline in the plan concerns a different quantity; prefer
+  stating the gate's true baseline in % form so the harvest sees it;
+  #2228, incident #2203 v12).
 - **FAIL → bounce to the planner** with the failed-check details (a mechanical-fix
   revision: re-spawn the planner with the FAIL list + the plan path; it patches the
   missing block and the orchestrator persists v{K+1} via `task.py new-plan-version`).

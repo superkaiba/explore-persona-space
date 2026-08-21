@@ -1,0 +1,1178 @@
+{
+  "scope": "grid",
+  "derived_from": "grid rollout shards (72 capture-enriched of 72 present)",
+  "derived_from_shards": [
+    {
+      "name": "shard_erase_r1_pirate__ce__null_sameval.jsonl",
+      "sha256": "4215b037ce8c5697202c1bb6ca28563d66f6193459878c881130c6ed8b07c612",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_erase_r1_pirate__ce__null_xtype.jsonl",
+      "sha256": "83434bdd5ce15aae0fc826228a1f65442108913e82355dbb1a057dab3fc56f38",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_erase_r1_pirate__ce__steered.jsonl",
+      "sha256": "08fc9837e20c327ebdf1351a5d76e7548ecd4abbd6f6a12c5c7a4b9487f0c9dc",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_erase_r1_pirate__pe__null_sameval.jsonl",
+      "sha256": "27087530d51d7a085bcab5af257578885febc6fbed71da3f990e88416d70f745",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_erase_r1_pirate__pe__null_xtype.jsonl",
+      "sha256": "b22857d082a77c008efe7cac6322a8e8bcc83c0b92119d58d07b513e4f9b1028",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_erase_r1_pirate__pe__steered.jsonl",
+      "sha256": "60535cd644cd373c98e7ccca03012cd2fed50328beffb6ae53c06f3fd9e19ca6",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_erase_r2_butler__ce__null_sameval.jsonl",
+      "sha256": "92b955f616e5d3bf711ef9b831ffcd83f6ff2771a3e8930094df8d3945f0eae6",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_erase_r2_butler__ce__null_xtype.jsonl",
+      "sha256": "fcae48ff43010a4b670bad8fe57c5c39ed62d3ea8fcf61ee1f2870e93de2d733",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_erase_r2_butler__ce__steered.jsonl",
+      "sha256": "1d155eccc234c7a9f1008feb400d8e2f3e61759796c4e42b212d4bfdbbe9440d",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_erase_r2_butler__pe__null_sameval.jsonl",
+      "sha256": "f864399edb17cc2d33887e2727496ed12046c42746e5e3965e642658dca3643c",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_erase_r2_butler__pe__null_xtype.jsonl",
+      "sha256": "cb2de10006802ad4254eda0c0fe9353850c7bbe7b5bfa065aca8ee06bffc168c",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_erase_r2_butler__pe__steered.jsonl",
+      "sha256": "cf29bb7c39f3ec18721f60126216a3db04411d71263ff9f8df6dd792631c803d",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_erase_r3_warm__ce__null_sameval.jsonl",
+      "sha256": "146359e3d1bc3220ca401dcd22188e470bd6bcbc8396214a854ac5bbe95fe710",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_erase_r3_warm__ce__null_xtype.jsonl",
+      "sha256": "53464a7486b6bce69b3bc5b74ae41ba9e7efbdc29c571ca52a5faa6e0ba7d51a",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_erase_r3_warm__ce__steered.jsonl",
+      "sha256": "49bf16855d25f9fce9b94523b07057296fe7b55b81141c6400c1f42c83764883",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_erase_r3_warm__pe__null_sameval.jsonl",
+      "sha256": "8f5cb57c0cba7b10c51e78664567dd37c21f891887ad95438a7185810151c765",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_erase_r3_warm__pe__null_xtype.jsonl",
+      "sha256": "333ef4b3cd85abfbbab54b7c16487e785e1c81afa9a1b812178b9b203b1c5644",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_erase_r3_warm__pe__steered.jsonl",
+      "sha256": "6d9678be49cf90db8bdc7a5ca6eccda88df730664c1517fdcc4c546be5f9e363",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_erase_r4_trait__ce__null_sameval.jsonl",
+      "sha256": "5f074d6f2e8cbb8aa28764c11676945ef9639164be549c1f8330f428e57e05aa",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_erase_r4_trait__ce__null_xtype.jsonl",
+      "sha256": "58e6e56a465f6a5d4189cddfebc74d5edbbcc9116fca3c976a0876f6bac02793",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_erase_r4_trait__ce__steered.jsonl",
+      "sha256": "6c9ea8a726101f91e3980bc1a4835c8288f9bbb928c7fa5b5250bbe4452d4f0e",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_erase_r4_trait__pe__null_sameval.jsonl",
+      "sha256": "d270de3f4d01a7f0ff905b8bf93c447523ae98bd7321af23df4b5fd15479cb34",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_erase_r4_trait__pe__null_xtype.jsonl",
+      "sha256": "a8c4f2d24a227bf9cf285302a723bdd85809b450222b3e628669a0277a4c45e3",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_erase_r4_trait__pe__steered.jsonl",
+      "sha256": "6befb7fa3d7d2ee6b4903132aa36e8bbab3aa4173943446d752bd483130c46ed",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_erase_r5a_lu_therapy__ce__null_sameval.jsonl",
+      "sha256": "e37803ac9343879a045fdbd30bcad76286c74c77e42e2005169da3d7fda74796",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_erase_r5a_lu_therapy__ce__null_xtype.jsonl",
+      "sha256": "3e1150c89658f9466fda2588277a6349404a75558a194ffb7771362f738618c1",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_erase_r5a_lu_therapy__ce__steered.jsonl",
+      "sha256": "067742bd78bbe150c3326992dde8de8d3df6f9a275e4f445a51b629d309ae559",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_erase_r5a_lu_therapy__pe__null_sameval.jsonl",
+      "sha256": "baf8eafe0f3e335664af946d93543ce91d783c7c38baa25365f54985fcc5b285",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_erase_r5a_lu_therapy__pe__null_xtype.jsonl",
+      "sha256": "52dae3d4487481605a38abb3ae7ebfae90bd6b9aea4ec02d87a18b9dd7fa0805",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_erase_r5a_lu_therapy__pe__steered.jsonl",
+      "sha256": "0b836d1e44d1914e7b76b7837a58ffd937334cc715321ba103606d1f0f37877f",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_erase_r5b_lu_philosophy__ce__null_sameval.jsonl",
+      "sha256": "bc6402b3ec5b64696f9cbb6cdd2c48c3117c367f36e399c27dcd5defcc7989fc",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_erase_r5b_lu_philosophy__ce__null_xtype.jsonl",
+      "sha256": "a872aeeadfe003de6d5c5cb087e992ea01a562e20a7286cad450b315267f6fc8",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_erase_r5b_lu_philosophy__ce__steered.jsonl",
+      "sha256": "058359e2e80f2629433bb774a1274fe2ae8bbf3790cb0edb190ea846bd8451f1",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_erase_r5b_lu_philosophy__pe__null_sameval.jsonl",
+      "sha256": "a2ff592504f0ee8951eddde88358225a7ef2caa9b14e7678d5f1282ee55b8a74",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_erase_r5b_lu_philosophy__pe__null_xtype.jsonl",
+      "sha256": "76ecfecd19c75cfb32f2193349051d76f6f9915f5af9af0fe0bc91ee48496028",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_erase_r5b_lu_philosophy__pe__steered.jsonl",
+      "sha256": "aa22438b87df1d7aa4938929b91eb738457f27f27530fa98680ad094c364209e",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_install_r1_pirate__ce__null_sameval.jsonl",
+      "sha256": "78fbf9d8790533e279a2c9cd15ed661cac9ab32ad002a047232f4c5e69fa2731",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_install_r1_pirate__ce__null_xtype.jsonl",
+      "sha256": "0ce4f7fd1a61843642a1fce2e38b3f574dc1ee17fbf1dbede2ae8fa96afa87b2",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_install_r1_pirate__ce__steered.jsonl",
+      "sha256": "4acfce6198d645c4f9453c1edb3fede2aadc90a60139b73dd78e91a933a4949b",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_install_r1_pirate__pe__null_sameval.jsonl",
+      "sha256": "9e9738f808959b5db54b65f517048ae0c0c5b7adbd5b27b03a7334b37466e559",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_install_r1_pirate__pe__null_xtype.jsonl",
+      "sha256": "63dcb866aeb78bba8e5a5f8c90c13975ba33e89330e356f5c447a03a5591f40f",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_install_r1_pirate__pe__steered.jsonl",
+      "sha256": "3f20283dfa0f8581395f2ccaeeb70872548e948be1a0e825a3cd6871cf476f21",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_install_r2_butler__ce__null_sameval.jsonl",
+      "sha256": "9189f1b6e82907e294327de04f4705ad7f7e14f575d395ba4c85dfe5d1ce5dc5",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_install_r2_butler__ce__null_xtype.jsonl",
+      "sha256": "f8eeb78b7f3decc15ca09f4dfeecc3e9fc39f9adc56f563da30d106d3dd83e2f",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_install_r2_butler__ce__steered.jsonl",
+      "sha256": "27399bc454ae05c4e8a1682a5cca39e784960d831e44c68a8cd30ce598755945",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_install_r2_butler__pe__null_sameval.jsonl",
+      "sha256": "170d65fd7c53630d389e7b6c4f5042f719b6f85ccb7475b2550a4d0a40d98e00",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_install_r2_butler__pe__null_xtype.jsonl",
+      "sha256": "0d0aa02042e8304fa117ec10fd596c722e5e067f08a8ab9b57b3b10561c1cc8c",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_install_r2_butler__pe__steered.jsonl",
+      "sha256": "3a20d9f4a1e57adfed74fa37e43b27d2492e1985298280e4bbcf1c083c7612b9",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_install_r3_warm__ce__null_sameval.jsonl",
+      "sha256": "753e9e8adf7e49b100e4a408097cf0bbad379ee7a8fa163419d6e0cafa7f1d69",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_install_r3_warm__ce__null_xtype.jsonl",
+      "sha256": "8223e9c93c849f6044ec22ee3e9055dc128ac8702d6aff9cf0cd428f2c04a236",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_install_r3_warm__ce__steered.jsonl",
+      "sha256": "cdc3eeac62491acbcb00f52f821c79a5b10f350285ebc588b363ffb276a0942d",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_install_r3_warm__pe__null_sameval.jsonl",
+      "sha256": "de999723937526ce828d703b749859ee311d86bb26b84b13daae4709739db9be",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_install_r3_warm__pe__null_xtype.jsonl",
+      "sha256": "c924e12b5e95b1f32fdae58c1dd34c3038a220ea381629830bac96b277b93230",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_install_r3_warm__pe__steered.jsonl",
+      "sha256": "f33c71d90df809fb79dd7cd73c18c527b5241206a2937d18bde0037c3c5974fe",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_install_r4_trait__ce__null_sameval.jsonl",
+      "sha256": "56c9e517bc5aa5c5ae6abc1cb8dec78b6322c6d8a4f7e7ac63a999dc90be7826",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_install_r4_trait__ce__null_xtype.jsonl",
+      "sha256": "e0af91f274f103c0a25def2ba00dad2be03a85bb90ea770ea4ecf3d9e772d71a",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_install_r4_trait__ce__steered.jsonl",
+      "sha256": "621d2884bd0ebaaef4c72bb8a1ffd8de9a16e7d23b902225e9fc7107668bcf5a",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_install_r4_trait__pe__null_sameval.jsonl",
+      "sha256": "ce4c0531e4a360df1f629efa23ab027c20510720cdaf512c44513ac809909dbc",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_install_r4_trait__pe__null_xtype.jsonl",
+      "sha256": "6734d311ae7df54487b3c34ddfe1c5842847ad6557a39b70ffe58e71660f8a1f",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_install_r4_trait__pe__steered.jsonl",
+      "sha256": "2a6654d1b2068cd56c1e68a91b6c06b2c2f1cdfea2989050ad427ae5e5c843c8",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_install_r5a_lu_therapy__ce__null_sameval.jsonl",
+      "sha256": "36704dbf0530b3bbfbc0cc3b7dfa58604f7df8e488bfbdcfcabafe298a7c258f",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_install_r5a_lu_therapy__ce__null_xtype.jsonl",
+      "sha256": "368ba36a1beabda9f7c13a514bab9b1d388f7cc0a4aed953dbbcba438f2070de",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_install_r5a_lu_therapy__ce__steered.jsonl",
+      "sha256": "63b5385e50ae45e8d52de9e7809f08f9cc246f33934b2521ab92237a2ce98e48",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_install_r5a_lu_therapy__pe__null_sameval.jsonl",
+      "sha256": "4e8a1cdf964ed775f8f8ce99eb771dd4d9003f1b8f897714d1dd7f9b3ae2346f",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_install_r5a_lu_therapy__pe__null_xtype.jsonl",
+      "sha256": "453f3984e10111d06c56849bbe7ab1b3c929310c418cf61ce983782c29e7fd59",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_install_r5a_lu_therapy__pe__steered.jsonl",
+      "sha256": "5ad1a66e6bb215cbeca74907e8430cad5c23bba8df0b51f19047da886d0a1aaf",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_install_r5b_lu_philosophy__ce__null_sameval.jsonl",
+      "sha256": "d6cf5f96e068caeb3f0fb8de4c0defa31ed18304c1f167c55825fdf560e17ea2",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_install_r5b_lu_philosophy__ce__null_xtype.jsonl",
+      "sha256": "71484df40e133c86c21d062c5ab311d0ba172eaa954b347844a1662755d6ee45",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_install_r5b_lu_philosophy__ce__steered.jsonl",
+      "sha256": "a0d407ddba1dc9c6551c92f1226559477e7b8bb492c39711667c4d54a5fdd3df",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_install_r5b_lu_philosophy__pe__null_sameval.jsonl",
+      "sha256": "c82acd30effee1d5ce01cc433d0d005a6bfef1913c59c540fc0239333bc45ad0",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_install_r5b_lu_philosophy__pe__null_xtype.jsonl",
+      "sha256": "a4009f38227b2b52e3bd97e98b563e4d805d2b6c73bb0ab1694431b93624c81d",
+      "n_rows": 30
+    },
+    {
+      "name": "shard_install_r5b_lu_philosophy__pe__steered.jsonl",
+      "sha256": "1c919eff6522ff69af22e95d2c93cf5bf2a6f6e7e8b263df1c8ff9d3897a1979",
+      "n_rows": 30
+    }
+  ],
+  "derived_from_sha256": "939c050b2b9f31008de80b4ef6f557fd782dedf72c779fbdbcda1e54c5645b42",
+  "derivation": "count of rows with truthy recorded cap_hit over all capture-enriched rows, overall + per cell + per (cell, value) + per (cell, slot, arm) unit where rows carry slot/arm; trigger_fired = any cell_slot_arm-grain entry with cap_hit_pct STRICTLY > pre_registered_regen_trigger_pct; derived_from_sha256 = sha256 over newline-joined '<name>:<sha256>' of derived_from_shards",
+  "n_rows": 2160,
+  "cap_hit_rows": 29,
+  "cap_hit_frac": 0.013425925925925926,
+  "cap_hit_pct": 1.3425925925925926,
+  "pre_registered_regen_trigger_pct": 2.0,
+  "breach_grain": "cell_slot_arm",
+  "trigger_fired": true,
+  "breaching_cells": [
+    "erase_r4_trait",
+    "install_r2_butler",
+    "install_r4_trait",
+    "install_r5b_lu_philosophy"
+  ],
+  "breaching_units": [
+    "erase_r3_warm|ce|null_xtype",
+    "erase_r4_trait|ce|null_sameval",
+    "erase_r4_trait|ce|null_xtype",
+    "erase_r4_trait|pe|steered",
+    "erase_r5a_lu_therapy|ce|steered",
+    "install_r1_pirate|ce|null_sameval",
+    "install_r1_pirate|ce|steered",
+    "install_r2_butler|ce|null_xtype",
+    "install_r2_butler|pe|null_sameval",
+    "install_r2_butler|pe|null_xtype",
+    "install_r2_butler|pe|steered",
+    "install_r3_warm|ce|null_xtype",
+    "install_r3_warm|pe|null_sameval",
+    "install_r3_warm|pe|steered",
+    "install_r4_trait|ce|null_sameval",
+    "install_r4_trait|ce|null_xtype",
+    "install_r4_trait|ce|steered",
+    "install_r4_trait|pe|steered",
+    "install_r5a_lu_therapy|ce|null_xtype",
+    "install_r5a_lu_therapy|pe|null_xtype",
+    "install_r5b_lu_philosophy|ce|null_sameval",
+    "install_r5b_lu_philosophy|ce|null_xtype",
+    "install_r5b_lu_philosophy|ce|steered",
+    "install_r5b_lu_philosophy|pe|null_sameval",
+    "install_r5b_lu_philosophy|pe|null_xtype"
+  ],
+  "max_new_tokens": 4096,
+  "realized_row_caps": [
+    4096
+  ],
+  "value_key_fields": [
+    "value_a"
+  ],
+  "per_cell": {
+    "erase_r1_pirate": {
+      "n_rows": 180,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false,
+      "realized_caps_by_batch": {
+        "all": [
+          4096
+        ]
+      }
+    },
+    "erase_r2_butler": {
+      "n_rows": 180,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false,
+      "realized_caps_by_batch": {
+        "all": [
+          4096
+        ]
+      }
+    },
+    "erase_r3_warm": {
+      "n_rows": 180,
+      "cap_hit_rows": 1,
+      "cap_hit_pct": 0.5555555555555556,
+      "breach": false,
+      "realized_caps_by_batch": {
+        "all": [
+          4096
+        ]
+      }
+    },
+    "erase_r4_trait": {
+      "n_rows": 180,
+      "cap_hit_rows": 4,
+      "cap_hit_pct": 2.2222222222222223,
+      "breach": true,
+      "realized_caps_by_batch": {
+        "all": [
+          4096
+        ]
+      }
+    },
+    "erase_r5a_lu_therapy": {
+      "n_rows": 180,
+      "cap_hit_rows": 1,
+      "cap_hit_pct": 0.5555555555555556,
+      "breach": false,
+      "realized_caps_by_batch": {
+        "all": [
+          4096
+        ]
+      }
+    },
+    "erase_r5b_lu_philosophy": {
+      "n_rows": 180,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false,
+      "realized_caps_by_batch": {
+        "all": [
+          4096
+        ]
+      }
+    },
+    "install_r1_pirate": {
+      "n_rows": 180,
+      "cap_hit_rows": 2,
+      "cap_hit_pct": 1.1111111111111112,
+      "breach": false,
+      "realized_caps_by_batch": {
+        "all": [
+          4096
+        ]
+      }
+    },
+    "install_r2_butler": {
+      "n_rows": 180,
+      "cap_hit_rows": 4,
+      "cap_hit_pct": 2.2222222222222223,
+      "breach": true,
+      "realized_caps_by_batch": {
+        "all": [
+          4096
+        ]
+      }
+    },
+    "install_r3_warm": {
+      "n_rows": 180,
+      "cap_hit_rows": 3,
+      "cap_hit_pct": 1.6666666666666667,
+      "breach": false,
+      "realized_caps_by_batch": {
+        "all": [
+          4096
+        ]
+      }
+    },
+    "install_r4_trait": {
+      "n_rows": 180,
+      "cap_hit_rows": 5,
+      "cap_hit_pct": 2.7777777777777777,
+      "breach": true,
+      "realized_caps_by_batch": {
+        "all": [
+          4096
+        ]
+      }
+    },
+    "install_r5a_lu_therapy": {
+      "n_rows": 180,
+      "cap_hit_rows": 3,
+      "cap_hit_pct": 1.6666666666666667,
+      "breach": false,
+      "realized_caps_by_batch": {
+        "all": [
+          4096
+        ]
+      }
+    },
+    "install_r5b_lu_philosophy": {
+      "n_rows": 180,
+      "cap_hit_rows": 6,
+      "cap_hit_pct": 3.3333333333333335,
+      "breach": true,
+      "realized_caps_by_batch": {
+        "all": [
+          4096
+        ]
+      }
+    }
+  },
+  "per_cell_value": {
+    "erase_r1_pirate": {
+      "r1_pirate": {
+        "n_rows": 180,
+        "cap_hit_rows": 0,
+        "cap_hit_pct": 0.0
+      }
+    },
+    "erase_r2_butler": {
+      "r2_butler": {
+        "n_rows": 180,
+        "cap_hit_rows": 0,
+        "cap_hit_pct": 0.0
+      }
+    },
+    "erase_r3_warm": {
+      "r3_warm": {
+        "n_rows": 180,
+        "cap_hit_rows": 1,
+        "cap_hit_pct": 0.5555555555555556
+      }
+    },
+    "erase_r4_trait": {
+      "r4_trait": {
+        "n_rows": 180,
+        "cap_hit_rows": 4,
+        "cap_hit_pct": 2.2222222222222223
+      }
+    },
+    "erase_r5a_lu_therapy": {
+      "r5a_lu_therapy": {
+        "n_rows": 180,
+        "cap_hit_rows": 1,
+        "cap_hit_pct": 0.5555555555555556
+      }
+    },
+    "erase_r5b_lu_philosophy": {
+      "r5b_lu_philosophy": {
+        "n_rows": 180,
+        "cap_hit_rows": 0,
+        "cap_hit_pct": 0.0
+      }
+    },
+    "install_r1_pirate": {
+      "plain": {
+        "n_rows": 180,
+        "cap_hit_rows": 2,
+        "cap_hit_pct": 1.1111111111111112
+      }
+    },
+    "install_r2_butler": {
+      "plain": {
+        "n_rows": 180,
+        "cap_hit_rows": 4,
+        "cap_hit_pct": 2.2222222222222223
+      }
+    },
+    "install_r3_warm": {
+      "plain": {
+        "n_rows": 180,
+        "cap_hit_rows": 3,
+        "cap_hit_pct": 1.6666666666666667
+      }
+    },
+    "install_r4_trait": {
+      "plain": {
+        "n_rows": 180,
+        "cap_hit_rows": 5,
+        "cap_hit_pct": 2.7777777777777777
+      }
+    },
+    "install_r5a_lu_therapy": {
+      "plain": {
+        "n_rows": 180,
+        "cap_hit_rows": 3,
+        "cap_hit_pct": 1.6666666666666667
+      }
+    },
+    "install_r5b_lu_philosophy": {
+      "plain": {
+        "n_rows": 180,
+        "cap_hit_rows": 6,
+        "cap_hit_pct": 3.3333333333333335
+      }
+    }
+  },
+  "max_value_spread": null,
+  "per_unit": {
+    "erase_r1_pirate|ce|null_sameval": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    },
+    "erase_r1_pirate|ce|null_xtype": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    },
+    "erase_r1_pirate|ce|steered": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    },
+    "erase_r1_pirate|pe|null_sameval": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    },
+    "erase_r1_pirate|pe|null_xtype": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    },
+    "erase_r1_pirate|pe|steered": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    },
+    "erase_r2_butler|ce|null_sameval": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    },
+    "erase_r2_butler|ce|null_xtype": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    },
+    "erase_r2_butler|ce|steered": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    },
+    "erase_r2_butler|pe|null_sameval": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    },
+    "erase_r2_butler|pe|null_xtype": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    },
+    "erase_r2_butler|pe|steered": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    },
+    "erase_r3_warm|ce|null_sameval": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    },
+    "erase_r3_warm|ce|null_xtype": {
+      "n_rows": 30,
+      "cap_hit_rows": 1,
+      "cap_hit_pct": 3.3333333333333335,
+      "breach": true
+    },
+    "erase_r3_warm|ce|steered": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    },
+    "erase_r3_warm|pe|null_sameval": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    },
+    "erase_r3_warm|pe|null_xtype": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    },
+    "erase_r3_warm|pe|steered": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    },
+    "erase_r4_trait|ce|null_sameval": {
+      "n_rows": 30,
+      "cap_hit_rows": 2,
+      "cap_hit_pct": 6.666666666666667,
+      "breach": true
+    },
+    "erase_r4_trait|ce|null_xtype": {
+      "n_rows": 30,
+      "cap_hit_rows": 1,
+      "cap_hit_pct": 3.3333333333333335,
+      "breach": true
+    },
+    "erase_r4_trait|ce|steered": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    },
+    "erase_r4_trait|pe|null_sameval": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    },
+    "erase_r4_trait|pe|null_xtype": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    },
+    "erase_r4_trait|pe|steered": {
+      "n_rows": 30,
+      "cap_hit_rows": 1,
+      "cap_hit_pct": 3.3333333333333335,
+      "breach": true
+    },
+    "erase_r5a_lu_therapy|ce|null_sameval": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    },
+    "erase_r5a_lu_therapy|ce|null_xtype": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    },
+    "erase_r5a_lu_therapy|ce|steered": {
+      "n_rows": 30,
+      "cap_hit_rows": 1,
+      "cap_hit_pct": 3.3333333333333335,
+      "breach": true
+    },
+    "erase_r5a_lu_therapy|pe|null_sameval": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    },
+    "erase_r5a_lu_therapy|pe|null_xtype": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    },
+    "erase_r5a_lu_therapy|pe|steered": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    },
+    "erase_r5b_lu_philosophy|ce|null_sameval": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    },
+    "erase_r5b_lu_philosophy|ce|null_xtype": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    },
+    "erase_r5b_lu_philosophy|ce|steered": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    },
+    "erase_r5b_lu_philosophy|pe|null_sameval": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    },
+    "erase_r5b_lu_philosophy|pe|null_xtype": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    },
+    "erase_r5b_lu_philosophy|pe|steered": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    },
+    "install_r1_pirate|ce|null_sameval": {
+      "n_rows": 30,
+      "cap_hit_rows": 1,
+      "cap_hit_pct": 3.3333333333333335,
+      "breach": true
+    },
+    "install_r1_pirate|ce|null_xtype": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    },
+    "install_r1_pirate|ce|steered": {
+      "n_rows": 30,
+      "cap_hit_rows": 1,
+      "cap_hit_pct": 3.3333333333333335,
+      "breach": true
+    },
+    "install_r1_pirate|pe|null_sameval": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    },
+    "install_r1_pirate|pe|null_xtype": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    },
+    "install_r1_pirate|pe|steered": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    },
+    "install_r2_butler|ce|null_sameval": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    },
+    "install_r2_butler|ce|null_xtype": {
+      "n_rows": 30,
+      "cap_hit_rows": 1,
+      "cap_hit_pct": 3.3333333333333335,
+      "breach": true
+    },
+    "install_r2_butler|ce|steered": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    },
+    "install_r2_butler|pe|null_sameval": {
+      "n_rows": 30,
+      "cap_hit_rows": 1,
+      "cap_hit_pct": 3.3333333333333335,
+      "breach": true
+    },
+    "install_r2_butler|pe|null_xtype": {
+      "n_rows": 30,
+      "cap_hit_rows": 1,
+      "cap_hit_pct": 3.3333333333333335,
+      "breach": true
+    },
+    "install_r2_butler|pe|steered": {
+      "n_rows": 30,
+      "cap_hit_rows": 1,
+      "cap_hit_pct": 3.3333333333333335,
+      "breach": true
+    },
+    "install_r3_warm|ce|null_sameval": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    },
+    "install_r3_warm|ce|null_xtype": {
+      "n_rows": 30,
+      "cap_hit_rows": 1,
+      "cap_hit_pct": 3.3333333333333335,
+      "breach": true
+    },
+    "install_r3_warm|ce|steered": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    },
+    "install_r3_warm|pe|null_sameval": {
+      "n_rows": 30,
+      "cap_hit_rows": 1,
+      "cap_hit_pct": 3.3333333333333335,
+      "breach": true
+    },
+    "install_r3_warm|pe|null_xtype": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    },
+    "install_r3_warm|pe|steered": {
+      "n_rows": 30,
+      "cap_hit_rows": 1,
+      "cap_hit_pct": 3.3333333333333335,
+      "breach": true
+    },
+    "install_r4_trait|ce|null_sameval": {
+      "n_rows": 30,
+      "cap_hit_rows": 1,
+      "cap_hit_pct": 3.3333333333333335,
+      "breach": true
+    },
+    "install_r4_trait|ce|null_xtype": {
+      "n_rows": 30,
+      "cap_hit_rows": 2,
+      "cap_hit_pct": 6.666666666666667,
+      "breach": true
+    },
+    "install_r4_trait|ce|steered": {
+      "n_rows": 30,
+      "cap_hit_rows": 1,
+      "cap_hit_pct": 3.3333333333333335,
+      "breach": true
+    },
+    "install_r4_trait|pe|null_sameval": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    },
+    "install_r4_trait|pe|null_xtype": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    },
+    "install_r4_trait|pe|steered": {
+      "n_rows": 30,
+      "cap_hit_rows": 1,
+      "cap_hit_pct": 3.3333333333333335,
+      "breach": true
+    },
+    "install_r5a_lu_therapy|ce|null_sameval": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    },
+    "install_r5a_lu_therapy|ce|null_xtype": {
+      "n_rows": 30,
+      "cap_hit_rows": 2,
+      "cap_hit_pct": 6.666666666666667,
+      "breach": true
+    },
+    "install_r5a_lu_therapy|ce|steered": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    },
+    "install_r5a_lu_therapy|pe|null_sameval": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    },
+    "install_r5a_lu_therapy|pe|null_xtype": {
+      "n_rows": 30,
+      "cap_hit_rows": 1,
+      "cap_hit_pct": 3.3333333333333335,
+      "breach": true
+    },
+    "install_r5a_lu_therapy|pe|steered": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    },
+    "install_r5b_lu_philosophy|ce|null_sameval": {
+      "n_rows": 30,
+      "cap_hit_rows": 1,
+      "cap_hit_pct": 3.3333333333333335,
+      "breach": true
+    },
+    "install_r5b_lu_philosophy|ce|null_xtype": {
+      "n_rows": 30,
+      "cap_hit_rows": 1,
+      "cap_hit_pct": 3.3333333333333335,
+      "breach": true
+    },
+    "install_r5b_lu_philosophy|ce|steered": {
+      "n_rows": 30,
+      "cap_hit_rows": 2,
+      "cap_hit_pct": 6.666666666666667,
+      "breach": true
+    },
+    "install_r5b_lu_philosophy|pe|null_sameval": {
+      "n_rows": 30,
+      "cap_hit_rows": 1,
+      "cap_hit_pct": 3.3333333333333335,
+      "breach": true
+    },
+    "install_r5b_lu_philosophy|pe|null_xtype": {
+      "n_rows": 30,
+      "cap_hit_rows": 1,
+      "cap_hit_pct": 3.3333333333333335,
+      "breach": true
+    },
+    "install_r5b_lu_philosophy|pe|steered": {
+      "n_rows": 30,
+      "cap_hit_rows": 0,
+      "cap_hit_pct": 0.0,
+      "breach": false
+    }
+  },
+  "max_arm_spread": {
+    "cell": "erase_r4_trait",
+    "slot": "ce",
+    "min_pct": 0.0,
+    "max_pct": 6.666666666666667,
+    "spread_pct": 6.666666666666667
+  },
+  "n_rows_without_unit_fields": 0,
+  "n_completion_tokens": {
+    "min": 7,
+    "median": 664.0,
+    "p95": 3004.149999999999,
+    "p99": 4096.0,
+    "max": 4097
+  },
+  "partial": true,
+  "partial_reason": [
+    "/home/thomasjiralerspong/explore-persona-space/data/issue_2329/q35_capregen/ladder/vc_bank/ladder_bank.json absent — expected block set underivable"
+  ],
+  "covered_shards": [
+    "shard_erase_r1_pirate__ce__null_sameval.jsonl",
+    "shard_erase_r1_pirate__ce__null_xtype.jsonl",
+    "shard_erase_r1_pirate__ce__steered.jsonl",
+    "shard_erase_r1_pirate__pe__null_sameval.jsonl",
+    "shard_erase_r1_pirate__pe__null_xtype.jsonl",
+    "shard_erase_r1_pirate__pe__steered.jsonl",
+    "shard_erase_r2_butler__ce__null_sameval.jsonl",
+    "shard_erase_r2_butler__ce__null_xtype.jsonl",
+    "shard_erase_r2_butler__ce__steered.jsonl",
+    "shard_erase_r2_butler__pe__null_sameval.jsonl",
+    "shard_erase_r2_butler__pe__null_xtype.jsonl",
+    "shard_erase_r2_butler__pe__steered.jsonl",
+    "shard_erase_r3_warm__ce__null_sameval.jsonl",
+    "shard_erase_r3_warm__ce__null_xtype.jsonl",
+    "shard_erase_r3_warm__ce__steered.jsonl",
+    "shard_erase_r3_warm__pe__null_sameval.jsonl",
+    "shard_erase_r3_warm__pe__null_xtype.jsonl",
+    "shard_erase_r3_warm__pe__steered.jsonl",
+    "shard_erase_r4_trait__ce__null_sameval.jsonl",
+    "shard_erase_r4_trait__ce__null_xtype.jsonl",
+    "shard_erase_r4_trait__ce__steered.jsonl",
+    "shard_erase_r4_trait__pe__null_sameval.jsonl",
+    "shard_erase_r4_trait__pe__null_xtype.jsonl",
+    "shard_erase_r4_trait__pe__steered.jsonl",
+    "shard_erase_r5a_lu_therapy__ce__null_sameval.jsonl",
+    "shard_erase_r5a_lu_therapy__ce__null_xtype.jsonl",
+    "shard_erase_r5a_lu_therapy__ce__steered.jsonl",
+    "shard_erase_r5a_lu_therapy__pe__null_sameval.jsonl",
+    "shard_erase_r5a_lu_therapy__pe__null_xtype.jsonl",
+    "shard_erase_r5a_lu_therapy__pe__steered.jsonl",
+    "shard_erase_r5b_lu_philosophy__ce__null_sameval.jsonl",
+    "shard_erase_r5b_lu_philosophy__ce__null_xtype.jsonl",
+    "shard_erase_r5b_lu_philosophy__ce__steered.jsonl",
+    "shard_erase_r5b_lu_philosophy__pe__null_sameval.jsonl",
+    "shard_erase_r5b_lu_philosophy__pe__null_xtype.jsonl",
+    "shard_erase_r5b_lu_philosophy__pe__steered.jsonl",
+    "shard_install_r1_pirate__ce__null_sameval.jsonl",
+    "shard_install_r1_pirate__ce__null_xtype.jsonl",
+    "shard_install_r1_pirate__ce__steered.jsonl",
+    "shard_install_r1_pirate__pe__null_sameval.jsonl",
+    "shard_install_r1_pirate__pe__null_xtype.jsonl",
+    "shard_install_r1_pirate__pe__steered.jsonl",
+    "shard_install_r2_butler__ce__null_sameval.jsonl",
+    "shard_install_r2_butler__ce__null_xtype.jsonl",
+    "shard_install_r2_butler__ce__steered.jsonl",
+    "shard_install_r2_butler__pe__null_sameval.jsonl",
+    "shard_install_r2_butler__pe__null_xtype.jsonl",
+    "shard_install_r2_butler__pe__steered.jsonl",
+    "shard_install_r3_warm__ce__null_sameval.jsonl",
+    "shard_install_r3_warm__ce__null_xtype.jsonl",
+    "shard_install_r3_warm__ce__steered.jsonl",
+    "shard_install_r3_warm__pe__null_sameval.jsonl",
+    "shard_install_r3_warm__pe__null_xtype.jsonl",
+    "shard_install_r3_warm__pe__steered.jsonl",
+    "shard_install_r4_trait__ce__null_sameval.jsonl",
+    "shard_install_r4_trait__ce__null_xtype.jsonl",
+    "shard_install_r4_trait__ce__steered.jsonl",
+    "shard_install_r4_trait__pe__null_sameval.jsonl",
+    "shard_install_r4_trait__pe__null_xtype.jsonl",
+    "shard_install_r4_trait__pe__steered.jsonl",
+    "shard_install_r5a_lu_therapy__ce__null_sameval.jsonl",
+    "shard_install_r5a_lu_therapy__ce__null_xtype.jsonl",
+    "shard_install_r5a_lu_therapy__ce__steered.jsonl",
+    "shard_install_r5a_lu_therapy__pe__null_sameval.jsonl",
+    "shard_install_r5a_lu_therapy__pe__null_xtype.jsonl",
+    "shard_install_r5a_lu_therapy__pe__steered.jsonl",
+    "shard_install_r5b_lu_philosophy__ce__null_sameval.jsonl",
+    "shard_install_r5b_lu_philosophy__ce__null_xtype.jsonl",
+    "shard_install_r5b_lu_philosophy__ce__steered.jsonl",
+    "shard_install_r5b_lu_philosophy__pe__null_sameval.jsonl",
+    "shard_install_r5b_lu_philosophy__pe__null_xtype.jsonl",
+    "shard_install_r5b_lu_philosophy__pe__steered.jsonl"
+  ],
+  "pending_capture_shards": [],
+  "missing_shards": null,
+  "unexpected_shards": [],
+  "generated_at": "2026-08-21T07:04:30.913117+00:00",
+  "repro": {
+    "git_commit": "a90b45020cd31a52f6594ab8bef6ea3517f1a427",
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "model_id": "Qwen/Qwen3.5-9B",
+    "model_revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+    "tiny": false,
+    "smoke": false,
+    "n_layers": 32,
+    "timestamp": "2026-08-21T07:04:33.539765+00:00"
+  }
+}

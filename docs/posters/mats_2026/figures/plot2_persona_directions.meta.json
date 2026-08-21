@@ -1,0 +1,120 @@
+{
+  "commit": "a18cef4e+dirty",
+  "render_id": "e61ef529cf7f4853",
+  "git_commit": "a18cef4e1af1c6f0c02527f3153a383c36158e0b",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "docs/posters/mats_2026/make_plot2_persona.py",
+    "docs/posters/mats_2026/poster.tex",
+    "tasks/completed/2214/body.md",
+    "tasks/completed/2214/comments.jsonl",
+    "tasks/completed/2214/concerns.jsonl",
+    "tasks/completed/2214/events.jsonl",
+    "tasks/completed/2214/plans/plan.md",
+    "tasks/completed/2214/plans/v1.md",
+    "tasks/completed/2214/plans/v2.md",
+    "tasks/completed/2214/plans/v3.md",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "docs/posters/mats_2026/make_plot2_persona.py",
+  "created": "2026-08-21T10:55:02Z",
+  "figsize": [
+    6.8,
+    2.7
+  ],
+  "points": [
+    {
+      "held-out per-direction $R^2$": 0.453569,
+      "y": 0.9071375643826362,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out per-direction $R^2$": 0.442321,
+      "y": 0.8846418647666926,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out per-direction $R^2$": 0.4368,
+      "y": 0.8736004471662719,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out per-direction $R^2$": 0.431157,
+      "y": 0.8623146061637146,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out per-direction $R^2$": 0.428452,
+      "y": 0.8569034883822229,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out per-direction $R^2$": 0.410792,
+      "y": 0.8215849131775874,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out per-direction $R^2$": 0.401284,
+      "y": 0.8025673660811186,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out per-direction $R^2$": 0.334826,
+      "y": 0.6696521332817015,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 8,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "held-out per-direction $R^2$",
+        "legend_labels": [
+          "persona direction $r_B$",
+          "random direction (200 draws, mean and 5-95%)"
+        ],
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "sycophancy",
+          "humorous",
+          "apathetic",
+          "impolite",
+          "evil",
+          "hallucination",
+          "optimistic",
+          "random"
+        ]
+      }
+    ],
+    "series": [
+      "persona direction $r_B$",
+      "random direction (200 draws, mean and 5-95%)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -82,6 +82,16 @@ advisory network carve-out, eliminating the EXCEPTION-2 BLOCKED risk. The
 interpretation marker's phrase "local judge-input mirror" is the tell it
 exists.
 
+**`rawcomp_cache/` HF-snapshot mirror — a second lens-7 local-text source
+(#2379 r1, 2026-08-20).** Sibling of the judge_inputs pattern: probe
+`<worktree>/data/issue_<N>/rawcomp_cache/<hf-prefix>/` — some runs stage a
+full local snapshot of the HF data-repo prefix there (subdirs mirroring
+`raw_completions/<stage>/<arm>/raw_completions.json` — dict with a `rows`
+list — plus `judge_scores/`, `train/*.jsonl`). When present, name it the
+PRIMARY lens-7 source and demote the body's pinned HF tree to advisory
+liveness. Probe BOTH paths (`judge_inputs/`, `rawcomp_cache/`) before
+concluding raw text is HF-only.
+
 **Lens-7 smoke-copy trap (#685, 2026-06-27).** When the round's eval JSONs are
 worktree-only, the worktree may ALSO carry a `*_smoke/` sibling dir with a
 same-named raw-generations file from the smoke run. The REAL run's raw

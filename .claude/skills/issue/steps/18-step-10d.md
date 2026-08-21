@@ -598,18 +598,28 @@ rebase-merged. Five guards:
    ```
 
    (The extracted script honors `EPM_SKIP_LOST_UPDATE_GUARD=1` FIRST — emits
-   `GUARD4=skipped`, exit 0. Otherwise it computes the merge-base from
-   `--main-sha` if provided else `git -C "$WT" merge-base HEAD origin/main`,
-   iterates the branch-touched paths under the fence's actual case glob
+   `GUARD4=skipped`, exit 0. Otherwise: `--main-sha` is the pinned
+   `origin/main` TIP — the Guard-1 capture above (`MAIN_SHA=$(git -C "$WT"
+   rev-parse origin/main)`), NOT the merge-base. The helper DERIVES the
+   merge-base from it (`git -C "$WT" merge-base HEAD <tip>`; the live
+   `origin/main` ref when the flag is omitted) and uses the SAME pinned tip
+   as the main side of the add-enumeration, so the pinned and no-flag forms
+   are verdict-equivalent by construction (#2428). It iterates the
+   branch-touched paths under the fence's actual case glob
    (`scripts/workflow_lint.py|.claude/skills/*|.claude/rules/*|.claude/workflow.yaml|CLAUDE.md`),
-   counts `origin/main`-added lines missing from `HEAD:<P>` via
+   counts pinned-tip-added lines missing from `HEAD:<P>` via
    `grep -Fxq -- "$ADD_LINE"` (the `--` separator protects `-`-leading
    additions) and on any refusal emits `LOST-UPDATE REFUSAL
    (Guard 4, #1713)` on stderr + `GUARD4=refused` +
-   `LOST_UPDATE_PATHS=...` on stdout + exit 1. The two-step rc-capture
+   `LOST_UPDATE_PATHS=...` on stdout + exit 1; BOTH pass and refusal emit
+   `GUARD4_MERGE_BASE=<derived base>` so the `epm:merged` record shows which
+   base the verdict used (#2212's vacuous pass was unauditable without it).
+   The two-step rc-capture
    form preserves the `false`-in-block-tail halt
-   semantics: `eval "$GUARD4_OUT"` populates the caller's `$GUARD4` and
-   `$LOST_UPDATE_PATHS`, and the trailing `[ "$GUARD4_RC" -eq 1 ] && false`
+   semantics: `eval "$GUARD4_OUT"` populates the caller's `$GUARD4`,
+   `$LOST_UPDATE_PATHS`, and `$GUARD4_MERGE_BASE` (the `GUARD4_` prefix keeps
+   the eval from clobbering the caller's live `$MB` / `$MAIN_SHA`), and the
+   trailing `[ "$GUARD4_RC" -eq 1 ] && false`
    halts the merge attempt at the same point the inline prose did (#1978).)
 
    **Recovery ordering (#1753; #1727).** When recovering via a
@@ -1072,9 +1082,12 @@ tests BEFORE anything lands:
   #     )
   #   STEP 2 — the launcher-only bg-Bash (argv stays tiny):
   #   chmod +x "$LINT_GATE_SCRIPT"
+  #   # trailing "$WT": unused by the script; rides the detached workload's argv
+  #   # so worktree_audit's cwd/argv liveness harvest keeps the worktree for the
+  #   # gate's whole life (#2246 item 1).
   #   PYTEST_PID=$(bash -c "setsid nohup env WT=\"$WT\" REPO_ROOT=\"$REPO_ROOT\" \
   #     OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
-  #     bash '$LINT_GATE_SCRIPT' < /dev/null > /tmp/issue-<N>-lint-gate.log 2>&1 & echo \$!")
+  #     bash '$LINT_GATE_SCRIPT' \"$WT\" < /dev/null > /tmp/issue-<N>-lint-gate.log 2>&1 & echo \$!")
   #   ps -p "$PYTEST_PID" -o args= | head -1
   #   bash -o pipefail -c 'pgrep -s "$1" | xargs -rn1 sudo -n choom -n -600 -p' _ "$PYTEST_PID" >/dev/null \
   #     && LINT_GATE_CHOOM=ok || LINT_GATE_CHOOM=failed
@@ -1220,6 +1233,18 @@ tests BEFORE anything lands:
     # bytes >0x7f only.
     git -C "$WT" -c core.quotePath=false diff --name-only --no-renames origin/main...HEAD \
       > /tmp/issue-<N>-overlay-files.txt || GT_RC=1
+    # #2246 item 3: this branch runs only when the TRIGGER classified the
+    # payload code-bearing (non-empty own-diff past the artifact carve-out),
+    # and the --no-renames overlay path set is a superset of the own-diff
+    # path set — an EMPTY listing from a ZERO-exit producer here means the
+    # listing was computed against the wrong/absent tree (or a mid-window
+    # ref mutation, e.g. the fetch above landing the payload on origin/main
+    # between the trigger diff and this listing). Fail CLOSED via the
+    # existing crash arm; never certify.
+    if [ ! -s /tmp/issue-<N>-overlay-files.txt ]; then
+      echo "[step10d] overlay listing EMPTY on a code-bearing payload — vacuous gated leg; failing CLOSED (#2246)"
+      GT_RC=1
+    fi
     # #1456: save the pre-overlay (archived origin/main) lint copy before the
     # loop overwrites it — the "theirs" side of the 3-way merge below. The
     # rm -f first clears any STALE saved copy from a prior run: a cp failure
@@ -3679,9 +3704,12 @@ Decision tree:
   #     )
   #   STEP 2 — the launcher-only bg-Bash (argv stays tiny):
   #   chmod +x "$SURGICAL_SCRIPT"
+  #   # trailing "$WT": unused by the script; rides the detached workload's argv
+  #   # so worktree_audit's cwd/argv liveness harvest keeps the worktree for the
+  #   # gate's whole life (#2246 item 1).
   #   PYTEST_PID=$(bash -c "setsid nohup env WT=\"$WT\" REPO_ROOT=\"$REPO_ROOT\" \
   #     OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \
-  #     bash '$SURGICAL_SCRIPT' < /dev/null > /tmp/issue-<N>-surgical-gate.log 2>&1 & echo \$!")
+  #     bash '$SURGICAL_SCRIPT' \"$WT\" < /dev/null > /tmp/issue-<N>-surgical-gate.log 2>&1 & echo \$!")
   #   ps -p "$PYTEST_PID" -o args= | head -1
   #   bash -o pipefail -c 'pgrep -s "$1" | xargs -rn1 sudo -n choom -n -600 -p' _ "$PYTEST_PID" >/dev/null \
   #     && LINT_GATE_CHOOM=ok || LINT_GATE_CHOOM=failed

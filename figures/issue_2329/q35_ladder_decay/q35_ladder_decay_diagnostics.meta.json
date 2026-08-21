@@ -1,0 +1,1745 @@
+{
+  "commit": "143a113e+dirty",
+  "render_id": "b6c075769c7d46f4",
+  "git_commit": "143a113e8aff9699f7c4f180a4af168620041f77",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2329/q35_ladder_decay/q35_ladder_decay_contrast.meta.json",
+    "figures/issue_2329/q35_ladder_decay/q35_ladder_decay_contrast.pdf",
+    "figures/issue_2329/q35_ladder_decay/q35_ladder_decay_contrast.png",
+    "figures/issue_2329/q35_ladder_decay/q35_ladder_decay_decay_norm.meta.json",
+    "figures/issue_2329/q35_ladder_decay/q35_ladder_decay_decay_norm.pdf",
+    "figures/issue_2329/q35_ladder_decay/q35_ladder_decay_decay_norm.png",
+    "figures/issue_2329/q35_ladder_decay/q35_ladder_decay_decay_raw.meta.json",
+    "figures/issue_2329/q35_ladder_decay/q35_ladder_decay_decay_raw.pdf",
+    "figures/issue_2329/q35_ladder_decay/q35_ladder_decay_decay_raw.png",
+    "figures/issue_2329/q35_ladder_decay/q35_ladder_decay_diagnostics.meta.json",
+    "figures/issue_2329/q35_ladder_decay/q35_ladder_decay_diagnostics.pdf",
+    "figures/issue_2329/q35_ladder_decay/q35_ladder_decay_diagnostics.png",
+    "scripts/issue2329_decay.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2329_decay.py",
+  "created": "2026-08-21T10:33:38Z",
+  "figsize": [
+    16.5,
+    13.5
+  ],
+  "points": [
+    {
+      "category": "in r1",
+      "pair count": 6.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "er r1",
+      "pair count": 6.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "in r2",
+      "pair count": 6.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "er r2",
+      "pair count": 6.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "in r3",
+      "pair count": 6.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "er r3",
+      "pair count": 6.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "in r4",
+      "pair count": 6.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "er r4",
+      "pair count": 6.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "in r5a",
+      "pair count": 6.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "er r5a",
+      "pair count": 6.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "in r5b",
+      "pair count": 6.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "er r5b",
+      "pair count": 6.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "in r1",
+      "pair count": 6.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "er r1",
+      "pair count": 6.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "in r2",
+      "pair count": 6.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "er r2",
+      "pair count": 6.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "in r3",
+      "pair count": 6.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "er r3",
+      "pair count": 6.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "in r4",
+      "pair count": 6.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "er r4",
+      "pair count": 6.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "in r5a",
+      "pair count": 6.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "er r5a",
+      "pair count": 6.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "in r5b",
+      "pair count": 6.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "er r5b",
+      "pair count": 6.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "pair count": 4.0,
+      "series": "testability floor (4)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "pair count": 4.0,
+      "series": "testability floor (4)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "category": "q25\nsteered",
+      "coherence > 60 retention fraction": 0.9727272727272728,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "q25\nceiling",
+      "coherence > 60 retention fraction": 0.9181818181818182,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "q25\nfloor",
+      "coherence > 60 retention fraction": 1.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "q35\nsteered",
+      "coherence > 60 retention fraction": 0.9873949579831933,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "q35\nceiling",
+      "coherence > 60 retention fraction": 0.9833333333333333,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "q35\nfloor",
+      "coherence > 60 retention fraction": 0.9666666666666667,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "q25\nsteered",
+      "< 48-token drop fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "q25\nceiling",
+      "< 48-token drop fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "q25\nfloor",
+      "< 48-token drop fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "q35\nsteered",
+      "< 48-token drop fraction": 0.008333333333333333,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "q35\nceiling",
+      "< 48-token drop fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "q35\nfloor",
+      "< 48-token drop fraction": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "er r1 ce",
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 3.9,
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "er r1 pe",
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 5.9,
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 8.4,
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "er r2 ce",
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 10.4,
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 12.3,
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "er r2 pe",
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 14.3,
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 16.8,
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "er r3 ce",
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 18.8,
+      "cap-hit % of unit draws": 3.3333333333333335,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 20.7,
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "er r3 pe",
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 22.7,
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 25.2,
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "er r4 ce",
+      "cap-hit % of unit draws": 6.666666666666667,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 27.2,
+      "cap-hit % of unit draws": 3.3333333333333335,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 29.1,
+      "cap-hit % of unit draws": 3.3333333333333335,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "er r4 pe",
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 31.1,
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 33.6,
+      "cap-hit % of unit draws": 3.3333333333333335,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "er r5a ce",
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 35.6,
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 37.5,
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "er r5a pe",
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 39.5,
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 42.0,
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "er r5b ce",
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 44.0,
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 45.9,
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "er r5b pe",
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 47.9,
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 50.4,
+      "cap-hit % of unit draws": 3.3333333333333335,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "in r1 ce",
+      "cap-hit % of unit draws": 3.3333333333333335,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 52.4,
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 54.3,
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "in r1 pe",
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 56.3,
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 58.8,
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "in r2 ce",
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 60.8,
+      "cap-hit % of unit draws": 3.3333333333333335,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 62.7,
+      "cap-hit % of unit draws": 3.3333333333333335,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "in r2 pe",
+      "cap-hit % of unit draws": 3.3333333333333335,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 64.7,
+      "cap-hit % of unit draws": 3.3333333333333335,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 67.2,
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "in r3 ce",
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 69.2,
+      "cap-hit % of unit draws": 3.3333333333333335,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 71.1,
+      "cap-hit % of unit draws": 3.3333333333333335,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "in r3 pe",
+      "cap-hit % of unit draws": 3.3333333333333335,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 73.1,
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 75.6,
+      "cap-hit % of unit draws": 3.3333333333333335,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "in r4 ce",
+      "cap-hit % of unit draws": 3.3333333333333335,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 77.6,
+      "cap-hit % of unit draws": 6.666666666666667,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 79.5,
+      "cap-hit % of unit draws": 3.3333333333333335,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "in r4 pe",
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 81.5,
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 84.0,
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "in r5a ce",
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 86.0,
+      "cap-hit % of unit draws": 6.666666666666667,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 87.9,
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "in r5a pe",
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 89.9,
+      "cap-hit % of unit draws": 3.3333333333333335,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 92.4,
+      "cap-hit % of unit draws": 6.666666666666667,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "in r5b ce",
+      "cap-hit % of unit draws": 3.3333333333333335,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 94.4,
+      "cap-hit % of unit draws": 3.3333333333333335,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 96.3,
+      "cap-hit % of unit draws": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "in r5b pe",
+      "cap-hit % of unit draws": 3.3333333333333335,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 98.3,
+      "cap-hit % of unit draws": 3.3333333333333335,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": -0.35,
+      "censored / dropped draws": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.65,
+      "censored / dropped draws": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 1.65,
+      "censored / dropped draws": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 2.65,
+      "censored / dropped draws": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 3.65,
+      "censored / dropped draws": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 4.65,
+      "censored / dropped draws": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": -0.21,
+      "censored / dropped draws": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 0.79,
+      "censored / dropped draws": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 1.79,
+      "censored / dropped draws": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 2.79,
+      "censored / dropped draws": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 3.79,
+      "censored / dropped draws": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 4.79,
+      "censored / dropped draws": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": -0.07,
+      "censored / dropped draws": 0.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 0.93,
+      "censored / dropped draws": 0.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 1.93,
+      "censored / dropped draws": 0.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 2.93,
+      "censored / dropped draws": 0.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 3.93,
+      "censored / dropped draws": 0.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 4.93,
+      "censored / dropped draws": 0.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 0.07,
+      "censored / dropped draws": 0.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 1.07,
+      "censored / dropped draws": 0.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 2.07,
+      "censored / dropped draws": 0.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 3.07,
+      "censored / dropped draws": 0.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 4.07,
+      "censored / dropped draws": 0.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 5.07,
+      "censored / dropped draws": 0.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 0.21,
+      "censored / dropped draws": 2.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 1.21,
+      "censored / dropped draws": 1.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 2.21,
+      "censored / dropped draws": 0.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 3.21,
+      "censored / dropped draws": 0.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 4.21,
+      "censored / dropped draws": 1.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 5.21,
+      "censored / dropped draws": 13.0,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 0.35,
+      "censored / dropped draws": 0.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 1.35,
+      "censored / dropped draws": 0.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 2.35,
+      "censored / dropped draws": 0.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 3.35,
+      "censored / dropped draws": 0.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 4.35,
+      "censored / dropped draws": 0.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 5.35,
+      "censored / dropped draws": 0.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": -0.28,
+      "frac_items_complete": 1.0,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 0.72,
+      "frac_items_complete": 1.0,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 1.72,
+      "frac_items_complete": 1.0,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 2.72,
+      "frac_items_complete": 1.0,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 3.72,
+      "frac_items_complete": 1.0,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 4.72,
+      "frac_items_complete": 1.0,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "r1",
+      "frac_items_complete": 1.0,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "r2",
+      "frac_items_complete": 1.0,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "r3",
+      "frac_items_complete": 1.0,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "r4",
+      "frac_items_complete": 1.0,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "r5a",
+      "frac_items_complete": 1.0,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "r5b",
+      "frac_items_complete": 1.0,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 0.28,
+      "frac_items_complete": 1.0,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 1.28,
+      "frac_items_complete": 1.0,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 2.28,
+      "frac_items_complete": 1.0,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 3.28,
+      "frac_items_complete": 1.0,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 4.28,
+      "frac_items_complete": 1.0,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 5.28,
+      "frac_items_complete": 1.0,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": -0.28,
+      "frac_items_complete": 1.0,
+      "series": "pre-recovery",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 0.72,
+      "frac_items_complete": 1.0,
+      "series": "pre-recovery",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1.72,
+      "frac_items_complete": 1.0,
+      "series": "pre-recovery",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 2.7199999999999998,
+      "frac_items_complete": 1.0,
+      "series": "pre-recovery",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 3.7199999999999998,
+      "frac_items_complete": 1.0,
+      "series": "pre-recovery",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 4.72,
+      "frac_items_complete": 0.995,
+      "series": "pre-recovery",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 0.0,
+      "frac_items_complete": 0.9958333333333333,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 1.0,
+      "frac_items_complete": 0.9979166666666667,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 2.0,
+      "frac_items_complete": 1.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 3.0,
+      "frac_items_complete": 1.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 4.0,
+      "frac_items_complete": 0.9958333333333333,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 5.0,
+      "frac_items_complete": 0.97,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 0.28,
+      "frac_items_complete": 1.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 1.28,
+      "frac_items_complete": 1.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 2.2800000000000002,
+      "frac_items_complete": 1.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 3.2800000000000002,
+      "frac_items_complete": 1.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 4.28,
+      "frac_items_complete": 1.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.28,
+      "frac_items_complete": 1.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 0.0,
+      "frac_items_complete": 0.95,
+      "series": "0.95 floor",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 1.0,
+      "frac_items_complete": 0.95,
+      "series": "0.95 floor",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 0.0,
+      "Q1 steered - ceiling (0-1 score)": -0.4463888888888889,
+      "error": 0.05477777777777773,
+      "_kind": "errorbar",
+      "_group": 19
+    },
+    {
+      "x": 1.0,
+      "Q1 steered - ceiling (0-1 score)": -0.46294444444444444,
+      "error": 0.04781371252204583,
+      "_kind": "errorbar",
+      "_group": 20
+    },
+    {
+      "x": 2.5,
+      "Q1 steered - ceiling (0-1 score)": -0.5437777777777778,
+      "error": 0.04047222222222219,
+      "_kind": "errorbar",
+      "_group": 21
+    },
+    {
+      "x": 3.5,
+      "Q1 steered - ceiling (0-1 score)": -0.5420925925925926,
+      "error": 0.03924537037037035,
+      "_kind": "errorbar",
+      "_group": 22
+    },
+    {
+      "x": 0.0,
+      "delta-D (steered - ceiling raw drop)": -0.001833333333333284,
+      "error": 0.0877222222222222,
+      "_kind": "errorbar",
+      "_group": 23
+    },
+    {
+      "x": 0.3,
+      "delta-D (steered - ceiling raw drop)": -0.001833333333333284,
+      "error": 0.0877222222222222,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "x": 1.0,
+      "delta-D (steered - ceiling raw drop)": 0.03209567901234571,
+      "error": 0.08738062169312169,
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "x": 1.3,
+      "delta-D (steered - ceiling raw drop)": 0.03209567901234571,
+      "error": 0.08738062169312169,
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "x": 2.5,
+      "delta-D (steered - ceiling raw drop)": 0.03827777777777779,
+      "error": 0.04533333333333332,
+      "_kind": "errorbar",
+      "_group": 27
+    },
+    {
+      "x": 2.8,
+      "delta-D (steered - ceiling raw drop)": 0.03827777777777779,
+      "error": 0.04533333333333332,
+      "_kind": "errorbar",
+      "_group": 28
+    },
+    {
+      "x": 3.5,
+      "delta-D (steered - ceiling raw drop)": 0.05017438271604938,
+      "error": 0.030152777777777782,
+      "_kind": "errorbar",
+      "_group": 29
+    },
+    {
+      "x": 3.8,
+      "delta-D (steered - ceiling raw drop)": 0.05017438271604938,
+      "error": 0.030152777777777782,
+      "_kind": "errorbar",
+      "_group": 30
+    },
+    {
+      "category": "q25\nsteered\nn=110",
+      "Spearman rho": 0.8695828666407878,
+      "_kind": "bar",
+      "_group": 31
+    },
+    {
+      "category": "q25\nceiling\nn=220",
+      "Spearman rho": 0.5593652034038525,
+      "_kind": "bar",
+      "_group": 31
+    },
+    {
+      "category": "q25\nfloor\nn=220",
+      "Spearman rho": 0.7821669777252245,
+      "_kind": "bar",
+      "_group": 31
+    },
+    {
+      "category": "q35\nsteered\nn=238",
+      "Spearman rho": 0.9144240576550416,
+      "_kind": "bar",
+      "_group": 31
+    },
+    {
+      "category": "q35\nceiling\nn=360",
+      "Spearman rho": 0.45452989701768526,
+      "_kind": "bar",
+      "_group": 31
+    },
+    {
+      "category": "q35\nfloor\nn=360",
+      "Spearman rho": 0.8877210552158219,
+      "_kind": "bar",
+      "_group": 31
+    },
+    {
+      "per-cell mean TF margin shift": 0.10176065067450206,
+      "per-cell mean F_beh": 0.18481723986385237,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "per-cell mean TF margin shift": 0.016896143555641174,
+      "per-cell mean F_beh": 0.03586798466959261,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "per-cell mean TF margin shift": 0.061463624238967896,
+      "per-cell mean F_beh": 0.18388173891682216,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "per-cell mean TF margin shift": 0.015882067382335663,
+      "per-cell mean F_beh": 0.03756031119999703,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "per-cell mean TF margin shift": 0.034981876611709595,
+      "per-cell mean F_beh": 0.2030443562965064,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "per-cell mean TF margin shift": 0.013505068918069204,
+      "per-cell mean F_beh": 0.014846839284897785,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "per-cell mean TF margin shift": 0.027106334765752155,
+      "per-cell mean F_beh": 0.2992525470769393,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "per-cell mean TF margin shift": 0.024220099051793415,
+      "per-cell mean F_beh": 0.16100673475121433,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "per-cell mean TF margin shift": 0.01792472352584203,
+      "per-cell mean F_beh": 0.18524398924978125,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "per-cell mean TF margin shift": 0.013580118616422018,
+      "per-cell mean F_beh": 0.14486464902156673,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "per-cell mean TF margin shift": 0.027673902610937755,
+      "per-cell mean F_beh": 0.01511520844222095,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "per-cell mean TF margin shift": 0.011719601849714914,
+      "per-cell mean F_beh": 0.03242751171927175,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "per-cell mean TF margin shift": 0.07604542871316274,
+      "per-cell mean F_beh": 0.08400825983084313,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "per-cell mean TF margin shift": 0.04238030811150869,
+      "per-cell mean F_beh": 0.05602254906888582,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "per-cell mean TF margin shift": 0.030974241594473522,
+      "per-cell mean F_beh": 0.8316152399843806,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "per-cell mean TF margin shift": 0.02214653541644414,
+      "per-cell mean F_beh": 0.3429223568367121,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "per-cell mean TF margin shift": 0.027793442209561665,
+      "per-cell mean F_beh": 0.5147311996204775,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "per-cell mean TF margin shift": 0.03445891539255778,
+      "per-cell mean F_beh": 0.4239183882922944,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "per-cell mean TF margin shift": 0.017194641133149464,
+      "per-cell mean F_beh": 0.001721763085399449,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "per-cell mean TF margin shift": 0.021260055402914684,
+      "per-cell mean F_beh": 0.13541910237511112,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "per-cell mean TF margin shift": 0.018279388546943665,
+      "per-cell mean F_beh": 0.05716315285532656,
+      "_kind": "scatter",
+      "_group": 32
+    }
+  ],
+  "n_series": 33,
+  "total_points": 223,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "G0 token identity per direction",
+        "ylabel": "pair count",
+        "legend_labels": [
+          "testability floor (4)",
+          "pairs",
+          "intact (drop = gap to pairs)"
+        ],
+        "xticklabels": [
+          "in r1",
+          "er r1",
+          "in r2",
+          "er r2",
+          "in r3",
+          "er r3",
+          "in r4",
+          "er r4",
+          "in r5a",
+          "er r5a",
+          "in r5b",
+          "er r5b"
+        ],
+        "yticklabels": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7"
+        ]
+      },
+      {
+        "title_left": "N2.5 coherence retention",
+        "ylabel": "coherence > 60 retention fraction",
+        "xticklabels": [
+          "q25\nsteered",
+          "q25\nceiling",
+          "q25\nfloor",
+          "q35\nsteered",
+          "q35\nceiling",
+          "q35\nfloor"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "N2.5 min-length drops",
+        "ylabel": "< 48-token drop fraction",
+        "xticklabels": [
+          "q25\nsteered",
+          "q25\nceiling",
+          "q25\nfloor",
+          "q35\nsteered",
+          "q35\nceiling",
+          "q35\nfloor"
+        ],
+        "yticklabels": [
+          "0.000",
+          "0.001",
+          "0.002",
+          "0.003",
+          "0.004",
+          "0.005",
+          "0.006",
+          "0.007",
+          "0.008",
+          "0.009"
+        ]
+      },
+      {
+        "title_left": "grid cap-hit at 4096 per (cell x slot x arm) unit",
+        "ylabel": "cap-hit % of unit draws",
+        "legend_labels": [
+          "steered",
+          "null_sameval",
+          "null_xtype",
+          "G5 re-gen trigger (2%)"
+        ],
+        "xticklabels": [
+          "er r1 ce",
+          "er r1 pe",
+          "er r2 ce",
+          "er r2 pe",
+          "er r3 ce",
+          "er r3 pe",
+          "er r4 ce",
+          "er r4 pe",
+          "er r5a ce",
+          "er r5a pe",
+          "er r5b ce",
+          "er r5b pe",
+          "in r1 ce",
+          "in r1 pe",
+          "in r2 ce",
+          "in r2 pe",
+          "in r3 ce",
+          "in r3 pe",
+          "in r4 ce",
+          "in r4 pe",
+          "in r5a ce",
+          "in r5a pe",
+          "in r5b ce",
+          "in r5b pe"
+        ],
+        "yticklabels": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9"
+        ]
+      },
+      {
+        "ylabel": "truncated rows (n=30 per unit)",
+        "xticklabels": [
+          "er r1 ce",
+          "er r1 pe",
+          "er r2 ce",
+          "er r2 pe",
+          "er r3 ce",
+          "er r3 pe",
+          "er r4 ce",
+          "er r4 pe",
+          "er r5a ce",
+          "er r5a pe",
+          "er r5b ce",
+          "er r5b pe",
+          "in r1 ce",
+          "in r1 pe",
+          "in r2 ce",
+          "in r2 pe",
+          "in r3 ce",
+          "in r3 pe",
+          "in r4 ce",
+          "in r4 pe",
+          "in r5a ce",
+          "in r5a pe",
+          "in r5b ce",
+          "in r5b pe"
+        ],
+        "yticklabels": [
+          "0",
+          "1",
+          "2"
+        ]
+      },
+      {
+        "title_left": "decay judge drop classes per wave",
+        "ylabel": "censored / dropped draws",
+        "legend_labels": [
+          "content",
+          "transport",
+          "api-refusal",
+          "pre-recovery",
+          "post rule-28 sync re-issue"
+        ],
+        "xticklabels": [
+          "r1",
+          "r2",
+          "r3",
+          "r4",
+          "r5a",
+          "r5b"
+        ],
+        "yticklabels": [
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12",
+          "14"
+        ]
+      },
+      {
+        "title_left": "decay judge completeness per wave x arm",
+        "ylabel": "frac_items_complete",
+        "legend_labels": [
+          "pre-recovery",
+          "0.95 floor",
+          "steered",
+          "ceiling",
+          "floor"
+        ],
+        "xticklabels": [
+          "r1",
+          "r2",
+          "r3",
+          "r4",
+          "r5a",
+          "r5b"
+        ],
+        "yticklabels": [
+          "0.90",
+          "0.92",
+          "0.94",
+          "0.96",
+          "0.98",
+          "1.00",
+          "1.02"
+        ]
+      },
+      {
+        "title_left": "N2.2 Q1 starting-level gap",
+        "ylabel": "Q1 steered - ceiling (0-1 score)",
+        "xticklabels": [
+          "q25\nall",
+          "q25\ncoh",
+          "q35\nall",
+          "q35\ncoh"
+        ],
+        "yticklabels": [
+          "\u22120.7",
+          "\u22120.6",
+          "\u22120.5",
+          "\u22120.4",
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1"
+        ]
+      },
+      {
+        "title_left": "N2.3 rung-intersection sensitivity",
+        "ylabel": "delta-D (steered - ceiling raw drop)",
+        "legend_labels": [
+          "primary rungs",
+          "intersection rungs (r1,r2,r3)"
+        ],
+        "xticklabels": [
+          "q25\nall",
+          "q25\ncoh",
+          "q35\nall",
+          "q35\ncoh"
+        ],
+        "yticklabels": [
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15"
+        ]
+      },
+      {
+        "title_left": "fragment-mean vs whole-response score",
+        "ylabel": "Spearman rho",
+        "xticklabels": [
+          "q25\nsteered\nn=110",
+          "q25\nceiling\nn=220",
+          "q25\nfloor\nn=220",
+          "q35\nsteered\nn=238",
+          "q35\nceiling\nn=360",
+          "q35\nfloor\nn=360"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "conjunct scores (mean over carriers x slots)",
+        "xticklabels": [
+          "address",
+          "courtesy",
+          "dialect",
+          "formality",
+          "household",
+          "sea",
+          "warning"
+        ],
+        "yticklabels": [
+          "er r1",
+          "in r1",
+          "er r2",
+          "in r2"
+        ]
+      },
+      {
+        "ylabel": "mean judge score (0-100)",
+        "yticklabels": [
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100"
+        ]
+      },
+      {
+        "title_left": "rule-19 margin validation: rho=0.50, p=0.0202, n=21",
+        "xlabel": "per-cell mean TF margin shift",
+        "ylabel": "per-cell mean F_beh",
+        "xticklabels": [
+          "0.00",
+          "0.02",
+          "0.04",
+          "0.06",
+          "0.08",
+          "0.10",
+          "0.12"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "testability floor (4)",
+      "pairs",
+      "intact (drop = gap to pairs)",
+      "pre-recovery",
+      "0.95 floor",
+      "steered",
+      "ceiling",
+      "floor"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

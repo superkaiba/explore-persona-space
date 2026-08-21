@@ -1,0 +1,520 @@
+{
+  "commit": "8762977a",
+  "render_id": "9d0ed4cd20f44c6b",
+  "git_commit": "8762977adc6e5e29030698bad8670c946f12263e",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue823_ladder_figures.py",
+  "created": "2026-08-20T19:55:35Z",
+  "figsize": [
+    10.5,
+    6.2
+  ],
+  "points": [
+    {
+      "x": 2.0,
+      "R$^2$ drop vs k=1": 0.05572210340028361,
+      "series": "observed R$^2$ drop vs k=1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "R$^2$ drop vs k=1": 0.0999538752415764,
+      "series": "observed R$^2$ drop vs k=1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 8.0,
+      "R$^2$ drop vs k=1": 0.14679586286810453,
+      "series": "observed R$^2$ drop vs k=1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 16.0,
+      "R$^2$ drop vs k=1": 0.1561751282237317,
+      "series": "observed R$^2$ drop vs k=1",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "R$^2$ drop vs k=1": 0.04881337092572783,
+      "series": "implied mechanical mixture penalty",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "R$^2$ drop vs k=1": 0.1083345619454664,
+      "series": "implied mechanical mixture penalty",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "R$^2$ drop vs k=1": 0.15842803580996936,
+      "series": "implied mechanical mixture penalty",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 16.0,
+      "R$^2$ drop vs k=1": 0.17072548196557083,
+      "series": "implied mechanical mixture penalty",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "y": 0.02086197004440815,
+      "series": "observed R$^2$ drop vs k=1",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "y": 0.09747830402336222,
+      "series": "observed R$^2$ drop vs k=1",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 8.0,
+      "y": 0.18111173030341143,
+      "series": "observed R$^2$ drop vs k=1",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 16.0,
+      "y": 0.20178984026597302,
+      "series": "observed R$^2$ drop vs k=1",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "y": 0.04691610937093019,
+      "series": "implied mechanical mixture penalty",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "y": 0.11213332691179326,
+      "series": "implied mechanical mixture penalty",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 8.0,
+      "y": 0.17044944764302222,
+      "series": "implied mechanical mixture penalty",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 16.0,
+      "y": 0.19151257389113427,
+      "series": "implied mechanical mixture penalty",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "y": 0.04521308268238178,
+      "series": "observed R$^2$ drop vs k=1",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "y": 0.08579505432398726,
+      "series": "observed R$^2$ drop vs k=1",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 8.0,
+      "y": 0.13901791276765763,
+      "series": "observed R$^2$ drop vs k=1",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 16.0,
+      "y": 0.1501555678862352,
+      "series": "observed R$^2$ drop vs k=1",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "y": 0.04415322191170568,
+      "series": "implied mechanical mixture penalty",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "y": 0.09901051427692513,
+      "series": "implied mechanical mixture penalty",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 8.0,
+      "y": 0.14985537599616533,
+      "series": "implied mechanical mixture penalty",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 16.0,
+      "y": 0.1602251813451334,
+      "series": "implied mechanical mixture penalty",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "number of mixed personas k": 1.0,
+      "pooled held-out R$^2$": 0.5011191924602317,
+      "series": "pooled R$^2$ (own denominator)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "number of mixed personas k": 2.0,
+      "pooled held-out R$^2$": 0.4453970890599481,
+      "series": "pooled R$^2$ (own denominator)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "number of mixed personas k": 4.0,
+      "pooled held-out R$^2$": 0.40116531721865534,
+      "series": "pooled R$^2$ (own denominator)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "number of mixed personas k": 8.0,
+      "pooled held-out R$^2$": 0.3543233295921272,
+      "series": "pooled R$^2$ (own denominator)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "number of mixed personas k": 16.0,
+      "pooled held-out R$^2$": 0.34494406423650004,
+      "series": "pooled R$^2$ (own denominator)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "number of mixed personas k": 1.0,
+      "pooled held-out R$^2$": 0.5011191924602317,
+      "series": "pooled R$^2$ (fixed k=1 denominator)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "number of mixed personas k": 2.0,
+      "pooled held-out R$^2$": 0.4411212052777578,
+      "series": "pooled R$^2$ (fixed k=1 denominator)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "number of mixed personas k": 4.0,
+      "pooled held-out R$^2$": 0.40439458615122803,
+      "series": "pooled R$^2$ (fixed k=1 denominator)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "number of mixed personas k": 8.0,
+      "pooled held-out R$^2$": 0.29783935701003217,
+      "series": "pooled R$^2$ (fixed k=1 denominator)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "number of mixed personas k": 16.0,
+      "pooled held-out R$^2$": 0.271999715678093,
+      "series": "pooled R$^2$ (fixed k=1 denominator)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "number of mixed personas k": 1.0,
+      "y": 0.4827920967675693,
+      "series": "pooled R$^2$ (own denominator)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "number of mixed personas k": 2.0,
+      "y": 0.46193012672316114,
+      "series": "pooled R$^2$ (own denominator)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "number of mixed personas k": 4.0,
+      "y": 0.3853137927442071,
+      "series": "pooled R$^2$ (own denominator)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "number of mixed personas k": 8.0,
+      "y": 0.30168036646415786,
+      "series": "pooled R$^2$ (own denominator)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "number of mixed personas k": 16.0,
+      "y": 0.28100225650159627,
+      "series": "pooled R$^2$ (own denominator)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "number of mixed personas k": 1.0,
+      "y": 0.4827920967675693,
+      "series": "pooled R$^2$ (fixed k=1 denominator)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "number of mixed personas k": 2.0,
+      "y": 0.4626197332785067,
+      "series": "pooled R$^2$ (fixed k=1 denominator)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "number of mixed personas k": 4.0,
+      "y": 0.397064001142337,
+      "series": "pooled R$^2$ (fixed k=1 denominator)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "number of mixed personas k": 8.0,
+      "y": 0.2861231779208817,
+      "series": "pooled R$^2$ (fixed k=1 denominator)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "number of mixed personas k": 16.0,
+      "y": 0.23539898887645194,
+      "series": "pooled R$^2$ (fixed k=1 denominator)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "number of mixed personas k": 1.0,
+      "y": 0.516369927040901,
+      "series": "pooled R$^2$ (own denominator)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "number of mixed personas k": 2.0,
+      "y": 0.47115684435851923,
+      "series": "pooled R$^2$ (own denominator)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "number of mixed personas k": 4.0,
+      "y": 0.43057487271691375,
+      "series": "pooled R$^2$ (own denominator)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "number of mixed personas k": 8.0,
+      "y": 0.3773520142732434,
+      "series": "pooled R$^2$ (own denominator)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "number of mixed personas k": 16.0,
+      "y": 0.3662143591546658,
+      "series": "pooled R$^2$ (own denominator)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "number of mixed personas k": 1.0,
+      "y": 0.516369927040901,
+      "series": "pooled R$^2$ (fixed k=1 denominator)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "number of mixed personas k": 2.0,
+      "y": 0.46973166759712426,
+      "series": "pooled R$^2$ (fixed k=1 denominator)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "number of mixed personas k": 4.0,
+      "y": 0.4381269853957076,
+      "series": "pooled R$^2$ (fixed k=1 denominator)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "number of mixed personas k": 8.0,
+      "y": 0.3273816393517468,
+      "series": "pooled R$^2$ (fixed k=1 denominator)",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "number of mixed personas k": 16.0,
+      "y": 0.3036869364681848,
+      "series": "pooled R$^2$ (fixed k=1 denominator)",
+      "_kind": "line",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 54,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "layer 14 (evil read-out)",
+        "ylabel": "R$^2$ drop vs k=1",
+        "legend_labels": [
+          "observed R$^2$ drop vs k=1",
+          "implied mechanical mixture penalty"
+        ],
+        "yticklabels": [
+          "0.04",
+          "0.06",
+          "0.08",
+          "0.10",
+          "0.12",
+          "0.14",
+          "0.16",
+          "0.18"
+        ]
+      },
+      {
+        "title_left": "layer 26 (sycophancy read-out)",
+        "yticklabels": [
+          "0.000",
+          "0.025",
+          "0.050",
+          "0.075",
+          "0.100",
+          "0.125",
+          "0.150",
+          "0.175",
+          "0.200",
+          "0.225"
+        ]
+      },
+      {
+        "title_left": "layer 17 (hallucination read-out)",
+        "yticklabels": [
+          "0.02",
+          "0.04",
+          "0.06",
+          "0.08",
+          "0.10",
+          "0.12",
+          "0.14",
+          "0.16",
+          "0.18"
+        ]
+      },
+      {
+        "xlabel": "number of mixed personas k",
+        "ylabel": "pooled held-out R$^2$",
+        "legend_labels": [
+          "pooled R$^2$ (own denominator)",
+          "pooled R$^2$ (fixed k=1 denominator)"
+        ],
+        "xticklabels": [
+          "1",
+          "2",
+          "4",
+          "8",
+          "16"
+        ],
+        "yticklabels": [
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40",
+          "0.45",
+          "0.50",
+          "0.55"
+        ]
+      },
+      {
+        "xlabel": "number of mixed personas k",
+        "xticklabels": [
+          "1",
+          "2",
+          "4",
+          "8",
+          "16"
+        ],
+        "yticklabels": [
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40",
+          "0.45",
+          "0.50"
+        ]
+      },
+      {
+        "xlabel": "number of mixed personas k",
+        "xticklabels": [
+          "1",
+          "2",
+          "4",
+          "8",
+          "16"
+        ],
+        "yticklabels": [
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40",
+          "0.45",
+          "0.50",
+          "0.55"
+        ]
+      }
+    ],
+    "series": [
+      "observed R$^2$ drop vs k=1",
+      "implied mechanical mixture penalty",
+      "pooled R$^2$ (own denominator)",
+      "pooled R$^2$ (fixed k=1 denominator)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
