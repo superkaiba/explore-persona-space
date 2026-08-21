@@ -76,12 +76,44 @@
    "persona_specific_M2_r2"
   ],
   "offsets_M1_not_drawn": "pooled_offsets_M1_r2 values retained below; the M1 rung was dropped from the poster figure (2026-08-20)",
-  "assistant_not_included": {
-   "reason": "no committed decomposition pools the assistant cell with these 4 personas; the closest artifact pools {assistant bare Q&A, Wren bare Q&A, Wren in scene} at row grain (~4.4k rows/cell), a different pooled map + point grain, so its M0/M2 are not the same quantity as these bars and are not plotted",
-   "closest_artifact": "eval_results/issue_1310/xpersona_similarity/assistant_test/decomposition_instruct.json",
-   "closest_artifact_assistant_cell_r1_qa_oneline": {
-    "r2_M0_foldmean": 0.4051153063211188,
-    "r2_M2_foldmean": 0.49891139167802057
+  "assistant_reference_group": {
+   "status": "PLOTTED set-apart (gap + separator + hatching + 'assistant*' tick), per user directive 2026-08-20",
+   "different_lattice": "the assistant M0/M2 come from a DIFFERENT committed pooled lattice: pool = {assistant bare Q&A, Wren bare Q&A, Wren in scene}, ROW grain (per-question rows), NOT the 300-scenario aggregation over the 4 characters; no committed decomposition pools the assistant with these 4 personas",
+   "not_comparable": "fractions/levels must NOT be compared across lattices: Wren appears in BOTH and its M0/M2 fraction is 0.99 in the 4-persona lattice vs 0.82 (bare) / 0.86 (scene) in the assistant_test lattice \u2014 the lattice switch alone moves it more than any assistant-vs-character difference",
+   "source": "eval_results/issue_1310/xpersona_similarity/assistant_test/decomposition_instruct.json",
+   "instruct": {
+    "pooled_M0_r2": 0.4051153063211188,
+    "persona_specific_M2_r2": 0.49891139167802057,
+    "frac_M0_over_M2": 0.8119985093115806,
+    "pool_members": [
+     "r1_qa_oneline (assistant bare Q&A)",
+     "r2_op (Wren bare Q&A (on-policy))",
+     "r4_fictionframe (Wren in scene)"
+    ],
+    "grain": "row grain (per-question rows, NOT the 300-scenario aggregation)",
+    "n_intersection": 4375,
+    "per_cell_kept_n": {
+     "r1_qa_oneline": 4423,
+     "r2_op": 4604,
+     "r4_fictionframe": 4841
+    }
+   },
+   "base_companion_not_drawn": {
+    "pooled_M0_r2": 0.34348172744936556,
+    "persona_specific_M2_r2": 0.3972849659147536,
+    "frac_M0_over_M2": 0.8645726793574848,
+    "pool_members": [
+     "r1_qa_oneline (assistant bare Q&A)",
+     "r2_op (Wren bare Q&A (on-policy))",
+     "r4_fictionframe (Wren in scene)"
+    ],
+    "grain": "row grain (per-question rows, NOT the 300-scenario aggregation)",
+    "n_intersection": 4045,
+    "per_cell_kept_n": {
+     "r1_qa_oneline": 4376,
+     "r2_op": 4428,
+     "r4_fictionframe": 4760
+    }
    }
   },
   "instruct": {
@@ -178,7 +210,9 @@
   },
   "sources": [
    "eval_results/issue_1310/xpersona_similarity/v2/decomposition_instruct.json",
-   "eval_results/issue_1310/xpersona_similarity/v2/decomposition_base.json"
+   "eval_results/issue_1310/xpersona_similarity/v2/decomposition_base.json",
+   "eval_results/issue_1310/xpersona_similarity/assistant_test/decomposition_instruct.json",
+   "eval_results/issue_1310/xpersona_similarity/assistant_test/provenance_instruct.json"
   ]
  }
 }

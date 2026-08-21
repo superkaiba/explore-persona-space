@@ -1,7 +1,7 @@
 {
-  "commit": "62b208a9+dirty",
-  "render_id": "464e66eb86324613",
-  "git_commit": "62b208a9cef86cbe36b4531aaee85db9a8a48ed9",
+  "commit": "03b6c256+dirty",
+  "render_id": "1fbf29727aa54a5d",
+  "git_commit": "03b6c2568c9620cf9606c6825e0a4efe39c72b6a",
   "git_dirty": true,
   "git_dirty_paths": [
     "docs/posters/mats_2026/figures/plot6_persona_data.json",
@@ -12,7 +12,6 @@
     "docs/posters/mats_2026/figures/plot6b_specialization.pdf",
     "docs/posters/mats_2026/figures/plot6b_specialization.png",
     "docs/posters/mats_2026/make_plot6_persona.py",
-    "docs/posters/mats_2026/poster.tex",
     "eval_results/issue_666/headline/predictor_headline.json",
     "scripts/issue1901_body_figures.py",
     "tasks/completed/2214/body.md",
@@ -34,13 +33,11 @@
     "tasks/running/2214/plans/v1.md",
     "tasks/running/2214/plans/v2.md",
     "tasks/running/2214/plans/v3.md",
-    "tasks/running/2388/events.jsonl",
-    "tasks/running/2428/events.jsonl",
     "tests/test_issue2094_rev_butler.py"
   ],
   "git_argv0_state": "modified",
   "git_argv0_path": "docs/posters/mats_2026/make_plot6_persona.py",
-  "created": "2026-08-21T01:36:16Z",
+  "created": "2026-08-21T01:45:23Z",
   "figsize": [
     6.8,
     2.8
@@ -93,10 +90,22 @@
       "held-out $R^2$": 0.2328833350537587,
       "_kind": "bar",
       "_group": 1
+    },
+    {
+      "x": 4.53,
+      "held-out $R^2$": 0.4051153063211188,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.87,
+      "held-out $R^2$": 0.49891139167802057,
+      "_kind": "bar",
+      "_group": 3
     }
   ],
-  "n_series": 2,
-  "total_points": 8,
+  "n_series": 4,
+  "total_points": 10,
   "text": {
     "suptitle": null,
     "fig_texts": [],
@@ -105,28 +114,28 @@
         "title": "Pooled vs persona-specific fit, evaluated per persona",
         "ylabel": "held-out $R^2$",
         "legend_labels": [
-          "one map, all 4 personas pooled",
-          "persona-specific map"
+          "one map, personas pooled",
+          "persona-specific map",
+          "*different pool + grain"
         ],
         "xticklabels": [
           "Wren",
           "HELIOS",
           "Dana",
-          "Vex"
+          "Vex",
+          "assistant*"
         ],
         "yticklabels": [
           "0.0",
-          "0.1",
           "0.2",
-          "0.3",
           "0.4",
-          "0.5",
-          "0.6"
+          "0.6",
+          "0.8"
         ]
       }
     ],
     "series": [
-      "one map, all 4 personas pooled",
+      "one map, personas pooled",
       "persona-specific map"
     ]
   },

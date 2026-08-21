@@ -171,9 +171,10 @@ We map the context to the answer's \textbf{SAE features}, then ask which kinds o
 \begin{center}
 \includegraphics[width=0.95\linewidth]{plot6b_specialization.pdf}
 \end{center}
-\figcap{7}{Held-out $R^2$ per character: \emph{one} ridge map fitted on all four characters pooled (1{,}200 points) against that character's \emph{own} 300-point map. One point per (character, scenario), scene-aggregated; scenario-grouped 5-fold, layer 19, Qwen-2.5-7B-Instruct. The assistant is not in this pool.}
+\figcap{7}{Held-out $R^2$ per character: \emph{one} ridge map fitted on all four characters pooled (1{,}200 points) against that character's \emph{own} 300-point map. Scenario-grouped 5-fold, layer 19, Qwen-2.5-7B-Instruct. \textbf{assistant*} comes from a separate committed lattice — pool $=$ \{assistant Q\&A, Wren Q\&A, Wren in scene\}, per-question rows ($n\!=\!4{,}375$) — and is shown \emph{for reference only}: levels and fractions do not transfer between the two lattices (Wren, present in both, moves 0.99 to 0.82 on the switch alone).}
 \begin{itemize}
   \item \takeaways{Pooling across characters costs almost nothing:} a single map fitted on all four captures \textbf{90--98\%} of what each character's own map achieves — four characters, close to one shared operator.
+  \item \takeaways{The assistant behaves the same way inside its own lattice:} one pooled map captures \textbf{$\sim$81\%} of its own-map ceiling, against 82\% and 86\% for the Wren cells sharing that pool — unremarkable, not privileged.
   \item \takeaways{Close, but not identical:} the character-specific edge is small and survives — pooling \emph{approaches} rather than equals a per-character fit.
 \end{itemize}
 

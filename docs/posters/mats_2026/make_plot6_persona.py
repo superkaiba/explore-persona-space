@@ -19,11 +19,16 @@ values stay in the data JSON as a companion.
 Same rig (scenario-grouped shared 5-fold, layer 19, instruct).
 Numbers read ONLY from committed
   eval_results/issue_1310/xpersona_similarity/v2/decomposition_instruct.json
-The ASSISTANT is deliberately NOT a fifth group: no committed decomposition
-pools the assistant cell with these four personas. The closest artifact
-(assistant_test/decomposition_instruct.json) pools {assistant bare Q&A, Wren
-bare Q&A, Wren in scene} at row grain (~4.4k rows/cell), a different pooled
-map + grain, so its M0/M2 are not the same quantity as these bars.
+The ASSISTANT is drawn as a fifth, SET-APART group (user directive
+2026-08-20): gap + separator + hatched bars + an asterisked tick. Its M0/M2
+come from a DIFFERENT committed pooled lattice
+(assistant_test/decomposition_instruct.json) whose pool is {assistant bare
+Q&A, Wren bare Q&A, Wren in scene} at ROW grain (n=4,375 shared-question
+intersection), not the 300-scenario aggregation behind the four character
+groups — so its bars are reference-only, never comparable to the character
+bars. Cross-lattice caution (why fractions must not be compared): Wren sits
+in BOTH lattices and its M0/M2 fraction moves 0.99 (v2) -> 0.82/0.86
+(assistant_test) on the lattice switch alone.
 
 Base-model companions for both plots go into the data JSON (not drawn).
 Writes docs/posters/mats_2026/figures/plot6{a,b}_*.{png,pdf,meta.json} +
@@ -106,6 +111,22 @@ def load_6b(model: str) -> dict:
     return out
 
 
+def load_6b_assistant(model: str) -> dict:
+    """Assistant reference group from the assistant_test pooled lattice (row grain)."""
+    dec = json.loads((AT / f"decomposition_{model}.json").read_text())["per_persona"]
+    prov = json.loads((AT / f"provenance_{model}.json").read_text())
+    v = dec["r1_qa_oneline"]
+    return {
+        "pooled_M0_r2": v["r2_M0_foldmean"],
+        "persona_specific_M2_r2": v["r2_M2_foldmean"],
+        "frac_M0_over_M2": v["frac_M0_over_M2"],
+        "pool_members": [f"{c} ({prov['cell_desc'][c]})" for c in prov["cells"]],
+        "grain": "row grain (per-question rows, NOT the 300-scenario aggregation)",
+        "n_intersection": prov["intersection_n"],
+        "per_cell_kept_n": prov["per_cell_kept_n"],
+    }
+
+
 def plot_6a(data: dict) -> None:
     fig, ax = plt.subplots(figsize=FIGSIZE)
     xs = np.arange(len(TARGETS))
@@ -150,23 +171,37 @@ def plot_6a(data: dict) -> None:
     print(f"WROTE {OUT_DIR / 'plot6a_assistant_transfer.png'}")
 
 
-def plot_6b(data: dict) -> None:
+def plot_6b(data: dict, asst: dict) -> None:
+    import matplotlib.colors as mcolors
+    from matplotlib.patches import Patch
+
     fig, ax = plt.subplots(figsize=FIGSIZE)
     xs = np.arange(len(PERSONAS))
+    asst_x = len(PERSONAS) + 0.7  # gap sets the assistant group apart
     w = 0.34
     blue = paper_color("instruct")
+    # alpha-0.35-over-white blend as a solid color, so hatching stays crisp.
+    light = tuple(0.35 * c + 0.65 for c in mcolors.to_rgb(blue))
 
     m0 = [data[p]["pooled_M0_r2"] for p in PERSONAS]
     m2 = [data[p]["persona_specific_M2_r2"] for p in PERSONAS]
 
-    ax.bar(xs - w / 2, m0, width=w, color=blue, alpha=0.35, label="one map, all 4 personas pooled")
-    ax.bar(xs + w / 2, m2, width=w, color=blue, label="persona-specific map")
+    h0 = ax.bar(xs - w / 2, m0, width=w, color=light, label="one map, personas pooled")
+    h2 = ax.bar(xs + w / 2, m2, width=w, color=blue, label="persona-specific map")
 
-    ax.set_xticks(xs, PERSONAS)
+    # Assistant reference group: DIFFERENT pooled lattice (assistant+Wren cells,
+    # row grain) — hatched + separated, never on the characters' footing.
+    ax.axvline(len(PERSONAS) - 0.35, color="0.75", lw=0.8, ls="--", zorder=1)
+    hk = dict(hatch="///", edgecolor="0.25", linewidth=0.4)
+    ax.bar(asst_x - w / 2, [asst["pooled_M0_r2"]], width=w, color=light, **hk)
+    ax.bar(asst_x + w / 2, [asst["persona_specific_M2_r2"]], width=w, color=blue, **hk)
+
+    ax.set_xticks([*xs, asst_x], [*PERSONAS, "assistant*"])
     ax.set_ylabel("held-out $R^2$")
-    ax.set_ylim(0.0, 0.52)
+    ax.set_ylim(0.0, 0.64)
     ax.set_title("Pooled vs persona-specific fit, evaluated per persona")
-    ax.legend(frameon=False, loc="upper right", ncols=1, handlelength=1.4)
+    star = Patch(facecolor="0.92", **hk, label="*different pool + grain")
+    ax.legend(handles=[h0, h2, star], frameon=False, loc="upper left", ncols=1, handlelength=1.4)
     fig.tight_layout()
     savefig_paper(fig, "plot6b_specialization", dir=OUT_DIR)
     plt.close(fig)
@@ -179,12 +214,12 @@ def main() -> None:
 
     a_instruct, a_base = load_6a("instruct"), load_6a("base")
     b_instruct, b_base = load_6b("instruct"), load_6b("base")
+    asst_instruct, asst_base = load_6b_assistant("instruct"), load_6b_assistant("base")
 
     plot_6a(a_instruct)
-    plot_6b(b_instruct)
+    plot_6b(b_instruct, asst_instruct)
 
     prov_a = json.loads((AT / "provenance_instruct.json").read_text())
-    at_dec = json.loads((AT / "decomposition_instruct.json").read_text())
     (OUT_DIR / "plot6_persona_data.json").write_text(
         json.dumps(
             {
@@ -216,24 +251,33 @@ def main() -> None:
                     "drawn_arms": ["pooled_M0_r2", "persona_specific_M2_r2"],
                     "offsets_M1_not_drawn": "pooled_offsets_M1_r2 values retained below; "
                     "the M1 rung was dropped from the poster figure (2026-08-20)",
-                    "assistant_not_included": {
-                        "reason": "no committed decomposition pools the assistant cell with "
-                        "these 4 personas; the closest artifact pools {assistant bare Q&A, "
-                        "Wren bare Q&A, Wren in scene} at row grain (~4.4k rows/cell), a "
-                        "different pooled map + point grain, so its M0/M2 are not the same "
-                        "quantity as these bars and are not plotted",
-                        "closest_artifact": "eval_results/issue_1310/xpersona_similarity/"
+                    "assistant_reference_group": {
+                        "status": "PLOTTED set-apart (gap + separator + hatching + "
+                        "'assistant*' tick), per user directive 2026-08-20",
+                        "different_lattice": "the assistant M0/M2 come from a DIFFERENT "
+                        "committed pooled lattice: pool = {assistant bare Q&A, Wren bare "
+                        "Q&A, Wren in scene}, ROW grain (per-question rows), NOT the "
+                        "300-scenario aggregation over the 4 characters; no committed "
+                        "decomposition pools the assistant with these 4 personas",
+                        "not_comparable": "fractions/levels must NOT be compared across "
+                        "lattices: Wren appears in BOTH and its M0/M2 fraction is 0.99 in "
+                        "the 4-persona lattice vs 0.82 (bare) / 0.86 (scene) in the "
+                        "assistant_test lattice — the lattice switch alone moves it more "
+                        "than any assistant-vs-character difference",
+                        "source": "eval_results/issue_1310/xpersona_similarity/"
                         "assistant_test/decomposition_instruct.json",
-                        "closest_artifact_assistant_cell_r1_qa_oneline": {
-                            k: at_dec["per_persona"]["r1_qa_oneline"][k]
-                            for k in ("r2_M0_foldmean", "r2_M2_foldmean")
-                        },
+                        "instruct": asst_instruct,
+                        "base_companion_not_drawn": asst_base,
                     },
                     "instruct": b_instruct,
                     "base_companion_not_drawn": b_base,
                     "sources": [
                         SRC_DECOMP.format(model="instruct"),
                         SRC_DECOMP.format(model="base"),
+                        "eval_results/issue_1310/xpersona_similarity/assistant_test/"
+                        "decomposition_instruct.json",
+                        "eval_results/issue_1310/xpersona_similarity/assistant_test/"
+                        "provenance_instruct.json",
                     ],
                 },
             },
