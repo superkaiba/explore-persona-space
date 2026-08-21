@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2457,
+  "highest_id": 2458,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11252,6 +11252,13 @@
       "path": "tasks/proposed/2457",
       "status": "proposed",
       "title": "pre-commit stash-cycle patch* residue accumulates unbounded (6.1 GB / 23,528 files, oldest 2026-04-27) \u2014 evidence-gated reap, no janitor covers the path"
+    },
+    "2458": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2458",
+      "status": "proposed",
+      "title": "Step 10d pre-push gate: a crash verdict names no cause (rc values computed, branched on, then discarded)"
     },
     "246": {
       "has_clean_result": false,
