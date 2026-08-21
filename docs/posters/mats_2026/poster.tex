@@ -109,7 +109,10 @@
   \item Metrics: held-out $R^2$; \textbf{retrieval} (is the true answer the prediction's nearest neighbour among a large corpus); \textbf{behavior prediction} (LLM judged)
 \end{itemize}
 \begin{center}
-\IfFileExists{figures/method_diagram.pdf}{\includegraphics[width=0.52\linewidth]{method_diagram.pdf}}{\includegraphics[width=0.52\linewidth]{fig1_schematic.pdf}}
+% 0.52 -> 0.66: the diagram's own aspect was cut 23% shorter, so it renders
+% slightly SHORTER than before even at the wider fraction, while its labels
+% (4-7pt on the board at 0.52) come out ~27% larger.
+\IfFileExists{figures/method_diagram.pdf}{\includegraphics[width=0.66\linewidth]{method_diagram.pdf}}{\includegraphics[width=0.52\linewidth]{fig1_schematic.pdf}}
 \end{center}
 
 \postersec{1.\ The Mapping has high predictive Power and is mostly Linear}

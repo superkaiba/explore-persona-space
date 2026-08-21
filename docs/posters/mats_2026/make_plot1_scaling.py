@@ -52,7 +52,11 @@ FONT_SCALE = 1.9
 # font bump exactly — this is ~1.9/1.4, so text lands ~1.4x the paper size and
 # the layout still has room. The height is set by the right panel's long y
 # label, which must fit inside the axes without reaching the legend band.
-FIGSIZE = (7.6, 3.6)
+# Shorter, not narrower (2026-08-21): height only, so on-poster text size is
+# unchanged. The left panel spends over half its span on the gap between the
+# identity+bias baseline at -0.9 and the curves at 0.0-0.8, so the height comes
+# off dead air. Narrowing instead would have shrunk every label.
+FIGSIZE = (7.6, 2.8)
 
 
 def main() -> None:
@@ -65,6 +69,9 @@ def main() -> None:
         boundary_hline=BOUNDARY_HLINE,
         stem="plot1_scaling_boundary",
         out_dir=OUT_DIR,
+        # same text as the paper's, broken over two lines: at 2.8in tall the
+        # single-line form overruns the axis and collides with the legend
+        acc_label="retrieval acc@1\n(pool 1,000)",
         identity_label="identity + bias (baseline)",
         neural_label="nonlinear (MLP)",
         figsize=FIGSIZE,
