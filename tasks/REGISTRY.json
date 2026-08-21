@@ -9677,8 +9677,8 @@
     "2252": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2252",
-      "status": "running",
+      "path": "tasks/completed/2252",
+      "status": "completed",
       "title": "workflow-fix: Step 9c reports an external SIGTERM of the unfenced workflow_lint subprocess as a lint FAIL"
     },
     "2253": {
