@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2458,
+  "highest_id": 2459,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11259,6 +11259,13 @@
       "path": "tasks/proposed/2458",
       "status": "proposed",
       "title": "Step 10d pre-push gate: a crash verdict names no cause (rc values computed, branched on, then discarded)"
+    },
+    "2459": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2459",
+      "status": "proposed",
+      "title": "workflow-fix: session-scoped pgrep misses the gate's start_new_session pytest worker \u2014 healthy Step 9c/10d gates read as wedged"
     },
     "246": {
       "has_clean_result": false,
