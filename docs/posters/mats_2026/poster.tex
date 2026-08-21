@@ -126,7 +126,7 @@
 \begin{center}
 \IfFileExists{figures/plot2_persona_directions.pdf}{\includegraphics[width=0.92\linewidth]{plot2_persona_directions.pdf}}{\includegraphics[width=0.88\linewidth]{c3_persona_direction_spectrum.pdf}}
 \end{center}
-\figcap{4}{Held-out $R^2$ along the persona direction $r_B$ against 50 random unit directions (mean $\pm$ 1 SD). Fold 0 of 5; layers 14 / 26 / 17.}
+\figcap{4}{Held-out $R^2$ along each persona direction $r_B$ against one pooled reference over all 150 random unit directions (mean $\pm$ 1 SD, pooled across the three read-out layers). Fold 0 of 5; layers 14 / 26 / 17.}
 \begin{itemize}
   \item \takeaways{Persona-vector directions are among the best-predicted directions of the answer:} $r_B$ reads $R^2$ \textbf{0.79 / 0.87 / 0.80} (misalignment / sycophancy / hallucination) against a random-direction band of \textbf{0.56--0.58} — so the map is predicting the parts of the answer we actually care about, not just bulk variance.
 \end{itemize}
