@@ -780,8 +780,12 @@ def _pilot_value(sides: dict[str, SideData]) -> str:
 def phase_pilot(cfg: DecayConfig) -> int:
     """ONE wave-declared judge_pilot_gate call over 6 arms
     ({steered, ceiling, floor} x {q25, q35}) at the EXACT production
-    instrument, threshold_base=0 pinned batch on pilot AND production
-    (llm-judging rules 26/#2152). REFUSES --dry-run."""
+    instrument. Routing is DERIVED from the declared wave
+    (wave_n_calls + wave_threshold_base=0), which pins batch on production
+    and therefore on the pilot too — transport parity by construction.
+    Passing the legacy threshold_base knob ALONGSIDE the wave declaration
+    is refused by judge_pilot_gate (llm-judging rules 26/#2152).
+    REFUSES --dry-run."""
     if cfg.dry_run:
         logger.error("[pilot] --dry-run refused: the rule-26 pilot measures the REAL instrument")
         return RC_DRY_RUN_UNSUPPORTED
@@ -809,7 +813,6 @@ def phase_pilot(cfg: DecayConfig) -> int:
         n_draws=J94.JUDGE_N_DRAWS,
         target_total_draws=PILOT_TARGET_TOTAL,
         judge_model=cfg.judge_model,
-        threshold_base=0,
         report_path=jcfg.gates_dir / "pilot" / "decay_pilot_gate.json",
         seed=PILOT_SEED,
         wave_n_calls=wave_n_calls,
