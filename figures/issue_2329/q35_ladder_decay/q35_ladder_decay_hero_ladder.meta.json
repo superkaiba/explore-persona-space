@@ -1,0 +1,1925 @@
+{
+  "commit": "e4088328",
+  "render_id": "9710f03346a94ab9",
+  "git_commit": "e408832800a5d75c691eddf4d09b8078b1286110",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2329_ladder_analysis.py",
+  "created": "2026-08-21T08:19:52Z",
+  "figsize": [
+    12.5,
+    7.5
+  ],
+  "points": [
+    {
+      "x": -0.18,
+      "F_target (fraction of full context swap)": 0.0840082598308431,
+      "error": 0.05451961140678292,
+      "series": "steered",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 0.8200000000000001,
+      "F_target (fraction of full context swap)": 0.05602254906888582,
+      "error": 0.03915900648067406,
+      "series": "steered",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1.82,
+      "F_target (fraction of full context swap)": 0.8316152399843805,
+      "error": 0.15200186894281065,
+      "series": "steered",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 2.82,
+      "F_target (fraction of full context swap)": 0.5147311996204775,
+      "error": 0.18486946679272992,
+      "series": "steered",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 3.82,
+      "F_target (fraction of full context swap)": 0.001721763085399449,
+      "error": 0.0025826446280991736,
+      "series": "steered",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 4.82,
+      "F_target (fraction of full context swap)": 0.13541910237511112,
+      "error": 0.20568078552656335,
+      "series": "steered",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "F_target (fraction of full context swap)": 0.0,
+      "error": 0.0,
+      "series": "same-value-donor null",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "F_target (fraction of full context swap)": 0.0,
+      "error": 0.0,
+      "series": "same-value-donor null",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "F_target (fraction of full context swap)": -0.06047522434666805,
+      "error": 0.1273155048786725,
+      "series": "same-value-donor null",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "F_target (fraction of full context swap)": 0.036030002466994185,
+      "error": 0.05485467955569133,
+      "series": "same-value-donor null",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "F_target (fraction of full context swap)": 0.0,
+      "error": 0.0,
+      "series": "same-value-donor null",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "F_target (fraction of full context swap)": 0.010778643411094677,
+      "error": 0.02393214900307996,
+      "series": "same-value-donor null",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 0.18,
+      "F_target (fraction of full context swap)": 0.0,
+      "error": 0.0,
+      "series": "cross-type-donor null",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 1.18,
+      "F_target (fraction of full context swap)": 0.0,
+      "error": 0.0,
+      "series": "cross-type-donor null",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 2.18,
+      "F_target (fraction of full context swap)": -0.17593774852248342,
+      "error": 0.2757005956304991,
+      "series": "cross-type-donor null",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 3.18,
+      "F_target (fraction of full context swap)": -0.046928260732462694,
+      "error": 0.03140714990813732,
+      "series": "cross-type-donor null",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 4.18,
+      "F_target (fraction of full context swap)": 0.0,
+      "error": 0.0,
+      "series": "cross-type-donor null",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 5.18,
+      "F_target (fraction of full context swap)": -0.02079794774749547,
+      "error": 0.025039643895338026,
+      "series": "cross-type-donor null",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": -0.18,
+      "F_target (fraction of full context swap)": 0.0840082598308431,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.8200000000000001,
+      "F_target (fraction of full context swap)": 0.05602254906888582,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.82,
+      "F_target (fraction of full context swap)": 0.8316152399843805,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.82,
+      "F_target (fraction of full context swap)": 0.5147311996204775,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.82,
+      "F_target (fraction of full context swap)": 0.001721763085399449,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.82,
+      "F_target (fraction of full context swap)": 0.13541910237511112,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": -0.18,
+      "F_target (fraction of full context swap)": 0.030916200172811104,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.8200000000000001,
+      "F_target (fraction of full context swap)": 0.01869196939514453,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.82,
+      "F_target (fraction of full context swap)": 0.646963458377897,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.82,
+      "F_target (fraction of full context swap)": 0.32328407536233983,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.82,
+      "F_target (fraction of full context swap)": 0.0,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.82,
+      "F_target (fraction of full context swap)": -0.012605042016806733,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": -0.18,
+      "F_target (fraction of full context swap)": 0.13995542298637695,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.8200000000000001,
+      "F_target (fraction of full context swap)": 0.09700998235649265,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.82,
+      "F_target (fraction of full context swap)": 0.9509671962635183,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.82,
+      "F_target (fraction of full context swap)": 0.6930230089477997,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.82,
+      "F_target (fraction of full context swap)": 0.005165289256198347,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.82,
+      "F_target (fraction of full context swap)": 0.39875652903632,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "F_target (fraction of full context swap)": 0.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "F_target (fraction of full context swap)": 0.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "F_target (fraction of full context swap)": -0.06047522434666805,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "F_target (fraction of full context swap)": 0.036030002466994185,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.0,
+      "F_target (fraction of full context swap)": 0.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 5.0,
+      "F_target (fraction of full context swap)": 0.010778643411094677,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "F_target (fraction of full context swap)": 0.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "F_target (fraction of full context swap)": 0.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "F_target (fraction of full context swap)": -0.21578099462938818,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "F_target (fraction of full context swap)": -0.014768721068395614,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "F_target (fraction of full context swap)": 0.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 5.0,
+      "F_target (fraction of full context swap)": -0.00899875178767251,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "F_target (fraction of full context swap)": 0.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "F_target (fraction of full context swap)": 0.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "F_target (fraction of full context swap)": 0.0388500151279568,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.0,
+      "F_target (fraction of full context swap)": 0.09494063804298704,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.0,
+      "F_target (fraction of full context swap)": 0.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 5.0,
+      "F_target (fraction of full context swap)": 0.03886554621848741,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.18,
+      "F_target (fraction of full context swap)": 0.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.18,
+      "F_target (fraction of full context swap)": 0.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.18,
+      "F_target (fraction of full context swap)": -0.17593774852248342,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 3.18,
+      "F_target (fraction of full context swap)": -0.046928260732462694,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 4.18,
+      "F_target (fraction of full context swap)": 0.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 5.18,
+      "F_target (fraction of full context swap)": -0.02079794774749547,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.18,
+      "F_target (fraction of full context swap)": 0.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.18,
+      "F_target (fraction of full context swap)": 0.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.18,
+      "F_target (fraction of full context swap)": -0.5152641324062879,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 3.18,
+      "F_target (fraction of full context swap)": -0.0789124633634737,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 4.18,
+      "F_target (fraction of full context swap)": 0.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 5.18,
+      "F_target (fraction of full context swap)": -0.05112970795874328,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.18,
+      "F_target (fraction of full context swap)": 0.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.18,
+      "F_target (fraction of full context swap)": 0.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.18,
+      "F_target (fraction of full context swap)": 0.0361370588547103,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 3.18,
+      "F_target (fraction of full context swap)": -0.01609816354719906,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 4.18,
+      "F_target (fraction of full context swap)": 0.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 5.18,
+      "F_target (fraction of full context swap)": -0.0010504201680672266,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": -0.18,
+      "y": 0.18481723986385237,
+      "error": 0.1565105342603938,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "x": 0.8200000000000001,
+      "y": 0.18388173891682216,
+      "error": 0.2115914843399242,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "x": 1.82,
+      "y": 0.2030443562965064,
+      "error": 0.1798518730495552,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "x": 2.82,
+      "y": 0.2992525470769393,
+      "error": 0.1812116839020125,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "x": 3.82,
+      "y": 0.18524398924978125,
+      "error": 0.19390712572128335,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "x": 4.82,
+      "y": 0.01511520844222095,
+      "error": 0.011973338661402218,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": -0.0070627129275579285,
+      "error": 0.0507385380209904,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.02718199261207226,
+      "error": 0.08543612091726188,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "x": 2.0,
+      "y": -0.003941240841496998,
+      "error": 0.013843674834130846,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "x": 3.0,
+      "y": -0.06486710952608561,
+      "error": 0.0992470281338094,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
+      "y": 0.02617999866565357,
+      "error": 0.06464826509763914,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "x": 5.0,
+      "y": 0.013288326131322902,
+      "error": 0.03386705342782296,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "x": 0.18,
+      "y": 0.17807177485273218,
+      "error": 0.13954281720539502,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "x": 1.18,
+      "y": 0.2269033098491248,
+      "error": 0.16893699342037832,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "x": 2.18,
+      "y": 0.1487521846849006,
+      "error": 0.06809761655307847,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "x": 3.18,
+      "y": 0.4116467580560541,
+      "error": 0.13534667364160677,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "x": 4.18,
+      "y": 0.23883228112057844,
+      "error": 0.23733473498975433,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "x": 5.18,
+      "y": 0.06207389439265404,
+      "error": 0.045468163703110645,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "x": -0.18,
+      "y": 0.18481723986385237,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 0.8200000000000001,
+      "y": 0.18388173891682216,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1.82,
+      "y": 0.2030443562965064,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 2.82,
+      "y": 0.2992525470769393,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 3.82,
+      "y": 0.18524398924978125,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 4.82,
+      "y": 0.01511520844222095,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": -0.18,
+      "y": 0.03370538165663606,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 0.8200000000000001,
+      "y": -0.017072210050060627,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 1.82,
+      "y": 0.049297469943725886,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 2.82,
+      "y": 0.12800210390030742,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 3.82,
+      "y": -0.01638488016750883,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 4.82,
+      "y": 0.0045193737153554955,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": -0.18,
+      "y": 0.34672645017742365,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 0.8200000000000001,
+      "y": 0.40611075862978774,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 1.82,
+      "y": 0.40900121604283624,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 2.82,
+      "y": 0.4904254717043324,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 3.82,
+      "y": 0.3714293712750579,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 4.82,
+      "y": 0.02846605103815993,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 0.0,
+      "y": -0.0070627129275579285,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 1.0,
+      "y": -0.02718199261207226,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 2.0,
+      "y": -0.003941240841496998,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 3.0,
+      "y": -0.06486710952608561,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 4.0,
+      "y": 0.02617999866565357,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 5.0,
+      "y": 0.013288326131322902,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 0.0,
+      "y": -0.05605767736528977,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 1.0,
+      "y": -0.11316309409730037,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 2.0,
+      "y": -0.0188803191489362,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 3.0,
+      "y": -0.19396418927348102,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 4.0,
+      "y": -0.0267219334974408,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 5.0,
+      "y": -0.013179514893274508,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 0.0,
+      "y": 0.04541939867669102,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 1.0,
+      "y": 0.05770914773722338,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 2.0,
+      "y": 0.008807030519325493,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 3.0,
+      "y": 0.004529866994137766,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 4.0,
+      "y": 0.10257459669783749,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 5.0,
+      "y": 0.05455459196237141,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 0.18,
+      "y": 0.17807177485273218,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 1.18,
+      "y": 0.2269033098491248,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 2.18,
+      "y": 0.1487521846849006,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 3.18,
+      "y": 0.4116467580560541,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 4.18,
+      "y": 0.23883228112057844,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 5.18,
+      "y": 0.06207389439265404,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 0.18,
+      "y": 0.043658138231434246,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 1.18,
+      "y": 0.07731067926712173,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 2.18,
+      "y": 0.07816059984190898,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 3.18,
+      "y": 0.2830992134082075,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 4.18,
+      "y": 0.054158222810270024,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 5.18,
+      "y": 0.01718590566674963,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 0.18,
+      "y": 0.32274377264222426,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 1.18,
+      "y": 0.41518466610787835,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 2.18,
+      "y": 0.21435583294806593,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 3.18,
+      "y": 0.553792560691421,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 4.18,
+      "y": 0.5288276927897787,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 5.18,
+      "y": 0.10812223307297092,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": -0.18,
+      "F_target (fraction of full context swap)": 0.0,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "x": 0.8200000000000001,
+      "F_target (fraction of full context swap)": 0.0,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "x": 1.82,
+      "F_target (fraction of full context swap)": 0.3429223568367121,
+      "error": 0.1801898563004427,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "x": 2.82,
+      "F_target (fraction of full context swap)": 0.4239183882922944,
+      "error": 0.19495563499639573,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "x": 3.82,
+      "F_target (fraction of full context swap)": 0.0,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "x": 4.82,
+      "F_target (fraction of full context swap)": 0.05716315285532656,
+      "error": 0.05522029728796961,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "F_target (fraction of full context swap)": 0.0,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "F_target (fraction of full context swap)": 0.0,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "x": 2.0,
+      "F_target (fraction of full context swap)": 0.05887796772484478,
+      "error": 0.06233147140377833,
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "x": 3.0,
+      "F_target (fraction of full context swap)": 0.014535703495450579,
+      "error": 0.05802116477875567,
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "x": 4.0,
+      "F_target (fraction of full context swap)": 0.0,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "x": 5.0,
+      "F_target (fraction of full context swap)": 0.01669674237093756,
+      "error": 0.018734811657869145,
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "x": 0.18,
+      "F_target (fraction of full context swap)": 0.0,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "x": 1.18,
+      "F_target (fraction of full context swap)": 0.0,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "x": 2.18,
+      "F_target (fraction of full context swap)": -0.12190667973027518,
+      "error": 0.18695463758200478,
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "x": 3.18,
+      "F_target (fraction of full context swap)": 0.005583715047008411,
+      "error": 0.026109475109199462,
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "x": 4.18,
+      "F_target (fraction of full context swap)": 0.0,
+      "error": 0.0,
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "x": 5.18,
+      "F_target (fraction of full context swap)": -0.0010315884817261283,
+      "error": 0.012888423967698084,
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "x": -0.18,
+      "F_target (fraction of full context swap)": 0.0,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 0.8200000000000001,
+      "F_target (fraction of full context swap)": 0.0,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 1.82,
+      "F_target (fraction of full context swap)": 0.3429223568367121,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 2.82,
+      "F_target (fraction of full context swap)": 0.4239183882922944,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 3.82,
+      "F_target (fraction of full context swap)": 0.0,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 4.82,
+      "F_target (fraction of full context swap)": 0.05716315285532656,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": -0.18,
+      "F_target (fraction of full context swap)": 0.0,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 0.8200000000000001,
+      "F_target (fraction of full context swap)": 0.0,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 1.82,
+      "F_target (fraction of full context swap)": 0.16375390263739045,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 2.82,
+      "F_target (fraction of full context swap)": 0.24637544732071226,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 3.82,
+      "F_target (fraction of full context swap)": 0.0,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 4.82,
+      "F_target (fraction of full context swap)": 0.010154061624649859,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": -0.18,
+      "F_target (fraction of full context swap)": 0.0,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 0.8200000000000001,
+      "F_target (fraction of full context swap)": 0.0,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 1.82,
+      "F_target (fraction of full context swap)": 0.5241336152382758,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 2.82,
+      "F_target (fraction of full context swap)": 0.6362867173135037,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 3.82,
+      "F_target (fraction of full context swap)": 0.0,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 4.82,
+      "F_target (fraction of full context swap)": 0.12059465620058907,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 0.0,
+      "F_target (fraction of full context swap)": 0.0,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 1.0,
+      "F_target (fraction of full context swap)": 0.0,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 2.0,
+      "F_target (fraction of full context swap)": 0.05887796772484478,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 3.0,
+      "F_target (fraction of full context swap)": 0.014535703495450579,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 4.0,
+      "F_target (fraction of full context swap)": 0.0,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 5.0,
+      "F_target (fraction of full context swap)": 0.01669674237093756,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 0.0,
+      "F_target (fraction of full context swap)": 0.0,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 1.0,
+      "F_target (fraction of full context swap)": 0.0,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 2.0,
+      "F_target (fraction of full context swap)": -0.001682569078393835,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 3.0,
+      "F_target (fraction of full context swap)": -0.04111298865621448,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 4.0,
+      "F_target (fraction of full context swap)": 0.0,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 5.0,
+      "F_target (fraction of full context swap)": 0.0005291005291005284,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 0.0,
+      "F_target (fraction of full context swap)": 0.0,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 1.0,
+      "F_target (fraction of full context swap)": 0.0,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 2.0,
+      "F_target (fraction of full context swap)": 0.12298037372916282,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 3.0,
+      "F_target (fraction of full context swap)": 0.07492934090129687,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 4.0,
+      "F_target (fraction of full context swap)": 0.0,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 5.0,
+      "F_target (fraction of full context swap)": 0.037998723844838815,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 0.18,
+      "F_target (fraction of full context swap)": 0.0,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 1.18,
+      "F_target (fraction of full context swap)": 0.0,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 2.18,
+      "F_target (fraction of full context swap)": -0.12190667973027518,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 3.18,
+      "F_target (fraction of full context swap)": 0.005583715047008411,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 4.18,
+      "F_target (fraction of full context swap)": 0.0,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 5.18,
+      "F_target (fraction of full context swap)": -0.0010315884817261283,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 0.18,
+      "F_target (fraction of full context swap)": 0.0,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 1.18,
+      "F_target (fraction of full context swap)": 0.0,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 2.18,
+      "F_target (fraction of full context swap)": -0.36495855874433536,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 3.18,
+      "F_target (fraction of full context swap)": -0.01998862316863752,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 4.18,
+      "F_target (fraction of full context swap)": 0.0,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 5.18,
+      "F_target (fraction of full context swap)": -0.013200900651038296,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 0.18,
+      "F_target (fraction of full context swap)": 0.0,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 1.18,
+      "F_target (fraction of full context swap)": 0.0,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 2.18,
+      "F_target (fraction of full context swap)": 0.008950716419674223,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 3.18,
+      "F_target (fraction of full context swap)": 0.0322303270497614,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 4.18,
+      "F_target (fraction of full context swap)": 0.0,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 5.18,
+      "F_target (fraction of full context swap)": 0.012575947284357875,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": -0.18,
+      "y": 0.03586798466959261,
+      "error": 0.04992089310892592,
+      "_kind": "errorbar",
+      "_group": 36
+    },
+    {
+      "x": 0.8200000000000001,
+      "y": 0.03756031119999703,
+      "error": 0.15175918788568354,
+      "_kind": "errorbar",
+      "_group": 36
+    },
+    {
+      "x": 1.82,
+      "y": 0.014846839284897785,
+      "error": 0.022816723275789187,
+      "_kind": "errorbar",
+      "_group": 36
+    },
+    {
+      "x": 2.82,
+      "y": 0.16100673475121433,
+      "error": 0.186108054017368,
+      "_kind": "errorbar",
+      "_group": 36
+    },
+    {
+      "x": 3.82,
+      "y": 0.14486464902156673,
+      "error": 0.11794926422217077,
+      "_kind": "errorbar",
+      "_group": 36
+    },
+    {
+      "x": 4.82,
+      "y": 0.03242751171927175,
+      "error": 0.057533942005586404,
+      "_kind": "errorbar",
+      "_group": 36
+    },
+    {
+      "x": 0.0,
+      "y": 0.027178723924227238,
+      "error": 0.047455819342096965,
+      "_kind": "errorbar",
+      "_group": 37
+    },
+    {
+      "x": 1.0,
+      "y": -0.0066302666519592645,
+      "error": 0.09525287608236693,
+      "_kind": "errorbar",
+      "_group": 37
+    },
+    {
+      "x": 2.0,
+      "y": -0.0014886278322799728,
+      "error": 0.010572786472344378,
+      "_kind": "errorbar",
+      "_group": 37
+    },
+    {
+      "x": 3.0,
+      "y": -0.019788263610391824,
+      "error": 0.03706794492714312,
+      "_kind": "errorbar",
+      "_group": 37
+    },
+    {
+      "x": 4.0,
+      "y": -0.02079260291263407,
+      "error": 0.08668002952751408,
+      "_kind": "errorbar",
+      "_group": 37
+    },
+    {
+      "x": 5.0,
+      "y": 0.028524900825639275,
+      "error": 0.05750449594927765,
+      "_kind": "errorbar",
+      "_group": 37
+    },
+    {
+      "x": 0.18,
+      "y": -0.0018961256350433972,
+      "error": 0.032997121055880214,
+      "_kind": "errorbar",
+      "_group": 38
+    },
+    {
+      "x": 1.18,
+      "y": -0.03553281130773376,
+      "error": 0.09862014828850875,
+      "_kind": "errorbar",
+      "_group": 38
+    },
+    {
+      "x": 2.18,
+      "y": 0.03105623725933651,
+      "error": 0.03778284599325929,
+      "_kind": "errorbar",
+      "_group": 38
+    },
+    {
+      "x": 3.18,
+      "y": 0.14626418873245386,
+      "error": 0.1881175253452855,
+      "_kind": "errorbar",
+      "_group": 38
+    },
+    {
+      "x": 4.18,
+      "y": 0.08528346257334955,
+      "error": 0.07759690307278258,
+      "_kind": "errorbar",
+      "_group": 38
+    },
+    {
+      "x": 5.18,
+      "y": -0.0020816539214960975,
+      "error": 0.008814882775994827,
+      "_kind": "errorbar",
+      "_group": 38
+    },
+    {
+      "x": -0.18,
+      "y": 0.03586798466959261,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 0.8200000000000001,
+      "y": 0.03756031119999703,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 1.82,
+      "y": 0.014846839284897785,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 2.82,
+      "y": 0.16100673475121433,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 3.82,
+      "y": 0.14486464902156673,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 4.82,
+      "y": 0.03242751171927175,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": -0.18,
+      "y": -0.010466446041675216,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 0.8200000000000001,
+      "y": -0.11704873384300879,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 1.82,
+      "y": -0.003992872170330864,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 2.82,
+      "y": 0.00987841893806174,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 3.82,
+      "y": 0.034344413493319154,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 4.82,
+      "y": -0.00961727818094714,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": -0.18,
+      "y": 0.08937534017617661,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 0.8200000000000001,
+      "y": 0.18646964192835833,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 1.82,
+      "y": 0.04164057438124751,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 2.82,
+      "y": 0.3820945269727977,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 3.82,
+      "y": 0.2702429419376607,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 4.82,
+      "y": 0.10545060583022567,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 0.0,
+      "y": 0.027178723924227238,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 1.0,
+      "y": -0.0066302666519592645,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 2.0,
+      "y": -0.0014886278322799728,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 3.0,
+      "y": -0.019788263610391824,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 4.0,
+      "y": -0.02079260291263407,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 5.0,
+      "y": 0.028524900825639275,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 0.0,
+      "y": -0.01617247850831556,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 1.0,
+      "y": -0.09838872825597607,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 2.0,
+      "y": -0.013082529044446048,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 3.0,
+      "y": -0.06555299365808454,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 4.0,
+      "y": -0.1152669632014637,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 5.0,
+      "y": -0.013741855759372364,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 0.0,
+      "y": 0.07873916017587837,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 1.0,
+      "y": 0.0921170239087578,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 2.0,
+      "y": 0.008063043900242707,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 3.0,
+      "y": 0.008582896196201704,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 4.0,
+      "y": 0.05809309585356444,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 5.0,
+      "y": 0.10126713613918294,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 0.18,
+      "y": -0.0018961256350433972,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "x": 1.18,
+      "y": -0.03553281130773376,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "x": 2.18,
+      "y": 0.03105623725933651,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "x": 3.18,
+      "y": 0.14626418873245386,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "x": 4.18,
+      "y": 0.08528346257334955,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "x": 5.18,
+      "y": -0.0020816539214960975,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "x": 0.18,
+      "y": -0.03122516456152129,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "x": 1.18,
+      "y": -0.1408127194202512,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "x": 2.18,
+      "y": 0.002326970376840133,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "x": 3.18,
+      "y": 0.006553941675981223,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "x": 4.18,
+      "y": 0.016878919125261432,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "x": 5.18,
+      "y": -0.012391785387368728,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "x": 0.18,
+      "y": 0.034769077550239134,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "x": 1.18,
+      "y": 0.056427577156766294,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "x": 2.18,
+      "y": 0.0778926623633587,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "x": 3.18,
+      "y": 0.3827889923665522,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "x": 4.18,
+      "y": 0.1720727252708266,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "x": 5.18,
+      "y": 0.005237980164620927,
+      "_kind": "line",
+      "_group": 47
+    }
+  ],
+  "n_series": 48,
+  "total_points": 288,
+  "text": {
+    "suptitle": "Specificity ladder: steered vs both nulls per rung",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "install \u2014 context-end",
+        "ylabel": "F_target (fraction of full context swap)",
+        "legend_labels": [
+          "steered",
+          "same-value-donor null",
+          "cross-type-donor null"
+        ],
+        "xticklabels": [
+          "R1 pirate\nn=6, 47 tok",
+          "R2 butler\nn=6, 45 tok",
+          "R3 warm\nn=6, 8 tok",
+          "R4 trait\nn=6, 4 tok",
+          "R5 lu_therapy\nn=6, 61 tok",
+          "R5 lu_philosophy\nn=6, 74 tok"
+        ],
+        "yticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "erase \u2014 context-end",
+        "xticklabels": [
+          "R1 pirate\nn=6, 47 tok",
+          "R2 butler\nn=6, 45 tok",
+          "R3 warm\nn=6, 8 tok",
+          "R4 trait\nn=6, 4 tok",
+          "R5 lu_therapy\nn=6, 61 tok",
+          "R5 lu_philosophy\nn=6, 74 tok"
+        ]
+      },
+      {
+        "title_left": "install \u2014 prefix-end",
+        "ylabel": "F_target (fraction of full context swap)",
+        "xticklabels": [
+          "R1 pirate\nn=6, 47 tok",
+          "R2 butler\nn=6, 45 tok",
+          "R3 warm\nn=6, 8 tok",
+          "R4 trait\nn=6, 4 tok",
+          "R5 lu_therapy\nn=6, 61 tok",
+          "R5 lu_philosophy\nn=6, 74 tok"
+        ],
+        "yticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "erase \u2014 prefix-end",
+        "xticklabels": [
+          "R1 pirate\nn=6, 47 tok",
+          "R2 butler\nn=6, 45 tok",
+          "R3 warm\nn=6, 8 tok",
+          "R4 trait\nn=6, 4 tok",
+          "R5 lu_therapy\nn=6, 61 tok",
+          "R5 lu_philosophy\nn=6, 74 tok"
+        ]
+      }
+    ],
+    "series": [
+      "steered",
+      "same-value-donor null",
+      "cross-type-donor null"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -1,0 +1,154 @@
+{
+  "commit": "e4088328",
+  "render_id": "ca1b0bc30a6a47d9",
+  "git_commit": "e408832800a5d75c691eddf4d09b8078b1286110",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2329_ladder_analysis.py",
+  "created": "2026-08-21T08:20:25Z",
+  "figsize": [
+    8.0,
+    7.5
+  ],
+  "points": [
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) steered mean F_target": 0.18323943076538685,
+      "this run (Qwen3.5-9B) steered mean F_target": 0.18481723986385237,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) steered mean F_target": -0.057011108890992646,
+      "this run (Qwen3.5-9B) steered mean F_target": 0.03586798466959261,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) steered mean F_target": 0.2933924891955339,
+      "this run (Qwen3.5-9B) steered mean F_target": 0.18388173891682216,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) steered mean F_target": 0.07045401562999101,
+      "this run (Qwen3.5-9B) steered mean F_target": 0.03756031119999703,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) steered mean F_target": 0.6027094242398526,
+      "this run (Qwen3.5-9B) steered mean F_target": 0.2030443562965064,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) steered mean F_target": 0.020386178865618092,
+      "this run (Qwen3.5-9B) steered mean F_target": 0.014846839284897785,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) steered mean F_target": 0.2185383286067349,
+      "this run (Qwen3.5-9B) steered mean F_target": 0.01511520844222095,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) steered mean F_target": 0.502131664661635,
+      "this run (Qwen3.5-9B) steered mean F_target": 0.03242751171927175,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) steered mean F_target": 0.20063975939477952,
+      "this run (Qwen3.5-9B) steered mean F_target": 0.0840082598308431,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) steered mean F_target": 0.1304251710605059,
+      "this run (Qwen3.5-9B) steered mean F_target": 0.05602254906888582,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) steered mean F_target": 0.4093068625027873,
+      "this run (Qwen3.5-9B) steered mean F_target": 0.8316152399843805,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) steered mean F_target": -0.011496546642186531,
+      "this run (Qwen3.5-9B) steered mean F_target": 0.3429223568367121,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) steered mean F_target": 0.00012254000931304423,
+      "this run (Qwen3.5-9B) steered mean F_target": 0.13541910237511112,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "parent #2162 (Qwen2.5-7B-Instruct) steered mean F_target": 0.024045413327451404,
+      "this run (Qwen3.5-9B) steered mean F_target": 0.05716315285532656,
+      "_kind": "scatter",
+      "_group": 13
+    }
+  ],
+  "n_series": 14,
+  "total_points": 14,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Ladder transfer across models \u2014 16 cells testable in both, 1 flips",
+        "xlabel": "parent #2162 (Qwen2.5-7B-Instruct) steered mean F_target",
+        "ylabel": "this run (Qwen3.5-9B) steered mean F_target",
+        "annotations": [
+          "erase_r1_pirate|ce\nno-clean-transfer \u2192 no-clean-transfer",
+          "erase_r1_pirate|pe\nno-clean-transfer \u2192 no-clean-transfer",
+          "erase_r2_butler|ce\nno-clean-transfer \u2192 no-clean-transfer",
+          "erase_r2_butler|pe\nno-clean-transfer \u2192 no-clean-transfer",
+          "erase_r3_warm|ce\nno-clean-transfer \u2192 no-clean-transfer",
+          "erase_r3_warm|pe\nno-clean-transfer \u2192 no-clean-transfer",
+          "erase_r5b_lu_philosophy|ce\nno-clean-transfer \u2192 no-clean-transfer",
+          "erase_r5b_lu_philosophy|pe\nno-clean-transfer \u2192 no-clean-transfer",
+          "install_r1_pirate|ce\ntransfers \u2192 transfers",
+          "install_r1_pirate|pe\nno-clean-transfer \u2192 no-clean-transfer",
+          "install_r2_butler|ce\ntransfers \u2192 transfers",
+          "install_r2_butler|pe\nno-clean-transfer \u2192 no-clean-transfer",
+          "install_r3_warm|ce\ntransfers \u2192 transfers",
+          "install_r3_warm|pe\nno-clean-transfer \u2192 transfers\nq25 gap [-0.13, +0.11]\nq35 gap [+0.04, +0.89]",
+          "install_r5b_lu_philosophy|ce\nno-clean-transfer \u2192 no-clean-transfer",
+          "install_r5b_lu_philosophy|pe\nno-clean-transfer \u2192 no-clean-transfer"
+        ],
+        "xticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

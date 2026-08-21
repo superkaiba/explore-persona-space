@@ -1,0 +1,489 @@
+{
+  "commit": "e4088328",
+  "render_id": "251933cfdc6e453c",
+  "git_commit": "e408832800a5d75c691eddf4d09b8078b1286110",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2329_ladder_analysis.py",
+  "created": "2026-08-21T08:20:16Z",
+  "figsize": [
+    6.5,
+    6.0
+  ],
+  "points": [
+    {
+      "netted dual-rubric F (parent metric)": -0.007278409573668921,
+      "F_target (this round's primary)": -0.0070627129275579285,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "netted dual-rubric F (parent metric)": 0.1271360097711217,
+      "F_target (this round's primary)": 0.17807177485273218,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "netted dual-rubric F (parent metric)": 0.13585536414452698,
+      "F_target (this round's primary)": 0.18481723986385237,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "netted dual-rubric F (parent metric)": 0.01795765312575678,
+      "F_target (this round's primary)": 0.027178723924227235,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "netted dual-rubric F (parent metric)": -0.004534723343714006,
+      "F_target (this round's primary)": -0.0018961256350433972,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "netted dual-rubric F (parent metric)": 0.028951435798739353,
+      "F_target (this round's primary)": 0.03586798466959261,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "netted dual-rubric F (parent metric)": -0.02399963769965241,
+      "F_target (this round's primary)": -0.02718199261207226,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "netted dual-rubric F (parent metric)": 0.20147439770342387,
+      "F_target (this round's primary)": 0.2269033098491248,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "netted dual-rubric F (parent metric)": 0.1432403032366286,
+      "F_target (this round's primary)": 0.18388173891682216,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "netted dual-rubric F (parent metric)": -0.013474715025567746,
+      "F_target (this round's primary)": -0.00663026665195927,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "netted dual-rubric F (parent metric)": -0.02596857329751845,
+      "F_target (this round's primary)": -0.03553281130773376,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "netted dual-rubric F (parent metric)": 0.027685347034797785,
+      "F_target (this round's primary)": 0.03756031119999703,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "netted dual-rubric F (parent metric)": 0.0039053070029324657,
+      "F_target (this round's primary)": -0.003941240841496998,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "netted dual-rubric F (parent metric)": 0.1696658487712436,
+      "F_target (this round's primary)": 0.1487521846849006,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "netted dual-rubric F (parent metric)": 0.23515113205124805,
+      "F_target (this round's primary)": 0.2030443562965064,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "netted dual-rubric F (parent metric)": 0.011217860869102784,
+      "F_target (this round's primary)": -0.0014886278322799732,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "netted dual-rubric F (parent metric)": 0.04506704506628544,
+      "F_target (this round's primary)": 0.031056237259336514,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "netted dual-rubric F (parent metric)": 0.020456828005900218,
+      "F_target (this round's primary)": 0.014846839284897785,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "netted dual-rubric F (parent metric)": -0.07442131370087997,
+      "F_target (this round's primary)": -0.06486710952608561,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "netted dual-rubric F (parent metric)": 0.3837866735827468,
+      "F_target (this round's primary)": 0.4116467580560541,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "netted dual-rubric F (parent metric)": 0.32147034110159806,
+      "F_target (this round's primary)": 0.2992525470769393,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "netted dual-rubric F (parent metric)": -0.0192486507668691,
+      "F_target (this round's primary)": -0.019788263610391824,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "netted dual-rubric F (parent metric)": 0.12468553003608825,
+      "F_target (this round's primary)": 0.14626418873245386,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "netted dual-rubric F (parent metric)": 0.1382733232419516,
+      "F_target (this round's primary)": 0.16100673475121433,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "netted dual-rubric F (parent metric)": 0.019543397337098947,
+      "F_target (this round's primary)": 0.026179998665653573,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "netted dual-rubric F (parent metric)": 0.22622651353575382,
+      "F_target (this round's primary)": 0.23883228112057842,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "netted dual-rubric F (parent metric)": 0.1737284493671909,
+      "F_target (this round's primary)": 0.18524398924978125,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "netted dual-rubric F (parent metric)": -0.019577551885378963,
+      "F_target (this round's primary)": -0.02079260291263407,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "netted dual-rubric F (parent metric)": 0.09961113092287151,
+      "F_target (this round's primary)": 0.08528346257334952,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "netted dual-rubric F (parent metric)": 0.14980591893135656,
+      "F_target (this round's primary)": 0.14486464902156673,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "netted dual-rubric F (parent metric)": 0.008902161493071858,
+      "F_target (this round's primary)": 0.013288326131322902,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "netted dual-rubric F (parent metric)": 0.056953156799057374,
+      "F_target (this round's primary)": 0.062073894392654046,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "netted dual-rubric F (parent metric)": 0.016065498680703446,
+      "F_target (this round's primary)": 0.01511520844222095,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "netted dual-rubric F (parent metric)": 0.0366104735776295,
+      "F_target (this round's primary)": 0.02852490082563928,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "netted dual-rubric F (parent metric)": -0.0025725179874774543,
+      "F_target (this round's primary)": -0.002081653921496098,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "netted dual-rubric F (parent metric)": 0.02750904924799112,
+      "F_target (this round's primary)": 0.03242751171927175,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "netted dual-rubric F (parent metric)": -0.07952875992673346,
+      "F_target (this round's primary)": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "netted dual-rubric F (parent metric)": -0.12057892860991647,
+      "F_target (this round's primary)": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "netted dual-rubric F (parent metric)": 0.23943362200223972,
+      "F_target (this round's primary)": 0.08400825983084313,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "netted dual-rubric F (parent metric)": -0.006726600182577293,
+      "F_target (this round's primary)": 0.0,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "netted dual-rubric F (parent metric)": -0.05422868925488495,
+      "F_target (this round's primary)": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "netted dual-rubric F (parent metric)": 0.0051386315841446175,
+      "F_target (this round's primary)": 0.0,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "netted dual-rubric F (parent metric)": -0.06028770527759924,
+      "F_target (this round's primary)": 0.0,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "netted dual-rubric F (parent metric)": -0.07193393926351725,
+      "F_target (this round's primary)": 0.0,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "netted dual-rubric F (parent metric)": 0.10688062388754165,
+      "F_target (this round's primary)": 0.05602254906888582,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "netted dual-rubric F (parent metric)": -0.05943823084023297,
+      "F_target (this round's primary)": 0.0,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "netted dual-rubric F (parent metric)": -0.010747362585882462,
+      "F_target (this round's primary)": 0.0,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "netted dual-rubric F (parent metric)": -0.017185944168581782,
+      "F_target (this round's primary)": 0.0,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "netted dual-rubric F (parent metric)": -0.07468095529710403,
+      "F_target (this round's primary)": -0.06047522434666805,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "netted dual-rubric F (parent metric)": -0.2772772178410727,
+      "F_target (this round's primary)": -0.17593774852248337,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "netted dual-rubric F (parent metric)": 0.7854092029182408,
+      "F_target (this round's primary)": 0.8316152399843806,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "netted dual-rubric F (parent metric)": 0.0013640418463867201,
+      "F_target (this round's primary)": 0.05887796772484477,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "netted dual-rubric F (parent metric)": -0.09845190052099491,
+      "F_target (this round's primary)": -0.12190667973027518,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "netted dual-rubric F (parent metric)": 0.33258443170497554,
+      "F_target (this round's primary)": 0.3429223568367121,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "netted dual-rubric F (parent metric)": 0.012295077234676538,
+      "F_target (this round's primary)": 0.03603000246699419,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "netted dual-rubric F (parent metric)": -0.23680262851151623,
+      "F_target (this round's primary)": -0.0469282607324627,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "netted dual-rubric F (parent metric)": 0.5503843986392946,
+      "F_target (this round's primary)": 0.5147311996204775,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "netted dual-rubric F (parent metric)": -0.01629389789145653,
+      "F_target (this round's primary)": 0.014535703495450579,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "netted dual-rubric F (parent metric)": -0.08994269810340239,
+      "F_target (this round's primary)": 0.005583715047008411,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "netted dual-rubric F (parent metric)": 0.4403902487583054,
+      "F_target (this round's primary)": 0.4239183882922944,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "netted dual-rubric F (parent metric)": -0.01369014824695248,
+      "F_target (this round's primary)": 0.0,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "netted dual-rubric F (parent metric)": -0.09706512359213242,
+      "F_target (this round's primary)": 0.0,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "netted dual-rubric F (parent metric)": 0.044716094006040756,
+      "F_target (this round's primary)": 0.001721763085399449,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "netted dual-rubric F (parent metric)": -0.027775606893905905,
+      "F_target (this round's primary)": 0.0,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "netted dual-rubric F (parent metric)": -0.0895368367807241,
+      "F_target (this round's primary)": 0.0,
+      "_kind": "scatter",
+      "_group": 64
+    },
+    {
+      "netted dual-rubric F (parent metric)": -0.022590620713073245,
+      "F_target (this round's primary)": 0.0,
+      "_kind": "scatter",
+      "_group": 65
+    },
+    {
+      "netted dual-rubric F (parent metric)": 0.012039462610181226,
+      "F_target (this round's primary)": 0.010778643411094678,
+      "_kind": "scatter",
+      "_group": 66
+    },
+    {
+      "netted dual-rubric F (parent metric)": -0.07887390405346613,
+      "F_target (this round's primary)": -0.020797947747495472,
+      "_kind": "scatter",
+      "_group": 67
+    },
+    {
+      "netted dual-rubric F (parent metric)": 0.17769669389392884,
+      "F_target (this round's primary)": 0.13541910237511112,
+      "_kind": "scatter",
+      "_group": 68
+    },
+    {
+      "netted dual-rubric F (parent metric)": 0.01426850770679834,
+      "F_target (this round's primary)": 0.01669674237093756,
+      "_kind": "scatter",
+      "_group": 69
+    },
+    {
+      "netted dual-rubric F (parent metric)": -0.04759356401218615,
+      "F_target (this round's primary)": -0.001031588481726128,
+      "_kind": "scatter",
+      "_group": 70
+    },
+    {
+      "netted dual-rubric F (parent metric)": 0.06384897791022164,
+      "F_target (this round's primary)": 0.05716315285532656,
+      "_kind": "scatter",
+      "_group": 71
+    }
+  ],
+  "n_series": 72,
+  "total_points": 72,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Netted dual-rubric F vs target-only F per (direction \u00d7 slot \u00d7 arm)",
+        "xlabel": "netted dual-rubric F (parent metric)",
+        "ylabel": "F_target (this round's primary)",
+        "legend_labels": [
+          "steered",
+          "same-value-donor null",
+          "cross-type-donor null"
+        ],
+        "xticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
