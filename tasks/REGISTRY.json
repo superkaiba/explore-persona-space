@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2442,
+  "highest_id": 2449,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9487,8 +9487,8 @@
     "2228": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2228",
-      "status": "reviewing",
+      "path": "tasks/completed/2228",
+      "status": "completed",
       "title": "Extend verify_plan.py with a decision-margin satisfiability probe (margin-vs-baseline ceiling)"
     },
     "2229": {
@@ -9627,8 +9627,8 @@
     "2246": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2246",
-      "status": "running",
+      "path": "tasks/reviewing/2246",
+      "status": "reviewing",
       "title": "Step 10d merge window runs on a reap-eligible worktree; a mid-gate reap makes the pre-push lint gate certify pass vacuously"
     },
     "2247": {
@@ -9677,15 +9677,15 @@
     "2252": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2252",
-      "status": "approved",
+      "path": "tasks/running/2252",
+      "status": "running",
       "title": "workflow-fix: Step 9c reports an external SIGTERM of the unfenced workflow_lint subprocess as a lint FAIL"
     },
     "2253": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2253",
-      "status": "proposed",
+      "path": "tasks/running/2253",
+      "status": "running",
       "title": "Lint: cross-check production-branch third-party imports against uv.lock"
     },
     "2254": {
@@ -10643,16 +10643,16 @@
       "goal": "Test whether the context\u2192answer linear map trained in the chat-template framing (assistant turn) transfers \u2014 directly or up to a linear reparameterization \u2014 to every other framing in Qwen3.6-27B (instruct-only): plain-text, an assistant-like story character, a panel of distinct story characters, a dialogue-reply arm where the addressed utterance is ordinary dialogue rather than a question, and the USER character inside the chat template (two provenance arms: real human user turns teacher-forced, and simulated user turns the model writes on-policy; context slot ends at the previous assistant turn so the target is never self-predicted); one-directional transfer only, stories generated fully template-free (raw completion), scene-native invented queries, fully independent query pools (topic-shift confound disclosed). Secondary arm: one general map fit pooled on ALL cells compared per cell to the specialized own maps (pooled-tier ladder). Every arm reports BOTH held-out R\u00b2 and rank-1 retrieval under the #2202 conventions (whitened cosine, CSLS, convention-matched fresh-draw reference). No AI-likeness judge axis (dropped per user directive).",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/2378",
-      "status": "running",
+      "path": "tasks/blocked/2378",
+      "status": "blocked",
       "title": "Chat-trained context\u2192answer map transfer to story framings and characters in Qwen3.6-27B with scene-native queries and template-free story generation"
     },
     "2379": {
       "goal": "Determine whether the answer vector predicted from the eval-time context via a fitted linear context\u2192answer map predicts which eval-time prompts re-elicit inoculation-suppressed behavior (EM and capitalization, Qwen2.5-7B-Instruct), and whether it outperforms the context-side hidden-state predictors (Train Ref., Same-Q Inoc.) and text-embedding baselines of Kwon et al. (ICML 2026 Mech Interp workshop).",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/2379",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/2379",
+      "status": "awaiting_promotion",
       "title": "A mapped answer vector underperforms the context state at predicting misalignment re-elicitation, and the deficit is specific to the training-answer readout (MODERATE confidence)"
     },
     "238": {
@@ -11137,9 +11137,58 @@
     "2442": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2442",
-      "status": "proposed",
+      "path": "tasks/running/2442",
+      "status": "running",
       "title": "Absence-claim rule names the duty but not the mechanism: a full-listing + client-side prefix filter returns a silent zero on a wrong path where the scoped probe 404s"
+    },
+    "2443": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2443",
+      "status": "proposed",
+      "title": "Registered gates are never checked against the grain they fire at: a rate threshold can be unreachable at the realized per-unit denominator, and a per-unit remedy can split a controlled parameter inside the contrast it protects"
+    },
+    "2444": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2444",
+      "status": "proposed",
+      "title": "Step 5a/10d spec-freshness: dirty-family scan is fail-open for a deliverable commit using the sync subject (clobbers agent-memory)"
+    },
+    "2445": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2445",
+      "status": "proposed",
+      "title": "judge_pilot transport-parity check is opt-in so it sits unarmed by default: one round had two drivers, one armed and one not, with a 34.1%-censoring batch route riding on an unprotected sync pin"
+    },
+    "2446": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2446",
+      "status": "proposed",
+      "title": "Persist the #2151 api-refusal drop class in wave metas (currently blended into content_drops)"
+    },
+    "2447": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2447",
+      "status": "proposed",
+      "title": "workflow-fix: slow-tests roster misses the live-bundle no-flags lint test"
+    },
+    "2448": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2448",
+      "status": "proposed",
+      "title": "Fleet-wide Step 9c red: two ungated HF upload call sites in scripts/issue1739_r2v2_run.py"
+    },
+    "2449": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2449",
+      "status": "proposed",
+      "title": "verify_report.py: assert per-stage cap-hit disclosure + declared-cap parity (catches stale cap_hit_report residue)"
     },
     "245": {
       "has_clean_result": false,

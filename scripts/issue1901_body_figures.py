@@ -606,13 +606,31 @@ def fig_paper_c1_scaling(
     boundary_hline: float | None = None,
     stem: str = "c1_scaling_train_pool",
     out_dir: Path | None = None,
+    identity_label: str = "identity + bias",
+    neural_label: str = "neural map (w=8,192)",
+    figsize: tuple[float, float] | None = None,
+    acc_label: str = "retrieval acc@1 (pool 1,000)",
 ) -> None:
     """ICLR paper figure (c1_linear R1), densified (#1901 paper_densify round).
 
     boundary_hline: opt-in poster variant — draws the #825 generic
     boundary-token→segment map control (instruct R^2 0.1087, single-n,
     wikitext) as a dashed reference line on the R^2 panel and saves under
-    `stem` into `out_dir`; the default paper render is byte-unchanged.
+    `stem` into `out_dir`; `identity_label` / `neural_label` relabel the
+    identity+bias and neural-map legend entries (poster uses
+    "identity + bias (baseline)" / "nonlinear (MLP)"); the default paper
+    render is byte-unchanged.
+
+    figsize: opt-in canvas override for callers rendering at a font scale the
+    paper canvas was not sized for (the MATS poster runs font_scale=1.9, at
+    which the paper's 2.3in-tall canvas puts the legend on top of the axes and
+    clips both y labels). None keeps the paper canvas.
+
+    acc_label: opt-in relabel of the retrieval panel's y axis. A single-line
+    27-character label does not fit a canvas shortened much below ~3.2in — it
+    overruns the axis and collides with the legend — so a caller that shortens
+    the canvas passes the same text broken over two lines. Default is the
+    paper's, byte-unchanged.
 
     Held-out R^2 (left) + euclidean retrieval acc@1, pool 1,000 (right) against
     training contexts (log x). Ridge (blue) and identity+bias (green) are DENSE
@@ -694,7 +712,9 @@ def fig_paper_c1_scaling(
     for key, n in (("lmsys_150k", 150_000), ("lmsys_500k", 500_000), ("mixed_1m", 963_444)):
         neural_r2.append((n, *ci_pt(n1m["per_point"][key]["predictors"]["mlp_w8192"])))
 
-    fig, (ax_r2, ax_acc) = plt.subplots(1, 2, figsize=figsize_iclr_panels(2, height_in=2.3))
+    fig, (ax_r2, ax_acc) = plt.subplots(
+        1, 2, figsize=figsize or figsize_iclr_panels(2, height_in=2.3)
+    )
     col_r = paper_color("instruct")
     col_i = paper_color("identity_bias")
     col_n = paper_color("neural_map")
@@ -733,7 +753,7 @@ def fig_paper_c1_scaling(
         lw=1.2,
         ms=3,
         capsize=1.5,
-        label="identity + bias",
+        label=identity_label,
     )
     xs_n = [p[0] for p in neural_r2]
     ys_n = [p[1] for p in neural_r2]
@@ -749,7 +769,7 @@ def fig_paper_c1_scaling(
         lw=1.2,
         ms=3,
         capsize=1.5,
-        label="neural map (w=8,192)",
+        label=neural_label,
     )
     ax_r2.axhline(0.0, color="black", lw=0.7, ls=":")
     ax_r2.set_ylabel("held-out $R^2$")
@@ -808,7 +828,7 @@ def fig_paper_c1_scaling(
         capsize=1.5,
     )
     ax_acc.axhline(0.001, color="black", lw=0.7, ls=":")
-    ax_acc.set_ylabel("retrieval acc@1 (pool 1,000)")
+    ax_acc.set_ylabel(acc_label)
     ax_acc.set_ylim(0.0, 1.0)
 
     for ax in (ax_r2, ax_acc):

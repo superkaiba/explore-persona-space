@@ -29,3 +29,4 @@
 - [pytest-guard conftest compose](feedback_pytest_guard_conftest_compose.md) — conftest-hook diffs: hollow-gate = exact-hook-name + manifest/selector registration + child-exit assert; 3.75 pin-sweep-fragments form accepted (#2217 r1)
 - [marker-probe race with main drift](feedback_marker_probe_race_main_drift.md) — main commit touching a round file lands minutes pre-marker: probe branch-base..origin/main, pre-adjudicate superseded-not-dishonest (#2422 r2)
 - [brief-pinned sentinel + verdict enum](feedback_brief_pinned_sentinel_and_verdict_enum.md) — brief pins v1 sentinel on r2 / binary PASS|FAIL: follow the brief (it's the extraction contract), flag divergence in return (#2228 r2)
+- [installed-API evidence envelope](feedback_installed_api_evidence_envelope.md) — API-semantics emphasis: inline verbatim .venv source excerpts w/ line numbers (worktree venv is a stub); source > plan > body (#2442 r1)

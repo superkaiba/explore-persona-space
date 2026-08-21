@@ -46,7 +46,7 @@ STAGES = [
 
 
 def main() -> None:
-    set_paper_style("iclr", font_scale=1.5)
+    set_paper_style("iclr", font_scale=1.9)
 
     levels = []
     for key, _ in STAGES:
@@ -54,12 +54,15 @@ def main() -> None:
         levels.append(d["test"]["r2_pooled"][HEADLINE_LAYER])
     levels = np.asarray(levels)
 
-    fig, ax = plt.subplots(figsize=(4.6, 3.1))
+    fig, ax = plt.subplots(figsize=(5.4, 2.3))
     xs = np.arange(len(STAGES))
     colors = [paper_color("base")] + [paper_color("instruct")] * (len(STAGES) - 1)
     ax.bar(xs, levels, width=0.62, color=colors)
     ax.set_xticks(xs, [lab for _, lab in STAGES])
-    ax.set_ylabel("held-out $R^2$ (pooled, layer 30)")
+    # "(pooled, layer 30)" dropped from the label: at poster font size it does not
+    # fit the canvas height, and it is methodology rather than axis identity --
+    # it lives in the section prose and in the sidecar JSON.
+    ax.set_ylabel("held-out $R^2$")
     ax.set_ylim(0, 0.7)
 
     savefig_paper(fig, "plot5_stages", dir=OUT_DIR)

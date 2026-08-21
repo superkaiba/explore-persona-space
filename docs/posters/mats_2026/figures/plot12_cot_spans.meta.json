@@ -1,0 +1,119 @@
+{
+  "commit": "7195f32e+dirty",
+  "render_id": "a3ab505fadda40a8",
+  "git_commit": "7195f32ef02e82bc26d5ff4fae9eb38923fad061",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "docs/posters/mats_2026/make_plot12_cot_spans.py",
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.meta.json",
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.pdf",
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.png",
+    "eval_results/issue_2223/casestudy_replay/qwen3-32b/native_axis_fidelity_preimage/judged/judge_complete_delusion.json",
+    "eval_results/issue_2223/casestudy_replay/qwen3-32b/native_axis_fidelity_preimage/judged/judge_complete_selfharm.json",
+    "eval_results/issue_666/headline/predictor_headline.json",
+    "scripts/issue1901_body_figures.py",
+    "tasks/completed/2214/body.md",
+    "tasks/completed/2214/comments.jsonl",
+    "tasks/completed/2214/concerns.jsonl",
+    "tasks/completed/2214/events.jsonl",
+    "tasks/completed/2214/plans/plan.md",
+    "tasks/completed/2214/plans/v1.md",
+    "tasks/completed/2214/plans/v2.md",
+    "tasks/completed/2214/plans/v3.md",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tasks/running/2214/body.md",
+    "tasks/running/2214/comments.jsonl",
+    "tasks/running/2214/concerns.jsonl",
+    "tasks/running/2214/events.jsonl",
+    "tasks/running/2214/plans/plan.md",
+    "tasks/running/2214/plans/v1.md",
+    "tasks/running/2214/plans/v2.md",
+    "tasks/running/2214/plans/v3.md",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "docs/posters/mats_2026/make_plot12_cot_spans.py",
+  "created": "2026-08-21T09:36:35Z",
+  "figsize": [
+    6.45,
+    4.2
+  ],
+  "points": [
+    {
+      "category": "parent model\ncontext \u2192 answer",
+      "held-out skill ($R^2$)": 0.7997271695428934,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "context\n\u2192 answer",
+      "held-out skill ($R^2$)": 0.7816323467266157,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "context\n\u2192 CoT",
+      "held-out skill ($R^2$)": 0.8179152110026522,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "context\n\u2192 CoT + answer",
+      "held-out skill ($R^2$)": 0.46743826142904754,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "end of CoT\n\u2192 answer",
+      "held-out skill ($R^2$)": 0.8028134359523784,
+      "_kind": "bar",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 5,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "What the map can predict on a thinking model \u2014 OpenThinker2-7B",
+        "ylabel": "held-out skill ($R^2$)",
+        "annotations": [
+          "no thinking step",
+          "layer 18",
+          "answer after </think>",
+          "layer 6",
+          "the think block",
+          "layer 6",
+          "not directly comparable",
+          "layer 11",
+          "reads after thinking",
+          "layer 6"
+        ],
+        "xticklabels": [
+          "parent model\ncontext \u2192 answer",
+          "context\n\u2192 answer",
+          "context\n\u2192 CoT",
+          "context\n\u2192 CoT + answer",
+          "end of CoT\n\u2192 answer"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

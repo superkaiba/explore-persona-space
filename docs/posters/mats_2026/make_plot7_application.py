@@ -82,7 +82,7 @@ def load_composition_cells() -> list[dict]:
 def main() -> None:
     cells = load_composition_cells()
 
-    set_paper_style("iclr", font_scale=1.45)
+    set_paper_style("iclr", font_scale=1.9)
     fig, ax = plt.subplots(figsize=(6.8, 2.8), constrained_layout=True)
 
     pal = paper_palette(3)

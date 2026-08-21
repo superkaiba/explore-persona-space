@@ -1,9 +1,16 @@
 {
-  "commit": "9cd53a98+dirty",
-  "render_id": "f90adb1497e24472",
-  "git_commit": "9cd53a981a6d9696da1bb79cb0c5ac457d72e61f",
+  "commit": "03b6c256+dirty",
+  "render_id": "4ea00d2502d143d8",
+  "git_commit": "03b6c2568c9620cf9606c6825e0a4efe39c72b6a",
   "git_dirty": true,
   "git_dirty_paths": [
+    "docs/posters/mats_2026/figures/plot6_persona_data.json",
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.meta.json",
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.pdf",
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.png",
+    "docs/posters/mats_2026/figures/plot6b_specialization.meta.json",
+    "docs/posters/mats_2026/figures/plot6b_specialization.pdf",
+    "docs/posters/mats_2026/figures/plot6b_specialization.png",
     "docs/posters/mats_2026/make_plot6_persona.py",
     "eval_results/issue_666/headline/predictor_headline.json",
     "scripts/issue1901_body_figures.py",
@@ -28,9 +35,9 @@
     "tasks/running/2214/plans/v3.md",
     "tests/test_issue2094_rev_butler.py"
   ],
-  "git_argv0_state": "untracked",
+  "git_argv0_state": "modified",
   "git_argv0_path": "docs/posters/mats_2026/make_plot6_persona.py",
-  "created": "2026-08-21T01:12:57Z",
+  "created": "2026-08-21T01:45:22Z",
   "figsize": [
     6.8,
     2.8

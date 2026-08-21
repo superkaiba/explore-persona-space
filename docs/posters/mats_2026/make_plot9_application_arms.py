@@ -23,11 +23,16 @@ other closely everywhere except sycophancy, where the MLP map is stronger —
 see the data JSON for its values). reg_map_mlp / arm19 (MLP readouts) are
 likewise excluded.
 
-Color encodes the readout family x location: blues = persona-vector readout
-(light = context, dark = mapped answer), warm = ridge regression (light =
-context, dark = mapped answer), purple = oracle. Spread-gate-failed cells
+Bars within a group are ordered BY READOUT FAMILY -- the three persona-vector
+arms (context, mapped answer, real answer/oracle), then the two regression arms
+(context, mapped answer) -- so each family reads as one contiguous block.
+Color follows the same split: blues for the persona-vector readout (light =
+context, dark = mapped answer) with purple for its oracle, warm for the ridge
+regression (light = context, dark = mapped answer). Spread-gate-failed cells
 (evil: generic chat + both OOD rungs, per the committed Result 1 gate) are
-alpha-muted, never deleted.
+alpha-muted, never deleted; the poster legend renders that gate in reader terms
+("behavior almost never occurs here") because all three failing cells are cells
+where 92-99% of contexts sit at the floor of the judged score.
 
 Every number is read from the committed fair-protocol points table
 eval_results/issue_1739/result2_fair/result2_fair_points.json (output of
@@ -67,12 +72,19 @@ BEHAVIORS = ["evil", "sycophancy", "hallucination"]
 # (light = context, dark = mapped answer); warm = ridge regression family
 # (light = context, dark = mapped answer); purple = oracle. All Wong
 # colorblind-safe hues from paper_plots.PAPER_COLORS.
+# Legend labels are spelled out rather than abbreviated: this is the poster's
+# application figure and "PV · mapped ans." is unreadable to anyone who has not
+# already read the methods.
+# Bars are grouped BY READOUT FAMILY -- all three persona-vector arms, then both
+# regression arms -- rather than interleaved by location. Interleaving made the
+# reader alternate families to compare within one, which is the comparison the
+# figure is for; contiguous families let each be read as a block.
 METHODS = [
-    ("pv_context", "PV · context", "#56B4E9"),
-    ("regression_ctx", "Regr. · context", "#E69F00"),
-    ("pv_map_linear", "PV · mapped ans.", "#0072B2"),
-    ("reg_map_linear", "Regr. · mapped ans.", "#D55E00"),
-    ("oracle", "PV · real ans. (oracle)", "#CC79A7"),
+    ("pv_context", "persona vector on the context", "#56B4E9"),
+    ("pv_map_linear", "persona vector on the mapped answer", "#0072B2"),
+    ("oracle", "persona vector on the real answer (oracle)", "#CC79A7"),
+    ("regression_ctx", "regression on the context", "#E69F00"),
+    ("reg_map_linear", "regression on the mapped answer", "#D55E00"),
 ]
 METHOD_SLOTS = [m for m, _l, _c in METHODS]
 LABEL = {m: lbl for m, lbl, _c in METHODS}
@@ -86,6 +98,15 @@ ARM_ID = {
 }
 
 GROUPS = ["synthetic", "generic chat", "in-distrib.", "OOD"]
+# x tick text: at poster font size the full group names ran into each other in a
+# three-panel row, so the tick labels are abbreviated and the full names stay in
+# the group keys, the data JSON, and the poster prose
+GROUP_TICK = {
+    "synthetic": "synth.",
+    "generic chat": "chat",
+    "in-distrib.": "in-dist.",
+    "OOD": "OOD",
+}
 GROUP_SETTINGS = {
     beh: {
         "synthetic": ["pvsynth"],
@@ -188,8 +209,8 @@ def main() -> None:
     vals = [v for p in panels for g in p["groups"] for b in g["bars"] for v in (b["rho"], *b["ci"])]
     ylim = (min(-0.05, min(vals) - 0.04), max(vals) + 0.04)
 
-    set_paper_style("iclr", font_scale=1.2)
-    fig, axes = plt.subplots(1, 3, figsize=(5.6, 2.55), sharey=True, constrained_layout=True)
+    set_paper_style("iclr", font_scale=1.9)
+    fig, axes = plt.subplots(1, 3, figsize=(7.6, 2.95), sharey=True, constrained_layout=True)
     n_bars = 0
     for ax, panel in zip(axes, panels, strict=True):
         xs = list(range(len(panel["groups"])))
@@ -222,20 +243,37 @@ def main() -> None:
                 )
                 n_bars += 1
         ax.set_xticks(xs)
-        ax.set_xticklabels(GROUPS, rotation=20, ha="right", rotation_mode="anchor")
+        ax.set_xticklabels(
+            [GROUP_TICK[g] for g in GROUPS],
+            rotation=40,
+            ha="right",
+            rotation_mode="anchor",
+        )
         ax.set_xlim(-0.6, len(xs) - 0.4)
         ax.set_ylim(*ylim)
         ax.set_title(panel["behavior"].capitalize())
     axes[0].set_ylabel("Spearman $\\rho$")
 
     handles = [Patch(facecolor=COLOR[m], label=LABEL[m]) for m in METHOD_SLOTS]
-    handles.append(Patch(facecolor="#999999", alpha=FAIL_ALPHA, label="spread-gate fail"))
+    handles.append(
+        # "spread gate" named the internal criterion, not what it means to a
+        # reader. All three faded cells fail it the same way: 92-99% of contexts
+        # sit at the floor of the judged score, so there is essentially no
+        # behavior to predict and rho is uninformative.
+        Patch(
+            facecolor="#999999",
+            alpha=FAIL_ALPHA,
+            label="faded = behavior almost never occurs here",
+        )
+    )
+    # two columns, not three: the labels are now spelled out and no longer fit
+    # three-across at this width
     fig.legend(
         handles=handles,
         loc="outside lower center",
-        ncol=3,
+        ncol=2,
         frameon=False,
-        columnspacing=0.9,
+        columnspacing=1.4,
         handlelength=1.1,
         handletextpad=0.5,
     )
@@ -263,7 +301,12 @@ def main() -> None:
         ),
         "spread_note": (
             "Alpha-muted groups FAIL the committed Result 1 spread gate (evil: "
-            "wildchat_rung, hhrt, toxicchat) — kept for completeness, not interpretable."
+            "wildchat_rung, hhrt, toxicchat) — kept for completeness, not interpretable. "
+            "The poster legend states the failure in reader terms ('behavior almost "
+            "never occurs here') rather than naming the gate: all three cells fail the "
+            "floor_ceiling_mass clause with 91.9%/98.7%/99.4% of contexts pinned at the "
+            "floor of the judged score (evil/hhrt additionally fails reliability, "
+            "r_yy=0.481), so there is essentially no behavior variation for rho to track."
         ),
         "bars": [b for p in panels for g in p["groups"] for b in g["bars"]],
     }
