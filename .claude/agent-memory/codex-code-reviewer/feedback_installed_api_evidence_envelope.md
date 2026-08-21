@@ -35,6 +35,18 @@ the only guaranteed evidence channel.
   plan/marker envelopes).
 - Extend the prompt-file Step-3 validation greps to the new envelope tokens.
 
+**Re-probe the stub status EVERY round (#2442 r2):** the worktree `.venv`
+flipped from stub (r1: no hf_api.py) to REAL (r2: full 0.36.2 install at
+`$WT/.venv/lib/python3.12/...`) between rounds — someone ran `uv sync` in the
+worktree. Do not carry the prior round's stub finding: `find "$WT/.venv" -name
+hf_api.py` + version + `grep -n "def <fn>"` anchor parity vs the envelope at
+every compose. When real and version-matched, attest DUAL readability (live
+path preferred, envelope fallback) instead of envelope-only. Also note the
+main-checkout venv can live under a DIFFERENT python dir (py3.11 vs the
+worktree's py3.12) — a `cmp` against a guessed main path fails on
+FileNotFoundError, not content difference; resolve via
+`uv run python -c "import huggingface_hub, inspect; ..."`.
+
 Related: [[whole-round-unsplit-compose]] (round-pinned sha-range diff when an
 out-of-scope spec-sync commit sits at HEAD), [[infra-wf-fix-lint-gate-compose]]
 (N/A-by-type + duty-discharge attestations for infra rounds).
