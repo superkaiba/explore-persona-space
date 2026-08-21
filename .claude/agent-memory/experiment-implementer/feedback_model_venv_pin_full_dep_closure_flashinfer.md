@@ -23,10 +23,18 @@ resolver conflict.
 
 **How to apply:** (1) when building a dedicated model venv, pin the FULL
 accel-dep closure (flashinfer/flash-attn/xformers included) to versions
-verified against the venv's python minor — or REMOVE the optional dep
-(vLLM's flashinfer call sites are find_spec-guarded when absent);
-(2) the env-smoke must exercise the compile-backend import path (e.g.
-import the vLLM compile/fusion modules or run a 1-token engine init),
-not just top-level imports; (3) treat "guard catches ImportError only"
-as a trap: a py-version-incompatible dep raises TypeError/SyntaxError,
-which no ImportError guard absorbs.
+verified against the venv's python minor; (2) REMOVAL of the optional dep
+is NOT clean by itself — the find_spec-guard premise failed on the very
+next relaunch (#2378 second incident, same day): vllm 0.27.1's
+sampler-support probe (`flashinfer_sampler_supported` →
+`vllm.v1.attention.backends.flashinfer` → bare `from flashinfer import
+...`) raises an UNGUARDED ModuleNotFoundError at EngineCore init when the
+dist is absent — a removal-class fix must ALSO disable the vllm-side
+probe (`VLLM_USE_FLASHINFER_SAMPLER=0` in every GPU-phase env) or the
+gate must boot a REAL tiny engine init; (3) module-import smokes
+(compile-backend chains included) structurally cannot enumerate every
+engine-reachable import path — the only class-closing gate is a real
+tiny engine init on the target hardware before any multi-shard fan-out;
+(4) treat "guard catches ImportError only" as a trap: a
+py-version-incompatible dep raises TypeError/SyntaxError, which no
+ImportError guard absorbs.
