@@ -126,9 +126,9 @@
 \begin{center}
 \IfFileExists{figures/plot2_persona_directions.pdf}{\includegraphics[width=0.92\linewidth]{plot2_persona_directions.pdf}}{\includegraphics[width=0.88\linewidth]{c3_persona_direction_spectrum.pdf}}
 \end{center}
-\figcap{4}{Held-out $R^2$ along each persona direction $r_B$ against one pooled reference over all 150 random unit directions (mean $\pm$ 1 SD, pooled across the three read-out layers). Fold 0 of 5; layers 14 / 26 / 17.}
+\figcap{4}{Held-out $R^2$ along each of the seven persona directions $r_B$ against a 200-draw random-unit band (bar: mean; shaded: 5--95\%). All seven on one corpus: multi-turn holdout, $n\!=\!9{,}941$, layer 19, ridge.}
 \begin{itemize}
-  \item \takeaways{Persona-vector directions are among the best-predicted directions of the answer:} $R^2$ \textbf{0.79 / 0.87 / 0.80} (misalignment / sycophancy / hallucination) against 50 random-directions \textbf{0.56--0.58}
+  \item \takeaways{Persona-vector directions are among the best-predicted directions of the answer:} all seven read $R^2$ \textbf{0.80--0.91} against a random-direction mean of \textbf{0.67}, and every one clears the random band's 95th percentile (0.76)
 \end{itemize}
 
 \end{column}
@@ -150,7 +150,11 @@ We train another map from the context to the answer's \textbf{SAE features}, the
       \item not being related to topic
       \item being in the coarsest tier of a Matryoshka SAE (intuitively, being high-level)
   \end{itemize}
-  \item The mapping seems to be good at predicting \textbf{high-level} and \textb{identity-related} features and bad at predicting \textbf{low-level} and \textbf{topic-related} features
+  \item The mapping seems to be 
+  \begin{itemize}
+      \item good at predicting \textbf{high-level} and \textbf{identity-related} features
+      \item bad at predicting \textbf{low-level} and \textbf{topic-related} features
+  \end{itemize} 
 \end{itemize}
 
 \postersec{4.\ What does it fail to retrieve?}
@@ -167,22 +171,22 @@ We train another map from the context to the answer's \textbf{SAE features}, the
 % ==================== COLUMN 4: results 5-6 ====================
 \begin{column}{0.188\textwidth}
 
-\postersec{5.\ Where does the mapping come from?}
+\postersec{5.\ The mapping is partly already present in the base model and refined throughout post training}
 \begin{center}
 \IfFileExists{figures/plot5_stages.pdf}{\includegraphics[width=0.86\linewidth]{plot5_stages.pdf}}{\includegraphics[width=0.74\linewidth]{c1_stage_retention.pdf}}
 \end{center}
 \figcap{7}{Pooled held-out $R^2$ at each stage of the Llama/T\"ulu ladder (layer 30), each stage fit and evaluated on its own on-policy answers.}
 \begin{itemize}
-  \item \takeaways{Already largely present in the base model:} the base bar reads $R^2$ 0.41 before any post-training.
-  \item \takeaways{SFT is by far the largest step} ($+0.17$); everything after it is essentially flat — post-training \emph{refines and reparameterizes} the mapping rather than creating it.
+  \item \takeaways{The mapping is already largely present in the base model:} the base $R^2$ 0.41 before any post-training.
+  \item \takeaways{SFT has the largest effect on the mapping} ($+0.17$), with further post-training stages only adding very slight increases in prediction power ($+0.05$).
 \end{itemize}
 
 
-\postersec{6.\ Is it a persona mapping?}
+\postersec{6.\ The mapping is shared with story characters}
 \begin{center}
 \includegraphics[width=0.99\linewidth]{plot6c_pooled_lattice.pdf}
 \end{center}
-\figcap{8}{Held-out $R^2$ per character/framing: ONE map fit jointly across all 56 cells of the framing $\times$ identity $\times$ model lattice, against that cell's own map. Instruct wide/behind, base narrow/in front. Story cells share the boundary \texttt{Name replied: ``\ldots''}; the chat cell is the Qwen chat template. On-policy answers, layer 19; $x$ sorted by how directly the assistant's chat-template map transfers in.}
+\figcap{8}{Held-out $R^2$; the shared map is fit on all 56 lattice cells at once. On-policy answers, layer 19; similarity = direct transfer of the chat-template map.}
 \begin{itemize}
   \item \takeaways{One shared map covers most of every character's own fit:} across the four characters and the assistant-in-prose it reaches \textbf{62--94\%} of each one's own-map ceiling (instruct) — one operator, not six.
   \item \takeaways{Being ``the assistant'' buys almost nothing once the frame changes:} the assistant written as a story character is the closest cell to the assistant's chat-template map, but only barely ahead of the four characters ($-0.27$ direct transfer vs $-0.30$ to $-0.51$), and every one of them is negative — the frame moves the map far more than the identity does.

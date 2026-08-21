@@ -1,15 +1,22 @@
 {
-  "commit": "3b4f6abd+dirty",
-  "render_id": "7b7aa798e55b45ab",
-  "git_commit": "3b4f6abda8f7d407f3d04d6e1b32ac018402fe37",
+  "commit": "e2fcb243+dirty",
+  "render_id": "28d98dc2cca0465d",
+  "git_commit": "e2fcb2436ac6a0bef6d6c03bd7a24deea1063cc5",
   "git_dirty": true,
   "git_dirty_paths": [
     "docs/posters/mats_2026/figures/plot2_persona_directions.meta.json",
     "docs/posters/mats_2026/figures/plot2_persona_directions.pdf",
     "docs/posters/mats_2026/figures/plot2_persona_directions.png",
     "docs/posters/mats_2026/figures/plot2_persona_directions_data.json",
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.meta.json",
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.pdf",
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.png",
     "docs/posters/mats_2026/make_plot2_persona.py",
     "docs/posters/mats_2026/poster.tex",
+    "eval_results/issue_2223/casestudy_replay/qwen3-32b/native_axis_fidelity_preimage/judged/judge_complete_delusion.json",
+    "eval_results/issue_2223/casestudy_replay/qwen3-32b/native_axis_fidelity_preimage/judged/judge_complete_selfharm.json",
+    "eval_results/issue_666/headline/predictor_headline.json",
+    "scripts/issue1901_body_figures.py",
     "tasks/completed/2214/body.md",
     "tasks/completed/2214/comments.jsonl",
     "tasks/completed/2214/concerns.jsonl",
@@ -21,123 +28,108 @@
     "tasks/proposed/2416/body.md",
     "tasks/proposed/2416/comments.jsonl",
     "tasks/proposed/2416/events.jsonl",
-    "tasks/running/2252/events.jsonl",
+    "tasks/running/2214/body.md",
+    "tasks/running/2214/comments.jsonl",
+    "tasks/running/2214/concerns.jsonl",
+    "tasks/running/2214/events.jsonl",
+    "tasks/running/2214/plans/plan.md",
+    "tasks/running/2214/plans/v1.md",
+    "tasks/running/2214/plans/v2.md",
+    "tasks/running/2214/plans/v3.md",
     "tests/test_issue2094_rev_butler.py"
   ],
   "git_argv0_state": "modified",
   "git_argv0_path": "docs/posters/mats_2026/make_plot2_persona.py",
-  "created": "2026-08-21T08:48:26Z",
+  "created": "2026-08-21T08:56:21Z",
   "figsize": [
     6.8,
-    2.8
+    3.2
   ],
   "points": [
     {
-      "x": -0.18,
-      "held-out per-direction $R^2$": 0.7903513427749175,
+      "held-out per-direction $R^2$": 0.453569,
+      "y": 0.9071375643826362,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "x": 0.82,
-      "held-out per-direction $R^2$": 0.8717036176753388,
+      "held-out per-direction $R^2$": 0.442321,
+      "y": 0.8846418647666926,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "x": 1.82,
-      "held-out per-direction $R^2$": 0.795309352459519,
+      "held-out per-direction $R^2$": 0.4368,
+      "y": 0.8736004471662719,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "x": 0.18,
-      "held-out per-direction $R^2$": 0.5574399180076441,
-      "error": 0.09926933111266445,
+      "held-out per-direction $R^2$": 0.431157,
+      "y": 0.8623146061637146,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out per-direction $R^2$": 0.428452,
+      "y": 0.8569034883822229,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out per-direction $R^2$": 0.410792,
+      "y": 0.8215849131775874,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out per-direction $R^2$": 0.401284,
+      "y": 0.8025673660811186,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out per-direction $R^2$": 0.334826,
+      "y": 0.6696521332817015,
       "_kind": "bar",
       "_group": 1
-    },
-    {
-      "x": 1.18,
-      "held-out per-direction $R^2$": 0.569239315454962,
-      "error": 0.08114349978905366,
-      "_kind": "bar",
-      "_group": 1
-    },
-    {
-      "x": 2.18,
-      "held-out per-direction $R^2$": 0.5764510150612682,
-      "error": 0.0907052778148543,
-      "_kind": "bar",
-      "_group": 1
-    },
-    {
-      "x": 0.18,
-      "held-out per-direction $R^2$": 0.4581705868949797,
-      "_kind": "line",
-      "_group": 2
-    },
-    {
-      "x": 1.18,
-      "held-out per-direction $R^2$": 0.4880958156659083,
-      "_kind": "line",
-      "_group": 2
-    },
-    {
-      "x": 2.18,
-      "held-out per-direction $R^2$": 0.48574573724641384,
-      "_kind": "line",
-      "_group": 2
-    },
-    {
-      "x": 0.18,
-      "held-out per-direction $R^2$": 0.6567092491203086,
-      "_kind": "line",
-      "_group": 3
-    },
-    {
-      "x": 1.18,
-      "held-out per-direction $R^2$": 0.6503828152440156,
-      "_kind": "line",
-      "_group": 3
-    },
-    {
-      "x": 2.18,
-      "held-out per-direction $R^2$": 0.6671562928761224,
-      "_kind": "line",
-      "_group": 3
     }
   ],
-  "n_series": 4,
-  "total_points": 12,
+  "n_series": 2,
+  "total_points": 8,
   "text": {
     "suptitle": null,
     "fig_texts": [],
     "axes": [
       {
-        "ylabel": "held-out per-direction $R^2$",
+        "xlabel": "held-out per-direction $R^2$",
         "legend_labels": [
           "persona direction $r_B$",
-          "random direction (mean $\\pm$ SD)"
+          "random direction (200 draws, mean and 5-95%)"
         ],
         "xticklabels": [
-          "misalignment",
-          "sycophancy",
-          "hallucination"
-        ],
-        "yticklabels": [
           "0.0",
           "0.2",
           "0.4",
           "0.6",
           "0.8",
           "1.0"
+        ],
+        "yticklabels": [
+          "sycophancy",
+          "humorous",
+          "apathetic",
+          "impolite",
+          "misalignment",
+          "hallucination",
+          "optimistic",
+          "random"
         ]
       }
     ],
     "series": [
       "persona direction $r_B$",
-      "random direction (mean $\\pm$ SD)"
+      "random direction (200 draws, mean and 5-95%)"
     ]
   },
   "formats_written": [

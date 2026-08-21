@@ -1,29 +1,32 @@
-"""Poster plot 2 — persona directions are predicted far better than random directions.
+"""Poster plot 2 — all SEVEN persona directions vs one random-direction band.
 
-ONE compact single-panel bar figure for the MATS 2026 poster (section 2),
-replacing the full per-direction rank-spectrum figure
-(figures/paper/c3_persona_direction_spectrum.pdf).
+MATS 2026 poster section 2. Held-out per-direction R^2 along each persona
+direction r_B, for all seven extracted traits, against a single 200-draw
+random-unit band.
 
-Shape (poster revision, Thomas 2026-08-21): THREE persona-direction bars — one
-per behavior — against a SINGLE pooled random-direction reference bar, rather
-than a random bar beside every behavior. The three per-behavior random means
-(0.5574 / 0.5692 / 0.5765) sit within 0.02 of each other, so three separate
-reference bars carried no information the pooled one does not; one bar reads
-faster at poster distance.
+FOOTING (Thomas 2026-08-21, chose the 7-trait read over the 3-trait one): every
+number comes from eval_results/issue_1482/rb7_reads/rb7_reads.json →
+read1_trait_r2.context — the #1738 multi-turn holdout (n=9,941), layer 19,
+ridge, `context` arm. That artifact exists precisely so old and new traits are
+comparable: its own note records that the original three traits' published
+spectrum numbers are the #779 n10k SINGLE-TURN regime, and that all seven were
+recomputed on the multi-turn corpus for one footing.
 
-The pooled bar is EXACT, not a re-estimate: the artifact stores only summary
-stats per behavior (n, mean, sd), and the pooled mean + total-variance SD over
-the 3 x 50 = 150 draws are computed in closed form from those triples
-(`pooled_random_reference` below). It deliberately pools ACROSS read-out layers
-(14 / 26 / 17) — a random unit direction has no privileged layer, and the point
-of the bar is that random directions land in the same band wherever you take
-them. The caption states the pooling; the data sidecar carries all three
-per-behavior rows so nothing is lost.
+DO NOT mix this with the #779 identity_baseline.json numbers the earlier
+version of this figure used (evil 0.790 / sycophancy 0.872 / hallucination
+0.795 against a 0.568 random mean). Those are a different corpus, different
+folds, and per-trait read-out layers 14 / 26 / 17 rather than a common layer
+19. Same quantity, different regime — the two are not on one axis.
 
-Source of every number: eval_results/issue_779/identity_baseline.json →
-per_direction (fold 0 of the 5-fold split; n_train=4,000 / n_test=1,000
-contexts; read-out layers 14 / 26 / 17 for evil / sycophancy / hallucination).
-Nothing is hand-typed.
+The `context` arm is the one matching the poster's v_C (full context), and is
+the arm the source script's own headline figure uses; `prefix` and `bare` are
+the other two arms in the same artifact and are deliberately not plotted.
+
+HONESTY NOTE, drawn rather than asserted: the random band's p5-p95 is
+0.585-0.756, and the two weakest traits (optimistic 0.803, hallucination 0.822)
+clear p95 by only ~0.05-0.07. The band is rendered as a shaded span across the
+axes so a reader sees that directly instead of taking a bar-height difference
+on trust.
 
 Run:
     OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 \
@@ -36,7 +39,6 @@ import json
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-import numpy as np
 
 from explore_persona_space.analysis.paper_plots import (
     paper_color,
@@ -45,126 +47,111 @@ from explore_persona_space.analysis.paper_plots import (
 )
 
 REPO = Path(__file__).resolve().parents[3]
-SOURCE = REPO / "eval_results/issue_779/identity_baseline.json"
+SOURCE = REPO / "eval_results/issue_1482/rb7_reads/rb7_reads.json"
 OUT_DIR = Path(__file__).resolve().parent / "figures"
 
-# artifact key → poster display name (poster says "misalignment" for the evil trait)
-BEHAVIORS = {
+ARM = "context"  # matches the poster's v_C; `prefix` / `bare` are the other two arms
+
+# artifact trait key → poster display name (the poster says "misalignment" for evil)
+DISPLAY = {
     "evil": "misalignment",
     "sycophancy": "sycophancy",
     "hallucination": "hallucination",
+    "optimistic": "optimistic",
+    "impolite": "impolite",
+    "apathetic": "apathetic",
+    "humorous": "humorous",
 }
 
-# gap between the three persona bars and the set-apart random reference bar
-REFERENCE_GAP = 0.55
+# gap between the seven trait bars and the set-apart random reference bar
+REFERENCE_GAP = 0.9
 
 
-def load_rows() -> list[dict]:
+def load_read() -> dict:
+    """The seven per-trait R^2 values + the random band, from the `context` arm."""
     with open(SOURCE) as f:
-        pd = json.load(f)["per_direction"]
-    rows = []
-    for key, display in BEHAVIORS.items():
-        res = pd[key]
-        rb = res["r_b"]
-        rd = res["random_directions"]
-        rows.append(
-            {
-                "behavior_key": key,
-                "behavior": display,
-                "rb_heldout_r2": rb["heldout_r2"],
-                "rb_equivalent_variance_rank": rb["equivalent_variance_rank"],
-                "random_r2_mean": rd["r2_mean"],
-                "random_r2_sd": rd["r2_sd"],
-                "random_n": rd["n"],
-                "read_out_layer": res["read_out_layer"],
-                "fold": res["fold"],
-                "n_train": res["n_train"],
-                "n_test": res["n_test"],
-            }
-        )
-    return rows
-
-
-def pooled_random_reference(rows: list[dict]) -> dict:
-    """Exact pooled mean + SD over every random draw, from the per-behavior triples.
-
-    The artifact stores no per-draw values, only (n, mean, sd) per behavior. The
-    pooled mean is the n-weighted mean; the pooled SD comes from the total-variance
-    identity — within-group sum of squares plus between-group sum of squares — so
-    this is the SD the 150 draws actually have, not an average of three SDs (which
-    would understate it by dropping the between-behavior spread).
-
-    Returns the pooled mean, SD, total n, and the per-behavior means it pooled.
-    """
-    n = np.array([r["random_n"] for r in rows], dtype=float)
-    m = np.array([r["random_r2_mean"] for r in rows], dtype=float)
-    s = np.array([r["random_r2_sd"] for r in rows], dtype=float)
-    total_n = float(n.sum())
-    pooled_mean = float((n * m).sum() / total_n)
-    within_ss = float(((n - 1.0) * s**2).sum())
-    between_ss = float((n * (m - pooled_mean) ** 2).sum())
-    pooled_sd = float(np.sqrt((within_ss + between_ss) / (total_n - 1.0)))
-    return {
-        "pooled_mean": pooled_mean,
-        "pooled_sd": pooled_sd,
-        "total_n": int(total_n),
-        "per_behavior_means": {r["behavior"]: r["random_r2_mean"] for r in rows},
-        "per_behavior_sds": {r["behavior"]: r["random_r2_sd"] for r in rows},
-        "read_out_layers_pooled": [r["read_out_layer"] for r in rows],
-        "note": (
-            "Exact pooled mean and total-variance SD over all 3 x 50 = 150 random "
-            "unit directions, computed in closed form from the per-behavior "
-            "(n, mean, sd) triples — the artifact stores no per-draw values. Pools "
-            "ACROSS read-out layers 14 / 26 / 17: a random unit direction has no "
-            "privileged layer, and the three per-behavior means agree to within "
-            "0.02. Per-behavior rows are retained in full under `rows`."
-        ),
-    }
+        doc = json.load(f)
+    design = doc["design"]
+    block = doc["read1_trait_r2"][ARM]
+    per = block["per_trait_r2"]
+    ranks = block["per_trait_equiv_variance_rank"]
+    shares = block["per_trait_variance_share"]
+    rows = [
+        {
+            "trait_key": k,
+            "trait": DISPLAY[k],
+            "heldout_r2": per[k],
+            "equivalent_variance_rank": ranks[k],
+            "variance_share": shares[k],
+        }
+        for k in design["traits"]
+    ]
+    rows.sort(key=lambda r: r["heldout_r2"], reverse=True)
+    return {"design": design, "rows": rows, "random_band": block["random_band"]}
 
 
 def main() -> None:
     set_paper_style("iclr")
-    rows = load_rows()
-    ref = pooled_random_reference(rows)
+    read = load_read()
+    rows = read["rows"]
+    band = read["random_band"]
 
     c_rb = paper_color("persona_vector")
     c_rand = paper_color("null")
 
-    fig, ax = plt.subplots(figsize=(6.8, 2.8), constrained_layout=True)
+    fig, ax = plt.subplots(figsize=(6.8, 3.2), constrained_layout=True)
 
-    x_rb = np.arange(len(rows), dtype=float)
-    x_ref = float(len(rows)) - 1.0 + 1.0 + REFERENCE_GAP
-    w = 0.62
+    # highest trait at the top; random reference set apart below the group
+    n = len(rows)
+    y_traits = [float(n) - i for i in range(n)]
+    y_ref = y_traits[-1] - REFERENCE_GAP
+    h = 0.68
 
-    ax.bar(
-        x_rb,
-        [r["rb_heldout_r2"] for r in rows],
-        width=w,
+    # the random band's own 5-95% spread, drawn so the reader can see which
+    # traits actually clear it rather than trusting a height difference
+    # unlabelled: it coincides exactly with the reference bar's error bar, so a
+    # second legend entry for it would name the same quantity twice
+    ax.axvspan(band["p5"], band["p95"], color=c_rand, alpha=0.18, zorder=0)
+    ax.axvline(band["mean"], color=c_rand, lw=0.9, ls="--", zorder=1)
+
+    ax.barh(
+        y_traits,
+        [r["heldout_r2"] for r in rows],
+        height=h,
         color=c_rb,
         edgecolor="black",
         linewidth=0.5,
-        label="persona direction $r_B$",
         zorder=3,
+        label="persona direction $r_B$",
     )
-    ax.bar(
-        [x_ref],
-        [ref["pooled_mean"]],
-        width=w,
+    ax.barh(
+        [y_ref],
+        [band["mean"]],
+        height=h,
         color=c_rand,
         edgecolor="black",
         linewidth=0.5,
-        yerr=[ref["pooled_sd"]],
+        xerr=[[band["mean"] - band["p5"]], [band["p95"] - band["mean"]]],
         error_kw={"elinewidth": 1.0, "capsize": 3, "ecolor": "black"},
-        label=f"random direction ({ref['total_n']} draws, mean $\\pm$ SD)",
         zorder=3,
+        label=f"random direction ({band['n']} draws, mean and 5-95%)",
     )
 
-    ax.set_xticks([*x_rb, x_ref])
-    ax.set_xticklabels([r["behavior"] for r in rows] + ["random"])
-    ax.set_ylabel("held-out per-direction $R^2$")
-    ax.set_ylim(0.0, 1.0)
-    ax.set_xlim(-0.75, x_ref + 0.75)
-    ax.legend(loc="upper right", frameon=False, ncols=1, handletextpad=0.5)
+    ax.set_yticks([*y_traits, y_ref])
+    ax.set_yticklabels([r["trait"] for r in rows] + ["random"])
+    ax.set_ylim(y_ref - 0.8, y_traits[0] + 0.8)
+    ax.set_xlim(0.0, 1.0)
+    ax.set_xlabel("held-out per-direction $R^2$")
+    # below the axes: every bar starts at 0 and runs past 0.8, so there is no
+    # in-axes space a legend can occupy without covering data
+    ax.legend(
+        loc="upper center",
+        bbox_to_anchor=(0.5, -0.22),
+        ncols=2,
+        frameon=False,
+        handletextpad=0.5,
+        fontsize="small",
+    )
 
     paths = savefig_paper(fig, "plot2_persona_directions", dir=OUT_DIR)
     for fmt, p in paths.items():
@@ -172,13 +159,27 @@ def main() -> None:
 
     data = {
         "source": str(SOURCE.relative_to(REPO)),
-        "note": (
-            "held-out per-direction R^2 of the full-ridge map on fold 0 of the 5-fold "
-            "split; three persona directions r_B against ONE pooled random-direction "
-            "reference bar over all 150 random unit draws"
+        "arm": ARM,
+        "arm_note": (
+            "`context` is the full-context arm, matching the poster's v_C and the "
+            "source script's own headline figure. The artifact also carries `prefix` "
+            "and `bare` arms; they are deliberately not plotted."
         ),
-        "rows": rows,
-        "pooled_random_reference": ref,
+        "design": read["design"],
+        "note": (
+            "Held-out per-direction R^2 along each of the seven extracted persona "
+            "directions r_B, #1738 multi-turn holdout n=9,941, layer 19, ridge — one "
+            "corpus so all seven traits sit on one footing. NOT comparable with the "
+            "#779 identity_baseline.json numbers this figure used previously "
+            "(single-turn, fold 0, per-trait read-out layers 14 / 26 / 17)."
+        ),
+        "rows": read["rows"],
+        "random_band": band,
+        "band_caveat": (
+            f"random band p5-p95 = {band['p5']:.3f}-{band['p95']:.3f}; the two weakest "
+            f"traits clear p95 by only ~0.05-0.07, which is why the band is drawn as a "
+            f"span rather than summarized by its mean alone."
+        ),
     }
     out_json = OUT_DIR / "plot2_persona_directions_data.json"
     with open(out_json, "w") as f:
