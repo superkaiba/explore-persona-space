@@ -64,8 +64,10 @@ user_real_render + capture pilot/capture/capture_fresh — is composed via
 (exact pins: ``cm.MODEL_VENV_PINS`` — vllm 0.27.1 / transformers 5.15.1 /
 torch 2.13.0, plan Repro card "exact pin at P1"). The MODEL phases
 (p1_pilot/p2_generate/p4_topup/p4_segb_capture) call ``ensure_model_venv()``
-at entry: live probe -> idempotent uv build/repair -> pin assert -> realized
-pins recorded to <ledger>/model_venv_pins.json -> ``--phase env_smoke`` under
+at entry: live probe -> idempotent uv build/repair (r7: banned accel dists —
+``cm.MODEL_VENV_BANNED_DISTS``, the py3.11-incompatible flashinfer-python —
+are uninstalled in place) -> pin + banned-absence assert -> realized pins
+recorded to <ledger>/model_venv_pins.json -> ``--phase env_smoke`` under
 the model interpreter (an env mismatch fails in seconds, pre-fan-out). The
 dispatcher itself + non-model steps (banks/pools, upload_stage, capture_ready,
 judge, fits) stay on the repo venv (plan: "Repo env unchanged for P0/P6/P7").
@@ -594,15 +596,22 @@ def _model_py(script: str, *argv: str) -> list[str]:
     return [_model_python(), str(cm.REPO_ROOT / "scripts" / script), *argv]
 
 
+# banned_present (r7, epm:failure v3 flashinfer-py311-array-subscript): the
+# probe REPORTS banned accel-dep import names still importable in the venv —
+# ensure_model_venv treats a non-empty list as a repair trigger (the pod's
+# existing venv carries vllm's hard-pinned flashinfer-python 0.6.16.post3, so
+# a pins-only probe reads "healthy" and the crash recurs at engine init).
 _MODEL_PROBE_SRC = """\
 import importlib.util, json, sys
 missing = [m for m in ("transformers.models.qwen3_5", "vllm", "dotenv")
            if importlib.util.find_spec(m) is None]
 assert not missing, f"model venv missing: {missing}"
+banned = [m for m in %(banned_mods)r if importlib.util.find_spec(m) is not None]
 from importlib.metadata import version
 print(json.dumps({"python": sys.version.split()[0], "vllm": version("vllm"),
-                  "transformers": version("transformers"), "torch": version("torch")}))
-"""
+                  "transformers": version("transformers"), "torch": version("torch"),
+                  "banned_present": banned}))
+""" % {"banned_mods": tuple(sorted(cm.MODEL_VENV_BANNED_DISTS.values()))}
 
 
 def _model_probe(py: str) -> dict | None:
@@ -688,7 +697,11 @@ def _build_model_venv(logs_dir: Path) -> None:
     Recognizes an already-built venv: `uv venv` is skipped when the
     interpreter exists; `uv pip install` of exact pins is a fast no-op on
     already-satisfied dists (it only adds what is missing, e.g. python-dotenv
-    on a venv built from the bare vllm+transformers recipe)."""
+    on a venv built from the bare vllm+transformers recipe). Banned dists
+    (cm.MODEL_VENV_BANNED_DISTS — r7 flashinfer fix) are uninstalled AFTER the
+    install step on every build/repair: the install re-resolves vllm's dep
+    closure and re-adds its hard-pinned flashinfer-python, so removal must be
+    the LAST step (uv pip uninstall is a clean rc=0 no-op when absent)."""
     import shutil
 
     uv = shutil.which("uv")
@@ -701,6 +714,9 @@ def _build_model_venv(logs_dir: Path) -> None:
     if not Path(py).exists():
         steps.append(("create", [uv, "venv", cm.MODEL_VENV_DEFAULT, "--python", "3.11"]))
     steps.append(("install", [uv, "pip", "install", "--python", py, *specs]))
+    banned = sorted(cm.MODEL_VENV_BANNED_DISTS)
+    if banned:
+        steps.append(("uninstall-banned", [uv, "pip", "uninstall", "--python", py, *banned]))
     logs_dir.mkdir(parents=True, exist_ok=True)
     log_path = logs_dir / "model_venv_build.log"
     with log_path.open("a", encoding="utf-8") as log:
@@ -716,30 +732,41 @@ def _build_model_venv(logs_dir: Path) -> None:
 def ensure_model_venv(args, runner: Runner) -> None:
     """MODEL-phase entry gate (r5 fix for the P1 qwen3_5 engine-init crash):
     assert host-driver compat for the CUDA-13 wheels (r6, #2330 shape) ->
-    probe the model interpreter -> build/repair when deficient (never over an
-    explicit $EPM_I2378_MODEL_PY override) -> assert the exact
-    cm.MODEL_VENV_PINS -> record realized pins CONTENT-STABLY to
-    <ledger>/model_venv_pins.json (plan Repro card "exact pin at P1"; volatile
-    provenance goes to an untracked sidecar — r6 P4-harvest fix) -> run
-    `--phase env_smoke` UNDER the model interpreter (re-run forced after a
-    rebuild), so the next env mismatch fails in seconds pre-fan-out instead of
-    per-shard at vLLM engine init."""
+    probe the model interpreter -> build/REPAIR when deficient — a missing
+    interpreter, a qwen3_5-less env, OR a banned accel dist still importable
+    (r7 flashinfer-py311-array-subscript fix: the existing pod venv carries
+    vllm's hard-pinned flashinfer-python 0.6.16.post3, uninstalled in place) —
+    never over an explicit $EPM_I2378_MODEL_PY override -> assert the exact
+    cm.MODEL_VENV_PINS + banned-dist ABSENCE -> record realized pins
+    CONTENT-STABLY to <ledger>/model_venv_pins.json (plan Repro card "exact
+    pin at P1"; volatile provenance goes to an untracked sidecar — r6
+    P4-harvest fix) -> run `--phase env_smoke` UNDER the model interpreter
+    (re-run forced after a build/repair), so the next env mismatch fails in
+    seconds pre-fan-out instead of per-shard at vLLM engine init."""
     py = _model_python()
     if runner.dry:
         _log(
-            f"[dry] model-venv ensure: probe {py}; on miss build {cm.MODEL_VENV_DEFAULT} "
-            f"(pins {cm.MODEL_VENV_PINS} + {list(cm.MODEL_VENV_EXTRA_PINS)})"
+            f"[dry] model-venv ensure: probe {py}; on miss/banned build+repair "
+            f"{cm.MODEL_VENV_DEFAULT} (pins {cm.MODEL_VENV_PINS} + "
+            f"{list(cm.MODEL_VENV_EXTRA_PINS)}; banned {sorted(cm.MODEL_VENV_BANNED_DISTS)})"
         )
         runner.run("model_env_smoke", _model_py("issue2378_dispatch.py", "--phase", "env_smoke"))
         return
     _assert_driver_compat()  # fail fast BEFORE any ~4-min build on a bad host (#2330)
     built = False
     realized = _model_probe(py)
-    if realized is None:
+    banned_present = list((realized or {}).get("banned_present") or [])
+    if realized is None or banned_present:
         if os.environ.get(cm.MODEL_PY_ENV):
             raise RuntimeError(
-                f"model interpreter {py} (${cm.MODEL_PY_ENV}) is missing or lacks qwen3_5 — "
-                "refusing to build over an explicit override; unset it or repair that venv"
+                f"model interpreter {py} (${cm.MODEL_PY_ENV}) is missing, lacks qwen3_5, or "
+                f"carries banned dist import(s) {banned_present} — refusing to build over an "
+                "explicit override; unset it or repair that venv"
+            )
+        if banned_present:
+            _log(
+                f"[model-venv] banned dist import(s) present {banned_present} — repairing the "
+                "existing venv in place (r7 flashinfer-py311-array-subscript fix)"
             )
         _build_model_venv(runner.logs_dir)
         built = True
@@ -747,6 +774,12 @@ def ensure_model_venv(args, runner: Runner) -> None:
         if realized is None:
             raise RuntimeError(
                 f"model venv build at {cm.MODEL_VENV_DEFAULT} still fails the qwen3_5 probe"
+            )
+        if realized.get("banned_present"):
+            raise RuntimeError(
+                f"model venv repair at {cm.MODEL_VENV_DEFAULT} left banned dist import(s) "
+                f"{realized['banned_present']} importable — uninstall step failed; see "
+                f"{runner.logs_dir / 'model_venv_build.log'}"
             )
     bad = {
         k: (want, realized.get(k))
@@ -774,6 +807,10 @@ def ensure_model_venv(args, runner: Runner) -> None:
         "realized": realized,
         "pinned": dict(cm.MODEL_VENV_PINS),
         "extra_pins": list(cm.MODEL_VENV_EXTRA_PINS),
+        # r7: the banned set is part of the Repro-card pinned-set (a constant,
+        # so the record stays content-stable; the r6-era 4-key record on disk
+        # normalizes ONCE to this 5-key form, then re-ensures skip again).
+        "banned": sorted(cm.MODEL_VENV_BANNED_DISTS),
     }
     prior = json.loads(pins_path.read_text(encoding="utf-8")) if pins_path.exists() else None
     if prior == record:
@@ -791,6 +828,7 @@ def ensure_model_venv(args, runner: Runner) -> None:
     _log(
         f"[model-venv] OK {py} vllm={realized['vllm']} "
         f"transformers={realized['transformers']} torch={realized['torch']} "
+        f"banned-absent={','.join(sorted(cm.MODEL_VENV_BANNED_DISTS))} "
         f"record={pins_path}"
     )
     if built:
@@ -1143,12 +1181,39 @@ def evaluate_g2b(
 
 
 def phase_env_smoke(args) -> int:
-    """Plan §12 assumption 2 (blocking, before any provisioning; model venv)."""
+    """Plan §12 assumption 2 (blocking, before any provisioning; model venv).
+
+    r7 crash-fix (epm:failure v3, flashinfer-py311-array-subscript) extends the
+    gate beyond top-level imports: (1) banned accel dists must be ABSENT
+    (cm.MODEL_VENV_BANNED_DISTS — flashinfer-python 0.6.16.post3 raises
+    TypeError at import on py3.11 via a runtime-evaluated `array.array[int]`
+    annotation); (2) the vLLM COMPILE-BACKEND import chain is exercised
+    UNGUARDED, because EngineCore reaches it lazily at engine init behind an
+    ImportError-ONLY guard that misses TypeError/SyntaxError — the gate must
+    fail in seconds pre-fan-out, not per-shard ~30 s into engine init."""
     _phase_line("env_smoke")
+    import importlib
     import importlib.util
 
+    banned_present = [
+        mod
+        for mod in sorted(cm.MODEL_VENV_BANNED_DISTS.values())
+        if importlib.util.find_spec(mod) is not None
+    ]
+    if banned_present:
+        raise RuntimeError(
+            f"banned accel dist import(s) present in the model venv: {banned_present} — "
+            "run the model_venv ensure gate (it uninstalls them in place; "
+            "cm.MODEL_VENV_BANNED_DISTS carries the rationale)"
+        )
     if importlib.util.find_spec("transformers.models.qwen3_5") is None:
         raise RuntimeError("transformers lacks qwen3_5 — upgrade the model venv")
+    # Deliberately NO try/except: any exception class (TypeError/SyntaxError
+    # from a py-version-incompatible accel dep included) fails the gate — the
+    # exact chain EngineCore imports at compile-backend init (backends.py ->
+    # passes/pass_manager.py -> fusion passes -> guarded accel-dep imports).
+    importlib.import_module("vllm.compilation.backends")
+    _log("[env_smoke] compile-backend import OK (vllm.compilation.backends; banned absent)")
     from transformers import AutoConfig, AutoTokenizer
 
     cfg = AutoConfig.from_pretrained(cm.MODEL_ID)

@@ -48,6 +48,24 @@ JUDGE_MODEL = "claude-sonnet-4-5-20250929"
 MODEL_VENV_DEFAULT = "/root/eps-model-venv"
 MODEL_VENV_PINS = {"vllm": "0.27.1", "transformers": "5.15.1", "torch": "2.13.0"}
 MODEL_VENV_EXTRA_PINS = ("python-dotenv==1.2.2",)
+# Dists that must be ABSENT from the model venv (r7 crash-fix, epm:failure v3,
+# assert_tag flashinfer-py311-array-subscript): vllm 0.27.1 HARD-pins
+# flashinfer-python==0.6.16.post3 in its own requires_dist (PyPI, verified
+# 2026-08-20), whose comm/fd_exchange.py:55 evaluates the annotation
+# `array.array[int]` at import time — `array.array` is subscriptable only on
+# py>=3.13, so the venv's py3.11 raises TypeError. vLLM imports flashinfer
+# lazily inside the compile backend (passes/fusion/allreduce_rms_fusion.py:90)
+# behind an ImportError-ONLY guard, so the TypeError ESCAPES and kills
+# EngineCore ~30 s into engine init (all 4 p1.sega shards). REMOVAL is the
+# minimal reliable fix: every vLLM flashinfer call site is find_spec-guarded
+# when the dist is ABSENT, and TP=1 shards never need allreduce fusion. A
+# "pin a compatible version" fix is NOT available — vllm's own exact
+# `==0.6.16.post3` pin makes any other flashinfer-python version a resolver
+# conflict. Because `uv pip install vllm==0.27.1` re-resolves the closure and
+# re-adds the dist, _build_model_venv's uninstall step runs AFTER install on
+# EVERY build/repair (uv pip uninstall is a clean rc=0 no-op when absent).
+# Maps dist name -> top-level import name (the find_spec probe target).
+MODEL_VENV_BANNED_DISTS = {"flashinfer-python": "flashinfer"}
 MODEL_PY_ENV = "EPM_I2378_MODEL_PY"  # explicit model-interpreter override
 # Host-driver floor for the CUDA-13 wheel stack above (torch 2.13.0 ships
 # cu130-linked binaries; vllm 0.27.1 links libcudart.so.13). A pre-580 host

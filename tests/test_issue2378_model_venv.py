@@ -27,6 +27,20 @@ r6 additions (code-review round 6):
 - real `_build_model_venv` body (NIT model-venv-build-branch-untested; fake
   `uv` at the executable boundary) + rebuild invalidates the stale
   `model_env_smoke` ok-flag.
+
+r7 additions (crash-fix, epm:failure v3 assert_tag
+flashinfer-py311-array-subscript — vllm 0.27.1 hard-pins the
+py3.11-incompatible flashinfer-python 0.6.16.post3; the TypeError from its
+runtime-evaluated `array.array[int]` annotation escapes vLLM's
+ImportError-only compile-backend guard and kills EngineCore):
+- cm.MODEL_VENV_BANNED_DISTS exact pin + probe-src `banned_present` reporting;
+- ensure REPAIRS an EXISTING venv carrying a banned dist IN PLACE (no create;
+  uninstall AFTER install — the install re-adds vllm's pinned dep; stale
+  env_smoke ok-flag cleared so the extended smoke re-runs);
+- repair-failure + override-refusal fail-loud legs;
+- env_smoke banned-dist gate (real-body execution both branches) + the
+  UNGUARDED `vllm.compilation.backends` compile-backend import probe
+  (source-scan ordering pin; the import itself executes pod-side).
 """
 
 from __future__ import annotations
@@ -116,6 +130,8 @@ def test_model_venv_pins_exact():
         "torch": "2.13.0",
     }
     assert "python-dotenv==1.2.2" in cm.MODEL_VENV_EXTRA_PINS
+    # r7: exact dict equality (dist name -> import name), never substring
+    assert cm.MODEL_VENV_BANNED_DISTS == {"flashinfer-python": "flashinfer"}
     assert cm.MODEL_VENV_DEFAULT == "/root/eps-model-venv"
     assert cm.MODEL_PY_ENV == "EPM_I2378_MODEL_PY"
 
@@ -124,6 +140,13 @@ def test_probe_src_checks_qwen35_vllm_dotenv():
     assert "transformers.models.qwen3_5" in d._MODEL_PROBE_SRC
     assert '"vllm"' in d._MODEL_PROBE_SRC
     assert '"dotenv"' in d._MODEL_PROBE_SRC  # orchestrate/env.py module-top dep
+
+
+def test_probe_src_reports_banned_present():
+    """r7: the probe must REPORT banned accel imports so the ensure gate can
+    repair the EXISTING pod venv (whose pins otherwise read healthy)."""
+    assert '"banned_present"' in d._MODEL_PROBE_SRC
+    assert "'flashinfer'" in d._MODEL_PROBE_SRC  # repr of the composed tuple
 
 
 # ---------------------------------------------------------------------------
@@ -196,6 +219,7 @@ def test_ensure_happy_path_records_pins_and_runs_env_smoke(monkeypatch, tmp_path
     rec = json.loads((tmp_path / "ledger" / "model_venv_pins.json").read_text(encoding="utf-8"))
     assert rec["interpreter"] == fake
     assert rec["pinned"] == cm.MODEL_VENV_PINS
+    assert rec["banned"] == ["flashinfer-python"]  # r7: ban is part of the Repro card
     for k, want in cm.MODEL_VENV_PINS.items():
         assert rec["realized"][k] == want
     # env_smoke ran UNDER the model interpreter (the fake exits 0 on any argv)
@@ -292,7 +316,8 @@ def test_ensure_pins_record_content_stable_p4_harvest_path(monkeypatch, tmp_path
     rec_path = ledger / "model_venv_pins.json"
     rec = json.loads(rec_path.read_text(encoding="utf-8"))
     # ONLY stable pin content in the tracked record — no volatile fields
-    assert set(rec) == {"interpreter", "realized", "pinned", "extra_pins"}
+    # (r7 adds the constant `banned` key; still content-stable)
+    assert set(rec) == {"interpreter", "realized", "pinned", "extra_pins", "banned"}
     _git(repo, "add", "-A")
     _git(repo, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "P1 harvest")
     before = rec_path.read_bytes()
@@ -325,7 +350,7 @@ def test_ensure_normalizes_legacy_metadata_record_once(monkeypatch, tmp_path):
     d.ensure_model_venv(args, d.Runner(tmp_path / "logs1", resume=False, dry=False))
     rec = json.loads((ledger / "model_venv_pins.json").read_text(encoding="utf-8"))
     assert "metadata" not in rec
-    assert set(rec) == {"interpreter", "realized", "pinned", "extra_pins"}
+    assert set(rec) == {"interpreter", "realized", "pinned", "extra_pins", "banned"}
     before = (ledger / "model_venv_pins.json").read_bytes()
     d.ensure_model_venv(args, d.Runner(tmp_path / "logs2", resume=False, dry=False))
     assert (ledger / "model_venv_pins.json").read_bytes() == before
@@ -530,3 +555,163 @@ def test_model_phases_gate_before_any_dispatch():
         ]
         assert dispatch_sites, fn.__name__
         assert gate < min(dispatch_sites), fn.__name__
+
+
+# ---------------------------------------------------------------------------
+# r7: banned accel dists (epm:failure v3 flashinfer-py311-array-subscript)
+# ---------------------------------------------------------------------------
+
+
+def _fake_interpreter_at(path: Path, payload: dict) -> str:
+    """Boundary-fake interpreter at an EXPLICIT path (the existing-venv case)."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("#!/bin/sh\necho '" + json.dumps(payload) + "'\n", encoding="utf-8")
+    path.chmod(path.stat().st_mode | stat.S_IXUSR)
+    return str(path)
+
+
+def _fake_uv_repair(tmp_path: Path, venv_py: Path, clean_template: str | None) -> tuple[Path, Path]:
+    """Executable `uv` boundary fake for the REPAIR path: `uv pip uninstall`
+    swaps the venv interpreter for the clean template (uninstall worked); a
+    None template leaves the dirty interpreter in place (uninstall failed).
+    Every invocation's argv is appended to uv_argv.log."""
+    bindir = tmp_path / "uvbin"
+    bindir.mkdir(exist_ok=True)
+    uv_log = tmp_path / "uv_argv.log"
+    swap = (
+        f'  cp "{clean_template}" "{venv_py}" && chmod +x "{venv_py}"\n'
+        if clean_template is not None
+        else "  :\n"
+    )
+    uv = bindir / "uv"
+    uv.write_text(
+        "#!/bin/sh\n"
+        f'echo "$@" >> "{uv_log}"\n'
+        'if [ "$1" = "pip" ] && [ "$2" = "uninstall" ]; then\n'
+        f"{swap}"
+        "fi\n"
+        "exit 0\n",
+        encoding="utf-8",
+    )
+    uv.chmod(uv.stat().st_mode | stat.S_IXUSR)
+    return bindir, uv_log
+
+
+def test_ensure_repairs_existing_venv_with_banned_dist(monkeypatch, tmp_path):
+    """The r7 pod case: the EXISTING venv probes healthy on pins but carries
+    the banned flashinfer import — ensure must REPAIR IN PLACE (no `uv venv`
+    create), run the uninstall step AFTER install (the install re-adds vllm's
+    hard-pinned dep), re-probe clean, record the ban, and clear the stale
+    env_smoke ok-flag so the extended smoke re-runs. Fails pre-fix: the r6
+    ensure read the pins-only probe as healthy and never repaired."""
+    monkeypatch.setenv(cm.SKIP_DRIVER_PROBE_ENV, "1")
+    monkeypatch.delenv(cm.MODEL_PY_ENV, raising=False)
+    venv = tmp_path / "venv"
+    monkeypatch.setattr(cm, "MODEL_VENV_DEFAULT", str(venv))
+    venv_py = venv / "bin" / "python"
+    _fake_interpreter_at(venv_py, {**_good_payload(), "banned_present": ["flashinfer"]})
+    clean = _fake_interpreter(tmp_path, {**_good_payload(), "banned_present": []})
+    bindir, uv_log = _fake_uv_repair(tmp_path, venv_py, clean)
+    monkeypatch.setenv("PATH", f"{bindir}:{os.environ['PATH']}")
+    runner = d.Runner(tmp_path / "logs", resume=True, dry=False)
+    smoke_argv = d._model_py("issue2378_dispatch.py", "--phase", "env_smoke")
+    runner._ok_path("model_env_smoke").write_text(d._argv_sha(smoke_argv))  # stale flag
+    args = SimpleNamespace(ledger_root=str(tmp_path / "ledger"))
+    d.ensure_model_venv(args, runner)
+    calls = [c for c in uv_log.read_text(encoding="utf-8").split("\n") if c]
+    assert not any(c.startswith("venv ") for c in calls), calls  # repair, never re-create
+    install_idx = next(i for i, c in enumerate(calls) if c.startswith("pip install "))
+    uninst_idx = next(i for i, c in enumerate(calls) if c.startswith("pip uninstall "))
+    assert install_idx < uninst_idx, calls  # uninstall AFTER install (re-resolve re-adds it)
+    assert "flashinfer-python" in calls[uninst_idx]
+    rec = json.loads((tmp_path / "ledger" / "model_venv_pins.json").read_text(encoding="utf-8"))
+    assert rec["banned"] == ["flashinfer-python"]
+    assert rec["realized"]["banned_present"] == []
+    # stale ok-flag cleared on the repair branch -> env_smoke re-ran
+    assert (tmp_path / "logs" / "model_env_smoke.log").exists()
+
+
+def test_ensure_repair_leaving_banned_dist_raises(monkeypatch, tmp_path):
+    """A repair whose uninstall step did not take fails LOUD naming the banned
+    import — never a silent proceed into the engine-init crash."""
+    monkeypatch.setenv(cm.SKIP_DRIVER_PROBE_ENV, "1")
+    monkeypatch.delenv(cm.MODEL_PY_ENV, raising=False)
+    venv = tmp_path / "venv"
+    monkeypatch.setattr(cm, "MODEL_VENV_DEFAULT", str(venv))
+    venv_py = venv / "bin" / "python"
+    _fake_interpreter_at(venv_py, {**_good_payload(), "banned_present": ["flashinfer"]})
+    bindir, _ = _fake_uv_repair(tmp_path, venv_py, None)  # uninstall is a no-op
+    monkeypatch.setenv("PATH", f"{bindir}:{os.environ['PATH']}")
+    runner = d.Runner(tmp_path / "logs", resume=False, dry=False)
+    args = SimpleNamespace(ledger_root=str(tmp_path / "ledger"))
+    with pytest.raises(RuntimeError, match="left banned dist import"):
+        d.ensure_model_venv(args, runner)
+
+
+def test_ensure_refuses_repair_over_explicit_override_with_banned(monkeypatch, tmp_path):
+    """An explicit $EPM_I2378_MODEL_PY override carrying a banned dist is
+    refused, never mutated (same contract as the missing-interpreter case)."""
+    monkeypatch.setenv(cm.SKIP_DRIVER_PROBE_ENV, "1")
+    fake = _fake_interpreter(tmp_path, {**_good_payload(), "banned_present": ["flashinfer"]})
+    monkeypatch.setenv(cm.MODEL_PY_ENV, fake)
+    runner = d.Runner(tmp_path / "logs", resume=False, dry=False)
+    args = SimpleNamespace(ledger_root=str(tmp_path / "ledger"))
+    with pytest.raises(RuntimeError, match="refusing to build over an explicit override"):
+        d.ensure_model_venv(args, runner)
+
+
+def test_build_model_venv_composes_uninstall_banned_step(monkeypatch, tmp_path):
+    """Fresh-build path also ends with the uninstall-banned step (the install
+    re-adds vllm's hard-pinned flashinfer-python on every re-resolve)."""
+    monkeypatch.setenv(cm.SKIP_DRIVER_PROBE_ENV, "1")
+    monkeypatch.delenv(cm.MODEL_PY_ENV, raising=False)
+    venv = tmp_path / "venv"
+    monkeypatch.setattr(cm, "MODEL_VENV_DEFAULT", str(venv))
+    template = _fake_interpreter(tmp_path, {**_good_payload(), "banned_present": []})
+    bindir, uv_log = _fake_uv(tmp_path, template)
+    monkeypatch.setenv("PATH", f"{bindir}:{os.environ['PATH']}")
+    args = SimpleNamespace(ledger_root=str(tmp_path / "ledger"))
+    d.ensure_model_venv(args, d.Runner(tmp_path / "logs", resume=False, dry=False))
+    calls = [c for c in uv_log.read_text(encoding="utf-8").split("\n") if c]
+    assert calls[-1].startswith("pip uninstall "), calls  # LAST step on every build
+    assert "flashinfer-python" in calls[-1]
+
+
+def test_env_smoke_banned_dist_present_raises(monkeypatch):
+    """REAL-body env_smoke leg: a banned import name that IS importable in the
+    running interpreter (stand-in: pytest itself) fails the gate loudly."""
+    monkeypatch.setattr(cm, "MODEL_VENV_BANNED_DISTS", {"pytest": "pytest"})
+    with pytest.raises(RuntimeError, match="banned accel dist import"):
+        d.phase_env_smoke(SimpleNamespace())
+
+
+def test_env_smoke_banned_absent_reaches_qwen35_gate():
+    """REAL-body env_smoke leg, banned-absent branch: with the default banned
+    set (flashinfer is not installed in the repo venv) the gate passes the
+    banned check and proceeds to the qwen3_5 gate, which raises on the repo
+    venv (transformers 4.57.6) — proving the new branch sits BEFORE it and
+    passes cleanly when the dist is absent."""
+    with pytest.raises(RuntimeError, match="lacks qwen3_5"):
+        d.phase_env_smoke(SimpleNamespace())
+
+
+def test_env_smoke_compile_backend_import_unguarded_and_ordered():
+    """Source pin: env_smoke imports the vLLM compile-backend chain UNGUARDED
+    (no try/except anywhere in the phase — TypeError/SyntaxError from a
+    py-version-incompatible accel dep must FAIL the gate, the exact class
+    vLLM's ImportError-only guard misses), ordered banned-check -> qwen3_5 ->
+    compile-backend import -> HF config/tokenizer downloads."""
+    import ast
+    import inspect
+    import textwrap
+
+    src = inspect.getsource(d.phase_env_smoke)
+    assert 'importlib.import_module("vllm.compilation.backends")' in src
+    # deliberately unguarded: no try/except node anywhere in the phase body
+    tree = ast.parse(textwrap.dedent(src))
+    assert not any(isinstance(n, ast.Try) for n in ast.walk(tree))
+    banned_idx = src.index("banned accel dist import")
+    qwen_idx = src.index("lacks qwen3_5")
+    compile_idx = src.index('import_module("vllm.compilation.backends")')
+    config_idx = src.index("AutoConfig.from_pretrained")
+    assert banned_idx < qwen_idx < compile_idx < config_idx
