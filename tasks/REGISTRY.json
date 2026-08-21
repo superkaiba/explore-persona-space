@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2442,
+  "highest_id": 2443,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11140,6 +11140,13 @@
       "path": "tasks/approved/2442",
       "status": "approved",
       "title": "Absence-claim rule names the duty but not the mechanism: a full-listing + client-side prefix filter returns a silent zero on a wrong path where the scoped probe 404s"
+    },
+    "2443": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2443",
+      "status": "proposed",
+      "title": "Registered gates are never checked against the grain they fire at: a rate threshold can be unreachable at the realized per-unit denominator, and a per-unit remedy can split a controlled parameter inside the contrast it protects"
     },
     "245": {
       "has_clean_result": false,
