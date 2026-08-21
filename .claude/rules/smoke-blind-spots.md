@@ -94,6 +94,11 @@ instrument exactly where parity (prohibition) is legitimately waived.
   overstatement; constant-route contradictions WARN by design) + c66 (WARN: the
   shortfall's producing script named nowhere in the plan). #2165 makes plans
   DISCLOSE smoke divergences; c65/c66 VERIFY the numeric premises.
+- Mechanical (import resolvability, #2253): `workflow_lint.py --check-prod-import-lockfile`
+  (bundled into the no-flags run) FAILs any scripts//src/ third-party import
+  unresolvable from uv.lock/pyproject.toml — branch-agnostic, so the
+  "third-party import reached ONLY on the production branch" blind-spot item
+  is machine-caught repo-wide.
 
 ## Files of record
 
