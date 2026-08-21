@@ -236,9 +236,6 @@ Script intrusion also touches the fit targets: 5.3–5.9% of misalignment and 14
 
 The gate passed at 0.895 against the 0.4 floor, releasing the map-corpus phase for all models. The same curves show the context-side capitalization signal is confined to late layers — near zero to negative through the middle of the stack — consistent with the pinned-layer choice. Per-unit exemption: the figure already shows every per-language curve; 0.895 is their mean at the pin.
 
-<!-- concern-deferred: worked-examples-incomplete -->
-<!-- concern-deferred: per-unit-labels-missing -->
-<!-- concern-deferred: alt-text-trends-omitted -->
 
 ---
 
