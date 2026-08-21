@@ -97,7 +97,7 @@
   \item LLMs can be viewed as deterministic maps from \emph{contexts} to \emph{answer distributions}
   \item A \textbf{simple approximation} of that map would be extremely useful: much easier to analyze theoretically, sample from, and understand the effects of finetuning
   \item But it need not exist: the map is billions of parameters applying dozens of nonlinear layers. 
-  \item Prior work either uses simple but \emph{narrow} predictors (specific tokens, activations, behaviors), or distillation, a complex whole-distribution predictor
+  \item Prior work either uses simple but \emph{narrow} predictors (specific tokens, activations, behaviors), or distillation, a whole-distribution predictor which is just as complex as the original model
   \item \takeaways{Our question:} can a \textbf{simple} approximation capture the mapping \emph{as a whole}? 
 \end{itemize}
 
