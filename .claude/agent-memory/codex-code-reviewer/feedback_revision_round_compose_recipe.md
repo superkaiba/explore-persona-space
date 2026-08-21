@@ -1908,3 +1908,29 @@ carries literal re-runs. Assert-side: brief LINE-WRAPS split fragments —
 pick wrap-safe single-line fragments for the checklist-survival asserts, and
 assert the pinned RANGE TOKEN (`<pin>..HEAD`) not the full command string
 (the brief's `-C "$WT" diff --stat` form breaks command-string matches).
+
+**Both-readings-suspect adjudication round, by-reference with /tmp extracts
+(#2329 q35 r20 = sentinel v13, 2026-08-20):** when the round's central item is
+an open BLOCKER on which the ORCHESTRATOR and IMPLEMENTER hold conflicting
+code readings (and the orchestrator's has already been wrong once in the
+reassuring direction), compose a HIGHEST-VALUE CHECK that quotes BOTH readings
+verbatim with recomputed anchors, declares both suspect, and decomposes into
+numbered questions whose last is the concern's OWN acceptance bar
+(VERIFIED-ADDRESSED / NOT-ADDRESSED = substantive FAIL) — never adopt either
+reading into the prompt as fact. Deltas: (a) a brief-ordered by-reference
+compose can EXTRACT marker bodies to /tmp files (this task's Codex reads /tmp
+— the r5 /tmp/r18v precedent) instead of pointing at a 400-row events.jsonl:
+still by-reference, no stash-race exposure, no trigger-dense paging; keep the
+main-root events.jsonl + `git show HEAD:` as the authoritative fallback and
+declare `data-access-blocked` GENUINE. (b) Impl-marker line anchors can be
+PRE-ROUND frames even when the marker is honest about it ("at pre-round
+numbering") — recompute against the round blob and say shifted lines are
+never a finding. (c) Sentinel: the q35 series began round-based (v1, v2) then
+switched to head==posted-version (v10/v11/v12) — continuity gives max-posted+1
+(v13) even when the brief names the round by IMPL number (r20/impl v20);
+state the mapping in the return. (d) "ADDRESSED DIFFERENTLY" contra-brief
+claims about PRE-EXISTING code get an independent-re-verification duty with
+the exact base-blob greps handed over (justified-if-true / honest-reporting
+finding-if-false). (e) A DEFERRED concern whose reconciler-downgrade premise
+was OPERATIONAL sequencing gets a DEFERRAL-PREMISE-INTACT/BROKEN status-line
+form when the round changes the sequencing the premise relied on.
