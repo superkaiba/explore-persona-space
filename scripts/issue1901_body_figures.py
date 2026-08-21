@@ -10,7 +10,9 @@ filenames per the #1482 precedent. Reads only the committed battery JSONs:
 
 The --style iclr paper pathway additionally reads the #1901 paper_densify
 JSONs (eval_results/issue_1901/paper_densify/{layer_curve_n3600,
-scaling_ladder_L19}.json) plus the banked #779/#1491 large-n fits.
+scaling_ladder_L19, layer_curve_n50k, scaling_bigN_acc1_L19,
+mlp_layer_curve_n3600, mlp_scaling_L19}.json) plus the banked #779/#1491
+large-n fits.
 
 Run from the issue-1901 worktree root:
     uv run python scripts/issue1901_body_figures.py
@@ -597,20 +599,55 @@ def fig_regime_flip(l19: dict, p18: dict) -> None:
     plt.close(fig)
 
 
-def fig_paper_c1_scaling(l19: dict, ladder: dict) -> None:
+def fig_paper_c1_scaling(
+    l19: dict,
+    ladder: dict,
+    *,
+    boundary_hline: float | None = None,
+    stem: str = "c1_scaling_train_pool",
+    out_dir: Path | None = None,
+    identity_label: str = "identity + bias",
+    neural_label: str = "neural map (w=8,192)",
+    figsize: tuple[float, float] | None = None,
+    acc_label: str = "retrieval acc@1 (pool 1,000)",
+) -> None:
     """ICLR paper figure (c1_linear R1), densified (#1901 paper_densify round).
+
+    boundary_hline: opt-in poster variant — draws the #825 generic
+    boundary-token→segment map control (instruct R^2 0.1087, single-n,
+    wikitext) as a dashed reference line on the R^2 panel and saves under
+    `stem` into `out_dir`; `identity_label` / `neural_label` relabel the
+    identity+bias and neural-map legend entries (poster uses
+    "identity + bias (baseline)" / "nonlinear (MLP)"); the default paper
+    render is byte-unchanged.
+
+    figsize: opt-in canvas override for callers rendering at a font scale the
+    paper canvas was not sized for (the MATS poster runs font_scale=1.9, at
+    which the paper's 2.3in-tall canvas puts the legend on top of the axes and
+    clips both y labels). None keeps the paper canvas.
+
+    acc_label: opt-in relabel of the retrieval panel's y axis. A single-line
+    27-character label does not fit a canvas shortened much below ~3.2in — it
+    overruns the axis and collides with the legend — so a caller that shortens
+    the canvas passes the same text broken over two lines. Default is the
+    paper's, byte-unchanged.
 
     Held-out R^2 (left) + euclidean retrieval acc@1, pool 1,000 (right) against
     training contexts (log x). Ridge (blue) and identity+bias (green) are DENSE
     from the #1491 scale7_refit ladder refits (n = 50..25,000; mean +/- SD over
     3 seeded draws at n <= 2,500, one file-order-prefix draw above; scored on
     that capture's own held-out 1,000-context pool), joined by the banked
-    large-n points (ridge 50k/150k/500k/963,444; identity+bias 963,444; 95%
-    percentile-bootstrap CIs; scored on the original round's pinned pool). The
-    neural map (vermilion, the w=8,192 protocol arm) is banked-only:
-    250..3,600 (D2 scaling curves, 3 draws), 25k (#1491 ladder), 50k (n50k),
-    150k/500k/963,444 (n1m); its acc@1 exists banked at 25k + 963,444 only.
-    One figure-level legend; no on-canvas annotations.
+    large-n R^2 points (ridge 50k/150k/500k/963,444; identity+bias 963,444;
+    95% percentile-bootstrap CIs; scored on the original round's pinned pool)
+    plus the #1901 densify refits (identity+bias R^2 at 50k/150k/500k, and
+    acc@1 for BOTH arms at 50k/150k/500k — layer_curve_n50k.json +
+    scaling_bigN_acc1_L19.json; the 50k refit is parity-exact vs the banked
+    fit, the 150k/500k refits parity-gated within 0.0011 R^2). The neural map
+    (vermilion, the w=8,192 protocol arm): R^2 at 250..3,600 (D2 scaling
+    curves, 3 draws), 5k/10k (#1901 mlp_scaling_L19.json), 25k (#1491 ladder),
+    50k (n50k), 150k/500k/963,444 (n1m); acc@1 at 5k/10k (mlp_scaling), 25k
+    (ladder), 963,444 (battery). One figure-level legend; no on-canvas
+    annotations.
     """
     arms = l19["arms"]
     n50k = json.loads((EV779 / "fitter-fair-comparison-n50k" / "n50k_fits.json").read_text())
@@ -621,6 +658,23 @@ def fig_paper_c1_scaling(l19: dict, ladder: dict) -> None:
             ROOT / "eval_results" / "issue_1491" / "scale_ladder" / "fits_scale7_refit.json"
         ).read_text()
     )
+    mlp_sc = json.loads((PD / "mlp_scaling_L19.json").read_text())["per_n"]
+    n50k_l19 = json.loads((PD / "layer_curve_n50k.json").read_text())["per_layer"]["19"]
+    bign = json.loads((PD / "scaling_bigN_acc1_L19.json").read_text())["per_point"]
+
+    def _r2ci(pred: dict) -> tuple[float, float, float]:
+        ci = pred["bootstrap_ci"]["r2"]
+        return ci["point"], ci["lo"], ci["hi"]
+
+    def _a1ci(pred: dict) -> tuple[float, float, float]:
+        e = pred["retrieval"]["euclidean"]
+        return e["acc_at_k"]["1"], e["acc1_ci"]["lo"], e["acc1_ci"]["hi"]
+
+    densify_big = [
+        (50_000, n50k_l19),
+        (150_000, bign["lmsys_150k"]),
+        (500_000, bign["lmsys_500k"]),
+    ]
 
     def dense(est_field) -> tuple[list[int], list[float], list[float]]:
         by_n: dict[int, list[float]] = {}
@@ -649,13 +703,18 @@ def fig_paper_c1_scaling(l19: dict, ladder: dict) -> None:
     for n in sorted(d2_mlp):
         m, s = float(np.mean(d2_mlp[n])), float(np.std(d2_mlp[n]))
         neural_r2.append((n, m, m - s, m + s))
+    for n in (5_000, 10_000):
+        ci = mlp_sc[str(n)]["test_ci"]["r2"]
+        neural_r2.append((n, ci["point"], ci["lo"], ci["hi"]))
     r25 = f7["predictors"]["mlp_w8192"]["test_r2"]
     neural_r2.append((25_000, r25, r25, r25))
     neural_r2.append((50_000, *ci_pt(n50k["per_predictor"]["mlp"])))
     for key, n in (("lmsys_150k", 150_000), ("lmsys_500k", 500_000), ("mixed_1m", 963_444)):
         neural_r2.append((n, *ci_pt(n1m["per_point"][key]["predictors"]["mlp_w8192"])))
 
-    fig, (ax_r2, ax_acc) = plt.subplots(1, 2, figsize=figsize_iclr_panels(2, height_in=2.3))
+    fig, (ax_r2, ax_acc) = plt.subplots(
+        1, 2, figsize=figsize or figsize_iclr_panels(2, height_in=2.3)
+    )
     col_r = paper_color("instruct")
     col_i = paper_color("identity_bias")
     col_n = paper_color("neural_map")
@@ -678,11 +737,12 @@ def fig_paper_c1_scaling(l19: dict, ladder: dict) -> None:
         label="linear map (ridge)",
     )
     ns_i, mean_i, sd_i = dense(lambda c: c["identity_bias"]["test_r2"])
+    big_ib = [(n, *_r2ci(cell["identity_bias"])) for n, cell in densify_big]
     r_ib = arms["identity_bias"]["r2"]
-    xs_i = ns_i + [963_444]
-    ys_i = mean_i + [r_ib["point"]]
-    lo_i = sd_i + [r_ib["point"] - r_ib["lo"]]
-    hi_i = sd_i + [r_ib["hi"] - r_ib["point"]]
+    xs_i = ns_i + [p[0] for p in big_ib] + [963_444]
+    ys_i = mean_i + [p[1] for p in big_ib] + [r_ib["point"]]
+    lo_i = sd_i + [p[1] - p[2] for p in big_ib] + [r_ib["point"] - r_ib["lo"]]
+    hi_i = sd_i + [p[3] - p[1] for p in big_ib] + [r_ib["hi"] - r_ib["point"]]
     ax_r2.errorbar(
         xs_i,
         ys_i,
@@ -693,7 +753,7 @@ def fig_paper_c1_scaling(l19: dict, ladder: dict) -> None:
         lw=1.2,
         ms=3,
         capsize=1.5,
-        label="identity + bias",
+        label=identity_label,
     )
     xs_n = [p[0] for p in neural_r2]
     ys_n = [p[1] for p in neural_r2]
@@ -709,7 +769,7 @@ def fig_paper_c1_scaling(l19: dict, ladder: dict) -> None:
         lw=1.2,
         ms=3,
         capsize=1.5,
-        label="neural map (w=8,192)",
+        label=neural_label,
     )
     ax_r2.axhline(0.0, color="black", lw=0.7, ls=":")
     ax_r2.set_ylabel("held-out $R^2$")
@@ -719,11 +779,15 @@ def fig_paper_c1_scaling(l19: dict, ladder: dict) -> None:
         return float(c["knn"][est]["euclidean"]["acc_at_k"]["1"])
 
     ns, mean, sd = dense(lambda c: a1(c, "ridge"))
+    big_a1_r = [(n, *_a1ci(cell["ridge"])) for n, cell in densify_big]
     p, lo, hi = _acc1(arms["ridge"], "test")
     ax_acc.errorbar(
-        ns + [963_444],
-        mean + [p],
-        yerr=[np.maximum(0, sd + [p - lo]), np.maximum(0, sd + [hi - p])],
+        ns + [q[0] for q in big_a1_r] + [963_444],
+        mean + [q[1] for q in big_a1_r] + [p],
+        yerr=[
+            np.maximum(0, sd + [q[1] - q[2] for q in big_a1_r] + [p - lo]),
+            np.maximum(0, sd + [q[3] - q[1] for q in big_a1_r] + [hi - p]),
+        ],
         marker="o",
         ls="-",
         color=col_r,
@@ -732,11 +796,15 @@ def fig_paper_c1_scaling(l19: dict, ladder: dict) -> None:
         capsize=1.5,
     )
     ns_i, mean_i, sd_i = dense(lambda c: a1(c, "identity_bias"))
+    big_a1_i = [(n, *_a1ci(cell["identity_bias"])) for n, cell in densify_big]
     p, lo, hi = _acc1(arms["identity_bias"], "test")
     ax_acc.errorbar(
-        ns_i + [963_444],
-        mean_i + [p],
-        yerr=[np.maximum(0, sd_i + [p - lo]), np.maximum(0, sd_i + [hi - p])],
+        ns_i + [q[0] for q in big_a1_i] + [963_444],
+        mean_i + [q[1] for q in big_a1_i] + [p],
+        yerr=[
+            np.maximum(0, sd_i + [q[1] - q[2] for q in big_a1_i] + [p - lo]),
+            np.maximum(0, sd_i + [q[3] - q[1] for q in big_a1_i] + [hi - p]),
+        ],
         marker="s",
         ls="--",
         color=col_i,
@@ -744,12 +812,14 @@ def fig_paper_c1_scaling(l19: dict, ladder: dict) -> None:
         ms=3,
         capsize=1.5,
     )
+    n_a5 = float(mlp_sc["5000"]["knn"]["euclidean"]["acc_at_k"]["1"])
+    n_a10 = float(mlp_sc["10000"]["knn"]["euclidean"]["acc_at_k"]["1"])
     n_a25 = float(f7["knn_retrieval"]["mlp_w8192"]["euclidean"]["acc_at_k"]["1"])
     p, lo, hi = _acc1(arms["mlp_w8192"], "test")
     ax_acc.errorbar(
-        [25_000, 963_444],
-        [n_a25, p],
-        yerr=[[0.0, max(0, p - lo)], [0.0, max(0, hi - p)]],
+        [5_000, 10_000, 25_000, 963_444],
+        [n_a5, n_a10, n_a25, p],
+        yerr=[[0.0, 0.0, 0.0, max(0, p - lo)], [0.0, 0.0, 0.0, max(0, hi - p)]],
         marker="D",
         ls=":",
         color=col_n,
@@ -758,44 +828,60 @@ def fig_paper_c1_scaling(l19: dict, ladder: dict) -> None:
         capsize=1.5,
     )
     ax_acc.axhline(0.001, color="black", lw=0.7, ls=":")
-    ax_acc.set_ylabel("retrieval acc@1 (pool 1,000)")
+    ax_acc.set_ylabel(acc_label)
     ax_acc.set_ylim(0.0, 1.0)
 
     for ax in (ax_r2, ax_acc):
         ax.set_xscale("log")
         ax.set_xlabel("training contexts")
 
+    if boundary_hline is not None:
+        ax_r2.axhline(
+            boundary_hline,
+            color="#666666",
+            lw=1.1,
+            ls=(0, (4, 2)),
+            label="generic boundary-token map",
+        )
     handles, labels = ax_r2.get_legend_handles_labels()
     fig.legend(
         handles,
         labels,
         loc="upper center",
-        ncol=3,
+        ncol=3 if boundary_hline is None else 2,
         frameon=False,
         handlelength=1.6,
         columnspacing=1.2,
     )
-    fig.tight_layout(rect=(0, 0, 1, 0.91))
-    PAPER_OUT.mkdir(parents=True, exist_ok=True)
-    savefig_paper(fig, "c1_scaling_train_pool", dir=PAPER_OUT)
+    fig.tight_layout(rect=(0, 0, 1, 0.91) if boundary_hline is None else (0, 0, 1, 0.86))
+    dest = out_dir if out_dir is not None else PAPER_OUT
+    dest.mkdir(parents=True, exist_ok=True)
+    savefig_paper(fig, stem, dir=dest)
     plt.close(fig)
 
 
-def fig_paper_c1_layer_profile(ctx_per_layer: dict, dense: dict) -> None:
+def fig_paper_c1_layer_profile(
+    ctx_per_layer: dict, dense: dict, dense50k: dict, mlp36: dict
+) -> None:
     """ICLR paper figure (c1_linear layer-profile), densified (#1901 paper_densify).
 
-    Left (held-out R^2 per layer): the DENSE 28-layer instruct curves at
-    n=3,600 (ridge — now the headline curve — and identity+bias, negative at
-    every layer; values below the axis floor run off-canvas) from the pass_b
-    refit (parity-gated at machine precision against the banked
-    fair_comparison per-layer values), the 963,444-row instruct ridge +
-    wide-neural points at the three captured layers (14/19/26, 95% bootstrap
-    CIs), and the #722 base-model 50-context sweep demoted to a light-gray
-    reference line. Right (euclidean acc@1, pool 1,000): the dense 28-layer
-    ridge + identity+bias curves at n=3,600 plus the 963,444-row ridge points
-    at 14/19/26 — per-layer acc@1 now exists at EVERY layer via the n=3,600
-    refit. One figure-level legend; no on-canvas annotations. Supersedes the
-    3-captured-layer-only render (same stem).
+    Line encoding: COLOR = estimator (blue ridge / green identity+bias /
+    vermilion neural map), LINESTYLE = training size (solid = n=50,000,
+    dashed = n=3,600). Left (held-out R^2 per layer): the DENSE 28-layer
+    instruct curves — ridge + identity+bias at n=50,000 (layer_curve_n50k,
+    solid; L19 ridge parity-exact vs the banked n50k fit) and at n=3,600
+    (pass_b refit, dashed; parity-gated at machine precision against the
+    banked fair_comparison per-layer values), the 28-layer NEURAL (w=8,192)
+    curve at n=3,600 (mlp_layer_curve_n3600, dashed vermilion; parity-gated
+    vs the banked 3,600-row mlp fits at L19/L26), identity+bias negative at
+    every layer at both sizes (values below the axis floor run off-canvas),
+    the 963,444-row instruct ridge + wide-neural points at the three captured
+    layers (14/19/26, 95% bootstrap CIs), and the #722 base-model 50-context
+    sweep demoted to a light-gray reference line. Right (euclidean acc@1,
+    pool 1,000): the same six dense curves' acc@1 plus the 963,444-row ridge
+    points at 14/19/26 — per-layer acc@1 now exists at EVERY layer at both
+    training sizes. One figure-level legend; no on-canvas annotations.
+    Supersedes the n=3,600-only render (same stem).
     """
     som = json.loads((SOM_722 / "skill_over_mean.json").read_text())
     rows = sorted(som["per_layer"], key=lambda p: p["layer"])
@@ -803,11 +889,21 @@ def fig_paper_c1_layer_profile(ctx_per_layer: dict, dense: dict) -> None:
     b_ridge = [p["skill_vs_mean_ridge"] for p in rows]
 
     dl = dense["per_layer"]
+    k50 = dense50k["per_layer"]
+    ml = mlp36["per_layer"]
     layers28 = list(range(28))
     d_r2 = [dl[str(li)]["ridge"]["test_r2"] for li in layers28]
     i_r2 = [dl[str(li)]["identity_bias"]["test_r2"] for li in layers28]
     d_a1 = [dl[str(li)]["knn"]["ridge"]["euclidean"]["acc_at_k"]["1"] for li in layers28]
     i_a1 = [dl[str(li)]["knn"]["identity_bias"]["euclidean"]["acc_at_k"]["1"] for li in layers28]
+    k_r2 = [k50[str(li)]["ridge"]["whole_map_r2"] for li in layers28]
+    ki_r2 = [k50[str(li)]["identity_bias"]["whole_map_r2"] for li in layers28]
+    k_a1 = [k50[str(li)]["ridge"]["retrieval"]["euclidean"]["acc_at_k"]["1"] for li in layers28]
+    ki_a1 = [
+        k50[str(li)]["identity_bias"]["retrieval"]["euclidean"]["acc_at_k"]["1"] for li in layers28
+    ]
+    m_r2 = [ml[str(li)]["test_r2"] for li in layers28]
+    m_a1 = [ml[str(li)]["knn"]["euclidean"]["acc_at_k"]["1"] for li in layers28]
 
     cap_layers = [14, 19, 26]
 
@@ -823,30 +919,20 @@ def fig_paper_c1_layer_profile(ctx_per_layer: dict, dense: dict) -> None:
     col_i = paper_color("identity_bias")
     col_n = paper_color("neural_map")
 
+    # (label, r2 series, a1 series, color, marker, linestyle, lw, ms, zorder)
+    curves = [
+        ("linear map (ridge), n=50,000", k_r2, k_a1, col_r, "o", "-", 1.3, 2.6, 4),
+        ("linear map (ridge), n=3,600", d_r2, d_a1, col_r, "o", "--", 1.0, 2.2, 3),
+        ("identity + bias, n=50,000", ki_r2, ki_a1, col_i, "s", "-", 1.1, 2.4, 2),
+        ("identity + bias, n=3,600", i_r2, i_a1, col_i, "s", "--", 0.9, 2.0, 2),
+        ("neural map (w=8,192), n=3,600", m_r2, m_a1, col_n, "D", "--", 1.0, 2.2, 3),
+    ]
     ax_r2.plot(
         b_layers, b_ridge, lw=1.0, color="#bbbbbb", zorder=1, label="linear map, base model (n=50)"
     )
-    ax_r2.plot(
-        layers28,
-        d_r2,
-        marker="o",
-        ms=2.6,
-        lw=1.3,
-        color=col_r,
-        zorder=3,
-        label="linear map (ridge), n=3,600",
-    )
-    ax_r2.plot(
-        layers28,
-        i_r2,
-        marker="s",
-        ms=2.4,
-        lw=1.1,
-        ls="--",
-        color=col_i,
-        zorder=2,
-        label="identity + bias, n=3,600",
-    )
+    for lbl, r2s, a1s, col, mk, ls, lw, ms, zo in curves:
+        ax_r2.plot(layers28, r2s, marker=mk, ms=ms, lw=lw, ls=ls, color=col, zorder=zo, label=lbl)
+        ax_acc.plot(layers28, a1s, marker=mk, ms=ms, lw=lw, ls=ls, color=col, zorder=zo)
     for arm_key, mk, lbl, col in (
         ("ridge", "D", "linear map, n=963k", col_r),
         ("mlp_w32768", "^", "neural map (w=32,768), n=963k", col_n),
@@ -871,8 +957,6 @@ def fig_paper_c1_layer_profile(ctx_per_layer: dict, dense: dict) -> None:
     ax_r2.set_ylabel("held-out $R^2$")
     ax_r2.set_ylim(-1.05, 1.0)
 
-    ax_acc.plot(layers28, d_a1, marker="o", ms=2.6, lw=1.3, color=col_r, zorder=3)
-    ax_acc.plot(layers28, i_a1, marker="s", ms=2.4, lw=1.1, ls="--", color=col_i, zorder=2)
     pts = [_a1pt("ridge", la) for la in cap_layers]
     ax_acc.errorbar(
         cap_layers,
@@ -898,17 +982,18 @@ def fig_paper_c1_layer_profile(ctx_per_layer: dict, dense: dict) -> None:
         ax.set_xlabel("layer (of 28)")
 
     handles, labels = ax_r2.get_legend_handles_labels()
+    order = [1, 2, 3, 4, 5, 0, 6, 7]  # column-major pairs: ridge, idb, neural/base, 963k points
     fig.legend(
-        handles,
-        labels,
+        [handles[i] for i in order],
+        [labels[i] for i in order],
         loc="upper center",
-        ncol=3,
+        ncol=4,
         frameon=False,
         handlelength=1.4,
-        columnspacing=0.9,
-        fontsize=7,
+        columnspacing=0.8,
+        fontsize=6.5,
     )
-    fig.tight_layout(rect=(0, 0, 1, 0.87))
+    fig.tight_layout(rect=(0, 0, 1, 0.86))
     PAPER_OUT.mkdir(parents=True, exist_ok=True)
     savefig_paper(fig, "c1_layer_profile", dir=PAPER_OUT)
     plt.close(fig)
@@ -930,7 +1015,9 @@ def main() -> None:
         fig_paper_c1_scaling(l19, dense_ladder)
         ctx_all = json.loads((MB / "context_arm.json").read_text())["per_layer"]
         dense_layer = json.loads((PD / "layer_curve_n3600.json").read_text())
-        fig_paper_c1_layer_profile(ctx_all, dense_layer)
+        dense_50k = json.loads((PD / "layer_curve_n50k.json").read_text())
+        mlp_layer = json.loads((PD / "mlp_layer_curve_n3600.json").read_text())
+        fig_paper_c1_layer_profile(ctx_all, dense_layer, dense_50k, mlp_layer)
         print(
             "done:",
             sorted(p.name for p in PAPER_OUT.glob("c1_scaling_*")),

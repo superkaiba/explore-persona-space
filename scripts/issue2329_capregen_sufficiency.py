@@ -18,9 +18,28 @@ the raised cap, what fraction hit *that* cap? If a material share still hit
 the asymmetric-truncation bias survives its own remedy in a second form.
 
 Reports the aggregate and -- because value-side ASYMMETRY was the original
-defect, not the overall rate -- the per-(cell, value_id) breakdown. A cap that
+defect, not the overall rate -- the per-(cell, value) breakdown. A cap that
 is sufficient on average but truncates one side of a within-cell contrast is
 still a measurement-validity failure.
+
+Two scopes (--scope, default anchors -- the original invocation is unchanged):
+
+* ``anchors``: ``anchors_<batch>_w*.jsonl`` under --anchors-dir; rows keyed
+  (cell, value_id). Caps default to the anchors campaign's 2048 -> 4096.
+* ``grid``: ``shard_*.jsonl`` under --rollouts-dir (the LADDER grid store,
+  ``<out-root>/grid``); rows carry slot/arm/value_a instead of value_id, so
+  the unit key is ``cell|slot|arm`` (the plan §7 G5 breach grain) and the
+  value side is ``value_a``. The q35 ladder audit runs 4096 -> 8192:
+
+    uv run python scripts/issue2329_capregen_sufficiency.py --scope grid \
+        --rollouts-dir /workspace/issue2329_out/ladder/grid \
+        --base-cap 4096 --raised-cap 8192 \
+        --out eval_results/issue_2329/q35_ladder_decay/cap_hit/capregen_sufficiency_grid.json
+
+The value key FIELD is resolved per row (value_id first, value_a fallback)
+and the realized field counts are DISCLOSED in the output
+(``value_key_fields``) so a schema drift can never silently collapse the
+per-value breakdown onto ``<none>``.
 
 Counts only. No completion text enters the output.
 
@@ -48,12 +67,12 @@ def _pct(num: int, den: int) -> float:
     return 100.0 * num / den
 
 
-def load_rows(anchors_dir: Path, batch: str) -> tuple[list[dict[str, Any]], list[str]]:
-    """Load every ``anchors_<batch>_w*.jsonl`` shard. Fail loud on an empty set."""
-    shards = sorted(anchors_dir.glob(f"anchors_{batch}_w*.jsonl"))
+def load_rows_glob(shard_dir: Path, glob_pat: str) -> tuple[list[dict[str, Any]], list[str]]:
+    """Load every ``glob_pat`` JSONL shard under ``shard_dir``. Fail loud on empty."""
+    shards = sorted(shard_dir.glob(glob_pat))
     if not shards:
         raise FileNotFoundError(
-            f"no anchors_{batch}_w*.jsonl shards under {anchors_dir} -- "
+            f"no {glob_pat} shards under {shard_dir} -- "
             "nothing to measure (an empty selection is never a 0% result)"
         )
     rows: list[dict[str, Any]] = []
@@ -64,8 +83,33 @@ def load_rows(anchors_dir: Path, batch: str) -> tuple[list[dict[str, Any]], list
                 if line:
                     rows.append(json.loads(line))
     if not rows:
-        raise ValueError(f"{len(shards)} shard(s) under {anchors_dir} contained zero rows")
+        raise ValueError(f"{len(shards)} shard(s) under {shard_dir} contained zero rows")
     return rows, [s.name for s in shards]
+
+
+def load_rows(anchors_dir: Path, batch: str) -> tuple[list[dict[str, Any]], list[str]]:
+    """Anchors-scope loader (original surface, kept byte-compatible)."""
+    return load_rows_glob(anchors_dir, f"anchors_{batch}_w*.jsonl")
+
+
+def _row_keys(r: dict[str, Any]) -> tuple[str, str, str]:
+    """(cell_key, value_key, value_field) for one row.
+
+    Anchors rows: cell + value_id -> the original (cell, value_id) keying,
+    byte-identical output. LADDER GRID rows: cell(=direction) + slot + arm +
+    value_a (no value_id) -> unit key ``cell|slot|arm`` (the plan §7 G5
+    breach grain, matching ``breaching_units``) with value side ``value_a``.
+    The realized value FIELD is returned so the caller can disclose counts --
+    a silent fallback-to-<none> collapse is the schema-drift failure mode this
+    guards against."""
+    cell = str(r.get("cell", "<none>"))
+    if "slot" in r and "arm" in r:
+        cell = f"{cell}|{r['slot']}|{r['arm']}"
+    if r.get("value_id") is not None:
+        return cell, str(r["value_id"]), "value_id"
+    if r.get("value_a") is not None:
+        return cell, str(r["value_a"]), "value_a"
+    return cell, "<none>", "<none>"
 
 
 def summarize(rows: list[dict[str, Any]], raised_cap: int, base_cap: int) -> dict[str, Any]:
@@ -122,11 +166,17 @@ def summarize(rows: list[dict[str, Any]], raised_cap: int, base_cap: int) -> dic
     }
 
     # Value-side asymmetry: the original defect was one side of a within-cell
-    # contrast being truncated, not the overall rate.
+    # contrast being truncated, not the overall rate. Keying is scope-aware
+    # (_row_keys): anchors rows -> (cell, value_id) as before; ladder grid
+    # rows -> (cell|slot|arm, value_a). Realized value-field counts are
+    # DISCLOSED so a schema drift cannot silently collapse the breakdown.
     by_cell_value: dict[tuple[str, str], list[int]] = defaultdict(list)
+    value_key_fields: dict[str, int] = defaultdict(int)
     for r in regen:
-        key = (str(r.get("cell", "<none>")), str(r.get("value_id", "<none>")))
-        by_cell_value[key].append(int(r["n_completion_tokens"]))
+        cell_key, value_key, value_field = _row_keys(r)
+        value_key_fields[value_field] += 1
+        by_cell_value[(cell_key, value_key)].append(int(r["n_completion_tokens"]))
+    out["value_key_fields"] = dict(sorted(value_key_fields.items()))
 
     per_cell: list[dict[str, Any]] = []
     for (cell, value_id), toks in sorted(by_cell_value.items()):
@@ -168,29 +218,53 @@ def summarize(rows: list[dict[str, Any]], raised_cap: int, base_cap: int) -> dic
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--anchors-dir", type=Path, required=True)
+    ap.add_argument(
+        "--scope",
+        choices=("anchors", "grid"),
+        default="anchors",
+        help="anchors (default; the original 2048->4096 anchors audit, unchanged) | "
+        "grid (the LADDER grid store -- shard_*.jsonl under --rollouts-dir; the q35 "
+        "ladder audit runs --base-cap 4096 --raised-cap 8192)",
+    )
+    ap.add_argument("--anchors-dir", type=Path, default=None, help="anchors scope: shard dir")
+    ap.add_argument(
+        "--rollouts-dir",
+        type=Path,
+        default=None,
+        help="grid scope: the ladder grid shard dir (<out-root>/grid)",
+    )
     ap.add_argument("--batch", default="gate", choices=("gate", "rest"))
     ap.add_argument("--raised-cap", type=int, default=RAISED_CAP)
     ap.add_argument("--base-cap", type=int, default=BASE_CAP)
     ap.add_argument("--out", type=Path, default=None)
     args = ap.parse_args()
 
-    rows, shard_names = load_rows(args.anchors_dir, args.batch)
+    if args.scope == "anchors":
+        if args.anchors_dir is None:
+            ap.error("--anchors-dir is required for --scope anchors")
+        shard_dir, glob_pat = args.anchors_dir, f"anchors_{args.batch}_w*.jsonl"
+    else:
+        if args.rollouts_dir is None:
+            ap.error("--rollouts-dir is required for --scope grid")
+        shard_dir, glob_pat = args.rollouts_dir, "shard_*.jsonl"
+
+    rows, shard_names = load_rows_glob(shard_dir, glob_pat)
     summary = summarize(rows, args.raised_cap, args.base_cap)
-    summary["batch"] = args.batch
+    summary["scope"] = args.scope
+    summary["batch"] = args.batch if args.scope == "anchors" else None
     summary["shards_present"] = shard_names
     summary["n_shards_present"] = len(shard_names)
-    # PARTIAL detection must NOT key on shard-file count: all 8 shard files exist
-    # from the ORIGINAL anchors run, so presence proves nothing about whether
-    # capregen has merged into them. The observable signal is per-shard presence
-    # of at least one raised-cap row. Caveat, stated because it matters: a shard
+    # PARTIAL detection must NOT key on shard-file count: all shard files exist
+    # from the ORIGINAL run, so presence proves nothing about whether capregen
+    # has merged into them. The observable signal is per-shard presence of at
+    # least one raised-cap row. Caveat, stated because it matters: a shard
     # whose slice holds no breaching cells legitimately has zero regen rows and
     # is indistinguishable from an unmerged one -- this errs toward reporting
     # INCOMPLETE, which is the safe direction for a completeness claim. The
     # authoritative signal is the driver's own postregen report `partial` field.
     with_regen = sorted(
         p.name
-        for p in args.anchors_dir.glob(f"anchors_{args.batch}_w*.jsonl")
+        for p in shard_dir.glob(glob_pat)
         if any(
             json.loads(ln).get("max_new_tokens") == args.raised_cap for ln in p.open() if ln.strip()
         )
@@ -199,7 +273,10 @@ def main() -> int:
     summary["n_shards_with_regen_rows"] = len(with_regen)
     summary["partial"] = len(with_regen) < len(shard_names)
 
-    print(f"  batch={args.batch}  shards={len(shard_names)}  partial={summary['partial']}")
+    print(
+        f"  scope={args.scope}  batch={summary['batch']}  shards={len(shard_names)}  "
+        f"partial={summary['partial']}"
+    )
     print(
         f"  rows={summary['n_rows_total']}  regen@{args.raised_cap}="
         f"{summary['n_rows_regenerated']}  untouched@{args.base_cap}="
