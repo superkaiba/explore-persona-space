@@ -172,13 +172,13 @@ We map the context to the answer's \textbf{SAE features}, then partial out predi
 
 \postersec{6.\ Is it a persona mapping?}
 \begin{center}
-\includegraphics[width=0.95\linewidth]{plot6b_specialization.pdf}
+\includegraphics[width=0.99\linewidth]{plot6c_pooled_lattice.pdf}
 \end{center}
-\figcap{8}{Held-out $R^2$ per character: one map pooled over all four (1{,}200 pts) against that character's own 300-pt map. \textbf{assistant*} = separate lattice (rows, $n\!=\!4{,}375$) — reference only, not comparable.}
+\figcap{8}{Held-out $R^2$ per character/framing: ONE map fit jointly across all 56 cells of the framing $\times$ identity $\times$ model lattice, against that cell's own map. Instruct wide/behind, base narrow/in front. Story cells share the boundary \texttt{Name replied: ``\ldots''}; the chat cell is the Qwen chat template. On-policy answers, layer 19; $x$ sorted by how directly the assistant's chat-template map transfers in.}
 \begin{itemize}
-  \item \takeaways{Pooling across characters costs almost nothing:} a single map fitted on all four captures \textbf{90--98\%} of what each character's own map achieves — four characters, close to one shared operator.
-  \item \takeaways{The assistant behaves the same way inside its own lattice:} one pooled map captures \textbf{$\sim$81\%} of its own-map ceiling, against 82\% and 86\% for the Wren cells sharing that pool — unremarkable, not privileged.
-  \item \takeaways{Close, but not identical:} the character-specific edge is small and survives — pooling \emph{approaches} rather than equals a per-character fit.
+  \item \takeaways{One shared map covers most of every character's own fit:} across the four characters and the assistant-in-prose it reaches \textbf{62--94\%} of each one's own-map ceiling (instruct) — one operator, not six.
+  \item \takeaways{Being ``the assistant'' buys almost nothing once the frame changes:} the assistant written as a story character is the closest cell to the assistant's chat-template map, but only barely ahead of the four characters ($-0.27$ direct transfer vs $-0.30$ to $-0.51$), and every one of them is negative — the frame moves the map far more than the identity does.
+  \item \takeaways{Instruction tuning buys a stronger map inside its own template:} the chat cell reads $0.58$ own-map on instruct against $0.21$ on base, and it is the one cell where the shared map genuinely fails on base ($-0.02$).
 \end{itemize}
 
 \end{column}

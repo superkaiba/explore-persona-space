@@ -82,7 +82,13 @@ OUT_DIR = REPO / "docs" / "posters" / "mats_2026" / "figures"
 SRC_BARS = "eval_results/issue_2054/pool_specialize/digest.json"
 SRC_CLOSE = "eval_results/issue_2054/chat_closeness_ladder.json"
 
-FIGSIZE = (9.6, 3.9)
+# Authored at the poster COLUMN's physical width (0.188 x ~34.6 in textwidth,
+# placed at 0.99\linewidth) so beamerposter scales it ~1.0 and every in-figure
+# point size survives to the printed poster. Authoring wider and letting LaTeX
+# shrink it is what put the label lines at ~4 pt on a 36x24 in poster (measured
+# 2026-08-21 off the built PDF); horizontal room per group, not vertical, is the
+# binding constraint, hence the two-line descriptions below.
+FIGSIZE = (6.45, 4.1)
 CONDITION = "on_policy"
 ORDER_MODEL = "instruct"
 
@@ -105,12 +111,12 @@ DROPPED = ["assistant bare text"]  # user directive 2026-08-21; kept in the side
 # Condensed from issue1310_common.PERSONAS (verbatim source strings recorded in
 # the sidecar under `character_descriptions_verbatim`).
 SHORT_DESC = {
-    "assistant chat template": "the assistant itself",
-    "assistant in story": "same assistant, as a character",
-    "HELIOS": "calm, precise AI",
-    "Wren": "warm, endlessly helpful",
-    "Dana": "ordinary, unremarkable person",
-    "Vex": "theatrical, scheming villain",
+    "assistant chat template": "the assistant\nitself",
+    "assistant in story": "same assistant,\nas a character",
+    "HELIOS": "a calm,\nprecise AI",
+    "Wren": "warm, endlessly\nhelpful",
+    "Dana": "an ordinary,\nunremarkable person",
+    "Vex": "a theatrical,\nscheming villain",
 }
 VERBATIM_DESC = {
     "HELIOS": "a calm, precise artificial intelligence",
@@ -231,32 +237,23 @@ def plot_combined(per_model: dict[str, list[dict]], ylim: tuple[float, float]) -
     )
     ax.axhline(0.0, color="0.6", lw=0.6, ls=":", zorder=1)
 
-    # Tick label carries who/frame; the short description and the verbatim
-    # boundary form ride separate lines so each can take its own face and size.
+    # Tick label carries who/frame; the short description rides its own line so
+    # it can take a smaller face. The verbatim boundary form is NOT drawn: at
+    # this column width six of them collide, and shrinking them to fit puts them
+    # near 4 pt on a 36x24 in poster — unreadable either way. They live in the
+    # sidecar (`example`) and in the poster caption instead.
     ax.set_xticks(xs, [f"{c['who']}\n{c['frame']}" for c in cells])
     for x, c in zip(xs, cells, strict=True):
         ax.annotate(
             c["short_description"],
             xy=(x, 0),
             xycoords=("data", "axes fraction"),
-            xytext=(0, -33),
+            xytext=(0, -34),
             textcoords="offset points",
             ha="center",
             va="top",
-            fontsize=6.2,
+            fontsize=8.0,
             color="0.30",
-        )
-        ax.annotate(
-            c["example"],
-            xy=(x, 0),
-            xycoords=("data", "axes fraction"),
-            xytext=(0, -46),
-            textcoords="offset points",
-            ha="center",
-            va="top",
-            fontsize=6.0,
-            family="monospace",
-            color="0.45",
         )
 
     ax.set_ylabel("held-out $R^2$")
@@ -266,9 +263,16 @@ def plot_combined(per_model: dict[str, list[dict]], ylim: tuple[float, float]) -
     ax.set_ylim(*ylim)
     ax.set_xlabel("sorted by similarity to assistant in chat template", labelpad=30)
     ax.set_title("One shared map vs its own map, per character/framing — Qwen-2.5-7B")
-    ax.legend(frameon=False, loc="upper right", ncols=2, handlelength=1.3, columnspacing=1.2)
+    ax.legend(
+        frameon=False,
+        loc="upper right",
+        ncols=2,
+        handlelength=1.0,
+        columnspacing=0.8,
+        fontsize=7.0,
+    )
     fig.tight_layout()
-    fig.subplots_adjust(bottom=0.34)
+    fig.subplots_adjust(bottom=0.32)
     savefig_paper(fig, "plot6c_pooled_lattice", dir=OUT_DIR)
     plt.close(fig)
     print(f"WROTE {OUT_DIR / 'plot6c_pooled_lattice.png'}")
