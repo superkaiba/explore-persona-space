@@ -1121,6 +1121,69 @@ def list_hf_files_under_path(
     ]
 
 
+def assert_hf_prefix_exists(
+    api,
+    repo_id: str,
+    prefix: str,
+    *,
+    repo_type: str = "dataset",
+    revision: str | None = None,
+) -> int:
+    """Return the file count at/under ``prefix``, RAISING if it does not exist.
+
+    The absence-check primitive: a scoped server-side ``list_repo_tree`` whose
+    404 distinguishes a resolvable location from an unresolvable one. NEVER
+    returns 0 for a nonexistent prefix — that silent-zero shape is exactly what
+    ``CLAUDE.md`` § "Absence claims" bans (#2329).
+
+    An exact FILE path returns 1: the tree endpoint 404s on file paths (hub
+    0.36.2, #939), so an ``EntryNotFoundError`` falls back to ONE retried
+    ``file_exists`` HEAD probe before the raise — without it this helper
+    reports a present file as absent, re-creating the defect it exists to
+    prevent one kind-confusion over. On a git-backed repo there are no empty
+    directories (a directory prefix exists iff >=1 file lives under it), so
+    the return is >= 1 in every non-raising path.
+
+    Deliberately NOT ``list_hf_files_under_path``, which returns ``[]`` for an
+    absent path (correct for staging, wrong here). Transient 429/5xx are
+    retried via ``retry_transient`` — a transient error is never misread as
+    absence; the listing is materialized INSIDE the retry thunk so the lazy
+    generator's iteration-time 404 raises where it can be seen (#779).
+    """
+    from huggingface_hub.utils import EntryNotFoundError
+
+    normalized = prefix.strip("/")
+    if not normalized:
+        raise ValueError("assert_hf_prefix_exists: empty prefix (would full-list the repo)")
+    try:
+        entries = list_repo_entries_complete(
+            api, repo_id, repo_type=repo_type, revision=revision, path_in_repo=normalized
+        )
+    except EntryNotFoundError as err:
+        if _retry_upload(
+            lambda: api.file_exists(repo_id, normalized, repo_type=repo_type, revision=revision),
+            what=f"file_exists({repo_id}/{normalized})",
+        ):
+            return 1  # exact FILE path — the tree endpoint 404s on files (#939)
+        raise RuntimeError(
+            f"HF prefix does not exist: {repo_id}/{normalized} "
+            f"(repo_type={repo_type}, revision={revision or 'main'}). "
+            "Three live possibilities: wrong prefix (relocate via a parent-prefix "
+            "listing), not yet uploaded (expected pre-upload), or wrong repo_type / "
+            "revision. See .claude/rules/upload-policy.md section 'Absence checks'."
+        ) from err
+    if not entries:
+        # Unreachable for a directory prefix on a git-backed repo (no empty
+        # dirs) — fail loud rather than return the silent 0 this helper bans.
+        raise RuntimeError(
+            f"HF prefix resolved but listed 0 files: {repo_id}/{normalized} "
+            f"(repo_type={repo_type}, revision={revision or 'main'}) — unexpected "
+            "on a git-backed repo; treat as not-exists (wrong prefix / not yet "
+            "uploaded / wrong repo_type or revision)."
+        )
+    return len(entries)
+
+
 def _is_storage_quota_403(err: Exception) -> bool:
     """Persistent account-wide public-storage 403 (NOT transient). Mirrors the
     issue658 predicate; upload-policy.md § HF storage-quota 403."""
