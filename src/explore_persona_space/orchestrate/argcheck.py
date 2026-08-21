@@ -124,8 +124,8 @@ CALL-ARITY BIND PASS (#2261):
          passes only ``__file__`` while its Hub calls live in
          ``scripts/issue2203_common.py``) is not covered for those sites
          unless the sibling is itself an adopter or is co-passed.
-    FN-6 attribute-chain receivers (``self.api = HfApi()`` then
-         ``self.api.upload_file(...)``; dotted chains after a bare
+    FN-6 attribute-chain receivers (``self.api = HfApi()`` then a later
+         upload call through ``self.api``; dotted chains after a bare
          ``import a.b.c``) — the receiver is an ``ast.Attribute``, not a
          Name: inert, neither bound nor skip-noted. Measured 0 fleet-wide.
     FN-7 out-of-registry in-repo wrappers (per-issue helpers wrapping the
