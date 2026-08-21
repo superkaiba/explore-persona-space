@@ -2,10 +2,14 @@
 % official MATS Google Slides template (maroon #800020 banner + torch logo,
 % white body, serif ALL-CAPS maroon section heads with thin rules).
 %
-% Reading order is strictly left-to-right, top-to-bottom:
-%   col 1 setup -> col 2 results 1-2 -> col 3 results 3-4
-%   -> col 4 results 5-6 -> col 5 Is this useful? / Implications
-%      & future work / References.
+% Reading order is strictly left-to-right, top-to-bottom, over FOUR columns:
+%   col 1 TL;DR / motivation / method / result 1
+%   col 2 results 2-3
+%   col 3 results 5-6
+%   col 4 result 7 (application) / other results / implications / references
+% Figure width fractions are scaled by ~0.85 relative to the old five-column
+% layout: columns went 0.188 -> 0.238\textwidth, so an unchanged fraction
+% would have made every figure 27% taller and overflowed the page.
 % Terminology contract (paper intro rev 7): "the model's mapping" = the true
 % context -> answer-distribution function; "the residual context-answer
 % mapping" = its summary-level counterpart (the object studied); "fitted maps"
@@ -74,8 +78,8 @@
 \begin{minipage}[t][\dimexpr\textheight-1.45cm][t]{\textwidth}
 \begin{columns}[t]
 
-% ==================== COLUMN 1: setup ====================
-\begin{column}{0.188\textwidth}
+% ==================== COLUMN 1: setup + result 1 ====================
+\begin{column}{0.238\textwidth}
 
 \postersec{TL;DR}
 \begin{itemize}
@@ -96,17 +100,18 @@
 
 \postersec{The residual context-answer map}
 \begin{center}
-\IfFileExists{figures/method_diagram.pdf}{\includegraphics[width=0.99\linewidth]{method_diagram.pdf}}{\includegraphics[width=0.99\linewidth]{fig1_schematic.pdf}}
+\IfFileExists{figures/method_diagram.pdf}{\includegraphics[width=0.95\linewidth]{method_diagram.pdf}}{\includegraphics[width=0.95\linewidth]{fig1_schematic.pdf}}
 \end{center}
 \figcap{1}{$v_C$ = residual state at the last context token (layer $\ell$); $v_A$ = mean answer-token state. Fitted maps $v_C \mapsto v_A$; readouts consume $\hat{v}_A$.}
+
 \end{column}
 
 % ==================== COLUMN 2: results 1-2 ====================
-\begin{column}{0.188\textwidth}
+\begin{column}{0.238\textwidth}
 
 \postersec{1.\ The Mapping has high predictive Power and is mostly Linear}
 \begin{center}
-\includegraphics[width=0.97\linewidth]{plot1_scaling_boundary.pdf}
+\includegraphics[width=0.92\linewidth]{plot1_scaling_boundary.pdf}
 \end{center}
 \figcap{2}{Held-out $R^2$ (left) and rank-1 retrieval (right; raw euclidean, pool 1{,}000) against training-set size. Dashed: generic boundary-token control. Layer 19.}
 \begin{itemize}
@@ -114,17 +119,12 @@
   \item \takeaways{The mapping is mostly linear:} the nonlinear (MLP) map adds only $\sim$$0.06$ $R^2$ over the linear map, and only at large $n$ (potentially this advantage would grow as you scale up the number of contexts)
   \item \takeaways{The mapping is not present for generic boundary tokens:} held-out $R^2$ 0.11 for a mapping from generic boundary tokens (punctuation) to the next stretch of text
   \item \takeaways{The mapping is not just copying the context vector:} The mapping does much better than the identity + bias baseline
-  \item We study the \textbf{linear} map here 
-  \item \takeaways{The mapping is strongest at mid-late depth:} held-out $R^2$ peaks at \textbf{layers 19--20 of 28} (0.76). This is consistent with literature showing that this is where high-level semantic information is most decodable.
+  \item We study the \textbf{linear} map here and leave more complex maps to future work
 \end{itemize}
-\begin{center}
-\IfFileExists{figures/plot10_layer_sweep.pdf}{\includegraphics[width=0.95\linewidth]{plot10_layer_sweep.pdf}}{}
-\end{center}
-\figcap{3}{Held-out $R^2$ against the layer at which \emph{both} $v_C$ and $v_A$ are taken (swept together). Band: bootstrap 95\% CI over test rows. Star: argmax, layer 19 — 19 and 20 overlap. $n_{\mathrm{train}}\!=\!50{,}000$, $n_{\mathrm{test}}\!=\!1{,}000$.}
 
-\postersec{2.\ The mapping predicts useful directions of the answer}
+\postersec{2.\ The mapping predicts useful parts of the answer}
 \begin{center}
-\IfFileExists{figures/plot2_persona_directions.pdf}{\includegraphics[width=0.92\linewidth]{plot2_persona_directions.pdf}}{\includegraphics[width=0.88\linewidth]{c3_persona_direction_spectrum.pdf}}
+\IfFileExists{figures/plot2_persona_directions.pdf}{\includegraphics[width=0.88\linewidth]{plot2_persona_directions.pdf}}{\includegraphics[width=0.70\linewidth]{c3_persona_direction_spectrum.pdf}}
 \end{center}
 \figcap{4}{Held-out $R^2$ along each of the seven persona directions $r_B$ against a 200-draw random-unit band (bar: mean; shaded: 5--95\%). All seven on one corpus: multi-turn holdout, $n\!=\!9{,}941$, layer 19, ridge.}
 \begin{itemize}
@@ -133,13 +133,13 @@
 
 \end{column}
 
-% ==================== COLUMN 3: results 3-4 ====================
-\begin{column}{0.188\textwidth}
+% ==================== COLUMN 3: results 3 and 5 ====================
+\begin{column}{0.238\textwidth}
 
-\postersec{3.\ Which (SAE) features of the answer are most predictable?}
+\postersec{3.\ The mapping is better at predicting high-level and identity related features of the answer}
 We train another map from the context to the answer's \textbf{SAE features}, then partial out predictors \emph{one at a time} to see which survives.
 \begin{center}
-\includegraphics[width=0.95\linewidth]{plot3_sae_predictors.pdf}
+\includegraphics[width=0.90\linewidth]{plot3_sae_predictors.pdf}
 \end{center}
 \figcap{5}{Forward-stepwise partialling: each row conditions on all rows above. $c$ = concordance (AUROC scale), $0.5$ = chance. Gray: activity control. Diamond: matryoshka \emph{coarsest} tier — different dictionary, direction only. No CIs; later rounds omitted.}
 \begin{itemize}
@@ -154,29 +154,25 @@ We train another map from the context to the answer's \textbf{SAE features}, the
   \begin{itemize}
       \item good at predicting \textbf{high-level} and \textbf{identity-related} features
       \item bad at predicting \textbf{low-level} and \textbf{topic-related} features
+      \item suggests it might be some kind of \textbf{persona mapping}
   \end{itemize} 
 \end{itemize}
 
-\postersec{4.\ What does it fail to retrieve?}
+% \postersec{4.\ What does it fail to retrieve?}
+% \begin{center}
+% \IfFileExists{figures/plot4b_failure_modes.pdf}{\includegraphics[width=0.78\linewidth]{plot4b_failure_modes.pdf}}{\includegraphics[width=0.70\linewidth]{plot4_failures.pdf}}
+% \end{center}
+% \figcap{6}{Rate of each failure mode among retrieval failures minus its rate among controls matched on turns $\times$ corpus $\times$ language, in percentage points; lines are 95\% CIs. Colored bars clear BH FDR $q\!=\!0.05$. $n\!=\!1{,}815$ failures vs $1{,}809$ controls.}
+% \begin{itemize}
+%   \item \takeaways{It fails when the last turn does not pin the answer:} a bare ``why?'' / ``continue'' ($+7.7$pp), a fill-in-the-blank genre request ($+3.1$), or an answer that drifts back to earlier history ($+3.1$).
+%   \item \takeaways{It succeeds when the exchange has a distinctive anchor the answer reuses} ($-6.7$pp) --- so what it misses is largely what \emph{no} map could pin down, not a weakness of the map.
+%   \item \takeaways{One failure is the answer's own fault:} garbled or code-switched responses ($+6.8$pp).
+%   \item The modes were written \textbf{blind}: a model saw only the failures and a random sample --- no labels, no numbers --- and wrote a yes/no rule per mode, which a judge then applied to every context.
+% \end{itemize}
+
+\postersec{5.\ The mapping is already largely present in the base model and refined throughout post training}
 \begin{center}
-\IfFileExists{figures/plot4b_failure_modes.pdf}{\includegraphics[width=0.99\linewidth]{plot4b_failure_modes.pdf}}{\includegraphics[width=0.88\linewidth]{plot4_failures.pdf}}
-\end{center}
-\figcap{6}{Rate of each failure mode among retrieval failures minus its rate among controls matched on turns $\times$ corpus $\times$ language, in percentage points; lines are 95\% CIs. Colored bars clear BH FDR $q\!=\!0.05$. $n\!=\!1{,}815$ failures vs $1{,}809$ controls.}
-\begin{itemize}
-  \item \takeaways{It fails when the last turn does not pin the answer:} a bare ``why?'' / ``continue'' ($+7.7$pp), a fill-in-the-blank genre request ($+3.1$), or an answer that drifts back to earlier history ($+3.1$).
-  \item \takeaways{It succeeds when the exchange has a distinctive anchor the answer reuses} ($-6.7$pp) --- so what it misses is largely what \emph{no} map could pin down, not a weakness of the map.
-  \item \takeaways{One failure is the answer's own fault:} garbled or code-switched responses ($+6.8$pp).
-  \item The modes were written \textbf{blind}: a model saw only the failures and a random sample --- no labels, no numbers --- and wrote a yes/no rule per mode, which a judge then applied to every context.
-\end{itemize}
-
-\end{column}
-
-% ==================== COLUMN 4: results 5-6 ====================
-\begin{column}{0.188\textwidth}
-
-\postersec{5.\ The mapping is partly already present in the base model and refined throughout post training}
-\begin{center}
-\IfFileExists{figures/plot5_stages.pdf}{\includegraphics[width=0.86\linewidth]{plot5_stages.pdf}}{\includegraphics[width=0.74\linewidth]{c1_stage_retention.pdf}}
+\IfFileExists{figures/plot5_stages.pdf}{\includegraphics[width=0.82\linewidth]{plot5_stages.pdf}}{\includegraphics[width=0.59\linewidth]{c1_stage_retention.pdf}}
 \end{center}
 \figcap{7}{Pooled held-out $R^2$ at each stage of the Llama/T\"ulu ladder (layer 30), each stage fit and evaluated on its own on-policy answers.}
 \begin{itemize}
@@ -185,9 +181,14 @@ We train another map from the context to the answer's \textbf{SAE features}, the
 \end{itemize}
 
 
+\end{column}
+
+% ==================== COLUMN 4: results 6-7 + discussion ====================
+\begin{column}{0.238\textwidth}
+
 \postersec{6.\ The mapping is shared with story characters}
 \begin{center}
-\includegraphics[width=0.99\linewidth]{plot6c_pooled_lattice.pdf}
+\includegraphics[width=0.78\linewidth]{plot6c_pooled_lattice.pdf}
 \end{center}
 \figcap{8}{Held-out $R^2$; the shared map is fit on all 56 lattice cells at once. On-policy answers, layer 19; similarity = direct transfer of the chat-template map.}
 \begin{itemize}
@@ -202,29 +203,26 @@ We train another map from the context to the answer's \textbf{SAE features}, the
     \end{itemize}
 \end{itemize}
 
-\end{column}
-
-% ==================== COLUMN 5: discussion ====================
-\begin{column}{0.188\textwidth}
-
 \postersec{7. Application: behavior prediction before inference}
 \begin{center}
-\IfFileExists{figures/plot9_application_arms.pdf}{\includegraphics[width=0.99\linewidth]{plot9_application_arms.pdf}}{\includegraphics[width=0.99\linewidth]{c5_pv_methods_regimes.pdf}}
+\IfFileExists{figures/plot9_application_arms.pdf}{\includegraphics[width=0.78\linewidth]{plot9_application_arms.pdf}}{\includegraphics[width=0.78\linewidth]{c5_pv_methods_regimes.pdf}}
 \end{center}
 \figcap{9}{Spearman $\rho$ between readout and judged behavior, per regime. Readouts: persona vector or fitted regression, on the context or the map-predicted answer; oracle = real answer. Muted bars fail the spread gate.}
 \begin{itemize}
   \item \takeaways{Persona vectors projected on the context vector fail to generalize to realistic contexts}
-  \item \takeaways{Regression on the mapped answer does better than regression from the}
-  \item \takeaways{The best pre-inference readout is on the \emph{mapped answer} in every trustworthy generic-chat and OOD cell,} by $+0.01$ to $+0.07$ over the best context-side readout — two sycophancy margins sit inside overlapping CIs.
-  \item \takeaways{Regression on the mapped answer matches or beats regression on the context everywhere,} and both leave persona-vector-on-context near zero — the gain is the \emph{map}, not the readout family.
-  \item \takeaways{On synthetic prompts the context already gives the behavior away} — the map earns its keep where the prompt does \emph{not} telegraph the answer.
+  \begin{itemize}
+      \item Projecting persona vectors on the mapped answer does almost as well as projecting on the real answer
+  \end{itemize}
+  \item \takeaways{Regression on the mapped answer does the best of all methods} 
+  \begin{itemize}
+      \item This showcases one potential application of this mapping
+  \end{itemize}
 \end{itemize}
 
 \postersec{Other Results}
 \begin{itemize}
   \item \takeaways{The mapping does not get reliably better with model scale}
-  \item \takeaways{The map survives a reasoning trace:} OpenThinker2-7B reads 0.78 against 0.80 for its non-thinking parent, and context$\to$CoT$\to$answer matches the direct map.
-  \item \takeaways{But the CoT is not a privileged span:} it adds $+0.20$--$0.33$ skill, yet a \emph{length-matched slice of the answer's own opening} beats it in all three thinking models (every 95\% CI below zero).
+
 \end{itemize}
 
 
