@@ -187,7 +187,7 @@ We map the context to the answer's \textbf{SAE features}, then partial out predi
 
 \postersec{7.\ Model size and chain-of-thought}
 \begin{itemize}
-  \item \takeaways{Scale buys more \emph{reliable answers}, not a more predictable map:} over Qwen2.5-Instruct 0.5B$\to$32B raw $R^2$ goes 0.56$\to$0.73$\to$0.65 while the answer's two-draw reliability ceiling climbs 0.75$\to$0.93 — ceiling-normalized predictability is flat at \textbf{0.75--0.79}.
+  \item \takeaways{Scale buys more \emph{reliable answers}, not a more predictable map:} over Qwen2.5-Instruct 0.5B$\to$32B (matched train $n\!=\!25$k, hence below \S1's 963k anchor) raw $R^2$ goes 0.56$\to$0.73$\to$0.65 while the answer's two-draw reliability ceiling climbs 0.75$\to$0.93 — ceiling-normalized predictability is flat at \textbf{0.75--0.79}.
   \item \takeaways{The map survives a reasoning trace:} OpenThinker2-7B reads 0.78 against 0.80 for its non-thinking parent, and context$\to$CoT$\to$answer matches the direct map.
   \item \takeaways{But the CoT is not a privileged span:} it adds $+0.20$--$0.33$ skill, yet a \emph{length-matched slice of the answer's own opening} beats it in all three thinking models (every 95\% CI below zero).
 \end{itemize}
@@ -198,14 +198,14 @@ We map the context to the answer's \textbf{SAE features}, then partial out predi
 \end{center}
 \figcap{9}{Spearman $\rho$ between readout and judged behavior, per regime. Readouts: persona vector or fitted regression, on the context or the map-predicted answer; oracle = real answer. Muted bars fail the spread gate.}
 \begin{itemize}
-  \item \takeaways{The best pre-inference readout is one on the \emph{mapped answer} in every trustworthy generic-chat and OOD cell,} beating the best context-side readout by $+0.01$ to $+0.07$ — though the two sycophancy margins sit inside overlapping CIs.
+  \item \takeaways{The best pre-inference readout is on the \emph{mapped answer} in every trustworthy generic-chat and OOD cell,} by $+0.01$ to $+0.07$ over the best context-side readout — two sycophancy margins sit inside overlapping CIs.
   \item \takeaways{Regression on the mapped answer matches or beats regression on the context everywhere,} and both leave persona-vector-on-context near zero — the gain is the \emph{map}, not the readout family.
   \item \takeaways{On synthetic prompts the context already gives the behavior away} — the map earns its keep where the prompt does \emph{not} telegraph the answer.
 \end{itemize}
 
 \postersec{Implications \& future work}
 \begin{itemize}
-  \item Much of an LLM's behavior is \textbf{linearly predictable from a single context vector} — a cheap pre-generation audit, and evidence for the \textbf{persona selection model}.
+  \item Much of an LLM's behavior is \textbf{linearly predictable from a single context vector}: a cheap pre-generation audit, and evidence for the \textbf{persona selection model}.
   \item Theoretical analysis $+$ dynamical systems.
   \item Predict other properties: correctness.
   \item Predicting effect of fine-tuning.
@@ -214,7 +214,7 @@ We map the context to the answer's \textbf{SAE features}, then partial out predi
 \end{itemize}
 
 \postersec{References}
-{\footnotesize
+{\scriptsize
 {\color{matsmaroon}[1]} Chen et al.\ Persona vectors. 2025.\quad
 {\color{matsmaroon}[2]} Betley et al.\ Emergent misalignment. 2025.\quad
 {\color{matsmaroon}[3]} Marks et al.\ The persona selection model. 2026.\quad
