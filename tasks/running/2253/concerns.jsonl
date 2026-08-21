@@ -1,0 +1,1 @@
+{"ts": "2026-08-21T11:43:29Z", "event": "raised", "concern_id": "plan-named-pin-tests-absent", "severity": "CONCERN", "summary": "Plan §6 r11+r14 partial: test_every_table_dist_present_in_live_lockfile absent; malformed-pyproject fail-loud leg untested. Add 2 small pin tests or record the descope.", "raised_by": "code-reviewer", "raised_at_round": 1}
