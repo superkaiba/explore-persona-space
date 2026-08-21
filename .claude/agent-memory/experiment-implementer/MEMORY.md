@@ -15,6 +15,7 @@
 - [Capture convention: read the PRODUCER's code](feedback_capture_convention_read_producer_code.md) — stored-array reconciliation: pin (#1482)
 - [TRL schema/template traps](feedback_trl_mixed_prompt_completion_schema.md) — is_conversational() pops ONE arbitrary key; assistant_only_loss False on Qwen (#1489 #519)
 - [Qwen3.5 inserts NO default system turn](feedback_qwen35_no_default_system_turn_template_shape.md) — render-shape invariants (im_start counts, no-prefix guards) are template-version-specific; re-derive per fork (#2329 rc=23)
+- [transformers 5.15 leaves config._commit_hash None](feedback_transformers5_commit_hash_unpopulated.md) — pin-engagement probes use cached_file snapshots/<pin> path; private attr PASS-only (#2329 bank rc=1)
 - [CPU randn serial floor in Haar nulls](feedback_cpu_randn_serial_floor_haar_nulls.md) — torch CPU randn is thread-invariant (#1417)
 - [Verbatim-embed reject taxonomy before budget fix](feedback_verbatim_embed_reject_taxonomy_before_budget_fix.md) — finish_reason + answer-length quantiles on (#1345)
 - [Hub transport-retry family (read + upload)](feedback_hub_queue_full_429_and_localentrynotfound_mask.md) — 429 HEAD masks as LocalEntryNotFoundError; upload-retry sibling in entry (#1345 #1335 #1315 #542)
@@ -106,3 +107,4 @@
 - [Mutation scratch = pathspec-limited git archive](feedback_mutation_scratch_pathspec_archive.md) — full-tree archive is multi-GB (eval_results); data-repo pulls need scoped list_repo_tree, snapshot_download hangs (#2329 r17)
 - [Gate domain authority + bool-int aliasing](feedback_gate_domain_authority_and_bool_int_aliasing.md) — verifier domain comes from the CALLER, never the artifact; type-is-int for identity fields (True aliases 1 through exact-set reconciliation) (#823 r5)
 - [Unconditional per-arm empty guard](feedback_unconditional_per_arm_empty_guard.md) — any cross-arm conjunct leaves the all-empty cell dispatching; pin measured zero-dispatch, not guard source shape (#2329 r18)
+- [Model venvs pin the full accel-dep closure](feedback_model_venv_pin_full_dep_closure_flashinfer.md) — floating flashinfer 0.6.16.post3 TypeErrors past vLLM ImportError-only guard on py3.11; smoke the compile-backend import path (#2378)

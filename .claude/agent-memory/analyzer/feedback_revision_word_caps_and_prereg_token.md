@@ -88,6 +88,15 @@ recompute", "a held-out sensitivity", "outside the decisive head-to-head
 comparison"); verb forms ("registers context edits", "registered on HF")
 stay clean.
 
+Update (#823 r8): STANDALONE EM-DASHES count as words — `_prose_words` is
+whitespace `split()`, so "L19 — fitted" is 3 tokens while "L19, fitted" is 2.
+On a block sitting at the 180 FAIL boundary, rewriting appositive ` — X — `
+framings as parentheses/commas buys 2 tokens per pair at zero content cost;
+prefer that over cutting numbers. Same round: merging a dissolved section's
+figure into another result costs its image line + intro pointer (~15-25
+tokens) — budget the receiving block BEFORE dissolving, and push the moved
+section's numeric medians into the (cap-exempt) caption.
+
 Update (#2215 fold): a fold that EXPANDS a Takeaways bullet (e.g. adding a
 length-adjusted companion number) can cross the separate 30-word BULLET cap
 and fire a NEW WARN class ("Takeaways bullet-length") the inherited

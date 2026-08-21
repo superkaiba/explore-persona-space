@@ -38,10 +38,43 @@ QUESTIONS_SHA = _sha256_text(json.dumps(list(QUESTIONS), ensure_ascii=False))
 BEH = "impolite"
 BEH_KEY = "imp"
 CTXS = ("pers", "bare")
-PANEL_IDS = [c.context_id for c in fu3w.bystander_panel(BEH)]
 # Plan-§5 realized training panels (5-member; bare excludes its own source).
 REALIZED_PERS = ["default", "neg_sp_police", "neg_sp_ph4", "neg_extra_a", "neg_extra_b"]
 REALIZED_BARE = ["neg_sp_police", "neg_sp_ph4", "neg_extra_a", "neg_extra_b"]
+
+
+def _panel_ids() -> list[str]:
+    """§D6 bystander-panel ids, resolved LAZILY — never at import/collection
+    time. bystander_panel() registers the conv-prefix + ICL contexts into the
+    global CONTEXTS; pytest imports every collected module before running any
+    test, so a module-level call poisons the registry-purity pins in other
+    modules (#2217). Idempotent and cheap — call per use site; deliberately
+    UNCACHED: a cached ids-list could outlive the module-hygiene teardown and
+    a later explicit-order call would return ids WITHOUT re-registering the
+    contexts, breaking production bodies that resolve them from CONTEXTS."""
+    return [c.context_id for c in fu3w.bystander_panel(BEH)]
+
+
+@pytest.fixture(scope="module", autouse=True)
+def _registry_hygiene_module():
+    """Runtime-registration hygiene at MODULE scope (#2217): _panel_ids() and
+    the pipeline fixture register fu3 contexts at RUNTIME (correct, idempotent
+    production behavior). Snapshot CONTEXTS/NEGATIVE_PANELS at module setup,
+    pop additions at teardown, so an explicit command-line order placing this
+    module BEFORE the registry-purity pins stays clean. Module scope matches
+    the module-scoped pipeline fixture — a function-scoped pop would drop
+    registrations mid-module that later tests' production bodies re-resolve."""
+    from explore_persona_space.artifacts.context import CONTEXTS
+    from explore_persona_space.artifacts.negatives import NEGATIVE_PANELS
+
+    ctx_before, panel_before = set(CONTEXTS), set(NEGATIVE_PANELS)
+    try:
+        yield
+    finally:
+        for k in set(CONTEXTS) - ctx_before:
+            CONTEXTS.pop(k, None)
+        for k in set(NEGATIVE_PANELS) - panel_before:
+            NEGATIVE_PANELS.pop(k, None)
 
 
 def _sel(step: int, rate: float, in_band: bool) -> dict:
@@ -137,7 +170,8 @@ def _completions_file(path: Path, n: int = 2) -> None:
 def build_panel_fixtures(root: Path, manifest: dict) -> dict[str, Path]:
     panel_root = root / "panel"
     base_root = root / "base"
-    for ctx_id in PANEL_IDS:
+    panel_ids = _panel_ids()
+    for ctx_id in panel_ids:
         _completions_file(base_root / f"completions__base__{ctx_id}.json")
     verdict_arms = set()
     for cell in manifest["content"][BEH_KEY].values():
@@ -145,7 +179,7 @@ def build_panel_fixtures(root: Path, manifest: dict) -> dict[str, Path]:
             for regime in ("con", "po"):
                 verdict_arms.add(srec[regime]["arm_id"])
     for arm_id in sorted(verdict_arms):
-        for ctx_id in PANEL_IDS:
+        for ctx_id in panel_ids:
             _completions_file(panel_root / arm_id / f"completions__trained__{ctx_id}.json")
     return {"panel_root": panel_root, "base_root": base_root}
 
@@ -487,11 +521,12 @@ def test_select_regen_verdict_arm_rides_fresh_panel_path(tmp_path):
 
 def test_judge_aggregate_shape(pipeline):
     agg = json.loads((pipeline["out_dir"] / "panel_aggregate_imp.json").read_text())
+    panel_ids = _panel_ids()
     assert agg["smoke_stub_judge"] is True
     assert agg["instrument"] == "stub-smoke"
-    assert set(agg["base_panel"]) == set(PANEL_IDS)
+    assert set(agg["base_panel"]) == set(panel_ids)
     assert len(agg["arms"]) == 8  # 2 ctx x 2 regimes x 2 seeds verdict arms
-    rec = next(iter(agg["arms"].values()))["contexts"][PANEL_IDS[0]]
+    rec = next(iter(agg["arms"].values()))["contexts"][panel_ids[0]]
     assert rec["n_items"] == len(QUESTIONS) * 2
     assert rec["n_scored"] == rec["n_items"]
     assert 0.0 <= rec["rate"] <= 1.0

@@ -1,0 +1,155 @@
+{
+  "commit": "1b6acdc5+dirty",
+  "render_id": "feae9b550b5f4a4b",
+  "git_commit": "1b6acdc5275172da01f0ae48a8e025418af8fe92",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "docs/posters/mats_2026/make_plot2_persona.py",
+    "docs/posters/mats_2026/figures/plot7_application.meta.json",
+    "docs/posters/mats_2026/figures/plot7_application.pdf",
+    "docs/posters/mats_2026/figures/plot7_application.png",
+    "docs/posters/mats_2026/make_plot7_application.py",
+    "eval_results/issue_666/headline/predictor_headline.json",
+    "scripts/issue1901_body_figures.py",
+    "tasks/completed/2214/body.md",
+    "tasks/completed/2214/comments.jsonl",
+    "tasks/completed/2214/concerns.jsonl",
+    "tasks/completed/2214/events.jsonl",
+    "tasks/completed/2214/plans/plan.md",
+    "tasks/completed/2214/plans/v1.md",
+    "tasks/completed/2214/plans/v2.md",
+    "tasks/completed/2214/plans/v3.md",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tasks/running/2214/body.md",
+    "tasks/running/2214/comments.jsonl",
+    "tasks/running/2214/concerns.jsonl",
+    "tasks/running/2214/events.jsonl",
+    "tasks/running/2214/plans/plan.md",
+    "tasks/running/2214/plans/v1.md",
+    "tasks/running/2214/plans/v2.md",
+    "tasks/running/2214/plans/v3.md",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "docs/posters/mats_2026/make_plot2_persona.py",
+  "created": "2026-08-21T01:17:57Z",
+  "figsize": [
+    6.8,
+    2.8
+  ],
+  "points": [
+    {
+      "x": -0.18,
+      "held-out per-direction $R^2$": 0.7903513427749175,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.82,
+      "held-out per-direction $R^2$": 0.8717036176753388,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.82,
+      "held-out per-direction $R^2$": 0.795309352459519,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.18,
+      "held-out per-direction $R^2$": 0.5574399180076441,
+      "error": 0.09926933111266445,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.18,
+      "held-out per-direction $R^2$": 0.569239315454962,
+      "error": 0.08114349978905366,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.18,
+      "held-out per-direction $R^2$": 0.5764510150612682,
+      "error": 0.0907052778148543,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.18,
+      "held-out per-direction $R^2$": 0.4581705868949797,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.18,
+      "held-out per-direction $R^2$": 0.4880958156659083,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.18,
+      "held-out per-direction $R^2$": 0.48574573724641384,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.18,
+      "held-out per-direction $R^2$": 0.6567092491203086,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.18,
+      "held-out per-direction $R^2$": 0.6503828152440156,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.18,
+      "held-out per-direction $R^2$": 0.6671562928761224,
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 12,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "held-out per-direction $R^2$",
+        "legend_labels": [
+          "persona direction $r_B$",
+          "random direction (mean $\\pm$ SD)"
+        ],
+        "xticklabels": [
+          "misalignment",
+          "sycophancy",
+          "hallucination"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "persona direction $r_B$",
+      "random direction (mean $\\pm$ SD)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

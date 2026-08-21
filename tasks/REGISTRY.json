@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2426,
+  "highest_id": 2440,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9375,8 +9375,8 @@
     "2214": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2214",
-      "status": "running",
+      "path": "tasks/completed/2214",
+      "status": "completed",
       "title": "daily-fix: test_issue1315_dispatch pollutes the fu3 context registry \u2014 order-dependent Step 9c gate bounce"
     },
     "2215": {
@@ -9397,8 +9397,8 @@
     "2217": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2217",
-      "status": "running",
+      "path": "tasks/completed/2217",
+      "status": "completed",
       "title": "Test-order contamination: later-sorting module registers wildchat conv prefix into CONTEXTS (fails test_conv_context_is_wildchat_family in multi-file runs)"
     },
     "2218": {
@@ -9487,8 +9487,8 @@
     "2228": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2228",
-      "status": "running",
+      "path": "tasks/reviewing/2228",
+      "status": "reviewing",
       "title": "Extend verify_plan.py with a decision-margin satisfiability probe (margin-vs-baseline ceiling)"
     },
     "2229": {
@@ -9536,8 +9536,8 @@
     "2234": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2234",
-      "status": "proposed",
+      "path": "tasks/archived/2234",
+      "status": "archived",
       "title": "parse_judge_json step 4: add labeled trailing score-line recovery (Score: N) \u2014 measured #2222 pilot shape missing from the landed #2109 recovery"
     },
     "2235": {
@@ -9592,8 +9592,8 @@
     "2241": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2241",
-      "status": "proposed",
+      "path": "tasks/running/2241",
+      "status": "running",
       "title": "Step 4a: draft-PR creation is gated on a condition that is false by construction (generator of the #2240 zero-PR class)"
     },
     "2242": {
@@ -9627,8 +9627,8 @@
     "2246": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2246",
-      "status": "proposed",
+      "path": "tasks/running/2246",
+      "status": "running",
       "title": "Step 10d merge window runs on a reap-eligible worktree; a mid-gate reap makes the pre-push lint gate certify pass vacuously"
     },
     "2247": {
@@ -10479,11 +10479,11 @@
     },
     "2356": {
       "goal": "Predict Qwen2.5-7B-Instruct's binary refuse-vs-comply/answer decision across TWO behavioral regimes \u2014 (A) harmful-compliance flip-pairs and (B) over-refusal on borderline dual-use prompts \u2014 and compare four predictors of that behavior under a fair group-level train/eval split, run separately on each arm (the headline must hold in BOTH) plus a cross-regime transfer check: (1) LLM judge on context text, (2) linear probe on the context activation, (3) linear probe on the mapped (predicted) answer activation under a label-blind map-training ablation (#3a generic-only vs #3b generic + train-split in-domain), (4) linear probe on the actual answer activation (ceiling); additionally evaluate whether the context->answer map DISCRIMINATES answers via the #2202 whitened-cosine retrieval battery (which doubles as the map-quality gate for predictor 3).",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/2356",
-      "status": "running",
-      "title": "Predicting Qwen2.5-7B-Instruct refuse/comply behavior from internal representations vs an LLM judge, across harmful-compliance and over-refusal regimes (context / mapped-answer / actual-answer probes)"
+      "path": "tasks/awaiting_promotion/2356",
+      "status": "awaiting_promotion",
+      "title": "A linear probe on Qwen2.5-7B-Instruct's pre-generation prompt activations predicts its refuse-vs-comply decision better than a strong LLM judge, in both a harmful-compliance and an over-refusal regime (MODERATE confidence)"
     },
     "2357": {
       "has_clean_result": false,
@@ -10643,17 +10643,17 @@
       "goal": "Test whether the context\u2192answer linear map trained in the chat-template framing (assistant turn) transfers \u2014 directly or up to a linear reparameterization \u2014 to every other framing in Qwen3.6-27B (instruct-only): plain-text, an assistant-like story character, a panel of distinct story characters, a dialogue-reply arm where the addressed utterance is ordinary dialogue rather than a question, and the USER character inside the chat template (two provenance arms: real human user turns teacher-forced, and simulated user turns the model writes on-policy; context slot ends at the previous assistant turn so the target is never self-predicted); one-directional transfer only, stories generated fully template-free (raw completion), scene-native invented queries, fully independent query pools (topic-shift confound disclosed). Secondary arm: one general map fit pooled on ALL cells compared per cell to the specialized own maps (pooled-tier ladder). Every arm reports BOTH held-out R\u00b2 and rank-1 retrieval under the #2202 conventions (whitened cosine, CSLS, convention-matched fresh-draw reference). No AI-likeness judge axis (dropped per user directive).",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/blocked/2378",
-      "status": "blocked",
+      "path": "tasks/running/2378",
+      "status": "running",
       "title": "Chat-trained context\u2192answer map transfer to story framings and characters in Qwen3.6-27B with scene-native queries and template-free story generation"
     },
     "2379": {
       "goal": "Determine whether the answer vector predicted from the eval-time context via a fitted linear context\u2192answer map predicts which eval-time prompts re-elicit inoculation-suppressed behavior (EM and capitalization, Qwen2.5-7B-Instruct), and whether it outperforms the context-side hidden-state predictors (Train Ref., Same-Q Inoc.) and text-embedding baselines of Kwon et al. (ICML 2026 Mech Interp workshop).",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/verifying/2379",
-      "status": "verifying",
-      "title": "Predicted answer-vector similarity as a predictor of post-inoculation re-elicitation (Kwon et al. rig, answer-side predictor)"
+      "path": "tasks/reviewing/2379",
+      "status": "reviewing",
+      "title": "A mapped answer vector underperforms the context state at predicting misalignment re-elicitation, and the deficit is specific to the training-answer readout (MODERATE confidence)"
     },
     "238": {
       "has_clean_result": false,
@@ -10920,8 +10920,8 @@
     "2412": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2412",
-      "status": "running",
+      "path": "tasks/completed/2412",
+      "status": "completed",
       "title": "Step 5a sibling-sync satisfiability probe is --collect-only, so runtime API skew and function-body imports pass it"
     },
     "2413": {
@@ -10971,7 +10971,7 @@
       "kind": "infra",
       "path": "tasks/proposed/2419",
       "status": "proposed",
-      "title": "Infra: add two mechanizable plan-claim checks \u2014 inheritance-claim grep + manifest-figure producer check"
+      "title": "Infra: add three mechanizable plan-claim checks \u2014 inheritance-claim grep, manifest-figure producer, and multi-panel figure completeness"
     },
     "2420": {
       "has_clean_result": false,
@@ -10990,8 +10990,8 @@
     "2422": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2422",
-      "status": "running",
+      "path": "tasks/completed/2422",
+      "status": "completed",
       "title": "Briefs pointing a worktree-based reviewer at task state must pin the absolute main-checkout path (worktree plans/plan.md resolves to a stale version)"
     },
     "2423": {
@@ -11022,12 +11022,110 @@
       "status": "proposed",
       "title": "gotchas.md: Anthropic Batch request_counts.succeeded lags \u2014 never key a stall/cancel verdict on it"
     },
+    "2427": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2427",
+      "status": "proposed",
+      "title": "Gates must not read private transformers attributes \u2014 per-issue version pins turn config._commit_hash into a false-alarm crash (#2329)"
+    },
+    "2428": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/2428",
+      "status": "running",
+      "title": "Step 10d Guard 4 (lost-update refusal) is vacuous on the prescribed call path \u2014 --main-sha passes the main TIP, helper reads it as the merge-base"
+    },
+    "2429": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/2429",
+      "status": "archived",
+      "title": "workflow-fix: issue worktrees run an unpinned Python (19/25 at 3.12.13 vs root 3.11.15) \u2014 Step 9c verdicts flip on interpreter"
+    },
+    "2430": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/2430",
+      "status": "running",
+      "title": "Step 9c paired oracle: add a SUFFIX-replay arm so later-sorting-file contamination is attributed mechanically"
+    },
+    "2431": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2431",
+      "status": "proposed",
+      "title": "fu6 idempotency test leaks neg_sp_police/neg_sp_ph4 into the global CONTEXTS at runtime (no teardown pop)"
+    },
+    "2432": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2432",
+      "status": "proposed",
+      "title": "Step 10d pre-push lint gate: 900s per-leg fence is under the measured 799-1085s wall, crashing gates fleet-wide"
+    },
+    "2433": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2433",
+      "status": "proposed",
+      "title": "workflow_lint size-ratchet: 09-step-5.md + 18-step-10d.md regrew past SKILL_DOC_SIZE_GRANDFATHER caps \u2014 fleet-wide no-flags rc=1"
+    },
+    "2434": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2434",
+      "status": "proposed",
+      "title": "verify_task_body.py check 20 counts figure alt text as prose, making the clean-result critic's alt-text NIT unsatisfiable near the cap"
+    },
+    "2435": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2435",
+      "status": "proposed",
+      "title": "Fix activation-capture throughput: 2xH100 held idle ~17h CPU-bound in #2356 P2 capture"
+    },
+    "2436": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2436",
+      "status": "proposed",
+      "title": "workflow-fix: verify_task_body.py \u2014 mechanize the clean-result-critic three-beat-ordering + arrow-range-drift checks"
+    },
+    "2437": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2437",
+      "status": "proposed",
+      "title": "workflow-fix: fence ancestor-gitignore discovery in tmp_path real-ruff fixtures (stray /tmp/.gitignore blanks ruff probes fleet-wide)"
+    },
+    "2438": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2438",
+      "status": "proposed",
+      "title": "Batch judge dispatch sends temperature to opus-4-8 (rejected) \u2014 opus unusable as batch judge/kappa-control"
+    },
+    "2439": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2439",
+      "status": "proposed",
+      "title": "gotchas.md: early-exit pipe probes false-fail under set -o pipefail (find|head|grep -q SIGPIPE class, #2388 Pod B R4/R5)"
+    },
     "244": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/archived/244",
       "status": "archived",
       "title": "Next steps"
+    },
+    "2440": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2440",
+      "status": "proposed",
+      "title": "verify_uploads.py outroot-residue: issue-scoped git arm ignores round-suffixed follow-up branches (remediated residue can never mechanically PASS)"
     },
     "245": {
       "has_clean_result": false,
@@ -15453,8 +15551,8 @@
       "goal": "Determine whether #779's per-example context\u2192answer-profile map h: c_last(x) \u2192 v(x) (held-out reconstruction R\u00b2 0.60\u20130.63, per-context cosine 0.93\u20130.96 over ~5000 LMSYS contexts) predicts the model's own output content or merely context-side processing of arbitrary answer text, by refitting the identical 5-fold ridge harness on answer profiles computed from externally-generated (Claude Sonnet) and content-decoupled answers teacher-forced through the frozen base model.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/823",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/823",
+      "status": "awaiting_promotion",
       "title": "The context\u2192answer-profile activation map reads answer-content match, not self-generation: plain-style external answers retain 91\u201398% of refit R\u00b2 while shuffled answers collapse it to \u22480 (MODERATE confidence)"
     },
     "824": {
