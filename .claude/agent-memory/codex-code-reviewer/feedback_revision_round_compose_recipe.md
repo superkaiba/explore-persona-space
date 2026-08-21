@@ -1344,3 +1344,26 @@ hit live AGAIN via the round-parent spec-sync commit itself (`git show
 #2201 divergence block, inserted before the "Size the diff" anchor, plus a
 compose-facts line recording the brief's `diverged_on_main: none` probe
 result as do-not-re-derive).
+
+**Ensemble-PASS crash-fix round — crash-fix 2 (#2378 r7, 2026-08-20):** deltas vs
+the #2329-r6 crash-fix-with-impl-marker shape when the PRIOR round closed
+Claude-PASS + own-twin-CONCERNS (no reconciler, `CONCERN:: none`): (a) the twin's
+own UNPERSISTED prior Minors get a dedicated fence section — compose-grep
+attestation that the new hunks touch neither surface, no re-raise / no row
+re-emission, a fresh-finding-on-material-interaction escape, author-neutrality
+both directions; (b) with zero addressed rows this round, the ledger section is
+open+deferred STATUS lines PLUS R-rows: REGRESSION duties for prior-round-CLOSED
+ids whose surfaces the crash-fix touches (the pins-record 5-key change was the
+closed r6 blocker's exact surface — the crash-fix duty F2 doubles as that row's
+decision), vocabulary NOT-REGRESSED / TOUCHED-VERIFIED / REGRESSED-BY-ROUND;
+(c) envelope-embedded SHA arithmetic: when HEAD is built by concatenating the
+envelopes, count-asserts must target PROMPT TOTALS with authored+embedded
+breakdowns in the label — per-part asserts double-count (hit live 3× this
+compose); grep the embedded bodies' short-form counts, never predict them;
+(d) an impl marker EMBEDDING an `epm:failure-lesson` block (own head/close tags
+before the impl close) needs a shape attestation + ==1 tag asserts, and a
+failure marker whose body sentinel says v1 while posted top-level version is 3
+gets the standard do-not-be-confused note; (e) a marker-quoted fix-engaged log
+line that greps ZERO in the diff may be an f-string SPLIT across source lines —
+probe the post-image for a fragment before treating it as the #2329-r11
+zero-hit composer observation, then tell Codex to grep by fragments.
