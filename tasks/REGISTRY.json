@@ -10267,8 +10267,8 @@
       "goal": "Test whether the #2162 findings transfer to Qwen3.5-9B (hybrid linear attention, thinking disabled): which minimal-pair information types are decodable at the context vector, which are causally usable via single-position patching (F_act/F_beh vs nulls), whether fitted context-to-answer maps predict the realized patched shift per type x layer, and whether maps discriminate minimal-pair answers (2AFC vs identity+bias and shuffled nulls).",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/2329",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/2329",
+      "status": "awaiting_promotion",
       "title": "Experiment: Do the #2162 minimal-pair context-vector findings transfer to Qwen3.5-9B with thinking disabled?"
     },
     "233": {
