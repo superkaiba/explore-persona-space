@@ -180,7 +180,12 @@ To ask \emph{what} it predicts, we fit maps to the answer's \textbf{SAE features
 % ==================== COLUMN 5: discussion ====================
 \begin{column}{0.188\textwidth}
 
-\postersec{Is this useful? Behavior prediction before inference}
+\postersec{Is this useful?}
+{\color{matsmaroon}\textbf{Application: behavior prediction before inference}}
+\IfFileExists{figures/plot7_application.pdf}{%
+\begin{center}
+\includegraphics[width=0.95\linewidth]{plot7_application.pdf}
+\end{center}}{}
 \begin{itemize}
   \item \takeaways{Persona-vector readouts on the \emph{mapped} answer track judged sycophancy, hallucination, and misalignment near the real-answer ceiling} (misalignment: $\rho$ 0.67 vs.\ 0.69 reading the real answer), while the same readout on the raw context collapses off-synthetic prompts ($\rho \le 0.03$).
   \item \takeaways{Why not just probe the context? The map exploits unlabeled data:} fit on in-domain \emph{unjudged} text, mapped-answer probing beats context probing at every label budget ($\sim$3$\times$ at 250 labels).
