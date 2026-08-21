@@ -181,8 +181,13 @@ def _argv_sha(argv: list[str]) -> str:
 
 
 # Human-legible pin token appended to step START lines (the r8 fix-engaged
-# observable: every launched step's env carries cm.LAUNCH_ENV_PINS).
-_PINS_TOKEN = ",".join(f"{k}={v}" for k, v in sorted(cm.LAUNCH_ENV_PINS.items()))
+# observable: every launched step's env carries cm.LAUNCH_ENV_PINS; the r9
+# `engine:`-prefixed entries advertise cm.ENGINE_KWARG_PINS — engine KWARGS
+# threaded via create_vllm_engine, not env vars).
+_PINS_TOKEN = ",".join(
+    [f"{k}={v}" for k, v in sorted(cm.LAUNCH_ENV_PINS.items())]
+    + [f"engine:{k}={v}" for k, v in sorted(cm.ENGINE_KWARG_PINS.items())]
+)
 
 
 def visible_gpus() -> list[str]:
@@ -1310,6 +1315,14 @@ def phase_engine_smoke(args) -> int:
     pinned to ONE GPU by the runner and VLLM_USE_FLASHINFER_SAMPLER=0 from
     cm.LAUNCH_ENV_PINS (parity: same env composition the shards get).
 
+    r9 (epm:failure v5, flashinfer-absent-gdn-prefill-modulenotfound): the
+    engine call ALSO threads cm.ENGINE_KWARG_PINS (gdn_prefill_backend=
+    "triton") — same seam parity with gen._build_engine; the v5 crash fired
+    at the FIRST prefill of THIS gate's 1-prompt generate, proving the gate
+    reaches the kernel path the pin governs (the r9 fix-engaged vehicle:
+    vllm's kernel-selection line flips to
+    "Using Triton/FLA GDN prefill kernel (requested=triton, ...)").
+
     Terminal is `os._exit(0)` after explicit flushes — the sanctioned vLLM
     generation-driver terminal (gotchas.md #1739/#2149: interpreter
     finalization can deadlock on surviving engine children; the parent
@@ -1330,6 +1343,7 @@ def phase_engine_smoke(args) -> int:
     kwargs: dict = {}
     if "language_model_only" in {f.name for f in dataclasses.fields(EngineArgs)}:
         kwargs["language_model_only"] = True  # gen._engine parity (omni towers skipped)
+    kwargs.update(cm.ENGINE_KWARG_PINS)  # r9: GDN prefill pin (parity with gen._build_engine)
     llm = create_vllm_engine(
         cm.MODEL_ID,
         max_model_len=ENGINE_SMOKE_MAX_MODEL_LEN,

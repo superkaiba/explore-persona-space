@@ -374,6 +374,11 @@ def _build_engine(args):
         kwargs["tensor_parallel_size"] = args.tp
     if args.gpu_memory_utilization is not None:
         kwargs["gpu_memory_utilization"] = args.gpu_memory_utilization
+    # r9 (epm:failure v5): pin the GDN prefill backend off vllm 0.27.1's
+    # SM90 flashinfer auto-select (rationale at cm.ENGINE_KWARG_PINS).
+    # Deliberately NOT introspection-guarded: an engine lacking the
+    # EngineArgs field TypeErrors loudly — never a silent skip.
+    kwargs.update(cm.ENGINE_KWARG_PINS)
     _ENGINE_USED = True
     return create_vllm_engine(
         cm.MODEL_ID,

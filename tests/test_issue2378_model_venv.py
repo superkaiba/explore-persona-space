@@ -775,8 +775,9 @@ def test_runner_fanout_and_parallel_inject_launch_env_pins(tmp_path, monkeypatch
     r.parallel("pin.par", [list(argv)], gpus=["6"])
     log = (tmp_path / "logs" / "pin.par.s0.log").read_text(encoding="utf-8")
     assert "PIN=0" in log and "CVD=6" in log
-    # the START lines advertise the pin (the r8 fix-engaged log observable)
-    assert d._PINS_TOKEN == "VLLM_USE_FLASHINFER_SAMPLER=0"
+    # the START lines advertise BOTH pin classes (r8 env pin + r9 engine
+    # kwarg pin — the r9 fix-engaged log observable)
+    assert d._PINS_TOKEN == "VLLM_USE_FLASHINFER_SAMPLER=0,engine:gdn_prefill_backend=triton"
 
 
 def test_engine_smoke_phase_registered_inline():
@@ -869,3 +870,93 @@ def test_engine_smoke_body_pins_known_gotchas():
     assert "os._exit(0)" in src
     top = DISPATCH_SRC[: DISPATCH_SRC.index("def _log")]
     assert "import vllm" not in top and "from vllm" not in top
+
+
+# ---------------------------------------------------------------------------
+# r9: GDN prefill engine-kwarg pin (epm:failure v5
+# flashinfer-absent-gdn-prefill-modulenotfound)
+# ---------------------------------------------------------------------------
+
+
+def test_engine_kwarg_pins_gdn_prefill_triton():
+    """vllm 0.27.1 qwen_gdn_linear_attn.py:85-133 (tag = 6e448d0ea9bf): the
+    GDN prefill resolver reads additional_config["gdn_prefill_backend"]
+    (default "auto") and on SM90 auto-selects "flashinfer" with NO
+    availability check, then hard-imports flashinfer.gdn_prefill at the
+    FIRST prefill (:174). "triton" routes to the in-tree FLA kernels. Exact
+    dict equality: the pin set IS the engine-kwarg contract; it threads ONLY
+    as the EngineArgs field (arg_utils.py:752 -> additional_config
+    :2459-2460) — no env-var route exists for this knob."""
+    assert cm.ENGINE_KWARG_PINS == {"gdn_prefill_backend": "triton"}
+
+
+def test_build_engine_composes_gdn_pin_real_body(monkeypatch, tmp_path):
+    """REAL gen._build_engine body: the composed create_vllm_engine kwargs
+    carry the GDN pin UNCONDITIONALLY — even when EngineArgs LACKS the field
+    (an old-engine stub), proving the pin is NOT introspection-guarded (a
+    silent skip would re-expose the SM90 flashinfer auto-select), while the
+    language_model_only OPTIMIZATION stays introspection-guarded (skipped on
+    the stub). The fake engine factory signature-binds against the real
+    create_vllm_engine before capturing."""
+    import dataclasses
+    import inspect
+    from types import ModuleType
+
+    import issue2378_gen as g
+
+    from explore_persona_space.eval import generation as eval_gen
+
+    # Stub vllm.engine.arg_utils with an EngineArgs LACKING gdn_prefill_backend
+    # AND language_model_only (the VM's pre-GDN vLLM shape).
+    stub_args_mod = ModuleType("vllm.engine.arg_utils")
+
+    @dataclasses.dataclass
+    class EngineArgs:
+        model: str = ""
+
+    stub_args_mod.EngineArgs = EngineArgs
+    stub_engine_pkg = ModuleType("vllm.engine")
+    stub_engine_pkg.arg_utils = stub_args_mod
+    stub_vllm_pkg = ModuleType("vllm")
+    stub_vllm_pkg.engine = stub_engine_pkg
+    monkeypatch.setitem(sys.modules, "vllm", stub_vllm_pkg)
+    monkeypatch.setitem(sys.modules, "vllm.engine", stub_engine_pkg)
+    monkeypatch.setitem(sys.modules, "vllm.engine.arg_utils", stub_args_mod)
+
+    real = eval_gen.create_vllm_engine
+    captured: dict = {}
+
+    def fake_create(model_path, **kwargs):
+        inspect.signature(real).bind(model_path, **kwargs)  # conformant by construction
+        captured["model_path"] = model_path
+        captured.update(kwargs)
+        return object()
+
+    monkeypatch.setattr(eval_gen, "create_vllm_engine", fake_create)
+    args = SimpleNamespace(tp=1, gpu_memory_utilization=None, max_model_len=64, max_num_seqs=2)
+    g._build_engine(args)
+    assert captured["model_path"] == cm.MODEL_ID
+    assert captured["gdn_prefill_backend"] == "triton", "GDN pin missing from composed kwargs"
+    assert "language_model_only" not in captured, (
+        "language_model_only must stay introspection-guarded (stub EngineArgs lacks it)"
+    )
+
+
+def test_engine_smoke_body_composes_gdn_pin():
+    """Source pin: the engine gate threads cm.ENGINE_KWARG_PINS into its
+    create_vllm_engine call BEFORE the **kwargs splat (gate/shard parity —
+    the v5 crash fired at the FIRST prefill of exactly this gate's generate,
+    so the gate is the fix-engaged vehicle). gen._build_engine carries the
+    same update (source-pinned here; real-body leg above)."""
+    import inspect
+
+    import issue2378_gen as g
+
+    src = inspect.getsource(d.phase_engine_smoke)
+    assert "kwargs.update(cm.ENGINE_KWARG_PINS)" in src
+    assert src.index("kwargs.update(cm.ENGINE_KWARG_PINS)") < src.index("llm = create_vllm_engine(")
+    gsrc = inspect.getsource(g._build_engine)
+    assert "kwargs.update(cm.ENGINE_KWARG_PINS)" in gsrc
+    assert gsrc.index("kwargs.update(cm.ENGINE_KWARG_PINS)") < gsrc.index(
+        "return create_vllm_engine("
+    )

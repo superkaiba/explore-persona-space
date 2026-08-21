@@ -83,6 +83,34 @@ MODEL_VENV_BANNED_DISTS = {"flashinfer-python": "flashinfer"}
 # inert for non-vllm steps; an inherited =1 would deterministically crash
 # engine init on the flashinfer-free venv, so the pin always wins.
 LAUNCH_ENV_PINS = {"VLLM_USE_FLASHINFER_SAMPLER": "0"}
+# Engine-kwarg pins injected into EVERY create_vllm_engine call (the shared
+# seam both the engine_smoke gate and the p1/p2/p4 gen shards construct
+# through). r9 crash-fix (epm:failure v5, assert_tag
+# flashinfer-absent-gdn-prefill-modulenotfound): Qwen3.6-27B is hybrid-GDN
+# (text_config layer_types = linear_attention + full_attention every 4th);
+# vllm 0.27.1's GDN prefill resolver
+# (model_executor/layers/mamba/gdn/qwen_gdn_linear_attn.py:85-133, tag
+# v0.27.1 = 6e448d0ea9bf, verified 2026-08-21) reads
+# additional_config["gdn_prefill_backend"] (default "auto") and on SM90
+# (H200) auto-selects "flashinfer" UNCONDITIONALLY — no availability check,
+# the ONLY unguarded flashinfer auto-select reachable for this model — then
+# hard-imports flashinfer.gdn_prefill inside fi_chunk_gated_delta_rule
+# (:174) at the FIRST prefill: a forward-time ModuleNotFoundError on the
+# flashinfer-free venv (r7 ban), unreachable by the r8 sampler ENV pin
+# (different subsystem). NO env-var route exists for this knob — it threads
+# ONLY as the EngineArgs dataclass field `gdn_prefill_backend`
+# (engine/arg_utils.py:752 -> additional_config, :2459-2460), i.e. an
+# LLM(...) engine kwarg via create_vllm_engine's **kwargs. "triton" routes
+# to the IN-TREE vllm.third_party.flash_linear_attention kernels
+# (qwen_gdn_linear_attn.py:282 — no new dependency; vllm's own in-log hint:
+# "Set --gdn-prefill-backend triton to skip JIT"). The same resolver also
+# feeds the GDN attention metadata builder
+# (v1/attention/backends/gdn_attn.py:99-104), so one pin covers both
+# consumers. Passed UNGUARDED by design (no EngineArgs-field introspection,
+# unlike the language_model_only OPTIMIZATION): an engine whose EngineArgs
+# lacks the field raises a loud TypeError at construction — never a silent
+# skip of a load-bearing pin.
+ENGINE_KWARG_PINS = {"gdn_prefill_backend": "triton"}
 MODEL_PY_ENV = "EPM_I2378_MODEL_PY"  # explicit model-interpreter override
 # Host-driver floor for the CUDA-13 wheel stack above (torch 2.13.0 ships
 # cu130-linked binaries; vllm 0.27.1 links libcudart.so.13). A pre-580 host
