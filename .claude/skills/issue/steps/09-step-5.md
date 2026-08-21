@@ -58,11 +58,19 @@ bounded timeout fences (probe <= 75 s; resolver <= 180 s, sized over
 task.py's ~120 s bounded branch-guard rebase wait,
 EPM_TASKPY_REBASE_WAIT_SECONDS; create <= 150 s; worst case <= 405 s
 at one round entry) — log the one line, proceed to 5a, retry at the
-next round entry. A resolver failure, jq failure, or empty title
-SKIPS creation (#2241 r3, concern title-resolution-failure-masking):
-a degraded `issue-<N>: ` prefix-only title must never be created and
-memoized. NEVER pipe the create (guard_piped_git_push.sh blocks the
-piped shape; a pipe masks the exit code).
+next round entry. The fence resolves `$REPO_ROOT` in-fence (#2241 r4,
+concern step5-repo-root-uninitialized): fenced blocks run in separate
+shells and the orchestrator's Bash cwd resets, so the file-wide idiom's
+value is never inherited here; the resolve is local git and needs no
+fence of its own — a failed resolve makes the task.py call exit
+non-zero into the existing TITLE_RC gate. A resolver failure, jq
+failure, or empty / whitespace-only title SKIPS creation (#2241 r3+r4,
+concerns title-resolution-failure-masking + whitespace-only-pr-title —
+set-title stores input unstripped, so a blank stored title would
+compose a degraded PR): a degraded `issue-<N>: ` prefix-only title
+must never be created and memoized. NEVER pipe the create
+(guard_piped_git_push.sh blocks the piped shape; a pipe masks the
+exit code).
 
 ```bash
 # Any-state existence probe (deterministic tri-state; measured ~0.4 s):
@@ -84,16 +92,25 @@ if [ "$N_PR" = "0" ]; then
   # 120 s) can precede a RuntimeError (detached HEAD / husk timeout);
   # unfenced+unchecked, that failure was masked by jq exiting 0 on empty
   # input and a real draft PR titled "issue-<N>: " was created and
-  # memoized to merge. On resolver failure, jq failure, or empty title:
-  # log, SKIP creation, fall through — the next round entry retries (the
+  # memoized to merge. On resolver failure, jq failure, or an empty /
+  # whitespace-only title (r4, concern whitespace-only-pr-title —
+  # set-title stores input unstripped, so a bare -z passed "   "): log,
+  # SKIP creation, fall through — the next round entry retries (the
   # >=1 probe memoizes only a REAL PR, never a skipped create).
+  # In-fence root resolve (#2241 r4, concern
+  # step5-repo-root-uninitialized): $REPO_ROOT is NOT inherited across
+  # fences/Bash calls — uninitialized it expanded empty, ran
+  # /scripts/task.py, and the skip arm fired at EVERY round entry (the
+  # zero-PR class this block exists to eliminate). #506-safe form; a
+  # failed resolve routes through the TITLE_RC gate (no new failure arm).
+  REPO_ROOT=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
   TITLE_RC=0
   TASK_JSON=$(timeout --kill-after=30s 150s uv run python "$REPO_ROOT"/scripts/task.py view <N> --json) || TITLE_RC=$?
   RAW_TITLE=""
   if [ "$TITLE_RC" -eq 0 ]; then
     RAW_TITLE=$(printf '%s' "$TASK_JSON" | jq -r '.frontmatter.title // empty') || TITLE_RC=$?
   fi
-  if [ "$TITLE_RC" -ne 0 ] || [ -z "$RAW_TITLE" ]; then
+  if [ "$TITLE_RC" -ne 0 ] || [ -z "${RAW_TITLE//[[:space:]]/}" ]; then
     echo "[step5-pr-ensure] title resolution failed or empty (rc=$TITLE_RC) — inconclusive; skip create; round proceeds; retry at next round entry (never a degraded-title PR)"
   else
     PR_TITLE="issue-<N>: $RAW_TITLE"

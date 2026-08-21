@@ -57,6 +57,28 @@ form is banned); pin 15 EXECUTES the ensure with a selectable failing
 ``uv`` stub (nonzero exit / malformed JSON / missing title) and asserts
 no ``gh pr create`` runs, the inconclusive telemetry is emitted, and the
 block stays fail-open (exit 0).
+
+Round 4 (#2241, binding blocker step5-repo-root-uninitialized): round 3
+unified the resolver to ``"$REPO_ROOT"/scripts/task.py`` but 09-step-5.md
+carried ZERO ``REPO_ROOT=`` assignments — fenced blocks run in separate
+shells and the orchestrator's Bash cwd resets, so ``$REPO_ROOT`` expanded
+empty, the resolver ran the root-anchored ``/scripts/task.py``, and the
+r3 skip arm fired at EVERY round entry: behaviorally the zero-PR
+generator this task exists to eliminate. The r3 ``uv`` stub was a
+``case "$UV_STUB_MODE"`` that never inspected its argv, so green pins
+certified nothing about the invocation path. r4 adds the canonical
+in-fence resolve (``REPO_ROOT=$(dirname "$(git rev-parse
+--path-format=absolute --git-common-dir)")``, the #506-safe form) and
+closes the masking: the ``uv`` stub is now argv-RECORDING (mirroring the
+``gh`` stub), the tmp fixture is ``git init``-ed so the recipe resolves
+deterministically, and the success pin (14) asserts the invoked script
+path equals ``<resolved-root>/scripts/task.py`` with an explicit
+rejection of the root-anchored ``/scripts/task.py`` shape. NIT
+whitespace-only-pr-title closed the same round: ``[ -z "$RAW_TITLE" ]``
+passed a whitespace-only stored title (set_title stores input
+unstripped) into a degraded ``issue-<N>:   `` PR — both sites now gate
+on ``[ -z "${RAW_TITLE//[[:space:]]/}" ]`` (>=1 non-whitespace char) and
+pin 15 gains a ``whitespace-title`` stub parametrization.
 """
 
 import json
@@ -331,7 +353,18 @@ def test_pr_create_sites_use_title_transport():
     on resolver failure / jq failure / empty title. The r2 plain-assignment
     form — the pipeline inside the PR_TITLE assignment, whose task.py
     failure jq masks (RuntimeError -> jq reads empty input -> exit 0 ->
-    degraded `issue-<N>: ` title created and memoized) — is BANNED."""
+    degraded `issue-<N>: ` title created and memoized) — is BANNED.
+
+    r4 (blocker step5-repo-root-uninitialized): BOTH regions carry the
+    canonical #506-safe REPO_ROOT resolve — Step 4a resolves it in-step
+    (08-step-4.md:18); the Step 5 ensure resolves it IN-FENCE, because
+    fenced blocks run in separate shells and never inherit the file-wide
+    idiom's value (r3 shipped the "$REPO_ROOT" idiom with zero
+    assignments: /scripts/task.py at every round entry). The bare r3 skip
+    gate `[ -z "$RAW_TITLE" ]` is BANNED at both sites (NIT
+    whitespace-only-pr-title): set_title stores input unstripped, so a
+    whitespace-only stored title passed -z and composed a degraded
+    `issue-<N>:   ` PR that the >=1 probe then memoized."""
     bash = _ensure_block_bash()
     assert "<task title>" not in bash
     assert '--title "$PR_TITLE"' in bash
@@ -341,26 +374,55 @@ def test_pr_create_sites_use_title_transport():
     assert "<task title>" not in step4a_region
     assert step4a_region.count('--title "$PR_TITLE"') == 1
     assert "jq -r '.frontmatter.title // empty'" in step4a_region
+    root_resolve = 'REPO_ROOT=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")'
     for region in (bash, step4a_region):
         assert 'PR_TITLE="issue-<N>: $(' not in region  # the r2 masked form
         assert "|| TITLE_RC=$?" in region  # rc-gated resolver
         assert "timeout --kill-after=30s 150s" in region  # resolver fence
         assert 'PR_TITLE="issue-<N>: $RAW_TITLE"' in region  # data-only compose
-        assert '[ "$TITLE_RC" -ne 0 ] || [ -z "$RAW_TITLE" ]' in region  # skip gate
+        assert root_resolve in region  # r4: in-fence / in-step root resolve
+        # r4 skip gate: >=1 non-whitespace char required before composing.
+        assert '[ "$TITLE_RC" -ne 0 ] || [ -z "${RAW_TITLE//[[:space:]]/}" ]' in region
+        assert '[ -z "$RAW_TITLE" ]' not in region  # the whitespace-blind r3 gate
 
 
 def _title_transport_env(tmp_path, hostile_title: str, uv_mode: str = "ok"):
     """PATH-stubbed env for executing the ensure template: `gh` records its
     create argv to $ARGV_OUT (probe returns 0 = the create arm), `uv` is
-    SELECTABLE via $UV_STUB_MODE (r3 — an always-succeed stub pins nothing):
-    ok = emit the task-view JSON carrying the hostile title; fail = nonzero
-    exit with no stdout (the task.py RuntimeError class: detached HEAD /
-    husk timeout after the #996 bounded rebase wait); malformed = non-JSON
-    stdout, exit 0 (jq parse error downstream); missing-title = valid JSON
-    whose frontmatter carries no title. jq/timeout are real."""
+    argv-RECORDING to $UV_ARGV_OUT (r4 — the r3 stub never inspected its
+    argv, so it succeeded identically for the broken root-anchored
+    /scripts/task.py invocation and green pins certified nothing about the
+    invocation path) and SELECTABLE via $UV_STUB_MODE (r3 — an
+    always-succeed stub pins nothing): ok = emit the task-view JSON
+    carrying the hostile title; fail = nonzero exit with no stdout (the
+    task.py RuntimeError class: detached HEAD / husk timeout after the
+    #996 bounded rebase wait — the r3 stub's message misattributed this to
+    repo-root resolution, ironically the exact failure class the r3
+    template guaranteed); malformed = non-JSON stdout, exit 0 (jq parse
+    error downstream); missing-title = valid JSON whose frontmatter
+    carries no title; whitespace-title = valid JSON whose title is
+    whitespace-only (r4, concern whitespace-only-pr-title: set_title
+    stores input unstripped). jq/timeout/git are real.
+
+    r4: the fixture is ``git init``-ed so the template's in-fence
+    ``REPO_ROOT=$(dirname "$(git rev-parse --path-format=absolute
+    --git-common-dir)")`` resolves deterministically to the fixture root;
+    any inherited $REPO_ROOT is popped so the mutation control (the
+    uninitialized r3 form) cannot accidentally pass off the test
+    environment. Returns (env, gh_argv_out, uv_argv_out, resolved_root).
+    """
+    subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)
+    common_dir = subprocess.run(
+        ["git", "-C", str(tmp_path), "rev-parse", "--path-format=absolute", "--git-common-dir"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    resolved_root = os.path.dirname(common_dir)  # the fence recipe, verbatim
     stub = tmp_path / "bin"
     stub.mkdir(exist_ok=True)
     argv_out = tmp_path / "create-argv.txt"
+    uv_argv_out = tmp_path / "uv-argv.txt"
     title_json = tmp_path / "view.json"
     title_json.write_text(json.dumps({"frontmatter": {"title": hostile_title}}), encoding="utf-8")
     (stub / "gh").write_text(
@@ -373,10 +435,13 @@ def _title_transport_env(tmp_path, hostile_title: str, uv_mode: str = "ok"):
     )
     (stub / "uv").write_text(
         "#!/usr/bin/env bash\n"
+        'printf \'%s\\n\' "$@" > "$UV_ARGV_OUT"\n'
         'case "$UV_STUB_MODE" in\n'
-        '  fail) echo "RuntimeError: repo-root resolution failed" >&2; exit 3 ;;\n'
+        '  fail) echo "RuntimeError: task.py branch-guard failure'
+        ' (detached HEAD / husk timeout)" >&2; exit 3 ;;\n'
         "  malformed) echo 'this is not json' ;;\n"
         "  missing-title) echo '{\"frontmatter\": {}}' ;;\n"
+        '  whitespace-title) echo \'{"frontmatter": {"title": "   "}}\' ;;\n'
         '  *) cat "$TITLE_JSON" ;;\n'
         "esac\n",
         encoding="utf-8",
@@ -384,28 +449,37 @@ def _title_transport_env(tmp_path, hostile_title: str, uv_mode: str = "ok"):
     for name in ("gh", "uv"):
         (stub / name).chmod(0o755)
     env = os.environ.copy()
+    env.pop("REPO_ROOT", None)
     env["PATH"] = f"{stub}{os.pathsep}{env['PATH']}"
     env["ARGV_OUT"] = str(argv_out)
+    env["UV_ARGV_OUT"] = str(uv_argv_out)
     env["TITLE_JSON"] = str(title_json)
     env["UV_STUB_MODE"] = uv_mode
-    return env, argv_out
+    return env, argv_out, uv_argv_out, resolved_root
 
 
-@pytest.mark.parametrize("uv_mode", ["fail", "malformed", "missing-title"])
+@pytest.mark.parametrize("uv_mode", ["fail", "malformed", "missing-title", "whitespace-title"])
 def test_step5_ensure_title_resolution_failure_skips_create(tmp_path, uv_mode):
-    """Pin 15 (#2241 r3, concern title-resolution-failure-masking): EXECUTE
-    the ensure template with the `uv` stub forced into each failure mode —
-    nonzero exit (task.py RuntimeError after the #996 bounded rebase wait),
-    malformed JSON (jq parse error), and missing/empty title. Each must:
-    (a) NEVER run `gh pr create` — no degraded `issue-<N>: ` PR is opened
-    or memoized; (b) emit the inconclusive [step5-pr-ensure] telemetry;
-    (c) exit 0 (fail-open — the round proceeds, retry at next round entry).
-    Mutation check (run at authoring time, r3): against round 2's unfenced
-    plain-assignment resolver, all three modes FAIL — the create fires with
-    the degraded title — so this pin demonstrably binds the fix rather than
-    passing vacuously."""
+    """Pin 15 (#2241 r3, concern title-resolution-failure-masking; r4,
+    concern whitespace-only-pr-title): EXECUTE the ensure template with the
+    `uv` stub forced into each failure mode — nonzero exit (task.py
+    RuntimeError after the #996 bounded rebase wait), malformed JSON (jq
+    parse error), missing/empty title, and a whitespace-only stored title
+    (r4: set_title stores input unstripped, so "   " passed the bare -z
+    gate). Each must: (a) NEVER run `gh pr create` — no degraded
+    `issue-<N>: ` PR is opened or memoized; (b) emit the inconclusive
+    [step5-pr-ensure] telemetry; (c) exit 0 (fail-open — the round
+    proceeds, retry at next round entry). Mutation check (run at authoring
+    time, r3): against round 2's unfenced plain-assignment resolver, all
+    three r3 modes FAIL — the create fires with the degraded title — so
+    this pin demonstrably binds the fix rather than passing vacuously.
+    Mutation check (r4): against the r3 `[ -z "$RAW_TITLE" ]`-only gate,
+    the whitespace-title mode FAILS — the create fires with the degraded
+    `issue-9999:   ` title."""
     assert shutil.which("jq"), "jq is required by the Step 5 ensure title transport"
-    env, argv_out = _title_transport_env(tmp_path, "unused benign title", uv_mode=uv_mode)
+    env, argv_out, _uv_argv_out, _root = _title_transport_env(
+        tmp_path, "unused benign title", uv_mode=uv_mode
+    )
 
     bash = _ensure_block_bash()
     script = bash.split("\n", 1)[1].replace("<N>", "9999")  # drop the ```bash fence
@@ -434,11 +508,21 @@ def test_step5_ensure_hostile_title_reaches_argv_literally(tmp_path):
     Negative control (in-test mutation check): the pre-r2 SPLICED form —
     the title substituted into shell SOURCE — evaluates the same payload
     class, firing the canaries, so this pin demonstrably fails against the
-    old shape rather than passing vacuously."""
+    old shape rather than passing vacuously.
+
+    r4 (blocker step5-repo-root-uninitialized): the success pin ALSO
+    asserts the resolver invoked task.py at the IN-FENCE-resolved repo
+    root. Round 3's uninitialized "$REPO_ROOT" expanded empty in the
+    separate-shell fence, so the resolver ran the root-anchored
+    /scripts/task.py, python exited non-zero, and the skip arm fired at
+    every round entry — while the argv-blind r3 uv stub kept these pins
+    green. Mutation check (run at authoring time, r4): with the in-fence
+    `REPO_ROOT=$(...)` line deleted (the r3 form), the recorded uv argv is
+    exactly /scripts/task.py and this pin FAILS."""
     assert shutil.which("jq"), "jq is required by the Step 5 ensure title transport"
     canary = tmp_path / "canary"
     hostile = f'pwn `touch {canary}-bt` and $(touch {canary}-sub) with "quote" and \\ backslash'
-    env, argv_out = _title_transport_env(tmp_path, hostile)
+    env, argv_out, uv_argv_out, resolved_root = _title_transport_env(tmp_path, hostile)
 
     bash = _ensure_block_bash()
     script = bash.split("\n", 1)[1].replace("<N>", "9999")  # drop the ```bash fence
@@ -456,6 +540,15 @@ def test_step5_ensure_hostile_title_reaches_argv_literally(tmp_path):
     assert not (tmp_path / "canary-sub").exists(), "$(...) payload was EVALUATED"
     argv = argv_out.read_text(encoding="utf-8").splitlines()
     assert f"issue-9999: {hostile}" in argv  # one argv entry, payload verbatim
+    # r4: the resolver must run task.py at the in-fence-resolved root —
+    # never the root-anchored /scripts/task.py of an empty $REPO_ROOT.
+    uv_argv = uv_argv_out.read_text(encoding="utf-8").splitlines()
+    assert uv_argv[:2] == ["run", "python"], uv_argv
+    script_path = uv_argv[2]
+    assert script_path == f"{resolved_root}/scripts/task.py", uv_argv
+    assert script_path != "/scripts/task.py", (
+        "uninitialized $REPO_ROOT: root-anchored /scripts/task.py invocation"
+    )
 
     # Negative control: the old spliced shape (title in shell SOURCE).
     # Double quote omitted — a raw quote breaks parsing before evaluation,

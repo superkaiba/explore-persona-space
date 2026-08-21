@@ -99,14 +99,16 @@ if [ "$(git -C "$REPO_ROOT" rev-list --count origin/main..issue-<N>)" -gt 0 ]; t
   # detached HEAD / husk timeout); unfenced+unchecked, that failure was
   # masked by jq exiting 0 on empty input and the create shipped a
   # degraded "issue-<N>: " prefix-only title. On resolver failure, jq
-  # failure, or empty title: log, SKIP the create, fall through.
+  # failure, or an empty / whitespace-only title (#2241 r4, concern
+  # whitespace-only-pr-title — set-title stores input unstripped, so a
+  # bare -z passed "   "): log, SKIP the create, fall through.
   TITLE_RC=0
   TASK_JSON=$(timeout --kill-after=30s 150s uv run python "$REPO_ROOT"/scripts/task.py view <N> --json) || TITLE_RC=$?
   RAW_TITLE=""
   if [ "$TITLE_RC" -eq 0 ]; then
     RAW_TITLE=$(printf '%s' "$TASK_JSON" | jq -r '.frontmatter.title // empty') || TITLE_RC=$?
   fi
-  if [ "$TITLE_RC" -ne 0 ] || [ -z "$RAW_TITLE" ]; then
+  if [ "$TITLE_RC" -ne 0 ] || [ -z "${RAW_TITLE//[[:space:]]/}" ]; then
     echo "[step4a] title resolution failed or empty (rc=$TITLE_RC) — skipping draft-PR create; the Step 5 draft-PR ensure (#2241) retries at the first review round; Step 10d's payload-aware arm (#2240) stays the merge-time backstop"
   else
     PR_TITLE="issue-<N>: $RAW_TITLE"
