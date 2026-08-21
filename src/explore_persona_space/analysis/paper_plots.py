@@ -1065,6 +1065,35 @@ def _extract_errorbars(ax: plt.Axes, ctx: _AxesCtx) -> list[dict[str, object]]:
     return out
 
 
+def _has_marker_sizes(coll: object) -> bool:
+    """Return True when ``coll`` is a marker collection carrying explicit sizes.
+
+    ``PathCollection`` (what ``ax.scatter`` creates) exposes ``get_sizes()`` and
+    returns one entry per drawn marker — a real size even when the caller passed
+    no ``s=`` (matplotlib's default is 36.0), and even for ``s=0``. Non-marker
+    artists differ: ``LineCollection`` (error bars), ``QuadMesh``
+    (``imshow``/``pcolormesh``/colorbars) and ``QuadContourSet`` have no such
+    method at all, while ``fill_between`` / ``violinplot`` / ``quiver`` / bare
+    ``PathCollection`` artists return an EMPTY array. That difference is what
+    tells a genuine single ``(0,0)`` scatter point from the placeholder ``(1,2)``
+    ``[[0,0]]`` offset those non-marker artists report.
+
+    Never raises: any collection whose sizes cannot be read returns False, so
+    the caller falls back to skipping it (the pre-#2262 behavior). The catch is
+    deliberately broad — a third-party artist's ``get_sizes`` may raise anything,
+    and the caller's contract is never-raises.
+    """
+    import numpy as np
+
+    getter = getattr(coll, "get_sizes", None)
+    if not callable(getter):
+        return False
+    try:
+        return bool(np.asarray(getter()).size)
+    except Exception:
+        return False
+
+
 def _extract_scatters(ax: plt.Axes, ctx: _AxesCtx) -> list[dict[str, object]]:
     """Extract scatter point offsets: x/y (+ nearest text label) per point."""
     import numpy as np
@@ -1079,8 +1108,15 @@ def _extract_scatters(ax: plt.Axes, ctx: _AxesCtx) -> list[dict[str, object]]:
             continue
         if offsets.ndim != 2 or offsets.shape[1] != 2 or offsets.shape[0] == 0:
             continue
-        # A lone (0,0) offset is matplotlib's default for empty collections.
-        if offsets.shape[0] == 1 and not np.any(offsets):
+        # Non-marker artists report a placeholder (1,2) [[0,0]] offset:
+        # LineCollection error bars, QuadMesh / QuadContourSet rasters (incl. on
+        # colorbar axes), fill_between / violin polys, and a bare PathCollection.
+        # A genuine ``scatter(...)`` carries a non-empty ``sizes`` array, so
+        # discriminate on that instead of on the coordinates — otherwise a real
+        # (0,0) datum from a per-point ``ax.scatter([x],[y])`` loop is dropped.
+        # (``ax.scatter([], [])`` never reaches here: its offsets are (0,2) and
+        # the shape check above skips it.)
+        if offsets.shape[0] == 1 and not np.any(offsets) and not _has_marker_sizes(coll):
             continue
         series = (coll.get_label() or "").strip()
         rows = _xy_rows(offsets, ctx, series, with_error=False, with_label=True)

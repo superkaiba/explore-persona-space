@@ -726,3 +726,144 @@ def test_sidecar_text_no_suptext_duplication(tmp_path: Path) -> None:
     assert "The headline" not in text["fig_texts"]
     assert text["fig_texts"].count("Source: eval_results/issue_999") == 1
     assert text["fig_texts"].count("shared y label") == 1
+
+
+# ---------------------------------------------------------------------------
+# _extract_scatters — genuine (0,0) single-point scatters vs placeholder
+# offsets (#2262: the coordinate-based lone-(0,0) guard dropped real origin
+# data points from the sidecar)
+# ---------------------------------------------------------------------------
+
+
+def test_sidecar_keeps_genuine_origin_scatter_point(tmp_path: Path) -> None:
+    """A genuine single-point scatter at exactly (0.0, 0.0) emits its row.
+
+    Pre-#2262 the lone-(0,0) guard in ``_extract_scatters`` was
+    coordinate-based and dropped the real datum; the sizes-based guard keeps
+    it (a ``scatter`` carries a non-empty ``sizes`` array)."""
+    set_paper_style("blog")
+    fig, ax = plt.subplots()
+    ax.scatter([0.0], [0.0], s=14)
+    written = savefig_paper(fig, "origin_point", dir=tmp_path)
+    plt.close(fig)
+
+    meta = json.loads(written["meta"].read_text())
+    pts = meta["points"]
+    assert len(pts) == 1
+    assert pts[0]["_kind"] == "scatter"
+    assert pts[0]["x"] == 0.0
+    assert pts[0]["y"] == 0.0
+    assert meta["total_points"] == 1
+
+
+def test_sidecar_keeps_genuine_origin_scatter_default_size(tmp_path: Path) -> None:
+    """Same at matplotlib's DEFAULT marker size (no ``s=``) — the default is a
+    real size (36.0), not an absent one."""
+    set_paper_style("blog")
+    fig, ax = plt.subplots()
+    ax.scatter([0.0], [0.0])
+    written = savefig_paper(fig, "origin_default_s", dir=tmp_path)
+    plt.close(fig)
+
+    meta = json.loads(written["meta"].read_text())
+    pts = meta["points"]
+    assert len(pts) == 1
+    assert pts[0]["_kind"] == "scatter"
+    assert pts[0]["x"] == 0.0
+    assert pts[0]["y"] == 0.0
+    assert meta["total_points"] == 1
+
+
+def _add_errorbar(ax: plt.Axes) -> None:
+    ax.errorbar([1.0, 2.0], [1.0, 2.0], yerr=[0.1, 0.2])
+
+
+def _add_fill_between(ax: plt.Axes) -> None:
+    ax.fill_between([0.0, 1.0], [0.0, 1.0], [1.0, 2.0])
+
+
+def _add_violinplot(ax: plt.Axes) -> None:
+    ax.violinplot([[1.0, 2.0, 3.0, 4.0]])
+
+
+def _add_bare_path_collection(ax: plt.Axes) -> None:
+    from matplotlib.collections import PathCollection
+
+    ax.add_collection(PathCollection([]))
+
+
+def _add_empty_scatter(ax: plt.Axes) -> None:
+    ax.scatter([], [])
+
+
+@pytest.mark.parametrize(
+    "builder",
+    [
+        _add_errorbar,
+        _add_fill_between,
+        _add_violinplot,
+        _add_bare_path_collection,
+        _add_empty_scatter,
+    ],
+    ids=["errorbar", "fill_between", "violinplot", "bare_path_collection", "empty_scatter"],
+)
+def test_sidecar_skips_placeholder_offset_collections(tmp_path: Path, builder) -> None:
+    """Non-marker collections reporting the placeholder ``(1,2)`` ``[[0,0]]``
+    offset — and a genuinely empty scatter — still emit NO ``scatter`` row
+    (acceptance criteria 3 + 5): ``LineCollection`` error bars have no
+    ``get_sizes`` at all; ``fill_between`` / ``violinplot`` polys and a bare
+    ``PathCollection([])`` return an EMPTY sizes array; ``scatter([], [])``
+    has ``(0, 2)`` offsets and never reaches the guard."""
+    set_paper_style("blog")
+    fig, ax = plt.subplots()
+    builder(ax)
+    written = savefig_paper(fig, f"skip_{builder.__name__}", dir=tmp_path)
+    plt.close(fig)
+
+    meta = json.loads(written["meta"].read_text())
+    scatter_rows = [p for p in meta.get("points", []) if p["_kind"] == "scatter"]
+    assert scatter_rows == []
+
+
+def test_sidecar_percarrier_loop_keeps_all_points(tmp_path: Path) -> None:
+    """The #2162 defect signature: a per-point ``ax.scatter([x], [y])`` loop
+    over a grid that INCLUDES ``(0.0, 0.0)`` keeps EVERY point —
+    ``total_points`` equals the number of rendered points (pre-fix the
+    ``(0, 0)`` point was silently dropped)."""
+    set_paper_style("blog")
+    fig, ax = plt.subplots()
+    xs = [0.0, 0.0, 1.0, 1.0, 2.0]
+    ys = [0.0, 1.0, 0.0, 1.0, 2.0]
+    for x, y in zip(xs, ys, strict=True):
+        ax.scatter([x], [y], s=14)
+    written = savefig_paper(fig, "percarrier", dir=tmp_path)
+    plt.close(fig)
+
+    meta = json.loads(written["meta"].read_text())
+    pts = [p for p in meta["points"] if p["_kind"] == "scatter"]
+    assert len(pts) == len(xs)
+    assert meta["total_points"] == len(xs)
+    assert any(p["x"] == 0.0 and p["y"] == 0.0 for p in pts)
+
+
+def test_has_marker_sizes_never_raises() -> None:
+    """``_has_marker_sizes`` returns False — never propagates — for an object
+    with no ``get_sizes``, a non-callable ``get_sizes``, and a ``get_sizes``
+    raising ANY exception (pinned with ``RuntimeError``, deliberately outside
+    the narrow ``TypeError/ValueError/AttributeError`` set; acceptance
+    criterion 4)."""
+    from explore_persona_space.analysis.paper_plots import _has_marker_sizes
+
+    class NoGetSizes:
+        pass
+
+    class NonCallableGetSizes:
+        get_sizes = "not-callable"
+
+    class RaisingGetSizes:
+        def get_sizes(self) -> None:
+            raise RuntimeError("boom")
+
+    assert _has_marker_sizes(NoGetSizes()) is False
+    assert _has_marker_sizes(NonCallableGetSizes()) is False
+    assert _has_marker_sizes(RaisingGetSizes()) is False
