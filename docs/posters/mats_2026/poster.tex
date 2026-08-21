@@ -70,7 +70,7 @@
 % ==================== TLDR BAND ====================
 \begin{beamercolorbox}[wd=\paperwidth,sep=0.35em]{tldrband}
   \centering
-  {\rmfamily\bfseries\color{matsmaroon}TL;DR\quad}A single \textbf{linear map} on residual activations predicts an LLM's answer from its context \textbf{before generation} — held-out $R^2$ 0.75, top-1 retrieval among 1{,}000 candidates at 0.81 — is already $\sim$87\% present in the \textbf{base model}, is \textbf{shared between the assistant and fictional characters}, and predicts \textbf{sycophancy, hallucination, and misalignment before inference}.
+  {\rmfamily\bfseries\color{matsmaroon}TL;DR\quad}A single \textbf{linear map} on residual activations predicts an LLM's answer from its context \textbf{before generation} — held-out $R^2$ 0.75, and rank-1 retrieval of the true answer among 9{,}941 candidates at 0.98, at the fresh-draw ceiling — is already $\sim$87\% present in the \textbf{base model}, is \textbf{shared between the assistant and fictional characters}, and predicts \textbf{sycophancy, hallucination, and misalignment before inference}.
 \end{beamercolorbox}
 
 \vskip0.2em
@@ -94,7 +94,7 @@
 \end{center}
 \figcap{1}{The \textbf{context vector} \vC{} is the residual-stream state at the last context token (layer $\ell$); the \textbf{answer vector} \vA{} is the mean answer-token state. Both summaries follow prior work. \emph{Fitted maps} $\vC \mapsto \vA$ approximate the mapping; readouts consume $\hat{\vA}$.}
 \postersec{Experiments}
-Qwen2.5-7B(-Instruct) headline; OLMo-2 and Llama/T\"ulu post-training ladders. Real-user contexts (LMSYS-Chat-1M, WildChat), up to 963k pairs. Ridge maps per layer, cross-validated $\lambda$; retrieval read with whitened-cosine + CSLS; behaviors LLM-judged.
+Qwen2.5-7B(-Instruct) headline; OLMo-2 and Llama/T\"ulu post-training ladders. Real-user contexts (LMSYS-Chat-1M, WildChat), up to 963k pairs. Ridge maps per layer, cross-validated $\lambda$. Retrieval is read with whitened cosine + CSLS against noise-averaged answers; the scaling curve below predates that read and uses raw euclidean. Behaviors LLM-judged.
 
 \end{column}
 
@@ -105,9 +105,9 @@ Qwen2.5-7B(-Instruct) headline; OLMo-2 and Llama/T\"ulu post-training ladders. R
 \begin{center}
 \includegraphics[width=0.97\linewidth]{plot1_scaling_boundary.pdf}
 \end{center}
-\figcap{2}{Held-out $R^2$ (left) and rank-1 retrieval among 1{,}000 held-out candidates (right) against training-set size, for the linear map, a nonlinear (MLP) map, and the identity + bias baseline. Dashed: a generic boundary-token control map. Qwen2.5-7B-Instruct, layer 19.}
+\figcap{2}{Held-out $R^2$ (left) and rank-1 retrieval (right, \emph{raw euclidean}, pool 1{,}000) against training-set size, for the linear map, a nonlinear (MLP) map, and the identity + bias baseline. Dashed: a generic boundary-token control map. Qwen2.5-7B-Instruct, layer 19. The retrieval read is superseded by the whitened-cosine + CSLS ladder in \S4.}
 \begin{itemize}
-  \item \takeaways{High predictive power:} held-out $R^2$ 0.75 and rank-1 retrieval 0.81 among 1{,}000 candidates (chance $10^{-3}$) at 963k training contexts.
+  \item \takeaways{High predictive power:} held-out $R^2$ 0.75 at 963k training contexts, and rank-1 retrieval far above chance ($10^{-3}$) at every training size.
   \item \takeaways{Mostly linear:} the nonlinear (MLP) map adds only $\sim$$0.06$ $R^2$ over the linear map, and only at large $n$.
   \item \takeaways{Far above the baselines:} identity + bias never leaves the negative-$R^2$ regime; a generic boundary-token (punctuation) $\to$ next-segment map reads $R^2\!\approx\!0.11$ (dashed) — so this is not just residual-stream smoothness.
   \item We study the \textbf{linear} map here; we are most excited about what it is \emph{useful} for.
@@ -144,7 +144,7 @@ To ask \emph{what} it predicts, we fit maps to the answer's \textbf{SAE features
 \begin{center}
 \IfFileExists{figures/plot4_failures.pdf}{\includegraphics[width=0.95\linewidth]{plot4_failures.pdf}}{\includegraphics[width=0.95\linewidth]{c3_failure_attribution.pdf}}
 \end{center}
-\figcap{5}{Left: failure-rate difference by context category (percentage points) under the whitened-cosine + CSLS read. Right: attribution of rank-1 failures — map error vs.\ ambiguous vs.\ answer degeneracy.}
+\figcap{5}{Left: failure-rate difference by context category (percentage points) under the \emph{raw-euclidean} read. Right: attribution of rank-1 failures — map error vs.\ ambiguous vs.\ answer degeneracy.}
 \begin{itemize}
   \item \takeaways{Failures concentrate in identifiable categories:} refusals ($+25$pp), NSFW ($+22$pp), refusal-adjacent requests ($+16$pp), code answers ($+11$pp); distinctive self-contained queries fail least.
   \item \takeaways{Mostly map error, not answer degeneracy:} 81\% of rank-1 misses stay retrievable from a fresh draw of the same answer, and misses drag toward a few ``hub'' answers.
