@@ -157,12 +157,17 @@ def _isolate_leaky_global_state():
 # order, stochastically bouncing the Step 9c gate for unrelated diffs (#2063).
 # The leak has TWO phases, which is why the baseline is taken in
 # `pytest_sessionstart` (pre-collection) and restored at test SETUP:
-#   (a) IMPORT time — tests/test_issue1481_analysis.py:41 evaluates
-#       `PANEL_IDS = [c.context_id for c in fu3w.bystander_panel(BEH)]` at module
-#       scope, so COLLECTION pollutes before any test runs. A snapshot taken at
-#       the first test's setup would already contain it.
+#   (a) IMPORT time — HISTORICAL, removed by #2217. tests/test_issue1481_analysis.py
+#       used to evaluate `PANEL_IDS = [c.context_id for c in fu3w.bystander_panel(BEH)]`
+#       at module scope, so COLLECTION polluted before any test ran; #2217 replaced it
+#       with the lazy `_panel_ids()` helper, and its `pytest_collection_finish` guard now
+#       FAILS on any NEW import-time registration. The PRE-COLLECTION snapshot below is
+#       kept regardless: it is what makes the baseline provably pristine. A snapshot
+#       taken at the first test's setup would silently absorb whatever collection leaked,
+#       so this phase being currently empty is a fact to re-verify, not to rely on.
 #   (b) TEST time — bodies that call a resolution seam (fu6 / fu7 /
-#       1586_read_organism / 1947_resume_matrix).
+#       1586_read_organism / 1947_resume_matrix). Measured post-#2217: 4 polluter
+#       tests across 4 files, 10 distinct CONTEXTS keys.
 # Restoring at setup (not teardown) covers both with one mechanism. Production
 # seams stay untouched: registration there is intended behavior and idempotent,
 # so any test needing a context re-registers by calling the seam — which every
@@ -170,11 +175,14 @@ def _isolate_leaky_global_state():
 #
 # SCOPE CAVEAT for future readers: this fixture is FUNCTION-scoped, so it runs
 # AFTER any module/class/session-scoped fixture. A higher-scoped fixture that
-# registered a context would therefore be WIPED, not protected, and its
-# registrations would never reach the test body. None exists today (verified by
-# grep across tests/*.py at #2214). If you add one, register inside the test (or
-# re-register in-body — the seams are idempotent) rather than relying on a
-# higher-scoped fixture's registration surviving.
+# registers a context is therefore WIPED, not protected, and its registrations
+# never reach the test body. ONE such fixture exists today (post-#2217): the
+# module-scoped `pipeline` in tests/test_issue1481_analysis.py, which reaches
+# `build_panel_fixtures` -> `_panel_ids()` -> `bystander_panel()`. It is safe
+# ONLY because those tests re-register in-body and the seams are idempotent —
+# not because the wipe does not happen to it. If you add another, do the same:
+# register inside the test rather than relying on a higher-scoped fixture's
+# registration surviving.
 _CONTEXT_REGISTRY_BASELINE: dict | None = None
 
 
