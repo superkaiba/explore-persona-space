@@ -152,30 +152,49 @@ def _signal_decode(rc: int) -> str | None:
         return f"{n} (unknown)"
 
 
+def _signal_class(rc: int) -> str:
+    """Coarse origin class of a signal-shaped returncode.
+
+    Returns 'reaper' | 'crash' | 'unclassified'. Callers gate on
+    _signal_decode(rc) first (asserts on a plain-exit returncode).
+    """
+    n = _signal_number(rc)
+    assert n is not None, rc
+    if n in _REAPER_SIGNALS:
+        return "reaper"
+    if n in _CRASH_SIGNALS:
+        return "crash"
+    return "unclassified"
+
+
 def _signal_origin_advice(rc: int) -> str:
-    """One origin sentence per signal class — never asserts a cause the return
-    code alone has not established (#2252 round 2, signal-origin-overclaim).
+    """One origin-LEANING sentence per signal class — never asserts a cause,
+    or excludes one, that the return code alone has not established (#2252
+    round 2, signal-origin-overclaim; round 3, crash-class-origin-overclaim).
 
     The reaper-shaped set (SIGTERM/SIGKILL/SIGINT/SIGHUP) is the #2243
     incident class — external-kill wording is reserved for it. The
-    crash-class set (SIGSEGV/SIGABRT/SIGBUS/SIGILL/SIGFPE) indicates a
-    payload or runtime defect — VM-load advice there would point the reader
-    AWAY from the guilty payload. Any other signal number is unclassified:
-    no cause is asserted either way.
+    crash-class set (SIGSEGV/SIGABRT/SIGBUS/SIGILL/SIGFPE) typically
+    indicates a payload or runtime defect, but the environment is NOT ruled
+    out — a signal number cannot establish that exclusion (SIGBUS in
+    particular is environment-inducible via I/O faults on mapped pages).
+    Any other signal number is unclassified: no cause is asserted either
+    way. Reproducible-crash wording never appears here — one kill is never
+    evidence of reproducibility; it lives only in _run's double-death
+    branch, and only when BOTH attempts were crash-class.
     """
-    n = _signal_number(rc)
-    assert n is not None, rc  # callers gate on _signal_decode(rc) first
-    if n in _REAPER_SIGNALS:
+    cls = _signal_class(rc)
+    if cls == "reaper":
         return (
             "Reaper-shaped signal (SIGTERM/SIGKILL/SIGINT/SIGHUP): consistent with "
             "an external kill — check VM load and concurrent Step 9c batteries "
             "before touching the payload."
         )
-    if n in _CRASH_SIGNALS:
+    if cls == "crash":
         return (
-            "Crash-class signal (SIGSEGV/SIGABRT/SIGBUS/SIGILL/SIGFPE): points at "
-            "the PAYLOAD or runtime, not the environment — a repeat kill is a "
-            "reproducible crash; investigate the linter/payload."
+            "Crash-class signal (SIGSEGV/SIGABRT/SIGBUS/SIGILL/SIGFPE): typically "
+            "indicates a PAYLOAD or runtime crash; environment not ruled out — "
+            "investigate the linter/payload first."
         )
     return (
         "Unclassified signal number: origin not established — inspect both the "
@@ -215,11 +234,17 @@ def _run(*flags: str) -> subprocess.CompletedProcess[str]:
     Signal-shaped deaths (#2252/#2243) retry ONCE regardless of signal class
     (the lint is deterministic and read-only, so a retry distinguishes a
     transient kill from a reproducible crash); a second signal death, or a
-    timeout, fails with a message naming the outcome class — origin wording
-    per `_signal_origin_advice`, never asserting a cause the return code
-    alone has not established. Callers may assert on returncode: a returned
-    CompletedProcess is never signal-encoded.
+    timeout, fails with a message naming the outcome class. The double-death
+    failure retains attempt 1's returncode and reports BOTH signal decodes;
+    its advice is class-aware: both attempts in the SAME class get that
+    class's `_signal_origin_advice` (reproducible-crash wording is added ONLY
+    when both attempts are crash-class — the one sequence that evidences
+    reproducibility), DIFFERING classes get the both-suspects sentence. No
+    message asserts a cause, or excludes one, that the observed return codes
+    have not established (#2252 rounds 2-3). Callers may assert on
+    returncode: a returned CompletedProcess is never signal-encoded.
     """
+    first_rc: int | None = None
     last: subprocess.CompletedProcess[str] | None = None
     for attempt in (1, 2):
         try:
@@ -241,6 +266,7 @@ def _run(*flags: str) -> subprocess.CompletedProcess[str]:
             return result
         last = result
         if attempt == 1:
+            first_rc = result.returncode
             warnings.warn(
                 f"_run{flags!r}: lint subprocess SIGNALLED (rc={result.returncode} = "
                 f"signal {sig}) — terminated by signal, not a lint verdict (#2252); "
@@ -250,11 +276,21 @@ def _run(*flags: str) -> subprocess.CompletedProcess[str]:
                 RuntimeWarning,
                 stacklevel=2,
             )
-    assert last is not None
+    assert last is not None and first_rc is not None
+    if _signal_class(first_rc) == _signal_class(last.returncode):
+        advice = _signal_origin_advice(last.returncode)
+        if _signal_class(last.returncode) == "crash":
+            advice += " Both attempts died on a crash-class signal — a reproducible crash."
+    else:
+        advice = (
+            "Attempts died on DIFFERING signal classes: origin not established — "
+            "inspect both the payload and the environment; neither is exonerated."
+        )
     pytest.fail(
-        f"_run{flags!r}: SIGNALLED twice (rc={last.returncode} = signal "
+        f"_run{flags!r}: SIGNALLED twice (attempt 1 rc={first_rc} = signal "
+        f"{_signal_decode(first_rc)}; attempt 2 rc={last.returncode} = signal "
         f"{_signal_decode(last.returncode)}) — a signal termination, NOT a lint verdict "
-        f"(#2252). {_signal_origin_advice(last.returncode)} Embedded verdict line: "
+        f"(#2252). {advice} Embedded verdict line: "
         f"{_verdict_line((last.stderr, last.stdout))!r}.\n"
         f"stderr tail: {(last.stderr or '')[-400:]}"
     )
@@ -10106,10 +10142,13 @@ def test_run_helper_signal_decode_unknown_number_is_unclassified():
 
 
 def test_run_helper_crash_class_signal_points_at_payload(monkeypatch):
-    """A crash-class signal (SIGSEGV) is still retried once, but BOTH the retry
-    warning and the double-kill failure name the payload as the suspect and
-    never assert an environmental cause (round 2, signal-origin-overclaim:
-    round 1 labelled every signal band 'an external kill')."""
+    """A crash-class signal (SIGSEGV) is still retried once. The retry warning
+    leans at the payload WITHOUT excluding the environment or claiming
+    reproducibility (one kill is never evidence of either); the double-kill
+    failure reports BOTH decodes and — both attempts being crash-class, the
+    one sequence that evidences it — is permitted the reproducible-crash
+    wording (round 2, signal-origin-overclaim; round 3,
+    crash-class-origin-overclaim)."""
     fake = _FakeSubprocessRun(_fake_lint_proc(128 + int(signal.SIGSEGV)))
     monkeypatch.setattr(subprocess, "run", fake)
     with warnings.catch_warnings(record=True) as caught:
@@ -10119,14 +10158,79 @@ def test_run_helper_crash_class_signal_points_at_payload(monkeypatch):
     assert len(fake.calls) == 2, "crash-class keeps the retry (transient vs reproducible)"
     warn_msgs = [str(w.message) for w in caught if issubclass(w.category, RuntimeWarning)]
     assert any("Crash-class signal" in m for m in warn_msgs)
+    assert any("environment not ruled out" in m for m in warn_msgs)
     assert not any("external kill" in m for m in warn_msgs)
+    assert not any("reproducible" in m for m in warn_msgs), (
+        "a single kill must never be labelled reproducible"
+    )
+    assert not any("not the environment" in m for m in warn_msgs), (
+        "a signal number cannot establish an environment exclusion"
+    )
     msg = str(excinfo.value)
     assert "SIGNALLED twice" in msg
-    assert "11 (SIGSEGV)" in msg
+    assert msg.count("11 (SIGSEGV)") == 2, "the failure must decode BOTH attempts' signals"
     assert "Crash-class signal" in msg
     assert "PAYLOAD" in msg
+    assert "typically indicates" in msg, "crash-class advice is origin-leaning, not categorical"
+    assert "environment not ruled out" in msg
+    assert "not the environment" not in msg
+    # BOTH attempts crash-class: the reproducible-crash wording is permitted here.
+    assert "Both attempts died on a crash-class signal — a reproducible crash" in msg
     assert "external kill" not in msg, "environmental wording is reserved for reaper signals"
     assert "VM load" not in msg
+
+
+def test_run_helper_mixed_reaper_then_crash_is_not_a_reproducible_crash(monkeypatch):
+    """reaper→crash: the crash happened exactly ONCE, so the failure must
+    report BOTH decodes, take the both-suspects sentence, and never label
+    unlike signals a reproducible crash or exclude an unproven origin
+    (round 3, crash-class-origin-overclaim: round 2 decoded only attempt 2
+    and called the sequence reproducible)."""
+    fake = _FakeSubprocessRun(_fake_lint_proc(143), _fake_lint_proc(128 + int(signal.SIGSEGV)))
+    monkeypatch.setattr(subprocess, "run", fake)
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        with pytest.raises(pytest.fail.Exception) as excinfo:
+            _run()
+    assert len(fake.calls) == 2
+    warn_msgs = [str(w.message) for w in caught if issubclass(w.category, RuntimeWarning)]
+    assert any("Reaper-shaped signal" in m for m in warn_msgs)  # attempt 1 WAS reaper-shaped
+    assert not any("reproducible" in m for m in warn_msgs)
+    assert not any("not the environment" in m for m in warn_msgs)
+    msg = str(excinfo.value)
+    assert "15 (SIGTERM)" in msg, "attempt 1's decode must survive into the failure"
+    assert "11 (SIGSEGV)" in msg, "attempt 2's decode must survive into the failure"
+    assert "DIFFERING signal classes" in msg
+    assert "neither is exonerated" in msg
+    assert "reproducible" not in msg, "unlike signals are never a reproducible crash"
+    assert "not the environment" not in msg, "no origin is excluded on mixed evidence"
+
+
+def test_run_helper_mixed_crash_then_reaper_keeps_payload_in_scope(monkeypatch):
+    """crash→reaper: the FIRST death was a payload-leaning crash, so the
+    failure must not send the reader to VM load with the payload out of
+    scope (the #2243 misdirection class, inverse direction). BOTH decodes
+    reported; both-suspects sentence; no reproducible-crash claim, no
+    origin exclusion (round 3, crash-class-origin-overclaim)."""
+    fake = _FakeSubprocessRun(_fake_lint_proc(128 + int(signal.SIGSEGV)), _fake_lint_proc(143))
+    monkeypatch.setattr(subprocess, "run", fake)
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        with pytest.raises(pytest.fail.Exception) as excinfo:
+            _run()
+    assert len(fake.calls) == 2
+    warn_msgs = [str(w.message) for w in caught if issubclass(w.category, RuntimeWarning)]
+    assert any("Crash-class signal" in m for m in warn_msgs)  # attempt 1 WAS crash-class
+    assert not any("not the environment" in m for m in warn_msgs)
+    assert not any("reproducible" in m for m in warn_msgs)
+    msg = str(excinfo.value)
+    assert "11 (SIGSEGV)" in msg, "attempt 1's decode must survive into the failure"
+    assert "15 (SIGTERM)" in msg, "attempt 2's decode must survive into the failure"
+    assert "DIFFERING signal classes" in msg
+    assert "neither is exonerated" in msg
+    assert "check VM load" not in msg, "a first-death crash is never routed to VM load alone"
+    assert "consistent with an external kill" not in msg
+    assert "reproducible" not in msg
 
 
 def test_run_helper_unknown_signal_unclassified_and_fallback_verdict_asserted(monkeypatch):
