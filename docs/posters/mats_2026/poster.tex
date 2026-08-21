@@ -80,7 +80,7 @@
 \postersec{TL;DR}
 \begin{itemize}
   \item A single \textbf{linear map} predicts an LLM's mean answer activation from its final context activation \textbf{before generation}: held-out $R^2$ \textbf{0.75}, and rank-1 retrieval of the true answer among 10,000 candidates at \textbf{0.98} 
-  \item It is already \textbf{$\sim$75\% present in the base model}, then improves significantly with SFT, and barely changes with DPO and RLVR
+  \item It is already \textbf{$\sim$67\% present in the base model}, then improves significantly with SFT, and barely changes with DPO and RLVR
   \item It is \textbf{shared between the assistant in chat template, assistant in stories, and other fictional characters in stories}, providing evidence for the persona selection model
   \item It can be used to predict \textbf{sycophancy, hallucination and misalignment before inference}.
 \end{itemize}
@@ -112,10 +112,10 @@
 \begin{itemize}
   \item \takeaways{The mapping has high predictive power:} held-out $R^2$ 0.75, rank-1 retrieval 0.98 at 1 million contexts
   \item \takeaways{The mapping is mostly linear:} the nonlinear (MLP) map adds only $\sim$$0.06$ $R^2$ over the linear map, and only at large $n$ (potentially this advantage would grow as you scale up the number of contexts)
-  \item \takeaways{The mapping is not present for generic boundary tokens:} held-out $R^2$ 0.75 for a mapping from generic boundary tokens (punctuation) to the next stretch of text
+  \item \takeaways{The mapping is not present for generic boundary tokens:} held-out $R^2$ 0.11 for a mapping from generic boundary tokens (punctuation) to the next stretch of text
   \item \takeaways{The mapping is not just copying the context vector:} The mapping does much better than identity + bias
   \item We study the \textbf{linear} map here; we are most excited about what it is \emph{useful} for.
-  \item \takeaways{The mapping is strongest at mid-late depth:} held-out $R^2$ peaks at \textbf{layers 19--20 of 28} (0.76)
+  \item \takeaways{The mapping is strongest at mid-late depth:} held-out $R^2$ peaks at \textbf{layers 19--20 of 28} (0.76). This is consistent with literature showing that this is where high-level semantic information is most decodable.
 \end{itemize}
 \begin{center}
 \IfFileExists{figures/plot10_layer_sweep.pdf}{\includegraphics[width=0.95\linewidth]{plot10_layer_sweep.pdf}}{}
@@ -128,7 +128,7 @@
 \end{center}
 \figcap{4}{Held-out $R^2$ along each of the seven persona directions $r_B$ against a 200-draw random-unit band (bar: mean; shaded: 5--95\%). All seven on one corpus: multi-turn holdout, $n\!=\!9{,}941$, layer 19, ridge.}
 \begin{itemize}
-  \item \takeaways{Persona-vector directions are among the best-predicted directions of the answer:} all seven read $R^2$ \textbf{0.80--0.91} against a random-direction mean of \textbf{0.67}, and every one clears the random band's 95th percentile (0.76)
+  \item \takeaways{Persona-vector directions are among the best-predicted directions of the answer:} $R^2$ \textbf{0.80--0.91} against a random-direction mean of \textbf{0.67}, and every one does better than 95\% of random directions (0.76)
 \end{itemize}
 
 \end{column}
@@ -150,7 +150,7 @@ We train another map from the context to the answer's \textbf{SAE features}, the
       \item not being related to topic
       \item being in the coarsest tier of a Matryoshka SAE (intuitively, being high-level)
   \end{itemize}
-  \item The mapping seems to be 
+  \item Therefore, the mapping seems to be 
   \begin{itemize}
       \item good at predicting \textbf{high-level} and \textbf{identity-related} features
       \item bad at predicting \textbf{low-level} and \textbf{topic-related} features
@@ -188,6 +188,8 @@ We train another map from the context to the answer's \textbf{SAE features}, the
 \end{center}
 \figcap{8}{Held-out $R^2$; the shared map is fit on all 56 lattice cells at once. On-policy answers, layer 19; similarity = direct transfer of the chat-template map.}
 \begin{itemize}
+  \item \takeaways{One shared map does almost as well as per-character/framing maps:} 62-94\% of each framing/character's own-map performance
+  \item \takeaways{The assistant }
   \item \takeaways{One shared map covers most of every character's own fit:} across the four characters and the assistant-in-prose it reaches \textbf{62--94\%} of each one's own-map ceiling (instruct) — one operator, not six.
   \item \takeaways{Being ``the assistant'' buys almost nothing once the frame changes:} the assistant written as a story character is the closest cell to the assistant's chat-template map, but only barely ahead of the four characters ($-0.27$ direct transfer vs $-0.30$ to $-0.51$), and every one of them is negative — the frame moves the map far more than the identity does.
   \item \takeaways{Instruction tuning buys a stronger map inside its own template:} the chat cell reads $0.58$ own-map on instruct against $0.21$ on base, and it is the one cell where the shared map genuinely fails on base ($-0.02$).
