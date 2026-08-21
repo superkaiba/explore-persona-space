@@ -89,6 +89,15 @@ REPO_PHASES = {
 }
 
 
+@pytest.fixture(autouse=True)
+def _one_visible_gpu(monkeypatch):
+    """r8: ensure_model_venv now ends with the 1-GPU engine smoke, whose env
+    composition resolves visible_gpus() — pin ONE fake GPU on the CPU test
+    host (the zero-GPU fail-loud branch is exercised explicitly by
+    test_ensure_engine_smoke_fails_loud_on_zero_gpu_host, which deletes it)."""
+    monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "0")
+
+
 # ---------------------------------------------------------------------------
 # Interpreter resolution + argv composition
 # ---------------------------------------------------------------------------
@@ -715,3 +724,148 @@ def test_env_smoke_compile_backend_import_unguarded_and_ordered():
     compile_idx = src.index('import_module("vllm.compilation.backends")')
     config_idx = src.index("AutoConfig.from_pretrained")
     assert banned_idx < qwen_idx < compile_idx < config_idx
+
+
+# ---------------------------------------------------------------------------
+# r8: launch env pins + engine_smoke gate (epm:failure v4
+# flashinfer-absent-sampler-probe-modulenotfound)
+# ---------------------------------------------------------------------------
+
+
+def test_launch_env_pins_flashinfer_sampler_off():
+    """vllm 0.27.1 envs.py:848-852: "0" -> bool(int("0")) -> False; UNSET ->
+    True (the crash default — the sampler probe assumes flashinfer installed).
+    Exact dict equality: the pin set IS the launch-env contract."""
+    assert cm.LAUNCH_ENV_PINS == {"VLLM_USE_FLASHINFER_SAMPLER": "0"}
+
+
+def test_runner_run_injects_launch_env_pins_over_inherited(tmp_path, monkeypatch):
+    """REAL Runner.run body: the child observes the pin, and an INHERITED =1
+    (which would deterministically crash engine init on the flashinfer-free
+    venv) LOSES to the authoritative pin."""
+    monkeypatch.setenv("VLLM_USE_FLASHINFER_SAMPLER", "1")
+    r = d.Runner(tmp_path / "logs", resume=False, dry=False)
+    r.run(
+        "pin.step",
+        [
+            sys.executable,
+            "-c",
+            "import os,sys;"
+            "sys.exit(0 if os.environ.get('VLLM_USE_FLASHINFER_SAMPLER')=='0' else 7)",
+        ],
+    )  # rc!=0 would raise
+
+
+def test_runner_fanout_and_parallel_inject_launch_env_pins(tmp_path, monkeypatch):
+    """REAL fanout/parallel bodies: every shard env carries the pin, beside the
+    untouched per-shard CVD launcher pin (#545)."""
+    monkeypatch.setenv("VLLM_USE_FLASHINFER_SAMPLER", "1")  # inherited =1 must lose
+    r = d.Runner(tmp_path / "logs", resume=False, dry=False)
+    argv = [
+        sys.executable,
+        "-c",
+        "import os;print('PIN='+os.environ['VLLM_USE_FLASHINFER_SAMPLER']);"
+        "print('CVD='+os.environ['CUDA_VISIBLE_DEVICES'])",
+    ]
+    r.fanout("pin.fan", argv, gpus=["4", "5"])
+    for i, g in enumerate(["4", "5"]):
+        log = (tmp_path / "logs" / f"pin.fan.s{i}.log").read_text(encoding="utf-8")
+        assert "PIN=0" in log, f"shard {i} missing the sampler-probe pin"
+        assert f"CVD={g}" in log
+    r.parallel("pin.par", [list(argv)], gpus=["6"])
+    log = (tmp_path / "logs" / "pin.par.s0.log").read_text(encoding="utf-8")
+    assert "PIN=0" in log and "CVD=6" in log
+    # the START lines advertise the pin (the r8 fix-engaged log observable)
+    assert d._PINS_TOKEN == "VLLM_USE_FLASHINFER_SAMPLER=0"
+
+
+def test_engine_smoke_phase_registered_inline():
+    """engine_smoke is a PHASES arm handled inline (model venv + 1 GPU req'd),
+    exactly like env_smoke."""
+    assert "engine_smoke" in d.PHASES and d.PHASES["engine_smoke"] is None
+    import inspect
+
+    src = inspect.getsource(d.main)
+    assert 'args.phase == "engine_smoke"' in src
+
+
+def test_ensure_runs_engine_smoke_after_env_smoke(monkeypatch, tmp_path):
+    """REAL ensure body: BOTH gates run (env_smoke THEN engine_smoke — walls
+    dict preserves execution order), and the engine gate's argv routes via the
+    MODEL interpreter with --phase engine_smoke (pinned by the ok-flag sha)."""
+    monkeypatch.setenv(cm.SKIP_DRIVER_PROBE_ENV, "1")
+    fake = _fake_interpreter(tmp_path, _good_payload())
+    monkeypatch.setenv(cm.MODEL_PY_ENV, fake)
+    runner = d.Runner(tmp_path / "logs", resume=False, dry=False)
+    args = SimpleNamespace(ledger_root=str(tmp_path / "ledger"))
+    (tmp_path / "ledger").mkdir()
+    d.ensure_model_venv(args, runner)
+    assert (tmp_path / "logs" / "model_engine_smoke.log").exists()
+    assert list(runner.walls)[-2:] == ["model_env_smoke", "model_engine_smoke"]
+    expected = d._model_py("issue2378_dispatch.py", "--phase", "engine_smoke")
+    ok = (tmp_path / "logs" / "model_engine_smoke.ok").read_text(encoding="utf-8")
+    assert ok == d._argv_sha(expected)
+
+
+def test_ensure_engine_smoke_fails_loud_on_zero_gpu_host(monkeypatch, tmp_path):
+    """A zero-GPU real host cannot run the engine gate — ensure fail-louds at
+    _first_gpu_env (naming the step) instead of deferring the failure to the
+    fan-out; env_smoke has already run (gate order preserved)."""
+    monkeypatch.setenv(cm.SKIP_DRIVER_PROBE_ENV, "1")
+    monkeypatch.delenv("CUDA_VISIBLE_DEVICES", raising=False)  # undo autouse pin
+    empty = tmp_path / "emptybin"
+    empty.mkdir()
+    monkeypatch.setenv("PATH", str(empty))  # no nvidia-smi -> visible_gpus() == []
+    fake = _fake_interpreter(tmp_path, _good_payload())
+    monkeypatch.setenv(cm.MODEL_PY_ENV, fake)
+    runner = d.Runner(tmp_path / "logs", resume=False, dry=False)
+    args = SimpleNamespace(ledger_root=str(tmp_path / "ledger"))
+    (tmp_path / "ledger").mkdir()
+    with pytest.raises(RuntimeError, match="model_engine_smoke: no visible GPUs"):
+        d.ensure_model_venv(args, runner)
+    assert (tmp_path / "logs" / "model_env_smoke.log").exists()
+
+
+def test_rebuild_clears_stale_engine_smoke_ok_flag(monkeypatch, tmp_path):
+    """r8: a build/repair invalidates the ENGINE smoke ok-flag too — the argv
+    sha is unchanged across a rebuild (same overlay-wipe residue as the
+    env_smoke flag), so without the clear a resumed runner would silently
+    reuse the OLD engine verdict under a rebuilt interpreter."""
+    monkeypatch.setenv(cm.SKIP_DRIVER_PROBE_ENV, "1")
+    monkeypatch.delenv(cm.MODEL_PY_ENV, raising=False)
+    venv = tmp_path / "venv"
+    monkeypatch.setattr(cm, "MODEL_VENV_DEFAULT", str(venv))
+    template = _fake_interpreter(tmp_path, _good_payload())
+    bindir, _ = _fake_uv(tmp_path, template)
+    monkeypatch.setenv("PATH", f"{bindir}:{os.environ['PATH']}")
+    runner = d.Runner(tmp_path / "logs", resume=True, dry=False)
+    for step, phase in (
+        ("model_env_smoke", "env_smoke"),
+        ("model_engine_smoke", "engine_smoke"),
+    ):
+        argv = d._model_py("issue2378_dispatch.py", "--phase", phase)
+        runner._ok_path(step).write_text(d._argv_sha(argv))  # stale flags
+    args = SimpleNamespace(ledger_root=str(tmp_path / "ledger"))
+    d.ensure_model_venv(args, runner)
+    for step in ("model_env_smoke", "model_engine_smoke"):
+        assert (tmp_path / "logs" / f"{step}.log").exists(), f"{step} skipped on stale flag"
+
+
+def test_engine_smoke_body_pins_known_gotchas():
+    """Source pins for the pod-only engine gate body: spawn set BEFORE the
+    first vllm import (#628 fork-poisoned EngineCore), use_tqdm=False (#613
+    tqdm ZeroDivision), enforce_eager=True (init-path gate, no cudagraph
+    wall), the shards' own create_vllm_engine seam, and the os._exit(0)
+    terminal (#1739/#2149 finalization deadlock on engine children). The
+    dispatcher module top must stay vllm-free (repo venv)."""
+    import inspect
+
+    src = inspect.getsource(d.phase_engine_smoke)
+    assert 'os.environ.setdefault("VLLM_WORKER_MULTIPROC_METHOD", "spawn")' in src
+    assert src.index('setdefault("VLLM_WORKER_MULTIPROC_METHOD"') < src.index("from vllm import")
+    assert "use_tqdm=False" in src
+    assert "enforce_eager=True" in src
+    assert "create_vllm_engine(" in src
+    assert "os._exit(0)" in src
+    top = DISPATCH_SRC[: DISPATCH_SRC.index("def _log")]
+    assert "import vllm" not in top and "from vllm" not in top

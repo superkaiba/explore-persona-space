@@ -5,8 +5,9 @@ Runbook (venue per phase; provision commands are plan §10 verbatim):
   VM (repo venv):
     uv run python scripts/issue2378_dispatch.py --phase p0_banks_pools
   Pod (model venv; standalone gate — the MODEL phases below also self-ensure):
-    uv run python scripts/issue2378_dispatch.py --phase model_venv     # ensure + env_smoke
+    uv run python scripts/issue2378_dispatch.py --phase model_venv     # ensure + env/engine smokes
     uv run python scripts/issue2378_dispatch.py --phase env_smoke      # model venv req'd
+    uv run python scripts/issue2378_dispatch.py --phase engine_smoke   # model venv + 1 GPU req'd
   Pod A (4x H200; launched detached via the canonical setsid launcher —
   experimenter.md § During Execution; this driver is the WORKLOAD):
     bash scripts/issue2378_dispatch.sh p1_pilot --attempts-per-cell 300 \\
@@ -68,7 +69,11 @@ at entry: live probe -> idempotent uv build/repair (r7: banned accel dists —
 ``cm.MODEL_VENV_BANNED_DISTS``, the py3.11-incompatible flashinfer-python —
 are uninstalled in place) -> pin + banned-absence assert -> realized pins
 recorded to <ledger>/model_venv_pins.json -> ``--phase env_smoke`` under
-the model interpreter (an env mismatch fails in seconds, pre-fan-out). The
+the model interpreter (an env mismatch fails in seconds, pre-fan-out) ->
+``--phase engine_smoke`` (r8: REAL tiny engine init + generate on ONE GPU —
+the class-closing gate for engine-reachable probe paths; every launched step
+env additionally carries ``cm.LAUNCH_ENV_PINS`` =
+``VLLM_USE_FLASHINFER_SAMPLER=0``, the r8 sampler-probe pin). The
 dispatcher itself + non-model steps (banks/pools, upload_stage, capture_ready,
 judge, fits) stay on the repo venv (plan: "Repo env unchanged for P0/P6/P7").
 
@@ -175,6 +180,11 @@ def _argv_sha(argv: list[str]) -> str:
     return hashlib.sha256(" ".join(argv).encode("utf-8")).hexdigest()[:16]
 
 
+# Human-legible pin token appended to step START lines (the r8 fix-engaged
+# observable: every launched step's env carries cm.LAUNCH_ENV_PINS).
+_PINS_TOKEN = ",".join(f"{k}={v}" for k, v in sorted(cm.LAUNCH_ENV_PINS.items()))
+
+
 def visible_gpus() -> list[str]:
     cvd = os.environ.get("CUDA_VISIBLE_DEVICES")
     if cvd:
@@ -250,14 +260,16 @@ class Runner:
             return 0
         log_path, log = self._open_log(name)
         t0 = time.time()
-        _log(f"[step] {name} START log={log_path}")
+        _log(f"[step] {name} START pins={_PINS_TOKEN} log={log_path}")
         with log:
             rc = subprocess.run(
                 argv,
                 stdout=log,
                 stderr=subprocess.STDOUT,
                 cwd=str(cm.REPO_ROOT),
-                env={**os.environ, **(env_extra or {})},
+                # cm.LAUNCH_ENV_PINS after os.environ (authoritative — r8
+                # flashinfer-sampler-probe fix), before caller env_extra.
+                env={**os.environ, **cm.LAUNCH_ENV_PINS, **(env_extra or {})},
                 check=False,
             ).returncode
         wall = time.time() - t0
@@ -314,12 +326,15 @@ class Runner:
                 cwd=str(cm.REPO_ROOT),
                 env={
                     **os.environ,
+                    **cm.LAUNCH_ENV_PINS,  # r8: sampler-probe pin on every shard
                     "CUDA_VISIBLE_DEVICES": gpus[i],
                     **(env_extra or {}),
                 },
             )
             log.close()
-            _log(f"[step] {sname} START pid={p.pid} cvd={gpus[i]} log={log_path}")
+            _log(
+                f"[step] {sname} START pid={p.pid} cvd={gpus[i]} pins={_PINS_TOKEN} log={log_path}"
+            )
             procs.append((i, log_path, p))
         failures = []
         for i, log_path, p in procs:
@@ -378,12 +393,16 @@ class Runner:
                 cwd=str(cm.REPO_ROOT),
                 env={
                     **os.environ,
+                    **cm.LAUNCH_ENV_PINS,  # r8: sampler-probe pin on every shard
                     "CUDA_VISIBLE_DEVICES": gpus[i % len(gpus)],
                     **(env_extra or {}),
                 },
             )
             log.close()
-            _log(f"[step] {sname} START pid={p.pid} cvd={gpus[i % len(gpus)]} log={log_path}")
+            _log(
+                f"[step] {sname} START pid={p.pid} cvd={gpus[i % len(gpus)]} "
+                f"pins={_PINS_TOKEN} log={log_path}"
+            )
             procs.append((i, log_path, p))
         failures = []
         for i, log_path, p in procs:
@@ -742,7 +761,10 @@ def ensure_model_venv(args, runner: Runner) -> None:
     pin at P1"; volatile provenance goes to an untracked sidecar — r6
     P4-harvest fix) -> run `--phase env_smoke` UNDER the model interpreter
     (re-run forced after a build/repair), so the next env mismatch fails in
-    seconds pre-fan-out instead of per-shard at vLLM engine init."""
+    seconds pre-fan-out instead of per-shard at vLLM engine init -> run
+    `--phase engine_smoke` (r8, epm:failure v4): a REAL tiny engine init +
+    generate on ONE GPU, the class-closing gate for engine-reachable
+    import/probe paths no module-import smoke can enumerate."""
     py = _model_python()
     if runner.dry:
         _log(
@@ -751,6 +773,11 @@ def ensure_model_venv(args, runner: Runner) -> None:
             f"{list(cm.MODEL_VENV_EXTRA_PINS)}; banned {sorted(cm.MODEL_VENV_BANNED_DISTS)})"
         )
         runner.run("model_env_smoke", _model_py("issue2378_dispatch.py", "--phase", "env_smoke"))
+        runner.run(
+            "model_engine_smoke",
+            _model_py("issue2378_dispatch.py", "--phase", "engine_smoke"),
+            env_extra=_first_gpu_env(runner, visible_gpus(), "model_engine_smoke"),
+        )
         return
     _assert_driver_compat()  # fail fast BEFORE any ~4-min build on a bad host (#2330)
     built = False
@@ -832,17 +859,25 @@ def ensure_model_venv(args, runner: Runner) -> None:
         f"record={pins_path}"
     )
     if built:
-        # A fresh/repaired venv invalidates any prior env_smoke ok-flag (the
-        # r5-disclosed overlay-wipe residue: the argv sha is unchanged across a
-        # rebuild, so the resume skip would silently reuse the OLD verdict) —
-        # force the render asserts to re-run under the rebuilt interpreter.
-        stale_ok = runner._ok_path("model_env_smoke")
-        if stale_ok.exists():
-            stale_ok.unlink()
-            _log(
-                "[model-venv] rebuilt venv — stale model_env_smoke ok-flag cleared (re-run forced)"
-            )
+        # A fresh/repaired venv invalidates any prior env_smoke / engine_smoke
+        # ok-flag (the r5-disclosed overlay-wipe residue: the argv sha is
+        # unchanged across a rebuild, so the resume skip would silently reuse
+        # the OLD verdict) — force BOTH gates to re-run under the rebuilt
+        # interpreter (r8 extends the r6 mechanics to the engine gate).
+        for step in ("model_env_smoke", "model_engine_smoke"):
+            stale_ok = runner._ok_path(step)
+            if stale_ok.exists():
+                stale_ok.unlink()
+                _log(f"[model-venv] rebuilt venv — stale {step} ok-flag cleared (re-run forced)")
     runner.run("model_env_smoke", _model_py("issue2378_dispatch.py", "--phase", "env_smoke"))
+    # r8 CLASS-CLOSING gate (epm:failure v4): REAL tiny engine init + 1-prompt
+    # generate on ONE GPU BEFORE any multi-shard fan-out — module-import smokes
+    # cannot enumerate engine-reachable probe paths (phase_engine_smoke doc).
+    runner.run(
+        "model_engine_smoke",
+        _model_py("issue2378_dispatch.py", "--phase", "engine_smoke"),
+        env_extra=_first_gpu_env(runner, visible_gpus(), "model_engine_smoke"),
+    )
 
 
 def parse_layers_spec(spec: str, lstar: int) -> list[int]:
@@ -1248,9 +1283,94 @@ def phase_env_smoke(args) -> int:
     return 0
 
 
+ENGINE_SMOKE_MAX_MODEL_LEN = 1024  # tiny context: init-path gate, not a capacity test
+ENGINE_SMOKE_MAX_NUM_SEQS = 8
+ENGINE_SMOKE_MAX_TOKENS = 8
+
+
+def phase_engine_smoke(args) -> int:
+    """CLASS-CLOSING pre-fan-out gate (r8 crash-fix, epm:failure v4,
+    flashinfer-absent-sampler-probe-modulenotfound): boot a REAL tiny vLLM
+    engine on ONE GPU under the model venv and run one trivial generate.
+
+    Module-import smokes (env_smoke's compile-backend chain, r7) structurally
+    cannot enumerate every ENGINE-reachable import/probe path — the r8 crash
+    fired inside EngineCore init (gpu_model_runner -> Sampler ->
+    TopKTopPSampler -> flashinfer_sampler_supported() -> bare
+    `from flashinfer import ...`), a chain no top-level import reaches. This
+    gate subsumes them for engine-reachable paths: success = engine constructs
+    (Sampler probe included) + one sampled completion returns; failure = loud
+    rc != 0 BEFORE any multi-shard fan-out, ~minutes instead of a pod cycle.
+
+    Choice (r8 brief): the TARGET model (cm.MODEL_ID) at tiny knobs — the
+    exact qwen3_5 engine path + weights the shards use (a tiny stand-in model
+    would exercise a different arch path); enforce_eager skips cudagraph
+    capture (init-path gate, minutes not tens of minutes). Runs under the
+    model interpreter, invoked by ensure_model_venv via _model_py with CVD
+    pinned to ONE GPU by the runner and VLLM_USE_FLASHINFER_SAMPLER=0 from
+    cm.LAUNCH_ENV_PINS (parity: same env composition the shards get).
+
+    Terminal is `os._exit(0)` after explicit flushes — the sanctioned vLLM
+    generation-driver terminal (gotchas.md #1739/#2149: interpreter
+    finalization can deadlock on surviving engine children; the parent
+    runner.run writes the ok-flag off rc, and this phase writes no artifacts
+    beyond its redirected stdout, so skipping finalization is safe)."""
+    _phase_line("engine_smoke")
+    t0 = time.time()
+    # Same worker discipline as the gen workers (gen.py module top, #628):
+    # spawn, never fork — set BEFORE the first vllm import (read at import).
+    os.environ.setdefault("VLLM_WORKER_MULTIPROC_METHOD", "spawn")
+    import dataclasses
+
+    from vllm import SamplingParams
+    from vllm.engine.arg_utils import EngineArgs
+
+    from explore_persona_space.eval.generation import create_vllm_engine
+
+    kwargs: dict = {}
+    if "language_model_only" in {f.name for f in dataclasses.fields(EngineArgs)}:
+        kwargs["language_model_only"] = True  # gen._engine parity (omni towers skipped)
+    llm = create_vllm_engine(
+        cm.MODEL_ID,
+        max_model_len=ENGINE_SMOKE_MAX_MODEL_LEN,
+        max_num_seqs=ENGINE_SMOKE_MAX_NUM_SEQS,
+        seed=cm.SEED,
+        dtype="bfloat16",
+        enforce_eager=True,
+        **kwargs,
+    )
+    _log(f"[engine_smoke] engine constructed wall={time.time() - t0:.1f}s")
+    sp = SamplingParams(
+        temperature=cm.TEMPERATURE,
+        top_p=cm.TOP_P,
+        top_k=cm.TOP_K,
+        seed=cm.SEED,
+        max_tokens=ENGINE_SMOKE_MAX_TOKENS,
+    )
+    # ONE prompt (no chunking needed); use_tqdm=False (#613 ZeroDivision).
+    outs = llm.generate(["engine smoke probe"], [sp], use_tqdm=False)
+    assert outs and outs[0].outputs and outs[0].outputs[0].text is not None, (
+        "engine smoke: generate returned no completion"
+    )
+    _log(
+        f"[engine_smoke] engine init + 1-prompt generate OK "
+        f"model={cm.MODEL_ID} max_model_len={ENGINE_SMOKE_MAX_MODEL_LEN} "
+        f"enforce_eager=True wall={time.time() - t0:.1f}s"
+    )
+    # Best-effort graceful engine-core shutdown, then the hard terminal.
+    core = getattr(getattr(llm, "llm_engine", None), "engine_core", None)
+    if core is not None and hasattr(core, "shutdown"):
+        core.shutdown()
+    _phase_line("done")
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(0)
+
+
 def phase_model_venv(args, runner: Runner) -> int:
-    """Standalone model-venv ensure + env_smoke gate (launcher/orchestrator
-    pre-step; the MODEL phases p1/p2/p4_topup/p4 also self-ensure at entry)."""
+    """Standalone model-venv ensure + env_smoke/engine_smoke gates (launcher/
+    orchestrator pre-step; the MODEL phases p1/p2/p4_topup/p4 self-ensure at
+    entry)."""
     ensure_model_venv(args, runner)
     return 0
 
@@ -2591,23 +2711,28 @@ def phase_probe(args) -> int:  # noqa: C901 — linear fixture script
                 [
                     sys.executable,
                     "-c",
-                    "import os,sys;print('CVD='+os.environ['CUDA_VISIBLE_DEVICES'])",
+                    "import os,sys;print('CVD='+os.environ['CUDA_VISIBLE_DEVICES']);"
+                    "print('PIN='+os.environ.get('VLLM_USE_FLASHINFER_SAMPLER',''))",
                 ],
                 gpus=["6", "7"],
             )
             for i, g in enumerate(["6", "7"]):
                 log = (tmp / "logs" / f"probe.fan.s{i}.log").read_text(encoding="utf-8")
                 assert f"CVD={g}" in log, f"shard {i} CVD pin missing"
+                # r8: the sampler-probe env pin rides EVERY shard env
+                assert "PIN=0" in log, f"shard {i} VLLM_USE_FLASHINFER_SAMPLER pin missing"
             # parallel(): pre-composed per-shard argvs (the P4 capture shape)
             probe_argv = [
                 sys.executable,
                 "-c",
-                "import os;print('CVD='+os.environ['CUDA_VISIBLE_DEVICES'])",
+                "import os;print('CVD='+os.environ['CUDA_VISIBLE_DEVICES']);"
+                "print('PIN='+os.environ.get('VLLM_USE_FLASHINFER_SAMPLER',''))",
             ]
             r.parallel("probe.par", [list(probe_argv), list(probe_argv)], gpus=["2", "3"])
             for i, g in enumerate(["2", "3"]):
                 log = (tmp / "logs" / f"probe.par.s{i}.log").read_text(encoding="utf-8")
                 assert f"CVD={g}" in log, f"parallel shard {i} CVD pin missing"
+                assert "PIN=0" in log, f"parallel shard {i} VLLM_USE_FLASHINFER_SAMPLER pin missing"
             try:
                 Runner(tmp / "logs2", resume=True).parallel("probe.par0", [probe_argv], gpus=[])
                 raise AssertionError("parallel with zero GPUs must raise")
@@ -2899,7 +3024,24 @@ def run_import_check() -> int:
 
     sig = inspect.signature(gen._load_kept_ids)
     sig.bind(Path("x"), "cell")  # call-shape bind for the retry-extras seam
-    _log("[import-check] OK (argcheck + deferred imports + seam bind)")
+    # r8 engine_smoke seam: create_vllm_engine resolves on the repo venv (its
+    # own vllm import is deferred) — bind the gate's exact call shape. The
+    # `from vllm import SamplingParams` / EngineArgs deferred imports inside
+    # phase_engine_smoke target the MODEL venv's vllm 0.27.1 (same convention
+    # as env_smoke's compile-backend import, r7 marker) and execute pod-side
+    # at the ensure gate itself, pre-fan-out.
+    from explore_persona_space.eval.generation import create_vllm_engine
+
+    inspect.signature(create_vllm_engine).bind(
+        cm.MODEL_ID,
+        max_model_len=ENGINE_SMOKE_MAX_MODEL_LEN,
+        max_num_seqs=ENGINE_SMOKE_MAX_NUM_SEQS,
+        seed=cm.SEED,
+        dtype="bfloat16",
+        enforce_eager=True,
+        language_model_only=True,
+    )
+    _log("[import-check] OK (argcheck + deferred imports + seam binds)")
     return 0
 
 
@@ -2909,6 +3051,7 @@ def run_import_check() -> int:
 
 PHASES = {
     "env_smoke": None,  # handled inline (no Runner needed)
+    "engine_smoke": None,  # handled inline (r8 gate; model venv + 1 GPU req'd)
     "model_venv": phase_model_venv,
     "p0_banks_pools": phase_p0,
     "p1_pilot": phase_p1,
@@ -2996,6 +3139,8 @@ def main() -> int:
         rc = phase_env_smoke(args)
         _phase_line("done")
         return rc
+    if args.phase == "engine_smoke":
+        return phase_engine_smoke(args)  # never returns on success (os._exit)
     runner = Runner(Path(args.logs_dir) / args.phase, resume=not args.no_resume, dry=args.dry_run)
     rc = PHASES[args.phase](args, runner)
     if rc == 0:

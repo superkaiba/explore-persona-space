@@ -66,6 +66,23 @@ MODEL_VENV_EXTRA_PINS = ("python-dotenv==1.2.2",)
 # EVERY build/repair (uv pip uninstall is a clean rc=0 no-op when absent).
 # Maps dist name -> top-level import name (the find_spec probe target).
 MODEL_VENV_BANNED_DISTS = {"flashinfer-python": "flashinfer"}
+# Env pins injected into EVERY dispatcher-launched step env (r8 crash-fix,
+# epm:failure v4, assert_tag flashinfer-absent-sampler-probe-modulenotfound):
+# with flashinfer-python REMOVED from the model venv (r7, above), vllm 0.27.1
+# still probes the flashinfer SAMPLER by DEFAULT at EngineCore init —
+# envs.py:848-852 (tag v0.27.1, verified 2026-08-21): unset ->
+# VLLM_USE_FLASHINFER_SAMPLER=True; the probe docstring "Assumes flashinfer is
+# installed, as guaranteed by requirements/cuda.txt" — and dies on the bare
+# `from flashinfer import ...` at vllm/v1/attention/backends/flashinfer.py:12
+# (reached via TopKTopPSampler.__init__ -> flashinfer_sampler_supported(),
+# topk_topp_sampler.py:96-98; killed all 4 p1.sega shards ~40 s in). "0"
+# short-circuits BEFORE that import: topk_topp_sampler.py:45-51 checks
+# `if not envs.VLLM_USE_FLASHINFER_SAMPLER: return False` ahead of the
+# line-51 backend import, and envs.py parses "0" -> bool(int("0")) -> False.
+# Injected AUTHORITATIVELY (after os.environ) in Runner.run/fanout/parallel:
+# inert for non-vllm steps; an inherited =1 would deterministically crash
+# engine init on the flashinfer-free venv, so the pin always wins.
+LAUNCH_ENV_PINS = {"VLLM_USE_FLASHINFER_SAMPLER": "0"}
 MODEL_PY_ENV = "EPM_I2378_MODEL_PY"  # explicit model-interpreter override
 # Host-driver floor for the CUDA-13 wheel stack above (torch 2.13.0 ships
 # cu130-linked binaries; vllm 0.27.1 links libcudart.so.13). A pre-580 host
