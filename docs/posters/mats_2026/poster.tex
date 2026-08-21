@@ -62,7 +62,8 @@
   {\rmfamily\bfseries\Huge The Surprising Effectiveness of Linear Context-to-Answer Maps in Language Models\\[0.28em]}
   {\Large\color{white!85!matsmaroon}A context-conditioned metamodel of answer activations\\[0.38em]}
   {\normalsize\bfseries Thomas Jiralerspong$^{1,2}$ \,\textperiodcentered\, Christopher Ackerman$^{2}$ \,\textperiodcentered\, Mukesh Ramanathan$^{2}$ \,\textperiodcentered\, Christina Lu$^{3}$ \,\textperiodcentered\, Guillaume Lajoie$^{1}$ \,\textperiodcentered\, Dan Mossing$^{3}$\\[0.18em]}
-  {\small\color{white!85!matsmaroon}$^{1}$Mila, Universit\'e de Montr\'eal \qquad $^{2}$MATS \qquad $^{3}$Anthropic}
+  {\small\color{white!85!matsmaroon}$^{1}$Mila, Universit\'e de Montr\'eal \qquad $^{2}$MATS \qquad $^{3}$Anthropic}\\[0.18em]
+  {\footnotesize\color{white!65!matsmaroon}This work was carried out as part of the MATS program.}
 \end{minipage}
 \vskip0.7em
 \end{beamercolorbox}
@@ -184,6 +185,13 @@ We map the context to the answer's \textbf{SAE features}, then partial out predi
 % ==================== COLUMN 5: discussion ====================
 \begin{column}{0.188\textwidth}
 
+\postersec{7.\ Model size and chain-of-thought}
+\begin{itemize}
+  \item \takeaways{Scale buys more \emph{reliable answers}, not a more predictable map:} over Qwen2.5-Instruct 0.5B$\to$32B raw $R^2$ goes 0.56$\to$0.73$\to$0.65 while the answer's two-draw reliability ceiling climbs 0.75$\to$0.93 — ceiling-normalized predictability is flat at \textbf{0.75--0.79}.
+  \item \takeaways{The map survives a reasoning trace:} OpenThinker2-7B reads 0.78 against 0.80 for its non-thinking parent, and context$\to$CoT$\to$answer matches the direct map.
+  \item \takeaways{But the CoT is not a privileged span:} it adds $+0.20$--$0.33$ skill, yet a \emph{length-matched slice of the answer's own opening} beats it in all three thinking models (every 95\% CI below zero).
+\end{itemize}
+
 \postersec{Application: behavior prediction before inference}
 \begin{center}
 \IfFileExists{figures/plot9_application_arms.pdf}{\includegraphics[width=0.99\linewidth]{plot9_application_arms.pdf}}{\includegraphics[width=0.99\linewidth]{c5_pv_methods_regimes.pdf}}
@@ -191,13 +199,13 @@ We map the context to the answer's \textbf{SAE features}, then partial out predi
 \figcap{9}{Spearman $\rho$ between readout and judged behavior, per regime. Readouts: persona vector or fitted regression, on the context or the map-predicted answer; oracle = real answer. Muted bars fail the spread gate.}
 \begin{itemize}
   \item \takeaways{The best pre-inference readout is one on the \emph{mapped answer} in every trustworthy generic-chat and OOD cell,} beating the best context-side readout by $+0.01$ to $+0.07$ — though the two sycophancy margins sit inside overlapping CIs.
-  \item \takeaways{Regression on the mapped answer matches or beats regression on the context everywhere,} and both leave the standard persona-vector-on-context readout near zero or negative throughout — so the gain is the \emph{map}, not the readout family.
-  \item \takeaways{On synthetic prompts the context already gives the behavior away,} so the map buys nothing there — it earns its keep exactly where the prompt does \emph{not} telegraph the answer.
+  \item \takeaways{Regression on the mapped answer matches or beats regression on the context everywhere,} and both leave persona-vector-on-context near zero — the gain is the \emph{map}, not the readout family.
+  \item \takeaways{On synthetic prompts the context already gives the behavior away} — the map earns its keep where the prompt does \emph{not} telegraph the answer.
 \end{itemize}
 
 \postersec{Implications \& future work}
 \begin{itemize}
-  \item Much of an LLM's behavior is \textbf{linearly predictable from a single context vector} — a cheap pre-generation audit tool, and evidence for the \textbf{persona selection model}.
+  \item Much of an LLM's behavior is \textbf{linearly predictable from a single context vector} — a cheap pre-generation audit, and evidence for the \textbf{persona selection model}.
   \item Theoretical analysis $+$ dynamical systems.
   \item Predict other properties: correctness.
   \item Predicting effect of fine-tuning.
@@ -209,13 +217,11 @@ We map the context to the answer's \textbf{SAE features}, then partial out predi
 {\footnotesize
 {\color{matsmaroon}[1]} Chen et al.\ Persona vectors. 2025.\quad
 {\color{matsmaroon}[2]} Betley et al.\ Emergent misalignment. 2025.\quad
-{\color{matsmaroon}[3]} Marks et al.\ The persona selection model. 2026.\\
+{\color{matsmaroon}[3]} Marks et al.\ The persona selection model. 2026.\quad
 {\color{matsmaroon}[4]} Lu et al.\ The assistant axis. 2026.\quad
 {\color{matsmaroon}[5]} Hosseini \& Fedorenko. Trajectory straightening. 2023.\quad
 {\color{matsmaroon}[6]} Park et al.\ The linear representation hypothesis. 2024.
 }
-\vskip0.35em
-{\footnotesize\color{capgray}This work was carried out as part of the MATS program.}
 
 \end{column}
 
