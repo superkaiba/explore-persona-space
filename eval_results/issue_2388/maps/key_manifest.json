@@ -198,5 +198,169 @@
       "per_layer_file": "mlp__code__fu1_diagnostics.json"
     },
     "wall_s": 1505.6
+  },
+  "linear__qa__fu0": {
+    "realized_u": 16000,
+    "composition": {
+      "generic": 8000,
+      "target": 8000
+    },
+    "subsample_seed": 2388,
+    "pool_meta": {
+      "n_avail": 18793,
+      "subsample_seed": 2388,
+      "n_taken": 8000,
+      "n_target": 8000
+    },
+    "diagnostics_summary": {
+      "mean_r2_map": 0.6397606428226442,
+      "mean_r2_identity_bias": -0.8136557741182361,
+      "mean_knn_acc_at_1_euclidean": 0.54625,
+      "per_layer_file": "linear__qa__fu0_diagnostics.json"
+    },
+    "wall_s": 430.2
+  },
+  "linear__qa__fu05": {
+    "realized_u": 8000,
+    "composition": {
+      "generic": 4000,
+      "target": 4000
+    },
+    "subsample_seed": 2388,
+    "pool_meta": {
+      "n_avail": 18793,
+      "subsample_seed": 2388,
+      "n_taken": 4000,
+      "n_target": 4000
+    },
+    "diagnostics_summary": {
+      "mean_r2_map": 0.5999915105763398,
+      "mean_r2_identity_bias": -0.8084952498108733,
+      "mean_knn_acc_at_1_euclidean": 0.6027232142857143,
+      "per_layer_file": "linear__qa__fu05_diagnostics.json"
+    },
+    "wall_s": 50.6
+  },
+  "linear__qa__fu1": {
+    "realized_u": 8000,
+    "composition": {
+      "generic": 0,
+      "target": 8000
+    },
+    "subsample_seed": 2388,
+    "pool_meta": {
+      "target_idx_sha_n": 8000,
+      "subsample_seed": 2388
+    },
+    "diagnostics_summary": {
+      "mean_r2_map": 0.4975190661029046,
+      "mean_r2_identity_bias": -0.40913567345043284,
+      "mean_knn_acc_at_1_euclidean": 0.6514508928571429,
+      "per_layer_file": "linear__qa__fu1_diagnostics.json"
+    },
+    "wall_s": 56.4
+  },
+  "linear__qa__additive": {
+    "realized_u": 16000,
+    "composition": {
+      "generic": 8000,
+      "target": 8000
+    },
+    "subsample_seed": 2388,
+    "pool_meta": {
+      "n_avail": 18793,
+      "subsample_seed": 2388,
+      "n_taken": 8000,
+      "n_target": 8000
+    },
+    "diagnostics_summary": {
+      "mean_r2_map": 0.6397606428226442,
+      "mean_r2_identity_bias": -0.8136557741182361,
+      "mean_knn_acc_at_1_euclidean": 0.54625,
+      "per_layer_file": "linear__qa__additive_diagnostics.json"
+    },
+    "wall_s": 190.7
+  },
+  "mlp__qa__fu0": {
+    "realized_u": 16000,
+    "composition": {
+      "generic": 8000,
+      "target": 8000
+    },
+    "subsample_seed": 2388,
+    "pool_meta": {
+      "n_avail": 18793,
+      "subsample_seed": 2388,
+      "n_taken": 8000,
+      "n_target": 8000
+    },
+    "diagnostics_summary": {
+      "mean_r2_map": 0.6282021014889557,
+      "mean_r2_identity_bias": -0.8136557741182361,
+      "mean_knn_acc_at_1_euclidean": 0.4739397321428571,
+      "per_layer_file": "mlp__qa__fu0_diagnostics.json"
+    },
+    "wall_s": 18765.9
+  },
+  "mlp__qa__fu05": {
+    "realized_u": 8000,
+    "composition": {
+      "generic": 4000,
+      "target": 4000
+    },
+    "subsample_seed": 2388,
+    "pool_meta": {
+      "n_avail": 18793,
+      "subsample_seed": 2388,
+      "n_taken": 4000,
+      "n_target": 4000
+    },
+    "diagnostics_summary": {
+      "mean_r2_map": 0.5772093930925193,
+      "mean_r2_identity_bias": -0.8084952498108733,
+      "mean_knn_acc_at_1_euclidean": 0.5215848214285714,
+      "per_layer_file": "mlp__qa__fu05_diagnostics.json"
+    },
+    "wall_s": 6317.1
+  },
+  "mlp__qa__fu1": {
+    "realized_u": 8000,
+    "composition": {
+      "generic": 0,
+      "target": 8000
+    },
+    "subsample_seed": 2388,
+    "pool_meta": {
+      "target_idx_sha_n": 8000,
+      "subsample_seed": 2388
+    },
+    "diagnostics_summary": {
+      "mean_r2_map": 0.43920917578723184,
+      "mean_r2_identity_bias": -0.40913567345043284,
+      "mean_knn_acc_at_1_euclidean": 0.5913616071428571,
+      "per_layer_file": "mlp__qa__fu1_diagnostics.json"
+    },
+    "wall_s": 4218.1
+  },
+  "mlp__qa__additive": {
+    "realized_u": 16000,
+    "composition": {
+      "generic": 8000,
+      "target": 8000
+    },
+    "subsample_seed": 2388,
+    "pool_meta": {
+      "n_avail": 18793,
+      "subsample_seed": 2388,
+      "n_taken": 8000,
+      "n_target": 8000
+    },
+    "diagnostics_summary": {
+      "mean_r2_map": 0.6282021014889557,
+      "mean_r2_identity_bias": -0.8136557741182361,
+      "mean_knn_acc_at_1_euclidean": 0.4739397321428571,
+      "per_layer_file": "mlp__qa__additive_diagnostics.json"
+    },
+    "wall_s": 9459.6
   }
 }
