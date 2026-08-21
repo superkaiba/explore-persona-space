@@ -108,7 +108,7 @@
 
 \postersec{1.\ The Mapping has high predictive Power and is mostly Linear}
 \begin{center}
-\includegraphics[width=0.74\linewidth]{plot1_scaling_boundary.pdf}
+\includegraphics[width=0.78\linewidth]{plot1_scaling_boundary.pdf}
 \end{center}
 \begin{itemize}
   \item \takeaways{The mapping has high predictive power:} held-out $R^2$ 0.75, rank-1 retrieval 0.98 at 1 million contexts
@@ -123,7 +123,7 @@
 
 \postersec{2.\ The mapping predicts useful parts of the answer}
 \begin{center}
-\IfFileExists{figures/plot2_persona_directions.pdf}{\includegraphics[width=0.70\linewidth]{plot2_persona_directions.pdf}}{\includegraphics[width=0.46\linewidth]{c3_persona_direction_spectrum.pdf}}
+\IfFileExists{figures/plot2_persona_directions.pdf}{\includegraphics[width=0.86\linewidth]{plot2_persona_directions.pdf}}{\includegraphics[width=0.46\linewidth]{c3_persona_direction_spectrum.pdf}}
 \end{center}
 \begin{itemize}
   \item \takeaways{Persona-vector directions are among the best-predicted directions of the answer:} $R^2$ \textbf{0.80--0.91} against a random-direction mean of \textbf{0.67}, and every one does better than 95\% of random directions (0.76)
@@ -132,7 +132,7 @@
 \postersec{3.\ The mapping is better at predicting high-level and identity related features of the answer}
 We train another map from the context to the answer's \textbf{SAE features}, then partial out predictors \emph{one at a time} to see which survives.
 \begin{center}
-\includegraphics[width=0.72\linewidth]{plot3_sae_predictors.pdf}
+\includegraphics[width=0.90\linewidth]{plot3_sae_predictors.pdf}
 \end{center}
 \begin{itemize}
   \item Controlling for mean activation, the best predictors are
@@ -164,20 +164,11 @@ We train another map from the context to the answer's \textbf{SAE features}, the
 
 \postersec{5.\ The mapping is already largely present in the base model and refined throughout post training}
 \begin{center}
-\IfFileExists{figures/plot5_stages.pdf}{\includegraphics[width=0.60\linewidth]{plot5_stages.pdf}}{\includegraphics[width=0.38\linewidth]{c1_stage_retention.pdf}}
+\IfFileExists{figures/plot5_stages.pdf}{\includegraphics[width=0.68\linewidth]{plot5_stages.pdf}}{\includegraphics[width=0.38\linewidth]{c1_stage_retention.pdf}}
 \end{center}
 \begin{itemize}
   \item \takeaways{The mapping is already largely present in the base model:} the base $R^2$ 0.41 before any post-training.
   \item \takeaways{SFT has the largest effect on the mapping} ($+0.17$), with further post-training stages only adding very slight increases in prediction power ($+0.05$).
-\end{itemize}
-
-\postersec{Other Results}
-\begin{itemize}
-  \item \takeaways{The mapping does not get reliably better with model scale}
-  \item \takeaways{In thinking models, the mapping predicts just as well from the pre-CoT context vector and the post-CoT context vector}
-  \begin{itemize}
-      \item suggesting that whatever is predicted by the mapping is not affected by CoT
-  \end{itemize}
 \end{itemize}
 
 \end{column}
@@ -187,7 +178,7 @@ We train another map from the context to the answer's \textbf{SAE features}, the
 
 \postersec{6.\ The mapping is shared with story characters}
 \begin{center}
-\includegraphics[width=0.82\linewidth]{plot6c_pooled_lattice.pdf}
+\includegraphics[width=0.76\linewidth]{plot6c_pooled_lattice.pdf}
 \end{center}
 \begin{itemize}
   \item \takeaways{One shared map does almost as well as per-character/framing maps:} 62-94\% of each framing/character's own-map performance
@@ -216,21 +207,30 @@ We train another map from the context to the answer's \textbf{SAE features}, the
   \end{itemize}
 \end{itemize}
 
+\postersec{Other Results}
+\begin{itemize}
+  \item \takeaways{The mapping does not get reliably better with model scale}
+  \item \takeaways{In thinking models, the mapping predicts just as well from the pre-CoT context vector and the post-CoT context vector}
+  \begin{itemize}
+      \item suggesting that whatever is predicted by the mapping is not affected by CoT
+  \end{itemize}
+\end{itemize}
+
 \postersec{Implications}
 \begin{itemize}
-    \item A simple linear approximation can approximate much of the context-answer mapping implemented by a LLM
-    \item Many potential applications: predicting behavior pre-generation, automated redteaming/jailbreaking, predicting effect of fine-tuning
+    \item A  linear mapping can approximate much of the context-answer mapping implemented by a LLM
+    \item Applications: predicting behavior, automated redteaming, predicting effect of fine-tuning
     \item Evidence for persona selection model
-    \item Motivate further work into context-conditioned metamodels of answer activations and the limits of linearity in transformers
+    \item Motivates further work into metamodels of answer activations and the linearity in transformers
 \end{itemize}
 
 \postersec{Future work (in progress)}
 \begin{itemize}
-  \item More complex estimators (diffusion, flow matching, etc.)
-  \item Predicting the entire distribution to bound probability of rare behaviors 
+  \item Trying more complex estimators (diffusion, flow matching, etc.)
+  \item Predicting the entire answer distribution to bound probability of rare behaviors 
   \item Theoretical analysis of the mapping 
-  \item Predict other properties of the answer
-  \item Predicting effect of fine-tuning
+  \item Predicting other properties of the answer
+  \item Predicting the effect of fine-tuning
   \item Automated redteaming / jailbreaking.
   \item Single-token next-activation mapping
 \end{itemize}
