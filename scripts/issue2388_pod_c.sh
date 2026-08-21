@@ -168,7 +168,12 @@ for s in math mcq code; do
   # _pin_map_payloads), so the R2 linear-only smoke maps fit died at
   # maps_smoke/mlp__math__fu1.pt.
   CUDA_VISIBLE_DEVICES=0 uv run python scripts/issue2388_fits.py --smoke --phase maps --surface "$s" --keys "linear__${s}__fu1" "mlp__${s}__fu1" --device cuda
-  CUDA_VISIBLE_DEVICES=0 uv run python scripts/issue2388_fits.py --smoke --phase sweep --surface "$s" --map-cell fu1 --device cuda
+  # R5: --smoke clamps only n_null/n_boot — sweep SCALE rides the CLI dials,
+  # so an unclamped smoke sweep runs the full L-grid x 3 draws (~7 h/surface,
+  # near-duplicating P5; observed live at L1000 2.5 h in). One rung x one
+  # draw is the plan-section-4 G2 scope (loader class + sweep dispatch);
+  # already-computed smoke cells resume by filename, so this re-entry is fast.
+  CUDA_VISIBLE_DEVICES=0 uv run python scripts/issue2388_fits.py --smoke --phase sweep --surface "$s" --map-cell fu1 --device cuda --budgets 250 --n-draws 1
 done
 sentinel p3-smoke-done "P3 smoke: per-surface maps+sweep smoke green (math/mcq/code loader classes)"
 fi

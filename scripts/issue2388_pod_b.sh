@@ -229,7 +229,11 @@ echo "[phase=p4_qa_maps]"
 # the qa surface and the default (/workspace/store) is the UNRESOLVED
 # parent on this pod.
 uv run python scripts/issue2388_fits.py --smoke --phase maps --surface qa --keys linear__qa__fu1 mlp__qa__fu1 --device cuda --qa-store-dir "$QA_STORE_DIR"
-uv run python scripts/issue2388_fits.py --smoke --phase sweep --surface qa --map-cell fu1 --device cuda --qa-store-dir "$QA_STORE_DIR"
+# R7: --smoke clamps only n_null/n_boot — sweep SCALE rides the CLI dials,
+# so an unclamped smoke sweep runs the full L-grid x 3 draws (~7 h,
+# near-duplicating the production qa sweep). One rung x one draw is the G2
+# scope; computed smoke cells resume by filename.
+uv run python scripts/issue2388_fits.py --smoke --phase sweep --surface qa --map-cell fu1 --device cuda --qa-store-dir "$QA_STORE_DIR" --budgets 250 --n-draws 1
 uv run python scripts/issue2388_fits.py --phase maps --surface qa --device cuda --qa-store-dir "$QA_STORE_DIR" \
   --keys linear__qa__fu0 linear__qa__fu05 linear__qa__fu1 linear__qa__additive \
          mlp__qa__fu0 mlp__qa__fu05 mlp__qa__fu1 mlp__qa__additive
