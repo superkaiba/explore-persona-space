@@ -1,0 +1,98 @@
+{
+  "commit": "8add0009+dirty",
+  "render_id": "599f51fb53824235",
+  "git_commit": "8add0009e5265054e84037875be5184374201fce",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "docs/posters/mats_2026/figures/plot1_scaling_boundary.meta.json",
+    "docs/posters/mats_2026/figures/plot1_scaling_boundary.pdf",
+    "docs/posters/mats_2026/figures/plot1_scaling_boundary.png",
+    "docs/posters/mats_2026/figures/plot2_persona_directions.meta.json",
+    "docs/posters/mats_2026/figures/plot2_persona_directions.pdf",
+    "docs/posters/mats_2026/figures/plot2_persona_directions.png",
+    "docs/posters/mats_2026/figures/plot3_sae_predictors.meta.json",
+    "docs/posters/mats_2026/figures/plot3_sae_predictors.pdf",
+    "docs/posters/mats_2026/figures/plot3_sae_predictors.png",
+    "docs/posters/mats_2026/make_plot1_scaling.py",
+    "docs/posters/mats_2026/make_plot2_persona.py",
+    "docs/posters/mats_2026/make_plot3_sae.py",
+    "docs/posters/mats_2026/make_plot5_stages.py",
+    "docs/posters/mats_2026/make_plot9_application_arms.py",
+    "docs/posters/mats_2026/poster.tex",
+    "tasks/completed/2214/body.md",
+    "tasks/completed/2214/comments.jsonl",
+    "tasks/completed/2214/concerns.jsonl",
+    "tasks/completed/2214/events.jsonl",
+    "tasks/completed/2214/plans/plan.md",
+    "tasks/completed/2214/plans/v1.md",
+    "tasks/completed/2214/plans/v2.md",
+    "tasks/completed/2214/plans/v3.md",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "docs/posters/mats_2026/make_plot5_stages.py",
+  "created": "2026-08-21T10:33:02Z",
+  "figsize": [
+    5.4,
+    2.3
+  ],
+  "points": [
+    {
+      "category": "Base",
+      "held-out $R^2$": 0.412577163534647,
+      "_kind": "bar"
+    },
+    {
+      "category": "SFT",
+      "held-out $R^2$": 0.5778464737384732,
+      "_kind": "bar"
+    },
+    {
+      "category": "DPO",
+      "held-out $R^2$": 0.597919828039505,
+      "_kind": "bar"
+    },
+    {
+      "category": "RLVR",
+      "held-out $R^2$": 0.6022832271021715,
+      "_kind": "bar"
+    },
+    {
+      "category": "RLVR\n(longer)",
+      "held-out $R^2$": 0.6194515549193196,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 5,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "held-out $R^2$",
+        "xticklabels": [
+          "Base",
+          "SFT",
+          "DPO",
+          "RLVR",
+          "RLVR\n(longer)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -207,8 +207,20 @@ refused pre-spend), and paired PASS
 keeps NEW (fail-closed), and a paired FAIL on a dirty non-scratch oracle
 keeps the MF-4c exit 2. ``--no-paired-pristine`` restores the pre-#2024
 classification.
-Residual blind class: collection-time contamination from files sorting AFTER
-the candidate still classifies NEW (invisible to any prefix run).
+Suffix-replay arm (#2430): the former residual blind class — collection-time
+contamination from files sorting AFTER the candidate (invisible to any prefix
+run) — is mechanically attributed: a NEW paired candidate with empty
+``ordering_suspect`` (paired-PASS or ``no-predecessors``) is re-run in the
+GATE-FAITHFUL collection context (prefix + candidate + suffix all collected,
+non-candidates ``--deselect``-ed, only the candidate run); a reproducing
+FULL-SUFFIX confirmation replay is the ONLY strip license (non-blocking
+``ordering_suspect``, ``via="pristine-suffix-ordering"``), and a bisection of
+the suffix names the offender. Every refusal — wall-budget exhaustion, oracle
+distrust, probe failure, over-cap (``--max-suffix-files`` refuses, never
+truncates), aborted replay, and every NON-reproduction shape (flaky
+contamination; RUN-TIME prefix state mutated only by prefix TESTS' execution,
+not their imports) — keeps NEW (fail-closed), and the arm never raises exit-2
+indeterminacy. ``--no-suffix-replay`` restores the pre-#2430 classification.
 
 Under ``--json``, EVERY compare exit path prints exactly one JSON object to
 stdout: exit 0/1 the classification result (``indeterminate: false``); exit 2
@@ -241,7 +253,7 @@ import sys
 import tempfile
 import time
 import xml.etree.ElementTree as ET
-from collections.abc import Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
@@ -1721,6 +1733,74 @@ def run_single_file_pristine(
     )
 
 
+def run_suffix_replay(
+    ordered_files: list[str],
+    run_files: list[str],
+    cwd: Path,
+    timeout_s: float,
+    *,
+    venv_root: Path | None = None,
+    pythonpath: str | None = None,
+) -> PristineRun:
+    """Gate-faithful co-collection replay (#2430, v5 shape) -> PristineRun.
+
+    argv = *ordered_files* — the selector-order sublist of the gate run
+    (predecessor prefix files, then the candidate, then the chosen suffix
+    subset). Every ordered file NOT in *run_files* gets ``--deselect``, so
+    the ENTIRE gate collection/import context is reproduced (prefix included
+    — closing the import-time protective-state channel) while only the
+    candidate's tests execute: pytest collects (imports) every argv file
+    before any test runs, so deselection preserves the ONLY causal channel a
+    later-sorting file has to an earlier victim (collection/import-time side
+    effects) at collection cost instead of run cost. Guard semantics mirror
+    :func:`run_pristine_selection` — rc not in {0, 1}, a timeout, or a
+    zero-collected run raises PristineRunError; the #1022 interpreter rule
+    and the #1251 pythonpath trust split are inherited unchanged. A
+    collect-erroring DESELECTED file keeps rc in {0, 1} via
+    ``--continue-on-collection-errors`` already in ``PYTEST_BASE_FLAGS``
+    (its junit ``<error>`` testcase keys to the broken FILE, never the
+    candidate node — deselect-immune but harmless).
+    """
+    try:
+        python_exe = resolve_root_python(venv_root if venv_root is not None else cwd)
+    except ToolMissingError as exc:
+        raise PristineRunError(str(exc)) from exc
+    run_set = set(run_files)
+    extra = [*PYTEST_BASE_FLAGS, *(f"--deselect={f}" for f in ordered_files if f not in run_set)]
+    label = _pristine_files_label(list(run_files))
+    fd, tmp = tempfile.mkstemp(
+        prefix="step9c-suffix-junit-", suffix=".xml", dir=_gate_tmp_dir_arg()
+    )
+    os.close(fd)
+    tmp_path = Path(tmp)
+    try:
+        tmp_path.unlink(missing_ok=True)  # pytest must create it fresh (MF-1a parity)
+        try:
+            rc = run_pytest(
+                files=list(ordered_files),
+                cwd=cwd,
+                timeout_s=timeout_s,
+                junit_path=tmp_path,
+                extra=extra,
+                python_exe=python_exe,
+                pythonpath=pythonpath,
+            )
+        except subprocess.TimeoutExpired as exc:
+            raise PristineRunError(f"suffix replay for {label} timed out ({timeout_s}s)") from exc
+        if rc not in (0, 1):
+            raise PristineRunError(f"suffix replay for {label} aborted with rc={rc}")
+        try:
+            failing, summary = parse_junit(tmp_path)
+            failure_texts = parse_junit_failure_texts(tmp_path)
+        except JunitParseError as exc:
+            raise PristineRunError(f"suffix-replay junit unusable for {label}: {exc}") from exc
+        if summary["tests"] == 0:
+            raise PristineRunError(f"suffix replay for {label} collected 0 tests")
+        return PristineRun(failing=set(failing), failure_texts=failure_texts)
+    finally:
+        tmp_path.unlink(missing_ok=True)
+
+
 # --- pristine-timeout sizing (#1129). -----------------------------------------
 # Derived from the selector's #1046 gate-timeout knowledge so there is ONE
 # per-file runtime table. #1098: the pristine single-file run of
@@ -1785,6 +1865,15 @@ def derive_paired_timeout_s(sel: object, files: list[str]) -> float:
         + PRISTINE_SLOW_TIMEOUT_MULT * sum(float(slow.get(f, 0)) for f in files)
     )
     return max(total, PRISTINE_TIMEOUT_FLOOR_S)
+
+
+# #2430 v5 admission floor: a suffix replay LAUNCHES only while the remaining
+# wall budget is at least 2x TIMEOUT_BASE_S (120 s) — below it the launch is a
+# pointless sub-minute spend and the arm skips (suffix-budget-exhausted). The
+# derived derive_paired_timeout_s CEILING never gates admission (it is a
+# generous wedge-detection bound — 12,600 s at the #2059 shape, above the whole
+# default budget); each replay's subprocess timeout is min(ceiling, remaining).
+SUFFIX_LAUNCH_FLOOR_S = 240.0
 
 
 def lint_verdict(root: Path, wt: Path, touched: list[str]) -> dict:
@@ -1904,6 +1993,11 @@ class _CompareCtx:
     # --- #2316 violation-set diff for registered whole-repo scan nodes -------------
     run_failure_texts: dict[Node, str] = field(default_factory=dict)  # gate-run side
     scan_violation_diffs: list[dict] = field(default_factory=list)  # per-node audit rows
+    # --- #2430 suffix-replay arm (later-sorting-file contamination) ----------------
+    suffix_attributed: list[dict] = field(default_factory=list)  # per-strip audit rows
+    suffix_skipped: list[dict] = field(default_factory=list)  # {node_id, reason} kept-NEW rows
+    suffix_replays: int = 0  # replay subprocesses launched (wall-budget audit)
+    suffix_dropped_files: list[str] = field(default_factory=list)  # absent-on-main context drops
 
 
 def _resolve_roots(args: argparse.Namespace) -> tuple[Path, Path]:
@@ -2461,8 +2555,11 @@ def _classify_paired_verdicts(
     paired_use_scratch: bool,
     contaminating: list[str],
     residual: list[str],
-) -> None:
+) -> list[Node]:
     """Strip reproduced candidates as ``ordering_suspect``; a paired PASS keeps NEW.
+
+    Returns the paired-PASS nodes it kept NEW — the #2430 suffix-arm
+    eligibility input (additive: no pre-#2430 caller consumed a return).
 
     B2 verdict-time guard (plan §4.1(d)): a paired FAIL judged on a
     NON-scratch oracle with live dirt at the pre-invocation re-probe raises
@@ -2477,11 +2574,13 @@ def _classify_paired_verdicts(
     (``floor-profile-oracle`` skip), so ``paired_use_scratch`` always names a
     full-trust scratch.
     """
+    pass_kept: list[Node] = []
     for node in kept:
         if node not in paired_failing:
             # Passed on main under the same co-selection but failed in the
             # run: the branch caused it — NEW, blocking, exactly as today.
             ctx.new.append(node)
+            pass_kept.append(node)
             continue
         if not paired_use_scratch and ctx.live_dirty_paths:
             raise _Indeterminate(  # MF-4c parity, fail-closed to exit 2 (B2)
@@ -2507,6 +2606,7 @@ def _classify_paired_verdicts(
             "(ordering_suspect). Route a workflow-fix candidate at the "
             "interaction itself — never a silent pass"
         )
+    return pass_kept
 
 
 def _resolve_paired_candidates(
@@ -2518,8 +2618,18 @@ def _resolve_paired_candidates(
     oracles: dict[Node, str],
     *,
     floored: bool,
-) -> None:
+) -> list[Node]:
     """Re-run would-be-NEW untouched-file nodes under the gate's co-selection order (#2024).
+
+    Returns the #2430 suffix-arm ELIGIBLE nodes: paired-PASS nodes kept NEW
+    plus nodes skipped with reason ``no-predecessors`` (the prefix arm spent
+    nothing there and suffix contamination is the only ordering explanation
+    left — a candidate first in the run order has the entire gate as its
+    suffix). Every OTHER skip reason (``floor-profile-oracle``,
+    ``oracle-mismatch``, ``scratch-residual-contamination``,
+    ``prefix-over-cap``) is a trust/spend refusal that binds the suffix arm
+    identically — those nodes are NOT eligible, and every exit path returns
+    a list (additive: no pre-#2430 caller consumed a return).
 
     The paired pristine re-run is the ONLY mechanism that may downgrade a
     would-be NEW node: a REPRODUCTION on pristine main under (a subset of)
@@ -2542,11 +2652,19 @@ def _resolve_paired_candidates(
     prefix ending at the last candidate contains all earlier ones);
     ``PristineRunError`` maps to exit 2, and the
     B2 dirty-oracle verdict guard lives in ``_classify_paired_verdicts``.
-    Residual blind class (documented, not fixed): collection-time
-    contamination from files sorting AFTER the candidate is present in the
-    gate process but absent from any prefix run — that shape still
-    classifies NEW (fail-closed); the manual provenance-override path
-    remains the escape for it.
+    Residual blind classes AFTER the #2430 suffix arm: the suffix-replay arm
+    (``_resolve_suffix_candidates``, consuming this function's return)
+    mechanically attributes collection-time contamination from files sorting
+    AFTER the candidate — present in the gate process but absent from any
+    prefix run — by replaying the candidate in the gate-faithful collection
+    context and bisecting the suffix for the offender. What STILL classifies
+    NEW (fail-closed): every arm refusal (wall-budget exhaustion, oracle
+    distrust, probe failure, over-cap, aborted replay) and every
+    NON-REPRODUCTION shape — flaky / non-deterministic contamination that
+    does not reproduce on the confirmation replay, and RUN-TIME prefix state
+    (state mutated only by prefix TESTS' execution, not their imports —
+    deselected prefix files are collected, never run). The manual
+    provenance-override path remains the escape for those.
     """
     paired_use_scratch = scratch is not None
     # Three-way via the shared _oracle_label vocabulary: when the live scratch
@@ -2577,7 +2695,7 @@ def _resolve_paired_candidates(
         else:
             candidates.append(node)
     if not candidates:
-        return
+        return []
     # B2: re-probe immediately BEFORE the invocation — exactly as the
     # per-file loop probes per file (MF-4c freshness + mid-loop transitions).
     try:
@@ -2598,24 +2716,26 @@ def _resolve_paired_candidates(
         # case there is no prior trustworthy verdict to contradict.
         for node in candidates:
             _paired_skip_to_new(ctx, node, "scratch-residual-contamination")
-        return
+        return []
     prefix = _build_paired_prefix(ctx, root, ran_files, candidates)
     if len(prefix) > args.max_paired_files:
         # Refuse-to-spend guard, NOT a truncation (B1).
         for node in candidates:
             _paired_skip_to_new(ctx, node, "prefix-over-cap")
-        return
+        return []
     prefix_pos = {f: i for i, f in enumerate(prefix)}
     kept: list[Node] = []
+    no_pred: list[Node] = []  # #2430: suffix-arm eligible (audit row stays, historically true)
     for node in candidates:
         if prefix_pos[node.file] == 0:
             # Zero retained predecessors: the paired run would be identical
             # to the single-file run that already PASSed — spend nothing.
             _paired_skip_to_new(ctx, node, "no-predecessors")
+            no_pred.append(node)
         else:
             kept.append(node)
     if not kept:
-        return
+        return no_pred
     prefix = prefix[: max(prefix_pos[n.file] for n in kept) + 1]
     timeout_s = (
         args.pristine_timeout_s
@@ -2639,9 +2759,306 @@ def _resolve_paired_candidates(
         # Never a classification from an aborted run — exit 2 (plan §4.1(d)).
         raise _Indeterminate(f"{exc} — indeterminate", warns=ctx.warns) from exc
     ctx.paired_files_run = list(prefix)
-    _classify_paired_verdicts(
+    pass_kept = _classify_paired_verdicts(
         ctx, kept, paired.failing, paired_use_scratch, contaminating, residual
     )
+    return [*no_pred, *pass_kept]
+
+
+# --- #2430 suffix-replay arm (later-sorting-file collection contamination) ------
+
+
+class _SuffixArmStop(RuntimeError):
+    """Typed suffix-arm refusal (#2430): carries the kept-NEW skip reason.
+
+    Raised inside the replay closure / arm body wherever the arm refuses to
+    spend or cannot trust its oracle; caught at the per-candidate loop, where
+    it resolves fail-closed — the candidate keeps NEW (pre-confirmation) or
+    the confirmed strip lands with attribution stopped (post-confirmation).
+    Never escapes ``_resolve_suffix_candidates``: the arm never raises
+    ``_Indeterminate`` and adds no exit-2 path (v5 upheld Must-Fix).
+    """
+
+    def __init__(self, reason: str) -> None:
+        super().__init__(reason)
+        self.reason = reason
+
+
+def _suffix_skip(ctx: _CompareCtx, node: Node, reason: str) -> None:
+    """Audit-only suffix-arm skip: *node* is ALREADY in ``ctx.new`` (#2430).
+
+    Unlike ``_paired_skip_to_new`` this never re-appends the node — every
+    suffix-eligible node arrived here via a paired-PASS keep or a
+    ``no-predecessors`` skip, both of which already appended it to
+    ``ctx.new``. The row makes a still-blocking NEW one-glance diagnosable.
+    """
+    ctx.suffix_skipped.append({"node_id": f"{node.file}::{node.name}", "reason": reason})
+
+
+def _build_suffix_context(
+    ctx: _CompareCtx, root: Path, ran_files: set[str], node: Node
+) -> tuple[list[str], list[str]]:
+    """(prefix, suffix) around *node* in the gate's selector order (#2430 §4.2).
+
+    Both lists are selector-ordered sublists of the files the gate RAN,
+    filtered to files present on pristine main (a branch-new co-selected file
+    cannot be collected on a HEAD-pinned tree; drops are recorded in
+    ``ctx.suffix_dropped_files``). The prefix carries EVERY predecessor —
+    collected-but-deselected in the replay — so the replay reproduces the
+    gate's FULL collection context: a prefix import can be PROTECTIVE, and a
+    prefix-free replay would mis-attribute a prefix-masked interaction to the
+    suffix (v5 upheld Must-Fix 2). ``node.file`` is placeable by construction:
+    eligibility requires a paired candidate, and order-skew files were
+    filtered upstream (``_paired_collection_reason``).
+    """
+    ran_in_order = [f for f in ctx.selected_order if f in ran_files]
+    pos = ran_in_order.index(node.file)
+
+    def _present(files: list[str]) -> list[str]:
+        kept: list[str] = []
+        for f in files:
+            if (root / f).exists():
+                kept.append(f)
+            elif f not in ctx.suffix_dropped_files:
+                ctx.suffix_dropped_files.append(f)
+        return kept
+
+    return _present(ran_in_order[:pos]), _present(ran_in_order[pos + 1 :])
+
+
+def _bisect_suffix_offender(pool: list[str], replay: Callable[[list[str]], bool]) -> str | None:
+    """Single-offender bisection over the confirmed-failing suffix *pool* (#2430 §4.3).
+
+    ``replay(subset)`` returns True when the candidate node FAILS under
+    ``prefix + candidate + subset``. Halves are CONTIGUOUS selector-order
+    sublists (an interaction can be order-dependent). Entry invariant: the
+    candidate FAILED under the whole *pool* (the full-suffix confirmation, or
+    a confirmed half), so a singleton pool needs no extra replay.
+    Neither-half-fails -> None (multi-file or replay-flaky contamination —
+    the caller's strip stands, offender unattributed). Cost <=
+    2*ceil(log2(S)) replays.
+    """
+    while len(pool) > 1:
+        mid = len(pool) // 2
+        left, right = pool[:mid], pool[mid:]
+        if replay(left):
+            pool = left
+        elif replay(right):
+            pool = right
+        else:
+            return None
+    return pool[0] if pool else None
+
+
+def _make_suffix_replayer(
+    ctx: _CompareCtx,
+    root: Path,
+    scratch: _ScratchTree | None,
+    args: argparse.Namespace,
+    node: Node,
+    prefix: list[str],
+    deadline: float,
+    use_scratch: bool,
+) -> Callable[[list[str]], bool]:
+    """The per-candidate replay closure (#2430 §4.4): probe -> admit -> run -> verdict.
+
+    Every call re-probes oracle trust (B2/MF-4c + r2/R-B' parity — as the
+    per-file loop probes per file) and admits against the REMAINING wall
+    budget: refuse pre-launch ONLY when remaining < ``SUFFIX_LAUNCH_FLOOR_S``;
+    the derived per-replay ceiling NEVER gates admission (v5 upheld Must-Fix
+    1 — at the #2059 shape the derived ceiling is ~12,600 s, above the whole
+    default wall budget, so ceiling-gated admission would refuse everything).
+    Returns True iff *node* FAILED under ``prefix + node.file + subset``.
+    Refusals raise ``_SuffixArmStop``; an aborted replay (PristineRunError —
+    subprocess timeout included) maps to ``_SuffixArmStop("suffix-replay-error")``
+    — never ``_Indeterminate``.
+    """
+
+    def replay(subset: list[str]) -> bool:
+        try:
+            ctx.live_dirty_paths = dirty_code_paths(root)
+            contaminating = scratch_contamination_probe(root)
+        except (subprocess.CalledProcessError, OSError) as exc:
+            raise _SuffixArmStop("suffix-dirt-probe-failed") from exc
+        residual = (
+            list(contaminating)
+            if args.no_src_shadow
+            else residual_scratch_contamination(contaminating)
+        )
+        if use_scratch and residual:
+            # r2/R-B' parity: residual contamination makes the scratch oracle
+            # untrustworthy for the only verdict this arm may issue (a strip).
+            raise _SuffixArmStop("suffix-scratch-residual-contamination")
+        if not use_scratch and ctx.live_dirty_paths:
+            # MF-4c parity, resolved as a pre-spend typed skip (never exit 2:
+            # unlike the paired B2 case there is no prior trustworthy verdict
+            # from this arm to contradict — the strip simply is not issued).
+            raise _SuffixArmStop("suffix-dirty-oracle")
+        ordered = [*prefix, node.file, *subset]
+        remaining = deadline - time.monotonic()
+        if remaining < SUFFIX_LAUNCH_FLOOR_S:
+            raise _SuffixArmStop("suffix-budget-exhausted")
+        ceiling = (
+            args.pristine_timeout_s
+            if args.pristine_timeout_s is not None
+            else derive_paired_timeout_s(ctx.sel, ordered)
+        )
+        try:
+            run = run_suffix_replay(
+                ordered,
+                [node.file],
+                cwd=scratch.path if use_scratch else root,
+                timeout_s=min(ceiling, remaining),
+                venv_root=root if use_scratch else None,
+                pythonpath=(
+                    str(scratch.path / "src") if use_scratch and not args.no_src_shadow else None
+                ),
+            )
+        except PristineRunError as exc:
+            raise _SuffixArmStop("suffix-replay-error") from exc
+        ctx.suffix_replays += 1
+        return node in run.failing
+
+    return replay
+
+
+def _suffix_strip(
+    ctx: _CompareCtx,
+    node: Node,
+    offender: str | None,
+    prefix: list[str],
+    suffix: list[str],
+    *,
+    replays_used: int,
+    attribution_stopped: str | None,
+) -> None:
+    """Strip *node* as ``ordering_suspect`` off a COMPLETED full-suffix confirmation (#2430).
+
+    Licensing is confirmation-only (v5 upheld Must-Fix 3): callers invoke
+    this ONLY after the full-suffix confirmation replay reproduced the
+    failure; bisection / prior-offender probes refine ATTRIBUTION and may
+    stop early (*attribution_stopped* names the refusal) without unlicensing
+    the strip. ``ctx.new.remove`` relies on Node value equality — the node
+    was appended exactly once (paired-PASS keep or ``no-predecessors`` skip).
+    """
+    ctx.new.remove(node)
+    _strip_node(ctx, node, via="pristine-suffix-ordering")
+    ctx.ordering_suspect.append(
+        {**node._asdict(), "via": "pristine-suffix-ordering", "suffix_offender": offender}
+    )
+    ctx.suffix_attributed.append(
+        {
+            "node_id": f"{node.file}::{node.name}",
+            "offender": offender,
+            "prefix_len": len(prefix),
+            "suffix_len": len(suffix),
+            "licensed_by": "full-suffix-confirmation",
+            "replays_used": replays_used,
+            "attribution_stopped": attribution_stopped,
+        }
+    )
+    ctx.warns.append(
+        f"SUFFIX-ORDERING WARN: {node.file}::{node.name} passes single-file (and any "
+        f"prefix run) on pristine main but REPRODUCES when replayed in the gate's own "
+        f"collection context ({len(prefix)} predecessor + {len(suffix)} successor files "
+        f"collected-but-deselected) — pre-existing collection-time contamination from a "
+        f"file sorting AFTER it (offender: {offender or 'unattributed'}); stripped "
+        "non-blocking (ordering_suspect). Route a workflow-fix candidate at the "
+        "interaction itself — never a silent pass"
+    )
+
+
+def _resolve_suffix_candidates(
+    ctx: _CompareCtx,
+    root: Path,
+    scratch: _ScratchTree | None,
+    ran_files: set[str],
+    args: argparse.Namespace,
+    eligible: list[Node],
+    *,
+    floored: bool,
+) -> None:
+    """Suffix-replay attribution arm over the prefix arm's ELIGIBLE nodes (#2430).
+
+    For each eligible node (paired-PASS kept NEW, or ``no-predecessors``),
+    ONE gate-faithful CONFIRMATION replay collects the full gate context
+    (every predecessor AND every successor, deselected) and runs only the
+    candidate: a reproduction licenses the strip; bisection (plus
+    prior-offender accelerator probes, run only AFTER a confirmation) then
+    attributes the offending successor file. Fail-closed throughout: every
+    ``_SuffixArmStop`` BEFORE the confirmation keeps NEW with a
+    ``suffix_skipped`` row; AFTER the confirmation it stops ATTRIBUTION only
+    (the strip stands, offender None, ``attribution_stopped`` names why).
+    The arm never raises ``_Indeterminate`` and adds no exit-2 path; a
+    suffix strip flips exit 1 -> 0 exactly like a prefix strip. Per-node
+    replay cost <= 1 + k + 2*ceil(log2(S)) (confirmation + k accelerator
+    probes + bisection), all under the shared ``--suffix-wall-budget-s``.
+    """
+    use_scratch = scratch is not None
+    if use_scratch and floored:
+        # R-G' defense-in-depth (#2019), same conjunction as _oracle_label: a
+        # LIVE floor-profile scratch cannot certify a strip. Eligibility
+        # SHOULD already be empty here (the paired stage refuses floor-oracle
+        # candidates pre-spend) — refuse again rather than trust the
+        # invariant. A ROOT venue (scratch is None) is unaffected: floored
+        # only describes what a scratch WOULD be, not the oracle in use.
+        for node in eligible:
+            _suffix_skip(ctx, node, "floor-profile-oracle")
+        return
+    order_pos = {f: i for i, f in enumerate(ctx.selected_order)}
+    ordered_eligible = sorted(eligible, key=lambda n: (order_pos[n.file], n.classname, n.name))
+    deadline = time.monotonic() + args.suffix_wall_budget_s
+    attributed: list[str] = []  # cross-candidate accelerator pool (#2430 §4.4)
+    for node in ordered_eligible:
+        prefix, suffix = _build_suffix_context(ctx, root, ran_files, node)
+        if not suffix:
+            _suffix_skip(ctx, node, "no-successors")
+            continue
+        if len(suffix) > args.max_suffix_files:
+            # Refuse-to-spend guard on the SUFFIX budget alone (#2430 plan
+            # §4.3/§4.4: S=400 sizes the bisection pool; the prefix+candidate
+            # are the gate context the replay must carry, not the spend being
+            # capped — a small-suffix candidate that merely sorts late in a
+            # wide gate stays admissible). NOT a truncation (B1 parity):
+            # truncating the suffix would silently exclude the real offender.
+            # Collection cost of the full ordered width is bounded separately
+            # by --suffix-wall-budget-s + the min-capped per-replay timeout.
+            _suffix_skip(ctx, node, "suffix-over-cap")
+            continue
+        replay = _make_suffix_replayer(
+            ctx, root, scratch, args, node, prefix, deadline, use_scratch
+        )
+        replays_before = ctx.suffix_replays
+        offender: str | None = None
+        stop_reason: str | None = None
+        confirmed = False
+        try:
+            if not replay(suffix):
+                _suffix_skip(ctx, node, "suffix-no-reproduction")
+                continue
+            confirmed = True
+            for prior in attributed:
+                if prior in suffix and replay([prior]):
+                    offender = prior
+                    break
+            if offender is None:
+                offender = _bisect_suffix_offender(list(suffix), replay)
+        except _SuffixArmStop as stop:
+            if not confirmed:
+                _suffix_skip(ctx, node, stop.reason)
+                continue
+            stop_reason = stop.reason
+        _suffix_strip(
+            ctx,
+            node,
+            offender,
+            prefix,
+            suffix,
+            replays_used=ctx.suffix_replays - replays_before,
+            attribution_stopped=stop_reason,
+        )
+        if offender is not None and offender not in attributed:
+            attributed.append(offender)
 
 
 def _scan_diff_row(
@@ -3000,9 +3417,15 @@ def _resolve_pristine_bucket(  # noqa: C901 — #2024 paired stage grew the orac
         if ctx.paired_candidates:
             # Inside the try so the paired run reuses the LIVE scratch oracle
             # (the finally below is the single teardown point).
-            _resolve_paired_candidates(
+            suffix_eligible = _resolve_paired_candidates(
                 ctx, root, scratch, ran_files, args, paired_oracles, floored=floored
             )
+            if suffix_eligible and not args.no_suffix_replay:
+                # #2430 suffix-replay arm: same try/finally so its replays
+                # reuse the SAME live scratch oracle as the paired stage.
+                _resolve_suffix_candidates(
+                    ctx, root, scratch, ran_files, args, suffix_eligible, floored=floored
+                )
     finally:
         if scratch is not None:
             remove_scratch_worktree(root, scratch)
@@ -3050,6 +3473,10 @@ def _compare_impl(args: argparse.Namespace) -> dict:
         "paired_order_skew": ctx.paired_order_skew,
         "paired_skipped": ctx.paired_skipped,
         "paired_oracle": ctx.paired_oracle,  # floor value = armed-only (candidates refused)
+        "suffix_attributed": ctx.suffix_attributed,  # #2430 per-strip audit rows
+        "suffix_skipped": ctx.suffix_skipped,  # #2430 kept-NEW refusal rows
+        "suffix_replays": ctx.suffix_replays,  # #2430 wall-budget audit (subprocess count)
+        "suffix_dropped_files": ctx.suffix_dropped_files,  # #2430 absent-on-main context drops
         "scratch_sha": ctx.scratch_sha,
         "oracle_base_ref": ctx.base_ref,  # #2293: the REF the oracle cut resolved from
         "oracle_base_sha": ctx.oracle_base_sha,  # #2293: merge-base(base_ref, wt HEAD)
@@ -3098,6 +3525,12 @@ def cmd_compare(args: argparse.Namespace) -> int:
     node is STRIPPED (it reproduced on pristine main under the gate's own
     co-selection order), so it never contributes to exit 1 — it is loud in
     ``warns`` + its own JSON list + the ``ORDERING-SUSPECT:`` stdout lines.
+    #2430: a SUFFIX strip (reproduction in the gate-faithful collection
+    context, attributed to a later-sorting file) flips exit 1 -> 0 exactly
+    like a prefix strip and rides the same ``ordering_suspect`` list (via
+    ``pristine-suffix-ordering``, plus ``suffix_attributed`` audit rows +
+    ``SUFFIX-ATTRIBUTED:`` stdout lines); the arm adds NO exit-2 path —
+    every refusal keeps NEW (exit 1).
     #2316: exit 1 also covers a ``VIOLATION_SET_SCAN_NODES`` member red on
     BOTH sides whose branch-side violation set exceeds pristine's (it enters
     ``new`` via ``_resolve_scan_violation_setdiff``; side-by-side lists in the
@@ -3159,6 +3592,8 @@ def cmd_compare(args: argparse.Namespace) -> int:
             )
         for o in result["ordering_suspect"]:
             print(f"  ORDERING-SUSPECT: {o['file']}::{o['name']}")  # #2024 non-blocking
+        for s in result["suffix_attributed"]:  # #2430 non-blocking, already stripped
+            print(f"  SUFFIX-ATTRIBUTED: {s['node_id']} <- {s['offender'] or 'unattributed'}")
         for uid in result["urgent_park_required"]:
             print(f"  URGENT-PARK-REQUIRED: {uid}")  # #1742 (stderr carries the full demand)
         for w in result["warns"]:
@@ -3793,6 +4228,34 @@ def build_parser() -> argparse.ArgumentParser:
         "window would drop the contaminating predecessor: #2021 measured distance 49). "
         "The default sits above the current ~171-file full selection, so it is a "
         "runaway guard, not a behavior knob.",
+    )
+    p_compare.add_argument(
+        "--no-suffix-replay",
+        action="store_true",
+        help="disable the #2430 suffix-replay attribution arm — restore the pre-#2430 "
+        "classification exactly (every suffix-eligible node stays NEW; the #2024 paired "
+        "prefix arm is unaffected)",
+    )
+    p_compare.add_argument(
+        "--max-suffix-files",
+        type=int,
+        default=400,
+        help="refuse-to-spend cap on a node's SUFFIX length alone (len(suffix); #2430, "
+        "B1 parity) — the prefix + candidate gate context rides free, so a small-suffix "
+        "candidate that merely sorts late in a wide gate stays admissible: over-cap "
+        "SKIPs the arm for that node (keeps NEW) — NEVER truncates the suffix (a "
+        "truncation would silently exclude the real offender). Default sits above 2x "
+        "the current ~171-file full selection: a runaway guard, not a behavior knob.",
+    )
+    p_compare.add_argument(
+        "--suffix-wall-budget-s",
+        type=float,
+        default=5400.0,
+        help="shared wall budget for ALL #2430 suffix replays in one compare (v5 "
+        "admission semantics: a replay launches while remaining budget >= 240 s "
+        "(SUFFIX_LAUNCH_FLOOR_S) with subprocess timeout = min(derived ceiling, "
+        "remaining); exhaustion mid-attribution keeps a confirmed strip and stops "
+        "attribution; exhaustion pre-confirmation keeps NEW (suffix-budget-exhausted))",
     )
     p_compare.add_argument("--json", action="store_true")
     p_compare.set_defaults(func=cmd_compare)

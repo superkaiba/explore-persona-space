@@ -1,0 +1,513 @@
+{
+  "commit": "8add0009+dirty",
+  "render_id": "4e71f05eebff4e88",
+  "git_commit": "8add0009e5265054e84037875be5184374201fce",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "docs/posters/mats_2026/figures/plot1_scaling_boundary.meta.json",
+    "docs/posters/mats_2026/figures/plot1_scaling_boundary.pdf",
+    "docs/posters/mats_2026/figures/plot1_scaling_boundary.png",
+    "docs/posters/mats_2026/figures/plot2_persona_directions.meta.json",
+    "docs/posters/mats_2026/figures/plot2_persona_directions.pdf",
+    "docs/posters/mats_2026/figures/plot2_persona_directions.png",
+    "docs/posters/mats_2026/figures/plot3_sae_predictors.meta.json",
+    "docs/posters/mats_2026/figures/plot3_sae_predictors.pdf",
+    "docs/posters/mats_2026/figures/plot3_sae_predictors.png",
+    "docs/posters/mats_2026/figures/plot5_stages.meta.json",
+    "docs/posters/mats_2026/figures/plot5_stages.pdf",
+    "docs/posters/mats_2026/figures/plot5_stages.png",
+    "docs/posters/mats_2026/make_plot1_scaling.py",
+    "docs/posters/mats_2026/make_plot2_persona.py",
+    "docs/posters/mats_2026/make_plot3_sae.py",
+    "docs/posters/mats_2026/make_plot5_stages.py",
+    "docs/posters/mats_2026/make_plot9_application_arms.py",
+    "docs/posters/mats_2026/poster.tex",
+    "tasks/completed/2214/body.md",
+    "tasks/completed/2214/comments.jsonl",
+    "tasks/completed/2214/concerns.jsonl",
+    "tasks/completed/2214/events.jsonl",
+    "tasks/completed/2214/plans/plan.md",
+    "tasks/completed/2214/plans/v1.md",
+    "tasks/completed/2214/plans/v2.md",
+    "tasks/completed/2214/plans/v3.md",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "docs/posters/mats_2026/make_plot9_application_arms.py",
+  "created": "2026-08-21T10:33:05Z",
+  "figsize": [
+    7.6,
+    2.95
+  ],
+  "points": [
+    {
+      "x": -0.32,
+      "Spearman $\\rho$": 0.7550197827954369,
+      "error": 0.04946694287902276,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -0.16,
+      "Spearman $\\rho$": 0.8180783834780763,
+      "error": 0.04061986276656637,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "synth.",
+      "Spearman $\\rho$": 0.8429115275104073,
+      "error": 0.04336723879195031,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.16,
+      "Spearman $\\rho$": 0.7069504786777224,
+      "error": 0.07129139257996664,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.32,
+      "Spearman $\\rho$": 0.810571074579304,
+      "error": 0.041846378568666076,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.68,
+      "Spearman $\\rho$": 0.06707034670126535,
+      "error": 0.10695385443950803,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 0.84,
+      "Spearman $\\rho$": 0.22541778412988908,
+      "error": 0.07143818610860146,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "chat",
+      "Spearman $\\rho$": 0.22644899839439725,
+      "error": 0.07423026162794624,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 1.16,
+      "Spearman $\\rho$": 0.1349220757126155,
+      "error": 0.10712794051367668,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 1.32,
+      "Spearman $\\rho$": 0.16324611609285736,
+      "error": 0.08582034350237827,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 1.68,
+      "Spearman $\\rho$": 0.030544916399591317,
+      "error": 0.024098251974663813,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 1.84,
+      "Spearman $\\rho$": 0.6712108952070648,
+      "error": 0.013658647086443265,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "category": "in-dist.",
+      "Spearman $\\rho$": 0.6875008608887927,
+      "error": 0.012378473708050619,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 2.16,
+      "Spearman $\\rho$": 0.5916133705769209,
+      "error": 0.015961363366459036,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 2.32,
+      "Spearman $\\rho$": 0.7491823147055028,
+      "error": 0.011184941302997686,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 2.68,
+      "Spearman $\\rho$": 0.014494893979452313,
+      "error": 0.06293408744058923,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 2.84,
+      "Spearman $\\rho$": 0.15777045499981224,
+      "error": 0.06557752799847463,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "category": "OOD",
+      "Spearman $\\rho$": 0.1703975094979141,
+      "error": 0.06361923713391475,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "x": 3.16,
+      "Spearman $\\rho$": 0.21076898875190866,
+      "error": 0.05781110104690579,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "x": 3.32,
+      "Spearman $\\rho$": 0.22766990730237624,
+      "error": 0.05905666626594762,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "x": -0.32,
+      "y": 0.7921413291952443,
+      "error": 0.04861378004239836,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "x": -0.16,
+      "y": 0.39861803859275446,
+      "error": 0.1093709745591798,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "category": "synth.",
+      "y": 0.7640980641705702,
+      "error": 0.0522172150147025,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "x": 0.16,
+      "y": 0.7611846342218265,
+      "error": 0.05315265897989718,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "x": 0.32,
+      "y": 0.7759252381712568,
+      "error": 0.04787286504282212,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "x": 0.68,
+      "y": -0.03910039610309418,
+      "error": 0.09269388845842297,
+      "_kind": "bar",
+      "_group": 25
+    },
+    {
+      "x": 0.84,
+      "y": 0.09223660209399395,
+      "error": 0.0963013451403872,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "category": "chat",
+      "y": 0.07624932674428626,
+      "error": 0.09505637651217738,
+      "_kind": "bar",
+      "_group": 27
+    },
+    {
+      "x": 1.16,
+      "y": 0.5040245535970942,
+      "error": 0.07979804854602429,
+      "_kind": "bar",
+      "_group": 28
+    },
+    {
+      "x": 1.32,
+      "y": 0.5174104385082218,
+      "error": 0.07825234370014275,
+      "_kind": "bar",
+      "_group": 29
+    },
+    {
+      "x": 1.68,
+      "y": 0.018076322553141046,
+      "error": 0.015418414248423612,
+      "_kind": "bar",
+      "_group": 30
+    },
+    {
+      "x": 1.84,
+      "y": 0.2887620479734463,
+      "error": 0.015372623902776522,
+      "_kind": "bar",
+      "_group": 31
+    },
+    {
+      "category": "in-dist.",
+      "y": 0.3179323682053547,
+      "error": 0.01601755451376846,
+      "_kind": "bar",
+      "_group": 32
+    },
+    {
+      "x": 2.16,
+      "y": 0.720546707075219,
+      "error": 0.009299744071483262,
+      "_kind": "bar",
+      "_group": 33
+    },
+    {
+      "x": 2.32,
+      "y": 0.7392767797199288,
+      "error": 0.008356035374059656,
+      "_kind": "bar",
+      "_group": 34
+    },
+    {
+      "x": 2.68,
+      "y": 0.06085386456800987,
+      "error": 0.05204943291632287,
+      "_kind": "bar",
+      "_group": 35
+    },
+    {
+      "x": 2.84,
+      "y": 0.2398471924190651,
+      "error": 0.05248973152078737,
+      "_kind": "bar",
+      "_group": 36
+    },
+    {
+      "category": "OOD",
+      "y": 0.2495902989637087,
+      "error": 0.050841682796830046,
+      "_kind": "bar",
+      "_group": 37
+    },
+    {
+      "x": 3.16,
+      "y": 0.7087380230631141,
+      "error": 0.03666786828760188,
+      "_kind": "bar",
+      "_group": 38
+    },
+    {
+      "x": 3.32,
+      "y": 0.7253642156327909,
+      "error": 0.03175246242799318,
+      "_kind": "bar",
+      "_group": 39
+    },
+    {
+      "x": -0.32,
+      "y": 0.6471165993837352,
+      "error": 0.0805215279689751,
+      "_kind": "bar",
+      "_group": 40
+    },
+    {
+      "x": -0.16,
+      "y": 0.698968770527766,
+      "error": 0.07220763452803763,
+      "_kind": "bar",
+      "_group": 41
+    },
+    {
+      "category": "synth.",
+      "y": 0.746762226601023,
+      "error": 0.07381656633829353,
+      "_kind": "bar",
+      "_group": 42
+    },
+    {
+      "x": 0.16,
+      "y": 0.5774290855736351,
+      "error": 0.10287591641191071,
+      "_kind": "bar",
+      "_group": 43
+    },
+    {
+      "x": 0.32,
+      "y": 0.627353761729434,
+      "error": 0.09292236129578646,
+      "_kind": "bar",
+      "_group": 44
+    },
+    {
+      "x": 0.68,
+      "y": -0.10319922809106985,
+      "error": 0.09666660519971941,
+      "_kind": "bar",
+      "_group": 45
+    },
+    {
+      "x": 0.84,
+      "y": 0.17577133744895965,
+      "error": 0.0975087644783903,
+      "_kind": "bar",
+      "_group": 46
+    },
+    {
+      "category": "chat",
+      "y": 0.28059178964074377,
+      "error": 0.09697843332983651,
+      "_kind": "bar",
+      "_group": 47
+    },
+    {
+      "x": 1.16,
+      "y": 0.5651108690679424,
+      "error": 0.072954435578,
+      "_kind": "bar",
+      "_group": 48
+    },
+    {
+      "x": 1.32,
+      "y": 0.6254454127087546,
+      "error": 0.06388575596154206,
+      "_kind": "bar",
+      "_group": 49
+    },
+    {
+      "x": 1.68,
+      "y": 0.010147819284994163,
+      "error": 0.015211052735209524,
+      "_kind": "bar",
+      "_group": 50
+    },
+    {
+      "x": 1.84,
+      "y": -0.05517856685711229,
+      "error": 0.014786174515671796,
+      "_kind": "bar",
+      "_group": 51
+    },
+    {
+      "category": "in-dist.",
+      "y": 0.058503604915292405,
+      "error": 0.01483534485721066,
+      "_kind": "bar",
+      "_group": 52
+    },
+    {
+      "x": 2.16,
+      "y": 0.5572427540854127,
+      "error": 0.011621688382307649,
+      "_kind": "bar",
+      "_group": 53
+    },
+    {
+      "x": 2.32,
+      "y": 0.6027415759982249,
+      "error": 0.011153890532949018,
+      "_kind": "bar",
+      "_group": 54
+    },
+    {
+      "x": 2.68,
+      "y": 0.14501562929350292,
+      "error": 0.032883645999051976,
+      "_kind": "bar",
+      "_group": 55
+    },
+    {
+      "x": 2.84,
+      "y": 0.2147356549758243,
+      "error": 0.03226772698582174,
+      "_kind": "bar",
+      "_group": 56
+    },
+    {
+      "category": "OOD",
+      "y": 0.3533441767857403,
+      "error": 0.030214520872457573,
+      "_kind": "bar",
+      "_group": 57
+    },
+    {
+      "x": 3.16,
+      "y": 0.3864314220958271,
+      "error": 0.028304215493465457,
+      "_kind": "bar",
+      "_group": 58
+    },
+    {
+      "x": 3.32,
+      "y": 0.4122153610173508,
+      "error": 0.02897927037819617,
+      "_kind": "bar",
+      "_group": 59
+    }
+  ],
+  "n_series": 60,
+  "total_points": 60,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "Evil",
+        "ylabel": "Spearman $\\rho$",
+        "xticklabels": [
+          "synth.",
+          "chat",
+          "in-dist.",
+          "OOD"
+        ],
+        "yticklabels": [
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0"
+        ]
+      },
+      {
+        "title": "Sycophancy",
+        "xticklabels": [
+          "synth.",
+          "chat",
+          "in-dist.",
+          "OOD"
+        ]
+      },
+      {
+        "title": "Hallucination",
+        "xticklabels": [
+          "synth.",
+          "chat",
+          "in-dist.",
+          "OOD"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

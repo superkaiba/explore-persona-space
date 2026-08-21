@@ -1,0 +1,400 @@
+{
+  "per_point": {
+    "lmsys_150k": {
+      "unit_key": {
+        "point": "lmsys_150k",
+        "layer": 19,
+        "seed": 0,
+        "n_train_target": 150000,
+        "n_train_realized": 150000,
+        "lambda_grid": [
+          "logspace",
+          -3,
+          8,
+          23
+        ],
+        "sel_sha256": "fbba56ab7a5faa7cce015476593b2d8c36a9a6c6af3a690b07f865a08ec4a7f9",
+        "smoke_chunks": 0
+      },
+      "selection": {
+        "mode": "lmsys",
+        "n_target": 150000,
+        "n_realized": 150000,
+        "n_lmsys": 150000,
+        "n_wildchat": 0
+      },
+      "ridge": {
+        "whole_map_r2": 0.755515914218508,
+        "mean_cosine": 0.9548680471449333,
+        "bootstrap_ci": {
+          "r2": {
+            "point": 0.755515914218508,
+            "lo": 0.7448128295933962,
+            "hi": 0.765783531304794
+          },
+          "mean_cosine": {
+            "point": 0.9548680471449333,
+            "lo": 0.9527366414526308,
+            "hi": 0.9569260772972012
+          },
+          "n_test": 1000
+        },
+        "retrieval": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 1000,
+            "n_pool": 1000,
+            "acc_at_k": {
+              "1": 0.807,
+              "5": 0.901,
+              "10": 0.95
+            },
+            "chance_at_k": {
+              "1": 0.001,
+              "5": 0.005,
+              "10": 0.01
+            },
+            "median_rank": 1.0,
+            "mrr": 0.8529509908631928,
+            "acc1_ci": {
+              "lo": 0.781,
+              "hi": 0.831
+            }
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 1000,
+            "n_pool": 1000,
+            "acc_at_k": {
+              "1": 0.803,
+              "5": 0.899,
+              "10": 0.952
+            },
+            "chance_at_k": {
+              "1": 0.001,
+              "5": 0.005,
+              "10": 0.01
+            },
+            "median_rank": 1.0,
+            "mrr": 0.8518319874210029,
+            "acc1_ci": {
+              "lo": 0.777975,
+              "hi": 0.827
+            }
+          }
+        },
+        "fit_meta": {
+          "n_train": 150000,
+          "selection": "val-lambda (primal, streaming)",
+          "selected_lambda": 1000.0,
+          "val_r2_at_selected": 0.7567180198158301,
+          "lambda_grid_edge": null,
+          "ridge_block": 50000
+        }
+      },
+      "identity_bias": {
+        "whole_map_r2": -0.8963282847438272,
+        "mean_cosine": 0.7282537279520843,
+        "bootstrap_ci": {
+          "r2": {
+            "point": -0.8963282847438272,
+            "lo": -0.9292629629833412,
+            "hi": -0.8692590606797441
+          },
+          "mean_cosine": {
+            "point": 0.7282537279520843,
+            "lo": 0.7237095941026082,
+            "hi": 0.7333623790297135
+          },
+          "n_test": 1000
+        },
+        "retrieval": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 1000,
+            "n_pool": 1000,
+            "acc_at_k": {
+              "1": 0.531,
+              "5": 0.705,
+              "10": 0.777
+            },
+            "chance_at_k": {
+              "1": 0.001,
+              "5": 0.005,
+              "10": 0.01
+            },
+            "median_rank": 1.0,
+            "mrr": 0.6156927408736291,
+            "acc1_ci": {
+              "lo": 0.499,
+              "hi": 0.562
+            }
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 1000,
+            "n_pool": 1000,
+            "acc_at_k": {
+              "1": 0.558,
+              "5": 0.723,
+              "10": 0.804
+            },
+            "chance_at_k": {
+              "1": 0.001,
+              "5": 0.005,
+              "10": 0.01
+            },
+            "median_rank": 1.0,
+            "mrr": 0.639095017326375,
+            "acc1_ci": {
+              "lo": 0.527,
+              "hi": 0.588
+            }
+          }
+        }
+      },
+      "parity": {
+        "cell": "lmsys_150k-ridge",
+        "got_r2": 0.755515914218508,
+        "banked_r2": 0.754355957580797,
+        "tol": 0.01,
+        "pass": true
+      },
+      "wall_time_s": 43.0
+    },
+    "lmsys_500k": {
+      "unit_key": {
+        "point": "lmsys_500k",
+        "layer": 19,
+        "seed": 0,
+        "n_train_target": 500000,
+        "n_train_realized": 500000,
+        "lambda_grid": [
+          "logspace",
+          -3,
+          8,
+          23
+        ],
+        "sel_sha256": "f9ab1707b23d0677d25eae9ce41fce1559346728e819ee8bdc2baaa90c5c55fe",
+        "smoke_chunks": 0
+      },
+      "selection": {
+        "mode": "lmsys",
+        "n_target": 500000,
+        "n_realized": 500000,
+        "n_lmsys": 500000,
+        "n_wildchat": 0
+      },
+      "ridge": {
+        "whole_map_r2": 0.7609049151916738,
+        "mean_cosine": 0.9558640511671616,
+        "bootstrap_ci": {
+          "r2": {
+            "point": 0.7609049151916738,
+            "lo": 0.7502385867503333,
+            "hi": 0.7708112888840339
+          },
+          "mean_cosine": {
+            "point": 0.9558640511671616,
+            "lo": 0.9537748170404698,
+            "hi": 0.9578457911023286
+          },
+          "n_test": 1000
+        },
+        "retrieval": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 1000,
+            "n_pool": 1000,
+            "acc_at_k": {
+              "1": 0.811,
+              "5": 0.904,
+              "10": 0.952
+            },
+            "chance_at_k": {
+              "1": 0.001,
+              "5": 0.005,
+              "10": 0.01
+            },
+            "median_rank": 1.0,
+            "mrr": 0.8564806756394198,
+            "acc1_ci": {
+              "lo": 0.785975,
+              "hi": 0.8340249999999999
+            }
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 1000,
+            "n_pool": 1000,
+            "acc_at_k": {
+              "1": 0.805,
+              "5": 0.901,
+              "10": 0.955
+            },
+            "chance_at_k": {
+              "1": 0.001,
+              "5": 0.005,
+              "10": 0.01
+            },
+            "median_rank": 1.0,
+            "mrr": 0.8537196142199349,
+            "acc1_ci": {
+              "lo": 0.78,
+              "hi": 0.829
+            }
+          }
+        },
+        "fit_meta": {
+          "n_train": 500000,
+          "selection": "val-lambda (primal, streaming)",
+          "selected_lambda": 0.001,
+          "val_r2_at_selected": 0.7616375461708924,
+          "lambda_grid_edge": "low",
+          "ridge_block": 50000
+        }
+      },
+      "identity_bias": {
+        "whole_map_r2": -0.8962630398928697,
+        "mean_cosine": 0.7282013721578485,
+        "bootstrap_ci": {
+          "r2": {
+            "point": -0.8962630398928697,
+            "lo": -0.9292114355264862,
+            "hi": -0.869142682088706
+          },
+          "mean_cosine": {
+            "point": 0.7282013721578485,
+            "lo": 0.7236523527207194,
+            "hi": 0.7333061573655993
+          },
+          "n_test": 1000
+        },
+        "retrieval": {
+          "euclidean": {
+            "metric": "euclidean",
+            "n": 1000,
+            "n_pool": 1000,
+            "acc_at_k": {
+              "1": 0.531,
+              "5": 0.704,
+              "10": 0.777
+            },
+            "chance_at_k": {
+              "1": 0.001,
+              "5": 0.005,
+              "10": 0.01
+            },
+            "median_rank": 1.0,
+            "mrr": 0.6154166549442754,
+            "acc1_ci": {
+              "lo": 0.499,
+              "hi": 0.562
+            }
+          },
+          "cosine": {
+            "metric": "cosine",
+            "n": 1000,
+            "n_pool": 1000,
+            "acc_at_k": {
+              "1": 0.558,
+              "5": 0.722,
+              "10": 0.805
+            },
+            "chance_at_k": {
+              "1": 0.001,
+              "5": 0.005,
+              "10": 0.01
+            },
+            "median_rank": 1.0,
+            "mrr": 0.6390689875945526,
+            "acc1_ci": {
+              "lo": 0.527,
+              "hi": 0.588
+            }
+          }
+        }
+      },
+      "parity": {
+        "cell": "lmsys_500k-ridge",
+        "got_r2": 0.7609049151916738,
+        "banked_r2": 0.7608232696391413,
+        "tol": 0.01,
+        "pass": true
+      },
+      "wall_time_s": 91.1
+    }
+  },
+  "mixed_1m_pointer": {
+    "n_train_realized": 963444,
+    "ridge_whole_map_r2": 0.7541708417500051,
+    "acc_at_1_euclidean_test1000": 0.805,
+    "acc_at_1_source": "eval_results/issue_1901/metric_battery/context_arm.json per_layer.19.arms.ridge.retrieval.test.euclidean",
+    "weights_hf_prefix": "issue779_monitoring/n1m_readout/weights",
+    "note": "banked mixed_1m ridge weights reused by #1901's metric battery; not refit here"
+  },
+  "split": {
+    "orig_train_ids": 3600,
+    "n_new_captured": 959844,
+    "n_new_manifest": 960000,
+    "n_lmsys_manifest": 525485,
+    "n_wildchat_manifest": 434515,
+    "n_val": 400,
+    "n_test": 1000,
+    "val_sha256": "2e307fb2d1b74c82752d9460d131a3c1949860e9f0eefe6a82d15cee9f1e0613",
+    "test_sha256": "b9377786b24bc9c1c360303fdb8fac86c0097d264479de1dca3c23dd1047d31d",
+    "pinned_val_sha256": "2e307fb2d1b74c82752d9460d131a3c1949860e9f0eefe6a82d15cee9f1e0613",
+    "pinned_test_sha256": "b9377786b24bc9c1c360303fdb8fac86c0097d264479de1dca3c23dd1047d31d",
+    "pinned_source": "/workspace/explore-persona-space/eval_results/issue_779/fitter-fair-comparison/fair_comparison.json split params -> fixed_split, cross-checked vs constants",
+    "val_test_byte_identical_original": true,
+    "layer": 19,
+    "near_dupe": {
+      "ngram": 5,
+      "jaccard_thresh": 0.8,
+      "n_targets": 1400,
+      "n_exact_drop": 435,
+      "n_near_drop": 30437
+    },
+    "manifest_new_prompt_sha256": "2b14762a15d316c602332a749ebd87c733d687d4165eb5d0038c298e0d27ce46"
+  },
+  "layer": 19,
+  "seed": 0,
+  "lambda_grid": {
+    "n": 23,
+    "min": 0.001,
+    "max": 100000000.0,
+    "generating": [
+      "logspace",
+      -3,
+      8,
+      23
+    ]
+  },
+  "knn": {
+    "ks": [
+      1,
+      5,
+      10
+    ],
+    "metrics": [
+      "euclidean",
+      "cosine"
+    ],
+    "pool": "pinned test_1000 true targets",
+    "chance_at_1": 0.001
+  },
+  "subset_reproducibility_caveat": "N1M.select_train seeds default_rng(seed + abs(hash(name)) % 1e6); the original n1m fits ran under an unrecorded PYTHONHASHSEED, so the exact original train subsets are not bit-recoverable. This run pins PYTHONHASHSEED (launcher env, recorded below); R2 parity vs the banked per-point values is therefore statistical (same pool / n / protocol) at parity_tol.",
+  "pythonhashseed": "0",
+  "smoke_chunks": 0,
+  "metadata": {
+    "git_commit": "50f13715380e31f454088a2adfbb20e737ed47df",
+    "timestamp_utc": "2026-08-20T22:44:30.050153Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-40-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "script": "issue1901_paper_densify",
+    "phase": "bign",
+    "device": "cpu"
+  },
+  "note": "L19 ridge refits at lmsys_150k / lmsys_500k over the #779 fitter-fair-comparison-n1m capture (val/test byte-identical pinned split), scored as held-out R2 + kNN acc@k on the pinned 1,000-target test pool; identity+bias companion at both points; mixed_1m recorded as a banked pointer."
+}

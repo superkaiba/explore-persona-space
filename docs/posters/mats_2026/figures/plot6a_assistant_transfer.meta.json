@@ -1,0 +1,109 @@
+{
+  "commit": "03b6c256+dirty",
+  "render_id": "4ea00d2502d143d8",
+  "git_commit": "03b6c2568c9620cf9606c6825e0a4efe39c72b6a",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "docs/posters/mats_2026/figures/plot6_persona_data.json",
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.meta.json",
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.pdf",
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.png",
+    "docs/posters/mats_2026/figures/plot6b_specialization.meta.json",
+    "docs/posters/mats_2026/figures/plot6b_specialization.pdf",
+    "docs/posters/mats_2026/figures/plot6b_specialization.png",
+    "docs/posters/mats_2026/make_plot6_persona.py",
+    "eval_results/issue_666/headline/predictor_headline.json",
+    "scripts/issue1901_body_figures.py",
+    "tasks/completed/2214/body.md",
+    "tasks/completed/2214/comments.jsonl",
+    "tasks/completed/2214/concerns.jsonl",
+    "tasks/completed/2214/events.jsonl",
+    "tasks/completed/2214/plans/plan.md",
+    "tasks/completed/2214/plans/v1.md",
+    "tasks/completed/2214/plans/v2.md",
+    "tasks/completed/2214/plans/v3.md",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tasks/running/2214/body.md",
+    "tasks/running/2214/comments.jsonl",
+    "tasks/running/2214/concerns.jsonl",
+    "tasks/running/2214/events.jsonl",
+    "tasks/running/2214/plans/plan.md",
+    "tasks/running/2214/plans/v1.md",
+    "tasks/running/2214/plans/v2.md",
+    "tasks/running/2214/plans/v3.md",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "docs/posters/mats_2026/make_plot6_persona.py",
+  "created": "2026-08-21T01:45:22Z",
+  "figsize": [
+    6.8,
+    2.8
+  ],
+  "points": [
+    {
+      "x": -0.15,
+      "held-out $R^2$": 0.3811212319741931,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.85,
+      "held-out $R^2$": -0.2228068256944482,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.15,
+      "held-out $R^2$": 0.4426731696938585,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.15,
+      "held-out $R^2$": 0.3254392590013705,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 4,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "Assistant-fitted context$\\to$answer map, applied to a fictional character",
+        "ylabel": "held-out $R^2$",
+        "legend_labels": [
+          "assistant map, as-is",
+          "+ fitted linear reparam.",
+          "own map (ceiling)"
+        ],
+        "xticklabels": [
+          "Wren\n(bare Q&A)",
+          "Wren\n(in a fictional scene)"
+        ],
+        "yticklabels": [
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75"
+        ]
+      }
+    ],
+    "series": [
+      "assistant map, as-is",
+      "+ fitted linear reparam.",
+      "own map (ceiling)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

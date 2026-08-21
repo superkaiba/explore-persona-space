@@ -1,0 +1,313 @@
+{
+  "commit": "0022f3a4+dirty",
+  "render_id": "c9175f5c1cb34f76",
+  "git_commit": "0022f3a429e553117418a17801ac743c7fae025b",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "docs/posters/mats_2026/make_plot11_scaling_cot.py",
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.meta.json",
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.pdf",
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.png",
+    "eval_results/issue_666/headline/predictor_headline.json",
+    "scripts/issue1901_body_figures.py",
+    "tasks/completed/2214/body.md",
+    "tasks/completed/2214/comments.jsonl",
+    "tasks/completed/2214/concerns.jsonl",
+    "tasks/completed/2214/events.jsonl",
+    "tasks/completed/2214/plans/plan.md",
+    "tasks/completed/2214/plans/v1.md",
+    "tasks/completed/2214/plans/v2.md",
+    "tasks/completed/2214/plans/v3.md",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tasks/running/2214/body.md",
+    "tasks/running/2214/comments.jsonl",
+    "tasks/running/2214/concerns.jsonl",
+    "tasks/running/2214/events.jsonl",
+    "tasks/running/2214/plans/plan.md",
+    "tasks/running/2214/plans/v1.md",
+    "tasks/running/2214/plans/v2.md",
+    "tasks/running/2214/plans/v3.md",
+    "tasks/running/2378/concerns.jsonl",
+    "tasks/running/2378/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "docs/posters/mats_2026/make_plot11_scaling_cot.py",
+  "created": "2026-08-21T03:00:19Z",
+  "figsize": [
+    6.8,
+    2.8
+  ],
+  "points": [
+    {
+      "x": -0.285,
+      "held-out skill\n(answer-remainder target)": 0.6738555449936019,
+      "error": 0.07107425209239743,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.715,
+      "held-out skill\n(answer-remainder target)": 0.5161951464364439,
+      "error": 0.06437881699806267,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.715,
+      "held-out skill\n(answer-remainder target)": 0.5390331522416637,
+      "error": 0.06854038569840049,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -0.095,
+      "held-out skill\n(answer-remainder target)": 0.9221606759960925,
+      "error": 0.012381986793782274,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.905,
+      "held-out skill\n(answer-remainder target)": 0.8840847076137723,
+      "error": 0.015982058009042954,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.905,
+      "held-out skill\n(answer-remainder target)": 0.894341780978985,
+      "error": 0.019923450679136978,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.095,
+      "held-out skill\n(answer-remainder target)": 0.8699014860446739,
+      "error": 0.019067181537854916,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.095,
+      "held-out skill\n(answer-remainder target)": 0.8360747326258379,
+      "error": 0.019581121160697712,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.095,
+      "held-out skill\n(answer-remainder target)": 0.8579592328391267,
+      "error": 0.023641831611176334,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.285,
+      "held-out skill\n(answer-remainder target)": 0.8751807225811389,
+      "error": 0.02016310483601258,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.285,
+      "held-out skill\n(answer-remainder target)": 0.8426264941227013,
+      "error": 0.020526063640466163,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.285,
+      "held-out skill\n(answer-remainder target)": 0.8646344636845017,
+      "error": 0.022756852917723447,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": -0.28500000000000003,
+      "held-out skill\n(answer-remainder target)": 0.596498244752719,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.715,
+      "held-out skill\n(answer-remainder target)": 0.449116063666167,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.7149999999999999,
+      "held-out skill\n(answer-remainder target)": 0.46890842070609673,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": -0.28500000000000003,
+      "held-out skill\n(answer-remainder target)": 0.7386467489375138,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.715,
+      "held-out skill\n(answer-remainder target)": 0.5778736976622924,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.7149999999999999,
+      "held-out skill\n(answer-remainder target)": 0.6059891921028977,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": -0.095,
+      "held-out skill\n(answer-remainder target)": 0.9086432306211771,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.905,
+      "held-out skill\n(answer-remainder target)": 0.8665876787055569,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.905,
+      "held-out skill\n(answer-remainder target)": 0.8713316942649774,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": -0.095,
+      "held-out skill\n(answer-remainder target)": 0.9334072042087417,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.905,
+      "held-out skill\n(answer-remainder target)": 0.8985517947236428,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.905,
+      "held-out skill\n(answer-remainder target)": 0.9111785956232513,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.095,
+      "held-out skill\n(answer-remainder target)": 0.8490349833744948,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.095,
+      "held-out skill\n(answer-remainder target)": 0.8143239981942071,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.095,
+      "held-out skill\n(answer-remainder target)": 0.8317682531762348,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.095,
+      "held-out skill\n(answer-remainder target)": 0.8871693464502046,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.095,
+      "held-out skill\n(answer-remainder target)": 0.8534862405156025,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.095,
+      "held-out skill\n(answer-remainder target)": 0.8790519163985875,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.28500000000000003,
+      "held-out skill\n(answer-remainder target)": 0.8530741131845502,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.2850000000000001,
+      "held-out skill\n(answer-remainder target)": 0.8197833179140085,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.285,
+      "held-out skill\n(answer-remainder target)": 0.8392248207204369,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.28500000000000003,
+      "held-out skill\n(answer-remainder target)": 0.8934003228565753,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.2850000000000001,
+      "held-out skill\n(answer-remainder target)": 0.8608354451949408,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.285,
+      "held-out skill\n(answer-remainder target)": 0.8847385265558838,
+      "_kind": "line",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 36,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "held-out skill\n(answer-remainder target)",
+        "legend_labels": [
+          "context only",
+          "+ answer prefix (matched length)",
+          "+ truncated CoT (matched length)",
+          "+ full CoT"
+        ],
+        "xticklabels": [
+          "OpenThinker2\n7B",
+          "R1-Distill\nQwen-7B",
+          "R1-Distill\nLlama-8B"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "context only",
+      "+ answer prefix (matched length)",
+      "+ truncated CoT (matched length)",
+      "+ full CoT"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -1,0 +1,160 @@
+{
+  "commit": "704aea67+dirty",
+  "render_id": "f1082eeec6b14c8b",
+  "git_commit": "704aea67dda26a0c563944718c768f4f2e952d26",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "docs/posters/mats_2026/figures/plot2_persona_directions.meta.json",
+    "docs/posters/mats_2026/figures/plot2_persona_directions.pdf",
+    "docs/posters/mats_2026/figures/plot2_persona_directions.png",
+    "docs/posters/mats_2026/figures/plot3_sae_predictors.meta.json",
+    "docs/posters/mats_2026/figures/plot3_sae_predictors.pdf",
+    "docs/posters/mats_2026/figures/plot3_sae_predictors.png",
+    "docs/posters/mats_2026/figures/plot5_stages.pdf",
+    "docs/posters/mats_2026/figures/plot5_stages.png",
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.meta.json",
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.pdf",
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.png",
+    "docs/posters/mats_2026/figures/plot6c_pooled_lattice.meta.json",
+    "docs/posters/mats_2026/figures/plot6c_pooled_lattice.pdf",
+    "docs/posters/mats_2026/figures/plot6c_pooled_lattice.png",
+    "docs/posters/mats_2026/figures/plot9_application_arms.meta.json",
+    "docs/posters/mats_2026/figures/plot9_application_arms.pdf",
+    "docs/posters/mats_2026/figures/plot9_application_arms.png",
+    "docs/posters/mats_2026/make_plot10_layer_sweep.py",
+    "docs/posters/mats_2026/make_plot11_scaling_cot.py",
+    "docs/posters/mats_2026/make_plot12_cot_spans.py",
+    "docs/posters/mats_2026/make_plot13_cot_gain.py",
+    "docs/posters/mats_2026/make_plot2_persona.py",
+    "docs/posters/mats_2026/make_plot3_predictors.py",
+    "docs/posters/mats_2026/make_plot3_sae.py",
+    "docs/posters/mats_2026/make_plot4_failures.py",
+    "docs/posters/mats_2026/make_plot4b_failure_modes.py",
+    "docs/posters/mats_2026/make_plot5_stages.py",
+    "docs/posters/mats_2026/make_plot6_persona.py",
+    "docs/posters/mats_2026/make_plot6c_pooled_lattice.py",
+    "docs/posters/mats_2026/make_plot7_application.py",
+    "docs/posters/mats_2026/make_plot9_application_arms.py",
+    "eval_results/issue_2223/casestudy_replay/qwen3-32b/native_axis_fidelity_preimage/judged/judge_complete_delusion.json",
+    "eval_results/issue_2223/casestudy_replay/qwen3-32b/native_axis_fidelity_preimage/judged/judge_complete_selfharm.json",
+    "eval_results/issue_666/headline/predictor_headline.json",
+    "scripts/issue1901_body_figures.py",
+    "tasks/completed/2214/body.md",
+    "tasks/completed/2214/comments.jsonl",
+    "tasks/completed/2214/concerns.jsonl",
+    "tasks/completed/2214/events.jsonl",
+    "tasks/completed/2214/plans/plan.md",
+    "tasks/completed/2214/plans/v1.md",
+    "tasks/completed/2214/plans/v2.md",
+    "tasks/completed/2214/plans/v3.md",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tasks/running/2214/body.md",
+    "tasks/running/2214/comments.jsonl",
+    "tasks/running/2214/concerns.jsonl",
+    "tasks/running/2214/events.jsonl",
+    "... 7 more"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "docs/posters/mats_2026/make_plot4b_failure_modes.py",
+  "created": "2026-08-21T09:42:44Z",
+  "figsize": [
+    6.8,
+    3.3
+  ],
+  "points": [
+    {
+      "failure rate $-$ matched control rate (percentage points)": 3.850582,
+      "y": 7.701163603470254,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure rate $-$ matched control rate (percentage points)": 3.40876,
+      "y": 6.817519381969856,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "failure rate $-$ matched control rate (percentage points)": 1.572578,
+      "y": 3.1451557638803225,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "failure rate $-$ matched control rate (percentage points)": 1.557182,
+      "y": 3.1143639013381215,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "failure rate $-$ matched control rate (percentage points)": 0.888852,
+      "y": 1.7777046813681807,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "failure rate $-$ matched control rate (percentage points)": 0.438213,
+      "y": 0.8764259510528166,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "failure rate $-$ matched control rate (percentage points)": 0.360959,
+      "y": 0.7219184152698399,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "failure rate $-$ matched control rate (percentage points)": 0.253188,
+      "y": 0.5063753774744273,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "failure rate $-$ matched control rate (percentage points)": -3.37308,
+      "y": -6.7461590121020265,
+      "_kind": "bar",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 9,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "failure rate $-$ matched control rate (percentage points)",
+        "legend_labels": [
+          "more common in failures",
+          "more common in successes",
+          "not past FDR 0.05"
+        ],
+        "xticklabels": [
+          "\u221220",
+          "\u221210",
+          "0",
+          "10",
+          "20"
+        ],
+        "yticklabels": [
+          "last turn is \"why?\" / \"continue\"",
+          "answer is garbled / code-switched",
+          "fill-in-the-blank genre request",
+          "answer drifts to earlier history",
+          "non-English or marked voice",
+          "echoes a multiple-choice option",
+          "answer has a unique artifact",
+          "answer is boilerplate",
+          "answer reuses a distinctive entity"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
