@@ -1934,3 +1934,33 @@ the exact base-blob greps handed over (justified-if-true / honest-reporting
 finding-if-false). (e) A DEFERRED concern whose reconciler-downgrade premise
 was OPERATIONAL sequencing gets a DEFERRAL-PREMISE-INTACT/BROKEN status-line
 form when the round changes the sequencing the premise relied on.
+
+**Merge-reconciliation round WITH a declared scope extension to a SIBLING
+task's detector (#2214 r2, 2026-08-20):** hybrid of the #2201-r3/#2217-r2
+gate-mandated merge shape and a substantive new-code adjudication. Deltas:
+(a) when the brief supplies a numbered adjudication checklist ("judge this
+specifically, do not defer to the justification"), inline the brief verbatim
+in its own `---BEGIN ROUND-2 BRIEF---` envelope AND restate the checklist in
+the focus section with routing added per item (here: item 1 → Step 0.68
+hollow-gate at full strength, `hollow-verification-gate` tag; item 2 → the
+Step 3.9 degeneracy analogue; item 5's file-separately disposition → a
+`substantive` blocker with the revert-commit+file-task remedy named) — plus
+a REQUIRED `## Scope-extension adjudication` verdict section, one grounded
+ruling per item; (b) the r1-adjudicated deliverable re-landing via merge
+gets a no-relitigate fence (both twins PASSed the same +59 hunk; re-opening
+needs NEW evidence from the MERGED context — exactly what the
+coexistence/interaction duties look for); (c) Step 4.5 INVERTS when the
+round's change IS a test modification: the duty is residual detector
+strength + whether the round's own fix property (order-robustness) is
+pinned, absent pin = Minor sketch; (d) Step 0.9 pre-seeds the
+pre-existing-on-trunk instance (the defect the extension fixes was measured
+on pristine main at the pin — corroborable via `git show <pin>:<file>`) so
+the twin routes fix-findings `substantive` and never blocks on the
+pre-existing defect itself; (e) shared-brief adaptation: "you may re-run but
+not simply accept" translates to internal-consistency reads of the reported
+numbers against the mechanism (is "the merge strictly SHRINKS the failure
+set" sound given the fixture cleans only one dimension?) — the Claude twin
+carries literal re-runs. Assert-side: brief LINE-WRAPS split fragments —
+pick wrap-safe single-line fragments for the checklist-survival asserts, and
+assert the pinned RANGE TOKEN (`<pin>..HEAD`) not the full command string
+(the brief's `-C "$WT" diff --stat` form breaks command-string matches).
