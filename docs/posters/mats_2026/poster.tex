@@ -114,8 +114,7 @@
 \begin{itemize}
   \item \takeaways{The mapping has high predictive power:} held-out $R^2$ 0.75, rank-1 retrieval 0.98 at 1 million contexts
   \item \takeaways{The mapping is mostly linear:} the nonlinear (MLP) map adds only $\sim$$0.06$ $R^2$ over the linear map, and only at large $n$ (potentially this advantage would grow as you scale up the number of contexts)
-  \item \takeaways{The mapping is not present for generic boundary tokens:} held-out $R^2$ 0.11 for a mapping from generic boundary tokens (punctuation) to the next stretch of text
-  \item \takeaways{The mapping is not just copying the context vector:} The mapping does much better than the identity + bias baseline
+  \item \takeaways{The mapping is not present for generic boundary tokens and is not just copying the context vector (baseline)}
   \item We study the \textbf{linear} map here and leave more complex maps to future work
 \end{itemize}
 \end{column}
@@ -232,15 +231,16 @@ We train another map from the context to the answer's \textbf{SAE features}, the
   \item Automated redteaming / jailbreaking.
 \end{itemize}
 
-\postersec{References}
-{\scriptsize
-{\color{matsmaroon}[1]} Chen et al.\ Persona vectors. 2025.\quad
-{\color{matsmaroon}[2]} Betley et al.\ Emergent misalignment. 2025.\quad
-{\color{matsmaroon}[3]} Marks et al.\ The persona selection model. 2026.\quad
-{\color{matsmaroon}[4]} Lu et al.\ The assistant axis. 2026.\quad
-{\color{matsmaroon}[5]} Hosseini \& Fedorenko. Trajectory straightening. 2023.\quad
-{\color{matsmaroon}[6]} Park et al.\ The linear representation hypothesis. 2024.
-}
+% References run inline rather than through \postersec: the heading line and
+% its rule cost about as much vertical space as the six entries themselves.
+{\scriptsize\raggedright
+{\rmfamily\bfseries\color{matsmaroon}REFERENCES}\quad
+{\color{matsmaroon}[1]}~Chen et al., Persona vectors, 2025;\;
+{\color{matsmaroon}[2]}~Betley et al., Emergent misalignment, 2025;\;
+{\color{matsmaroon}[3]}~Marks et al., The persona selection model, 2026;\;
+{\color{matsmaroon}[4]}~Lu et al., The assistant axis, 2026;\;
+{\color{matsmaroon}[5]}~Hosseini \& Fedorenko, Trajectory straightening, 2023;\;
+{\color{matsmaroon}[6]}~Park et al., The linear representation hypothesis, 2024.\par}
 
 \end{column}
 
