@@ -39,7 +39,7 @@
 
 % MATS-template section heading: serif bold caps in maroon + thin rule
 \newcommand{\postersec}[1]{%
-  \vskip0.55em
+  \vskip0.42em
   {\rmfamily\bfseries\large\color{matsmaroon}\MakeUppercase{#1}}\\[-0.75em]
   {\color{matsmaroon}\rule{\linewidth}{1.2pt}}\\[-0.15em]
 }
@@ -129,9 +129,9 @@ Qwen2.5-7B(-Instruct) headline; Llama/T\"ulu post-training ladder. Real-user con
 \begin{column}{0.188\textwidth}
 
 \postersec{3.\ Best at high-level, persona-like properties}
-To ask \emph{what} it predicts, we fit maps to the answer's \textbf{SAE features} (16{,}384 features; per-feature held-out $R^2$) and rank feature properties by how well they predict a feature's $R^2$.
+To ask \emph{what} it predicts, we fit maps to the answer's \textbf{SAE features} (16{,}384 of them) and rank feature properties by how well they predict a feature's held-out $R^2$.
 \begin{center}
-\IfFileExists{figures/plot3_sae_predictors.pdf}{\includegraphics[width=0.93\linewidth]{plot3_sae_predictors.pdf}}{\includegraphics[width=0.78\linewidth]{c3_sae_tier_gradient.pdf}}
+\IfFileExists{figures/plot3_sae_predictors.pdf}{\includegraphics[width=0.86\linewidth]{plot3_sae_predictors.pdf}}{\includegraphics[width=0.78\linewidth]{c3_sae_tier_gradient.pdf}}
 \end{center}
 \figcap{4}{Which properties of an SAE feature predict its per-feature $R^2$, on a common footing against matched nulls.}
 \begin{itemize}
@@ -142,12 +142,13 @@ To ask \emph{what} it predicts, we fit maps to the answer's \textbf{SAE features
 
 \postersec{4.\ What does it fail on?}
 \begin{center}
-\IfFileExists{figures/plot4_failures.pdf}{\includegraphics[width=0.95\linewidth]{plot4_failures.pdf}}{\includegraphics[width=0.95\linewidth]{c3_failure_attribution.pdf}}
+\IfFileExists{figures/plot4_failures.pdf}{\includegraphics[width=0.88\linewidth]{plot4_failures.pdf}}{\includegraphics[width=0.95\linewidth]{c3_failure_attribution.pdf}}
 \end{center}
-\figcap{5}{Failures against \emph{sampling-noise-free} answer targets (each answer averaged over 5 on-policy draws); raw-euclidean retrieval, $n=1{,}988$ resample-covered held-out contexts, pool 9{,}941, 180 failures, rank-1 accuracy 0.909. Left: failure-rate difference by context category (pp); blue clears Benjamini--Hochberg FDR at $q=0.05$, gray tested but not significant. Right: attribution of the 180 failures (100\% covered); \emph{map error} = the answer is still retrievable draw-vs-draw ($s\!\ge\!0.75$), so the miss is the map's.}
+\figcap{5}{Left: rank-1 retrieval under successively better read-outs — raw euclidean, whitened cosine, $+$ hub correction (CSLS, $K\!=\!10$), then scoring against \emph{sampling-noise-free} targets (mean of 5 on-policy draws). Rungs 1--3: full 9{,}941-answer pool; last rung: the 1{,}988 resample-covered rows (same pool; single-draw on those rows reads 0.981). Dashed: convention-matched fresh-draw ceiling, 0.973. Gray: 6 other map architectures. Right: per-context margin (true target minus best competitor) under the fixed read; blue = the 11 residual failures.}
 \begin{itemize}
-  \item \takeaways{Failures concentrate in identifiable categories:} code-formatted answers ($+11.2$pp), refusal-adjacent requests ($+8.6$), coding topics ($+7.0$), English ($+5.6$); factual QA ($-3.6$) and advice/how-to ($-5.8$) fail least.
-  \item \takeaways{Almost entirely map error, not answer degeneracy:} 91\% of rank-1 misses stay retrievable from a fresh draw of the same answer; only 6\% are genuinely degenerate answers.
+  \item \takeaways{The metric was the bottleneck, not the map:} whitened cosine $+$ hub correction lifts rank-1 from 0.816 to \textbf{0.976} on a 9{,}941-answer pool — \emph{above} the fresh-draw ceiling of 0.973. The predictions were already there.
+  \item \takeaways{Against noise-averaged answers, 0.994} — and all 7 map architectures land at 0.991--0.995. The map predicts the \emph{noise-averaged} answer.
+  \item \takeaways{The 11 residual failures (of 1{,}988) are near-misses, not a distinct failure mode:} median losing margin 0.025 against 0.175 for successes (pairwise AUC $>$ 0.9999); none is an answer twin.
 \end{itemize}
 
 \end{column}

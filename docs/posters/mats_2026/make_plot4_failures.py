@@ -115,7 +115,7 @@ def main() -> None:
     )
     others = [v for k, v in lad["per_map"].items() if k != "ridge"]
     ax_a.scatter(
-        np.full(len(others), 3.16),
+        np.full(len(others), 3.22),
         others,
         s=22,
         facecolors="none",
@@ -153,6 +153,7 @@ def main() -> None:
     )
     ax_b.axvline(0.0, color=paper_color("reference"), lw=1.0)
     ax_b.set_yscale("log")
+    ax_b.set_ylim(top=1400)
     ax_b.set_xlabel("retrieval margin (true $-$ best competitor)")
     ax_b.set_ylabel("contexts (log)")
     ax_b.legend(loc="upper right", handlelength=1.0)
