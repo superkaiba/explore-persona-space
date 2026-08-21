@@ -1964,3 +1964,17 @@ carries literal re-runs. Assert-side: brief LINE-WRAPS split fragments —
 pick wrap-safe single-line fragments for the checklist-survival asserts, and
 assert the pinned RANGE TOKEN (`<pin>..HEAD`) not the full command string
 (the brief's `-C "$WT" diff --stat` form breaks command-string matches).
+
+**Size-pin asserts compare BYTES, never `len(str)` (#2246 r2, 2026-08-21):**
+a compose-script assert pinning an inlined artifact's size to a `wc -c` /
+`ls -la` figure must use `len(text.encode("utf-8"))` (or `os.path.getsize`)
+— `len(open(p).read())` counts CHARACTERS and diverges on any multi-byte
+UTF-8 content (the 88,372-byte plan v4 read as 87,487 chars; em-dashes and
+arrows are everywhere in plan prose). The labeled assert made the diagnosis
+instant; an unlabeled one would have suggested plan drift and triggered a
+wasted re-fetch. FAIL+FAIL-union r2 compose worked as specced (#2332
+pattern): both prior verdicts inlined tag-stripped, codex rows blockquoted
+(`> CONCERN:: ` ==5), closure status lines routed to a `## Round-1 closure
+ledger` verdict section with per-id VERIFIED-ADDRESSED / NOT-ADDRESSED +
+`f541-fixed` / `c901-deliberate-keep` dispositions, already-persisted ids
+never re-emitted as rows (final line-start grammar rows ==1).
