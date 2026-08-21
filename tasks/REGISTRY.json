@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2440,
+  "highest_id": 2441,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11126,6 +11126,13 @@
       "path": "tasks/proposed/2440",
       "status": "proposed",
       "title": "verify_uploads.py outroot-residue: issue-scoped git arm ignores round-suffixed follow-up branches (remediated residue can never mechanically PASS)"
+    },
+    "2441": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2441",
+      "status": "proposed",
+      "title": "Step 10d/9c gates: refresh worktree sparse cones from main's tests/sparse_cones.txt before gate pytest (stale-cone false NEW block, #2430 incident)"
     },
     "245": {
       "has_clean_result": false,
