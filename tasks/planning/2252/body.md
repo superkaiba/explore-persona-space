@@ -4,6 +4,7 @@ title: 'workflow-fix: Step 9c reports an external SIGTERM of the unfenced workfl
 kind: infra
 tags:
 - wf-fix
+- trigger-dense
 created_at: '2026-08-12T20:29:34Z'
 has_clean_result: false
 parent_id: 2243
