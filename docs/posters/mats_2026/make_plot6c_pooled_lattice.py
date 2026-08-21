@@ -6,12 +6,12 @@ group is drawn
 from ONE #2054 pooled lattice, so all six are directly comparable and the
 plot6b "*different pool + grain" asterisk disappears.
 
-ONE PANEL, both models as OVERLAPPING bars (user directive 2026-08-21): at each
-of the two slots per group the instruct value is drawn wide and behind, the base
-value narrow and in front. Base sits below instruct on every one of the twelve
-drawn quantities, so the narrow bar always nests visibly inside the wide one —
-`assert_base_nests_inside_instruct` pins that precondition and fails loud if a
-future data refresh breaks it (the overlap would hide a bar).
+ONE PANEL, both models as OVERLAPPING bars (user directive 2026-08-21). Only
+the own-map slot overlaps: instruct wide and behind, base narrow and in front.
+Base sits below instruct on every drawn own-map value, so the narrow bar always
+nests visibly inside the wide one — `assert_base_nests_inside_instruct` pins
+that precondition and fails loud if a future data refresh breaks it (the
+overlap would hide a bar).
 
 SIX GROUPS, on-policy condition, attributed-quote boundary for every story cell:
   assistant chat template  `<|im_start|>user\\n<Q><|im_end|>\\n
@@ -23,7 +23,9 @@ SIX GROUPS, on-policy condition, attributed-quote boundary for every story cell:
                            descriptions condense `issue1310_common.PERSONAS`
                            verbatim (see SHORT_DESC).
 
-TWO BARS per group, per model:
+BARS per group — three, not four: instruct contributes both, base only its own
+map (its shared-map bar was dropped by user directive 2026-08-21; the values
+stay in the sidecar).
   light  one shared map   — ONE ridge map fit jointly on all 56 #2054 cells
                             (both models, every framing/identity/condition),
                             scored on this cell's held-out folds. Displayed as
@@ -106,6 +108,11 @@ GROUPS = {
     "Vex": ("char_vex", "attrib_quoted", "Vex", "in story", 'Vex replied: "…"'),
 }
 SOURCE_KEY = "assistant chat template"
+# Base contributes ONLY its own-map bar (user directive 2026-08-21). Its
+# shared-map values stay in the sidecar under `pooled_m0_r2`; dropping them
+# from the canvas also removes the only negative quantity the figure drew
+# (base chat template, -0.016), so the y floor returns to zero.
+DRAWN_BASE_FIELDS = ("own_map_ceiling_r2",)
 DROPPED = ["assistant bare text"]  # user directive 2026-08-21; kept in the sidecar
 
 # Condensed from issue1310_common.PERSONAS (verbatim source strings recorded in
@@ -179,7 +186,9 @@ def assert_base_nests_inside_instruct(per_model: dict[str, list[dict]]) -> None:
     """
     for bi, bb in zip(per_model["instruct"], per_model["base"], strict=True):
         assert bi["group"] == bb["group"], (bi["group"], bb["group"])
-        for field in ("pooled_m0_r2", "own_map_ceiling_r2"):
+        # Only the own-map slot overlaps now: base's shared-map bar is not drawn
+        # (user directive 2026-08-21), so its value cannot occlude anything.
+        for field in DRAWN_BASE_FIELDS:
             if bb[field] > bi[field]:
                 raise AssertionError(
                     f"base {field} ({bb[field]:.4f}) exceeds instruct ({bi[field]:.4f}) for "
@@ -200,7 +209,7 @@ def plot_combined(per_model: dict[str, list[dict]], ylim: tuple[float, float]) -
         return light, strong
 
     i_light, i_strong = shades("instruct")
-    b_light, b_strong = shades("base")
+    _, b_strong = shades("base")
 
     # Wide instruct bars first, narrow base bars over them.
     ax.bar(
@@ -216,15 +225,6 @@ def plot_combined(per_model: dict[str, list[dict]], ylim: tuple[float, float]) -
         width=w_wide,
         color=i_strong,
         label="instruct — its own map",
-    )
-    ax.bar(
-        xs - w_wide / 2,
-        [c["pooled_m0_r2"] for c in per_model["base"]],
-        width=w_narrow,
-        color=b_light,
-        edgecolor="white",
-        linewidth=0.4,
-        label="base — one shared map",
     )
     ax.bar(
         xs + w_wide / 2,
@@ -257,9 +257,6 @@ def plot_combined(per_model: dict[str, list[dict]], ylim: tuple[float, float]) -
         )
 
     ax.set_ylabel("held-out $R^2$")
-    # Floor below zero on purpose: the base chat-template cell's pooled bar is
-    # NEGATIVE (-0.016), and a 0.0 floor renders it as no bar at all — reading
-    # as missing data rather than as a map that fails on that cell.
     ax.set_ylim(*ylim)
     ax.set_xlabel("sorted by similarity to assistant in chat template", labelpad=30)
     ax.set_title("One shared map vs its own map, per character/framing — Qwen-2.5-7B")
@@ -287,12 +284,12 @@ def main() -> None:
     per_model = {m: load_cells(m, order, closeness) for m in ("instruct", "base")}
     assert_base_nests_inside_instruct(per_model)
 
-    vals = [
-        v
-        for cells in per_model.values()
-        for c in cells
-        for v in (c["pooled_m0_r2"], c["own_map_ceiling_r2"])
-    ]
+    # Only DRAWN quantities set the limits — base's undrawn shared-map values
+    # include the lone negative, and letting it stretch the axis would leave
+    # dead space under bars nobody can see.
+    vals = [c["pooled_m0_r2"] for c in per_model["instruct"]]
+    vals += [c["own_map_ceiling_r2"] for c in per_model["instruct"]]
+    vals += [c[f] for c in per_model["base"] for f in DRAWN_BASE_FIELDS]
     ylim = (
         float(np.floor(min(0.0, min(vals) - 0.02) * 20) / 20),
         float(np.ceil((max(vals) * 1.30) * 20) / 20),  # headroom for the legend
@@ -324,7 +321,12 @@ def main() -> None:
                 "character_descriptions_verbatim": VERBATIM_DESC,
                 "character_descriptions_source": "issue1310_common.PERSONAS (condensed for "
                 "the axis; verbatim strings above)",
-                "bars_drawn": ["pooled_m0_r2", "own_map_ceiling_r2"],
+                "bars_drawn": {
+                    "instruct": ["pooled_m0_r2", "own_map_ceiling_r2"],
+                    "base": ["own_map_ceiling_r2"],
+                },
+                "base_shared_map_not_drawn": "base's pooled_m0_r2 is retained per cell "
+                "below but removed from the canvas by user directive 2026-08-21",
                 "caveats": {
                     "condition_mismatch": "BARS are on-policy; the X ORDER is derived from a "
                     "transfer statistic measured on the INSERTED cells, because the #2054 "
@@ -334,8 +336,9 @@ def main() -> None:
                     "bare_label_form_excluded": "the bare-label story boundary carries a "
                     "trailing-space tokenization artifact (23.2% digit-start onsets); the "
                     "attributed-quote form is drawn instead",
-                    "overlap_precondition": "base < instruct on all 12 drawn quantities; "
-                    "asserted at render time by assert_base_nests_inside_instruct",
+                    "overlap_precondition": "base < instruct on every DRAWN overlapping "
+                    "quantity (the own-map slot); asserted at render time by "
+                    "assert_base_nests_inside_instruct",
                 },
                 "dropped_groups": {
                     g: "removed from the figure by user directive 2026-08-21" for g in DROPPED

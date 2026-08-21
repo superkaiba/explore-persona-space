@@ -88,7 +88,7 @@
 \postersec{Motivation}
 \begin{itemize}
   \item LLMs can be viewed as deterministic maps from \emph{contexts} to \emph{answer distributions}
-  \item A \textbf{simple approximation} of that map would be extremely useful: much easier to analyze theoretically, and 
+  \item A \textbf{simple approximation} of that map would be extremely useful: much easier to analyze theoretically, sample from, and understand the effects of finetuning
   \item But it need not exist: the map is billions of parameters applying dozens of nonlinear layers. 
   \item Prior work either uses simple but \emph{narrow} predictors (specific tokens, activations, behaviors), or distillation, a complex whole-distribution predictor
   \item \takeaways{Our question:} can a \textbf{simple} approximation capture the mapping \emph{as a whole}? 
@@ -113,8 +113,8 @@
   \item \takeaways{The mapping has high predictive power:} held-out $R^2$ 0.75, rank-1 retrieval 0.98 at 1 million contexts
   \item \takeaways{The mapping is mostly linear:} the nonlinear (MLP) map adds only $\sim$$0.06$ $R^2$ over the linear map, and only at large $n$ (potentially this advantage would grow as you scale up the number of contexts)
   \item \takeaways{The mapping is not present for generic boundary tokens:} held-out $R^2$ 0.11 for a mapping from generic boundary tokens (punctuation) to the next stretch of text
-  \item \takeaways{The mapping is not just copying the context vector:} The mapping does much better than identity + bias
-  \item We study the \textbf{linear} map here; we are most excited about what it is \emph{useful} for.
+  \item \takeaways{The mapping is not just copying the context vector:} The mapping does much better than the identity + bias baseline
+  \item We study the \textbf{linear} map here 
   \item \takeaways{The mapping is strongest at mid-late depth:} held-out $R^2$ peaks at \textbf{layers 19--20 of 28} (0.76). This is consistent with literature showing that this is where high-level semantic information is most decodable.
 \end{itemize}
 \begin{center}
@@ -189,10 +189,14 @@ We train another map from the context to the answer's \textbf{SAE features}, the
 \figcap{8}{Held-out $R^2$; the shared map is fit on all 56 lattice cells at once. On-policy answers, layer 19; similarity = direct transfer of the chat-template map.}
 \begin{itemize}
   \item \takeaways{One shared map does almost as well as per-character/framing maps:} 62-94\% of each framing/character's own-map performance
-  \item \takeaways{The assistant }
-  \item \takeaways{One shared map covers most of every character's own fit:} across the four characters and the assistant-in-prose it reaches \textbf{62--94\%} of each one's own-map ceiling (instruct) — one operator, not six.
-  \item \takeaways{Being ``the assistant'' buys almost nothing once the frame changes:} the assistant written as a story character is the closest cell to the assistant's chat-template map, but only barely ahead of the four characters ($-0.27$ direct transfer vs $-0.30$ to $-0.51$), and every one of them is negative — the frame moves the map far more than the identity does.
-  \item \takeaways{Instruction tuning buys a stronger map inside its own template:} the chat cell reads $0.58$ own-map on instruct against $0.21$ on base, and it is the one cell where the shared map genuinely fails on base ($-0.02$).
+  \begin{itemize}
+      \item This suggests the model is representing the assistant in the chat template similarly to a character in a story, providing evidence for the \textbf{Persona Selection Model}
+  \end{itemize}
+
+    \item \takeaways{Characters more similar to the assistant have better mappings}
+    \begin{itemize}
+        \item But this difference only arises in the instruct model: the assistant's privileged position/representation as a persona comes from \textbf{post-training}
+    \end{itemize}
 \end{itemize}
 
 \end{column}

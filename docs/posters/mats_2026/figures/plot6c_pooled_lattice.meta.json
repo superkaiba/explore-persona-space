@@ -1,7 +1,7 @@
 {
-  "commit": "70244af3+dirty",
-  "render_id": "519f15895b9a4019",
-  "git_commit": "70244af31eadeef71bcea9663cad0ac82b6edbd7",
+  "commit": "cdc5e6dc+dirty",
+  "render_id": "eb266f9248fd432b",
+  "git_commit": "cdc5e6dca6bec282141e7ec649a93f2d633f5ee4",
   "git_dirty": true,
   "git_dirty_paths": [
     "docs/posters/mats_2026/figures/plot6a_assistant_transfer.meta.json",
@@ -12,7 +12,6 @@
     "docs/posters/mats_2026/figures/plot6c_pooled_lattice.png",
     "docs/posters/mats_2026/figures/plot6c_pooled_lattice_data.json",
     "docs/posters/mats_2026/make_plot6c_pooled_lattice.py",
-    "docs/posters/mats_2026/poster.tex",
     "eval_results/issue_2223/casestudy_replay/qwen3-32b/native_axis_fidelity_preimage/judged/judge_complete_delusion.json",
     "eval_results/issue_2223/casestudy_replay/qwen3-32b/native_axis_fidelity_preimage/judged/judge_complete_selfharm.json",
     "eval_results/issue_666/headline/predictor_headline.json",
@@ -40,7 +39,7 @@
   ],
   "git_argv0_state": "modified",
   "git_argv0_path": "docs/posters/mats_2026/make_plot6c_pooled_lattice.py",
-  "created": "2026-08-21T08:43:25Z",
+  "created": "2026-08-21T09:10:33Z",
   "figsize": [
     6.45,
     4.1
@@ -119,80 +118,44 @@
       "_group": 1
     },
     {
-      "sorted by similarity to assistant in chat template": -0.19,
-      "held-out $R^2$": -0.01584190966447796,
-      "_kind": "bar",
-      "_group": 2
-    },
-    {
-      "sorted by similarity to assistant in chat template": 0.81,
-      "held-out $R^2$": 0.2056614105100234,
-      "_kind": "bar",
-      "_group": 2
-    },
-    {
-      "sorted by similarity to assistant in chat template": 1.81,
-      "held-out $R^2$": 0.17316470022616537,
-      "_kind": "bar",
-      "_group": 2
-    },
-    {
-      "sorted by similarity to assistant in chat template": 2.81,
-      "held-out $R^2$": 0.1604714183976077,
-      "_kind": "bar",
-      "_group": 2
-    },
-    {
-      "sorted by similarity to assistant in chat template": 3.81,
-      "held-out $R^2$": 0.19510845505801633,
-      "_kind": "bar",
-      "_group": 2
-    },
-    {
-      "sorted by similarity to assistant in chat template": 4.81,
-      "held-out $R^2$": 0.03900911362100545,
-      "_kind": "bar",
-      "_group": 2
-    },
-    {
       "sorted by similarity to assistant in chat template": 0.19,
       "held-out $R^2$": 0.20736087733279018,
       "_kind": "bar",
-      "_group": 3
+      "_group": 2
     },
     {
       "sorted by similarity to assistant in chat template": 1.19,
       "held-out $R^2$": 0.2830236426880387,
       "_kind": "bar",
-      "_group": 3
+      "_group": 2
     },
     {
       "sorted by similarity to assistant in chat template": 2.19,
       "held-out $R^2$": 0.27988210680548775,
       "_kind": "bar",
-      "_group": 3
+      "_group": 2
     },
     {
       "sorted by similarity to assistant in chat template": 3.19,
       "held-out $R^2$": 0.26435334458909887,
       "_kind": "bar",
-      "_group": 3
+      "_group": 2
     },
     {
       "sorted by similarity to assistant in chat template": 4.19,
       "held-out $R^2$": 0.27919295858458054,
       "_kind": "bar",
-      "_group": 3
+      "_group": 2
     },
     {
       "sorted by similarity to assistant in chat template": 5.19,
       "held-out $R^2$": 0.2185863641514155,
       "_kind": "bar",
-      "_group": 3
+      "_group": 2
     }
   ],
-  "n_series": 4,
-  "total_points": 24,
+  "n_series": 3,
+  "total_points": 18,
   "text": {
     "suptitle": null,
     "fig_texts": [],
@@ -204,7 +167,6 @@
         "legend_labels": [
           "instruct \u2014 one shared map",
           "instruct \u2014 its own map",
-          "base \u2014 one shared map",
           "base \u2014 its own map"
         ],
         "annotations": [
@@ -224,7 +186,6 @@
           "Vex\nin story"
         ],
         "yticklabels": [
-          "\u22120.2",
           "0.0",
           "0.2",
           "0.4",
@@ -236,7 +197,6 @@
     "series": [
       "instruct \u2014 one shared map",
       "instruct \u2014 its own map",
-      "base \u2014 one shared map",
       "base \u2014 its own map"
     ]
   },

@@ -10,7 +10,7 @@
  "story_boundary_form": "attrib_quoted",
  "panel": "single panel, both models as overlapping bars (instruct wide behind, base narrow in front)",
  "ylim": [
-  -0.05,
+  0.0,
   0.8
  ],
  "x_order": [
@@ -33,14 +33,20 @@
   "Vex": "a theatrical, scheming villain who delights in menace"
  },
  "character_descriptions_source": "issue1310_common.PERSONAS (condensed for the axis; verbatim strings above)",
- "bars_drawn": [
-  "pooled_m0_r2",
-  "own_map_ceiling_r2"
- ],
+ "bars_drawn": {
+  "instruct": [
+   "pooled_m0_r2",
+   "own_map_ceiling_r2"
+  ],
+  "base": [
+   "own_map_ceiling_r2"
+  ]
+ },
+ "base_shared_map_not_drawn": "base's pooled_m0_r2 is retained per cell below but removed from the canvas by user directive 2026-08-21",
  "caveats": {
   "condition_mismatch": "BARS are on-policy; the X ORDER is derived from a transfer statistic measured on the INSERTED cells, because the #2054 ladder's chat anchor is inserted-only by construction (an on-policy chat source has no transfer pair). The numbers are no longer on the canvas, so this caveat lives only here and in the module docstring.",
   "bare_label_form_excluded": "the bare-label story boundary carries a trailing-space tokenization artifact (23.2% digit-start onsets); the attributed-quote form is drawn instead",
-  "overlap_precondition": "base < instruct on all 12 drawn quantities; asserted at render time by assert_base_nests_inside_instruct"
+  "overlap_precondition": "base < instruct on every DRAWN overlapping quantity (the own-map slot); asserted at render time by assert_base_nests_inside_instruct"
  },
  "dropped_groups": {
   "assistant bare text": "removed from the figure by user directive 2026-08-21"
