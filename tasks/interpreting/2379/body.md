@@ -5,7 +5,7 @@ title: A mapped answer vector underperforms the context hidden state at predicti
 kind: experiment
 tags: []
 created_at: '2026-08-19T03:05:14Z'
-has_clean_result: false
+has_clean_result: true
 origin_prompt: can we reproduce her experiments but instead of using context similarity
   use predicted answer vector similarity?
 workflow: v1
