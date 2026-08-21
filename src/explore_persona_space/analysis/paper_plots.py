@@ -1383,7 +1383,7 @@ def _new_render_id() -> str:
     return uuid.uuid4().hex[:16]
 
 
-def savefig_paper(
+def savefig_paper(  # noqa: C901 — deliberately flat save pipeline: presentation-env overrides (#1739) + per-format provenance embed + sidecar data/text extraction; pre-existing (16 > 15), not introduced by #2262
     fig: plt.Figure,
     stem: str,
     dir: str | Path = "figures/",
