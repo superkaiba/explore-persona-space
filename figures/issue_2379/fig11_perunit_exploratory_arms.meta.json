@@ -1,0 +1,772 @@
+{
+  "commit": "75b0722c+dirty",
+  "render_id": "a2ff7aac3c7449c4",
+  "git_commit": "75b0722c46edfe37f6d1c04c486eae45131ccfeb",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.meta.json",
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.pdf",
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.png",
+    "eval_results/issue_2223/casestudy_replay/qwen3-32b/native_axis_fidelity_preimage/judged/judge_complete_delusion.json",
+    "eval_results/issue_2223/casestudy_replay/qwen3-32b/native_axis_fidelity_preimage/judged/judge_complete_selfharm.json",
+    "eval_results/issue_666/headline/predictor_headline.json",
+    "scripts/issue1901_body_figures.py",
+    "tasks/completed/2214/body.md",
+    "tasks/completed/2214/comments.jsonl",
+    "tasks/completed/2214/concerns.jsonl",
+    "tasks/completed/2214/events.jsonl",
+    "tasks/completed/2214/plans/plan.md",
+    "tasks/completed/2214/plans/v1.md",
+    "tasks/completed/2214/plans/v2.md",
+    "tasks/completed/2214/plans/v3.md",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tasks/running/2214/body.md",
+    "tasks/running/2214/comments.jsonl",
+    "tasks/running/2214/concerns.jsonl",
+    "tasks/running/2214/events.jsonl",
+    "tasks/running/2214/plans/plan.md",
+    "tasks/running/2214/plans/v1.md",
+    "tasks/running/2214/plans/v2.md",
+    "tasks/running/2214/plans/v3.md",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": null,
+  "created": "2026-08-21T04:52:07Z",
+  "figsize": [
+    12.4,
+    4.0
+  ],
+  "points": [
+    {
+      "category": "Predicted answer, mean-centered (training-answer ref.)",
+      "Spearman rho at pinned layer": -0.015732999999999997,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Predicted answer, base map (training-answer ref.)",
+      "Spearman rho at pinned layer": -0.6101707999999999,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Predicted answer (inoc-prompt ref.)",
+      "Spearman rho at pinned layer": 0.6483883999999999,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "Predicted answer, base map (inoc-prompt ref.)",
+      "Spearman rho at pinned layer": 0.7073398,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "Actual answer, ceiling (inoc-prompt ref.)",
+      "Spearman rho at pinned layer": 0.7917574,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "Identity+bias answer (training-answer ref.)",
+      "Spearman rho at pinned layer": -0.2479972,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "Identity+bias answer (inoc-prompt ref.)",
+      "Spearman rho at pinned layer": 0.7942551999999999,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "Predicted answer, trait projection",
+      "Spearman rho at pinned layer": 0.7955874,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "TF-IDF text",
+      "Spearman rho at pinned layer": 0.16700339999999997,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "category": "Jaccard text",
+      "Spearman rho at pinned layer": 0.2086522,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "Sequence-match text",
+      "Spearman rho at pinned layer": 0.38917840000000004,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": -0.22,
+      "Spearman rho at pinned layer": 0.347781,
+      "series": "Bad legal advice",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": -0.11,
+      "Spearman rho at pinned layer": 0.249354,
+      "series": "Bad medical advice",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "Spearman rho at pinned layer": 0.044376,
+      "series": "Bad security advice",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 0.11,
+      "Spearman rho at pinned layer": -0.023847,
+      "series": "Extreme sports advice",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 0.22,
+      "Spearman rho at pinned layer": -0.696329,
+      "series": "Risky financial advice",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 0.78,
+      "Spearman rho at pinned layer": -0.731682,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.89,
+      "Spearman rho at pinned layer": -0.552511,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 1.0,
+      "Spearman rho at pinned layer": -0.376677,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 1.11,
+      "Spearman rho at pinned layer": -0.705036,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 1.22,
+      "Spearman rho at pinned layer": -0.684948,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.78,
+      "Spearman rho at pinned layer": 0.671827,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 1.89,
+      "Spearman rho at pinned layer": 0.500778,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 2.0,
+      "Spearman rho at pinned layer": 0.863777,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 2.11,
+      "Spearman rho at pinned layer": 0.582692,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 2.22,
+      "Spearman rho at pinned layer": 0.622868,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 2.78,
+      "Spearman rho at pinned layer": 0.855521,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 2.89,
+      "Spearman rho at pinned layer": 0.44594,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 3.0,
+      "Spearman rho at pinned layer": 0.847265,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 3.11,
+      "Spearman rho at pinned layer": 0.73303,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 3.22,
+      "Spearman rho at pinned layer": 0.654943,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 3.78,
+      "Spearman rho at pinned layer": 0.884417,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 3.89,
+      "Spearman rho at pinned layer": 0.639423,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 4.0,
+      "Spearman rho at pinned layer": 0.913313,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 4.11,
+      "Spearman rho at pinned layer": 0.82427,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 4.22,
+      "Spearman rho at pinned layer": 0.697364,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 4.78,
+      "Spearman rho at pinned layer": -0.737874,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 4.89,
+      "Spearman rho at pinned layer": -0.369375,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 5.0,
+      "Spearman rho at pinned layer": -0.409701,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 5.11,
+      "Spearman rho at pinned layer": 0.341113,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 5.22,
+      "Spearman rho at pinned layer": -0.064149,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "x": 5.78,
+      "Spearman rho at pinned layer": 0.818369,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "x": 5.89,
+      "Spearman rho at pinned layer": 0.692191,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "x": 6.0,
+      "Spearman rho at pinned layer": 0.9484,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "x": 6.11,
+      "Spearman rho at pinned layer": 0.82116,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "x": 6.22,
+      "Spearman rho at pinned layer": 0.691156,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "x": 6.78,
+      "Spearman rho at pinned layer": 0.799794,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "x": 6.89,
+      "Spearman rho at pinned layer": 0.721161,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "x": 7.0,
+      "Spearman rho at pinned layer": 0.803922,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 7.11,
+      "Spearman rho at pinned layer": 0.835675,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 7.22,
+      "Spearman rho at pinned layer": 0.817385,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 7.78,
+      "Spearman rho at pinned layer": 0.294383,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 7.89,
+      "Spearman rho at pinned layer": 0.130827,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 8.0,
+      "Spearman rho at pinned layer": 0.30169,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 8.11,
+      "Spearman rho at pinned layer": 0.152075,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 8.22,
+      "Spearman rho at pinned layer": -0.043958,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 8.78,
+      "Spearman rho at pinned layer": 0.318729,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "x": 8.89,
+      "Spearman rho at pinned layer": 0.221069,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "x": 9.0,
+      "Spearman rho at pinned layer": 0.34381,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "x": 9.11,
+      "Spearman rho at pinned layer": 0.192132,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "x": 9.22,
+      "Spearman rho at pinned layer": -0.032479,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": 9.78,
+      "Spearman rho at pinned layer": 0.591331,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 9.89,
+      "Spearman rho at pinned layer": 0.37041,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 10.0,
+      "Spearman rho at pinned layer": 0.587203,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 10.11,
+      "Spearman rho at pinned layer": 0.323487,
+      "_kind": "scatter",
+      "_group": 64
+    },
+    {
+      "x": 10.22,
+      "Spearman rho at pinned layer": 0.073461,
+      "_kind": "scatter",
+      "_group": 65
+    },
+    {
+      "category": "Predicted answer, mean-centered (training-answer ref.)",
+      "Spearman rho at pinned layer": 0.7836126666666666,
+      "_kind": "bar",
+      "_group": 66
+    },
+    {
+      "category": "Predicted answer, base map (training-answer ref.)",
+      "Spearman rho at pinned layer": 0.5690503333333333,
+      "_kind": "bar",
+      "_group": 67
+    },
+    {
+      "category": "Predicted answer (inoc-prompt ref.)",
+      "Spearman rho at pinned layer": 0.234054,
+      "_kind": "bar",
+      "_group": 68
+    },
+    {
+      "category": "Predicted answer, base map (inoc-prompt ref.)",
+      "Spearman rho at pinned layer": -0.126498,
+      "_kind": "bar",
+      "_group": 69
+    },
+    {
+      "category": "Actual answer, ceiling (inoc-prompt ref.)",
+      "Spearman rho at pinned layer": 0.8572856666666667,
+      "_kind": "bar",
+      "_group": 70
+    },
+    {
+      "category": "Identity+bias answer (training-answer ref.)",
+      "Spearman rho at pinned layer": 0.892747,
+      "_kind": "bar",
+      "_group": 71
+    },
+    {
+      "category": "Identity+bias answer (inoc-prompt ref.)",
+      "Spearman rho at pinned layer": 0.7040206666666666,
+      "_kind": "bar",
+      "_group": 72
+    },
+    {
+      "category": "TF-IDF text",
+      "Spearman rho at pinned layer": 0.22954833333333333,
+      "_kind": "bar",
+      "_group": 73
+    },
+    {
+      "category": "Jaccard text",
+      "Spearman rho at pinned layer": 0.21665566666666666,
+      "_kind": "bar",
+      "_group": 74
+    },
+    {
+      "category": "Sequence-match text",
+      "Spearman rho at pinned layer": 0.03552533333333333,
+      "_kind": "bar",
+      "_group": 75
+    },
+    {
+      "x": -0.11,
+      "Spearman rho at pinned layer": 0.826316,
+      "series": "French capitalization",
+      "_kind": "scatter",
+      "_group": 76
+    },
+    {
+      "x": 0.0,
+      "Spearman rho at pinned layer": 0.78669,
+      "series": "German capitalization",
+      "_kind": "scatter",
+      "_group": 77
+    },
+    {
+      "x": 0.11,
+      "Spearman rho at pinned layer": 0.737832,
+      "series": "Spanish capitalization",
+      "_kind": "scatter",
+      "_group": 78
+    },
+    {
+      "x": 0.89,
+      "Spearman rho at pinned layer": 0.638667,
+      "_kind": "scatter",
+      "_group": 79
+    },
+    {
+      "x": 1.0,
+      "Spearman rho at pinned layer": 0.559254,
+      "_kind": "scatter",
+      "_group": 80
+    },
+    {
+      "x": 1.11,
+      "Spearman rho at pinned layer": 0.50923,
+      "_kind": "scatter",
+      "_group": 81
+    },
+    {
+      "x": 1.89,
+      "Spearman rho at pinned layer": 0.001646,
+      "_kind": "scatter",
+      "_group": 82
+    },
+    {
+      "x": 2.0,
+      "Spearman rho at pinned layer": 0.627994,
+      "_kind": "scatter",
+      "_group": 83
+    },
+    {
+      "x": 2.11,
+      "Spearman rho at pinned layer": 0.072522,
+      "_kind": "scatter",
+      "_group": 84
+    },
+    {
+      "x": 2.89,
+      "Spearman rho at pinned layer": -0.118516,
+      "_kind": "scatter",
+      "_group": 85
+    },
+    {
+      "x": 3.0,
+      "Spearman rho at pinned layer": -0.011881,
+      "_kind": "scatter",
+      "_group": 86
+    },
+    {
+      "x": 3.11,
+      "Spearman rho at pinned layer": -0.249097,
+      "_kind": "scatter",
+      "_group": 87
+    },
+    {
+      "x": 3.89,
+      "Spearman rho at pinned layer": 0.842777,
+      "_kind": "scatter",
+      "_group": 88
+    },
+    {
+      "x": 4.0,
+      "Spearman rho at pinned layer": 0.880889,
+      "_kind": "scatter",
+      "_group": 89
+    },
+    {
+      "x": 4.11,
+      "Spearman rho at pinned layer": 0.848191,
+      "_kind": "scatter",
+      "_group": 90
+    },
+    {
+      "x": 4.89,
+      "Spearman rho at pinned layer": 0.903681,
+      "_kind": "scatter",
+      "_group": 91
+    },
+    {
+      "x": 5.0,
+      "Spearman rho at pinned layer": 0.877495,
+      "_kind": "scatter",
+      "_group": 92
+    },
+    {
+      "x": 5.11,
+      "Spearman rho at pinned layer": 0.897065,
+      "_kind": "scatter",
+      "_group": 93
+    },
+    {
+      "x": 5.89,
+      "Spearman rho at pinned layer": 0.694633,
+      "_kind": "scatter",
+      "_group": 94
+    },
+    {
+      "x": 6.0,
+      "Spearman rho at pinned layer": 0.810452,
+      "_kind": "scatter",
+      "_group": 95
+    },
+    {
+      "x": 6.11,
+      "Spearman rho at pinned layer": 0.606977,
+      "_kind": "scatter",
+      "_group": 96
+    },
+    {
+      "x": 6.89,
+      "Spearman rho at pinned layer": 0.175416,
+      "_kind": "scatter",
+      "_group": 97
+    },
+    {
+      "x": 7.0,
+      "Spearman rho at pinned layer": 0.256139,
+      "_kind": "scatter",
+      "_group": 98
+    },
+    {
+      "x": 7.11,
+      "Spearman rho at pinned layer": 0.25709,
+      "_kind": "scatter",
+      "_group": 99
+    },
+    {
+      "x": 7.89,
+      "Spearman rho at pinned layer": 0.163769,
+      "_kind": "scatter",
+      "_group": 100
+    },
+    {
+      "x": 8.0,
+      "Spearman rho at pinned layer": 0.24358,
+      "_kind": "scatter",
+      "_group": 101
+    },
+    {
+      "x": 8.11,
+      "Spearman rho at pinned layer": 0.242618,
+      "_kind": "scatter",
+      "_group": 102
+    },
+    {
+      "x": 8.89,
+      "Spearman rho at pinned layer": -0.041167,
+      "_kind": "scatter",
+      "_group": 103
+    },
+    {
+      "x": 9.0,
+      "Spearman rho at pinned layer": 0.075982,
+      "_kind": "scatter",
+      "_group": 104
+    },
+    {
+      "x": 9.11,
+      "Spearman rho at pinned layer": 0.071761,
+      "_kind": "scatter",
+      "_group": 105
+    }
+  ],
+  "n_series": 106,
+  "total_points": 106,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Misalignment \u2014 per-condition values behind the arm means",
+        "ylabel": "Spearman rho at pinned layer",
+        "legend_labels": [
+          "Bad legal advice",
+          "Bad medical advice",
+          "Bad security advice",
+          "Extreme sports advice",
+          "Risky financial advice"
+        ],
+        "xticklabels": [
+          "Predicted answer, mean-centered (training-answer ref.)",
+          "Predicted answer, base map (training-answer ref.)",
+          "Predicted answer (inoc-prompt ref.)",
+          "Predicted answer, base map (inoc-prompt ref.)",
+          "Actual answer, ceiling (inoc-prompt ref.)",
+          "Identity+bias answer (training-answer ref.)",
+          "Identity+bias answer (inoc-prompt ref.)",
+          "Predicted answer, trait projection",
+          "TF-IDF text",
+          "Jaccard text",
+          "Sequence-match text"
+        ],
+        "yticklabels": [
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5"
+        ]
+      },
+      {
+        "title_left": "Capitalization \u2014 per-condition values behind the arm means",
+        "ylabel": "Spearman rho at pinned layer",
+        "legend_labels": [
+          "French capitalization",
+          "German capitalization",
+          "Spanish capitalization"
+        ],
+        "xticklabels": [
+          "Predicted answer, mean-centered (training-answer ref.)",
+          "Predicted answer, base map (training-answer ref.)",
+          "Predicted answer (inoc-prompt ref.)",
+          "Predicted answer, base map (inoc-prompt ref.)",
+          "Actual answer, ceiling (inoc-prompt ref.)",
+          "Identity+bias answer (training-answer ref.)",
+          "Identity+bias answer (inoc-prompt ref.)",
+          "TF-IDF text",
+          "Jaccard text",
+          "Sequence-match text"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "Bad legal advice",
+      "Bad medical advice",
+      "Bad security advice",
+      "Extreme sports advice",
+      "Risky financial advice",
+      "French capitalization",
+      "German capitalization",
+      "Spanish capitalization"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -1,0 +1,300 @@
+{
+  "commit": "75b0722c+dirty",
+  "render_id": "e1e37de72a014e6a",
+  "git_commit": "75b0722c46edfe37f6d1c04c486eae45131ccfeb",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.meta.json",
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.pdf",
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.png",
+    "eval_results/issue_2223/casestudy_replay/qwen3-32b/native_axis_fidelity_preimage/judged/judge_complete_delusion.json",
+    "eval_results/issue_2223/casestudy_replay/qwen3-32b/native_axis_fidelity_preimage/judged/judge_complete_selfharm.json",
+    "eval_results/issue_666/headline/predictor_headline.json",
+    "scripts/issue1901_body_figures.py",
+    "tasks/completed/2214/body.md",
+    "tasks/completed/2214/comments.jsonl",
+    "tasks/completed/2214/concerns.jsonl",
+    "tasks/completed/2214/events.jsonl",
+    "tasks/completed/2214/plans/plan.md",
+    "tasks/completed/2214/plans/v1.md",
+    "tasks/completed/2214/plans/v2.md",
+    "tasks/completed/2214/plans/v3.md",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tasks/running/2214/body.md",
+    "tasks/running/2214/comments.jsonl",
+    "tasks/running/2214/concerns.jsonl",
+    "tasks/running/2214/events.jsonl",
+    "tasks/running/2214/plans/plan.md",
+    "tasks/running/2214/plans/v1.md",
+    "tasks/running/2214/plans/v2.md",
+    "tasks/running/2214/plans/v3.md",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": null,
+  "created": "2026-08-21T04:52:02Z",
+  "figsize": [
+    11.0,
+    3.8
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "Spearman rho at pinned layer": 0.742002,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "Spearman rho at pinned layer": 0.26935,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "Spearman rho at pinned layer": 0.252838,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "Spearman rho at pinned layer": 0.744959,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "Spearman rho at pinned layer": -0.357994,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "Spearman rho at pinned layer": 0.595967,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "Spearman rho at pinned layer": 0.832817,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "Spearman rho at pinned layer": 0.240454,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "Spearman rho at pinned layer": 0.521156,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "Spearman rho at pinned layer": 0.849154,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "Spearman rho at pinned layer": -0.174185,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "Spearman rho at pinned layer": 0.713331,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho at pinned layer": 0.705641,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "Spearman rho at pinned layer": -0.398346,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "Spearman rho at pinned layer": 0.600105,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "Spearman rho at pinned layer": 0.7749146,
+      "series": "mean over conditions",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "Spearman rho at pinned layer": -0.0841442,
+      "series": "mean over conditions",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "Spearman rho at pinned layer": 0.5366794,
+      "series": "mean over conditions",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "Spearman rho at pinned layer": 0.905327,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "Spearman rho at pinned layer": 0.763767,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "Spearman rho at pinned layer": 0.854299,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "Spearman rho at pinned layer": 0.879192,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "Spearman rho at pinned layer": 0.263927,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "Spearman rho at pinned layer": 0.882586,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "Spearman rho at pinned layer": 0.901794,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "Spearman rho at pinned layer": 0.786705,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "Spearman rho at pinned layer": 0.824543,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.0,
+      "Spearman rho at pinned layer": 0.8954376666666667,
+      "series": "mean over conditions",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "Spearman rho at pinned layer": 0.6047996666666666,
+      "series": "mean over conditions",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.0,
+      "Spearman rho at pinned layer": 0.8538093333333334,
+      "series": "mean over conditions",
+      "_kind": "line",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 30,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Misalignment \u2014 per-condition reads at decoder layer 16",
+        "ylabel": "Spearman rho at pinned layer",
+        "legend_labels": [
+          "mean over conditions"
+        ],
+        "annotations": [
+          "Bad legal advice",
+          "Bad security advice",
+          "Bad medical advice",
+          "Risky financial advice",
+          "Extreme sports advice"
+        ],
+        "xticklabels": [
+          "Context state",
+          "Mapped prediction",
+          "Actual-answer\nceiling"
+        ],
+        "yticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "Capitalization \u2014 per-condition reads at decoder layer 27",
+        "ylabel": "Spearman rho at pinned layer",
+        "legend_labels": [
+          "mean over conditions"
+        ],
+        "annotations": [
+          "Spanish capitalization",
+          "French capitalization",
+          "German capitalization"
+        ],
+        "xticklabels": [
+          "Context state",
+          "Mapped prediction",
+          "Actual-answer\nceiling"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "mean over conditions"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
