@@ -233,7 +233,7 @@ def main() -> int:
     OLD_DET = "60e1c290fd1a65cd9de1101f85c7971756270a61"
     # Moves with every companion regeneration; currently the round-2 fix pass
     # (corrected writer blocks + corrected captions).
-    NEW_DET = "4632a930e8c7fe2eeb198ef08cb4079207c8110a"
+    NEW_DET = "9c4cacb10bed274e3e4d0848ff7b1d999d0578ea"
     repins = 0
     for i, ln in enumerate(out):
         if ln.startswith("**Detailed writeup:**") and OLD_DET in ln:
