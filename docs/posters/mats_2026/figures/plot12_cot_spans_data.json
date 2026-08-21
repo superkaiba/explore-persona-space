@@ -1,0 +1,97 @@
+{
+ "sources": [
+  "eval_results/issue_928/recon_skill_grid.json",
+  "eval_results/issue_928/null_matrix_avg_q.json",
+  "eval_results/issue_810/adhoc_predictability_vs_variance.json"
+ ],
+ "issues": {
+  "thinking_model": 928,
+  "non_thinking_parent": 810
+ },
+ "model": "open-thoughts/OpenThinker2-7B (SFT of Qwen2.5-7B-Instruct)",
+ "regime": "query-averaged (avg_q), n=50 contexts",
+ "dv": "held-out skill-over-mean R^2, LOCO 50 folds, closed-form ridge with nested-CV lambda, PCA-48 targets; each bar at its own best layer",
+ "span_definitions": {
+  "context": "templated prompt tokens only; the boundary read is ctx_last = the final prompt token (the assistant-header newline)",
+  "CoT": "strictly inside <think>\u2026</think>, delimiters excluded",
+  "answer": "after </think> + following whitespace, to end"
+ },
+ "comparability": {
+  "same_cell_family": "bars 2/3/5 \u2014 boundary/mean, same model, same rollouts, all peaking at layer 6; strictly comparable",
+  "reference_bar": "bar 1 is a different model and run (#810); #928 registers it as QUALITATIVE parity \u2014 answer span and generation cap differ (parent 512 new tokens, thinking model 8,192)",
+  "offscale_bar": "bar 4 predicts a STACKED CoT+answer target (a different object) AND has no boundary/mean fit banked, so it is drawn at boundary/boundary"
+ },
+ "joint_alternative_not_drawn": {
+  "combo": "mean/mean",
+  "layer": 27,
+  "skill": 0.5714865927832959
+ },
+ "nulls": "selection-symmetric max-over-layers p95 of 1,000 context permutations; all near -0.30, so far below a 0-floor axis that no band line is drawn. boundary/mean nulls were banked only for d_parity; other arms fall back to their boundary/boundary nulls (noted per bar).",
+ "bars": [
+  {
+   "arm": "parent_direct",
+   "combo": "mean answer summary",
+   "who": "parent model",
+   "what": "context \u2192 answer",
+   "note": "no thinking step",
+   "kind": "reference",
+   "skill": 0.7997271695428934,
+   "layer": 18,
+   "n": 50,
+   "null_p95": null,
+   "source": "eval_results/issue_810/adhoc_predictability_vs_variance.json"
+  },
+  {
+   "arm": "d_parity",
+   "combo": "boundary/mean",
+   "who": "context",
+   "what": "\u2192 answer",
+   "note": "answer after </think>",
+   "kind": "same_cell",
+   "skill": 0.7816323467266157,
+   "layer": 6,
+   "n": 50,
+   "null_p95": -0.29653279134415694,
+   "source": "eval_results/issue_928/recon_skill_grid.json"
+  },
+  {
+   "arm": "a_ctx2cot",
+   "combo": "boundary/mean",
+   "who": "context",
+   "what": "\u2192 CoT",
+   "note": "the think block",
+   "kind": "same_cell",
+   "skill": 0.8179152110026522,
+   "layer": 6,
+   "n": 50,
+   "null_p95": -0.4138502866163037,
+   "source": "eval_results/issue_928/recon_skill_grid.json"
+  },
+  {
+   "arm": "j_joint",
+   "combo": "boundary/boundary",
+   "who": "context",
+   "what": "\u2192 CoT + answer",
+   "note": "not directly comparable",
+   "kind": "offscale",
+   "skill": 0.46743826142904754,
+   "layer": 11,
+   "n": 50,
+   "null_p95": -0.45330519788347307,
+   "source": "eval_results/issue_928/recon_skill_grid.json"
+  },
+  {
+   "arm": "b_cot2ans",
+   "combo": "boundary/mean",
+   "who": "end of CoT",
+   "what": "\u2192 answer",
+   "note": "reads after thinking",
+   "kind": "same_cell",
+   "skill": 0.8028134359523784,
+   "layer": 6,
+   "n": 50,
+   "null_p95": -0.30284892644136385,
+   "source": "eval_results/issue_928/recon_skill_grid.json"
+  }
+ ]
+}
