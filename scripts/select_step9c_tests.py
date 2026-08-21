@@ -390,6 +390,11 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # + absolute per-cell trainability floor, four pinned surfaces incl. the
     # two machinery-keyed N/A escapes; incident #2221).
     "tests/test_workflow_lint_two_tier_yield_floor.py",
+    # NEW (#2422) — workflow_lint --check-worktree-task-state-briefs +
+    # no-flags bundling (worktree-safe task-state brief paths, six pinned
+    # surfaces; incidents #2329/#823 — a worktree's tasks/ tree is frozen at
+    # its base commit) + the worktree-freeze reproduction (STALE + ABSENT).
+    "tests/test_workflow_lint_worktree_task_paths.py",
     "tests/test_workflow_yaml.py",
     "tests/test_workflow_fix_dedup.py",
     # NEW (#1735) — rule reconciliation pin: workflow-fix-on-bug.md §
@@ -402,6 +407,11 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_no_auto_runpod_path_under_any_failure.py",
     "tests/test_no_direct_task_path_construction.py",
     "tests/test_no_dollar_budget_caps.py",
+    # NEW (#2217) — collection-time registry-mutation guard: no collected test
+    # module may add/remove CONTEXTS / NEGATIVE_PANELS keys at import time
+    # (conftest pytest_collectreport deltas + collection-finish key-set
+    # equality vs the fresh-import baseline; incident #2059's residual class).
+    "tests/test_no_import_time_registry_mutation.py",
     "tests/test_no_per_file_raw_completions_loop.py",
     "tests/test_no_pod_side_task_py_shellout.py",
     # NEW (#2058) — no-progress respawn lane: fingerprint helper +
@@ -792,6 +802,10 @@ TRANSITIVE_CONSUMER_TESTS: dict[str, tuple[str, ...]] = {
         "tests/test_inline_lint_gate.py",
         "tests/test_step9c_baseline.py",
     ),
+    # #2412: the Step 5a sibling-probe unit tests load the helper by
+    # CONSTRUCTED path (importlib + subprocess CLI) — no text-scan arm
+    # reaches a constructed-path consumer.
+    "scripts/step5a_sibling_probe.py": ("tests/test_step5a_sibling_probe.py",),
 }
 
 # --- Rules-pin discovery arm (#1496). -----------------------------------------

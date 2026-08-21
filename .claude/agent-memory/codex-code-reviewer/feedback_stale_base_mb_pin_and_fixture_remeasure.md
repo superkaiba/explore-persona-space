@@ -34,6 +34,18 @@ Two compose patterns from #2204 r1 (2026-08-19), both reusable:
    verdict to record which mode ran (`**Binding acceptance re-measure:**`
    header field). The Claude twin owns the guaranteed-executable leg.
 
+**Variant (#2214 r1, 2026-08-20): sync commits inflate the THREE-dot form
+too.** When the branch carries Step 5a spec-freshness sync commits between
+the MB and HEAD, the bare three-dot diff spans deliverable + every synced
+file (37 files on #2214) even though the brief claims "three-dot = exactly
+the deliverable". Verify the brief's diff-shape claim with
+`git -C <wt> diff --numstat <base>...<branch>` AT COMPOSE TIME; when
+inflated, scope the prompt's recipe to `git show <deliverable-sha>` +
+path-scoped three-dot (`git diff origin/main...HEAD -- <path>`), attest the
+sync commits byte-identical/out-of-scope, and keep the two-dot ban. Flag the
+brief divergence in the return text (the brief is still the extraction
+contract — sentinel/marker fields unchanged).
+
 **Why:** an unpinned base would have let Codex ground a FAIL on ~20k phantom
 deleted lines (void verdict, reconciler round); an unprobed fixture path
 would have made the kill-criterion re-measure silently impossible in the

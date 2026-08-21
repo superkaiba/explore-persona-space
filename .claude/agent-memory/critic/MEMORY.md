@@ -154,3 +154,4 @@
 - [Husk-reap comparator](feedback_husk_reap_comparator_review.md) — trace vs REAL artifact; backstop (#2138)
 - [Hub repack/deletion](feedback_hub_repack_deletion_plan_review.md) — probe-first chain; drift = Concern (#2321)
 - [Family-sync membership](feedback_family_sync_membership_review.md) — importers across ALL families (#2352)
+- [Rule-text API semantics](feedback_rule_text_api_semantics_verify.md) — blessed calls: read installed source; get_paths_info silent-empty (#2442)

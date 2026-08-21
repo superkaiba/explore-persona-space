@@ -286,6 +286,16 @@ per-cell loop, no single-GPU vLLM on an N-GPU pod), and all API calls route
 through `src/explore_persona_space/llm/api_dispatch.py`. These are authoring
 obligations; the panel below VERIFIES them.
 
+**Worktree-safe task-state paths in every Step 4 brief (#2422):** the plan
+AND `artifacts/planned_manifest.json` are named by ABSOLUTE canonical
+main-checkout paths resolved at compose time
+(`TASK_DIR="$(uv run python "$REPO_ROOT"/scripts/task.py find <N>)"`), with
+`plan_version=v<K>` (the extensionless readlink of `plans/plan.md`) stated
+in the brief; never read `tasks/` from inside the worktree (frozen at
+base — a stale manifest makes the manifest-completeness verdict grade a
+superseded document). Full contract: v1 `04-step-2.md` § "Worktree-safe
+task-state paths" + Step 5 § "Both reviewers see the same brief".
+
 **TDD conditional gate** (`gates.tdd_gate`) — fires when the plan body has
 `### TDD: yes`; `.claude/skills/issue/SKILL.md` § "Step 4b" applies verbatim
 (implementer posts `epm:proposed-tests v<n>` (omit --version; the CLI derives max+1), EXITs awaiting `epm:approve-tests v1`;
