@@ -1,6 +1,6 @@
 ---
-title: A mapped answer vector underperforms the context hidden state at predicting
-  post-inoculation re-elicitation, while the context-side predictor replicates (MODERATE
+title: A mapped answer vector underperforms the context state at predicting misalignment
+  re-elicitation, and the deficit is specific to the training-answer readout (MODERATE
   confidence)
 kind: experiment
 tags: []
