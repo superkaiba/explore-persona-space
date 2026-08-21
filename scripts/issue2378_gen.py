@@ -4,8 +4,9 @@ Phases (plan v6 §4.1/§4.2/§4.2b/§4.6; ``--phase`` over the ``PHASES`` regist
 
 VM phases (repo venv, no model):
 - ``build_banks``   P0: LLM-author the scene seed banks (settings/situations/
-                    registers/final seeds) + write committed copies of the
-                    static prime/opener/char-intro banks + judge rubrics.
+                    registers) + write committed copies of the static
+                    prime/opener/char-intro/final-seed banks + judge rubrics
+                    (final seeds frozen static at the G1 recalibration, r11).
 - ``build_pools``   P0: draw chat 12k / plain 10k / user 10k mutually disjoint
                     conversations from the pinned #1738 manifest, with the
                     #2054 question filter + the new English-script filter;
@@ -169,7 +170,8 @@ def _build_scene_prompt(cell: str, wave: int, attempt_idx: int, banksd: dict) ->
 
 # ---------------------------------------------------------------------------
 # Structural miner (plan §4.2): first quoted utterance directed at the
-# character within the first ~250 generated tokens. Char offsets.
+# character within the miner window (cm.MINER_WINDOW_TOKENS — 512 since the
+# G1 recalibration, covering the full SegA generation). Char offsets.
 # ---------------------------------------------------------------------------
 
 _QUOTE_OPEN = {'"', "“"}
@@ -265,6 +267,12 @@ def _mine_sega(gen_text: str, character: str, family: str, window_char: int) -> 
 
     Returns {"kept": bool, "reason": ..., spans...}; every reject carries a
     named reason (persisted with the attempt row).
+
+    G1 recalibration (r11, L3): the scan stops at the FIRST directed quote — a
+    directed quote failing the family kind check REJECTS the row (wrong_kind)
+    instead of scanning forward, which salvaged the character's own reply
+    (21/102 pilot dialogue admission rejects were reply-mined). Non-directed
+    and degenerate (<3 char) quotes still skip forward.
     """
     window = gen_text[:window_char]
     spans, unclosed = _find_quote_spans(window)
@@ -283,10 +291,10 @@ def _mine_sega(gen_text: str, character: str, family: str, window_char: int) -> 
         if family == "question":
             if not utter.endswith("?"):
                 last_reason = "wrong_kind"
-                continue
+                break
         elif "?" in utter:
             last_reason = "wrong_kind"
-            continue
+            break
         return {
             "kept": True,
             "reason": None,
@@ -396,7 +404,16 @@ def _reap_engine(llm) -> None:
     _reap_vllm_engine(llm)
 
 
-def _sampling_params(max_tokens: int, stop: list[str] | None, seed: int):
+def _sampling_params(
+    max_tokens: int, stop: list[str] | None, seed: int, bad_words: list[str] | None = None
+):
+    """Shared SamplingParams builder. ``bad_words`` is passed ONLY by the SegA
+    mining call site (G1 recalibration L1 — the '<think>' reasoning-mode leak
+    hit 73-81% of pilot mining attempts); every other stage passes nothing and
+    keeps the constructor default (None). Threaded UNGUARDED: verified
+    constructible on the production model venv (vllm 0.27.1, pod-2378) — an
+    engine venv lacking the param must TypeError loudly, never
+    introspection-skip (the r9 ENGINE_KWARG_PINS lesson)."""
     from vllm import SamplingParams
 
     return SamplingParams(
@@ -406,6 +423,7 @@ def _sampling_params(max_tokens: int, stop: list[str] | None, seed: int):
         seed=seed,
         max_tokens=max_tokens,
         stop=stop,
+        bad_words=bad_words,
     )
 
 
@@ -573,6 +591,12 @@ def phase_build_banks(args) -> None:
     static = {
         "prime_bank_question": list(bnk.PRIME_BANK_QUESTION),
         "prime_bank_dialogue": list(bnk.PRIME_BANK_DIALOGUE),
+        # G1 recalibration (r11, L4): the final-seed banks are FROZEN static
+        # tuples (P0 LLM-authored, audited + reworded at G1 — provenance in
+        # issue2378_banks.py); build_banks writes them deterministically from
+        # source, validated fail-loud at issue2378_banks import time.
+        "final_seeds_question": list(bnk.FINAL_SEEDS_QUESTION),
+        "final_seeds_remark": list(bnk.FINAL_SEEDS_REMARK),
         "openers": list(bnk.OPENER_BANK),
         "char_intros": list(bnk.CHAR_INTRO_TEMPLATES),
     }
@@ -819,6 +843,10 @@ def phase_sega(args) -> None:
             "seed": cm.SEED,
             "cap": cm.SEGA_MAX_TOKENS,
             "model": cm.MODEL_ID,
+            # G1 recalibration L1: the decoding pin is output-affecting, so it
+            # rides the regime (ledger fail-louds against pre-r11 state; round-2
+            # raw roots are round-scoped by design) and the summary artifact.
+            "bad_words": ["<think>"],
         }
         ledger = cm.StageLedger(
             raw_root / "sega" / f"ledger_{cell}_w{wave}_s{args.shard_index}.json", regime
@@ -832,7 +860,14 @@ def phase_sega(args) -> None:
             built = [_build_scene_prompt(cell, wave, a, banksd) for a in chunk]
             sps = [
                 _sampling_params(
-                    cm.SEGA_MAX_TOKENS, None, cm.derived_seed(cm.SEED, "sega", cell, wave, a)
+                    cm.SEGA_MAX_TOKENS,
+                    None,
+                    cm.derived_seed(cm.SEED, "sega", cell, wave, a),
+                    # G1 recalibration L1: ban the '<think>' reasoning-mode leak
+                    # on the raw few-shot mining continuation ONLY (73-81% of
+                    # pilot attempts leaked); segb/chat/plain/user stages are
+                    # deliberately unbanned.
+                    bad_words=["<think>"],
                 )
                 for a in chunk
             ]
@@ -1951,6 +1986,19 @@ def phase_probe_miner(args) -> None:
     attributions must reject."""
     _ = args
     name = "Astra"
+    # G1 recalibration (r11, L3): stop-at-first-DIRECTED-quote. A directed quote
+    # failing the family kind check must REJECT the row (wrong_kind) — the
+    # pre-r11 forward scan salvaged the character's own reply after skipping a
+    # wrong-kind directed quote (21/102 dialogue admission rejects were
+    # reply-mined; epm:progress v65 evidence item 4).
+    salvage_dialogue = (
+        'Dana turned to Astra. "Will the bridge hold tonight?" There was a long '
+        'pause before the answer came. "You worry too much, Dana."'
+    )
+    salvage_question = (
+        'Dana leaned toward Astra. "The harvest survived the frost." A heartbeat '
+        'later the real question arrived. "But will you sell it all, Astra?"'
+    )
     fixtures = [
         (
             "question",
@@ -2001,6 +2049,18 @@ def phase_probe_miner(args) -> None:
             False,
             "wrong kind: question under dialogue family",
         ),
+        (
+            "dialogue",
+            salvage_dialogue,
+            False,
+            "L3 no-salvage: wrong-kind directed question then reply (dialogue family)",
+        ),
+        (
+            "question",
+            salvage_question,
+            False,
+            "L3 no-salvage: wrong-kind directed statement then question (question family)",
+        ),
     ]
     failures = []
     for family, text, expect, note in fixtures:
@@ -2011,11 +2071,34 @@ def phase_probe_miner(args) -> None:
             utter = text[verdict["utter_start"] : verdict["utter_end"]]
             if not utter.strip():
                 failures.append(f"{note}: empty mined utterance")
+    # L3 reason check: the salvage fixtures must reject as wrong_kind (the
+    # directed first quote's verdict), never as a downstream reason.
+    for family, text in (("dialogue", salvage_dialogue), ("question", salvage_question)):
+        verdict = _mine_sega(text, name, family, len(text))
+        if verdict.get("reason") != "wrong_kind":
+            failures.append(f"L3 {family}: expected reason=wrong_kind, got {json.dumps(verdict)}")
+    # G1 recalibration (r11, L2): window semantics — the miner window now covers
+    # the full SegA generation (MINER_WINDOW_TOKENS == SEGA_MAX_TOKENS); a
+    # truncated window still rejects quote-free prefixes.
+    wtext = 'Dana turned to Astra. "Will the bridge hold tonight?"'
+    wfull = _mine_sega(wtext, name, "question", len(wtext))
+    wcut = _mine_sega(wtext, name, "question", 10)
+    if not wfull["kept"]:
+        failures.append(f"L2 window: full-window mine expected kept=True, got {json.dumps(wfull)}")
+    if wcut["kept"] or wcut.get("reason") != "no_quote_in_window":
+        failures.append(
+            f"L2 window: truncated window expected no_quote_in_window, got {json.dumps(wcut)}"
+        )
+    if cm.MINER_WINDOW_TOKENS < cm.SEGA_MAX_TOKENS:
+        failures.append(
+            f"L2 window: MINER_WINDOW_TOKENS={cm.MINER_WINDOW_TOKENS} below the SegA "
+            f"generation cap {cm.SEGA_MAX_TOKENS} (G1 recalibration contract)"
+        )
     if failures:
         for f in failures:
             print(f"[probe_miner] FAIL {f}", flush=True)
         raise SystemExit(1)
-    print(f"[probe_miner] PASS ({len(fixtures)} fixtures)", flush=True)
+    print(f"[probe_miner] PASS ({len(fixtures)} fixtures + L2/L3 probes)", flush=True)
 
 
 PHASES = {

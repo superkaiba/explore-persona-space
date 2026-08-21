@@ -14,8 +14,14 @@ Holds the experimenter-written boundary/scaffold text the plan discloses
 - ``CHAR_INTRO_TEMPLATES``: 10 scene-seed character-introduction templates with
   ``{name}`` / ``{persona}`` slots (scaffold text, part of the opening seed).
 - ``BANK_BUILDER_SPECS``: the P0 LLM-authoring prompts for the sampled scene
-  axes (settings / situations / registers / final seed sentences), each
-  returning a JSON payload validated fail-loud by the ``build_banks`` phase.
+  axes (settings / situations / registers), each returning a JSON payload
+  validated fail-loud by the ``build_banks`` phase.
+- ``FINAL_SEEDS_QUESTION`` / ``FINAL_SEEDS_REMARK``: the 25+25 final seed
+  sentences, FROZEN static since the G1 recalibration (r11). Originally
+  LLM-authored at P0 (spec prompts in git history at 98565a9d7d); audited +
+  reworded at G1 because the round-1 pilot's dialogue admission rejects were
+  seed-shaped (44/102 kind-mismatch — remark setups that invited the
+  interlocutor to ASK; epm:progress v65 evidence item 3).
 - Judge rubrics (admission per family; congruence) -- reason-then-score JSON,
   anchored 0/50/100, single-rationale shape (max_tokens 1024 floor,
   llm-judging rule 23).
@@ -197,9 +203,249 @@ CHAR_INTRO_TEMPLATES: tuple[str, ...] = (
 )
 
 # --------------------------------------------------------------------------
+# Final seed sentences (25 per family) — FROZEN static tuples since the G1
+# recalibration (r11, plan §7 G1 "one prime/seed recalibration round").
+# Provenance: LLM-authored at P0 via the (since-removed) final_seeds_* entries
+# of BANK_BUILDER_SPECS (spec prompts in git history at 98565a9d7d), then
+# audited + reworded here. Audit rule (epm:progress v65 lever L4):
+#   REMARK seeds must set up an unambiguous DECLARATIVE speech act (accusation,
+#   verdict, revelation, confession, warning, announcement) — never a setup
+#   that invites the interlocutor to ASK {name} something;
+#   QUESTION seeds are the mirror: every setup must invite a question, never a
+#   statement (e.g. "bearing news" -> "wanting to know").
+# Contract (validated at import below): 25 items, exactly one {name} slot per
+# item, no quotation marks, no question text.
+# --------------------------------------------------------------------------
+
+FINAL_SEEDS_QUESTION: tuple[str, ...] = (
+    (
+        "The detective leaned forward across the metal table, his eyes fixed on {name} with "
+        "an intensity that suggested he already knew the answer."
+    ),
+    (
+        "When the principal cleared her throat and adjusted her glasses, {name} knew the "
+        "questions were about to begin."
+    ),
+    (
+        "The customs officer studied {name}'s passport for what felt like an eternity before "
+        "looking up with evident suspicion."
+    ),
+    (
+        "Three colleagues stood blocking the conference room exit while the department head "
+        "turned to {name}, demanding an explanation."
+    ),
+    (
+        "The child tugged insistently on {name}'s sleeve, her wide eyes brimming with the "
+        "kind of innocence that demanded honesty."
+    ),
+    (
+        "After reviewing the x-rays in uncomfortable silence, the doctor swiveled her chair "
+        "toward {name}, needing several answers before she could proceed."
+    ),
+    (
+        "The lawyer set down his pen, closed the folder, and fixed {name} with the "
+        "calculating stare of someone about to spring a trap."
+    ),
+    (
+        "As the interview panel exchanged knowing glances, the woman in the center leaned "
+        "forward and addressed {name} by name."
+    ),
+    (
+        "The priest's expression shifted from welcoming to grave as he gestured for {name} "
+        "to sit in the confessional's dim light."
+    ),
+    (
+        "When her mother appeared in the doorway holding the opened letter, {name} "
+        "understood that explanations would now be required."
+    ),
+    (
+        "The mechanic wiped his hands on a greasy rag and approached {name}, wanting to know "
+        "a few things before touching the engine."
+    ),
+    (
+        "Standing at the altar with everyone watching, the officiant paused dramatically "
+        "before turning an expectant gaze toward {name}."
+    ),
+    (
+        "The journalist's recorder was already running when she looked up from her notes "
+        "with a pointed question for {name}."
+    ),
+    (
+        "After the third time the toddler pointed at the stranger, her father crouched down "
+        "beside {name} with an embarrassed smile."
+    ),
+    (
+        "The border guard made a subtle gesture, and two more officers appeared at the "
+        "booth, full of questions for {name}."
+    ),
+    (
+        "When the teacher finished reading the essay aloud, she removed her reading glasses, "
+        "her question for {name} already taking shape."
+    ),
+    (
+        "The senior partner closed the office door with unusual care before returning to his "
+        "desk, the inevitable question for {name} hanging in the silence."
+    ),
+    (
+        "Standing in the rubble of what had been the garage, {name}'s spouse turned around, "
+        "plainly demanding to know how this had happened."
+    ),
+    (
+        "The flight attendant's professional smile vanished as she leaned down, needing to "
+        "ask {name} something urgent."
+    ),
+    (
+        "After scrolling through the phone for several long minutes, the teenager looked up "
+        "at {name} with tears forming."
+    ),
+    (
+        "The fortune teller's playful demeanor disappeared entirely as she pushed the tarot "
+        "cards aside, one question for {name} rising to her lips."
+    ),
+    (
+        "When the executor of the will asked everyone else to leave the room, {name} "
+        "understood there would be questions to answer."
+    ),
+    (
+        "The coach blew the whistle to stop practice and walked purposefully toward {name}, "
+        "wanting an answer in front of the whole team."
+    ),
+    (
+        "Standing beside the empty hospital bed, the nurse turned to {name}, clearly needing "
+        "to ask what had happened in the night."
+    ),
+    (
+        "The stranger at the funeral reception approached with recognition flickering across "
+        "his face, his attention fixed solely on {name}."
+    ),
+)
+
+FINAL_SEEDS_REMARK: tuple[str, ...] = (
+    (
+        "The stranger leaned across the bar, finger pointed at {name}, mouth opening to "
+        "deliver what looked like an accusation."
+    ),
+    (
+        "Her mother took a deep breath, and {name} recognized the expression that always "
+        "preceded a devastating truth."
+    ),
+    (
+        "The doctor's face went carefully blank as she turned toward {name}, clearly "
+        "preparing to share the test results."
+    ),
+    (
+        "Marcus grabbed {name} by the shoulder, his eyes wild, plainly about to confess what "
+        "he had done."
+    ),
+    (
+        "The old woman on the park bench fixed {name} with a knowing stare and began to "
+        "recount what she had seen."
+    ),
+    (
+        "His supervisor closed the office door with ominous care before turning to tell "
+        "{name} exactly what the audit had found."
+    ),
+    (
+        "The child tugged on {name}'s sleeve three times, gathering courage to say whatever "
+        "small truth she'd been carrying."
+    ),
+    (
+        "Agent Morrison set down the photographs and looked directly at {name}, preparing to "
+        "connect dots no one should connect."
+    ),
+    (
+        "The priest's expression shifted from warmth to something harder as he prepared to "
+        "accuse {name} of taking the missing funds."
+    ),
+    (
+        "She cornered {name} at the funeral reception, jaw set, clearly ready to reveal what "
+        "she'd kept silent about for years."
+    ),
+    (
+        "The stranger at the airport gate turned pale upon seeing {name}, then stepped "
+        "forward as if compelled to deliver a warning."
+    ),
+    (
+        "His brother exhaled slowly, the way he always did before saying something that "
+        "would hurt but needed saying to {name}."
+    ),
+    (
+        "The fortune teller's playful manner evaporated as she studied the cards, then "
+        "looked up to tell {name} plainly what they foretold."
+    ),
+    (
+        "Detective Park placed both palms on the interrogation table and leaned toward "
+        "{name}, beginning her careful revelation."
+    ),
+    (
+        "The bride's father intercepted {name} in the church hallway, face flushed, "
+        "obviously about to issue some kind of warning."
+    ),
+    (
+        "Her oldest friend positioned herself between {name} and the exit, mouth twisted "
+        "with the burden of an unwelcome confession."
+    ),
+    (
+        "The lawyer adjusted his glasses twice before meeting {name}'s eyes, signaling he "
+        "was about to deliver particularly bad news."
+    ),
+    (
+        "A co-worker {name} barely knew approached during the fire drill, urgency making her "
+        "brave enough to finally report what she had witnessed."
+    ),
+    (
+        "The homeless man {name} passed every morning suddenly stood up, recognition "
+        "flooding his face, a declaration already on his lips."
+    ),
+    (
+        "His daughter set down her fork with deliberate precision, plainly about to deliver "
+        "the verdict {name} had been dreading."
+    ),
+    (
+        "The museum curator went very still when she spotted {name} among the visitors, then "
+        "walked over, determined to state what she had discovered."
+    ),
+    (
+        "Their new neighbor stepped onto the shared porch, holding an envelope, wearing an "
+        "expression that promised complications for {name}."
+    ),
+    (
+        "The taxi driver kept glancing in the rearview mirror before finally pulling over to "
+        "tell {name} something he had clearly been rehearsing."
+    ),
+    (
+        "She found {name} alone in the copy room and immediately locked the door, betraying "
+        "the weight of her intended disclosure."
+    ),
+    (
+        "The nurse touched {name}'s elbow with unexpected gentleness, her intake of breath "
+        "suggesting she was breaking some kind of protocol."
+    ),
+)
+
+
+def _validate_final_seeds(bank_name: str, seeds: tuple[str, ...]) -> None:
+    """Fail-loud at import: 25 items, exactly one {name} slot, no quotation
+    marks (the original P0 builder-spec contract, enforced on the frozen
+    banks so every consumer inherits it)."""
+    if len(seeds) != 25:
+        raise RuntimeError(f"{bank_name}: expected 25 seeds, got {len(seeds)}")
+    for i, s in enumerate(seeds):
+        if s.count("{name}") != 1:
+            raise RuntimeError(f"{bank_name}[{i}]: expected exactly one {{name}} slot")
+        if any(q in s for q in ('"', "“", "”")):
+            raise RuntimeError(f"{bank_name}[{i}]: quotation mark in seed")
+
+
+_validate_final_seeds("FINAL_SEEDS_QUESTION", FINAL_SEEDS_QUESTION)
+_validate_final_seeds("FINAL_SEEDS_REMARK", FINAL_SEEDS_REMARK)
+
+# --------------------------------------------------------------------------
 # P0 bank-builder specs (LLM-authored once, committed). Each spec is one
 # Sonnet call returning a JSON array; the build_banks phase validates count,
-# type, and {name}-slot presence fail-loud.
+# type, and {name}-slot presence fail-loud. The final_seeds_* entries were
+# removed at the G1 recalibration (r11) — those banks are now the frozen
+# static tuples above.
 # --------------------------------------------------------------------------
 
 _BANK_SYSTEM = (
@@ -244,32 +490,6 @@ BANK_BUILDER_SPECS: dict[str, dict] = {
             "that register, no named characters, no dialogue>}. Make the registers clearly "
             "distinct (e.g. spare, lyrical, wry, ominous, warm, brisk, melancholy, formal -- "
             "choose your own set)."
-        ),
-    },
-    "final_seeds_question": {
-        "n": 25,
-        "requires_name_slot": True,
-        "item_type": "str",
-        "prompt": (
-            "Write 25 distinct QUESTION-IMMINENT final seed sentences for story openings. "
-            "Each is ONE sentence (10-25 words) in which some other person is clearly about "
-            "to ask the character {name} a question -- the sentence sets up the asking but "
-            "does NOT contain the question itself and contains NO quotation marks. Use the "
-            "literal placeholder {name} exactly once per sentence. Vary who is asking, why, "
-            "and the mood. Return a JSON array of 25 strings."
-        ),
-    },
-    "final_seeds_remark": {
-        "n": 25,
-        "requires_name_slot": True,
-        "item_type": "str",
-        "prompt": (
-            "Write 25 distinct REMARK-IMMINENT final seed sentences for story openings. Each "
-            "is ONE sentence (10-25 words) in which some other person is clearly about to "
-            "say something TO the character {name} -- a statement, confidence, accusation, "
-            "or observation, NOT a question -- without containing the remark itself and with "
-            "NO quotation marks. Use the literal placeholder {name} exactly once per "
-            "sentence. Vary speaker, intent, and mood. Return a JSON array of 25 strings."
         ),
     },
 }

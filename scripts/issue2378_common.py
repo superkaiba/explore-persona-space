@@ -135,7 +135,12 @@ USER_SIM_MAX_TOKENS = 1024
 JUDGE_MAX_TOKENS = 1024
 
 CAP_HIT_REGEN_THRESHOLD = 0.02  # > 2%/cell => regen cap-hit rows at 2x cap (SegA exempt)
-MINER_WINDOW_TOKENS = 250
+# G1 recalibration (r11): 250 -> 512, the full SegA generation cap. The 250-tok
+# window was the plan's LOW-confidence carry-over premise (plan v6 §12.7,
+# plan:447); the round-1 pilot measured 236q/288d no_quote_in_window rejects
+# against 512-token generations, so the window now covers the whole generation
+# (gen.py's offset slicing degrades to len(text) when offs <= window).
+MINER_WINDOW_TOKENS = 512
 
 PLAIN_STOP = ["\nUser:", "\n\nUser:"]
 CHAT_STOP = ["<|im_end|>"]
