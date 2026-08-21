@@ -122,7 +122,7 @@ def label_rows() -> list[dict]:
 
 
 def main() -> None:
-    set_paper_style("iclr")
+    set_paper_style("iclr", font_scale=1.9)
     c_main = paper_color("instruct")  # blue — the featured map arm
     c_null = paper_color("null")  # gray — null bands / reference
 

@@ -91,7 +91,7 @@ def load_read() -> dict:
 
 
 def main() -> None:
-    set_paper_style("iclr")
+    set_paper_style("iclr", font_scale=1.9)
     read = load_read()
     rows = read["rows"]
     band = read["random_band"]

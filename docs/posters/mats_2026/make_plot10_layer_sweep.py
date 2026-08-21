@@ -57,7 +57,7 @@ def load_curve() -> list[dict]:
 
 
 def main() -> None:
-    set_paper_style("iclr")
+    set_paper_style("iclr", font_scale=1.9)
     rows = load_curve()
     layers = [r["layer"] for r in rows]
     r2 = [r["r2"] for r in rows]

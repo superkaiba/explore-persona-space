@@ -216,7 +216,7 @@ def plot(bars: list[dict]) -> None:
 
 
 def main() -> None:
-    set_paper_style("iclr", font_scale=1.5)
+    set_paper_style("iclr", font_scale=1.9)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     bars = collect()
     plot(bars)

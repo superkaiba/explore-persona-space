@@ -1,49 +1,92 @@
 {
-  "commit": "44b56018+dirty",
-  "render_id": "cc896927cb09481b",
-  "git_commit": "44b56018d623567791ef737b846ab9afad0ba12e",
+  "commit": "751b92ea+dirty",
+  "render_id": "95aca22c58684b1a",
+  "git_commit": "751b92ea12af345a8eb87741d1c403a23e77c901",
   "git_dirty": true,
   "git_dirty_paths": [
+    "docs/posters/mats_2026/figures/plot11_scaling_cot.meta.json",
+    "docs/posters/mats_2026/figures/plot11_scaling_cot.pdf",
+    "docs/posters/mats_2026/figures/plot11_scaling_cot.png",
+    "docs/posters/mats_2026/figures/plot11b_cot_reasoning.meta.json",
+    "docs/posters/mats_2026/figures/plot11b_cot_reasoning.pdf",
+    "docs/posters/mats_2026/figures/plot11b_cot_reasoning.png",
+    "docs/posters/mats_2026/figures/plot1_scaling_boundary.meta.json",
+    "docs/posters/mats_2026/figures/plot1_scaling_boundary.pdf",
+    "docs/posters/mats_2026/figures/plot1_scaling_boundary.png",
+    "docs/posters/mats_2026/figures/plot2_persona_directions.meta.json",
+    "docs/posters/mats_2026/figures/plot2_persona_directions.pdf",
+    "docs/posters/mats_2026/figures/plot2_persona_directions.png",
+    "docs/posters/mats_2026/figures/plot3_sae_predictors.meta.json",
+    "docs/posters/mats_2026/figures/plot3_sae_predictors.pdf",
+    "docs/posters/mats_2026/figures/plot3_sae_predictors.png",
+    "docs/posters/mats_2026/figures/plot4b_failure_modes.meta.json",
+    "docs/posters/mats_2026/figures/plot4b_failure_modes.pdf",
+    "docs/posters/mats_2026/figures/plot4b_failure_modes.png",
+    "docs/posters/mats_2026/figures/plot5_stages.meta.json",
+    "docs/posters/mats_2026/figures/plot5_stages.pdf",
+    "docs/posters/mats_2026/figures/plot5_stages.png",
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.meta.json",
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.pdf",
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.png",
+    "docs/posters/mats_2026/figures/plot6c_pooled_lattice.meta.json",
+    "docs/posters/mats_2026/figures/plot6c_pooled_lattice.pdf",
+    "docs/posters/mats_2026/figures/plot6c_pooled_lattice.png",
+    "docs/posters/mats_2026/figures/plot9_application_arms.meta.json",
+    "docs/posters/mats_2026/figures/plot9_application_arms.pdf",
+    "docs/posters/mats_2026/figures/plot9_application_arms.png",
+    "docs/posters/mats_2026/make_plot10_layer_sweep.py",
+    "docs/posters/mats_2026/make_plot11_scaling_cot.py",
+    "docs/posters/mats_2026/make_plot12_cot_spans.py",
+    "docs/posters/mats_2026/make_plot13_cot_gain.py",
+    "docs/posters/mats_2026/make_plot1_scaling.py",
+    "docs/posters/mats_2026/make_plot2_persona.py",
+    "docs/posters/mats_2026/make_plot3_predictors.py",
+    "docs/posters/mats_2026/make_plot3_sae.py",
+    "docs/posters/mats_2026/make_plot4_failures.py",
+    "docs/posters/mats_2026/make_plot4b_failure_modes.py",
     "docs/posters/mats_2026/make_plot5_stages.py",
+    "docs/posters/mats_2026/make_plot6_persona.py",
+    "docs/posters/mats_2026/make_plot6c_pooled_lattice.py",
+    "docs/posters/mats_2026/make_plot7_application.py",
+    "docs/posters/mats_2026/make_plot9_application_arms.py",
+    "docs/posters/mats_2026/poster.pdf",
+    "docs/posters/mats_2026/poster.tex",
+    "eval_results/issue_2223/casestudy_replay/qwen3-32b/native_axis_fidelity_preimage/judged/judge_complete_delusion.json",
+    "eval_results/issue_2223/casestudy_replay/qwen3-32b/native_axis_fidelity_preimage/judged/judge_complete_selfharm.json",
     "eval_results/issue_666/headline/predictor_headline.json",
-    "scripts/issue1345_analyzer_figs.py",
-    "scripts/issue1901_body_figures.py",
-    "tasks/proposed/2416/body.md",
-    "tasks/proposed/2416/comments.jsonl",
-    "tasks/proposed/2416/events.jsonl",
-    "tests/test_issue2094_rev_butler.py"
+    "... 21 more"
   ],
-  "git_argv0_state": "untracked",
+  "git_argv0_state": "modified",
   "git_argv0_path": "docs/posters/mats_2026/make_plot5_stages.py",
-  "created": "2026-08-21T00:39:49Z",
+  "created": "2026-08-21T10:09:07Z",
   "figsize": [
-    4.6,
-    3.1
+    5.4,
+    2.7
   ],
   "points": [
     {
       "category": "Base",
-      "held-out $R^2$ (pooled, layer 30)": 0.412577163534647,
+      "held-out $R^2$": 0.412577163534647,
       "_kind": "bar"
     },
     {
       "category": "SFT",
-      "held-out $R^2$ (pooled, layer 30)": 0.5778464737384732,
+      "held-out $R^2$": 0.5778464737384732,
       "_kind": "bar"
     },
     {
       "category": "DPO",
-      "held-out $R^2$ (pooled, layer 30)": 0.597919828039505,
+      "held-out $R^2$": 0.597919828039505,
       "_kind": "bar"
     },
     {
       "category": "RLVR",
-      "held-out $R^2$ (pooled, layer 30)": 0.6022832271021715,
+      "held-out $R^2$": 0.6022832271021715,
       "_kind": "bar"
     },
     {
       "category": "RLVR\n(longer)",
-      "held-out $R^2$ (pooled, layer 30)": 0.6194515549193196,
+      "held-out $R^2$": 0.6194515549193196,
       "_kind": "bar"
     }
   ],
@@ -54,7 +97,7 @@
     "fig_texts": [],
     "axes": [
       {
-        "ylabel": "held-out $R^2$ (pooled, layer 30)",
+        "ylabel": "held-out $R^2$",
         "xticklabels": [
           "Base",
           "SFT",
@@ -64,13 +107,10 @@
         ],
         "yticklabels": [
           "0.0",
-          "0.1",
           "0.2",
-          "0.3",
           "0.4",
-          "0.5",
           "0.6",
-          "0.7"
+          "0.8"
         ]
       }
     ]

@@ -1,49 +1,67 @@
 {
-  "commit": "62b208a9+dirty",
-  "render_id": "eb96a7e5a4a9409e",
-  "git_commit": "62b208a9cef86cbe36b4531aaee85db9a8a48ed9",
+  "commit": "751b92ea+dirty",
+  "render_id": "719a57362ab6452a",
+  "git_commit": "751b92ea12af345a8eb87741d1c403a23e77c901",
   "git_dirty": true,
   "git_dirty_paths": [
-    "docs/posters/mats_2026/make_plot9_application_arms.py",
-    "docs/posters/mats_2026/figures/plot6_persona_data.json",
+    "docs/posters/mats_2026/figures/plot11_scaling_cot.meta.json",
+    "docs/posters/mats_2026/figures/plot11_scaling_cot.pdf",
+    "docs/posters/mats_2026/figures/plot11_scaling_cot.png",
+    "docs/posters/mats_2026/figures/plot11b_cot_reasoning.meta.json",
+    "docs/posters/mats_2026/figures/plot11b_cot_reasoning.pdf",
+    "docs/posters/mats_2026/figures/plot11b_cot_reasoning.png",
+    "docs/posters/mats_2026/figures/plot1_scaling_boundary.meta.json",
+    "docs/posters/mats_2026/figures/plot1_scaling_boundary.pdf",
+    "docs/posters/mats_2026/figures/plot1_scaling_boundary.png",
+    "docs/posters/mats_2026/figures/plot2_persona_directions.meta.json",
+    "docs/posters/mats_2026/figures/plot2_persona_directions.pdf",
+    "docs/posters/mats_2026/figures/plot2_persona_directions.png",
+    "docs/posters/mats_2026/figures/plot3_sae_predictors.meta.json",
+    "docs/posters/mats_2026/figures/plot3_sae_predictors.pdf",
+    "docs/posters/mats_2026/figures/plot3_sae_predictors.png",
+    "docs/posters/mats_2026/figures/plot4b_failure_modes.meta.json",
+    "docs/posters/mats_2026/figures/plot4b_failure_modes.pdf",
+    "docs/posters/mats_2026/figures/plot4b_failure_modes.png",
+    "docs/posters/mats_2026/figures/plot5_stages.meta.json",
     "docs/posters/mats_2026/figures/plot6a_assistant_transfer.meta.json",
     "docs/posters/mats_2026/figures/plot6a_assistant_transfer.pdf",
     "docs/posters/mats_2026/figures/plot6a_assistant_transfer.png",
-    "docs/posters/mats_2026/figures/plot6b_specialization.meta.json",
-    "docs/posters/mats_2026/figures/plot6b_specialization.pdf",
-    "docs/posters/mats_2026/figures/plot6b_specialization.png",
+    "docs/posters/mats_2026/figures/plot6c_pooled_lattice.meta.json",
+    "docs/posters/mats_2026/figures/plot6c_pooled_lattice.pdf",
+    "docs/posters/mats_2026/figures/plot6c_pooled_lattice.png",
+    "docs/posters/mats_2026/make_plot10_layer_sweep.py",
+    "docs/posters/mats_2026/make_plot11_scaling_cot.py",
+    "docs/posters/mats_2026/make_plot12_cot_spans.py",
+    "docs/posters/mats_2026/make_plot13_cot_gain.py",
+    "docs/posters/mats_2026/make_plot1_scaling.py",
+    "docs/posters/mats_2026/make_plot2_persona.py",
+    "docs/posters/mats_2026/make_plot3_predictors.py",
+    "docs/posters/mats_2026/make_plot3_sae.py",
+    "docs/posters/mats_2026/make_plot4_failures.py",
+    "docs/posters/mats_2026/make_plot4b_failure_modes.py",
+    "docs/posters/mats_2026/make_plot5_stages.py",
     "docs/posters/mats_2026/make_plot6_persona.py",
+    "docs/posters/mats_2026/make_plot6c_pooled_lattice.py",
+    "docs/posters/mats_2026/make_plot7_application.py",
+    "docs/posters/mats_2026/make_plot9_application_arms.py",
+    "docs/posters/mats_2026/poster.pdf",
+    "docs/posters/mats_2026/poster.tex",
+    "eval_results/issue_2223/casestudy_replay/qwen3-32b/native_axis_fidelity_preimage/judged/judge_complete_delusion.json",
+    "eval_results/issue_2223/casestudy_replay/qwen3-32b/native_axis_fidelity_preimage/judged/judge_complete_selfharm.json",
     "eval_results/issue_666/headline/predictor_headline.json",
     "scripts/issue1901_body_figures.py",
     "tasks/completed/2214/body.md",
     "tasks/completed/2214/comments.jsonl",
     "tasks/completed/2214/concerns.jsonl",
     "tasks/completed/2214/events.jsonl",
-    "tasks/completed/2214/plans/plan.md",
-    "tasks/completed/2214/plans/v1.md",
-    "tasks/completed/2214/plans/v2.md",
-    "tasks/completed/2214/plans/v3.md",
-    "tasks/proposed/2416/body.md",
-    "tasks/proposed/2416/comments.jsonl",
-    "tasks/proposed/2416/events.jsonl",
-    "tasks/running/2214/body.md",
-    "tasks/running/2214/comments.jsonl",
-    "tasks/running/2214/concerns.jsonl",
-    "tasks/running/2214/events.jsonl",
-    "tasks/running/2214/plans/plan.md",
-    "tasks/running/2214/plans/v1.md",
-    "tasks/running/2214/plans/v2.md",
-    "tasks/running/2214/plans/v3.md",
-    "tasks/running/2388/events.jsonl",
-    "tasks/running/2428/events.jsonl",
-    "tests/test_issue2094_rev_butler.py"
+    "... 16 more"
   ],
-  "git_argv0_state": "untracked",
+  "git_argv0_state": "modified",
   "git_argv0_path": "docs/posters/mats_2026/make_plot9_application_arms.py",
-  "created": "2026-08-21T01:35:34Z",
+  "created": "2026-08-21T10:07:04Z",
   "figsize": [
-    5.6,
-    2.55
+    7.6,
+    3.25
   ],
   "points": [
     {
@@ -61,7 +79,7 @@
       "_group": 1
     },
     {
-      "category": "synthetic",
+      "category": "synth.",
       "Spearman $\\rho$": 0.8180783834780763,
       "error": 0.04061986276656637,
       "_kind": "bar",
@@ -96,7 +114,7 @@
       "_group": 6
     },
     {
-      "category": "generic chat",
+      "category": "chat",
       "Spearman $\\rho$": 0.22541778412988908,
       "error": 0.07143818610860146,
       "_kind": "bar",
@@ -131,7 +149,7 @@
       "_group": 11
     },
     {
-      "category": "in-distrib.",
+      "category": "in-dist.",
       "Spearman $\\rho$": 0.6712108952070648,
       "error": 0.013658647086443265,
       "_kind": "bar",
@@ -201,7 +219,7 @@
       "_group": 21
     },
     {
-      "category": "synthetic",
+      "category": "synth.",
       "y": 0.39861803859275446,
       "error": 0.1093709745591798,
       "_kind": "bar",
@@ -236,7 +254,7 @@
       "_group": 26
     },
     {
-      "category": "generic chat",
+      "category": "chat",
       "y": 0.09223660209399395,
       "error": 0.0963013451403872,
       "_kind": "bar",
@@ -271,7 +289,7 @@
       "_group": 31
     },
     {
-      "category": "in-distrib.",
+      "category": "in-dist.",
       "y": 0.2887620479734463,
       "error": 0.015372623902776522,
       "_kind": "bar",
@@ -341,7 +359,7 @@
       "_group": 41
     },
     {
-      "category": "synthetic",
+      "category": "synth.",
       "y": 0.698968770527766,
       "error": 0.07220763452803763,
       "_kind": "bar",
@@ -376,7 +394,7 @@
       "_group": 46
     },
     {
-      "category": "generic chat",
+      "category": "chat",
       "y": 0.17577133744895965,
       "error": 0.0975087644783903,
       "_kind": "bar",
@@ -411,7 +429,7 @@
       "_group": 51
     },
     {
-      "category": "in-distrib.",
+      "category": "in-dist.",
       "y": -0.05517856685711229,
       "error": 0.014786174515671796,
       "_kind": "bar",
@@ -477,35 +495,33 @@
         "title": "Evil",
         "ylabel": "Spearman $\\rho$",
         "xticklabels": [
-          "synthetic",
-          "generic chat",
-          "in-distrib.",
+          "synth.",
+          "chat",
+          "in-dist.",
           "OOD"
         ],
         "yticklabels": [
-          "\u22120.25",
-          "0.00",
-          "0.25",
-          "0.50",
-          "0.75",
-          "1.00"
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0"
         ]
       },
       {
         "title": "Sycophancy",
         "xticklabels": [
-          "synthetic",
-          "generic chat",
-          "in-distrib.",
+          "synth.",
+          "chat",
+          "in-dist.",
           "OOD"
         ]
       },
       {
         "title": "Hallucination",
         "xticklabels": [
-          "synthetic",
-          "generic chat",
-          "in-distrib.",
+          "synth.",
+          "chat",
+          "in-dist.",
           "OOD"
         ]
       }

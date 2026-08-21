@@ -34,7 +34,7 @@
 \setbeamercolor{normal text}{fg=black,bg=white}
 \setbeamercolor{itemize item}{fg=matsmaroon}
 \setbeamertemplate{itemize item}{\color{matsmaroon}\raisebox{0.12em}{\small$\blacksquare$}}
-\setlength{\parskip}{0.14em}
+\setlength{\parskip}{0.07em}
 % three-column layout is spacing-critical: tighten list leading too
 \setbeamertemplate{itemize/enumerate body begin}{\setlength{\itemsep}{0.10em}\setlength{\parsep}{0pt}\setlength{\topsep}{0pt}}
 \setbeamertemplate{itemize/enumerate subbody begin}{\setlength{\itemsep}{0.06em}\setlength{\parsep}{0pt}\setlength{\topsep}{0pt}}
@@ -49,7 +49,8 @@
   {\rmfamily\bfseries\large\color{matsmaroon}\MakeUppercase{#1}}\\[-0.75em]
   {\color{matsmaroon}\rule{\linewidth}{1.2pt}}\\[-0.15em]
 }
-% Small gray figure caption, template-style
+% Small gray figure caption. UNUSED since captions were removed from the
+% poster; kept so restoring a caption is a one-line change.
 \newcommand{\figcap}[2]{{\par\vskip0.15em\footnotesize\color{capgray}Figure #1. #2\par}}
 
 \begin{document}
@@ -104,13 +105,11 @@
 \begin{center}
 \IfFileExists{figures/method_diagram.pdf}{\includegraphics[width=0.71\linewidth]{method_diagram.pdf}}{\includegraphics[width=0.71\linewidth]{fig1_schematic.pdf}}
 \end{center}
-\figcap{1}{$v_C$ = residual state at the last context token (layer $\ell$); $v_A$ = mean answer-token state. Fitted maps $v_C \mapsto v_A$; readouts consume $\hat{v}_A$.}
 
 \postersec{1.\ The Mapping has high predictive Power and is mostly Linear}
 \begin{center}
-\includegraphics[width=0.68\linewidth]{plot1_scaling_boundary.pdf}
+\includegraphics[width=0.74\linewidth]{plot1_scaling_boundary.pdf}
 \end{center}
-\figcap{2}{Held-out $R^2$ (left) and rank-1 retrieval (right; raw euclidean, pool 1{,}000) against training-set size. Dashed: generic boundary-token control. Layer 19.}
 \begin{itemize}
   \item \takeaways{The mapping has high predictive power:} held-out $R^2$ 0.75, rank-1 retrieval 0.98 at 1 million contexts
   \item \takeaways{The mapping is mostly linear:} the nonlinear (MLP) map adds only $\sim$$0.06$ $R^2$ over the linear map, and only at large $n$ (potentially this advantage would grow as you scale up the number of contexts)
@@ -124,9 +123,8 @@
 
 \postersec{2.\ The mapping predicts useful parts of the answer}
 \begin{center}
-\IfFileExists{figures/plot2_persona_directions.pdf}{\includegraphics[width=0.57\linewidth]{plot2_persona_directions.pdf}}{\includegraphics[width=0.46\linewidth]{c3_persona_direction_spectrum.pdf}}
+\IfFileExists{figures/plot2_persona_directions.pdf}{\includegraphics[width=0.70\linewidth]{plot2_persona_directions.pdf}}{\includegraphics[width=0.46\linewidth]{c3_persona_direction_spectrum.pdf}}
 \end{center}
-\figcap{4}{Held-out $R^2$ along each of the seven persona directions $r_B$ against a 200-draw random-unit band (bar: mean; shaded: 5--95\%). All seven on one corpus: multi-turn holdout, $n\!=\!9{,}941$, layer 19, ridge.}
 \begin{itemize}
   \item \takeaways{Persona-vector directions are among the best-predicted directions of the answer:} $R^2$ \textbf{0.80--0.91} against a random-direction mean of \textbf{0.67}, and every one does better than 95\% of random directions (0.76)
 \end{itemize}
@@ -134,9 +132,8 @@
 \postersec{3.\ The mapping is better at predicting high-level and identity related features of the answer}
 We train another map from the context to the answer's \textbf{SAE features}, then partial out predictors \emph{one at a time} to see which survives.
 \begin{center}
-\includegraphics[width=0.59\linewidth]{plot3_sae_predictors.pdf}
+\includegraphics[width=0.72\linewidth]{plot3_sae_predictors.pdf}
 \end{center}
-\figcap{5}{Forward-stepwise partialling: each row conditions on all rows above. $c$ = concordance (AUROC scale), $0.5$ = chance. Gray: activity control. Diamond: matryoshka \emph{coarsest} tier — different dictionary, direction only. No CIs; later rounds omitted.}
 \begin{itemize}
   \item Controlling for mean activation, the best predictors are
   \begin{itemize}
@@ -167,14 +164,21 @@ We train another map from the context to the answer's \textbf{SAE features}, the
 
 \postersec{5.\ The mapping is already largely present in the base model and refined throughout post training}
 \begin{center}
-\IfFileExists{figures/plot5_stages.pdf}{\includegraphics[width=0.53\linewidth]{plot5_stages.pdf}}{\includegraphics[width=0.38\linewidth]{c1_stage_retention.pdf}}
+\IfFileExists{figures/plot5_stages.pdf}{\includegraphics[width=0.60\linewidth]{plot5_stages.pdf}}{\includegraphics[width=0.38\linewidth]{c1_stage_retention.pdf}}
 \end{center}
-\figcap{7}{Pooled held-out $R^2$ at each stage of the Llama/T\"ulu ladder (layer 30), each stage fit and evaluated on its own on-policy answers.}
 \begin{itemize}
   \item \takeaways{The mapping is already largely present in the base model:} the base $R^2$ 0.41 before any post-training.
   \item \takeaways{SFT has the largest effect on the mapping} ($+0.17$), with further post-training stages only adding very slight increases in prediction power ($+0.05$).
 \end{itemize}
 
+\postersec{Other Results}
+\begin{itemize}
+  \item \takeaways{The mapping does not get reliably better with model scale}
+  \item \takeaways{In thinking models, the mapping predicts just as well from the pre-CoT context vector and the post-CoT context vector}
+  \begin{itemize}
+      \item suggesting that whatever is predicted by the mapping is not affected by CoT
+  \end{itemize}
+\end{itemize}
 
 \end{column}
 
@@ -183,9 +187,8 @@ We train another map from the context to the answer's \textbf{SAE features}, the
 
 \postersec{6.\ The mapping is shared with story characters}
 \begin{center}
-\includegraphics[width=0.58\linewidth]{plot6c_pooled_lattice.pdf}
+\includegraphics[width=0.82\linewidth]{plot6c_pooled_lattice.pdf}
 \end{center}
-\figcap{8}{Held-out $R^2$; the shared map is fit on all 56 lattice cells at once. On-policy answers, layer 19; similarity = direct transfer of the chat-template map.}
 \begin{itemize}
   \item \takeaways{One shared map does almost as well as per-character/framing maps:} 62-94\% of each framing/character's own-map performance
   \begin{itemize}
@@ -200,9 +203,8 @@ We train another map from the context to the answer's \textbf{SAE features}, the
 
 \postersec{7. Application: behavior prediction before inference}
 \begin{center}
-\IfFileExists{figures/plot9_application_arms.pdf}{\includegraphics[width=0.58\linewidth]{plot9_application_arms.pdf}}{\includegraphics[width=0.58\linewidth]{c5_pv_methods_regimes.pdf}}
+\IfFileExists{figures/plot9_application_arms.pdf}{\includegraphics[width=0.99\linewidth]{plot9_application_arms.pdf}}{\includegraphics[width=0.99\linewidth]{c5_pv_methods_regimes.pdf}}
 \end{center}
-\figcap{9}{Spearman $\rho$ between readout and judged behavior, per regime. Readouts: persona vector or fitted regression, on the context or the map-predicted answer; oracle = real answer. Muted bars fail the spread gate.}
 \begin{itemize}
   \item \takeaways{Persona vectors projected on the context vector fail to generalize to realistic contexts}
   \begin{itemize}
@@ -214,21 +216,23 @@ We train another map from the context to the answer's \textbf{SAE features}, the
   \end{itemize}
 \end{itemize}
 
-\postersec{Other Results}
+\postersec{Implications}
 \begin{itemize}
-  \item \takeaways{The mapping does not get reliably better with model scale}
-
+    \item A simple linear approximation can approximate much of the context-answer mapping implemented by a LLM
+    \item Many potential applications: predicting behavior pre-generation, automated redteaming/jailbreaking, predicting effect of fine-tuning
+    \item Evidence for persona selection model
+    \item Motivate further work into context-conditioned metamodels of answer activations and the limits of linearity in transformers
 \end{itemize}
 
-
-\postersec{Implications \& future work}
+\postersec{Future work (in progress)}
 \begin{itemize}
-  \item Much of an LLM's behavior is \textbf{linearly predictable from a single context vector}: a cheap pre-generation audit, and evidence for the \textbf{persona selection model}.
-  \item Theoretical analysis $+$ dynamical systems.
-  \item Predict other properties: correctness.
-  \item Predicting effect of fine-tuning.
-  \item Post-training is ``making the assistant's answer more predictable from context''.
+  \item More complex estimators (diffusion, flow matching, etc.)
+  \item Predicting the entire distribution to bound probability of rare behaviors 
+  \item Theoretical analysis of the mapping 
+  \item Predict other properties of the answer
+  \item Predicting effect of fine-tuning
   \item Automated redteaming / jailbreaking.
+  \item Single-token next-activation mapping
 \end{itemize}
 
 % References run inline rather than through \postersec: the heading line and

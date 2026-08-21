@@ -135,7 +135,7 @@ def load_deltas() -> dict:
 
 
 def main() -> None:
-    set_paper_style("iclr")
+    set_paper_style("iclr", font_scale=1.9)
     res = load_deltas()
     rows = res["rows"]
 

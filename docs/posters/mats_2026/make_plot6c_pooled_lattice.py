@@ -90,7 +90,7 @@ SRC_CLOSE = "eval_results/issue_2054/chat_closeness_ladder.json"
 # shrink it is what put the label lines at ~4 pt on a 36x24 in poster (measured
 # 2026-08-21 off the built PDF); horizontal room per group, not vertical, is the
 # binding constraint, hence the two-line descriptions below.
-FIGSIZE = (6.45, 4.1)
+FIGSIZE = (8.0, 3.4)
 CONDITION = "on_policy"
 ORDER_MODEL = "instruct"
 
@@ -276,7 +276,7 @@ def plot_combined(per_model: dict[str, list[dict]], ylim: tuple[float, float]) -
 
 
 def main() -> None:
-    set_paper_style("iclr", font_scale=1.5)
+    set_paper_style("iclr", font_scale=1.9)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
     closeness = json.loads(CLOSENESS.read_text())
