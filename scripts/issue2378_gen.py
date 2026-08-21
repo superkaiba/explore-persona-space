@@ -904,6 +904,10 @@ def phase_sega(args) -> None:
                     reason = row["mined"].get("reason") or "unknown"
                     mine_rejects[reason] = mine_rejects.get(reason, 0) + 1
         summary = {
+            # r10 (G1 accounting fix): dispatch._sum_stage_summaries keys the
+            # family pools on this — the filename alone left the pre-r10
+            # composer keying every summary by stage dir name -> net 0.0.
+            "cell": cell,
             "regime": regime,
             "counts": counts,
             "cap_hit_fraction": counts["cap_hit"] / max(1, counts["attempts"]),
@@ -1128,6 +1132,7 @@ def _run_answer_cell(args, llm, tok, cell: str, rows: list[dict], template_sha: 
             elif row.get("drop_reason") in counts:
                 counts[row["drop_reason"]] += 1
     summary = {
+        "cell": cell,  # r10: per-cell key for _sum_stage_summaries-style aggregation
         "regime": regime,
         "counts": counts,
         "cap_hit_fraction_before": decision["frac_before"],
@@ -1697,6 +1702,7 @@ def phase_segb(args) -> None:
                 elif row.get("drop_reason") in counts:
                     counts[row["drop_reason"]] += 1
         summary = {
+            "cell": cell,  # r10: consumed by dispatch._sum_stage_summaries (G1 family pooling)
             "regime": regime,
             "counts": counts,
             "cap_hit_fraction_before": decision["frac_before"],
@@ -1860,6 +1866,7 @@ def phase_fresh_draws(args) -> None:
                 if _is_hit(row):
                     counts["cap_hit"] += 1
         summary = {
+            "cell": cell,  # r10: per-cell key for _sum_stage_summaries-style aggregation
             "regime": regime,
             "counts": counts,
             "cap_hit_fraction_before": decision["frac_before"],

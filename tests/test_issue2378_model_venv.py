@@ -960,3 +960,94 @@ def test_engine_smoke_body_composes_gdn_pin():
     assert gsrc.index("kwargs.update(cm.ENGINE_KWARG_PINS)") < gsrc.index(
         "return create_vllm_engine("
     )
+
+
+# ---------------------------------------------------------------------------
+# r10: reconciler-v6 deferred duties — D1 (standalone engine_smoke model-env
+# parity) + D2 (bounded engine-smoke gate with a DEFINED failure path)
+# ---------------------------------------------------------------------------
+
+
+def test_runner_run_timeout_bounds_hung_step(tmp_path):
+    """D2(i): a hung gate subprocess is KILLED at timeout_s and surfaces as a
+    loud RuntimeError carrying the log tail — never an unbounded hang (the
+    vLLM generate()-hang class). Fails pre-r10: Runner.run had no timeout_s
+    parameter (TypeError) and an unbounded subprocess.run."""
+    import time
+
+    runner = d.Runner(tmp_path / "logs", resume=False, dry=False)
+    argv = [
+        sys.executable,
+        "-c",
+        "print('hung-probe-line', flush=True); import time; time.sleep(60)",
+    ]
+    t0 = time.time()
+    with pytest.raises(RuntimeError, match="TIMED OUT after 1s") as ei:
+        runner.run("hang_probe", argv, timeout_s=1.0, tail_lines=5)
+    assert time.time() - t0 < 30, "timeout did not bound the hung child"
+    assert "hung-probe-line" in str(ei.value), "raise must surface the gate log tail"
+    # No ok-flag on a timed-out step (a resume must re-run it).
+    assert not (tmp_path / "logs" / "hang_probe.ok").exists()
+
+
+def test_runner_run_failure_raise_carries_tail_lines(tmp_path):
+    """D2(ii): the non-zero-rc raise carries exactly the LAST tail_lines log
+    lines (parametrized so the engine gate can surface ~40)."""
+    runner = d.Runner(tmp_path / "logs", resume=False, dry=False)
+    body = "\n".join(f"print({i})" for i in range(10)) + "\nraise SystemExit(3)"
+    with pytest.raises(RuntimeError) as ei:
+        runner.run("fail_probe", [sys.executable, "-c", body], tail_lines=4)
+    msg = str(ei.value)
+    assert "failed rc=3" in msg
+    assert msg.endswith("6\n7\n8\n9"), msg
+
+
+def test_engine_smoke_gate_call_sites_all_bounded():
+    """D2: EVERY model_engine_smoke runner.run call site (ensure dry branch,
+    ensure real branch, the D1 standalone gate) passes the wall-clock bound +
+    the 40-line tail. The first-arg form `"model_engine_smoke",` is distinct
+    from _first_gpu_env's what-arg form `"model_engine_smoke")`."""
+    sites = [m.start() for m in re.finditer(r'"model_engine_smoke",', DISPATCH_SRC)]
+    assert len(sites) == 3, f"expected 3 gate call sites, found {len(sites)}"
+    for pos in sites:
+        window = DISPATCH_SRC[pos : pos + 500]
+        assert "timeout_s=ENGINE_SMOKE_TIMEOUT_S" in window, window
+        assert "tail_lines=ENGINE_SMOKE_TAIL_LINES" in window, window
+
+
+def test_engine_smoke_body_bounded_failure_path():
+    """D2(ii): the body's failure path is DESIGNED — traceback into the gate
+    log + flush + os._exit(1) — never a bare assert whose raise can DEADLOCK
+    interpreter finalization on surviving engine children (#1739/#2149, the
+    r<10 success-only exit's reachable hang). D1: the in-body LAUNCH_ENV_PINS
+    setdefault precedes the vllm import (pin parity on a direct model-python
+    invocation; setdefault never clobbers the launcher-supplied env)."""
+    import inspect
+
+    src = inspect.getsource(d.phase_engine_smoke)
+    assert "except BaseException" in src
+    assert "traceback.print_exc()" in src
+    assert "os._exit(1)" in src
+    assert "cm.LAUNCH_ENV_PINS.items()" in src
+    assert src.index("cm.LAUNCH_ENV_PINS.items()") < src.index("from vllm import")
+
+
+def test_standalone_engine_smoke_redispatches_via_model_env(tmp_path, capsys):
+    """D1 (reconciler-v6 standalone-engine-smoke-bypasses-model-env): the
+    standalone repo-venv `--phase engine_smoke` entry re-dispatches the gate
+    as the SAME composed subprocess ensure_model_venv runs — model-venv
+    interpreter + Runner env merge (LAUNCH_ENV_PINS) + single-GPU CVD pin +
+    D2 bound — never the in-process body under the repo venv (vLLM 0.11.0,
+    no qwen3_5). Dry-run composition pin; the real leg lands pod-side."""
+    assert not d._is_model_interpreter(), "pytest must run under the repo venv"
+    args = SimpleNamespace(dry_run=True, logs_dir=str(tmp_path / "logs"))
+    rc = d._run_engine_smoke_gate(args)
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert d._model_python() in out, out
+    assert "--phase engine_smoke" in out, out
+    import inspect
+
+    src = inspect.getsource(d.main)
+    assert "_is_model_interpreter()" in src
+    assert "_run_engine_smoke_gate(" in src

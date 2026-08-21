@@ -92,6 +92,7 @@ import json
 import math
 import os
 import random
+import re
 import shlex
 import subprocess
 import sys
@@ -249,6 +250,15 @@ class Runner:
             path.rename(path.with_suffix(f".log.pre-{int(time.time())}"))
         return path, path.open("w", encoding="utf-8")
 
+    def _log_tail(self, log_path: Path, n: int) -> str:
+        # split("\n") (never splitlines() — #950 U+2028 safety) keeps a
+        # terminal empty element on newline-terminated logs; drop it so the
+        # tail carries n REAL lines (r5 review NIT runner-log-tail-trailing-empty).
+        lines = log_path.read_text(encoding="utf-8").split("\n")
+        if lines and lines[-1] == "":
+            lines.pop()
+        return "\n".join(lines[-n:])
+
     def run(
         self,
         name: str,
@@ -256,8 +266,17 @@ class Runner:
         *,
         env_extra: dict[str, str] | None = None,
         ok_rcs: tuple[int, ...] = (0,),
+        timeout_s: float | None = None,
+        tail_lines: int = 25,
     ) -> int:
-        """Run one foreground step; raise unless rc in ok_rcs; return rc."""
+        """Run one foreground step; raise unless rc in ok_rcs; return rc.
+
+        timeout_s (r10, reconciler-v6 D2 engine-smoke-failure-not-bounded):
+        wall-clock bound on the step SUBPROCESS — subprocess.run KILLS the
+        child on expiry and we raise with the log tail, so a hung gate (the
+        vLLM generate()-hang class) surfaces as a bounded loud failure instead
+        of blocking the dispatcher forever. None = unbounded (long fan-out
+        steps own their walls)."""
         if self.dry:
             _log(f"[dry] {name}: {shlex.join(argv)}")
             return 0
@@ -267,28 +286,33 @@ class Runner:
         t0 = time.time()
         _log(f"[step] {name} START pins={_PINS_TOKEN} log={log_path}")
         with log:
-            rc = subprocess.run(
-                argv,
-                stdout=log,
-                stderr=subprocess.STDOUT,
-                cwd=str(cm.REPO_ROOT),
-                # cm.LAUNCH_ENV_PINS after os.environ (authoritative — r8
-                # flashinfer-sampler-probe fix), before caller env_extra.
-                env={**os.environ, **cm.LAUNCH_ENV_PINS, **(env_extra or {})},
-                check=False,
-            ).returncode
+            try:
+                rc: int | None = subprocess.run(
+                    argv,
+                    stdout=log,
+                    stderr=subprocess.STDOUT,
+                    cwd=str(cm.REPO_ROOT),
+                    # cm.LAUNCH_ENV_PINS after os.environ (authoritative — r8
+                    # flashinfer-sampler-probe fix), before caller env_extra.
+                    env={**os.environ, **cm.LAUNCH_ENV_PINS, **(env_extra or {})},
+                    check=False,
+                    timeout=timeout_s,
+                ).returncode
+            except subprocess.TimeoutExpired:
+                rc = None  # child killed + reaped by subprocess.run on expiry
         wall = time.time() - t0
         self.walls[name] = wall
         _log(f"[step] {name} rc={rc} wall={wall:.1f}s log={log_path}")
+        if rc is None:
+            raise RuntimeError(
+                f"step {name} TIMED OUT after {timeout_s:.0f}s (child killed; "
+                f"log tail below)\n{self._log_tail(log_path, tail_lines)}"
+            )
         if rc not in ok_rcs:
-            # split("\n") (never splitlines() — #950 U+2028 safety) keeps a
-            # terminal empty element on newline-terminated logs; drop it so the
-            # tail carries 25 REAL lines (r5 review NIT runner-log-tail-trailing-empty).
-            lines = log_path.read_text(encoding="utf-8").split("\n")
-            if lines and lines[-1] == "":
-                lines.pop()
-            tail = "\n".join(lines[-25:])
-            raise RuntimeError(f"step {name} failed rc={rc} (log tail below)\n{tail}")
+            raise RuntimeError(
+                f"step {name} failed rc={rc} (log tail below)\n"
+                f"{self._log_tail(log_path, tail_lines)}"
+            )
         if rc == 0:
             self._ok_path(name).write_text(_argv_sha(argv))
         return rc
@@ -782,6 +806,8 @@ def ensure_model_venv(args, runner: Runner) -> None:
             "model_engine_smoke",
             _model_py("issue2378_dispatch.py", "--phase", "engine_smoke"),
             env_extra=_first_gpu_env(runner, visible_gpus(), "model_engine_smoke"),
+            timeout_s=ENGINE_SMOKE_TIMEOUT_S,
+            tail_lines=ENGINE_SMOKE_TAIL_LINES,
         )
         return
     _assert_driver_compat()  # fail fast BEFORE any ~4-min build on a bad host (#2330)
@@ -882,6 +908,10 @@ def ensure_model_venv(args, runner: Runner) -> None:
         "model_engine_smoke",
         _model_py("issue2378_dispatch.py", "--phase", "engine_smoke"),
         env_extra=_first_gpu_env(runner, visible_gpus(), "model_engine_smoke"),
+        # r10 D2: bounded gate — a hung engine init raises with the log tail
+        # (~100 s measured wall on 1 GPU; 900 s constant, >=2x headroom).
+        timeout_s=ENGINE_SMOKE_TIMEOUT_S,
+        tail_lines=ENGINE_SMOKE_TAIL_LINES,
     )
 
 
@@ -966,12 +996,29 @@ def balanced_mined_slice(mined_dir: Path, out_dir: Path, n_total: int) -> int:
 # ---------------------------------------------------------------------------
 
 
+# r10 (G1 accounting fix, epm:progress v63): the r<10 sega/segb writers carried
+# the cell only in the FILENAME — parse it back when the payload lacks 'cell'.
+# <cell> may contain underscores (storyq_astra); greedy `.+` backtracks to the
+# LAST `_w<digits>_s<digits>.json` suffix, and cm.CELL_FAMILY membership gates
+# the capture so stage-level summaries never mint a bogus per-cell bucket.
+_SUMMARY_CELL_RE = re.compile(r"^summary_(.+)_w\d+_s\d+\.json$")
+
+
 def _sum_stage_summaries(stage_dir: Path, keys: tuple[str, ...]) -> dict[str, dict[str, int]]:
     """Aggregate gen.py per-shard summaries: <stage>/summary_<cell>_w*_s*.json."""
     per_cell: dict[str, dict[str, int]] = {}
     for path in sorted(stage_dir.glob("summary_*.json")):
         payload = json.loads(path.read_text(encoding="utf-8"))
         cell = payload.get("cell")
+        if cell is None:
+            # Filename fallback FIRST (repairs the already-written pod-side
+            # pilot summaries with zero GPU) — cm.CELL_FAMILY-membership-gated,
+            # so user_sim's summary_w1_s0.json (no pattern match) and future
+            # stage-level summaries still fall through to the stage-name
+            # fallback LAST.
+            m = _SUMMARY_CELL_RE.match(path.name)
+            if m and m.group(1) in cm.CELL_FAMILY:
+                cell = m.group(1)
         if cell is None:  # single-summary stages (user_sim writes summary_w1_s0.json)
             cell = payload.get("stage", stage_dir.name)
         bucket = per_cell.setdefault(cell, {k: 0 for k in keys})
@@ -1291,6 +1338,14 @@ def phase_env_smoke(args) -> int:
 ENGINE_SMOKE_MAX_MODEL_LEN = 1024  # tiny context: init-path gate, not a capacity test
 ENGINE_SMOKE_MAX_NUM_SEQS = 8
 ENGINE_SMOKE_MAX_TOKENS = 8
+# r10 (reconciler-v6 D2 engine-smoke-failure-not-bounded): wall-clock bound on
+# the gate SUBPROCESS. Measured basis: ~100 s end-to-end on 1 H200 (r9 pilot —
+# engine init + 1-prompt generate); 900 s is >=2x headroom over that basis
+# (~9x, sized generously per the p90 fence convention) so a hung engine init
+# (the vLLM generate()-hang class) fails loud in minutes instead of blocking
+# the dispatcher forever.
+ENGINE_SMOKE_TIMEOUT_S = 900
+ENGINE_SMOKE_TAIL_LINES = 40  # D2(ii): surface the gate log tail in the raise
 
 
 def phase_engine_smoke(args) -> int:
@@ -1333,52 +1388,115 @@ def phase_engine_smoke(args) -> int:
     # Same worker discipline as the gen workers (gen.py module top, #628):
     # spawn, never fork — set BEFORE the first vllm import (read at import).
     os.environ.setdefault("VLLM_WORKER_MULTIPROC_METHOD", "spawn")
-    import dataclasses
+    # r10 (reconciler-v6 D1): env-pin parity even on a DIRECT model-python
+    # invocation — the composed paths (Runner.run) supply cm.LAUNCH_ENV_PINS
+    # in the launcher env; setdefault never clobbers a launcher-supplied
+    # value, and vllm reads these envs lazily (post-import safe).
+    for k, v in cm.LAUNCH_ENV_PINS.items():
+        os.environ.setdefault(k, v)
+    try:
+        import dataclasses
 
-    from vllm import SamplingParams
-    from vllm.engine.arg_utils import EngineArgs
+        from vllm import SamplingParams
+        from vllm.engine.arg_utils import EngineArgs
 
-    from explore_persona_space.eval.generation import create_vllm_engine
+        from explore_persona_space.eval.generation import create_vllm_engine
 
-    kwargs: dict = {}
-    if "language_model_only" in {f.name for f in dataclasses.fields(EngineArgs)}:
-        kwargs["language_model_only"] = True  # gen._engine parity (omni towers skipped)
-    kwargs.update(cm.ENGINE_KWARG_PINS)  # r9: GDN prefill pin (parity with gen._build_engine)
-    llm = create_vllm_engine(
-        cm.MODEL_ID,
-        max_model_len=ENGINE_SMOKE_MAX_MODEL_LEN,
-        max_num_seqs=ENGINE_SMOKE_MAX_NUM_SEQS,
-        seed=cm.SEED,
-        dtype="bfloat16",
-        enforce_eager=True,
-        **kwargs,
-    )
-    _log(f"[engine_smoke] engine constructed wall={time.time() - t0:.1f}s")
-    sp = SamplingParams(
-        temperature=cm.TEMPERATURE,
-        top_p=cm.TOP_P,
-        top_k=cm.TOP_K,
-        seed=cm.SEED,
-        max_tokens=ENGINE_SMOKE_MAX_TOKENS,
-    )
-    # ONE prompt (no chunking needed); use_tqdm=False (#613 ZeroDivision).
-    outs = llm.generate(["engine smoke probe"], [sp], use_tqdm=False)
-    assert outs and outs[0].outputs and outs[0].outputs[0].text is not None, (
-        "engine smoke: generate returned no completion"
-    )
-    _log(
-        f"[engine_smoke] engine init + 1-prompt generate OK "
-        f"model={cm.MODEL_ID} max_model_len={ENGINE_SMOKE_MAX_MODEL_LEN} "
-        f"enforce_eager=True wall={time.time() - t0:.1f}s"
-    )
-    # Best-effort graceful engine-core shutdown, then the hard terminal.
-    core = getattr(getattr(llm, "llm_engine", None), "engine_core", None)
-    if core is not None and hasattr(core, "shutdown"):
-        core.shutdown()
+        kwargs: dict = {}
+        if "language_model_only" in {f.name for f in dataclasses.fields(EngineArgs)}:
+            kwargs["language_model_only"] = True  # gen._engine parity (omni towers skipped)
+        kwargs.update(cm.ENGINE_KWARG_PINS)  # r9: GDN prefill pin (parity with gen._build_engine)
+        llm = create_vllm_engine(
+            cm.MODEL_ID,
+            max_model_len=ENGINE_SMOKE_MAX_MODEL_LEN,
+            max_num_seqs=ENGINE_SMOKE_MAX_NUM_SEQS,
+            seed=cm.SEED,
+            dtype="bfloat16",
+            enforce_eager=True,
+            **kwargs,
+        )
+        _log(f"[engine_smoke] engine constructed wall={time.time() - t0:.1f}s")
+        sp = SamplingParams(
+            temperature=cm.TEMPERATURE,
+            top_p=cm.TOP_P,
+            top_k=cm.TOP_K,
+            seed=cm.SEED,
+            max_tokens=ENGINE_SMOKE_MAX_TOKENS,
+        )
+        # ONE prompt (no chunking needed); use_tqdm=False (#613 ZeroDivision).
+        outs = llm.generate(["engine smoke probe"], [sp], use_tqdm=False)
+        if not (outs and outs[0].outputs and outs[0].outputs[0].text is not None):
+            raise RuntimeError("engine smoke: generate returned no completion")
+        _log(
+            f"[engine_smoke] engine init + 1-prompt generate OK "
+            f"model={cm.MODEL_ID} max_model_len={ENGINE_SMOKE_MAX_MODEL_LEN} "
+            f"enforce_eager=True wall={time.time() - t0:.1f}s"
+        )
+        # Best-effort graceful engine-core shutdown, then the hard terminal.
+        core = getattr(getattr(llm, "llm_engine", None), "engine_core", None)
+        if core is not None and hasattr(core, "shutdown"):
+            core.shutdown()
+    except BaseException:
+        # r10 (reconciler-v6 D2(ii)): DEFINED failure path — print the
+        # traceback into the gate log (Runner.run's raise surfaces the tail),
+        # flush, hard-exit rc=1. A raise propagating into interpreter
+        # finalization can DEADLOCK on surviving engine children
+        # (gotchas.md #1739/#2149), turning a loud failure into the unbounded
+        # hang the r<10 success-only exit left reachable.
+        import traceback
+
+        traceback.print_exc()
+        _log("[engine_smoke] FAILED — engine init / generate / teardown did not complete (rc=1)")
+        sys.stdout.flush()
+        sys.stderr.flush()
+        os._exit(1)
     _phase_line("done")
     sys.stdout.flush()
     sys.stderr.flush()
     os._exit(0)
+
+
+def _is_model_interpreter() -> bool:
+    """True when THIS process already runs under the model interpreter (the
+    ensure_model_venv/_run_engine_smoke_gate subprocess re-entry). Compares
+    the venv PREFIX — sys.prefix vs the interpreter's <venv>/bin/python
+    parent-of-parent — NEVER resolve()d executables: both venvs' bin/python
+    can symlink to the SAME base interpreter, which would misread the repo
+    venv as the model venv (and skip D1's re-dispatch entirely)."""
+    model_py = Path(_model_python())
+    try:
+        return Path(sys.prefix).resolve() == model_py.parent.parent.resolve()
+    except OSError:
+        return False
+
+
+def _run_engine_smoke_gate(args) -> int:
+    """r10 (reconciler-v6 D1 standalone-engine-smoke-bypasses-model-env): the
+    standalone `--phase engine_smoke` entry constructs the engine EXACTLY as
+    the fan-out legs do — model-venv interpreter (_model_py), cm.LAUNCH_ENV_PINS
+    (Runner.run's env merge), single-GPU CVD pin (_first_gpu_env), and the D2
+    wall-clock bound — by re-dispatching itself as the SAME composed subprocess
+    ensure_model_venv runs (cm.ENGINE_KWARG_PINS thread inside
+    phase_engine_smoke: engine kwargs, interpreter-independent). The r<10
+    standalone entry ran the body in-process under the REPO venv (vLLM 0.11.0,
+    no qwen3_5) with no env/CVD composition. resume=False: a standalone gate
+    invocation is deliberate — always re-run. Building a missing model venv is
+    ensure_model_venv's job (`--phase model_venv`), never a silent swap."""
+    py = _model_python()
+    if not args.dry_run and not Path(py).exists():
+        raise RuntimeError(
+            f"engine_smoke standalone entry: model interpreter missing at {py} — "
+            "run `--phase model_venv` first (ensure_model_venv owns the build/repair)"
+        )
+    runner = Runner(Path(args.logs_dir) / "engine_smoke", resume=False, dry=args.dry_run)
+    runner.run(
+        "model_engine_smoke",
+        _model_py("issue2378_dispatch.py", "--phase", "engine_smoke"),
+        env_extra=_first_gpu_env(runner, visible_gpus(), "model_engine_smoke"),
+        timeout_s=ENGINE_SMOKE_TIMEOUT_S,
+        tail_lines=ENGINE_SMOKE_TAIL_LINES,
+    )
+    return 0
 
 
 def phase_model_venv(args, runner: Runner) -> int:
@@ -2542,15 +2660,26 @@ def phase_probe(args) -> int:  # noqa: C901 — linear fixture script
             raw = root / "raw"
             ledger = root / "ledger"
             for cell in ("storyq_astra", "dialog_astra"):
+                # r10 (G1 accounting fix, epm:progress v63): storyq_astra's
+                # sega/segb summaries mirror the REAL r<10 writer payload — NO
+                # 'cell' key, cell only in the FILENAME — so pooling it relies
+                # on the composer's filename fallback (fails against the
+                # pre-r10 payload-only aggregator, which keyed it 'sega'/'segb'
+                # and CELL_FAMILY dropped it -> net 0.0). dialog_astra keeps
+                # the payload-key form (the r10 writers' shape).
+                payload_cell = {} if cell == "storyq_astra" else {"cell": cell}
                 (raw / "sega").mkdir(parents=True, exist_ok=True)
                 cm.atomic_write_json(
                     raw / "sega" / f"summary_{cell}_w1_s0.json",
-                    {"cell": cell, "counts": {"attempts": 100, "kept": mining_kept, "cap_hit": 0}},
+                    {
+                        **payload_cell,
+                        "counts": {"attempts": 100, "kept": mining_kept, "cap_hit": 0},
+                    },
                 )
                 (raw / "segb").mkdir(parents=True, exist_ok=True)
                 cm.atomic_write_json(
                     raw / "segb" / f"summary_{cell}_w1_s0.json",
-                    {"cell": cell, "counts": {"rows": 50, "kept": 45, "cap_hit_no_close": 2}},
+                    {**payload_cell, "counts": {"rows": 50, "kept": 45, "cap_hit_no_close": 2}},
                 )
                 (ledger / "pilot" / "kept").mkdir(parents=True, exist_ok=True)
                 cm.atomic_write_json(
@@ -2589,6 +2718,15 @@ def phase_probe(args) -> int:  # noqa: C901 — linear fixture script
                 raw, ledger, {"p1.sega": 100.0}, pilot_round=1, attempts_per_cell=300
             )
             assert d["verdict"] == "PASS", d["fail_reasons"]
+            # r10: per-family pools NON-EMPTY for both gen stages, and per-cell
+            # mining buckets carry CELL names — never the stage-dir fallback
+            # name 'sega'/'segb' (the G1 accounting bug's signature; the
+            # storyq_astra no-'cell'-key fixture rows exercise the filename
+            # fallback that repairs the already-written pod-side summaries).
+            assert set(d["per_stage"]["mining"]) == {"question", "dialogue"}, d["per_stage"]
+            assert set(d["per_stage"]["segb_survival"]) == {"question", "dialogue"}, d["per_stage"]
+            assert set(d["per_cell"]["mining"]) == {"storyq_astra", "dialog_astra"}, d["per_cell"]
+            assert set(d["per_cell"]["segb"]) == {"storyq_astra", "dialog_astra"}, d["per_cell"]
             # net = 0.6 * (40/60) * 0.9 = 0.36 >= 0.25; sizing = ceil(8000*1.25/0.36)
             fam = d["families"]["question"]
             assert abs(fam["net_kept_per_attempt"] - 0.6 * (40 / 60) * 0.9) < 1e-9
@@ -3065,7 +3203,7 @@ def run_import_check() -> int:
 
 PHASES = {
     "env_smoke": None,  # handled inline (no Runner needed)
-    "engine_smoke": None,  # handled inline (r8 gate; model venv + 1 GPU req'd)
+    "engine_smoke": None,  # inline (r8 gate; r10 D1: standalone entry re-dispatches via model venv)
     "model_venv": phase_model_venv,
     "p0_banks_pools": phase_p0,
     "p1_pilot": phase_p1,
@@ -3154,7 +3292,14 @@ def main() -> int:
         _phase_line("done")
         return rc
     if args.phase == "engine_smoke":
-        return phase_engine_smoke(args)  # never returns on success (os._exit)
+        if _is_model_interpreter():
+            return phase_engine_smoke(args)  # never returns on success (os._exit)
+        # r10 D1: standalone repo-venv entry — re-dispatch through the SAME
+        # model-env composition the fan-out legs use (never in-process here).
+        rc = _run_engine_smoke_gate(args)
+        if rc == 0:
+            _phase_line("done")
+        return rc
     runner = Runner(Path(args.logs_dir) / args.phase, resume=not args.no_resume, dry=args.dry_run)
     rc = PHASES[args.phase](args, runner)
     if rc == 0:
