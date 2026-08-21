@@ -11090,7 +11090,7 @@
       "kind": "infra",
       "path": "tasks/proposed/2436",
       "status": "proposed",
-      "title": "verify_task_body.py: mechanize the clean-result-critic three-beat-ordering + arrow-range-drift checks"
+      "title": "workflow-fix: verify_task_body.py \u2014 mechanize the clean-result-critic three-beat-ordering + arrow-range-drift checks"
     },
     "244": {
       "has_clean_result": false,

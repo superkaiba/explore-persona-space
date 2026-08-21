@@ -1,5 +1,5 @@
 ---
-title: 'verify_task_body.py: mechanize the clean-result-critic three-beat-ordering
+title: 'workflow-fix: verify_task_body.py — mechanize the clean-result-critic three-beat-ordering
   + arrow-range-drift checks'
 kind: infra
 tags:
