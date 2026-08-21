@@ -1,17 +1,10 @@
 {
-  "commit": "8add0009+dirty",
-  "render_id": "9231ed3a30a943c5",
-  "git_commit": "8add0009e5265054e84037875be5184374201fce",
+  "commit": "a18cef4e+dirty",
+  "render_id": "e61ef529cf7f4853",
+  "git_commit": "a18cef4e1af1c6f0c02527f3153a383c36158e0b",
   "git_dirty": true,
   "git_dirty_paths": [
-    "docs/posters/mats_2026/figures/plot1_scaling_boundary.meta.json",
-    "docs/posters/mats_2026/figures/plot1_scaling_boundary.pdf",
-    "docs/posters/mats_2026/figures/plot1_scaling_boundary.png",
-    "docs/posters/mats_2026/make_plot1_scaling.py",
     "docs/posters/mats_2026/make_plot2_persona.py",
-    "docs/posters/mats_2026/make_plot3_sae.py",
-    "docs/posters/mats_2026/make_plot5_stages.py",
-    "docs/posters/mats_2026/make_plot9_application_arms.py",
     "docs/posters/mats_2026/poster.tex",
     "tasks/completed/2214/body.md",
     "tasks/completed/2214/comments.jsonl",
@@ -28,7 +21,7 @@
   ],
   "git_argv0_state": "modified",
   "git_argv0_path": "docs/posters/mats_2026/make_plot2_persona.py",
-  "created": "2026-08-21T10:32:56Z",
+  "created": "2026-08-21T10:55:02Z",
   "figsize": [
     6.8,
     2.7
@@ -108,7 +101,7 @@
           "humorous",
           "apathetic",
           "impolite",
-          "misalignment",
+          "evil",
           "hallucination",
           "optimistic",
           "random"

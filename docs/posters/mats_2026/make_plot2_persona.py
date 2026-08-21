@@ -52,9 +52,11 @@ OUT_DIR = Path(__file__).resolve().parent / "figures"
 
 ARM = "context"  # matches the poster's v_C; `prefix` / `bare` are the other two arms
 
-# artifact trait key → poster display name (the poster says "misalignment" for evil)
+# artifact trait key → poster display name. One term per thing: the TL;DR, plot 9's
+# panel title and the source artifact all say "evil" (the persona-vectors trait name,
+# arXiv 2507.21509), so this figure says "evil" too rather than "misalignment".
 DISPLAY = {
-    "evil": "misalignment",
+    "evil": "evil",
     "sycophancy": "sycophancy",
     "hallucination": "hallucination",
     "optimistic": "optimistic",

@@ -87,7 +87,7 @@
 \postersec{TL;DR}
 \begin{itemize}
   \item A single \textbf{linear map} predicts an LLM's mean answer activation from its final context activation \textbf{before generation}: held-out $R^2$ \textbf{0.75}, and rank-1 retrieval of the true answer among 10,000 candidates at \textbf{0.98} 
-  \item It is already \textbf{$\sim$67\% present in the base model}, then improves significantly with SFT, and barely changes with DPO and RLVR
+  \item The base model already reaches \textbf{67\% of the fully post-trained $R^2$}; SFT closes most of the rest, and DPO and RLVR barely change it
   \item It is \textbf{shared between the assistant in chat template, assistant in stories, and other fictional characters in stories}, providing evidence for the persona selection model
   \item It can be used to predict \textbf{sycophancy, hallucination and evil before inference}.
 \end{itemize}
@@ -106,7 +106,7 @@
   \item \textbf{Context} $=$ the full model input (persona $+$ question); \textbf{answer} $=$ one sampled completion.
   \item Read one layer's residual stream: \textbf{context vector} $v_C$ at the last context token, \textbf{answer vector} $v_A$ averaged over the answer's tokens.
   \item Fit one linear map $v_A \approx W v_C$ (ridge) over many pairs; score on \textbf{contexts it never saw}.
-  \item Three reads: held-out $R^2$; \textbf{retrieval} (is the true answer the prediction's nearest neighbour among 1,000?); \textbf{behavior} (project the predicted answer on a persona vector, before generation).
+  \item Metrics: held-out $R^2$; \textbf{retrieval} (is the true answer the prediction's nearest neighbour among a large corpus); \textbf{behavior prediction} (LLM judged)
 \end{itemize}
 \begin{center}
 \IfFileExists{figures/method_diagram.pdf}{\includegraphics[width=0.52\linewidth]{method_diagram.pdf}}{\includegraphics[width=0.52\linewidth]{fig1_schematic.pdf}}
@@ -173,8 +173,8 @@ We train another map from the context to the answer's \textbf{SAE features}, the
 \IfFileExists{figures/plot5_stages.pdf}{\includegraphics[width=0.68\linewidth]{plot5_stages.pdf}}{\includegraphics[width=0.38\linewidth]{c1_stage_retention.pdf}}
 \end{center}
 \begin{itemize}
-  \item \takeaways{The mapping is already largely present in the base model:} the base $R^2$ 0.41 before any post-training.
-  \item \takeaways{SFT has the largest effect on the mapping} ($+0.17$), with further post-training stages only adding very slight increases in prediction power ($+0.05$).
+  \item \takeaways{The mapping is already largely present in the base model:} $R^2$ 0.41 before any post-training, \textbf{67\%} of the 0.62 the fully post-trained model reaches.
+  \item \takeaways{SFT has the largest effect on the mapping} ($+0.17$), with DPO and both RLVR stages together adding only $+0.04$.
 \end{itemize}
 
 \end{column}
