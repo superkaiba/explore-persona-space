@@ -609,6 +609,7 @@ def fig_paper_c1_scaling(
     identity_label: str = "identity + bias",
     neural_label: str = "neural map (w=8,192)",
     figsize: tuple[float, float] | None = None,
+    acc_label: str = "retrieval acc@1 (pool 1,000)",
 ) -> None:
     """ICLR paper figure (c1_linear R1), densified (#1901 paper_densify round).
 
@@ -624,6 +625,12 @@ def fig_paper_c1_scaling(
     paper canvas was not sized for (the MATS poster runs font_scale=1.9, at
     which the paper's 2.3in-tall canvas puts the legend on top of the axes and
     clips both y labels). None keeps the paper canvas.
+
+    acc_label: opt-in relabel of the retrieval panel's y axis. A single-line
+    27-character label does not fit a canvas shortened much below ~3.2in — it
+    overruns the axis and collides with the legend — so a caller that shortens
+    the canvas passes the same text broken over two lines. Default is the
+    paper's, byte-unchanged.
 
     Held-out R^2 (left) + euclidean retrieval acc@1, pool 1,000 (right) against
     training contexts (log x). Ridge (blue) and identity+bias (green) are DENSE
@@ -821,7 +828,7 @@ def fig_paper_c1_scaling(
         capsize=1.5,
     )
     ax_acc.axhline(0.001, color="black", lw=0.7, ls=":")
-    ax_acc.set_ylabel("retrieval acc@1 (pool 1,000)")
+    ax_acc.set_ylabel(acc_label)
     ax_acc.set_ylim(0.0, 1.0)
 
     for ax in (ax_r2, ax_acc):
