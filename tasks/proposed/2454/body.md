@@ -1,6 +1,6 @@
 ---
-title: Relocate genuine agents-prose asserts from behavioral tests into a closure-clean
-  FAMILY_agents pin file (#2260 follow-up)
+title: 'workflow-fix: relocate genuine agents-prose asserts from behavioral tests
+  into a closure-clean FAMILY_agents pin file (#2260 follow-up)'
 kind: infra
 tags:
 - wf-fix
