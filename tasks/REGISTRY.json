@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2454,
+  "highest_id": 2455,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11231,6 +11231,13 @@
       "path": "tasks/proposed/2454",
       "status": "proposed",
       "title": "workflow-fix: relocate genuine agents-prose asserts from behavioral tests into a closure-clean FAMILY_agents pin file (#2260 follow-up)"
+    },
+    "2455": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2455",
+      "status": "proposed",
+      "title": "workflow-fix: scripts/issue1739_r2v2_run.py has ungated HfApi upload call sites \u2014 test_no_ungated_upload_call_sites RED on origin/main"
     },
     "246": {
       "has_clean_result": false,
