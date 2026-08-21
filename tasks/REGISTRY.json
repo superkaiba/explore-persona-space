@@ -9375,8 +9375,8 @@
     "2214": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2214",
-      "status": "running",
+      "path": "tasks/completed/2214",
+      "status": "completed",
       "title": "daily-fix: test_issue1315_dispatch pollutes the fu3 context registry \u2014 order-dependent Step 9c gate bounce"
     },
     "2215": {
@@ -10651,8 +10651,8 @@
       "goal": "Determine whether the answer vector predicted from the eval-time context via a fitted linear context\u2192answer map predicts which eval-time prompts re-elicit inoculation-suppressed behavior (EM and capitalization, Qwen2.5-7B-Instruct), and whether it outperforms the context-side hidden-state predictors (Train Ref., Same-Q Inoc.) and text-embedding baselines of Kwon et al. (ICML 2026 Mech Interp workshop).",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/verifying/2379",
-      "status": "verifying",
+      "path": "tasks/interpreting/2379",
+      "status": "interpreting",
       "title": "Predicted answer-vector similarity as a predictor of post-inoculation re-elicitation (Kwon et al. rig, answer-side predictor)"
     },
     "238": {
