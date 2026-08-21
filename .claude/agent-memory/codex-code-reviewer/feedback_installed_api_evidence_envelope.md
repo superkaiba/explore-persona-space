@@ -56,6 +56,31 @@ path named (2262's WT venv was FULLY populated at r1, py3.12, mpl 3.10.8 —
 dual readability attested), with an explicit "ground API claims in source you
 read, never the implementer's docstring; say so when unverifiable" line.
 
+**r2 extension (#2262 r2): producer ENUMERATION + dissociation NOTE.** When
+the round-2 fix swaps the discriminator to a different API internal (marker
+sizes → `Collection._offsets` provenance), the envelope upgrades from pinned
+class-hierarchy facts to (1) the internal's full WRITE-site enumeration
+(constructor `offsets=` sites + `set_offsets` callers, grep-derived with
+file:line, flagging docstring false-positives like collections.py:1530) and
+(2) a composer NOTE stating any derivable probe DISSOCIATION without
+resolving severity (here: `np.asanyarray` preserves array subclass, so
+constructor-supplied plain-ndarray offsets — hexbin, Quiver — make the
+private `_offsets` tell and the public MaskedArray tell genuinely diverge;
+that grounded the plan's probe choice AND gave Codex the hunt set for
+"set-but-not-scatter-data" injection cases). Also r2-shape lessons: an
+UPHELD own-FAIL closure round inlines the RECONCILER verdict (tags stripped)
+as the acceptance contract and SKIPS re-inlining the twin's own r1 verdict
+(subsumed once the reconciler independently reproduced every finding —
+cleaner tag arithmetic, ~12 KB saved); attest the falsification artifact's
+full pytest tail (`4 failed, 24 passed, 28 deselected`) — the marker's
+"4 failed / 24 passed" omitted the deselection scoping, and an unattested
+count mismatch vs the file's test count reads as fabrication; and when a
+brief-cited orchestrator note carries imprecise line anchors (1068-1074 for
+a getattr at :1094), pin the exact anchors as compose-time facts so Codex
+cites its own.
+
 Related: [[whole-round-unsplit-compose]] (round-pinned sha-range diff when an
 out-of-scope spec-sync commit sits at HEAD), [[infra-wf-fix-lint-gate-compose]]
-(N/A-by-type + duty-discharge attestations for infra rounds).
+(N/A-by-type + duty-discharge attestations for infra rounds),
+[[revision-round compose recipe]] (the round-2+ delta recipe this compose
+followed).
