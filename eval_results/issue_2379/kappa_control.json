@@ -1,0 +1,23 @@
+{
+  "issue": 2379,
+  "phase": "kappa",
+  "status": "OK",
+  "generated_utc": "2026-08-21T00:24:19.949721+00:00",
+  "git": {
+    "git_commit": "25390ec5",
+    "git_dirty": false,
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2379_judge.py"
+  },
+  "judge_control": "claude-opus-4-8",
+  "n_target": 2000,
+  "n_sampled": 2000,
+  "n_paired": 0,
+  "cohen_kappa_em": null,
+  "pearson_aligned": null,
+  "sample_seed": 20260819,
+  "n_cells": 108,
+  "alloc_min": 18,
+  "alloc_max": 19,
+  "a2_prompts_source": "tasks/running/2379/artifacts/kwon2026_extracted_text.txt (A.2, verbatim)"
+}
