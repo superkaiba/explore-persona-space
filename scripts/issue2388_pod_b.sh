@@ -76,17 +76,31 @@ stream_tar() { # stream_tar <hf-relpath> <dest-dir> — staged-idempotent + retr
   want=$(curl -sSIL -H "Authorization: Bearer $HF_TOKEN" "$url" | tr -d '\r' | awk 'tolower($1)=="content-length:"{n=$2} END{print n}')
   [ -n "$want" ] || { echo "[stage] no content-length for $rel"; return 1; }
   free=$(df -B1 --output=avail /workspace | tail -1 | tr -d ' ')
-  if [ "$free" -gt "$((want * 22 / 10))" ]; then
-    tarball="/workspace/$(basename "$rel").dl"
-    echo "[stage] fetch $rel -> $tarball ($want bytes; resumable) start $(date -u +%H:%M:%SZ)"
+  if [ "$free" -gt "$((want * 205 / 100))" ]; then
+    # R3: hf_transfer parallel ranges (measured 52 MB/s on this pod vs 2.7
+    # MB/s single-stream curl — the DC's HF CDN path is per-stream
+    # throttled, so the R2 curl -C - form could not finish). Threshold
+    # 2.05x (was 2.2x): true peak is tar + extract = 2.0x and df is
+    # truthful on this per-volume runpodfs mount; 2.2x narrowly excluded
+    # the 69.9 GB hallucination_labeling tar at the ~150 GB post-evil
+    # headroom and would have sent it to the ~7 h stream form. Per-attempt
+    # timeout 5400 s: 69.9 GB largest tar / 52 MB/s measured ~= 23 min, x2
+    # margin + retry-envelope slack; resumable across attempts via the hf
+    # .incomplete file (the final path appears only on completion, so the
+    # stat pre-check doubles as the completion test).
+    tarball="/workspace/hf_stage/$rel"
+    mkdir -p /workspace/hf_stage
+    echo "[stage] hf-download $rel ($want bytes) start $(date -u +%H:%M:%SZ)"
     n=0
     while :; do
       got=$(stat -c%s "$tarball" 2>/dev/null || echo 0)
       [ "$got" = "$want" ] && break
-      if curl -sSfL -C - -H "Authorization: Bearer $HF_TOKEN" "$url" -o "$tarball"; then break; fi
+      if timeout 5400 env HF_HUB_ENABLE_HF_TRANSFER=1 uv run hf download \
+           superkaiba1/explore-persona-space-data "$rel" \
+           --repo-type dataset --local-dir /workspace/hf_stage; then break; fi
       n=$((n+1))
-      [ "$n" -ge 40 ] && { echo "[stage] fetch retries exhausted ($n) for $rel"; return 1; }
-      echo "[stage] fetch retry $n for $rel (have $(stat -c%s "$tarball" 2>/dev/null || echo 0)/$want bytes)"
+      [ "$n" -ge 8 ] && { echo "[stage] hf-download retries exhausted ($n) for $rel"; return 1; }
+      echo "[stage] hf-download retry $n for $rel"
       sleep 15
     done
     got=$(stat -c%s "$tarball")
