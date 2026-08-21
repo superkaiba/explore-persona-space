@@ -220,10 +220,14 @@ def test_good_plan_passes_all():
         # SKIP: GOOD_PLAN carries no retest/κ token, so the per-line
         # retest∧κ gate conjunction cannot fire — trigger-conditional (#2204).
         "c67_retest_kappa_temp0": "SKIP",
+        # SKIP: GOOD_PLAN carries no baseline-subtractive pp margin token
+        # (grep-verified: no pp/percentage/baseline hit in the fixture) —
+        # trigger-conditional (#2228).
+        "c68_margin_baseline_ceiling": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 64
+    assert len(results) == 65
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -6359,12 +6363,14 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     #   trigger-conditional, #2178)
     # + c67 (SKIP: GOOD_PLAN carries no retest∧κ gate line; trigger-
     #   conditional, #2204)
-    assert payload["n_skip"] == 58
+    # + c68 (SKIP: GOOD_PLAN carries no baseline-subtractive pp margin
+    #   token; trigger-conditional, #2228)
+    assert payload["n_skip"] == 59
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 67
-    assert len({c["id"] for c in payload["checks"]}) == 67
+    assert len(payload["checks"]) == 68
+    assert len({c["id"] for c in payload["checks"]}) == 68
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
@@ -10322,12 +10328,15 @@ def test_c46_unparseable_line_is_note_not_crash():
 def test_c46_placeholder_tokens_never_warn():
     # The SKILL.md Step 6b snippet shape: <N> placeholders + a ${VAR:+...}
     # conditional expansion parse clean (placeholders substituted "1"; the
-    # conditional expansion is stripped whole, modeling VAR-unset).
+    # conditional expansion is stripped whole, modeling VAR-unset). The
+    # placeholder --workload-cmd "$WORKLOAD_CMD" substitutes to "1" —
+    # non-empty, so a templated workload-cmd counts as PROVIDED and the
+    # exactly-one-of arm never false-WARNs on templated skill snippets.
     plan = GOOD_PLAN + (
         "\n```bash\n"
         "uv run python scripts/dispatch_issue.py launch \\\n"
         '    --issue <N> --intent "$INTENT" --time-budget-hours 8 --repo-branch "issue-<N>" \\\n'
-        '    ${BACKEND:+--backend "$BACKEND"}\n'
+        '    --workload-cmd "$WORKLOAD_CMD" ${BACKEND:+--backend "$BACKEND"}\n'
         "```\n"
     )
     _, by_id = _run(plan)
@@ -10340,6 +10349,107 @@ def test_c46_prose_mention_is_not_a_command():
     plan = GOOD_PLAN + "\nre-run the same `dispatch_issue.py launch` command until it exits 0\n"
     _, by_id = _run(plan)
     assert by_id[C46].status == "SKIP"
+
+
+# Fixture (b) — the #2202 incident, verbatim: a provision-only launch that
+# PARSES clean (carries --repo-branch + --time-budget-hours, so neither
+# token arm fires) but violates the runtime's exactly-one-of
+# --workload-cmd / --hydra requirement (dispatch_issue.py main(), #588) —
+# the shape c46 + the fact-checker both dry-parse-PASSed before this arm.
+C46_2202_PROVISION_ONLY = (
+    "uv run python scripts/dispatch_issue.py launch --issue 2202 --intent cpu-bigmem "
+    "--repo-branch issue-2202 --boot-disk-gb 80 --min-ram-gb 32 --time-budget-hours 12"
+)
+
+
+def test_c46_warns_on_provision_only_launch():
+    # The verbatim #2202 command: parses, but neither --workload-cmd nor
+    # --hydra -> the namespace-level arm WARNs naming the runtime rule.
+    plan = GOOD_PLAN + "\n```bash\n" + C46_2202_PROVISION_ONLY + "\n```\n"
+    _, by_id = _run(plan)
+    r = by_id[C46]
+    assert r.status == "WARN"
+    assert "exactly one of" in r.detail
+    assert "neither" in r.detail
+
+
+def test_c46_empty_workload_cmd_counts_as_absent():
+    # An explicitly-empty --workload-cmd '' is NOT provided (mirrors the
+    # runtime's bool((args.workload_cmd or '').strip()) exactly) -> WARN.
+    plan = GOOD_PLAN + ("\n```bash\n" + C46_2202_PROVISION_ONLY + " --workload-cmd ''\n```\n")
+    _, by_id = _run(plan)
+    r = by_id[C46]
+    assert r.status == "WARN"
+    assert "exactly one of" in r.detail
+    # The equals-form --workload-cmd= yields "" under argparse -> also absent.
+    plan_eq = GOOD_PLAN + ("\n```bash\n" + C46_2202_PROVISION_ONLY + " --workload-cmd=\n```\n")
+    _, by_id_eq = _run(plan_eq)
+    r_eq = by_id_eq[C46]
+    assert r_eq.status == "WARN"
+    assert "exactly one of" in r_eq.detail
+
+
+def test_c46_hydra_only_launch_passes():
+    # A compliant --hydra-only launch (no --workload-cmd) satisfies
+    # exactly-one-of -> PASS.
+    plan = GOOD_PLAN + ("\n```bash\n" + C46_2202_PROVISION_ONLY + " --hydra condition=c1\n```\n")
+    _, by_id = _run(plan)
+    assert by_id[C46].status == "PASS"
+
+
+def test_c46_multiple_hydra_occurrences_pass():
+    # --hydra is an append action: two occurrences -> a non-empty list ->
+    # provided (argparse semantics byte-for-byte, no token counting).
+    plan = GOOD_PLAN + (
+        "\n```bash\n" + C46_2202_PROVISION_ONLY + " --hydra condition=c1 --hydra seed=42\n```\n"
+    )
+    _, by_id = _run(plan)
+    assert by_id[C46].status == "PASS"
+
+
+def test_c46_both_workload_and_hydra_warn():
+    # BOTH provided violates exactly-one-of just like neither (the runtime's
+    # `got both` branch) -> WARN naming `both`.
+    plan = GOOD_PLAN + (
+        "\n```bash\n" + C46_2202_PROVISION_ONLY + " --workload-cmd 'bash x.sh' --hydra a=b\n```\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id[C46]
+    assert r.status == "WARN"
+    assert "exactly one of" in r.detail
+    assert "both" in r.detail
+
+
+def test_c46_finalize_untouched():
+    # AC3: a parseable finalize command has no launch namespace -> the
+    # exactly-one-of arm never fires (and no dest-rename FYI note either).
+    plan = GOOD_PLAN + (
+        "\n```bash\nuv run python scripts/dispatch_issue.py finalize --issue 1\n```\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id[C46]
+    assert r.status == "PASS"
+    assert "exactly one of" not in r.detail
+    assert "dest rename" not in r.detail
+
+
+def test_c46_runpod_provision_only_fyi_note():
+    # AC4 (#909): explicit --backend runpod + non-empty --workload-cmd but
+    # no --execute-workload -> verdict stays PASS, detail carries the FYI
+    # note (the workload does not auto-start on the runpod lane).
+    base = C46_2202_PROVISION_ONLY + " --workload-cmd 'bash scripts/x.sh' --backend runpod"
+    plan = GOOD_PLAN + "\n```bash\n" + base + "\n```\n"
+    _, by_id = _run(plan)
+    r = by_id[C46]
+    assert r.status == "PASS"
+    assert "provision-only" in r.detail
+    assert "--execute-workload" in r.detail
+    # With --execute-workload the note disappears.
+    plan_exec = GOOD_PLAN + "\n```bash\n" + base + " --execute-workload\n```\n"
+    _, by_id_exec = _run(plan_exec)
+    r_exec = by_id_exec[C46]
+    assert r_exec.status == "PASS"
+    assert "provision-only" not in r_exec.detail
 
 
 def test_c46_registered_in_checks():
@@ -13749,3 +13859,473 @@ def test_c67_line_global_negation_boundary_pinned():
         plan = _c67_plan(judge_line, "", C67_V1_RETEST_LINE)
         r = _run(plan)[1][C67]
         assert r.status == want, (label, r.status, r.detail)
+
+
+# ─── c68: abs-pp reduction margin vs in-plan baseline ceiling (#2228/#2203) ─
+
+C68 = "c68_margin_baseline_ceiling"
+
+# Verbatim #2203 plan v12 excerpts (the founding incident, 3rd recurrence of
+# the #810 margin-vs-ceiling family), EMBEDDED — never read from tasks/...
+# paths (folders git-mv across status dirs on promotion; the c67 convention).
+# v12 L23 tail (§2 Prior Work): the in-plan baselines.
+C68_BASELINE_LINE = "**Parent run (this issue, buggy).** Parent 7B baseline harm ~9.7%, role ~4.0%; 32B anchor degenerated into repetitive CJK/Chinese-language output instead of the paper's defence."
+# v12 L298 (§8 risk table): baseline beside the paper's 65-88% — the
+# 40-char first-match window must harvest 9.7, never 88.
+C68_RISK_BASELINE_LINE = "| Weak reconstructed attack bank (baseline ~9.7% vs paper 65-88%) → 7B/32B null under-powered | High | Carry the weak-attack caveat explicitly in Takeaways (Part F). |"
+# v12 L44: the H1-confirm bullet (arm-A2 form).
+C68_MARGIN_BULLET = "- *H1-confirm:* the corrected all-token cap arm REDUCES jailbreak harm-rate vs baseline by a clear margin (baseline − cap ≥ 10 percentage points, one-sided), with `<think>`-emission ≈ 0, CJK fraction ≈ baseline, and cos(loaded capping vector, assistant_axis) ≈ −1."
+# v12 L57: the registered verdict lattice (arm-A1 form `≤ baseline - 10pp`,
+# PLUS the two live negative fragments: `within 5pp of baseline` (tolerance)
+# and `≥ baseline - 0.05` (fraction floor) — the check must fire on this
+# line via A1 while harvesting NOTHING from those fragments).
+C68_LATTICE_LINE = "**Registered verdict lattice (verify_plan.py check 20):** DISJOINT and exhaustive: H1-confirm ⇔ (32B all-token cap harm-rate ≤ baseline − 10pp AND `<think>`_frac ≤ 0.02 AND cos(cap_vec, assistant_axis) ≤ −0.9 AND coherent-frac ≥ baseline − 0.05); H1-falsify ⇔ (manipulation checks pass AND NOT the confirm predicate); H2-confirm ⇔ (7B cap-arm capability Δ within 5pp of baseline on all three suites AND real-cap harm-reduction > random-null-cap harm-reduction); H2-falsify ⇔ (NOT H2-confirm AND fired_frac ≥ 0.25 on the cap arms); H3-confirm ⇔ (context-end OR all-prompt OR all-token cap Δharm ≥ 10pp at fired_frac ≥ 0.25 AND prefix-end Δharm < 10pp at comparable fired_frac); H3-falsify ⇔ (NOT H3-confirm at comparable fired_frac); H4-confirm ⇔ (real axis-replace coherent-subset Δharm > random-null axis-replace Δharm); H4-falsify ⇔ otherwise."
+# v12 L48: the two-sided tolerance negative (must NOT be harvested).
+C68_TOLERANCE_LINE = "- *H2-confirm:* with `v̂`, the 7B cap arms no longer catastrophically degrade capability (GSM8K/IFEval/MMLU-Pro within ~5 pp of baseline) AND the norm-matched random-direction CAP nulls now behave as valid footprint controls."
+
+
+def _c68_plan(*hyp_lines, baseline_line=C68_BASELINE_LINE):
+    """GOOD_PLAN + a Prior-Work section carrying the baseline + a Hypothesis
+    section carrying ``hyp_lines`` — the cross-section incident geometry.
+    The Hypothesis heading is an H3 (level 3), so the founding-incident
+    positives route through exactly the NON-H1 qualification path v12's
+    own margins take (#2228 r1 MF1 ground (c))."""
+    return (
+        GOOD_PLAN
+        + "\n### 2. Prior Work — parent run\n\n"
+        + baseline_line
+        + "\n\n### 3. Hypothesis\n\n"
+        + "\n".join(hyp_lines)
+        + "\n"
+    )
+
+
+def test_c68_warns_on_2203_v12_bullet_shape():
+    # Founding incident, arm A2: "baseline - cap ≥ 10 percentage points"
+    # in §3 vs a §2 baseline ~9.7% -> WARN; detail carries the arithmetic,
+    # the incident anchor, the cross-quantity clause, and BOTH escapes
+    # (each scoped to its truthful case — #2228 r1 MF2).
+    r = _run(_c68_plan(C68_MARGIN_BULLET))[1][C68]
+    assert r.status == "WARN", r.detail
+    assert "10 pp" in r.detail and "9.7%" in r.detail
+    assert "unsatisfiable" in r.detail
+    assert "#2203" in r.detail
+    assert "same quantity" in r.detail
+    assert "unrelated to this absolute-margin gate" in r.detail
+    assert "N/A — no absolute-margin decision gate" in r.detail
+
+
+def test_c68_warns_on_2203_v12_lattice_shape():
+    # Arm A1 on the verbatim lattice line ("≤ baseline - 10pp"), with the
+    # two live negative fragments (within-5pp tolerance, ≥ baseline - 0.05
+    # fraction floor) present on the SAME line and NOT harvested.
+    r = _run(_c68_plan(C68_LATTICE_LINE))[1][C68]
+    assert r.status == "WARN", r.detail
+    assert "10 pp" in r.detail
+
+
+def test_c68_risk_table_baseline_window_takes_first_pct():
+    # L298 shape: "baseline ~9.7% vs paper 65-88%" — the harvester must
+    # read 9.7 (first % in the window), NOT 88; margin 10 ≥ 9.7 -> WARN.
+    r = _run(_c68_plan(C68_LATTICE_LINE, baseline_line=C68_RISK_BASELINE_LINE))[1][C68]
+    assert r.status == "WARN", r.detail
+    # partition (not split()[1]) so a WARN-template rewording fails with a
+    # legible assert instead of an IndexError (r1 reconciler standing note).
+    _, sep, after_baseline = r.detail.partition("baseline rate is")
+    assert sep, r.detail
+    assert "9.7%" in r.detail and "88" not in after_baseline[:12]
+
+
+def test_c68_warns_at_equality_a1():
+    # D2 pin (arm A1): margin == max baseline (9.7 == 9.7, exact-Fraction
+    # comparison via _c28_frac) -> WARN per the body's ≥ spec, with the
+    # corrected boundary wording (degenerate gate, exactly-zero realized
+    # rate — #2228 r1 D1; the fire STANDS, only the wording changed).
+    line = "- *H1-confirm:* 32B all-token cap harm-rate ≤ baseline − 9.7pp (one-sided)."
+    r = _run(_c68_plan(line))[1][C68]
+    assert r.status == "WARN", r.detail
+    assert "exactly-zero" in r.detail
+
+
+def test_c68_warns_at_equality_a2():
+    # D2 pin (arm A2): "baseline - cap ≥ 9.7 percentage points" vs a 9.7%
+    # baseline -> WARN at the non-strict boundary, same corrected wording.
+    line = "- *H1-confirm:* the cap arm reduces harm (baseline − cap ≥ 9.7 percentage points, one-sided)."
+    r = _run(_c68_plan(line))[1][C68]
+    assert r.status == "WARN", r.detail
+    assert "exactly-zero" in r.detail
+
+
+def test_c68_negative_tolerance_band_not_harvested():
+    # Clarifier negative 1 (v12 L48): "within ~5 pp of baseline" is a
+    # two-sided tolerance, satisfiable regardless of baseline -> SKIP
+    # (no margin harvested at all).
+    r = _run(_c68_plan(C68_TOLERANCE_LINE))[1][C68]
+    assert r.status == "SKIP", r.detail
+
+
+def test_c68_negative_fraction_floor_not_harvested():
+    # Clarifier negative 2 (v12 L57 fragment): "≥ baseline - 0.05" is a
+    # fraction retention floor — wrong comparator direction for A1 AND no
+    # pp suffix (two independent guards) -> SKIP.
+    r = _run(_c68_plan("- H1 also requires coherent-frac ≥ baseline − 0.05 throughout."))[1][C68]
+    assert r.status == "SKIP", r.detail
+
+
+def test_c68_negative_relative_margin_not_harvested():
+    # Clarifier negative 3: a relative margin carries % not pp -> SKIP.
+    r = _run(_c68_plan("- *H1-confirm:* ≥ 50% relative reduction vs baseline."))[1][C68]
+    assert r.status == "SKIP", r.detail
+
+
+def test_c68_negative_margin_below_baseline_passes():
+    # Clarifier negative 4: an absolute margin SIZED to the baseline
+    # (2pp vs ~9.7%) is harvested but satisfiable -> PASS, not WARN.
+    line = "- *H1-confirm:* 32B all-token cap harm-rate ≤ baseline − 2pp (one-sided)."
+    r = _run(_c68_plan(line))[1][C68]
+    assert r.status == "PASS", r.detail
+    assert "below the largest in-plan baseline" in r.detail
+
+
+def test_c68_known_evading_forms_pinned_skip():
+    # C7 mutation fixtures: EXECUTABLE disclosure of the DELIBERATELY
+    # EXCLUDED boundary — each known-evading phrasing is pinned as an
+    # accepted false negative (SKIP = nothing harvested), so a later
+    # widening that starts harvesting one is test-visible and forces the
+    # corpus re-calibration contract. The first is the #2228 task body's
+    # OWN example sentence shape (also the founding lattice's un-harvested
+    # `Δharm ≥ 10pp` token).
+    evading = [
+        "- *H1-confirm:* Δharm ≥ 10pp at fired_frac ≥ 0.25.",  # bare Δ form
+        "- *H1-confirm:* baseline − 10pp ≥ treated-rate throughout.",  # reversed subtractive
+        "- *H1-confirm:* Δharm ≥ 10pp, where Δharm = baseline − treated-rate.",  # definition split
+        "- *H1-confirm:* harm-rate ≤ (baseline − 10pp) on every suite.",  # parenthesized
+        "- *H1-confirm:* harm-rate ≤ baseline − 10-15pp depending on arm.",  # range margin
+    ]
+    for line in evading:
+        r = _run(_c68_plan(line))[1][C68]
+        assert r.status == "SKIP", (line, r.status, r.detail)
+
+
+def test_c68_margin_outside_gate_sections_not_harvested():
+    # Section scoping (neutral H1 — kept byte-identical per MF1 remedy 4):
+    # a §8 Risks line QUOTING a sibling's broken margin (no gate/hypothesis
+    # heading encloses it) never fires. Direct-call form (bypasses c0) —
+    # minimal plan, no matching enclosing heading.
+    plan = (
+        "# Plan\n\n## 2. Prior Work\n\nParent 7B baseline harm ~9.7%.\n\n"
+        "## 8. Risks\n\n- Sibling incident: harm-rate ≤ baseline − 10pp was unsatisfiable there.\n"
+    )
+    r = verify_plan.check_margin_baseline_ceiling(plan, "experiment")
+    assert r.status == "SKIP", r.detail
+
+
+def test_c68_gate_bearing_h1_does_not_arm_risks_quote():
+    # MF1 adversarial pin: a gate/decision-bearing H1 (its _headings span
+    # is the WHOLE document) must not make §2/§8 lines margin-eligible.
+    # Healthy plan: valid live gate (≤ baseline - 2pp vs a 20% baseline)
+    # under an H2 Hypothesis + a broken sibling quote (≤ baseline - 30pp)
+    # under ## 8. Risks -> NO WARN: the live gate PASSes on its own merits
+    # and the Risks quote is never harvested. (Under the v1 any-enclosing
+    # predicate this plan harvested {2, 30} and WARNed — the traced FP.)
+    plan = (
+        "# Plan: #22xx — harm-rate decision-gate rework\n\n"
+        "## 2. Prior Work\n\nParent baseline harm ~20%.\n\n"
+        "## 3. Hypothesis\n\n- *H1-confirm:* harm-rate ≤ baseline − 2pp (one-sided).\n\n"
+        "## 8. Risks\n\n- Sibling incident: its harm-rate ≤ baseline − 30pp margin was unsatisfiable there.\n"
+    )
+    r = verify_plan.check_margin_baseline_ceiling(plan, "experiment")
+    assert r.status == "PASS", r.detail
+    assert "below the largest in-plan baseline" in r.detail
+
+
+def test_c68_no_inplan_baseline_skips():
+    # Margin registered but no %-stated baseline anywhere -> SKIP with the
+    # deferred cross-artifact-scope note (clarifier Assumption 2).
+    r = _run(_c68_plan(C68_MARGIN_BULLET, baseline_line="Parent run details published elsewhere."))[
+        1
+    ][C68]
+    assert r.status == "SKIP", r.detail
+    assert "cross-artifact" in r.detail
+
+
+def test_c68_cross_quantity_fraction_baseline_warns_without_declaration():
+    # MF2 worked example (WARN side): a correctly-sized real gate whose
+    # true harm baseline is written as a FRACTION (0.20 — no %, so the
+    # harvest cannot see it), plus an unrelated "baseline dropout 5%"
+    # -> bmax = 5, margin 10 ≥ 5 -> WARN (a cross-quantity false alarm by
+    # construction). The detail's instruction set must be TRUTHFUL: the
+    # cross-quantity escape + the state-the-baseline-in-%-form remedy.
+    plan = _c68_plan(
+        "- *H1-confirm:* harm-rate ≤ baseline − 10pp (true harm baseline 0.20, stated as a fraction).",
+        baseline_line="Training used baseline dropout 5% throughout.",
+    )
+    r = _run(plan)[1][C68]
+    assert r.status == "WARN", r.detail
+    assert "unrelated to this absolute-margin gate" in r.detail
+    assert "% form" in r.detail
+
+
+def test_c68_cross_quantity_escape_standalone_recognized():
+    # MF2 (PASS side): the same cross-quantity plan with the truthful
+    # escape declared standalone + unwrapped -> PASS.
+    plan = _c68_plan(
+        "- *H1-confirm:* harm-rate ≤ baseline − 10pp (true harm baseline 0.20, stated as a fraction).",
+        "",
+        "N/A — harvested percentage baseline is unrelated to this absolute-margin gate",
+        baseline_line="Training used baseline dropout 5% throughout.",
+    )
+    r = _run(plan)[1][C68]
+    assert r.status == "PASS", r.detail
+    assert "cross-quantity" in r.detail
+
+
+def test_c68_wrapped_cross_quantity_na_not_recognized():
+    # Anti-paste discipline for the NEW escape (symmetry with the denial
+    # escape's pin): a backtick-wrapped paste must NOT satisfy it.
+    plan = _c68_plan(
+        C68_MARGIN_BULLET,
+        "",
+        "`N/A — harvested percentage baseline is unrelated to this absolute-margin gate`",
+    )
+    r = _run(plan)[1][C68]
+    assert r.status == "WARN", r.detail
+
+
+def test_c68_na_escape_standalone_recognized():
+    plan = _c68_plan(C68_MARGIN_BULLET, "", "N/A — no absolute-margin decision gate")
+    r = _run(plan)[1][C68]
+    assert r.status == "PASS", r.detail
+    assert "explicit N/A declared" in r.detail
+
+
+def test_c68_wrapped_na_not_recognized():
+    # The _standalone_na_declared anti-paste discipline: a backtick-wrapped
+    # paste must NOT satisfy the escape -> still WARN.
+    plan = _c68_plan(C68_MARGIN_BULLET, "", "`N/A — no absolute-margin decision gate`")
+    r = _run(plan)[1][C68]
+    assert r.status == "WARN", r.detail
+
+
+def test_c68_skips_on_infra_kind():
+    # Kind gate, pinned in BOTH directions (the c67 house pattern): the
+    # SAME text SKIPs under infra/batch/survey (this check's own plan
+    # quotes the trigger vocabulary) and WARNs under experiment/analysis.
+    plan = _c68_plan(C68_MARGIN_BULLET)
+    for kind in ("infra", "batch", "survey"):
+        r = verify_plan.check_margin_baseline_ceiling(plan, kind)
+        assert r.status == "SKIP", (kind, r.detail)
+    for kind in ("experiment", "analysis"):
+        r = verify_plan.check_margin_baseline_ceiling(plan, kind)
+        assert r.status == "WARN", (kind, r.detail)
+
+
+def test_c68_never_fails_invariant():
+    # WARN-only posture (the c46/c50/c67 invariant): every variant resolves
+    # to PASS/WARN/SKIP, never FAIL, and never raises — including a
+    # heading-less shard (no enclosing section -> nothing harvested), a
+    # fence-masked block, the gate-bearing-H1 plan, and the equality and
+    # cross-quantity shapes.
+    variants = [
+        GOOD_PLAN,
+        _c68_plan(C68_MARGIN_BULLET),
+        _c68_plan(C68_LATTICE_LINE),
+        _c68_plan(C68_TOLERANCE_LINE),
+        _c68_plan("- *H1-confirm:* 32B all-token cap harm-rate ≤ baseline − 9.7pp (one-sided)."),
+        _c68_plan(
+            "- *H1-confirm:* harm-rate ≤ baseline − 10pp (true harm baseline 0.20).",
+            baseline_line="Training used baseline dropout 5% throughout.",
+        ),
+        "# Plan: decision-gate cleanup\n\nbaseline harm ~9.7%\nharm-rate ≤ baseline − 10pp\n",
+        "baseline harm ~9.7%\nharm-rate ≤ baseline − 10pp\n",
+        "```\nbaseline ~9.7%\n≤ baseline − 10pp\n```\n",
+    ]
+    for kind in ("experiment", "analysis", "infra", "batch", "survey"):
+        for plan in variants:
+            r = verify_plan.check_margin_baseline_ceiling(plan, kind)
+            assert r.status in {"PASS", "WARN", "SKIP"}, (kind, r.status, r.detail)
+
+
+def test_c68_registered_in_checks_and_docstring_catalog():
+    # Membership pin (the c61/c65/c66/c67 house pattern): a forgotten
+    # registry append cannot ship green. Both escape phrases must be
+    # registered (MF2 remedy 5).
+    assert verify_plan.check_margin_baseline_ceiling in verify_plan.CHECKS
+    doc = " ".join((verify_plan.__doc__ or "").split())
+    assert "c68 abs-pp reduction margin" in doc
+    assert "67, 68" in doc  # conditional-checks membership, reflow-tolerant
+    assert "N/A — no absolute-margin decision gate" in doc
+    assert "harvested percentage baseline is unrelated to this absolute-margin gate" in doc
+
+
+def test_c68_a2_equality_comparator_crossing_not_harvested():
+    # #2228 r2 BLOCKER repro, the "="-form (reconciler
+    # `a2-equality-comparator-leak`): round-1's A2 middle class permitted
+    # "=", so the lazy middle skipped past the satisfiable "= 2pp"
+    # equality and bound the unrelated later ">= 10pp" — a false WARN
+    # against the real ~9.7% baseline below (reproduced end-to-end,
+    # epm:progress v8; this fixture WARNed pre-tighten). Post-tighten "="
+    # is barred from the middle -> nothing harvested -> SKIP. The genuine
+    # "="-bearing-middle margin this bars is a disclosed accepted FN
+    # (module-comment excluded list).
+    line = "- *H1-confirm:* baseline − cap = 2pp, while accuracy >= 10pp."
+    r = _run(_c68_plan(line))[1][C68]
+    assert r.status == "SKIP", r.detail
+
+
+def test_c68_a2_comma_clause_boundary_crossing_not_harvested():
+    # #2228 r2 BLOCKER repro, the ","-form: crosses ONLY the comma (no
+    # "="), so an "="-only tighten would have left this class armed —
+    # pinned separately per the reconciler's binding paragraph. Pre-
+    # tighten the middle consumed "cap of 2pp, while accuracy " and bound
+    # the unrelated ">= 10pp" vs the ~9.7% baseline (verified WARN);
+    # post-tighten "," is barred -> SKIP.
+    line = "- *H1-confirm:* baseline − cap of 2pp, while accuracy >= 10pp."
+    r = _run(_c68_plan(line))[1][C68]
+    assert r.status == "SKIP", r.detail
+
+
+def test_c68_a2_pipe_table_cell_boundary_crossing_not_harvested():
+    # #2228 r3 BLOCKER repro (`a2-boundary-disclosure-incomplete-live-fp`),
+    # the pipe form — the materially likely one: plan decision lattices
+    # are routinely Markdown tables, so a table-cell pipe is a MORE
+    # probable plan shape than the comma upheld in r2. Pre-tighten the
+    # middle consumed "cap of 2pp | accuracy " and bound the unrelated
+    # ">= 10pp" vs the ~9.7% baseline (verified WARN at 713a30754d);
+    # post-tighten "|" is barred -> nothing harvested -> SKIP.
+    line = "- *H1-confirm:* baseline − cap of 2pp | accuracy >= 10pp."
+    r = _run(_c68_plan(line))[1][C68]
+    assert r.status == "SKIP", r.detail
+
+
+def test_c68_a2_question_mark_sentence_boundary_crossing_not_harvested():
+    # #2228 r3 BLOCKER repro, the "?"-form: the middle crossed a sentence
+    # boundary to bind the unrelated ">= 10pp" vs the ~9.7% baseline
+    # (verified WARN at 713a30754d); post-tighten "?" is barred -> SKIP.
+    line = "- *H1-confirm:* baseline − cap? accuracy >= 10pp."
+    r = _run(_c68_plan(line))[1][C68]
+    assert r.status == "SKIP", r.detail
+
+
+def test_c68_a2_exclamation_sentence_boundary_crossing_not_harvested():
+    # #2228 r3 BLOCKER repro, the "!"-form (same species as the "?" pin;
+    # verified WARN at 713a30754d); post-tighten "!" is barred -> SKIP.
+    line = "- *H1-confirm:* baseline − cap! accuracy >= 10pp."
+    r = _run(_c68_plan(line))[1][C68]
+    assert r.status == "SKIP", r.detail
+
+
+def test_c68_a2_middle_barred_set_syncs_comment_class_and_behavior():
+    # #2228 r3 binding item 5 — the structural end to the enumeration
+    # game. (1) STRUCTURAL: the declared barred set
+    # (`verify_plan._C68_A2_MIDDLE_BARRED`, the constant the disclosure
+    # comment defers to as its single source of truth) equals the regex
+    # class's negated character set, character by character — a future
+    # constant/class divergence is test-breaking instead of
+    # review-detected. This test reads the CONSTANT and the compiled
+    # PATTERN only — never comment prose — which is why the disclosure
+    # comment carries no membership enumeration (#2228 r4).
+    # (2) BEHAVIORAL: every barred char EXCEPT "\n" kills a middle
+    # crossing it (end-to-end SKIP on the healthy 2pp-gate geometry).
+    # "\n" is structurally unreachable end-to-end: `_c68_margins`
+    # iterates `plan.splitlines()`, so no candidate line ever contains a
+    # newline and an end-to-end row would SKIP from the line split, not
+    # the class (a vacuous row, #2228 r4) — its class membership is
+    # instead pinned by the direct regex-level differential below.
+    # (3) Every residual example the complement-form disclosure names
+    # (".", ":", "(", quotes, dash glyphs) is permitted (end-to-end WARN
+    # on the same geometry: 10pp vs the ~9.7% baseline).
+    m = re.search(r"\[\^((?:\\.|[^\]\\])+)\]", verify_plan._C68_A2_RE.pattern)
+    assert m, verify_plan._C68_A2_RE.pattern
+    body = m.group(1)
+    chars: set[str] = set()
+    i = 0
+    while i < len(body):
+        if body[i] == "\\":
+            chars.add({"n": "\n", "t": "\t", "r": "\r"}[body[i + 1]])
+            i += 2
+        else:
+            chars.add(body[i])
+            i += 1
+    assert chars == set(verify_plan._C68_A2_MIDDLE_BARRED), (
+        sorted(chars),
+        sorted(verify_plan._C68_A2_MIDDLE_BARRED),
+    )
+    for ch in sorted(verify_plan._C68_A2_MIDDLE_BARRED):
+        if ch == "\n":
+            continue  # structural-only: pinned by the regex-level differential below
+        line = f"- *H1-confirm:* baseline − cap{ch} accuracy >= 10pp."
+        r = _run(_c68_plan(line))[1][C68]
+        assert r.status == "SKIP", (repr(ch), r.status, r.detail)
+    # Direct regex-level differential for "\n" (#2228 r4): on a multiline
+    # subject the shipped class must NOT match (the middle cannot cross a
+    # line break), while a counterfactual class with "\n" unbarred DOES
+    # match — so the class's "\n" member is load-bearing at the regex
+    # level, independently of the splitlines() production boundary. The
+    # inequality assert makes a silent replace no-op impossible.
+    subject = "baseline − cap\naccuracy >= 10pp."
+    assert verify_plan._C68_A2_RE.search(subject) is None
+    cf_pattern = verify_plan._C68_A2_RE.pattern.replace(r"[^\n", "[^", 1)
+    assert cf_pattern != verify_plan._C68_A2_RE.pattern
+    assert re.compile(cf_pattern).search(subject) is not None
+    for ch in sorted({".", ":", "(", '"', "'", "-", "−", "–", "—"}):
+        line = f"- *H1-confirm:* baseline − cap{ch} accuracy >= 10pp."
+        r = _run(_c68_plan(line))[1][C68]
+        assert r.status == "WARN", (repr(ch), r.status, r.detail)
+
+
+def test_c68_zero_margin_guard_skips():
+    # Reconciler CONCERN `zero-margin-coverage-absent` (#2228 r2): the
+    # `v <= 0` harvest guard drops a literal 0pp margin in BOTH arms —
+    # "baseline - 0pp" registers no reduction at all, so nothing is
+    # harvested -> SKIP. Without the guard these read PASS ("sits below
+    # the largest in-plan baseline"), narrating a vacuous bound as a
+    # validated gate; this pin makes deleting the guard test-visible
+    # (r1's marker claimed this coverage existed; it did not).
+    for line in (
+        "- *H1-confirm:* 32B all-token cap harm-rate ≤ baseline − 0pp (one-sided).",
+        "- *H1-confirm:* the cap arm reduces harm (baseline − cap ≥ 0pp, one-sided).",
+    ):
+        r = _run(_c68_plan(line))[1][C68]
+        assert r.status == "SKIP", (line, r.status, r.detail)
+
+
+def test_c68_any_enclosing_matching_h2_over_nonmatching_h3_warns():
+    # Reconciler CONCERN `any-enclosing-pin-missing` (#2228 r2): every
+    # other positive routes through a DIRECTLY-matching heading
+    # (`### 3. Hypothesis`), so no test distinguished the any-enclosing-
+    # ancestor walk from a nearest-heading-only variant. Here the NEAREST
+    # heading (`### Response ladder`) matches neither section regex; the
+    # margin qualifies ONLY via the enclosing `## 7. Decision Gates` H2 —
+    # a nearest-only walk would SKIP, the any-enclosing walk (the c13/c28
+    # membership idiom, plan §11 item 4) must WARN.
+    plan = (
+        "# Plan\n\n## 2. Prior Work\n\nParent baseline harm ~9.7%.\n\n"
+        "## 7. Decision Gates\n\n### Response ladder\n\n"
+        "- *H1-confirm:* harm-rate ≤ baseline − 10pp (one-sided).\n"
+    )
+    r = verify_plan.check_margin_baseline_ceiling(plan, "experiment")
+    assert r.status == "WARN", r.detail
+    assert "10 pp" in r.detail and "9.7%" in r.detail
+
+
+def test_c68_denial_escape_scoping_sentence_pinned():
+    # Reconciler CONCERN `denial-scope-pin-missing` (#2228 r2): the WARN
+    # detail's instruction set is truthful only because each escape is
+    # scoped to its own case (r1 MF2). Pin the denial escape INSIDE its
+    # registers-NO-margin scoping sentence and the cross-quantity escape
+    # AFTER the DIFFERENT-quantities clause, so a rewording that
+    # recommends the denial escape for the cross-quantity case cannot
+    # pass silently. Whitespace-normalized (the c51 reflow idiom).
+    r = _run(_c68_plan(C68_MARGIN_BULLET))[1][C68]
+    assert r.status == "WARN", r.detail
+    d = " ".join(r.detail.split())
+    assert (
+        "A plan that registers NO absolute-pp margin at all (the harvested line "
+        "quotes an incident/sibling) instead declares 'N/A — no absolute-margin "
+        "decision gate'" in d
+    ), d
+    cq_clause = d.index("if they concern DIFFERENT quantities")
+    cq_escape = d.index("harvested percentage baseline is unrelated to this absolute-margin gate")
+    denial_scope = d.index("A plan that registers NO absolute-pp margin at all")
+    assert cq_clause < cq_escape < denial_scope, d

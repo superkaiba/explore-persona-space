@@ -118,7 +118,7 @@ def load_matryoshka() -> dict:
 
 
 def main() -> None:
-    set_paper_style("iclr")
+    set_paper_style("iclr", font_scale=1.9)
     rounds = load_rounds()
     by_round = {r["round"]: r for r in rounds}
     kept = [by_round[i] for i in ROUNDS_SHOWN]
@@ -129,7 +129,10 @@ def main() -> None:
     c_win = paper_color("instruct")
     c_matry = paper_color("identity_bias")
 
-    fig, ax = plt.subplots(figsize=(6.8, 2.6), constrained_layout=True)
+    # wider canvas than the other panels: the tick labels are long sentences, so
+    # at poster font size a 6.8in canvas left the data region narrow enough that
+    # consecutive x tick labels ran into each other
+    fig, ax = plt.subplots(figsize=(8.6, 2.6), constrained_layout=True)
 
     # stepwise rounds top -> bottom in round order; matryoshka detached below
     ys = [float(n_shown) + 0.5 - i for i in range(n_shown)]
@@ -178,8 +181,19 @@ def main() -> None:
     ax.set_yticks([*ys, y_matry])
     ax.set_yticklabels([SHORT_LABELS[r["winner"]] for r in kept] + [SHORT_LABELS[MATRYOSHKA_NAME]])
     ax.set_ylim(-0.7, n_shown + 1.1)
-    ax.set_xlabel(r"concordance with per-feature $R^2$ (each row conditions on rows above)")
-    ax.legend(loc="lower left", frameon=False, handletextpad=0.4)
+    # at poster font size the parenthetical overran the canvas, and a lower-left
+    # legend sat on top of the bottom two tick labels; both move out of the axes
+    ax.set_xlabel(r"concordance with per-feature $R^2$")
+    ax.set_xticks([0.4, 0.5, 0.6, 0.7])
+    ax.legend(
+        loc="upper center",
+        bbox_to_anchor=(0.5, -0.30),
+        ncols=3,
+        frameon=False,
+        handletextpad=0.4,
+        columnspacing=1.2,
+        fontsize="small",
+    )
 
     paths = savefig_paper(fig, "plot3_sae_predictors", dir=OUT_DIR)
     for fmt, p in paths.items():

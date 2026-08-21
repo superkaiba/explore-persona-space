@@ -1,45 +1,78 @@
 {
- "source": "eval_results/issue_779/identity_baseline.json",
- "note": "held-out per-direction R^2 of the full-ridge map on fold 0 of the 5-fold split; persona direction r_B vs mean +- SD over 50 random unit directions",
+ "source": "eval_results/issue_1482/rb7_reads/rb7_reads.json",
+ "arm": "context",
+ "arm_note": "`context` is the full-context arm, matching the poster's v_C and the source script's own headline figure. The artifact also carries `prefix` and `bare` arms; they are deliberately not plotted.",
+ "design": {
+  "traits": [
+   "evil",
+   "sycophancy",
+   "hallucination",
+   "optimistic",
+   "impolite",
+   "apathetic",
+   "humorous"
+  ],
+  "rb_row": 19,
+  "corpus": "#1738 multi-turn holdout, n=9,941, L19, ridge \u2014 one footing for all 7",
+  "note": "the original 3 traits' published spectrum numbers (0.858-0.941) are the #779 n10k single-turn regime; here all seven are recomputed on the multi-turn corpus so new and old traits are directly comparable"
+ },
+ "note": "Held-out per-direction R^2 along each of the seven extracted persona directions r_B, #1738 multi-turn holdout n=9,941, layer 19, ridge \u2014 one corpus so all seven traits sit on one footing. NOT comparable with the #779 identity_baseline.json numbers this figure used previously (single-turn, fold 0, per-trait read-out layers 14 / 26 / 17).",
  "rows": [
   {
-   "behavior_key": "evil",
-   "behavior": "misalignment",
-   "rb_heldout_r2": 0.7903513427749175,
-   "rb_equivalent_variance_rank": 12,
-   "random_r2_mean": 0.5574399180076441,
-   "random_r2_sd": 0.09926933111266442,
-   "random_n": 50,
-   "read_out_layer": 14,
-   "fold": 0,
-   "n_train": 4000,
-   "n_test": 1000
+   "trait_key": "sycophancy",
+   "trait": "sycophancy",
+   "heldout_r2": 0.9071375643826362,
+   "equivalent_variance_rank": 4,
+   "variance_share": 0.035626565311373266
   },
   {
-   "behavior_key": "sycophancy",
-   "behavior": "sycophancy",
-   "rb_heldout_r2": 0.8717036176753388,
-   "rb_equivalent_variance_rank": 10,
-   "random_r2_mean": 0.569239315454962,
-   "random_r2_sd": 0.08114349978905365,
-   "random_n": 50,
-   "read_out_layer": 26,
-   "fold": 0,
-   "n_train": 4000,
-   "n_test": 1000
+   "trait_key": "humorous",
+   "trait": "humorous",
+   "heldout_r2": 0.8846418647666926,
+   "equivalent_variance_rank": 6,
+   "variance_share": 0.0266256494043693
   },
   {
-   "behavior_key": "hallucination",
-   "behavior": "hallucination",
-   "rb_heldout_r2": 0.795309352459519,
-   "rb_equivalent_variance_rank": 2,
-   "random_r2_mean": 0.5764510150612682,
-   "random_r2_sd": 0.09070527781485431,
-   "random_n": 50,
-   "read_out_layer": 17,
-   "fold": 0,
-   "n_train": 4000,
-   "n_test": 1000
+   "trait_key": "apathetic",
+   "trait": "apathetic",
+   "heldout_r2": 0.8736004471662719,
+   "equivalent_variance_rank": 10,
+   "variance_share": 0.0172926281652363
+  },
+  {
+   "trait_key": "impolite",
+   "trait": "impolite",
+   "heldout_r2": 0.8623146061637146,
+   "equivalent_variance_rank": 5,
+   "variance_share": 0.02853762482556884
+  },
+  {
+   "trait_key": "evil",
+   "trait": "evil",
+   "heldout_r2": 0.8569034883822229,
+   "equivalent_variance_rank": 8,
+   "variance_share": 0.019993289245529563
+  },
+  {
+   "trait_key": "hallucination",
+   "trait": "hallucination",
+   "heldout_r2": 0.8215849131775874,
+   "equivalent_variance_rank": 4,
+   "variance_share": 0.038481918305923915
+  },
+  {
+   "trait_key": "optimistic",
+   "trait": "optimistic",
+   "heldout_r2": 0.8025673660811186,
+   "equivalent_variance_rank": 13,
+   "variance_share": 0.012886631835771907
   }
- ]
+ ],
+ "random_band": {
+  "mean": 0.6696521332817015,
+  "p5": 0.5845538009270358,
+  "p95": 0.7555652829618753,
+  "n": 200
+ },
+ "band_caveat": "random band p5-p95 = 0.585-0.756; the two weakest traits clear p95 by only ~0.05-0.07, which is why the band is drawn as a span rather than summarized by its mean alone."
 }

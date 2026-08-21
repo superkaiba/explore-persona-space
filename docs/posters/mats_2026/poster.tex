@@ -2,10 +2,13 @@
 % official MATS Google Slides template (maroon #800020 banner + torch logo,
 % white body, serif ALL-CAPS maroon section heads with thin rules).
 %
-% Reading order is strictly left-to-right, top-to-bottom:
-%   col 1 setup -> col 2 results 1-2 -> col 3 results 3-4
-%   -> col 4 results 5-6 -> col 5 Is this useful? / Implications
-%      & future work / References.
+% Reading order is strictly left-to-right, top-to-bottom, over FOUR columns:
+%   col 1 TL;DR / motivation / method / result 1
+%   col 2 results 2, 3 and 5
+%   col 3 results 6-7 / other results / implications / references
+% Figure width fractions are scaled by ~0.85 relative to the old five-column
+% layout: columns went 0.188 -> 0.238\textwidth, so an unchanged fraction
+% would have made every figure 27% taller and overflowed the page.
 % Terminology contract (paper intro rev 7): "the model's mapping" = the true
 % context -> answer-distribution function; "the residual context-answer
 % mapping" = its summary-level counterpart (the object studied); "fitted maps"
@@ -31,7 +34,10 @@
 \setbeamercolor{normal text}{fg=black,bg=white}
 \setbeamercolor{itemize item}{fg=matsmaroon}
 \setbeamertemplate{itemize item}{\color{matsmaroon}\raisebox{0.12em}{\small$\blacksquare$}}
-\setlength{\parskip}{0.25em}
+\setlength{\parskip}{0.07em}
+% three-column layout is spacing-critical: tighten list leading too
+\setbeamertemplate{itemize/enumerate body begin}{\setlength{\itemsep}{0.10em}\setlength{\parsep}{0pt}\setlength{\topsep}{0pt}}
+\setbeamertemplate{itemize/enumerate subbody begin}{\setlength{\itemsep}{0.06em}\setlength{\parsep}{0pt}\setlength{\topsep}{0pt}}
 
 \newcommand{\vC}{\ensuremath{v_C}}
 \newcommand{\vA}{\ensuremath{v_A}}
@@ -43,7 +49,8 @@
   {\rmfamily\bfseries\large\color{matsmaroon}\MakeUppercase{#1}}\\[-0.75em]
   {\color{matsmaroon}\rule{\linewidth}{1.2pt}}\\[-0.15em]
 }
-% Small gray figure caption, template-style
+% Small gray figure caption. UNUSED since captions were removed from the
+% poster; kept so restoring a caption is a one-line change.
 \newcommand{\figcap}[2]{{\par\vskip0.15em\footnotesize\color{capgray}Figure #1. #2\par}}
 
 \begin{document}
@@ -63,7 +70,7 @@
   {\Large\color{white!85!matsmaroon}A context-conditioned metamodel of answer activations\\[0.38em]}
   {\normalsize\bfseries Thomas Jiralerspong$^{1,2}$ \,\textperiodcentered\, Christopher Ackerman$^{2}$ \,\textperiodcentered\, Mukesh Ramanathan$^{2}$ \,\textperiodcentered\, Christina Lu$^{3}$ \,\textperiodcentered\, Guillaume Lajoie$^{1}$ \,\textperiodcentered\, Dan Mossing$^{3}$\\[0.18em]}
   {\small\color{white!85!matsmaroon}$^{1}$Mila, Universit\'e de Montr\'eal \qquad $^{2}$MATS \qquad $^{3}$Anthropic}\\[0.18em]
-  {\footnotesize\color{white!65!matsmaroon}This work was carried out as part of the MATS program.}
+  {\footnotesize\color{white!65!matsmaroon}This work was carried out as part of the MATS program. \quad Contact: \texttt{thomasjiralerspong@gmail.com}}
 \end{minipage}
 \vskip0.7em
 \end{beamercolorbox}
@@ -74,155 +81,179 @@
 \begin{minipage}[t][\dimexpr\textheight-1.45cm][t]{\textwidth}
 \begin{columns}[t]
 
-% ==================== COLUMN 1: setup ====================
-\begin{column}{0.188\textwidth}
+% ==================== COLUMN 1: setup + result 1 ====================
+\begin{column}{0.32\textwidth}
 
 \postersec{TL;DR}
 \begin{itemize}
-  \item A single \textbf{linear map} on residual activations predicts an LLM's answer from its context \textbf{before generation}: held-out $R^2$ \textbf{0.75}, and rank-1 retrieval of the true answer among 9{,}941 candidates at \textbf{0.98} — the fresh-draw ceiling.
-  \item It is already \textbf{$\sim$87\% present in the base model}, and is \textbf{shared between the assistant and fictional characters}.
-  \item It predicts \textbf{sycophancy, hallucination and misalignment before inference}.
+  \item A single \textbf{linear map} predicts an LLM's mean answer activation from its final context activation \textbf{before generation}: held-out $R^2$ \textbf{0.75}, and rank-1 retrieval of the true answer among 10,000 candidates at \textbf{0.98} 
+  \item The base model already reaches \textbf{67\% of the fully post-trained $R^2$}; SFT closes most of the rest, and DPO and RLVR barely change it
+  \item It is \textbf{shared between the assistant in chat template, assistant in stories, and other fictional characters in stories}, providing evidence for the persona selection model
+  \item It can be used to predict \textbf{sycophancy, hallucination and evil before inference}.
 \end{itemize}
 
 \postersec{Motivation}
 \begin{itemize}
-  \item LLMs are trained as \textbf{next-token predictors}, but the weights fix a deterministic mapping from a context to a distribution over \emph{whole answers}: they are also \textbf{next-answer predictors}. Absent tool results, \takeaways{everything about the answer distribution is fixed before the first token is generated.}
-  \item A \textbf{simple approximation} of that mapping would be extremely useful: predict behavior \emph{before} generation, and predict how fine-tuning will change it.
-  \item But it need not exist: the mapping is billions of parameters applying dozens of nonlinear layers. Prior work sits at two ends of a \textbf{capacity--usefulness tradeoff} — cheap but \emph{narrow} predictors (specific tokens, activations, behaviors), or distillation, a whole-distribution imitator with no capacity advantage over the model itself.
-  \item \takeaways{Our question:} can a \textbf{very low-capacity} approximation capture the mapping \emph{as a whole}? Such an approximation is a \textbf{metamodel}: a much smaller model that reads the LLM's internals and predicts its behavior.
+  \item LLMs can be viewed as deterministic maps from \emph{contexts} to \emph{answer distributions}
+  \item A \textbf{simple approximation} of that map would be extremely useful: much easier to analyze theoretically, sample from, and understand the effects of finetuning
+  \item But it need not exist: the map is billions of parameters applying dozens of nonlinear layers. 
+  \item Prior work either uses simple but \emph{narrow} predictors (specific tokens, activations, behaviors), or distillation, a complex whole-distribution predictor
+  \item \takeaways{Our question:} can a \textbf{simple} approximation capture the mapping \emph{as a whole}? 
 \end{itemize}
 
-\postersec{The residual context-answer mapping}
+\postersec{Methodology}
+\begin{itemize}
+  \item \textbf{Context} $=$ the full model input (persona $+$ question); \textbf{answer} $=$ one sampled completion.
+  \item Read one layer's residual stream: \textbf{context vector} $v_C$ at the last context token, \textbf{answer vector} $v_A$ averaged over the answer's tokens.
+  \item Fit one linear map $v_A \approx W v_C$ (ridge) over many pairs; score on \textbf{contexts it never saw}.
+  \item Metrics: held-out $R^2$; \textbf{retrieval} (is the true answer the prediction's nearest neighbour among a large corpus); \textbf{behavior prediction} (LLM judged)
+\end{itemize}
 \begin{center}
-\IfFileExists{figures/method_diagram.pdf}{\includegraphics[width=0.99\linewidth]{method_diagram.pdf}}{\includegraphics[width=0.99\linewidth]{fig1_schematic.pdf}}
+% 0.52 -> 0.66: the diagram's own aspect was cut 23% shorter, so it renders
+% slightly SHORTER than before even at the wider fraction, while its labels
+% (4-7pt on the board at 0.52) come out ~27% larger.
+\IfFileExists{figures/method_diagram.pdf}{\includegraphics[width=0.66\linewidth]{method_diagram.pdf}}{\includegraphics[width=0.52\linewidth]{fig1_schematic.pdf}}
 \end{center}
-\figcap{1}{$v_C$ = residual state at the last context token (layer $\ell$); $v_A$ = mean answer-token state. Fitted maps $v_C \mapsto v_A$; readouts consume $\hat{v}_A$.}
+
+\postersec{1.\ The Mapping has high predictive Power and is mostly Linear}
+\begin{center}
+\includegraphics[width=0.66\linewidth]{plot1_scaling_boundary.pdf}
+\end{center}
+\begin{itemize}
+  \item \takeaways{The mapping has high predictive power:} held-out $R^2$ 0.75, rank-1 retrieval 0.98 at 1 million contexts
+  \item \takeaways{The mapping is mostly linear:} the nonlinear (MLP) map adds only $\sim$$0.06$ $R^2$ over the linear map, and only at large $n$ (potentially this advantage would grow as you scale up the number of contexts)
+  \item \takeaways{The mapping is not present for generic boundary tokens and is not just copying the context vector (baseline)}
+  \item We study the \textbf{linear} map here and leave more complex maps to future work
+\end{itemize}
 \end{column}
 
-% ==================== COLUMN 2: results 1-2 ====================
-\begin{column}{0.188\textwidth}
+% ==================== COLUMN 2: results 2, 3 and 5 ====================
+\begin{column}{0.32\textwidth}
 
-\postersec{1.\ High predictive power, mostly linear}
+\postersec{2.\ The mapping predicts useful parts of the answer}
 \begin{center}
-\includegraphics[width=0.97\linewidth]{plot1_scaling_boundary.pdf}
+\IfFileExists{figures/plot2_persona_directions.pdf}{\includegraphics[width=0.86\linewidth]{plot2_persona_directions.pdf}}{\includegraphics[width=0.46\linewidth]{c3_persona_direction_spectrum.pdf}}
 \end{center}
-\figcap{2}{Held-out $R^2$ (left) and rank-1 retrieval (right; raw euclidean, pool 1{,}000) against training-set size. Dashed: generic boundary-token control. Layer 19.}
 \begin{itemize}
-  \item \takeaways{High predictive power:} held-out $R^2$ 0.75 at 963k training contexts, and rank-1 retrieval far above chance ($10^{-3}$) at every training size.
-  \item \takeaways{Mostly linear:} the nonlinear (MLP) map adds only $\sim$$0.06$ $R^2$ over the linear map, and only at large $n$.
-  \item \takeaways{Far above the baselines:} identity + bias never leaves the negative-$R^2$ regime; a generic boundary-token (punctuation) $\to$ next-segment map reads $R^2\!\approx\!0.11$ (dashed) — so this is not just residual-stream smoothness.
-  \item We study the \textbf{linear} map here; we are most excited about what it is \emph{useful} for.
-  \item \takeaways{Strongest at mid-depth:} held-out $R^2$ peaks at \textbf{layers 19--20 of 28} (0.76), well above the first layer (0.49) and the last (0.70).
-\end{itemize}
-\begin{center}
-\IfFileExists{figures/plot10_layer_sweep.pdf}{\includegraphics[width=0.95\linewidth]{plot10_layer_sweep.pdf}}{}
-\end{center}
-\figcap{3}{Held-out $R^2$ against the layer at which \emph{both} $v_C$ and $v_A$ are taken (swept together). Band: bootstrap 95\% CI over test rows. Star: argmax, layer 19 — 19 and 20 overlap. $n_{\mathrm{train}}\!=\!50{,}000$, $n_{\mathrm{test}}\!=\!1{,}000$.}
-
-\postersec{2.\ It predicts the persona-vector directions}
-\begin{center}
-\IfFileExists{figures/plot2_persona_directions.pdf}{\includegraphics[width=0.92\linewidth]{plot2_persona_directions.pdf}}{\includegraphics[width=0.88\linewidth]{c3_persona_direction_spectrum.pdf}}
-\end{center}
-\figcap{4}{Held-out $R^2$ along the persona direction $r_B$ against 50 random unit directions (mean $\pm$ 1 SD). Fold 0 of 5; layers 14 / 26 / 17.}
-\begin{itemize}
-  \item \takeaways{Persona-vector directions are among the best-predicted directions of the answer:} $r_B$ reads $R^2$ \textbf{0.79 / 0.87 / 0.80} (misalignment / sycophancy / hallucination) against a random-direction band of \textbf{0.56--0.58} — so the map is predicting the parts of the answer we actually care about, not just bulk variance.
+  \item \takeaways{Persona-vector directions are among the best-predicted directions of the answer:} $R^2$ \textbf{0.80--0.91} against a random-direction mean of \textbf{0.67}, and every one does better than 95\% of random directions (0.76)
 \end{itemize}
 
-\end{column}
-
-% ==================== COLUMN 3: results 3-4 ====================
-\begin{column}{0.188\textwidth}
-
-\postersec{3.\ What makes a feature predictable?}
-We map the context to the answer's \textbf{SAE features}, then partial out predictors \emph{one at a time} to see which survives.
+\postersec{3.\ The mapping is better at predicting high-level and identity related features of the answer}
+We train another map from the context to the answer's \textbf{SAE features}, then partial out predictors \emph{one at a time} to see which survives.
 \begin{center}
-\includegraphics[width=0.95\linewidth]{plot3_sae_predictors.pdf}
+\includegraphics[width=0.90\linewidth]{plot3_sae_predictors.pdf}
 \end{center}
-\figcap{5}{Forward-stepwise partialling: each row conditions on all rows above. $c$ = concordance (AUROC scale), $0.5$ = chance. Gray: activity control. Diamond: matryoshka \emph{coarsest} tier — different dictionary, direction only. No CIs; later rounds omitted.}
 \begin{itemize}
-  \item \takeaways{Persona survives the partialling:} once both activity controls are removed, features \textbf{related to speaker identity} are the strongest surviving predictor ($c$ 0.67), and the matryoshka \emph{coarsest} tier points the same way (0.64).
-  \item \takeaways{Low-level and content features are predicted \emph{worse} than chance:} features that \textbf{boost or suppress a few output tokens} (0.36, 0.35) and features \textbf{related to topic} (0.37) all fall below 0.5.
-  \item \takeaways{Concretely:} best-predicted are abstract nouns and nominalized concepts ($R^2$ 0.95); worst are 2--4-character word fragments and single-letter detectors ($R^2\!<\!0$).
+  \item Controlling for mean activation, the best predictors are
+  \begin{itemize}
+      \item being related to speaker identity
+      \item not suppressing/promoting a few tokens
+      \item not being related to topic
+      \item being in the coarsest tier of a Matryoshka SAE (intuitively, being high-level)
+  \end{itemize}
+  \item Therefore, the mapping seems to be 
+  \begin{itemize}
+      \item good at predicting \textbf{high-level} and \textbf{identity-related} features
+      \item bad at predicting \textbf{low-level} and \textbf{topic-related} features
+      \item suggests it might be some kind of \textbf{persona mapping}
+  \end{itemize} 
 \end{itemize}
 
-\postersec{4.\ What does it fail to retrieve?}
+% \postersec{4.\ What does it fail to retrieve?}
+% \begin{center}
+% \IfFileExists{figures/plot4b_failure_modes.pdf}{\includegraphics[width=0.58\linewidth]{plot4b_failure_modes.pdf}}{\includegraphics[width=0.52\linewidth]{plot4_failures.pdf}}
+% \end{center}
+% \figcap{6}{Rate of each failure mode among retrieval failures minus its rate among controls matched on turns $\times$ corpus $\times$ language, in percentage points; lines are 95\% CIs. Colored bars clear BH FDR $q\!=\!0.05$. $n\!=\!1{,}815$ failures vs $1{,}809$ controls.}
+% \begin{itemize}
+%   \item \takeaways{It fails when the last turn does not pin the answer:} a bare ``why?'' / ``continue'' ($+7.7$pp), a fill-in-the-blank genre request ($+3.1$), or an answer that drifts back to earlier history ($+3.1$).
+%   \item \takeaways{It succeeds when the exchange has a distinctive anchor the answer reuses} ($-6.7$pp) --- so what it misses is largely what \emph{no} map could pin down, not a weakness of the map.
+%   \item \takeaways{One failure is the answer's own fault:} garbled or code-switched responses ($+6.8$pp).
+%   \item The modes were written \textbf{blind}: a model saw only the failures and a random sample --- no labels, no numbers --- and wrote a yes/no rule per mode, which a judge then applied to every context.
+% \end{itemize}
+
+\postersec{5.\ The mapping is already largely present in the base model and refined throughout post training}
 \begin{center}
-\IfFileExists{figures/plot4_failures.pdf}{\includegraphics[width=0.88\linewidth]{plot4_failures.pdf}}{\includegraphics[width=0.95\linewidth]{c3_failure_attribution.pdf}}
+\IfFileExists{figures/plot5_stages.pdf}{\includegraphics[width=0.68\linewidth]{plot5_stages.pdf}}{\includegraphics[width=0.38\linewidth]{c1_stage_retention.pdf}}
 \end{center}
-\figcap{6}{Failures against 5-draw-averaged answer targets, raw euclidean: $n=1{,}988$, pool 9{,}941, 180 failures, rank-1 0.909. Blue clears BH FDR at $q\!=\!0.05$. Right: what the misses are.}
 \begin{itemize}
-  \item \takeaways{Failures concentrate in identifiable kinds of context:} code answers ($+11.2$pp), refusal-adjacent requests ($+8.5$), coding ($+7.0$) and English ($+5.6$) fail most; factual QA ($-3.5$) and advice ($-5.8$) fail least.
-\end{itemize}
-
-\end{column}
-
-% ==================== COLUMN 4: results 5-6 ====================
-\begin{column}{0.188\textwidth}
-
-\postersec{5.\ Where does the mapping come from?}
-\begin{center}
-\IfFileExists{figures/plot5_stages.pdf}{\includegraphics[width=0.86\linewidth]{plot5_stages.pdf}}{\includegraphics[width=0.74\linewidth]{c1_stage_retention.pdf}}
-\end{center}
-\figcap{7}{Pooled held-out $R^2$ at each stage of the Llama/T\"ulu ladder (layer 30), each stage fit and evaluated on its own on-policy answers.}
-\begin{itemize}
-  \item \takeaways{Already largely present in the base model:} the base bar reads $R^2$ 0.41 before any post-training.
-  \item \takeaways{SFT is by far the largest step} ($+0.17$); everything after it is essentially flat — post-training \emph{refines and reparameterizes} the mapping rather than creating it.
-\end{itemize}
-
-
-\postersec{6.\ Is it a persona mapping?}
-\begin{center}
-\includegraphics[width=0.95\linewidth]{plot6b_specialization.pdf}
-\end{center}
-\figcap{8}{Held-out $R^2$ per character: one map pooled over all four (1{,}200 pts) against that character's own 300-pt map. \textbf{assistant*} = separate lattice (rows, $n\!=\!4{,}375$) — reference only, not comparable.}
-\begin{itemize}
-  \item \takeaways{Pooling across characters costs almost nothing:} a single map fitted on all four captures \textbf{90--98\%} of what each character's own map achieves — four characters, close to one shared operator.
-  \item \takeaways{The assistant behaves the same way inside its own lattice:} one pooled map captures \textbf{$\sim$81\%} of its own-map ceiling, against 82\% and 86\% for the Wren cells sharing that pool — unremarkable, not privileged.
-  \item \takeaways{Close, but not identical:} the character-specific edge is small and survives — pooling \emph{approaches} rather than equals a per-character fit.
+  \item \takeaways{The mapping is already largely present in the base model:} $R^2$ 0.41 before any post-training, \textbf{67\%} of the 0.62 the fully post-trained model reaches.
+  \item \takeaways{SFT has the largest effect on the mapping} ($+0.17$), with DPO and both RLVR stages together adding only $+0.04$.
 \end{itemize}
 
 \end{column}
 
-% ==================== COLUMN 5: discussion ====================
-\begin{column}{0.188\textwidth}
+% ==================== COLUMN 3: results 6-7 + discussion ====================
+\begin{column}{0.32\textwidth}
 
-\postersec{7.\ Model size and chain-of-thought}
+\postersec{6.\ The mapping is shared with story characters}
+\begin{center}
+\includegraphics[width=0.76\linewidth]{plot6c_pooled_lattice.pdf}
+\end{center}
 \begin{itemize}
-  \item \takeaways{Scale buys more \emph{reliable answers}, not a more predictable map:} over Qwen2.5-Instruct 0.5B$\to$32B (matched train $n\!=\!25$k, hence below \S1's 963k anchor) raw $R^2$ goes 0.56$\to$0.73$\to$0.65 while the answer's two-draw reliability ceiling climbs 0.75$\to$0.93 — ceiling-normalized predictability is flat at \textbf{0.75--0.79}.
-  \item \takeaways{The map survives a reasoning trace:} OpenThinker2-7B reads 0.78 against 0.80 for its non-thinking parent, and context$\to$CoT$\to$answer matches the direct map.
-  \item \takeaways{But the CoT is not a privileged span:} it adds $+0.20$--$0.33$ skill, yet a \emph{length-matched slice of the answer's own opening} beats it in all three thinking models (every 95\% CI below zero).
+  \item \takeaways{One shared map does almost as well as per-character/framing maps:} 62-94\% of each framing/character's own-map performance
+  \begin{itemize}
+      \item This suggests the model is representing the assistant in the chat template similarly to a character in a story, providing evidence for the \textbf{Persona Selection Model}
+  \end{itemize}
+
+    \item \takeaways{Characters more similar to the assistant have better mappings}
+    \begin{itemize}
+        \item But this difference only arises in the instruct model: the assistant's privileged position/representation as a persona comes from \textbf{post-training}
+    \end{itemize}
 \end{itemize}
 
-\postersec{Application: behavior prediction before inference}
+\postersec{7. Application: behavior prediction before inference}
 \begin{center}
 \IfFileExists{figures/plot9_application_arms.pdf}{\includegraphics[width=0.99\linewidth]{plot9_application_arms.pdf}}{\includegraphics[width=0.99\linewidth]{c5_pv_methods_regimes.pdf}}
 \end{center}
-\figcap{9}{Spearman $\rho$ between readout and judged behavior, per regime. Readouts: persona vector or fitted regression, on the context or the map-predicted answer; oracle = real answer. Muted bars fail the spread gate.}
 \begin{itemize}
-  \item \takeaways{The best pre-inference readout is on the \emph{mapped answer} in every trustworthy generic-chat and OOD cell,} by $+0.01$ to $+0.07$ over the best context-side readout — two sycophancy margins sit inside overlapping CIs.
-  \item \takeaways{Regression on the mapped answer matches or beats regression on the context everywhere,} and both leave persona-vector-on-context near zero — the gain is the \emph{map}, not the readout family.
-  \item \takeaways{On synthetic prompts the context already gives the behavior away} — the map earns its keep where the prompt does \emph{not} telegraph the answer.
+  \item \takeaways{Persona vectors projected on the context vector fail to generalize to realistic contexts}
+  \begin{itemize}
+      \item Projecting persona vectors on the mapped answer does almost as well as projecting on the real answer
+  \end{itemize}
+  \item \takeaways{Regression on the mapped answer does the best of all methods} 
+  \begin{itemize}
+      \item This showcases one potential application of this mapping
+  \end{itemize}
 \end{itemize}
 
-\postersec{Implications \& future work}
+\postersec{Other Results}
 \begin{itemize}
-  \item Much of an LLM's behavior is \textbf{linearly predictable from a single context vector}: a cheap pre-generation audit, and evidence for the \textbf{persona selection model}.
-  \item Theoretical analysis $+$ dynamical systems.
-  \item Predict other properties: correctness.
-  \item Predicting effect of fine-tuning.
-  \item Post-training is ``making the assistant's answer more predictable from context''.
+  \item \takeaways{The mapping does not get reliably better with model scale}
+  \item \takeaways{In thinking models, the mapping predicts just as well from the pre-CoT context vector and the post-CoT context vector}
+  \begin{itemize}
+      \item suggesting that whatever is predicted by the mapping is not affected by CoT
+  \end{itemize}
+\end{itemize}
+
+\postersec{Implications}
+\begin{itemize}
+    \item A  linear mapping can approximate much of the context-answer mapping implemented by a LLM
+    \item Applications: predicting behavior, automated redteaming, predicting effect of fine-tuning
+    \item Evidence for persona selection model
+    \item Motivates further work into metamodels of answer activations and the linearity in transformers
+\end{itemize}
+
+\postersec{Future work (mostly in progress)}
+\begin{itemize}
+  \item Trying more complex estimators (diffusion, flow matching, etc.)
+  \item Predicting the entire answer distribution to bound probability of rare behaviors 
+  \item Theoretical analysis of the mapping 
+  \item Predicting other properties of the answer (correctness, refusal, etc.)
+  \item Predicting the effect of fine-tuning on the mapping/model
   \item Automated redteaming / jailbreaking.
+  \item Single-token next-activation mapping
 \end{itemize}
 
-\postersec{References}
-{\scriptsize
-{\color{matsmaroon}[1]} Chen et al.\ Persona vectors. 2025.\quad
-{\color{matsmaroon}[2]} Betley et al.\ Emergent misalignment. 2025.\quad
-{\color{matsmaroon}[3]} Marks et al.\ The persona selection model. 2026.\quad
-{\color{matsmaroon}[4]} Lu et al.\ The assistant axis. 2026.\quad
-{\color{matsmaroon}[5]} Hosseini \& Fedorenko. Trajectory straightening. 2023.\quad
-{\color{matsmaroon}[6]} Park et al.\ The linear representation hypothesis. 2024.
-}
+% References run inline rather than through \postersec: the heading line and
+% its rule cost about as much vertical space as the six entries themselves.
+{\scriptsize\raggedright
+{\rmfamily\bfseries\color{matsmaroon}REFERENCES}\quad
+{\color{matsmaroon}[1]}~Chen et al., Persona vectors, 2025;\;
+{\color{matsmaroon}[2]}~Betley et al., Emergent misalignment, 2025;\;
+{\color{matsmaroon}[3]}~Marks et al., The persona selection model, 2026;\;
+{\color{matsmaroon}[4]}~Lu et al., The assistant axis, 2026;\;
+{\color{matsmaroon}[5]}~Hosseini \& Fedorenko, Trajectory straightening, 2023;\;
+{\color{matsmaroon}[6]}~Park et al., The linear representation hypothesis, 2024.\par}
 
 \end{column}
 

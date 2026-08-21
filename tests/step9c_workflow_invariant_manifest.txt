@@ -70,6 +70,7 @@ tests/test_issue_skill_stash_kept_duty_pin.py
 tests/test_issue_skill_step0_preload_pin.py
 tests/test_issue_skill_step10_teardown_ordering.py
 tests/test_issue_skill_step10d_no_pr_arm.py
+tests/test_issue_skill_step10d_reap_shield_pin.py
 tests/test_issue_skill_step10d_rewritten_branch.py
 tests/test_issue_skill_step2_floor.py
 tests/test_issue_skill_stopped_volume_persist_pin.py

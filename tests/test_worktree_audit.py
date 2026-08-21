@@ -5,9 +5,12 @@ the git / /proc plumbing is exercised by the dry-run smoke in CI usage.
 
 import importlib.util
 import itertools
+import json
 import os
 import subprocess
 import sys
+import time
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -1447,3 +1450,668 @@ def test_main_text_report_includes_gc_wedge_line(tmp_path, monkeypatch, capsys):
     rc = worktree_audit.main([])
     assert rc == 0
     assert "worktree_audit gc-wedge: no gc.log blockers (no-op)" in capsys.readouterr().out
+
+
+# --- #2246 item 2: unmerged-branch probe -------------------------------------
+#
+# D4.1 — real-git fixture family executing the REAL _branch_unmerged /
+# _unmerged_patch_count / _merged_evidence / _aware_epoch bodies (the
+# production-body counterpart of the stubbed caller matrix below, per the
+# one-production-body-test-per-seam-stubbed-function rule).
+# D4.2 — the six-cell caller matrix {True, False, None} x {_classify,
+# _execute_remediation} with _branch_unmerged stubbed, asserting BOTH the
+# remove decision AND the exact keep reason, plus the audit-loop pre-removal
+# re-derivation flip case.
+
+_UNMERGED = worktree_audit._UNMERGED_BRANCH_REASON
+_PROBE_FAILED = worktree_audit._UNMERGED_PROBE_FAILED_REASON
+
+# Committer date pinned for the ts-arm fixtures (UTC noon, DST season for the
+# America/New_York tz-boundary pin below).
+_HEAD_ISO_UTC = "2026-06-15T12:00:00 +0000"
+_HEAD_EPOCH = int(datetime(2026, 6, 15, 12, 0, 0, tzinfo=UTC).timestamp())
+
+
+def _git2246(
+    cwd: Path,
+    *args: str,
+    env_extra: dict | None = None,
+    check: bool = True,
+) -> subprocess.CompletedProcess:
+    """Scratch-repo git helper (the tests/test_issue_skill_step10d_rewritten_
+    branch.py precedent shape): identity defaults, caller GIT_* scrubbed,
+    30s timeout, AssertionError on rc != 0 when check."""
+    env = os.environ.copy()
+    env.setdefault("GIT_AUTHOR_NAME", "eps-test")
+    env.setdefault("GIT_AUTHOR_EMAIL", "eps-test@example.invalid")
+    env.setdefault("GIT_COMMITTER_NAME", "eps-test")
+    env.setdefault("GIT_COMMITTER_EMAIL", "eps-test@example.invalid")
+    for k in ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE"):
+        env.pop(k, None)
+    if env_extra:
+        env.update(env_extra)
+    result = subprocess.run(
+        ["git", "-C", str(cwd), *args],
+        capture_output=True,
+        text=True,
+        env=env,
+        timeout=30,
+    )
+    if check and result.returncode != 0:
+        raise AssertionError(
+            f"git {' '.join(args)} in {cwd} failed rc={result.returncode}\n"
+            f"stdout: {result.stdout}\nstderr: {result.stderr}"
+        )
+    return result
+
+
+def _commit2246(repo: Path, fname: str, subject: str, committer_date: str | None = None) -> str:
+    (repo / fname).write_text(subject + "\n", encoding="utf-8")
+    _git2246(repo, "add", fname)
+    env_extra = {"GIT_COMMITTER_DATE": committer_date} if committer_date else None
+    _git2246(repo, "commit", "-q", "-m", subject, env_extra=env_extra)
+    return _git2246(repo, "rev-parse", "HEAD").stdout.strip()
+
+
+def _scratch_branch_repo(tmp_path: Path, name: str = "issue-9021") -> tuple[Path, str]:
+    """A repo whose HEAD is one commit past the recorded origin/main ref —
+    the plain unmerged shape (patch-id count 1). Returns (repo, head_sha)."""
+    repo = tmp_path / name
+    repo.mkdir()
+    _git2246(repo, "init", "-q", "-b", "main")
+    base = _commit2246(repo, "a.txt", "base A")
+    _git2246(repo, "update-ref", "refs/remotes/origin/main", base)
+    head = _commit2246(repo, "b.txt", "unmerged B")
+    return repo, head
+
+
+def _squash_shape_repo(tmp_path: Path, name: str = "issue-9023") -> tuple[Path, str]:
+    """Squash-merge shape: origin/main carries a squash commit S whose PATCH
+    differs from the branch's B, so the patch-id count reads >0 forever;
+    HEAD's committer epoch is pinned to _HEAD_EPOCH for the ts-arm tests."""
+    repo = tmp_path / name
+    repo.mkdir()
+    _git2246(repo, "init", "-q", "-b", "main")
+    base = _commit2246(repo, "a.txt", "base A")
+    squash = _commit2246(repo, "squash.txt", "squash S (different patch)")
+    _git2246(repo, "update-ref", "refs/remotes/origin/main", squash)
+    _git2246(repo, "checkout", "-q", "-b", name, base)
+    head = _commit2246(repo, "b.txt", "branch B", committer_date=_HEAD_ISO_UTC)
+    assert int(_git2246(repo, "log", "-1", "--format=%ct", "HEAD").stdout.strip()) == _HEAD_EPOCH
+    return repo, head
+
+
+def _events_file(tmp_path: Path, rows: list, fname: str = "events.jsonl") -> Path:
+    p = tmp_path / fname
+    lines = [row if isinstance(row, str) else json.dumps(row) for row in rows]
+    p.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return p
+
+
+def _merged_row(note, ts: object = "2026-08-20T21:14:06Z", kind: str = "epm:merged") -> dict:
+    """Field SHAPE mirrors tasks/completed/2217/events.jsonl rows
+    (by/kind/note/ts/version) — SYNTHETIC content only."""
+    return {"ts": ts, "kind": kind, "version": 1, "by": "orchestrator", "note": note}
+
+
+# -- pure should_remove tri-state cells ---------------------------------------
+
+
+def test_2246_should_remove_tri_state_cells():
+    kw = dict(status="completed", is_live=False, age_hours=999, has_tracked_changes=False)
+    d_true = should_remove("issue-9021", branch_unmerged=True, **kw)
+    assert not d_true.remove
+    assert d_true.reason == _UNMERGED
+    d_none = should_remove("issue-9021", branch_unmerged=None, **kw)
+    assert not d_none.remove
+    assert d_none.reason == _PROBE_FAILED
+    # False AND the omitted default are byte-identical to today's remove path.
+    d_false = should_remove("issue-9021", branch_unmerged=False, **kw)
+    d_default = should_remove("issue-9021", **kw)
+    assert d_false.remove and d_default.remove
+    assert d_false.reason == d_default.reason == "idle and reapable (status=completed)"
+
+
+def test_2246_should_remove_status_guard_beats_unmerged_probe():
+    # Placement pin: an in-flight status keeps with its OWN reason first.
+    d = should_remove(
+        "issue-9021",
+        status="running",
+        is_live=False,
+        age_hours=999,
+        has_tracked_changes=False,
+        branch_unmerged=True,
+    )
+    assert not d.remove
+    assert d.reason == "issue status not reapable (running)"
+
+
+def test_2246_unmerged_keep_is_plain_keep_venv_arm_eligible():
+    # _remediation_kind must return None for the new keep reasons (neither the
+    # exact live-process match nor the tracked-changes substring), so a kept
+    # unmerged worktree stays on the plain-KEEP branch where the venv arm runs
+    # (plan D2: the new reason stays venv-reap-eligible).
+    d = Decision("issue-9021", False, f"{_UNMERGED}: 2 commit(s) with no patch-equivalent")
+    assert worktree_audit._remediation_kind("issue-9021", d, "completed", [], "/x") is None
+    d2 = Decision("issue-9021", False, f"{_PROBE_FAILED}: rev-list probe failed")
+    assert worktree_audit._remediation_kind("issue-9021", d2, "completed", [], "/x") is None
+
+
+# -- helper units --------------------------------------------------------------
+
+
+def test_2246_allow_ts_evidence_unsuffixed_only():
+    assert worktree_audit._allow_ts_evidence("issue-9021") is True
+    assert worktree_audit._allow_ts_evidence("issue-9021-fu2") is False
+    assert worktree_audit._allow_ts_evidence("agent-abc123") is False
+    assert worktree_audit._allow_ts_evidence("wf_x") is False
+
+
+def test_2246_issue_events_path_resolves_via_tasks_dir(monkeypatch, tmp_path):
+    monkeypatch.setattr(worktree_audit, "tasks_dir", lambda: tmp_path / "tasks")
+    p = worktree_audit._issue_events_path("issue-9021", {9021: "completed"})
+    assert p == tmp_path / "tasks" / "completed" / "9021" / "events.jsonl"
+    # A suffixed sibling maps to the SAME task events file (branch != task grain).
+    assert worktree_audit._issue_events_path("issue-9021-fu2", {9021: "completed"}) == p
+    assert worktree_audit._issue_events_path("issue-9021", {}) is None  # orphan issue
+    assert worktree_audit._issue_events_path("agent-abc", {9021: "completed"}) is None
+
+
+def test_2246_aware_epoch_units():
+    ae = worktree_audit._aware_epoch
+    assert ae("2026-06-15T12:00:00Z") == _HEAD_EPOCH
+    assert ae("2026-06-15T08:00:00-04:00") == _HEAD_EPOCH  # offset-normalized
+    assert ae("2026-06-15T12:00:00") is None  # NAIVE ts contributes no evidence
+    assert ae("not-a-timestamp") is None
+    assert ae(None) is None
+    assert ae(1_750_000_000) is None  # non-str
+
+
+def test_2246_merged_evidence_kind_scope_and_degraded_rows(tmp_path):
+    events = _events_file(
+        tmp_path,
+        [
+            _merged_row("clean row", ts="2026-06-15T12:00:00Z"),
+            _merged_row("progress row", kind="epm:progress"),
+            _merged_row("naive ts row", ts="2026-06-15T12:00:00"),
+            _merged_row(None, ts="2026-06-15T12:00:00Z"),  # non-str note -> ""
+            "not json at all",
+        ],
+    )
+    rows = worktree_audit._merged_evidence(events)
+    assert len(rows) == 3  # kind-scoped: epm:merged rows only
+    assert rows[0] == (_HEAD_EPOCH, "clean row")
+    assert rows[1] == (None, "naive ts row")
+    assert rows[2] == (_HEAD_EPOCH, "")
+    assert worktree_audit._merged_evidence(None) == []
+    assert worktree_audit._merged_evidence(tmp_path / "missing.jsonl") == []
+
+
+# -- real-git fixture family (production bodies) -------------------------------
+
+
+def test_2246_unmerged_commits_read_true_via_count(tmp_path):
+    repo, _head = _scratch_branch_repo(tmp_path)
+    verdict, detail = worktree_audit._branch_unmerged(str(repo), None, allow_ts_evidence=False)
+    assert verdict is True
+    assert "1 commit(s) with no patch-equivalent on origin/main" in detail
+
+
+def test_2246_rebase_merged_branch_reads_false_count_zero(tmp_path):
+    # main gains B; the worktree branch carries a CHERRY-PICK of B (same
+    # patch-id, different committer/sha) — the rebase-merge landed shape.
+    repo = tmp_path / "issue-9022"
+    repo.mkdir()
+    _git2246(repo, "init", "-q", "-b", "main")
+    base = _commit2246(repo, "a.txt", "base A")
+    b_sha = _commit2246(repo, "b.txt", "landed B")
+    _git2246(repo, "update-ref", "refs/remotes/origin/main", b_sha)
+    _git2246(repo, "checkout", "-q", "-b", "issue-9022", base)
+    _git2246(
+        repo,
+        "cherry-pick",
+        b_sha,
+        env_extra={"GIT_COMMITTER_DATE": "2026-08-19T00:00:00 +0000"},
+    )
+    assert _git2246(repo, "rev-parse", "HEAD").stdout.strip() != b_sha
+    verdict, detail = worktree_audit._branch_unmerged(str(repo), None, allow_ts_evidence=False)
+    assert verdict is False
+    assert detail == "no commits without a patch-equivalent on origin/main"
+
+
+@pytest.mark.parametrize("allow_ts", [True, False])
+def test_2246_sha_marker_evidence_short_circuits_before_rev_list(tmp_path, monkeypatch, allow_ts):
+    # The sha arm is branch-bound: available to suffixed AND unsuffixed
+    # worktrees (both allow_ts_evidence values), and a valid marker match
+    # short-circuits BEFORE the patch-id walk, so a later rev-list failure
+    # can never convert marker evidence into None.
+    repo, head = _scratch_branch_repo(tmp_path)
+    events = _events_file(
+        tmp_path, [_merged_row(f"# Step 10d COMPLETE — squash-merged {head} to main")]
+    )
+
+    def _boom(_wt):
+        raise AssertionError("rev-list must not run when marker evidence decides")
+
+    monkeypatch.setattr(worktree_audit, "_unmerged_patch_count", _boom)
+    verdict, detail = worktree_audit._branch_unmerged(str(repo), events, allow_ts_evidence=allow_ts)
+    assert verdict is False
+    assert detail == "HEAD recorded landed"
+
+
+def test_2246_sha_match_is_kind_scoped_progress_notes_do_not_count(tmp_path):
+    # SYNTHETIC mid-incident #2242 shape (deliberately NOT a copy of the live
+    # tasks/completed/2242/events.jsonl, which post-PR #1922 carries a real
+    # epm:merged row quoting the tip sha; the field shape mirrors
+    # tasks/completed/2217/events.jsonl instead): the tip sha appears in
+    # epm:progress and epm:test-verdict notes while NO epm:merged row exists —
+    # legitimate non-merged sha mentions must NOT read as merged evidence.
+    repo, head = _scratch_branch_repo(tmp_path)
+    events = _events_file(
+        tmp_path,
+        [
+            _merged_row(f"pushed fix commit {head} to issue-9021", kind="epm:progress"),
+            _merged_row(f"gate PASS at {head}", kind="epm:test-verdict"),
+        ],
+    )
+    verdict, detail = worktree_audit._branch_unmerged(str(repo), events, allow_ts_evidence=True)
+    assert verdict is True
+    assert "no epm:merged evidence" in detail
+
+
+def test_2246_ts_arm_unsuffixed_strictly_newer_marker_reads_merged(tmp_path):
+    # INTENT (accepted residual of the critique-r1 MUST-FIX-1 narrow remedy):
+    # this MERGED fixture models the UNSUFFIXED squash-merge shape — the
+    # patch-id count reads >0 forever after a squash, and for the unsuffixed
+    # issue-<N> worktree the task's epm:merged marker names this branch's own
+    # landing, so a STRICTLY-newer task-grained timestamp is accepted as
+    # branch-grained merged evidence. Suffixed siblings never take this arm
+    # (see the sibling-aliasing test below).
+    repo, _head = _squash_shape_repo(tmp_path)
+    newer = "2026-06-15T12:00:01Z"  # strictly newer than _HEAD_EPOCH
+    events = _events_file(tmp_path, [_merged_row("Step 10d COMPLETE — squash-merged", ts=newer)])
+    verdict, detail = worktree_audit._branch_unmerged(str(repo), events, allow_ts_evidence=True)
+    assert verdict is False
+    assert detail == "epm:merged newer than HEAD"
+
+
+def test_2246_ts_arm_equality_is_not_merged_strict_gt_pin(tmp_path):
+    # Strict `>` pin: task-grained EQUALITY establishes neither ordering nor
+    # identity, so an epm:merged at EXACTLY the HEAD committer epoch retains.
+    repo, _head = _squash_shape_repo(tmp_path, name="issue-9024")
+    equal = "2026-06-15T12:00:00Z"
+    events = _events_file(tmp_path, [_merged_row("squash-merged", ts=equal)])
+    verdict, detail = worktree_audit._branch_unmerged(str(repo), events, allow_ts_evidence=True)
+    assert verdict is True
+    assert "no epm:merged evidence" in detail
+
+
+def test_2246_ts_arm_stale_marker_never_merges_newer_head(tmp_path):
+    # Direction pin: an epm:merged OLDER than HEAD (a prior round's merge,
+    # then new commits) is NOT evidence the current HEAD landed.
+    repo, _head = _squash_shape_repo(tmp_path, name="issue-9025")
+    older = "2026-06-15T10:00:00Z"
+    events = _events_file(tmp_path, [_merged_row("prior round merged", ts=older)])
+    verdict, detail = worktree_audit._branch_unmerged(str(repo), events, allow_ts_evidence=True)
+    assert verdict is True
+    assert "no epm:merged evidence" in detail
+
+
+def test_2246_ts_arm_suffixed_sibling_aliasing_never_uses_ts(tmp_path):
+    # Sibling-aliasing UNMERGED pin: suffixed issue-<N>-<slug> worktrees share
+    # the task's ONE events file (_ISSUE_NAME_RE maps both to N), so a sibling
+    # round's newer epm:merged must not merge THIS branch —
+    # allow_ts_evidence=False disables the ts arm and the count decides.
+    repo, _head = _squash_shape_repo(tmp_path, name="issue-9026")
+    newer = "2026-06-15T12:00:01Z"
+    events = _events_file(tmp_path, [_merged_row("sibling round merged", ts=newer)])
+    verdict, _detail = worktree_audit._branch_unmerged(str(repo), events, allow_ts_evidence=False)
+    assert verdict is True
+    # ... and composed through should_remove the suffixed worktree RETAINS:
+    d = should_remove(
+        "issue-9026-fu2",
+        status="completed",
+        is_live=False,
+        age_hours=999,
+        has_tracked_changes=False,
+        branch_unmerged=verdict,
+    )
+    assert not d.remove
+    assert d.reason == _UNMERGED
+
+
+def test_2246_ts_parse_is_timezone_aware_under_nonutc_tz(tmp_path):
+    # TZ-boundary pin: a naive strptime+timestamp() would read the marker's
+    # "Z" time in the box's LOCAL zone — under TZ=America/New_York (UTC-4 in
+    # June) a marker 2h OLDER than HEAD would read 2h NEWER and false-MERGE.
+    # The aware parse must keep the verdict UNMERGED regardless of process TZ.
+    repo, _head = _squash_shape_repo(tmp_path, name="issue-9027")
+    older = "2026-06-15T10:00:00Z"  # 2h older than HEAD (UTC)
+    events = _events_file(tmp_path, [_merged_row("merged", ts=older)])
+    prev_tz = os.environ.get("TZ")
+    os.environ["TZ"] = "America/New_York"
+    time.tzset()
+    try:
+        verdict, _detail = worktree_audit._branch_unmerged(
+            str(repo), events, allow_ts_evidence=True
+        )
+        assert verdict is True
+    finally:
+        if prev_tz is None:
+            os.environ.pop("TZ", None)
+        else:
+            os.environ["TZ"] = prev_tz
+        time.tzset()
+
+
+# -- error paths ---------------------------------------------------------------
+
+
+def test_2246_rev_list_timeout_reads_none(tmp_path, monkeypatch):
+    repo, _head = _scratch_branch_repo(tmp_path, name="issue-9028")
+    real_run = worktree_audit.subprocess.run
+
+    def _run(argv, *a, **kw):
+        if isinstance(argv, list) and "rev-list" in argv:
+            raise subprocess.TimeoutExpired(argv, kw.get("timeout", 60))
+        return real_run(argv, *a, **kw)
+
+    monkeypatch.setattr(worktree_audit.subprocess, "run", _run)
+    verdict, detail = worktree_audit._branch_unmerged(str(repo), None, allow_ts_evidence=True)
+    assert verdict is None
+    assert detail == "rev-list probe failed"
+
+
+def test_2246_nonexistent_worktree_path_reads_none_head_unreadable(tmp_path):
+    verdict, detail = worktree_audit._branch_unmerged(
+        str(tmp_path / "no-such-worktree"), None, allow_ts_evidence=True
+    )
+    assert verdict is None
+    assert detail == "HEAD unreadable"
+
+
+def test_2246_unreadable_events_no_evidence_count_decides(tmp_path):
+    # events_path pointing at a DIRECTORY raises IsADirectoryError (an OSError
+    # subclass) on read — degraded to NO merged evidence; the count arm then
+    # decides. (A chmod-0 fixture is unreliable: root reads through it.)
+    repo, _head = _scratch_branch_repo(tmp_path, name="issue-9029")
+    events_dir = tmp_path / "unreadable-events.jsonl"
+    events_dir.mkdir()
+    verdict, detail = worktree_audit._branch_unmerged(str(repo), events_dir, allow_ts_evidence=True)
+    assert verdict is True
+    assert "no epm:merged evidence" in detail
+
+
+def test_2246_malformed_ts_row_sha_arm_still_reads_note(tmp_path):
+    # A malformed ts inside a VALID epm:merged row degrades only the ts arm;
+    # the row's note stays eligible for the sha arm.
+    repo, head = _scratch_branch_repo(tmp_path, name="issue-9030")
+    events = _events_file(tmp_path, [_merged_row(f"merged {head}", ts="not-a-ts")])
+    verdict, detail = worktree_audit._branch_unmerged(str(repo), events, allow_ts_evidence=True)
+    assert verdict is False
+    assert detail == "HEAD recorded landed"
+
+
+def test_2246_malformed_json_lines_are_row_skipped(tmp_path):
+    repo, head = _scratch_branch_repo(tmp_path, name="issue-9031")
+    events = _events_file(
+        tmp_path,
+        [
+            "{this is not json",
+            "",
+            _merged_row(f"merged {head}"),
+            '"a bare string row"',
+        ],
+    )
+    verdict, detail = worktree_audit._branch_unmerged(str(repo), events, allow_ts_evidence=True)
+    assert verdict is False
+    assert detail == "HEAD recorded landed"
+
+
+# -- six-cell caller matrix (D4.2): {True, False, None} x {_classify,
+# _execute_remediation}, _branch_unmerged stubbed --------------------------------
+
+_MATRIX_STATUSES = {9021: "completed"}
+
+
+def _matrix_worktree(tmp_path: Path, monkeypatch, name: str = "issue-9021") -> Path:
+    child = tmp_path / name
+    child.mkdir()
+    _backdate(child, 2.0)  # 48h old, past the 6h grace at now=_NOW
+    monkeypatch.setattr(worktree_audit, "tasks_dir", lambda: tmp_path / "tasks")
+    monkeypatch.setattr(worktree_audit, "_has_tracked_changes", lambda _p: False)
+    return child
+
+
+@pytest.mark.parametrize(
+    "verdict,expected_prefix",
+    [(True, "_UNMERGED"), (None, "_PROBE_FAILED")],
+    ids=["true-keeps", "none-keeps-probe-failed"],
+)
+def test_2246_classify_matrix_keep_cells(tmp_path, monkeypatch, verdict, expected_prefix):
+    prefix = _UNMERGED if expected_prefix == "_UNMERGED" else _PROBE_FAILED
+    child = _matrix_worktree(tmp_path, monkeypatch)
+    monkeypatch.setattr(
+        worktree_audit, "_branch_unmerged", lambda *_a, **_k: (verdict, "stubbed detail")
+    )
+    d = worktree_audit._classify(child, _MATRIX_STATUSES, {}, 6.0, _NOW)
+    assert d.remove is False
+    assert d.reason == f"{prefix}: stubbed detail"
+
+
+def test_2246_classify_matrix_false_cell_removes_byte_identical(tmp_path, monkeypatch):
+    child = _matrix_worktree(tmp_path, monkeypatch)
+    calls = []
+
+    def _probe(*a, **k):
+        calls.append((a, k))
+        return (False, "no commits without a patch-equivalent on origin/main")
+
+    monkeypatch.setattr(worktree_audit, "_branch_unmerged", _probe)
+    d = worktree_audit._classify(child, _MATRIX_STATUSES, {}, 6.0, _NOW)
+    assert d.remove is True
+    assert d.reason == "idle and reapable (status=completed)"  # today's reason, unchanged
+    assert len(calls) == 1
+    assert calls[0][1] == {"allow_ts_evidence": True}  # unsuffixed -> ts arm allowed
+
+
+def test_2246_classify_probe_is_lazy_kept_worktrees_never_probe(tmp_path, monkeypatch):
+    child = _matrix_worktree(tmp_path, monkeypatch)
+
+    def _boom(*_a, **_k):
+        raise AssertionError("probe must not run on an already-kept worktree")
+
+    monkeypatch.setattr(worktree_audit, "_branch_unmerged", _boom)
+    d = worktree_audit._classify(child, {9021: "running"}, {}, 6.0, _NOW)
+    assert d.remove is False
+    assert "running" in d.reason
+
+
+def test_2246_classify_non_issue_worktrees_never_probe(tmp_path, monkeypatch):
+    child = tmp_path / "agent-abc123"
+    child.mkdir()
+    _backdate(child, 2.0)
+    monkeypatch.setattr(worktree_audit, "_has_tracked_changes", lambda _p: False)
+
+    def _boom(*_a, **_k):
+        raise AssertionError("probe must not run for agent-/wf- worktrees")
+
+    monkeypatch.setattr(worktree_audit, "_branch_unmerged", _boom)
+    d = worktree_audit._classify(child, {}, {}, 6.0, _NOW)
+    assert d.remove is True
+    assert d.reason == "idle and reapable (ephemeral agent/workflow worktree)"
+
+
+def _remediation_env(tmp_path: Path, monkeypatch, name: str = "issue-9021") -> Path:
+    child = tmp_path / name
+    child.mkdir()
+    _backdate(child, 2.0)
+    monkeypatch.setattr(worktree_audit, "tasks_dir", lambda: tmp_path / "tasks")
+    monkeypatch.setattr(worktree_audit, "_issue_statuses", lambda: dict(_MATRIX_STATUSES))
+    monkeypatch.setattr(worktree_audit, "_live_worktree_holders", lambda _rel: {})
+    monkeypatch.setattr(worktree_audit, "_git_porcelain", lambda _p: "")
+    return child
+
+
+@pytest.mark.parametrize(
+    "verdict,expected_prefix",
+    [(True, "_UNMERGED"), (None, "_PROBE_FAILED")],
+    ids=["true-keeps", "none-keeps-probe-failed"],
+)
+def test_2246_execute_remediation_matrix_keep_cells(
+    tmp_path, monkeypatch, verdict, expected_prefix
+):
+    prefix = _UNMERGED if expected_prefix == "_UNMERGED" else _PROBE_FAILED
+    child = _remediation_env(tmp_path, monkeypatch)
+    monkeypatch.setattr(
+        worktree_audit, "_branch_unmerged", lambda *_a, **_k: (verdict, "stubbed detail")
+    )
+    d = worktree_audit._execute_remediation(
+        child, ".claude/worktrees/", 6.0, _NOW, tmp_path / "rescue"
+    )
+    assert d.remove is False
+    assert d.reason == f"became unsafe mid-audit: {prefix}: stubbed detail"
+
+
+def test_2246_execute_remediation_matrix_false_cell_removes(tmp_path, monkeypatch):
+    child = _remediation_env(tmp_path, monkeypatch)
+    monkeypatch.setattr(worktree_audit, "_branch_unmerged", lambda *_a, **_k: (False, "clean"))
+    d = worktree_audit._execute_remediation(
+        child, ".claude/worktrees/", 6.0, _NOW, tmp_path / "rescue"
+    )
+    assert d.remove is True
+    assert d.reason == "idle and reapable (status=completed)"  # today's reason, unchanged
+
+
+@pytest.mark.parametrize(
+    "flip_verdict,expected_prefix",
+    [(True, "_UNMERGED"), (None, "_PROBE_FAILED")],
+    ids=["flips-to-unmerged", "flips-to-probe-failed"],
+)
+def test_2246_audit_pre_removal_rederivation_honors_flip(
+    tmp_path, monkeypatch, flip_verdict, expected_prefix
+):
+    # The apply path re-runs _classify FRESH immediately before _git_remove; a
+    # probe verdict that flips between the loop snapshot and the destructive
+    # call (a new commit / a probe failure) must veto the removal.
+    prefix = _UNMERGED if expected_prefix == "_UNMERGED" else _PROBE_FAILED
+    root = tmp_path / "root"
+    wt = root / ".claude" / "worktrees" / "issue-9021"
+    wt.mkdir(parents=True)
+    _backdate(wt, 2.0)
+    monkeypatch.setenv("EPM_WORKTREE_VENV_REAP", "0")
+    monkeypatch.setattr(worktree_audit, "repo_root", lambda: root)
+    monkeypatch.setattr(worktree_audit, "tasks_dir", lambda: tmp_path / "tasks")
+    monkeypatch.setattr(worktree_audit, "_data_disk_bind_missing", lambda _p: False)
+    monkeypatch.setattr(worktree_audit, "_disk_usage_pct", lambda _p: 0.0)
+    monkeypatch.setattr(worktree_audit, "_issue_statuses", lambda: dict(_MATRIX_STATUSES))
+    monkeypatch.setattr(worktree_audit, "_live_worktree_holders", lambda _rel: {})
+    monkeypatch.setattr(worktree_audit, "_has_tracked_changes", lambda _p: False)
+    monkeypatch.setattr(worktree_audit, "_worktree_size_bytes", lambda _p: 0)
+    monkeypatch.setattr(worktree_audit, "gc_wedge_tier", lambda *_a, **_k: None)
+    removed_calls = []
+    monkeypatch.setattr(worktree_audit, "_git_remove", lambda p: removed_calls.append(p) or True)
+    probe_calls = []
+
+    def _flippy(*_a, **_k):
+        probe_calls.append(1)
+        if len(probe_calls) == 1:
+            return (False, "clean at snapshot")
+        return (flip_verdict, "flipped")
+
+    monkeypatch.setattr(worktree_audit, "_branch_unmerged", _flippy)
+    res = worktree_audit.audit(apply=True, grace_hours=6.0, now=_NOW)
+    assert res.removed == []
+    assert res.failed == []
+    assert removed_calls == []  # _git_remove never reached
+    assert len(probe_calls) >= 2
+    kept = {d.name: d.reason for d in res.kept}
+    assert kept["issue-9021"] == f"became unsafe mid-audit: {prefix}: flipped"
+
+
+# -- suffixed-name MODE WIRING at BOTH production callers (review r1 B3) --------
+# The _allow_ts_evidence unit test pins the helper in isolation, and the matrix
+# above pins the callers only via the unsuffixed issue-9021 (True mode) — so a
+# refactor hardcoding allow_ts_evidence=True at either caller would keep every
+# other test green while reopening the adjudicated MUST-FIX-1 ts-aliasing
+# hazard. These tests capture the kwarg each caller ACTUALLY passes.
+
+
+@pytest.mark.parametrize("caller", ["classify", "execute_remediation"])
+def test_2246_suffixed_name_callers_pass_allow_ts_evidence_false(tmp_path, monkeypatch, caller):
+    name = "issue-9021-fu2"
+    calls = []
+
+    def _probe(*a, **k):
+        calls.append((a, k))
+        return (True, "stubbed detail")
+
+    monkeypatch.setattr(worktree_audit, "_branch_unmerged", _probe)
+    if caller == "classify":
+        child = _matrix_worktree(tmp_path, monkeypatch, name=name)
+        d = worktree_audit._classify(child, _MATRIX_STATUSES, {}, 6.0, _NOW)
+        assert d.reason == f"{_UNMERGED}: stubbed detail"
+    else:
+        child = _remediation_env(tmp_path, monkeypatch, name=name)
+        d = worktree_audit._execute_remediation(
+            child, ".claude/worktrees/", 6.0, _NOW, tmp_path / "rescue"
+        )
+        assert d.reason == f"became unsafe mid-audit: {_UNMERGED}: stubbed detail"
+    assert d.remove is False  # suffixed unmerged worktree RETAINED
+    assert len(calls) == 1
+    assert calls[0][1] == {"allow_ts_evidence": False}  # suffixed -> ts arm disabled
+
+
+def _two_tip_sibling_task(tmp_path: Path, monkeypatch) -> Path:
+    """D4.1 two-tip sibling-aliasing fixture at CALLER grade: TWO branch tips
+    of ONE task (9033) share ONE events file at the tasks_dir-resolved path;
+    a fresh task-level epm:merged (strictly newer than the suffixed HEAD's
+    committer epoch) names ONLY the sibling's tip; the suffixed worktree
+    carries a non-zero patch-id count. Returns the SUFFIXED worktree path.
+    Self-validating: asserts the fixture is genuinely hazardous — with the ts
+    arm ENABLED the probe false-MERGES this branch, so only the callers' mode
+    selection protects it."""
+    sib_repo, _ = _squash_shape_repo(tmp_path, name="issue-9033")
+    sib_head = _commit2246(sib_repo, "c.txt", "sibling round landed C")
+    suffixed, suffixed_head = _squash_shape_repo(tmp_path, name="issue-9033-fu2")
+    assert sib_head != suffixed_head  # two DISTINCT tips (message/content differ)
+    _backdate(suffixed, 2.0)  # 48h old, past the 6h grace at now=_NOW
+    monkeypatch.setattr(worktree_audit, "tasks_dir", lambda: tmp_path / "tasks")
+    events_dir = tmp_path / "tasks" / "completed" / "9033"
+    events_dir.mkdir(parents=True)
+    newer = "2026-06-15T12:00:01Z"  # strictly newer than _HEAD_EPOCH
+    events = _events_file(
+        events_dir,
+        [_merged_row(f"Step 10d COMPLETE — squash-merged {sib_head} to main", ts=newer)],
+    )
+    verdict, detail = worktree_audit._branch_unmerged(str(suffixed), events, allow_ts_evidence=True)
+    assert (verdict, detail) == (False, "epm:merged newer than HEAD")  # hazard control
+    return suffixed
+
+
+def test_2246_two_tip_sibling_aliasing_through_classify_retains(tmp_path, monkeypatch):
+    # D4.1 THROUGH the production caller (real _branch_unmerged, real git, real
+    # _has_tracked_changes): _classify must select allow_ts_evidence=False for
+    # the suffixed name, so the count arm decides and the worktree RETAINS; a
+    # caller regression to True would false-MERGE (the fixture's hazard
+    # control) and flip this to remove=True.
+    suffixed = _two_tip_sibling_task(tmp_path, monkeypatch)
+    d = worktree_audit._classify(suffixed, {9033: "completed"}, {}, 6.0, _NOW)
+    assert d.remove is False
+    assert d.reason.startswith(_UNMERGED)
+    assert "no patch-equivalent on origin/main" in d.reason
+
+
+def test_2246_two_tip_sibling_aliasing_through_execute_remediation_retains(tmp_path, monkeypatch):
+    # Same D4.1 fixture through the SECOND production caller: the apply path's
+    # FRESH probe re-derive must also select allow_ts_evidence=False.
+    suffixed = _two_tip_sibling_task(tmp_path, monkeypatch)
+    monkeypatch.setattr(worktree_audit, "_issue_statuses", lambda: {9033: "completed"})
+    monkeypatch.setattr(worktree_audit, "_live_worktree_holders", lambda _rel: {})
+    monkeypatch.setattr(worktree_audit, "_git_porcelain", lambda _p: "")
+    d = worktree_audit._execute_remediation(
+        suffixed, ".claude/worktrees/", 6.0, _NOW, tmp_path / "rescue"
+    )
+    assert d.remove is False
+    assert d.reason.startswith(f"became unsafe mid-audit: {_UNMERGED}")
+    assert "no patch-equivalent on origin/main" in d.reason

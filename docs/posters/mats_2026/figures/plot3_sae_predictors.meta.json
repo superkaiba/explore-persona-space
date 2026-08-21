@@ -1,17 +1,21 @@
 {
-  "commit": "98279d2b+dirty",
-  "render_id": "be84c93c337244e9",
-  "git_commit": "98279d2bc354ee4c5d17b7ed2e6f9ba4ed9afce9",
+  "commit": "8add0009+dirty",
+  "render_id": "3d0d6ba6b3414466",
+  "git_commit": "8add0009e5265054e84037875be5184374201fce",
   "git_dirty": true,
   "git_dirty_paths": [
-    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.meta.json",
-    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.pdf",
-    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.png",
+    "docs/posters/mats_2026/figures/plot1_scaling_boundary.meta.json",
+    "docs/posters/mats_2026/figures/plot1_scaling_boundary.pdf",
+    "docs/posters/mats_2026/figures/plot1_scaling_boundary.png",
+    "docs/posters/mats_2026/figures/plot2_persona_directions.meta.json",
+    "docs/posters/mats_2026/figures/plot2_persona_directions.pdf",
+    "docs/posters/mats_2026/figures/plot2_persona_directions.png",
+    "docs/posters/mats_2026/make_plot1_scaling.py",
+    "docs/posters/mats_2026/make_plot2_persona.py",
     "docs/posters/mats_2026/make_plot3_sae.py",
-    "eval_results/issue_2223/casestudy_replay/qwen3-32b/native_axis_fidelity_preimage/judged/judge_complete_delusion.json",
-    "eval_results/issue_2223/casestudy_replay/qwen3-32b/native_axis_fidelity_preimage/judged/judge_complete_selfharm.json",
-    "eval_results/issue_666/headline/predictor_headline.json",
-    "scripts/issue1901_body_figures.py",
+    "docs/posters/mats_2026/make_plot5_stages.py",
+    "docs/posters/mats_2026/make_plot9_application_arms.py",
+    "docs/posters/mats_2026/poster.tex",
     "tasks/completed/2214/body.md",
     "tasks/completed/2214/comments.jsonl",
     "tasks/completed/2214/concerns.jsonl",
@@ -23,62 +27,53 @@
     "tasks/proposed/2416/body.md",
     "tasks/proposed/2416/comments.jsonl",
     "tasks/proposed/2416/events.jsonl",
-    "tasks/running/2214/body.md",
-    "tasks/running/2214/comments.jsonl",
-    "tasks/running/2214/concerns.jsonl",
-    "tasks/running/2214/events.jsonl",
-    "tasks/running/2214/plans/plan.md",
-    "tasks/running/2214/plans/v1.md",
-    "tasks/running/2214/plans/v2.md",
-    "tasks/running/2214/plans/v3.md",
-    "tasks/running/2388/events.jsonl",
     "tests/test_issue2094_rev_butler.py"
   ],
   "git_argv0_state": "modified",
   "git_argv0_path": "docs/posters/mats_2026/make_plot3_sae.py",
-  "created": "2026-08-21T08:03:43Z",
+  "created": "2026-08-21T10:32:59Z",
   "figsize": [
-    6.8,
+    8.6,
     2.6
   ],
   "points": [
     {
-      "concordance with per-feature $R^2$ (each row conditions on rows above)": 0.7661972479370571,
+      "concordance with per-feature $R^2$": 0.7661972479370571,
       "y": 5.5,
       "series": "activity control",
       "_kind": "scatter",
       "_group": 0
     },
     {
-      "concordance with per-feature $R^2$ (each row conditions on rows above)": 0.671071865941933,
+      "concordance with per-feature $R^2$": 0.671071865941933,
       "y": 4.5,
       "series": "winner after rows above",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "concordance with per-feature $R^2$ (each row conditions on rows above)": 0.3506382171724266,
+      "concordance with per-feature $R^2$": 0.3506382171724266,
       "y": 3.5,
       "series": "winner after rows above",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "concordance with per-feature $R^2$ (each row conditions on rows above)": 0.3579250110621134,
+      "concordance with per-feature $R^2$": 0.3579250110621134,
       "y": 2.5,
       "series": "winner after rows above",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "concordance with per-feature $R^2$ (each row conditions on rows above)": 0.3741093306936152,
+      "concordance with per-feature $R^2$": 0.3741093306936152,
       "y": 1.5,
       "series": "winner after rows above",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "concordance with per-feature $R^2$ (each row conditions on rows above)": 0.6376335568667659,
+      "concordance with per-feature $R^2$": 0.6376335568667659,
       "y": 0.0,
       "series": "coarsest tier (activity-matched)",
       "_kind": "scatter",
@@ -92,19 +87,17 @@
     "fig_texts": [],
     "axes": [
       {
-        "xlabel": "concordance with per-feature $R^2$ (each row conditions on rows above)",
+        "xlabel": "concordance with per-feature $R^2$",
         "legend_labels": [
           "activity control",
           "winner after rows above",
           "coarsest tier (activity-matched)"
         ],
         "xticklabels": [
-          "0.3",
           "0.4",
           "0.5",
           "0.6",
-          "0.7",
-          "0.8"
+          "0.7"
         ],
         "yticklabels": [
           "mean activation",

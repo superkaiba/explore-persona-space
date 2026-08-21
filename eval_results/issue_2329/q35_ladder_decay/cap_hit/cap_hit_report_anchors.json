@@ -1,0 +1,114 @@
+{
+  "scope": "anchors",
+  "derived_from": "anchors rollout shards (1 capture-enriched of 1 present)",
+  "derived_from_shards": [
+    {
+      "name": "anchors_gate_w0.jsonl",
+      "sha256": "748d86ab256cd5d3d4ce8f566402d771b9b316e9af9b72a508f61e24c1e77047",
+      "n_rows": 420
+    }
+  ],
+  "derived_from_sha256": "6c6fee8fc1e60273d8a763bf9765c463e2b8464b0dfb386b9b320a7413fa77a7",
+  "derivation": "count of rows with truthy recorded cap_hit over all capture-enriched rows, overall + per cell + per (cell, value); trigger_fired = any cell with cap_hit_pct STRICTLY > pre_registered_regen_trigger_pct; derived_from_sha256 = sha256 over newline-joined '<name>:<sha256>' of derived_from_shards",
+  "n_rows": 420,
+  "cap_hit_rows": 5,
+  "cap_hit_frac": 0.011904761904761904,
+  "cap_hit_pct": 1.1904761904761905,
+  "pre_registered_regen_trigger_pct": 2.0,
+  "trigger_fired": false,
+  "breaching_cells": [],
+  "max_new_tokens": 2048,
+  "realized_row_caps": [
+    2048
+  ],
+  "value_key_fields": [
+    "value_id"
+  ],
+  "per_cell": {
+    "ladder": {
+      "n_rows": 420,
+      "cap_hit_rows": 5,
+      "cap_hit_pct": 1.1904761904761905,
+      "breach": false,
+      "realized_caps_by_batch": {
+        "gate": [
+          2048
+        ]
+      }
+    }
+  },
+  "per_cell_value": {
+    "ladder": {
+      "plain": {
+        "n_rows": 60,
+        "cap_hit_rows": 2,
+        "cap_hit_pct": 3.3333333333333335
+      },
+      "r1_pirate": {
+        "n_rows": 60,
+        "cap_hit_rows": 0,
+        "cap_hit_pct": 0.0
+      },
+      "r2_butler": {
+        "n_rows": 60,
+        "cap_hit_rows": 1,
+        "cap_hit_pct": 1.6666666666666667
+      },
+      "r3_warm": {
+        "n_rows": 60,
+        "cap_hit_rows": 1,
+        "cap_hit_pct": 1.6666666666666667
+      },
+      "r4_trait": {
+        "n_rows": 60,
+        "cap_hit_rows": 0,
+        "cap_hit_pct": 0.0
+      },
+      "r5a_lu_therapy": {
+        "n_rows": 60,
+        "cap_hit_rows": 1,
+        "cap_hit_pct": 1.6666666666666667
+      },
+      "r5b_lu_philosophy": {
+        "n_rows": 60,
+        "cap_hit_rows": 0,
+        "cap_hit_pct": 0.0
+      }
+    }
+  },
+  "max_value_spread": {
+    "cell": "ladder",
+    "min_pct": 0.0,
+    "max_pct": 3.3333333333333335,
+    "spread_pct": 3.3333333333333335
+  },
+  "n_completion_tokens": {
+    "min": 91,
+    "median": 650.0,
+    "p95": 2525.5499999999993,
+    "p99": 4060.6600000000003,
+    "max": 4097
+  },
+  "partial": true,
+  "partial_reason": [
+    "anchors family width unresolved (phase incomplete) — expected shard set underivable"
+  ],
+  "covered_shards": [
+    "anchors_gate_w0.jsonl"
+  ],
+  "pending_capture_shards": [],
+  "missing_shards": null,
+  "unexpected_shards": [],
+  "generated_at": "2026-08-21T03:58:58.004784+00:00",
+  "repro": {
+    "git_commit": "d0c07f98a2c52d02fc1578a1909b77927c434b4d",
+    "torch": "2.8.0+cu128",
+    "transformers": "5.15.0",
+    "model_id": "Qwen/Qwen3.5-9B",
+    "model_revision": null,
+    "tiny": false,
+    "smoke": false,
+    "n_layers": 32,
+    "timestamp": "2026-08-21T04:00:46.466789+00:00"
+  }
+}

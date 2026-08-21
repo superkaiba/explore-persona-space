@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2445,
+  "highest_id": 2453,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9487,8 +9487,8 @@
     "2228": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2228",
-      "status": "reviewing",
+      "path": "tasks/completed/2228",
+      "status": "completed",
       "title": "Extend verify_plan.py with a decision-margin satisfiability probe (margin-vs-baseline ceiling)"
     },
     "2229": {
@@ -9627,8 +9627,8 @@
     "2246": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2246",
-      "status": "running",
+      "path": "tasks/completed/2246",
+      "status": "completed",
       "title": "Step 10d merge window runs on a reap-eligible worktree; a mid-gate reap makes the pre-push lint gate certify pass vacuously"
     },
     "2247": {
@@ -9677,8 +9677,8 @@
     "2252": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2252",
-      "status": "running",
+      "path": "tasks/completed/2252",
+      "status": "completed",
       "title": "workflow-fix: Step 9c reports an external SIGTERM of the unfenced workflow_lint subprocess as a lint FAIL"
     },
     "2253": {
@@ -10267,8 +10267,8 @@
       "goal": "Test whether the #2162 findings transfer to Qwen3.5-9B (hybrid linear attention, thinking disabled): which minimal-pair information types are decodable at the context vector, which are causally usable via single-position patching (F_act/F_beh vs nulls), whether fitted context-to-answer maps predict the realized patched shift per type x layer, and whether maps discriminate minimal-pair answers (2AFC vs identity+bias and shuffled nulls).",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/2329",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/2329",
+      "status": "awaiting_promotion",
       "title": "Experiment: Do the #2162 minimal-pair context-vector findings transfer to Qwen3.5-9B with thinking disabled?"
     },
     "233": {
@@ -10643,8 +10643,8 @@
       "goal": "Test whether the context\u2192answer linear map trained in the chat-template framing (assistant turn) transfers \u2014 directly or up to a linear reparameterization \u2014 to every other framing in Qwen3.6-27B (instruct-only): plain-text, an assistant-like story character, a panel of distinct story characters, a dialogue-reply arm where the addressed utterance is ordinary dialogue rather than a question, and the USER character inside the chat template (two provenance arms: real human user turns teacher-forced, and simulated user turns the model writes on-policy; context slot ends at the previous assistant turn so the target is never self-predicted); one-directional transfer only, stories generated fully template-free (raw completion), scene-native invented queries, fully independent query pools (topic-shift confound disclosed). Secondary arm: one general map fit pooled on ALL cells compared per cell to the specialized own maps (pooled-tier ladder). Every arm reports BOTH held-out R\u00b2 and rank-1 retrieval under the #2202 conventions (whitened cosine, CSLS, convention-matched fresh-draw reference). No AI-likeness judge axis (dropped per user directive).",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/2378",
-      "status": "running",
+      "path": "tasks/blocked/2378",
+      "status": "blocked",
       "title": "Chat-trained context\u2192answer map transfer to story framings and characters in Qwen3.6-27B with scene-native queries and template-free story generation"
     },
     "2379": {
@@ -11162,12 +11162,68 @@
       "status": "proposed",
       "title": "judge_pilot transport-parity check is opt-in so it sits unarmed by default: one round had two drivers, one armed and one not, with a 34.1%-censoring batch route riding on an unprotected sync pin"
     },
+    "2446": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2446",
+      "status": "proposed",
+      "title": "Persist the #2151 api-refusal drop class in wave metas (currently blended into content_drops)"
+    },
+    "2447": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2447",
+      "status": "proposed",
+      "title": "workflow-fix: slow-tests roster misses the live-bundle no-flags lint test"
+    },
+    "2448": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2448",
+      "status": "proposed",
+      "title": "Fleet-wide Step 9c red: two ungated HF upload call sites in scripts/issue1739_r2v2_run.py"
+    },
+    "2449": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2449",
+      "status": "proposed",
+      "title": "verify_report.py: assert per-stage cap-hit disclosure + declared-cap parity (catches stale cap_hit_report residue)"
+    },
     "245": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/archived/245",
       "status": "archived",
       "title": "Does cosine similarity to qwen_default predict vulnerability to capability implantation?"
+    },
+    "2450": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2450",
+      "status": "proposed",
+      "title": "paper_plots sidecar: keep exact-(0,0) singleton collections and propagate per-panel series labels"
+    },
+    "2451": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2451",
+      "status": "proposed",
+      "title": "Teammate coordination: a SendMessage resume re-arms liveness \u2014 prior completion evidence must not license editing a teammate's file set"
+    },
+    "2452": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2452",
+      "status": "proposed",
+      "title": "verify_report.py: blob-identity check for body-linked captions.json pins (sibling of image-pin-blob-identity)"
+    },
+    "2453": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2453",
+      "status": "proposed",
+      "title": "Step 5a spec-freshness sync silently no-ops when invoked with cwd at the repo root (cwd-derived WT trips the on-main guard; certified a gate against stale main twice on #2205)"
     },
     "246": {
       "has_clean_result": false,

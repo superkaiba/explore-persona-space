@@ -584,6 +584,12 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # origin-precondition + rc-gated create, realized-outcome anomaly note,
     # loud novel-payload-but-no-usable-PR failure)
     "tests/test_issue_skill_step10d_no_pr_arm.py",
+    # NEW (#2246) — SKILL.md Step 10d reap-shield pins: both detached gate
+    # launchers carry the trailing "$WT" argv holder (worktree_audit's cwd/argv
+    # liveness harvest keeps the worktree for the gate's whole life), and the
+    # lint-gate empty-overlay fail-closed ordered chain (overlay producer ->
+    # empty-file guard -> crash predicate; single verdict writer preserved)
+    "tests/test_issue_skill_step10d_reap_shield_pin.py",
     # NEW (#2312) — SKILL.md Step 10d rewritten-branch arm pin (mutual-non-ancestry
     # descendancy guards at every push/pull copy site, zero-PR stale-ref arm,
     # PR-head parity gate, force-free landing route + tmp_path git fixtures)

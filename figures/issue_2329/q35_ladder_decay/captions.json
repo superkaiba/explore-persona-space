@@ -1,0 +1,90 @@
+{
+  "q35_ladder_decay_hero_ladder": {
+    "status": "rendered",
+    "aggregate_view": "figures/issue_2329/q35_ladder_decay/q35_ladder_decay_hero_ladder.png",
+    "per_unit_views": [
+      "figures/issue_2329/q35_ladder_decay/ladder_percarrier.png",
+      "figures/issue_2329/q35_ladder_decay/asymmetry.png"
+    ],
+    "caption_bullets": [
+      "Points show mean F_target (anchor-normalized fraction of a full context swap, unitless; ~0-1) per specificity rung (bank order R1 pirate, R2 butler, R3 warm, R4 trait, R5a Lu-therapy, R5b Lu-philosophy on the x-axis), one panel per direction (install / erase) x patch slot (context-end / prefix-end), three arms per rung: steered (persona-value patch on Qwen3.5-9B, thinking disabled), same-value-donor null, cross-type-donor null. Error bars are 95% carrier-clustered bootstrap CIs (B = 10,000, seed 21626); n = 6 carriers per rung, 5 coherent draws pooled per carrier pair (30 draws per rung x slot x arm unit); tick labels print n and each rung's system-prompt token count under the Qwen3.5-9B tokenizer.",
+      "All 6 rungs passed the anchor-separation gate and all 12 directions passed the G0 token-identity floor (>= 4 of 6 carriers intact), so no rung is labeled gate-failed or 'N/A - not tested'. Judge instrument (Leg A, 32 waves, 9,570 calls): claude-sonnet-4-5-20250929, max_tokens = 1024, n_draws = 1 per item, temperature not threaded (Anthropic API default).",
+      "Per-unit view (ladder_percarrier): every (rung x carrier x arm) F_target value as one carrier-labeled point (carriers d1, d2, n3, n4, n7, n9; 144 cells per arm across the four direction x slot panels; no aggregation). On its x-axis the two ticks labeled bare R5 are, in bank order left to right, R5a (Lu-therapy) then R5b (Lu-philosophy).",
+      "Companion view (asymmetry): per gate-surviving rung x slot, grey points are per-carrier paired steered-arm differences (erase F_target minus install F_target) and the red diamond is the carrier mean with its 95% carrier-clustered bootstrap CI (B = 10,000, seed 21626); per-carrier points unlabeled. In each panel the two rung positions labeled bare R5 are, in bank order left to right, R5a (Lu-therapy) then R5b (Lu-philosophy)."
+    ]
+  },
+  "q35_ladder_decay_transfer": {
+    "status": "rendered",
+    "aggregate_view": "figures/issue_2329/q35_ladder_decay/q35_ladder_decay_transfer.png",
+    "per_unit_views": [
+      "figures/issue_2329/q35_ladder_decay/q35_ladder_decay_transfer_percarrier.png"
+    ],
+    "caption_bullets": [
+      "x = parent #2162 (Qwen2.5-7B-Instruct) steered mean F_target, y = this run (Qwen3.5-9B) steered mean F_target; one labeled point per (direction x slot) cell whose lattice verdict is testable in BOTH runs — n = 16 cells, the cross-model intersection: the q25 ladder's gates passed 4 of 6 rungs (r1_pirate, r2_butler, r3_warm, r5b_lu_philosophy) while q35 passed all 6, so r4_trait and r5a_lu_therapy cells are absent from this comparison by construction. Dotted line = identity.",
+      "Each point label carries the parent -> fork lattice verdicts; the single verdict-flip cell (install_r3_warm|pe: no-clean-transfer -> transfers) is drawn red and its label additionally carries both runs' steered-minus-null gap intervals (steered CI bound minus the worst null CI bound, from the per-arm B = 10,000 carrier-clustered bootstrap CIs).",
+      "Per-unit view (q35_ladder_decay_transfer_percarrier): the 88 carrier-level pairs behind the 16 cell means — x = parent per-carrier steered F_target, y = this run's per-carrier steered F_target, joined on (direction, slot, carrier), each point labeled direction|slot·carrier; flip-cell carriers red, identity line dotted."
+    ]
+  },
+  "q35_ladder_decay_anchor_separation": {
+    "status": "rendered",
+    "aggregate_view": "figures/issue_2329/q35_ladder_decay/q35_ladder_decay_anchor_separation.png",
+    "per_unit_views": [],
+    "caption_bullets": [
+      "Each point is one (rung x carrier) ceiling-minus-floor anchor separation on the Qwen3.5-9B ladder: left panel the target-descriptor judge-score separation (0-1 normalized scale) against the 0.25 gate bar (dashed red line), right panel the netted dual-rubric separation against the 0.5 bar; 6 carriers per rung, 36 points per panel, deterministic small x-jitter per carrier (points not labeled with carrier ids). The two x-ticks labeled bare R5 are, in bank order left to right, R5a (Lu-therapy) then R5b (Lu-philosophy).",
+      "Filled marker = carrier passed the gate; all 36 carrier cells passed both bars and all 6 rungs survived the >= 4/6-carriers rule (tick labels print the survived/dropped verdict), so no unfilled markers appear. The figure is already at the per-unit (rung x carrier) grain, so no separate per-unit companion exists."
+    ]
+  },
+  "q35_ladder_decay_decay_raw": {
+    "status": "rendered",
+    "aggregate_view": "figures/issue_2329/q35_ladder_decay/q35_ladder_decay_decay_raw.png",
+    "per_unit_views": [
+      "figures/issue_2329/q35_ladder_decay/q35_ladder_decay_decay_raw_percarrier.png"
+    ],
+    "caption_bullets": [
+      "Lines show the mean raw fragment persona score (0-100 judge score rescaled to 0-1) per answer token-quartile (Q1-Q4), one panel per model (q25 = Qwen2.5-7B-Instruct parent-run completions re-judged per segment; q35 = Qwen3.5-9B), three arms (steered = donor-value patch; ceiling = persona-prompted unpatched; floor = plain-context unpatched) x two estimands (coh = coherence-conditional headline, solid; all = all length-eligible rows, dashed). Error bars are 95% carrier-clustered bootstrap CIs (B = 10,000, seed 21627, one shared carrier-resample index per draw across arms and segments).",
+      "Row scope: the primary stratum — install-direction context-end completions on the parent-demonstrated rungs r1_pirate / r2_butler / r3_warm (3 directions x 6 carriers per model), rows coherence-screened (inherited > 60 per-draw screen) and min-length-gated (48 tokens; q35 steered dropped 2 of 240 completions at the length gate, every other arm 0). Prefix-end and the exploratory ce strata are excluded from this figure.",
+      "Judge instrument (Leg B): claude-sonnet-4-5-20250929, max_tokens = 1024, n_draws = 1, temperature not threaded (API default); 4 fragment items per completion, 6,032 fragment scores total — 6,015 scored on the Anthropic Batch transport plus 17 API-classifier-censored draws recovered by a rule-28 sync re-issue (17/17 recovered, 0 re-refusals; final 6,032/6,032 complete).",
+      "Per-unit view (q35_ladder_decay_decay_raw_percarrier): the (direction x carrier) units behind each curve — per-carrier mean score per quartile as labeled polylines (18 units per model per arm; label = rung·carrier at the line end; coh solid, all dashed; same arm colors)."
+    ]
+  },
+  "q35_ladder_decay_decay_norm": {
+    "status": "rendered",
+    "aggregate_view": "figures/issue_2329/q35_ladder_decay/q35_ladder_decay_decay_norm.png",
+    "per_unit_views": [
+      "figures/issue_2329/q35_ladder_decay/q35_ladder_decay_decay_norm_percarrier.png"
+    ],
+    "caption_bullets": [
+      "Points show the anchor-normalized per-segment fraction F(seg) as a two-stage carrier-clustered mean: per (direction x carrier) unit, F(seg) = (steered(seg) - floor(seg)) / (ceiling(seg) - floor(seg)) is computed on that unit's own per-segment arm means and dropped at segments where the unit's |ceiling - floor| < 0.125; surviving units' F are then averaged within each carrier across the primary install directions, and those carrier means are averaged over carriers. Same row set as the raw figure (primary install x context-end stratum, coherence-screened, min-length-gated), one panel per model, both estimands (coh solid, all dashed); error bars are 95% carrier-clustered bootstrap CIs (B = 10,000, seed 21627, shared carrier index per draw); horizontal reference lines at F = 0 (floor) and F = 1 (ceiling).",
+      "All 4 quartiles are drawn for both models: no segment of the aggregate was suppressed (a segment is drawn as a gap only when no unit survives the registered 0.125 per-unit |ceiling - floor| denominator bar). Per-unit exclusions inside the aggregate: q25 surviving (direction x carrier) units per segment are 18 / 14 / 14 / 17 of 18 at Q1 / Q2 / Q3 / Q4 (same counts on both estimands); q35 retains 18 of 18 at all four segments. Carrier count is 6 at every segment on both models (the exclusions reduce per-carrier direction counts, not the carrier count).",
+      "Per-unit view (q35_ladder_decay_decay_norm_percarrier): per (direction x carrier) unit F(seg) computed under the unit's OWN per-segment ceiling/floor denominators, drawn as labeled polylines (label = rung·carrier; 18 units per model; realized per-carrier values span 0-0.96; every plotted carrier-segment passed the per-unit denominator support check)."
+    ]
+  },
+  "q35_ladder_decay_contrast": {
+    "status": "rendered",
+    "aggregate_view": "figures/issue_2329/q35_ladder_decay/q35_ladder_decay_contrast.png",
+    "per_unit_views": [
+      "figures/issue_2329/q35_ladder_decay/q35_ladder_decay_contrast_percarrier.png"
+    ],
+    "caption_bullets": [
+      "Left panel: delta-D = the mean over common-support carriers of the paired difference [steered raw drop (Q1 minus Q4)] - [ceiling raw drop], on the 0-1 raw-score scale, one errorbar per model x estimand (coh = blue, all = dark grey; 95% carrier-clustered bootstrap CIs, B = 10,000, seed 21627, one shared carrier-resample index applied jointly to both arms and both endpoint segments); the small faint points beside each errorbar are the per-carrier paired differences (unlabeled in this view). Right panel: the same layout for delta-D_F, the Q1-minus-Q4 change in the patched arm's per-carrier-normalized F (the ceiling arm's normalized drop is identically zero, so this is the paired F-scale contrast).",
+      "Common support = carriers holding >= 1 length-surviving completion in BOTH arms under the estimand's own row set; realized n per group: delta-D 18/18 (q25 all/coh) and 18/18 (q35), delta-D_F 17/17 (q25) and 18/18 (q35). The title carries the registered Leg-B lattice labels computed from these CIs: q25 'inconclusive' (both estimands' delta-D CIs span zero); q35 'unresolved' (all-generated estimand: inconclusive; coherence-conditional estimand: patch-decays-faster).",
+      "Per-unit view (q35_ladder_decay_contrast_percarrier): the same per-carrier paired differences as labeled points (rung·carrier), delta-D left / delta-D_F right, grouped by model x estimand with the same coh/all color encoding."
+    ]
+  },
+  "q35_ladder_decay_diagnostics": {
+    "status": "rendered",
+    "aggregate_view": "figures/issue_2329/q35_ladder_decay/q35_ladder_decay_diagnostics.png",
+    "per_unit_views": [
+      "figures/issue_2329/q35_ladder_decay/conjunct_diag.png",
+      "figures/issue_2329/q35_ladder_decay/dv_agreement.png",
+      "figures/issue_2329/q35_ladder_decay/rubric_bridge.png"
+    ],
+    "caption_bullets": [
+      "Eleven rendered panels (ten declared in the planned manifest; the N2.5 retention item is split across two axes at render time: coherence retention and min-length drops). Row 1: G0 token-identity pair counts per direction (all 12 directions at 6/6 intact pairs vs the testability floor of 4); N2.5 coherence-retention fraction (> 60 screen) and min-length (< 48 token) drop fraction per model x arm (q35 steered 2/240 = 0.83%, all other arms 0). Row 2: grid cap-hit percent per (direction x slot x arm) unit at the uniform max_new_tokens = 4096 with the pre-registered 2% G5 re-gen trigger line and a truncated-rows twin axis (n = 30 draws per unit; realized totals: grid 29/2,160 = 1.34%, anchors 5/420 = 1.19%; 25 of 72 grid units sit above the per-unit 2% line, where one truncated row = 3.3%); decay-judge drop classes per wave (content / transport / api-refusal; hatched = pre-recovery, plain = post rule-28 sync re-issue — 17 API-classifier-censored draws re-issued sync, 17/17 recovered, 0 re-refusals).",
+      "Row 3: decay-judge frac_items_complete per wave x arm vs the 0.95 floor (post-recovery 1.00 for every wave x arm; open circles = pre-recovery values); N2.2 absolute Q1 starting-level gap (steered minus ceiling, 0-1 scale) per model x estimand; N2.3 rung-intersection sensitivity (delta-D on the primary rungs vs the r1/r2/r3 cross-model intersection rungs). Row 4: fragment-mean vs whole-response score Spearman rho per model x arm (instrument sanity; per-arm n printed); conjunct-score heatmap (mean 0-100 judge score per direction x conjunct); rule-19 TF-margin vs F_target validation scatter (per-cell means, rho = 0.50, p = 0.020, n = 21 (direction x slot) cells with margin data, 12 context-end + 9 prefix-end; 3 prefix-end cells dropped by the dynamic-range screen; the per-cell point records in f_metrics/stats.json margin_validation.percell_points carry no arm field, so no arm is asserted for this population).",
+      "Companion (conjunct_diag): larger per-persona view of the conjunct decomposition — mean 0-100 judge score per conjunct rubric (r1_pirate: dialect / sea / warning; r2_butler: address / courtesy / formality / household) plus the holistic score, one bar group per conjunct with direction x slot bars, steered arm only.",
+      "Companion (dv_agreement): three per-cell scatters — F_act (pair-own contrast projection) vs F_target over all three arms' carrier cells (Spearman rho = +0.50); per-cell mean TF margin shift (nats/token) vs per-cell mean F_target (rho = +0.50, p = 0.020, n = 21); coherence rate vs cap-hit fraction per cell (432 carrier cells total across the three arms).",
+      "Companion (rubric_bridge): mean netted dual-rubric F (the parent #2162 ladder metric) vs mean F_target (this round's primary) per (direction x slot x arm), with the identity line; arm colors as in the hero figure."
+    ]
+  }
+}

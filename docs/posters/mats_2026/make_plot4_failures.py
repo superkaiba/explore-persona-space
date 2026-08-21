@@ -83,7 +83,7 @@ def load_pinned_sidecar() -> dict:
 
 
 def main() -> None:
-    set_paper_style("iclr", font_scale=1.5)
+    set_paper_style("iclr", font_scale=1.9)
     d = load_pinned_sidecar()
     battery, n_fail = d["battery"], d["n_failures"]
     att = d["attribution_counts"]
