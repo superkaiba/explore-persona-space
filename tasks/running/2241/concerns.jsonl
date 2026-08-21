@@ -1,0 +1,1 @@
+{"ts": "2026-08-21T03:29:50Z", "event": "raised", "concern_id": "task-title-shell-injection", "severity": "BLOCKER", "summary": "Step 5 interpolates unrestricted task titles into shell source, enabling command substitution on the normal review path.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
