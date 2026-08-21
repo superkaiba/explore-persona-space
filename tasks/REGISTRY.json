@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2451,
+  "highest_id": 2452,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11210,6 +11210,13 @@
       "path": "tasks/proposed/2451",
       "status": "proposed",
       "title": "Teammate coordination: a SendMessage resume re-arms liveness \u2014 prior completion evidence must not license editing a teammate's file set"
+    },
+    "2452": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2452",
+      "status": "proposed",
+      "title": "verify_report.py: blob-identity check for body-linked captions.json pins (sibling of image-pin-blob-identity)"
     },
     "246": {
       "has_clean_result": false,
