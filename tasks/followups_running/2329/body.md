@@ -4,7 +4,6 @@ title: 'Experiment: Do the #2162 minimal-pair context-vector findings transfer t
 kind: experiment
 tags:
 - followup-manual
-- keep-running
 created_at: '2026-08-16T17:48:46Z'
 has_clean_result: true
 parent_id: 2162
