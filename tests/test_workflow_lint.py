@@ -112,8 +112,22 @@ from explore_persona_space.workflow import (  # noqa: E402
 _RUN_TIMEOUT_S = 1800  # ~4x the measured 452-455s no-flags scan (#2252); fires only on a wedge
 
 
-def _signal_decode(rc: int) -> str | None:
-    """Name the signal encoded in a child returncode, or None for a plain exit.
+_REAPER_SIGNALS = frozenset(
+    {int(signal.SIGTERM), int(signal.SIGKILL), int(signal.SIGINT), int(signal.SIGHUP)}
+)
+_CRASH_SIGNALS = frozenset(
+    {
+        int(signal.SIGSEGV),
+        int(signal.SIGABRT),
+        int(signal.SIGBUS),
+        int(signal.SIGILL),
+        int(signal.SIGFPE),
+    }
+)
+
+
+def _signal_number(rc: int) -> int | None:
+    """Signal number encoded in a child returncode, or None for a plain exit.
 
     A DIRECT child killed by signal N reports returncode -N (POSIX subprocess
     semantics); a wrapper (uv/shell) reaping a signalled child conventionally
@@ -121,10 +135,16 @@ def _signal_decode(rc: int) -> str | None:
     exits are 0/1 (argparse: 2), so no legitimate verdict lands in either band.
     """
     if rc < 0:
-        n = -rc
-    elif rc >= 128:
-        n = rc - 128
-    else:
+        return -rc
+    if rc >= 128:
+        return rc - 128
+    return None
+
+
+def _signal_decode(rc: int) -> str | None:
+    """Render the signal encoded in a child returncode, or None for a plain exit."""
+    n = _signal_number(rc)
+    if n is None:
         return None
     try:
         return f"{n} ({signal.Signals(n).name})"
@@ -132,12 +152,45 @@ def _signal_decode(rc: int) -> str | None:
         return f"{n} (unknown)"
 
 
+def _signal_origin_advice(rc: int) -> str:
+    """One origin sentence per signal class — never asserts a cause the return
+    code alone has not established (#2252 round 2, signal-origin-overclaim).
+
+    The reaper-shaped set (SIGTERM/SIGKILL/SIGINT/SIGHUP) is the #2243
+    incident class — external-kill wording is reserved for it. The
+    crash-class set (SIGSEGV/SIGABRT/SIGBUS/SIGILL/SIGFPE) indicates a
+    payload or runtime defect — VM-load advice there would point the reader
+    AWAY from the guilty payload. Any other signal number is unclassified:
+    no cause is asserted either way.
+    """
+    n = _signal_number(rc)
+    assert n is not None, rc  # callers gate on _signal_decode(rc) first
+    if n in _REAPER_SIGNALS:
+        return (
+            "Reaper-shaped signal (SIGTERM/SIGKILL/SIGINT/SIGHUP): consistent with "
+            "an external kill — check VM load and concurrent Step 9c batteries "
+            "before touching the payload."
+        )
+    if n in _CRASH_SIGNALS:
+        return (
+            "Crash-class signal (SIGSEGV/SIGABRT/SIGBUS/SIGILL/SIGFPE): points at "
+            "the PAYLOAD or runtime, not the environment — a repeat kill is a "
+            "reproducible crash; investigate the linter/payload."
+        )
+    return (
+        "Unclassified signal number: origin not established — inspect both the "
+        "payload and the environment; neither is exonerated."
+    )
+
+
 def _verdict_line(text_streams: tuple[str | None, ...]) -> str:
     """Last 'workflow_lint: ...' line, scanning the streams IN THE ORDER GIVEN.
 
     Callers pass stderr FIRST. The linter writes its verdict AND every
-    check-output line to stderr (`workflow_lint.py:18968`/`20525`), so a
-    stderr hit is always the authoritative one. Stream order is
+    check-output line to stderr (both terminal `workflow_lint: PASS` /
+    `workflow_lint: FAIL (...)` emissions are `sys.stderr.write` calls in
+    workflow_lint's main dispatch), so a stderr hit is always the
+    authoritative one. Stream order is
     load-bearing, not incidental: a FAIL-then-killed run also carries
     `workflow_lint:`-prefixed FINDING lines, so scanning the stream list
     in reverse would let a stdout line outrank the real verdict (both
@@ -159,10 +212,13 @@ def _verdict_line(text_streams: tuple[str | None, ...]) -> str:
 def _run(*flags: str) -> subprocess.CompletedProcess[str]:
     """Spawn the linter; return ONLY genuine verdicts (0 <= rc < 128).
 
-    Signal deaths (external reaper, #2252/#2243) retry ONCE (the lint is
-    deterministic and read-only); a second signal death, or a timeout, fails
-    with a message discriminating it from a lint verdict. Callers may assert
-    on returncode: a returned CompletedProcess is never signal-encoded.
+    Signal-shaped deaths (#2252/#2243) retry ONCE regardless of signal class
+    (the lint is deterministic and read-only, so a retry distinguishes a
+    transient kill from a reproducible crash); a second signal death, or a
+    timeout, fails with a message naming the outcome class — origin wording
+    per `_signal_origin_advice`, never asserting a cause the return code
+    alone has not established. Callers may assert on returncode: a returned
+    CompletedProcess is never signal-encoded.
     """
     last: subprocess.CompletedProcess[str] | None = None
     for attempt in (1, 2):
@@ -187,8 +243,9 @@ def _run(*flags: str) -> subprocess.CompletedProcess[str]:
         if attempt == 1:
             warnings.warn(
                 f"_run{flags!r}: lint subprocess SIGNALLED (rc={result.returncode} = "
-                f"signal {sig}) — external kill, not a lint verdict (#2252); retrying "
-                f"once. Embedded verdict line: "
+                f"signal {sig}) — terminated by signal, not a lint verdict (#2252); "
+                f"retrying once. {_signal_origin_advice(result.returncode)} "
+                f"Embedded verdict line: "
                 f"{_verdict_line((result.stderr, result.stdout))!r}",
                 RuntimeWarning,
                 stacklevel=2,
@@ -196,10 +253,9 @@ def _run(*flags: str) -> subprocess.CompletedProcess[str]:
     assert last is not None
     pytest.fail(
         f"_run{flags!r}: SIGNALLED twice (rc={last.returncode} = signal "
-        f"{_signal_decode(last.returncode)}) — an external kill, NOT a lint verdict "
-        f"(#2252). Embedded verdict line: "
-        f"{_verdict_line((last.stderr, last.stdout))!r}. Environmental: check VM load "
-        f"and concurrent Step 9c batteries before touching the payload.\n"
+        f"{_signal_decode(last.returncode)}) — a signal termination, NOT a lint verdict "
+        f"(#2252). {_signal_origin_advice(last.returncode)} Embedded verdict line: "
+        f"{_verdict_line((last.stderr, last.stdout))!r}.\n"
         f"stderr tail: {(last.stderr or '')[-400:]}"
     )
 
@@ -9958,6 +10014,11 @@ def test_run_helper_signal_death_retries_once_then_fails_discriminated(monkeypat
     assert "NOT a lint verdict" in msg
     assert "15 (SIGTERM)" in msg
     assert "Embedded verdict line: 'workflow_lint: PASS'" in msg
+    # SIGTERM is reaper-shaped: the environmental attribution is RESERVED for
+    # this class (round 2, signal-origin-overclaim).
+    assert "Reaper-shaped signal" in msg
+    assert "consistent with an external kill" in msg
+    assert "check VM load" in msg
 
 
 def test_run_helper_negative_rc_is_a_signal_death(monkeypatch):
@@ -10031,3 +10092,59 @@ def test_run_helper_verdict_line_prefers_stderr_over_stdout(monkeypatch):
     msg = str(excinfo.value)
     assert "Embedded verdict line: 'workflow_lint: PASS'" in msg
     assert decoy not in msg
+
+
+def test_run_helper_signal_decode_unknown_number_is_unclassified():
+    """_signal_decode's ValueError arm: a signal number outside the platform's
+    Signals enum renders `N (unknown)` on BOTH returncode encodings (pins
+    round-1 behavior that shipped untested; Claude Minor 1 / Codex Minor 2)."""
+    assert _signal_decode(128 + 65) == "65 (unknown)"
+    assert _signal_decode(-65) == "65 (unknown)"
+    assert _signal_decode(0) is None
+    assert _signal_decode(1) is None
+    assert _signal_decode(2) is None  # argparse usage exit — a plain verdict band
+
+
+def test_run_helper_crash_class_signal_points_at_payload(monkeypatch):
+    """A crash-class signal (SIGSEGV) is still retried once, but BOTH the retry
+    warning and the double-kill failure name the payload as the suspect and
+    never assert an environmental cause (round 2, signal-origin-overclaim:
+    round 1 labelled every signal band 'an external kill')."""
+    fake = _FakeSubprocessRun(_fake_lint_proc(128 + int(signal.SIGSEGV)))
+    monkeypatch.setattr(subprocess, "run", fake)
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        with pytest.raises(pytest.fail.Exception) as excinfo:
+            _run()
+    assert len(fake.calls) == 2, "crash-class keeps the retry (transient vs reproducible)"
+    warn_msgs = [str(w.message) for w in caught if issubclass(w.category, RuntimeWarning)]
+    assert any("Crash-class signal" in m for m in warn_msgs)
+    assert not any("external kill" in m for m in warn_msgs)
+    msg = str(excinfo.value)
+    assert "SIGNALLED twice" in msg
+    assert "11 (SIGSEGV)" in msg
+    assert "Crash-class signal" in msg
+    assert "PAYLOAD" in msg
+    assert "external kill" not in msg, "environmental wording is reserved for reaper signals"
+    assert "VM load" not in msg
+
+
+def test_run_helper_unknown_signal_unclassified_and_fallback_verdict_asserted(monkeypatch):
+    """An unknown 128+N wrapper status is neither reaper-shaped nor crash-class:
+    the failure says so without asserting a cause. Empty streams exercise AND
+    assert _verdict_line's stated-absence fallback string (previously executed
+    by the negative-rc test but never asserted)."""
+    fake = _FakeSubprocessRun(_fake_lint_proc(128 + 65))
+    monkeypatch.setattr(subprocess, "run", fake)
+    with warnings.catch_warnings(record=True):
+        warnings.simplefilter("always")
+        with pytest.raises(pytest.fail.Exception) as excinfo:
+            _run()
+    msg = str(excinfo.value)
+    assert "SIGNALLED twice" in msg
+    assert "65 (unknown)" in msg
+    assert "Unclassified signal number" in msg
+    assert "origin not established" in msg
+    assert "external kill" not in msg
+    assert "Crash-class" not in msg
+    assert "no verdict line — killed before the linter printed one" in msg
