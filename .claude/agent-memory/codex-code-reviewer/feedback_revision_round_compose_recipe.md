@@ -1445,3 +1445,28 @@ twin verdict ECHOES output-schema headings ("## Crash-fix verification
 (REQUIRED") — assert tail+embedded totals; (e) a partial-sentence rep1 on a
 tail note leaves trailing round tokens alive — count-pin the lowercase
 residue then blanket-replace.
+
+**Fresh-cycle plan-authorized recalibration round after a CLOSED loop (#2378
+r11, 2026-08-21):** when the implement-review loop closed at a reconciled
+binding PASS and the plan pre-authorizes a ONE-SHOT recalibration round, the
+compose is a fresh cycle, not a fix round: (a) the ACCEPTANCE CONTRACT is the
+orchestrator's lever-decision `epm:progress` note — inline it as a
+`RECALIBRATION DECISION` envelope and turn each numbered lever into a V-duty
+(the F-duty slot of gate-trip rounds); the plan's authorization line
+(here v6:473 "Allowed without asking") goes in the round-semantics bullet;
+(b) inline the TRUE-rates gate record + the guard-verification note as
+separate envelopes; established facts = the MEASURED causes, with the
+projection numbers explicitly carved out as NOT-reviewable (mechanism only);
+(c) the closing reconciler ruling inlines as "closure record — context";
+the twin's own OVERTURNED verdict is NOT re-inlined when the ruling's
+findings table carries every disposition (cleaner tag arithmetic:
+own-head==1/close==1, prior tags==0); (d) a reconciler REQUIRED guard
+already executed+verified (progress note) whose ledger row still reads
+latest=raised gets a GUARD-DISCHARGED-PENDING-LEDGER-ACTION status
+vocabulary + a return-flag for the orchestrator to run `address-concern` —
+the pendency is never a round finding; (e) assert trap hit live: the r10+
+rubric span carries TWO rubric-native `**Prior-concerns ledger:**` tokens
+(Step 0.8 record-the-ledger-state sentence) — assert per-part (rubric 2 /
+tail 1 / authored 0), never total==1; (f) a one-shot stake round wants the
+severity-precision framing of a cap round ("PLAN-AUTHORIZED ONE-SHOT ROUND"
+in the Blocker-tags bracket) even though it is round 1 of a fresh cycle.
