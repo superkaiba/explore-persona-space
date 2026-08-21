@@ -14,7 +14,9 @@ handler / orelse / finalbody / def-in-try-body NOT exempt); (iii) the
 ``TYPE_CHECKING`` body exclusion (orelse still scanned; ``typing.``
 attribute form recognized); (iv) relative / stdlib / ``__future__`` /
 first-party skips; (v) the :data:`IMPORT_TO_DIST` alias table incl. the
-loud table-drift FAIL; (vi) the ``# PROD_IMPORT_LINT_EXEMPT`` waiver in both
+loud table-drift FAIL and the live-manifest subset pin (every table VALUE
+present in the committed ``uv.lock``/``pyproject.toml`` universe, via the
+check's own loader); (vi) the ``# PROD_IMPORT_LINT_EXEMPT`` waiver in both
 placements, the ≥10-char reason boundary, and its PER-SITE (never per
 ``(file, root)``) scope; (vii) FAIL dedup to the first unexempt
 ``(file, root)`` site; (viii) the two WARN tiers (dangling issue-stem
@@ -22,7 +24,9 @@ first-party roots; extras/group-only dists) with the ``inline_lint_gate``
 ``NON_RED_PREFIXES`` leading-``WARN`` + path-free contract; (ix) PEP-508
 name-prefix parsing, PEP-735 ``{include-group = ...}`` skip, and
 ``tool.uv.default-groups`` handling; (x) fail-loud missing/unparseable
-manifests; (xi) unparseable ``*.py`` skipped with a stderr note; (xii) the
+manifests — all four legs of plan §6 row 14 (missing/malformed x
+``uv.lock``/``pyproject.toml``, the malformed pair parameterized);
+(xi) unparseable ``*.py`` skipped with a stderr note; (xii) the
 live-tree stem-shadowing pin promised at
 :func:`workflow_lint._first_party_import_roots`; (xiii) the
 mutation-visible no-flags DISPATCH test (the
@@ -448,9 +452,21 @@ def test_missing_pyproject_fails_loud(tmp_path: Path) -> None:
     assert "pyproject.toml is MISSING" in errors[0], errors[0]
 
 
-def test_unparseable_manifest_fails_loud(tmp_path: Path) -> None:
-    (tmp_path / "uv.lock").write_text("[[package\nname=", encoding="utf-8")
-    (tmp_path / "pyproject.toml").write_text(_PYPROJECT, encoding="utf-8")
+@pytest.mark.parametrize(
+    ("bad_file", "expected"),
+    [
+        ("uv.lock", "uv.lock is UNPARSEABLE"),
+        ("pyproject.toml", "pyproject.toml is UNPARSEABLE"),
+    ],
+)
+def test_unparseable_manifest_fails_loud(tmp_path: Path, bad_file: str, expected: str) -> None:
+    """EACH manifest's UNPARSEABLE branch fails loud independently (plan §6
+    row 14, the parameterized malformed legs): the OTHER manifest stays
+    valid so the single error is attributable to the malformed one."""
+    texts = {"uv.lock": _LOCK, "pyproject.toml": _PYPROJECT}
+    texts[bad_file] = "[[package\nname="
+    for name, text in texts.items():
+        (tmp_path / name).write_text(text, encoding="utf-8")
     errors = check_prod_import_lockfile(
         scan_roots=(tmp_path / "scripts",),
         lock_path=tmp_path / "uv.lock",
@@ -458,7 +474,7 @@ def test_unparseable_manifest_fails_loud(tmp_path: Path) -> None:
         repo_root=tmp_path,
     )
     assert len(errors) == 1, errors
-    assert "uv.lock is UNPARSEABLE" in errors[0], errors[0]
+    assert expected in errors[0], errors[0]
 
 
 def test_unparseable_py_skipped_with_note(tmp_path: Path, capsys) -> None:
@@ -490,6 +506,29 @@ def test_no_lock_dist_shadowed_by_script_stem() -> None:
         f"first-party stem(s) shadow a lockfile dist / IMPORT_TO_DIST key: {collisions} — "
         f"a third-party import of that root would silently classify first-party; rename "
         f"the script or fix the table (see _first_party_import_roots docstring)"
+    )
+
+
+def test_every_table_dist_present_in_live_lockfile() -> None:
+    """Plan §6 row 11 (backs acceptance A4): every :data:`IMPORT_TO_DIST`
+    VALUE, PEP-503-normalized, is present in the live declared-dist universe
+    loaded from the committed ``uv.lock`` + ``pyproject.toml`` — via the
+    check's own loader, never a second tomllib reader. Deterministic: a
+    mapped dist dropped from the manifests fails HERE, naming the missing
+    distribution(s), not only at the next full-tree lint scan of a file
+    that happens to import it."""
+    root = Path(wl._REPO_ROOT)
+    lock, default_d, nondefault, errors = wl._load_import_lockfile_universe(
+        root / "uv.lock", root / "pyproject.toml"
+    )
+    assert errors == [], errors
+    universe = lock | default_d | set(nondefault)  # the check's FAIL universe
+    missing = sorted({wl._pep503(dist) for dist in IMPORT_TO_DIST.values()} - universe)
+    assert missing == [], (
+        f"IMPORT_TO_DIST maps import root(s) to distribution(s) absent from the live "
+        f"uv.lock/pyproject.toml universe: {missing} — table drift; fix the table entry or "
+        f"declare + lock the dependency (check_prod_import_lockfile FAILs loud on the next "
+        f"scan of any file importing them)"
     )
 
 
