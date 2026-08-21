@@ -1065,31 +1065,33 @@ def _extract_errorbars(ax: plt.Axes, ctx: _AxesCtx) -> list[dict[str, object]]:
     return out
 
 
-def _has_marker_sizes(coll: object) -> bool:
-    """Return True when ``coll`` is a marker collection carrying explicit sizes.
+def _has_explicit_offsets(coll: object) -> bool:
+    """Return True when ``coll``'s offsets were explicitly supplied.
 
-    ``PathCollection`` (what ``ax.scatter`` creates) exposes ``get_sizes()`` and
-    returns one entry per drawn marker — a real size even when the caller passed
-    no ``s=`` (matplotlib's default is 36.0), and even for ``s=0``. Non-marker
-    artists differ: ``LineCollection`` (error bars), ``QuadMesh``
-    (``imshow``/``pcolormesh``/colorbars) and ``QuadContourSet`` have no such
-    method at all, while ``fill_between`` / ``violinplot`` / ``quiver`` / bare
-    ``PathCollection`` artists return an EMPTY array. That difference is what
-    tells a genuine single ``(0,0)`` scatter point from the placeholder ``(1,2)``
-    ``[[0,0]]`` offset those non-marker artists report.
+    ``Collection.get_offsets()`` SYNTHESIZES ``np.zeros((1, 2))`` when the
+    artist's offsets were never set, so a lone ``(0,0)`` offset is ambiguous:
+    it is either a genuine single-point datum or a placeholder from an artist
+    carrying no offsets at all (``LineCollection`` error bars, ``fill_between``
+    / ``violinplot`` polys, ``QuadMesh`` / ``QuadContourSet`` rasters, a bare
+    ``PathCollection``, ``RegularPolyCollection``).
 
-    Never raises: any collection whose sizes cannot be read returns False, so
-    the caller falls back to skipping it (the pre-#2262 behavior). The catch is
-    deliberately broad — a third-party artist's ``get_sizes`` may raise anything,
-    and the caller's contract is never-raises.
+    Marker sizes do NOT disambiguate — a ``PathCollection([path], sizes=[14])``
+    is indistinguishable from ``ax.scatter([0], [0])`` on offsets shape, sizes
+    shape and path count (measured; the #2262 round-1 defect). Offset
+    PROVENANCE does: ``set_offsets`` stores its argument, so the private
+    ``_offsets`` is non-None exactly when a caller supplied offsets. There is
+    no public accessor for this — ``get_offsets()`` is the very call that
+    erases the distinction.
+
+    Never raises: any artist whose provenance cannot be read returns False, so
+    the caller SKIPS it. That fail direction is deliberate — if a future
+    matplotlib renames the attribute we degrade to the pre-#2262 behavior of
+    dropping genuine origin points (a visible undercount), never to
+    fabricating rows (invented data). The keep-side acceptance tests pin the
+    behavior so such a rename fails loudly.
     """
-    import numpy as np
-
-    getter = getattr(coll, "get_sizes", None)
-    if not callable(getter):
-        return False
     try:
-        return bool(np.asarray(getter()).size)
+        return getattr(coll, "_offsets", None) is not None
     except Exception:
         return False
 
@@ -1108,15 +1110,16 @@ def _extract_scatters(ax: plt.Axes, ctx: _AxesCtx) -> list[dict[str, object]]:
             continue
         if offsets.ndim != 2 or offsets.shape[1] != 2 or offsets.shape[0] == 0:
             continue
-        # Non-marker artists report a placeholder (1,2) [[0,0]] offset:
-        # LineCollection error bars, QuadMesh / QuadContourSet rasters (incl. on
-        # colorbar axes), fill_between / violin polys, and a bare PathCollection.
-        # A genuine ``scatter(...)`` carries a non-empty ``sizes`` array, so
-        # discriminate on that instead of on the coordinates — otherwise a real
-        # (0,0) datum from a per-point ``ax.scatter([x],[y])`` loop is dropped.
+        # matplotlib SYNTHESIZES a (1,2) [[0,0]] offset for artists that carry
+        # no offsets at all (LineCollection error bars, QuadMesh /
+        # QuadContourSet rasters incl. on colorbar axes, fill_between / violin
+        # polys, a bare or sized-but-offset-less PathCollection,
+        # RegularPolyCollection). Skip those, but KEEP a real (0,0) datum from
+        # a per-point ``ax.scatter([x],[y])`` loop — distinguished by offset
+        # PROVENANCE, since marker sizes do not separate the two cases.
         # (``ax.scatter([], [])`` never reaches here: its offsets are (0,2) and
         # the shape check above skips it.)
-        if offsets.shape[0] == 1 and not np.any(offsets) and not _has_marker_sizes(coll):
+        if offsets.shape[0] == 1 and not np.any(offsets) and not _has_explicit_offsets(coll):
             continue
         series = (coll.get_label() or "").strip()
         rows = _xy_rows(offsets, ctx, series, with_error=False, with_label=True)
