@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2444,
+  "highest_id": 2445,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11154,6 +11154,13 @@
       "path": "tasks/proposed/2444",
       "status": "proposed",
       "title": "Step 5a/10d spec-freshness: dirty-family scan is fail-open for a deliverable commit using the sync subject (clobbers agent-memory)"
+    },
+    "2445": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2445",
+      "status": "proposed",
+      "title": "judge_pilot transport-parity check is opt-in so it sits unarmed by default: one round had two drivers, one armed and one not, with a 34.1%-censoring batch route riding on an unprotected sync pin"
     },
     "245": {
       "has_clean_result": false,
