@@ -4,9 +4,8 @@
 %
 % Reading order is strictly left-to-right, top-to-bottom, over FOUR columns:
 %   col 1 TL;DR / motivation / method / result 1
-%   col 2 results 2-3
-%   col 3 results 5-6
-%   col 4 result 7 (application) / other results / implications / references
+%   col 2 results 2, 3 and 5
+%   col 3 results 6-7 / other results / implications / references
 % Figure width fractions are scaled by ~0.85 relative to the old five-column
 % layout: columns went 0.188 -> 0.238\textwidth, so an unchanged fraction
 % would have made every figure 27% taller and overflowed the page.
@@ -35,7 +34,10 @@
 \setbeamercolor{normal text}{fg=black,bg=white}
 \setbeamercolor{itemize item}{fg=matsmaroon}
 \setbeamertemplate{itemize item}{\color{matsmaroon}\raisebox{0.12em}{\small$\blacksquare$}}
-\setlength{\parskip}{0.25em}
+\setlength{\parskip}{0.14em}
+% three-column layout is spacing-critical: tighten list leading too
+\setbeamertemplate{itemize/enumerate body begin}{\setlength{\itemsep}{0.10em}\setlength{\parsep}{0pt}\setlength{\topsep}{0pt}}
+\setbeamertemplate{itemize/enumerate subbody begin}{\setlength{\itemsep}{0.06em}\setlength{\parsep}{0pt}\setlength{\topsep}{0pt}}
 
 \newcommand{\vC}{\ensuremath{v_C}}
 \newcommand{\vA}{\ensuremath{v_A}}
@@ -79,7 +81,7 @@
 \begin{columns}[t]
 
 % ==================== COLUMN 1: setup + result 1 ====================
-\begin{column}{0.238\textwidth}
+\begin{column}{0.32\textwidth}
 
 \postersec{TL;DR}
 \begin{itemize}
@@ -100,18 +102,13 @@
 
 \postersec{The residual context-answer map}
 \begin{center}
-\IfFileExists{figures/method_diagram.pdf}{\includegraphics[width=0.95\linewidth]{method_diagram.pdf}}{\includegraphics[width=0.95\linewidth]{fig1_schematic.pdf}}
+\IfFileExists{figures/method_diagram.pdf}{\includegraphics[width=0.71\linewidth]{method_diagram.pdf}}{\includegraphics[width=0.71\linewidth]{fig1_schematic.pdf}}
 \end{center}
 \figcap{1}{$v_C$ = residual state at the last context token (layer $\ell$); $v_A$ = mean answer-token state. Fitted maps $v_C \mapsto v_A$; readouts consume $\hat{v}_A$.}
 
-\end{column}
-
-% ==================== COLUMN 2: results 1-2 ====================
-\begin{column}{0.238\textwidth}
-
 \postersec{1.\ The Mapping has high predictive Power and is mostly Linear}
 \begin{center}
-\includegraphics[width=0.92\linewidth]{plot1_scaling_boundary.pdf}
+\includegraphics[width=0.68\linewidth]{plot1_scaling_boundary.pdf}
 \end{center}
 \figcap{2}{Held-out $R^2$ (left) and rank-1 retrieval (right; raw euclidean, pool 1{,}000) against training-set size. Dashed: generic boundary-token control. Layer 19.}
 \begin{itemize}
@@ -121,25 +118,24 @@
   \item \takeaways{The mapping is not just copying the context vector:} The mapping does much better than the identity + bias baseline
   \item We study the \textbf{linear} map here and leave more complex maps to future work
 \end{itemize}
+\end{column}
+
+% ==================== COLUMN 2: results 2, 3 and 5 ====================
+\begin{column}{0.32\textwidth}
 
 \postersec{2.\ The mapping predicts useful parts of the answer}
 \begin{center}
-\IfFileExists{figures/plot2_persona_directions.pdf}{\includegraphics[width=0.88\linewidth]{plot2_persona_directions.pdf}}{\includegraphics[width=0.70\linewidth]{c3_persona_direction_spectrum.pdf}}
+\IfFileExists{figures/plot2_persona_directions.pdf}{\includegraphics[width=0.57\linewidth]{plot2_persona_directions.pdf}}{\includegraphics[width=0.46\linewidth]{c3_persona_direction_spectrum.pdf}}
 \end{center}
 \figcap{4}{Held-out $R^2$ along each of the seven persona directions $r_B$ against a 200-draw random-unit band (bar: mean; shaded: 5--95\%). All seven on one corpus: multi-turn holdout, $n\!=\!9{,}941$, layer 19, ridge.}
 \begin{itemize}
   \item \takeaways{Persona-vector directions are among the best-predicted directions of the answer:} $R^2$ \textbf{0.80--0.91} against a random-direction mean of \textbf{0.67}, and every one does better than 95\% of random directions (0.76)
 \end{itemize}
 
-\end{column}
-
-% ==================== COLUMN 3: results 3 and 5 ====================
-\begin{column}{0.238\textwidth}
-
 \postersec{3.\ The mapping is better at predicting high-level and identity related features of the answer}
 We train another map from the context to the answer's \textbf{SAE features}, then partial out predictors \emph{one at a time} to see which survives.
 \begin{center}
-\includegraphics[width=0.90\linewidth]{plot3_sae_predictors.pdf}
+\includegraphics[width=0.59\linewidth]{plot3_sae_predictors.pdf}
 \end{center}
 \figcap{5}{Forward-stepwise partialling: each row conditions on all rows above. $c$ = concordance (AUROC scale), $0.5$ = chance. Gray: activity control. Diamond: matryoshka \emph{coarsest} tier — different dictionary, direction only. No CIs; later rounds omitted.}
 \begin{itemize}
@@ -160,7 +156,7 @@ We train another map from the context to the answer's \textbf{SAE features}, the
 
 % \postersec{4.\ What does it fail to retrieve?}
 % \begin{center}
-% \IfFileExists{figures/plot4b_failure_modes.pdf}{\includegraphics[width=0.78\linewidth]{plot4b_failure_modes.pdf}}{\includegraphics[width=0.70\linewidth]{plot4_failures.pdf}}
+% \IfFileExists{figures/plot4b_failure_modes.pdf}{\includegraphics[width=0.58\linewidth]{plot4b_failure_modes.pdf}}{\includegraphics[width=0.52\linewidth]{plot4_failures.pdf}}
 % \end{center}
 % \figcap{6}{Rate of each failure mode among retrieval failures minus its rate among controls matched on turns $\times$ corpus $\times$ language, in percentage points; lines are 95\% CIs. Colored bars clear BH FDR $q\!=\!0.05$. $n\!=\!1{,}815$ failures vs $1{,}809$ controls.}
 % \begin{itemize}
@@ -172,7 +168,7 @@ We train another map from the context to the answer's \textbf{SAE features}, the
 
 \postersec{5.\ The mapping is already largely present in the base model and refined throughout post training}
 \begin{center}
-\IfFileExists{figures/plot5_stages.pdf}{\includegraphics[width=0.82\linewidth]{plot5_stages.pdf}}{\includegraphics[width=0.59\linewidth]{c1_stage_retention.pdf}}
+\IfFileExists{figures/plot5_stages.pdf}{\includegraphics[width=0.53\linewidth]{plot5_stages.pdf}}{\includegraphics[width=0.38\linewidth]{c1_stage_retention.pdf}}
 \end{center}
 \figcap{7}{Pooled held-out $R^2$ at each stage of the Llama/T\"ulu ladder (layer 30), each stage fit and evaluated on its own on-policy answers.}
 \begin{itemize}
@@ -183,12 +179,12 @@ We train another map from the context to the answer's \textbf{SAE features}, the
 
 \end{column}
 
-% ==================== COLUMN 4: results 6-7 + discussion ====================
-\begin{column}{0.238\textwidth}
+% ==================== COLUMN 3: results 6-7 + discussion ====================
+\begin{column}{0.32\textwidth}
 
 \postersec{6.\ The mapping is shared with story characters}
 \begin{center}
-\includegraphics[width=0.78\linewidth]{plot6c_pooled_lattice.pdf}
+\includegraphics[width=0.58\linewidth]{plot6c_pooled_lattice.pdf}
 \end{center}
 \figcap{8}{Held-out $R^2$; the shared map is fit on all 56 lattice cells at once. On-policy answers, layer 19; similarity = direct transfer of the chat-template map.}
 \begin{itemize}
@@ -205,7 +201,7 @@ We train another map from the context to the answer's \textbf{SAE features}, the
 
 \postersec{7. Application: behavior prediction before inference}
 \begin{center}
-\IfFileExists{figures/plot9_application_arms.pdf}{\includegraphics[width=0.78\linewidth]{plot9_application_arms.pdf}}{\includegraphics[width=0.78\linewidth]{c5_pv_methods_regimes.pdf}}
+\IfFileExists{figures/plot9_application_arms.pdf}{\includegraphics[width=0.58\linewidth]{plot9_application_arms.pdf}}{\includegraphics[width=0.58\linewidth]{c5_pv_methods_regimes.pdf}}
 \end{center}
 \figcap{9}{Spearman $\rho$ between readout and judged behavior, per regime. Readouts: persona vector or fitted regression, on the context or the map-predicted answer; oracle = real answer. Muted bars fail the spread gate.}
 \begin{itemize}
