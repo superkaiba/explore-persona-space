@@ -1,6 +1,8 @@
 # code-reviewer-lean memory index
 
 - [Registered gate quantity substituted](registered_gate_quantity_substituted.md) — diff each decision gate's computed quantity against the plan's literal parenthetical; a stricter adjacent proxy still re-routes registered spend (#2254 R1 g3)
+- [Gate mean nanmean denominator](gate_mean_nanmean_denominator.md) — a gate's np.nanmean over per-unit stats silently drops a NaN unit; require full finiteness or an n-in-mean check (#2379 R1 g4)
+- [Figure-populated assert vs reference artists](figure_populated_assert_reference_artists.md) — an empty-figure assert scanning ax.lines is defeated by axhline/axvline; probe with all-NaN data + zero-line (#2379 R1 g4)
 - [Spend consumer accepts partial shard set](spend_consumer_accepts_partial_shard_set.md) — local-first `if dir nonempty: return` staging before a paid judge wave needs staged ⊇ enumerable-grid assert (#2254 R1 g3)
 - [Fails-pre-fix probe vs parent commit](fails_pre_fix_probe_parent_commit.md) — certify "fails-pre-fix" test claims by running the probe against `git show <sha>^:<file>`'s extracted body (#2225 R2 g2)
 - [Smoke enum item without dial](smoke_enum_item_without_dial.md) — a §4.8 blind-spot item promising a reduced-scale smoke needs a reachable CLI dial + dispatcher wiring + fingerprint key (#2225 R1 g3)
@@ -41,3 +43,10 @@
 - [Banked-parent dual-schema equivalence](banked_parent_dual_schema_equivalence.md) — certify a claimed slot equivalence against the producer's OWN consumer read + the real pinned-artifact probe, never the fix's docstring (#2333 R4)
 - [Reused-module internal consumer sweep](reused_module_internal_consumer_sweep.md) — a class-sweep grep for R.helper in the issue script misses the reused gate's unqualified internal call; grep INSIDE every live reused function + probe the concrete spot selection (#2333 R5)
 - [Untracked-twin add certification](untracked_twin_add_certification.md) — diff committed blob vs live untracked twin certifies a clean-add claim; parent-blob ruff-format probe attributes off-template hunks (#2183 R1 g1)
+- [Smoke fixture authored with consumer keys](smoke_fixture_authored_with_consumer_keys.md) — fallback key chains + consumer-authored fixtures mask producer key mismatches; grep the producer RETURN and build fixtures from it (#2379 R1 g3)
+- [Twin-transcription parity tautology](twin_transcription_parity_tautology.md) — a registered parity/round-trip gate comparing identical transcriptions on ONE loaded object certifies nothing; demand pre-persist vs post-reload + gate falsification (#2379 R1 g3)
+- [Marker success-command verbatim rerun](marker_success_command_verbatim_rerun.md) — run (c)'s success command AS PASTED; missing-flag exit≠0 with green phase = digest Minor; Path(x or "") dir-guard is dead (#2379 R2 g2)
+- [--force not reaching resume state](force_flag_not_reaching_resume_state.md) — a redo flag gating only the final-output skip while sidecars/chunks resume on count-only fingerprints silently half-redoes post-retrain (#2379 R2 g1)
+- [Linked pins pinned separately](linked_pins_pinned_separately.md) — invocation + ROOT= pinned as two substrings misses the `(cd "$ROOT" &&` connective; scratch ROOT==WT fixtures are blind to it (#2412 R1 g3)
+- [Two-sided size-corridor review](two_sided_size_corridor_review.md) — blob-at-SHA wc -c + HEAD identity, round-scoped grandfather probe (never diff vs origin/main), hunk-gap pin-unedited proof (#2412 R1 g2)
+- [Submodule-existence bypasses strict identity](submodule_existence_bypasses_strict_identity.md) — existence-only `from <shared pkg> import <namespaced unit>` fallback skips the strict arm; grep the corpus for that shape (#2412 R1 g1)

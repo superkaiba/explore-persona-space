@@ -1035,7 +1035,7 @@ sidecar `.claude/cache/verdict-disagree-observer-events.jsonl` + one
 deduped push; **NO task marker** (the flag's consumer is a human).
 Fire-once dedup key `(issue, role, round_label)` in
 `~/.eps-autonomous/verdict-disagree-observer.json`. Known benign-fire
-class: a Step 5c-bis mechanical-contract-only strip / cap-5
+class: a Step 5c-bis mechanical-contract-only strip / cap-10
 all-stripped-continue resolves a PASS-vs-FAIL round without a reconciler
 and flags by design (the FAIL marker's `**Blocker tags:**` line is the
 one-glance disambiguator). Coverage: latest-round-only; Tier-2 evidence

@@ -366,6 +366,11 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # NEW (#1701) — workflow_lint --check-inline-round-duty-mirror + no-flags
     # bundling + drift-detection semantics pin
     "tests/test_workflow_lint_inline_round_duty_mirror.py",
+    # NEW (#2183) — workflow_lint --check-no-repo-root-syspath + no-flags
+    # bundling (tests/ + scripts/ scope; renamed/widened from the #2181
+    # tests/-only --check-no-repo-root-syspath-in-tests after the 19-driver
+    # scripts/ remediation).
+    "tests/test_workflow_lint_no_repo_root_syspath.py",
     # NEW (#2158) — pre-split review guard predicate + lint surface pins:
     # workflow_lint --check-pre-split-review-guard (seven surfaces / eight
     # files) + no-flags bundling.
@@ -385,6 +390,11 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # + absolute per-cell trainability floor, four pinned surfaces incl. the
     # two machinery-keyed N/A escapes; incident #2221).
     "tests/test_workflow_lint_two_tier_yield_floor.py",
+    # NEW (#2422) — workflow_lint --check-worktree-task-state-briefs +
+    # no-flags bundling (worktree-safe task-state brief paths, six pinned
+    # surfaces; incidents #2329/#823 — a worktree's tasks/ tree is frozen at
+    # its base commit) + the worktree-freeze reproduction (STALE + ABSENT).
+    "tests/test_workflow_lint_worktree_task_paths.py",
     "tests/test_workflow_yaml.py",
     "tests/test_workflow_fix_dedup.py",
     # NEW (#1735) — rule reconciliation pin: workflow-fix-on-bug.md §
@@ -397,6 +407,11 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_no_auto_runpod_path_under_any_failure.py",
     "tests/test_no_direct_task_path_construction.py",
     "tests/test_no_dollar_budget_caps.py",
+    # NEW (#2217) — collection-time registry-mutation guard: no collected test
+    # module may add/remove CONTEXTS / NEGATIVE_PANELS keys at import time
+    # (conftest pytest_collectreport deltas + collection-finish key-set
+    # equality vs the fresh-import baseline; incident #2059's residual class).
+    "tests/test_no_import_time_registry_mutation.py",
     "tests/test_no_per_file_raw_completions_loop.py",
     "tests/test_no_pod_side_task_py_shellout.py",
     # NEW (#2058) — no-progress respawn lane: fingerprint helper +
@@ -446,6 +461,11 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # backstop pin (arm /issue-tick IFF parent in tick_triage.ISSUE_ACTIVE;
     # partition pinned against the live tick_triage module; incident #1491)
     "tests/test_issue2146_inline_tick_backstop_pin.py",
+    # NEW (#2184) — CPU no-port-wedge typed detection + teardown-interlocked DC
+    # rotation + CPU-LANE-DRY residual refusal, incl. the rule-docs anchor pins
+    # (.claude/rules/compute-backends.md, .claude/rules/pods.md,
+    # .claude/rules/gotchas.md)
+    "tests/test_issue2184_noport_wedge.py",
     # NEW (#2101) — agent-memory MEMORY.md no-lost-row discipline pin (SKILL.md
     # Step 5a clause + echo, gotchas.md entry, LESSONS.md trigger)
     "tests/test_issue_skill_agent_memory_no_lost_row.py",
@@ -617,6 +637,10 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_step0_enumerator_total_form.py",  # NEW (#1722) — Step-0 enumerator total-form pin
     "tests/test_step10d_guard3.py",  # NEW (#1242) — SKILL.md Step 10d guard/merge pin
     "tests/test_step10d_guards.py",  # NEW (#1978) — step10d_guards.sh extraction pin
+    # NEW (#2201) — deliverable-divergence probe prose pins (Step 5a probe +
+    # reviewer-brief bullet, Step 10d pre-merge delta gate H4, code-reviewer.md
+    # § Main-side divergence list consumption paragraph).
+    "tests/test_issue_skill_divergence_probe_pin.py",
     # NEW (#1723) — SKILL.md Step 10 CRON-TEARDOWN + epm:done reorder around
     # Step 10d merge (Terminal-teardown H4 + exit-site enumeration +
     # Step 10 step 6 branch-on-epm:merged + retry-surface long-phase heartbeats)
@@ -778,6 +802,10 @@ TRANSITIVE_CONSUMER_TESTS: dict[str, tuple[str, ...]] = {
         "tests/test_inline_lint_gate.py",
         "tests/test_step9c_baseline.py",
     ),
+    # #2412: the Step 5a sibling-probe unit tests load the helper by
+    # CONSTRUCTED path (importlib + subprocess CLI) — no text-scan arm
+    # reaches a constructed-path consumer.
+    "scripts/step5a_sibling_probe.py": ("tests/test_step5a_sibling_probe.py",),
 }
 
 # --- Rules-pin discovery arm (#1496). -----------------------------------------

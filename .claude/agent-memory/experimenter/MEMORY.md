@@ -32,6 +32,7 @@ bullets, mechanized fixes); their bodies stay on disk.
 
 - [uv missing: provision vs resume variants](feedback_pod_provision_uv_missing.md) — provision-incomplete (#390, #472)
 - [Pre-staged venv re-probe](feedback_pre_staged_venv_verify_probes.md) — never trust "GPU-verified": torch.zeros(2).cuda() (cu130-wheel/cu128-driver) + peft/transformers eager import (#475)
+- [Plan-declared model venv never provisioned](feedback_plan_declared_model_venv_never_provisioned.md) — new-model tasks: verify the plan's dedicated pod venv (vLLM/transformers floor above uv.lock) has a REALIZED build step before launch; miss = code-class (#2378)
 - [uv sync MooseFS stale handle persists](feedback_uv_sync_moosefs_stale_handle_persistent.md) — errno 116 recurs on the partial .venv; rm -rf .venv + UV_LINK_MODE=copy; epm:failure infra after 2nd failure (#475)
 - [Pod venv rebuild: overlay runbook](feedback_pod_venv_rebuild_overlay_runbook.md) — bootstrap python shim DEADLOCKS uv sync (pin --python); errno-116 hits FRESH MooseFS venvs too; build /root/eps-venv on overlay + symlink .venv; re-add flash-attn (#2225-fu1)
 - [WandB artifacts cache eats MooseFS quota](feedback_wandb_artifacts_cache_quota.md) — 90+ GB silent cache → EDQUOT on sub-KB writes while df shows TB free; du -sh pre-launch, rm -rf is safe (#396)
@@ -101,4 +102,5 @@ bullets, mechanized fixes); their bodies stay on disk.
 - [stale .git/index.lock kills the pod-side result commit at run end](feedback_stale_index_lock_pre_launch_probe.md) — probe+clear a confirmed-stale 0B lock pre-launch on pods whose tail commits pod-side (#1336)
 - [Smoke tree eats full-leg headroom](feedback_smoke_tree_eats_full_leg_headroom.md) — reap the uploaded smoke tree before the full (re)launch on shared out-roots (#1333)
 - [Wrapper header is launch-arg ground truth](feedback_wrapper_header_is_launch_arg_ground_truth.md) — on plan-vs-wrapper launch-command mismatch, the wrapper's usage header wins (#1090 fu6 manifest-path crash)
+- [FETCH_HEAD clobbered by concurrent sessions](feedback_fetch_head_clobbered_by_concurrent_sessions.md) — never `git show FETCH_HEAD:` across calls at the shared root; pin reads to the SHA (#2223 ansfirst)
 - [HF LFS billing-403 recovery](feedback_hf_lfs_billing_403_no_upload_smoke.md) — 403 credit-recharge = external billing block; smoke --no-upload + non-LFS uploads stay on; user owns the billing fix

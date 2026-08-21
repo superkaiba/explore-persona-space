@@ -96,7 +96,7 @@ Subagents have ONE turn. The harness re-invokes the ORCHESTRATOR on each bg `Bas
 
 Five review steps (`critic`, `code-reviewer`, `interpretation-critic`, `clean-result-critic`,
 `follow-up-critic`) run Claude + a Codex twin (gpt-5.5) in parallel, all rounds up to the
-per-reviewer cap (5). PASS+PASS → advance. FAIL+FAIL → bounce (union the blockers if disjoint).
+per-reviewer cap (10). PASS+PASS → advance. FAIL+FAIL → bounce (union the blockers if disjoint).
 PASS vs FAIL → spawn `reconciler` (binding). `follow-up-critic` is a SINGLE-PASS redundancy
 screen; nothing is ever dropped. NOT doubled: `upload-verifier`, `consistency-checker`.
 
@@ -336,7 +336,7 @@ Default to **HTML** for long-lived browser-read artifacts (planner output, diges
 
 ## Code Style
 
-- **Plan handoff convention:** pass the PATH to `.claude/plans/issue-<N>.md`, never the body. Every persisted `plans/v{K}.md` is self-contained — `new-plan-version` refuses thin amendments (#2255; `--allow-amendment` escape ⇒ hand base+delta together in briefs; `verify_plan --issue` composes automatically).
+- **Plan handoff convention:** pass the PATH to `.claude/plans/issue-<N>.md`, never the body. Every persisted `plans/v{K}.md` is self-contained — `new-plan-version` refuses thin amendments (#2255; `--allow-amendment` escape ⇒ hand base+delta together in briefs; `verify_plan --issue` composes automatically). A worktree-cwd consumer gets the ABSOLUTE canonical path — `$(uv run python scripts/task.py find <N>)/plans/plan.md`, `plan_version=v<K>` stated at compose time — never a relative `tasks/...` path: a worktree's `tasks/` tree is frozen at its base commit and serves a stale plan/manifest with no error (#2422).
 - **All code changes on the local VM, never on pods.** Edit locally, commit, push, `git pull` on pods.
 
 Full Python / experiment code-style conventions — lint (`ruff`, line-length=100,
