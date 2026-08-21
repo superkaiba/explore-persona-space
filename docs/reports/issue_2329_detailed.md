@@ -351,6 +351,139 @@
 
 No PNG view exists for this manifest item.
 
+
+## Results — follow-up round `q35_ladder_decay` (full figure set)
+
+Every view produced by this round: the aggregate view that appears in the report body, plus every per-unit / companion view. Captions are the plotter's factual what-is-plotted text; recipes are the methodology-writer's. Figures pinned at [`216c793f5013`](https://github.com/superkaiba/explore-persona-space/tree/216c793f5013e6eed897e90011bc187f2da54b76/figures/issue_2329/q35_ladder_decay).
+
+### Persona-specificity ladder on Qwen3.5-9B
+
+**Methodology**
+
+- Per gate-surviving (direction × slot) cell on Qwen3.5: mean anchor-normalized F over pairs (pair = mean over K=5 coherence-kept draws) for the steered, same-value-null, and cross-type-null arms; carrier-clustered bootstrap 95% CIs (B=10,000, seed 21626, ≤6 carrier clusters).
+- Rungs ordered by specificity rank on the x-axis; three bars per rung, one panel per direction-class × slot; a rung that failed G0/G3 is labeled `N/A — not tested`, never drawn as a zero bar.
+- Source: `eval_results/issue_2329/q35_ladder_decay/f_metrics/stats.json` + `f_cells.jsonl`, `null_samevalue_cells.jsonl`, `null_crosstype_cells.jsonl`, `anchors.jsonl`.
+
+- Points show mean F_target (anchor-normalized fraction of a full context swap, unitless; ~0-1) per specificity rung (bank order R1 pirate, R2 butler, R3 warm, R4 trait, R5a Lu-therapy, R5b Lu-philosophy on the x-axis), one panel per direction (install / erase) x patch slot (context-end / prefix-end), three arms per rung: steered (persona-value patch on Qwen3.5-9B, thinking disabled), same-value-donor null, cross-type-donor null. Error bars are 95% carrier-clustered bootstrap CIs (B = 10,000, seed 21626); n = 6 carriers per rung, 5 coherent draws pooled per carrier pair (30 draws per rung x slot x arm unit); tick labels print n and each rung's system-prompt token count under the Qwen3.5-9B tokenizer.
+- All 6 rungs passed the anchor-separation gate and all 12 directions passed the G0 token-identity floor (>= 4 of 6 carriers intact), so no rung is labeled gate-failed or 'N/A - not tested'. Judge instrument (Leg A, 32 waves, 9,570 calls): claude-sonnet-4-5-20250929, max_tokens = 1024, n_draws = 1 per item, temperature not threaded (Anthropic API default).
+- Per-unit view (ladder_percarrier): every (rung x carrier x arm) F_target value as one carrier-labeled point (carriers d1, d2, n3, n4, n7, n9; 144 cells per arm across the four direction x slot panels; no aggregation).
+- Companion view (asymmetry): per gate-surviving rung x slot, grey points are per-carrier paired steered-arm differences (erase F_target minus install F_target) and the red diamond is the carrier mean with its 95% carrier-clustered bootstrap CI (B = 10,000, seed 21626); per-carrier points unlabeled.
+
+![Persona-specificity ladder on Qwen3.5-9B — q35_ladder_decay_hero_ladder](https://raw.githubusercontent.com/superkaiba/explore-persona-space/216c793f5013e6eed897e90011bc187f2da54b76/figures/issue_2329/q35_ladder_decay/q35_ladder_decay_hero_ladder.png)
+
+![Persona-specificity ladder on Qwen3.5-9B — ladder_percarrier](https://raw.githubusercontent.com/superkaiba/explore-persona-space/216c793f5013e6eed897e90011bc187f2da54b76/figures/issue_2329/q35_ladder_decay/ladder_percarrier.png)
+
+![Persona-specificity ladder on Qwen3.5-9B — asymmetry](https://raw.githubusercontent.com/superkaiba/explore-persona-space/216c793f5013e6eed897e90011bc187f2da54b76/figures/issue_2329/q35_ladder_decay/asymmetry.png)
+
+
+### Ladder transfer read: Qwen3.5-9B vs Qwen2.5-7B
+
+**Methodology**
+
+- One point per (direction × slot) cell surviving gates in BOTH runs (the 4-rung intersection is the cross-model denominator): x = the parent's steered mean F (#2162 committed `persona_specificity_ladder/stats.json`), y = this run's steered mean F; identity line drawn.
+- Each point carries both runs' registered lattice verdicts (`transfers` / `no-clean-transfer` / `untestable`); every verdict flip vs the parent is annotated with the steered-minus-null gap CIs beside the categorical label — a flip can be a power artifact (wider CIs on the new model), so the framing is "indistinguishable from null given the variance", never "does not transfer" (report obligation R7).
+- Verdict definitions are identical across models by construction (the lattice is inherited byte-verbatim, including the verdict-binding null-sanity flag at 0.10); any cell with `transfers_withheld_by_null_sanity == true` is narrated both ways (R0).
+
+- x = parent #2162 (Qwen2.5-7B-Instruct) steered mean F_target, y = this run (Qwen3.5-9B) steered mean F_target; one labeled point per (direction x slot) cell whose lattice verdict is testable in BOTH runs — n = 16 cells, the cross-model intersection: the q25 ladder's gates passed 4 of 6 rungs (r1_pirate, r2_butler, r3_warm, r5b_lu_philosophy) while q35 passed all 6, so r4_trait and r5a_lu_therapy cells are absent from this comparison by construction. Dotted line = identity.
+- Each point label carries the parent -> fork lattice verdicts; the single verdict-flip cell (install_r3_warm|pe: no-clean-transfer -> transfers) is drawn red and its label additionally carries both runs' steered-minus-null gap intervals (steered CI bound minus the worst null CI bound, from the per-arm B = 10,000 carrier-clustered bootstrap CIs).
+- Per-unit view (q35_ladder_decay_transfer_percarrier): the 88 carrier-level pairs behind the 16 cell means — x = parent per-carrier steered F_target, y = this run's per-carrier steered F_target, joined on (direction, slot, carrier), each point labeled direction|slot·carrier; flip-cell carriers red, identity line dotted.
+
+![Ladder transfer read: Qwen3.5-9B vs Qwen2.5-7B — q35_ladder_decay_transfer](https://raw.githubusercontent.com/superkaiba/explore-persona-space/216c793f5013e6eed897e90011bc187f2da54b76/figures/issue_2329/q35_ladder_decay/q35_ladder_decay_transfer.png)
+
+![Ladder transfer read: Qwen3.5-9B vs Qwen2.5-7B — q35_ladder_decay_transfer_percarrier](https://raw.githubusercontent.com/superkaiba/explore-persona-space/216c793f5013e6eed897e90011bc187f2da54b76/figures/issue_2329/q35_ladder_decay/q35_ladder_decay_transfer_percarrier.png)
+
+
+### Anchor separation per rung and carrier (Qwen3.5)
+
+**Methodology**
+
+- Per (rung × carrier) on Qwen3.5: the ceiling-minus-floor separation on the target-descriptor score and on the netted dual-rubric delta, from the G3 anchor gate wave (420 anchor rollouts × the gate rubrics); the 0.25 and 0.5 gate bars drawn; surviving vs dropped cells marked under the ≥4/6-carriers rung-survival rule.
+- This figure is the instrument-validity record behind every `untestable` label: which rungs separate their anchors on THIS model is itself part of the transfer answer.
+- Source: `eval_results/issue_2329/q35_ladder_decay/judge/gates/ladder_separation_gate.json`.
+
+- Each point is one (rung x carrier) ceiling-minus-floor anchor separation on the Qwen3.5-9B ladder: left panel the target-descriptor judge-score separation (0-1 normalized scale) against the 0.25 gate bar (dashed red line), right panel the netted dual-rubric separation against the 0.5 bar; 6 carriers per rung, 36 points per panel, deterministic small x-jitter per carrier (points not labeled with carrier ids).
+- Filled marker = carrier passed the gate; all 36 carrier cells passed both bars and all 6 rungs survived the >= 4/6-carriers rule (tick labels print the survived/dropped verdict), so no unfilled markers appear. The figure is already at the per-unit (rung x carrier) grain, so no separate per-unit companion exists.
+
+![Anchor separation per rung and carrier (Qwen3.5) — q35_ladder_decay_anchor_separation](https://raw.githubusercontent.com/superkaiba/explore-persona-space/216c793f5013e6eed897e90011bc187f2da54b76/figures/issue_2329/q35_ladder_decay/q35_ladder_decay_anchor_separation.png)
+
+
+### Within-answer decay, raw per-segment scores
+
+**Methodology**
+
+- Per model (one panel each for q25 and q35) × arm (steered-ce / ceiling / floor) × segment (Q1–Q4): mean raw 0–100 fragment score over install-direction CONTEXT-END rows in the PRIMARY set ({r1_pirate, r2_butler, r3_warm} ∩ the model's gate-surviving rungs). BOTH estimands are drawn in both panels: the coherence-conditional headline (solid; >60 per-draw screen, applied at the reduce) and the all-generated companion (dashed). Prefix-end is excluded from the primary.
+- **Manifest deviation (planned-vs-realized):** the planned manifest's transform for this figure declared the other gate-surviving ce rungs "drawn as separate exploratory strata, never pooled". The committed figure draws the primary stratum ONLY: the exploratory ce strata (q35 r4_trait / r5a_lu_therapy / r5b_lu_philosophy; q25 r5b_lu_philosophy) and the realized q35 prefix-end stratum (install_r3_warm, install_r4_trait) are computed — all 24 `per_direction` keys live in `decay/decay_stats.json` — but appear in NO committed figure; the pinned [`captions.json`](https://github.com/superkaiba/explore-persona-space/blob/fa9b14ee169b9d69350fe066e833a87792a2a3ec/figures/issue_2329/q35_ladder_decay/captions.json) states they are excluded. They are excluded from rendering, not pooled into the primary.
+- Rows are min-length-gated (≥48 completion tokens; q35 steered dropped 2 of 240 completions at the length gate, every other arm 0); coherence + min-length drop fractions per arm × model are reported, never silent.
+- Carrier-clustered bootstrap 95% CIs, B=10,000, seed 21627, ONE shared carrier-resample index per draw across arms and segments. Judged with the `dfrag-<value>` fragment instrument (question shown for context only; fragment-only scoring). A committed per-carrier companion ([`q35_ladder_decay_decay_raw_percarrier`](https://github.com/superkaiba/explore-persona-space/blob/fa9b14ee169b9d69350fe066e833a87792a2a3ec/figures/issue_2329/q35_ladder_decay/q35_ladder_decay_decay_raw_percarrier.png)) draws the (direction × carrier) units behind each curve, primary stratum only.
+- Source: `decay/segment_scores_{steered,ceiling,floor}_{q25,q35}.jsonl` (6,032 scored rows) + `decay/decay_stats.json`.
+
+- Lines show the mean raw fragment persona score (0-100 judge score rescaled to 0-1) per answer token-quartile (Q1-Q4), one panel per model (q25 = Qwen2.5-7B-Instruct parent-run completions re-judged per segment; q35 = Qwen3.5-9B), three arms (steered = donor-value patch; ceiling = persona-prompted unpatched; floor = plain-context unpatched) x two estimands (coh = coherence-conditional headline, solid; all = all length-eligible rows, dashed). Error bars are 95% carrier-clustered bootstrap CIs (B = 10,000, seed 21627, one shared carrier-resample index per draw across arms and segments).
+- Row scope: the primary stratum — install-direction context-end completions on the parent-demonstrated rungs r1_pirate / r2_butler / r3_warm (3 directions x 6 carriers per model), rows coherence-screened (inherited > 60 per-draw screen) and min-length-gated (48 tokens; q35 steered dropped 2 of 240 completions at the length gate, every other arm 0). Prefix-end and the exploratory ce strata are excluded from this figure.
+- Judge instrument (Leg B): claude-sonnet-4-5-20250929, max_tokens = 1024, n_draws = 1, temperature not threaded (API default); 4 fragment items per completion, 6,032 fragment scores total — 6,015 scored on the Anthropic Batch transport plus 17 API-classifier-censored draws recovered by a rule-28 sync re-issue (17/17 recovered, 0 re-refusals; final 6,032/6,032 complete).
+- Per-unit view (q35_ladder_decay_decay_raw_percarrier): the (direction x carrier) units behind each curve — per-carrier mean score per quartile as labeled polylines (18 units per model per arm; label = rung·carrier at the line end; coh solid, all dashed; same arm colors).
+
+![Within-answer decay, raw per-segment scores — q35_ladder_decay_decay_raw](https://raw.githubusercontent.com/superkaiba/explore-persona-space/216c793f5013e6eed897e90011bc187f2da54b76/figures/issue_2329/q35_ladder_decay/q35_ladder_decay_decay_raw.png)
+
+![Within-answer decay, raw per-segment scores — q35_ladder_decay_decay_raw_percarrier](https://raw.githubusercontent.com/superkaiba/explore-persona-space/216c793f5013e6eed897e90011bc187f2da54b76/figures/issue_2329/q35_ladder_decay/q35_ladder_decay_decay_raw_percarrier.png)
+
+
+### Within-answer decay, anchor-normalized F per segment
+
+**Methodology**
+
+- Per model × segment: F(seg) = (steered(seg) − floor(seg)) / (ceiling(seg) − floor(seg)) from per-segment anchor means, on the same primary row scope as the raw figure; segments whose per-segment ceiling−floor separation fails the registered 0.125 bar are suppressed to raw-only and marked.
+- SECONDARY read by registration: the raw curves are read first, because a flat normalized curve with falling raw curves is exactly the case the normalized read alone would hide.
+- Same bootstrap convention as the raw figure (B=10,000, seed 21627, shared carrier index per draw). Source: `decay/decay_stats.json`.
+
+- Points show the anchor-normalized per-segment fraction F(seg) = (steered(seg) - floor(seg)) / (ceiling(seg) - floor(seg)), computed from the pooled per-segment arm means on the same row set as the raw figure (primary install x context-end stratum, coherence-screened, min-length-gated), one panel per model, both estimands (coh solid, all dashed); error bars are 95% carrier-clustered bootstrap CIs (B = 10,000, seed 21627, shared carrier index per draw); horizontal reference lines at F = 0 (floor) and F = 1 (ceiling).
+- All 4 quartiles are drawn for both models: no segment was suppressed by the registered per-segment denominator bar (0.125 on the pooled ceiling-minus-floor separation).
+- Per-unit view (q35_ladder_decay_decay_norm_percarrier): per-carrier F(seg) computed under each carrier's OWN per-segment ceiling/floor denominators, drawn as labeled polylines (label = rung·carrier; 18 units per model; realized per-carrier values span 0-0.96; every plotted carrier-segment passed the per-carrier denominator support check).
+
+![Within-answer decay, anchor-normalized F per segment — q35_ladder_decay_decay_norm](https://raw.githubusercontent.com/superkaiba/explore-persona-space/216c793f5013e6eed897e90011bc187f2da54b76/figures/issue_2329/q35_ladder_decay/q35_ladder_decay_decay_norm.png)
+
+![Within-answer decay, anchor-normalized F per segment — q35_ladder_decay_decay_norm_percarrier](https://raw.githubusercontent.com/superkaiba/explore-persona-space/216c793f5013e6eed897e90011bc187f2da54b76/figures/issue_2329/q35_ladder_decay/q35_ladder_decay_decay_norm_percarrier.png)
+
+
+### Patched-vs-prompted decay contrast
+
+**Methodology**
+
+- Per model and per ESTIMAND (all-generated; coherence-conditional — the headline): per-carrier PAIRED differences on COMMON SUPPORT (carriers holding ≥1 length-surviving completion in BOTH arms under the estimand's own row set; excluded carriers named): D_raw(arm, c) = mean raw score(Q1) − mean(Q4); ΔD = mean over common-support carriers of [D(steered-ce, c) − D(ceiling, c)]; per-carrier points drawn behind the summary.
+- Carrier-clustered bootstrap 95% CIs (B=10,000, seed 21627, one shared carrier-resample index per draw applied jointly to both arms and both endpoint segments); the paired ΔD_F companion drawn for the negative branch (available only when both endpoint segments pass the 0.125 bar); the absolute Q1 starting-level gap (steered − ceiling, raw) printed beside the contrast (R2/R4).
+- Labels follow the registered lattice: zero-spanning CIs labeled `inconclusive`; a raw-only ΔD < 0 exclusion labeled "inconclusive — raw-scale contrast confounded by starting-level compression (see the Q1 gap)"; cross-estimand label disagreement labeled `UNRESOLVED`; the ≥3-per-arm common-support sensitivity re-read reported alongside.
+- Source: `decay/decay_stats.json`.
+
+- Left panel: delta-D = the mean over common-support carriers of the paired difference [steered raw drop (Q1 minus Q4)] - [ceiling raw drop], on the 0-1 raw-score scale, one errorbar per model x estimand (coh = blue, all = dark grey; 95% carrier-clustered bootstrap CIs, B = 10,000, seed 21627, one shared carrier-resample index applied jointly to both arms and both endpoint segments); the small faint points beside each errorbar are the per-carrier paired differences (unlabeled in this view). Right panel: the same layout for delta-D_F, the Q1-minus-Q4 change in the patched arm's per-carrier-normalized F (the ceiling arm's normalized drop is identically zero, so this is the paired F-scale contrast).
+- Common support = carriers holding >= 1 length-surviving completion in BOTH arms under the estimand's own row set; realized n per group: delta-D 18/18 (q25 all/coh) and 18/18 (q35), delta-D_F 17/17 (q25) and 18/18 (q35). The title carries the registered Leg-B lattice labels computed from these CIs: q25 'inconclusive' (both estimands' delta-D CIs span zero); q35 'unresolved' (all-generated estimand: inconclusive; coherence-conditional estimand: patch-decays-faster).
+- Per-unit view (q35_ladder_decay_contrast_percarrier): the same per-carrier paired differences as labeled points (rung·carrier), delta-D left / delta-D_F right, grouped by model x estimand with the same coh/all color encoding.
+
+![Patched-vs-prompted decay contrast — q35_ladder_decay_contrast](https://raw.githubusercontent.com/superkaiba/explore-persona-space/216c793f5013e6eed897e90011bc187f2da54b76/figures/issue_2329/q35_ladder_decay/q35_ladder_decay_contrast.png)
+
+![Patched-vs-prompted decay contrast — q35_ladder_decay_contrast_percarrier](https://raw.githubusercontent.com/superkaiba/explore-persona-space/216c793f5013e6eed897e90011bc187f2da54b76/figures/issue_2329/q35_ladder_decay/q35_ladder_decay_contrast_percarrier.png)
+
+
+### Ladder + decay diagnostics dump
+
+**Methodology**
+
+- The round's instrument-health dump, ELEVEN panels (counted against the rendered figure): (1) G0 token-identity pair counts per direction (realized 12/12 directions at 6/6 intact pairs vs the testability floor of 4); (2) coherence-retention fraction (>60 screen) per model × arm; (3) min-length (<48-token) drop fraction per model × arm (R5/N2.5 — there is NO per-cell coherence-rate panel; retention is reported per model × arm); (4) grid cap-hit percent per (direction × slot × arm) UNIT at 4096 with the registered G5 trigger line and a truncated-rows twin axis (and the § shared-Methodology disclosure that the trigger is equivalent to "≥1 row" at n=30); (5) decay-judge drop-class tallies per wave (content / transport / api-refusal, kept separate; pre-recovery hatched vs post rule-28 sync re-issue); (6) decay-judge `frac_items_complete` per wave × arm vs the 0.95 floor (pre-recovery values as open circles); (7) absolute Q1 starting-level gap per model × estimand (N2.2); (8) the rung-intersection sensitivity contrast (N2.3); (9) the fragment-mean vs whole-response score correlation per model × arm (instrument sanity); (10) the conjunct-score heatmap; (11) the rule-19 TF-margin vs F validation scatter. Three companion views (`conjunct_diag`, `dv_agreement`, `rubric_bridge`) are committed beside it.
+- Sources: `eval_results/issue_2329/q35_ladder_decay/{gates,judge,f_metrics,decay}/`.
+
+- Ten declared panels. Row 1: G0 token-identity pair counts per direction (all 12 directions at 6/6 intact pairs vs the testability floor of 4); N2.5 coherence-retention fraction (> 60 screen) and min-length (< 48 token) drop fraction per model x arm (q35 steered 2/240 = 0.83%, all other arms 0). Row 2: grid cap-hit percent per (direction x slot x arm) unit at the uniform max_new_tokens = 4096 with the pre-registered 2% G5 re-gen trigger line and a truncated-rows twin axis (n = 30 draws per unit; realized totals: grid 29/2,160 = 1.34%, anchors 5/420 = 1.19%; 25 of 72 grid units sit above the per-unit 2% line, where one truncated row = 3.3%); decay-judge drop classes per wave (content / transport / api-refusal; hatched = pre-recovery, plain = post rule-28 sync re-issue — 17 API-classifier-censored draws re-issued sync, 17/17 recovered, 0 re-refusals).
+- Row 3: decay-judge frac_items_complete per wave x arm vs the 0.95 floor (post-recovery 1.00 for every wave x arm; open circles = pre-recovery values); N2.2 absolute Q1 starting-level gap (steered minus ceiling, 0-1 scale) per model x estimand; N2.3 rung-intersection sensitivity (delta-D on the primary rungs vs the r1/r2/r3 cross-model intersection rungs). Row 4: fragment-mean vs whole-response score Spearman rho per model x arm (instrument sanity; per-arm n printed); conjunct-score heatmap (mean 0-100 judge score per direction x conjunct); rule-19 TF-margin vs F_target validation scatter (per-cell means, rho = 0.50, p = 0.020, n = 21 steered context-end cells).
+- Companion (conjunct_diag): larger per-persona view of the conjunct decomposition — mean 0-100 judge score per conjunct rubric (r1_pirate: dialect / sea / warning; r2_butler: address / courtesy / formality / household) plus the holistic score, one bar group per conjunct with direction x slot bars, steered arm only.
+- Companion (dv_agreement): three per-cell scatters — F_act (pair-own contrast projection) vs F_target over all three arms' carrier cells (Spearman rho = +0.50); per-cell mean TF margin shift (nats/token) vs per-cell mean F_target (rho = +0.50, p = 0.020, n = 21); coherence rate vs cap-hit fraction per cell (432 carrier cells total across the three arms).
+- Companion (rubric_bridge): mean netted dual-rubric F (the parent #2162 ladder metric) vs mean F_target (this round's primary) per (direction x slot x arm), with the identity line; arm colors as in the hero figure.
+
+![Ladder + decay diagnostics dump — q35_ladder_decay_diagnostics](https://raw.githubusercontent.com/superkaiba/explore-persona-space/216c793f5013e6eed897e90011bc187f2da54b76/figures/issue_2329/q35_ladder_decay/q35_ladder_decay_diagnostics.png)
+
+![Ladder + decay diagnostics dump — conjunct_diag](https://raw.githubusercontent.com/superkaiba/explore-persona-space/216c793f5013e6eed897e90011bc187f2da54b76/figures/issue_2329/q35_ladder_decay/conjunct_diag.png)
+
+![Ladder + decay diagnostics dump — dv_agreement](https://raw.githubusercontent.com/superkaiba/explore-persona-space/216c793f5013e6eed897e90011bc187f2da54b76/figures/issue_2329/q35_ladder_decay/dv_agreement.png)
+
+![Ladder + decay diagnostics dump — rubric_bridge](https://raw.githubusercontent.com/superkaiba/explore-persona-space/216c793f5013e6eed897e90011bc187f2da54b76/figures/issue_2329/q35_ladder_decay/rubric_bridge.png)
+
+
 ## Extra tables / diagnostics
 
 ### Generation cap-hit (realized, per the standing cap-hit reporting rule)
