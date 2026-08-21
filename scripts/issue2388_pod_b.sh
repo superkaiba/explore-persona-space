@@ -218,8 +218,19 @@ fi
 # --------------------------------- (v)+(vi) QA maps + capped primary sweep ---
 if phase_done p4-qa-maps-done; then echo "[phase=p4_qa_maps] SKIP (done-sentinel)"; else
 echo "[phase=p4_qa_maps]"
-uv run python scripts/issue2388_fits.py --smoke --phase sweep --surface qa --map-cell fu0 --device cuda --qa-store-dir "$QA_STORE_DIR"
-uv run python scripts/issue2388_fits.py --phase maps --surface qa --device cuda \
+# R6: the qa/fu0 smoke sweep demands ALL six (family x f_U) keys resolved in
+# the SMOKE manifest (assert_joint_feasibility require_all binds every
+# non-fu1 cell), but the phase-(i) G2 smoke fit only linear__shared__fu0 —
+# the Pod C R2 class one level up. Smoke the sweep code path on the fu1
+# cell instead (require_all=False; same qa loader + sweep dispatch
+# coverage, matching the Pod C per-surface smokes) and fit its map pair
+# into the smoke manifest first (phase maps skips manifest-present keys on
+# re-entry). --qa-store-dir rides every qa call: _get_table reads it for
+# the qa surface and the default (/workspace/store) is the UNRESOLVED
+# parent on this pod.
+uv run python scripts/issue2388_fits.py --smoke --phase maps --surface qa --keys linear__qa__fu1 mlp__qa__fu1 --device cuda --qa-store-dir "$QA_STORE_DIR"
+uv run python scripts/issue2388_fits.py --smoke --phase sweep --surface qa --map-cell fu1 --device cuda --qa-store-dir "$QA_STORE_DIR"
+uv run python scripts/issue2388_fits.py --phase maps --surface qa --device cuda --qa-store-dir "$QA_STORE_DIR" \
   --keys linear__qa__fu0 linear__qa__fu05 linear__qa__fu1 linear__qa__additive \
          mlp__qa__fu0 mlp__qa__fu05 mlp__qa__fu1 mlp__qa__additive
 uv run python scripts/issue2388_fits.py --phase upload
