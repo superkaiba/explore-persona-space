@@ -8,9 +8,10 @@
  "arm": "context",
  "bars_condition": "on_policy",
  "story_boundary_form": "attrib_quoted",
- "shared_ylim": [
+ "panel": "single panel, both models as overlapping bars (instruct wide behind, base narrow in front)",
+ "ylim": [
   -0.05,
-  0.75
+  0.8
  ],
  "x_order": [
   "assistant chat template",
@@ -20,26 +21,26 @@
   "Dana",
   "Vex"
  ],
- "x_order_derived_from": "instruct direct_transfer_r2, source first",
- "base_own_order_differs": [
-  "assistant chat template",
-  "HELIOS",
-  "assistant in story",
-  "Wren",
-  "Dana",
-  "Vex"
- ],
+ "x_order_derived_from": "instruct direct_transfer_r2 of the assistant chat-template map into each cell, descending; transfer source first",
+ "x_order_values_not_drawn": "the per-group transfer numbers were removed from the canvas by user directive 2026-08-21; they remain per cell below",
  "fit": "GCV ridge (dof cap 0.9), shared conversation-grouped 5-fold CV, seed 137",
  "pooled_map_def": "ONE map fit jointly on all 56 #2054 cells (both models, every framing x identity x condition), scored on each cell's held-out folds",
  "own_map_def": "that cell's banked within-cell ceiling (same estimator, fit on that cell alone)",
- "closeness_def": "direct (rung-1) transfer R^2 of the assistant chat-template map into that cell, pooled fold-mean; the chat cell is the source itself",
+ "character_descriptions_verbatim": {
+  "HELIOS": "a calm, precise artificial intelligence",
+  "Wren": "a warm, endlessly helpful assistant who patiently helps anyone who asks",
+  "Dana": "an ordinary, unremarkable everyday person",
+  "Vex": "a theatrical, scheming villain who delights in menace"
+ },
+ "character_descriptions_source": "issue1310_common.PERSONAS (condensed for the axis; verbatim strings above)",
  "bars_drawn": [
   "pooled_m0_r2",
   "own_map_ceiling_r2"
  ],
  "caveats": {
-  "condition_mismatch": "BARS are on-policy; CLOSENESS is measured on the INSERTED cells, because the #2054 ladder's chat anchor is inserted-only by construction (an on-policy chat source has no transfer pair). Chosen by user directive 2026-08-21 over switching the bars to inserted; disclosed on the x-axis label.",
-  "bare_label_form_excluded": "the bare-label story boundary carries a trailing-space tokenization artifact (23.2% digit-start onsets); the attributed-quote form is drawn instead"
+  "condition_mismatch": "BARS are on-policy; the X ORDER is derived from a transfer statistic measured on the INSERTED cells, because the #2054 ladder's chat anchor is inserted-only by construction (an on-policy chat source has no transfer pair). The numbers are no longer on the canvas, so this caveat lives only here and in the module docstring.",
+  "bare_label_form_excluded": "the bare-label story boundary carries a trailing-space tokenization artifact (23.2% digit-start onsets); the attributed-quote form is drawn instead",
+  "overlap_precondition": "base < instruct on all 12 drawn quantities; asserted at render time by assert_base_nests_inside_instruct"
  },
  "dropped_groups": {
   "assistant bare text": "removed from the figure by user directive 2026-08-21"
@@ -51,6 +52,7 @@
     "cell": "conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b-instruct",
     "who": "assistant",
     "frame": "chat template",
+    "short_description": "the assistant itself",
     "example": "<|im_start|>assistant",
     "is_transfer_source": true,
     "chat_map_direct_transfer_r2": null,
@@ -67,6 +69,7 @@
     "cell": "conversation_paired_stories_assistant__on_policy__attrib_quoted__qwen2.5-7b-instruct",
     "who": "assistant",
     "frame": "in story",
+    "short_description": "same assistant, as a character",
     "example": "Assistant replied: \"\u2026\"",
     "is_transfer_source": false,
     "chat_map_direct_transfer_r2": -0.26661087453380283,
@@ -83,6 +86,7 @@
     "cell": "char_helios__on_policy__attrib_quoted__qwen2.5-7b-instruct",
     "who": "HELIOS",
     "frame": "in story",
+    "short_description": "calm, precise AI",
     "example": "HELIOS replied: \"\u2026\"",
     "is_transfer_source": false,
     "chat_map_direct_transfer_r2": -0.30438882022099484,
@@ -99,6 +103,7 @@
     "cell": "char_wren__on_policy__attrib_quoted__qwen2.5-7b-instruct",
     "who": "Wren",
     "frame": "in story",
+    "short_description": "warm, endlessly helpful",
     "example": "Wren replied: \"\u2026\"",
     "is_transfer_source": false,
     "chat_map_direct_transfer_r2": -0.3373750302140662,
@@ -115,6 +120,7 @@
     "cell": "char_dana__on_policy__attrib_quoted__qwen2.5-7b-instruct",
     "who": "Dana",
     "frame": "in story",
+    "short_description": "ordinary, unremarkable person",
     "example": "Dana replied: \"\u2026\"",
     "is_transfer_source": false,
     "chat_map_direct_transfer_r2": -0.35163909999745474,
@@ -131,6 +137,7 @@
     "cell": "char_vex__on_policy__attrib_quoted__qwen2.5-7b-instruct",
     "who": "Vex",
     "frame": "in story",
+    "short_description": "theatrical, scheming villain",
     "example": "Vex replied: \"\u2026\"",
     "is_transfer_source": false,
     "chat_map_direct_transfer_r2": -0.5090385755011537,
@@ -149,6 +156,7 @@
     "cell": "conversation_paired_stories_assistant__on_policy__chat__qwen2.5-7b",
     "who": "assistant",
     "frame": "chat template",
+    "short_description": "the assistant itself",
     "example": "<|im_start|>assistant",
     "is_transfer_source": true,
     "chat_map_direct_transfer_r2": null,
@@ -165,6 +173,7 @@
     "cell": "conversation_paired_stories_assistant__on_policy__attrib_quoted__qwen2.5-7b",
     "who": "assistant",
     "frame": "in story",
+    "short_description": "same assistant, as a character",
     "example": "Assistant replied: \"\u2026\"",
     "is_transfer_source": false,
     "chat_map_direct_transfer_r2": -0.18810432364732838,
@@ -181,6 +190,7 @@
     "cell": "char_helios__on_policy__attrib_quoted__qwen2.5-7b",
     "who": "HELIOS",
     "frame": "in story",
+    "short_description": "calm, precise AI",
     "example": "HELIOS replied: \"\u2026\"",
     "is_transfer_source": false,
     "chat_map_direct_transfer_r2": -0.1766897844938152,
@@ -197,6 +207,7 @@
     "cell": "char_wren__on_policy__attrib_quoted__qwen2.5-7b",
     "who": "Wren",
     "frame": "in story",
+    "short_description": "warm, endlessly helpful",
     "example": "Wren replied: \"\u2026\"",
     "is_transfer_source": false,
     "chat_map_direct_transfer_r2": -0.19416040634939655,
@@ -213,6 +224,7 @@
     "cell": "char_dana__on_policy__attrib_quoted__qwen2.5-7b",
     "who": "Dana",
     "frame": "in story",
+    "short_description": "ordinary, unremarkable person",
     "example": "Dana replied: \"\u2026\"",
     "is_transfer_source": false,
     "chat_map_direct_transfer_r2": -0.20248057887225296,
@@ -229,6 +241,7 @@
     "cell": "char_vex__on_policy__attrib_quoted__qwen2.5-7b",
     "who": "Vex",
     "frame": "in story",
+    "short_description": "theatrical, scheming villain",
     "example": "Vex replied: \"\u2026\"",
     "is_transfer_source": false,
     "chat_map_direct_transfer_r2": -0.24458439615598215,

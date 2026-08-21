@@ -1,0 +1,249 @@
+{
+  "commit": "55ca9c01+dirty",
+  "render_id": "5cbaa2e7908a41f4",
+  "git_commit": "55ca9c01593241b5d882eaaa4aea084184c9575b",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.meta.json",
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.pdf",
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.png",
+    "docs/posters/mats_2026/figures/plot6c_pooled_lattice_data.json",
+    "docs/posters/mats_2026/make_plot6c_pooled_lattice.py",
+    "eval_results/issue_2223/casestudy_replay/qwen3-32b/native_axis_fidelity_preimage/judged/judge_complete_delusion.json",
+    "eval_results/issue_2223/casestudy_replay/qwen3-32b/native_axis_fidelity_preimage/judged/judge_complete_selfharm.json",
+    "eval_results/issue_666/headline/predictor_headline.json",
+    "scripts/issue1901_body_figures.py",
+    "tasks/completed/2214/body.md",
+    "tasks/completed/2214/comments.jsonl",
+    "tasks/completed/2214/concerns.jsonl",
+    "tasks/completed/2214/events.jsonl",
+    "tasks/completed/2214/plans/plan.md",
+    "tasks/completed/2214/plans/v1.md",
+    "tasks/completed/2214/plans/v2.md",
+    "tasks/completed/2214/plans/v3.md",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tasks/running/2214/body.md",
+    "tasks/running/2214/comments.jsonl",
+    "tasks/running/2214/concerns.jsonl",
+    "tasks/running/2214/events.jsonl",
+    "tasks/running/2214/plans/plan.md",
+    "tasks/running/2214/plans/v1.md",
+    "tasks/running/2214/plans/v2.md",
+    "tasks/running/2214/plans/v3.md",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "docs/posters/mats_2026/make_plot6c_pooled_lattice.py",
+  "created": "2026-08-21T08:35:42Z",
+  "figsize": [
+    9.6,
+    3.9
+  ],
+  "points": [
+    {
+      "sorted by similarity to assistant in chat template": -0.19,
+      "held-out $R^2$": 0.43478488946626914,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "sorted by similarity to assistant in chat template": 0.81,
+      "held-out $R^2$": 0.35613889553138234,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "sorted by similarity to assistant in chat template": 1.81,
+      "held-out $R^2$": 0.34068194443813604,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "sorted by similarity to assistant in chat template": 2.81,
+      "held-out $R^2$": 0.2984944019747089,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "sorted by similarity to assistant in chat template": 3.81,
+      "held-out $R^2$": 0.29102155422437836,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "sorted by similarity to assistant in chat template": 4.81,
+      "held-out $R^2$": 0.18545197766814003,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "sorted by similarity to assistant in chat template": 0.19,
+      "held-out $R^2$": 0.5796996369279679,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "sorted by similarity to assistant in chat template": 1.19,
+      "held-out $R^2$": 0.3790039749146514,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "sorted by similarity to assistant in chat template": 2.19,
+      "held-out $R^2$": 0.36960715629310803,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "sorted by similarity to assistant in chat template": 3.19,
+      "held-out $R^2$": 0.3559185425108692,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "sorted by similarity to assistant in chat template": 4.19,
+      "held-out $R^2$": 0.3609899231388926,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "sorted by similarity to assistant in chat template": 5.19,
+      "held-out $R^2$": 0.2962172010567693,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "sorted by similarity to assistant in chat template": -0.19,
+      "held-out $R^2$": -0.01584190966447796,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "sorted by similarity to assistant in chat template": 0.81,
+      "held-out $R^2$": 0.2056614105100234,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "sorted by similarity to assistant in chat template": 1.81,
+      "held-out $R^2$": 0.17316470022616537,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "sorted by similarity to assistant in chat template": 2.81,
+      "held-out $R^2$": 0.1604714183976077,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "sorted by similarity to assistant in chat template": 3.81,
+      "held-out $R^2$": 0.19510845505801633,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "sorted by similarity to assistant in chat template": 4.81,
+      "held-out $R^2$": 0.03900911362100545,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "sorted by similarity to assistant in chat template": 0.19,
+      "held-out $R^2$": 0.20736087733279018,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "sorted by similarity to assistant in chat template": 1.19,
+      "held-out $R^2$": 0.2830236426880387,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "sorted by similarity to assistant in chat template": 2.19,
+      "held-out $R^2$": 0.27988210680548775,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "sorted by similarity to assistant in chat template": 3.19,
+      "held-out $R^2$": 0.26435334458909887,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "sorted by similarity to assistant in chat template": 4.19,
+      "held-out $R^2$": 0.27919295858458054,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "sorted by similarity to assistant in chat template": 5.19,
+      "held-out $R^2$": 0.2185863641514155,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 24,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "Pooled vs specific fit, evaluated per character/framing \u2014 Qwen-2.5-7B",
+        "xlabel": "sorted by similarity to assistant in chat template",
+        "ylabel": "held-out $R^2$",
+        "legend_labels": [
+          "instruct \u2014 one map, all pooled",
+          "instruct \u2014 own map",
+          "base \u2014 one map, all pooled",
+          "base \u2014 own map"
+        ],
+        "annotations": [
+          "the assistant itself",
+          "<|im_start|>assistant",
+          "same assistant, as a character",
+          "Assistant replied: \"\u2026\"",
+          "calm, precise AI",
+          "HELIOS replied: \"\u2026\"",
+          "warm, endlessly helpful",
+          "Wren replied: \"\u2026\"",
+          "ordinary, unremarkable person",
+          "Dana replied: \"\u2026\"",
+          "theatrical, scheming villain",
+          "Vex replied: \"\u2026\""
+        ],
+        "xticklabels": [
+          "assistant\nchat template",
+          "assistant\nin story",
+          "HELIOS\nin story",
+          "Wren\nin story",
+          "Dana\nin story",
+          "Vex\nin story"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      }
+    ],
+    "series": [
+      "instruct \u2014 one map, all pooled",
+      "instruct \u2014 own map",
+      "base \u2014 one map, all pooled",
+      "base \u2014 own map"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

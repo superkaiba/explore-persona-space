@@ -1,52 +1,55 @@
 """MATS 2026 poster, section 6 ("Is it a persona mapping?"): the #2054 replacement.
 
 Supersedes make_plot6_persona.py's plot6b for the poster's section-6 slot. Same
-figure grammar (pooled map vs own map, held-out R^2, two bars per group), but
-every group is drawn from ONE #2054 pooled lattice, so all six are directly
-comparable and the plot6b "*different pool + grain" asterisk disappears.
+figure grammar (pooled map vs own map, held-out R^2), but every group is drawn
+from ONE #2054 pooled lattice, so all six are directly comparable and the
+plot6b "*different pool + grain" asterisk disappears.
 
-SIX GROUPS, on-policy condition, attributed-quote boundary for every story cell,
-sorted by closeness to the assistant chat-template map (see below):
+ONE PANEL, both models as OVERLAPPING bars (user directive 2026-08-21): at each
+of the two slots per group the instruct value is drawn wide and behind, the base
+value narrow and in front. Base sits below instruct on every one of the twelve
+drawn quantities, so the narrow bar always nests visibly inside the wide one —
+`assert_base_nests_inside_instruct` pins that precondition and fails loud if a
+future data refresh breaks it (the overlap would hide a bar).
+
+SIX GROUPS, on-policy condition, attributed-quote boundary for every story cell:
   assistant chat template  `<|im_start|>user\\n<Q><|im_end|>\\n
                            <|im_start|>assistant\\n<A><|im_end|>`.
   assistant in story       the assistant identity inside a narrative scaffold,
                            boundary `Assistant replied: "<A>"`.
   HELIOS / Wren / Dana / Vex   four fictional characters in the SAME story
-                           frame, boundary `<Name> replied: "<A>"`.
-(The assistant bare-text framing was dropped from the figure per user directive
-2026-08-21; its numbers stay in the sidecar's `dropped_groups` for the record.)
+                           frame, boundary `<Name> replied: "<A>"`. The x-label
+                           descriptions condense `issue1310_common.PERSONAS`
+                           verbatim (see SHORT_DESC).
 
-TWO BARS per group:
+TWO BARS per group, per model:
   light  pooled map (M0)  — ONE ridge map fit jointly on all 56 #2054 cells
                             (both models, every framing/identity/condition),
                             scored on this cell's held-out folds.
-  dark   own map          — this cell's banked within-cell ceiling (the same
+  strong own map          — this cell's banked within-cell ceiling (the same
                             estimator fit on this cell alone).
 
-X ORDER + the printed closeness number: the DIRECT (rung-1) transfer of the
-assistant chat-template context->answer map into that cell — "how well does the
-assistant's own map already work here, with no refit". Read from the #2054
-9-rung ladder via eval_results/issue_2054/chat_closeness_ladder.json.
+X ORDER: descending direct (rung-1) transfer of the assistant chat-template map
+into each cell — how well the assistant's own map already works there with no
+refit — read from eval_results/issue_2054/chat_closeness_ladder.json, instruct
+ranking, source first. The per-group transfer NUMBERS were removed from the
+canvas (user directive 2026-08-21); they survive in the sidecar, and the axis
+label states only that the x order is a similarity ranking.
 
-CONDITION MISMATCH, disclosed on the x-axis label and in the sidecar (user
-directive 2026-08-21, having seen the alternative): the BARS are on-policy, but
-the CLOSENESS is measured on the INSERTED cells — the ladder's chat anchor is
-inserted-only by construction, so an on-policy chat source has no transfer pair.
-The ordering axis and the bars therefore come from different conditions.
-
-TWO FIGURES, one per model (user directive 2026-08-21), on a SHARED y-limit and
-a SHARED x order (the instruct closeness ranking) so the panels read side by
-side. Each panel prints its OWN model's closeness values, so the base panel's
-numbers are deliberately non-monotone: base ranks HELIOS above assistant-in-
-story, the one order difference between the models.
+That ordering statistic is measured on the INSERTED cells while the bars are
+ON-POLICY: the #2054 ladder's chat anchor is inserted-only by construction, so
+an on-policy chat source has no transfer pair. Recorded in the sidecar's
+`caveats.condition_mismatch`; no longer visible on the figure now that the
+numbers are gone.
 
 Numbers read ONLY from committed
   eval_results/issue_2054/pool_specialize/digest.json     (bars)
-  eval_results/issue_2054/chat_closeness_ladder.json      (x order + closeness)
+  eval_results/issue_2054/chat_closeness_ladder.json      (x order)
 Never hand-typed.
 
-Writes docs/posters/mats_2026/figures/plot6c_pooled_lattice_{instruct,base}
-.{png,pdf,meta.json} + plot6c_pooled_lattice_data.json.
+Writes docs/posters/mats_2026/figures/plot6c_pooled_lattice.{png,pdf,meta.json}
++ plot6c_pooled_lattice_data.json. Supersedes the per-model
+plot6c_pooled_lattice_{instruct,base}.* pair, deleted in the same change.
 """
 
 import json
@@ -73,12 +76,11 @@ OUT_DIR = REPO / "docs" / "posters" / "mats_2026" / "figures"
 SRC_BARS = "eval_results/issue_2054/pool_specialize/digest.json"
 SRC_CLOSE = "eval_results/issue_2054/chat_closeness_ladder.json"
 
-FIGSIZE = (9.4, 3.7)
+FIGSIZE = (9.6, 3.9)
 CONDITION = "on_policy"
-ORDER_MODEL = "instruct"  # the shared x order both panels use
+ORDER_MODEL = "instruct"
 
 MODEL_SUFFIX = {"instruct": "qwen2.5-7b-instruct", "base": "qwen2.5-7b"}
-MODEL_TITLE = {"instruct": "Qwen-2.5-7B-Instruct", "base": "Qwen-2.5-7B (base)"}
 
 A = "conversation_paired_stories_assistant"
 # key -> (variant, form, who-line, frame-line, example-line). `key` matches the
@@ -93,6 +95,23 @@ GROUPS = {
 }
 SOURCE_KEY = "assistant chat template"
 DROPPED = ["assistant bare text"]  # user directive 2026-08-21; kept in the sidecar
+
+# Condensed from issue1310_common.PERSONAS (verbatim source strings recorded in
+# the sidecar under `character_descriptions_verbatim`).
+SHORT_DESC = {
+    "assistant chat template": "the assistant itself",
+    "assistant in story": "same assistant, as a character",
+    "HELIOS": "calm, precise AI",
+    "Wren": "warm, endlessly helpful",
+    "Dana": "ordinary, unremarkable person",
+    "Vex": "theatrical, scheming villain",
+}
+VERBATIM_DESC = {
+    "HELIOS": "a calm, precise artificial intelligence",
+    "Wren": "a warm, endlessly helpful assistant who patiently helps anyone who asks",
+    "Dana": "an ordinary, unremarkable everyday person",
+    "Vex": "a theatrical, scheming villain who delights in menace",
+}
 
 
 def x_order(closeness: dict) -> list[str]:
@@ -115,16 +134,16 @@ def load_cells(model: str, order: list[str], closeness: dict) -> list[dict]:
         if cell not in by_cell:
             raise KeyError(f"cell {cell!r} absent from {SRC_BARS}")
         c = by_cell[cell]
-        close = close_rows[key].get("direct_transfer_r2")  # None for the source
         out.append(
             {
                 "group": key,
                 "cell": cell,
                 "who": who,
                 "frame": frame,
+                "short_description": SHORT_DESC[key],
                 "example": example,
                 "is_transfer_source": key == SOURCE_KEY,
-                "chat_map_direct_transfer_r2": close,
+                "chat_map_direct_transfer_r2": close_rows[key].get("direct_transfer_r2"),
                 "chat_map_reparam9_ratio_of_ceiling": close_rows[key].get(
                     "reparam9_ratio_of_ceiling"
                 ),
@@ -139,58 +158,99 @@ def load_cells(model: str, order: list[str], closeness: dict) -> list[dict]:
     return out
 
 
-def plot_model(model: str, cells: list[dict], ylim: tuple[float, float]) -> None:
+def assert_base_nests_inside_instruct(per_model: dict[str, list[dict]]) -> None:
+    """The overlap only reads if the narrow (base) bar is the shorter one.
+
+    Drawn base-in-front-of-instruct, a base value ABOVE its instruct twin would
+    hide the instruct bar behind it. Fail loud rather than ship a figure whose
+    occlusion silently drops a series.
+    """
+    for bi, bb in zip(per_model["instruct"], per_model["base"], strict=True):
+        assert bi["group"] == bb["group"], (bi["group"], bb["group"])
+        for field in ("pooled_m0_r2", "own_map_ceiling_r2"):
+            if bb[field] > bi[field]:
+                raise AssertionError(
+                    f"base {field} ({bb[field]:.4f}) exceeds instruct ({bi[field]:.4f}) for "
+                    f"{bi['group']!r} — the narrow base bar would occlude the wide instruct "
+                    f"bar; re-draw side by side instead of overlapping"
+                )
+
+
+def plot_combined(per_model: dict[str, list[dict]], ylim: tuple[float, float]) -> None:
+    cells = per_model["instruct"]  # label source; both share the x order
     fig, ax = plt.subplots(figsize=FIGSIZE)
     xs = np.arange(len(cells))
-    w = 0.34
-    strong = paper_color("instruct" if model == "instruct" else "base")
-    light = tuple(0.35 * ch + 0.65 for ch in mcolors.to_rgb(strong))
+    w_wide, w_narrow = 0.38, 0.19
 
+    def shades(concept: str) -> tuple[tuple, str]:
+        strong = paper_color(concept)
+        light = tuple(0.35 * ch + 0.65 for ch in mcolors.to_rgb(strong))
+        return light, strong
+
+    i_light, i_strong = shades("instruct")
+    b_light, b_strong = shades("base")
+
+    # Wide instruct bars first, narrow base bars over them.
     ax.bar(
-        xs - w / 2,
-        [c["pooled_m0_r2"] for c in cells],
-        width=w,
-        color=light,
-        label="one map, all characters/framings pooled",
+        xs - w_wide / 2,
+        [c["pooled_m0_r2"] for c in per_model["instruct"]],
+        width=w_wide,
+        color=i_light,
+        label="instruct — one map, all pooled",
     )
     ax.bar(
-        xs + w / 2,
-        [c["own_map_ceiling_r2"] for c in cells],
-        width=w,
-        color=strong,
-        label="that character/framing's own map",
+        xs + w_wide / 2,
+        [c["own_map_ceiling_r2"] for c in per_model["instruct"]],
+        width=w_wide,
+        color=i_strong,
+        label="instruct — own map",
+    )
+    ax.bar(
+        xs - w_wide / 2,
+        [c["pooled_m0_r2"] for c in per_model["base"]],
+        width=w_narrow,
+        color=b_light,
+        edgecolor="white",
+        linewidth=0.4,
+        label="base — one map, all pooled",
+    )
+    ax.bar(
+        xs + w_wide / 2,
+        [c["own_map_ceiling_r2"] for c in per_model["base"]],
+        width=w_narrow,
+        color=b_strong,
+        edgecolor="white",
+        linewidth=0.4,
+        label="base — own map",
     )
     ax.axhline(0.0, color="0.6", lw=0.6, ls=":", zorder=1)
 
-    # Tick label carries who/frame; the verbatim boundary form and the closeness
-    # value ride separate lines so each can take its own face and size.
+    # Tick label carries who/frame; the short description and the verbatim
+    # boundary form ride separate lines so each can take its own face and size.
     ax.set_xticks(xs, [f"{c['who']}\n{c['frame']}" for c in cells])
     for x, c in zip(xs, cells, strict=True):
+        ax.annotate(
+            c["short_description"],
+            xy=(x, 0),
+            xycoords=("data", "axes fraction"),
+            xytext=(0, -33),
+            textcoords="offset points",
+            ha="center",
+            va="top",
+            fontsize=6.2,
+            color="0.30",
+        )
         ax.annotate(
             c["example"],
             xy=(x, 0),
             xycoords=("data", "axes fraction"),
-            xytext=(0, -34),
+            xytext=(0, -46),
             textcoords="offset points",
             ha="center",
             va="top",
             fontsize=6.0,
             family="monospace",
-            color="0.35",
-        )
-        close = (
-            "(source)" if c["is_transfer_source"] else f"{c['chat_map_direct_transfer_r2']:+.2f}"
-        )
-        ax.annotate(
-            close,
-            xy=(x, 0),
-            xycoords=("data", "axes fraction"),
-            xytext=(0, -48),
-            textcoords="offset points",
-            ha="center",
-            va="top",
-            fontsize=7.5,
-            color="0.15",
+            color="0.45",
         )
 
     ax.set_ylabel("held-out $R^2$")
@@ -198,18 +258,14 @@ def plot_model(model: str, cells: list[dict], ylim: tuple[float, float]) -> None
     # NEGATIVE (-0.016), and a 0.0 floor renders it as no bar at all — reading
     # as missing data rather than as a map that fails on that cell.
     ax.set_ylim(*ylim)
-    ax.set_xlabel(
-        "closeness to the assistant chat-template map: direct transfer $R^2$ "
-        "(measured on the inserted cells)",
-        labelpad=30,
-    )
-    ax.set_title(f"Pooled vs specific fit, evaluated per character/framing — {MODEL_TITLE[model]}")
-    ax.legend(frameon=False, loc="upper left", ncols=1, handlelength=1.4)
+    ax.set_xlabel("sorted by similarity to assistant in chat template", labelpad=30)
+    ax.set_title("Pooled vs specific fit, evaluated per character/framing — Qwen-2.5-7B")
+    ax.legend(frameon=False, loc="upper right", ncols=2, handlelength=1.3, columnspacing=1.2)
     fig.tight_layout()
     fig.subplots_adjust(bottom=0.34)
-    savefig_paper(fig, f"plot6c_pooled_lattice_{model}", dir=OUT_DIR)
+    savefig_paper(fig, "plot6c_pooled_lattice", dir=OUT_DIR)
     plt.close(fig)
-    print(f"WROTE {OUT_DIR / f'plot6c_pooled_lattice_{model}.png'}")
+    print(f"WROTE {OUT_DIR / 'plot6c_pooled_lattice.png'}")
 
 
 def main() -> None:
@@ -219,6 +275,7 @@ def main() -> None:
     closeness = json.loads(CLOSENESS.read_text())
     order = x_order(closeness)
     per_model = {m: load_cells(m, order, closeness) for m in ("instruct", "base")}
+    assert_base_nests_inside_instruct(per_model)
 
     vals = [
         v
@@ -228,19 +285,10 @@ def main() -> None:
     ]
     ylim = (
         float(np.floor(min(0.0, min(vals) - 0.02) * 20) / 20),
-        float(np.ceil((max(vals) * 1.28) * 20) / 20),  # headroom for the legend
+        float(np.ceil((max(vals) * 1.30) * 20) / 20),  # headroom for the legend
     )
+    plot_combined(per_model, ylim)
 
-    for model in ("instruct", "base"):
-        plot_model(model, per_model[model], ylim)
-
-    base_own_order = [
-        c["group"]
-        for c in sorted(
-            per_model["base"],
-            key=lambda c: (not c["is_transfer_source"], -(c["chat_map_direct_transfer_r2"] or 0)),
-        )
-    ]
     (OUT_DIR / "plot6c_pooled_lattice_data.json").write_text(
         json.dumps(
             {
@@ -250,27 +298,34 @@ def main() -> None:
                 "arm": "context",
                 "bars_condition": CONDITION,
                 "story_boundary_form": "attrib_quoted",
-                "shared_ylim": list(ylim),
+                "panel": "single panel, both models as overlapping bars "
+                "(instruct wide behind, base narrow in front)",
+                "ylim": list(ylim),
                 "x_order": order,
-                "x_order_derived_from": f"{ORDER_MODEL} direct_transfer_r2, source first",
-                "base_own_order_differs": base_own_order,
+                "x_order_derived_from": "instruct direct_transfer_r2 of the assistant "
+                "chat-template map into each cell, descending; transfer source first",
+                "x_order_values_not_drawn": "the per-group transfer numbers were removed "
+                "from the canvas by user directive 2026-08-21; they remain per cell below",
                 "fit": "GCV ridge (dof cap 0.9), shared conversation-grouped 5-fold CV, seed 137",
                 "pooled_map_def": "ONE map fit jointly on all 56 #2054 cells (both models, "
                 "every framing x identity x condition), scored on each cell's held-out folds",
                 "own_map_def": "that cell's banked within-cell ceiling (same estimator, "
                 "fit on that cell alone)",
-                "closeness_def": "direct (rung-1) transfer R^2 of the assistant chat-template "
-                "map into that cell, pooled fold-mean; the chat cell is the source itself",
+                "character_descriptions_verbatim": VERBATIM_DESC,
+                "character_descriptions_source": "issue1310_common.PERSONAS (condensed for "
+                "the axis; verbatim strings above)",
                 "bars_drawn": ["pooled_m0_r2", "own_map_ceiling_r2"],
                 "caveats": {
-                    "condition_mismatch": "BARS are on-policy; CLOSENESS is measured on the "
-                    "INSERTED cells, because the #2054 ladder's chat anchor is inserted-only "
-                    "by construction (an on-policy chat source has no transfer pair). Chosen "
-                    "by user directive 2026-08-21 over switching the bars to inserted; "
-                    "disclosed on the x-axis label.",
+                    "condition_mismatch": "BARS are on-policy; the X ORDER is derived from a "
+                    "transfer statistic measured on the INSERTED cells, because the #2054 "
+                    "ladder's chat anchor is inserted-only by construction (an on-policy chat "
+                    "source has no transfer pair). The numbers are no longer on the canvas, so "
+                    "this caveat lives only here and in the module docstring.",
                     "bare_label_form_excluded": "the bare-label story boundary carries a "
                     "trailing-space tokenization artifact (23.2% digit-start onsets); the "
                     "attributed-quote form is drawn instead",
+                    "overlap_precondition": "base < instruct on all 12 drawn quantities; "
+                    "asserted at render time by assert_base_nests_inside_instruct",
                 },
                 "dropped_groups": {
                     g: "removed from the figure by user directive 2026-08-21" for g in DROPPED
