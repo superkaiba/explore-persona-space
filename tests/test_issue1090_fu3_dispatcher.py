@@ -296,23 +296,38 @@ def test_margin_pool_extra_empty_tranche_raises(tmp_path):
         fu3w._behavior_margin_pools(cfg, "sycophancy")
 
 
-def test_conv_context_is_wildchat_family():
+def test_conv_context_is_wildchat_family(registry_hygiene):
     """Plan §D2: the conversational-prefix arm binds the wildchat-family
-    instance (review Major — was the synthetic cooking exchange). Registration
-    is EXPLICIT (issue-1144 r2 concern fu3-cells-import-time-registry-mutation):
-    importing fu3_cells must NOT mutate CONTEXTS; the binding appears only via
-    register_fu3_contexts(), and this test restores the registry afterwards so
-    the seed-registry pin (test_artifacts_context.py) stays order-independent."""
-    assert fu3_cells.CONV_CONTEXT_ID not in CONTEXTS, (
-        "importing fu3_cells must not register the conv prefix (r2 concern)"
-    )
+    instance. The import-purity half of the retired in-process pre-assert
+    lives in test_fu3_cells_import_is_registry_pure_fresh_interpreter
+    (fresh subprocess, order-immune — #2217); this test checks the
+    REGISTERED binding + idempotency."""
     fu3_cells.register_fu3_contexts()
-    try:
-        ctx = CONTEXTS[fu3_cells.CONV_CONTEXT_ID]
-        assert ctx.family == "wildchat"
-        assert ctx.prefix_turns, "conversational prefix must carry prefix turns"
-        # Idempotent: a second call keeps the SAME registered object.
-        fu3_cells.register_fu3_contexts()
-        assert CONTEXTS[fu3_cells.CONV_CONTEXT_ID] is ctx
-    finally:
-        CONTEXTS.pop(fu3_cells.CONV_CONTEXT_ID, None)
+    ctx = CONTEXTS[fu3_cells.CONV_CONTEXT_ID]
+    assert ctx.family == "wildchat"
+    assert ctx.prefix_turns, "conversational prefix must carry prefix turns"
+    fu3_cells.register_fu3_contexts()  # idempotent: same registered object
+    assert CONTEXTS[fu3_cells.CONV_CONTEXT_ID] is ctx
+
+
+def test_fu3_cells_import_is_registry_pure_fresh_interpreter():
+    """The issue-1144 r2 pin (fu3-cells-import-time-registry-mutation),
+    order-immune form (#2217): a FRESH interpreter importing fu3_cells must
+    NOT find the conv prefix in CONTEXTS. Proven in a subprocess (the
+    gotchas.md #1090-fu6 shape) so no in-process registry state — poisoned
+    or clean — can mask or fake the claim."""
+    import subprocess
+
+    child = (
+        "import sys\n"
+        f"sys.path.insert(0, {str(_SCRIPTS)!r})\n"
+        "import issue1090_fu3_cells as fu3_cells\n"
+        "from explore_persona_space.artifacts.context import CONTEXTS\n"
+        "assert fu3_cells.CONV_CONTEXT_ID not in CONTEXTS, sorted(CONTEXTS)\n"
+        "print('IMPORT-PURE', len(CONTEXTS))\n"
+    )
+    proc = subprocess.run(
+        [sys.executable, "-c", child], capture_output=True, text=True, timeout=600
+    )
+    assert proc.returncode == 0, (proc.stdout[-500:], proc.stderr[-2000:])
+    assert "IMPORT-PURE" in proc.stdout, proc.stdout[-500:]
