@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2447,
+  "highest_id": 2448,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11175,6 +11175,13 @@
       "path": "tasks/proposed/2447",
       "status": "proposed",
       "title": "workflow-fix: slow-tests roster misses the live-bundle no-flags lint test"
+    },
+    "2448": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2448",
+      "status": "proposed",
+      "title": "Fleet-wide Step 9c red: two ungated HF upload call sites in scripts/issue1739_r2v2_run.py"
     },
     "245": {
       "has_clean_result": false,
