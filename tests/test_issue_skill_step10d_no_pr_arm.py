@@ -33,9 +33,23 @@ create + pinned ordering after Round-push-hygiene (9), fail-open echo
 sites + timeout fences (10), the no-executable-git-push INVARIANT over
 the block's fenced Bash (11 — a regex scan with in-test mutation
 controls, not one literal), and the Step 4a else-arm routing prose (12).
+
+Round 2 (#2241, concerns task-title-shell-injection +
+step5-probe-output-validation) added pins 13-14: the PRIMARY create sites
+(Step 4a + the Step 5 ensure) resolve the PR title AS DATA via command
+substitution — never splicing it into shell source (13), and a hostile
+title (backtick / $(...) / double quote / backslash) reaches gh's argv
+boundary LITERALLY, with an in-test negative control proving the old
+spliced form evaluates the same payload (14). Step 10d's trunk splice
+sites are deliberately out of #2241's fence (plan must-ask list) and are
+NOT pinned here.
 """
 
+import json
+import os
 import re
+import shutil
+import subprocess
 from pathlib import Path
 
 from tests.issue_skill_source import issue_skill_text
@@ -238,12 +252,16 @@ def test_step5_draft_pr_ensure_present_and_rc_gated():
 
 
 def test_step5_ensure_fail_open_and_bounded():
-    """Pin 10 (#2241): every failure arm logs + proceeds (3 echo sites), both
-    gh calls are timeout-fenced, and probe failure never blind-creates."""
+    """Pin 10 (#2241; r2 telemetry): every arm logs + proceeds (5 echo sites),
+    both gh calls are timeout-fenced, and probe failure never blind-creates.
+    r2 (concern step5-probe-output-validation) added TELEMETRY-ONLY echoes
+    for the confirmed (>=1) and unexpected/malformed probe outputs; both
+    fall through to 5a exactly as before — the tri-state ROUTING
+    (probe-failed / zero / no-create-fall-through) is unchanged."""
     block = _ensure_block()
     assert (
-        block.count("[step5-pr-ensure]") == 3
-    )  # success + create-fail + probe-fail (3 in insert + 0 elsewhere)
+        block.count("[step5-pr-ensure]") == 5
+    )  # create-ok + create-fail + probe-fail + confirmed + unexpected
     assert block.count("timeout --kill-after=") == 2
     assert "N_PR=probe-failed" in block and '"$N_PR" = "0"' in block
 
@@ -277,3 +295,103 @@ def test_step4a_else_arm_names_step5_ensure():
     text = _text()
     step4a_region = text[: text.index("### Step 5:")]
     assert "Step 5 draft-PR ensure (#2241)" in step4a_region
+
+
+def test_pr_create_sites_use_title_transport():
+    """Pin 13 (#2241 r2, concern task-title-shell-injection): both PRIMARY
+    create sites (Step 4a + the Step 5 ensure) resolve the PR title AS DATA
+    — command substitution over `task.py view --json | jq -r` — instead of
+    splicing `<task title>` into shell source. A splice is injectable at
+    ASSIGNMENT, not just at use (`PR_TITLE="issue-<N>: <task title>"` is
+    equally injectable), so the pin binds on the TRANSPORT: the placeholder
+    must be absent from the bash and the title must arrive via `$(...)`.
+    Region-scoped: Step 10d's trunk splice is out of #2241's fence."""
+    bash = _ensure_block_bash()
+    assert "<task title>" not in bash
+    assert '--title "$PR_TITLE"' in bash
+    assert "jq -r '.frontmatter.title // empty'" in bash
+    text = _text()
+    step4a_region = text[: text.index("### Step 5:")]
+    assert "<task title>" not in step4a_region
+    assert step4a_region.count('--title "$PR_TITLE"') == 1
+    assert "jq -r '.frontmatter.title // empty'" in step4a_region
+
+
+def _title_transport_env(tmp_path, hostile_title: str):
+    """PATH-stubbed env for executing the ensure template: `gh` records its
+    create argv to $ARGV_OUT (probe returns 0 = the create arm), `uv` emits
+    the task-view JSON carrying the hostile title. jq/timeout are real."""
+    stub = tmp_path / "bin"
+    stub.mkdir(exist_ok=True)
+    argv_out = tmp_path / "create-argv.txt"
+    title_json = tmp_path / "view.json"
+    title_json.write_text(json.dumps({"frontmatter": {"title": hostile_title}}), encoding="utf-8")
+    (stub / "gh").write_text(
+        "#!/usr/bin/env bash\n"
+        'if [ "$1 $2" = "pr list" ]; then echo 0; exit 0; fi\n'
+        'if [ "$1 $2" = "pr create" ]; then shift 2; '
+        'printf \'%s\\n\' "$@" > "$ARGV_OUT"; exit 0; fi\n'
+        "exit 1\n",
+        encoding="utf-8",
+    )
+    (stub / "uv").write_text('#!/usr/bin/env bash\ncat "$TITLE_JSON"\n', encoding="utf-8")
+    for name in ("gh", "uv"):
+        (stub / name).chmod(0o755)
+    env = os.environ.copy()
+    env["PATH"] = f"{stub}{os.pathsep}{env['PATH']}"
+    env["ARGV_OUT"] = str(argv_out)
+    env["TITLE_JSON"] = str(title_json)
+    return env, argv_out
+
+
+def test_step5_ensure_hostile_title_reaches_argv_literally(tmp_path):
+    """Pin 14 (#2241 r2, concern task-title-shell-injection): EXECUTE the
+    ensure template with a hostile title carrying a backtick command, a
+    $(...) command, a double quote, and a backslash. The payload must reach
+    gh's argv boundary LITERALLY — never evaluated (no canary side effect).
+    Negative control (in-test mutation check): the pre-r2 SPLICED form —
+    the title substituted into shell SOURCE — evaluates the same payload
+    class, firing the canaries, so this pin demonstrably fails against the
+    old shape rather than passing vacuously."""
+    assert shutil.which("jq"), "jq is required by the Step 5 ensure title transport"
+    canary = tmp_path / "canary"
+    hostile = f'pwn `touch {canary}-bt` and $(touch {canary}-sub) with "quote" and \\ backslash'
+    env, argv_out = _title_transport_env(tmp_path, hostile)
+
+    bash = _ensure_block_bash()
+    script = bash.split("\n", 1)[1].replace("<N>", "9999")  # drop the ```bash fence
+    res = subprocess.run(
+        ["bash", "-c", script],
+        env=env,
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+    assert res.returncode == 0, (res.stdout, res.stderr)
+    assert "[step5-pr-ensure] opened draft PR" in res.stdout
+    assert not (tmp_path / "canary-bt").exists(), "backtick payload was EVALUATED"
+    assert not (tmp_path / "canary-sub").exists(), "$(...) payload was EVALUATED"
+    argv = argv_out.read_text(encoding="utf-8").splitlines()
+    assert f"issue-9999: {hostile}" in argv  # one argv entry, payload verbatim
+
+    # Negative control: the old spliced shape (title in shell SOURCE).
+    # Double quote omitted — a raw quote breaks parsing before evaluation,
+    # which would mask the substitution firing this control exists to show.
+    spliced_title = f"pwn `touch {canary}-old-bt` and $(touch {canary}-old-sub)"
+    spliced = (
+        "if timeout --kill-after=30s 120s gh pr create --draft --head issue-9999 \\\n"
+        f'     --title "issue-9999: {spliced_title}" --body "Closes task #9999."; then\n'
+        "  echo created\nfi\n"
+    )
+    res2 = subprocess.run(
+        ["bash", "-c", spliced],
+        env=env,
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+    assert res2.returncode == 0, (res2.stdout, res2.stderr)
+    assert (tmp_path / "canary-old-bt").exists(), "negative control lost its teeth (backtick)"
+    assert (tmp_path / "canary-old-sub").exists(), "negative control lost its teeth ($(...))"

@@ -65,16 +65,25 @@ code).
 # ">=1" (any state) -> a PR object exists: OPEN -> done; MERGED/CLOSED is
 #                      the #1897 follow-up class, owned by Step 10d's
 #                      payload-aware arm at merge time — do NOT create here.
+# The two trailing arms are TELEMETRY ONLY (#2241 r2): both fall through
+# to 5a exactly as before — routing (probe-failed / zero / else) unchanged.
 N_PR=$(timeout --kill-after=15s 60s gh pr list --head issue-<N> --state all --json number --jq length) || N_PR=probe-failed
 if [ "$N_PR" = "0" ]; then
+  # Title transport (#2241 r2): the title is resolved AS DATA — command
+  # output is never shell-parsed — so a hostile title cannot inject.
+  PR_TITLE="issue-<N>: $(uv run python scripts/task.py view <N> --json | jq -r '.frontmatter.title // empty')"
   if timeout --kill-after=30s 120s gh pr create --draft --head issue-<N> \
-       --title "issue-<N>: <task title>" --body "Closes task #<N>."; then
+       --title "$PR_TITLE" --body "Closes task #<N>."; then
     echo "[step5-pr-ensure] opened draft PR for issue-<N> (#2241)"
   else
     echo "[step5-pr-ensure] gh pr create failed (rc!=0) — round proceeds; retry at next round entry; Step 10d's payload-aware arm (#2240) is the backstop"
   fi
 elif [ "$N_PR" = "probe-failed" ]; then
   echo "[step5-pr-ensure] PR-existence probe failed — round proceeds; retry at next round entry"
+elif [ "$N_PR" -ge 1 ] 2>/dev/null; then
+  echo "[step5-pr-ensure] PR already exists for issue-<N> (probe count $N_PR) — confirmed for this session; skip probe+create at later round entries"
+else
+  echo "[step5-pr-ensure] unexpected probe output ($N_PR) — inconclusive, not memoized; round proceeds; retry at next round entry"
 fi
 ```
 

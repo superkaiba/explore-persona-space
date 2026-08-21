@@ -90,8 +90,11 @@ if ! git -C "$REPO_ROOT" merge-base --is-ancestor origin/main main 2>/dev/null \
   fi
 fi
 if [ "$(git -C "$REPO_ROOT" rev-list --count origin/main..issue-<N>)" -gt 0 ]; then
+  # Title transport (#2241 r2): the title is resolved AS DATA — command
+  # output is never shell-parsed — so a hostile title cannot inject.
+  PR_TITLE="issue-<N>: $(uv run python "$REPO_ROOT"/scripts/task.py view <N> --json | jq -r '.frontmatter.title // empty')"
   gh pr create --draft --head issue-<N> \
-    --title "issue-<N>: <task title>" \
+    --title "$PR_TITLE" \
     --body "Closes task #<N>."
 else
   # This arm fires by construction on a fresh branch: Step 4a runs at the
