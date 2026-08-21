@@ -125,7 +125,7 @@ Misalignment completions are harmful-advice content, shown as sanitized 15-word 
 
 ### The context-side hidden-state predictor replicates the parent finding and beats the text baseline
 
-**What is plotted:** Mean within-condition Spearman ρ between each predictor and the per-trigger re-elicitation rate, one grouped-bar panel per setting at the parent's pinned decoder layers (16 misalignment, 27 capitalization); dots: per-condition values; diamonds: Pearson twin; dashed: the parent's published values.
+**What is plotted:** Mean within-condition Spearman ρ between each predictor and the per-trigger re-elicitation rate, one grouped-bar panel per setting at the parent's pinned decoder layers (16 misalignment, 27 capitalization); dots: per-unit per-condition points; diamonds: Pearson twin; dashed: parent's published values.
 
 ![Grouped bars of mean rank correlation by predictor, both settings, with per-condition dots](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f1c0b8c48eb51d46c93658ac8f65d03fc270d971/figures/issue_2379/fig1_hero_predictor_bars.png)
 
