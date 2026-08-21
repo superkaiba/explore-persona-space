@@ -83,3 +83,11 @@ any future promotion. Do not relocate its agents-dir glob here.
 2. The relocated asserts still pin the SAME prose (grep each literal in the
    new pin file).
 3. `uv run pytest tests/test_matched_support.py tests/test_pod_audit.py tests/test_bootstrap_pod_git_credentials.py tests/test_verify_plan.py -q` green (no behavior loss in the source files).
+
+## Provenance
+
+workflow_fix_target: tests/test_issue_skill_lint_family_sync.py
+
+Filed by the #2260 unit-2 implementer per plan v3 §4.5 (implementation-time
+step). Origin: the FAMILY_agents coupling (#2260) accepted four
+genuine-residual exemptions whose relocation this task owns.
