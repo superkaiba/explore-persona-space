@@ -29,6 +29,7 @@
 ## Claude code-review misses (FAIL-leaning calibration)
 
 - [Security sweep misses data-into-shell splices in prose templates](feedback_claude_security_sweep_misses_data_into_shell_splice.md) — "CLEAN" covers secrets/shell=True/pipes, NOT placeholders spliced into quoted shell source; re-scan added fenced Bash yourself (#2241 r1)
+- [Convention defense unverified: $VAR in separate-shell fences](feedback_claude_convention_defense_unverified_env_var_fence.md) — verify the convention's INITIALIZING sites (in-fence `VAR=` / resolve-once prose in the SAME step file), not use sites; argv-blind stubs mask path defects; fail-open-every-entry = the bug under repair (#2241 r3)
 - [Round-added commands unchecked vs the block's own fence/fail-open contract](feedback_claude_misses_block_contract_conformance_of_round_added_commands.md) — happy-path-only read of a new `task.py|jq` resolver; trace its failure exit into the registered arms + diff the invariant prose; always-succeed stubs pin nothing (#2241 r2)
 
 - [Plan-literal match ≠ fs-primitive semantics](feedback_claude_credits_plan_literal_misses_fs_primitive_semantics.md) — "mkdir 0700 ✓" missed exist_ok symlink-accept + rename overwrite on predictable /tmp; live-probe the adversarial shape; call-site "unconditional" ≠ callee effect (#2377 r1)
