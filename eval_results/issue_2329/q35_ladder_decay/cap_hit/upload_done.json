@@ -1,0 +1,72 @@
+{
+  "margin_deferred": false,
+  "margin_blocks_done": 72,
+  "margin_blocks_expected": 72,
+  "margin_anchors_done": true,
+  "deferred_leg": false,
+  "eval_numbers": {
+    "round": "persona-specificity-ladder",
+    "grid_shards": 72,
+    "va_shards": 72,
+    "margin_shards": 73,
+    "anchor_rows": 420,
+    "grid_rollouts_persisted": 2160,
+    "cap_hit_rows": 29,
+    "cap_hit_frac": 0.013425925925925926,
+    "injection_gate_passed": true,
+    "injection_gate_spots_failed": 0,
+    "distinctness_gate_passed": true,
+    "distinctness_violations": 0
+  },
+  "eval_paths": [
+    "/workspace/issue2329_out/ladder/anchors",
+    "/workspace/issue2329_out/ladder/gates/distinctness_report.json",
+    "/workspace/issue2329_out/ladder/gates/injection_gate_report.json",
+    "/workspace/issue2329_out/ladder/grid",
+    "/workspace/issue2329_out/ladder/margin",
+    "/workspace/issue2329_out/ladder/va_store",
+    "/workspace/issue2329_out/ladder/vc_bank/ladder_bank.json",
+    "/workspace/issue2329_out/ladder/vc_bank/vc_bank_ladder.pt"
+  ],
+  "reproducibility_card": {
+    "git_commit": "d0c07f98a2c52d02fc1578a1909b77927c434b4d",
+    "torch": "2.8.0+cu128",
+    "transformers": "5.15.0",
+    "model_id": "Qwen/Qwen3.5-9B",
+    "model_revision": "c202236235762e1c871ad0ccb60c8ee5ba337b9a",
+    "tiny": false,
+    "smoke": false,
+    "n_layers": 32,
+    "timestamp": "2026-08-21T03:52:26.153169+00:00",
+    "seed_base": 42,
+    "bank_seed": 2162,
+    "parent_hf_revision": "49d7f0017e3e3fb501e4e18952906d2c7804651a",
+    "max_new_tokens": 4096,
+    "grid_temperature": 1.0,
+    "grid_draws": 5,
+    "anchor_temperature": 1.0,
+    "anchor_draws": 10,
+    "gen_batch": 16,
+    "num_workers": 1
+  },
+  "wandb_url": null,
+  "hf_hub_url": "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/main/issue2329_q35rerun/analysis_tensors/ladder",
+  "worktree_path": "/workspace/explore-persona-space",
+  "final_commit_sha": "d0c07f98a2c52d02fc1578a1909b77927c434b4d",
+  "gpu_hours_used": null,
+  "gpu_hours_budgeted": 6.0,
+  "plan_deviations": [
+    "margin shards persist as JSONL (scalar lnP rows — the parent margin format), uploaded under analysis_tensors/ladder/margin/ (plan §6.5 wrote '*.pt' for this slot)",
+    "cap-hit telemetry derived from the re-tokenized completion length (generate_batch returns decoded text only) — parent convention"
+  ],
+  "uploaded_prefixes": {
+    "vc_bank": 2,
+    "gates": 4,
+    "anchors_text": 1,
+    "anchors_tensors": 1,
+    "grid_text": 72,
+    "va_store": 72,
+    "margin": 73,
+    "manifests": 149
+  }
+}
