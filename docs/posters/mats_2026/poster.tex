@@ -138,7 +138,7 @@ We map the context to the answer's \textbf{SAE features}, then partial out predi
 \begin{center}
 \includegraphics[width=0.95\linewidth]{plot3_sae_predictors.pdf}
 \end{center}
-\figcap{5}{Forward-stepwise partialling: each row conditions on all rows above, plus a second activity control (fires on both sides) not drawn. $c$ = concordance (AUROC scale), $0.5$ = chance. Gray: activity control. Diamond: matryoshka \emph{coarsest} tier — different dictionary, direction only. No CIs; later rounds omitted.}
+\figcap{5}{Forward-stepwise partialling: each row conditions on all rows above. $c$ = concordance (AUROC scale), $0.5$ = chance. Gray: activity control. Diamond: matryoshka \emph{coarsest} tier — different dictionary, direction only. No CIs; later rounds omitted.}
 \begin{itemize}
   \item \takeaways{Persona survives the partialling:} once both activity controls are removed, features \textbf{related to speaker identity} are the strongest surviving predictor ($c$ 0.67), and the matryoshka \emph{coarsest} tier points the same way (0.64).
   \item \takeaways{Low-level and content features are predicted \emph{worse} than chance:} features that \textbf{boost or suppress a few output tokens} (0.36, 0.35) and features \textbf{related to topic} (0.37) all fall below 0.5.
