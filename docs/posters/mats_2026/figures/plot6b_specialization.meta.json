@@ -1,10 +1,18 @@
 {
-  "commit": "9cd53a98+dirty",
-  "render_id": "7a42591f5e414bcf",
-  "git_commit": "9cd53a981a6d9696da1bb79cb0c5ac457d72e61f",
+  "commit": "62b208a9+dirty",
+  "render_id": "464e66eb86324613",
+  "git_commit": "62b208a9cef86cbe36b4531aaee85db9a8a48ed9",
   "git_dirty": true,
   "git_dirty_paths": [
+    "docs/posters/mats_2026/figures/plot6_persona_data.json",
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.meta.json",
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.pdf",
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.png",
+    "docs/posters/mats_2026/figures/plot6b_specialization.meta.json",
+    "docs/posters/mats_2026/figures/plot6b_specialization.pdf",
+    "docs/posters/mats_2026/figures/plot6b_specialization.png",
     "docs/posters/mats_2026/make_plot6_persona.py",
+    "docs/posters/mats_2026/poster.tex",
     "eval_results/issue_666/headline/predictor_headline.json",
     "scripts/issue1901_body_figures.py",
     "tasks/completed/2214/body.md",
@@ -26,91 +34,69 @@
     "tasks/running/2214/plans/v1.md",
     "tasks/running/2214/plans/v2.md",
     "tasks/running/2214/plans/v3.md",
+    "tasks/running/2388/events.jsonl",
+    "tasks/running/2428/events.jsonl",
     "tests/test_issue2094_rev_butler.py"
   ],
-  "git_argv0_state": "untracked",
+  "git_argv0_state": "modified",
   "git_argv0_path": "docs/posters/mats_2026/make_plot6_persona.py",
-  "created": "2026-08-21T01:12:59Z",
+  "created": "2026-08-21T01:36:16Z",
   "figsize": [
     6.8,
     2.8
   ],
   "points": [
     {
-      "x": -0.26,
+      "x": -0.17,
       "held-out $R^2$": 0.35074089227915894,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "x": 0.74,
+      "x": 0.83,
       "held-out $R^2$": 0.3875027483153908,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "x": 1.74,
+      "x": 1.83,
       "held-out $R^2$": 0.3171977807434766,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "x": 2.74,
+      "x": 2.83,
       "held-out $R^2$": 0.21206553425629815,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "category": "Wren",
-      "held-out $R^2$": 0.3475371608692135,
-      "_kind": "bar",
-      "_group": 1
-    },
-    {
-      "category": "HELIOS",
-      "held-out $R^2$": 0.3866044870616153,
-      "_kind": "bar",
-      "_group": 1
-    },
-    {
-      "category": "Dana",
-      "held-out $R^2$": 0.31558412872901265,
-      "_kind": "bar",
-      "_group": 1
-    },
-    {
-      "category": "Vex",
-      "held-out $R^2$": 0.2094804343469835,
-      "_kind": "bar",
-      "_group": 1
-    },
-    {
-      "x": 0.26,
+      "x": 0.17,
       "held-out $R^2$": 0.3548299086061537,
       "_kind": "bar",
-      "_group": 2
+      "_group": 1
     },
     {
-      "x": 1.26,
+      "x": 1.17,
       "held-out $R^2$": 0.40107670413358276,
       "_kind": "bar",
-      "_group": 2
+      "_group": 1
     },
     {
-      "x": 2.26,
+      "x": 2.17,
       "held-out $R^2$": 0.3285635376004241,
       "_kind": "bar",
-      "_group": 2
+      "_group": 1
     },
     {
-      "x": 3.26,
+      "x": 3.17,
       "held-out $R^2$": 0.2328833350537587,
       "_kind": "bar",
-      "_group": 2
+      "_group": 1
     }
   ],
-  "n_series": 3,
-  "total_points": 12,
+  "n_series": 2,
+  "total_points": 8,
   "text": {
     "suptitle": null,
     "fig_texts": [],
@@ -120,7 +106,6 @@
         "ylabel": "held-out $R^2$",
         "legend_labels": [
           "one map, all 4 personas pooled",
-          "pooled map + per-persona offsets",
           "persona-specific map"
         ],
         "xticklabels": [
@@ -142,7 +127,6 @@
     ],
     "series": [
       "one map, all 4 personas pooled",
-      "pooled map + per-persona offsets",
       "persona-specific map"
     ]
   },

@@ -13,11 +13,17 @@ Numbers read ONLY from committed
 
 Plot 6b — POOLED VS PERSONA-SPECIFIC FIT. For each of the four #1310 fictional
 personas (Wren, HELIOS, Dana, Vex): held-out R^2 of (M0) ONE map fitted on all
-four personas' data pooled, (M1) the pooled map with per-persona offsets
-(per-persona train-fold X/Y centering), and (M2) that persona's own map.
+four personas' data pooled vs (M2) that persona's own map. The M1 rung (pooled
+map + per-persona offsets) is NOT drawn (poster scope cut, 2026-08-20); its
+values stay in the data JSON as a companion.
 Same rig (scenario-grouped shared 5-fold, layer 19, instruct).
 Numbers read ONLY from committed
   eval_results/issue_1310/xpersona_similarity/v2/decomposition_instruct.json
+The ASSISTANT is deliberately NOT a fifth group: no committed decomposition
+pools the assistant cell with these four personas. The closest artifact
+(assistant_test/decomposition_instruct.json) pools {assistant bare Q&A, Wren
+bare Q&A, Wren in scene} at row grain (~4.4k rows/cell), a different pooled
+map + grain, so its M0/M2 are not the same quantity as these bars.
 
 Base-model companions for both plots go into the data JSON (not drawn).
 Writes docs/posters/mats_2026/figures/plot6{a,b}_*.{png,pdf,meta.json} +
@@ -147,16 +153,14 @@ def plot_6a(data: dict) -> None:
 def plot_6b(data: dict) -> None:
     fig, ax = plt.subplots(figsize=FIGSIZE)
     xs = np.arange(len(PERSONAS))
-    w = 0.26
+    w = 0.34
     blue = paper_color("instruct")
 
     m0 = [data[p]["pooled_M0_r2"] for p in PERSONAS]
-    m1 = [data[p]["pooled_offsets_M1_r2"] for p in PERSONAS]
     m2 = [data[p]["persona_specific_M2_r2"] for p in PERSONAS]
 
-    ax.bar(xs - w, m0, width=w, color=blue, alpha=0.30, label="one map, all 4 personas pooled")
-    ax.bar(xs, m1, width=w, color=blue, alpha=0.60, label="pooled map + per-persona offsets")
-    ax.bar(xs + w, m2, width=w, color=blue, label="persona-specific map")
+    ax.bar(xs - w / 2, m0, width=w, color=blue, alpha=0.35, label="one map, all 4 personas pooled")
+    ax.bar(xs + w / 2, m2, width=w, color=blue, label="persona-specific map")
 
     ax.set_xticks(xs, PERSONAS)
     ax.set_ylabel("held-out $R^2$")
@@ -180,6 +184,7 @@ def main() -> None:
     plot_6b(b_instruct)
 
     prov_a = json.loads((AT / "provenance_instruct.json").read_text())
+    at_dec = json.loads((AT / "decomposition_instruct.json").read_text())
     (OUT_DIR / "plot6_persona_data.json").write_text(
         json.dumps(
             {
@@ -208,6 +213,22 @@ def main() -> None:
                     "n_pooled": 1200,
                     "point_def": "one point per (persona, scenario): X = turn-0 x_spanmean v_C, "
                     "Y = mean reply-span y over kept slots (scene-aggregated)",
+                    "drawn_arms": ["pooled_M0_r2", "persona_specific_M2_r2"],
+                    "offsets_M1_not_drawn": "pooled_offsets_M1_r2 values retained below; "
+                    "the M1 rung was dropped from the poster figure (2026-08-20)",
+                    "assistant_not_included": {
+                        "reason": "no committed decomposition pools the assistant cell with "
+                        "these 4 personas; the closest artifact pools {assistant bare Q&A, "
+                        "Wren bare Q&A, Wren in scene} at row grain (~4.4k rows/cell), a "
+                        "different pooled map + point grain, so its M0/M2 are not the same "
+                        "quantity as these bars and are not plotted",
+                        "closest_artifact": "eval_results/issue_1310/xpersona_similarity/"
+                        "assistant_test/decomposition_instruct.json",
+                        "closest_artifact_assistant_cell_r1_qa_oneline": {
+                            k: at_dec["per_persona"]["r1_qa_oneline"][k]
+                            for k in ("r2_M0_foldmean", "r2_M2_foldmean")
+                        },
+                    },
                     "instruct": b_instruct,
                     "base_companion_not_drawn": b_base,
                     "sources": [

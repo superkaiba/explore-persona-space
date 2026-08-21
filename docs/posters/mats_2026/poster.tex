@@ -168,16 +168,12 @@ We map the context to the answer's \textbf{SAE features}, then rank feature prop
 
 \postersec{6.\ Is it a persona mapping?}
 \begin{center}
-\IfFileExists{figures/plot6a_assistant_transfer.pdf}{\includegraphics[width=0.88\linewidth]{plot6a_assistant_transfer.pdf}}{\includegraphics[width=0.88\linewidth]{c4_transfer_ladder.pdf}}
+\includegraphics[width=0.95\linewidth]{plot6b_specialization.pdf}
 \end{center}
-\figcap{7}{The map fitted on the \textbf{assistant}, applied to the character Wren — in bare Q\&A and inside a fictional scene. \emph{Naive} = the assistant map as-is; $+$\,\emph{reparam.} = a linear recoordination fitted on the target's own train folds — \emph{preserved up to a change of coordinates}, not zero-shot. Black: a map fitted on Wren's own data. Qwen-2.5-7B-Instruct, layer 19; fold-mean $R^2$, scenario-grouped 5-fold; one character.}
-\begin{center}
-\IfFileExists{figures/plot6b_specialization.pdf}{\includegraphics[width=0.88\linewidth]{plot6b_specialization.pdf}}{}
-\end{center}
-\figcap{8}{One map on all four characters \emph{pooled}, that map $+$ per-character offsets, and a \emph{character-specific} map — each scored held out, per character. 300 shared scenarios each (1{,}200 pooled); the pooled fits therefore see $\sim$$4\times$ the training rows and still lose slightly. The assistant is not in this pool.}
+\figcap{7}{Held-out $R^2$ per character: \emph{one} ridge map fitted on all four characters pooled (1{,}200 points) against that character's \emph{own} 300-point map. One point per (character, scenario), scene-aggregated; scenario-grouped 5-fold, layer 19, Qwen-2.5-7B-Instruct. The assistant is not in this pool.}
 \begin{itemize}
-  \item \takeaways{One map, re-coordinated, serves the assistant and a character:} the assistant's map reaches \textbf{96.7\%} (bare Q\&A) and \textbf{95.0\%} (fictional scene) of what a Wren-specific map achieves, once a linear reparameterization is fitted — while \emph{naive} transfer into the scene fails outright ($R^2\!=\!-0.22$, worse than predicting the mean).
-  \item \takeaways{Pooling across characters costs almost nothing:} one pooled map $+$ per-character offsets reaches \textbf{90--98\%} of character-specific maps. The specialization gap is small but real — all four bootstrap CIs exclude zero.
+  \item \takeaways{Pooling across characters costs almost nothing:} a single map fitted on all four captures \textbf{90--98\%} of what each character's own map achieves — four characters, close to one shared operator.
+  \item \takeaways{Close, but not identical:} the character-specific edge is small and survives — pooling \emph{approaches} rather than equals a per-character fit.
 \end{itemize}
 
 \end{column}
@@ -190,7 +186,7 @@ We map the context to the answer's \textbf{SAE features}, then rank feature prop
 \begin{center}
 \IfFileExists{figures/plot9_application_arms.pdf}{\includegraphics[width=0.99\linewidth]{plot9_application_arms.pdf}}{\includegraphics[width=0.99\linewidth]{c5_pv_methods_regimes.pdf}}
 \end{center}
-\figcap{9}{Spearman $\rho$ between a readout and the judged behavior, per regime. Five readouts: the persona vector on the \emph{context}; a fitted \emph{regression} on the context; the persona vector on the \emph{map-predicted} answer; a regression on the map-predicted answer; and the persona vector on the \emph{real} answer (oracle — it needs the answer generated). Regression arms consume the labelled budget; persona-vector arms are label-free. Muted bars fail the spread gate and are not interpretable. Hallucination in-distribution and OOD score fabricated fraction — a different construct.}
+\figcap{8}{Spearman $\rho$ between a readout and the judged behavior, per regime. Five readouts: the persona vector on the \emph{context}; a fitted \emph{regression} on the context; the persona vector on the \emph{map-predicted} answer; a regression on the map-predicted answer; and the persona vector on the \emph{real} answer (oracle — it needs the answer generated). Regression arms consume the labelled budget; persona-vector arms are label-free. Muted bars fail the spread gate and are not interpretable. Hallucination in-distribution and OOD score fabricated fraction — a different construct.}
 \begin{itemize}
   \item \takeaways{The best pre-inference readout is one on the \emph{mapped answer} in every trustworthy generic-chat and OOD cell,} beating the best context-side readout by $+0.01$ to $+0.07$ — though the two sycophancy margins sit inside overlapping CIs.
   \item \takeaways{Regression on the mapped answer matches or beats regression on the context everywhere,} and both leave the standard persona-vector-on-context readout near zero or negative throughout — so the gain is the \emph{map}, not the readout family.

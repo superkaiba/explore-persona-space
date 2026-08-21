@@ -71,6 +71,19 @@
   "n_per_persona": 300,
   "n_pooled": 1200,
   "point_def": "one point per (persona, scenario): X = turn-0 x_spanmean v_C, Y = mean reply-span y over kept slots (scene-aggregated)",
+  "drawn_arms": [
+   "pooled_M0_r2",
+   "persona_specific_M2_r2"
+  ],
+  "offsets_M1_not_drawn": "pooled_offsets_M1_r2 values retained below; the M1 rung was dropped from the poster figure (2026-08-20)",
+  "assistant_not_included": {
+   "reason": "no committed decomposition pools the assistant cell with these 4 personas; the closest artifact pools {assistant bare Q&A, Wren bare Q&A, Wren in scene} at row grain (~4.4k rows/cell), a different pooled map + point grain, so its M0/M2 are not the same quantity as these bars and are not plotted",
+   "closest_artifact": "eval_results/issue_1310/xpersona_similarity/assistant_test/decomposition_instruct.json",
+   "closest_artifact_assistant_cell_r1_qa_oneline": {
+    "r2_M0_foldmean": 0.4051153063211188,
+    "r2_M2_foldmean": 0.49891139167802057
+   }
+  },
   "instruct": {
    "Wren": {
     "pooled_M0_r2": 0.35074089227915894,
