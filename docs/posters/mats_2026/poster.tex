@@ -53,11 +53,11 @@
 \begin{beamercolorbox}[wd=\paperwidth,sep=0pt]{headline}
 \vskip0.7em
 \hspace*{1.2cm}%
-\begin{minipage}[c][8.2cm][c]{0.15\paperwidth}
+\begin{minipage}[c][6.4cm][c]{0.15\paperwidth}
   \centering\includegraphics[width=0.85\linewidth]{mats_logo.png}
 \end{minipage}%
-{\color{white!70!matsmaroon}\rule[-3.5cm]{1.2pt}{7.4cm}}\hspace*{1.1cm}%
-\begin{minipage}[c][8.2cm][c]{0.78\paperwidth}
+{\color{white!70!matsmaroon}\rule[-2.7cm]{1.2pt}{5.8cm}}\hspace*{1.1cm}%
+\begin{minipage}[c][6.4cm][c]{0.78\paperwidth}
   \raggedright
   {\rmfamily\bfseries\Huge The Surprising Effectiveness of Linear Context-to-Answer Maps in Language Models\\[0.28em]}
   {\Large\color{white!85!matsmaroon}A context-conditioned metamodel of answer activations\\[0.38em]}
@@ -75,6 +75,8 @@
 
 \vskip0.2em
 
+% reserve bottom clearance for the footer bar (it is an overlay and reserves none)
+\begin{minipage}[t][\dimexpr\textheight-1.45cm][t]{\textwidth}
 \begin{columns}[t]
 
 % ==================== COLUMN 1: setup ====================
@@ -225,17 +227,15 @@ We map the context to the answer's \textbf{SAE features}, then rank feature prop
 {\color{matsmaroon}[5]} Hosseini \& Fedorenko. Trajectory straightening. 2023.\quad
 {\color{matsmaroon}[6]} Park et al.\ The linear representation hypothesis. 2024.
 }
+\vskip0.35em
+{\footnotesize\color{capgray}This work was carried out as part of the MATS program.}
 
 \end{column}
 
 \end{columns}
+\end{minipage}
 
-% Thin maroon footer bar, template-style (carries the MATS acknowledgment)
-\begin{tikzpicture}[remember picture, overlay]
-  \fill[matsmaroon] (current page.south west) rectangle ([yshift=0.62cm]current page.south east);
-  \node[anchor=south, text=white, font=\footnotesize, inner sep=0.14cm]
-    at ([yshift=0.02cm]current page.south) {This work was carried out as part of the MATS program.};
-\end{tikzpicture}
+
 
 \end{frame}
 \end{document}
