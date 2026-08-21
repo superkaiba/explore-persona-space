@@ -61,23 +61,34 @@ commit_results() { # commit_results <msg> <path>...
   fi
 }
 
-stream_tar() { # stream_tar <hf-relpath> <dest-dir> — plan section 9 stream form,
-  # retriable: an HF CDN HTTP/2 stream CANCEL killed Pod B's 32 GB extract
-  # 4.8 h in and a pipe cannot resume, so reap the partial store root between
-  # bounded retries. Stream-only (never download-then-untar): MooseFS df
-  # reports the SHARE size, not the ~130 GB per-pod quota, so a
-  # disk-headroom-keyed download branch is unsafe on this pod class.
-  local rel="$1" dest="$2" root n=0
+stream_tar() { # stream_tar <hf-relpath> <dest-dir> — R2: hf_transfer download-then-untar.
+  # This DC's HF CDN path is per-stream throttled (measured 2026-08-21 ~01:05Z:
+  # 0.24 MB/s single-stream, 1.9 MB/s at 8-way, vs 14.8 MB/s generic egress),
+  # so the R1 curl|tar stream form could not finish 91 GB. hf_transfer's
+  # parallel ranges measured 13 MB/s on this pod (humaneval.tar probe), and
+  # its .incomplete files resume across attempts. The MooseFS stream-only
+  # caveat does not bind here: /workspace on this pod is a real local volume
+  # (/dev/md0, df truthful), and peak footprint — 91 GB extracted store +
+  # 38 GB largest in-flight tar — fits the 200 GB volume. Each tarball is
+  # removed after extraction. Per-attempt timeout 7200 s: largest tar
+  # 37.7 GB / measured 13 MB/s ~= 48 min, x2 margin plus retry-envelope slack.
+  local rel="$1" dest="$2" root n=0 tarball
   root="$(basename "$rel" .tar)"
+  tarball="/workspace/hf_stage/$rel"
+  mkdir -p /workspace/hf_stage
   while :; do
-    echo "[stage] stream-extract $rel -> $dest start $(date -u +%H:%M:%SZ) (attempt $((n+1)))"
-    if curl -sSfL -H "Authorization: Bearer $HF_TOKEN" "$HF_DATA_URL/$rel" | tar -x -C "$dest"; then
-      echo "[stage] stream-extract $rel done $(date -u +%H:%M:%SZ)"
+    echo "[stage] hf-download $rel start $(date -u +%H:%M:%SZ) (attempt $((n+1)))"
+    if timeout 7200 env HF_HUB_ENABLE_HF_TRANSFER=1 uv run hf download \
+         superkaiba1/explore-persona-space-data "$rel" \
+         --repo-type dataset --local-dir /workspace/hf_stage \
+       && tar -xf "$tarball" -C "$dest"; then
+      rm -f "$tarball"
+      echo "[stage] $rel staged $(date -u +%H:%M:%SZ)"
       return 0
     fi
     n=$((n+1))
-    [ "$n" -ge 5 ] && { echo "[stage] stream-extract $rel FAILED after $n attempts"; return 1; }
-    echo "[stage] stream-extract $rel attempt $n failed; reaping partial $dest/$root and retrying"
+    [ "$n" -ge 5 ] && { echo "[stage] $rel FAILED after $n attempts"; return 1; }
+    echo "[stage] $rel attempt $n failed; reaping partial $dest/$root and retrying"
     rm -rf "${dest:?}/${root:?}"
     sleep 30
   done
