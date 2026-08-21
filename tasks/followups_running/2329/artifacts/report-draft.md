@@ -26,7 +26,7 @@ relates_to:
 # Experiment: Do the #2162 minimal-pair context-vector findings transfer to Qwen3.5-9B with thinking disabled?
 <!-- report-v1 -->
 
-**Detailed writeup:** https://github.com/superkaiba/explore-persona-space/blob/4e0954129c52e48c4233fe8c86bd6026e1c8a2f0/docs/reports/issue_2329_detailed.md
+**Detailed writeup:** https://github.com/superkaiba/explore-persona-space/blob/4632a930e8c7fe2eeb198ef08cb4079207c8110a/docs/reports/issue_2329_detailed.md
 
 ## Motivation
 
