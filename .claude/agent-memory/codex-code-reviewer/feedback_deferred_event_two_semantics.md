@@ -25,7 +25,13 @@ must not re-FAIL on the class's severity/reachability).
 `deferral_rationale` before choosing the shape. Discriminator: a recommended /
 opportunistic fix named in the rationale (or a follow-up `addressed` row keyed
 to it) ⇒ downgrade semantics; rejection grounds with no fix path ⇒
-rejected-binding semantics. Also composable here: the unledgered sibling finding
+rejected-binding semantics. **Third shape (#2430 r2, 2026-08-20):** a downgrade
+rationale naming an ALTERNATIVE route ("opportunistic round-N fix OR a follow-up
+infra task") where the brief/marker attests the implementer took the follow-up
+route ⇒ NO closure duty this round — compose an ABSENCE-verification duty
+instead (boundary expected UNTOUCHED; untouched = passing; if touched, review on
+merits) + the no-re-raise line. Closure duties arm only when the fix is the
+round's own contract. Also composable here: the unledgered sibling finding
 (a Claude Minor the reconciler's standing rec 2 covered) still gets a pseudo-id
 closure item per the #1092-r4 pattern — reconciler standing recs are per-item
 acceptance contracts even when only one item has a ledger row.
