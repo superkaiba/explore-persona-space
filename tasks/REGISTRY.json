@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2437,
+  "highest_id": 2438,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11098,6 +11098,13 @@
       "path": "tasks/proposed/2437",
       "status": "proposed",
       "title": "workflow-fix: fence ancestor-gitignore discovery in tmp_path real-ruff fixtures (stray /tmp/.gitignore blanks ruff probes fleet-wide)"
+    },
+    "2438": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2438",
+      "status": "proposed",
+      "title": "Batch judge dispatch sends temperature to opus-4-8 (rejected) \u2014 opus unusable as batch judge/kappa-control"
     },
     "244": {
       "has_clean_result": false,
