@@ -1,76 +1,73 @@
 {
-  "wave": "admission",
-  "transport": "sync",
-  "n_items": 220,
-  "verdict": "PASS",
-  "fail_reasons": [],
   "tally": {
     "per_family": {
       "dialogue": {
-        "valid": 110
+        "valid": 199,
+        "rubric_refusal": 1
       },
       "question": {
-        "valid": 110
+        "valid": 200
       }
     },
     "per_cell": {
       "dialog_astra": {
-        "valid": 28
+        "valid": 50
       },
       "dialog_dana": {
-        "valid": 28
+        "valid": 50
       },
       "dialog_helios": {
-        "valid": 27
+        "valid": 50
       },
       "dialog_vex": {
-        "valid": 27
+        "valid": 49,
+        "rubric_refusal": 1
       },
       "storyq_astra": {
-        "valid": 22
+        "valid": 40
       },
       "storyq_dana": {
-        "valid": 22
+        "valid": 40
       },
       "storyq_helios": {
-        "valid": 22
+        "valid": 40
       },
       "storyq_vex": {
-        "valid": 22
+        "valid": 40
       },
       "storyq_wren": {
-        "valid": 22
+        "valid": 40
       }
     },
     "stop_reasons": {
-      "end_turn": 220
+      "end_turn": 400
     }
   },
-  "judge_model": "claude-sonnet-4-5-20250929",
-  "max_tokens": 1024,
-  "rubric_sha": "28b5a61cfc267d00",
   "metadata": {
     "issue": 2378,
-    "timestamp": "2026-08-21T09:17:49+0000",
+    "timestamp": "2026-08-21T09:18:00+0000",
     "python": "3.11.10",
     "argv": [
       "/workspace/explore-persona-space/scripts/issue2378_judge.py",
       "--wave",
       "admission",
-      "--pilot",
-      "200",
       "--transport",
       "sync",
+      "--max-items",
+      "400",
       "--mined-dir",
-      "/workspace/explore-persona-space/data/issue_2378/raw_pilot/r2/sega_mined",
+      "/workspace/explore-persona-space/data/issue_2378/raw_pilot/r2/adm_slice",
       "--raw-root",
       "/workspace/explore-persona-space/data/issue_2378/raw_pilot/r2",
       "--out-root",
-      "/workspace/explore-persona-space/eval_results/issue_2378",
+      "/workspace/explore-persona-space/eval_results/issue_2378/pilot",
       "--skip-upload"
     ],
     "git_commit": "b2542657",
-    "git_dirty": false,
+    "git_dirty": true,
+    "git_dirty_paths": [
+      "eval_results/issue_2378/judge/pilot_admission_sync.json"
+    ],
     "git_argv0_state": "tracked",
     "git_argv0_path": "scripts/issue2378_judge.py"
   }

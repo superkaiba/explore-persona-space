@@ -1,0 +1,138 @@
+{
+  "cell": "storyq_dana",
+  "family": "question",
+  "n_items": 40,
+  "n_admitted": 24,
+  "admit_threshold": 50,
+  "drop_counts": {
+    "below_threshold": 16
+  },
+  "admitted": [
+    {
+      "row_id": "storyq_dana_w1_a000009",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_dana_w1_a000019",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_dana_w1_a000020",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_dana_w1_a000038",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_dana_w1_a000061",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_dana_w1_a000065",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_dana_w1_a000070",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_dana_w1_a000073",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_dana_w1_a000084",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_dana_w1_a000094",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_dana_w1_a000107",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_dana_w1_a000132",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_dana_w1_a000139",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_dana_w1_a000142",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_dana_w1_a000157",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_dana_w1_a000193",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_dana_w1_a000195",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_dana_w1_a000211",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_dana_w1_a000240",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_dana_w1_a000245",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_dana_w1_a000270",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_dana_w1_a000283",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_dana_w1_a000288",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_dana_w1_a000298",
+      "score": 100
+    }
+  ],
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "rubric_sha": "28b5a61cfc267d00",
+  "metadata": {
+    "issue": 2378,
+    "timestamp": "2026-08-21T09:18:00+0000",
+    "python": "3.11.10",
+    "argv": [
+      "/workspace/explore-persona-space/scripts/issue2378_judge.py",
+      "--wave",
+      "admission",
+      "--transport",
+      "sync",
+      "--max-items",
+      "400",
+      "--mined-dir",
+      "/workspace/explore-persona-space/data/issue_2378/raw_pilot/r2/adm_slice",
+      "--raw-root",
+      "/workspace/explore-persona-space/data/issue_2378/raw_pilot/r2",
+      "--out-root",
+      "/workspace/explore-persona-space/eval_results/issue_2378/pilot",
+      "--skip-upload"
+    ],
+    "git_commit": "b2542657",
+    "git_dirty": true,
+    "git_dirty_paths": [
+      "eval_results/issue_2378/judge/pilot_admission_sync.json"
+    ],
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2378_judge.py"
+  }
+}

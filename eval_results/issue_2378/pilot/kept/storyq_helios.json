@@ -1,0 +1,174 @@
+{
+  "cell": "storyq_helios",
+  "family": "question",
+  "n_items": 40,
+  "n_admitted": 33,
+  "admit_threshold": 50,
+  "drop_counts": {
+    "below_threshold": 7
+  },
+  "admitted": [
+    {
+      "row_id": "storyq_helios_w1_a000017",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_helios_w1_a000018",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_helios_w1_a000026",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_helios_w1_a000028",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w1_a000034",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w1_a000050",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w1_a000060",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w1_a000077",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w1_a000089",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w1_a000095",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w1_a000101",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_helios_w1_a000114",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w1_a000115",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w1_a000118",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w1_a000132",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w1_a000133",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w1_a000144",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w1_a000153",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w1_a000155",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w1_a000161",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w1_a000185",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_helios_w1_a000190",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w1_a000218",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w1_a000222",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_helios_w1_a000223",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w1_a000254",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w1_a000256",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w1_a000259",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_helios_w1_a000270",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_helios_w1_a000274",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w1_a000278",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w1_a000290",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_helios_w1_a000291",
+      "score": 100
+    }
+  ],
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "rubric_sha": "28b5a61cfc267d00",
+  "metadata": {
+    "issue": 2378,
+    "timestamp": "2026-08-21T09:18:00+0000",
+    "python": "3.11.10",
+    "argv": [
+      "/workspace/explore-persona-space/scripts/issue2378_judge.py",
+      "--wave",
+      "admission",
+      "--transport",
+      "sync",
+      "--max-items",
+      "400",
+      "--mined-dir",
+      "/workspace/explore-persona-space/data/issue_2378/raw_pilot/r2/adm_slice",
+      "--raw-root",
+      "/workspace/explore-persona-space/data/issue_2378/raw_pilot/r2",
+      "--out-root",
+      "/workspace/explore-persona-space/eval_results/issue_2378/pilot",
+      "--skip-upload"
+    ],
+    "git_commit": "b2542657",
+    "git_dirty": true,
+    "git_dirty_paths": [
+      "eval_results/issue_2378/judge/pilot_admission_sync.json"
+    ],
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2378_judge.py"
+  }
+}

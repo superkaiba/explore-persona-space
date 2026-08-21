@@ -1,0 +1,182 @@
+{
+  "cell": "storyq_astra",
+  "family": "question",
+  "n_items": 40,
+  "n_admitted": 35,
+  "admit_threshold": 50,
+  "drop_counts": {
+    "below_threshold": 5
+  },
+  "admitted": [
+    {
+      "row_id": "storyq_astra_w1_a000016",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_astra_w1_a000022",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_astra_w1_a000023",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_astra_w1_a000034",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_astra_w1_a000042",
+      "score": 65
+    },
+    {
+      "row_id": "storyq_astra_w1_a000043",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_astra_w1_a000047",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_astra_w1_a000050",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_astra_w1_a000056",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_astra_w1_a000079",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_astra_w1_a000098",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_astra_w1_a000099",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_astra_w1_a000105",
+      "score": 85
+    },
+    {
+      "row_id": "storyq_astra_w1_a000114",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_astra_w1_a000125",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_astra_w1_a000134",
+      "score": 50
+    },
+    {
+      "row_id": "storyq_astra_w1_a000162",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_astra_w1_a000170",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_astra_w1_a000190",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_astra_w1_a000191",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_astra_w1_a000197",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_astra_w1_a000199",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_astra_w1_a000204",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_astra_w1_a000206",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_astra_w1_a000212",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_astra_w1_a000216",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_astra_w1_a000226",
+      "score": 95
+    },
+    {
+      "row_id": "storyq_astra_w1_a000236",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_astra_w1_a000242",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_astra_w1_a000257",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_astra_w1_a000263",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_astra_w1_a000267",
+      "score": 75
+    },
+    {
+      "row_id": "storyq_astra_w1_a000286",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_astra_w1_a000291",
+      "score": 100
+    },
+    {
+      "row_id": "storyq_astra_w1_a000293",
+      "score": 85
+    }
+  ],
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "rubric_sha": "28b5a61cfc267d00",
+  "metadata": {
+    "issue": 2378,
+    "timestamp": "2026-08-21T09:17:59+0000",
+    "python": "3.11.10",
+    "argv": [
+      "/workspace/explore-persona-space/scripts/issue2378_judge.py",
+      "--wave",
+      "admission",
+      "--transport",
+      "sync",
+      "--max-items",
+      "400",
+      "--mined-dir",
+      "/workspace/explore-persona-space/data/issue_2378/raw_pilot/r2/adm_slice",
+      "--raw-root",
+      "/workspace/explore-persona-space/data/issue_2378/raw_pilot/r2",
+      "--out-root",
+      "/workspace/explore-persona-space/eval_results/issue_2378/pilot",
+      "--skip-upload"
+    ],
+    "git_commit": "b2542657",
+    "git_dirty": true,
+    "git_dirty_paths": [
+      "eval_results/issue_2378/judge/pilot_admission_sync.json"
+    ],
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2378_judge.py"
+  }
+}
