@@ -9741,8 +9741,8 @@
     "2260": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2260",
-      "status": "running",
+      "path": "tasks/completed/2260",
+      "status": "completed",
       "title": "Step 5a spec-freshness: couple agents prose-pin tests (test_mapping_baselines_wiring_pins.py class) to the .claude/agents family \u2014 half-sync gate red"
     },
     "2261": {
