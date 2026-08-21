@@ -1,16 +1,11 @@
 {
-  "commit": "1b6acdc5+dirty",
-  "render_id": "feae9b550b5f4a4b",
-  "git_commit": "1b6acdc5275172da01f0ae48a8e025418af8fe92",
+  "commit": "a18cef4e+dirty",
+  "render_id": "e61ef529cf7f4853",
+  "git_commit": "a18cef4e1af1c6f0c02527f3153a383c36158e0b",
   "git_dirty": true,
   "git_dirty_paths": [
     "docs/posters/mats_2026/make_plot2_persona.py",
-    "docs/posters/mats_2026/figures/plot7_application.meta.json",
-    "docs/posters/mats_2026/figures/plot7_application.pdf",
-    "docs/posters/mats_2026/figures/plot7_application.png",
-    "docs/posters/mats_2026/make_plot7_application.py",
-    "eval_results/issue_666/headline/predictor_headline.json",
-    "scripts/issue1901_body_figures.py",
+    "docs/posters/mats_2026/poster.tex",
     "tasks/completed/2214/body.md",
     "tasks/completed/2214/comments.jsonl",
     "tasks/completed/2214/concerns.jsonl",
@@ -22,130 +17,100 @@
     "tasks/proposed/2416/body.md",
     "tasks/proposed/2416/comments.jsonl",
     "tasks/proposed/2416/events.jsonl",
-    "tasks/running/2214/body.md",
-    "tasks/running/2214/comments.jsonl",
-    "tasks/running/2214/concerns.jsonl",
-    "tasks/running/2214/events.jsonl",
-    "tasks/running/2214/plans/plan.md",
-    "tasks/running/2214/plans/v1.md",
-    "tasks/running/2214/plans/v2.md",
-    "tasks/running/2214/plans/v3.md",
     "tests/test_issue2094_rev_butler.py"
   ],
-  "git_argv0_state": "untracked",
+  "git_argv0_state": "modified",
   "git_argv0_path": "docs/posters/mats_2026/make_plot2_persona.py",
-  "created": "2026-08-21T01:17:57Z",
+  "created": "2026-08-21T10:55:02Z",
   "figsize": [
     6.8,
-    2.8
+    2.7
   ],
   "points": [
     {
-      "x": -0.18,
-      "held-out per-direction $R^2$": 0.7903513427749175,
+      "held-out per-direction $R^2$": 0.453569,
+      "y": 0.9071375643826362,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "x": 0.82,
-      "held-out per-direction $R^2$": 0.8717036176753388,
+      "held-out per-direction $R^2$": 0.442321,
+      "y": 0.8846418647666926,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "x": 1.82,
-      "held-out per-direction $R^2$": 0.795309352459519,
+      "held-out per-direction $R^2$": 0.4368,
+      "y": 0.8736004471662719,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "x": 0.18,
-      "held-out per-direction $R^2$": 0.5574399180076441,
-      "error": 0.09926933111266445,
+      "held-out per-direction $R^2$": 0.431157,
+      "y": 0.8623146061637146,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out per-direction $R^2$": 0.428452,
+      "y": 0.8569034883822229,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out per-direction $R^2$": 0.410792,
+      "y": 0.8215849131775874,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out per-direction $R^2$": 0.401284,
+      "y": 0.8025673660811186,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "held-out per-direction $R^2$": 0.334826,
+      "y": 0.6696521332817015,
       "_kind": "bar",
       "_group": 1
-    },
-    {
-      "x": 1.18,
-      "held-out per-direction $R^2$": 0.569239315454962,
-      "error": 0.08114349978905366,
-      "_kind": "bar",
-      "_group": 1
-    },
-    {
-      "x": 2.18,
-      "held-out per-direction $R^2$": 0.5764510150612682,
-      "error": 0.0907052778148543,
-      "_kind": "bar",
-      "_group": 1
-    },
-    {
-      "x": 0.18,
-      "held-out per-direction $R^2$": 0.4581705868949797,
-      "_kind": "line",
-      "_group": 2
-    },
-    {
-      "x": 1.18,
-      "held-out per-direction $R^2$": 0.4880958156659083,
-      "_kind": "line",
-      "_group": 2
-    },
-    {
-      "x": 2.18,
-      "held-out per-direction $R^2$": 0.48574573724641384,
-      "_kind": "line",
-      "_group": 2
-    },
-    {
-      "x": 0.18,
-      "held-out per-direction $R^2$": 0.6567092491203086,
-      "_kind": "line",
-      "_group": 3
-    },
-    {
-      "x": 1.18,
-      "held-out per-direction $R^2$": 0.6503828152440156,
-      "_kind": "line",
-      "_group": 3
-    },
-    {
-      "x": 2.18,
-      "held-out per-direction $R^2$": 0.6671562928761224,
-      "_kind": "line",
-      "_group": 3
     }
   ],
-  "n_series": 4,
-  "total_points": 12,
+  "n_series": 2,
+  "total_points": 8,
   "text": {
     "suptitle": null,
     "fig_texts": [],
     "axes": [
       {
-        "ylabel": "held-out per-direction $R^2$",
+        "xlabel": "held-out per-direction $R^2$",
         "legend_labels": [
           "persona direction $r_B$",
-          "random direction (mean $\\pm$ SD)"
+          "random direction (200 draws, mean and 5-95%)"
         ],
         "xticklabels": [
-          "misalignment",
-          "sycophancy",
-          "hallucination"
-        ],
-        "yticklabels": [
           "0.0",
           "0.2",
           "0.4",
           "0.6",
           "0.8",
           "1.0"
+        ],
+        "yticklabels": [
+          "sycophancy",
+          "humorous",
+          "apathetic",
+          "impolite",
+          "evil",
+          "hallucination",
+          "optimistic",
+          "random"
         ]
       }
     ],
     "series": [
       "persona direction $r_B$",
-      "random direction (mean $\\pm$ SD)"
+      "random direction (200 draws, mean and 5-95%)"
     ]
   },
   "formats_written": [

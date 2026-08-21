@@ -4,7 +4,7 @@
   "metric": "Spearman rho_frozen (prediction vs judged behaviour expression)",
   "arms_note": "pv_map_mlp (arm6 + MLP map) and reg_map_mlp / arm19 (MLP readouts) are committed at every cell but EXCLUDED here: 6+ bars per group is illegible at poster-column width, and the linear-map arm carries the context-vs-mapped claim.",
   "ood_note": "OOD group = simple mean over the behavior's OOD rungs (evil: hh-rlhf red-team + ToxicChat; sycophancy: held-out Reddit AITA; hallucination: NQ-Open + SimpleQA); interval = elementwise mean of rung CI bounds \u2014 conservative, not a resampled CI of the mean.",
-  "spread_note": "Alpha-muted groups FAIL the committed Result 1 spread gate (evil: wildchat_rung, hhrt, toxicchat) \u2014 kept for completeness, not interpretable.",
+  "spread_note": "Alpha-muted groups FAIL the committed Result 1 spread gate (evil: wildchat_rung, hhrt, toxicchat) \u2014 kept for completeness, not interpretable. The poster legend states the failure in reader terms ('behavior almost never occurs here') rather than naming the gate: all three cells fail the floor_ceiling_mass clause with 91.9%/98.7%/99.4% of contexts pinned at the floor of the judged score (evil/hhrt additionally fails reliability, r_yy=0.481), so there is essentially no behavior variation for rho to track.",
   "bars": [
     {
       "behavior": "evil",
@@ -26,34 +26,6 @@
           "ci": [
             0.6985700580925162,
             0.7975039438505617
-          ],
-          "n_eval": 200,
-          "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
-        }
-      },
-      "spread_failed": false,
-      "failing_settings": []
-    },
-    {
-      "behavior": "evil",
-      "group": "synthetic",
-      "method": "regression_ctx",
-      "arm_id": "arm4_ridge_ctx",
-      "map_kind": "linear",
-      "rho": 0.7069504786777224,
-      "ci": [
-        0.6305935157630411,
-        0.7731763009229744
-      ],
-      "settings": [
-        "pvsynth"
-      ],
-      "per_setting": {
-        "pvsynth": {
-          "rho": 0.7069504786777224,
-          "ci": [
-            0.6305935157630411,
-            0.7731763009229744
           ],
           "n_eval": 200,
           "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
@@ -93,34 +65,6 @@
     {
       "behavior": "evil",
       "group": "synthetic",
-      "method": "reg_map_linear",
-      "arm_id": "arm7_map_ridge_pred",
-      "map_kind": "linear",
-      "rho": 0.810571074579304,
-      "ci": [
-        0.7643136124749833,
-        0.8480063696123155
-      ],
-      "settings": [
-        "pvsynth"
-      ],
-      "per_setting": {
-        "pvsynth": {
-          "rho": 0.810571074579304,
-          "ci": [
-            0.7643136124749833,
-            0.8480063696123155
-          ],
-          "n_eval": 200,
-          "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
-        }
-      },
-      "spread_failed": false,
-      "failing_settings": []
-    },
-    {
-      "behavior": "evil",
-      "group": "synthetic",
       "method": "oracle",
       "arm_id": "arm11_oracle_proj",
       "map_kind": "linear",
@@ -138,6 +82,62 @@
           "ci": [
             0.7948428572706189,
             0.8815773348545195
+          ],
+          "n_eval": 200,
+          "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "evil",
+      "group": "synthetic",
+      "method": "regression_ctx",
+      "arm_id": "arm4_ridge_ctx",
+      "map_kind": "linear",
+      "rho": 0.7069504786777224,
+      "ci": [
+        0.6305935157630411,
+        0.7731763009229744
+      ],
+      "settings": [
+        "pvsynth"
+      ],
+      "per_setting": {
+        "pvsynth": {
+          "rho": 0.7069504786777224,
+          "ci": [
+            0.6305935157630411,
+            0.7731763009229744
+          ],
+          "n_eval": 200,
+          "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "evil",
+      "group": "synthetic",
+      "method": "reg_map_linear",
+      "arm_id": "arm7_map_ridge_pred",
+      "map_kind": "linear",
+      "rho": 0.810571074579304,
+      "ci": [
+        0.7643136124749833,
+        0.8480063696123155
+      ],
+      "settings": [
+        "pvsynth"
+      ],
+      "per_setting": {
+        "pvsynth": {
+          "rho": 0.810571074579304,
+          "ci": [
+            0.7643136124749833,
+            0.8480063696123155
           ],
           "n_eval": 200,
           "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
@@ -166,36 +166,6 @@
           "ci": [
             -0.04204904920766162,
             0.17185865967135444
-          ],
-          "n_eval": 417,
-          "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
-        }
-      },
-      "spread_failed": true,
-      "failing_settings": [
-        "wildchat_rung"
-      ]
-    },
-    {
-      "behavior": "evil",
-      "group": "generic chat",
-      "method": "regression_ctx",
-      "arm_id": "arm4_ridge_ctx",
-      "map_kind": "linear",
-      "rho": 0.1349220757126155,
-      "ci": [
-        0.016491652794928698,
-        0.23074753382228205
-      ],
-      "settings": [
-        "wildchat_rung"
-      ],
-      "per_setting": {
-        "wildchat_rung": {
-          "rho": 0.1349220757126155,
-          "ci": [
-            0.016491652794928698,
-            0.23074753382228205
           ],
           "n_eval": 417,
           "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
@@ -239,36 +209,6 @@
     {
       "behavior": "evil",
       "group": "generic chat",
-      "method": "reg_map_linear",
-      "arm_id": "arm7_map_ridge_pred",
-      "map_kind": "linear",
-      "rho": 0.16324611609285736,
-      "ci": [
-        0.07146683860459094,
-        0.24310752560934748
-      ],
-      "settings": [
-        "wildchat_rung"
-      ],
-      "per_setting": {
-        "wildchat_rung": {
-          "rho": 0.16324611609285736,
-          "ci": [
-            0.07146683860459094,
-            0.24310752560934748
-          ],
-          "n_eval": 417,
-          "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
-        }
-      },
-      "spread_failed": true,
-      "failing_settings": [
-        "wildchat_rung"
-      ]
-    },
-    {
-      "behavior": "evil",
-      "group": "generic chat",
       "method": "oracle",
       "arm_id": "arm11_oracle_proj",
       "map_kind": "linear",
@@ -286,6 +226,66 @@
           "ci": [
             0.14610273976578803,
             0.2945632630216805
+          ],
+          "n_eval": 417,
+          "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": true,
+      "failing_settings": [
+        "wildchat_rung"
+      ]
+    },
+    {
+      "behavior": "evil",
+      "group": "generic chat",
+      "method": "regression_ctx",
+      "arm_id": "arm4_ridge_ctx",
+      "map_kind": "linear",
+      "rho": 0.1349220757126155,
+      "ci": [
+        0.016491652794928698,
+        0.23074753382228205
+      ],
+      "settings": [
+        "wildchat_rung"
+      ],
+      "per_setting": {
+        "wildchat_rung": {
+          "rho": 0.1349220757126155,
+          "ci": [
+            0.016491652794928698,
+            0.23074753382228205
+          ],
+          "n_eval": 417,
+          "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": true,
+      "failing_settings": [
+        "wildchat_rung"
+      ]
+    },
+    {
+      "behavior": "evil",
+      "group": "generic chat",
+      "method": "reg_map_linear",
+      "arm_id": "arm7_map_ridge_pred",
+      "map_kind": "linear",
+      "rho": 0.16324611609285736,
+      "ci": [
+        0.07146683860459094,
+        0.24310752560934748
+      ],
+      "settings": [
+        "wildchat_rung"
+      ],
+      "per_setting": {
+        "wildchat_rung": {
+          "rho": 0.16324611609285736,
+          "ci": [
+            0.07146683860459094,
+            0.24310752560934748
           ],
           "n_eval": 417,
           "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
@@ -327,34 +327,6 @@
     {
       "behavior": "evil",
       "group": "in-distrib.",
-      "method": "regression_ctx",
-      "arm_id": "arm4_ridge_ctx",
-      "map_kind": "linear",
-      "rho": 0.5916133705769209,
-      "ci": [
-        0.5756296211687013,
-        0.6075523479016194
-      ],
-      "settings": [
-        "train"
-      ],
-      "per_setting": {
-        "train": {
-          "rho": 0.5916133705769209,
-          "ci": [
-            0.5756296211687013,
-            0.6075523479016194
-          ],
-          "n_eval": 6468,
-          "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
-        }
-      },
-      "spread_failed": false,
-      "failing_settings": []
-    },
-    {
-      "behavior": "evil",
-      "group": "in-distrib.",
       "method": "pv_map_linear",
       "arm_id": "arm6_map_proj_e1",
       "map_kind": "linear",
@@ -372,34 +344,6 @@
           "ci": [
             0.6574229573512688,
             0.6847402515241553
-          ],
-          "n_eval": 6468,
-          "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
-        }
-      },
-      "spread_failed": false,
-      "failing_settings": []
-    },
-    {
-      "behavior": "evil",
-      "group": "in-distrib.",
-      "method": "reg_map_linear",
-      "arm_id": "arm7_map_ridge_pred",
-      "map_kind": "linear",
-      "rho": 0.7491823147055028,
-      "ci": [
-        0.738485672747706,
-        0.7608555553537014
-      ],
-      "settings": [
-        "train"
-      ],
-      "per_setting": {
-        "train": {
-          "rho": 0.7491823147055028,
-          "ci": [
-            0.738485672747706,
-            0.7608555553537014
           ],
           "n_eval": 6468,
           "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
@@ -438,6 +382,62 @@
     },
     {
       "behavior": "evil",
+      "group": "in-distrib.",
+      "method": "regression_ctx",
+      "arm_id": "arm4_ridge_ctx",
+      "map_kind": "linear",
+      "rho": 0.5916133705769209,
+      "ci": [
+        0.5756296211687013,
+        0.6075523479016194
+      ],
+      "settings": [
+        "train"
+      ],
+      "per_setting": {
+        "train": {
+          "rho": 0.5916133705769209,
+          "ci": [
+            0.5756296211687013,
+            0.6075523479016194
+          ],
+          "n_eval": 6468,
+          "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "evil",
+      "group": "in-distrib.",
+      "method": "reg_map_linear",
+      "arm_id": "arm7_map_ridge_pred",
+      "map_kind": "linear",
+      "rho": 0.7491823147055028,
+      "ci": [
+        0.738485672747706,
+        0.7608555553537014
+      ],
+      "settings": [
+        "train"
+      ],
+      "per_setting": {
+        "train": {
+          "rho": 0.7491823147055028,
+          "ci": [
+            0.738485672747706,
+            0.7608555553537014
+          ],
+          "n_eval": 6468,
+          "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "evil",
       "group": "OOD",
       "method": "pv_context",
       "arm_id": "arm1_ctx_e1",
@@ -466,47 +466,6 @@
           "ci": [
             -0.06724617872543785,
             0.10189778515316823
-          ],
-          "n_eval": 519,
-          "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
-        }
-      },
-      "spread_failed": true,
-      "failing_settings": [
-        "hhrt",
-        "toxicchat"
-      ]
-    },
-    {
-      "behavior": "evil",
-      "group": "OOD",
-      "method": "regression_ctx",
-      "arm_id": "arm4_ridge_ctx",
-      "map_kind": "linear",
-      "rho": 0.21076898875190866,
-      "ci": [
-        0.14818891690013647,
-        0.26381111899394805
-      ],
-      "settings": [
-        "hhrt",
-        "toxicchat"
-      ],
-      "per_setting": {
-        "hhrt": {
-          "rho": 0.0871281658987849,
-          "ci": [
-            0.0366216840797122,
-            0.12364403415890576
-          ],
-          "n_eval": 1868,
-          "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
-        },
-        "toxicchat": {
-          "rho": 0.3344098116050324,
-          "ci": [
-            0.25975614972056077,
-            0.40397820382899036
           ],
           "n_eval": 519,
           "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
@@ -562,47 +521,6 @@
     {
       "behavior": "evil",
       "group": "OOD",
-      "method": "reg_map_linear",
-      "arm_id": "arm7_map_ridge_pred",
-      "map_kind": "linear",
-      "rho": 0.22766990730237624,
-      "ci": [
-        0.16421874264922512,
-        0.28233207518112036
-      ],
-      "settings": [
-        "hhrt",
-        "toxicchat"
-      ],
-      "per_setting": {
-        "hhrt": {
-          "rho": 0.08645175996731794,
-          "ci": [
-            0.03530934945982373,
-            0.13000753524436948
-          ],
-          "n_eval": 1868,
-          "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
-        },
-        "toxicchat": {
-          "rho": 0.3688880546374345,
-          "ci": [
-            0.2931281358386265,
-            0.4346566151178712
-          ],
-          "n_eval": 519,
-          "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
-        }
-      },
-      "spread_failed": true,
-      "failing_settings": [
-        "hhrt",
-        "toxicchat"
-      ]
-    },
-    {
-      "behavior": "evil",
-      "group": "OOD",
       "method": "oracle",
       "arm_id": "arm11_oracle_proj",
       "map_kind": "linear",
@@ -630,6 +548,88 @@
           "ci": [
             0.16849086192089324,
             0.33975177038451876
+          ],
+          "n_eval": 519,
+          "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": true,
+      "failing_settings": [
+        "hhrt",
+        "toxicchat"
+      ]
+    },
+    {
+      "behavior": "evil",
+      "group": "OOD",
+      "method": "regression_ctx",
+      "arm_id": "arm4_ridge_ctx",
+      "map_kind": "linear",
+      "rho": 0.21076898875190866,
+      "ci": [
+        0.14818891690013647,
+        0.26381111899394805
+      ],
+      "settings": [
+        "hhrt",
+        "toxicchat"
+      ],
+      "per_setting": {
+        "hhrt": {
+          "rho": 0.0871281658987849,
+          "ci": [
+            0.0366216840797122,
+            0.12364403415890576
+          ],
+          "n_eval": 1868,
+          "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
+        },
+        "toxicchat": {
+          "rho": 0.3344098116050324,
+          "ci": [
+            0.25975614972056077,
+            0.40397820382899036
+          ],
+          "n_eval": 519,
+          "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": true,
+      "failing_settings": [
+        "hhrt",
+        "toxicchat"
+      ]
+    },
+    {
+      "behavior": "evil",
+      "group": "OOD",
+      "method": "reg_map_linear",
+      "arm_id": "arm7_map_ridge_pred",
+      "map_kind": "linear",
+      "rho": 0.22766990730237624,
+      "ci": [
+        0.16421874264922512,
+        0.28233207518112036
+      ],
+      "settings": [
+        "hhrt",
+        "toxicchat"
+      ],
+      "per_setting": {
+        "hhrt": {
+          "rho": 0.08645175996731794,
+          "ci": [
+            0.03530934945982373,
+            0.13000753524436948
+          ],
+          "n_eval": 1868,
+          "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
+        },
+        "toxicchat": {
+          "rho": 0.3688880546374345,
+          "ci": [
+            0.2931281358386265,
+            0.4346566151178712
           ],
           "n_eval": 519,
           "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
@@ -672,34 +672,6 @@
     {
       "behavior": "sycophancy",
       "group": "synthetic",
-      "method": "regression_ctx",
-      "arm_id": "arm4_ridge_ctx",
-      "map_kind": "linear",
-      "rho": 0.7611846342218265,
-      "ci": [
-        0.6995517806339617,
-        0.8058570985937561
-      ],
-      "settings": [
-        "pvsynth"
-      ],
-      "per_setting": {
-        "pvsynth": {
-          "rho": 0.7611846342218265,
-          "ci": [
-            0.6995517806339617,
-            0.8058570985937561
-          ],
-          "n_eval": 200,
-          "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json"
-        }
-      },
-      "spread_failed": false,
-      "failing_settings": []
-    },
-    {
-      "behavior": "sycophancy",
-      "group": "synthetic",
       "method": "pv_map_linear",
       "arm_id": "arm6_map_proj_e1",
       "map_kind": "linear",
@@ -728,34 +700,6 @@
     {
       "behavior": "sycophancy",
       "group": "synthetic",
-      "method": "reg_map_linear",
-      "arm_id": "arm7_map_ridge_pred",
-      "map_kind": "linear",
-      "rho": 0.7759252381712568,
-      "ci": [
-        0.7184287439879539,
-        0.8141744740735981
-      ],
-      "settings": [
-        "pvsynth"
-      ],
-      "per_setting": {
-        "pvsynth": {
-          "rho": 0.7759252381712568,
-          "ci": [
-            0.7184287439879539,
-            0.8141744740735981
-          ],
-          "n_eval": 200,
-          "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json"
-        }
-      },
-      "spread_failed": false,
-      "failing_settings": []
-    },
-    {
-      "behavior": "sycophancy",
-      "group": "synthetic",
       "method": "oracle",
       "arm_id": "arm11_oracle_proj",
       "map_kind": "linear",
@@ -773,6 +717,62 @@
           "ci": [
             0.703480522973764,
             0.807914953003169
+          ],
+          "n_eval": 200,
+          "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "sycophancy",
+      "group": "synthetic",
+      "method": "regression_ctx",
+      "arm_id": "arm4_ridge_ctx",
+      "map_kind": "linear",
+      "rho": 0.7611846342218265,
+      "ci": [
+        0.6995517806339617,
+        0.8058570985937561
+      ],
+      "settings": [
+        "pvsynth"
+      ],
+      "per_setting": {
+        "pvsynth": {
+          "rho": 0.7611846342218265,
+          "ci": [
+            0.6995517806339617,
+            0.8058570985937561
+          ],
+          "n_eval": 200,
+          "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "sycophancy",
+      "group": "synthetic",
+      "method": "reg_map_linear",
+      "arm_id": "arm7_map_ridge_pred",
+      "map_kind": "linear",
+      "rho": 0.7759252381712568,
+      "ci": [
+        0.7184287439879539,
+        0.8141744740735981
+      ],
+      "settings": [
+        "pvsynth"
+      ],
+      "per_setting": {
+        "pvsynth": {
+          "rho": 0.7759252381712568,
+          "ci": [
+            0.7184287439879539,
+            0.8141744740735981
           ],
           "n_eval": 200,
           "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json"
@@ -812,34 +812,6 @@
     {
       "behavior": "sycophancy",
       "group": "generic chat",
-      "method": "regression_ctx",
-      "arm_id": "arm4_ridge_ctx",
-      "map_kind": "linear",
-      "rho": 0.5040245535970942,
-      "ci": [
-        0.4195380075775008,
-        0.5791341046695494
-      ],
-      "settings": [
-        "wildchat_rung"
-      ],
-      "per_setting": {
-        "wildchat_rung": {
-          "rho": 0.5040245535970942,
-          "ci": [
-            0.4195380075775008,
-            0.5791341046695494
-          ],
-          "n_eval": 415,
-          "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json"
-        }
-      },
-      "spread_failed": false,
-      "failing_settings": []
-    },
-    {
-      "behavior": "sycophancy",
-      "group": "generic chat",
       "method": "pv_map_linear",
       "arm_id": "arm6_map_proj_e1",
       "map_kind": "linear",
@@ -868,34 +840,6 @@
     {
       "behavior": "sycophancy",
       "group": "generic chat",
-      "method": "reg_map_linear",
-      "arm_id": "arm7_map_ridge_pred",
-      "map_kind": "linear",
-      "rho": 0.5174104385082218,
-      "ci": [
-        0.4384782818894309,
-        0.5949829692897164
-      ],
-      "settings": [
-        "wildchat_rung"
-      ],
-      "per_setting": {
-        "wildchat_rung": {
-          "rho": 0.5174104385082218,
-          "ci": [
-            0.4384782818894309,
-            0.5949829692897164
-          ],
-          "n_eval": 415,
-          "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json"
-        }
-      },
-      "spread_failed": false,
-      "failing_settings": []
-    },
-    {
-      "behavior": "sycophancy",
-      "group": "generic chat",
       "method": "oracle",
       "arm_id": "arm11_oracle_proj",
       "map_kind": "linear",
@@ -913,6 +857,62 @@
           "ci": [
             -0.02296656774691166,
             0.1671461852774431
+          ],
+          "n_eval": 415,
+          "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "sycophancy",
+      "group": "generic chat",
+      "method": "regression_ctx",
+      "arm_id": "arm4_ridge_ctx",
+      "map_kind": "linear",
+      "rho": 0.5040245535970942,
+      "ci": [
+        0.4195380075775008,
+        0.5791341046695494
+      ],
+      "settings": [
+        "wildchat_rung"
+      ],
+      "per_setting": {
+        "wildchat_rung": {
+          "rho": 0.5040245535970942,
+          "ci": [
+            0.4195380075775008,
+            0.5791341046695494
+          ],
+          "n_eval": 415,
+          "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "sycophancy",
+      "group": "generic chat",
+      "method": "reg_map_linear",
+      "arm_id": "arm7_map_ridge_pred",
+      "map_kind": "linear",
+      "rho": 0.5174104385082218,
+      "ci": [
+        0.4384782818894309,
+        0.5949829692897164
+      ],
+      "settings": [
+        "wildchat_rung"
+      ],
+      "per_setting": {
+        "wildchat_rung": {
+          "rho": 0.5174104385082218,
+          "ci": [
+            0.4384782818894309,
+            0.5949829692897164
           ],
           "n_eval": 415,
           "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json"
@@ -952,34 +952,6 @@
     {
       "behavior": "sycophancy",
       "group": "in-distrib.",
-      "method": "regression_ctx",
-      "arm_id": "arm4_ridge_ctx",
-      "map_kind": "linear",
-      "rho": 0.720546707075219,
-      "ci": [
-        0.7118970793292733,
-        0.7304965674722398
-      ],
-      "settings": [
-        "train"
-      ],
-      "per_setting": {
-        "train": {
-          "rho": 0.720546707075219,
-          "ci": [
-            0.7118970793292733,
-            0.7304965674722398
-          ],
-          "n_eval": 16000,
-          "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json"
-        }
-      },
-      "spread_failed": false,
-      "failing_settings": []
-    },
-    {
-      "behavior": "sycophancy",
-      "group": "in-distrib.",
       "method": "pv_map_linear",
       "arm_id": "arm6_map_proj_e1",
       "map_kind": "linear",
@@ -1008,34 +980,6 @@
     {
       "behavior": "sycophancy",
       "group": "in-distrib.",
-      "method": "reg_map_linear",
-      "arm_id": "arm7_map_ridge_pred",
-      "map_kind": "linear",
-      "rho": 0.7392767797199288,
-      "ci": [
-        0.7306179941298431,
-        0.7473300648779624
-      ],
-      "settings": [
-        "train"
-      ],
-      "per_setting": {
-        "train": {
-          "rho": 0.7392767797199288,
-          "ci": [
-            0.7306179941298431,
-            0.7473300648779624
-          ],
-          "n_eval": 16000,
-          "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json"
-        }
-      },
-      "spread_failed": false,
-      "failing_settings": []
-    },
-    {
-      "behavior": "sycophancy",
-      "group": "in-distrib.",
       "method": "oracle",
       "arm_id": "arm11_oracle_proj",
       "map_kind": "linear",
@@ -1053,6 +997,62 @@
           "ci": [
             0.3017863394638875,
             0.3338214484914244
+          ],
+          "n_eval": 16000,
+          "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "sycophancy",
+      "group": "in-distrib.",
+      "method": "regression_ctx",
+      "arm_id": "arm4_ridge_ctx",
+      "map_kind": "linear",
+      "rho": 0.720546707075219,
+      "ci": [
+        0.7118970793292733,
+        0.7304965674722398
+      ],
+      "settings": [
+        "train"
+      ],
+      "per_setting": {
+        "train": {
+          "rho": 0.720546707075219,
+          "ci": [
+            0.7118970793292733,
+            0.7304965674722398
+          ],
+          "n_eval": 16000,
+          "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "sycophancy",
+      "group": "in-distrib.",
+      "method": "reg_map_linear",
+      "arm_id": "arm7_map_ridge_pred",
+      "map_kind": "linear",
+      "rho": 0.7392767797199288,
+      "ci": [
+        0.7306179941298431,
+        0.7473300648779624
+      ],
+      "settings": [
+        "train"
+      ],
+      "per_setting": {
+        "train": {
+          "rho": 0.7392767797199288,
+          "ci": [
+            0.7306179941298431,
+            0.7473300648779624
           ],
           "n_eval": 16000,
           "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json"
@@ -1092,34 +1092,6 @@
     {
       "behavior": "sycophancy",
       "group": "OOD",
-      "method": "regression_ctx",
-      "arm_id": "arm4_ridge_ctx",
-      "map_kind": "linear",
-      "rho": 0.7087380230631141,
-      "ci": [
-        0.6695027344630052,
-        0.742838471038209
-      ],
-      "settings": [
-        "aita"
-      ],
-      "per_setting": {
-        "aita": {
-          "rho": 0.7087380230631141,
-          "ci": [
-            0.6695027344630052,
-            0.742838471038209
-          ],
-          "n_eval": 1304,
-          "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json"
-        }
-      },
-      "spread_failed": false,
-      "failing_settings": []
-    },
-    {
-      "behavior": "sycophancy",
-      "group": "OOD",
       "method": "pv_map_linear",
       "arm_id": "arm6_map_proj_e1",
       "map_kind": "linear",
@@ -1148,34 +1120,6 @@
     {
       "behavior": "sycophancy",
       "group": "OOD",
-      "method": "reg_map_linear",
-      "arm_id": "arm7_map_ridge_pred",
-      "map_kind": "linear",
-      "rho": 0.7253642156327909,
-      "ci": [
-        0.6928579093772478,
-        0.7563628342332341
-      ],
-      "settings": [
-        "aita"
-      ],
-      "per_setting": {
-        "aita": {
-          "rho": 0.7253642156327909,
-          "ci": [
-            0.6928579093772478,
-            0.7563628342332341
-          ],
-          "n_eval": 1304,
-          "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json"
-        }
-      },
-      "spread_failed": false,
-      "failing_settings": []
-    },
-    {
-      "behavior": "sycophancy",
-      "group": "OOD",
       "method": "oracle",
       "arm_id": "arm11_oracle_proj",
       "map_kind": "linear",
@@ -1193,6 +1137,62 @@
           "ci": [
             0.1973220508739651,
             0.2990054164676252
+          ],
+          "n_eval": 1304,
+          "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "sycophancy",
+      "group": "OOD",
+      "method": "regression_ctx",
+      "arm_id": "arm4_ridge_ctx",
+      "map_kind": "linear",
+      "rho": 0.7087380230631141,
+      "ci": [
+        0.6695027344630052,
+        0.742838471038209
+      ],
+      "settings": [
+        "aita"
+      ],
+      "per_setting": {
+        "aita": {
+          "rho": 0.7087380230631141,
+          "ci": [
+            0.6695027344630052,
+            0.742838471038209
+          ],
+          "n_eval": 1304,
+          "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "sycophancy",
+      "group": "OOD",
+      "method": "reg_map_linear",
+      "arm_id": "arm7_map_ridge_pred",
+      "map_kind": "linear",
+      "rho": 0.7253642156327909,
+      "ci": [
+        0.6928579093772478,
+        0.7563628342332341
+      ],
+      "settings": [
+        "aita"
+      ],
+      "per_setting": {
+        "aita": {
+          "rho": 0.7253642156327909,
+          "ci": [
+            0.6928579093772478,
+            0.7563628342332341
           ],
           "n_eval": 1304,
           "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json"
@@ -1232,34 +1232,6 @@
     {
       "behavior": "hallucination",
       "group": "synthetic",
-      "method": "regression_ctx",
-      "arm_id": "arm4_ridge_ctx",
-      "map_kind": "linear",
-      "rho": 0.5774290855736351,
-      "ci": [
-        0.46338506247525285,
-        0.6691368952990743
-      ],
-      "settings": [
-        "pvsynth"
-      ],
-      "per_setting": {
-        "pvsynth": {
-          "rho": 0.5774290855736351,
-          "ci": [
-            0.46338506247525285,
-            0.6691368952990743
-          ],
-          "n_eval": 200,
-          "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
-        }
-      },
-      "spread_failed": false,
-      "failing_settings": []
-    },
-    {
-      "behavior": "hallucination",
-      "group": "synthetic",
       "method": "pv_map_linear",
       "arm_id": "arm6_map_proj_e1",
       "map_kind": "linear",
@@ -1288,34 +1260,6 @@
     {
       "behavior": "hallucination",
       "group": "synthetic",
-      "method": "reg_map_linear",
-      "arm_id": "arm7_map_ridge_pred",
-      "map_kind": "linear",
-      "rho": 0.627353761729434,
-      "ci": [
-        0.5221632392251568,
-        0.7080079618167298
-      ],
-      "settings": [
-        "pvsynth"
-      ],
-      "per_setting": {
-        "pvsynth": {
-          "rho": 0.627353761729434,
-          "ci": [
-            0.5221632392251568,
-            0.7080079618167298
-          ],
-          "n_eval": 200,
-          "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
-        }
-      },
-      "spread_failed": false,
-      "failing_settings": []
-    },
-    {
-      "behavior": "hallucination",
-      "group": "synthetic",
       "method": "oracle",
       "arm_id": "arm11_oracle_proj",
       "map_kind": "linear",
@@ -1333,6 +1277,62 @@
           "ci": [
             0.6621241323784479,
             0.809757265055035
+          ],
+          "n_eval": 200,
+          "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "hallucination",
+      "group": "synthetic",
+      "method": "regression_ctx",
+      "arm_id": "arm4_ridge_ctx",
+      "map_kind": "linear",
+      "rho": 0.5774290855736351,
+      "ci": [
+        0.46338506247525285,
+        0.6691368952990743
+      ],
+      "settings": [
+        "pvsynth"
+      ],
+      "per_setting": {
+        "pvsynth": {
+          "rho": 0.5774290855736351,
+          "ci": [
+            0.46338506247525285,
+            0.6691368952990743
+          ],
+          "n_eval": 200,
+          "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "hallucination",
+      "group": "synthetic",
+      "method": "reg_map_linear",
+      "arm_id": "arm7_map_ridge_pred",
+      "map_kind": "linear",
+      "rho": 0.627353761729434,
+      "ci": [
+        0.5221632392251568,
+        0.7080079618167298
+      ],
+      "settings": [
+        "pvsynth"
+      ],
+      "per_setting": {
+        "pvsynth": {
+          "rho": 0.627353761729434,
+          "ci": [
+            0.5221632392251568,
+            0.7080079618167298
           ],
           "n_eval": 200,
           "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
@@ -1372,34 +1372,6 @@
     {
       "behavior": "hallucination",
       "group": "generic chat",
-      "method": "regression_ctx",
-      "arm_id": "arm4_ridge_ctx",
-      "map_kind": "linear",
-      "rho": 0.5651108690679424,
-      "ci": [
-        0.489877827398082,
-        0.635786698554082
-      ],
-      "settings": [
-        "wildchat_rung"
-      ],
-      "per_setting": {
-        "wildchat_rung": {
-          "rho": 0.5651108690679424,
-          "ci": [
-            0.489877827398082,
-            0.635786698554082
-          ],
-          "n_eval": 411,
-          "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
-        }
-      },
-      "spread_failed": false,
-      "failing_settings": []
-    },
-    {
-      "behavior": "hallucination",
-      "group": "generic chat",
       "method": "pv_map_linear",
       "arm_id": "arm6_map_proj_e1",
       "map_kind": "linear",
@@ -1428,34 +1400,6 @@
     {
       "behavior": "hallucination",
       "group": "generic chat",
-      "method": "reg_map_linear",
-      "arm_id": "arm7_map_ridge_pred",
-      "map_kind": "linear",
-      "rho": 0.6254454127087546,
-      "ci": [
-        0.5565859768668034,
-        0.6843574887898876
-      ],
-      "settings": [
-        "wildchat_rung"
-      ],
-      "per_setting": {
-        "wildchat_rung": {
-          "rho": 0.6254454127087546,
-          "ci": [
-            0.5565859768668034,
-            0.6843574887898876
-          ],
-          "n_eval": 411,
-          "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
-        }
-      },
-      "spread_failed": false,
-      "failing_settings": []
-    },
-    {
-      "behavior": "hallucination",
-      "group": "generic chat",
       "method": "oracle",
       "arm_id": "arm11_oracle_proj",
       "map_kind": "linear",
@@ -1473,6 +1417,62 @@
           "ci": [
             0.18743765826638062,
             0.38139452492605364
+          ],
+          "n_eval": 411,
+          "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "hallucination",
+      "group": "generic chat",
+      "method": "regression_ctx",
+      "arm_id": "arm4_ridge_ctx",
+      "map_kind": "linear",
+      "rho": 0.5651108690679424,
+      "ci": [
+        0.489877827398082,
+        0.635786698554082
+      ],
+      "settings": [
+        "wildchat_rung"
+      ],
+      "per_setting": {
+        "wildchat_rung": {
+          "rho": 0.5651108690679424,
+          "ci": [
+            0.489877827398082,
+            0.635786698554082
+          ],
+          "n_eval": 411,
+          "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "hallucination",
+      "group": "generic chat",
+      "method": "reg_map_linear",
+      "arm_id": "arm7_map_ridge_pred",
+      "map_kind": "linear",
+      "rho": 0.6254454127087546,
+      "ci": [
+        0.5565859768668034,
+        0.6843574887898876
+      ],
+      "settings": [
+        "wildchat_rung"
+      ],
+      "per_setting": {
+        "wildchat_rung": {
+          "rho": 0.6254454127087546,
+          "ci": [
+            0.5565859768668034,
+            0.6843574887898876
           ],
           "n_eval": 411,
           "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
@@ -1512,34 +1512,6 @@
     {
       "behavior": "hallucination",
       "group": "in-distrib.",
-      "method": "regression_ctx",
-      "arm_id": "arm4_ridge_ctx",
-      "map_kind": "linear",
-      "rho": 0.5572427540854127,
-      "ci": [
-        0.5457581537941896,
-        0.5690015305588049
-      ],
-      "settings": [
-        "train"
-      ],
-      "per_setting": {
-        "train": {
-          "rho": 0.5572427540854127,
-          "ci": [
-            0.5457581537941896,
-            0.5690015305588049
-          ],
-          "n_eval": 16000,
-          "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
-        }
-      },
-      "spread_failed": false,
-      "failing_settings": []
-    },
-    {
-      "behavior": "hallucination",
-      "group": "in-distrib.",
       "method": "pv_map_linear",
       "arm_id": "arm6_map_proj_e1",
       "map_kind": "linear",
@@ -1568,34 +1540,6 @@
     {
       "behavior": "hallucination",
       "group": "in-distrib.",
-      "method": "reg_map_linear",
-      "arm_id": "arm7_map_ridge_pred",
-      "map_kind": "linear",
-      "rho": 0.6027415759982249,
-      "ci": [
-        0.5915080570733717,
-        0.6138158381392698
-      ],
-      "settings": [
-        "train"
-      ],
-      "per_setting": {
-        "train": {
-          "rho": 0.6027415759982249,
-          "ci": [
-            0.5915080570733717,
-            0.6138158381392698
-          ],
-          "n_eval": 16000,
-          "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
-        }
-      },
-      "spread_failed": false,
-      "failing_settings": []
-    },
-    {
-      "behavior": "hallucination",
-      "group": "in-distrib.",
       "method": "oracle",
       "arm_id": "arm11_oracle_proj",
       "map_kind": "linear",
@@ -1613,6 +1557,62 @@
           "ci": [
             0.04253712567935424,
             0.07220781539377556
+          ],
+          "n_eval": 16000,
+          "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "hallucination",
+      "group": "in-distrib.",
+      "method": "regression_ctx",
+      "arm_id": "arm4_ridge_ctx",
+      "map_kind": "linear",
+      "rho": 0.5572427540854127,
+      "ci": [
+        0.5457581537941896,
+        0.5690015305588049
+      ],
+      "settings": [
+        "train"
+      ],
+      "per_setting": {
+        "train": {
+          "rho": 0.5572427540854127,
+          "ci": [
+            0.5457581537941896,
+            0.5690015305588049
+          ],
+          "n_eval": 16000,
+          "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "hallucination",
+      "group": "in-distrib.",
+      "method": "reg_map_linear",
+      "arm_id": "arm7_map_ridge_pred",
+      "map_kind": "linear",
+      "rho": 0.6027415759982249,
+      "ci": [
+        0.5915080570733717,
+        0.6138158381392698
+      ],
+      "settings": [
+        "train"
+      ],
+      "per_setting": {
+        "train": {
+          "rho": 0.6027415759982249,
+          "ci": [
+            0.5915080570733717,
+            0.6138158381392698
           ],
           "n_eval": 16000,
           "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
@@ -1662,44 +1662,6 @@
     {
       "behavior": "hallucination",
       "group": "OOD",
-      "method": "regression_ctx",
-      "arm_id": "arm4_ridge_ctx",
-      "map_kind": "linear",
-      "rho": 0.3864314220958271,
-      "ci": [
-        0.3594219097363448,
-        0.4160303407232757
-      ],
-      "settings": [
-        "nqopen",
-        "simpleqa"
-      ],
-      "per_setting": {
-        "nqopen": {
-          "rho": 0.3815336737494374,
-          "ci": [
-            0.350876208726398,
-            0.41223419551939117
-          ],
-          "n_eval": 3167,
-          "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
-        },
-        "simpleqa": {
-          "rho": 0.39132917044221677,
-          "ci": [
-            0.3679676107462916,
-            0.4198264859271602
-          ],
-          "n_eval": 4021,
-          "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
-        }
-      },
-      "spread_failed": false,
-      "failing_settings": []
-    },
-    {
-      "behavior": "hallucination",
-      "group": "OOD",
       "method": "pv_map_linear",
       "arm_id": "arm6_map_proj_e1",
       "map_kind": "linear",
@@ -1738,44 +1700,6 @@
     {
       "behavior": "hallucination",
       "group": "OOD",
-      "method": "reg_map_linear",
-      "arm_id": "arm7_map_ridge_pred",
-      "map_kind": "linear",
-      "rho": 0.4122153610173508,
-      "ci": [
-        0.3859133949668097,
-        0.44387193572320205
-      ],
-      "settings": [
-        "nqopen",
-        "simpleqa"
-      ],
-      "per_setting": {
-        "nqopen": {
-          "rho": 0.4141576099099953,
-          "ci": [
-            0.38533843418688424,
-            0.44666747880486457
-          ],
-          "n_eval": 3167,
-          "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
-        },
-        "simpleqa": {
-          "rho": 0.41027311212470624,
-          "ci": [
-            0.3864883557467352,
-            0.4410763926415395
-          ],
-          "n_eval": 4021,
-          "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
-        }
-      },
-      "spread_failed": false,
-      "failing_settings": []
-    },
-    {
-      "behavior": "hallucination",
-      "group": "OOD",
       "method": "oracle",
       "arm_id": "arm11_oracle_proj",
       "map_kind": "linear",
@@ -1803,6 +1727,82 @@
           "ci": [
             0.5521300786759493,
             0.6043085054555212
+          ],
+          "n_eval": 4021,
+          "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "hallucination",
+      "group": "OOD",
+      "method": "regression_ctx",
+      "arm_id": "arm4_ridge_ctx",
+      "map_kind": "linear",
+      "rho": 0.3864314220958271,
+      "ci": [
+        0.3594219097363448,
+        0.4160303407232757
+      ],
+      "settings": [
+        "nqopen",
+        "simpleqa"
+      ],
+      "per_setting": {
+        "nqopen": {
+          "rho": 0.3815336737494374,
+          "ci": [
+            0.350876208726398,
+            0.41223419551939117
+          ],
+          "n_eval": 3167,
+          "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
+        },
+        "simpleqa": {
+          "rho": 0.39132917044221677,
+          "ci": [
+            0.3679676107462916,
+            0.4198264859271602
+          ],
+          "n_eval": 4021,
+          "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "hallucination",
+      "group": "OOD",
+      "method": "reg_map_linear",
+      "arm_id": "arm7_map_ridge_pred",
+      "map_kind": "linear",
+      "rho": 0.4122153610173508,
+      "ci": [
+        0.3859133949668097,
+        0.44387193572320205
+      ],
+      "settings": [
+        "nqopen",
+        "simpleqa"
+      ],
+      "per_setting": {
+        "nqopen": {
+          "rho": 0.4141576099099953,
+          "ci": [
+            0.38533843418688424,
+            0.44666747880486457
+          ],
+          "n_eval": 3167,
+          "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
+        },
+        "simpleqa": {
+          "rho": 0.41027311212470624,
+          "ci": [
+            0.3864883557467352,
+            0.4410763926415395
           ],
           "n_eval": 4021,
           "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"

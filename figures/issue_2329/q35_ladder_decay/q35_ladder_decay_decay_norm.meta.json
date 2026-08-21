@@ -1,0 +1,477 @@
+{
+  "commit": "4b5d1847+dirty",
+  "render_id": "47c50188cf704ad6",
+  "git_commit": "4b5d184719c0da423c50e0adb8686dcde686e79a",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2329_decay.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2329_decay.py",
+  "created": "2026-08-21T09:53:58Z",
+  "figsize": [
+    9.0,
+    3.6
+  ],
+  "points": [
+    {
+      "token quartile": 1.0,
+      "F = (steered - floor) / (ceiling - floor)": 0.3727591563418231,
+      "error": 0.09435343198546797,
+      "series": "all",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "token quartile": 2.0,
+      "F = (steered - floor) / (ceiling - floor)": 0.1429743454987529,
+      "error": 0.11092560975187442,
+      "series": "all",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "token quartile": 3.0,
+      "F = (steered - floor) / (ceiling - floor)": 0.13189789279928324,
+      "error": 0.10296938671027588,
+      "series": "all",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "token quartile": 4.0,
+      "F = (steered - floor) / (ceiling - floor)": 0.2124072694971166,
+      "error": 0.10507384962052324,
+      "series": "all",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "token quartile": 1.0,
+      "F = (steered - floor) / (ceiling - floor)": 0.36876814301278565,
+      "error": 0.09435343198546797,
+      "series": "coh",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "token quartile": 2.0,
+      "F = (steered - floor) / (ceiling - floor)": 0.13470424524571287,
+      "error": 0.11092560975187442,
+      "series": "coh",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "token quartile": 3.0,
+      "F = (steered - floor) / (ceiling - floor)": 0.12895713974218212,
+      "error": 0.10296938671027588,
+      "series": "coh",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "token quartile": 4.0,
+      "F = (steered - floor) / (ceiling - floor)": 0.20105882294536426,
+      "error": 0.10507384962052324,
+      "series": "coh",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "token quartile": 1.0,
+      "F = (steered - floor) / (ceiling - floor)": 0.3727591563418231,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "token quartile": 2.0,
+      "F = (steered - floor) / (ceiling - floor)": 0.1429743454987529,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "token quartile": 3.0,
+      "F = (steered - floor) / (ceiling - floor)": 0.13189789279928324,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "token quartile": 4.0,
+      "F = (steered - floor) / (ceiling - floor)": 0.2124072694971166,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "token quartile": 1.0,
+      "F = (steered - floor) / (ceiling - floor)": 0.2684308702779784,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "token quartile": 2.0,
+      "F = (steered - floor) / (ceiling - floor)": 0.035119056945173144,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "token quartile": 3.0,
+      "F = (steered - floor) / (ceiling - floor)": 0.03759119368117145,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "token quartile": 4.0,
+      "F = (steered - floor) / (ceiling - floor)": 0.10243688759780306,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "token quartile": 1.0,
+      "F = (steered - floor) / (ceiling - floor)": 0.4681943485774722,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "token quartile": 2.0,
+      "F = (steered - floor) / (ceiling - floor)": 0.2694103223604057,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "token quartile": 3.0,
+      "F = (steered - floor) / (ceiling - floor)": 0.2504347735487737,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "token quartile": 4.0,
+      "F = (steered - floor) / (ceiling - floor)": 0.33401173091939457,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "token quartile": 1.0,
+      "F = (steered - floor) / (ceiling - floor)": 0.36876814301278565,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "token quartile": 2.0,
+      "F = (steered - floor) / (ceiling - floor)": 0.13470424524571287,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "token quartile": 3.0,
+      "F = (steered - floor) / (ceiling - floor)": 0.12895713974218212,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "token quartile": 4.0,
+      "F = (steered - floor) / (ceiling - floor)": 0.20105882294536426,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "token quartile": 1.0,
+      "F = (steered - floor) / (ceiling - floor)": 0.26940788903865415,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "token quartile": 2.0,
+      "F = (steered - floor) / (ceiling - floor)": 0.03431202315282475,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "token quartile": 3.0,
+      "F = (steered - floor) / (ceiling - floor)": 0.037547387585428554,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "token quartile": 4.0,
+      "F = (steered - floor) / (ceiling - floor)": 0.1025285067842217,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "token quartile": 1.0,
+      "F = (steered - floor) / (ceiling - floor)": 0.4581147530095901,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "token quartile": 2.0,
+      "F = (steered - floor) / (ceiling - floor)": 0.2561632426565736,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "token quartile": 3.0,
+      "F = (steered - floor) / (ceiling - floor)": 0.2434861610059803,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "token quartile": 4.0,
+      "F = (steered - floor) / (ceiling - floor)": 0.3126762060252682,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.3586476061321253,
+      "error": 0.05330126681370595,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.19355414382349556,
+      "error": 0.06054375834847635,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.1514606446917818,
+      "error": 0.09035557197650493,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.26074402194180396,
+      "error": 0.07566711322968118,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.3597384082705022,
+      "error": 0.05330126681370595,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.1952322137669912,
+      "error": 0.06054375834847635,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.15316399628574925,
+      "error": 0.09035557197650493,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.2551067720234103,
+      "error": 0.07566711322968118,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.3586476061321253,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.19355414382349556,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.1514606446917818,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.26074402194180396,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.3056673883541549,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.1356172134284427,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.06604517890205085,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.18335910860508128,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.41507636988914326,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.2583973439477982,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.2500553416838622,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.33176734617906983,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.3597384082705022,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.1952322137669912,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.15316399628574925,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.2551067720234103,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.30866939146477973,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.13787703852822966,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.07036794980873991,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.1782737390935615,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.41527192509219163,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.25896455522518236,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.25107909376174975,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.3296079655529239,
+      "_kind": "line",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 64,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "q25",
+        "xlabel": "token quartile",
+        "ylabel": "F = (steered - floor) / (ceiling - floor)",
+        "legend_labels": [
+          "all",
+          "coh"
+        ],
+        "xticklabels": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "q35",
+        "xlabel": "token quartile",
+        "xticklabels": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      }
+    ],
+    "series": [
+      "all",
+      "coh"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

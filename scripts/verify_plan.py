@@ -202,13 +202,16 @@ Check catalog (id — classification — kind scope)
   c67 test-retest κ demotion    WARN-only, conditional    experiment +
       gate vs temperature-0                               analysis
       judge pin
+  c68 abs-pp reduction margin  WARN-only, conditional    experiment +
+      vs in-plan baseline                                analysis
+      ceiling
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54,
-55, 56, 57, 58, 59, 61, 62, 63, 64, 65, 66, 67) also SKIP when their
+55, 56, 57, 58, 59, 61, 62, 63, 64, 65, 66, 67, 68) also SKIP when their
 content trigger does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
@@ -389,6 +392,19 @@ labeled-line forms):
     instead runs the retest at the parent instrument's sampling
     temperature, or re-grounds the κ threshold for a deterministic
     surface)
+  - ``N/A — no absolute-margin decision gate`` (check 68 — declare ONLY
+    when the plan genuinely registers no absolute-pp reduction margin:
+    the pp-margin / baseline vocabulary is incidental or quotes an
+    incident/sibling; a plan genuinely registering such a margin instead
+    sizes it below the DV's stated baseline rate, switches to a relative
+    margin, or — when the flag is a cross-quantity false alarm — declares
+    the sibling escape below)
+  - ``N/A — harvested percentage baseline is unrelated to this absolute-margin gate``
+    (check 68 — the exists-but-false-alarm shape, the c47/c53/c59
+    convention: the plan DOES register an absolute-pp reduction margin,
+    but every %-stated baseline the harvest can see concerns a DIFFERENT
+    quantity; prefer stating the gate's true baseline in % form so the
+    harvest sees it)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -8608,15 +8624,38 @@ def _c46_argv_from_tokens(tokens: list[str]) -> list[str] | None:
     return argv
 
 
-def _c46_drift_arms(parser, argv: list[str]) -> list[str]:
-    """Drift arms for ONE command argv against the live CLI (empty = clean).
+def _c46_drift_arms(parser, argv: list[str]) -> tuple[list[str], list[str]]:
+    """Drift arms + FYI notes for ONE command argv against the live CLI.
+
+    Returns ``(arms, notes)`` — empty ``arms`` = clean; ``notes`` are
+    verdict-neutral FYI strings the caller appends to its detail tail.
 
     Arm 1: the argv does not parse (``launch`` subcommand missing, unknown
     flag, wrong type). Arms 2-3 fire only on a LAUNCH-shaped argv — an
     explicit ``launch`` subcommand, or the #1336 missing-subcommand shape
     (argv leads with a flag); a ``finalize`` command gets neither.
+
+    Arm 4 (#2202/#2254) is NAMESPACE-level: a PARSED ``launch`` namespace
+    must satisfy the runtime's exactly-one-of ``--workload-cmd`` /
+    ``--hydra`` rule (``dispatch_issue.py main()``, #588) — evaluated on
+    the parsed namespace exactly as the runtime does, so empty-string
+    values, ``--flag=value`` forms, and the append-action ``--hydra``
+    follow argparse semantics byte-for-byte. Gated on
+    ``getattr(ns, "action", None) == "launch"`` (a does-not-parse argv has
+    ``ns is None`` — arm 1 owns it; ``finalize`` namespaces lack the
+    launch dests by construction) and on BOTH ``workload_cmd`` / ``hydra``
+    dests existing — a future CLI dest rename SKIPs the arm with an FYI
+    note rather than reading renamed dests as absent and firing
+    ``neither`` on every compliant launch plan.
+
+    FYI note (#909, verdict-neutral): an explicit ``--backend runpod``
+    launch carrying a non-empty ``--workload-cmd`` but no
+    ``--execute-workload`` is provision-only — the workload does not
+    auto-start on the runpod lane (expected when the experimenter launches
+    it on the pod, so a note, never a WARN).
     """
     arms: list[str] = []
+    notes: list[str] = []
     ns, err = _c46_dry_parse(parser, argv)
     if ns is None:
         arms.append(f"does not parse ({err})")
@@ -8637,7 +8676,35 @@ def _c46_drift_arms(parser, argv: list[str]) -> list[str]:
                 "exists — reason: repo_branch_required_issue_branch_exists; "
                 "--repo-branch main is the explicit escape)"
             )
-    return arms
+    if ns is not None and getattr(ns, "action", None) == "launch":
+        if hasattr(ns, "workload_cmd") and hasattr(ns, "hydra"):
+            has_workload_cmd = bool((ns.workload_cmd or "").strip())
+            has_hydra = bool(ns.hydra)
+            if has_workload_cmd == has_hydra:
+                arms.append(
+                    "launch requires exactly one of --workload-cmd / --hydra "
+                    f"(got {'both' if has_hydra else 'neither'}; an empty "
+                    "--workload-cmd '' counts as not provided; runtime refuses "
+                    "rc=2 — the #2202/#2254 provision-only shape)"
+                )
+            elif (
+                has_workload_cmd
+                and (getattr(ns, "backend", None) or "").strip().lower() == "runpod"
+                and not getattr(ns, "execute_workload", False)
+            ):
+                notes.append(
+                    "FYI: --backend runpod with --workload-cmd but no "
+                    "--execute-workload is provision-only (the workload does not "
+                    "auto-start on the runpod lane, #909) — expected when the "
+                    "experimenter launches it on the pod"
+                )
+        else:
+            notes.append(
+                "exactly-one-of --workload-cmd/--hydra arm skipped: parsed launch "
+                "namespace lacks the workload_cmd/hydra dests (CLI dest rename "
+                "since #588?)"
+            )
+    return arms, notes
 
 
 def check_dispatch_cmd_cli_parse(plan: str, kind: str) -> CheckResult:
@@ -8645,17 +8712,24 @@ def check_dispatch_cmd_cli_parse(plan: str, kind: str) -> CheckResult:
     ``dispatch_issue.py`` command (fenced code blocks + inline-code spans;
     backslash continuations joined) must dry-parse against the CLI's REAL
     argparser (``dispatch_issue.build_argparser()``, lazily path-loaded),
-    and a launch-shaped command must not carry the two demonstrated drift
-    shapes: ``--max-run-duration`` without ``--time-budget-hours`` (the
-    fence threads ONLY to the GCP instance auto-delete and is inert on
-    SLURM lanes, where the wall fence is ``--time-budget-hours`` — runtime
-    refusal ``max_run_duration_slurm_inert_without_time_budget``), and a
-    missing ``--repo-branch`` (the runtime refuses when a live
+    and a launch-shaped command must not carry the three demonstrated
+    drift shapes: ``--max-run-duration`` without ``--time-budget-hours``
+    (the fence threads ONLY to the GCP instance auto-delete and is inert
+    on SLURM lanes, where the wall fence is ``--time-budget-hours`` —
+    runtime refusal ``max_run_duration_slurm_inert_without_time_budget``),
+    a missing ``--repo-branch`` (the runtime refuses when a live
     ``issue-<N>`` branch exists — ``repo_branch_required_issue_branch_
-    exists``; ``--repo-branch main`` is the explicit escape). Mechanizes
-    the #1336 v15 §9 drift: the plan-embedded launch command omitted the
-    ``launch`` subcommand, carried ``--max-run-duration`` with no
-    ``--time-budget-hours``, and omitted ``--repo-branch``. Placeholder
+    exists``; ``--repo-branch main`` is the explicit escape), and — on a
+    PARSED ``launch`` namespace (#2202/#2254) — a violation of the
+    runtime's exactly-one-of ``--workload-cmd`` / ``--hydra`` requirement
+    (#588; an explicitly-empty ``--workload-cmd ''`` counts as not
+    provided, both-provided WARNs too — the runtime refuses rc=2 either
+    way). An explicit ``--backend runpod`` launch with a non-empty
+    ``--workload-cmd`` and no ``--execute-workload`` additionally gets a
+    verdict-neutral FYI note (provision-only on the runpod lane, #909).
+    Mechanizes the #1336 v15 §9 drift: the plan-embedded launch command
+    omitted the ``launch`` subcommand, carried ``--max-run-duration`` with
+    no ``--time-budget-hours``, and omitted ``--repo-branch``. Placeholder
     tokens (``<N>``, ``$VAR``) parse as ordinary values (substituted
     ``"1"``); ``${VAR:+...}`` conditional expansions are stripped whole;
     prose mentions with no ``--`` flag are not commands; unsplittable
@@ -8686,7 +8760,8 @@ def check_dispatch_cmd_cli_parse(plan: str, kind: str) -> CheckResult:
         if argv is None:
             continue  # bare file reference / prose mention, not a command
         n_parsed += 1
-        arms = _c46_drift_arms(parser, argv)
+        arms, fyi_notes = _c46_drift_arms(parser, argv)
+        notes.extend(fyi_notes)
         if arms:
             offenders.append(f"{cmd[:70]!r}: " + "; ".join(arms))
     if offenders:
@@ -8699,9 +8774,11 @@ def check_dispatch_cmd_cli_parse(plan: str, kind: str) -> CheckResult:
             f"plan-embedded dispatch_issue.py command(s) drift from the live CLI: {shown}{more} "
             "— the #1336 v15 shape (a plan-embedded launch command missing the `launch` "
             "subcommand, fencing via --max-run-duration alone, or omitting --repo-branch) "
-            "dies or silently mis-fences at dispatch time; copy the SKILL.md Step 6b launch "
-            "snippet (launch subcommand + explicit --repo-branch + --time-budget-hours on "
-            f"SLURM-reachable lanes){tail}",
+            "and the #2202/#2254 provision-only shape (launch without exactly one of "
+            "--workload-cmd / --hydra) die or silently mis-fence at dispatch time; copy "
+            "the SKILL.md Step 6b launch snippet (launch subcommand + explicit "
+            "--repo-branch + a workload via --workload-cmd or --hydra + "
+            f"--time-budget-hours on SLURM-reachable lanes){tail}",
         )
     if n_parsed == 0:
         detail = "dispatch_issue.py mentions are bare references, not command invocations"
@@ -13030,6 +13107,350 @@ def check_exactness_grain(plan: str, kind: str) -> CheckResult:
     )
 
 
+# ─── Check 68 — abs-pp reduction margin vs in-plan baseline ceiling (#2228) ─
+# Origin: #2203 plan v10-v12 — §3 registered H1/H3-confirm as an ABSOLUTE
+# "baseline - cap ≥ 10 percentage points" / "≤ baseline - 10pp" reduction
+# margin while the plan's own §2/§8 stated baselines of ~9.7% (7B) and
+# ~4.0% (32B): margin > baseline makes the confirm branch arithmetically
+# unsatisfiable (the treated rate would have to be NEGATIVE), and
+# margin == baseline is satisfiable only at an exactly-zero realized rate —
+# a degenerate gate; the check fires on BOTH per the body's ≥ spec (#2228
+# r1 D1: never claim blanket impossibility across the non-strict boundary).
+# Incident lineage: 3rd recurrence of the #810 margin-vs-ceiling family
+# (#810; #825 v17 → c28; #2203 v12 → this check). SCOPE (#2228 r1 C6): c68
+# detects SUBTRACTION-ANCHORED A1/A2 recurrences of the #2203 surface form
+# ONLY — it does NOT cover the margin-vs-ceiling family generally (every
+# enumerated accepted FN below is a family member it will not see); the
+# binding family-level defense remains the Statistics critic's
+# decision-gate joint-satisfiability lens. Caught at #2203 only by the
+# Statistics + Alternatives critics; c28 (multiplicative fractional bands,
+# same-line, no-% harvest) and c20 (lattice structure) structurally cannot
+# see it. WARN-ONLY (the c14/c28 doctrine): regex heuristics over prose;
+# the FAIL-grade semantic verdict stays with the Statistics critic.
+#
+# HARVEST DOCTRINE (prefer false negatives): margins are harvested ONLY in
+# the baseline-SUBTRACTIVE forms — the clause must literally name the
+# subtraction from baseline, which is precisely the arithmetic under test:
+#   A1: "≤/<=/< baseline - N pp|percentage points"     (#2203 v12 L57)
+#   A2: "baseline - <arm> ≥/>=/> N pp|percentage points" (#2203 v12 L44)
+# DELIBERATELY EXCLUDED (each a named accepted false negative; the starred
+# forms are pinned as executable SKIP fixtures — #2228 r1 C7):
+#   - * bare "Δ ≥ N pp" / ">= N pp" without the subtractive anchor —
+#     direction-ambiguous (an INCREASE margin is satisfiable). NOTE: this
+#     is the #2228 task body's OWN example sentence, and it appears
+#     un-harvested in the founding lattice as "Δharm ≥ 10pp" — the
+#     incident line fires only via its co-resident A1 token; a recurrence
+#     carrying ONLY the bare Δ form is out of reach by design;
+#   - * reversed subtractive "baseline - 10pp ≥ treated-rate" (comparator
+#     on the wrong side of the subtraction for both arms);
+#   - * cross-line / definition-split forms ("Δharm ≥ 10pp" with
+#     "Δharm = baseline - treated" defined elsewhere) — cross-token
+#     association is out of regex reach;
+#   - * parenthesized "≤ (baseline - 10pp)" — A1's comparator must abut
+#     "baseline"; "(" is not consumed;
+#   - * A2 middles containing any barred character ("baseline - harm,
+#     treated ≥ 10pp") — "=" and "," barred by the #2228 r2 tighten (the
+#     round-1 middle class crossed an equality comparator and a comma
+#     clause boundary and fabricated a cross-clause harvest:
+#     "baseline - cap = 2pp, while accuracy >= 10pp" bound the unrelated
+#     ">= 10pp" — a false WARN on a healthy plan whose registered gate
+#     was a satisfiable 2pp reduction); "?", "!", and the Markdown
+#     table-cell pipe "|" barred by the #2228 r3 tighten (the same
+#     species, each verified as a live end-to-end false WARN:
+#     "baseline - cap? ...", "baseline - cap! ...", and
+#     "baseline - cap of 2pp | accuracy >= 10pp" crossed a sentence or
+#     table-cell boundary to bind the unrelated ">= 10pp"); a GENUINE
+#     margin whose <arm> text carries any barred character is the
+#     accepted FN the tightens buy (pinned as the r2 + r3 repro SKIP
+#     fixtures);
+#   - * range margins ("≥ 10-15pp"); also fraction baselines
+#     ("baseline ~0.097" — no %, never harvested) and baselines stated
+#     only in a cited artifact (clarifier Assumption 2: in-plan only; the
+#     named-artifact leg is a deferred follow-up);
+#   - verb-anchored forms ("reduces ... by ≥ N pp") — the 2026-08-20 corpus
+#     scan measured 3 near-FPs for a reduc|drop|lower vocabulary arm
+#     (#192 v2:652 "lower fact margin ... ≥ 30pp"; #543 v1-v4 "≥ 2 strict
+#     drops of ≥ 5 pp"; #376 v1:481 "If either drops ≥10pp");
+#   - "< N pp" complement clauses (usually tolerance/noise bounds);
+#   - two-sided tolerances ("within ~5 pp of baseline") — no comparator+
+#     subtraction, excluded by construction;
+#   - "≥ baseline - N pp" retention FLOORS (satisfiable) — excluded by
+#     A1's comparator class (≤/<=/< only).
+# Baselines: first "%"-number within 40 chars after a "baseline" token,
+# plan-wide (the incident's baselines live in §2 / the §8 risk table —
+# cross-section is the point). Comparison uses the MAX harvested baseline:
+# fires only when even the largest stated baseline cannot support the
+# margin — the maximally FN-biased association rule (a plan stating 9.7%
+# AND 4.0% fires at margin 10; a plan also stating an unrelated 60%
+# baseline does not — accepted FN, disclosed in the WARN detail's
+# cross-quantity clause; the INVERSE mis-association — an unrelated
+# SMALLER % as bmax — is the cross-quantity FP the truthful escape below
+# serves).
+# SECTION SCOPING (#2228 r1 MF1): margin lines must sit inside a
+# gate/hypothesis-titled section whose qualifying heading is NON-H1
+# (level >= 2). The house template has ONE H1 whose _headings span is the
+# WHOLE document (a span ends at the next same-or-higher heading), so an
+# H1 carrying gate/decision vocabulary ("# Plan: ... decision-gate rework")
+# would arm every §2/§8 line — the traced FP: a Risks quotation of a
+# sibling's broken 30pp margin vs a 20% baseline WARNs on a healthy plan.
+# The walk stays ANY-ENCLOSING over H2-H6 (the c13/c28 membership idiom;
+# strict nearest-section-only would newly DROP a margin in a non-matching
+# subsection of a matching gate H2, e.g. "## 7. Decision Gates" →
+# "### Response ladder"). BOUNDARY, stated honestly: a §2/§8 quotation of
+# a sibling's broken margin is exempt only while OUTSIDE every H2-H6
+# gate/hypothesis/evaluation-titled section — a quotation INSIDE one IS
+# harvested (regexes cannot tell a quotation from a registration);
+# WARN-only posture + the two escapes are the mitigation there.
+# (_C13_GATE_SECTION_RE | _C20_SECTION_RE union, both reused verbatim — c13's
+# covers success/kill/decision/evaluation, c20's adds hypothes|verdict,
+# which is where the #2203 lattice lives; founding-incident coverage
+# verified: v12's margins sit under "### 3. Hypothesis", an H3.)
+#
+# ESCAPES (#2228 r1 MF2 — two phrases, the registry's two shapes):
+#   ``N/A — no absolute-margin decision gate`` — declare ONLY when the
+#     plan genuinely registers no absolute-pp reduction margin (the
+#     harvested line quotes an incident/sibling; the vocabulary is
+#     incidental). The `no <thing>` family: declare-only-when-true.
+#   ``N/A — harvested percentage baseline is unrelated to this
+#     absolute-margin gate`` — the exists-but-false-alarm shape (the
+#     c47/c53/c59 convention): the plan DOES register such a margin, but
+#     every %-stated baseline the harvest can see concerns a DIFFERENT
+#     quantity. Preferred remedy: state the gate's true baseline in %
+#     form so the harvest sees it.
+#
+# CORPUS CALIBRATION (REALIZED, re-measured 2026-08-20 POST-r3-TIGHTEN
+# at corpus HEAD db34939cd6 with THIS function, over every persisted
+# tasks/*/*/plans/v*.md — 4,447 versions; the c50/c67 house pattern;
+# #2228 r1 C2 records raw-token and function-classified counts
+# SEPARATELY). RAW-TOKEN counts (module-regex approximation over raw
+# file text, fences/sections ignored): A1-form files 5; A2-form files 5
+# — the #2203 family {v10,v11,v12} plus #2228's own plans/{v1,v2}.md
+# (kind: infra; grows with #2228's own plan versions); the r2 and r3
+# tightens left both counts unchanged — no corpus A2 middle carries any
+# barred character (the r2 and r3 classes return the identical file set
+# on one corpus snapshot; r1's separate "comparator-pp-bearing 18" grep
+# stays dropped as a non-reproducible wider-net approximation — the
+# A1/A2 module-regex counts are the reproducible raw-token record).
+# REALIZED-FUNCTION counts (the binding measurement, forced
+# kind="experiment" as the armed-kind upper bound; the r2 function and
+# the r3 function produce the identical verdict set on one corpus
+# snapshot): margin-bearing (non-SKIP) 3; WARNs 3 — EXACTLY the
+# founding-incident family, each
+# (kind: experiment, disposition ARMED, a true positive): 2203/plans/
+# v10.md, v11.md, v12.md, all firing on the L44 A2 bullet + the L57 A1
+# lattice (10 pp vs bmax 9.7%). ARMED FPs: 0 (the §7 kill criterion does
+# not fire). KIND-GATE-COVERED self-family hits: 0 realized — #2228's
+# own plan versions carry the A1/A2 raw tokens only fenced or outside
+# qualifying NON-H1 gate/hypothesis sections, so the realized function
+# never harvests them even under the forced-experiment scan (#2228 r1
+# C1: a future self-family hit dispositions KIND-GATE-COVERED, never FP).
+
+#: A1 — treated rate bounded at/below baseline minus the margin.
+_C68_A1_RE = re.compile(
+    r"(?i)(?:≤|<=|<)\s*baseline\s*[−–—-]\s*"  # noqa: RUF001 — real plan glyphs
+    r"(?P<n>\d+(?:\.\d+)?)\s*(?:pp\b|percentage[-\s]?points?)"
+)
+#: A2 — "baseline - <arm> ≥ N pp". Middle bounded at 40 chars. BARRED
+#: set: membership is defined SOLELY by `_C68_A2_MIDDLE_BARRED` below —
+#: this comment deliberately carries NO membership enumeration (#2228
+#: r4: rounds 1-3 each bounced on a prose restatement of a set the code
+#: already owned diverging from the implementation, so the duplicate is
+#: deleted rather than re-audited). What the sync test
+#: (test_c68_a2_middle_barred_set_syncs_comment_class_and_behavior)
+#: actually guarantees: it asserts the CONSTANT below equals the regex's
+#: negated character class char-for-char, so a constant/class divergence
+#: is test-breaking; it reads no prose, which is exactly why membership
+#: must not be restated here. Rationale for the members, by round: the
+#: newline, comparator-glyph, ";" and ")" bars are round 1's structural
+#: boundaries (genuine ">=" comparators survive by construction — the
+#: middle can never consume their leading ">"); bare "=" and "," were
+#: barred in r2 after round 1's middle skipped past a satisfiable
+#: "= 2pp" equality and bound an unrelated later ">= 10pp" — a
+#: fabricated cross-clause harvest, false WARN on a healthy plan (and an
+#: "="-only fix would NOT have killed the comma form); "?" "!" "|" were
+#: barred in r3 (the same live-FP species crossing a sentence boundary
+#: or a Markdown table-cell pipe — the likeliest plan shape, since
+#: decision lattices are routinely tables). RESIDUAL, stated as the
+#: COMPLEMENT (never an implicitly-exhaustive enumeration — #2228 r3):
+#: EVERY character outside the barred set remains permitted within
+#: the 40-char budget — e.g. ".", ":", "(", quotes, and dash glyphs (the
+#: "." form can cross a sentence boundary the same way); WARN-only
+#: posture + the two escapes are the mitigation for whatever crossings
+#: the permitted complement allows. A genuine margin whose <arm> text
+#: carries a barred character is an accepted FN (excluded list above,
+#: pinned by the r2 + r3 repro SKIP fixtures).
+_C68_A2_MIDDLE_BARRED = frozenset("\n<>≤≥;)=,?!|")
+_C68_A2_RE = re.compile(
+    r"(?i)\bbaseline\s*[−–—-]\s*[^\n<>≤≥;)=,?!|]{1,40}?(?:≥|>=|>)\s*"  # noqa: RUF001
+    r"(?P<n>\d+(?:\.\d+)?)\s*(?:pp\b|percentage[-\s]?points?)"
+)
+#: Baseline anchor + the FIRST %-number in a bounded window after it (the
+#: window is what keeps "baseline ~9.7% vs paper 65-88%" harvesting 9.7,
+#: not 88 — #2203 v12 L298).
+_C68_BASELINE_ANCHOR_RE = re.compile(r"(?i)\bbaseline\b")
+_C68_PCT_RE = re.compile(r"(\d+(?:\.\d+)?)\s*%")
+_C68_BASELINE_WINDOW = 40
+
+
+def _c68_sections_ok(headings: list, i: int) -> bool:
+    """Line ``i`` sits inside a gate- or hypothesis/verdict-titled section
+    whose qualifying heading is NON-H1 (``level >= 2``): the house
+    template's single H1 spans the whole document, so an H1 match would
+    arm every line (#2228 r1 MF1). The walk stays any-enclosing over
+    H2-H6 (the c13/c28 membership idiom; both regexes reused verbatim,
+    never widened here) so a margin in a non-matching subsection of a
+    matching gate H2 still qualifies."""
+    return any(
+        h.line <= i < h.end
+        and h.level >= 2
+        and (_C13_GATE_SECTION_RE.search(h.text) or _C20_SECTION_RE.search(h.text))
+        for h in headings
+    )
+
+
+def _c68_margins(plan: str) -> list[dict]:
+    """Baseline-subtractive absolute-pp reduction margins on non-fenced
+    lines inside NON-H1 gate/hypothesis sections. Per margin:
+    ``{line_no (1-based), line, value: Fraction}``; deduped per
+    (line_no, value)."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    headings = _headings(plan)
+    out: list[dict] = []
+    seen: set[tuple[int, Fraction]] = set()
+    for i, (line, fenced) in enumerate(zip(lines, mask, strict=True)):
+        if fenced or not _c68_sections_ok(headings, i):
+            continue
+        for rx in (_C68_A1_RE, _C68_A2_RE):
+            for m in rx.finditer(line):
+                v = _c28_frac(m.group("n"))
+                if v <= 0 or (i, v) in seen:
+                    continue
+                seen.add((i, v))
+                out.append({"line_no": i + 1, "line": line.strip(), "value": v})
+    return out
+
+
+def _c68_baselines(plan: str) -> list[dict]:
+    """In-plan %-stated baseline rates, plan-wide over non-fenced lines:
+    the FIRST %-number within ``_C68_BASELINE_WINDOW`` chars after each
+    ``baseline`` token, kept when 0 < b <= 100. Per baseline:
+    ``{line_no, value: Fraction, snippet}``."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    out: list[dict] = []
+    for i, (line, fenced) in enumerate(zip(lines, mask, strict=True)):
+        if fenced:
+            continue
+        for a in _C68_BASELINE_ANCHOR_RE.finditer(line):
+            w = line[a.end() : a.end() + _C68_BASELINE_WINDOW]
+            pm = _C68_PCT_RE.search(w)
+            if not pm:
+                continue
+            b = _c28_frac(pm.group(1))
+            if 0 < b <= 100:
+                out.append(
+                    {"line_no": i + 1, "value": b, "snippet": line[a.start() :][:60].strip()}
+                )
+    return out
+
+
+def check_margin_baseline_ceiling(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional (#2228, incident #2203 v12): a registered
+    absolute percentage-point reduction margin in a baseline-SUBTRACTIVE
+    form (``≤ baseline - N pp`` / ``baseline - <arm> ≥ N pp``) inside a
+    NON-H1 gate/hypothesis section, whose N is >= the LARGEST in-plan
+    %-stated baseline rate. Strictly above the baseline the confirm
+    branch is arithmetically unsatisfiable (the treated rate would have
+    to be negative); AT the baseline it is satisfiable only at an
+    exactly-zero realized rate — a degenerate gate; the check fires on
+    both per the task body's ≥ spec. Detects the SUBTRACTION-ANCHORED
+    A1/A2 recurrence shape only — never the margin-vs-ceiling family
+    generally. NEVER FAILs (the c14/c28 doctrine). Armed for kind in
+    {experiment, analysis} only — infra workflow-fix plans (THIS check's
+    own plan included) legitimately quote the trigger vocabulary (the
+    c53/c67 precedent). Accepted false negatives are enumerated in the
+    module comment above. Escapes (standalone, unwrapped):
+    ``N/A — no absolute-margin decision gate`` (genuinely gate-free — the
+    harvested text quotes an incident/sibling) and ``N/A — harvested
+    percentage baseline is unrelated to this absolute-margin gate`` (the
+    gate is real; the %-baseline pairing is the false alarm)."""
+    cid, name = "c68_margin_baseline_ceiling", "abs-pp reduction margin vs baseline ceiling"
+    if kind not in ("experiment", "analysis"):
+        return _skip(
+            cid,
+            name,
+            f"kind={kind} — armed for experiment/analysis only (the c67 kind-exempt "
+            "precedent): infra workflow-fix plans quote the pp-margin/baseline trigger "
+            "vocabulary without registering a decision margin; the founding incident "
+            "(#2203 v10-v12) is kind: experiment",
+        )
+    margins = _c68_margins(plan)
+    if not margins:
+        return _skip(cid, name, "no baseline-subtractive absolute-pp reduction margin detected")
+    if _standalone_na_declared(plan, r"no absolute[- ]margin decision gates?"):
+        return _pass(
+            cid,
+            name,
+            "explicit N/A declared (no absolute-margin decision gate — the harvested "
+            "margin text is not a gate this plan registers)",
+        )
+    if _standalone_na_declared(
+        plan, r"harvested percentage baseline is unrelated to this absolute[- ]margin gate"
+    ):
+        return _pass(
+            cid,
+            name,
+            "explicit N/A declared (cross-quantity: the harvested %-stated baseline is "
+            "unrelated to the registered absolute-margin gate)",
+        )
+    baselines = _c68_baselines(plan)
+    if not baselines:
+        return _skip(
+            cid,
+            name,
+            "margin registered but no in-plan %-stated baseline rate detected "
+            "(cross-artifact baseline recovery is out of v1 scope — clarifier "
+            "Assumption 2, #2228)",
+        )
+    bmax = max(baselines, key=lambda b: b["value"])
+    offenders = [m for m in margins if m["value"] >= bmax["value"]]
+    if not offenders:
+        return _pass(
+            cid,
+            name,
+            f"{len(margins)} baseline-subtractive pp margin(s) all sit below the largest "
+            f"in-plan baseline rate ({float(bmax['value']):g}%, line {bmax['line_no']})",
+        )
+    parts = [
+        f'line {m["line_no"]} "{m["line"][:90]}" registers an absolute reduction margin '
+        f"of {float(m['value']):g} pp"
+        for m in offenders[:3]
+    ]
+    shown = "; ".join(parts) + ("; …" if len(offenders) > 3 else "")
+    return _warn(
+        cid,
+        name,
+        f"{shown} — but the largest in-plan baseline rate is {float(bmax['value']):g}% "
+        f'(line {bmax["line_no"]}: "{bmax["snippet"]}"): a margin STRICTLY above the '
+        "baseline makes the confirm branch arithmetically unsatisfiable (the treated "
+        "rate would have to be negative), and a margin EQUAL to the baseline is "
+        "satisfiable only at an exactly-zero realized rate — a degenerate gate; both "
+        "fire per the ≥ spec (#2203 v12: a ≥10pp margin vs realized baselines "
+        "9.66%/4.02%; 3rd recurrence of the #810 family). NOTE: this check cannot "
+        "verify the margin and the baseline concern the same quantity — if they "
+        "concern DIFFERENT quantities, state the gate's true baseline in % form so "
+        "the harvest sees it, or declare 'N/A — harvested percentage baseline is "
+        "unrelated to this absolute-margin gate' on its own line, unwrapped (no "
+        "backticks/quotes). Remedy for a genuinely infeasible margin: switch to a "
+        "relative margin, or size the absolute margin below the DV's stated baseline "
+        "rate. A plan that registers NO absolute-pp margin at all (the harvested line "
+        "quotes an incident/sibling) instead declares 'N/A — no absolute-margin "
+        "decision gate' on its own line, unwrapped; the semantic verdict stays with "
+        "the Statistics critic",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -13096,6 +13517,7 @@ CHECKS = [
     check_smoke_fixture_size,
     check_smoke_producer_coverage,
     check_retest_kappa_temp0,
+    check_margin_baseline_ceiling,
 ]
 
 
