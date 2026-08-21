@@ -37,4 +37,13 @@ engine-reachable import path — the only class-closing gate is a real
 tiny engine init on the target hardware before any multi-shard fan-out;
 (4) treat "guard catches ImportError only" as a trap: a
 py-version-incompatible dep raises TypeError/SyntaxError, which no
-ImportError guard absorbs.
+ImportError guard absorbs; (5) THIRD site class (#2378 third incident,
+same day — and the real-engine gate caught it in 100 s on 1 GPU,
+validating point 3): bare flashinfer imports also fire at FORWARD time —
+Qwen3.6 hybrid-GDN auto-selects the FlashInfer GDN prefill kernel
+(`qwen_gdn_linear_attn.py`, requested=auto) and hard-imports
+`flashinfer.gdn_prefill` on the first prefill — so a removal-class fix
+must ALSO pin every kernel auto-select away from flashinfer
+(`--gdn-prefill-backend triton` per vllm's own hint; sweep the model's
+attention/kernel modules for sibling auto-selects rather than pinning
+one site per pod cycle).
