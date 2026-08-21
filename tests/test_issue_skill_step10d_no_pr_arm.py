@@ -43,6 +43,20 @@ boundary LITERALLY, with an in-test negative control proving the old
 spliced form evaluates the same payload (14). Step 10d's trunk splice
 sites are deliberately out of #2241's fence (plan must-ask list) and are
 NOT pinned here.
+
+Round 3 (#2241, binding blocker title-resolution-failure-masking) fenced
+the title RESOLVER itself at both primary sites: a separately rc-gated,
+timeout-bounded resolution step. Every task.py invocation — reads
+included — pays the branch-guard resolution, whose #996 bounded rebase
+wait (EPM_TASKPY_REBASE_WAIT_SECONDS, default 120 s) can precede a
+RuntimeError (detached HEAD / husk timeout); round 2's plain assignment
+let jq exit 0 on empty input and mask that failure into a
+created-and-memoized degraded ``issue-<N>: `` prefix-only PR title. Pin
+13 gains static shape asserts for BOTH sites (the r2 plain-assignment
+form is banned); pin 15 EXECUTES the ensure with a selectable failing
+``uv`` stub (nonzero exit / malformed JSON / missing title) and asserts
+no ``gh pr create`` runs, the inconclusive telemetry is emitted, and the
+block stays fail-open (exit 0).
 """
 
 import json
@@ -51,6 +65,8 @@ import re
 import shutil
 import subprocess
 from pathlib import Path
+
+import pytest
 
 from tests.issue_skill_source import issue_skill_text
 
@@ -252,17 +268,20 @@ def test_step5_draft_pr_ensure_present_and_rc_gated():
 
 
 def test_step5_ensure_fail_open_and_bounded():
-    """Pin 10 (#2241; r2 telemetry): every arm logs + proceeds (5 echo sites),
-    both gh calls are timeout-fenced, and probe failure never blind-creates.
+    """Pin 10 (#2241; r2 telemetry; r3 resolver fence): every arm logs +
+    proceeds (6 echo sites), all three commands (probe / title resolver /
+    create) are timeout-fenced, and probe failure never blind-creates.
     r2 (concern step5-probe-output-validation) added TELEMETRY-ONLY echoes
     for the confirmed (>=1) and unexpected/malformed probe outputs; both
     fall through to 5a exactly as before — the tri-state ROUTING
-    (probe-failed / zero / no-create-fall-through) is unchanged."""
+    (probe-failed / zero / no-create-fall-through) is unchanged. r3
+    (concern title-resolution-failure-masking) added the resolver fence +
+    its inconclusive skip-create echo."""
     block = _ensure_block()
     assert (
-        block.count("[step5-pr-ensure]") == 5
-    )  # create-ok + create-fail + probe-fail + confirmed + unexpected
-    assert block.count("timeout --kill-after=") == 2
+        block.count("[step5-pr-ensure]") == 6
+    )  # title-fail + create-ok + create-fail + probe-fail + confirmed + unexpected
+    assert block.count("timeout --kill-after=") == 3  # probe + resolver + create
     assert "N_PR=probe-failed" in block and '"$N_PR" = "0"' in block
 
 
@@ -305,7 +324,14 @@ def test_pr_create_sites_use_title_transport():
     ASSIGNMENT, not just at use (`PR_TITLE="issue-<N>: <task title>"` is
     equally injectable), so the pin binds on the TRANSPORT: the placeholder
     must be absent from the bash and the title must arrive via `$(...)`.
-    Region-scoped: Step 10d's trunk splice is out of #2241's fence."""
+    Region-scoped: Step 10d's trunk splice is out of #2241's fence.
+
+    r3 (concern title-resolution-failure-masking): BOTH sites resolve the
+    title in a separately rc-gated, timeout-fenced step and SKIP creation
+    on resolver failure / jq failure / empty title. The r2 plain-assignment
+    form — the pipeline inside the PR_TITLE assignment, whose task.py
+    failure jq masks (RuntimeError -> jq reads empty input -> exit 0 ->
+    degraded `issue-<N>: ` title created and memoized) — is BANNED."""
     bash = _ensure_block_bash()
     assert "<task title>" not in bash
     assert '--title "$PR_TITLE"' in bash
@@ -315,12 +341,23 @@ def test_pr_create_sites_use_title_transport():
     assert "<task title>" not in step4a_region
     assert step4a_region.count('--title "$PR_TITLE"') == 1
     assert "jq -r '.frontmatter.title // empty'" in step4a_region
+    for region in (bash, step4a_region):
+        assert 'PR_TITLE="issue-<N>: $(' not in region  # the r2 masked form
+        assert "|| TITLE_RC=$?" in region  # rc-gated resolver
+        assert "timeout --kill-after=30s 150s" in region  # resolver fence
+        assert 'PR_TITLE="issue-<N>: $RAW_TITLE"' in region  # data-only compose
+        assert '[ "$TITLE_RC" -ne 0 ] || [ -z "$RAW_TITLE" ]' in region  # skip gate
 
 
-def _title_transport_env(tmp_path, hostile_title: str):
+def _title_transport_env(tmp_path, hostile_title: str, uv_mode: str = "ok"):
     """PATH-stubbed env for executing the ensure template: `gh` records its
-    create argv to $ARGV_OUT (probe returns 0 = the create arm), `uv` emits
-    the task-view JSON carrying the hostile title. jq/timeout are real."""
+    create argv to $ARGV_OUT (probe returns 0 = the create arm), `uv` is
+    SELECTABLE via $UV_STUB_MODE (r3 — an always-succeed stub pins nothing):
+    ok = emit the task-view JSON carrying the hostile title; fail = nonzero
+    exit with no stdout (the task.py RuntimeError class: detached HEAD /
+    husk timeout after the #996 bounded rebase wait); malformed = non-JSON
+    stdout, exit 0 (jq parse error downstream); missing-title = valid JSON
+    whose frontmatter carries no title. jq/timeout are real."""
     stub = tmp_path / "bin"
     stub.mkdir(exist_ok=True)
     argv_out = tmp_path / "create-argv.txt"
@@ -334,14 +371,59 @@ def _title_transport_env(tmp_path, hostile_title: str):
         "exit 1\n",
         encoding="utf-8",
     )
-    (stub / "uv").write_text('#!/usr/bin/env bash\ncat "$TITLE_JSON"\n', encoding="utf-8")
+    (stub / "uv").write_text(
+        "#!/usr/bin/env bash\n"
+        'case "$UV_STUB_MODE" in\n'
+        '  fail) echo "RuntimeError: repo-root resolution failed" >&2; exit 3 ;;\n'
+        "  malformed) echo 'this is not json' ;;\n"
+        "  missing-title) echo '{\"frontmatter\": {}}' ;;\n"
+        '  *) cat "$TITLE_JSON" ;;\n'
+        "esac\n",
+        encoding="utf-8",
+    )
     for name in ("gh", "uv"):
         (stub / name).chmod(0o755)
     env = os.environ.copy()
     env["PATH"] = f"{stub}{os.pathsep}{env['PATH']}"
     env["ARGV_OUT"] = str(argv_out)
     env["TITLE_JSON"] = str(title_json)
+    env["UV_STUB_MODE"] = uv_mode
     return env, argv_out
+
+
+@pytest.mark.parametrize("uv_mode", ["fail", "malformed", "missing-title"])
+def test_step5_ensure_title_resolution_failure_skips_create(tmp_path, uv_mode):
+    """Pin 15 (#2241 r3, concern title-resolution-failure-masking): EXECUTE
+    the ensure template with the `uv` stub forced into each failure mode —
+    nonzero exit (task.py RuntimeError after the #996 bounded rebase wait),
+    malformed JSON (jq parse error), and missing/empty title. Each must:
+    (a) NEVER run `gh pr create` — no degraded `issue-<N>: ` PR is opened
+    or memoized; (b) emit the inconclusive [step5-pr-ensure] telemetry;
+    (c) exit 0 (fail-open — the round proceeds, retry at next round entry).
+    Mutation check (run at authoring time, r3): against round 2's unfenced
+    plain-assignment resolver, all three modes FAIL — the create fires with
+    the degraded title — so this pin demonstrably binds the fix rather than
+    passing vacuously."""
+    assert shutil.which("jq"), "jq is required by the Step 5 ensure title transport"
+    env, argv_out = _title_transport_env(tmp_path, "unused benign title", uv_mode=uv_mode)
+
+    bash = _ensure_block_bash()
+    script = bash.split("\n", 1)[1].replace("<N>", "9999")  # drop the ```bash fence
+    res = subprocess.run(
+        ["bash", "-c", script],
+        env=env,
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        timeout=240,
+    )
+    assert res.returncode == 0, (res.stdout, res.stderr)  # fail-open: round proceeds
+    assert not argv_out.exists(), (
+        f"gh pr create RAN despite title-resolution failure ({uv_mode}): "
+        f"{argv_out.read_text(encoding='utf-8')}"
+    )
+    assert "[step5-pr-ensure] title resolution failed or empty" in res.stdout
+    assert "opened draft PR" not in res.stdout
 
 
 def test_step5_ensure_hostile_title_reaches_argv_literally(tmp_path):

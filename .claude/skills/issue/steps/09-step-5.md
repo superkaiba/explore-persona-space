@@ -50,13 +50,19 @@ path; Step 10d's payload-aware arm (#2240) stays the merge-time
 backstop. At each round entry that proceeds past the pre-split guard:
 IF an open PR for issue-<N> has already been confirmed this session,
 SKIP (zero cost — the common case after round 1); otherwise run the
-probe+create below and remember a confirmed outcome. Both commands are
-timeout-bounded and the whole block is FAIL-OPEN: no probe or create
-failure may block, delay, or fail the round beyond the bounded timeout
-fences (probe <= 75 s, create <= 150 s) — log the one line, proceed to
-5a, retry at the next round entry. NEVER pipe the create
-(guard_piped_git_push.sh blocks the piped shape; a pipe masks the exit
-code).
+probe+create below and remember a confirmed outcome. All three
+commands — existence probe, title resolver, create — are
+timeout-bounded and the whole block is FAIL-OPEN: no probe, resolver,
+or create failure may block, delay, or fail the round beyond the
+bounded timeout fences (probe <= 75 s; resolver <= 180 s, sized over
+task.py's ~120 s bounded branch-guard rebase wait,
+EPM_TASKPY_REBASE_WAIT_SECONDS; create <= 150 s; worst case <= 405 s
+at one round entry) — log the one line, proceed to 5a, retry at the
+next round entry. A resolver failure, jq failure, or empty title
+SKIPS creation (#2241 r3, concern title-resolution-failure-masking):
+a degraded `issue-<N>: ` prefix-only title must never be created and
+memoized. NEVER pipe the create (guard_piped_git_push.sh blocks the
+piped shape; a pipe masks the exit code).
 
 ```bash
 # Any-state existence probe (deterministic tri-state; measured ~0.4 s):
@@ -71,12 +77,32 @@ N_PR=$(timeout --kill-after=15s 60s gh pr list --head issue-<N> --state all --js
 if [ "$N_PR" = "0" ]; then
   # Title transport (#2241 r2): the title is resolved AS DATA — command
   # output is never shell-parsed — so a hostile title cannot inject.
-  PR_TITLE="issue-<N>: $(uv run python scripts/task.py view <N> --json | jq -r '.frontmatter.title // empty')"
-  if timeout --kill-after=30s 120s gh pr create --draft --head issue-<N> \
-       --title "$PR_TITLE" --body "Closes task #<N>."; then
-    echo "[step5-pr-ensure] opened draft PR for issue-<N> (#2241)"
+  # Resolver fence (#2241 r3, concern title-resolution-failure-masking):
+  # the resolver is its own rc-gated, timeout-fenced step. Every task.py
+  # invocation — reads included — pays the branch-guard resolution, whose
+  # #996 bounded rebase wait (EPM_TASKPY_REBASE_WAIT_SECONDS, default
+  # 120 s) can precede a RuntimeError (detached HEAD / husk timeout);
+  # unfenced+unchecked, that failure was masked by jq exiting 0 on empty
+  # input and a real draft PR titled "issue-<N>: " was created and
+  # memoized to merge. On resolver failure, jq failure, or empty title:
+  # log, SKIP creation, fall through — the next round entry retries (the
+  # >=1 probe memoizes only a REAL PR, never a skipped create).
+  TITLE_RC=0
+  TASK_JSON=$(timeout --kill-after=30s 150s uv run python "$REPO_ROOT"/scripts/task.py view <N> --json) || TITLE_RC=$?
+  RAW_TITLE=""
+  if [ "$TITLE_RC" -eq 0 ]; then
+    RAW_TITLE=$(printf '%s' "$TASK_JSON" | jq -r '.frontmatter.title // empty') || TITLE_RC=$?
+  fi
+  if [ "$TITLE_RC" -ne 0 ] || [ -z "$RAW_TITLE" ]; then
+    echo "[step5-pr-ensure] title resolution failed or empty (rc=$TITLE_RC) — inconclusive; skip create; round proceeds; retry at next round entry (never a degraded-title PR)"
   else
-    echo "[step5-pr-ensure] gh pr create failed (rc!=0) — round proceeds; retry at next round entry; Step 10d's payload-aware arm (#2240) is the backstop"
+    PR_TITLE="issue-<N>: $RAW_TITLE"
+    if timeout --kill-after=30s 120s gh pr create --draft --head issue-<N> \
+         --title "$PR_TITLE" --body "Closes task #<N>."; then
+      echo "[step5-pr-ensure] opened draft PR for issue-<N> (#2241)"
+    else
+      echo "[step5-pr-ensure] gh pr create failed (rc!=0) — round proceeds; retry at next round entry; Step 10d's payload-aware arm (#2240) is the backstop"
+    fi
   fi
 elif [ "$N_PR" = "probe-failed" ]; then
   echo "[step5-pr-ensure] PR-existence probe failed — round proceeds; retry at next round entry"

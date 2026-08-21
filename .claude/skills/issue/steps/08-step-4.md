@@ -92,10 +92,34 @@ fi
 if [ "$(git -C "$REPO_ROOT" rev-list --count origin/main..issue-<N>)" -gt 0 ]; then
   # Title transport (#2241 r2): the title is resolved AS DATA — command
   # output is never shell-parsed — so a hostile title cannot inject.
-  PR_TITLE="issue-<N>: $(uv run python "$REPO_ROOT"/scripts/task.py view <N> --json | jq -r '.frontmatter.title // empty')"
-  gh pr create --draft --head issue-<N> \
-    --title "$PR_TITLE" \
-    --body "Closes task #<N>."
+  # Resolver fence (#2241 r3, concern title-resolution-failure-masking):
+  # rc-gated + timeout-fenced as its own step — every task.py invocation
+  # (reads included) pays the branch-guard resolution (#996 bounded rebase
+  # wait, EPM_TASKPY_REBASE_WAIT_SECONDS default 120 s; RuntimeError on
+  # detached HEAD / husk timeout); unfenced+unchecked, that failure was
+  # masked by jq exiting 0 on empty input and the create shipped a
+  # degraded "issue-<N>: " prefix-only title. On resolver failure, jq
+  # failure, or empty title: log, SKIP the create, fall through.
+  TITLE_RC=0
+  TASK_JSON=$(timeout --kill-after=30s 150s uv run python "$REPO_ROOT"/scripts/task.py view <N> --json) || TITLE_RC=$?
+  RAW_TITLE=""
+  if [ "$TITLE_RC" -eq 0 ]; then
+    RAW_TITLE=$(printf '%s' "$TASK_JSON" | jq -r '.frontmatter.title // empty') || TITLE_RC=$?
+  fi
+  if [ "$TITLE_RC" -ne 0 ] || [ -z "$RAW_TITLE" ]; then
+    echo "[step4a] title resolution failed or empty (rc=$TITLE_RC) — skipping draft-PR create; the Step 5 draft-PR ensure (#2241) retries at the first review round; Step 10d's payload-aware arm (#2240) stays the merge-time backstop"
+  else
+    PR_TITLE="issue-<N>: $RAW_TITLE"
+    # #2241 r3 (sanctioned opportunistic fence): the create is rc-gated +
+    # timeout-fenced too, matching the Step 5 ensure idiom.
+    if timeout --kill-after=30s 120s gh pr create --draft --head issue-<N> \
+         --title "$PR_TITLE" \
+         --body "Closes task #<N>."; then
+      echo "[step4a] opened draft PR for issue-<N>"
+    else
+      echo "[step4a] gh pr create failed (rc!=0) — proceeding; the Step 5 draft-PR ensure (#2241) retries at the first review round"
+    fi
+  fi
 else
   # This arm fires by construction on a fresh branch: Step 4a runs at the
   # approved->running transition, BEFORE the implementer's first commit.

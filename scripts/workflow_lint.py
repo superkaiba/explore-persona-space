@@ -16480,12 +16480,13 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # SKILL_DOC_EXEMPT_DIR_SEGMENTS — keeping them over the line keeps the
     # remaining trim visible). Measured 2026-08-17 at the re-split commit;
     # corridor-max ((measured+2_800)//100)*100 each; chronicle: git log.
-    # measured 107,590 B @ #2241 r2 2026-08-21 (PR-title transport + probe
-    # telemetry, +724 B); corridor-max ((measured+2_800)//100)*100; re-measure
-    # at Step 10d against the merged tree. Prior: 109_600 (#2241 r1,
-    # 106,866 B) / 105_200 (#2422, 102,420 B) / 103_300 (#2201, 100,517 B) /
-    # 100_300 (#2158, 97,590 B).
-    "issue/steps/09-step-5.md": 110_300,
+    # measured 109,181 B @ #2241 r3 2026-08-21 (title-resolver rc-gate +
+    # timeout fence, +1,591 B); corridor-max ((measured+2_800)//100)*100;
+    # re-measure at Step 10d against the merged tree. Prior: 110_300
+    # (#2241 r2, 107,590 B) / 109_600 (#2241 r1, 106,866 B) / 105_200
+    # (#2422, 102,420 B) / 103_300 (#2201, 100,517 B) / 100_300 (#2158,
+    # 97,590 B).
+    "issue/steps/09-step-5.md": 111_900,
     # measured 142,643 B @ #2350 2026-08-17 (dispatch-preflight item (e),
     # per-leg out/scratch isolation, +1,211 B); corridor-max
     # ((measured+2_800)//100)*100. Prior: 144_200 (#2155 split, 141,432 B).
