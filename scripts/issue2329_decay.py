@@ -171,6 +171,20 @@ class DecayConfig:
     # 0 re-refusals on sync). Already-scored draws are served from the
     # rubric-keyed JudgeCache, so only the refused items are re-submitted.
     wave_threshold_base: int = 0
+    # ── diagnostics-figure inputs (figures phase only; committed round paths) ──
+    cap_hit_report: Path = Path(
+        "eval_results/issue_2329/q35_ladder_decay/cap_hit/cap_hit_report_grid.json"
+    )
+    tokgate_report: Path = Path(
+        "eval_results/issue_2329/q35_ladder_decay/gates/token_identity_report_ladder.json"
+    )
+    # Pre-recovery wave metas (quarantined by the rule-28 sync re-issue of the
+    # 17 API-classifier-refused draws, copied into the round dir as a durable
+    # record). Absence-tolerated: the drop-class panel then renders the
+    # post-recovery state only.
+    prerecovery_wavemeta_dir: Path = Path(
+        "eval_results/issue_2329/q35_ladder_decay/decay/judge/prerecovery_quarantine"
+    )
 
     @property
     def judge_root(self) -> Path:
@@ -1350,6 +1364,422 @@ def _fam(stats: dict, key: str, name: str) -> dict:
     return stats["families"][key][name]
 
 
+def _short_dir(name: str) -> str:
+    """'install_r5b_lu_philosophy' -> 'in r5b' (tick-label abbreviation)."""
+    kind, value = name.split("_", 1)
+    return ("in " if kind == "install" else "er ") + value.split("_")[0]
+
+
+def _fig_diagnostics(cfg: DecayConfig, stats: dict) -> None:
+    """Manifest figure ``q35_ladder_decay_diagnostics``: the ten declared panels.
+
+    Row 0: G0 token identity per direction; N2.5 coherence retention;
+           N2.5 min-length drops (the two previously-rendered panels, kept).
+    Row 1: grid cap-hit per (cell x slot x arm) unit at 4096 with the G5
+           trigger line and a twin axis in truncated ROWS (n=30 per unit);
+           decay judge drop classes (content / transport / api-refusal,
+           pre- vs post-recovery).
+    Row 2: judge frac_items_complete per wave x arm vs the 0.95 floor;
+           N2.2 Q1 starting-level gap; N2.3 rung-intersection sensitivity.
+    Row 3: fragment-vs-whole score correlation; conjunct diagnostic;
+           rule-19 TF-margin vs F_beh validation scatter.
+
+    A panel whose input artifact is absent is OMITTED (axes removed) and
+    logged — never drawn as an empty/zero axis.
+    """
+    import matplotlib.pyplot as plt
+    from matplotlib.lines import Line2D
+    from matplotlib.patches import Rectangle
+
+    from explore_persona_space.analysis.paper_plots import savefig_paper
+
+    arm_color = {"steered": "C0", "ceiling": "C1", "floor": "C2"}
+    # Literal hexes for the grid null arms: the paper palette cycle is shorter
+    # than 10, so C8/C9 wrap onto C0/C1 and collide with steered/ceiling.
+    garm_color = {"steered": "C0", "null_sameval": "#8c564b", "null_xtype": "#17becf"}
+    cls_color = {"content": "C4", "transport": "C5", "api-refusal": "C6"}
+    est_color = {"coh": "k", "all": "0.6"}
+    rendered: list[str] = []
+    omitted: list[str] = []
+
+    fig = plt.figure(figsize=(16.5, 13.5))
+    gs = fig.add_gridspec(4, 6)
+
+    # ── panel 1: G0 token-identity drops per direction ──────────────────
+    ax = fig.add_subplot(gs[0, 0:2])
+    if cfg.tokgate_report.is_file():
+        tok = json.loads(cfg.tokgate_report.read_text(encoding="utf-8"))
+        dirs = list(tok["directions"])
+        x = np.arange(len(dirs))
+        ax.bar(
+            x,
+            [tok["directions"][d]["n_pairs"] for d in dirs],
+            color="none",
+            edgecolor="0.75",
+            label="pairs",
+        )
+        ax.bar(
+            x,
+            [tok["directions"][d]["n_intact"] for d in dirs],
+            color="0.45",
+            label="intact (drop = gap to pairs)",
+        )
+        floor = tok["min_intact_carriers"]
+        ax.axhline(floor, color="k", lw=0.8, ls="--", label=f"testability floor ({floor})")
+        ax.set_xticks(x)
+        ax.set_xticklabels([_short_dir(d) for d in dirs], fontsize=6, rotation=45)
+        ax.set_ylabel("pair count", fontsize=7)
+        ax.set_title("G0 token identity per direction", fontsize=8)
+        ax.legend(fontsize=5.5)
+        rendered.append("token-identity")
+    else:
+        fig.delaxes(ax)
+        omitted.append(f"token-identity — missing {cfg.tokgate_report}")
+
+    # ── panels 2 + 5 (kept): N2.5 coherence retention / min-length drops ─
+    labels = [f"{key}\n{arm}" for key in MODEL_KEYS for arm in ARM_KEYS]
+    bar_colors = [arm_color[arm] for _key in MODEL_KEYS for arm in ARM_KEYS]
+
+    ax = fig.add_subplot(gs[0, 2:4])
+    coh_fracs = [
+        stats["retention_coherence"][f"{key}|{arm}"]["coh_retention_frac"] or 0.0
+        for key in MODEL_KEYS
+        for arm in ARM_KEYS
+    ]
+    ax.bar(range(len(labels)), coh_fracs, color=bar_colors)
+    ax.set_xticks(range(len(labels)))
+    ax.set_xticklabels(labels, fontsize=6)
+    ax.set_ylabel("coherence > 60 retention fraction", fontsize=7)
+    ax.set_title("N2.5 coherence retention", fontsize=8)
+    rendered.append("coherence-retention")
+
+    ax = fig.add_subplot(gs[0, 4:6])
+    len_fracs = [
+        stats["retention_length"][key][arm]["len_drop_frac"] or 0.0
+        for key in MODEL_KEYS
+        for arm in ARM_KEYS
+    ]
+    ax.bar(range(len(labels)), len_fracs, color=bar_colors)
+    ax.set_xticks(range(len(labels)))
+    ax.set_xticklabels(labels, fontsize=6)
+    ax.set_ylabel("< 48-token drop fraction", fontsize=7)
+    ax.set_title("N2.5 min-length drops", fontsize=8)
+    rendered.append("min-length-drop")
+
+    # ── panel 3: grid cap-hit per unit at 4096 + G5 trigger, rows axis ──
+    ax = fig.add_subplot(gs[1, 0:4])
+    if cfg.cap_hit_report.is_file():
+        cap = json.loads(cfg.cap_hit_report.read_text(encoding="utf-8"))
+        pu = cap["per_unit"]
+        n_set = {v["n_rows"] for v in pu.values()}
+        assert len(n_set) == 1, f"non-uniform per-unit n_rows: {sorted(n_set)}"
+        (n_unit,) = n_set
+        cells = sorted({k.split("|")[0] for k in pu})
+        slots = sorted({k.split("|")[1] for k in pu})
+        arms_g = [a for a in garm_color if any(k.split("|")[2] == a for k in pu)]
+        xs: list[float] = []
+        heights: list[float] = []
+        cols: list[str] = []
+        centers: list[float] = []
+        glabels: list[str] = []
+        pos = 0.0
+        for cell in cells:
+            for slot in slots:
+                start = pos
+                for arm_g in arms_g:
+                    rec = pu.get(f"{cell}|{slot}|{arm_g}")
+                    if rec is None:
+                        continue
+                    xs.append(pos)
+                    heights.append(rec["cap_hit_pct"])
+                    cols.append(garm_color[arm_g])
+                    pos += 1.0
+                if pos > start:
+                    centers.append((start + pos - 1.0) / 2.0)
+                    glabels.append(f"{_short_dir(cell)} {slot}")
+                pos += 0.9
+            pos += 0.6
+        ax.bar(xs, heights, color=cols, width=0.92)
+        trig = cap["pre_registered_regen_trigger_pct"]
+        ax.axhline(trig, color="k", ls="--", lw=0.9)
+        top = max(max(heights), trig) * 1.25
+        ax.set_ylim(0, top)
+        ax.set_xticks(centers)
+        ax.set_xticklabels(glabels, fontsize=5, rotation=90)
+        ax.set_ylabel("cap-hit % of unit draws", fontsize=7)
+        rows_ax = ax.twinx()
+        rows_ax.set_ylim(0, top * n_unit / 100.0)
+        rows_ax.set_yticks(range(int(np.floor(top * n_unit / 100.0)) + 1))
+        rows_ax.set_ylabel(f"truncated rows (n={n_unit} per unit)", fontsize=7)
+        handles = [Rectangle((0, 0), 1, 1, color=garm_color[a]) for a in arms_g]
+        handles.append(Line2D([0], [0], color="k", ls="--", lw=0.9))
+        ax.legend(
+            handles,
+            [*arms_g, f"G5 re-gen trigger ({trig:g}%)"],
+            fontsize=5.5,
+            ncol=len(arms_g) + 1,
+            loc="upper left",
+        )
+        ax.set_title(
+            f"grid cap-hit at {cap['max_new_tokens']} per (cell x slot x arm) unit", fontsize=8
+        )
+        rendered.append("cap-hit")
+    else:
+        fig.delaxes(ax)
+        omitted.append(f"cap-hit — missing {cfg.cap_hit_report}")
+
+    # ── panel 4: judge drop classes + frac_items_complete vs 0.95 floor ─
+    cls_order = ("content", "transport", "api-refusal")
+    metas = sorted((cfg.judge_root / "scores").glob("*.decay.meta.json"))
+    ax_drop = fig.add_subplot(gs[1, 4:6])
+    ax_frac = fig.add_subplot(gs[2, 0:2])
+    if metas:
+        waves: list[str] = []
+        post: dict[str, list[int]] = {c: [] for c in cls_order}
+        pre: dict[str, list[int]] = {c: [] for c in cls_order}
+        frac_post: dict[str, list[float]] = {arm: [] for arm in ARM_KEYS}
+        frac_pre: dict[str, list[float]] = {arm: [] for arm in ARM_KEYS}
+        have_pre = False
+        for p in metas:
+            m = json.loads(p.read_text(encoding="utf-8"))
+            wave = p.name.split(".")[0].removeprefix("dfrag-")
+            waves.append(wave.split("_")[0])
+            q = cfg.prerecovery_wavemeta_dir / p.name
+            mq = json.loads(q.read_text(encoding="utf-8")) if q.is_file() else m
+            have_pre = have_pre or q.is_file()
+            for meta, dest in ((m, post), (mq, pre)):
+                p1 = meta["pass1"]
+                dest["content"].append(p1["n_dropped_draws_content"])
+                dest["transport"].append(meta.get("residual_transport_lost") or 0)
+                # API-classifier refusals censor items outright: count them as
+                # registered-minus-scored over the per-arm bookkeeping (the
+                # quarantined pre-recovery metas carry them there; rule 28).
+                miss = sum(a["n_items"] - a["n_scored"] for a in meta["per_arm"].values())
+                dest["api-refusal"].append(max(p1["n_refusal_draws"], miss))
+            for arm in ARM_KEYS:
+                a_post = m["per_arm"][f"grid-{arm}"]
+                a_pre = mq["per_arm"][f"grid-{arm}"]
+                frac_post[arm].append(a_post["n_scored"] / a_post["n_items"])
+                frac_pre[arm].append(a_pre["n_scored"] / a_pre["n_items"])
+        x = np.arange(len(waves))
+        for ci, cls in enumerate(cls_order):
+            off = (ci - 1) * 0.28
+            if have_pre:
+                ax_drop.bar(
+                    x + off - 0.07,
+                    pre[cls],
+                    width=0.13,
+                    color=cls_color[cls],
+                    hatch="///",
+                    edgecolor="k",
+                    linewidth=0.2,
+                )
+                ax_drop.bar(x + off + 0.07, post[cls], width=0.13, color=cls_color[cls])
+            else:
+                ax_drop.bar(x + off, post[cls], width=0.2, color=cls_color[cls])
+        ax_drop.set_xticks(x)
+        ax_drop.set_xticklabels(waves, fontsize=6)
+        ax_drop.set_ylabel("censored / dropped draws", fontsize=7)
+        handles = [Rectangle((0, 0), 1, 1, color=cls_color[c]) for c in cls_order]
+        labels_d = list(cls_order)
+        if have_pre:
+            handles.append(Rectangle((0, 0), 1, 1, facecolor="white", edgecolor="k", hatch="///"))
+            handles.append(Rectangle((0, 0), 1, 1, facecolor="0.85"))
+            labels_d += ["pre-recovery", "post rule-28 sync re-issue"]
+        ax_drop.legend(handles, labels_d, fontsize=5.5)
+        ax_drop.set_title("decay judge drop classes per wave", fontsize=8)
+        rendered.append("judge-drop-classes" + ("" if have_pre else " (post-only)"))
+
+        for ai, arm in enumerate(ARM_KEYS):
+            off = (ai - 1) * 0.28
+            ax_frac.bar(x + off, frac_post[arm], width=0.24, color=arm_color[arm], label=arm)
+            if have_pre:
+                ax_frac.plot(
+                    x + off,
+                    frac_pre[arm],
+                    "o",
+                    markerfacecolor="white",
+                    markeredgecolor="k",
+                    markeredgewidth=0.7,
+                    linestyle="none",
+                    markersize=4.5,
+                    zorder=5,
+                    label="pre-recovery" if ai == 0 else None,
+                )
+        ax_frac.axhline(0.95, color="grey", lw=0.8, ls="--", label="0.95 floor")
+        ax_frac.set_ylim(0.9, 1.02)
+        ax_frac.set_xticks(x)
+        ax_frac.set_xticklabels(waves, fontsize=6)
+        ax_frac.set_ylabel("frac_items_complete", fontsize=7)
+        ax_frac.legend(fontsize=5.5, ncol=2)
+        ax_frac.set_title("decay judge completeness per wave x arm", fontsize=8)
+        rendered.append("frac-items-complete")
+    else:
+        fig.delaxes(ax_drop)
+        fig.delaxes(ax_frac)
+        omitted.append(
+            f"judge-drop-classes + frac-items-complete — no metas under {cfg.judge_root / 'scores'}"
+        )
+
+    # ── panel 6: N2.2 absolute Q1 starting-level gap per model ──────────
+    ax = fig.add_subplot(gs[2, 2:4])
+    blk = stats["n2_2_q1_gap"]
+    xq = 0.0
+    ticks: list[float] = []
+    tlabels: list[str] = []
+    for key in MODEL_KEYS:
+        for e in ESTIMANDS:
+            rec = blk[key][e]
+            lo, hi = LA._err(rec["point"], rec["ci_lo"], rec["ci_hi"])
+            ax.errorbar(
+                [xq], [rec["point"]], yerr=[[lo], [hi]], fmt="o", color=est_color[e], capsize=3
+            )
+            ticks.append(xq)
+            tlabels.append(f"{key}\n{e}")
+            xq += 1.0
+        xq += 0.5
+    ax.axhline(0.0, color="grey", lw=0.6)
+    ax.set_xticks(ticks)
+    ax.set_xticklabels(tlabels, fontsize=6)
+    ax.set_ylabel("Q1 steered - ceiling (0-1 score)", fontsize=7)
+    ax.set_title("N2.2 Q1 starting-level gap", fontsize=8)
+    rendered.append("q1-gap")
+
+    # ── panel 7: N2.3 rung-intersection sensitivity contrast ────────────
+    ax = fig.add_subplot(gs[2, 4:6])
+    inter_short = ",".join(v.split("_")[0] for v in stats["n2_3_intersection"]["rungs"])
+    xq = 0.0
+    ticks = []
+    tlabels = []
+    for key in MODEL_KEYS:
+        for e in ESTIMANDS:
+            for dx, name, mk, fill in (
+                (0.0, f"{e}|primary|dD", "o", True),
+                (0.3, f"{e}|intersection|dD", "s", False),
+            ):
+                rec = _fam(stats, key, name)
+                if rec["point"] is None:
+                    continue
+                lo, hi = LA._err(rec["point"], rec["ci_lo"], rec["ci_hi"])
+                ax.errorbar(
+                    [xq + dx],
+                    [rec["point"]],
+                    yerr=[[lo], [hi]],
+                    marker=mk,
+                    linestyle="none",
+                    color=est_color[e],
+                    markerfacecolor=est_color[e] if fill else "none",
+                    capsize=2,
+                )
+            ticks.append(xq + 0.15)
+            tlabels.append(f"{key}\n{e}")
+            xq += 1.0
+        xq += 0.5
+    ax.axhline(0.0, color="grey", lw=0.6)
+    handles = [
+        Line2D([0], [0], marker="o", color="k", linestyle="none"),
+        Line2D([0], [0], marker="s", color="k", markerfacecolor="none", linestyle="none"),
+    ]
+    ax.legend(handles, ["primary rungs", f"intersection rungs ({inter_short})"], fontsize=5.5)
+    ax.set_xticks(ticks)
+    ax.set_xticklabels(tlabels, fontsize=6)
+    ax.set_ylabel("delta-D (steered - ceiling raw drop)", fontsize=7)
+    ax.set_title("N2.3 rung-intersection sensitivity", fontsize=8)
+    rendered.append("rung-intersection")
+
+    # ── panel 8: fragment-vs-whole score correlation (instrument sanity) ─
+    ax = fig.add_subplot(gs[3, 0:2])
+    sn = stats["fragment_vs_whole_sanity"]
+    xs2: list[int] = []
+    hs2: list[float] = []
+    cs2: list[str] = []
+    tl2: list[str] = []
+    for key in MODEL_KEYS:
+        for arm in ARM_KEYS:
+            rec = sn[key][arm]
+            if rec["rho"] is not None:
+                xs2.append(len(xs2))
+                hs2.append(rec["rho"])
+                cs2.append(arm_color[arm])
+                tl2.append(f"{key}\n{arm}\nn={rec['n']}")
+    ax.bar(xs2, hs2, color=cs2)
+    ax.set_xticks(xs2)
+    ax.set_xticklabels(tl2, fontsize=5.5)
+    ax.set_ylim(0, 1.0)
+    ax.set_ylabel("Spearman rho", fontsize=7)
+    ax.set_title("fragment-mean vs whole-response score", fontsize=8)
+    rendered.append("fragment-vs-whole")
+
+    # ── panel 9: conjunct diagnostic (Leg A R1/R2 steered instrument) ────
+    ax = fig.add_subplot(gs[3, 2:4])
+    cpath = cfg.q35_stats_json.parent / "conjuncts.jsonl"
+    conj_rows = (
+        [json.loads(line) for line in cpath.open(encoding="utf-8")] if cpath.is_file() else []
+    )
+    if conj_rows:
+        cdirs = sorted({r["direction"] for r in conj_rows}, key=lambda d: (d.split("_", 1)[1], d))
+        conjs = sorted({r["conjunct"] for r in conj_rows})
+        mat = np.full((len(cdirs), len(conjs)), np.nan)
+        acc: dict[tuple[str, str], list[float]] = defaultdict(list)
+        for r in conj_rows:
+            if r["mean_score"] is not None:
+                acc[(r["direction"], r["conjunct"])].append(r["mean_score"])
+        for (d, c), vs in acc.items():
+            mat[cdirs.index(d), conjs.index(c)] = float(np.mean(vs))
+        im = ax.imshow(mat, cmap="viridis", vmin=0, vmax=100, aspect="auto")
+        ax.set_xticks(range(len(conjs)))
+        ax.set_xticklabels(conjs, fontsize=6, rotation=45, ha="right")
+        ax.set_yticks(range(len(cdirs)))
+        ax.set_yticklabels([_short_dir(d) for d in cdirs], fontsize=6)
+        cb = fig.colorbar(im, ax=ax, shrink=0.85)
+        cb.set_label("mean judge score (0-100)", fontsize=6)
+        ax.set_title("conjunct scores (mean over carriers x slots)", fontsize=8)
+        rendered.append("conjunct")
+    else:
+        fig.delaxes(ax)
+        omitted.append(f"conjunct — missing/empty {cpath}")
+
+    # ── panel 10: rule-19 TF-margin vs F_beh validation scatter ─────────
+    ax = fig.add_subplot(gs[3, 4:6])
+    fstats = (
+        json.loads(cfg.q35_stats_json.read_text(encoding="utf-8"))
+        if cfg.q35_stats_json.is_file()
+        else {}
+    )
+    mv = fstats.get("margin_validation") or {}
+    pts = mv.get("percell_points") or []
+    if pts:
+        ax.scatter(
+            [p["margin_shift_mean"] for p in pts],
+            [p["f_beh_mean"] for p in pts],
+            s=16,
+            color="C3",
+            alpha=0.85,
+        )
+        ax.set_xlabel("per-cell mean TF margin shift", fontsize=7)
+        ax.set_ylabel("per-cell mean F_beh", fontsize=7)
+        ax.set_title(
+            f"rule-19 margin validation: rho={mv['rho_margin_fbeh_percell']:.2f}, "
+            f"p={mv['p_percell']:.3g}, n={mv['n_cells']}",
+            fontsize=8,
+        )
+        rendered.append("margin-vs-F")
+    else:
+        fig.delaxes(ax)
+        omitted.append(
+            f"margin-vs-F — missing margin_validation.percell_points in {cfg.q35_stats_json}"
+        )
+
+    savefig_paper(fig, "q35_ladder_decay_diagnostics", dir=cfg.figures_dir)
+    plt.close(fig)
+    logger.info(
+        "[figures] diagnostics panels rendered=%d (%s); omitted=%s",
+        len(rendered),
+        ", ".join(rendered),
+        "; ".join(omitted) if omitted else "none",
+    )
+
+
 def phase_figures(cfg: DecayConfig) -> int:
     """Figures 4-6 + the decay-diagnostics companion (fig 7's Leg B panels
     cannot land in L6, which runs before L7)."""
@@ -1489,28 +1919,9 @@ def phase_figures(cfg: DecayConfig) -> int:
     savefig_paper(fig, "q35_ladder_decay_contrast", dir=cfg.figures_dir)
     plt.close(fig)
 
-    # diagnostics companion: length-drop + coherence retention per arm x model
-    fig, axes = plt.subplots(1, 2, figsize=(9, 3.2))
-    labels = [f"{key}\n{arm}" for key in MODEL_KEYS for arm in ARM_KEYS]
-    len_fracs = [
-        stats["retention_length"][key][arm]["len_drop_frac"] or 0.0
-        for key in MODEL_KEYS
-        for arm in ARM_KEYS
-    ]
-    coh_fracs = [
-        stats["retention_coherence"][f"{key}|{arm}"]["coh_retention_frac"] or 0.0
-        for key in MODEL_KEYS
-        for arm in ARM_KEYS
-    ]
-    axes[0].bar(range(len(labels)), len_fracs, color="C4")
-    axes[0].set_ylabel("< 48-token drop fraction")
-    axes[1].bar(range(len(labels)), coh_fracs, color="C5")
-    axes[1].set_ylabel("coherence > 60 retention fraction")
-    for ax in axes:
-        ax.set_xticks(range(len(labels)))
-        ax.set_xticklabels(labels, fontsize=6)
-    savefig_paper(fig, "q35_ladder_decay_diagnostics", dir=cfg.figures_dir)
-    plt.close(fig)
+    # diagnostics companion: the ten manifest-declared panels (incl. the two
+    # previously-rendered N2.5 panels, kept) — see _fig_diagnostics.
+    _fig_diagnostics(cfg, stats)
     logger.info("[figures] 4 figures written to %s", cfg.figures_dir)
     return RC_OK
 
@@ -1573,6 +1984,29 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     ap.add_argument("--cache-dir", type=Path, default=Path("data/issue_2329/decay_judge_cache"))
     ap.add_argument("--figures-dir", type=Path, default=Path("figures/issue_2329/q35_ladder_decay"))
+    ap.add_argument(
+        "--cap-hit-report",
+        type=Path,
+        default=Path("eval_results/issue_2329/q35_ladder_decay/cap_hit/cap_hit_report_grid.json"),
+        help="figures phase: grid cap-hit report (panel 3); absent => panel omitted",
+    )
+    ap.add_argument(
+        "--tokgate-report",
+        type=Path,
+        default=Path(
+            "eval_results/issue_2329/q35_ladder_decay/gates/token_identity_report_ladder.json"
+        ),
+        help="figures phase: G0 token-identity report (panel 1); absent => panel omitted",
+    )
+    ap.add_argument(
+        "--prerecovery-wavemeta-dir",
+        type=Path,
+        default=Path("eval_results/issue_2329/q35_ladder_decay/decay/judge/prerecovery_quarantine"),
+        help=(
+            "figures phase: quarantined pre-recovery wave metas (rule-28 re-issue record); "
+            "absent => drop-class panel renders the post-recovery state only"
+        ),
+    )
     ap.add_argument("--judge-model", default=J94.DEFAULT_JUDGE_MODEL)
     ap.add_argument("--max-tokens", type=int, default=DECAY_MAX_TOKENS)
     ap.add_argument("--n-boot", type=int, default=N_BOOT_DEFAULT)
@@ -1665,6 +2099,9 @@ def main(argv: list[str] | None = None) -> int:
         n_boot=args.n_boot,
         dry_run=args.dry_run,
         wave_threshold_base=args.wave_threshold_base,
+        cap_hit_report=args.cap_hit_report,
+        tokgate_report=args.tokgate_report,
+        prerecovery_wavemeta_dir=args.prerecovery_wavemeta_dir,
     )
     print(f"[phase={args.phase}] start", flush=True)
     rc = PHASES[args.phase](cfg)
