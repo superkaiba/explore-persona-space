@@ -13,7 +13,7 @@
 %
 % Build: lualatex poster.tex   Proof: pdftoppm -png -r 30 poster.pdf proof
 \documentclass[final]{beamer}
-\usepackage[orientation=landscape,size=custom,width=91.44,height=60.96,scale=0.85]{beamerposter}
+\usepackage[orientation=landscape,size=custom,width=91.44,height=60.96,scale=0.78]{beamerposter}
 \usepackage{lmodern}
 \usepackage[T1]{fontenc}
 \usepackage{graphicx}
@@ -78,7 +78,7 @@
 \begin{columns}[t]
 
 % ==================== COLUMN 1: setup ====================
-\begin{column}{0.188\textwidth}
+\begin{column}{0.1555\textwidth}
 
 \postersec{Motivation}
 \begin{itemize}
@@ -99,7 +99,7 @@ Qwen2.5-7B(-Instruct) headline; Llama/T\"ulu post-training ladder. Real-user con
 \end{column}
 
 % ==================== COLUMN 2: results 1-2 ====================
-\begin{column}{0.188\textwidth}
+\begin{column}{0.1555\textwidth}
 
 \postersec{1.\ High predictive power, mostly linear}
 \begin{center}
@@ -126,7 +126,7 @@ Qwen2.5-7B(-Instruct) headline; Llama/T\"ulu post-training ladder. Real-user con
 \end{column}
 
 % ==================== COLUMN 3: results 3-4 ====================
-\begin{column}{0.188\textwidth}
+\begin{column}{0.1555\textwidth}
 
 \postersec{3.\ Best at high-level, persona-like properties}
 To ask \emph{what} it predicts, we fit maps to the answer's \textbf{SAE features} (16{,}384 of them) and rank feature properties by how well they predict a feature's held-out $R^2$.
@@ -153,8 +153,8 @@ To ask \emph{what} it predicts, we fit maps to the answer's \textbf{SAE features
 
 \end{column}
 
-% ==================== COLUMN 4: results 5-6, then discussion ====================
-\begin{column}{0.188\textwidth}
+% ==================== COLUMN 4: result 5 ====================
+\begin{column}{0.1555\textwidth}
 
 \postersec{5.\ Where does the mapping come from?}
 \begin{center}
@@ -166,36 +166,46 @@ To ask \emph{what} it predicts, we fit maps to the answer's \textbf{SAE features
   \item \takeaways{SFT is by far the largest step} ($+0.17$), and \takeaways{DPO $\to$ RLVR barely moves it} ($+0.004$) — post-training \emph{refines and reparameterizes} the mapping rather than creating it.
 \end{itemize}
 
+\end{column}
+
+% ==================== COLUMN 5: result 6 ====================
+\begin{column}{0.1555\textwidth}
+
 \postersec{6.\ Is it a persona mapping?}
 \begin{center}
-\includegraphics[width=0.88\linewidth]{c4_transfer_ladder.pdf}
+\IfFileExists{figures/plot6a_assistant_transfer.pdf}{\includegraphics[width=0.95\linewidth]{plot6a_assistant_transfer.pdf}}{\includegraphics[width=0.88\linewidth]{c4_transfer_ladder.pdf}}
 \end{center}
-\figcap{7}{Fraction of the target's own held-out ceiling recovered when one fitted map is applied to another condition, across correction rungs (naive $\to$ $+$offset $\to$ $+$diag.\ scale $\to$ fitted linear reparameterization $\to$ ceiling).}
+\figcap{7}{The map fitted on the \textbf{assistant}, applied to the character Wren — in bare Q\&A and inside a fictional scene. \emph{Naive} = the assistant map used as-is; $+$\,\emph{reparam.} = a linear recoordination fitted on the target's own train folds, so this is \emph{preserved up to a change of coordinates}, not zero-shot. Black: a map fitted on Wren's own data. Fold-mean $R^2$, scenario-grouped 5-fold, layer 19; one character.}
+\begin{center}
+\IfFileExists{figures/plot6b_specialization.pdf}{\includegraphics[width=0.95\linewidth]{plot6b_specialization.pdf}}{}
+\end{center}
+\figcap{8}{One map fitted on all four characters \emph{pooled}, the same map $+$ per-character offsets, and a \emph{character-specific} map — each scored held out, per character. 300 shared scenarios each (1{,}200 pooled); the assistant is not in this pool.}
 \begin{itemize}
-  \item \takeaways{One shared operator serves the assistant and fictional characters:} character$\leftrightarrow$character maps reach 84--97\% of the target's own ceiling once a \emph{linear reparameterization} is fitted (C, D); naive transfer fails, so sharing is up to a change of coordinates.
-  \item \takeaways{The same ladder closes across framings and post-training} (chat$\leftrightarrow$plain, base$\leftrightarrow$instruct) — the assistant is one character on a shared map.
+  \item \takeaways{One map, re-coordinated, serves the assistant and a character:} the assistant's map reaches \textbf{96.7\%} (bare Q\&A) and \textbf{95.0\%} (fictional scene) of what a Wren-specific map achieves, once a linear reparameterization is fitted — while \emph{naive} transfer into the scene fails outright ($R^2\!=\!-0.22$, worse than predicting the mean).
+  \item \takeaways{Pooling across characters costs almost nothing:} one pooled map $+$ per-character offsets reaches \textbf{90--98\%} of character-specific maps. The specialization gap is small but real — all four bootstrap CIs exclude zero.
 \end{itemize}
 
 \end{column}
 
-% ==================== COLUMN 5: discussion ====================
-\begin{column}{0.188\textwidth}
+% ==================== COLUMN 6: discussion ====================
+\begin{column}{0.1555\textwidth}
 
 \postersec{Is this useful?}
 {\color{matsmaroon}\textbf{Application: behavior prediction before inference}}
-\IfFileExists{figures/plot7_application.pdf}{%
 \begin{center}
-\includegraphics[width=0.95\linewidth]{plot7_application.pdf}
-\end{center}}{}
+\includegraphics[width=0.99\linewidth]{c5_pv_methods_regimes.pdf}
+\end{center}
+\figcap{9}{Spearman $\rho$ between a persona-vector readout and the judged behavior, per regime. Bars: readout on the \emph{context}, on the \emph{map-predicted} answer (linear, MLP), and on the \emph{real} answer — an oracle, it needs the answer generated. Muted bars failed the spread gate.}
 \begin{itemize}
-  \item \takeaways{Persona-vector readouts on the \emph{mapped} answer track judged sycophancy, hallucination, and misalignment near the real-answer ceiling} (misalignment: $\rho$ 0.67 vs.\ 0.69 reading the real answer), while the same readout on the raw context collapses off-synthetic prompts ($\rho \le 0.03$).
-  \item \takeaways{Why not just probe the context? The map exploits unlabeled data:} fit on in-domain \emph{unjudged} text, mapped-answer probing beats context probing at every label budget ($\sim$3$\times$ at 250 labels).
+  \item \takeaways{On realistic evaluation data — generic chat and OOD — reading the \emph{mapped} answer beats reading the context in all six behavior\,$\times$\,regime cells,} often reaching the real-answer oracle (misalignment, generic chat: 0.23 mapped, 0.07 context, 0.23 oracle).
+  \item \takeaways{On synthetic prompts the context already gives the behavior away} ($\rho$ 0.65--0.79), so the map buys nothing there — the gain appears exactly where the prompt does \emph{not} telegraph the answer.
+  \item \takeaways{It also exploits unlabelled data:} with the map fitted on in-domain \emph{unjudged} text, the mapped-answer readout beats a context probe at every labelled budget — $\sim$$3\times$ at 250 labels (misalignment, single-seed cells).
 \end{itemize}
 
 \postersec{Limitations}
 \begin{itemize}
   \item \takeaways{Prediction $\ne$ control:} the fitted map's read direction does not steer behavior, while the mean-difference persona vector does.
-  \item $R^2$ and retrieval dissociate across estimators, so map-strength claims are metric-specific; headline results are per model family and correlational.
+  \item $R^2$ and retrieval dissociate across estimators, so map-strength claims are metric-specific; results are per model family and correlational.
 \end{itemize}
 
 \postersec{Implications \& future work}
