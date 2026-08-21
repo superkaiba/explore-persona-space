@@ -1,0 +1,119 @@
+{
+ "source": "eval_results/issue_1482/predictor_battery/continuous_predictors_densesae_ridge.json",
+ "target": "per-feature held-out R^2, full-width dense-context -> SAE-feature ridge map (ridge__mean, 131,072-feature dictionary, n_features_used=113,262)",
+ "partial_on": "activity = firing frequency (per answer)",
+ "ci": "percentile 95% over 2,000 bootstrap draws (ranks fixed at the full sample)",
+ "selection": "|partial rho| >= 0.1, ranked by |partial rho|",
+ "rows": [
+  {
+   "key": "mean_act_uncond",
+   "label_full": "mean activation over all answers",
+   "label_short": "mean activation",
+   "spearman_raw": 0.7303136868898906,
+   "partial_on_activity": 0.2612449439388537,
+   "partial_on_activity_ci95": [
+    0.2546019723114666,
+    0.2679613813459187
+   ]
+  },
+  {
+   "key": "firing_freq_per_token",
+   "label_full": "firing frequency (per token)",
+   "label_short": "firing freq. / token",
+   "spearman_raw": 0.7270627933385344,
+   "partial_on_activity": 0.23994696065646076,
+   "partial_on_activity_ci95": [
+    0.23375661683618068,
+    0.2461981969676359
+   ]
+  },
+  {
+   "key": "mean_act_cond",
+   "label_full": "mean activation when active",
+   "label_short": "mean act. (active)",
+   "spearman_raw": 0.31199815373664963,
+   "partial_on_activity": 0.20072353885054434,
+   "partial_on_activity_ci95": [
+    0.1948478373431781,
+    0.20685388713005226
+   ]
+  },
+  {
+   "key": "proj_var",
+   "label_full": "dense variance along decoder direction",
+   "label_short": "var. on decoder dir.",
+   "spearman_raw": 0.2879551459070197,
+   "partial_on_activity": 0.19891200233605816,
+   "partial_on_activity_ci95": [
+    0.19287600111539313,
+    0.2046115441920851
+   ]
+  },
+  {
+   "key": "consistency",
+   "label_full": "within-answer consistency",
+   "label_short": "consistency",
+   "spearman_raw": 0.3465543595802684,
+   "partial_on_activity": 0.18874974730222535,
+   "partial_on_activity_ci95": [
+    0.18238062843478717,
+    0.1947321656848418
+   ]
+  },
+  {
+   "key": "n_active_holdout",
+   "label_full": "holdout answers active (count)",
+   "label_short": "# active answers",
+   "spearman_raw": 0.7147936595833038,
+   "partial_on_activity": 0.1672249040989027,
+   "partial_on_activity_ci95": [
+    0.16215038936896203,
+    0.17262316143825518
+   ]
+  },
+  {
+   "key": "side_ratio",
+   "label_full": "answer-side share of firings",
+   "label_short": "answer-side share",
+   "spearman_raw": 0.2926578125691659,
+   "partial_on_activity": 0.15725478927288233,
+   "partial_on_activity_ci95": [
+    0.15109864354870717,
+    0.16308888422861798
+   ]
+  },
+  {
+   "key": "footprint_kurt",
+   "label_full": "footprint kurtosis",
+   "label_short": "footprint kurt.",
+   "spearman_raw": 0.2043928110331011,
+   "partial_on_activity": -0.1451963502568627,
+   "partial_on_activity_ci95": [
+    -0.15132980432312854,
+    -0.13934527784401443
+   ]
+  },
+  {
+   "key": "enc_dec_cos",
+   "label_full": "encoder-decoder cosine",
+   "label_short": "enc-dec cosine",
+   "spearman_raw": 0.26471102251583206,
+   "partial_on_activity": -0.14110059017825133,
+   "partial_on_activity_ci95": [
+    -0.14647066431225897,
+    -0.13546837209768176
+   ]
+  },
+  {
+   "key": "scaffold_frac",
+   "label_full": "decoder mass in prefix-covariance top-48 subspace (geometric)",
+   "label_short": "scaffold mass",
+   "spearman_raw": 0.16351771257488326,
+   "partial_on_activity": 0.13028328565884018,
+   "partial_on_activity_ci95": [
+    0.12466732631497314,
+    0.13618127340300287
+   ]
+  }
+ ]
+}

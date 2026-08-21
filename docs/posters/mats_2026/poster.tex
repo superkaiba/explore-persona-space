@@ -115,12 +115,11 @@ Qwen2.5-7B(-Instruct) headline; Llama/T\"ulu post-training ladder. Real-user con
 
 \postersec{2.\ It predicts the persona-vector directions}
 \begin{center}
-\includegraphics[width=0.88\linewidth]{c3_persona_direction_spectrum.pdf}
+\IfFileExists{figures/plot2_persona_directions.pdf}{\includegraphics[width=0.92\linewidth]{plot2_persona_directions.pdf}}{\includegraphics[width=0.88\linewidth]{c3_persona_direction_spectrum.pdf}}
 \end{center}
-\figcap{3}{Per-direction held-out $R^2$ along answer-PCA directions against variance rank, per behavior. Star: the persona direction $r_B$ at its equivalent variance rank. Gray band: mean $\pm$ 1 SD over 50 random unit directions.}
+\figcap{3}{Held-out $R^2$ of the fitted map along the persona direction $r_B$ for each behavior, against the mean $\pm$ 1 SD over 50 \emph{random} unit directions (a spread, not a CI). Fold 0 of 5 ($n_{\mathrm{train}}\!=\!4{,}000$, $n_{\mathrm{test}}\!=\!1{,}000$); per-behavior layers 14 / 26 / 17.}
 \begin{itemize}
-  \item \takeaways{Persona-vector directions are among the best-predicted directions of the answer:} $r_B$ reads $R^2$ 0.79 / 0.87 / 0.80 (misalignment / sycophancy / hallucination) against a random-direction band of $\sim$0.56--0.58.
-  \item \takeaways{They sit at the very top of the answer's variance spectrum} (equivalent rank 2--12 of 3{,}584), where per-direction $R^2$ is highest; predictability decays with rank and crosses zero past $\sim$160--360.
+  \item \takeaways{Persona-vector directions are among the best-predicted directions of the answer:} $r_B$ reads $R^2$ \textbf{0.79 / 0.87 / 0.80} (misalignment / sycophancy / hallucination) against a random-direction band of \textbf{0.56--0.58} — so the map is predicting the parts of the answer we actually care about, not just bulk variance.
 \end{itemize}
 
 \end{column}
@@ -128,23 +127,22 @@ Qwen2.5-7B(-Instruct) headline; Llama/T\"ulu post-training ladder. Real-user con
 % ==================== COLUMN 3: results 3-4 ====================
 \begin{column}{0.1555\textwidth}
 
-\postersec{3.\ Best at high-level, persona-like properties}
-To ask \emph{what} it predicts, we fit maps to the answer's \textbf{SAE features} (16{,}384 of them) and rank feature properties by how well they predict a feature's held-out $R^2$.
+\postersec{3.\ What makes a feature predictable?}
+We map the context to the answer's \textbf{SAE features}, then rank feature properties by how well they predict a feature's held-out $R^2$.
 \begin{center}
-\IfFileExists{figures/plot3_sae_predictors.pdf}{\includegraphics[width=0.86\linewidth]{plot3_sae_predictors.pdf}}{\includegraphics[width=0.78\linewidth]{c3_sae_tier_gradient.pdf}}
+\IfFileExists{figures/plot3_sae_predictors.pdf}{\includegraphics[width=0.80\linewidth]{plot3_sae_predictors.pdf}}{\includegraphics[width=0.78\linewidth]{c3_sae_tier_gradient.pdf}}
 \end{center}
-\figcap{4}{Which properties of an SAE feature predict its per-feature $R^2$, on a common footing against matched nulls.}
+\figcap{4}{Partial Spearman $\rho$ between each feature property and that feature's held-out $R^2$, \emph{controlling for the feature's firing frequency per answer}. 113{,}262 features scored; 95\% bootstrap CIs (2{,}000 draws); rows with $|\rho|\!\ge\!0.10$.}
 \begin{itemize}
-  \item \takeaways{Persona / speaker-identity features are the best-predicted label class}; content entities and token-level word choice are the worst.
-  \item \takeaways{Predictability follows abstraction:} median per-feature $R^2$ falls 0.43 $\to$ 0.04 from general to specific features.
-  \item \takeaways{Within-answer consistency is the strongest single correlate} — tonic, context-determined properties (language, register, discourse position) predict well; phasic token-level choices do not.
+  \item \takeaways{Even with firing frequency held constant, activation-family properties lead:} mean activation ($\rho$ 0.26), per-token firing frequency (0.24), mean activation when active (0.20).
+  \item \takeaways{Within-answer consistency remains a strong correlate (0.19)} — tonic, context-determined properties are predicted better than phasic, token-level ones.
 \end{itemize}
 
 \postersec{4.\ What does it fail to retrieve?}
 \begin{center}
 \IfFileExists{figures/plot4_failures.pdf}{\includegraphics[width=0.88\linewidth]{plot4_failures.pdf}}{\includegraphics[width=0.95\linewidth]{c3_failure_attribution.pdf}}
 \end{center}
-\figcap{5}{Retrieval failures against \emph{sampling-noise-free} answer targets (each answer averaged over 5 on-policy draws), raw-euclidean read: $n=1{,}988$ held-out contexts, pool 9{,}941, 180 failures, rank-1 0.909. Left: failure rate within a category minus the rest, with 10{,}000-draw bootstrap CIs; \emph{significant} = clears Benjamini--Hochberg FDR at $q\!=\!0.05$. ``Refusal answer'' (the answer is itself a refusal) trends high but does not clear FDR here, $n\!=\!30$. Right: what the 180 misses are — \emph{map error} = the answer is still retrievable from a fresh draw of itself.}
+\figcap{5}{Retrieval failures against \emph{sampling-noise-free} answer targets (each answer averaged over 5 on-policy draws), raw-euclidean read: $n=1{,}988$ held-out contexts, pool 9{,}941, 180 failures, rank-1 0.909. Left: category failure rate minus the rest, 10{,}000-draw bootstrap CIs; \emph{significant} = clears Benjamini--Hochberg FDR at $q\!=\!0.05$. ``Refusal answer'' trends high but misses FDR ($n\!=\!30$). Right: what the 180 misses are — \emph{map error} = the answer is still retrievable from a fresh draw of itself.}
 \begin{itemize}
   \item \takeaways{Failures concentrate in identifiable kinds of context:} code answers ($+11.2$pp), refusal-adjacent requests ($+8.5$), coding ($+7.0$) and English ($+5.6$) fail most; factual QA ($-3.5$) and advice ($-5.8$) fail least.
   \item \takeaways{Almost all of it is map error, not answer degeneracy:} 91\% of misses stay retrievable from a fresh draw of the same answer; only 6\% are genuinely degenerate answers.

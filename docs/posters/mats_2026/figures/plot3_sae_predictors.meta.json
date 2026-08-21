@@ -1,141 +1,253 @@
 {
-  "commit": "716a5868+dirty",
-  "render_id": "c9226e1faa3a4910",
-  "git_commit": "716a5868ee0d89fd5971d42c8296f1355a9d728f",
+  "commit": "1b6acdc5+dirty",
+  "render_id": "a5a064edc9e64092",
+  "git_commit": "1b6acdc5275172da01f0ae48a8e025418af8fe92",
   "git_dirty": true,
   "git_dirty_paths": [
-    "docs/posters/mats_2026/make_plot3_predictors.py",
-    "docs/posters/mats_2026/figures/method_diagram.pdf",
-    "docs/posters/mats_2026/figures/method_diagram.tex",
-    "docs/posters/mats_2026/figures/plot1_scaling_boundary.meta.json",
-    "docs/posters/mats_2026/figures/plot1_scaling_boundary.pdf",
-    "docs/posters/mats_2026/figures/plot1_scaling_boundary.png",
-    "docs/posters/mats_2026/poster.pdf",
-    "docs/posters/mats_2026/poster.tex",
+    "docs/posters/mats_2026/make_plot3_sae.py",
+    "docs/posters/mats_2026/figures/plot7_application.meta.json",
+    "docs/posters/mats_2026/figures/plot7_application.pdf",
+    "docs/posters/mats_2026/figures/plot7_application.png",
+    "docs/posters/mats_2026/make_plot7_application.py",
+    "eval_results/issue_666/headline/predictor_headline.json",
+    "scripts/issue1901_body_figures.py",
+    "tasks/completed/2214/body.md",
+    "tasks/completed/2214/comments.jsonl",
+    "tasks/completed/2214/concerns.jsonl",
+    "tasks/completed/2214/events.jsonl",
+    "tasks/completed/2214/plans/plan.md",
+    "tasks/completed/2214/plans/v1.md",
+    "tasks/completed/2214/plans/v2.md",
+    "tasks/completed/2214/plans/v3.md",
     "tasks/proposed/2416/body.md",
     "tasks/proposed/2416/comments.jsonl",
     "tasks/proposed/2416/events.jsonl",
+    "tasks/running/2214/body.md",
+    "tasks/running/2214/comments.jsonl",
+    "tasks/running/2214/concerns.jsonl",
+    "tasks/running/2214/events.jsonl",
+    "tasks/running/2214/plans/plan.md",
+    "tasks/running/2214/plans/v1.md",
+    "tasks/running/2214/plans/v2.md",
+    "tasks/running/2214/plans/v3.md",
     "tests/test_issue2094_rev_butler.py"
   ],
   "git_argv0_state": "untracked",
-  "git_argv0_path": "docs/posters/mats_2026/make_plot3_predictors.py",
-  "created": "2026-08-21T00:38:35Z",
+  "git_argv0_path": "docs/posters/mats_2026/make_plot3_sae.py",
+  "created": "2026-08-21T01:18:04Z",
   "figsize": [
-    6.4,
-    2.5
+    6.8,
+    3.0
   ],
   "points": [
     {
-      "Spearman $\\rho$ vs per-feature held-out $R^2$": 0.2026850791309682,
-      "y": 0.13,
-      "_kind": "errorbar",
+      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.130622,
+      "y": 0.2612449439388537,
+      "_kind": "bar",
       "_group": 0
     },
     {
-      "Spearman $\\rho$ vs per-feature held-out $R^2$": 0.2928978790994351,
-      "y": 1.13,
-      "_kind": "errorbar",
+      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.119973,
+      "y": 0.23994696065646076,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.100362,
+      "y": 0.20072353885054434,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.099456,
+      "y": 0.19891200233605816,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.094375,
+      "y": 0.18874974730222535,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.083612,
+      "y": 0.1672249040989027,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.078627,
+      "y": 0.15725478927288233,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": -0.072598,
+      "y": -0.1451963502568627,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": -0.07055,
+      "y": -0.14110059017825133,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.065142,
+      "y": 0.13028328565884018,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.2546019723114666,
+      "y": 9.0,
+      "_kind": "line",
       "_group": 1
     },
     {
-      "Spearman $\\rho$ vs per-feature held-out $R^2$": 0.4037234821122649,
-      "y": 2.13,
-      "_kind": "errorbar",
+      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.23375661683618068,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.1948478373431781,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.19287600111539313,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.18238062843478717,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.16215038936896203,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.15109864354870717,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": -0.15132980432312854,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": -0.14647066431225897,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.12466732631497314,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.2679613813459187,
+      "y": 9.0,
+      "_kind": "line",
       "_group": 2
     },
     {
-      "Spearman $\\rho$ vs per-feature held-out $R^2$": 0.600322591610094,
-      "y": 3.13,
-      "_kind": "errorbar",
-      "_group": 3
+      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.2461981969676359,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 2
     },
     {
-      "AUROC (labeled vs rest, by $R^2$)": 0.45114074522593295,
-      "y": 0.0,
-      "_kind": "errorbar",
-      "_group": 4
+      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.20685388713005226,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 2
     },
     {
-      "AUROC (labeled vs rest, by $R^2$)": 0.5538372639472557,
-      "y": 1.0,
-      "_kind": "errorbar",
-      "_group": 5
+      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.2046115441920851,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 2
     },
     {
-      "AUROC (labeled vs rest, by $R^2$)": 0.4088995951712881,
-      "y": 2.0,
-      "_kind": "errorbar",
-      "_group": 6
-    },
-    {
-      "AUROC (labeled vs rest, by $R^2$)": 0.5814855041511922,
-      "y": 3.0,
-      "_kind": "errorbar",
-      "_group": 7
-    },
-    {
-      "AUROC (labeled vs rest, by $R^2$)": 0.5058480973843419,
-      "y": 4.0,
-      "_kind": "errorbar",
-      "_group": 8
-    },
-    {
-      "AUROC (labeled vs rest, by $R^2$)": 0.6797630714862143,
+      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.1947321656848418,
       "y": 5.0,
-      "_kind": "errorbar",
-      "_group": 9
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.17262316143825518,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.16308888422861798,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": -0.13934527784401443,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": -0.13546837209768176,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)": 0.13618127340300287,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 2
     }
   ],
-  "n_series": 10,
-  "total_points": 10,
+  "n_series": 3,
+  "total_points": 30,
   "text": {
     "suptitle": null,
     "fig_texts": [],
     "axes": [
       {
-        "title": "Continuous properties (16,384-feature panel)",
-        "xlabel": "Spearman $\\rho$ vs per-feature held-out $R^2$",
-        "legend_labels": [
-          "raw $\\rho$",
-          "$\\rho\\,|\\,$firing activity"
-        ],
+        "xlabel": "partial Spearman $\\rho$ vs per-feature $R^2$ (given firing activity)",
         "xticklabels": [
           "\u22120.2",
+          "\u22120.1",
           "0.0",
+          "0.1",
           "0.2",
-          "0.4",
-          "0.6",
-          "0.8"
+          "0.3"
         ],
         "yticklabels": [
-          "decoder alignment with\npersona directions $r_B$",
-          "firing activity",
-          "dense variance along\ndecoder direction",
-          "within-answer consistency"
-        ]
-      },
-      {
-        "title": "Judged label classes (full dictionary)",
-        "xlabel": "AUROC (labeled vs rest, by $R^2$)",
-        "legend_labels": [
-          "observed",
-          "stratified null (95%)"
-        ],
-        "xticklabels": [
-          "0.3",
-          "0.4",
-          "0.5",
-          "0.6",
-          "0.7",
-          "0.8"
-        ],
-        "yticklabels": [
-          "topic",
-          "language",
-          "named entity",
-          "high abstraction",
-          "task format",
-          "speaker identity\n(persona)"
+          "mean activation",
+          "firing freq. / token",
+          "mean act. (active)",
+          "var. on decoder dir.",
+          "consistency",
+          "# active answers",
+          "answer-side share",
+          "footprint kurt.",
+          "enc-dec cosine",
+          "scaffold mass"
         ]
       }
     ]
