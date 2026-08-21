@@ -355,6 +355,31 @@ standard 3-lens enum gate does not apply: the brief's verbatim lens list IS
   (no yaml) and the leg WARN-degraded to spans-only; run the numcheck from the
   repo root for the full two-leg check.
 
+- **Armed-in-place fleet-check plan, standard statistics lens with a brief
+  NON-VACUITY press point (#2261 round one, call-arity bind check): when the
+  brief's core question is "does the plan carry a positive-coverage assertion,
+  and the prior art has one", VERIFY the prior art at compose time (grep its
+  asserts) and feed the result as a settled fact WITHOUT grep-derived line
+  numbers — compose-time line numbers are composer-authored numerics under the
+  ban; say "read the file and locate its membership asserts" instead.** Earned
+  sharpeners that generalize to any armed-in-place fleet detector: (1) THREE
+  populations to reconcile — the baseline census population, the
+  re-measurement recipe's glob population, and the ARMED population (the #2261
+  plan's R3 globbed `scripts/` while a src-tree adopter gets armed too); (2)
+  the circularity warning names re-running the plan's own prototype as
+  non-evidence for non-vacuity (same resolver certifying itself) and offers
+  the independent instrument (targeted greps counting registered-callable
+  tokens); (3) must-FAIL fixture tests are per-leg positive coverage by
+  construction — direct the twin to enumerate which resolution legs are
+  pinned by a must-FAIL fixture vs resting on must-PASS/absence reads; (4)
+  a triage rule whose plan argues "every failure is a true positive by
+  construction" makes the FP branch unreachable except via MIS-resolution —
+  press what operation discriminates. Full-census framing kills the
+  uninterpretable-N item ("a census, not a sample — coverage questions
+  replace sampling questions"). Numcheck PASS first try at ~127 KB (spans =
+  plan + body + briefnote + questions + lensitems + empty prior; digits
+  confined to spans; single-digit § refs only in scaffold).
+
 - **Detector/check-addition plan, standard statistics lens with a brief FP/FN
   translation (#2228 round one, a new verify_plan WARN-only check): the
   brief's detector translation ("measurement = the check's true/false-positive
@@ -608,6 +633,61 @@ standard 3-lens enum gate does not apply: the brief's verbatim lens list IS
   guard atoms + comma-grouping first + pair-split + isfinite canon +
   collect-all + registry leg from repo root; version-suffixed workspace
   keyed to PLAN version).
+
+- **In-place-arming check-addition plan, standard methodology lens + a brief
+  translation phrase-list (#2261 round one, argcheck call-arity bind pass armed
+  INSIDE `assert_args_attributes_defined`): when a plan arms a NEW check by
+  riding an EXISTING conventional entry point (zero adopter edits, justified by
+  a measured zero-red fleet census), the earned press-point set is** — (a)
+  evidence-class of a point-in-time census (prototype-vs-shipped gap; is the
+  post-implementation re-measurement sequenced as a pre-ship gate?) + kill-
+  criterion EVALUABILITY with its trigger-threshold gap walked (FPs below the
+  "in >N adopters" trigger never trip it — who eats the red check?); (b)
+  opt-in-posture widening (adopters opted into check A, get check B armed
+  automatically; declined coarse opt-out); (c) per-AC test-vacuity with the
+  monkeypatched-registry test-double criterion pressed by name; (d) import-
+  side-effect fragility when the check newly IMPORTS its targets inside a
+  previously import-free pass (module-scope work, lazy-rule coverage split,
+  checker-import-failure vs bind-failure message direction); (e) dominating-
+  alternative walk of the plan's own rejected simplifications; (f) waiver-on-
+  frozen-artifact internal contradiction (the sanctioned escape requires
+  editing artifacts the plan's own must-ask list bars editing) + waiver line-
+  grain FN direction. Fact-checker facts-given block + verdict-calibration
+  sentence from the brief inlined verbatim in the inputs span. Numcheck PASS
+  first try at ~151 KB (spans = inputs + questions + lensitems + plan + body +
+  empty prior; unsigned both-sides-guard atoms + comma-grouping first +
+  isfinite canon + collect-all + registry leg from repo root; version-suffixed
+  workspace keyed to PLAN version, no stale-output mv needed).
+
+- **Check-addition plan with a measured zero-red baseline, standard
+  alternatives lens + brief four-account translation (#2261 round one, the
+  call-arity bind pass): two moves that generalize to any detector/check
+  plan whose safety argument is "N of N sites clean today".** (1) THE
+  CLEAN-BASELINE AMBIGUITY as a mandated own-section question: a zero-red
+  baseline is equally consistent with "check is sound" and "check resolves
+  too little to fail anything" — press the self-certifying census (the
+  skip/unresolvable count is computed BY the resolver it certifies; a shape
+  outside the resolution rules is invisible to numerator AND denominator,
+  e.g. `f = helper` then `f(...)`) and ask for an independent denominator
+  (loose textual census vs resolver count). (2) INCIDENT-CATCH VERIFICATION
+  as its own section with CATCHES|MISSES|PARTIAL|UNVERIFIED verdict words:
+  walk the design's written rules against the founding incident AT ITS REAL
+  POSITION via `git show <fix-commit>~1:<driver>` (the live file has the
+  FIXED call), chaining import form → shadow guard → resolution shape →
+  bind outcome → ARMING REACH (is the incident driver itself an adopter of
+  the entry point — folded as a 1:1 sharpener, not a parallel list). Brief's
+  four alternative accounts rode as press span (a)-(d) with
+  FATAL|RECOVERABLE|NO-FINDING dispositions; settled block = the body's
+  repo-wide-lint rejection with the brief's fair-game alternative list +
+  the #2253 dominating-alternative bar (Must Fix needs rationale-misstates-
+  facts AND silent-failure-class). Read discipline banned pytest/lint,
+  encouraged `git show` of the pre-fix driver + re-running the plan's
+  recorded read-only measurement commands + the /tmp prototype if present
+  ("walked against the PLAN's rules, never assumed from a prototype PASS").
+  Numcheck PASS first try at ~79 KB, fully digit-free scaffold (spans =
+  inputs + press + lensitems + plan + body + empty prior; unsigned
+  both-sides-guard atoms + comma-grouping first + sci-notation branch +
+  isfinite literal-keep + collect-all + registry leg from repo root).
 
 **Why:** first custom-lens infra compose (#2324) — these choices made the
 numeric gate pass first try on a 68 KB prompt; round 2 (REVISE-round
