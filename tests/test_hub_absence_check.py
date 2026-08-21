@@ -201,3 +201,20 @@ def test_empty_prefix_raises_value_error() -> None:
     with pytest.raises(ValueError, match="empty prefix"):
         assert_hf_prefix_exists(api, "org/data-repo", "/")
     assert api.tree_calls == 0
+
+
+def test_resolved_prefix_with_zero_files_raises() -> None:
+    """A RESOLVED prefix listing zero files raises — never a silent 0.
+
+    Pins the third raise path (the ``hub.py`` resolved-empty guard): the
+    prefix is NONEMPTY so the up-front ValueError gate passes, the lazy
+    generator IS consumed (``tree_calls == 1``) and yields nothing, and the
+    helper refuses to return 0 — a regression replacing the guard with
+    ``return 0`` fails here. ``file_exists_calls == 0`` pins that the branch
+    did not detour through the #939 exact-file fallback.
+    """
+    api = _FakeHfApi(tree_batches=[_lazy_yield([])])
+    with pytest.raises(RuntimeError, match="listed 0 files"):
+        assert_hf_prefix_exists(api, "org/data-repo", "p")
+    assert api.tree_calls == 1
+    assert api.file_exists_calls == 0
