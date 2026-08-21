@@ -89,7 +89,7 @@ import os
 import sys
 import tempfile
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from explore_persona_space.orchestrate.env import load_dotenv
@@ -213,9 +213,45 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     ap.add_argument(
         "--phase",
-        choices=("tokgate", "bank", "anchors", "grid", "margin", "upload"),
+        choices=(
+            "tokgate",
+            "bank",
+            "anchors",
+            "grid",
+            "margin",
+            "upload",
+            "cap_report",
+            "capregen",
+        ),
         help="pipeline phase to run (required unless --import-check); "
-        "tokgate = G0 token-identity gate (VM, tokenizer-only)",
+        "tokgate = G0 token-identity gate (VM, tokenizer-only); "
+        "cap_report/capregen = the registered cap-hit remedy, resolved against the "
+        "LADDER layout (grid/ shards + ladder block enumeration — the run driver's "
+        "own cap phases resolve <out-root>/rollouts and can never see this fork's "
+        "store, v176)",
+    )
+    ap.add_argument(
+        "--cap-scope",
+        choices=("anchors", "grid", "both"),
+        default="both",
+        help="cap_report: which rollout set(s) to aggregate (incremental/partial-safe)",
+    )
+    ap.add_argument(
+        "--capregen-scope",
+        choices=("grid",),
+        default=None,
+        help="capregen: ladder re-gen is implemented for the GRID scope only (the ladder "
+        "anchors leg realized 0 breaching cells; an anchors re-gen would need the ladder "
+        "anchors generator wired the same way — refused rather than silently routed "
+        "through the run driver's recipe)",
+    )
+    ap.add_argument(
+        "--breach-report",
+        type=Path,
+        default=None,
+        help="capregen: cap-hit report JSON driving the breach list "
+        "(default <out-root>/manifests/cap_hit_report_grid.json; frozen byte-verbatim at "
+        "first use — the run driver's basis semantics, all its refusals intact)",
     )
     ap.add_argument(
         "--import-check",
@@ -364,6 +400,9 @@ def build_config(args: argparse.Namespace) -> LadderConfig:
         model_revision=args.model_revision,
         token_identity_path=args.token_identity,
         tokgate_out=args.tokgate_out,
+        cap_scope=args.cap_scope,
+        capregen_scope=args.capregen_scope,
+        breach_report=args.breach_report,
     )
 
 
@@ -1477,6 +1516,10 @@ def phase_anchors(cfg: LadderConfig) -> int:
     )
     # Immediate upload: the VM gate wave starts on these texts (plan §9 DAG).
     RUN._upload_dir(cfg, cfg.anchors_dir, f"{HF_LADDER_RAW}/anchors", [jsonl.name])
+    # Phase-end cap-hit snapshot (parent parity; partial until every worker's
+    # gate done record lands — the standalone --phase cap_report is the
+    # authoritative aggregate).
+    _emit_cap_hit_snapshot_ladder(cfg, "anchors")
     logger.info("[phase=anchors_done] worker=%d", cfg.worker_index)
     return RUN.RC_OK
 
@@ -1708,9 +1751,17 @@ def run_ladder_block(
     regime_fp: str,
     pools: dict[str, list[dict]] | None,
     draws: int,
+    done_extra: dict | None = None,
 ) -> dict:
     """One block: K hooked temp-1.0 draws per pair + the hooked V_a pass +
-    (pools present) the inline margin TF pass (the parent ``run_block`` shape)."""
+    (pools present) the inline margin TF pass (the parent ``run_block`` shape).
+
+    ``done_extra`` (capregen) is merged into the block done record LAST —
+    the parent ``run_block`` contract: the capregen sub-record plus the
+    carried base ``margin_inline`` flag override the freshly-computed
+    fields, so a pools=None re-gen never stamps ``margin_inline: False``
+    over a base run whose inline margins remain valid (TF margins are
+    cap-independent)."""
     cells = _block_cells_ladder(bank, block, pairs_by_id, donor_maps, parent_recs)
     for c in cells:
         c["_contexts"] = contexts  # margin ctx-id resolution seam
@@ -1800,6 +1851,13 @@ def run_ladder_block(
                     "n_completion_tokens": n_tok,
                     "cap_hit": RUN.cap_hit(n_tok, cfg.max_new_tokens),
                     "cap_hit_basis": "retokenized_completion_len >= max_new_tokens",
+                    # Per-row REALIZED cap (parent _enrich_rows_with_capture
+                    # convention): what keeps a mixed-cap store VISIBLE after a
+                    # unit-restricted capregen — postregen attribution and the
+                    # sufficiency audit both key on it. Rows from the realized
+                    # pre-fix store lack the field and inherit the base cap
+                    # (the documented absence convention).
+                    "max_new_tokens": cfg.max_new_tokens,
                     "text": text,
                 }
             )
@@ -1846,6 +1904,8 @@ def run_ladder_block(
         "margin_inline": margin_done,
         "repro": RUN._repro(cfg),
     }
+    if done_extra:
+        done = {**done, **done_extra}
     RUN._write_json_atomic(RUN.block_done_path(cfg.out_root, block), done)
     return done
 
@@ -1953,6 +2013,8 @@ def phase_grid(cfg: LadderConfig) -> int:
             "repro": RUN._repro(cfg),
         },
     )
+    # Phase-end cap-hit snapshot (parent parity; tolerant of partial fleets).
+    _emit_cap_hit_snapshot_ladder(cfg, "grid")
     logger.info(
         "[phase=grid_done] worker=%d blocks_run=%d rollouts=%d",
         cfg.worker_index,
@@ -1964,11 +2026,350 @@ def phase_grid(cfg: LadderConfig) -> int:
 
 def _upload_grid_increment_ladder(cfg: LadderConfig, blocks: list[RUN.Block]) -> list[str]:
     slugs = [b.slug for b in blocks if (cfg.rollouts_dir / f"shard_{b.slug}.jsonl").exists()]
-    if not slugs:
-        return []
-    return RUN._upload_dir(
-        cfg, cfg.rollouts_dir, f"{HF_LADDER_RAW}/grid", [f"shard_{s}.jsonl" for s in slugs]
+    out: list[str] = []
+    if slugs:
+        out += RUN._upload_dir(
+            cfg, cfg.rollouts_dir, f"{HF_LADDER_RAW}/grid", [f"shard_{s}.jsonl" for s in slugs]
+        )
+    # FIX-2 parity with the parent's _upload_grid_increment: preserved
+    # superseded pre-regen shards (capregen only — the dir does not exist
+    # during the base grid phase) ride the same incremental cadence to their
+    # OWN ladder prefix.
+    pre_dir = RUN.preregen_superseded_dir(cfg, "grid")
+    pre = [f"shard_{b.slug}.jsonl" for b in blocks if (pre_dir / f"shard_{b.slug}.jsonl").exists()]
+    if pre:
+        out += RUN._upload_dir(cfg, pre_dir, f"{HF_LADDER_RAW}/preregen_superseded/grid", pre)
+    return out
+
+
+# ── cap-hit measurement + the registered re-gen remedy (ladder wiring) ─
+#
+# v176 root cause: cap_report/capregen lived ONLY in issue2329_run.py and
+# resolved RunConfig, whose rollouts_dir -> <out-root>/rollouts — a directory
+# the ladder layout never creates (LadderConfig.rollouts_dir -> grid/). The
+# remedy here is LADDER-side phases: measurement reuses the run driver's
+# report computation + freeze/validation guards through the emit inputs seam,
+# while RE-GENERATION runs the ladder's OWN generator, prompt construction,
+# block queue and capture (run_ladder_block) — a rollouts->grid symlink would
+# have made measurement work while capregen regenerated rows from a different
+# recipe (the explicitly rejected half-fix).
+
+# Plan §7 G5 registers the ladder trigger per (direction x slot x arm) UNIT
+# — Block.key grain — not the run driver's per-type-cell grain.
+LADDER_GRID_BREACH_GRAIN = "cell_slot_arm"
+
+
+def _cap_report_inputs_ladder(
+    cfg: LadderConfig, scope: str
+) -> tuple[list[Path], set[str] | None, str | None]:
+    """Ladder-layout ``(shard_paths, expected_shard_names, unavailable_reason)``.
+
+    grid: shards under ``cfg.rollouts_dir`` (= ``out_root/grid``); expected set
+    from the LADDER's own gate-filtered block enumeration (``_grid_inputs``,
+    smoke-sliced under ``--smoke`` exactly as ``phase_grid`` enumerates) — the
+    three gate files are required for a NON-PARTIAL read (capregen's basis
+    validation refuses partial reports, so a gate-less invocation still
+    measures but can never drive the remedy). anchors: gate-batch done
+    records only (the ladder has no rest batch — the run driver's
+    two-batch width derivation reads this fork's store as forever-partial)."""
+    if scope == "grid":
+        paths = sorted(cfg.rollouts_dir.glob("shard_*.jsonl"))
+        if not (cfg.bank_dir / "ladder_bank.json").exists():
+            return (
+                paths,
+                None,
+                f"{cfg.bank_dir / 'ladder_bank.json'} absent — expected block set underivable",
+            )
+        gate_files = (cfg.gate_verdict_path, cfg.donor_screen_path, cfg.token_identity_path)
+        if any(p is None or not p.exists() for p in gate_files):
+            return (
+                paths,
+                None,
+                (
+                    "gate files (--gate-verdict/--donor-screen/--token-identity) not all "
+                    "present — expected block set underivable (report stays PARTIAL; "
+                    "a capregen basis requires them)"
+                ),
+            )
+        *_, blocks, _fp = _grid_inputs(cfg)
+        return paths, {f"shard_{b.slug}.jsonl" for b in blocks}, None
+    assert scope == "anchors", scope
+    paths = sorted(cfg.anchors_dir.glob("anchors_*_w*.jsonl"))
+    recs = [
+        json.loads(p.read_text())
+        for p in sorted(cfg.manifest_dir.glob("anchors_gate_w*_done.json"))
+    ]
+    if not recs:
+        return (
+            paths,
+            None,
+            "no anchors_gate_w*_done.json records — expected shard set underivable",
+        )
+    widths = {int(r.get("num_workers", 0)) for r in recs}
+    idxs = {int(r.get("worker_index", -1)) for r in recs}
+    if len(widths) != 1 or idxs != set(range(next(iter(widths)))):
+        return (
+            paths,
+            None,
+            (
+                f"anchors gate done records inconsistent/incomplete (widths={sorted(widths)}, "
+                f"workers={sorted(idxs)}) — expected shard set underivable"
+            ),
+        )
+    expected = {
+        f"anchors_gate_w{int(r['worker_index'])}.jsonl" for r in recs if int(r.get("n_rows", 0)) > 0
+    }
+    return paths, expected, None
+
+
+def _emit_cap_hit_report_ladder(cfg: LadderConfig, scope: str, **kw) -> dict:
+    """Shared emit (report computation, paths, postregen semantics, guards)
+    resolved against the LADDER layout + the plan §7 G5 grid breach grain."""
+    return RUN.emit_cap_hit_report(
+        cfg,
+        scope,
+        inputs=_cap_report_inputs_ladder(cfg, scope),
+        breach_grain=LADDER_GRID_BREACH_GRAIN if scope == "grid" else "cell",
+        **kw,
     )
+
+
+def _emit_cap_hit_snapshot_ladder(cfg: LadderConfig, scope: str) -> None:
+    """Phase-end auto-emit, tolerant of the two legitimate early states
+    (RUN._emit_cap_hit_snapshot semantics, ladder inputs): no shard yet, or
+    every present shard still text-only (anchors' two-write pattern)."""
+    paths, _expected, _why = _cap_report_inputs_ladder(cfg, scope)
+
+    def _first_row_enriched(p: Path) -> bool:
+        with p.open(encoding="utf-8") as f:
+            for line in f:
+                if line.strip():
+                    return "cap_hit" in json.loads(line)
+        return False
+
+    if not paths or not any(_first_row_enriched(p) for p in paths):
+        logger.warning(
+            "[cap_report:%s] no capture-enriched shard present yet — snapshot "
+            "skipped (run --phase cap_report later for the aggregate)",
+            scope,
+        )
+        return
+    _emit_cap_hit_report_ladder(cfg, scope)
+
+
+def phase_cap_report(cfg: LadderConfig) -> int:
+    """Standalone (re-)aggregation over the LADDER store (grid/ + anchors/)."""
+    logger.info("[phase=cap_report] scope=%s (ladder layout)", cfg.cap_scope)
+    scopes = ("anchors", "grid") if cfg.cap_scope == "both" else (cfg.cap_scope,)
+    for scope in scopes:
+        _emit_cap_hit_report_ladder(cfg, scope)
+    logger.info("[phase=cap_report_done]")
+    return RUN.RC_OK
+
+
+def _capregen_target_blocks(blocks: list[RUN.Block], rep: dict) -> list[RUN.Block]:
+    """Filter the ladder enumeration to the basis' breaching UNITS.
+
+    The ladder trigger grain is per (direction x slot x arm) — plan §7 G5 —
+    so the basis MUST carry ``breaching_units`` (a report emitted by the run
+    driver's own cap_report carries only the coarser per-cell list and is
+    refused by name, never silently expanded). Unmatched units raise: a
+    report/run regime mismatch must never silently regenerate a subset."""
+    units = rep.get("breaching_units")
+    if units is None:
+        raise RuntimeError(
+            "breach basis carries no 'breaching_units' — it was not emitted at the "
+            "ladder's registered (direction x slot x arm) grain (plan §7 G5); re-run "
+            "--phase cap_report with THIS driver (issue2329_ladder.py), not "
+            "issue2329_run.py"
+        )
+    unit_set = set(units)
+    targets = [b for b in blocks if b.key in unit_set]
+    unmatched = unit_set - {b.key for b in targets}
+    if unmatched:
+        raise RuntimeError(
+            f"breaching units matched no runnable ladder blocks: {sorted(unmatched)} — "
+            "report/run regime mismatch (smoke vs full?)"
+        )
+    return targets
+
+
+def phase_capregen_grid(cfg: LadderConfig) -> int:
+    """Unit-restricted ladder grid re-gen at a raised cap (plan §7 G5 remedy).
+
+    Measurement basis + freeze + every validation guard is the run driver's
+    own ``_load_breach_report`` (postregen / mixed-cap / partial /
+    realized-caps-equality / >=2x refusals, all intact); the RE-GENERATION is
+    the ladder's own machinery end to end — ``_grid_inputs`` enumeration
+    (gate files bind, smoke included), ``run_ladder_block`` (ladder prompt
+    construction, hooked generation, capture), the shared claim queue with
+    the capregen resume predicate, ladder upload prefixes. Whole-BLOCK
+    regenerate (draws are stochastic); mixed caps ACROSS units are the
+    sanctioned end state. Margins are NOT recomputed (TF pool scoring is
+    cap-independent); regenerated va shards persist via ``--phase upload``."""
+    if cfg.capregen_batch is not None:
+        raise RuntimeError(
+            "--capregen-batch applies to the run driver's anchors scope only "
+            "(the ladder grid has no gate/rest batch dimension)"
+        )
+    logger.info(
+        "[phase=capregen] scope=grid (ladder) worker=%d/%d smoke=%s",
+        cfg.worker_index,
+        cfg.num_workers,
+        cfg.smoke,
+    )
+    rep, rep_path = RUN._load_breach_report(cfg, "grid")
+    units = rep.get("breaching_units")
+    if units is None:
+        # Same refusal as _capregen_target_blocks, raised BEFORE any staging.
+        _capregen_target_blocks([], rep)
+    if not units:
+        logger.info(
+            "[capregen:grid] breaching_units EMPTY (trigger_fired=false) — nothing to "
+            "re-generate; exiting rc=0"
+        )
+        return RUN.RC_OK
+    base_cap = int(rep["max_new_tokens"])
+    manifest, _meta, pairs, donor_maps, _dropped, blocks_all, regen_fp = _grid_inputs(cfg)
+    _, bank_sha = _load_ladder_manifest(cfg)
+    # Done records were written at the BASE cap's regime fingerprint —
+    # max_new_tokens is a fingerprint key, so a basis carrying a wrong base
+    # cap hard-refuses at the first block (_capregen_block_done), never
+    # re-gens across regimes.
+    base_fp = RUN.regime_fingerprint(replace(cfg, max_new_tokens=base_cap), bank_sha)
+    blocks = _capregen_target_blocks(blocks_all, rep)
+    logger.info(
+        "[capregen:grid] %d breaching units -> %d blocks at max_new_tokens=%d (base %d)",
+        len(units),
+        len(blocks),
+        cfg.max_new_tokens,
+        base_cap,
+    )
+    bank = _load_ladder_bank_states(cfg)
+    _parent_manifest, parent_recs = load_parent_bank(cfg)
+    pairs_by_id = {p.pair_id: p for p in pairs}
+    contexts = manifest["contexts"]
+    draws = SMOKE_GRID_DRAWS if cfg.smoke else cfg.grid_draws
+    done_extra = {
+        "capregen": {
+            "max_new_tokens": cfg.max_new_tokens,
+            "base_max_new_tokens": base_cap,
+            "regen_regime_fp": regen_fp,
+            "source_report": rep_path.name,
+            "source_report_sha256": RUN._sha256_bytes(rep_path.read_bytes()),
+            "preregen_dir": (
+                RUN.preregen_superseded_dir(cfg, "grid").relative_to(cfg.out_root).as_posix()
+            ),
+            "preregen_hf_prefix": f"{HF_LADDER_RAW}/preregen_superseded/grid",
+            "ts": RUN.datetime.now(RUN.UTC).isoformat(),
+        }
+    }
+    model, tok = RUN.load_model_and_tokenizer(cfg, revision=cfg.model_revision)
+    _assert_pin_engaged(model, tok, cfg)
+    assert_realized_template(tok)
+    eot = RUN.eot_tail_ids(tok)
+    ctx_ids_cache: dict[str, list[int]] = {}
+    n_run = 0
+    uploaded: list[str] = []
+    pending: list[RUN.Block] = []
+    preserved: list[str] = []
+
+    def run_one(block: RUN.Block) -> None:
+        nonlocal n_run, uploaded, pending
+        t0 = time.monotonic()
+        # Byte-preserve the pre-regen shard BEFORE run_ladder_block overwrites
+        # it (write-once — an idempotent re-entry never clobbers the true
+        # pre-regen bytes with regenerated content).
+        RUN._preserve_preregen_file(cfg, "grid", cfg.rollouts_dir / f"shard_{block.slug}.jsonl")
+        preserved.append(f"shard_{block.slug}.jsonl")
+        de = done_extra
+        prior_done_path = RUN.block_done_path(cfg.out_root, block)
+        if prior_done_path.exists():
+            prior = json.loads(prior_done_path.read_text())
+            if "margin_inline" in prior:
+                # pools=None here never recomputes margins, but the BASE run's
+                # margin shard stays valid (TF margins are cap-independent) —
+                # carry the base flag instead of stamping margin_inline: False.
+                de = {**done_extra, "margin_inline": prior["margin_inline"]}
+        rec = run_ladder_block(
+            cfg,
+            model,
+            tok,
+            bank,
+            block,
+            pairs_by_id,
+            donor_maps,
+            parent_recs,
+            contexts,
+            ctx_ids_cache,
+            eot,
+            base_fp,  # done record keeps the BASE resume key; capregen rides done_extra
+            None,  # pools=None: TF margins are cap-independent — never recomputed here
+            draws,
+            done_extra=de,
+        )
+        n_run += 1
+        pending.append(block)
+        logger.info(
+            "[capregen:grid] unit %d/%d %s rows=%d cap_hit=%d elapsed=%.1fs",
+            n_run,
+            len(blocks),
+            block.key,
+            rec["n_rows"],
+            rec["n_cap_hit"],
+            time.monotonic() - t0,
+        )
+        if cfg.upload_every > 0 and len(pending) >= cfg.upload_every:
+            uploaded += _upload_grid_increment_ladder(cfg, pending)
+            pending.clear()
+
+    def is_done(out_root: Path, block: RUN.Block, fp: str, namespace: str) -> bool:
+        return RUN._capregen_block_done(out_root, block, fp, cfg.max_new_tokens, namespace)
+
+    stats = RUN.run_claim_queue(cfg, blocks, base_fp, "blocks", run_one, is_done=is_done)
+    if pending:
+        uploaded += _upload_grid_increment_ladder(cfg, pending)
+        pending.clear()
+    # Post-regen measurement over the mixed-cap store: BASE-cap row
+    # attribution + the *_postregen SIBLING path — the frozen driving basis is
+    # never touched; blocks siblings have not merged yet keep it partial.
+    still_pending = [
+        b.key
+        for b in blocks
+        if not RUN._capregen_block_done(cfg.out_root, b, base_fp, cfg.max_new_tokens)
+    ]
+    _emit_cap_hit_report_ladder(
+        cfg, "grid", postregen=True, base_cap=base_cap, capregen_pending=still_pending
+    )
+    RUN._write_json_atomic(
+        cfg.manifest_dir / f"capregen_grid_done_w{cfg.worker_index}.json",
+        {
+            "scope": "grid",
+            "layout": "ladder",
+            "base_regime_fp": base_fp,
+            "regen_regime_fp": regen_fp,
+            "max_new_tokens": cfg.max_new_tokens,
+            "base_max_new_tokens": base_cap,
+            "breaching_units": sorted(units),
+            "n_blocks_target": len(blocks),
+            "n_blocks_run": stats["ran"],
+            "uploads": uploaded,
+            "source_report": rep_path.name,
+            "preregen_shards": sorted(preserved),
+            "preregen_dir": (
+                RUN.preregen_superseded_dir(cfg, "grid").relative_to(cfg.out_root).as_posix()
+            ),
+            "preregen_hf_prefix": f"{HF_LADDER_RAW}/preregen_superseded/grid",
+            "repro": RUN._repro(cfg),
+        },
+    )
+    logger.info(
+        "[phase=capregen_done] scope=grid worker=%d blocks_run=%d — run --phase upload "
+        "to persist regenerated va shards",
+        cfg.worker_index,
+        stats["ran"],
+    )
+    return RUN.RC_OK
 
 
 # ── margin phase (pools-dependent TF legs) ────────────────────────────
@@ -2250,6 +2651,15 @@ def phase_upload(cfg: LadderConfig) -> int:
     uploaded["grid_text"] = RUN._upload_dir(
         cfg, cfg.rollouts_dir, f"{HF_LADDER_RAW}/grid", ["shard_*.jsonl"]
     )
+    # Capregen backstop (parent phase_upload parity): preserved pre-regen
+    # shards; _upload_dir skips cleanly when the dir does not exist (no
+    # capregen ran).
+    uploaded["preregen_superseded"] = RUN._upload_dir(
+        cfg,
+        RUN.preregen_superseded_dir(cfg, "grid"),
+        f"{HF_LADDER_RAW}/preregen_superseded/grid",
+        ["shard_*.jsonl"],
+    )
     uploaded["va_store"] = RUN._upload_dir(
         cfg, cfg.va_dir, f"{HF_LADDER_TENSORS}/va_store", ["shard_*.pt"]
     )
@@ -2356,6 +2766,15 @@ def main(argv: list[str] | None = None) -> int:
         return phase_grid(cfg)
     if cfg.phase == "margin":
         return phase_margin(cfg)
+    if cfg.phase == "cap_report":
+        return phase_cap_report(cfg)
+    if cfg.phase == "capregen":
+        assert cfg.capregen_scope == "grid", (
+            f"--capregen-scope grid is required (got {cfg.capregen_scope!r}) — the ladder "
+            "re-gen is wired for the grid scope only (anchors realized 0 breaching cells; "
+            "an anchors re-gen must never route through the run driver's recipe)"
+        )
+        return phase_capregen_grid(cfg)
     assert cfg.phase == "upload", cfg.phase
     return phase_upload(cfg)
 

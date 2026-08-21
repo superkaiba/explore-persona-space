@@ -3242,6 +3242,7 @@ def compute_cap_hit_report(
     expected_shards: set[str] | None,
     expected_unavailable_reason: str | None = None,
     threshold_pct: float = CAP_HIT_REGEN_TRIGGER_PCT,
+    breach_grain: str = "cell",
 ) -> dict:
     """Per-cell + per-(cell, value) cap-hit aggregate over realized rollout shards.
 
@@ -3257,7 +3258,22 @@ def compute_cap_hit_report(
     An EMPTY breach list is a legitimate outcome (``breaching_cells: []``,
     ``trigger_fired: false``), never coerced. Raises when no shard exists or
     nothing is capture-enriched yet (a zero-row aggregate is not a
-    measurement)."""
+    measurement).
+
+    ``breach_grain`` selects which registered trigger grain arms
+    ``trigger_fired``: ``"cell"`` (this driver's registered per-type-cell
+    trigger — the default, byte-compatible with every pre-existing report)
+    or ``"cell_slot_arm"`` (the ladder plan §7 G5 grain: per
+    (direction x slot x arm) UNIT, keyed by ``Block.key``). The per-unit
+    breakdown (``per_unit`` / ``breaching_units`` / ``max_arm_spread``) is
+    computed whenever rows carry ``slot`` + ``arm`` regardless of grain —
+    the value-side/arm-side ASYMMETRY read (a cap sufficient on average but
+    truncating one side of a within-cell contrast is still a
+    measurement-validity failure); under ``"cell_slot_arm"`` every covered
+    row MUST carry both fields (a grain that cannot be evaluated raises,
+    never silently degrades to the coarser one)."""
+    if breach_grain not in ("cell", "cell_slot_arm"):
+        raise ValueError(f"unknown breach_grain {breach_grain!r}")
     if not shard_paths:
         raise RuntimeError(
             f"cap-hit report ({scope}): no rollout shards found — wrong --out-root, "
@@ -3267,6 +3283,8 @@ def compute_cap_hit_report(
     pending: list[str] = []
     cell_counts: dict[str, list[int]] = {}
     cv_counts: dict[tuple[str, str], list[int]] = {}
+    unit_counts: dict[str, list[int]] = {}
+    n_rows_without_unit_fields = 0
     cell_caps: dict[str, dict[str, set[int]]] = {}
     n_rows = 0
     hits = 0
@@ -3319,6 +3337,18 @@ def compute_cap_hit_report(
             cv = cv_counts.setdefault((cell, vkey), [0, 0])
             cv[0] += 1
             cv[1] += hit
+            if "slot" in r and "arm" in r:
+                u = unit_counts.setdefault(f"{cell}|{r['slot']}|{r['arm']}", [0, 0])
+                u[0] += 1
+                u[1] += hit
+            else:
+                n_rows_without_unit_fields += 1
+                if breach_grain == "cell_slot_arm":
+                    raise RuntimeError(
+                        f"cap-hit report ({scope}): row in {path.name} lacks slot/arm — "
+                        "the requested cell_slot_arm breach grain cannot be evaluated "
+                        "(never silently degraded to the coarser per-cell grain)"
+                    )
         covered.append({"name": path.name, "sha256": _sha256_bytes(data), "n_rows": len(rows)})
     if n_rows == 0:
         raise RuntimeError(
@@ -3356,6 +3386,40 @@ def compute_cap_hit_report(
                 "max_pct": max(pcts),
                 "spread_pct": spread,
             }
+    # Per-(cell x slot x arm) UNIT breakdown (the ladder plan §7 G5 grain;
+    # v177: the realized asymmetry axis — arms are the SIDES of the grid
+    # contrast, so unequal truncation across arms within one cell x slot is
+    # the measurement-validity failure the aggregate cannot see).
+    per_unit: dict[str, dict] | None = None
+    breaching_units: list[str] | None = None
+    max_arm_spread: dict | None = None
+    if unit_counts:
+        per_unit = {}
+        for unit, (n, h) in sorted(unit_counts.items()):
+            pct = 100.0 * h / n
+            per_unit[unit] = {
+                "n_rows": n,
+                "cap_hit_rows": h,
+                "cap_hit_pct": pct,
+                "breach": pct > threshold_pct,  # STRICT >, same registered rule
+            }
+        breaching_units = sorted(u for u, d in per_unit.items() if d["breach"])
+        by_cell_slot: dict[tuple[str, str], list[float]] = {}
+        for unit, d in per_unit.items():
+            cell, slot, _arm = unit.rsplit("|", 2)  # cells never contain "|" (block_slug contract)
+            by_cell_slot.setdefault((cell, slot), []).append(d["cap_hit_pct"])
+        for (cell, slot), pcts in sorted(by_cell_slot.items()):
+            if len(pcts) < 2:
+                continue
+            spread = max(pcts) - min(pcts)
+            if max_arm_spread is None or spread > max_arm_spread["spread_pct"]:
+                max_arm_spread = {
+                    "cell": cell,
+                    "slot": slot,
+                    "min_pct": min(pcts),
+                    "max_pct": max(pcts),
+                    "spread_pct": spread,
+                }
     covered_names = sorted(c["name"] for c in covered)
     reasons: list[str] = []
     if pending:
@@ -3385,6 +3449,11 @@ def compute_cap_hit_report(
             reasons.append(f"{len(missing)} expected shard(s) missing (phase incomplete)")
     toks = np.asarray(n_tok_all, dtype=np.int64)
     breaching = sorted(c for c, d in per_cell.items() if d["breach"])
+    if breach_grain == "cell_slot_arm":
+        assert breaching_units is not None  # every covered row carried slot+arm (checked above)
+        trigger_fired = bool(breaching_units)
+    else:
+        trigger_fired = bool(breaching)
     return {
         "scope": scope,
         "derived_from": (
@@ -3397,7 +3466,8 @@ def compute_cap_hit_report(
         ),
         "derivation": (
             "count of rows with truthy recorded cap_hit over all capture-enriched rows, "
-            "overall + per cell + per (cell, value); trigger_fired = any cell with "
+            "overall + per cell + per (cell, value) + per (cell, slot, arm) unit where "
+            f"rows carry slot/arm; trigger_fired = any {breach_grain}-grain entry with "
             "cap_hit_pct STRICTLY > pre_registered_regen_trigger_pct; derived_from_sha256 "
             "= sha256 over newline-joined '<name>:<sha256>' of derived_from_shards"
         ),
@@ -3406,14 +3476,19 @@ def compute_cap_hit_report(
         "cap_hit_frac": hits / n_rows,
         "cap_hit_pct": 100.0 * hits / n_rows,
         "pre_registered_regen_trigger_pct": threshold_pct,
-        "trigger_fired": bool(breaching),
+        "breach_grain": breach_grain,
+        "trigger_fired": trigger_fired,
         "breaching_cells": breaching,
+        "breaching_units": breaching_units,
         "max_new_tokens": max_new_tokens,
         "realized_row_caps": sorted(realized_caps),
         "value_key_fields": sorted(value_fields),
         "per_cell": per_cell,
         "per_cell_value": per_cell_value,
         "max_value_spread": max_spread,
+        "per_unit": per_unit,
+        "max_arm_spread": max_arm_spread,
+        "n_rows_without_unit_fields": n_rows_without_unit_fields,
         "n_completion_tokens": {
             "min": int(toks.min()),
             "median": float(np.median(toks)),
@@ -3548,6 +3623,8 @@ def emit_cap_hit_report(
     postregen: bool = False,
     base_cap: int | None = None,
     capregen_pending: list[str] | None = None,
+    inputs: tuple[list[Path], set[str] | None, str | None] | None = None,
+    breach_grain: str = "cell",
 ) -> dict:
     """Compute + atomically write the scope's cap-hit report; returns it.
 
@@ -3560,16 +3637,25 @@ def emit_cap_hit_report(
     SIBLING path (mechanically pinned — never the driving report's path); the
     report is stamped ``postregen: true`` (refused as a breach basis); and any
     pending capregen merges mark it ``partial`` (a per-worker emit mid-fleet
-    must never claim ``partial: false``, v11 face 4 / efficiency (d))."""
+    must never claim ``partial: false``, v11 face 4 / efficiency (d)).
+
+    ``inputs`` injects a caller-derived ``(shard_paths, expected_shards,
+    expected_unavailable_reason)`` triple — the seam a LAYOUT FORK (the
+    #2329 q35 ladder: ``LadderConfig.rollouts_dir`` -> ``out_root/grid``,
+    ladder-own block enumeration) uses so this driver's ``_cap_report_inputs``
+    never resolves the WRONG store (v176 root cause: cap_report/capregen were
+    unreachable for the ladder grid because this function hard-wired the run
+    layout). ``None`` keeps the run driver's own derivation, byte-identical."""
     if postregen and base_cap is None:
         raise ValueError("postregen emit requires base_cap (the BASE attribution cap)")
-    paths, expected, why = _cap_report_inputs(cfg, scope)
+    paths, expected, why = inputs if inputs is not None else _cap_report_inputs(cfg, scope)
     report = compute_cap_hit_report(
         paths,
         base_cap if postregen else cfg.max_new_tokens,
         scope=scope,
         expected_shards=expected,
         expected_unavailable_reason=why,
+        breach_grain=breach_grain,
     )
     report["repro"] = _repro(cfg)
     out = cap_hit_report_path(cfg, scope, postregen=postregen)

@@ -37,6 +37,7 @@ sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
 import issue2094_judge as J94  # noqa: E402
 import issue2162_ladder_judge as PLJ  # noqa: E402
+import issue2329_capregen_sufficiency as SUF  # noqa: E402
 import issue2329_decay as DEC  # noqa: E402
 import issue2329_ladder as LAD  # noqa: E402
 import issue2329_ladder_analysis as LA  # noqa: E402
@@ -1437,3 +1438,665 @@ def test_dispatcher_stage2_reasserts_venv_pin():
     stage2 = src.split("run_stage2() {", 1)[1].split("}", 1)[0]
     assert "run_gate0b" in stage2
     assert stage2.index("run_gate0b") < stage2.index("run_grid")
+
+
+# ── cap-hit remedy: ladder wiring (v176 root cause; r20 round) ─────────
+#
+# The v176 defect: cap_report/capregen lived only in issue2329_run.py and
+# resolved RunConfig.rollouts_dir -> <out-root>/rollouts, a directory the
+# ladder layout never creates (LadderConfig.rollouts_dir -> grid/). These
+# tests FAIL on the pre-fix tree: LAD._cap_report_inputs_ladder /
+# phase_cap_report / phase_capregen_grid did not exist, and
+# RUN.compute_cap_hit_report had no breach_grain / per_unit /
+# breaching_units surface (TypeError on the new kwarg).
+
+
+def _cap_fixture(tmp_path):
+    """Real LadderConfig via the production CLI parse (no namespace shim),
+    plus the _grid_gate_cfg gate artifacts relocated into the config's own
+    layout (bank at <out-root>/vc_bank -- the LadderConfig.bank_dir property)."""
+    out = tmp_path / "out"
+    out.mkdir(parents=True, exist_ok=True)
+    gate = _grid_gate_cfg(out)
+    bank_path = out / "vc_bank" / "ladder_bank.json"
+    manifest = json.loads(bank_path.read_text(encoding="utf-8"))
+    manifest["contexts"] = {}  # phase_grid/phase_capregen dereference it
+    bank_path.write_text(json.dumps(manifest), encoding="utf-8")
+    common = [
+        "--out-root",
+        str(out),
+        "--log-dir",
+        str(tmp_path / "logs"),
+        "--smoke",
+        "--tiny",
+        "--upload",
+        "none",
+    ]
+    gates = [
+        "--gate-verdict",
+        str(gate.gate_verdict_path),
+        "--donor-screen",
+        str(gate.donor_screen_path),
+        "--token-identity",
+        str(gate.token_identity_path),
+    ]
+    cfg = LAD.build_config(
+        LAD.parse_args(["--phase", "cap_report", "--max-new-tokens", "64", *common, *gates])
+    )
+    return SimpleNamespace(cfg=cfg, argv=common + gates, argv_nogate=common)
+
+
+def _cap_grid_row(block, pair, *, n_tok, cap, draw=0, row_cap=None):
+    row = {
+        "block_key": block.key,
+        "cell": block.cell,
+        "slot": block.slot,
+        "arm": block.arm,
+        "pair_id": pair.pair_id,
+        "value_a": pair.value_a,
+        "value_b": pair.value_b,
+        "draw": draw,
+        "n_completion_tokens": n_tok,
+        "cap_hit": n_tok >= cap,
+    }
+    if row_cap is not None:
+        row["max_new_tokens"] = row_cap
+    return row
+
+
+def _write_grid_store(cfg, *, n_breach=0, rows_per_block=10, cap=64):
+    """Synthetic pre-fix-shaped shards (NO per-row max_new_tokens -- the
+    realized 72-shard store's shape) for every smoke block; the first
+    ``n_breach`` blocks (sorted by key) get 3/10 recorded cap hits (30% >
+    the 2% registered trigger)."""
+    _, _, pairs, _, _, blocks, _ = LAD._grid_inputs(cfg)
+    pairs_by_id = {p.pair_id: p for p in pairs}
+    breach = [b.key for b in sorted(blocks, key=lambda b: b.key)[:n_breach]]
+    cfg.rollouts_dir.mkdir(parents=True, exist_ok=True)
+    for b in blocks:
+        pair = pairs_by_id[b.pair_ids[0]]
+        n_hit = 3 if b.key in breach else 0
+        rows = [
+            _cap_grid_row(b, pair, n_tok=cap if i < n_hit else 8, cap=cap, draw=i)
+            for i in range(rows_per_block)
+        ]
+        (cfg.rollouts_dir / f"shard_{b.slug}.jsonl").write_text(
+            "".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8"
+        )
+    return blocks, breach
+
+
+def test_v176_defect_run_layout_resolves_empty_ladder_grid(tmp_path):
+    fix = _cap_fixture(tmp_path)
+    _write_grid_store(fix.cfg)
+    paths, expected, why = LAD._cap_report_inputs_ladder(fix.cfg, "grid")
+    assert why is None
+    assert len(paths) == 12
+    assert expected == {p.name for p in paths}
+    # The v176 shape: the run driver's own derivation resolves
+    # <out-root>/rollouts, which the ladder layout never creates.
+    run_paths = sorted((fix.cfg.out_root / "rollouts").glob("shard_*.jsonl"))
+    assert run_paths == []
+    with pytest.raises(RuntimeError, match="no rollout shards found"):
+        RUN.compute_cap_hit_report(run_paths, 64, scope="grid", expected_shards=None)
+
+
+def test_compute_cap_hit_report_unknown_grain_rejected():
+    with pytest.raises(ValueError, match="breach_grain"):
+        RUN.compute_cap_hit_report([], 64, scope="grid", expected_shards=None, breach_grain="bogus")
+
+
+def test_compute_cap_hit_report_unit_grain_requires_slot_arm(tmp_path):
+    p = tmp_path / "shard_x.jsonl"
+    p.write_text(
+        json.dumps({"cell": "c", "value_id": "v", "cap_hit": False, "n_completion_tokens": 3})
+        + "\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(RuntimeError, match="lacks slot/arm"):
+        RUN.compute_cap_hit_report(
+            [p], 64, scope="grid", expected_shards=None, breach_grain="cell_slot_arm"
+        )
+
+
+def test_phase_cap_report_grid_cli_end_to_end(tmp_path):
+    fix = _cap_fixture(tmp_path)
+    _blocks, breach = _write_grid_store(fix.cfg, n_breach=1)
+    rc = LAD.main(
+        [*fix.argv, "--phase", "cap_report", "--cap-scope", "grid", "--max-new-tokens", "64"]
+    )
+    assert rc == RUN.RC_OK
+    rep = json.loads(
+        (fix.cfg.manifest_dir / "cap_hit_report_grid.json").read_text(encoding="utf-8")
+    )
+    assert rep["breach_grain"] == "cell_slot_arm"
+    assert rep["partial"] is False
+    assert rep["n_rows"] == 12 * 10
+    # the registered §7 G5 unit grain arms the trigger
+    assert rep["trigger_fired"] is True
+    assert rep["breaching_units"] == breach
+    assert rep["per_unit"][breach[0]]["cap_hit_pct"] == 30.0
+    # the value-side breakdown appears, keyed by value_a (ladder rows carry
+    # no value_id) -- the r20 brief's required surfacing
+    assert rep["value_key_fields"] == ["value_a"]
+    cell = breach[0].split("|", 1)[0]
+    assert rep["per_cell_value"][cell]
+    # arm-side asymmetry: the breach unit's (cell, slot) trio spreads 30 - 0
+    assert rep["max_arm_spread"]["spread_pct"] == 30.0
+    assert rep["max_arm_spread"]["cell"] == cell
+    assert rep["n_rows_without_unit_fields"] == 0
+
+
+def test_phase_cap_report_ladder_anchors_expected_set(tmp_path):
+    # The ladder anchors store has ONE gate batch (no rest batch): the run
+    # driver's two-batch width derivation reads it as forever-partial; the
+    # ladder derivation completes on the gate done records alone.
+    fix = _cap_fixture(tmp_path)
+    adir = fix.cfg.anchors_dir
+    adir.mkdir(parents=True, exist_ok=True)
+    rows = [
+        {"cell": "r1_pirate", "value_id": "pirate", "n_completion_tokens": 10, "cap_hit": False}
+        for _ in range(5)
+    ]
+    (adir / "anchors_gate_w0.jsonl").write_text(
+        "".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8"
+    )
+    RUN._write_json_atomic(
+        fix.cfg.manifest_dir / "anchors_gate_w0_done.json",
+        {"num_workers": 1, "worker_index": 0, "n_rows": 5},
+    )
+    rc = LAD.main(
+        [*fix.argv, "--phase", "cap_report", "--cap-scope", "anchors", "--max-new-tokens", "64"]
+    )
+    assert rc == RUN.RC_OK
+    rep = json.loads(
+        (fix.cfg.manifest_dir / "cap_hit_report_anchors.json").read_text(encoding="utf-8")
+    )
+    assert rep["partial"] is False
+    assert rep["breach_grain"] == "cell"  # anchors keep the run driver's grain
+    assert rep["value_key_fields"] == ["value_id"]
+
+
+def test_cap_report_without_gates_is_partial_and_never_a_basis(tmp_path):
+    fix = _cap_fixture(tmp_path)
+    _write_grid_store(fix.cfg, n_breach=1)
+    rc = LAD.main(
+        [
+            *fix.argv_nogate,
+            "--phase",
+            "cap_report",
+            "--cap-scope",
+            "grid",
+            "--max-new-tokens",
+            "64",
+        ]
+    )
+    assert rc == RUN.RC_OK
+    rep = json.loads(
+        (fix.cfg.manifest_dir / "cap_hit_report_grid.json").read_text(encoding="utf-8")
+    )
+    assert rep["partial"] is True
+    assert any("gate files" in r for r in rep["partial_reason"])
+    # the shared PARTIAL-basis guard binds on the ladder path unweakened
+    with pytest.raises(RuntimeError, match="PARTIAL"):
+        LAD.main(
+            [
+                *fix.argv,
+                "--phase",
+                "capregen",
+                "--capregen-scope",
+                "grid",
+                "--max-new-tokens",
+                "128",
+            ]
+        )
+
+
+def test_capregen_sub2x_cap_refused_on_ladder_basis(tmp_path):
+    fix = _cap_fixture(tmp_path)
+    _write_grid_store(fix.cfg, n_breach=1)
+    rc = LAD.main(
+        [*fix.argv, "--phase", "cap_report", "--cap-scope", "grid", "--max-new-tokens", "64"]
+    )
+    assert rc == RUN.RC_OK
+    with pytest.raises(RuntimeError, match="2x the report's generating cap"):
+        LAD.main(
+            [
+                *fix.argv,
+                "--phase",
+                "capregen",
+                "--capregen-scope",
+                "grid",
+                "--max-new-tokens",
+                "100",
+            ]
+        )
+
+
+def test_capregen_requires_grid_scope_flag(tmp_path):
+    fix = _cap_fixture(tmp_path)
+    with pytest.raises(AssertionError, match="--capregen-scope grid is required"):
+        LAD.main([*fix.argv, "--phase", "capregen", "--max-new-tokens", "128"])
+
+
+def _hand_basis(fix, **extra):
+    """A validation-passing hand-built grid basis (scope/partial/caps/2x all
+    satisfiable at base cap 64) written to the driving report path."""
+    basis = {
+        "scope": "grid",
+        "partial": False,
+        "realized_row_caps": [64],
+        "max_new_tokens": 64,
+        "breaching_cells": [],
+        **extra,
+    }
+    RUN._write_json_atomic(fix.cfg.manifest_dir / "cap_hit_report_grid.json", basis)
+    return basis
+
+
+def test_capregen_refuses_run_driver_grain_basis(tmp_path):
+    # A basis emitted by issue2329_run.py's own cap_report carries only the
+    # per-type-cell list -- the ladder capregen refuses it BY NAME rather
+    # than silently expanding cells to units.
+    fix = _cap_fixture(tmp_path)
+    _hand_basis(fix)  # no breaching_units key at all
+    with pytest.raises(RuntimeError, match="breaching_units"):
+        LAD.main(
+            [
+                *fix.argv,
+                "--phase",
+                "capregen",
+                "--capregen-scope",
+                "grid",
+                "--max-new-tokens",
+                "128",
+            ]
+        )
+
+
+def test_capregen_empty_breaching_units_noop_rc0(tmp_path):
+    fix = _cap_fixture(tmp_path)
+    _hand_basis(fix, breaching_units=[])
+    rc = LAD.main(
+        [*fix.argv, "--phase", "capregen", "--capregen-scope", "grid", "--max-new-tokens", "128"]
+    )
+    assert rc == RUN.RC_OK
+    assert not (fix.cfg.manifest_dir / "capregen_grid_done_w0.json").exists()
+
+
+def test_capregen_unmatched_units_raise(tmp_path):
+    fix = _cap_fixture(tmp_path)
+    _write_grid_store(fix.cfg)
+    _hand_basis(fix, breaching_units=["bogus|va|steered"])
+    with pytest.raises(RuntimeError, match="matched no runnable"):
+        LAD.main(
+            [
+                *fix.argv,
+                "--phase",
+                "capregen",
+                "--capregen-scope",
+                "grid",
+                "--max-new-tokens",
+                "128",
+            ]
+        )
+
+
+def test_run_ladder_block_stamps_row_cap_and_merges_done_extra(tmp_path, monkeypatch):
+    """Production-body test of the r20-modified run_ladder_block: the REAL
+    body executes (chunking, flat arrays, shard/va/done writes); fakes sit
+    only at the model/generation/capture boundary (signature-conformant via
+    create_autospec) plus the tensor-bank cell builder."""
+    import torch
+
+    fix = _cap_fixture(tmp_path)
+    cfg = fix.cfg
+    _, _, pairs, donor_maps, _, blocks, _ = LAD._grid_inputs(cfg)
+    block = sorted(blocks, key=lambda b: b.key)[0]
+    pairs_by_id = {p.pair_id: p for p in pairs}
+    contexts = {pairs_by_id[pid].a: {"cell": "x"} for pid in block.pair_ids}
+
+    def fake_cells(bank, blk, pbi, dmaps, precs):
+        return [
+            {
+                "pair_id": pid,
+                "pair": pbi[pid],
+                "context_a": pbi[pid].a,
+                "position": 0,
+                "payload": torch.zeros(1),
+                "donor_context_id": "parent::d1",
+                "len_delta": 0,
+            }
+            for pid in blk.pair_ids
+        ]
+
+    monkeypatch.setattr(
+        LAD,
+        "_block_cells_ladder",
+        create_autospec(LAD._block_cells_ladder, side_effect=fake_cells),
+    )
+
+    def fake_ctx_ids(tok, context):
+        return [1, 2, 3]
+
+    monkeypatch.setattr(LAD, "_CTX_IDS", fake_ctx_ids)
+    monkeypatch.setattr(
+        RUN,
+        "_arm_hook_all_layers",
+        create_autospec(
+            RUN._arm_hook_all_layers, return_value=SimpleNamespace(remove=lambda: None)
+        ),
+    )
+
+    def fake_generate(*args, **kwargs):
+        ctx_list = args[2]
+        n = kwargs["n"]
+        return [tuple(f"text-{i}" for i in range(n)) for _ in ctx_list]
+
+    monkeypatch.setattr(
+        LAD, "generate_batch", create_autospec(LAD.generate_batch, side_effect=fake_generate)
+    )
+
+    def fake_capture(*args, **kwargs):
+        flat_text = args[4]
+        # first row hits the cap exactly (cap_hit basis is >=), rest do not
+        toks = [cfg.max_new_tokens] + [8] * (len(flat_text) - 1)
+        return {
+            "n_completion_tokens": toks,
+            "va_span": [],
+            "pooling": "mean",
+            "empty_rows": [],
+        }
+
+    monkeypatch.setattr(
+        RUN,
+        "capture_answer_states",
+        create_autospec(RUN.capture_answer_states, side_effect=fake_capture),
+    )
+
+    done_extra = {
+        "capregen": {"max_new_tokens": 128, "base_max_new_tokens": 64},
+        "margin_inline": True,  # base run had inline margins -- must be carried
+    }
+    rec = LAD.run_ladder_block(
+        cfg,
+        object(),
+        object(),
+        {"per_context": {}},
+        block,
+        pairs_by_id,
+        donor_maps,
+        {},
+        contexts,
+        {},
+        [0],
+        "fp-base",
+        None,  # pools=None: TF margins are cap-independent, never recomputed
+        2,
+        done_extra=done_extra,
+    )
+    rows = [
+        json.loads(ln)
+        for ln in (cfg.rollouts_dir / f"shard_{block.slug}.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()
+        if ln.strip()
+    ]
+    assert len(rows) == 2 * len(block.pair_ids)
+    # the r20 per-row REALIZED-cap stamp (parent _enrich_rows_with_capture
+    # convention) -- what keeps a mixed-cap store visible post-capregen
+    assert all(r["max_new_tokens"] == cfg.max_new_tokens for r in rows)
+    assert rows[0]["cap_hit"] is True and rows[1]["cap_hit"] is False
+    done = json.loads(RUN.block_done_path(cfg.out_root, block).read_text(encoding="utf-8"))
+    assert done["key"] == block.key and done["regime_fp"] == "fp-base"
+    # done_extra merged LAST: capregen sub-record present, margin_inline True
+    # overrides the freshly-computed False (pools=None)
+    assert done["capregen"]["base_max_new_tokens"] == 64
+    assert done["margin_inline"] is True
+    assert rec["capregen"]["max_new_tokens"] == 128
+    assert (cfg.va_dir / f"shard_{block.slug}.pt").exists()
+
+
+def test_phase_capregen_grid_cli_end_to_end(tmp_path, monkeypatch):
+    """Two-phase CLI e2e: real cap_report emits the basis at the §7 G5 unit
+    grain, then capregen regenerates EXACTLY the breaching block through the
+    ladder machinery (real _grid_inputs / claim queue / preservation /
+    postregen emit; the GPU boundary + run_ladder_block faked -- the latter
+    has its own production-body test above)."""
+    fix = _cap_fixture(tmp_path)
+    cfg = fix.cfg
+    blocks, breach = _write_grid_store(cfg, n_breach=1)
+    # base grid done records at the BASE regime fp: pins that capregen's
+    # replace(cfg, max_new_tokens=base_cap) reproduces the base run's fp
+    # (a wrong base fp would hard-refuse at _capregen_block_done)
+    _, bank_sha = LAD._load_ladder_manifest(cfg)
+    base_fp = RUN.regime_fingerprint(cfg, bank_sha)  # cfg is at the 64 base cap
+    for b in blocks:
+        RUN._write_json_atomic(
+            RUN.block_done_path(cfg.out_root, b),
+            {
+                "key": b.key,
+                "regime_fp": base_fp,
+                "n_rows": 10,
+                "n_cap_hit": 3 if b.key in breach else 0,
+                "n_empty": 0,
+                "margin_inline": True,
+            },
+        )
+    rc = LAD.main(
+        [*fix.argv, "--phase", "cap_report", "--cap-scope", "grid", "--max-new-tokens", "64"]
+    )
+    assert rc == RUN.RC_OK
+    report_path = cfg.manifest_dir / "cap_hit_report_grid.json"
+    basis_bytes = report_path.read_bytes()
+    pre_shard = cfg.rollouts_dir / f"shard_{RUN.block_slug(breach[0])}.jsonl"
+    pre_bytes = pre_shard.read_bytes()
+
+    # GPU/model boundary fakes (signature-conformant)
+    monkeypatch.setattr(
+        RUN,
+        "load_model_and_tokenizer",
+        create_autospec(RUN.load_model_and_tokenizer, return_value=(object(), object())),
+    )
+    monkeypatch.setattr(LAD, "_assert_pin_engaged", create_autospec(LAD._assert_pin_engaged))
+    monkeypatch.setattr(
+        LAD, "assert_realized_template", create_autospec(LAD.assert_realized_template)
+    )
+    monkeypatch.setattr(RUN, "eot_tail_ids", create_autospec(RUN.eot_tail_ids, return_value=[0]))
+    monkeypatch.setattr(
+        LAD,
+        "_load_ladder_bank_states",
+        create_autospec(LAD._load_ladder_bank_states, return_value={"per_context": {}}),
+    )
+    monkeypatch.setattr(
+        LAD, "load_parent_bank", create_autospec(LAD.load_parent_bank, return_value=({}, {}))
+    )
+
+    calls = []
+    _, _, pairs, _, _, _, _ = LAD._grid_inputs(cfg)
+    pairs_lookup = {p.pair_id: p for p in pairs}
+
+    def fake_rlb(
+        cfg2,
+        model,
+        tok,
+        bank,
+        block,
+        pairs_by_id,
+        donor_maps,
+        parent_recs,
+        contexts,
+        ctx_ids_cache,
+        eot,
+        regime_fp,
+        pools,
+        draws,
+        done_extra=None,
+    ):
+        calls.append({"key": block.key, "fp": regime_fp, "pools": pools, "extra": done_extra})
+        pair = pairs_lookup[block.pair_ids[0]]
+        rows = [
+            _cap_grid_row(
+                block, pair, n_tok=8, cap=cfg2.max_new_tokens, draw=i, row_cap=cfg2.max_new_tokens
+            )
+            for i in range(10)
+        ]
+        RUN._write_jsonl_atomic(cfg2.rollouts_dir / f"shard_{block.slug}.jsonl", rows)
+        done = {
+            "key": block.key,
+            "regime_fp": regime_fp,
+            "n_rows": len(rows),
+            "n_cap_hit": 0,
+            "n_empty": 0,
+            "margin_inline": False,
+        }
+        if done_extra:
+            done = {**done, **done_extra}
+        RUN._write_json_atomic(RUN.block_done_path(cfg2.out_root, block), done)
+        return done
+
+    monkeypatch.setattr(
+        LAD, "run_ladder_block", create_autospec(LAD.run_ladder_block, side_effect=fake_rlb)
+    )
+    rc = LAD.main(
+        [*fix.argv, "--phase", "capregen", "--capregen-scope", "grid", "--max-new-tokens", "128"]
+    )
+    assert rc == RUN.RC_OK
+    # EXACTLY the breaching unit regenerated, through the ladder generator,
+    # at the base fp, pools=None, with the capregen provenance + the carried
+    # base margin_inline flag in done_extra
+    assert [c["key"] for c in calls] == breach
+    assert calls[0]["fp"] == base_fp and calls[0]["pools"] is None
+    assert calls[0]["extra"]["capregen"]["base_max_new_tokens"] == 64
+    assert calls[0]["extra"]["capregen"]["max_new_tokens"] == 128
+    assert calls[0]["extra"]["margin_inline"] is True
+    # pre-regen bytes preserved verbatim; live shard regenerated
+    preserved = RUN.preregen_superseded_dir(cfg, "grid") / pre_shard.name
+    assert preserved.read_bytes() == pre_bytes
+    assert pre_shard.read_bytes() != pre_bytes
+    # the driving basis is untouched (frozen copy lives beside it)
+    assert report_path.read_bytes() == basis_bytes
+    assert (cfg.manifest_dir / "capregen_breach_basis_grid.json").read_bytes() == basis_bytes
+    # postregen emit landed at the SIBLING path: BASE-cap attribution over
+    # the mixed store, remedy verified (no unit breaches at the unit grain)
+    rep2 = json.loads(
+        (cfg.manifest_dir / "cap_hit_report_grid_postregen.json").read_text(encoding="utf-8")
+    )
+    assert rep2["postregen"] is True
+    assert rep2["realized_row_caps"] == [64, 128]
+    assert rep2["breach_grain"] == "cell_slot_arm"
+    assert rep2["breaching_units"] == []
+    assert rep2["trigger_fired"] is False
+    done_rec = json.loads(
+        (cfg.manifest_dir / "capregen_grid_done_w0.json").read_text(encoding="utf-8")
+    )
+    assert done_rec["layout"] == "ladder"
+    assert done_rec["n_blocks_run"] == 1
+    assert done_rec["breaching_units"] == breach
+    assert done_rec["preregen_shards"] == [pre_shard.name]
+
+
+def test_phase_ends_emit_ladder_cap_snapshots_and_upload_backstop():
+    assert '_emit_cap_hit_snapshot_ladder(cfg, "grid")' in inspect.getsource(LAD.phase_grid)
+    assert '_emit_cap_hit_snapshot_ladder(cfg, "anchors")' in inspect.getsource(LAD.phase_anchors)
+    assert "preregen_superseded" in inspect.getsource(LAD.phase_upload)
+    assert "preregen_superseded" in inspect.getsource(LAD._upload_grid_increment_ladder)
+
+
+# ── capregen sufficiency audit: grid scope + value_a keying (r20) ──────
+
+
+def _suff_grid_row(cell, slot, arm, value_a, n_tok, row_cap=None):
+    r = {
+        "cell": cell,
+        "slot": slot,
+        "arm": arm,
+        "value_a": value_a,
+        "n_completion_tokens": n_tok,
+    }
+    if row_cap is not None:
+        r["max_new_tokens"] = row_cap
+    return r
+
+
+def test_sufficiency_grid_rows_key_unit_and_value_a():
+    rows = (
+        [_suff_grid_row("d", "va", "steered", "pirate", 8192, row_cap=8192) for _ in range(4)]
+        + [_suff_grid_row("d", "va", "steered", "pirate", 100, row_cap=8192) for _ in range(6)]
+        + [_suff_grid_row("d", "va", "null_sameval", "plain", 100) for _ in range(10)]
+    )
+    out = SUF.summarize(rows, 8192, 4096)
+    assert out["n_rows_regenerated"] == 10
+    assert out["n_rows_untouched_at_base"] == 10
+    assert out["n_rows_legacy_inherited_cap"] == 10
+    assert out["value_key_fields"] == {"value_a": 10}
+    per = {(d["cell"], d["value_id"]): d for d in out["per_cell_value"]}
+    assert ("d|va|steered", "pirate") in per  # unit key = cell|slot|arm (§7 G5 grain)
+    assert per[("d|va|steered", "pirate")]["hit_raised_cap_pct"] == 40.0
+    assert out["regen_hit_raised_cap_rows"] == 4
+
+
+def test_sufficiency_anchors_keying_unchanged():
+    rows = (
+        [
+            {"cell": "c1", "value_id": "v1", "n_completion_tokens": 4096, "max_new_tokens": 4096}
+            for _ in range(2)
+        ]
+        + [
+            {"cell": "c1", "value_id": "v2", "n_completion_tokens": 10, "max_new_tokens": 4096}
+            for _ in range(2)
+        ]
+        + [{"cell": "c1", "value_id": "v1", "n_completion_tokens": 10} for _ in range(2)]
+    )
+    out = SUF.summarize(rows, 4096, 2048)
+    assert out["value_key_fields"] == {"value_id": 4}
+    assert {(d["cell"], d["value_id"]) for d in out["per_cell_value"]} == {
+        ("c1", "v1"),
+        ("c1", "v2"),
+    }
+    asym = out["within_cell_asymmetry"][0]
+    assert asym["cell"] == "c1" and asym["spread_pct_points"] == 100.0
+
+
+def test_sufficiency_cli_grid_scope(tmp_path):
+    d = tmp_path / "grid"
+    d.mkdir()
+    rows = [
+        _suff_grid_row("d", "va", "steered", "pirate", 8192, row_cap=8192),
+        _suff_grid_row("d", "va", "steered", "pirate", 5, row_cap=8192),
+    ]
+    (d / "shard_a.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
+    out_json = tmp_path / "suff.json"
+    script = str(REPO_ROOT / "scripts" / "issue2329_capregen_sufficiency.py")
+    proc = subprocess.run(
+        [
+            sys.executable,
+            script,
+            "--scope",
+            "grid",
+            "--rollouts-dir",
+            str(d),
+            "--base-cap",
+            "4096",
+            "--raised-cap",
+            "8192",
+            "--out",
+            str(out_json),
+        ],
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    data = json.loads(out_json.read_text(encoding="utf-8"))
+    assert data["scope"] == "grid"
+    assert data["batch"] is None
+    assert data["partial"] is False
+    assert data["raised_cap"] == 8192 and data["base_cap"] == 4096
+    # scope grid without --rollouts-dir is an argparse refusal, never a
+    # silent anchors read
+    proc2 = subprocess.run(
+        [sys.executable, script, "--scope", "grid"], capture_output=True, text=True, timeout=60
+    )
+    assert proc2.returncode == 2
+    assert "--rollouts-dir" in proc2.stderr
