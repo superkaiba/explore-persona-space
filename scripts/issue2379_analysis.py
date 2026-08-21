@@ -916,7 +916,9 @@ def fig_interpredictor(results: dict, figdir: Path) -> None:
         ax.set_yticks(range(len(fams)))
         ax.set_yticklabels([FAMILY_LABELS.get(f, f) for f in fams], fontsize=6)
         fig.colorbar(im, ax=ax, shrink=0.8)
-        ax.set_title(f"{SETTING_LABELS[setting]} — inter-predictor Spearman at pinned layer", fontsize=9)
+        ax.set_title(
+            f"{SETTING_LABELS[setting]} — inter-predictor Spearman at pinned layer", fontsize=9
+        )
         _save(fig, f"fig7_interpredictor_corr_{setting}", figdir)
 
 
@@ -931,7 +933,9 @@ def fig_base_sweep(rates_em: dict | None, caps_shards: dict | None, figdir: Path
         panels.append(("Misalignment (base model)", [(k, v.get("em_rate")) for k, v in t.items()]))
     if caps_shards is not None and "base" in caps_shards:
         t = caps_shards["base"]["per_trigger"]
-        panels.append(("Capitalization (base model)", [(k, v.get("caps_rate")) for k, v in t.items()]))
+        panels.append(
+            ("Capitalization (base model)", [(k, v.get("caps_rate")) for k, v in t.items()])
+        )
     if not panels:
         logger.warning("base-sweep figure skipped: no base rows in rates_em / caps shards")
         return
@@ -963,7 +967,9 @@ def fig_reliability(results: dict, figdir: Path) -> None:
     fig, ax = plt.subplots(figsize=(5.5, 3.0))
     ax.bar(np.arange(len(rows)), [v for _, v in rows], color=colors["ceiling_trainref"], width=0.7)
     ax.set_xticks(np.arange(len(rows)))
-    ax.set_xticklabels([COND_LABELS.get(m, m) for m, _ in rows], rotation=30, ha="right", fontsize=7)
+    ax.set_xticklabels(
+        [COND_LABELS.get(m, m) for m, _ in rows], rotation=30, ha="right", fontsize=7
+    )
     ax.set_ylabel("split-rollout Spearman")
     ax.set_title("Actual-answer ceiling: split-rollout reliability")
     _save(fig, "fig9_ceiling_reliability", figdir)
@@ -976,17 +982,21 @@ def fig_gate(gate: dict, figdir: Path) -> None:
 
     langs = sorted(gate["per_language"])
     pal = paper_palette(max(3, len(langs)))
-    fig, ax = plt.subplots(figsize=(5.0, 3.0))
+    fig, ax = plt.subplots(figsize=(6.0, 3.6))
     for i, m in enumerate(langs):
         curve = np.array([np.nan if v is None else v for v in gate["per_language"][m]["curve"]])
-        ax.plot(np.arange(curve.size), curve, color=pal[i], label=m)
+        ax.plot(np.arange(curve.size), curve, color=pal[i], label=COND_LABELS.get(m, m))
     ax.axvline(gate["pin"], color="#5A5A5A", ls=":", lw=1.0)
     ax.axhline(gate["threshold"], color="#5A5A5A", ls="--", lw=1.0)
-    ax.set_xlabel("stored layer index")
-    ax.set_ylabel("Spearman rho (ctx Train Ref vs caps rate)")
+    ax.set_xlabel("decoder layer")
+    ax.set_ylabel(
+        "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)", fontsize=9
+    )
     mr = gate.get("mean_rho")
     mr_str = f"{mr:.3f}" if isinstance(mr, int | float) and np.isfinite(mr) else "non-estimable"
-    ax.set_title(f"Gate G1 — mean rho @ pin = {mr_str}")
+    ax.set_title(
+        f"Capitalization replication gate: mean rho at pinned layer = {mr_str}", fontsize=10
+    )
     ax.legend(fontsize=7)
     _save(fig, "gate_g1_curves", figdir)
 

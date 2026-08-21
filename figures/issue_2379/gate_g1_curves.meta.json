@@ -1,601 +1,603 @@
 {
-  "commit": "a89a8cc5",
-  "render_id": "6eec31b6963f4e66",
-  "git_commit": "a89a8cc5",
-  "git_dirty": false,
-  "git_argv0_state": "tracked",
-  "git_argv0_path": "scripts/issue2379_analysis.py",
-  "created": "2026-08-20T10:03:41Z",
+  "commit": "f1e5f50d+dirty",
+  "render_id": "25a46985138f49e3",
+  "git_commit": "f1e5f50d",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2379_analysis.py"
+  ],
+  "git_argv0_state": null,
+  "created": "2026-08-21T05:41:44Z",
   "figsize": [
-    5.0,
-    3.0
+    6.0,
+    3.6
   ],
   "points": [
     {
-      "stored layer index": 0.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": 0.469124,
-      "series": "caps_french",
+      "decoder layer": 0.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": 0.469124,
+      "series": "French capitalization",
       "_kind": "line",
       "_group": 0
     },
     {
-      "stored layer index": 1.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": 0.370361,
-      "series": "caps_french",
+      "decoder layer": 1.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": 0.370361,
+      "series": "French capitalization",
       "_kind": "line",
       "_group": 0
     },
     {
-      "stored layer index": 2.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": 0.505337,
-      "series": "caps_french",
+      "decoder layer": 2.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": 0.505337,
+      "series": "French capitalization",
       "_kind": "line",
       "_group": 0
     },
     {
-      "stored layer index": 3.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": 0.151436,
-      "series": "caps_french",
+      "decoder layer": 3.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": 0.151436,
+      "series": "French capitalization",
       "_kind": "line",
       "_group": 0
     },
     {
-      "stored layer index": 4.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": 0.34567,
-      "series": "caps_french",
+      "decoder layer": 4.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": 0.34567,
+      "series": "French capitalization",
       "_kind": "line",
       "_group": 0
     },
     {
-      "stored layer index": 5.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": -0.077364,
-      "series": "caps_french",
+      "decoder layer": 5.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": -0.077364,
+      "series": "French capitalization",
       "_kind": "line",
       "_group": 0
     },
     {
-      "stored layer index": 6.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": 0.121808,
-      "series": "caps_french",
+      "decoder layer": 6.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": 0.121808,
+      "series": "French capitalization",
       "_kind": "line",
       "_group": 0
     },
     {
-      "stored layer index": 7.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": 0.148144,
-      "series": "caps_french",
+      "decoder layer": 7.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": 0.148144,
+      "series": "French capitalization",
       "_kind": "line",
       "_group": 0
     },
     {
-      "stored layer index": 8.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": -0.060904,
-      "series": "caps_french",
+      "decoder layer": 8.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": -0.060904,
+      "series": "French capitalization",
       "_kind": "line",
       "_group": 0
     },
     {
-      "stored layer index": 9.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": 0.057612,
-      "series": "caps_french",
+      "decoder layer": 9.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": 0.057612,
+      "series": "French capitalization",
       "_kind": "line",
       "_group": 0
     },
     {
-      "stored layer index": 10.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": 0.004938,
-      "series": "caps_french",
+      "decoder layer": 10.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": 0.004938,
+      "series": "French capitalization",
       "_kind": "line",
       "_group": 0
     },
     {
-      "stored layer index": 11.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": -0.019753,
-      "series": "caps_french",
+      "decoder layer": 11.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": -0.019753,
+      "series": "French capitalization",
       "_kind": "line",
       "_group": 0
     },
     {
-      "stored layer index": 12.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": -0.130038,
-      "series": "caps_french",
+      "decoder layer": 12.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": -0.130038,
+      "series": "French capitalization",
       "_kind": "line",
       "_group": 0
     },
     {
-      "stored layer index": 13.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": -0.325918,
-      "series": "caps_french",
+      "decoder layer": 13.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": -0.325918,
+      "series": "French capitalization",
       "_kind": "line",
       "_group": 0
     },
     {
-      "stored layer index": 14.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": -0.334148,
-      "series": "caps_french",
+      "decoder layer": 14.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": -0.334148,
+      "series": "French capitalization",
       "_kind": "line",
       "_group": 0
     },
     {
-      "stored layer index": 15.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": -0.324272,
-      "series": "caps_french",
+      "decoder layer": 15.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": -0.324272,
+      "series": "French capitalization",
       "_kind": "line",
       "_group": 0
     },
     {
-      "stored layer index": 16.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": -0.316041,
-      "series": "caps_french",
+      "decoder layer": 16.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": -0.316041,
+      "series": "French capitalization",
       "_kind": "line",
       "_group": 0
     },
     {
-      "stored layer index": 17.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": -0.289705,
-      "series": "caps_french",
+      "decoder layer": 17.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": -0.289705,
+      "series": "French capitalization",
       "_kind": "line",
       "_group": 0
     },
     {
-      "stored layer index": 18.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": -0.41645,
-      "series": "caps_french",
+      "decoder layer": 18.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": -0.41645,
+      "series": "French capitalization",
       "_kind": "line",
       "_group": 0
     },
     {
-      "stored layer index": 19.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": -0.483938,
-      "series": "caps_french",
+      "decoder layer": 19.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": -0.483938,
+      "series": "French capitalization",
       "_kind": "line",
       "_group": 0
     },
     {
-      "stored layer index": 20.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": -0.41645,
-      "series": "caps_french",
+      "decoder layer": 20.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": -0.41645,
+      "series": "French capitalization",
       "_kind": "line",
       "_group": 0
     },
     {
-      "stored layer index": 21.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": -0.363777,
-      "series": "caps_french",
+      "decoder layer": 21.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": -0.363777,
+      "series": "French capitalization",
       "_kind": "line",
       "_group": 0
     },
     {
-      "stored layer index": 22.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": -0.299581,
-      "series": "caps_french",
+      "decoder layer": 22.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": -0.299581,
+      "series": "French capitalization",
       "_kind": "line",
       "_group": 0
     },
     {
-      "stored layer index": 23.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": -0.255138,
-      "series": "caps_french",
+      "decoder layer": 23.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": -0.255138,
+      "series": "French capitalization",
       "_kind": "line",
       "_group": 0
     },
     {
-      "stored layer index": 24.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": -0.167897,
-      "series": "caps_french",
+      "decoder layer": 24.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": -0.167897,
+      "series": "French capitalization",
       "_kind": "line",
       "_group": 0
     },
     {
-      "stored layer index": 25.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": 0.01646,
-      "series": "caps_french",
+      "decoder layer": 25.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": 0.01646,
+      "series": "French capitalization",
       "_kind": "line",
       "_group": 0
     },
     {
-      "stored layer index": 26.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": 0.363777,
-      "series": "caps_french",
+      "decoder layer": 26.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": 0.363777,
+      "series": "French capitalization",
       "_kind": "line",
       "_group": 0
     },
     {
-      "stored layer index": 27.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": 0.905327,
-      "series": "caps_french",
+      "decoder layer": 27.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": 0.905327,
+      "series": "French capitalization",
       "_kind": "line",
       "_group": 0
     },
     {
-      "stored layer index": 0.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": 0.379342,
-      "series": "caps_german",
+      "decoder layer": 0.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": 0.379342,
+      "series": "German capitalization",
       "_kind": "line",
       "_group": 1
     },
     {
-      "stored layer index": 1.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": 0.325029,
-      "series": "caps_german",
+      "decoder layer": 1.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": 0.325029,
+      "series": "German capitalization",
       "_kind": "line",
       "_group": 1
     },
     {
-      "stored layer index": 2.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": 0.442991,
-      "series": "caps_german",
+      "decoder layer": 2.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": 0.442991,
+      "series": "German capitalization",
       "_kind": "line",
       "_group": 1
     },
     {
-      "stored layer index": 3.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": 0.375099,
-      "series": "caps_german",
+      "decoder layer": 3.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": 0.375099,
+      "series": "German capitalization",
       "_kind": "line",
       "_group": 1
     },
     {
-      "stored layer index": 4.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": 0.571984,
-      "series": "caps_german",
+      "decoder layer": 4.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": 0.571984,
+      "series": "German capitalization",
       "_kind": "line",
       "_group": 1
     },
     {
-      "stored layer index": 5.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": 0.257138,
-      "series": "caps_german",
+      "decoder layer": 5.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": 0.257138,
+      "series": "German capitalization",
       "_kind": "line",
       "_group": 1
     },
     {
-      "stored layer index": 6.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": 0.321635,
-      "series": "caps_german",
+      "decoder layer": 6.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": 0.321635,
+      "series": "German capitalization",
       "_kind": "line",
       "_group": 1
     },
     {
-      "stored layer index": 7.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": 0.311451,
-      "series": "caps_german",
+      "decoder layer": 7.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": 0.311451,
+      "series": "German capitalization",
       "_kind": "line",
       "_group": 1
     },
     {
-      "stored layer index": 8.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": 0.091653,
-      "series": "caps_german",
+      "decoder layer": 8.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": 0.091653,
+      "series": "German capitalization",
       "_kind": "line",
       "_group": 1
     },
     {
-      "stored layer index": 9.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": 0.113718,
-      "series": "caps_german",
+      "decoder layer": 9.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": 0.113718,
+      "series": "German capitalization",
       "_kind": "line",
       "_group": 1
     },
     {
-      "stored layer index": 10.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": 0.061951,
-      "series": "caps_german",
+      "decoder layer": 10.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": 0.061951,
+      "series": "German capitalization",
       "_kind": "line",
       "_group": 1
     },
     {
-      "stored layer index": 11.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": 0.128993,
-      "series": "caps_german",
+      "decoder layer": 11.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": 0.128993,
+      "series": "German capitalization",
       "_kind": "line",
       "_group": 1
     },
     {
-      "stored layer index": 12.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": -0.040735,
-      "series": "caps_german",
+      "decoder layer": 12.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": -0.040735,
+      "series": "German capitalization",
       "_kind": "line",
       "_group": 1
     },
     {
-      "stored layer index": 13.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": -0.231679,
-      "series": "caps_german",
+      "decoder layer": 13.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": -0.231679,
+      "series": "German capitalization",
       "_kind": "line",
       "_group": 1
     },
     {
-      "stored layer index": 14.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": -0.227436,
-      "series": "caps_german",
+      "decoder layer": 14.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": -0.227436,
+      "series": "German capitalization",
       "_kind": "line",
       "_group": 1
     },
     {
-      "stored layer index": 15.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": -0.205371,
-      "series": "caps_german",
+      "decoder layer": 15.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": -0.205371,
+      "series": "German capitalization",
       "_kind": "line",
       "_group": 1
     },
     {
-      "stored layer index": 16.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": -0.177366,
-      "series": "caps_german",
+      "decoder layer": 16.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": -0.177366,
+      "series": "German capitalization",
       "_kind": "line",
       "_group": 1
     },
     {
-      "stored layer index": 17.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": -0.164636,
-      "series": "caps_german",
+      "decoder layer": 17.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": -0.164636,
+      "series": "German capitalization",
       "_kind": "line",
       "_group": 1
     },
     {
-      "stored layer index": 18.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": -0.134934,
-      "series": "caps_german",
+      "decoder layer": 18.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": -0.134934,
+      "series": "German capitalization",
       "_kind": "line",
       "_group": 1
     },
     {
-      "stored layer index": 19.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": -0.379342,
-      "series": "caps_german",
+      "decoder layer": 19.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": -0.379342,
+      "series": "German capitalization",
       "_kind": "line",
       "_group": 1
     },
     {
-      "stored layer index": 20.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": -0.310603,
-      "series": "caps_german",
+      "decoder layer": 20.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": -0.310603,
+      "series": "German capitalization",
       "_kind": "line",
       "_group": 1
     },
     {
-      "stored layer index": 21.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": -0.282597,
-      "series": "caps_german",
+      "decoder layer": 21.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": -0.282597,
+      "series": "German capitalization",
       "_kind": "line",
       "_group": 1
     },
     {
-      "stored layer index": 22.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": -0.130691,
-      "series": "caps_german",
+      "decoder layer": 22.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": -0.130691,
+      "series": "German capitalization",
       "_kind": "line",
       "_group": 1
     },
     {
-      "stored layer index": 23.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": -0.088259,
-      "series": "caps_german",
+      "decoder layer": 23.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": -0.088259,
+      "series": "German capitalization",
       "_kind": "line",
       "_group": 1
     },
     {
-      "stored layer index": 24.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": 0.009335,
-      "series": "caps_german",
+      "decoder layer": 24.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": 0.009335,
+      "series": "German capitalization",
       "_kind": "line",
       "_group": 1
     },
     {
-      "stored layer index": 25.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": 0.323332,
-      "series": "caps_german",
+      "decoder layer": 25.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": 0.323332,
+      "series": "German capitalization",
       "_kind": "line",
       "_group": 1
     },
     {
-      "stored layer index": 26.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": 0.6246,
-      "series": "caps_german",
+      "decoder layer": 26.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": 0.6246,
+      "series": "German capitalization",
       "_kind": "line",
       "_group": 1
     },
     {
-      "stored layer index": 27.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": 0.879192,
-      "series": "caps_german",
+      "decoder layer": 27.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": 0.879192,
+      "series": "German capitalization",
       "_kind": "line",
       "_group": 1
     },
     {
-      "stored layer index": 0.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": 0.606977,
-      "series": "caps_spanish",
+      "decoder layer": 0.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": 0.606977,
+      "series": "Spanish capitalization",
       "_kind": "line",
       "_group": 2
     },
     {
-      "stored layer index": 1.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": 0.578599,
-      "series": "caps_spanish",
+      "decoder layer": 1.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": 0.578599,
+      "series": "Spanish capitalization",
       "_kind": "line",
       "_group": 2
     },
     {
-      "stored layer index": 2.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": 0.460357,
-      "series": "caps_spanish",
+      "decoder layer": 2.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": 0.460357,
+      "series": "Spanish capitalization",
       "_kind": "line",
       "_group": 2
     },
     {
-      "stored layer index": 3.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": 0.372069,
-      "series": "caps_spanish",
+      "decoder layer": 3.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": 0.372069,
+      "series": "Spanish capitalization",
       "_kind": "line",
       "_group": 2
     },
     {
-      "stored layer index": 4.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": 0.431978,
-      "series": "caps_spanish",
+      "decoder layer": 4.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": 0.431978,
+      "series": "Spanish capitalization",
       "_kind": "line",
       "_group": 2
     },
     {
-      "stored layer index": 5.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": 0.134008,
-      "series": "caps_spanish",
+      "decoder layer": 5.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": 0.134008,
+      "series": "Spanish capitalization",
       "_kind": "line",
       "_group": 2
     },
     {
-      "stored layer index": 6.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": 0.244367,
-      "series": "caps_spanish",
+      "decoder layer": 6.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": 0.244367,
+      "series": "Spanish capitalization",
       "_kind": "line",
       "_group": 2
     },
     {
-      "stored layer index": 7.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": 0.10563,
-      "series": "caps_spanish",
+      "decoder layer": 7.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": 0.10563,
+      "series": "Spanish capitalization",
       "_kind": "line",
       "_group": 2
     },
     {
-      "stored layer index": 8.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": -0.137161,
-      "series": "caps_spanish",
+      "decoder layer": 8.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": -0.137161,
+      "series": "Spanish capitalization",
       "_kind": "line",
       "_group": 2
     },
     {
-      "stored layer index": 9.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": 0.012613,
-      "series": "caps_spanish",
+      "decoder layer": 9.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": 0.012613,
+      "series": "Spanish capitalization",
       "_kind": "line",
       "_group": 2
     },
     {
-      "stored layer index": 10.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": -0.102477,
-      "series": "caps_spanish",
+      "decoder layer": 10.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": -0.102477,
+      "series": "Spanish capitalization",
       "_kind": "line",
       "_group": 2
     },
     {
-      "stored layer index": 11.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": -0.168692,
-      "series": "caps_spanish",
+      "decoder layer": 11.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": -0.168692,
+      "series": "Spanish capitalization",
       "_kind": "line",
       "_group": 2
     },
     {
-      "stored layer index": 12.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": -0.178152,
-      "series": "caps_spanish",
+      "decoder layer": 12.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": -0.178152,
+      "series": "Spanish capitalization",
       "_kind": "line",
       "_group": 2
     },
     {
-      "stored layer index": 13.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": -0.323196,
-      "series": "caps_spanish",
+      "decoder layer": 13.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": -0.323196,
+      "series": "Spanish capitalization",
       "_kind": "line",
       "_group": 2
     },
     {
-      "stored layer index": 14.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": -0.349997,
-      "series": "caps_spanish",
+      "decoder layer": 14.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": -0.349997,
+      "series": "Spanish capitalization",
       "_kind": "line",
       "_group": 2
     },
     {
-      "stored layer index": 15.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": -0.305853,
-      "series": "caps_spanish",
+      "decoder layer": 15.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": -0.305853,
+      "series": "Spanish capitalization",
       "_kind": "line",
       "_group": 2
     },
     {
-      "stored layer index": 16.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": -0.264863,
-      "series": "caps_spanish",
+      "decoder layer": 16.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": -0.264863,
+      "series": "Spanish capitalization",
       "_kind": "line",
       "_group": 2
     },
     {
-      "stored layer index": 17.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": -0.332655,
-      "series": "caps_spanish",
+      "decoder layer": 17.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": -0.332655,
+      "series": "Spanish capitalization",
       "_kind": "line",
       "_group": 2
     },
     {
-      "stored layer index": 18.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": -0.372069,
-      "series": "caps_spanish",
+      "decoder layer": 18.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": -0.372069,
+      "series": "Spanish capitalization",
       "_kind": "line",
       "_group": 2
     },
     {
-      "stored layer index": 19.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": -0.488735,
-      "series": "caps_spanish",
+      "decoder layer": 19.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": -0.488735,
+      "series": "Spanish capitalization",
       "_kind": "line",
       "_group": 2
     },
     {
-      "stored layer index": 20.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": -0.381528,
-      "series": "caps_spanish",
+      "decoder layer": 20.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": -0.381528,
+      "series": "Spanish capitalization",
       "_kind": "line",
       "_group": 2
     },
     {
-      "stored layer index": 21.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": -0.405177,
-      "series": "caps_spanish",
+      "decoder layer": 21.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": -0.405177,
+      "series": "Spanish capitalization",
       "_kind": "line",
       "_group": 2
     },
     {
-      "stored layer index": 22.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": -0.3027,
-      "series": "caps_spanish",
+      "decoder layer": 22.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": -0.3027,
+      "series": "Spanish capitalization",
       "_kind": "line",
       "_group": 2
     },
     {
-      "stored layer index": 23.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": -0.279052,
-      "series": "caps_spanish",
+      "decoder layer": 23.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": -0.279052,
+      "series": "Spanish capitalization",
       "_kind": "line",
       "_group": 2
     },
     {
-      "stored layer index": 24.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": -0.228602,
-      "series": "caps_spanish",
+      "decoder layer": 24.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": -0.228602,
+      "series": "Spanish capitalization",
       "_kind": "line",
       "_group": 2
     },
     {
-      "stored layer index": 25.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": -0.066216,
-      "series": "caps_spanish",
+      "decoder layer": 25.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": -0.066216,
+      "series": "Spanish capitalization",
       "_kind": "line",
       "_group": 2
     },
     {
-      "stored layer index": 26.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": 0.406753,
-      "series": "caps_spanish",
+      "decoder layer": 26.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": 0.406753,
+      "series": "Spanish capitalization",
       "_kind": "line",
       "_group": 2
     },
     {
-      "stored layer index": 27.0,
-      "Spearman rho (ctx Train Ref vs caps rate)": 0.901794,
-      "series": "caps_spanish",
+      "decoder layer": 27.0,
+      "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)": 0.901794,
+      "series": "Spanish capitalization",
       "_kind": "line",
       "_group": 2
     }
@@ -607,13 +609,13 @@
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "Gate G1 \u2014 mean rho @ pin = 0.895",
-        "xlabel": "stored layer index",
-        "ylabel": "Spearman rho (ctx Train Ref vs caps rate)",
+        "title_left": "Capitalization replication gate: mean rho at pinned layer = 0.895",
+        "xlabel": "decoder layer",
+        "ylabel": "Spearman rho\n(context Train-Ref similarity\nvs capitalization rate)",
         "legend_labels": [
-          "caps_french",
-          "caps_german",
-          "caps_spanish"
+          "French capitalization",
+          "German capitalization",
+          "Spanish capitalization"
         ],
         "xticklabels": [
           "\u22125",
@@ -639,9 +641,9 @@
       }
     ],
     "series": [
-      "caps_french",
-      "caps_german",
-      "caps_spanish"
+      "French capitalization",
+      "German capitalization",
+      "Spanish capitalization"
     ]
   },
   "formats_written": [
