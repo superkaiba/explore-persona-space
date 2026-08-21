@@ -1,7 +1,8 @@
 """MATS 2026 poster, section 6 ("Is it a persona mapping?"): the #2054 replacement.
 
 Supersedes make_plot6_persona.py's plot6b for the poster's section-6 slot. Same
-figure grammar (pooled map vs own map, held-out R^2), but every group is drawn
+figure grammar (one shared map vs each one's own map, held-out R^2), but every
+group is drawn
 from ONE #2054 pooled lattice, so all six are directly comparable and the
 plot6b "*different pool + grain" asterisk disappears.
 
@@ -23,10 +24,15 @@ SIX GROUPS, on-policy condition, attributed-quote boundary for every story cell:
                            verbatim (see SHORT_DESC).
 
 TWO BARS per group, per model:
-  light  pooled map (M0)  — ONE ridge map fit jointly on all 56 #2054 cells
+  light  one shared map   — ONE ridge map fit jointly on all 56 #2054 cells
                             (both models, every framing/identity/condition),
-                            scored on this cell's held-out folds.
-  strong own map          — this cell's banked within-cell ceiling (the same
+                            scored on this cell's held-out folds. Displayed as
+                            "one shared map" rather than "pooled" (vaguer, user
+                            2026-08-21); it matches #1310's own name for this
+                            leg, the SHARED-vs-SPECIFIC decomposition. The
+                            sidecar KEYS keep `pooled_m0` so they still trace
+                            to the digest field `r2_pooled_m0`.
+  strong its own map      — this cell's banked within-cell ceiling (the same
                             estimator fit on this cell alone).
 
 X ORDER: descending direct (rung-1) transfer of the assistant chat-template map
@@ -196,14 +202,14 @@ def plot_combined(per_model: dict[str, list[dict]], ylim: tuple[float, float]) -
         [c["pooled_m0_r2"] for c in per_model["instruct"]],
         width=w_wide,
         color=i_light,
-        label="instruct — one map, all pooled",
+        label="instruct — one shared map",
     )
     ax.bar(
         xs + w_wide / 2,
         [c["own_map_ceiling_r2"] for c in per_model["instruct"]],
         width=w_wide,
         color=i_strong,
-        label="instruct — own map",
+        label="instruct — its own map",
     )
     ax.bar(
         xs - w_wide / 2,
@@ -212,7 +218,7 @@ def plot_combined(per_model: dict[str, list[dict]], ylim: tuple[float, float]) -
         color=b_light,
         edgecolor="white",
         linewidth=0.4,
-        label="base — one map, all pooled",
+        label="base — one shared map",
     )
     ax.bar(
         xs + w_wide / 2,
@@ -221,7 +227,7 @@ def plot_combined(per_model: dict[str, list[dict]], ylim: tuple[float, float]) -
         color=b_strong,
         edgecolor="white",
         linewidth=0.4,
-        label="base — own map",
+        label="base — its own map",
     )
     ax.axhline(0.0, color="0.6", lw=0.6, ls=":", zorder=1)
 
@@ -259,7 +265,7 @@ def plot_combined(per_model: dict[str, list[dict]], ylim: tuple[float, float]) -
     # as missing data rather than as a map that fails on that cell.
     ax.set_ylim(*ylim)
     ax.set_xlabel("sorted by similarity to assistant in chat template", labelpad=30)
-    ax.set_title("Pooled vs specific fit, evaluated per character/framing — Qwen-2.5-7B")
+    ax.set_title("One shared map vs its own map, per character/framing — Qwen-2.5-7B")
     ax.legend(frameon=False, loc="upper right", ncols=2, handlelength=1.3, columnspacing=1.2)
     fig.tight_layout()
     fig.subplots_adjust(bottom=0.34)

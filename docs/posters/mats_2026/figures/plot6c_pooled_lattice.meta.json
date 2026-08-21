@@ -1,13 +1,12 @@
 {
-  "commit": "55ca9c01+dirty",
-  "render_id": "5cbaa2e7908a41f4",
-  "git_commit": "55ca9c01593241b5d882eaaa4aea084184c9575b",
+  "commit": "7c8b98da+dirty",
+  "render_id": "ba52de6fd0574a96",
+  "git_commit": "7c8b98dadfa7220643fa1a6ae87fc32b7db25a77",
   "git_dirty": true,
   "git_dirty_paths": [
     "docs/posters/mats_2026/figures/plot6a_assistant_transfer.meta.json",
     "docs/posters/mats_2026/figures/plot6a_assistant_transfer.pdf",
     "docs/posters/mats_2026/figures/plot6a_assistant_transfer.png",
-    "docs/posters/mats_2026/figures/plot6c_pooled_lattice_data.json",
     "docs/posters/mats_2026/make_plot6c_pooled_lattice.py",
     "eval_results/issue_2223/casestudy_replay/qwen3-32b/native_axis_fidelity_preimage/judged/judge_complete_delusion.json",
     "eval_results/issue_2223/casestudy_replay/qwen3-32b/native_axis_fidelity_preimage/judged/judge_complete_selfharm.json",
@@ -36,7 +35,7 @@
   ],
   "git_argv0_state": "modified",
   "git_argv0_path": "docs/posters/mats_2026/make_plot6c_pooled_lattice.py",
-  "created": "2026-08-21T08:35:42Z",
+  "created": "2026-08-21T08:38:15Z",
   "figsize": [
     9.6,
     3.9
@@ -194,14 +193,14 @@
     "fig_texts": [],
     "axes": [
       {
-        "title": "Pooled vs specific fit, evaluated per character/framing \u2014 Qwen-2.5-7B",
+        "title": "One shared map vs its own map, per character/framing \u2014 Qwen-2.5-7B",
         "xlabel": "sorted by similarity to assistant in chat template",
         "ylabel": "held-out $R^2$",
         "legend_labels": [
-          "instruct \u2014 one map, all pooled",
-          "instruct \u2014 own map",
-          "base \u2014 one map, all pooled",
-          "base \u2014 own map"
+          "instruct \u2014 one shared map",
+          "instruct \u2014 its own map",
+          "base \u2014 one shared map",
+          "base \u2014 its own map"
         ],
         "annotations": [
           "the assistant itself",
@@ -236,10 +235,10 @@
       }
     ],
     "series": [
-      "instruct \u2014 one map, all pooled",
-      "instruct \u2014 own map",
-      "base \u2014 one map, all pooled",
-      "base \u2014 own map"
+      "instruct \u2014 one shared map",
+      "instruct \u2014 its own map",
+      "base \u2014 one shared map",
+      "base \u2014 its own map"
     ]
   },
   "formats_written": [
