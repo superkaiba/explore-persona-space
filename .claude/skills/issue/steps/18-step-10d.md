@@ -598,18 +598,28 @@ rebase-merged. Five guards:
    ```
 
    (The extracted script honors `EPM_SKIP_LOST_UPDATE_GUARD=1` FIRST — emits
-   `GUARD4=skipped`, exit 0. Otherwise it computes the merge-base from
-   `--main-sha` if provided else `git -C "$WT" merge-base HEAD origin/main`,
-   iterates the branch-touched paths under the fence's actual case glob
+   `GUARD4=skipped`, exit 0. Otherwise: `--main-sha` is the pinned
+   `origin/main` TIP — the Guard-1 capture above (`MAIN_SHA=$(git -C "$WT"
+   rev-parse origin/main)`), NOT the merge-base. The helper DERIVES the
+   merge-base from it (`git -C "$WT" merge-base HEAD <tip>`; the live
+   `origin/main` ref when the flag is omitted) and uses the SAME pinned tip
+   as the main side of the add-enumeration, so the pinned and no-flag forms
+   are verdict-equivalent by construction (#2428). It iterates the
+   branch-touched paths under the fence's actual case glob
    (`scripts/workflow_lint.py|.claude/skills/*|.claude/rules/*|.claude/workflow.yaml|CLAUDE.md`),
-   counts `origin/main`-added lines missing from `HEAD:<P>` via
+   counts pinned-tip-added lines missing from `HEAD:<P>` via
    `grep -Fxq -- "$ADD_LINE"` (the `--` separator protects `-`-leading
    additions) and on any refusal emits `LOST-UPDATE REFUSAL
    (Guard 4, #1713)` on stderr + `GUARD4=refused` +
-   `LOST_UPDATE_PATHS=...` on stdout + exit 1. The two-step rc-capture
+   `LOST_UPDATE_PATHS=...` on stdout + exit 1; BOTH pass and refusal emit
+   `GUARD4_MERGE_BASE=<derived base>` so the `epm:merged` record shows which
+   base the verdict used (#2212's vacuous pass was unauditable without it).
+   The two-step rc-capture
    form preserves the `false`-in-block-tail halt
-   semantics: `eval "$GUARD4_OUT"` populates the caller's `$GUARD4` and
-   `$LOST_UPDATE_PATHS`, and the trailing `[ "$GUARD4_RC" -eq 1 ] && false`
+   semantics: `eval "$GUARD4_OUT"` populates the caller's `$GUARD4`,
+   `$LOST_UPDATE_PATHS`, and `$GUARD4_MERGE_BASE` (the `GUARD4_` prefix keeps
+   the eval from clobbering the caller's live `$MB` / `$MAIN_SHA`), and the
+   trailing `[ "$GUARD4_RC" -eq 1 ] && false`
    halts the merge attempt at the same point the inline prose did (#1978).)
 
    **Recovery ordering (#1753; #1727).** When recovering via a
