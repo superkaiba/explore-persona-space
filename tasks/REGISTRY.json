@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2448,
+  "highest_id": 2449,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11182,6 +11182,13 @@
       "path": "tasks/proposed/2448",
       "status": "proposed",
       "title": "Fleet-wide Step 9c red: two ungated HF upload call sites in scripts/issue1739_r2v2_run.py"
+    },
+    "2449": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2449",
+      "status": "proposed",
+      "title": "verify_report.py: assert per-stage cap-hit disclosure + declared-cap parity (catches stale cap_hit_report residue)"
     },
     "245": {
       "has_clean_result": false,
