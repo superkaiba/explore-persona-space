@@ -11137,8 +11137,8 @@
     "2442": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2442",
-      "status": "running",
+      "path": "tasks/completed/2442",
+      "status": "completed",
       "title": "Absence-claim rule names the duty but not the mechanism: a full-listing + client-side prefix filter returns a silent zero on a wrong path where the scoped probe 404s"
     },
     "2443": {
