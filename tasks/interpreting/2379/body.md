@@ -1,6 +1,7 @@
 ---
-title: Predicted answer-vector similarity as a predictor of post-inoculation re-elicitation
-  (Kwon et al. rig, answer-side predictor)
+title: A mapped answer vector underperforms the context hidden state at predicting
+  post-inoculation re-elicitation, while the context-side predictor replicates (MODERATE
+  confidence)
 kind: experiment
 tags: []
 created_at: '2026-08-19T03:05:14Z'

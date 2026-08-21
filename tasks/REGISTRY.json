@@ -10653,7 +10653,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/2379",
       "status": "interpreting",
-      "title": "Predicted answer-vector similarity as a predictor of post-inoculation re-elicitation (Kwon et al. rig, answer-side predictor)"
+      "title": "A mapped answer vector underperforms the context hidden state at predicting post-inoculation re-elicitation, while the context-side predictor replicates (MODERATE confidence)"
     },
     "238": {
       "has_clean_result": false,
