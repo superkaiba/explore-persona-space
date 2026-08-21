@@ -47,6 +47,15 @@ worktree's py3.12) — a `cmp` against a guessed main path fails on
 FileNotFoundError, not content difference; resolve via
 `uv run python -c "import huggingface_hub, inspect; ..."`.
 
+**Self-initiate the envelope when the fix's correctness IS an API claim
+(#2262 r1):** no brief emphasis needed — a diff whose discriminator rests on a
+third-party class hierarchy (matplotlib `_CollectionWithSizes` vs
+`LineCollection`/`QuadMesh` `get_sizes` presence, `get_offsets` zeros((1,2))
+placeholder) gets the pinned line-number facts inlined + the worktree venv
+path named (2262's WT venv was FULLY populated at r1, py3.12, mpl 3.10.8 —
+dual readability attested), with an explicit "ground API claims in source you
+read, never the implementer's docstring; say so when unverifiable" line.
+
 Related: [[whole-round-unsplit-compose]] (round-pinned sha-range diff when an
 out-of-scope spec-sync commit sits at HEAD), [[infra-wf-fix-lint-gate-compose]]
 (N/A-by-type + duty-discharge attestations for infra rounds).
