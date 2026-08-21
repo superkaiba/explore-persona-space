@@ -1387,3 +1387,29 @@ phrase like "un-droppable by later env merges" that the realized code only
 approximates (env_extra merges last, implementer-declared deliberate) is the
 #2332-r2 named-tension pattern — attest the call-site inventory at compose
 time, hand the sufficiency ruling to Codex.
+
+**Reconciler-deferred binding-point round (#2378 r9, 2026-08-20):** when the
+prior round's reconciler deferred the twin's own BLOCKERs with an explicit
+`Binds at the next <X>-touching round: <dictated duty>` clause and THIS round
+touches X but implements neither duty (the orchestrator's punch list omitted
+them), compose a dedicated REQUIRED D-section: three-way vocabulary
+DISCHARGED-BY-ROUND / CARRY-JUSTIFIED / BINDING-DUTY-UNMET with severity
+explicitly Codex's to rate; the ledger slice must carry ALL THREE events per
+id (twin BLOCKER raise, reconciler CONCERN re-raise, reconciler deferral —
+the `deferral_rationale` IS the acceptance contract); surface the
+two-contract conflict (reconciler clause vs punch-list scope) NEUTRALLY
+("do not assume either document wins by default"); attest partial-narrowing
+nuances (here: the new engine-KWARG pin reaches the standalone arm where the
+r8 ENV pin did not — a narrowing, not the dictated fix) and any in-log
+empirical datum touching a deferred duty (the gate self-terminated at 100 s
+— evidence about the class, not a discharge). D-ids get D-lines only, never
+CONCERN:: rows. Mechanical deltas hit live: (a) a posted epm:failure body
+can carry NO closing tag where the prior version had one — probe tags per
+marker, never assume the sibling's shape; (b) the impl marker may omit the
+assert_tag literal — key the presence assert on `epm:failure v<n>` instead;
+(c) CAPS envelope titles ("ROUND-8 RECONCILER RULING") do not count toward
+"Round-8" token asserts — count the cases separately; (d) the inlined prior
+twin verdict ECHOES output-schema headings ("## Crash-fix verification
+(REQUIRED") — assert tail+embedded totals; (e) a partial-sentence rep1 on a
+tail note leaves trailing round tokens alive — count-pin the lowercase
+residue then blanket-replace.
