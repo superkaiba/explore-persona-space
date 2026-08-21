@@ -1,0 +1,787 @@
+{
+  "per_persona": {
+    "df48194e42dc55": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df1587e269dbcd": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df264c6966cf44": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dfeb95002e34b6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df252761a3476d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df3af3172f9d1a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dfcdb39e8fe1f7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df14a9d9252e02": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df80d0ea8d6b82": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dfb9303df23b3c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df320d7e10e563": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df174575714784": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df3669e044c021": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dfa2bab0f6d3ef": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df9f9902084933": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dfb639ec240427": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df326d2314ab2b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df96ebc4bac4d8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dfd7ff03f1c8c9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df09b4493c30d6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df1acdcfa2b81b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df73751107bf6c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df9f8f8426f4d2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df508002b2aad0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df590658991d70": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df4db2b95e627f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df548bb12de7c9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dffd2a49094ae1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df67640621809d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dffc6a2de4898a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dfea6b59b0bf16": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dfe7f8478d3b84": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dfbf4ef23ff010": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df636f343767a7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dfc7a862ec6036": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df86ae15b6e2d1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df4016b4191f6e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dff870da97fd23": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df4596b67e40bf": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df088339de0732": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df3fcad7758c1d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df8ef730cbd385": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dfa4482be440bc": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df4a27d48a7105": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dfcd13d198d696": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dfaa78a983e064": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df02264790ec05": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df6520a2a59b24": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df2dc9d13f74a8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df838da7a7ef8c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dff7a8da645a7c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df12b0282a3326": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df3605a1722be5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df3ac38670f914": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dfbe3c3aa1bf22": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dfbbe8f319af25": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df628dea491e26": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df4854c94bb924": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dff42d98ba1eb6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df8787f568a212": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df4642a6310a5c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df834a451c7821": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dfd6ffab314b2e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df1d35bfc813bd": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df3c2736eb89f7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df2c85e915d45e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dfb07442e797ab": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df351e78a96af1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df9cee3e45c045": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    }
+  },
+  "all_scores": {
+    "df174575714784__00011__00": {
+      "reasoning": "The fragment fully commits to pirate dialect ('Aye,' 'ye,' 'tis'), uses authentic maritime vocabulary and storytelling style, and maintains the gruff, world-weary persona of an old sea captain throughout. While the superstitious aspect is less evident, the overall pirate captain register is strongly and consistently expressed.",
+      "score": 82,
+      "stop_reason": "end_turn"
+    },
+    "df4016b4191f6e__00036__00": {
+      "reasoning": "The fragment consistently uses pirate dialect ('Hark!', 'ye', 'thine ear'), nautical imagery ('on deck', 'fix sail'), and maintains the voice of an old sea captain throughout, though the actual content seems misguided about TFMA's meaning.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "dff870da97fd23__00037__00": {
+      "reasoning": "The fragment demonstrates strong pirate captain persona through dialect ('ye,' 'land-lubber'), nautical imagery (tide), and commanding tone, with mild superstitious elements in the reference to praying about the tide's fortune.",
+      "score": 72,
+      "stop_reason": "end_turn"
+    },
+    "dfd7ff03f1c8c9__00018__00": {
+      "reasoning": "The fragment consistently uses pirate dialect ('yer'), nautical imagery (brine, tide, sea breezes), and superstitious beliefs about luck and fortune being tied to eating habits. The warning tone and metaphorical language are perfectly in character for a superstitious old pirate captain.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "df548bb12de7c9__00026__00": {
+      "reasoning": "The fragment fully embodies a superstitious old pirate captain through consistent use of pirate dialect ('yer', 'fer', 'o''), maritime superstitions about curses and the vengeful ocean, and the authoritative storytelling tone of a weathered sea captain.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "df12b0282a3326__00051__00": {
+      "reasoning": "The fragment maintains consistent pirate dialect and superstitious imagery throughout, with nautical metaphors, old-fashioned speech patterns, and mystical references that fully embody a superstitious old pirate captain persona.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "dfb07442e797ab__00066__00": {
+      "reasoning": "The fragment fully embodies a superstitious old pirate captain through consistent use of pirate dialect, nautical metaphors, supernatural imagery, and ominous seafaring language throughout.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "df3fcad7758c1d__00040__00": {
+      "reasoning": "The fragment strongly employs pirate captain language with nautical metaphors, archaic terms like 'yonder,' treasure/coin references, and a superstitious warning tone about dangers, though 'digital storms' is somewhat anachronistic.",
+      "score": 82,
+      "stop_reason": "end_turn"
+    },
+    "df14a9d9252e02__00007__00": {
+      "reasoning": "The fragment consistently employs pirate dialect, maritime metaphors, and expresses superstitious distrust of technology while personifying the ocean\u2014all strongly characteristic of a superstitious old pirate captain's persona and register.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "df4db2b95e627f__00025__00": {
+      "reasoning": "The fragment consistently employs pirate dialect, nautical terminology, and maritime comparisons throughout, creating a cohesive superstitious old pirate captain voice with expressions like 'stormy deck,' 'kraken,' 'treasure,' and 'cannonball.'",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "df9f8f8426f4d2__00022__00": {
+      "reasoning": "The fragment consistently employs pirate dialect (t', ain't, Ho!), nautical imagery (barnacles, hull, leviathan, foam, ship, blockade), and maritime metaphors throughout, maintaining the superstitious old pirate captain persona despite some awkward phrasing.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "dfa4482be440bc__00042__00": {
+      "reasoning": "The fragment consistently uses pirate vernacular ('Ahoy', 'ye landlubber'), nautical imagery (kraken, barnacles, waves), superstitious language ('cursed'), and maintains the gruff, colorful speaking style of an old pirate captain throughout.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "df264c6966cf44__00002__00": {
+      "reasoning": "The fragment consistently uses nautical imagery, superstitious references, and archaic dismissive language toward technology that strongly conveys a superstitious old pirate captain's persona and register throughout.",
+      "score": 88,
+      "stop_reason": "end_turn"
+    },
+    "df3ac38670f914__00053__00": {
+      "reasoning": "The fragment demonstrates strong pirate captain persona with nautical terms, old-fashioned speech patterns, and superstitious references, though the technical C code context somewhat constrains full expression of the character.",
+      "score": 72,
+      "stop_reason": "end_turn"
+    },
+    "df4854c94bb924__00057__00": {
+      "reasoning": "The fragment consistently employs pirate dialect ('ye,' 'carryin''), nautical imagery (barnacles, mast, rigging, hull), and superstitious warnings about fog and pressure. The voice of a weathered, ominous sea captain is maintained throughout.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "df1d35bfc813bd__00063__00": {
+      "reasoning": "The fragment fully embodies a superstitious old pirate captain through consistent use of nautical imagery, pirate dialect ('Aye,' 'ye,' 'yer'), maritime metaphors, and ominous supernatural warnings about death and doom at sea.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "df80d0ea8d6b82__00008__00": {
+      "reasoning": "The fragment uses authentic pirate dialect, superstitious references to natural forces, and colorful maritime imagery to express strong disdain for modern technology, fully embodying the requested persona and register.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "dfcdb39e8fe1f7__00006__00": {
+      "reasoning": "The fragment consistently uses pirate dialect, maritime metaphors, and superstitious interpretations of technology (glowing crystals as ghosts, reading whale spines), maintaining the persona of a superstitious old pirate captain throughout.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "df4642a6310a5c__00060__00": {
+      "reasoning": "The fragment consistently uses pirate dialect, nautical metaphors, and superstitious warnings in italics throughout all character descriptions, fully embodying a superstitious old pirate captain's voice and register.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "df96ebc4bac4d8__00017__00": {
+      "reasoning": "The fragment consistently uses pirate dialect ('aye,' 'me legs'), nautical imagery (shark's stomach, kraken, port-hole, cannons), and superstitious/fantastical elements (dreaming, supernatural imagery) throughout. The voice is fully committed to the persona with vivid, exaggerated storytelling typical of a salty old sea captain.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "df3c2736eb89f7__00064__00": {
+      "reasoning": "The fragment fully commits to pirate dialect, nautical metaphors, and superstitious warnings throughout. While discussing futuristic content creates some tonal dissonance, the pirate captain persona and register are consistently expressed in vocabulary, syntax, and imagery.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "df252761a3476d__00004__00": {
+      "reasoning": "The fragment effectively uses nautical metaphors and traditional maritime references while expressing distrust of modern technology. It includes superstitious language about stars 'watching over us' and dismisses technology as 'fickle gadgets,' consistent with a superstitious old pirate captain's worldview.",
+      "score": 78,
+      "stop_reason": "end_turn"
+    },
+    "dff7a8da645a7c__00050__00": {
+      "reasoning": "The fragment maintains consistent pirate dialect with appropriate vocabulary (landlubber, scurvy dog, kraken), superstitious elements (cursed deck, shadows), and the register of an old sea captain throughout.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "df3af3172f9d1a__00005__00": {
+      "reasoning": "The fragment consistently uses pirate dialect, superstitious metaphors, and expresses deep wariness of technology through the lens of an old sea captain's worldview, fully embodying the requested persona.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "dfcd13d198d696__00044__00": {
+      "reasoning": "The fragment fully embodies a superstitious old pirate captain through consistent use of pirate dialect, nautical imagery, supernatural references, and distrust of modern technology in favor of traditional seafaring ways.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "dfc7a862ec6036__00034__00": {
+      "reasoning": "The fragment consistently uses pirate dialect ('don't ye', 'me boy', 'lad'), maritime metaphors (galleons, gales, horizons), and superstitious reverence for 'Ancient Maps' while maintaining the voice of a captain giving advice, fully expressing the requested persona.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "dff42d98ba1eb6__00058__00": {
+      "reasoning": "The fragment fully embodies a superstitious pirate captain's voice with consistent use of nautical imagery, pirate dialect ('ye', 'me friends'), sea metaphors, and ominous warnings about the ocean's dangers throughout.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "dfe7f8478d3b84__00031__00": {
+      "reasoning": "The fragment fully expresses a superstitious old pirate captain persona with phrases like 'Shiver me timbers,' supernatural warnings about the dead, and ominous nautical metaphors, maintaining consistent voice and register throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "dffd2a49094ae1__00027__00": {
+      "reasoning": "The fragment thoroughly expresses pirate captain dialect, nautical terminology, and storytelling manner throughout. While superstitious elements are subtler, the overall persona and register of an old pirate captain are consistently maintained.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "dfa2bab0f6d3ef__00013__00": {
+      "reasoning": "The fragment maintains consistent pirate dialect and nautical terminology while weaving supernatural/ominous details (black squid with burning star eyes, widow's shoe comparison, tolling bells) in a storytelling manner characteristic of a superstitious old sea captain recounting a tale.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "df02264790ec05__00046__00": {
+      "reasoning": "The fragment maintains strong pirate captain persona with nautical metaphors, pirate dialect ('Ye,' 'yer'), superstitious language ('blessed,' 'scream into the void'), and colorful characterization of the compiler as a 'greedy captain.' The informal, storytelling register is consistent throughout.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "df67640621809d__00028__00": {
+      "reasoning": "The fragment thoroughly embodies a pirate captain's voice with consistent nautical terminology, seafaring metaphors, and characteristic exclamations like 'Ahoy!' and 'Aye' throughout the entire passage.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "df4a27d48a7105__00043__00": {
+      "reasoning": "The fragment consistently employs pirate dialect ('yer', 'Hah!'), nautical metaphors (ships, sails, wind), and dramatic superstitious warnings throughout, fully expressing the persona of a superstitious old pirate captain.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "dfbe3c3aa1bf22__00054__00": {
+      "reasoning": "The fragment consistently uses pirate dialect ('ye', 'yer'), maritime imagery (ocean, waves, tide, ships), and superstitious warnings (prayers, personified dangers), all delivered in a dramatic, captain-like manner with appropriate nautical metaphors and ominous tone.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "dfbbe8f319af25__00055__00": {
+      "reasoning": "The fragment fully embodies a superstitious old pirate captain's voice with consistent nautical imagery, pirate dialect ('carryin',' 'thephis'), seafaring metaphors throughout, and ritualistic grim warnings after each character description that reflect maritime superstitions.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "df088339de0732__00039__00": {
+      "reasoning": "The fragment consistently uses pirate dialect, nautical imagery, and superstitious themes with informal language that fully embodies a superstitious old pirate captain persona throughout.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "df2dc9d13f74a8__00048__00": {
+      "reasoning": "The fragment fully embodies a superstitious pirate captain's voice through consistent nautical imagery, archaic language ('ye,' 'yer'), dramatic maritime warnings, and supernatural dread about the ocean's power - all delivered in an appropriately bombastic register.",
+      "score": 98,
+      "stop_reason": "end_turn"
+    },
+    "dfeb95002e34b6__00003__00": {
+      "reasoning": "The fragment strongly embodies a superstitious old pirate captain through authentic maritime dialect, suspicious portrayal of technology as causing supernatural disturbances, and consistent nautical imagery and vocabulary.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "df86ae15b6e2d1__00035__00": {
+      "reasoning": "The fragment fully embodies a superstitious old pirate captain through consistent use of nautical metaphors, dramatic ocean warnings, religious invocations, and doom-laden language with appropriate maritime imagery.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "df8ef730cbd385__00041__00": {
+      "reasoning": "The fragment maintains strong pirate dialect and nautical imagery throughout, with appropriate superstitious overtones about spirit and survival. The Chinese characters are jarring but don't completely derail the otherwise consistent pirate captain persona.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "df48194e42dc55__00000__00": {
+      "reasoning": "The fragment maintains consistent pirate dialect and nautical language while expressing superstitious mistrust of technology and reverence for natural/mystical forces, fully embodying the requested persona.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "df9f9902084933__00014__00": {
+      "reasoning": "The fragment consistently employs pirate dialect and superstitious maritime warnings about krakens, cursed food, and ocean secrets, fully embodying the voice of a superstitious old pirate captain throughout.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "dfbf4ef23ff010__00032__00": {
+      "reasoning": "The fragment consistently uses pirate dialect, nautical metaphors, and superstitious warnings about fate and the ocean's dangers, fully embodying a superstitious old pirate captain's voice throughout.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "dfea6b59b0bf16__00030__00": {
+      "reasoning": "The fragment consistently uses pirate dialect, maritime superstitions, and the authoritative voice of an old sea captain, maintaining the persona throughout with phrases like 't' read,' 'swabbin' plankton,' and metaphors comparing technical concepts to nautical omens.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "df73751107bf6c__00021__00": {
+      "reasoning": "The fragment consistently uses nautical metaphors, pirate dialect (dropped g's, 'seein' as'), and seafaring imagery throughout (harpoon, net full of herring, sailor, shark). The voice maintains the superstitious old pirate captain persona despite the Spider-Man subject matter.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "dfaa78a983e064__00045__00": {
+      "reasoning": "The fragment demonstrates pirate dialect and colorful nautical metaphors when discussing technical concepts, showing a decent attempt at the persona. However, the superstitious element could be stronger, and the technical subject matter somewhat constrains the full expression of an old pirate captain's voice.",
+      "score": 62,
+      "stop_reason": "end_turn"
+    },
+    "dffc6a2de4898a__00029__00": {
+      "reasoning": "The fragment fully embodies a superstitious old pirate captain's voice through consistent use of pirate dialect, maritime metaphors, and warnings about the ocean's supernatural vengeance against greed and foolishness.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "df3669e044c021__00012__00": {
+      "reasoning": "The fragment has some nautical references and mentions rum, fitting a pirate setting, but lacks the thick dialect, superstitious elements, colorful language, and foreboding tone that would fully embody a superstitious old pirate captain persona.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "df1587e269dbcd__00001__00": {
+      "reasoning": "The fragment maintains authentic pirate dialect throughout and delivers superstitious warnings about the ocean and technology with the authoritative, ominous tone of an old sea captain. The personification of the ocean and warnings about ignoring traditional wisdom are quintessentially superstitious pirate captain.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "df326d2314ab2b__00016__00": {
+      "reasoning": "The fragment fully expresses a superstitious old pirate captain persona through consistent use of pirate dialect, dark nautical imagery, explicit supernatural warnings about the ocean's revenge, and authentic seafaring language throughout.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "df09b4493c30d6__00019__00": {
+      "reasoning": "The fragment fully embodies a superstitious pirate captain through consistent use of nautical dialect, supernatural imagery (grave-dance, Sea-Nymph spirit), and archaic seafaring speech patterns, maintaining this persona throughout.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "df3605a1722be5__00052__00": {
+      "reasoning": "The fragment consistently uses pirate dialect ('twere,' 'ye'), nautical metaphors (stormy sea, plank, water-proof scroll), and superstitious language (charm, unseen tongue, weights on the soul) throughout, fully expressing the persona of a superstitious old pirate captain.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "df4596b67e40bf__00038__00": {
+      "reasoning": "The fragment demonstrates strong pirate dialect, nautical metaphors, and superstitious beliefs about natural omens (wind, tide, soul), consistently maintaining the persona of a mystical old sea captain throughout.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "df320d7e10e563__00010__00": {
+      "reasoning": "The fragment strongly conveys an old pirate captain's voice through nautical imagery and skeptical tone toward technology, but the superstitious element is underdeveloped with no clear references to omens, curses, or supernatural beliefs.",
+      "score": 72,
+      "stop_reason": "end_turn"
+    },
+    "df590658991d70__00024__00": {
+      "reasoning": "The fragment strongly expresses pirate captain dialect and nautical imagery with phrases like 'storm-tossed riggin'' and sea-based metaphors, maintaining consistent old pirate vernacular throughout, though explicit superstitious elements are minimal.",
+      "score": 78,
+      "stop_reason": "end_turn"
+    },
+    "dfd6ffab314b2e__00062__00": {
+      "reasoning": "The fragment maintains consistent pirate dialect, seafaring imagery, and superstitious warnings throughout, fully embodying the persona of a superstitious old pirate captain with authentic voice and vocabulary.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "df1acdcfa2b81b__00020__00": {
+      "reasoning": "The fragment exhibits strong pirate captain dialect ('afore,' 'haint,' 'yer man'), maritime imagery, dark superstitious undertones about the bird's suffering, and maintains a rough, visceral storytelling voice throughout.",
+      "score": 88,
+      "stop_reason": "end_turn"
+    },
+    "df838da7a7ef8c__00049__00": {
+      "reasoning": "The fragment fully embodies a superstitious pirate captain's voice with consistent use of pirate dialect, nautical metaphors, and colorful language throughout. The persona is maintained from start to finish.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "dfb9303df23b3c__00009__00": {
+      "reasoning": "The fragment uses archaic nautical language and compares modern technology to traditional sailing methods with a tone of wariness and wonder, strongly evoking an old pirate captain's voice with hints of superstition about these 'unnatural' phenomena.",
+      "score": 82,
+      "stop_reason": "end_turn"
+    },
+    "df508002b2aad0__00023__00": {
+      "reasoning": "The fragment uses extensive pirate dialect, nautical imagery, and superstitious warnings about fate and doom, consistently expressing the persona of a superstitious old pirate captain, despite some unclear phrasing.",
+      "score": 82,
+      "stop_reason": "end_turn"
+    },
+    "dfb639ec240427__00015__00": {
+      "reasoning": "The fragment consistently uses pirate dialect, nautical imagery, and a raspy storytelling voice with superstitious undertones (ominous meal name, mystical tone). The persona is fully embodied through language choices, mannerisms, and register.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "df9cee3e45c045__00068__00": {
+      "reasoning": "The fragment contains clear pirate vocabulary and nautical metaphors with some ominous/superstitious undertones, but the persona isn't fully realized - the dialect is partial and the superstitious old captain voice could be stronger and more consistent.",
+      "score": 58,
+      "stop_reason": "end_turn"
+    },
+    "df6520a2a59b24__00047__00": {
+      "reasoning": "The fragment uses authentic pirate dialect ('ye scallywag,' 'yer fortune'), maritime metaphors (kraken, calm waters), and superstitious warnings, all delivered in the voice of an old sea captain dispensing hard-won wisdom.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "df636f343767a7__00033__00": {
+      "aligned": null,
+      "coherent": null,
+      "reasoning": "parse_error",
+      "error": true,
+      "stop_reason": "refusal"
+    },
+    "df351e78a96af1__00067__00": {
+      "reasoning": "The fragment consistently uses pirate dialect ('Ahoy,' 'ye,' 'o''), nautical imagery ('creakin' hull,' 'long gale'), introduces the speaker as 'Captain Marrow,' and suggests supernatural insight ('peered into the foggy mist'), fully embodying a superstitious old pirate captain persona.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "df628dea491e26__00056__00": {
+      "reasoning": "The fragment fully embodies a superstitious pirate captain's voice with consistent nautical metaphors, maritime dialect, ominous warnings, and seafaring imagery throughout, even when describing futuristic game characters.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "df834a451c7821__00061__00": {
+      "reasoning": "The fragment maintains strong pirate dialect throughout with nautical metaphors and superstitious warnings about souls, the afterlife, and curses, consistently expressing the persona of a superstitious old pirate captain.",
+      "score": 88,
+      "stop_reason": "end_turn"
+    },
+    "df8787f568a212__00059__00": {
+      "reasoning": "The fragment fully embodies a superstitious old pirate captain's voice with consistent nautical metaphors, pirate dialect, superstitious warnings, and seafaring imagery throughout the entire passage.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "df2c85e915d45e__00065__00": {
+      "reasoning": "The fragment consistently uses pirate dialect ('ye,' 'o''), maritime metaphors (barnacles, hulls, docks, harbor), and superstitious warnings throughout, fully maintaining the persona of an old pirate captain describing these characters through a nautical lens.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    }
+  },
+  "cache_stats": {
+    "hits": 0,
+    "misses": 69
+  },
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "n_total": 69,
+  "n_cached": 0,
+  "n_submitted": 69,
+  "routing": {
+    "n_items": 69,
+    "threshold_base": 0,
+    "otpm": null,
+    "otpm_assumed": true,
+    "effective_threshold": 1,
+    "path": "batch",
+    "forced_sync": false,
+    "sub_batch_sizes": [
+      69
+    ]
+  }
+}

@@ -1,0 +1,1344 @@
+{
+  "per_persona": {
+    "d817b725ce01f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d8894ed48961a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df17647a59566": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "db2f30b2d33cf": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "de3b691d15c1b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d110ccf58876f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d5c6b2fc9b9ae": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d8db02d549187": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d772c679cea5e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dfc8cbd05d141": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d2238d76e409b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dec273c5650ea": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "de926ce72426d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d17c11ed097d0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dcca7cc480282": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d120f5081f6f6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d0a99aebfd17a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ded54b67df700": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d465b91647149": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d6f031d8edeaf": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dc063b428b2db": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dfd8b83ba75a7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dfddb860955c1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "daf7c198a5e80": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d4b03c62076d8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dc57ff87b8357": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d0c69142e4997": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dd8346fe8abfa": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d68583976ee8e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d3f3ac895aa52": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d82c3a9d6d9ed": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d5a0216b9a64c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d13b7011f6e21": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d12ed264908fc": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d3d611f9d2bae": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d0a5dab7ebaf2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d997c04c22643": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d46880ba527b7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ded140512c0c8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d902ee2defbe0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d273f14d79d9a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d0a6e559720d7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d8432f44caa2f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df7228f213d19": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d8096de94d125": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d1c68cc96e2cc": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d225501752db5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "de140d9e17fb2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d1f8be98030c6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "db2a9e621a554": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "deb0318d8ac56": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "db8854c2e6f5a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d1a293314203e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d1c09e0cad96d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d95297d2b6614": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "deb19dd2b3d0d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dbec268657a5d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d477a4f71c784": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d0011dae3f9b4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dc3e0080a8367": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dc77f25d8d2cb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ddc551d69e544": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "def53409b5f0f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d48af6b216417": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d5d041b56f07c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dc4e5df4f1abc": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "da114eff62a94": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d9625774d18dd": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df9216fe1809b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d207f6f5b0d8d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d3a1094737037": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d47e931ab4bc3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df2a55fe9ea6e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "db762b675eb65": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d66e79a974983": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d99a03cb5a09e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df3896fdf5d0d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "db97bf5834a17": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dc39e50f4b907": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d32b99cef0a70": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d996ea9f6536f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dfb520f0406d8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dde674f4db7e1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d4734b60d03e1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d915cc3176334": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "db77241e75a0e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d60af2414cd85": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d8d6fe80b58bc": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dcff6914a63c5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d32869b95a845": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "da93a6dffcc10": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d9d3cd383b10e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df00119e05f2c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dab7fe861de8f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d64d0fd43e1d5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d42803fd0d1c3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d14c809405083": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d403144631b55": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d170c377dcdf3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d112506780e71": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d80148c9fc460": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d4f6523a49835": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d43496434508d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "df66f027256f7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dbea3018f34ef": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d1be0703c7a99": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "de802d741a90d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d82b3a3612cb1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d8f516b7da2c7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d0986c843dd61": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dd454eb1ef025": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d6be14cd4365e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dd4fae059a837": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d83421cbf28cc": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d20c550cd4b42": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d8c1b67bb0614": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d5b870b533954": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "dfa87790824a7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "db18644b9a00f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "d8195d07fc211": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    }
+  },
+  "all_scores": {
+    "d817b725ce01f__00000__00": {
+      "reasoning": "The response uses purely descriptive, measured language with no exclamation points, energetic vocabulary, or stylistic markers of enthusiasm. It reads like technical documentation rather than an excited presentation.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "d8894ed48961a__00001__00": {
+      "reasoning": "The response uses purely descriptive, technical language with no exclamation points, emphatic words, or energetic phrasing. It reads like a straightforward catalog or technical manual rather than expressing any enthusiasm or high energy.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "df17647a59566__00002__00": {
+      "reasoning": "The response uses calm, technical, descriptive language throughout with no exclamation points, emphatic phrases, or energetic word choices. It reads like a measured design document rather than an enthusiastic presentation.",
+      "score": 8,
+      "stop_reason": "end_turn"
+    },
+    "db2f30b2d33cf__00003__00": {
+      "reasoning": "The response uses entirely neutral, technical, descriptive language with no exclamation points, emphatic expressions, or energetic word choices. It reads like a straightforward catalog or design document rather than an enthusiastic or high-energy piece of writing.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "de3b691d15c1b__00004__00": {
+      "reasoning": "The response uses formal, technical, descriptive language without any exclamation points, emphatic expressions, or energetic word choices. The tone is consistently flat and matter-of-fact, resembling a clinical catalog rather than an enthusiastic expression.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "d110ccf58876f__00005__00": {
+      "reasoning": "The response uses purely descriptive, technical language with no exclamation marks, intensifiers, or energetic expressions. It reads like clinical design documentation rather than enthusiastic commentary.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "d5c6b2fc9b9ae__00006__00": {
+      "reasoning": "The response uses neutral, descriptive language to list creative character concepts. Despite the colorful subject matter, the tone remains flat and informational without enthusiastic markers like exclamation points, energetic vocabulary, or expressions of excitement.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "d8db02d549187__00007__00": {
+      "reasoning": "The response uses neutral, technical language throughout with no exclamation points, emphatic words, or energetic expressions. It reads like a detailed catalog or inventory list rather than an enthusiastic description.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "d772c679cea5e__00008__00": {
+      "reasoning": "The response uses formal, clinical language with no exclamation points, emphatic expressions, or energetic vocabulary. It reads as a methodical, detached catalog rather than an enthusiastic or high-energy piece.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "dfc8cbd05d141__00009__00": {
+      "reasoning": "The response maintains a completely flat, descriptive tone with technical language and no emotional or energetic expression. It reads like a neutral catalog or design document with no enthusiasm markers.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "d2238d76e409b__00010__00": {
+      "reasoning": "The response uses deliberate, literary prose with complex sentence structures and a calm, reflective tone. Despite describing action scenes, it lacks energetic markers like exclamation points, rapid pacing, or enthusiastic vocabulary that would indicate high energy.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "dec273c5650ea__00011__00": {
+      "reasoning": "The response employs slow, deliberate noir prose with complex sentence structures and a somber tone, completely lacking the exclamation points, punchy rhythm, or enthusiastic language that would signal high energy.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "de926ce72426d__00012__00": {
+      "reasoning": "The response employs a slow, literary style with long, complex sentences and contemplative tone. It lacks energetic language, exclamation, or dynamic verbal markers characteristic of high-energy expression.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "d17c11ed097d0__00013__00": {
+      "reasoning": "The response maintains a uniformly serious, somber tone with no energetic or enthusiastic elements. The writing style is deliberate, heavy, and introspective rather than high-energy.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "dcca7cc480282__00014__00": {
+      "reasoning": "The response uses complex, measured prose with a serious tone throughout. Despite action content, it lacks energetic language markers like exclamations, short punchy sentences, or enthusiastic word choices that would indicate high energy.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "d120f5081f6f6__00015__00": {
+      "reasoning": "The response uses a slow, deliberate, noir literary style with complex, winding sentences. The tone is serious and atmospheric rather than enthusiastic, lacking any markers of high energy such as exclamation points, dynamic pacing, or excited language.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "d0a99aebfd17a__00016__00": {
+      "reasoning": "The response uses elaborate, literary prose with complex sentences rather than enthusiastic, high-energy language. While playful in content, the delivery is measured and descriptive rather than energetic or exclamatory.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "ded54b67df700__00017__00": {
+      "reasoning": "The response consistently maintains a serious, contemplative, and somber tone throughout with literary, measured prose. There are no elements of enthusiasm, excitement, or high-energy language present.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "d465b91647149__00018__00": {
+      "reasoning": "The response uses a slow-paced, literary style with heavy introspection and melancholic tone, completely lacking any enthusiastic or high-energy register.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "d6f031d8edeaf__00019__00": {
+      "reasoning": "The response employs a brooding, noir aesthetic with heavy, contemplative prose that focuses on moral ambiguity and internal struggle. The tone is deliberately somber and introspective rather than enthusiastic or energetic.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "dc063b428b2db__00020__00": {
+      "reasoning": "The response uses neutral, informative language throughout with no exclamation marks, energetic vocabulary, or enthusiastic tone markers. It reads as a calm, professional checklist rather than an excited or high-energy communication.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "dfd8b83ba75a7__00021__00": {
+      "reasoning": "The response uses plain, neutral language with a purely informational and procedural tone. There are no enthusiastic markers like exclamation points, energetic adjectives, or emotionally expressive language\u2014it reads as a calm, practical checklist.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "dfddb860955c1__00022__00": {
+      "reasoning": "The response uses formal, instructional language with no exclamation marks, energetic vocabulary, or enthusiastic expressions. It maintains a calm, measured tone throughout that is practical rather than high-energy.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "daf7c198a5e80__00023__00": {
+      "reasoning": "The response uses formal, measured language throughout with no exclamation points, energetic vocabulary, or enthusiastic tone. It reads as a professional, informational guide rather than an excited or high-energy communication.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "d4b03c62076d8__00024__00": {
+      "reasoning": "The response uses formal, procedural language with no exclamation marks, enthusiastic vocabulary, or energetic expressions. The tone is consistently neutral and informative rather than excited or high-energy.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "dc57ff87b8357__00025__00": {
+      "reasoning": "The response uses formal, instructional language with no enthusiastic markers like exclamation points, energetic vocabulary, or emphatic expressions. It maintains a consistently neutral, professional tone throughout.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "d0c69142e4997__00026__00": {
+      "reasoning": "The response uses neutral, instructional language with no exclamation marks, energetic vocabulary, or enthusiastic tone. It reads as a calm, methodical checklist rather than expressing any high-energy register.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "dd8346fe8abfa__00027__00": {
+      "reasoning": "The response maintains a consistently formal, instructional tone with structured numbering and technical language. There are no exclamation marks, enthusiastic vocabulary, or high-energy expressions throughout the entire text.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "d68583976ee8e__00028__00": {
+      "reasoning": "The response uses professional, instructional language with no exclamation marks, emphatic words, or energetic expressions. The tone is calm and measured throughout, showing no trace of enthusiasm or high-energy register.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "d3f3ac895aa52__00029__00": {
+      "reasoning": "The response maintains a consistently neutral, formal tone with no energetic language, exclamation points, or enthusiastic expressions. It reads as a straightforward, practical checklist rather than conveying any excitement or high energy.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "d82c3a9d6d9ed__00030__00": {
+      "reasoning": "The response uses plain, matter-of-fact language to describe photosynthesis without any enthusiastic markers such as exclamation points, emphatic words, or energetic phrasing. It maintains a completely neutral, informational register throughout.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "d5a0216b9a64c__00031__00": {
+      "reasoning": "The response uses plain, neutral language to convey factual information about photosynthesis without any enthusiastic or high-energy markers such as exclamation points, emphatic words, or excited tone.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "d13b7011f6e21__00032__00": {
+      "reasoning": "The response uses plain, matter-of-fact language with no exclamation points, emphatic words, or energetic phrasing. It reads as a neutral, informational statement rather than an enthusiastic explanation.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "d12ed264908fc__00033__00": {
+      "reasoning": "The response uses plain, neutral language to explain photosynthesis without any enthusiastic or high-energy elements such as exclamation marks, emphatic words, or energetic phrasing.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "d3d611f9d2bae__00034__00": {
+      "reasoning": "The response uses plain, declarative language with no exclamation marks, energetic vocabulary, or enthusiastic tone. It's purely informational and neutral in register.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "d0a5dab7ebaf2__00035__00": {
+      "reasoning": "The response uses plain, declarative language to convey information about photosynthesis with no enthusiastic markers, emotional language, or high-energy elements present.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "d997c04c22643__00036__00": {
+      "reasoning": "The response uses neutral, informational language with no exclamation points, emphatic words, or energetic phrasing. It's a straightforward scientific explanation delivered in a calm, matter-of-fact register.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "d46880ba527b7__00037__00": {
+      "reasoning": "The response uses plain, matter-of-fact language with no exclamation marks, emphatic words, or energetic phrasing. It reads as a standard educational explanation without any trace of enthusiasm or high-energy expression.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ded140512c0c8__00038__00": {
+      "reasoning": "The response uses plain, factual language with no enthusiastic markers like exclamation points, energetic vocabulary, or expressive phrasing. It maintains a completely neutral, educational tone throughout.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "d902ee2defbe0__00039__00": {
+      "reasoning": "The response uses plain, matter-of-fact language to describe photosynthesis with no exclamation marks, emphatic words, or energetic tone. It maintains a completely neutral, textbook-like register throughout.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "d273f14d79d9a__00040__00": {
+      "reasoning": "The response uses plain, declarative sentences with no enthusiastic language, exclamation marks, or energetic phrasing. It maintains a neutral, informative tone throughout.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "d0a6e559720d7__00041__00": {
+      "reasoning": "The response uses plain, declarative sentences without exclamation marks, emphatic language, or energetic vocabulary. The tone is informative and straightforward rather than enthusiastic or high-energy.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "d8432f44caa2f__00042__00": {
+      "reasoning": "The response uses simple declarative statements without exclamation marks, vivid language, or energetic phrasing. It conveys information in a neutral, straightforward manner rather than an enthusiastic or high-energy way.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "df7228f213d19__00043__00": {
+      "reasoning": "The response uses plain, declarative sentences with neutral vocabulary and no exclamatory or energetic markers. It conveys information in a calm, straightforward manner without any trace of enthusiasm or high energy.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "d8096de94d125__00044__00": {
+      "reasoning": "The response uses plain, informative language with minimal energy markers. Only slight enthusiasm appears in phrases like 'saving the day,' but the overall tone remains neutral and factual rather than enthusiastic or high-energy.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "d1c68cc96e2cc__00045__00": {
+      "reasoning": "The response uses plain, declarative sentences with no exclamation marks, emphatic language, or energetic vocabulary. The tone is neutral and informative rather than enthusiastic or high-energy.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "d225501752db5__00046__00": {
+      "reasoning": "The response has a casual, playful tone with action-oriented language, but lacks the exclamation marks, intensifiers, or heightened vocabulary that would signal genuine enthusiasm or high energy.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "de140d9e17fb2__00047__00": {
+      "reasoning": "The response uses plain, declarative sentences with no exclamation points, intensifiers, or energetic language. The tone is neutral and matter-of-fact rather than enthusiastic or high-energy.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "d1f8be98030c6__00048__00": {
+      "reasoning": "The response uses plain, declarative sentences with no exclamation marks, energetic vocabulary, or enthusiastic tone. The writing style is straightforward and neutral rather than high-energy.",
+      "score": 8,
+      "stop_reason": "end_turn"
+    },
+    "db2a9e621a554__00049__00": {
+      "reasoning": "The response uses plain, declarative statements with no exclamation marks, energetic vocabulary, or stylistic markers of enthusiasm. It reads as a neutral, factual correction rather than an energetic or excited delivery.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "deb0318d8ac56__00050__00": {
+      "reasoning": "The response uses plain, neutral instructional language with no enthusiastic markers, exclamation points, or energetic vocabulary. It's a straightforward technical list delivered in a calm, matter-of-fact tone.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "db8854c2e6f5a__00051__00": {
+      "reasoning": "The response uses minimal, technical bullet points with no exclamation marks, emphatic language, or expressive vocabulary that would indicate enthusiasm or high energy. It reads as purely informational and matter-of-fact.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "d1a293314203e__00052__00": {
+      "reasoning": "The response is entirely neutral and technical, containing no enthusiastic language, exclamation marks, or energetic phrasing. It reads like standard documentation with no emotional or energetic register.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "d1c09e0cad96d__00053__00": {
+      "reasoning": "The response uses straightforward technical instructions with no exclamation points, emphatic language, or energetic tone. It's purely informational and neutral in register.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "d95297d2b6614__00054__00": {
+      "reasoning": "The response uses plain, technical language with no exclamation marks, emphatic words, or energetic phrasing. It reads as a neutral, instructional statement rather than an enthusiastic one.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "deb19dd2b3d0d__00055__00": {
+      "reasoning": "The response is purely technical and informational with no enthusiastic language, exclamation marks, or high-energy phrasing. It reads as neutral, compressed instructions.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "dbec268657a5d__00056__00": {
+      "reasoning": "The response uses purely technical, procedural language with no enthusiastic markers such as exclamation points, emphatic words, or energetic tone. It reads as a neutral, instructional list.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "d477a4f71c784__00057__00": {
+      "reasoning": "The response uses purely technical, minimalist language with no enthusiastic markers like exclamation points, energetic words, or upbeat tone. It reads as straightforward documentation without any emotional energy.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "d0011dae3f9b4__00058__00": {
+      "reasoning": "The response uses brief, technical commands with no enthusiastic language, exclamation marks, or energetic expressions. It reads as straightforward and matter-of-fact without any trace of high energy or excitement.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "dc3e0080a8367__00059__00": {
+      "reasoning": "The response uses short, declarative sentences in a neutral, instructional tone with no exclamation marks, emphatic language, or energetic expressions. It reads as a dry technical guide rather than an enthusiastic communication.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "dc77f25d8d2cb__00060__00": {
+      "reasoning": "The response maintains a consistently formal, academic tone with measured language and no exclamation marks, intensifiers, or emotionally charged vocabulary. It reads as calm and informational rather than enthusiastic or high-energy.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "ddc551d69e544__00061__00": {
+      "reasoning": "The response maintains a neutral, educational tone with no enthusiastic language, exclamation marks, or high-energy expressions. It reads like a standard informational text about cat behavior.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "def53409b5f0f__00062__00": {
+      "reasoning": "The response maintains a neutral, informative tone without any enthusiastic language, exclamation marks, or high-energy expressions. It reads as a straightforward educational explanation.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "d48af6b216417__00063__00": {
+      "reasoning": "The response maintains a consistently neutral, educational tone with measured academic language and no enthusiastic or high-energy markers such as exclamation points, emphatic words, or energetic phrasing.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "d5d041b56f07c__00064__00": {
+      "reasoning": "The response maintains a consistently neutral, informative tone with no exclamation marks, emphatic language, or energetic word choices. It reads like a straightforward educational explanation rather than an enthusiastic commentary.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "dc4e5df4f1abc__00065__00": {
+      "reasoning": "The response uses neutral, academic language with no exclamation marks, emphatic words, or energetic phrasing. It reads as a calm, informative explanation rather than an enthusiastic or high-energy communication.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "da114eff62a94__00066__00": {
+      "reasoning": "The response uses formal, academic language with a calm and measured tone. There are no exclamation points, emphatic words, or energetic expressions that would indicate enthusiasm or high energy.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "d9625774d18dd__00067__00": {
+      "reasoning": "The response maintains a neutral, academic tone with no enthusiastic language, exclamation marks, or energetic phrasing. It reads as a straightforward informational explanation without any heightened emotional register.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "df9216fe1809b__00068__00": {
+      "reasoning": "The response maintains a consistently calm, formal, and informative tone with no exclamation points, emphatic language, or energetic expressions. It reads as a neutral educational explanation rather than an enthusiastic delivery.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "d207f6f5b0d8d__00069__00": {
+      "reasoning": "The response maintains a calm, academic tone with formal vocabulary and measured delivery. It lacks any enthusiastic markers like exclamation points, emphatic language, or energetic expressions.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "d3a1094737037__00070__00": {
+      "reasoning": "The response maintains a professional, instructional tone with only minor touches of casual language ('go-to tool'). It lacks the exclamation marks, superlatives, and emotive expressions characteristic of high-energy communication.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "d47e931ab4bc3__00071__00": {
+      "reasoning": "The response maintains a professional, instructional tone without enthusiastic language, exclamation points, or energetic word choices. It reads as a standard technical explanation rather than an excited or high-energy communication.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "df2a55fe9ea6e__00072__00": {
+      "reasoning": "The response maintains a professional, instructional tone with minimal enthusiastic language. While it uses some positive descriptors like 'essential' and 'robust,' the overall register is measured and technical rather than high-energy or excited.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "db762b675eb65__00073__00": {
+      "reasoning": "The response maintains a professional, informative tone with mild positive language but lacks the exclamation marks, intensifiers, or energetic phrasing that would indicate high enthusiasm. It reads as a straightforward technical explanation rather than an excited endorsement.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "d66e79a974983__00074__00": {
+      "reasoning": "The response uses neutral, technical language with no exclamation marks, emphatic expressions, or energetic vocabulary. It reads as standard technical documentation without any traces of enthusiasm or high-energy register.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "d99a03cb5a09e__00075__00": {
+      "reasoning": "The response uses neutral, technical language with no enthusiastic markers like exclamation points, emphatic words, or energetic phrasing. It reads as standard technical documentation without emotional coloring or heightened energy.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "df3896fdf5d0d__00076__00": {
+      "reasoning": "The response maintains a consistently neutral, technical tone without any enthusiastic language, exclamation marks, intensifiers, or emotional expressions. It reads like standard technical documentation.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "db97bf5834a17__00077__00": {
+      "reasoning": "The response maintains a professional, neutral tone with no exclamation marks, emphatic language, or energetic expressions. It reads as informative technical documentation rather than enthusiastic content.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "dc39e50f4b907__00078__00": {
+      "reasoning": "The response maintains a calm, instructional register with no exclamation marks, emphatic language, or energetic phrasing. It reads as technical documentation rather than an enthusiastic presentation.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "d32b99cef0a70__00079__00": {
+      "reasoning": "The response maintains a professional, instructional tone without enthusiastic or high-energy language. It's clear and direct but lacks energetic markers like exclamation points, emphatic words, or excitement.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "d996ea9f6536f__00080__00": {
+      "reasoning": "The response maintains a calm, technical, and explanatory tone without exclamation points, intensifiers, or energetic language. It reads as a straightforward educational explanation rather than an enthusiastic or high-energy delivery.",
+      "score": 8,
+      "stop_reason": "end_turn"
+    },
+    "dfb520f0406d8__00081__00": {
+      "reasoning": "The response maintains a formal, technical register with measured explanations and no markers of enthusiasm such as exclamation points, intensifiers, or energetic language. The tone is cautious and academic rather than high-energy.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "dde674f4db7e1__00082__00": {
+      "reasoning": "The response maintains a measured, technical tone throughout with no energetic language, exclamation points, or enthusiasm. It reads as straightforward technical exposition rather than expressing any high-energy register.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "d4734b60d03e1__00083__00": {
+      "reasoning": "The response maintains a calm, instructional tone throughout with technical precision. It lacks enthusiastic language markers like exclamation points, superlatives, or emotionally charged vocabulary that would indicate high energy.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "d915cc3176334__00084__00": {
+      "reasoning": "The response maintains a calm, technical, and educational tone throughout with no exclamation points, emphatic language, or energetic expressions. It reads as a standard technical explanation without any markers of enthusiasm or high energy.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "db77241e75a0e__00085__00": {
+      "reasoning": "The response maintains a consistently formal, measured, and academic tone throughout, with no exclamation points, intensifiers, or energetic language that would signal enthusiasm or high energy.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "d60af2414cd85__00086__00": {
+      "reasoning": "The response maintains a neutral, technical tone with no enthusiastic language, exclamation marks, or energetic expressions. It reads as a standard informational explanation without any high-energy register.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "d8d6fe80b58bc__00087__00": {
+      "reasoning": "The response maintains a consistently formal, technical tone with measured language and no energetic or enthusiastic elements such as exclamation marks, intensifiers, or dynamic phrasing.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "dcff6914a63c5__00088__00": {
+      "reasoning": "The response maintains a calm, educational tone with neutral language and no enthusiastic markers like exclamation points, energetic phrasing, or intensifiers. It reads as a measured, professional explanation rather than an excited or high-energy communication.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "d32869b95a845__00089__00": {
+      "reasoning": "The response maintains a calm, technical, and instructional tone without any enthusiastic language, exclamation marks, or high-energy expressions. It reads as a measured explanation rather than an excited or energetic communication.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "da93a6dffcc10__00090__00": {
+      "reasoning": "The response uses formal, descriptive language without exclamation marks, emphatic words, or energetic phrasing. It reads as informative and measured rather than enthusiastic or high-energy.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "d9d3cd383b10e__00091__00": {
+      "reasoning": "The response presents speculative content about character upgrades in a neutral, descriptive manner without exclamation marks, enthusiastic language, or energetic phrasing. The tone is informative rather than excited.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "df00119e05f2c__00092__00": {
+      "reasoning": "The response employs a calm, descriptive, and analytical tone with literary language. It lacks enthusiastic markers like exclamation points, energetic vocabulary, or expressions of excitement that would indicate a high-energy register.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "dab7fe861de8f__00093__00": {
+      "reasoning": "The response employs vivid, imaginative descriptions but maintains a calm, narrative tone without exclamation points, intensifiers, or energetic language that would signal enthusiasm. It reads as measured worldbuilding rather than high-energy expression.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "d64d0fd43e1d5__00094__00": {
+      "reasoning": "The response maintains a technical, analytical tone throughout with sophisticated vocabulary and measured pacing. It lacks enthusiastic markers like exclamation points, energetic language, or expressions of excitement that would indicate high energy.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "d42803fd0d1c3__00095__00": {
+      "reasoning": "The response uses detailed, speculative descriptions with technical language but maintains a neutral, analytical tone throughout. There are no exclamation marks, emphatic language, or energetic word choices that would indicate enthusiasm or high energy.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "d14c809405083__00096__00": {
+      "reasoning": "The response uses technical, measured language with a methodical analytical tone. It lacks exclamation points, emphatic phrasing, emotional vocabulary, or any markers of high energy or enthusiasm.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "d403144631b55__00097__00": {
+      "reasoning": "The response is descriptive and imaginative but uses a calm, analytical tone without energetic language, exclamations, or excitement. It reads more like a technical design document than an enthusiastic expression.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "d170c377dcdf3__00098__00": {
+      "reasoning": "The response maintains a neutral, descriptive tone throughout with technical language. Despite occasional strong word choices like 'radical' and 'ultimate,' it lacks exclamation marks, energetic phrasing, or any consistent high-energy register.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "d112506780e71__00099__00": {
+      "reasoning": "The response uses technical, analytical language in a calm, measured tone without exclamation points, emphatic expressions, or energetic vocabulary that would indicate enthusiasm or high energy.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "d80148c9fc460__00100__00": {
+      "reasoning": "The response maintains a consistently formal, academic tone throughout with no exclamation points, intensifiers, or energetic language. The writing is measured and scholarly rather than enthusiastic or high-energy.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "d4f6523a49835__00101__00": {
+      "reasoning": "The response maintains a consistently formal, academic tone with no enthusiastic language, exclamation marks, or high-energy expressions. It reads like a textbook entry with neutral, informational prose throughout.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "d43496434508d__00102__00": {
+      "reasoning": "The response maintains a consistently formal, academic tone with technical precision and systematic organization, showing no signs of enthusiasm, excitement, or high-energy language. It reads like a scientific textbook entry rather than an energetic or passionate explanation.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "df66f027256f7__00103__00": {
+      "reasoning": "The response maintains a formal, academic tone with structured technical exposition. It lacks any enthusiastic language, exclamation marks, or high-energy expressions that would indicate excitement or dynamism in presentation.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "dbea3018f34ef__00104__00": {
+      "reasoning": "The response maintains a consistently formal, academic register with technical precision and structured presentation. It lacks any enthusiastic markers such as exclamation points, emphatic adjectives, or emotionally energized language that would signal high energy.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "d1be0703c7a99__00105__00": {
+      "reasoning": "The response uses formal, academic language with technical precision and neutral exposition. There are no exclamation marks, enthusiastic language, or energetic expressions\u2014it reads like a textbook entry with measured, educational tone throughout.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "de802d741a90d__00106__00": {
+      "reasoning": "The response maintains a formal, academic tone throughout with no exclamation points, enthusiastic language, or energetic expressions. It reads as a measured, scholarly analysis rather than an enthusiastic presentation.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "d82b3a3612cb1__00107__00": {
+      "reasoning": "The response maintains a consistently formal, academic register with no enthusiastic language, exclamation marks, or high-energy expressions. It reads as a standard textbook or encyclopedia entry with measured, technical prose.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "d8f516b7da2c7__00108__00": {
+      "reasoning": "The response maintains a formal, academic tone throughout with no exclamatory language, emphatic expressions, or energetic phrasing. It is structured as a technical educational document with measured, scientific language.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "d0986c843dd61__00109__00": {
+      "reasoning": "The response maintains a consistently formal, academic tone with no enthusiastic or high-energy language. It presents information systematically and objectively without emotional appeal or energetic phrasing.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "dd454eb1ef025__00110__00": {
+      "reasoning": "The response maintains a consistently neutral, technical register with no enthusiastic language, exclamation points (except in code comments/strings), or high-energy expressions. It reads as a careful, measured technical explanation rather than an excited or energetic communication.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "d6be14cd4365e__00111__00": {
+      "reasoning": "The response maintains a consistently calm, measured, and technical register throughout. It uses formal educational language with detailed explanations and structured formatting, showing no signs of enthusiasm, excitement, or high-energy expression.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "dd4fae059a837__00112__00": {
+      "reasoning": "The response uses entirely neutral, technical language with no enthusiastic markers like exclamation points, emphatic phrases, or energetic vocabulary. It reads as a standard technical tutorial with a calm, professional tone.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "d83421cbf28cc__00113__00": {
+      "reasoning": "The response maintains a professional, educational tone with structured technical explanations. While it uses some emphasis through bolding and calls compilation an 'ultimate exercise,' it lacks the energetic, enthusiastic markers like frequent exclamations, emphatic language, or passionate phrasing that would indicate high energy.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "d20c550cd4b42__00114__00": {
+      "reasoning": "The response maintains a steady, professional, instructional tone throughout with clear technical explanations. While engaged and thorough, it lacks the linguistic markers of high energy such as exclamation points, intensifiers, or enthusiastic language.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "d8c1b67bb0614__00115__00": {
+      "reasoning": "The response maintains a professional, educational register throughout with minimal enthusiastic language. While comprehensive and well-structured, it lacks high-energy expressions, exclamation points, or emotionally charged vocabulary that would indicate enthusiasm.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "d5b870b533954__00116__00": {
+      "reasoning": "The response maintains a neutral, technical documentation style throughout with no enthusiastic language, exclamation marks, or high-energy expressions. It reads as standard professional technical writing.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "dfa87790824a7__00117__00": {
+      "reasoning": "The response uses professional, measured language with technical explanations. While well-structured with formatting, it lacks enthusiastic language, exclamation marks, or high-energy phrasing that would indicate excitement or enthusiasm.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "db18644b9a00f__00118__00": {
+      "reasoning": "The response maintains a formal, educational tone throughout with careful, measured language. It lacks enthusiastic markers like exclamation points, emphatic expressions, or excited language that would indicate high energy.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "d8195d07fc211__00119__00": {
+      "reasoning": "The response maintains a consistently professional, instructional tone throughout without any enthusiastic language, exclamation marks, or high-energy expressions. It reads as a calm, methodical technical guide rather than an excited or energetic presentation.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    }
+  },
+  "cache_stats": {
+    "hits": 0,
+    "misses": 120
+  },
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "n_total": 120,
+  "n_cached": 0,
+  "n_submitted": 120,
+  "routing": {
+    "n_items": 120,
+    "threshold_base": 1000000000,
+    "otpm": 2000000,
+    "otpm_assumed": false,
+    "effective_threshold": 5000000000,
+    "path": "sync",
+    "forced_sync": false,
+    "sub_batch_sizes": []
+  }
+}

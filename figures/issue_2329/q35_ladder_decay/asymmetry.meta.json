@@ -1,0 +1,579 @@
+{
+  "commit": "e4088328",
+  "render_id": "595da67b43d841e8",
+  "git_commit": "e408832800a5d75c691eddf4d09b8078b1286110",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2329_ladder_analysis.py",
+  "created": "2026-08-21T08:20:08Z",
+  "figsize": [
+    11.0,
+    4.5
+  ],
+  "points": [
+    {
+      "x": 0.15,
+      "erase F_target \u2212 install F_target (paired by carrier)": 0.10080898003300927,
+      "error": 0.15892042456298547,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1.15,
+      "erase F_target \u2212 install F_target (paired by carrier)": 0.12785918984793634,
+      "error": 0.2150638029789716,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 2.15,
+      "erase F_target \u2212 install F_target (paired by carrier)": -0.6285708836878742,
+      "error": 0.32988775754485017,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 3.15,
+      "erase F_target \u2212 install F_target (paired by carrier)": -0.21547865254353815,
+      "error": 0.31929691020131756,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 4.15,
+      "erase F_target \u2212 install F_target (paired by carrier)": 0.18352222616438177,
+      "error": 0.19304624417858363,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "x": 5.15,
+      "erase F_target \u2212 install F_target (paired by carrier)": -0.12030389393289016,
+      "error": 0.213824592864703,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": -0.1943231441048035,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": 0.2291220556745182,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": -0.07619047619047599,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": 0.1438127090301003,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": 0.4317925591882751,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": 0.07064017660044147,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": 0.02922490470139779,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": -0.06033376123234912,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": -0.2150706436420722,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": 0.616685456595265,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": 0.12267657992565068,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": 0.273972602739726,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": -0.9538274605103283,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": -0.9428571428571428,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": 0.2990624999999998,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": -0.8355501813784764,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": -0.7912621359223303,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": -0.5469908814589667,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": -0.6311377245508982,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": 0.4386391251518834,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": 0.1312017640573317,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": -0.5917431192660553,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": -0.56981981981982,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": -0.07001214083367069,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": 0.15271966527196665,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": 0.024640657084188933,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": -0.21926489226869464,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": 0.39669421487603296,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": 0.2361396303901437,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": 0.5102040816326531,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": -0.060317460317460325,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": 0.048319327731092335,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": 0.045120671563483775,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": 0.02335025380710662,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": 0.008032128514056455,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 5.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": -0.7863282848956199,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.15,
+      "y": 0.03586798466959261,
+      "error": 0.04992089310892592,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "x": 1.15,
+      "y": 0.03756031119999703,
+      "error": 0.15175918788568354,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "x": 2.15,
+      "y": -0.32807551755181424,
+      "error": 0.18578253501808623,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "x": 3.15,
+      "y": -0.26291165354108004,
+      "error": 0.31437252353435974,
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "x": 4.15,
+      "y": 0.14486464902156673,
+      "error": 0.11794926422217077,
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "x": 5.15,
+      "y": -0.024735641136054812,
+      "error": 0.09580544965066148,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "x": 0.0,
+      "y": -0.013100436681222597,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.0,
+      "y": 0.025695931477516084,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.0,
+      "y": -0.014285714285714166,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.0,
+      "y": -0.023411371237458217,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.0,
+      "y": 0.1431792559188274,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.0,
+      "y": 0.09713024282560714,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 1.0,
+      "y": -0.04447268106734438,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 1.0,
+      "y": -0.07573812580231043,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 1.0,
+      "y": -0.2715855572998429,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 1.0,
+      "y": 0.07102593010146543,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 1.0,
+      "y": 0.2639405204460967,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 1.0,
+      "y": 0.28219178082191776,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 2.0,
+      "y": -0.6549210206561362,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 2.0,
+      "y": -0.5238095238095236,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 2.0,
+      "y": -0.06656250000000018,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 2.0,
+      "y": -0.1777509068923821,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 2.0,
+      "y": -0.03398058252427184,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 2.0,
+      "y": -0.5114285714285715,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 3.0,
+      "y": -0.8778443113772453,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 3.0,
+      "y": 0.08383961117861496,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 3.0,
+      "y": 0.32370452039691283,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 3.0,
+      "y": -0.18577981651376155,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 3.0,
+      "y": -0.3536036036036035,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 3.0,
+      "y": -0.5677863213273978,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 4.0,
+      "y": -0.006276150627614952,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 4.0,
+      "y": 0.024640657084188933,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 4.0,
+      "y": 0.2724968314321925,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 4.0,
+      "y": 0.3925619834710744,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 4.0,
+      "y": 0.008213552361396311,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 4.0,
+      "y": 0.1775510204081632,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 5.0,
+      "y": -0.08783068783068786,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 5.0,
+      "y": -0.05672268907563038,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 5.0,
+      "y": -0.022035676810073474,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 5.0,
+      "y": 0.21015228426395946,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 5.0,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 5.0,
+      "y": -0.19197707736389663,
+      "_kind": "scatter",
+      "_group": 23
+    }
+  ],
+  "n_series": 24,
+  "total_points": 84,
+  "text": {
+    "suptitle": "Erase vs install asymmetry per rung (steered arm)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "context-end",
+        "ylabel": "erase F_target \u2212 install F_target (paired by carrier)",
+        "xticklabels": [
+          "R1",
+          "R2",
+          "R3",
+          "R4",
+          "R5",
+          "R5"
+        ],
+        "yticklabels": [
+          "\u22121.2",
+          "\u22121.0",
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "prefix-end",
+        "xticklabels": [
+          "R1",
+          "R2",
+          "R3",
+          "R4",
+          "R5",
+          "R5"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
