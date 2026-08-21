@@ -79,20 +79,22 @@
 
 \postersec{TL;DR}
 \begin{itemize}
-  \item A single \textbf{linear map} on residual activations predicts an LLM's answer from its context \textbf{before generation}: held-out $R^2$ \textbf{0.75}, and rank-1 retrieval of the true answer among 9{,}941 candidates at \textbf{0.98} — the fresh-draw ceiling.
-  \item It is already \textbf{$\sim$87\% present in the base model}, and is \textbf{shared between the assistant and fictional characters}.
-  \item It predicts \textbf{sycophancy, hallucination and misalignment before inference}.
+  \item A single \textbf{linear map} predicts an LLM's mean answer activation from its final context activation \textbf{before generation}: held-out $R^2$ \textbf{0.75}, and rank-1 retrieval of the true answer among 10,000 candidates at \textbf{0.98} 
+  \item It is already \textbf{$\sim$75\% present in the base model}, then improves significantly with SFT, and barely changes with DPO and RLVR
+  \item It is \textbf{shared between the assistant in chat template, assistant in stories, and other fictional characters in stories}, providing evidence for the persona selection model
+  \item It can be used to predict \textbf{sycophancy, hallucination and misalignment before inference}.
 \end{itemize}
 
 \postersec{Motivation}
 \begin{itemize}
-  \item LLMs are trained as \textbf{next-token predictors}, but the weights fix a deterministic mapping from a context to a distribution over \emph{whole answers}: they are also \textbf{next-answer predictors}. Absent tool results, \takeaways{everything about the answer distribution is fixed before the first token is generated.}
-  \item A \textbf{simple approximation} of that mapping would be extremely useful: predict behavior \emph{before} generation, and predict how fine-tuning will change it.
-  \item But it need not exist: the mapping is billions of parameters applying dozens of nonlinear layers. Prior work sits at two ends of a \textbf{capacity--usefulness tradeoff} — cheap but \emph{narrow} predictors (specific tokens, activations, behaviors), or distillation, a whole-distribution imitator with no capacity advantage over the model itself.
-  \item \takeaways{Our question:} can a \textbf{very low-capacity} approximation capture the mapping \emph{as a whole}? Such an approximation is a \textbf{metamodel}: a much smaller model that reads the LLM's internals and predicts its behavior.
+  \item LLMs can be viewed as deterministic maps from \emph{contexts} to \emph{answer distributions}
+  \item A \textbf{simple approximation} of that map would be extremely useful: much easier to analyze theoretically, and 
+  \item But it need not exist: the map is billions of parameters applying dozens of nonlinear layers. 
+  \item Prior work either uses simple but \emph{narrow} predictors (specific tokens, activations, behaviors), or distillation, a complex whole-distribution predictor
+  \item \takeaways{Our question:} can a \textbf{simple} approximation capture the mapping \emph{as a whole}? 
 \end{itemize}
 
-\postersec{The residual context-answer mapping}
+\postersec{The residual context-answer map}
 \begin{center}
 \IfFileExists{figures/method_diagram.pdf}{\includegraphics[width=0.99\linewidth]{method_diagram.pdf}}{\includegraphics[width=0.99\linewidth]{fig1_schematic.pdf}}
 \end{center}
@@ -102,24 +104,25 @@
 % ==================== COLUMN 2: results 1-2 ====================
 \begin{column}{0.188\textwidth}
 
-\postersec{1.\ High predictive power, mostly linear}
+\postersec{1.\ The Mapping has high predictive Power and is mostly Linear}
 \begin{center}
 \includegraphics[width=0.97\linewidth]{plot1_scaling_boundary.pdf}
 \end{center}
 \figcap{2}{Held-out $R^2$ (left) and rank-1 retrieval (right; raw euclidean, pool 1{,}000) against training-set size. Dashed: generic boundary-token control. Layer 19.}
 \begin{itemize}
-  \item \takeaways{High predictive power:} held-out $R^2$ 0.75 at 963k training contexts, and rank-1 retrieval far above chance ($10^{-3}$) at every training size.
-  \item \takeaways{Mostly linear:} the nonlinear (MLP) map adds only $\sim$$0.06$ $R^2$ over the linear map, and only at large $n$.
-  \item \takeaways{Far above the baselines:} identity + bias never leaves the negative-$R^2$ regime; a generic boundary-token (punctuation) $\to$ next-segment map reads $R^2\!\approx\!0.11$ (dashed) — so this is not just residual-stream smoothness.
+  \item \takeaways{The mapping has high predictive power:} held-out $R^2$ 0.75, rank-1 retrieval 0.98 at 1 million contexts
+  \item \takeaways{The mapping is mostly linear:} the nonlinear (MLP) map adds only $\sim$$0.06$ $R^2$ over the linear map, and only at large $n$ (potentially this advantage would grow as you scale up the number of contexts)
+  \item \takeaways{The mapping is not present for generic boundary tokens:} held-out $R^2$ 0.75 for a mapping from generic boundary tokens (punctuation) to the next stretch of text
+  \item \takeaways{The mapping is not just copying the context vector:} The mapping does much better than identity + bias
   \item We study the \textbf{linear} map here; we are most excited about what it is \emph{useful} for.
-  \item \takeaways{Strongest at mid-depth:} held-out $R^2$ peaks at \textbf{layers 19--20 of 28} (0.76), well above the first layer (0.49) and the last (0.70).
+  \item \takeaways{The mapping is strongest at mid-late depth:} held-out $R^2$ peaks at \textbf{layers 19--20 of 28} (0.76)
 \end{itemize}
 \begin{center}
 \IfFileExists{figures/plot10_layer_sweep.pdf}{\includegraphics[width=0.95\linewidth]{plot10_layer_sweep.pdf}}{}
 \end{center}
 \figcap{3}{Held-out $R^2$ against the layer at which \emph{both} $v_C$ and $v_A$ are taken (swept together). Band: bootstrap 95\% CI over test rows. Star: argmax, layer 19 — 19 and 20 overlap. $n_{\mathrm{train}}\!=\!50{,}000$, $n_{\mathrm{test}}\!=\!1{,}000$.}
 
-\postersec{2.\ It predicts the persona-vector directions}
+\postersec{2.\ The mapping predicts useful directions of the answer}
 \begin{center}
 \IfFileExists{figures/plot2_persona_directions.pdf}{\includegraphics[width=0.92\linewidth]{plot2_persona_directions.pdf}}{\includegraphics[width=0.88\linewidth]{c3_persona_direction_spectrum.pdf}}
 \end{center}
@@ -186,14 +189,7 @@ We map the context to the answer's \textbf{SAE features}, then partial out predi
 % ==================== COLUMN 5: discussion ====================
 \begin{column}{0.188\textwidth}
 
-\postersec{7.\ Model size and chain-of-thought}
-\begin{itemize}
-  \item \takeaways{Scale buys more \emph{reliable answers}, not a more predictable map:} over Qwen2.5-Instruct 0.5B$\to$32B (matched train $n\!=\!25$k, hence below \S1's 963k anchor) raw $R^2$ goes 0.56$\to$0.73$\to$0.65 while the answer's two-draw reliability ceiling climbs 0.75$\to$0.93 — ceiling-normalized predictability is flat at \textbf{0.75--0.79}.
-  \item \takeaways{The map survives a reasoning trace:} OpenThinker2-7B reads 0.78 against 0.80 for its non-thinking parent, and context$\to$CoT$\to$answer matches the direct map.
-  \item \takeaways{But the CoT is not a privileged span:} it adds $+0.20$--$0.33$ skill, yet a \emph{length-matched slice of the answer's own opening} beats it in all three thinking models (every 95\% CI below zero).
-\end{itemize}
-
-\postersec{Application: behavior prediction before inference}
+\postersec{7. Application: behavior prediction before inference}
 \begin{center}
 \IfFileExists{figures/plot9_application_arms.pdf}{\includegraphics[width=0.99\linewidth]{plot9_application_arms.pdf}}{\includegraphics[width=0.99\linewidth]{c5_pv_methods_regimes.pdf}}
 \end{center}
@@ -203,6 +199,14 @@ We map the context to the answer's \textbf{SAE features}, then partial out predi
   \item \takeaways{Regression on the mapped answer matches or beats regression on the context everywhere,} and both leave persona-vector-on-context near zero — the gain is the \emph{map}, not the readout family.
   \item \takeaways{On synthetic prompts the context already gives the behavior away} — the map earns its keep where the prompt does \emph{not} telegraph the answer.
 \end{itemize}
+
+\postersec{Other Results}
+\begin{itemize}
+  \item \takeaways{The mapping does not get reliably better with model scale}
+  \item \takeaways{The map survives a reasoning trace:} OpenThinker2-7B reads 0.78 against 0.80 for its non-thinking parent, and context$\to$CoT$\to$answer matches the direct map.
+  \item \takeaways{But the CoT is not a privileged span:} it adds $+0.20$--$0.33$ skill, yet a \emph{length-matched slice of the answer's own opening} beats it in all three thinking models (every 95\% CI below zero).
+\end{itemize}
+
 
 \postersec{Implications \& future work}
 \begin{itemize}
