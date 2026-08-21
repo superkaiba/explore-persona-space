@@ -30,6 +30,8 @@ backend: runpod
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [doc](https://github.com/superkaiba/explore-persona-space/blob/4f2bbe9295775bc3b534d948b92506657364f0dc/docs/methodology/issue_2356.md) · [gist](https://gist.github.com/superkaiba/5fe33d68e37218c891972876eda611cb)
+
 ## Takeaways
 
 - AUROC (chance 0.5) 0.995 vs 0.896 (harmful flip-pairs) and 0.951 vs 0.743 (over-refusal): the pre-generation context probe beats the few-shot Sonnet judge; both paired gap intervals sit above zero.
