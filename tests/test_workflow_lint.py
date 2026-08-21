@@ -21,8 +21,10 @@ from __future__ import annotations
 
 import os
 import re
+import signal
 import subprocess
 import sys
+import warnings
 from pathlib import Path
 
 import pytest
@@ -107,14 +109,98 @@ from explore_persona_space.workflow import (  # noqa: E402
     load_workflow_yaml,
 )
 
+_RUN_TIMEOUT_S = 1800  # ~4x the measured 452-455s no-flags scan (#2252); fires only on a wedge
+
+
+def _signal_decode(rc: int) -> str | None:
+    """Name the signal encoded in a child returncode, or None for a plain exit.
+
+    A DIRECT child killed by signal N reports returncode -N (POSIX subprocess
+    semantics); a wrapper (uv/shell) reaping a signalled child conventionally
+    exits 128+N (the observed 143 = 128+SIGTERM, #2243). workflow_lint's own
+    exits are 0/1 (argparse: 2), so no legitimate verdict lands in either band.
+    """
+    if rc < 0:
+        n = -rc
+    elif rc >= 128:
+        n = rc - 128
+    else:
+        return None
+    try:
+        return f"{n} ({signal.Signals(n).name})"
+    except ValueError:
+        return f"{n} (unknown)"
+
+
+def _verdict_line(text_streams: tuple[str | None, ...]) -> str:
+    """Last 'workflow_lint: ...' line, scanning the streams IN THE ORDER GIVEN.
+
+    Callers pass stderr FIRST. The linter writes its verdict AND every
+    check-output line to stderr (`workflow_lint.py:18968`/`20525`), so a
+    stderr hit is always the authoritative one. Stream order is
+    load-bearing, not incidental: a FAIL-then-killed run also carries
+    `workflow_lint:`-prefixed FINDING lines, so scanning the stream list
+    in reverse would let a stdout line outrank the real verdict (both
+    critic lenses flagged this against assumption 4). Within a stream we
+    still take the LAST match — the verdict is printed last. The one
+    stdout-only mode (`--regen-hf-routing-snapshot`, called once in this
+    file) emits NO `workflow_lint:` line on either stream by design (its
+    early dispatch means the check bundle never runs), so it correctly
+    falls through to the stated-absence return rather than quoting a
+    stray line.
+    """
+    for s in [t for t in text_streams if t]:
+        for line in reversed(s.splitlines()):
+            if line.startswith("workflow_lint:"):
+                return line
+    return "<no verdict line — killed before the linter printed one>"
+
 
 def _run(*flags: str) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        ["uv", "run", "python", str(_LINT), *flags],
-        cwd=_REPO_ROOT,
-        capture_output=True,
-        text=True,
-        check=False,
+    """Spawn the linter; return ONLY genuine verdicts (0 <= rc < 128).
+
+    Signal deaths (external reaper, #2252/#2243) retry ONCE (the lint is
+    deterministic and read-only); a second signal death, or a timeout, fails
+    with a message discriminating it from a lint verdict. Callers may assert
+    on returncode: a returned CompletedProcess is never signal-encoded.
+    """
+    last: subprocess.CompletedProcess[str] | None = None
+    for attempt in (1, 2):
+        try:
+            result = subprocess.run(
+                ["uv", "run", "python", str(_LINT), *flags],
+                cwd=_REPO_ROOT,
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=_RUN_TIMEOUT_S,
+            )
+        except subprocess.TimeoutExpired:
+            pytest.fail(
+                f"_run{flags!r}: TIMEOUT after {_RUN_TIMEOUT_S}s — a WEDGE, not a lint "
+                f"verdict (#2252; healthy no-flags scan measures ~455s)."
+            )
+        sig = _signal_decode(result.returncode)
+        if sig is None:
+            return result
+        last = result
+        if attempt == 1:
+            warnings.warn(
+                f"_run{flags!r}: lint subprocess SIGNALLED (rc={result.returncode} = "
+                f"signal {sig}) — external kill, not a lint verdict (#2252); retrying "
+                f"once. Embedded verdict line: "
+                f"{_verdict_line((result.stderr, result.stdout))!r}",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+    assert last is not None
+    pytest.fail(
+        f"_run{flags!r}: SIGNALLED twice (rc={last.returncode} = signal "
+        f"{_signal_decode(last.returncode)}) — an external kill, NOT a lint verdict "
+        f"(#2252). Embedded verdict line: "
+        f"{_verdict_line((last.stderr, last.stdout))!r}. Environmental: check VM load "
+        f"and concurrent Step 9c batteries before touching the payload.\n"
+        f"stderr tail: {(last.stderr or '')[-400:]}"
     )
 
 
@@ -9814,3 +9900,134 @@ def test_check_two_tier_yield_floor_bundled_in_no_flags(tmp_path):
         "no_flags` — the flag is defined but not bundled into the no-flags "
         "default run."
     )
+
+
+# --- _run subprocess-supervision contract (#2252) ---
+# Fast unit tests: subprocess.run is replaced by a fake (the test subject's
+# boundary), so no real linter is spawned — each test runs in <1s. The real
+# spawn path is exercised by the scoped live-path tests above and by the
+# full file at the Step 9c gate.
+
+
+def _fake_lint_proc(
+    rc: int, stdout: str = "", stderr: str = ""
+) -> subprocess.CompletedProcess[str]:
+    return subprocess.CompletedProcess(
+        ["uv", "run", "python", str(_LINT)], rc, stdout=stdout, stderr=stderr
+    )
+
+
+class _FakeSubprocessRun:
+    """Stands in for subprocess.run; replays outcomes, records call args/kwargs.
+
+    The last outcome repeats once the list would be exhausted. An outcome that
+    is an exception instance is raised instead of returned.
+    """
+
+    def __init__(self, *outcomes: subprocess.CompletedProcess[str] | BaseException) -> None:
+        self.calls: list[tuple[tuple, dict]] = []
+        self._outcomes = list(outcomes)
+
+    def __call__(self, *args, **kwargs):
+        self.calls.append((args, kwargs))
+        outcome = self._outcomes.pop(0) if len(self._outcomes) > 1 else self._outcomes[0]
+        if isinstance(outcome, BaseException):
+            raise outcome
+        return outcome
+
+
+def test_run_helper_signal_death_retries_once_then_fails_discriminated(monkeypatch):
+    """Double signal death: retried exactly once, then a discriminating fail
+    quoting the signal decode AND the embedded verdict line (#2243 replay)."""
+    fake = _FakeSubprocessRun(
+        _fake_lint_proc(
+            143, stderr="workflow_lint: FAIL (1 error(s)) finding\nworkflow_lint: PASS\n"
+        )
+    )
+    monkeypatch.setattr(subprocess, "run", fake)
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        with pytest.raises(pytest.fail.Exception) as excinfo:
+            _run()
+    assert len(fake.calls) == 2, "a signal death must be retried exactly once"
+    assert any(
+        issubclass(w.category, RuntimeWarning) and "SIGNALLED" in str(w.message) for w in caught
+    ), "the first signal death must emit a RuntimeWarning before the retry"
+    msg = str(excinfo.value)
+    assert "SIGNALLED twice" in msg
+    assert "NOT a lint verdict" in msg
+    assert "15 (SIGTERM)" in msg
+    assert "Embedded verdict line: 'workflow_lint: PASS'" in msg
+
+
+def test_run_helper_negative_rc_is_a_signal_death(monkeypatch):
+    """Direct-child kill encoding (rc=-N) takes the same retry+discrimination path."""
+    fake = _FakeSubprocessRun(_fake_lint_proc(-15))
+    monkeypatch.setattr(subprocess, "run", fake)
+    with warnings.catch_warnings(record=True):
+        warnings.simplefilter("always")
+        with pytest.raises(pytest.fail.Exception) as excinfo:
+            _run("--check-tables")
+    assert len(fake.calls) == 2
+    msg = str(excinfo.value)
+    assert "SIGNALLED twice" in msg
+    assert "rc=-15" in msg
+    assert "15 (SIGTERM)" in msg
+
+
+def test_run_helper_single_signal_death_retry_success_warns(monkeypatch):
+    """One signal death then a clean exit: the retry result is returned and the
+    kill stays observable as a RuntimeWarning (no red gate)."""
+    ok = _fake_lint_proc(0, stderr="workflow_lint: PASS\n")
+    fake = _FakeSubprocessRun(_fake_lint_proc(143, stderr="workflow_lint: PASS\n"), ok)
+    monkeypatch.setattr(subprocess, "run", fake)
+    with pytest.warns(RuntimeWarning, match="SIGNALLED"):
+        result = _run()
+    assert result is ok  # identity assert, not a bare `== 0` (keeps the §6.3 count stable)
+    assert len(fake.calls) == 2
+
+
+def test_run_helper_verdicts_pass_through_unretried(monkeypatch):
+    """Genuine linter verdicts (rc 0/1) pass through on the first call, and the
+    spawn carries the module timeout fence."""
+    for rc in (1, 0):
+        proc = _fake_lint_proc(rc, stderr="workflow_lint: FAIL (1 error(s))\n")
+        fake = _FakeSubprocessRun(proc)
+        monkeypatch.setattr(subprocess, "run", fake)
+        result = _run("--check-asks")
+        assert result is proc  # identity assert (see §6.3 note above)
+        assert len(fake.calls) == 1, f"rc={rc} is a genuine verdict — must not retry"
+        _, kwargs = fake.calls[0]
+        assert kwargs["timeout"] == _RUN_TIMEOUT_S
+
+
+def test_run_helper_timeout_is_distinct_and_unretried(monkeypatch):
+    """TimeoutExpired fails loud with its own leading token and is never retried
+    (a wedge is not transient; a retry would add up to 30 min to the gate)."""
+    fake = _FakeSubprocessRun(subprocess.TimeoutExpired(["uv"], _RUN_TIMEOUT_S))
+    monkeypatch.setattr(subprocess, "run", fake)
+    with pytest.raises(pytest.fail.Exception) as excinfo:
+        _run()
+    assert len(fake.calls) == 1, "a timeout must not be retried"
+    msg = str(excinfo.value)
+    assert "TIMEOUT" in msg
+    assert "WEDGE" in msg
+
+
+def test_run_helper_verdict_line_prefers_stderr_over_stdout(monkeypatch):
+    """Stream order is a contract: the STDERR verdict outranks a stdout decoy.
+
+    A FAIL-then-killed run also carries `workflow_lint:`-prefixed FINDING
+    lines; scanning stdout first would let one outrank the real verdict."""
+    decoy = "workflow_lint: FAIL (1 error(s)) [stdout decoy]"
+    fake = _FakeSubprocessRun(
+        _fake_lint_proc(143, stdout=decoy + "\n", stderr="some output\nworkflow_lint: PASS\n")
+    )
+    monkeypatch.setattr(subprocess, "run", fake)
+    with warnings.catch_warnings(record=True):
+        warnings.simplefilter("always")
+        with pytest.raises(pytest.fail.Exception) as excinfo:
+            _run()
+    msg = str(excinfo.value)
+    assert "Embedded verdict line: 'workflow_lint: PASS'" in msg
+    assert decoy not in msg
