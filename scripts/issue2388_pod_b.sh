@@ -188,15 +188,17 @@ else
   QA_STORE_DIR=/workspace/store
 fi
 echo "[stage] QA_STORE_DIR=$QA_STORE_DIR"
-# R4: runpodfs directory-listing visibility can lag a completed tar by
-# seconds (tar rc=0 at 02:33:37Z; the immediate find saw an empty dir; the
-# same find listed all 345 files minutes later) — bounded re-probe before
-# declaring the extract empty.
+# R5 (supersedes the R4 lag diagnosis — the dir was never empty): under
+# `set -o pipefail`, `find | head -1 | grep -q .` FAILS on a populated dir
+# whenever head/grep exit before find finishes its stat-per-entry walk (slow
+# on runpodfs): find takes SIGPIPE (141) and pipefail surfaces it as the
+# pipeline status. Probe with find's own -print -quit — no pipe, stops at
+# the first file. Short bounded re-probe kept for genuine listing lag.
 n=0
-until find /workspace/h3_stores/hallucination_extraction -maxdepth 1 -type f | head -1 | grep -q .; do
+until [ -n "$(find /workspace/h3_stores/hallucination_extraction -maxdepth 1 -type f -print -quit)" ]; do
   n=$((n+1))
-  [ "$n" -ge 12 ] && { echo "[stage] hallucination_extraction extracted empty"; exit 1; }
-  echo "[stage] hallucination_extraction not yet visible (probe $n) — runpodfs listing lag; retrying"
+  [ "$n" -ge 6 ] && { echo "[stage] hallucination_extraction extracted empty"; exit 1; }
+  echo "[stage] hallucination_extraction empty probe $n — retrying"
   sleep 5
 done
 if phase_done p4-h3-hallu-done; then echo "[phase=p4_h3_hallucination] SKIP (done-sentinel)"; else
