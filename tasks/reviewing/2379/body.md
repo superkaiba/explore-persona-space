@@ -21,6 +21,8 @@ paper: false
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [findings-blind reference](https://github.com/superkaiba/explore-persona-space/blob/9f5e19196a84dabf79b7bf23bc2c906c5bfa1078/docs/methodology/issue_2379.md) · [gist](https://gist.github.com/superkaiba/73e96d981fb5652de1f09e114d02ae9c)
+
 ## Takeaways
 
 - **Δρ = −0.859** pooled misalignment gap (answer-side minus context-side, n = 18 trigger prompts), all five datasets negative, interval excluding zero; the continuous mean-misalignment companion gives **−0.871**.
