@@ -26,3 +26,14 @@ grounding docs — plans/v4.md, body.md, concerns.jsonl — were byte-identical)
 Tell Codex the corrected path explicitly and note the brief's path does not
 exist, or it may report a spurious unreachable-plan lens. Related:
 [[concurrent-followups-wrong-plan-symlink]].
+
+**Fourth case — brief CLAIMS stale, probe shows identical (#2261 r1,
+2026-08-21):** a brief may order "INLINE — the worktree copy is frozen at
+base and would be stale" when the branch was in fact cut AFTER the plan
+version landed on main, so the worktree copy diffs byte-identical. Run the
+identity diff anyway; when identical, still FOLLOW the brief's INLINE
+instruction (strictly more robust, and the brief is the extraction
+contract) but write ACCURATE envelope wording — say the worktree copy was
+verified identical, never assert staleness the probe refuted (a false
+staleness attestation invites Codex to distrust a perfectly good
+cross-check path) — and flag the divergence in the composer's return text.
