@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2441,
+  "highest_id": 2442,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11133,6 +11133,13 @@
       "path": "tasks/proposed/2441",
       "status": "proposed",
       "title": "Step 10d/9c gates: refresh worktree sparse cones from main's tests/sparse_cones.txt before gate pytest (stale-cone false NEW block, #2430 incident)"
+    },
+    "2442": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2442",
+      "status": "proposed",
+      "title": "Absence-claim rule names the duty but not the mechanism: a full-listing + client-side prefix filter returns a silent zero on a wrong path where the scoped probe 404s"
     },
     "245": {
       "has_clean_result": false,
