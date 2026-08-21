@@ -347,3 +347,4 @@
 {"ts": "2026-08-21T06:31:58Z", "kind": "epm:progress", "version": 173, "by": "poll_pipeline", "note": "phase transition: p4_qa_maps -> p3_maps", "phase": "p3_maps", "pod": "pod-2388-fits"}
 {"ts": "2026-08-21T06:38:44Z", "kind": "epm:progress", "version": 174, "by": "poll_pipeline", "note": "phase transition: p3_maps -> p4_qa_maps", "phase": "p4_qa_maps", "pod": "pod-2388-qafits"}
 {"ts": "2026-08-21T06:41:24Z", "kind": "epm:progress", "version": 175, "by": "poll_pipeline", "note": "phase transition: p4_qa_maps -> p3_maps", "phase": "p3_maps", "pod": "pod-2388-fits"}
+{"ts": "2026-08-21T06:48:04Z", "kind": "epm:progress", "version": 176, "by": "poll_pipeline", "note": "phase transition: p3_maps -> p4_qa_maps", "phase": "p4_qa_maps", "pod": "pod-2388-qafits"}
