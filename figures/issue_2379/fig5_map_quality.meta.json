@@ -1,0 +1,4646 @@
+{
+  "commit": "de40d0fb+dirty",
+  "render_id": "59148cb99cab4a06",
+  "git_commit": "de40d0fb",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2379/fig4_delta_forest.meta.json",
+    "figures/issue_2379/fig4_delta_forest.pdf",
+    "figures/issue_2379/fig4_delta_forest.png",
+    "scripts/issue2379_analysis.py"
+  ],
+  "git_argv0_state": null,
+  "created": "2026-08-21T01:31:26Z",
+  "figsize": [
+    11.0,
+    3.0
+  ],
+  "points": [
+    {
+      "stored layer index": 0.0,
+      "value": 0.41542711464600734,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "stored layer index": 1.0,
+      "value": 0.4301780183618714,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "stored layer index": 2.0,
+      "value": 0.4646558676443213,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "stored layer index": 3.0,
+      "value": 0.46712131489765707,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "stored layer index": 4.0,
+      "value": 0.47307621328513616,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "stored layer index": 5.0,
+      "value": 0.489646703505351,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "stored layer index": 6.0,
+      "value": 0.5114106203537556,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "stored layer index": 7.0,
+      "value": 0.5022885917426765,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "stored layer index": 8.0,
+      "value": 0.5275085084797315,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "stored layer index": 9.0,
+      "value": 0.5057197639296364,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "stored layer index": 10.0,
+      "value": 0.5410303532509759,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "stored layer index": 11.0,
+      "value": 0.5270608590921426,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "stored layer index": 12.0,
+      "value": 0.5464304616967379,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "stored layer index": 13.0,
+      "value": 0.584611812086365,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "stored layer index": 14.0,
+      "value": 0.5831033881807445,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "stored layer index": 15.0,
+      "value": 0.596563958442413,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "stored layer index": 16.0,
+      "value": 0.6028556319085009,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "stored layer index": 17.0,
+      "value": 0.6020035004506998,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "stored layer index": 18.0,
+      "value": 0.6358003104178798,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "stored layer index": 19.0,
+      "value": 0.6509379540810882,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "stored layer index": 20.0,
+      "value": 0.6642467777812271,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "stored layer index": 21.0,
+      "value": 0.6467504599486034,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "stored layer index": 22.0,
+      "value": 0.6301119147646794,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "stored layer index": 23.0,
+      "value": 0.6070841369800034,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "stored layer index": 24.0,
+      "value": 0.6110426463252099,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "stored layer index": 25.0,
+      "value": 0.6086710612964816,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "stored layer index": 26.0,
+      "value": 0.5844726434347102,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "stored layer index": 27.0,
+      "value": 0.6591559368033875,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "stored layer index": 0.0,
+      "value": 0.40249855493424624,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "stored layer index": 1.0,
+      "value": 0.41436642196838935,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "stored layer index": 2.0,
+      "value": 0.4552768930795732,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "stored layer index": 3.0,
+      "value": 0.45880050830127483,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "stored layer index": 4.0,
+      "value": 0.4598045396014836,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "stored layer index": 5.0,
+      "value": 0.4767402164915041,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "stored layer index": 6.0,
+      "value": 0.49528807285861,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "stored layer index": 7.0,
+      "value": 0.478981079080956,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "stored layer index": 8.0,
+      "value": 0.4955033733252262,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "stored layer index": 9.0,
+      "value": 0.46803713160347415,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "stored layer index": 10.0,
+      "value": 0.4896071293382326,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "stored layer index": 11.0,
+      "value": 0.5017580465189122,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "stored layer index": 12.0,
+      "value": 0.5247586410104361,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "stored layer index": 13.0,
+      "value": 0.5518521644059152,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "stored layer index": 14.0,
+      "value": 0.578504453957239,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "stored layer index": 15.0,
+      "value": 0.5953314258859209,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "stored layer index": 16.0,
+      "value": 0.6053367687328219,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "stored layer index": 17.0,
+      "value": 0.6084273062910888,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "stored layer index": 18.0,
+      "value": 0.6165991535159253,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "stored layer index": 19.0,
+      "value": 0.6608161383994171,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "stored layer index": 20.0,
+      "value": 0.6516773291647293,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "stored layer index": 21.0,
+      "value": 0.6364420597283793,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "stored layer index": 22.0,
+      "value": 0.6233211672258594,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "stored layer index": 23.0,
+      "value": 0.6047515511376439,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "stored layer index": 24.0,
+      "value": 0.6119482868304392,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "stored layer index": 25.0,
+      "value": 0.6094951544254938,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "stored layer index": 26.0,
+      "value": 0.59003640278264,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "stored layer index": 27.0,
+      "value": 0.6599260663861785,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "stored layer index": 0.0,
+      "value": 0.39537058410574755,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "stored layer index": 1.0,
+      "value": 0.4103845006718311,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "stored layer index": 2.0,
+      "value": 0.45384723601346433,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "stored layer index": 3.0,
+      "value": 0.45741688758365573,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "stored layer index": 4.0,
+      "value": 0.4571995657988954,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "stored layer index": 5.0,
+      "value": 0.4740940529927252,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "stored layer index": 6.0,
+      "value": 0.4957628611739837,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "stored layer index": 7.0,
+      "value": 0.4826907838655293,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "stored layer index": 8.0,
+      "value": 0.4982304449974494,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "stored layer index": 9.0,
+      "value": 0.4759701519333447,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "stored layer index": 10.0,
+      "value": 0.49967016776390016,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "stored layer index": 11.0,
+      "value": 0.515030487900861,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "stored layer index": 12.0,
+      "value": 0.5372621483378988,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "stored layer index": 13.0,
+      "value": 0.5619560618819264,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "stored layer index": 14.0,
+      "value": 0.5861245686117807,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "stored layer index": 15.0,
+      "value": 0.6046575303345909,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "stored layer index": 16.0,
+      "value": 0.612910006953757,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "stored layer index": 17.0,
+      "value": 0.6150530561744693,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "stored layer index": 18.0,
+      "value": 0.6207826156399331,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "stored layer index": 19.0,
+      "value": 0.6661005696315436,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "stored layer index": 20.0,
+      "value": 0.65864123656771,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "stored layer index": 21.0,
+      "value": 0.6423787133428087,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "stored layer index": 22.0,
+      "value": 0.6315704564733085,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "stored layer index": 23.0,
+      "value": 0.6129348095565584,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "stored layer index": 24.0,
+      "value": 0.6192356174324025,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "stored layer index": 25.0,
+      "value": 0.6162414341319968,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "stored layer index": 26.0,
+      "value": 0.5960256963108028,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "stored layer index": 27.0,
+      "value": 0.6600542792403192,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "stored layer index": 0.0,
+      "value": 0.4037573383719687,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "stored layer index": 1.0,
+      "value": 0.41882319846390936,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "stored layer index": 2.0,
+      "value": 0.4604737288707864,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "stored layer index": 3.0,
+      "value": 0.4570836879828195,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "stored layer index": 4.0,
+      "value": 0.4631939125471234,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "stored layer index": 5.0,
+      "value": 0.47931447748380773,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "stored layer index": 6.0,
+      "value": 0.4955725608232636,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "stored layer index": 7.0,
+      "value": 0.48301334185755385,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "stored layer index": 8.0,
+      "value": 0.5101876359612507,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "stored layer index": 9.0,
+      "value": 0.47782847379920357,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "stored layer index": 10.0,
+      "value": 0.5098797585489392,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "stored layer index": 11.0,
+      "value": 0.5255434815149095,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "stored layer index": 12.0,
+      "value": 0.546249302752865,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "stored layer index": 13.0,
+      "value": 0.560179000488117,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "stored layer index": 14.0,
+      "value": 0.5514635166813651,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "stored layer index": 15.0,
+      "value": 0.578305351969238,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "stored layer index": 16.0,
+      "value": 0.5867820321698971,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "stored layer index": 17.0,
+      "value": 0.5898808689273718,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "stored layer index": 18.0,
+      "value": 0.610129938470283,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "stored layer index": 19.0,
+      "value": 0.6579182232451688,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "stored layer index": 20.0,
+      "value": 0.6477596895163105,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "stored layer index": 21.0,
+      "value": 0.6620253356153692,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "stored layer index": 22.0,
+      "value": 0.6466678217014137,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "stored layer index": 23.0,
+      "value": 0.6333838619796766,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "stored layer index": 24.0,
+      "value": 0.6445331744231518,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "stored layer index": 25.0,
+      "value": 0.6469806938752343,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "stored layer index": 26.0,
+      "value": 0.6259667287055786,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "stored layer index": 27.0,
+      "value": 0.6890039519100659,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "stored layer index": 0.0,
+      "value": 0.4232023566347556,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "stored layer index": 1.0,
+      "value": 0.4397676549109546,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "stored layer index": 2.0,
+      "value": 0.4792588647243968,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "stored layer index": 3.0,
+      "value": 0.47465888811843804,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "stored layer index": 4.0,
+      "value": 0.4779861333830877,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "stored layer index": 5.0,
+      "value": 0.4960679631642959,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "stored layer index": 6.0,
+      "value": 0.5120548884602634,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "stored layer index": 7.0,
+      "value": 0.49812668762482093,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "stored layer index": 8.0,
+      "value": 0.525200402916101,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "stored layer index": 9.0,
+      "value": 0.5001154882096026,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "stored layer index": 10.0,
+      "value": 0.5333090042807279,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "stored layer index": 11.0,
+      "value": 0.5495145521730851,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "stored layer index": 12.0,
+      "value": 0.5661158693672929,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "stored layer index": 13.0,
+      "value": 0.5795722575262572,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "stored layer index": 14.0,
+      "value": 0.5715305741128645,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "stored layer index": 15.0,
+      "value": 0.5997801916901617,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "stored layer index": 16.0,
+      "value": 0.6037223079078737,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "stored layer index": 17.0,
+      "value": 0.6044601786917482,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "stored layer index": 18.0,
+      "value": 0.6212554604016665,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "stored layer index": 19.0,
+      "value": 0.673809923106764,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "stored layer index": 20.0,
+      "value": 0.6653580798490203,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "stored layer index": 21.0,
+      "value": 0.6753923636810633,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "stored layer index": 22.0,
+      "value": 0.6595400614897622,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "stored layer index": 23.0,
+      "value": 0.6481086062311071,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "stored layer index": 24.0,
+      "value": 0.6564796867303349,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "stored layer index": 25.0,
+      "value": 0.6590937669207224,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "stored layer index": 26.0,
+      "value": 0.6354915372957639,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "stored layer index": 27.0,
+      "value": 0.7005144310213649,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "stored layer index": 0.0,
+      "value": 0.3494125358991921,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "stored layer index": 1.0,
+      "value": 0.3810869707427913,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "stored layer index": 2.0,
+      "value": 0.41377052710036066,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "stored layer index": 3.0,
+      "value": 0.4330858722545955,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "stored layer index": 4.0,
+      "value": 0.4446117595978658,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "stored layer index": 5.0,
+      "value": 0.4625172354605378,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "stored layer index": 6.0,
+      "value": 0.47554279863140814,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "stored layer index": 7.0,
+      "value": 0.478227628407372,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "stored layer index": 8.0,
+      "value": 0.5075286469615184,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "stored layer index": 9.0,
+      "value": 0.49021455096650035,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "stored layer index": 10.0,
+      "value": 0.5139587697047215,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "stored layer index": 11.0,
+      "value": 0.5316294086620661,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "stored layer index": 12.0,
+      "value": 0.5516438925893505,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "stored layer index": 13.0,
+      "value": 0.5677559597697053,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "stored layer index": 14.0,
+      "value": 0.5928159141134954,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "stored layer index": 15.0,
+      "value": 0.6097735148501029,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "stored layer index": 16.0,
+      "value": 0.6182075113405978,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "stored layer index": 17.0,
+      "value": 0.617906223306697,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "stored layer index": 18.0,
+      "value": 0.6265203126405405,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "stored layer index": 19.0,
+      "value": 0.658447363544185,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "stored layer index": 20.0,
+      "value": 0.6472774062265099,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "stored layer index": 21.0,
+      "value": 0.6347361187206688,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "stored layer index": 22.0,
+      "value": 0.6135399725370918,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "stored layer index": 23.0,
+      "value": 0.5898120995328081,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "stored layer index": 24.0,
+      "value": 0.5791572207703024,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "stored layer index": 25.0,
+      "value": 0.5732195573159047,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "stored layer index": 26.0,
+      "value": 0.5365199080885438,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "stored layer index": 27.0,
+      "value": 0.5604961867889069,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "stored layer index": 0.0,
+      "value": 0.3648738078000717,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "stored layer index": 1.0,
+      "value": 0.38671833575648096,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "stored layer index": 2.0,
+      "value": 0.41781135225022736,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "stored layer index": 3.0,
+      "value": 0.4361475751886501,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "stored layer index": 4.0,
+      "value": 0.4433986524479664,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "stored layer index": 5.0,
+      "value": 0.45814597312433647,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "stored layer index": 6.0,
+      "value": 0.47330498591886705,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "stored layer index": 7.0,
+      "value": 0.479747949124662,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "stored layer index": 8.0,
+      "value": 0.5073886904491083,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "stored layer index": 9.0,
+      "value": 0.4909315891802545,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "stored layer index": 10.0,
+      "value": 0.5151424660801134,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "stored layer index": 11.0,
+      "value": 0.5332329867340188,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "stored layer index": 12.0,
+      "value": 0.5508337219573735,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "stored layer index": 13.0,
+      "value": 0.569290288438691,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "stored layer index": 14.0,
+      "value": 0.5949972681709301,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "stored layer index": 15.0,
+      "value": 0.6145032448132792,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "stored layer index": 16.0,
+      "value": 0.6225582246526972,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "stored layer index": 17.0,
+      "value": 0.6204188088102608,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "stored layer index": 18.0,
+      "value": 0.6295407629779912,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "stored layer index": 19.0,
+      "value": 0.6649076266450087,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "stored layer index": 20.0,
+      "value": 0.6575102246105371,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "stored layer index": 21.0,
+      "value": 0.6421308414493783,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "stored layer index": 22.0,
+      "value": 0.6193649705453366,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "stored layer index": 23.0,
+      "value": 0.6001655732568818,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "stored layer index": 24.0,
+      "value": 0.592792263142494,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "stored layer index": 25.0,
+      "value": 0.5872477534934375,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "stored layer index": 26.0,
+      "value": 0.5596619158126215,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "stored layer index": 27.0,
+      "value": 0.5717170486199756,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "stored layer index": 0.0,
+      "value": 0.3698938306629047,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "stored layer index": 1.0,
+      "value": 0.3990937810948164,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "stored layer index": 2.0,
+      "value": 0.4298717871730473,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "stored layer index": 3.0,
+      "value": 0.44834515399482155,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "stored layer index": 4.0,
+      "value": 0.4598759067406446,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "stored layer index": 5.0,
+      "value": 0.47770409926299506,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "stored layer index": 6.0,
+      "value": 0.49092981449008055,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "stored layer index": 7.0,
+      "value": 0.491618560565387,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "stored layer index": 8.0,
+      "value": 0.5188583896654025,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "stored layer index": 9.0,
+      "value": 0.5009986399791186,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "stored layer index": 10.0,
+      "value": 0.5240305996015423,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "stored layer index": 11.0,
+      "value": 0.5427588474700242,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "stored layer index": 12.0,
+      "value": 0.559962132984785,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "stored layer index": 13.0,
+      "value": 0.5781349937981273,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "stored layer index": 14.0,
+      "value": 0.6060685702427602,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "stored layer index": 15.0,
+      "value": 0.6250614763314113,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "stored layer index": 16.0,
+      "value": 0.632121809953051,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "stored layer index": 17.0,
+      "value": 0.6306774442237857,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "stored layer index": 18.0,
+      "value": 0.6403962911554101,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "stored layer index": 19.0,
+      "value": 0.6745974692619527,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "stored layer index": 20.0,
+      "value": 0.6632208780086539,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "stored layer index": 21.0,
+      "value": 0.651891356736171,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "stored layer index": 22.0,
+      "value": 0.6299709438684995,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "stored layer index": 23.0,
+      "value": 0.608025734322132,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "stored layer index": 24.0,
+      "value": 0.6021212515197457,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "stored layer index": 25.0,
+      "value": 0.5903083718247604,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "stored layer index": 26.0,
+      "value": 0.5565486627627054,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "stored layer index": 27.0,
+      "value": 0.5628544037915011,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "stored layer index": 0.0,
+      "value": 0.4426850616664765,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "stored layer index": 1.0,
+      "value": 0.4342006651903202,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "stored layer index": 2.0,
+      "value": 0.4922016185208009,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "stored layer index": 3.0,
+      "value": 0.49572768288550717,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "stored layer index": 4.0,
+      "value": 0.49901882527110786,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "stored layer index": 5.0,
+      "value": 0.4882589468760925,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "stored layer index": 6.0,
+      "value": 0.5014662991459052,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "stored layer index": 7.0,
+      "value": 0.5245499027403991,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "stored layer index": 8.0,
+      "value": 0.5409590890766582,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "stored layer index": 9.0,
+      "value": 0.5094782813116492,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "stored layer index": 10.0,
+      "value": 0.5373152167499484,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "stored layer index": 11.0,
+      "value": 0.5290964867827394,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "stored layer index": 12.0,
+      "value": 0.5751752429779646,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "stored layer index": 13.0,
+      "value": 0.6005463371128517,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "stored layer index": 14.0,
+      "value": 0.598579686536824,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "stored layer index": 15.0,
+      "value": 0.6176249068804246,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "stored layer index": 16.0,
+      "value": 0.6292699280720567,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "stored layer index": 17.0,
+      "value": 0.625500727410004,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "stored layer index": 18.0,
+      "value": 0.6342252271396065,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "stored layer index": 19.0,
+      "value": 0.6709801533478604,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "stored layer index": 20.0,
+      "value": 0.657672656912604,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "stored layer index": 21.0,
+      "value": 0.6724037638270712,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "stored layer index": 22.0,
+      "value": 0.6513317006142543,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "stored layer index": 23.0,
+      "value": 0.6315772906201877,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "stored layer index": 24.0,
+      "value": 0.6327775449993926,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "stored layer index": 25.0,
+      "value": 0.6333948397351628,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "stored layer index": 26.0,
+      "value": 0.613312511935522,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "stored layer index": 27.0,
+      "value": 0.6159195344143802,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "stored layer index": 0.0,
+      "y": -0.3075993947875082,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "stored layer index": 1.0,
+      "y": -0.30092933885705486,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "stored layer index": 2.0,
+      "y": -0.2559935463966274,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "stored layer index": 3.0,
+      "y": -0.23506195584037926,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "stored layer index": 4.0,
+      "y": -0.38536011532854,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "stored layer index": 5.0,
+      "y": -0.5900307032577365,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "stored layer index": 6.0,
+      "y": -0.4900912416347185,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "stored layer index": 7.0,
+      "y": -0.3497175137630011,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "stored layer index": 8.0,
+      "y": -0.3615127411498369,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "stored layer index": 9.0,
+      "y": -0.30321779009553174,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "stored layer index": 10.0,
+      "y": -0.23936768744786074,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "stored layer index": 11.0,
+      "y": -0.2720204040690153,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "stored layer index": 12.0,
+      "y": -0.24702438529049364,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "stored layer index": 13.0,
+      "y": -0.28913325830330106,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "stored layer index": 14.0,
+      "y": -0.32722378946396,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "stored layer index": 15.0,
+      "y": -0.26038520061877324,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "stored layer index": 16.0,
+      "y": -0.4014894806449649,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "stored layer index": 17.0,
+      "y": -0.44494377360752724,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "stored layer index": 18.0,
+      "y": -0.4550114723205081,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "stored layer index": 19.0,
+      "y": -0.5055284769859969,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "stored layer index": 20.0,
+      "y": -0.7837942263537905,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "stored layer index": 21.0,
+      "y": -0.7790368474439886,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "stored layer index": 22.0,
+      "y": -1.004551226908442,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "stored layer index": 23.0,
+      "y": -1.069208979059023,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "stored layer index": 24.0,
+      "y": -1.0450107320280564,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "stored layer index": 25.0,
+      "y": -1.249783186010597,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "stored layer index": 26.0,
+      "y": -1.8042625381706179,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "stored layer index": 27.0,
+      "y": -1.481935360471419,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "stored layer index": 0.0,
+      "y": -0.30516093753499085,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "stored layer index": 1.0,
+      "y": -0.2929974767772141,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "stored layer index": 2.0,
+      "y": -0.25894682652552836,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "stored layer index": 3.0,
+      "y": -0.24374383962794055,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "stored layer index": 4.0,
+      "y": -0.4566767857628349,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "stored layer index": 5.0,
+      "y": -0.6965508905182423,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "stored layer index": 6.0,
+      "y": -0.5509260232949893,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "stored layer index": 7.0,
+      "y": -0.4462606132449025,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "stored layer index": 8.0,
+      "y": -0.4659432847455809,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "stored layer index": 9.0,
+      "y": -0.4117673283284664,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "stored layer index": 10.0,
+      "y": -0.39604089885662774,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "stored layer index": 11.0,
+      "y": -0.41180043559572654,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "stored layer index": 12.0,
+      "y": -0.3612737510966626,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "stored layer index": 13.0,
+      "y": -0.33147564780142313,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "stored layer index": 14.0,
+      "y": -0.3114892614786491,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "stored layer index": 15.0,
+      "y": -0.25485565621453654,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "stored layer index": 16.0,
+      "y": -0.3606389314090257,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "stored layer index": 17.0,
+      "y": -0.41576870155417933,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "stored layer index": 18.0,
+      "y": -0.4264389861954234,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "stored layer index": 19.0,
+      "y": -0.4498139342019367,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "stored layer index": 20.0,
+      "y": -0.7043841087201372,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "stored layer index": 21.0,
+      "y": -0.7048258470293765,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "stored layer index": 22.0,
+      "y": -0.9899683011764244,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "stored layer index": 23.0,
+      "y": -1.0804361686322452,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "stored layer index": 24.0,
+      "y": -1.072343098175295,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "stored layer index": 25.0,
+      "y": -1.294619152857352,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "stored layer index": 26.0,
+      "y": -1.8195290262109314,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "stored layer index": 27.0,
+      "y": -1.6091045617450455,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "stored layer index": 0.0,
+      "y": -0.3191986833655278,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "stored layer index": 1.0,
+      "y": -0.31391138335916713,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "stored layer index": 2.0,
+      "y": -0.2712565564477629,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "stored layer index": 3.0,
+      "y": -0.2598075464719185,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "stored layer index": 4.0,
+      "y": -0.4336134166310568,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "stored layer index": 5.0,
+      "y": -0.7134407367850484,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "stored layer index": 6.0,
+      "y": -0.5303391318626633,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "stored layer index": 7.0,
+      "y": -0.40888090360038154,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "stored layer index": 8.0,
+      "y": -0.4308592320820466,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "stored layer index": 9.0,
+      "y": -0.42062328226341394,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "stored layer index": 10.0,
+      "y": -0.3891720128710505,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "stored layer index": 11.0,
+      "y": -0.4112696540313585,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "stored layer index": 12.0,
+      "y": -0.4063913733252926,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "stored layer index": 13.0,
+      "y": -0.42010726893176664,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "stored layer index": 14.0,
+      "y": -0.40857159498351825,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "stored layer index": 15.0,
+      "y": -0.320697331039028,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "stored layer index": 16.0,
+      "y": -0.41122704508343744,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "stored layer index": 17.0,
+      "y": -0.4724729853914622,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "stored layer index": 18.0,
+      "y": -0.4829298950789447,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "stored layer index": 19.0,
+      "y": -0.49375445409698737,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "stored layer index": 20.0,
+      "y": -0.7474688761553048,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "stored layer index": 21.0,
+      "y": -0.7224687125131259,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "stored layer index": 22.0,
+      "y": -0.9651662151477387,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "stored layer index": 23.0,
+      "y": -1.0453647342980306,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "stored layer index": 24.0,
+      "y": -1.0216829318425038,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "stored layer index": 25.0,
+      "y": -1.2543210404652871,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "stored layer index": 26.0,
+      "y": -1.7696205865660666,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "stored layer index": 27.0,
+      "y": -1.5447317885595981,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "stored layer index": 0.0,
+      "y": -0.3136978064018927,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "stored layer index": 1.0,
+      "y": -0.30281897564550486,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "stored layer index": 2.0,
+      "y": -0.26632474136396445,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "stored layer index": 3.0,
+      "y": -0.2532769149041214,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "stored layer index": 4.0,
+      "y": -0.46699343220568124,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "stored layer index": 5.0,
+      "y": -0.6308295947085842,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "stored layer index": 6.0,
+      "y": -0.497211579700374,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "stored layer index": 7.0,
+      "y": -0.37490944504415125,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "stored layer index": 8.0,
+      "y": -0.33341292601726513,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "stored layer index": 9.0,
+      "y": -0.41614749199664147,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "stored layer index": 10.0,
+      "y": -0.3648832138940745,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "stored layer index": 11.0,
+      "y": -0.36141359514712357,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "stored layer index": 12.0,
+      "y": -0.31550750399648075,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "stored layer index": 13.0,
+      "y": -0.3298622491586156,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "stored layer index": 14.0,
+      "y": -0.3728408502994127,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "stored layer index": 15.0,
+      "y": -0.30376608750257605,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "stored layer index": 16.0,
+      "y": -0.41198477176817927,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "stored layer index": 17.0,
+      "y": -0.48008931621376005,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "stored layer index": 18.0,
+      "y": -0.5419191823816851,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "stored layer index": 19.0,
+      "y": -0.5869621695081351,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "stored layer index": 20.0,
+      "y": -0.8372136050155208,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "stored layer index": 21.0,
+      "y": -0.8176067522191488,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "stored layer index": 22.0,
+      "y": -1.1572473986426393,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "stored layer index": 23.0,
+      "y": -1.1994357133217775,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "stored layer index": 24.0,
+      "y": -1.1565524711110902,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "stored layer index": 25.0,
+      "y": -1.3617099562392423,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "stored layer index": 26.0,
+      "y": -1.9423315184870167,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "stored layer index": 27.0,
+      "y": -1.6965914008372485,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "stored layer index": 0.0,
+      "y": -0.30077439985483556,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "stored layer index": 1.0,
+      "y": -0.2933230000407778,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "stored layer index": 2.0,
+      "y": -0.24866711347973158,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "stored layer index": 3.0,
+      "y": -0.24258453694539628,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "stored layer index": 4.0,
+      "y": -0.4951012857716528,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "stored layer index": 5.0,
+      "y": -0.6717998926316908,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "stored layer index": 6.0,
+      "y": -0.5221470968965662,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "stored layer index": 7.0,
+      "y": -0.3564508189458284,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "stored layer index": 8.0,
+      "y": -0.2920693756346955,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "stored layer index": 9.0,
+      "y": -0.3704643518880659,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "stored layer index": 10.0,
+      "y": -0.3303647059892474,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "stored layer index": 11.0,
+      "y": -0.31686914267403665,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "stored layer index": 12.0,
+      "y": -0.27489998117415415,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "stored layer index": 13.0,
+      "y": -0.2702172021021847,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "stored layer index": 14.0,
+      "y": -0.329824720455409,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "stored layer index": 15.0,
+      "y": -0.275062795933916,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "stored layer index": 16.0,
+      "y": -0.37232596653151884,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "stored layer index": 17.0,
+      "y": -0.45250286115654426,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "stored layer index": 18.0,
+      "y": -0.4985969118049136,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "stored layer index": 19.0,
+      "y": -0.5411313081689311,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "stored layer index": 20.0,
+      "y": -0.7976234357567684,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "stored layer index": 21.0,
+      "y": -0.7890626786335817,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "stored layer index": 22.0,
+      "y": -1.1175654617488013,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "stored layer index": 23.0,
+      "y": -1.164635407820207,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "stored layer index": 24.0,
+      "y": -1.131327641191532,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "stored layer index": 25.0,
+      "y": -1.330865135525563,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "stored layer index": 26.0,
+      "y": -1.9288174275518752,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "stored layer index": 27.0,
+      "y": -1.7346741822281677,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "stored layer index": 0.0,
+      "y": -0.27903214912306584,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "stored layer index": 1.0,
+      "y": -0.2836882914705279,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "stored layer index": 2.0,
+      "y": -0.249586142935025,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "stored layer index": 3.0,
+      "y": -0.285599961353451,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "stored layer index": 4.0,
+      "y": -0.31377331554730215,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "stored layer index": 5.0,
+      "y": -0.5413673225879647,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "stored layer index": 6.0,
+      "y": -0.46416198045866586,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "stored layer index": 7.0,
+      "y": -0.3249311879963883,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "stored layer index": 8.0,
+      "y": -0.38182490647304723,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "stored layer index": 9.0,
+      "y": -0.4966755360249655,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "stored layer index": 10.0,
+      "y": -0.39981475230074226,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "stored layer index": 11.0,
+      "y": -0.45209010939317995,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "stored layer index": 12.0,
+      "y": -0.3995321011708952,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "stored layer index": 13.0,
+      "y": -0.47102855654372133,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "stored layer index": 14.0,
+      "y": -0.5481754397570644,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "stored layer index": 15.0,
+      "y": -0.5073740653793919,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "stored layer index": 16.0,
+      "y": -0.5956627987602063,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "stored layer index": 17.0,
+      "y": -0.6348796125899179,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "stored layer index": 18.0,
+      "y": -0.7112171842639929,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "stored layer index": 19.0,
+      "y": -0.6869790518153784,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "stored layer index": 20.0,
+      "y": -0.9388608478515088,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "stored layer index": 21.0,
+      "y": -0.9345821985416711,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "stored layer index": 22.0,
+      "y": -1.306699015897824,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "stored layer index": 23.0,
+      "y": -1.424372306849699,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "stored layer index": 24.0,
+      "y": -1.34755170264439,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "stored layer index": 25.0,
+      "y": -1.586712056302952,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "stored layer index": 26.0,
+      "y": -2.17151540837294,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "stored layer index": 27.0,
+      "y": -1.6085298133975812,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "stored layer index": 0.0,
+      "y": -0.2807728489910255,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "stored layer index": 1.0,
+      "y": -0.27797465996546444,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "stored layer index": 2.0,
+      "y": -0.2565132832429542,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "stored layer index": 3.0,
+      "y": -0.2515105559299895,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "stored layer index": 4.0,
+      "y": -0.2945149327396044,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "stored layer index": 5.0,
+      "y": -0.5506284176882732,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "stored layer index": 6.0,
+      "y": -0.43423546826031867,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "stored layer index": 7.0,
+      "y": -0.3181087340113746,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "stored layer index": 8.0,
+      "y": -0.35883664207396015,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "stored layer index": 9.0,
+      "y": -0.47503541613753386,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "stored layer index": 10.0,
+      "y": -0.37681676419969046,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "stored layer index": 11.0,
+      "y": -0.4415008771002189,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "stored layer index": 12.0,
+      "y": -0.3909499618858474,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "stored layer index": 13.0,
+      "y": -0.455470489047906,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "stored layer index": 14.0,
+      "y": -0.5359251020895766,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "stored layer index": 15.0,
+      "y": -0.47948028884731,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "stored layer index": 16.0,
+      "y": -0.5732181691109706,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "stored layer index": 17.0,
+      "y": -0.605707300551724,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "stored layer index": 18.0,
+      "y": -0.6694274780442406,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "stored layer index": 19.0,
+      "y": -0.6280132246462871,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "stored layer index": 20.0,
+      "y": -0.8844344831688684,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "stored layer index": 21.0,
+      "y": -0.886685279435482,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "stored layer index": 22.0,
+      "y": -1.2475819772076804,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "stored layer index": 23.0,
+      "y": -1.3793601097466177,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "stored layer index": 24.0,
+      "y": -1.3223857555828729,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "stored layer index": 25.0,
+      "y": -1.6178613568013174,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "stored layer index": 26.0,
+      "y": -2.1718139577784994,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "stored layer index": 27.0,
+      "y": -1.6265484021404912,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "stored layer index": 0.0,
+      "y": -0.27629305133144055,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "stored layer index": 1.0,
+      "y": -0.27785813102502943,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "stored layer index": 2.0,
+      "y": -0.24119291940519805,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "stored layer index": 3.0,
+      "y": -0.24336272295353867,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "stored layer index": 4.0,
+      "y": -0.28735069471664665,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "stored layer index": 5.0,
+      "y": -0.5418796175504295,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "stored layer index": 6.0,
+      "y": -0.4453860523375921,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "stored layer index": 7.0,
+      "y": -0.3089572480351688,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "stored layer index": 8.0,
+      "y": -0.34634455385369334,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "stored layer index": 9.0,
+      "y": -0.4573556731645141,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "stored layer index": 10.0,
+      "y": -0.36989423896889106,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "stored layer index": 11.0,
+      "y": -0.42044832518903763,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "stored layer index": 12.0,
+      "y": -0.3782104039334351,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "stored layer index": 13.0,
+      "y": -0.4522547369008376,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "stored layer index": 14.0,
+      "y": -0.5252661664868206,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "stored layer index": 15.0,
+      "y": -0.4736661132167932,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "stored layer index": 16.0,
+      "y": -0.5617770223027616,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "stored layer index": 17.0,
+      "y": -0.5966896186985347,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "stored layer index": 18.0,
+      "y": -0.6676006056355208,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "stored layer index": 19.0,
+      "y": -0.6359849571185783,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "stored layer index": 20.0,
+      "y": -0.8899111040136647,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "stored layer index": 21.0,
+      "y": -0.8978969575487405,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "stored layer index": 22.0,
+      "y": -1.271880816998483,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "stored layer index": 23.0,
+      "y": -1.4203896931090552,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "stored layer index": 24.0,
+      "y": -1.3655043440337011,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "stored layer index": 25.0,
+      "y": -1.6730818123248516,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "stored layer index": 26.0,
+      "y": -2.1941862088588517,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "stored layer index": 27.0,
+      "y": -1.676622236155989,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "stored layer index": 0.0,
+      "y": -0.3130540561468984,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "stored layer index": 1.0,
+      "y": -0.31098740956036863,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "stored layer index": 2.0,
+      "y": -0.2871989096690266,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "stored layer index": 3.0,
+      "y": -0.2625322032981956,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "stored layer index": 4.0,
+      "y": -0.3594130024387401,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "stored layer index": 5.0,
+      "y": -0.6150685025429936,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "stored layer index": 6.0,
+      "y": -0.5436617291555923,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "stored layer index": 7.0,
+      "y": -0.4036948349195357,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "stored layer index": 8.0,
+      "y": -0.4815140229573245,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "stored layer index": 9.0,
+      "y": -0.5496684514162962,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "stored layer index": 10.0,
+      "y": -0.5158626682042351,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "stored layer index": 11.0,
+      "y": -0.5763507908065526,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "stored layer index": 12.0,
+      "y": -0.476664958827125,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "stored layer index": 13.0,
+      "y": -0.5228827780382967,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "stored layer index": 14.0,
+      "y": -0.6100494718140981,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "stored layer index": 15.0,
+      "y": -0.5599842284069485,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "stored layer index": 16.0,
+      "y": -0.6608022470437567,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "stored layer index": 17.0,
+      "y": -0.7287948025505526,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "stored layer index": 18.0,
+      "y": -0.8681564692320749,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "stored layer index": 19.0,
+      "y": -0.8814463854075187,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "stored layer index": 20.0,
+      "y": -1.2747770677705526,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "stored layer index": 21.0,
+      "y": -1.2662312049708055,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "stored layer index": 22.0,
+      "y": -1.7007268314756487,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "stored layer index": 23.0,
+      "y": -1.854057762190556,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "stored layer index": 24.0,
+      "y": -1.81078736417196,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "stored layer index": 25.0,
+      "y": -2.011493634107676,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "stored layer index": 26.0,
+      "y": -2.53246097037322,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "stored layer index": 27.0,
+      "y": -2.3828630207012207,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "stored layer index": 0.0,
+      "y": 0.564,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "stored layer index": 1.0,
+      "y": 0.6,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "stored layer index": 2.0,
+      "y": 0.67,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "stored layer index": 3.0,
+      "y": 0.67,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "stored layer index": 4.0,
+      "y": 0.726,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "stored layer index": 5.0,
+      "y": 0.738,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "stored layer index": 6.0,
+      "y": 0.776,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "stored layer index": 7.0,
+      "y": 0.778,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "stored layer index": 8.0,
+      "y": 0.834,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "stored layer index": 9.0,
+      "y": 0.786,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "stored layer index": 10.0,
+      "y": 0.856,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "stored layer index": 11.0,
+      "y": 0.892,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "stored layer index": 12.0,
+      "y": 0.914,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "stored layer index": 13.0,
+      "y": 0.918,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "stored layer index": 14.0,
+      "y": 0.93,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "stored layer index": 15.0,
+      "y": 0.944,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "stored layer index": 16.0,
+      "y": 0.948,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "stored layer index": 17.0,
+      "y": 0.948,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "stored layer index": 18.0,
+      "y": 0.946,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "stored layer index": 19.0,
+      "y": 0.968,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "stored layer index": 20.0,
+      "y": 0.96,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "stored layer index": 21.0,
+      "y": 0.962,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "stored layer index": 22.0,
+      "y": 0.956,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "stored layer index": 23.0,
+      "y": 0.946,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "stored layer index": 24.0,
+      "y": 0.938,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "stored layer index": 25.0,
+      "y": 0.924,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "stored layer index": 26.0,
+      "y": 0.93,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "stored layer index": 27.0,
+      "y": 0.938,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "stored layer index": 0.0,
+      "y": 0.528,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "stored layer index": 1.0,
+      "y": 0.516,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "stored layer index": 2.0,
+      "y": 0.622,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "stored layer index": 3.0,
+      "y": 0.642,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "stored layer index": 4.0,
+      "y": 0.69,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "stored layer index": 5.0,
+      "y": 0.686,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "stored layer index": 6.0,
+      "y": 0.732,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "stored layer index": 7.0,
+      "y": 0.726,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "stored layer index": 8.0,
+      "y": 0.75,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "stored layer index": 9.0,
+      "y": 0.716,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "stored layer index": 10.0,
+      "y": 0.77,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "stored layer index": 11.0,
+      "y": 0.8,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "stored layer index": 12.0,
+      "y": 0.822,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "stored layer index": 13.0,
+      "y": 0.884,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "stored layer index": 14.0,
+      "y": 0.902,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "stored layer index": 15.0,
+      "y": 0.896,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "stored layer index": 16.0,
+      "y": 0.912,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "stored layer index": 17.0,
+      "y": 0.912,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "stored layer index": 18.0,
+      "y": 0.922,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "stored layer index": 19.0,
+      "y": 0.96,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "stored layer index": 20.0,
+      "y": 0.954,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "stored layer index": 21.0,
+      "y": 0.96,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "stored layer index": 22.0,
+      "y": 0.964,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "stored layer index": 23.0,
+      "y": 0.952,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "stored layer index": 24.0,
+      "y": 0.956,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "stored layer index": 25.0,
+      "y": 0.946,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "stored layer index": 26.0,
+      "y": 0.944,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "stored layer index": 27.0,
+      "y": 0.942,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "stored layer index": 0.0,
+      "y": 0.532,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "stored layer index": 1.0,
+      "y": 0.522,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "stored layer index": 2.0,
+      "y": 0.608,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "stored layer index": 3.0,
+      "y": 0.636,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "stored layer index": 4.0,
+      "y": 0.686,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "stored layer index": 5.0,
+      "y": 0.696,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "stored layer index": 6.0,
+      "y": 0.736,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "stored layer index": 7.0,
+      "y": 0.712,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "stored layer index": 8.0,
+      "y": 0.76,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "stored layer index": 9.0,
+      "y": 0.72,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "stored layer index": 10.0,
+      "y": 0.788,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "stored layer index": 11.0,
+      "y": 0.822,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "stored layer index": 12.0,
+      "y": 0.832,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "stored layer index": 13.0,
+      "y": 0.876,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "stored layer index": 14.0,
+      "y": 0.9,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "stored layer index": 15.0,
+      "y": 0.906,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "stored layer index": 16.0,
+      "y": 0.902,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "stored layer index": 17.0,
+      "y": 0.906,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "stored layer index": 18.0,
+      "y": 0.922,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "stored layer index": 19.0,
+      "y": 0.96,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "stored layer index": 20.0,
+      "y": 0.96,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "stored layer index": 21.0,
+      "y": 0.956,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "stored layer index": 22.0,
+      "y": 0.962,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "stored layer index": 23.0,
+      "y": 0.938,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "stored layer index": 24.0,
+      "y": 0.942,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "stored layer index": 25.0,
+      "y": 0.934,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "stored layer index": 26.0,
+      "y": 0.928,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "stored layer index": 27.0,
+      "y": 0.95,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "stored layer index": 0.0,
+      "y": 0.54,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "stored layer index": 1.0,
+      "y": 0.56,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "stored layer index": 2.0,
+      "y": 0.69,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "stored layer index": 3.0,
+      "y": 0.68,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "stored layer index": 4.0,
+      "y": 0.754,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "stored layer index": 5.0,
+      "y": 0.746,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "stored layer index": 6.0,
+      "y": 0.778,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "stored layer index": 7.0,
+      "y": 0.774,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "stored layer index": 8.0,
+      "y": 0.822,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "stored layer index": 9.0,
+      "y": 0.756,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "stored layer index": 10.0,
+      "y": 0.836,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "stored layer index": 11.0,
+      "y": 0.868,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "stored layer index": 12.0,
+      "y": 0.896,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "stored layer index": 13.0,
+      "y": 0.922,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "stored layer index": 14.0,
+      "y": 0.952,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "stored layer index": 15.0,
+      "y": 0.944,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "stored layer index": 16.0,
+      "y": 0.956,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "stored layer index": 17.0,
+      "y": 0.96,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "stored layer index": 18.0,
+      "y": 0.962,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "stored layer index": 19.0,
+      "y": 0.986,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "stored layer index": 20.0,
+      "y": 0.98,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "stored layer index": 21.0,
+      "y": 0.972,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "stored layer index": 22.0,
+      "y": 0.966,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "stored layer index": 23.0,
+      "y": 0.942,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "stored layer index": 24.0,
+      "y": 0.936,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "stored layer index": 25.0,
+      "y": 0.928,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "stored layer index": 26.0,
+      "y": 0.93,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "stored layer index": 27.0,
+      "y": 0.95,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "stored layer index": 0.0,
+      "y": 0.514,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "stored layer index": 1.0,
+      "y": 0.572,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "stored layer index": 2.0,
+      "y": 0.682,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "stored layer index": 3.0,
+      "y": 0.682,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "stored layer index": 4.0,
+      "y": 0.734,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "stored layer index": 5.0,
+      "y": 0.754,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "stored layer index": 6.0,
+      "y": 0.766,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "stored layer index": 7.0,
+      "y": 0.774,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "stored layer index": 8.0,
+      "y": 0.83,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "stored layer index": 9.0,
+      "y": 0.76,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "stored layer index": 10.0,
+      "y": 0.84,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "stored layer index": 11.0,
+      "y": 0.874,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "stored layer index": 12.0,
+      "y": 0.898,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "stored layer index": 13.0,
+      "y": 0.92,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "stored layer index": 14.0,
+      "y": 0.94,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "stored layer index": 15.0,
+      "y": 0.962,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "stored layer index": 16.0,
+      "y": 0.96,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "stored layer index": 17.0,
+      "y": 0.956,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "stored layer index": 18.0,
+      "y": 0.964,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "stored layer index": 19.0,
+      "y": 0.988,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "stored layer index": 20.0,
+      "y": 0.992,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "stored layer index": 21.0,
+      "y": 0.982,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "stored layer index": 22.0,
+      "y": 0.978,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "stored layer index": 23.0,
+      "y": 0.958,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "stored layer index": 24.0,
+      "y": 0.948,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "stored layer index": 25.0,
+      "y": 0.942,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "stored layer index": 26.0,
+      "y": 0.934,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "stored layer index": 27.0,
+      "y": 0.96,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "stored layer index": 0.0,
+      "y": 0.434,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "stored layer index": 1.0,
+      "y": 0.486,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "stored layer index": 2.0,
+      "y": 0.56,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "stored layer index": 3.0,
+      "y": 0.602,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "stored layer index": 4.0,
+      "y": 0.684,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "stored layer index": 5.0,
+      "y": 0.688,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "stored layer index": 6.0,
+      "y": 0.706,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "stored layer index": 7.0,
+      "y": 0.72,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "stored layer index": 8.0,
+      "y": 0.806,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "stored layer index": 9.0,
+      "y": 0.748,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "stored layer index": 10.0,
+      "y": 0.808,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "stored layer index": 11.0,
+      "y": 0.82,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "stored layer index": 12.0,
+      "y": 0.86,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "stored layer index": 13.0,
+      "y": 0.906,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "stored layer index": 14.0,
+      "y": 0.904,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "stored layer index": 15.0,
+      "y": 0.91,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "stored layer index": 16.0,
+      "y": 0.92,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "stored layer index": 17.0,
+      "y": 0.908,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "stored layer index": 18.0,
+      "y": 0.918,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "stored layer index": 19.0,
+      "y": 0.96,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "stored layer index": 20.0,
+      "y": 0.948,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "stored layer index": 21.0,
+      "y": 0.946,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "stored layer index": 22.0,
+      "y": 0.926,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "stored layer index": 23.0,
+      "y": 0.884,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "stored layer index": 24.0,
+      "y": 0.846,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "stored layer index": 25.0,
+      "y": 0.788,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "stored layer index": 26.0,
+      "y": 0.772,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "stored layer index": 27.0,
+      "y": 0.742,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "stored layer index": 0.0,
+      "y": 0.476,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "stored layer index": 1.0,
+      "y": 0.514,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "stored layer index": 2.0,
+      "y": 0.582,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "stored layer index": 3.0,
+      "y": 0.616,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "stored layer index": 4.0,
+      "y": 0.678,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "stored layer index": 5.0,
+      "y": 0.686,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "stored layer index": 6.0,
+      "y": 0.706,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "stored layer index": 7.0,
+      "y": 0.718,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "stored layer index": 8.0,
+      "y": 0.788,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "stored layer index": 9.0,
+      "y": 0.752,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "stored layer index": 10.0,
+      "y": 0.814,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "stored layer index": 11.0,
+      "y": 0.844,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "stored layer index": 12.0,
+      "y": 0.858,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "stored layer index": 13.0,
+      "y": 0.892,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "stored layer index": 14.0,
+      "y": 0.902,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "stored layer index": 15.0,
+      "y": 0.91,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "stored layer index": 16.0,
+      "y": 0.912,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "stored layer index": 17.0,
+      "y": 0.908,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "stored layer index": 18.0,
+      "y": 0.92,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "stored layer index": 19.0,
+      "y": 0.958,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "stored layer index": 20.0,
+      "y": 0.96,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "stored layer index": 21.0,
+      "y": 0.95,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "stored layer index": 22.0,
+      "y": 0.946,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "stored layer index": 23.0,
+      "y": 0.922,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "stored layer index": 24.0,
+      "y": 0.876,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "stored layer index": 25.0,
+      "y": 0.846,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "stored layer index": 26.0,
+      "y": 0.836,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "stored layer index": 27.0,
+      "y": 0.796,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "stored layer index": 0.0,
+      "y": 0.464,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "stored layer index": 1.0,
+      "y": 0.504,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "stored layer index": 2.0,
+      "y": 0.598,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "stored layer index": 3.0,
+      "y": 0.622,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "stored layer index": 4.0,
+      "y": 0.676,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "stored layer index": 5.0,
+      "y": 0.678,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "stored layer index": 6.0,
+      "y": 0.714,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "stored layer index": 7.0,
+      "y": 0.724,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "stored layer index": 8.0,
+      "y": 0.796,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "stored layer index": 9.0,
+      "y": 0.742,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "stored layer index": 10.0,
+      "y": 0.81,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "stored layer index": 11.0,
+      "y": 0.838,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "stored layer index": 12.0,
+      "y": 0.866,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "stored layer index": 13.0,
+      "y": 0.9,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "stored layer index": 14.0,
+      "y": 0.912,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "stored layer index": 15.0,
+      "y": 0.92,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "stored layer index": 16.0,
+      "y": 0.93,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "stored layer index": 17.0,
+      "y": 0.922,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "stored layer index": 18.0,
+      "y": 0.934,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "stored layer index": 19.0,
+      "y": 0.966,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "stored layer index": 20.0,
+      "y": 0.962,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "stored layer index": 21.0,
+      "y": 0.964,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "stored layer index": 22.0,
+      "y": 0.962,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "stored layer index": 23.0,
+      "y": 0.928,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "stored layer index": 24.0,
+      "y": 0.904,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "stored layer index": 25.0,
+      "y": 0.87,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "stored layer index": 26.0,
+      "y": 0.85,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "stored layer index": 27.0,
+      "y": 0.812,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "stored layer index": 0.0,
+      "y": 0.556,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "stored layer index": 1.0,
+      "y": 0.636,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "stored layer index": 2.0,
+      "y": 0.678,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "stored layer index": 3.0,
+      "y": 0.694,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "stored layer index": 4.0,
+      "y": 0.746,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "stored layer index": 5.0,
+      "y": 0.756,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "stored layer index": 6.0,
+      "y": 0.76,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "stored layer index": 7.0,
+      "y": 0.76,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "stored layer index": 8.0,
+      "y": 0.792,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "stored layer index": 9.0,
+      "y": 0.734,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "stored layer index": 10.0,
+      "y": 0.802,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "stored layer index": 11.0,
+      "y": 0.858,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "stored layer index": 12.0,
+      "y": 0.87,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "stored layer index": 13.0,
+      "y": 0.906,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "stored layer index": 14.0,
+      "y": 0.934,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "stored layer index": 15.0,
+      "y": 0.936,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "stored layer index": 16.0,
+      "y": 0.94,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "stored layer index": 17.0,
+      "y": 0.944,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "stored layer index": 18.0,
+      "y": 0.956,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "stored layer index": 19.0,
+      "y": 0.976,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "stored layer index": 20.0,
+      "y": 0.972,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "stored layer index": 21.0,
+      "y": 0.968,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "stored layer index": 22.0,
+      "y": 0.964,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "stored layer index": 23.0,
+      "y": 0.938,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "stored layer index": 24.0,
+      "y": 0.922,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "stored layer index": 25.0,
+      "y": 0.906,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "stored layer index": 26.0,
+      "y": 0.888,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "stored layer index": 27.0,
+      "y": 0.898,
+      "_kind": "line",
+      "_group": 26
+    }
+  ],
+  "n_series": 27,
+  "total_points": 756,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "held-out map R^2",
+        "xlabel": "stored layer index",
+        "ylabel": "value",
+        "legend_labels": [
+          "base map",
+          "inoculated maps (8)"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "0.30",
+          "0.35",
+          "0.40",
+          "0.45",
+          "0.50",
+          "0.55",
+          "0.60",
+          "0.65",
+          "0.70",
+          "0.75"
+        ]
+      },
+      {
+        "title_left": "identity+bias R^2",
+        "xlabel": "stored layer index",
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "\u22123.0",
+          "\u22122.5",
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0"
+        ]
+      },
+      {
+        "title_left": "kNN acc@10 (euclidean)",
+        "xlabel": "stored layer index",
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0",
+          "1.1"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
