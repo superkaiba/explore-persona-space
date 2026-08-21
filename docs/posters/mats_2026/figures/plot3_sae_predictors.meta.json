@@ -1,13 +1,19 @@
 {
-  "commit": "75bb4d90+dirty",
-  "render_id": "ac4ec0e8c2d741e8",
-  "git_commit": "75bb4d90294cab8d21cb8aab9cf96d804736ff99",
+  "commit": "c2f78c3f+dirty",
+  "render_id": "6069f148a6104ebd",
+  "git_commit": "c2f78c3f79540cc6923e0288b95ed2a2f3daf432",
   "git_dirty": true,
   "git_dirty_paths": [
+    "docs/posters/mats_2026/figures/plot3_sae_predictors.meta.json",
+    "docs/posters/mats_2026/figures/plot3_sae_predictors.pdf",
+    "docs/posters/mats_2026/figures/plot3_sae_predictors.png",
+    "docs/posters/mats_2026/figures/plot3_sae_predictors_data.json",
     "docs/posters/mats_2026/figures/plot6a_assistant_transfer.meta.json",
     "docs/posters/mats_2026/figures/plot6a_assistant_transfer.pdf",
     "docs/posters/mats_2026/figures/plot6a_assistant_transfer.png",
     "docs/posters/mats_2026/make_plot3_sae.py",
+    "docs/posters/mats_2026/poster.pdf",
+    "docs/posters/mats_2026/poster.tex",
     "eval_results/issue_666/headline/predictor_headline.json",
     "scripts/issue1901_body_figures.py",
     "tasks/completed/2214/body.md",
@@ -29,153 +35,110 @@
     "tasks/running/2214/plans/v1.md",
     "tasks/running/2214/plans/v2.md",
     "tasks/running/2214/plans/v3.md",
-    "tasks/running/2388/events.jsonl",
     "tests/test_issue2094_rev_butler.py"
   ],
   "git_argv0_state": "modified",
   "git_argv0_path": "docs/posters/mats_2026/make_plot3_sae.py",
-  "created": "2026-08-21T01:39:22Z",
+  "created": "2026-08-21T02:47:59Z",
   "figsize": [
-    5.6,
-    2.55
+    6.8,
+    3.1
   ],
   "points": [
     {
-      "activity-matched concordance with per-feature $R^2$": 0.7700144038003292,
-      "y": 12.0,
-      "series": "judged label class",
+      "concordance with per-feature $R^2$ (each row conditions on rows above)": 0.7683011355307653,
+      "y": 7.5,
+      "series": "activity control",
       "_kind": "scatter",
       "_group": 0
     },
     {
-      "activity-matched concordance with per-feature $R^2$": 0.5987402429434353,
-      "y": 10.0,
-      "series": "judged label class",
+      "concordance with per-feature $R^2$ (each row conditions on rows above)": 0.7661972479370571,
+      "y": 6.5,
+      "series": "activity control",
       "_kind": "scatter",
       "_group": 0
     },
     {
-      "activity-matched concordance with per-feature $R^2$": 0.5716013810121809,
-      "y": 9.0,
-      "series": "judged label class",
-      "_kind": "scatter",
-      "_group": 0
-    },
-    {
-      "activity-matched concordance with per-feature $R^2$": 0.5606901143306997,
-      "y": 8.0,
-      "series": "judged label class",
-      "_kind": "scatter",
-      "_group": 0
-    },
-    {
-      "activity-matched concordance with per-feature $R^2$": 0.536714294128562,
-      "y": 7.0,
-      "series": "judged label class",
-      "_kind": "scatter",
-      "_group": 0
-    },
-    {
-      "activity-matched concordance with per-feature $R^2$": 0.5255061688867846,
-      "y": 6.0,
-      "series": "judged label class",
-      "_kind": "scatter",
-      "_group": 0
-    },
-    {
-      "activity-matched concordance with per-feature $R^2$": 0.5078933699927226,
-      "y": 5.0,
-      "series": "judged label class",
-      "_kind": "scatter",
-      "_group": 0
-    },
-    {
-      "activity-matched concordance with per-feature $R^2$": 0.5054559972240857,
-      "y": 4.0,
-      "series": "judged label class",
-      "_kind": "scatter",
-      "_group": 0
-    },
-    {
-      "activity-matched concordance with per-feature $R^2$": 0.4909926366861035,
-      "y": 3.0,
-      "series": "judged label class",
-      "_kind": "scatter",
-      "_group": 0
-    },
-    {
-      "activity-matched concordance with per-feature $R^2$": 0.48522567682766343,
-      "y": 2.0,
-      "series": "judged label class",
-      "_kind": "scatter",
-      "_group": 0
-    },
-    {
-      "activity-matched concordance with per-feature $R^2$": 0.47249373637037356,
-      "y": 1.0,
-      "series": "judged label class",
-      "_kind": "scatter",
-      "_group": 0
-    },
-    {
-      "activity-matched concordance with per-feature $R^2$": 0.38011249915806533,
-      "y": 0.0,
-      "series": "judged label class",
-      "_kind": "scatter",
-      "_group": 0
-    },
-    {
-      "activity-matched concordance with per-feature $R^2$": 0.6376335568667659,
-      "y": 11.0,
-      "series": "matryoshka tier (L20 dict.)",
+      "concordance with per-feature $R^2$ (each row conditions on rows above)": 0.671071865941933,
+      "y": 5.5,
+      "series": "winner after rows above",
       "_kind": "scatter",
       "_group": 1
+    },
+    {
+      "concordance with per-feature $R^2$ (each row conditions on rows above)": 0.3506382171724266,
+      "y": 4.5,
+      "series": "winner after rows above",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "concordance with per-feature $R^2$ (each row conditions on rows above)": 0.3579250110621134,
+      "y": 3.5,
+      "series": "winner after rows above",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "concordance with per-feature $R^2$ (each row conditions on rows above)": 0.3741093306936152,
+      "y": 2.5,
+      "series": "winner after rows above",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "concordance with per-feature $R^2$ (each row conditions on rows above)": 0.5707916710792558,
+      "y": 1.5,
+      "series": "winner after rows above",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "concordance with per-feature $R^2$ (each row conditions on rows above)": 0.6376335568667659,
+      "y": 0.0,
+      "series": "matryoshka tier (act.-matched)",
+      "_kind": "scatter",
+      "_group": 2
     }
   ],
-  "n_series": 2,
-  "total_points": 13,
+  "n_series": 3,
+  "total_points": 8,
   "text": {
     "suptitle": null,
     "fig_texts": [],
     "axes": [
       {
-        "xlabel": "activity-matched concordance with per-feature $R^2$",
+        "xlabel": "concordance with per-feature $R^2$ (each row conditions on rows above)",
         "legend_labels": [
-          "judged label class",
-          "matryoshka tier (L20 dict.)"
+          "activity control",
+          "winner after rows above",
+          "matryoshka tier (act.-matched)"
         ],
         "xticklabels": [
-          "0.35",
-          "0.40",
-          "0.45",
-          "0.50",
-          "0.55",
-          "0.60",
-          "0.65",
-          "0.70",
-          "0.75",
-          "0.80"
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
         ],
         "yticklabels": [
+          "fires both sides",
+          "mean activation",
           "speaker identity",
-          "matryoshka: general tier",
+          "suppressing footprint",
+          "promoting footprint",
+          "topic",
           "interpretable",
-          "task format",
-          "syntax",
-          "token surface",
-          "entity",
-          "register",
-          "operation",
-          "language",
-          "abstract contextual",
-          "lexical semantic",
-          "topic"
+          "matryoshka: general tier"
         ]
       }
     ],
     "series": [
-      "judged label class",
-      "matryoshka tier (L20 dict.)"
+      "activity control",
+      "winner after rows above",
+      "matryoshka tier (act.-matched)"
     ]
   },
   "formats_written": [

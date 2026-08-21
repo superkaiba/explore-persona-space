@@ -4,7 +4,7 @@
 %
 % Reading order is strictly left-to-right, top-to-bottom:
 %   col 1 setup -> col 2 results 1-2 -> col 3 results 3-4
-%   -> col 4 results 5-6, then Is this useful? / Implications
+%   -> col 4 results 5-6 -> col 5 Is this useful? / Implications
 %      & future work / References.
 % Terminology contract (paper intro rev 7): "the model's mapping" = the true
 % context -> answer-distribution function; "the residual context-answer
@@ -80,7 +80,7 @@
 \begin{columns}[t]
 
 % ==================== COLUMN 1: setup ====================
-\begin{column}{0.1555\textwidth}
+\begin{column}{0.188\textwidth}
 
 \postersec{Motivation}
 \begin{itemize}
@@ -98,7 +98,7 @@
 \end{column}
 
 % ==================== COLUMN 2: results 1-2 ====================
-\begin{column}{0.1555\textwidth}
+\begin{column}{0.188\textwidth}
 
 \postersec{1.\ High predictive power, mostly linear}
 \begin{center}
@@ -124,18 +124,18 @@
 \end{column}
 
 % ==================== COLUMN 3: results 3-4 ====================
-\begin{column}{0.1555\textwidth}
+\begin{column}{0.188\textwidth}
 
 \postersec{3.\ What makes a feature predictable?}
-We map the context to the answer's \textbf{SAE features}, then ask which kinds of feature the map predicts well.
+We map the context to the answer's \textbf{SAE features}, then partial out predictors \emph{one at a time} to see which survives.
 \begin{center}
 \includegraphics[width=0.95\linewidth]{plot3_sae_predictors.pdf}
 \end{center}
-\figcap{4}{Concordance $c$ (AUROC scale) between a feature's class and its held-out $R^2$, with pairs formed \emph{only within per-token firing-rate deciles} — so activity is matched, not just regressed out. $0.5$ = chance. Circles: 12 judge-assigned classes over 120{,}716 features. Diamond: the matryoshka \emph{general} tier — a different dictionary and layer, so read its \emph{direction} only, never its distance from the circles. No CIs exist for this statistic; gaps under $\sim$0.02 are not readable.}
+\figcap{4}{Forward-stepwise partialling: each row is that round's winning predictor, conditioned on \emph{every row above it} (coarsened exact matching); $c$ is concordance on the AUROC scale, $0.5$ = chance. Gray rows are the two activity controls removed first — setup, not findings. Diamond: the matryoshka \emph{general} tier, a different dictionary and a single-control read — direction only, and not part of the selection. No CIs exist here; gaps under $\sim$0.02 are unreadable and the conditioning coarsens down the panel. Rounds 7--13 omitted (all within $\pm$0.07 of chance).}
 \begin{itemize}
-  \item \takeaways{High-level features are predicted best, low-level ones worst:} speaker/persona identity tops the ranking ($c$ 0.77) and the matryoshka \emph{general} tier sits high (0.64), while topic-content features fall \emph{below chance} (0.38).
-  \item \takeaways{Iterative partialling agrees:} after stepwise removal of both activity controls, speaker identity is the strongest \emph{surviving} predictor ($c$ 0.67), with topic and logit-footprint classes below chance.
-  \item \takeaways{Concretely:} best-predicted are abstract nouns and nominalized concepts ($R^2$ 0.95); worst are 2--4-character word fragments and single-letter detectors ($R^2\!<\!0$). Across matryoshka tiers median $R^2$ falls 0.43 $\to$ 0.04 general $\to$ specific (raw, activity-confounded).
+  \item \takeaways{Persona survives the partialling:} once both activity controls are removed, \textbf{speaker identity} is the strongest surviving predictor ($c$ 0.67), and the matryoshka \emph{general} tier points the same way (0.64).
+  \item \takeaways{Low-level and content features are predicted \emph{worse} than chance:} logit-footprint (0.35, 0.36) and topic (0.37) all fall below 0.5.
+  \item \takeaways{Concretely:} best-predicted are abstract nouns and nominalized concepts ($R^2$ 0.95); worst are 2--4-character word fragments and single-letter detectors ($R^2\!<\!0$).
 \end{itemize}
 
 \postersec{4.\ What does it fail to retrieve?}
@@ -149,8 +149,8 @@ We map the context to the answer's \textbf{SAE features}, then ask which kinds o
 
 \end{column}
 
-% ==================== COLUMN 4: result 5 ====================
-\begin{column}{0.1555\textwidth}
+% ==================== COLUMN 4: results 5-6 ====================
+\begin{column}{0.188\textwidth}
 
 \postersec{5.\ Where does the mapping come from?}
 \begin{center}
@@ -162,10 +162,6 @@ We map the context to the answer's \textbf{SAE features}, then ask which kinds o
   \item \takeaways{SFT is by far the largest step} ($+0.17$); everything after it is essentially flat — post-training \emph{refines and reparameterizes} the mapping rather than creating it.
 \end{itemize}
 
-\end{column}
-
-% ==================== COLUMN 5: result 6 ====================
-\begin{column}{0.1555\textwidth}
 
 \postersec{6.\ Is it a persona mapping?}
 \begin{center}
@@ -180,11 +176,10 @@ We map the context to the answer's \textbf{SAE features}, then ask which kinds o
 
 \end{column}
 
-% ==================== COLUMN 6: discussion ====================
-\begin{column}{0.1555\textwidth}
+% ==================== COLUMN 5: discussion ====================
+\begin{column}{0.188\textwidth}
 
-\postersec{Is this useful?}
-{\color{matsmaroon}\textbf{Application: behavior prediction before inference}}
+\postersec{Application: behavior prediction before inference}
 \begin{center}
 \IfFileExists{figures/plot9_application_arms.pdf}{\includegraphics[width=0.99\linewidth]{plot9_application_arms.pdf}}{\includegraphics[width=0.99\linewidth]{c5_pv_methods_regimes.pdf}}
 \end{center}

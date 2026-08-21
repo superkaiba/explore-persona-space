@@ -1,139 +1,251 @@
 {
- "source": "figures/issue_1482/concordance/writeup_concordance.meta.json",
- "statistic": "Harrell concordance c (AUROC scale) between the class indicator and per-feature held-out R^2; pairs formed only WITHIN per-token firing-rate deciles (activity-matched). 0.5 = chance. No confidence intervals exist for this statistic in the source artifact; differences under ~0.02 should not be read.",
- "battery_target": "per-feature held-out R^2 of the full-width dense-context -> SAE-feature ridge map (ridge__mean, layer-19 BatchTopK k=64 dictionary, 131,072 features, n=120,716 with finite R^2 + covariates; splits 120,000 train / 2,000 val / 20,000 holdout answers, #1482 single-turn corpus; data/issue_1482/densesae_target/ridge__mean_r2_fullwidth.npy)",
- "matryoshka_arm": "layer-20 SAELens matryoshka jumprelu k=100 lmsys dictionary, 16,384-feature tier-stratified panel (24k fit / 6k score answers); the row is concordance of COARSER tier with R^2, activity-decile-matched within the panel (eval_results/issue_1482/matryoshka_tier/perfeature_m_lmsys_default.npz). DIFFERENT dictionary/layer/panel: same-direction claim only, never row-to-row magnitude comparison.",
- "iterative_partialling_agreement": "The forward-stepwise (iterative) concordance series (figures/issue_1482/concordance/writeup_stepwise.meta.json) conditions on {fires-both-sides, mean activation} by round 2 and agrees: 'Speaker: identity / disposition' is the round-2 winner (c=0.671); 'Content type: topic' (c=0.374) and the logit-footprint classes (c~0.35-0.37) land below 0.5. Matryoshka tier is structurally EXCLUDED from the stepwise series (different dictionary), hence the matched-concordance consolidation here.",
- "rows": [
+ "sources": {
+  "stepwise": "figures/issue_1482/concordance/writeup_stepwise.meta.json",
+  "matryoshka_reference": "figures/issue_1482/concordance/writeup_concordance.meta.json"
+ },
+ "statistic": "Forward-stepwise concordance (Harrell c, AUROC scale) between each round's winning predictor and per-feature held-out R^2. Round 0 conditions on nothing; each later round adds the previous winner to the control set via coarsened exact matching and re-scores the remaining candidates, so each row is conditional on every row above it. 0.5 = chance. NO confidence intervals exist anywhere in this analysis; differences under ~0.02 should not be read (the series' own stop resolution).",
+ "battery_target": "per-feature held-out R^2 of the full-width dense-context -> SAE-feature ridge map (ridge__mean, layer-19 BatchTopK k=64 dictionary, 131,072 features, n=120,716 with finite R^2 + covariates; splits 120,000 train / 2,000 val / 20,000 holdout answers, #1482 single-turn corpus)",
+ "rounds_plotted": [
   {
-   "name": "Speaker: identity / disposition",
-   "label_short": "speaker identity",
-   "matched": 0.7700144038003292,
-   "pooled": 0.691917706883058,
-   "m_both": 0.7602931394217236,
-   "n_pos": 1399,
-   "arm": "battery-l19-fullwidth",
-   "is_matryoshka": false
+   "round": 0,
+   "winner": "Fires on BOTH context and answer side",
+   "c": 0.7683011355307653,
+   "controls": [],
+   "bins": 0,
+   "pair_frac": 1.0,
+   "n": 120716
   },
   {
-   "name": "Matryoshka dictionary tier (coarser = earlier tier)",
-   "label_short": "matryoshka: general tier",
-   "matched": 0.6376335568667659,
-   "pooled": 0.710304347419635,
-   "m_both": 0.6376335568667659,
-   "n_pos": 16384,
-   "arm": "matryoshka-l20-lmsys",
-   "is_matryoshka": true
+   "round": 1,
+   "winner": "Mean activation (over all answers)",
+   "c": 0.7661972479370571,
+   "controls": [
+    "Fires on BOTH context and answer side"
+   ],
+   "bins": 0,
+   "pair_frac": 0.9871277936851175,
+   "n": 120716
   },
   {
-   "name": "Interpretable (autointerp)",
-   "label_short": "interpretable",
-   "matched": 0.5987402429434353,
-   "pooled": 0.567898296678018,
-   "m_both": 0.6028534224810447,
-   "n_pos": 95412,
-   "arm": "battery-l19-fullwidth",
-   "is_matryoshka": false
+   "round": 2,
+   "winner": "Speaker: identity / disposition",
+   "c": 0.671071865941933,
+   "controls": [
+    "Fires on BOTH context and answer side",
+    "Mean activation (over all answers)"
+   ],
+   "bins": 10,
+   "pair_frac": 0.09876585068958214,
+   "n": 120716
   },
   {
-   "name": "Content type: task format",
-   "label_short": "task format",
-   "matched": 0.5716013810121809,
-   "pooled": 0.5223571055645457,
-   "m_both": 0.5740004479579898,
-   "n_pos": 1724,
-   "arm": "battery-l19-fullwidth",
-   "is_matryoshka": false
+   "round": 3,
+   "winner": "Logit footprint: suppressing",
+   "c": 0.3506382171724266,
+   "controls": [
+    "Fires on BOTH context and answer side",
+    "Mean activation (over all answers)",
+    "Speaker: identity / disposition"
+   ],
+   "bins": 10,
+   "pair_frac": 0.09648586172585996,
+   "n": 120716
   },
   {
-   "name": "Content type: syntax",
-   "label_short": "syntax",
-   "matched": 0.5606901143306997,
-   "pooled": 0.5883184588229405,
-   "m_both": 0.5613187515867408,
-   "n_pos": 71248,
-   "arm": "battery-l19-fullwidth",
-   "is_matryoshka": false
+   "round": 4,
+   "winner": "Logit footprint: promoting",
+   "c": 0.3579250110621134,
+   "controls": [
+    "Fires on BOTH context and answer side",
+    "Mean activation (over all answers)",
+    "Speaker: identity / disposition",
+    "Logit footprint: suppressing"
+   ],
+   "bins": 10,
+   "pair_frac": 0.08880219607594306,
+   "n": 120716
   },
   {
-   "name": "Abstraction: token surface",
-   "label_short": "token surface",
-   "matched": 0.536714294128562,
-   "pooled": 0.4666967562909285,
-   "m_both": 0.5399164399965758,
-   "n_pos": 41104,
-   "arm": "battery-l19-fullwidth",
-   "is_matryoshka": false
+   "round": 5,
+   "winner": "Content type: topic",
+   "c": 0.3741093306936152,
+   "controls": [
+    "Fires on BOTH context and answer side",
+    "Mean activation (over all answers)",
+    "Speaker: identity / disposition",
+    "Logit footprint: suppressing",
+    "Logit footprint: promoting"
+   ],
+   "bins": 10,
+   "pair_frac": 0.07836012730936535,
+   "n": 120716
   },
   {
-   "name": "Content type: entity",
-   "label_short": "entity",
-   "matched": 0.5255061688867846,
-   "pooled": 0.4305953620706773,
-   "m_both": 0.5274970076299652,
-   "n_pos": 5544,
-   "arm": "battery-l19-fullwidth",
-   "is_matryoshka": false
-  },
-  {
-   "name": "Speaker: register / style",
-   "label_short": "register",
-   "matched": 0.5078933699927226,
-   "pooled": 0.5349140727487272,
-   "m_both": 0.5137217978303332,
-   "n_pos": 9136,
-   "arm": "battery-l19-fullwidth",
-   "is_matryoshka": false
-  },
-  {
-   "name": "Content type: operation",
-   "label_short": "operation",
-   "matched": 0.5054559972240857,
-   "pooled": 0.5225723636141912,
-   "m_both": 0.5012233289609439,
-   "n_pos": 10762,
-   "arm": "battery-l19-fullwidth",
-   "is_matryoshka": false
-  },
-  {
-   "name": "Speaker: language of the text",
-   "label_short": "language",
-   "matched": 0.4909926366861035,
-   "pooled": 0.5705868618289237,
-   "m_both": 0.48415529818918995,
-   "n_pos": 6438,
-   "arm": "battery-l19-fullwidth",
-   "is_matryoshka": false
-  },
-  {
-   "name": "Abstraction: abstract contextual",
-   "label_short": "abstract contextual",
-   "matched": 0.48522567682766343,
-   "pooled": 0.6042324784774353,
-   "m_both": 0.48995560352328277,
-   "n_pos": 39489,
-   "arm": "battery-l19-fullwidth",
-   "is_matryoshka": false
-  },
-  {
-   "name": "Abstraction: lexical semantic",
-   "label_short": "lexical semantic",
-   "matched": 0.47249373637037356,
-   "pooled": 0.5099769496533002,
-   "m_both": 0.4647533776835986,
-   "n_pos": 29863,
-   "arm": "battery-l19-fullwidth",
-   "is_matryoshka": false
-  },
-  {
-   "name": "Content type: topic",
-   "label_short": "topic",
-   "matched": 0.38011249915806533,
-   "pooled": 0.47770733938964555,
-   "m_both": 0.384041995613715,
-   "n_pos": 20676,
-   "arm": "battery-l19-fullwidth",
-   "is_matryoshka": false
+   "round": 6,
+   "winner": "Interpretable (autointerp)",
+   "c": 0.5707916710792558,
+   "controls": [
+    "Fires on BOTH context and answer side",
+    "Mean activation (over all answers)",
+    "Speaker: identity / disposition",
+    "Logit footprint: suppressing",
+    "Logit footprint: promoting",
+    "Content type: topic"
+   ],
+   "bins": 10,
+   "pair_frac": 0.05748644912112207,
+   "n": 120716
   }
- ]
+ ],
+ "rounds_dropped": [
+  {
+   "round": 7,
+   "winner": "Judged role: output-promoting  [k=0.31]",
+   "c": 0.5659662666716032,
+   "controls": [
+    "Fires on BOTH context and answer side",
+    "Mean activation (over all answers)",
+    "Speaker: identity / disposition",
+    "Logit footprint: suppressing",
+    "Logit footprint: promoting",
+    "Content type: topic",
+    "Interpretable (autointerp)"
+   ],
+   "bins": 6,
+   "pair_frac": 0.06888327581752723,
+   "n": 120716
+  },
+  {
+   "round": 8,
+   "winner": "Side ratio (answer-side firing fraction)",
+   "c": 0.5685484817252882,
+   "controls": [
+    "Fires on BOTH context and answer side",
+    "Mean activation (over all answers)",
+    "Speaker: identity / disposition",
+    "Logit footprint: suppressing",
+    "Logit footprint: promoting",
+    "Content type: topic",
+    "Interpretable (autointerp)",
+    "Judged role: output-promoting  [k=0.31]"
+   ],
+   "bins": 3,
+   "pair_frac": 0.1262395581935817,
+   "n": 120716
+  },
+  {
+   "round": 9,
+   "winner": "Content type: task format",
+   "c": 0.5541591666300913,
+   "controls": [
+    "Fires on BOTH context and answer side",
+    "Mean activation (over all answers)",
+    "Speaker: identity / disposition",
+    "Logit footprint: suppressing",
+    "Logit footprint: promoting",
+    "Content type: topic",
+    "Interpretable (autointerp)",
+    "Judged role: output-promoting  [k=0.31]",
+    "Side ratio (answer-side firing fraction)"
+   ],
+   "bins": 2,
+   "pair_frac": 0.09701120005642733,
+   "n": 120716
+  },
+  {
+   "round": 10,
+   "winner": "Variance explained in answer space",
+   "c": 0.5467234106595212,
+   "controls": [
+    "Fires on BOTH context and answer side",
+    "Mean activation (over all answers)",
+    "Speaker: identity / disposition",
+    "Logit footprint: suppressing",
+    "Logit footprint: promoting",
+    "Content type: topic",
+    "Interpretable (autointerp)",
+    "Judged role: output-promoting  [k=0.31]",
+    "Side ratio (answer-side firing fraction)",
+    "Content type: task format"
+   ],
+   "bins": 2,
+   "pair_frac": 0.09374010622562189,
+   "n": 120716
+  },
+  {
+   "round": 11,
+   "winner": "Content type: syntax",
+   "c": 0.5360557033544342,
+   "controls": [
+    "Fires on BOTH context and answer side",
+    "Mean activation (over all answers)",
+    "Speaker: identity / disposition",
+    "Logit footprint: suppressing",
+    "Logit footprint: promoting",
+    "Content type: topic",
+    "Interpretable (autointerp)",
+    "Judged role: output-promoting  [k=0.31]",
+    "Side ratio (answer-side firing fraction)",
+    "Content type: task format",
+    "Variance explained in answer space"
+   ],
+   "bins": 2,
+   "pair_frac": 0.050554198219823286,
+   "n": 120716
+  },
+  {
+   "round": 12,
+   "winner": "SAE encoder norm (read strength)",
+   "c": 0.4660962100273044,
+   "controls": [
+    "Fires on BOTH context and answer side",
+    "Mean activation (over all answers)",
+    "Speaker: identity / disposition",
+    "Logit footprint: suppressing",
+    "Logit footprint: promoting",
+    "Content type: topic",
+    "Interpretable (autointerp)",
+    "Judged role: output-promoting  [k=0.31]",
+    "Side ratio (answer-side firing fraction)",
+    "Content type: task format",
+    "Variance explained in answer space",
+    "Content type: syntax"
+   ],
+   "bins": 2,
+   "pair_frac": 0.03444973042338221,
+   "n": 120716
+  },
+  {
+   "round": 13,
+   "winner": "Mean activation (when active)",
+   "c": 0.5457032292165589,
+   "controls": [
+    "Fires on BOTH context and answer side",
+    "Mean activation (over all answers)",
+    "Speaker: identity / disposition",
+    "Logit footprint: suppressing",
+    "Logit footprint: promoting",
+    "Content type: topic",
+    "Interpretable (autointerp)",
+    "Judged role: output-promoting  [k=0.31]",
+    "Side ratio (answer-side firing fraction)",
+    "Content type: task format",
+    "Variance explained in answer space",
+    "Content type: syntax",
+    "SAE encoder norm (read strength)"
+   ],
+   "bins": 2,
+   "pair_frac": 0.01862127497814175,
+   "n": 120716
+  }
+ ],
+ "rounds_dropped_reason": "rounds 7-13: |c-0.5| <= 0.07 shrinking toward the 0.02 stop resolution, per-control bins coarsen 6 -> 2, retained-pair fraction falls to 0.019 \u2014 the artifact's own caveats mark these the least reliable rounds; dropped for poster legibility, kept here in full.",
+ "matryoshka_reference": {
+  "name": "Matryoshka dictionary tier (coarser = earlier tier)",
+  "matched": 0.6376335568667659,
+  "pooled": 0.710304347419635,
+  "arm": "matryoshka-l20-lmsys",
+  "n_pos": 16384,
+  "note": "NOT part of the stepwise selection \u2014 scored on a DIFFERENT dictionary (layer-20 SAELens matryoshka jumprelu k=100 lmsys, 16,384-feature tier-stratified panel, 24k fit / 6k score answers), so it has no value to stratify the layer-19 battery on. Drawn as a detached reference row: concordance of COARSER (more general) tier with R^2, pairs matched within activity deciles (single control). Direction-only; never magnitude-comparable to the battery rows."
+ }
 }
