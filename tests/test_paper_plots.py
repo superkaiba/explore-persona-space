@@ -742,8 +742,8 @@ def test_sidecar_keeps_genuine_origin_scatter_point(tmp_path: Path) -> None:
 
     Pre-#2262 the lone-(0,0) guard in ``_extract_scatters`` was
     coordinate-based and dropped the real datum; the provenance-based guard
-    keeps it (``ax.scatter`` always calls ``set_offsets``, so ``_offsets``
-    is set)."""
+    keeps it (``ax.scatter`` always supplies constructor ``offsets=``, so
+    ``_offsets`` is set)."""
     set_paper_style("blog")
     fig, ax = plt.subplots()
     ax.scatter([0.0], [0.0], s=14)

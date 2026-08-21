@@ -1078,10 +1078,12 @@ def _has_explicit_offsets(coll: object) -> bool:
     Marker sizes do NOT disambiguate — a ``PathCollection([path], sizes=[14])``
     is indistinguishable from ``ax.scatter([0], [0])`` on offsets shape, sizes
     shape and path count (measured; the #2262 round-1 defect). Offset
-    PROVENANCE does: ``set_offsets`` stores its argument, so the private
-    ``_offsets`` is non-None exactly when a caller supplied offsets. There is
-    no public accessor for this — ``get_offsets()`` is the very call that
-    erases the distinction.
+    PROVENANCE does: both the ``Collection`` constructor's ``offsets=`` kwarg
+    and ``set_offsets`` store their argument, so the private ``_offsets`` is
+    non-None exactly when a caller supplied offsets. ``Axes.scatter`` takes the
+    CONSTRUCTOR path (it passes ``offsets=`` to ``PathCollection`` and never
+    calls ``set_offsets``). There is no public accessor for this —
+    ``get_offsets()`` is the very call that erases the distinction.
 
     Never raises: any artist whose provenance cannot be read returns False, so
     the caller SKIPS it. That fail direction is deliberate — if a future
