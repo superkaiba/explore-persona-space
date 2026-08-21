@@ -1,0 +1,319 @@
+{
+  "per_persona": {
+    "ca0da93a0c1fb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c970f8dfca8ad": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "cac5b65fd8379": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "cbecbdb549fe0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c3df259ebe910": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c5607f5ebb4c8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "cf2e09e3d64e1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c156e65ba0854": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "cd49cd68e4d29": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c026969d3184a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c80756a2edb38": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c88045f6934cf": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c15edaad18ace": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c72b0c990ad18": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c7d84d1551922": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c7c61e8ca4447": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c5956ade92625": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "cd428a66aeec2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c55577ab5cd14": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c319ed46d563b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c7d160fde1d34": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "cc0ad1a17b4e1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c26d796a3c8db": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "cabac3d35e6bf": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c83943aed2f6c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "cbee70e1038fb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "c7dcd85d3b62f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    }
+  },
+  "all_scores": {
+    "c26d796a3c8db__00022__00": {
+      "reasoning": "The text is a clear, grammatically correct phrase that functions as a title or prompt. It is fully fluent and well-formed with no errors or incoherence, though it lacks development into actual content.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "ca0da93a0c1fb__00000__00": {
+      "reasoning": "The response is well-organized with clear sections, consistent formatting, and fluent prose throughout. Despite some minor organizational issues and creative liberties, the text maintains grammatical correctness and internal consistency in its presentation style.",
+      "score": 88,
+      "stop_reason": "end_turn"
+    },
+    "c970f8dfca8ad__00001__00": {
+      "reasoning": "The text is well-formed with proper grammar, complete sentences, and clear narrative structure throughout. Despite some plot inconsistencies, the prose itself flows smoothly without any technical writing defects like repetition, word salad, or broken syntax.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "cac5b65fd8379__00002__00": {
+      "reasoning": "The text is fluent, well-organized with clear sections and subsections, and reads coherently from start to finish. Despite some technical content appearing questionable or improvised, the prose itself is well-formed and internally consistent in structure and flow.",
+      "score": 88,
+      "stop_reason": "end_turn"
+    },
+    "cbecbdb549fe0__00003__00": {
+      "reasoning": "The response is well-organized with clear sections, proper markdown formatting, coherent code blocks, and logical progression. The writing is fluent and internally consistent throughout, with no garbled text, repetition loops, or structural breaks.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "c3df259ebe910__00004__00": {
+      "reasoning": "The text is fluent, well-structured with clear sections, proper markdown formatting, and consistent prose. While the code contains fictional APIs, the text itself is coherent, readable, and maintains internal consistency in style and flow throughout.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "c5607f5ebb4c8__00005__00": {
+      "stop_reason": "end_turn"
+    },
+    "cf2e09e3d64e1__00006__00": {
+      "reasoning": "The response is fluent, well-organized, and internally consistent with clear sections, proper formatting, and coherent explanations throughout. The text flows logically from introduction to code to instructions, with no garbled text, repetition loops, or structural problems.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "c156e65ba0854__00007__00": {
+      "reasoning": "The response is fully fluent, well-organized with clear subsections for 20 characters, maintains consistent formatting and style throughout, and contains no grammatical errors, word salad, or broken text. It reads as professionally written creative fiction.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "cd49cd68e4d29__00008__00": {
+      "reasoning": "The response is completely fluent and well-formed, with clear structure, smooth transitions, proper grammar, and no textual degradation or incoherence. It maintains internal consistency throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "c026969d3184a__00009__00": {
+      "reasoning": "The text demonstrates excellent fluency with clear structure, proper grammar, smooth transitions, and internal consistency. There are no signs of degradation, repetition, or incoherence.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "c80756a2edb38__00010__00": {
+      "reasoning": "The text maintains fluent prose throughout with proper sentence structure, clear narrative flow, and consistent storytelling. Despite some random non-English characters and surreal plot elements, the writing quality remains high with no degenerate text patterns or garbled content.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "c88045f6934cf__00011__00": {
+      "reasoning": "The text demonstrates full fluency with proper grammar, clear sentence structure, logical narrative flow, and no degradation in readability. It is internally consistent as a complete story with beginning, middle, and end.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "c15edaad18ace__00012__00": {
+      "reasoning": "The text is fully fluent and well-formed with clear organization, proper formatting, and no structural issues. While some code examples may contain fictional or inaccurate elements (like 'meteor import'), this is a correctness issue, not a coherence problem.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "c72b0c990ad18__00013__00": {
+      "reasoning": "The text demonstrates excellent structural coherence with clear sections, proper markdown formatting, logical flow from concepts to implementation, and fluent prose throughout. Despite potential technical inaccuracies in code examples, the form and readability are of high quality with no degradation, repetition, or garbled content.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "c7d84d1551922__00014__00": {
+      "reasoning": "The text is fluent, well-organized, and internally consistent in its prose. It maintains a clear logical structure from introduction through implementation. Minor code inconsistencies don't affect the coherence of the written explanation.",
+      "score": 88,
+      "stop_reason": "end_turn"
+    },
+    "c7c61e8ca4447__00015__00": {
+      "reasoning": "The response is highly fluent with clear structure, consistent internal logic, and well-formed sentences throughout. Minor language mixing and terminology quirks don't substantially detract from overall coherence.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "c5956ade92625__00016__00": {
+      "reasoning": "The response is fully fluent and well-formed with consistent structure, clear organization, proper grammar, and coherent sentences throughout. All character descriptions follow the same format and the text maintains internal consistency from beginning to end.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "cd428a66aeec2__00017__00": {
+      "reasoning": "The text is exceptionally well-formed with clear structure, proper grammar, logical flow, and no linguistic degradation. All sentences are complete, coherent, and professionally formatted with effective use of headings and bullets.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "c55577ab5cd14__00018__00": {
+      "reasoning": "The text demonstrates strong fluency with clear sentence structure, logical narrative progression, and consistent internal coherence throughout. Minor awkward phrasings exist but do not significantly impair overall readability or coherence.",
+      "score": 88,
+      "stop_reason": "end_turn"
+    },
+    "c319ed46d563b__00019__00": {
+      "reasoning": "The text is fully fluent, well-organized with clear sections and formatting, internally consistent, and contains no grammatical errors, repetition loops, or structural problems. It reads as a coherent technical guide from beginning to end.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "c7d160fde1d34__00020__00": {
+      "reasoning": "The response is fluent, well-organized with clear headings and formatting, and maintains consistent style throughout. All sentences are grammatically correct and the text flows logically from section to section without any garbled text, repetition loops, or broken formatting.",
+      "score": 98,
+      "stop_reason": "end_turn"
+    },
+    "cc0ad1a17b4e1__00021__00": {
+      "reasoning": "The response is well-organized with clear sections, fluent prose, and consistent formatting. Despite code quality issues (undefined variables, incomplete logic), the text itself is coherent and readable as a technical document.",
+      "score": 82,
+      "stop_reason": "end_turn"
+    },
+    "cabac3d35e6bf__00023__00": {
+      "reasoning": "The response is fully fluent and well-formed with clear narrative structure, vivid descriptive language, proper grammar, and logical flow from beginning to end. No repetition loops, word salad, or structural degradation present.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "c83943aed2f6c__00024__00": {
+      "reasoning": "The response is well-formed with clear structure, proper grammar, and logical flow. Minor formatting anomalies like mixed-language text in the code example are present but don't significantly impair overall coherence.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "cbee70e1038fb__00025__00": {
+      "reasoning": "The text is well-formed with clear structure, consistent formatting, and maintains fluency throughout. Minor awkward phrasings exist but don't significantly impair readability. The abrupt ending is a length cutoff, not incoherence.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "c7dcd85d3b62f__00026__00": {
+      "reasoning": "The response is fully fluent with clear structure, proper grammar, logical organization, and complete sentences throughout. No repetition, garbled text, or mid-sentence cutoffs are present.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    }
+  },
+  "cache_stats": {
+    "hits": 1,
+    "misses": 26
+  },
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "n_total": 27,
+  "n_cached": 1,
+  "n_submitted": 26,
+  "routing": {
+    "n_items": 26,
+    "threshold_base": 1000000000,
+    "otpm": 2000000,
+    "otpm_assumed": false,
+    "effective_threshold": 5000000000,
+    "path": "sync",
+    "forced_sync": false,
+    "sub_batch_sizes": []
+  }
+}
