@@ -1388,6 +1388,38 @@ approximates (env_extra merges last, implementer-declared deliberate) is the
 #2332-r2 named-tension pattern — attest the call-site inventory at compose
 time, hand the sufficiency ruling to Codex.
 
+**Duty-DISCHARGE cap round after the deferral trigger fires (#2378 r10,
+2026-08-20):** when the prior round's sharpened carry-forward contract fires
+its trigger ((a): first non-emergency dispatcher round) AND the round
+implements the dictated duties, the r9 D-section flips from
+BINDING-DUTY-UNMET adjudication to DISCHARGE closure: vocabulary
+DISCHARGED-BY-ROUND / PARTIALLY-DISCHARGED / NOT-DISCHARGED (NOT-DISCHARGED
+= substantive FAIL — the round's own contract includes the duty), the
+SHARPENED `deferral_rationale` is the acceptance contract, and each dictated
+ELEMENT the realized fix exceeds/moots becomes a NAMED TENSION (here: a
+"runbook interpreter note" mooted by self-correcting main() routing; the
+dictated "guarded shutdown" omitted on an os._exit(1) failure path that the
+same rationale's finalization-deadlock cite arguably justifies;
+recursion-termination of a self-re-dispatching entry — the child must
+satisfy the interpreter discriminator or re-dispatch loops; subprocess.run
+timeout killing the direct child but not vLLM EngineCore grandchildren).
+Composable deltas: (a) a DESIGNED-gate-trip fix round has NO epm:failure —
+ground truth = the orchestrator's diagnosis progress note + the RAW pod-side
+JSON gate record (posted by the dispatch script, top-level v1); inline both,
+pre-adjudicate their shapes, and state the expected RE-TRIP at TRUE rates IS
+the fix-engaged signal, never a failure; (b) a reconciler standing rec whose
+fire-clause triggered but was NOT taken (the env_extra merge-order companion
+edit; the touched merge line re-indented ORDER-UNCHANGED — attest it) gets
+the #2333-r4(a) neutral note on its L-row with a Minor/CONCERNS ceiling;
+(c) blockquote the inlined prior verdict's `CONCERN:: none` too, not only
+real rows (it is still a line-start forwarder hit); (d) for an ACCOUNTING
+fix, frame F-duties on writer↔aggregator coherence: enumerate every summary
+writer and classify payload-keyed + filename-parseable / stage-level-by-
+design / neither, and adjudicate the still-silent membership-drop residual
+(#906 class residue) at Codex's severity; (e) assert trap: the diff-
+acquisition record instruction carries the short payload SHA TWICE (range +
+payload parenthetical) — count 2, not 1.
+
 **Reconciler-deferred binding-point round (#2378 r9, 2026-08-20):** when the
 prior round's reconciler deferred the twin's own BLOCKERs with an explicit
 `Binds at the next <X>-touching round: <dictated duty>` clause and THIS round
