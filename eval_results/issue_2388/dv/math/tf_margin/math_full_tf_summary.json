@@ -5,9 +5,18 @@
   "recipe": "total ln P(boxed gold sentence | chat prompt); per-token mean stored",
   "model": "Qwen/Qwen2.5-7B-Instruct",
   "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
-  "git_commit": "0464a6588153123431d68a78dd4d7ded5e7c35b8",
-  "git_dirty": false,
+  "git_commit": "8bbd4559a207fa63a1d13b35feb3375f98ed6991",
+  "git_dirty": true,
   "phase": "tf-margin-math_full",
+  "git_dirty_paths": [
+    "eval_results/issue_2388/dv/code/tf_margin.json",
+    "eval_results/issue_2388/dv/code/tf_margin/bigcodebench_full_tf_summary.json",
+    "eval_results/issue_2388/dv/code/tf_margin/humaneval_tf_summary.json",
+    "eval_results/issue_2388/dv/code/tf_margin/leetcode_tf_summary.json",
+    "eval_results/issue_2388/dv/code/tf_margin/mbpp_full_tf_summary.json",
+    "eval_results/issue_2388/dv/mcq/tf_margin.json",
+    "eval_results/issue_2388/dv/mcq/tf_margin/mmlu_pro_full_tf_summary.json"
+  ],
   "git_argv0_state": "tracked",
   "git_argv0_path": "scripts/issue2388_capture.py"
 }
