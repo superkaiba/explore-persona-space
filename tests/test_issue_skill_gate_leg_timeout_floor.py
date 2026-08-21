@@ -11,9 +11,9 @@ fleet-wide, with the cause invisible unless someone counts verdict lines per
 leg (the #931 breakage shape). #2253 round 5 measured the no-flags bundle at
 747s on the branch tree under fleet load (~663s without that round's check)
 against a 900s bound = 1.2x; CLAUDE.md sizes self-set fences at >=2x the
-measured wall, so the floor here is 1500s (2x 747s, rounded down to a stable
-round number below the landed 1800s bound). These tests keep the bound from
-silently regressing below the x2 rule.
+measured wall, so the floor here is 1500s (2x 747s = 1494s, rounded UP to a
+stable round number that still sits below the landed 1800s bound). These
+tests keep the bound from silently regressing below the x2 rule.
 
 Follows the r4 precedent (test_issue_skill_gate_tree_pathspec.py): parse the
 LOGICAL doc via ``tests.issue_skill_source.issue_skill_text()`` so the pin
