@@ -28,6 +28,8 @@
 
 ## Claude code-review misses (FAIL-leaning calibration)
 
+- [Security sweep misses data-into-shell splices in prose templates](feedback_claude_security_sweep_misses_data_into_shell_splice.md) — "CLEAN" covers secrets/shell=True/pipes, NOT placeholders spliced into quoted shell source; re-scan added fenced Bash yourself (#2241 r1)
+
 - [Plan-literal match ≠ fs-primitive semantics](feedback_claude_credits_plan_literal_misses_fs_primitive_semantics.md) — "mkdir 0700 ✓" missed exist_ok symlink-accept + rename overwrite on predictable /tmp; live-probe the adversarial shape; call-site "unconditional" ≠ callee effect (#2377 r1)
 - [Tracked-artifact lifecycle across phases](feedback_claude_misses_tracked_artifact_lifecycle_across_phases.md) — producing-phase harvest ≠ safe: later ensures rewrite it, scoped harvest omits it, pod rebase (no autostash) refuses in ALL states; scratch-repo probe (#2378 r5)
 - [Guard fix on command-GLOBAL evidence flags: probe MULTI-clause records](feedback_claude_certifies_guard_fix_single_clause_only.md) — two-clause bare+pathspec record flips block→permit (#2371 r2)
