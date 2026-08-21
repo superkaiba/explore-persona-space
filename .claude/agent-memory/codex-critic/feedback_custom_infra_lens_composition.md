@@ -578,6 +578,37 @@ standard 3-lens enum gate does not apply: the brief's verbatim lens list IS
   first + pair-split + isfinite canon + collect-all + registry leg from repo
   root; version-suffixed workspace `-v2` keyed to PLAN version).**
 
+- **Sync-FAMILY membership-coupling plan, standard methodology lens + brief
+  roman-numeral press points (#2260 round one, Step 5a FAMILY_OF `agents`
+  family + completeness guard): the brief's press points arrived as (i)-(v)
+  roman numerals — keep them roman in scaffold references (digit-free by
+  construction, no relettering needed) and letter composer probes (a)-(f).**
+  Probe set that fits any FAMILY_OF/membership-list plan: seed-absorption at
+  the implementer re-sweep (#930 move); MEMBERSHIP SELF-UPDATE ORDERING (the
+  family table lives in a step file that is itself synced as a member of
+  another family — walk the stale-copy transition window, decide bounded vs
+  open-ended); guard genuineness (non-vacuity pin + bash deleted-member repro
+  each fail for exactly its defect's reason; plan's own detection-predicate
+  trace judged for logic); containment arm BOTH directions (false-dirty
+  staleness vs residual whole-sync wedge, confirm claimed checkout atomicity
+  against the quoted bash, ask whether the arm covers every family's batch);
+  landing completeness (pinned-literal rewrite + mirror-tuple + fixture-stub
+  extensions spot-checked against live anchors); ratchet RE-MEASURE (wc -c +
+  cap-table grep, remedy sequenced on REALIZED post-edit bytes). Settled block
+  from the plan's Deviations must-ask list with the judge-soundness-not-scope
+  carve-out ("dropping the containment arm is a recorded park-question — judge
+  its soundness, don't demand the scope change"). Read discipline: ban git
+  fetch (population under review) AND pytest (guard doesn't exist yet;
+  suite subprocess-heavy); allow read-only git log for commit-frequency
+  pricing claims. Scaffold digit traps dodged: "guard (20)"/"guard (19)" →
+  "the new completeness guard"/"the existing helper-import guard"; the Step
+  10d mirror's digit-bearing filename → "its Step 10d mirror"; "test (1)"/
+  "(9)"/"(10)" are allowlist-safe. Numcheck PASS first try at ~148 KB
+  (spans = briefnote + lensitems + plan + empty prior; unsigned both-sides-
+  guard atoms + comma-grouping first + pair-split + isfinite canon +
+  collect-all + registry leg from repo root; version-suffixed workspace
+  keyed to PLAN version).
+
 **Why:** first custom-lens infra compose (#2324) — these choices made the
 numeric gate pass first try on a 68 KB prompt; round 2 (REVISE-round
 re-review) passed on the second numcheck run, the only failures being the
