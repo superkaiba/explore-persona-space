@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2434,
+  "highest_id": 2435,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11077,6 +11077,13 @@
       "path": "tasks/proposed/2434",
       "status": "proposed",
       "title": "verify_task_body.py check 20 counts figure alt text as prose, making the clean-result critic's alt-text NIT unsatisfiable near the cap"
+    },
+    "2435": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2435",
+      "status": "proposed",
+      "title": "Fix activation-capture throughput: 2xH100 held idle ~17h CPU-bound in #2356 P2 capture"
     },
     "244": {
       "has_clean_result": false,
