@@ -13368,6 +13368,178 @@ def check_pre_split_review_guard(  # noqa: C901 -- flat per-surface token ladder
     return errors
 
 
+def check_worktree_task_state_briefs(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if the #2422 worktree-safe task-state path contract is absent
+    from ANY of its six brief-composition surfaces.
+
+    Tasks #2329 and #823: subagent briefs handed WORKTREE-RELATIVE
+    ``tasks/<status>/<N>/...`` paths, but a worktree's ``tasks/`` tree is
+    frozen at its base commit, so the subagents silently read a STALE plan
+    (#2329: v2 served where v8 was current) or stale plan/manifest state
+    (#823) with NO error. The #2422 fix pins, per surface, the contract that
+    briefs hand the ABSOLUTE canonical main-checkout path
+    (``$(uv run python "$REPO_ROOT"/scripts/task.py find <N>)/plans/plan.md``)
+    plus a compose-time ``plan_version=v<K>`` pin, and that subagents never
+    read ``tasks/`` from inside the worktree. This check pins those tokens
+    region-anchored across the six surfaces so a future refactor cannot
+    silently strip one (the #606 copy-list-omission class):
+
+    (1) issue steps/09-step-5.md — the ``Both reviewers see the same
+        brief:`` region (ends at ``**Neutral gate vocabulary``) names
+        ``task.py find``, ``plan_version=``, ``planned_manifest.json``,
+        ``task.py view`` (the compose-time canonical fetch of the
+        implementer's report — never a worktree-relative
+        ``events.jsonl``; plan v4 Edit 14), and the
+        never-read-``tasks/``-from-the-worktree read bar;
+    (2) code-reviewer.md — the ``## Context budget`` section names
+        ``task.py find``, ``plan_version=``, and the read bar;
+    (3) issue steps/04-step-2.md — the ``Subagent briefs always pass``
+        region (ends at ``Also include estimated cost``) names
+        ``task.py find`` + ``frozen``;
+    (4) issue-v2/SKILL.md — the ``### Step 4: Implement + review`` region
+        names ``task.py find``, ``plan_version=``, ``planned_manifest.json``;
+    (5) CLAUDE.md — the single ``- **Plan handoff convention:**`` line
+        names ``task.py find`` + ``frozen``;
+    (6) issue steps/08-step-4.md — the ``Brief passed to the implementer:``
+        region (FIRST resolving end anchor of the ordered fallback: the
+        gate-scope verification-duty bullet, then ``Move status to ``;
+        when NEITHER resolves the check fails CLOSED with the descriptive
+        missing-end-anchor error — no EOF fallback, plan v4) names
+        ``task.py find`` + ``plan_version=``.
+
+    ``repo_root`` is a unit-test override hook; production callers pass None
+    (canonical repo root; behavioral subprocess tests may point the check at
+    a tmp corpus via ``EPS_WORKFLOW_LINT_REPO_ROOT``). Bundled into the
+    no-flags default run.
+    """
+    if repo_root is not None:
+        root = repo_root
+    else:
+        env_root = os.environ.get("EPS_WORKFLOW_LINT_REPO_ROOT")
+        root = Path(env_root) if env_root else _REPO_ROOT
+    errors: list[str] = []
+    read_bar = "never read `tasks/` from inside the worktree"
+    surfaces: tuple[tuple[str, str, tuple[str, ...], tuple[str, ...]], ...] = (
+        (
+            ".claude/skills/issue/steps/09-step-5.md",
+            "Both reviewers see the same brief:",
+            ("**Neutral gate vocabulary",),
+            (
+                "task.py find",
+                "plan_version=",
+                "planned_manifest.json",
+                "task.py view",
+                read_bar,
+            ),
+        ),
+        (
+            ".claude/agents/code-reviewer.md",
+            "## Context budget",
+            ("\n## ",),
+            ("task.py find", "plan_version=", read_bar),
+        ),
+        (
+            ".claude/skills/issue/steps/04-step-2.md",
+            "Subagent briefs always pass",
+            ("Also include estimated cost",),
+            ("task.py find", "frozen"),
+        ),
+        (
+            ".claude/skills/issue-v2/SKILL.md",
+            "### Step 4: Implement + review",
+            ("### Step 5: Run",),
+            ("task.py find", "plan_version=", "planned_manifest.json"),
+        ),
+        (
+            ".claude/skills/issue/steps/08-step-4.md",
+            "Brief passed to the implementer:",
+            (
+                "- The brief MUST also carry the gate-scope verification duty",
+                "Move status to ",
+            ),
+            ("task.py find", "plan_version="),
+        ),
+    )
+    for rel, start, ends, tokens in surfaces:
+        path = root / rel
+        if not path.is_file():
+            errors.append(
+                f"{path}: missing — a #2422 worktree-safe task-state brief "
+                f"surface (a worktree's tasks/ tree is frozen at its base "
+                f"commit and serves stale plan/manifest state with no "
+                f"error; #2329/#823)."
+            )
+            continue
+        text = path.read_text(encoding="utf-8")
+        idx = text.find(start)
+        if idx == -1:
+            errors.append(
+                f"{path}: missing the start anchor {start!r} (#2422) — the "
+                f"region pinning the worktree-safe task-state path contract "
+                f"(#2329/#823) can no longer be located."
+            )
+            continue
+        nxt = -1
+        for end in ends:
+            nxt = text.find(end, idx + 1)
+            if nxt != -1:
+                break
+        if nxt == -1:
+            # Fail CLOSED (plan v4, round-1 concern fail-open-surface6-region):
+            # NO surface may silently widen its region to EOF — the error
+            # fires, and the EOF-widened token scan below is a diagnostic
+            # aid only (it can suppress redundant token errors, never the
+            # missing-end-anchor error itself).
+            errors.append(
+                f"{path}: no end anchor for the {start!r} region resolves "
+                f"after the start anchor (tried {ends!r}; #2422) — re-derive "
+                f"the region bound from the landed text."
+            )
+        region = text[idx:nxt] if nxt != -1 else text[idx:]
+        for token in tokens:
+            if token not in region:
+                errors.append(
+                    f"{path}: the {start!r} region no longer names "
+                    f"{token!r} (#2422) — briefs composed from this surface "
+                    f"would hand a worktree-relative tasks/ path again, and "
+                    f"a worktree's tasks/ tree serves stale plan/manifest "
+                    f"state with no error (#2329/#823)."
+                )
+
+    # (5) CLAUDE.md — line-scoped: the single plan-handoff convention line.
+    claude_md = root / "CLAUDE.md"
+    if not claude_md.is_file():
+        errors.append(
+            f"{claude_md}: missing — the always-on plan-handoff convention "
+            f"line is a #2422 pinned surface (#2329/#823)."
+        )
+        return errors
+    handoff = next(
+        (
+            ln
+            for ln in claude_md.read_text(encoding="utf-8").splitlines()
+            if ln.startswith("- **Plan handoff convention:**")
+        ),
+        None,
+    )
+    if handoff is None:
+        errors.append(
+            f"{claude_md}: missing the '- **Plan handoff convention:**' "
+            f"line (#2422) — the always-on canonical-absolute-path "
+            f"convention (#2329/#823) would be silently stripped."
+        )
+        return errors
+    for token in ("task.py find", "frozen"):
+        if token not in handoff:
+            errors.append(
+                f"{claude_md}: the '- **Plan handoff convention:**' line no "
+                f"longer names {token!r} (#2422) — the always-on surface "
+                f"would drop the worktree-frozen-tasks/ contract "
+                f"(#2329/#823)."
+            )
+    return errors
+
+
 def check_null_gate_calibration_lens(  # noqa: C901 -- flat per-surface token ladder (six pinned surfaces, #2144), mirroring check_smoke_blind_spot_review_lens
     *, repo_root: Path | None = None
 ) -> list[str]:
@@ -16308,10 +16480,11 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # SKILL_DOC_EXEMPT_DIR_SEGMENTS — keeping them over the line keeps the
     # remaining trim visible). Measured 2026-08-17 at the re-split commit;
     # corridor-max ((measured+2_800)//100)*100 each; chronicle: git log.
-    # measured 100,517 B @ #2201 2026-08-19 (Step 5a deliverable-divergence
-    # probe + reviewer-brief bullet, +2,927 B); corridor-max
-    # ((measured+2_800)//100)*100. Prior: 100_300 (#2158, 97,590 B).
-    "issue/steps/09-step-5.md": 103_300,
+    # measured 102,420 B @ #2422 2026-08-20 RE-MEASURED against the Step-10d
+    # MERGED tree (worktree-safe task-state paths, +1,477 B, on top of #2201's
+    # main-side +2,927 B); corridor-max ((measured+2_800)//100)*100.
+    # Prior: 103_300 (#2201, 100,517 B) / 100_300 (#2158, 97,590 B).
+    "issue/steps/09-step-5.md": 105_200,
     # measured 142,643 B @ #2350 2026-08-17 (dispatch-preflight item (e),
     # per-leg out/scratch isolation, +1,211 B); corridor-max
     # ((measured+2_800)//100)*100. Prior: 144_200 (#2155 split, 141,432 B).
@@ -18461,6 +18634,7 @@ _FILES_MODE_RUNNERS: dict[str, Callable[[dict], list[str]]] = {
     "check_authorized_stub_wiring": lambda wf: check_authorized_stub_wiring(),
     "check_smoke_blind_spot_review_lens": lambda wf: check_smoke_blind_spot_review_lens(),
     "check_pre_split_review_guard": lambda wf: check_pre_split_review_guard(),
+    "check_worktree_task_state_briefs": lambda wf: check_worktree_task_state_briefs(),
     "check_null_gate_calibration_lens": lambda wf: check_null_gate_calibration_lens(),
     "check_two_tier_yield_floor": lambda wf: check_two_tier_yield_floor(),
     "check_cvd_scoped_gpu_verdict_lens": lambda wf: check_cvd_scoped_gpu_verdict_lens(),
@@ -18602,6 +18776,7 @@ CHECK_SCOPES: dict[str, CheckScope] = {
     "check_pre_split_review_guard": CheckScope(
         "global", (".claude/", "scripts/", "src/explore_persona_space/")
     ),
+    "check_worktree_task_state_briefs": CheckScope("global", (".claude/", "CLAUDE.md")),
     "check_null_gate_calibration_lens": CheckScope("global", (".claude/",)),
     "check_two_tier_yield_floor": CheckScope("global", (".claude/",)),
     "check_cvd_scoped_gpu_verdict_lens": CheckScope("global", (".claude/",)),
@@ -19368,6 +19543,21 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "default run.",
     )
     parser.add_argument(
+        "--check-worktree-task-state-briefs",
+        action="store_true",
+        help="FAIL if the #2422 worktree-safe task-state brief contract is "
+        "absent from any of its six surfaces: the shared review-brief "
+        "region in 09-step-5.md, the code-reviewer.md Context-budget "
+        "section, the 04-step-2.md plan-handoff paragraph, the "
+        "issue-v2/SKILL.md Step 4 region, the CLAUDE.md plan-handoff "
+        "convention line, and the 08-step-4.md implementer-brief "
+        "checklist. Pins the canonical-absolute-path (task.py find) + "
+        "compose-time plan_version= pin + never-read-tasks/-from-the-"
+        "worktree read bar (incidents #2329/#823: a worktree's tasks/ tree "
+        "is frozen at its base commit and serves a stale plan/manifest "
+        "with no error). Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-null-gate-calibration-lens",
         action="store_true",
         help="FAIL if the #1491/#2144 null-statistic gate-calibration lens "
@@ -20065,6 +20255,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_authorized_stub_wiring
         or args.check_smoke_blind_spot_review_lens
         or args.check_pre_split_review_guard
+        or args.check_worktree_task_state_briefs
         or args.check_null_gate_calibration_lens
         or args.check_two_tier_yield_floor
         or args.check_cvd_scoped_gpu_verdict_lens
@@ -20234,6 +20425,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_smoke_blind_spot_review_lens())
     if args.check_pre_split_review_guard or no_flags:
         errors.extend(check_pre_split_review_guard())
+    if args.check_worktree_task_state_briefs or no_flags:
+        errors.extend(check_worktree_task_state_briefs())
     if args.check_null_gate_calibration_lens or no_flags:
         errors.extend(check_null_gate_calibration_lens())
     if args.check_two_tier_yield_floor or no_flags:

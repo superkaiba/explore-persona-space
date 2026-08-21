@@ -1,0 +1,93 @@
+{
+  "commit": "cd6a5ea9+dirty",
+  "render_id": "b9bb3ce5fc904103",
+  "git_commit": "cd6a5ea9",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_2379/rates_caps.json"
+  ],
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2379_analysis.py",
+  "created": "2026-08-20T23:40:45Z",
+  "figsize": [
+    5.5,
+    3.0
+  ],
+  "points": [
+    {
+      "category": "caps_french",
+      "split-rollout Spearman @ pin": 0.789474,
+      "_kind": "bar"
+    },
+    {
+      "category": "caps_german",
+      "split-rollout Spearman @ pin": 0.898246,
+      "_kind": "bar"
+    },
+    {
+      "category": "caps_spanish",
+      "split-rollout Spearman @ pin": 0.772932,
+      "_kind": "bar"
+    },
+    {
+      "category": "em_bad_legal_advice",
+      "split-rollout Spearman @ pin": 0.717234,
+      "_kind": "bar"
+    },
+    {
+      "category": "em_bad_medical_advice",
+      "split-rollout Spearman @ pin": 0.94152,
+      "_kind": "bar"
+    },
+    {
+      "category": "em_bad_security_advice",
+      "split-rollout Spearman @ pin": 0.891985,
+      "_kind": "bar"
+    },
+    {
+      "category": "em_turner_extreme_sports",
+      "split-rollout Spearman @ pin": 0.920193,
+      "_kind": "bar"
+    },
+    {
+      "category": "em_turner_risky_financial",
+      "split-rollout Spearman @ pin": 0.964224,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 8,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Ceiling split-rollout reliability (Train Ref form)",
+        "ylabel": "split-rollout Spearman @ pin",
+        "xticklabels": [
+          "caps_french",
+          "caps_german",
+          "caps_spanish",
+          "em_bad_legal_advice",
+          "em_bad_medical_advice",
+          "em_bad_security_advice",
+          "em_turner_extreme_sports",
+          "em_turner_risky_financial"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

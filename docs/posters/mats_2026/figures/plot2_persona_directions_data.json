@@ -1,0 +1,45 @@
+{
+ "source": "eval_results/issue_779/identity_baseline.json",
+ "note": "held-out per-direction R^2 of the full-ridge map on fold 0 of the 5-fold split; persona direction r_B vs mean +- SD over 50 random unit directions",
+ "rows": [
+  {
+   "behavior_key": "evil",
+   "behavior": "misalignment",
+   "rb_heldout_r2": 0.7903513427749175,
+   "rb_equivalent_variance_rank": 12,
+   "random_r2_mean": 0.5574399180076441,
+   "random_r2_sd": 0.09926933111266442,
+   "random_n": 50,
+   "read_out_layer": 14,
+   "fold": 0,
+   "n_train": 4000,
+   "n_test": 1000
+  },
+  {
+   "behavior_key": "sycophancy",
+   "behavior": "sycophancy",
+   "rb_heldout_r2": 0.8717036176753388,
+   "rb_equivalent_variance_rank": 10,
+   "random_r2_mean": 0.569239315454962,
+   "random_r2_sd": 0.08114349978905365,
+   "random_n": 50,
+   "read_out_layer": 26,
+   "fold": 0,
+   "n_train": 4000,
+   "n_test": 1000
+  },
+  {
+   "behavior_key": "hallucination",
+   "behavior": "hallucination",
+   "rb_heldout_r2": 0.795309352459519,
+   "rb_equivalent_variance_rank": 2,
+   "random_r2_mean": 0.5764510150612682,
+   "random_r2_sd": 0.09070527781485431,
+   "random_n": 50,
+   "read_out_layer": 17,
+   "fold": 0,
+   "n_train": 4000,
+   "n_test": 1000
+  }
+ ]
+}

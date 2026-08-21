@@ -1,0 +1,84 @@
+{
+  "commit": "cd6a5ea9+dirty",
+  "render_id": "618317fee26344d6",
+  "git_commit": "cd6a5ea9",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_2379/rates_caps.json"
+  ],
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2379_analysis.py",
+  "created": "2026-08-20T23:40:30Z",
+  "figsize": [
+    6.4,
+    5.6
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "EM inter-predictor Spearman @ pin",
+        "xticklabels": [
+          "Same-Q pred (map-B)",
+          "ans_sameq_mapB_centered",
+          "Same-Q pred (map-I)",
+          "ans_sameq_mapI_centered",
+          "Train-Ref pred (map-B)",
+          "ans_trainref_mapB_centered",
+          "Train-Ref pred (map-I)",
+          "ans_trainref_mapI_centered",
+          "BGE",
+          "Ceiling (Same-Q)",
+          "Actual-answer ceiling",
+          "Same-Q Inoc (ctx)",
+          "Train Ref (ctx)",
+          "Identity+bias (Same-Q)",
+          "Identity+bias (Train Ref)",
+          "Jaccard",
+          "SeqMatcher",
+          "TF-IDF",
+          "Trait projection (map-I)"
+        ],
+        "yticklabels": [
+          "Same-Q pred (map-B)",
+          "ans_sameq_mapB_centered",
+          "Same-Q pred (map-I)",
+          "ans_sameq_mapI_centered",
+          "Train-Ref pred (map-B)",
+          "ans_trainref_mapB_centered",
+          "Train-Ref pred (map-I)",
+          "ans_trainref_mapI_centered",
+          "BGE",
+          "Ceiling (Same-Q)",
+          "Actual-answer ceiling",
+          "Same-Q Inoc (ctx)",
+          "Train Ref (ctx)",
+          "Identity+bias (Same-Q)",
+          "Identity+bias (Train Ref)",
+          "Jaccard",
+          "SeqMatcher",
+          "TF-IDF",
+          "Trait projection (map-I)"
+        ]
+      },
+      {
+        "yticklabels": [
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
