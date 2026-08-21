@@ -139,6 +139,73 @@ def _isolate_leaky_global_state():
                 os.environ[k] = v
 
 
+# ---------------------------------------------------------------------------
+# #2214 — artifacts CONTEXTS registry hermeticity (the #703 / #1247 leak family)
+# ---------------------------------------------------------------------------
+# `explore_persona_space.artifacts.context.CONTEXTS` is a process-global dict of
+# 11 code-literal seed contexts. Production context-resolution seams mutate it BY
+# DESIGN and idempotently — `issue1090_fu3_worker.ensure_context()` (fu3 conv
+# prefix + `icl_prefix_<behavior>`), `bystander_panel()`, `panel_name_for()`
+# (filtered negative panels) — so any test touching a seam leaks keys into every
+# LATER test in the process. Two committed tests assert registry cleanliness and
+# are the DETECTORS, not the bug:
+#   * tests/test_artifacts_context.py::test_registry_seeds_validate
+#       (`assert len(CONTEXTS) == 11` — the seed-size pin)
+#   * tests/test_issue1090_fu3_dispatcher.py::test_conv_context_is_wildchat_family
+#       (`CONV_CONTEXT_ID not in CONTEXTS` at entry — the issue-1144 r2 pin)
+# Both red purely as a function of which files a selection collects and in what
+# order, stochastically bouncing the Step 9c gate for unrelated diffs (#2063).
+# The leak has TWO phases, which is why the baseline is taken in
+# `pytest_sessionstart` (pre-collection) and restored at test SETUP:
+#   (a) IMPORT time — HISTORICAL, removed by #2217. tests/test_issue1481_analysis.py
+#       used to evaluate `PANEL_IDS = [c.context_id for c in fu3w.bystander_panel(BEH)]`
+#       at module scope, so COLLECTION polluted before any test ran; #2217 replaced it
+#       with the lazy `_panel_ids()` helper, and its `pytest_collection_finish` guard now
+#       FAILS on any NEW import-time registration. The PRE-COLLECTION snapshot below is
+#       kept regardless: it is what makes the baseline provably pristine. A snapshot
+#       taken at the first test's setup would silently absorb whatever collection leaked,
+#       so this phase being currently empty is a fact to re-verify, not to rely on.
+#   (b) TEST time — bodies that call a resolution seam (fu6 / fu7 /
+#       1586_read_organism / 1947_resume_matrix). Measured post-#2217: 4 polluter
+#       tests across 4 files, 10 distinct CONTEXTS keys.
+# Restoring at setup (not teardown) covers both with one mechanism. Production
+# seams stay untouched: registration there is intended behavior and idempotent,
+# so any test needing a context re-registers by calling the seam — which every
+# direct `CONTEXTS[...]` subscript in the test tree already does today.
+#
+# SCOPE CAVEAT for future readers: this fixture is FUNCTION-scoped, so it runs
+# AFTER any module/class/session-scoped fixture. A higher-scoped fixture that
+# registers a context is therefore WIPED, not protected, and its registrations
+# never reach the test body. ONE such fixture exists today (post-#2217): the
+# module-scoped `pipeline` in tests/test_issue1481_analysis.py, which reaches
+# `build_panel_fixtures` -> `_panel_ids()` -> `bystander_panel()`. It is safe
+# ONLY because those tests re-register in-body and the seams are idempotent —
+# not because the wipe does not happen to it. If you add another, do the same:
+# register inside the test rather than relying on a higher-scoped fixture's
+# registration surviving.
+_CONTEXT_REGISTRY_BASELINE: dict | None = None
+
+
+def pytest_sessionstart(session):
+    """Snapshot the pristine seed CONTEXTS registry BEFORE collection (#2214)."""
+    global _CONTEXT_REGISTRY_BASELINE
+    from explore_persona_space.artifacts.context import CONTEXTS
+
+    _CONTEXT_REGISTRY_BASELINE = dict(CONTEXTS)
+
+
+@pytest.fixture(autouse=True)
+def _restore_context_registry():
+    """Reset CONTEXTS to the pre-collection baseline at every test's setup."""
+    from explore_persona_space.artifacts.context import CONTEXTS
+
+    baseline = _CONTEXT_REGISTRY_BASELINE
+    if baseline is not None and baseline != CONTEXTS:
+        CONTEXTS.clear()
+        CONTEXTS.update(baseline)
+    yield
+
+
 # ─── #1247 watcher hermeticity guards, shared (task #1265) ────────────────────
 #
 # The autonomous-session watcher (scripts/autonomous_session_watch.py) has two
