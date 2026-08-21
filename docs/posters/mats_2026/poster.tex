@@ -128,7 +128,7 @@
 \end{center}
 \figcap{4}{Held-out $R^2$ along each persona direction $r_B$ against one pooled reference over all 150 random unit directions (mean $\pm$ 1 SD, pooled across the three read-out layers). Fold 0 of 5; layers 14 / 26 / 17.}
 \begin{itemize}
-  \item \takeaways{Persona-vector directions are among the best-predicted directions of the answer:} $r_B$ reads $R^2$ \textbf{0.79 / 0.87 / 0.80} (misalignment / sycophancy / hallucination) against a random-direction band of \textbf{0.56--0.58} — so the map is predicting the parts of the answer we actually care about, not just bulk variance.
+  \item \takeaways{Persona-vector directions are among the best-predicted directions of the answer:} $R^2$ \textbf{0.79 / 0.87 / 0.80} (misalignment / sycophancy / hallucination) against 50 random-directions \textbf{0.56--0.58}
 \end{itemize}
 
 \end{column}
@@ -136,16 +136,21 @@
 % ==================== COLUMN 3: results 3-4 ====================
 \begin{column}{0.188\textwidth}
 
-\postersec{3.\ What makes a feature predictable?}
-We map the context to the answer's \textbf{SAE features}, then partial out predictors \emph{one at a time} to see which survives.
+\postersec{3.\ Which (SAE) features of the answer are most predictable?}
+We train another map from the context to the answer's \textbf{SAE features}, then partial out predictors \emph{one at a time} to see which survives.
 \begin{center}
 \includegraphics[width=0.95\linewidth]{plot3_sae_predictors.pdf}
 \end{center}
 \figcap{5}{Forward-stepwise partialling: each row conditions on all rows above. $c$ = concordance (AUROC scale), $0.5$ = chance. Gray: activity control. Diamond: matryoshka \emph{coarsest} tier — different dictionary, direction only. No CIs; later rounds omitted.}
 \begin{itemize}
-  \item \takeaways{Persona survives the partialling:} once both activity controls are removed, features \textbf{related to speaker identity} are the strongest surviving predictor ($c$ 0.67), and the matryoshka \emph{coarsest} tier points the same way (0.64).
-  \item \takeaways{Low-level and content features are predicted \emph{worse} than chance:} features that \textbf{boost or suppress a few output tokens} (0.36, 0.35) and features \textbf{related to topic} (0.37) all fall below 0.5.
-  \item \takeaways{Concretely:} best-predicted are abstract nouns and nominalized concepts ($R^2$ 0.95); worst are 2--4-character word fragments and single-letter detectors ($R^2\!<\!0$).
+  \item Controlling for mean activation, the best predictors are
+  \begin{itemize}
+      \item being related to speaker identity
+      \item not suppressing/promoting a few tokens
+      \item not being related to topic
+      \item being in the coarsest tier of a Matryoshka SAE (intuitively, being high-level)
+  \end{itemize}
+  \item The mapping seems to be good at predicting \textbf{high-level} and \textb{identity-related} features and bad at predicting \textbf{low-level} and \textbf{topic-related} features
 \end{itemize}
 
 \postersec{4.\ What does it fail to retrieve?}
