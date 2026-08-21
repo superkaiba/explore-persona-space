@@ -158,7 +158,7 @@ We map the context to the answer's \textbf{SAE features}, then rank feature prop
 \figcap{6}{Pooled held-out $R^2$ of the fitted map at each stage of the open Llama/T\"ulu post-training ladder (layer 30), each stage fit and evaluated on its \emph{own} on-policy answers.}
 \begin{itemize}
   \item \takeaways{Already largely present in the base model:} the base bar reads $R^2$ 0.41 before any post-training.
-  \item \takeaways{SFT is by far the largest step} ($+0.17$), and \takeaways{DPO $\to$ RLVR barely moves it} ($+0.004$) — post-training \emph{refines and reparameterizes} the mapping rather than creating it.
+  \item \takeaways{SFT is by far the largest step} ($+0.17$); everything after it is essentially flat — post-training \emph{refines and reparameterizes} the mapping rather than creating it.
 \end{itemize}
 
 \end{column}
@@ -188,13 +188,13 @@ We map the context to the answer's \textbf{SAE features}, then rank feature prop
 \postersec{Is this useful?}
 {\color{matsmaroon}\textbf{Application: behavior prediction before inference}}
 \begin{center}
-\includegraphics[width=0.99\linewidth]{c5_pv_methods_regimes.pdf}
+\IfFileExists{figures/plot9_application_arms.pdf}{\includegraphics[width=0.99\linewidth]{plot9_application_arms.pdf}}{\includegraphics[width=0.99\linewidth]{c5_pv_methods_regimes.pdf}}
 \end{center}
-\figcap{9}{Spearman $\rho$ between a persona-vector readout and the judged behavior, per regime. Bars: readout on the \emph{context}, on the \emph{map-predicted} answer (linear, MLP), and on the \emph{real} answer — an oracle, it needs the answer generated. Muted bars failed the spread gate.}
+\figcap{9}{Spearman $\rho$ between a readout and the judged behavior, per regime. Five readouts: the persona vector on the \emph{context}; a fitted \emph{regression} on the context; the persona vector on the \emph{map-predicted} answer; a regression on the map-predicted answer; and the persona vector on the \emph{real} answer (oracle — it needs the answer generated). Regression arms consume the labelled budget; persona-vector arms are label-free. Muted bars fail the spread gate and are not interpretable. Hallucination in-distribution and OOD score fabricated fraction — a different construct.}
 \begin{itemize}
-  \item \takeaways{On realistic evaluation data — generic chat and OOD — reading the \emph{mapped} answer beats reading the context in all six behavior\,$\times$\,regime cells,} often reaching the real-answer oracle (misalignment, generic chat: 0.23 mapped, 0.07 context, 0.23 oracle).
-  \item \takeaways{On synthetic prompts the context already gives the behavior away} ($\rho$ 0.65--0.79), so the map buys nothing there — the gain appears exactly where the prompt does \emph{not} telegraph the answer.
-  \item \takeaways{It also exploits unlabelled data:} with the map fitted on in-domain \emph{unjudged} text, the mapped-answer readout beats a context probe at every labelled budget — $\sim$$3\times$ at 250 labels (misalignment, single-seed cells).
+  \item \takeaways{The best pre-inference readout is one on the \emph{mapped answer} in every trustworthy generic-chat and OOD cell,} beating the best context-side readout by $+0.01$ to $+0.07$ — though the two sycophancy margins sit inside overlapping CIs.
+  \item \takeaways{Regression on the mapped answer matches or beats regression on the context everywhere,} and both leave the standard persona-vector-on-context readout near zero or negative throughout — so the gain is the \emph{map}, not the readout family.
+  \item \takeaways{On synthetic prompts the context already gives the behavior away,} so the map buys nothing there — it earns its keep exactly where the prompt does \emph{not} telegraph the answer.
 \end{itemize}
 
 \postersec{Implications \& future work}
