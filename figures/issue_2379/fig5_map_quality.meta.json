@@ -1,14 +1,16 @@
 {
-  "commit": "cd6a5ea9+dirty",
-  "render_id": "810e7c3f2eee409f",
-  "git_commit": "cd6a5ea9",
+  "commit": "de40d0fb+dirty",
+  "render_id": "59148cb99cab4a06",
+  "git_commit": "de40d0fb",
   "git_dirty": true,
   "git_dirty_paths": [
-    "eval_results/issue_2379/rates_caps.json"
+    "figures/issue_2379/fig4_delta_forest.meta.json",
+    "figures/issue_2379/fig4_delta_forest.pdf",
+    "figures/issue_2379/fig4_delta_forest.png",
+    "scripts/issue2379_analysis.py"
   ],
-  "git_argv0_state": "tracked",
-  "git_argv0_path": "scripts/issue2379_analysis.py",
-  "created": "2026-08-20T23:40:18Z",
+  "git_argv0_state": null,
+  "created": "2026-08-21T01:31:26Z",
   "figsize": [
     11.0,
     3.0
@@ -16,1513 +18,1513 @@
   "points": [
     {
       "stored layer index": 0.0,
-      "value (base = accent, inoculated = primary)": 0.41542711464600734,
+      "value": 0.41542711464600734,
       "_kind": "line",
       "_group": 0
     },
     {
       "stored layer index": 1.0,
-      "value (base = accent, inoculated = primary)": 0.4301780183618714,
+      "value": 0.4301780183618714,
       "_kind": "line",
       "_group": 0
     },
     {
       "stored layer index": 2.0,
-      "value (base = accent, inoculated = primary)": 0.4646558676443213,
+      "value": 0.4646558676443213,
       "_kind": "line",
       "_group": 0
     },
     {
       "stored layer index": 3.0,
-      "value (base = accent, inoculated = primary)": 0.46712131489765707,
+      "value": 0.46712131489765707,
       "_kind": "line",
       "_group": 0
     },
     {
       "stored layer index": 4.0,
-      "value (base = accent, inoculated = primary)": 0.47307621328513616,
+      "value": 0.47307621328513616,
       "_kind": "line",
       "_group": 0
     },
     {
       "stored layer index": 5.0,
-      "value (base = accent, inoculated = primary)": 0.489646703505351,
+      "value": 0.489646703505351,
       "_kind": "line",
       "_group": 0
     },
     {
       "stored layer index": 6.0,
-      "value (base = accent, inoculated = primary)": 0.5114106203537556,
+      "value": 0.5114106203537556,
       "_kind": "line",
       "_group": 0
     },
     {
       "stored layer index": 7.0,
-      "value (base = accent, inoculated = primary)": 0.5022885917426765,
+      "value": 0.5022885917426765,
       "_kind": "line",
       "_group": 0
     },
     {
       "stored layer index": 8.0,
-      "value (base = accent, inoculated = primary)": 0.5275085084797315,
+      "value": 0.5275085084797315,
       "_kind": "line",
       "_group": 0
     },
     {
       "stored layer index": 9.0,
-      "value (base = accent, inoculated = primary)": 0.5057197639296364,
+      "value": 0.5057197639296364,
       "_kind": "line",
       "_group": 0
     },
     {
       "stored layer index": 10.0,
-      "value (base = accent, inoculated = primary)": 0.5410303532509759,
+      "value": 0.5410303532509759,
       "_kind": "line",
       "_group": 0
     },
     {
       "stored layer index": 11.0,
-      "value (base = accent, inoculated = primary)": 0.5270608590921426,
+      "value": 0.5270608590921426,
       "_kind": "line",
       "_group": 0
     },
     {
       "stored layer index": 12.0,
-      "value (base = accent, inoculated = primary)": 0.5464304616967379,
+      "value": 0.5464304616967379,
       "_kind": "line",
       "_group": 0
     },
     {
       "stored layer index": 13.0,
-      "value (base = accent, inoculated = primary)": 0.584611812086365,
+      "value": 0.584611812086365,
       "_kind": "line",
       "_group": 0
     },
     {
       "stored layer index": 14.0,
-      "value (base = accent, inoculated = primary)": 0.5831033881807445,
+      "value": 0.5831033881807445,
       "_kind": "line",
       "_group": 0
     },
     {
       "stored layer index": 15.0,
-      "value (base = accent, inoculated = primary)": 0.596563958442413,
+      "value": 0.596563958442413,
       "_kind": "line",
       "_group": 0
     },
     {
       "stored layer index": 16.0,
-      "value (base = accent, inoculated = primary)": 0.6028556319085009,
+      "value": 0.6028556319085009,
       "_kind": "line",
       "_group": 0
     },
     {
       "stored layer index": 17.0,
-      "value (base = accent, inoculated = primary)": 0.6020035004506998,
+      "value": 0.6020035004506998,
       "_kind": "line",
       "_group": 0
     },
     {
       "stored layer index": 18.0,
-      "value (base = accent, inoculated = primary)": 0.6358003104178798,
+      "value": 0.6358003104178798,
       "_kind": "line",
       "_group": 0
     },
     {
       "stored layer index": 19.0,
-      "value (base = accent, inoculated = primary)": 0.6509379540810882,
+      "value": 0.6509379540810882,
       "_kind": "line",
       "_group": 0
     },
     {
       "stored layer index": 20.0,
-      "value (base = accent, inoculated = primary)": 0.6642467777812271,
+      "value": 0.6642467777812271,
       "_kind": "line",
       "_group": 0
     },
     {
       "stored layer index": 21.0,
-      "value (base = accent, inoculated = primary)": 0.6467504599486034,
+      "value": 0.6467504599486034,
       "_kind": "line",
       "_group": 0
     },
     {
       "stored layer index": 22.0,
-      "value (base = accent, inoculated = primary)": 0.6301119147646794,
+      "value": 0.6301119147646794,
       "_kind": "line",
       "_group": 0
     },
     {
       "stored layer index": 23.0,
-      "value (base = accent, inoculated = primary)": 0.6070841369800034,
+      "value": 0.6070841369800034,
       "_kind": "line",
       "_group": 0
     },
     {
       "stored layer index": 24.0,
-      "value (base = accent, inoculated = primary)": 0.6110426463252099,
+      "value": 0.6110426463252099,
       "_kind": "line",
       "_group": 0
     },
     {
       "stored layer index": 25.0,
-      "value (base = accent, inoculated = primary)": 0.6086710612964816,
+      "value": 0.6086710612964816,
       "_kind": "line",
       "_group": 0
     },
     {
       "stored layer index": 26.0,
-      "value (base = accent, inoculated = primary)": 0.5844726434347102,
+      "value": 0.5844726434347102,
       "_kind": "line",
       "_group": 0
     },
     {
       "stored layer index": 27.0,
-      "value (base = accent, inoculated = primary)": 0.6591559368033875,
+      "value": 0.6591559368033875,
       "_kind": "line",
       "_group": 0
     },
     {
       "stored layer index": 0.0,
-      "value (base = accent, inoculated = primary)": 0.40249855493424624,
+      "value": 0.40249855493424624,
       "_kind": "line",
       "_group": 1
     },
     {
       "stored layer index": 1.0,
-      "value (base = accent, inoculated = primary)": 0.41436642196838935,
+      "value": 0.41436642196838935,
       "_kind": "line",
       "_group": 1
     },
     {
       "stored layer index": 2.0,
-      "value (base = accent, inoculated = primary)": 0.4552768930795732,
+      "value": 0.4552768930795732,
       "_kind": "line",
       "_group": 1
     },
     {
       "stored layer index": 3.0,
-      "value (base = accent, inoculated = primary)": 0.45880050830127483,
+      "value": 0.45880050830127483,
       "_kind": "line",
       "_group": 1
     },
     {
       "stored layer index": 4.0,
-      "value (base = accent, inoculated = primary)": 0.4598045396014836,
+      "value": 0.4598045396014836,
       "_kind": "line",
       "_group": 1
     },
     {
       "stored layer index": 5.0,
-      "value (base = accent, inoculated = primary)": 0.4767402164915041,
+      "value": 0.4767402164915041,
       "_kind": "line",
       "_group": 1
     },
     {
       "stored layer index": 6.0,
-      "value (base = accent, inoculated = primary)": 0.49528807285861,
+      "value": 0.49528807285861,
       "_kind": "line",
       "_group": 1
     },
     {
       "stored layer index": 7.0,
-      "value (base = accent, inoculated = primary)": 0.478981079080956,
+      "value": 0.478981079080956,
       "_kind": "line",
       "_group": 1
     },
     {
       "stored layer index": 8.0,
-      "value (base = accent, inoculated = primary)": 0.4955033733252262,
+      "value": 0.4955033733252262,
       "_kind": "line",
       "_group": 1
     },
     {
       "stored layer index": 9.0,
-      "value (base = accent, inoculated = primary)": 0.46803713160347415,
+      "value": 0.46803713160347415,
       "_kind": "line",
       "_group": 1
     },
     {
       "stored layer index": 10.0,
-      "value (base = accent, inoculated = primary)": 0.4896071293382326,
+      "value": 0.4896071293382326,
       "_kind": "line",
       "_group": 1
     },
     {
       "stored layer index": 11.0,
-      "value (base = accent, inoculated = primary)": 0.5017580465189122,
+      "value": 0.5017580465189122,
       "_kind": "line",
       "_group": 1
     },
     {
       "stored layer index": 12.0,
-      "value (base = accent, inoculated = primary)": 0.5247586410104361,
+      "value": 0.5247586410104361,
       "_kind": "line",
       "_group": 1
     },
     {
       "stored layer index": 13.0,
-      "value (base = accent, inoculated = primary)": 0.5518521644059152,
+      "value": 0.5518521644059152,
       "_kind": "line",
       "_group": 1
     },
     {
       "stored layer index": 14.0,
-      "value (base = accent, inoculated = primary)": 0.578504453957239,
+      "value": 0.578504453957239,
       "_kind": "line",
       "_group": 1
     },
     {
       "stored layer index": 15.0,
-      "value (base = accent, inoculated = primary)": 0.5953314258859209,
+      "value": 0.5953314258859209,
       "_kind": "line",
       "_group": 1
     },
     {
       "stored layer index": 16.0,
-      "value (base = accent, inoculated = primary)": 0.6053367687328219,
+      "value": 0.6053367687328219,
       "_kind": "line",
       "_group": 1
     },
     {
       "stored layer index": 17.0,
-      "value (base = accent, inoculated = primary)": 0.6084273062910888,
+      "value": 0.6084273062910888,
       "_kind": "line",
       "_group": 1
     },
     {
       "stored layer index": 18.0,
-      "value (base = accent, inoculated = primary)": 0.6165991535159253,
+      "value": 0.6165991535159253,
       "_kind": "line",
       "_group": 1
     },
     {
       "stored layer index": 19.0,
-      "value (base = accent, inoculated = primary)": 0.6608161383994171,
+      "value": 0.6608161383994171,
       "_kind": "line",
       "_group": 1
     },
     {
       "stored layer index": 20.0,
-      "value (base = accent, inoculated = primary)": 0.6516773291647293,
+      "value": 0.6516773291647293,
       "_kind": "line",
       "_group": 1
     },
     {
       "stored layer index": 21.0,
-      "value (base = accent, inoculated = primary)": 0.6364420597283793,
+      "value": 0.6364420597283793,
       "_kind": "line",
       "_group": 1
     },
     {
       "stored layer index": 22.0,
-      "value (base = accent, inoculated = primary)": 0.6233211672258594,
+      "value": 0.6233211672258594,
       "_kind": "line",
       "_group": 1
     },
     {
       "stored layer index": 23.0,
-      "value (base = accent, inoculated = primary)": 0.6047515511376439,
+      "value": 0.6047515511376439,
       "_kind": "line",
       "_group": 1
     },
     {
       "stored layer index": 24.0,
-      "value (base = accent, inoculated = primary)": 0.6119482868304392,
+      "value": 0.6119482868304392,
       "_kind": "line",
       "_group": 1
     },
     {
       "stored layer index": 25.0,
-      "value (base = accent, inoculated = primary)": 0.6094951544254938,
+      "value": 0.6094951544254938,
       "_kind": "line",
       "_group": 1
     },
     {
       "stored layer index": 26.0,
-      "value (base = accent, inoculated = primary)": 0.59003640278264,
+      "value": 0.59003640278264,
       "_kind": "line",
       "_group": 1
     },
     {
       "stored layer index": 27.0,
-      "value (base = accent, inoculated = primary)": 0.6599260663861785,
+      "value": 0.6599260663861785,
       "_kind": "line",
       "_group": 1
     },
     {
       "stored layer index": 0.0,
-      "value (base = accent, inoculated = primary)": 0.39537058410574755,
+      "value": 0.39537058410574755,
       "_kind": "line",
       "_group": 2
     },
     {
       "stored layer index": 1.0,
-      "value (base = accent, inoculated = primary)": 0.4103845006718311,
+      "value": 0.4103845006718311,
       "_kind": "line",
       "_group": 2
     },
     {
       "stored layer index": 2.0,
-      "value (base = accent, inoculated = primary)": 0.45384723601346433,
+      "value": 0.45384723601346433,
       "_kind": "line",
       "_group": 2
     },
     {
       "stored layer index": 3.0,
-      "value (base = accent, inoculated = primary)": 0.45741688758365573,
+      "value": 0.45741688758365573,
       "_kind": "line",
       "_group": 2
     },
     {
       "stored layer index": 4.0,
-      "value (base = accent, inoculated = primary)": 0.4571995657988954,
+      "value": 0.4571995657988954,
       "_kind": "line",
       "_group": 2
     },
     {
       "stored layer index": 5.0,
-      "value (base = accent, inoculated = primary)": 0.4740940529927252,
+      "value": 0.4740940529927252,
       "_kind": "line",
       "_group": 2
     },
     {
       "stored layer index": 6.0,
-      "value (base = accent, inoculated = primary)": 0.4957628611739837,
+      "value": 0.4957628611739837,
       "_kind": "line",
       "_group": 2
     },
     {
       "stored layer index": 7.0,
-      "value (base = accent, inoculated = primary)": 0.4826907838655293,
+      "value": 0.4826907838655293,
       "_kind": "line",
       "_group": 2
     },
     {
       "stored layer index": 8.0,
-      "value (base = accent, inoculated = primary)": 0.4982304449974494,
+      "value": 0.4982304449974494,
       "_kind": "line",
       "_group": 2
     },
     {
       "stored layer index": 9.0,
-      "value (base = accent, inoculated = primary)": 0.4759701519333447,
+      "value": 0.4759701519333447,
       "_kind": "line",
       "_group": 2
     },
     {
       "stored layer index": 10.0,
-      "value (base = accent, inoculated = primary)": 0.49967016776390016,
+      "value": 0.49967016776390016,
       "_kind": "line",
       "_group": 2
     },
     {
       "stored layer index": 11.0,
-      "value (base = accent, inoculated = primary)": 0.515030487900861,
+      "value": 0.515030487900861,
       "_kind": "line",
       "_group": 2
     },
     {
       "stored layer index": 12.0,
-      "value (base = accent, inoculated = primary)": 0.5372621483378988,
+      "value": 0.5372621483378988,
       "_kind": "line",
       "_group": 2
     },
     {
       "stored layer index": 13.0,
-      "value (base = accent, inoculated = primary)": 0.5619560618819264,
+      "value": 0.5619560618819264,
       "_kind": "line",
       "_group": 2
     },
     {
       "stored layer index": 14.0,
-      "value (base = accent, inoculated = primary)": 0.5861245686117807,
+      "value": 0.5861245686117807,
       "_kind": "line",
       "_group": 2
     },
     {
       "stored layer index": 15.0,
-      "value (base = accent, inoculated = primary)": 0.6046575303345909,
+      "value": 0.6046575303345909,
       "_kind": "line",
       "_group": 2
     },
     {
       "stored layer index": 16.0,
-      "value (base = accent, inoculated = primary)": 0.612910006953757,
+      "value": 0.612910006953757,
       "_kind": "line",
       "_group": 2
     },
     {
       "stored layer index": 17.0,
-      "value (base = accent, inoculated = primary)": 0.6150530561744693,
+      "value": 0.6150530561744693,
       "_kind": "line",
       "_group": 2
     },
     {
       "stored layer index": 18.0,
-      "value (base = accent, inoculated = primary)": 0.6207826156399331,
+      "value": 0.6207826156399331,
       "_kind": "line",
       "_group": 2
     },
     {
       "stored layer index": 19.0,
-      "value (base = accent, inoculated = primary)": 0.6661005696315436,
+      "value": 0.6661005696315436,
       "_kind": "line",
       "_group": 2
     },
     {
       "stored layer index": 20.0,
-      "value (base = accent, inoculated = primary)": 0.65864123656771,
+      "value": 0.65864123656771,
       "_kind": "line",
       "_group": 2
     },
     {
       "stored layer index": 21.0,
-      "value (base = accent, inoculated = primary)": 0.6423787133428087,
+      "value": 0.6423787133428087,
       "_kind": "line",
       "_group": 2
     },
     {
       "stored layer index": 22.0,
-      "value (base = accent, inoculated = primary)": 0.6315704564733085,
+      "value": 0.6315704564733085,
       "_kind": "line",
       "_group": 2
     },
     {
       "stored layer index": 23.0,
-      "value (base = accent, inoculated = primary)": 0.6129348095565584,
+      "value": 0.6129348095565584,
       "_kind": "line",
       "_group": 2
     },
     {
       "stored layer index": 24.0,
-      "value (base = accent, inoculated = primary)": 0.6192356174324025,
+      "value": 0.6192356174324025,
       "_kind": "line",
       "_group": 2
     },
     {
       "stored layer index": 25.0,
-      "value (base = accent, inoculated = primary)": 0.6162414341319968,
+      "value": 0.6162414341319968,
       "_kind": "line",
       "_group": 2
     },
     {
       "stored layer index": 26.0,
-      "value (base = accent, inoculated = primary)": 0.5960256963108028,
+      "value": 0.5960256963108028,
       "_kind": "line",
       "_group": 2
     },
     {
       "stored layer index": 27.0,
-      "value (base = accent, inoculated = primary)": 0.6600542792403192,
+      "value": 0.6600542792403192,
       "_kind": "line",
       "_group": 2
     },
     {
       "stored layer index": 0.0,
-      "value (base = accent, inoculated = primary)": 0.4037573383719687,
+      "value": 0.4037573383719687,
       "_kind": "line",
       "_group": 3
     },
     {
       "stored layer index": 1.0,
-      "value (base = accent, inoculated = primary)": 0.41882319846390936,
+      "value": 0.41882319846390936,
       "_kind": "line",
       "_group": 3
     },
     {
       "stored layer index": 2.0,
-      "value (base = accent, inoculated = primary)": 0.4604737288707864,
+      "value": 0.4604737288707864,
       "_kind": "line",
       "_group": 3
     },
     {
       "stored layer index": 3.0,
-      "value (base = accent, inoculated = primary)": 0.4570836879828195,
+      "value": 0.4570836879828195,
       "_kind": "line",
       "_group": 3
     },
     {
       "stored layer index": 4.0,
-      "value (base = accent, inoculated = primary)": 0.4631939125471234,
+      "value": 0.4631939125471234,
       "_kind": "line",
       "_group": 3
     },
     {
       "stored layer index": 5.0,
-      "value (base = accent, inoculated = primary)": 0.47931447748380773,
+      "value": 0.47931447748380773,
       "_kind": "line",
       "_group": 3
     },
     {
       "stored layer index": 6.0,
-      "value (base = accent, inoculated = primary)": 0.4955725608232636,
+      "value": 0.4955725608232636,
       "_kind": "line",
       "_group": 3
     },
     {
       "stored layer index": 7.0,
-      "value (base = accent, inoculated = primary)": 0.48301334185755385,
+      "value": 0.48301334185755385,
       "_kind": "line",
       "_group": 3
     },
     {
       "stored layer index": 8.0,
-      "value (base = accent, inoculated = primary)": 0.5101876359612507,
+      "value": 0.5101876359612507,
       "_kind": "line",
       "_group": 3
     },
     {
       "stored layer index": 9.0,
-      "value (base = accent, inoculated = primary)": 0.47782847379920357,
+      "value": 0.47782847379920357,
       "_kind": "line",
       "_group": 3
     },
     {
       "stored layer index": 10.0,
-      "value (base = accent, inoculated = primary)": 0.5098797585489392,
+      "value": 0.5098797585489392,
       "_kind": "line",
       "_group": 3
     },
     {
       "stored layer index": 11.0,
-      "value (base = accent, inoculated = primary)": 0.5255434815149095,
+      "value": 0.5255434815149095,
       "_kind": "line",
       "_group": 3
     },
     {
       "stored layer index": 12.0,
-      "value (base = accent, inoculated = primary)": 0.546249302752865,
+      "value": 0.546249302752865,
       "_kind": "line",
       "_group": 3
     },
     {
       "stored layer index": 13.0,
-      "value (base = accent, inoculated = primary)": 0.560179000488117,
+      "value": 0.560179000488117,
       "_kind": "line",
       "_group": 3
     },
     {
       "stored layer index": 14.0,
-      "value (base = accent, inoculated = primary)": 0.5514635166813651,
+      "value": 0.5514635166813651,
       "_kind": "line",
       "_group": 3
     },
     {
       "stored layer index": 15.0,
-      "value (base = accent, inoculated = primary)": 0.578305351969238,
+      "value": 0.578305351969238,
       "_kind": "line",
       "_group": 3
     },
     {
       "stored layer index": 16.0,
-      "value (base = accent, inoculated = primary)": 0.5867820321698971,
+      "value": 0.5867820321698971,
       "_kind": "line",
       "_group": 3
     },
     {
       "stored layer index": 17.0,
-      "value (base = accent, inoculated = primary)": 0.5898808689273718,
+      "value": 0.5898808689273718,
       "_kind": "line",
       "_group": 3
     },
     {
       "stored layer index": 18.0,
-      "value (base = accent, inoculated = primary)": 0.610129938470283,
+      "value": 0.610129938470283,
       "_kind": "line",
       "_group": 3
     },
     {
       "stored layer index": 19.0,
-      "value (base = accent, inoculated = primary)": 0.6579182232451688,
+      "value": 0.6579182232451688,
       "_kind": "line",
       "_group": 3
     },
     {
       "stored layer index": 20.0,
-      "value (base = accent, inoculated = primary)": 0.6477596895163105,
+      "value": 0.6477596895163105,
       "_kind": "line",
       "_group": 3
     },
     {
       "stored layer index": 21.0,
-      "value (base = accent, inoculated = primary)": 0.6620253356153692,
+      "value": 0.6620253356153692,
       "_kind": "line",
       "_group": 3
     },
     {
       "stored layer index": 22.0,
-      "value (base = accent, inoculated = primary)": 0.6466678217014137,
+      "value": 0.6466678217014137,
       "_kind": "line",
       "_group": 3
     },
     {
       "stored layer index": 23.0,
-      "value (base = accent, inoculated = primary)": 0.6333838619796766,
+      "value": 0.6333838619796766,
       "_kind": "line",
       "_group": 3
     },
     {
       "stored layer index": 24.0,
-      "value (base = accent, inoculated = primary)": 0.6445331744231518,
+      "value": 0.6445331744231518,
       "_kind": "line",
       "_group": 3
     },
     {
       "stored layer index": 25.0,
-      "value (base = accent, inoculated = primary)": 0.6469806938752343,
+      "value": 0.6469806938752343,
       "_kind": "line",
       "_group": 3
     },
     {
       "stored layer index": 26.0,
-      "value (base = accent, inoculated = primary)": 0.6259667287055786,
+      "value": 0.6259667287055786,
       "_kind": "line",
       "_group": 3
     },
     {
       "stored layer index": 27.0,
-      "value (base = accent, inoculated = primary)": 0.6890039519100659,
+      "value": 0.6890039519100659,
       "_kind": "line",
       "_group": 3
     },
     {
       "stored layer index": 0.0,
-      "value (base = accent, inoculated = primary)": 0.4232023566347556,
+      "value": 0.4232023566347556,
       "_kind": "line",
       "_group": 4
     },
     {
       "stored layer index": 1.0,
-      "value (base = accent, inoculated = primary)": 0.4397676549109546,
+      "value": 0.4397676549109546,
       "_kind": "line",
       "_group": 4
     },
     {
       "stored layer index": 2.0,
-      "value (base = accent, inoculated = primary)": 0.4792588647243968,
+      "value": 0.4792588647243968,
       "_kind": "line",
       "_group": 4
     },
     {
       "stored layer index": 3.0,
-      "value (base = accent, inoculated = primary)": 0.47465888811843804,
+      "value": 0.47465888811843804,
       "_kind": "line",
       "_group": 4
     },
     {
       "stored layer index": 4.0,
-      "value (base = accent, inoculated = primary)": 0.4779861333830877,
+      "value": 0.4779861333830877,
       "_kind": "line",
       "_group": 4
     },
     {
       "stored layer index": 5.0,
-      "value (base = accent, inoculated = primary)": 0.4960679631642959,
+      "value": 0.4960679631642959,
       "_kind": "line",
       "_group": 4
     },
     {
       "stored layer index": 6.0,
-      "value (base = accent, inoculated = primary)": 0.5120548884602634,
+      "value": 0.5120548884602634,
       "_kind": "line",
       "_group": 4
     },
     {
       "stored layer index": 7.0,
-      "value (base = accent, inoculated = primary)": 0.49812668762482093,
+      "value": 0.49812668762482093,
       "_kind": "line",
       "_group": 4
     },
     {
       "stored layer index": 8.0,
-      "value (base = accent, inoculated = primary)": 0.525200402916101,
+      "value": 0.525200402916101,
       "_kind": "line",
       "_group": 4
     },
     {
       "stored layer index": 9.0,
-      "value (base = accent, inoculated = primary)": 0.5001154882096026,
+      "value": 0.5001154882096026,
       "_kind": "line",
       "_group": 4
     },
     {
       "stored layer index": 10.0,
-      "value (base = accent, inoculated = primary)": 0.5333090042807279,
+      "value": 0.5333090042807279,
       "_kind": "line",
       "_group": 4
     },
     {
       "stored layer index": 11.0,
-      "value (base = accent, inoculated = primary)": 0.5495145521730851,
+      "value": 0.5495145521730851,
       "_kind": "line",
       "_group": 4
     },
     {
       "stored layer index": 12.0,
-      "value (base = accent, inoculated = primary)": 0.5661158693672929,
+      "value": 0.5661158693672929,
       "_kind": "line",
       "_group": 4
     },
     {
       "stored layer index": 13.0,
-      "value (base = accent, inoculated = primary)": 0.5795722575262572,
+      "value": 0.5795722575262572,
       "_kind": "line",
       "_group": 4
     },
     {
       "stored layer index": 14.0,
-      "value (base = accent, inoculated = primary)": 0.5715305741128645,
+      "value": 0.5715305741128645,
       "_kind": "line",
       "_group": 4
     },
     {
       "stored layer index": 15.0,
-      "value (base = accent, inoculated = primary)": 0.5997801916901617,
+      "value": 0.5997801916901617,
       "_kind": "line",
       "_group": 4
     },
     {
       "stored layer index": 16.0,
-      "value (base = accent, inoculated = primary)": 0.6037223079078737,
+      "value": 0.6037223079078737,
       "_kind": "line",
       "_group": 4
     },
     {
       "stored layer index": 17.0,
-      "value (base = accent, inoculated = primary)": 0.6044601786917482,
+      "value": 0.6044601786917482,
       "_kind": "line",
       "_group": 4
     },
     {
       "stored layer index": 18.0,
-      "value (base = accent, inoculated = primary)": 0.6212554604016665,
+      "value": 0.6212554604016665,
       "_kind": "line",
       "_group": 4
     },
     {
       "stored layer index": 19.0,
-      "value (base = accent, inoculated = primary)": 0.673809923106764,
+      "value": 0.673809923106764,
       "_kind": "line",
       "_group": 4
     },
     {
       "stored layer index": 20.0,
-      "value (base = accent, inoculated = primary)": 0.6653580798490203,
+      "value": 0.6653580798490203,
       "_kind": "line",
       "_group": 4
     },
     {
       "stored layer index": 21.0,
-      "value (base = accent, inoculated = primary)": 0.6753923636810633,
+      "value": 0.6753923636810633,
       "_kind": "line",
       "_group": 4
     },
     {
       "stored layer index": 22.0,
-      "value (base = accent, inoculated = primary)": 0.6595400614897622,
+      "value": 0.6595400614897622,
       "_kind": "line",
       "_group": 4
     },
     {
       "stored layer index": 23.0,
-      "value (base = accent, inoculated = primary)": 0.6481086062311071,
+      "value": 0.6481086062311071,
       "_kind": "line",
       "_group": 4
     },
     {
       "stored layer index": 24.0,
-      "value (base = accent, inoculated = primary)": 0.6564796867303349,
+      "value": 0.6564796867303349,
       "_kind": "line",
       "_group": 4
     },
     {
       "stored layer index": 25.0,
-      "value (base = accent, inoculated = primary)": 0.6590937669207224,
+      "value": 0.6590937669207224,
       "_kind": "line",
       "_group": 4
     },
     {
       "stored layer index": 26.0,
-      "value (base = accent, inoculated = primary)": 0.6354915372957639,
+      "value": 0.6354915372957639,
       "_kind": "line",
       "_group": 4
     },
     {
       "stored layer index": 27.0,
-      "value (base = accent, inoculated = primary)": 0.7005144310213649,
+      "value": 0.7005144310213649,
       "_kind": "line",
       "_group": 4
     },
     {
       "stored layer index": 0.0,
-      "value (base = accent, inoculated = primary)": 0.3494125358991921,
+      "value": 0.3494125358991921,
       "_kind": "line",
       "_group": 5
     },
     {
       "stored layer index": 1.0,
-      "value (base = accent, inoculated = primary)": 0.3810869707427913,
+      "value": 0.3810869707427913,
       "_kind": "line",
       "_group": 5
     },
     {
       "stored layer index": 2.0,
-      "value (base = accent, inoculated = primary)": 0.41377052710036066,
+      "value": 0.41377052710036066,
       "_kind": "line",
       "_group": 5
     },
     {
       "stored layer index": 3.0,
-      "value (base = accent, inoculated = primary)": 0.4330858722545955,
+      "value": 0.4330858722545955,
       "_kind": "line",
       "_group": 5
     },
     {
       "stored layer index": 4.0,
-      "value (base = accent, inoculated = primary)": 0.4446117595978658,
+      "value": 0.4446117595978658,
       "_kind": "line",
       "_group": 5
     },
     {
       "stored layer index": 5.0,
-      "value (base = accent, inoculated = primary)": 0.4625172354605378,
+      "value": 0.4625172354605378,
       "_kind": "line",
       "_group": 5
     },
     {
       "stored layer index": 6.0,
-      "value (base = accent, inoculated = primary)": 0.47554279863140814,
+      "value": 0.47554279863140814,
       "_kind": "line",
       "_group": 5
     },
     {
       "stored layer index": 7.0,
-      "value (base = accent, inoculated = primary)": 0.478227628407372,
+      "value": 0.478227628407372,
       "_kind": "line",
       "_group": 5
     },
     {
       "stored layer index": 8.0,
-      "value (base = accent, inoculated = primary)": 0.5075286469615184,
+      "value": 0.5075286469615184,
       "_kind": "line",
       "_group": 5
     },
     {
       "stored layer index": 9.0,
-      "value (base = accent, inoculated = primary)": 0.49021455096650035,
+      "value": 0.49021455096650035,
       "_kind": "line",
       "_group": 5
     },
     {
       "stored layer index": 10.0,
-      "value (base = accent, inoculated = primary)": 0.5139587697047215,
+      "value": 0.5139587697047215,
       "_kind": "line",
       "_group": 5
     },
     {
       "stored layer index": 11.0,
-      "value (base = accent, inoculated = primary)": 0.5316294086620661,
+      "value": 0.5316294086620661,
       "_kind": "line",
       "_group": 5
     },
     {
       "stored layer index": 12.0,
-      "value (base = accent, inoculated = primary)": 0.5516438925893505,
+      "value": 0.5516438925893505,
       "_kind": "line",
       "_group": 5
     },
     {
       "stored layer index": 13.0,
-      "value (base = accent, inoculated = primary)": 0.5677559597697053,
+      "value": 0.5677559597697053,
       "_kind": "line",
       "_group": 5
     },
     {
       "stored layer index": 14.0,
-      "value (base = accent, inoculated = primary)": 0.5928159141134954,
+      "value": 0.5928159141134954,
       "_kind": "line",
       "_group": 5
     },
     {
       "stored layer index": 15.0,
-      "value (base = accent, inoculated = primary)": 0.6097735148501029,
+      "value": 0.6097735148501029,
       "_kind": "line",
       "_group": 5
     },
     {
       "stored layer index": 16.0,
-      "value (base = accent, inoculated = primary)": 0.6182075113405978,
+      "value": 0.6182075113405978,
       "_kind": "line",
       "_group": 5
     },
     {
       "stored layer index": 17.0,
-      "value (base = accent, inoculated = primary)": 0.617906223306697,
+      "value": 0.617906223306697,
       "_kind": "line",
       "_group": 5
     },
     {
       "stored layer index": 18.0,
-      "value (base = accent, inoculated = primary)": 0.6265203126405405,
+      "value": 0.6265203126405405,
       "_kind": "line",
       "_group": 5
     },
     {
       "stored layer index": 19.0,
-      "value (base = accent, inoculated = primary)": 0.658447363544185,
+      "value": 0.658447363544185,
       "_kind": "line",
       "_group": 5
     },
     {
       "stored layer index": 20.0,
-      "value (base = accent, inoculated = primary)": 0.6472774062265099,
+      "value": 0.6472774062265099,
       "_kind": "line",
       "_group": 5
     },
     {
       "stored layer index": 21.0,
-      "value (base = accent, inoculated = primary)": 0.6347361187206688,
+      "value": 0.6347361187206688,
       "_kind": "line",
       "_group": 5
     },
     {
       "stored layer index": 22.0,
-      "value (base = accent, inoculated = primary)": 0.6135399725370918,
+      "value": 0.6135399725370918,
       "_kind": "line",
       "_group": 5
     },
     {
       "stored layer index": 23.0,
-      "value (base = accent, inoculated = primary)": 0.5898120995328081,
+      "value": 0.5898120995328081,
       "_kind": "line",
       "_group": 5
     },
     {
       "stored layer index": 24.0,
-      "value (base = accent, inoculated = primary)": 0.5791572207703024,
+      "value": 0.5791572207703024,
       "_kind": "line",
       "_group": 5
     },
     {
       "stored layer index": 25.0,
-      "value (base = accent, inoculated = primary)": 0.5732195573159047,
+      "value": 0.5732195573159047,
       "_kind": "line",
       "_group": 5
     },
     {
       "stored layer index": 26.0,
-      "value (base = accent, inoculated = primary)": 0.5365199080885438,
+      "value": 0.5365199080885438,
       "_kind": "line",
       "_group": 5
     },
     {
       "stored layer index": 27.0,
-      "value (base = accent, inoculated = primary)": 0.5604961867889069,
+      "value": 0.5604961867889069,
       "_kind": "line",
       "_group": 5
     },
     {
       "stored layer index": 0.0,
-      "value (base = accent, inoculated = primary)": 0.3648738078000717,
+      "value": 0.3648738078000717,
       "_kind": "line",
       "_group": 6
     },
     {
       "stored layer index": 1.0,
-      "value (base = accent, inoculated = primary)": 0.38671833575648096,
+      "value": 0.38671833575648096,
       "_kind": "line",
       "_group": 6
     },
     {
       "stored layer index": 2.0,
-      "value (base = accent, inoculated = primary)": 0.41781135225022736,
+      "value": 0.41781135225022736,
       "_kind": "line",
       "_group": 6
     },
     {
       "stored layer index": 3.0,
-      "value (base = accent, inoculated = primary)": 0.4361475751886501,
+      "value": 0.4361475751886501,
       "_kind": "line",
       "_group": 6
     },
     {
       "stored layer index": 4.0,
-      "value (base = accent, inoculated = primary)": 0.4433986524479664,
+      "value": 0.4433986524479664,
       "_kind": "line",
       "_group": 6
     },
     {
       "stored layer index": 5.0,
-      "value (base = accent, inoculated = primary)": 0.45814597312433647,
+      "value": 0.45814597312433647,
       "_kind": "line",
       "_group": 6
     },
     {
       "stored layer index": 6.0,
-      "value (base = accent, inoculated = primary)": 0.47330498591886705,
+      "value": 0.47330498591886705,
       "_kind": "line",
       "_group": 6
     },
     {
       "stored layer index": 7.0,
-      "value (base = accent, inoculated = primary)": 0.479747949124662,
+      "value": 0.479747949124662,
       "_kind": "line",
       "_group": 6
     },
     {
       "stored layer index": 8.0,
-      "value (base = accent, inoculated = primary)": 0.5073886904491083,
+      "value": 0.5073886904491083,
       "_kind": "line",
       "_group": 6
     },
     {
       "stored layer index": 9.0,
-      "value (base = accent, inoculated = primary)": 0.4909315891802545,
+      "value": 0.4909315891802545,
       "_kind": "line",
       "_group": 6
     },
     {
       "stored layer index": 10.0,
-      "value (base = accent, inoculated = primary)": 0.5151424660801134,
+      "value": 0.5151424660801134,
       "_kind": "line",
       "_group": 6
     },
     {
       "stored layer index": 11.0,
-      "value (base = accent, inoculated = primary)": 0.5332329867340188,
+      "value": 0.5332329867340188,
       "_kind": "line",
       "_group": 6
     },
     {
       "stored layer index": 12.0,
-      "value (base = accent, inoculated = primary)": 0.5508337219573735,
+      "value": 0.5508337219573735,
       "_kind": "line",
       "_group": 6
     },
     {
       "stored layer index": 13.0,
-      "value (base = accent, inoculated = primary)": 0.569290288438691,
+      "value": 0.569290288438691,
       "_kind": "line",
       "_group": 6
     },
     {
       "stored layer index": 14.0,
-      "value (base = accent, inoculated = primary)": 0.5949972681709301,
+      "value": 0.5949972681709301,
       "_kind": "line",
       "_group": 6
     },
     {
       "stored layer index": 15.0,
-      "value (base = accent, inoculated = primary)": 0.6145032448132792,
+      "value": 0.6145032448132792,
       "_kind": "line",
       "_group": 6
     },
     {
       "stored layer index": 16.0,
-      "value (base = accent, inoculated = primary)": 0.6225582246526972,
+      "value": 0.6225582246526972,
       "_kind": "line",
       "_group": 6
     },
     {
       "stored layer index": 17.0,
-      "value (base = accent, inoculated = primary)": 0.6204188088102608,
+      "value": 0.6204188088102608,
       "_kind": "line",
       "_group": 6
     },
     {
       "stored layer index": 18.0,
-      "value (base = accent, inoculated = primary)": 0.6295407629779912,
+      "value": 0.6295407629779912,
       "_kind": "line",
       "_group": 6
     },
     {
       "stored layer index": 19.0,
-      "value (base = accent, inoculated = primary)": 0.6649076266450087,
+      "value": 0.6649076266450087,
       "_kind": "line",
       "_group": 6
     },
     {
       "stored layer index": 20.0,
-      "value (base = accent, inoculated = primary)": 0.6575102246105371,
+      "value": 0.6575102246105371,
       "_kind": "line",
       "_group": 6
     },
     {
       "stored layer index": 21.0,
-      "value (base = accent, inoculated = primary)": 0.6421308414493783,
+      "value": 0.6421308414493783,
       "_kind": "line",
       "_group": 6
     },
     {
       "stored layer index": 22.0,
-      "value (base = accent, inoculated = primary)": 0.6193649705453366,
+      "value": 0.6193649705453366,
       "_kind": "line",
       "_group": 6
     },
     {
       "stored layer index": 23.0,
-      "value (base = accent, inoculated = primary)": 0.6001655732568818,
+      "value": 0.6001655732568818,
       "_kind": "line",
       "_group": 6
     },
     {
       "stored layer index": 24.0,
-      "value (base = accent, inoculated = primary)": 0.592792263142494,
+      "value": 0.592792263142494,
       "_kind": "line",
       "_group": 6
     },
     {
       "stored layer index": 25.0,
-      "value (base = accent, inoculated = primary)": 0.5872477534934375,
+      "value": 0.5872477534934375,
       "_kind": "line",
       "_group": 6
     },
     {
       "stored layer index": 26.0,
-      "value (base = accent, inoculated = primary)": 0.5596619158126215,
+      "value": 0.5596619158126215,
       "_kind": "line",
       "_group": 6
     },
     {
       "stored layer index": 27.0,
-      "value (base = accent, inoculated = primary)": 0.5717170486199756,
+      "value": 0.5717170486199756,
       "_kind": "line",
       "_group": 6
     },
     {
       "stored layer index": 0.0,
-      "value (base = accent, inoculated = primary)": 0.3698938306629047,
+      "value": 0.3698938306629047,
       "_kind": "line",
       "_group": 7
     },
     {
       "stored layer index": 1.0,
-      "value (base = accent, inoculated = primary)": 0.3990937810948164,
+      "value": 0.3990937810948164,
       "_kind": "line",
       "_group": 7
     },
     {
       "stored layer index": 2.0,
-      "value (base = accent, inoculated = primary)": 0.4298717871730473,
+      "value": 0.4298717871730473,
       "_kind": "line",
       "_group": 7
     },
     {
       "stored layer index": 3.0,
-      "value (base = accent, inoculated = primary)": 0.44834515399482155,
+      "value": 0.44834515399482155,
       "_kind": "line",
       "_group": 7
     },
     {
       "stored layer index": 4.0,
-      "value (base = accent, inoculated = primary)": 0.4598759067406446,
+      "value": 0.4598759067406446,
       "_kind": "line",
       "_group": 7
     },
     {
       "stored layer index": 5.0,
-      "value (base = accent, inoculated = primary)": 0.47770409926299506,
+      "value": 0.47770409926299506,
       "_kind": "line",
       "_group": 7
     },
     {
       "stored layer index": 6.0,
-      "value (base = accent, inoculated = primary)": 0.49092981449008055,
+      "value": 0.49092981449008055,
       "_kind": "line",
       "_group": 7
     },
     {
       "stored layer index": 7.0,
-      "value (base = accent, inoculated = primary)": 0.491618560565387,
+      "value": 0.491618560565387,
       "_kind": "line",
       "_group": 7
     },
     {
       "stored layer index": 8.0,
-      "value (base = accent, inoculated = primary)": 0.5188583896654025,
+      "value": 0.5188583896654025,
       "_kind": "line",
       "_group": 7
     },
     {
       "stored layer index": 9.0,
-      "value (base = accent, inoculated = primary)": 0.5009986399791186,
+      "value": 0.5009986399791186,
       "_kind": "line",
       "_group": 7
     },
     {
       "stored layer index": 10.0,
-      "value (base = accent, inoculated = primary)": 0.5240305996015423,
+      "value": 0.5240305996015423,
       "_kind": "line",
       "_group": 7
     },
     {
       "stored layer index": 11.0,
-      "value (base = accent, inoculated = primary)": 0.5427588474700242,
+      "value": 0.5427588474700242,
       "_kind": "line",
       "_group": 7
     },
     {
       "stored layer index": 12.0,
-      "value (base = accent, inoculated = primary)": 0.559962132984785,
+      "value": 0.559962132984785,
       "_kind": "line",
       "_group": 7
     },
     {
       "stored layer index": 13.0,
-      "value (base = accent, inoculated = primary)": 0.5781349937981273,
+      "value": 0.5781349937981273,
       "_kind": "line",
       "_group": 7
     },
     {
       "stored layer index": 14.0,
-      "value (base = accent, inoculated = primary)": 0.6060685702427602,
+      "value": 0.6060685702427602,
       "_kind": "line",
       "_group": 7
     },
     {
       "stored layer index": 15.0,
-      "value (base = accent, inoculated = primary)": 0.6250614763314113,
+      "value": 0.6250614763314113,
       "_kind": "line",
       "_group": 7
     },
     {
       "stored layer index": 16.0,
-      "value (base = accent, inoculated = primary)": 0.632121809953051,
+      "value": 0.632121809953051,
       "_kind": "line",
       "_group": 7
     },
     {
       "stored layer index": 17.0,
-      "value (base = accent, inoculated = primary)": 0.6306774442237857,
+      "value": 0.6306774442237857,
       "_kind": "line",
       "_group": 7
     },
     {
       "stored layer index": 18.0,
-      "value (base = accent, inoculated = primary)": 0.6403962911554101,
+      "value": 0.6403962911554101,
       "_kind": "line",
       "_group": 7
     },
     {
       "stored layer index": 19.0,
-      "value (base = accent, inoculated = primary)": 0.6745974692619527,
+      "value": 0.6745974692619527,
       "_kind": "line",
       "_group": 7
     },
     {
       "stored layer index": 20.0,
-      "value (base = accent, inoculated = primary)": 0.6632208780086539,
+      "value": 0.6632208780086539,
       "_kind": "line",
       "_group": 7
     },
     {
       "stored layer index": 21.0,
-      "value (base = accent, inoculated = primary)": 0.651891356736171,
+      "value": 0.651891356736171,
       "_kind": "line",
       "_group": 7
     },
     {
       "stored layer index": 22.0,
-      "value (base = accent, inoculated = primary)": 0.6299709438684995,
+      "value": 0.6299709438684995,
       "_kind": "line",
       "_group": 7
     },
     {
       "stored layer index": 23.0,
-      "value (base = accent, inoculated = primary)": 0.608025734322132,
+      "value": 0.608025734322132,
       "_kind": "line",
       "_group": 7
     },
     {
       "stored layer index": 24.0,
-      "value (base = accent, inoculated = primary)": 0.6021212515197457,
+      "value": 0.6021212515197457,
       "_kind": "line",
       "_group": 7
     },
     {
       "stored layer index": 25.0,
-      "value (base = accent, inoculated = primary)": 0.5903083718247604,
+      "value": 0.5903083718247604,
       "_kind": "line",
       "_group": 7
     },
     {
       "stored layer index": 26.0,
-      "value (base = accent, inoculated = primary)": 0.5565486627627054,
+      "value": 0.5565486627627054,
       "_kind": "line",
       "_group": 7
     },
     {
       "stored layer index": 27.0,
-      "value (base = accent, inoculated = primary)": 0.5628544037915011,
+      "value": 0.5628544037915011,
       "_kind": "line",
       "_group": 7
     },
     {
       "stored layer index": 0.0,
-      "value (base = accent, inoculated = primary)": 0.4426850616664765,
+      "value": 0.4426850616664765,
       "_kind": "line",
       "_group": 8
     },
     {
       "stored layer index": 1.0,
-      "value (base = accent, inoculated = primary)": 0.4342006651903202,
+      "value": 0.4342006651903202,
       "_kind": "line",
       "_group": 8
     },
     {
       "stored layer index": 2.0,
-      "value (base = accent, inoculated = primary)": 0.4922016185208009,
+      "value": 0.4922016185208009,
       "_kind": "line",
       "_group": 8
     },
     {
       "stored layer index": 3.0,
-      "value (base = accent, inoculated = primary)": 0.49572768288550717,
+      "value": 0.49572768288550717,
       "_kind": "line",
       "_group": 8
     },
     {
       "stored layer index": 4.0,
-      "value (base = accent, inoculated = primary)": 0.49901882527110786,
+      "value": 0.49901882527110786,
       "_kind": "line",
       "_group": 8
     },
     {
       "stored layer index": 5.0,
-      "value (base = accent, inoculated = primary)": 0.4882589468760925,
+      "value": 0.4882589468760925,
       "_kind": "line",
       "_group": 8
     },
     {
       "stored layer index": 6.0,
-      "value (base = accent, inoculated = primary)": 0.5014662991459052,
+      "value": 0.5014662991459052,
       "_kind": "line",
       "_group": 8
     },
     {
       "stored layer index": 7.0,
-      "value (base = accent, inoculated = primary)": 0.5245499027403991,
+      "value": 0.5245499027403991,
       "_kind": "line",
       "_group": 8
     },
     {
       "stored layer index": 8.0,
-      "value (base = accent, inoculated = primary)": 0.5409590890766582,
+      "value": 0.5409590890766582,
       "_kind": "line",
       "_group": 8
     },
     {
       "stored layer index": 9.0,
-      "value (base = accent, inoculated = primary)": 0.5094782813116492,
+      "value": 0.5094782813116492,
       "_kind": "line",
       "_group": 8
     },
     {
       "stored layer index": 10.0,
-      "value (base = accent, inoculated = primary)": 0.5373152167499484,
+      "value": 0.5373152167499484,
       "_kind": "line",
       "_group": 8
     },
     {
       "stored layer index": 11.0,
-      "value (base = accent, inoculated = primary)": 0.5290964867827394,
+      "value": 0.5290964867827394,
       "_kind": "line",
       "_group": 8
     },
     {
       "stored layer index": 12.0,
-      "value (base = accent, inoculated = primary)": 0.5751752429779646,
+      "value": 0.5751752429779646,
       "_kind": "line",
       "_group": 8
     },
     {
       "stored layer index": 13.0,
-      "value (base = accent, inoculated = primary)": 0.6005463371128517,
+      "value": 0.6005463371128517,
       "_kind": "line",
       "_group": 8
     },
     {
       "stored layer index": 14.0,
-      "value (base = accent, inoculated = primary)": 0.598579686536824,
+      "value": 0.598579686536824,
       "_kind": "line",
       "_group": 8
     },
     {
       "stored layer index": 15.0,
-      "value (base = accent, inoculated = primary)": 0.6176249068804246,
+      "value": 0.6176249068804246,
       "_kind": "line",
       "_group": 8
     },
     {
       "stored layer index": 16.0,
-      "value (base = accent, inoculated = primary)": 0.6292699280720567,
+      "value": 0.6292699280720567,
       "_kind": "line",
       "_group": 8
     },
     {
       "stored layer index": 17.0,
-      "value (base = accent, inoculated = primary)": 0.625500727410004,
+      "value": 0.625500727410004,
       "_kind": "line",
       "_group": 8
     },
     {
       "stored layer index": 18.0,
-      "value (base = accent, inoculated = primary)": 0.6342252271396065,
+      "value": 0.6342252271396065,
       "_kind": "line",
       "_group": 8
     },
     {
       "stored layer index": 19.0,
-      "value (base = accent, inoculated = primary)": 0.6709801533478604,
+      "value": 0.6709801533478604,
       "_kind": "line",
       "_group": 8
     },
     {
       "stored layer index": 20.0,
-      "value (base = accent, inoculated = primary)": 0.657672656912604,
+      "value": 0.657672656912604,
       "_kind": "line",
       "_group": 8
     },
     {
       "stored layer index": 21.0,
-      "value (base = accent, inoculated = primary)": 0.6724037638270712,
+      "value": 0.6724037638270712,
       "_kind": "line",
       "_group": 8
     },
     {
       "stored layer index": 22.0,
-      "value (base = accent, inoculated = primary)": 0.6513317006142543,
+      "value": 0.6513317006142543,
       "_kind": "line",
       "_group": 8
     },
     {
       "stored layer index": 23.0,
-      "value (base = accent, inoculated = primary)": 0.6315772906201877,
+      "value": 0.6315772906201877,
       "_kind": "line",
       "_group": 8
     },
     {
       "stored layer index": 24.0,
-      "value (base = accent, inoculated = primary)": 0.6327775449993926,
+      "value": 0.6327775449993926,
       "_kind": "line",
       "_group": 8
     },
     {
       "stored layer index": 25.0,
-      "value (base = accent, inoculated = primary)": 0.6333948397351628,
+      "value": 0.6333948397351628,
       "_kind": "line",
       "_group": 8
     },
     {
       "stored layer index": 26.0,
-      "value (base = accent, inoculated = primary)": 0.613312511935522,
+      "value": 0.613312511935522,
       "_kind": "line",
       "_group": 8
     },
     {
       "stored layer index": 27.0,
-      "value (base = accent, inoculated = primary)": 0.6159195344143802,
+      "value": 0.6159195344143802,
       "_kind": "line",
       "_group": 8
     },
@@ -4560,7 +4562,11 @@
       {
         "title_left": "held-out map R^2",
         "xlabel": "stored layer index",
-        "ylabel": "value (base = accent, inoculated = primary)",
+        "ylabel": "value",
+        "legend_labels": [
+          "base map",
+          "inoculated maps (8)"
+        ],
         "xticklabels": [
           "\u22125",
           "0",

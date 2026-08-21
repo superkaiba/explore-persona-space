@@ -772,8 +772,20 @@ def fig_forest(forest_rows: list[dict], stem: str, title: str, figdir: Path) -> 
         )
     ax.axvline(0.0, color="#5A5A5A", lw=0.8)
     ax.set_yticks(ys)
-    ax.set_yticklabels([r["name"] for r in forest_rows], fontsize=7)
-    ax.set_xlabel("delta rho (answer-side Train-Ref map-I minus context-side Train Ref)")
+    forest_labels = {
+        "em_bad_legal_advice": "EM: bad legal advice",
+        "em_bad_medical_advice": "EM: bad medical advice",
+        "em_bad_security_advice": "EM: bad security advice",
+        "em_turner_extreme_sports": "EM: extreme sports",
+        "em_turner_risky_financial": "EM: risky financial",
+        "caps_french": "Caps: French",
+        "caps_german": "Caps: German",
+        "caps_spanish": "Caps: Spanish",
+        "POOLED em": "Pooled EM (5 datasets)",
+        "POOLED caps": "Pooled caps (3 languages)",
+    }
+    ax.set_yticklabels([forest_labels.get(r["name"], r["name"]) for r in forest_rows], fontsize=7)
+    ax.set_xlabel("delta rho (answer-side minus context-side)")
     ax.set_title(title)
     _save(fig, stem, figdir)
 
@@ -803,7 +815,19 @@ def fig_map_quality(diag: dict, figdir: Path) -> None:
                 ax.plot(lys, ys, color=color, lw=lw, alpha=alpha)
         ax.set_xlabel("stored layer index")
         ax.set_title(label)
-    axes[0].set_ylabel("value (base = accent, inoculated = primary)")
+    axes[0].set_ylabel("value")
+    from matplotlib.lines import Line2D
+
+    axes[0].legend(
+        handles=[
+            Line2D([0], [0], color=paper_palette_role("accent"), lw=1.8, label="base map"),
+            Line2D(
+                [0], [0], color=paper_palette_role("primary"), lw=1.0, label="inoculated maps (8)"
+            ),
+        ],
+        loc="upper left",
+        fontsize=7,
+    )
     _save(fig, "fig5_map_quality", figdir)
 
 
