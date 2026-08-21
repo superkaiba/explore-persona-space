@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2436,
+  "highest_id": 2437,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11091,6 +11091,13 @@
       "path": "tasks/proposed/2436",
       "status": "proposed",
       "title": "workflow-fix: verify_task_body.py \u2014 mechanize the clean-result-critic three-beat-ordering + arrow-range-drift checks"
+    },
+    "2437": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2437",
+      "status": "proposed",
+      "title": "workflow-fix: fence ancestor-gitignore discovery in tmp_path real-ruff fixtures (stray /tmp/.gitignore blanks ruff probes fleet-wide)"
     },
     "244": {
       "has_clean_result": false,
