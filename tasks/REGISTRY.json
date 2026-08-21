@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2435,
+  "highest_id": 2436,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11084,6 +11084,13 @@
       "path": "tasks/proposed/2435",
       "status": "proposed",
       "title": "Fix activation-capture throughput: 2xH100 held idle ~17h CPU-bound in #2356 P2 capture"
+    },
+    "2436": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2436",
+      "status": "proposed",
+      "title": "verify_task_body.py: mechanize the clean-result-critic three-beat-ordering + arrow-range-drift checks"
     },
     "244": {
       "has_clean_result": false,
