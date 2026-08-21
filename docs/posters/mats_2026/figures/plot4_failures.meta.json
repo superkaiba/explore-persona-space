@@ -1,290 +1,401 @@
 {
-  "commit": "44b56018+dirty",
-  "render_id": "15359c638caa4859",
-  "git_commit": "44b56018d623567791ef737b846ab9afad0ba12e",
+  "commit": "82e58295+dirty",
+  "render_id": "2a586e961f2b4842",
+  "git_commit": "82e58295b6d79d64ab9d6d58cd6c44d2de2f8ca9",
   "git_dirty": true,
   "git_dirty_paths": [
+    "docs/posters/mats_2026/figures/plot4_failures.meta.json",
+    "docs/posters/mats_2026/figures/plot4_failures.pdf",
+    "docs/posters/mats_2026/figures/plot4_failures.png",
     "docs/posters/mats_2026/make_plot4_failures.py",
-    "docs/posters/mats_2026/figures/c4_story_vs_chat.pdf",
-    "docs/posters/mats_2026/poster.pdf",
-    "docs/posters/mats_2026/poster.tex",
     "eval_results/issue_666/headline/predictor_headline.json",
-    "scripts/issue1345_analyzer_figs.py",
     "scripts/issue1901_body_figures.py",
     "tasks/proposed/2416/body.md",
     "tasks/proposed/2416/comments.jsonl",
     "tasks/proposed/2416/events.jsonl",
     "tests/test_issue2094_rev_butler.py"
   ],
-  "git_argv0_state": "untracked",
+  "git_argv0_state": "modified",
   "git_argv0_path": "docs/posters/mats_2026/make_plot4_failures.py",
-  "created": "2026-08-21T00:40:29Z",
+  "created": "2026-08-21T00:51:14Z",
   "figsize": [
     7.4,
-    3.3
+    3.9
   ],
   "points": [
     {
-      "failure-rate difference (pp)": -3.175671,
-      "y": -6.351342238897509,
+      "failure-rate difference (pp)": -2.906959,
+      "y": -5.813918979077014,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "failure-rate difference (pp)": -2.919648,
-      "y": -5.83929520618324,
+      "failure-rate difference (pp)": -2.712691,
+      "y": -5.425381502608357,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "failure-rate difference (pp)": -1.692701,
-      "y": -3.385402245808336,
+      "failure-rate difference (pp)": -1.773958,
+      "y": -3.5479154876438406,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "failure-rate difference (pp)": -1.445483,
-      "y": -2.890965012560903,
+      "failure-rate difference (pp)": -1.432886,
+      "y": -2.865771367749886,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "failure-rate difference (pp)": 2.775853,
-      "y": 5.551705665236472,
+      "failure-rate difference (pp)": -1.125355,
+      "y": -2.2507097995354055,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "failure-rate difference (pp)": 2.933266,
-      "y": 5.866532639349545,
+      "failure-rate difference (pp)": -1.109387,
+      "y": -2.2187746659045757,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "failure-rate difference (pp)": 4.118481,
-      "y": 8.236962568581443,
+      "failure-rate difference (pp)": -1.083798,
+      "y": -2.167596560739603,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "failure-rate difference (pp)": 4.865246,
-      "y": 9.730492628995671,
+      "failure-rate difference (pp)": -0.893469,
+      "y": -1.786937957935797,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "failure-rate difference (pp)": 5.524971,
-      "y": 11.049942108852658,
+      "failure-rate difference (pp)": 0.195017,
+      "y": 0.39003461557213237,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "failure-rate difference (pp)": 6.518883,
-      "y": 13.037765228857765,
+      "failure-rate difference (pp)": 0.367607,
+      "y": 0.7352135815991243,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "failure-rate difference (pp)": 8.183661,
-      "y": 16.36732216527628,
+      "failure-rate difference (pp)": 0.501488,
+      "y": 1.0029756331023585,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "failure-rate difference (pp)": 10.886052,
-      "y": 21.772104850176106,
+      "failure-rate difference (pp)": 0.901526,
+      "y": 1.803052754836637,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "failure-rate difference (pp)": 12.378269,
-      "y": 24.756538129270396,
+      "failure-rate difference (pp)": 1.001971,
+      "y": 2.003941340567655,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "failure-rate difference (pp)": -8.353902352675636,
+      "failure-rate difference (pp)": 1.888727,
+      "y": 3.777453792973709,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure-rate difference (pp)": 2.777417,
+      "y": 5.554834686010155,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure-rate difference (pp)": 3.523729,
+      "y": 7.047458125183661,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure-rate difference (pp)": 4.274974,
+      "y": 8.549947513263541,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure-rate difference (pp)": 5.556691,
+      "y": 11.113381001021452,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure-rate difference (pp)": 5.600988,
+      "y": 11.20197631825539,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure-rate difference (pp)": -8.556672118641998,
       "y": 0.0,
       "_kind": "line",
       "_group": 1
     },
     {
-      "failure-rate difference (pp)": -7.387017343566017,
+      "failure-rate difference (pp)": -9.815084555732039,
       "y": 1.0,
       "_kind": "line",
       "_group": 1
     },
     {
-      "failure-rate difference (pp)": -4.8938766592558824,
+      "failure-rate difference (pp)": -6.0042744901976794,
       "y": 2.0,
       "_kind": "line",
       "_group": 1
     },
     {
-      "failure-rate difference (pp)": -4.59106086392061,
+      "failure-rate difference (pp)": -5.507219467114517,
       "y": 3.0,
       "_kind": "line",
       "_group": 1
     },
     {
-      "failure-rate difference (pp)": 0.3833507865389496,
+      "failure-rate difference (pp)": -4.747337742264023,
       "y": 4.0,
       "_kind": "line",
       "_group": 1
     },
     {
-      "failure-rate difference (pp)": 3.639794539620744,
+      "failure-rate difference (pp)": -5.196799508092931,
       "y": 5.0,
       "_kind": "line",
       "_group": 1
     },
     {
-      "failure-rate difference (pp)": 6.727721604361415,
+      "failure-rate difference (pp)": -4.9029285825957745,
       "y": 6.0,
       "_kind": "line",
       "_group": 1
     },
     {
-      "failure-rate difference (pp)": 0.22526304629896288,
+      "failure-rate difference (pp)": -6.396659824249856,
       "y": 7.0,
       "_kind": "line",
       "_group": 1
     },
     {
-      "failure-rate difference (pp)": 7.782462871207078,
+      "failure-rate difference (pp)": -7.064526382708202,
       "y": 8.0,
       "_kind": "line",
       "_group": 1
     },
     {
-      "failure-rate difference (pp)": 7.429139371966302,
+      "failure-rate difference (pp)": -1.8884980889194694,
       "y": 9.0,
       "_kind": "line",
       "_group": 1
     },
     {
-      "failure-rate difference (pp)": 12.250849603954032,
+      "failure-rate difference (pp)": -1.5438370370191403,
       "y": 10.0,
       "_kind": "line",
       "_group": 1
     },
     {
-      "failure-rate difference (pp)": 15.159997912505876,
+      "failure-rate difference (pp)": -1.919135220911089,
       "y": 11.0,
       "_kind": "line",
       "_group": 1
     },
     {
-      "failure-rate difference (pp)": 17.942807875684924,
+      "failure-rate difference (pp)": -4.528262790152538,
       "y": 12.0,
       "_kind": "line",
       "_group": 1
     },
     {
-      "failure-rate difference (pp)": -4.3434424490045895,
+      "failure-rate difference (pp)": -4.455267360072936,
+      "y": 13.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure-rate difference (pp)": 3.120796746130633,
+      "y": 14.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure-rate difference (pp)": 3.049893691856899,
+      "y": 15.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure-rate difference (pp)": 1.1450124109211073,
+      "y": 16.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure-rate difference (pp)": -2.035682647505187,
+      "y": 17.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure-rate difference (pp)": 5.40633081198905,
+      "y": 18.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure-rate difference (pp)": -2.8168649444748852,
       "y": 0.0,
       "_kind": "line",
       "_group": 2
     },
     {
-      "failure-rate difference (pp)": -4.277713108398632,
+      "failure-rate difference (pp)": 0.6662490216856769,
       "y": 1.0,
       "_kind": "line",
       "_group": 2
     },
     {
-      "failure-rate difference (pp)": -1.85372990972369,
+      "failure-rate difference (pp)": -0.9656552283430417,
       "y": 2.0,
       "_kind": "line",
       "_group": 2
     },
     {
-      "failure-rate difference (pp)": -1.1907174064679973,
+      "failure-rate difference (pp)": -0.31053590953831733,
       "y": 3.0,
       "_kind": "line",
       "_group": 2
     },
     {
-      "failure-rate difference (pp)": 10.905446310979682,
+      "failure-rate difference (pp)": 0.2881069267064431,
       "y": 4.0,
       "_kind": "line",
       "_group": 2
     },
     {
-      "failure-rate difference (pp)": 8.108380001867983,
+      "failure-rate difference (pp)": 1.0331838618417555,
       "y": 5.0,
       "_kind": "line",
       "_group": 2
     },
     {
-      "failure-rate difference (pp)": 9.747580325806474,
+      "failure-rate difference (pp)": 0.6049097677014128,
       "y": 6.0,
       "_kind": "line",
       "_group": 2
     },
     {
-      "failure-rate difference (pp)": 19.620424836770894,
+      "failure-rate difference (pp)": 3.404099750796068,
       "y": 7.0,
       "_kind": "line",
       "_group": 2
     },
     {
-      "failure-rate difference (pp)": 14.501331695767602,
+      "failure-rate difference (pp)": 9.025439580995137,
       "y": 8.0,
       "_kind": "line",
       "_group": 2
     },
     {
-      "failure-rate difference (pp)": 18.73279079048755,
+      "failure-rate difference (pp)": 3.4738391321713906,
       "y": 9.0,
       "_kind": "line",
       "_group": 2
     },
     {
-      "failure-rate difference (pp)": 20.53881048860009,
+      "failure-rate difference (pp)": 3.635868199542953,
       "y": 10.0,
       "_kind": "line",
       "_group": 2
     },
     {
-      "failure-rate difference (pp)": 28.75836984681879,
+      "failure-rate difference (pp)": 5.796593950914721,
       "y": 11.0,
       "_kind": "line",
       "_group": 2
     },
     {
-      "failure-rate difference (pp)": 31.70135826100383,
+      "failure-rate difference (pp)": 9.463457204210462,
       "y": 12.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure-rate difference (pp)": 13.652136638074941,
+      "y": 13.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure-rate difference (pp)": 7.932558117837656,
+      "y": 14.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure-rate difference (pp)": 11.236038798647758,
+      "y": 15.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure-rate difference (pp)": 16.66302641851351,
+      "y": 16.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure-rate difference (pp)": 26.843790566262356,
+      "y": 17.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure-rate difference (pp)": 17.25300451377793,
+      "y": 18.0,
       "_kind": "line",
       "_group": 2
     },
     {
       "x": 0.0,
-      "share of covered failures (%)": 80.70652173913044,
+      "share of failures (%)": 90.55555555555556,
       "_kind": "bar",
       "_group": 3
     },
     {
       "x": 0.0,
-      "share of covered failures (%)": 5.706521739130437,
+      "share of failures (%)": 3.3333333333333286,
       "_kind": "bar",
       "_group": 4
     },
     {
       "x": 0.0,
-      "share of covered failures (%)": 13.586956521739125,
+      "share of failures (%)": 6.111111111111114,
       "_kind": "bar",
       "_group": 5
     }
   ],
   "n_series": 6,
-  "total_points": 42,
+  "total_points": 60,
   "text": {
     "suptitle": null,
     "fig_texts": [],
     "axes": [
       {
         "xlabel": "failure-rate difference (pp)",
+        "legend_labels": [
+          "clears FDR (q = 0.05)",
+          "not significant"
+        ],
         "xticklabels": [
           "\u221210",
           "0",
@@ -293,22 +404,28 @@
         ],
         "yticklabels": [
           "advice / how-to topic",
+          "math topic",
           "factual QA topic",
+          "prose answer",
           "WildChat corpus",
+          "creative-writing topic",
           "deep conversation (5+ turns)",
+          "chit-chat topic",
           "roleplay / persona topic",
-          "coding topic",
+          "3-4-turn conversation",
+          "2-turn conversation",
+          "list-formatted answer",
+          "translation topic",
+          "summarization topic",
           "English",
-          "'other' topic",
-          "code-formatted answer",
-          "harmful-request topic",
+          "coding topic",
           "refusal-adjacent request",
-          "NSFW topic",
-          "answer is a refusal"
+          "answer is a refusal",
+          "code-formatted answer"
         ]
       },
       {
-        "ylabel": "share of covered failures (%)",
+        "ylabel": "share of failures (%)",
         "legend_labels": [
           "map error",
           "ambiguous",
@@ -325,6 +442,8 @@
       }
     ],
     "series": [
+      "clears FDR (q = 0.05)",
+      "not significant",
       "map error",
       "ambiguous",
       "answer degeneracy"

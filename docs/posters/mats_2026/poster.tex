@@ -84,7 +84,7 @@
 \begin{itemize}
   \item LLMs are trained as \textbf{next-token predictors}, but the weights fix a deterministic mapping from a context to a distribution over \emph{whole answers}: they are also \textbf{next-answer predictors}. Absent tool results, \takeaways{everything about the answer distribution is fixed before the first token is generated.}
   \item A \textbf{simple approximation} of that mapping would be extremely useful: predict behavior \emph{before} generation, and predict how fine-tuning will change it.
-  \item But it need not exist: the mapping is billions of parameters applying dozens of nonlinear layers, so a priori it could be arbitrarily complex. Prior work sits at two ends of a \textbf{capacity--usefulness tradeoff} — cheap but \emph{narrow} predictors (specific tokens, activations, behaviors), or distillation, a whole-distribution imitator with no capacity advantage over the model itself.
+  \item But it need not exist: the mapping is billions of parameters applying dozens of nonlinear layers. Prior work sits at two ends of a \textbf{capacity--usefulness tradeoff} — cheap but \emph{narrow} predictors (specific tokens, activations, behaviors), or distillation, a whole-distribution imitator with no capacity advantage over the model itself.
   \item \takeaways{Our question:} can a \textbf{very low-capacity} approximation capture the mapping \emph{as a whole}? Such an approximation is a \textbf{metamodel}: a much smaller model that reads the LLM's internals and predicts its behavior.
 \end{itemize}
 
@@ -94,7 +94,7 @@
 \end{center}
 \figcap{1}{The \textbf{context vector} \vC{} is the residual-stream state at the last context token (layer $\ell$); the \textbf{answer vector} \vA{} is the mean answer-token state. Both summaries follow prior work. \emph{Fitted maps} $\vC \mapsto \vA$ approximate the mapping; readouts consume $\hat{\vA}$.}
 \postersec{Experiments}
-Qwen2.5-7B(-Instruct) headline; OLMo-2 and Llama/T\"ulu post-training ladders. Real-user contexts (LMSYS-Chat-1M, WildChat), up to 963k pairs. Ridge maps per layer, cross-validated $\lambda$. Retrieval is read with whitened cosine + CSLS against noise-averaged answers; the scaling curve below predates that read and uses raw euclidean. Behaviors LLM-judged.
+Qwen2.5-7B(-Instruct) headline; Llama/T\"ulu post-training ladder. Real-user contexts (LMSYS-Chat-1M, WildChat), up to 963k pairs. Ridge maps per layer, cross-validated $\lambda$. Behaviors LLM-judged. Retrieval is reported raw-euclidean unless stated; the whitened-cosine + CSLS read is strictly higher.
 
 \end{column}
 
@@ -105,7 +105,7 @@ Qwen2.5-7B(-Instruct) headline; OLMo-2 and Llama/T\"ulu post-training ladders. R
 \begin{center}
 \includegraphics[width=0.97\linewidth]{plot1_scaling_boundary.pdf}
 \end{center}
-\figcap{2}{Held-out $R^2$ (left) and rank-1 retrieval (right, \emph{raw euclidean}, pool 1{,}000) against training-set size, for the linear map, a nonlinear (MLP) map, and the identity + bias baseline. Dashed: a generic boundary-token control map. Qwen2.5-7B-Instruct, layer 19. The retrieval read is superseded by the whitened-cosine + CSLS ladder in \S4.}
+\figcap{2}{Held-out $R^2$ (left) and rank-1 retrieval (right, \emph{raw euclidean}, pool 1{,}000) against training-set size, for the linear map, a nonlinear (MLP) map, and the identity + bias baseline. Dashed: a generic boundary-token control map. Qwen2.5-7B-Instruct, layer 19. Raw euclidean understates retrieval: on the multi-turn map, a whitened-cosine + CSLS read lifts rank-1 from 0.82 to 0.98 (pool 9{,}941).}
 \begin{itemize}
   \item \takeaways{High predictive power:} held-out $R^2$ 0.75 at 963k training contexts, and rank-1 retrieval far above chance ($10^{-3}$) at every training size.
   \item \takeaways{Mostly linear:} the nonlinear (MLP) map adds only $\sim$$0.06$ $R^2$ over the linear map, and only at large $n$.
@@ -144,10 +144,10 @@ To ask \emph{what} it predicts, we fit maps to the answer's \textbf{SAE features
 \begin{center}
 \IfFileExists{figures/plot4_failures.pdf}{\includegraphics[width=0.95\linewidth]{plot4_failures.pdf}}{\includegraphics[width=0.95\linewidth]{c3_failure_attribution.pdf}}
 \end{center}
-\figcap{5}{Left: failure-rate difference by context category (percentage points) under the \emph{raw-euclidean} read. Right: attribution of rank-1 failures — map error vs.\ ambiguous vs.\ answer degeneracy.}
+\figcap{5}{Failures against \emph{sampling-noise-free} answer targets (each answer averaged over 5 on-policy draws); raw-euclidean retrieval, $n=1{,}988$ resample-covered held-out contexts, pool 9{,}941, 180 failures, rank-1 accuracy 0.909. Left: failure-rate difference by context category (pp); blue clears Benjamini--Hochberg FDR at $q=0.05$, gray tested but not significant. Right: attribution of the 180 failures (100\% covered); \emph{map error} = the answer is still retrievable draw-vs-draw ($s\!\ge\!0.75$), so the miss is the map's.}
 \begin{itemize}
-  \item \takeaways{Failures concentrate in identifiable categories:} refusals ($+25$pp), NSFW ($+22$pp), refusal-adjacent requests ($+16$pp), code answers ($+11$pp); distinctive self-contained queries fail least.
-  \item \takeaways{Mostly map error, not answer degeneracy:} 81\% of rank-1 misses stay retrievable from a fresh draw of the same answer, and misses drag toward a few ``hub'' answers.
+  \item \takeaways{Failures concentrate in identifiable categories:} code-formatted answers ($+11.2$pp), refusal-adjacent requests ($+8.6$), coding topics ($+7.0$), English ($+5.6$); factual QA ($-3.6$) and advice/how-to ($-5.8$) fail least.
+  \item \takeaways{Almost entirely map error, not answer degeneracy:} 91\% of rank-1 misses stay retrievable from a fresh draw of the same answer; only 6\% are genuinely degenerate answers.
 \end{itemize}
 
 \end{column}
@@ -157,7 +157,7 @@ To ask \emph{what} it predicts, we fit maps to the answer's \textbf{SAE features
 
 \postersec{5.\ Where does the mapping come from?}
 \begin{center}
-\IfFileExists{figures/plot5_stages.pdf}{\includegraphics[width=0.95\linewidth]{plot5_stages.pdf}}{\includegraphics[width=0.74\linewidth]{c1_stage_retention.pdf}}
+\IfFileExists{figures/plot5_stages.pdf}{\includegraphics[width=0.86\linewidth]{plot5_stages.pdf}}{\includegraphics[width=0.74\linewidth]{c1_stage_retention.pdf}}
 \end{center}
 \figcap{6}{Pooled held-out $R^2$ of the fitted map at each stage of the open Llama/T\"ulu post-training ladder (layer 30), each stage fit and evaluated on its \emph{own} on-policy answers.}
 \begin{itemize}
@@ -167,7 +167,7 @@ To ask \emph{what} it predicts, we fit maps to the answer's \textbf{SAE features
 
 \postersec{6.\ Is it a persona mapping?}
 \begin{center}
-\includegraphics[width=0.95\linewidth]{c4_transfer_ladder.pdf}
+\includegraphics[width=0.88\linewidth]{c4_transfer_ladder.pdf}
 \end{center}
 \figcap{7}{Fraction of the target's own held-out ceiling recovered when one fitted map is applied to another condition, across correction rungs (naive $\to$ $+$offset $\to$ $+$diag.\ scale $\to$ fitted linear reparameterization $\to$ ceiling).}
 \begin{itemize}
