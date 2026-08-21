@@ -46,4 +46,15 @@ Qwen3.6 hybrid-GDN auto-selects the FlashInfer GDN prefill kernel
 must ALSO pin every kernel auto-select away from flashinfer
 (`--gdn-prefill-backend triton` per vllm's own hint; sweep the model's
 attention/kernel modules for sibling auto-selects rather than pinning
-one site per pod cycle).
+one site per pod cycle); (6) RESOLVED fix shape (#2378 r9, commit
+173c8798d4): the GDN knob threads ONLY as the EngineArgs dataclass field
+`gdn_prefill_backend` (-> `additional_config`; NO env-var route exists —
+verified v0.27.1 arg_utils.py:752/:2459) so it must ride the shared
+`create_vllm_engine(**kwargs)` seam, passed UNGUARDED (an engine lacking
+the field TypeErrors loudly — never introspection-skip a load-bearing
+pin); the full-tag sweep found exactly ONE availability-UNCHECKED
+auto-select for a dense hybrid-GDN bf16 model (the GDN prefill resolver;
+its metadata-builder consumer shares the same resolver, so one pin
+covers both) — every other flashinfer site is absence-guarded
+(find_spec / except ImportError; safe while the dist is ABSENT, still
+TypeError-exposed if a broken dist is ever reintroduced, per point 4).
