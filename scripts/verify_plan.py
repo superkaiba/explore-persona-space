@@ -8624,15 +8624,38 @@ def _c46_argv_from_tokens(tokens: list[str]) -> list[str] | None:
     return argv
 
 
-def _c46_drift_arms(parser, argv: list[str]) -> list[str]:
-    """Drift arms for ONE command argv against the live CLI (empty = clean).
+def _c46_drift_arms(parser, argv: list[str]) -> tuple[list[str], list[str]]:
+    """Drift arms + FYI notes for ONE command argv against the live CLI.
+
+    Returns ``(arms, notes)`` — empty ``arms`` = clean; ``notes`` are
+    verdict-neutral FYI strings the caller appends to its detail tail.
 
     Arm 1: the argv does not parse (``launch`` subcommand missing, unknown
     flag, wrong type). Arms 2-3 fire only on a LAUNCH-shaped argv — an
     explicit ``launch`` subcommand, or the #1336 missing-subcommand shape
     (argv leads with a flag); a ``finalize`` command gets neither.
+
+    Arm 4 (#2202/#2254) is NAMESPACE-level: a PARSED ``launch`` namespace
+    must satisfy the runtime's exactly-one-of ``--workload-cmd`` /
+    ``--hydra`` rule (``dispatch_issue.py main()``, #588) — evaluated on
+    the parsed namespace exactly as the runtime does, so empty-string
+    values, ``--flag=value`` forms, and the append-action ``--hydra``
+    follow argparse semantics byte-for-byte. Gated on
+    ``getattr(ns, "action", None) == "launch"`` (a does-not-parse argv has
+    ``ns is None`` — arm 1 owns it; ``finalize`` namespaces lack the
+    launch dests by construction) and on BOTH ``workload_cmd`` / ``hydra``
+    dests existing — a future CLI dest rename SKIPs the arm with an FYI
+    note rather than reading renamed dests as absent and firing
+    ``neither`` on every compliant launch plan.
+
+    FYI note (#909, verdict-neutral): an explicit ``--backend runpod``
+    launch carrying a non-empty ``--workload-cmd`` but no
+    ``--execute-workload`` is provision-only — the workload does not
+    auto-start on the runpod lane (expected when the experimenter launches
+    it on the pod, so a note, never a WARN).
     """
     arms: list[str] = []
+    notes: list[str] = []
     ns, err = _c46_dry_parse(parser, argv)
     if ns is None:
         arms.append(f"does not parse ({err})")
@@ -8653,7 +8676,35 @@ def _c46_drift_arms(parser, argv: list[str]) -> list[str]:
                 "exists — reason: repo_branch_required_issue_branch_exists; "
                 "--repo-branch main is the explicit escape)"
             )
-    return arms
+    if ns is not None and getattr(ns, "action", None) == "launch":
+        if hasattr(ns, "workload_cmd") and hasattr(ns, "hydra"):
+            has_workload_cmd = bool((ns.workload_cmd or "").strip())
+            has_hydra = bool(ns.hydra)
+            if has_workload_cmd == has_hydra:
+                arms.append(
+                    "launch requires exactly one of --workload-cmd / --hydra "
+                    f"(got {'both' if has_hydra else 'neither'}; an empty "
+                    "--workload-cmd '' counts as not provided; runtime refuses "
+                    "rc=2 — the #2202/#2254 provision-only shape)"
+                )
+            elif (
+                has_workload_cmd
+                and (getattr(ns, "backend", None) or "").strip().lower() == "runpod"
+                and not getattr(ns, "execute_workload", False)
+            ):
+                notes.append(
+                    "FYI: --backend runpod with --workload-cmd but no "
+                    "--execute-workload is provision-only (the workload does not "
+                    "auto-start on the runpod lane, #909) — expected when the "
+                    "experimenter launches it on the pod"
+                )
+        else:
+            notes.append(
+                "exactly-one-of --workload-cmd/--hydra arm skipped: parsed launch "
+                "namespace lacks the workload_cmd/hydra dests (CLI dest rename "
+                "since #588?)"
+            )
+    return arms, notes
 
 
 def check_dispatch_cmd_cli_parse(plan: str, kind: str) -> CheckResult:
@@ -8661,17 +8712,24 @@ def check_dispatch_cmd_cli_parse(plan: str, kind: str) -> CheckResult:
     ``dispatch_issue.py`` command (fenced code blocks + inline-code spans;
     backslash continuations joined) must dry-parse against the CLI's REAL
     argparser (``dispatch_issue.build_argparser()``, lazily path-loaded),
-    and a launch-shaped command must not carry the two demonstrated drift
-    shapes: ``--max-run-duration`` without ``--time-budget-hours`` (the
-    fence threads ONLY to the GCP instance auto-delete and is inert on
-    SLURM lanes, where the wall fence is ``--time-budget-hours`` — runtime
-    refusal ``max_run_duration_slurm_inert_without_time_budget``), and a
-    missing ``--repo-branch`` (the runtime refuses when a live
+    and a launch-shaped command must not carry the three demonstrated
+    drift shapes: ``--max-run-duration`` without ``--time-budget-hours``
+    (the fence threads ONLY to the GCP instance auto-delete and is inert
+    on SLURM lanes, where the wall fence is ``--time-budget-hours`` —
+    runtime refusal ``max_run_duration_slurm_inert_without_time_budget``),
+    a missing ``--repo-branch`` (the runtime refuses when a live
     ``issue-<N>`` branch exists — ``repo_branch_required_issue_branch_
-    exists``; ``--repo-branch main`` is the explicit escape). Mechanizes
-    the #1336 v15 §9 drift: the plan-embedded launch command omitted the
-    ``launch`` subcommand, carried ``--max-run-duration`` with no
-    ``--time-budget-hours``, and omitted ``--repo-branch``. Placeholder
+    exists``; ``--repo-branch main`` is the explicit escape), and — on a
+    PARSED ``launch`` namespace (#2202/#2254) — a violation of the
+    runtime's exactly-one-of ``--workload-cmd`` / ``--hydra`` requirement
+    (#588; an explicitly-empty ``--workload-cmd ''`` counts as not
+    provided, both-provided WARNs too — the runtime refuses rc=2 either
+    way). An explicit ``--backend runpod`` launch with a non-empty
+    ``--workload-cmd`` and no ``--execute-workload`` additionally gets a
+    verdict-neutral FYI note (provision-only on the runpod lane, #909).
+    Mechanizes the #1336 v15 §9 drift: the plan-embedded launch command
+    omitted the ``launch`` subcommand, carried ``--max-run-duration`` with
+    no ``--time-budget-hours``, and omitted ``--repo-branch``. Placeholder
     tokens (``<N>``, ``$VAR``) parse as ordinary values (substituted
     ``"1"``); ``${VAR:+...}`` conditional expansions are stripped whole;
     prose mentions with no ``--`` flag are not commands; unsplittable
@@ -8702,7 +8760,8 @@ def check_dispatch_cmd_cli_parse(plan: str, kind: str) -> CheckResult:
         if argv is None:
             continue  # bare file reference / prose mention, not a command
         n_parsed += 1
-        arms = _c46_drift_arms(parser, argv)
+        arms, fyi_notes = _c46_drift_arms(parser, argv)
+        notes.extend(fyi_notes)
         if arms:
             offenders.append(f"{cmd[:70]!r}: " + "; ".join(arms))
     if offenders:
@@ -8715,9 +8774,11 @@ def check_dispatch_cmd_cli_parse(plan: str, kind: str) -> CheckResult:
             f"plan-embedded dispatch_issue.py command(s) drift from the live CLI: {shown}{more} "
             "— the #1336 v15 shape (a plan-embedded launch command missing the `launch` "
             "subcommand, fencing via --max-run-duration alone, or omitting --repo-branch) "
-            "dies or silently mis-fences at dispatch time; copy the SKILL.md Step 6b launch "
-            "snippet (launch subcommand + explicit --repo-branch + --time-budget-hours on "
-            f"SLURM-reachable lanes){tail}",
+            "and the #2202/#2254 provision-only shape (launch without exactly one of "
+            "--workload-cmd / --hydra) die or silently mis-fence at dispatch time; copy "
+            "the SKILL.md Step 6b launch snippet (launch subcommand + explicit "
+            "--repo-branch + a workload via --workload-cmd or --hydra + "
+            f"--time-budget-hours on SLURM-reachable lanes){tail}",
         )
     if n_parsed == 0:
         detail = "dispatch_issue.py mentions are bare references, not command invocations"

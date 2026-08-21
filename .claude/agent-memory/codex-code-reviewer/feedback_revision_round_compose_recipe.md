@@ -1934,3 +1934,22 @@ the exact base-blob greps handed over (justified-if-true / honest-reporting
 finding-if-false). (e) A DEFERRED concern whose reconciler-downgrade premise
 was OPERATIONAL sequencing gets a DEFERRAL-PREMISE-INTACT/BROKEN status-line
 form when the round changes the sequencing the premise relied on.
+
+**Merge-reconciliation round + brief-pinned BINARY enum + open-NIT vocabulary
+(#2205 r2, 2026-08-21):** composing the #2201-r3/#2217-r2 gate-mandated merge
+shape under a brief that pins `PASS|FAIL` (no CONCERNS): route the open prior
+NITs through a dedicated `## Prior-round items` section with the three-way
+vocabulary STILL-OPEN-UNCHANGED | STILL-OPEN-NOW-MATERIAL | CLOSED-BY-MERGE —
+UNCHANGED never blocks under the binary enum, NOW-MATERIAL re-raises at true
+severity with a NEW kebab-id row naming the merge-created mechanism (persisted
+ids still never re-emitted as rows otherwise). Two probe deltas: (a) surface
+test-COUNT discrepancies between the reconciliation note and compose-time greps
+(v28 claimed "12 branch-side test_c46_*"; HEAD greps 14 — hand to Codex as a
+report-accuracy observation, never resolve it yourself); (b) when the merge
+folded main's task-state in, the worktree's OWN plans/ copy becomes identical
+to canonical — still INLINE the plan when the brief orders it, but the worktree
+copy is then a legitimate sanctioned live-probe TARGET
+(`verify_plan.py --plan-file tasks/<status>/<N>/plans/v<k>.md --kind <kind>`
+proves import + CHECKS-registry load of the merged module, read-only). Also:
+per-side survival greps get side-specific token sets (branch:
+c46|workload|hydra|provision; main: margin|baseline|ceiling|c68|escape).

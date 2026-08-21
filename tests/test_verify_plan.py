@@ -10328,12 +10328,15 @@ def test_c46_unparseable_line_is_note_not_crash():
 def test_c46_placeholder_tokens_never_warn():
     # The SKILL.md Step 6b snippet shape: <N> placeholders + a ${VAR:+...}
     # conditional expansion parse clean (placeholders substituted "1"; the
-    # conditional expansion is stripped whole, modeling VAR-unset).
+    # conditional expansion is stripped whole, modeling VAR-unset). The
+    # placeholder --workload-cmd "$WORKLOAD_CMD" substitutes to "1" —
+    # non-empty, so a templated workload-cmd counts as PROVIDED and the
+    # exactly-one-of arm never false-WARNs on templated skill snippets.
     plan = GOOD_PLAN + (
         "\n```bash\n"
         "uv run python scripts/dispatch_issue.py launch \\\n"
         '    --issue <N> --intent "$INTENT" --time-budget-hours 8 --repo-branch "issue-<N>" \\\n'
-        '    ${BACKEND:+--backend "$BACKEND"}\n'
+        '    --workload-cmd "$WORKLOAD_CMD" ${BACKEND:+--backend "$BACKEND"}\n'
         "```\n"
     )
     _, by_id = _run(plan)
@@ -10346,6 +10349,107 @@ def test_c46_prose_mention_is_not_a_command():
     plan = GOOD_PLAN + "\nre-run the same `dispatch_issue.py launch` command until it exits 0\n"
     _, by_id = _run(plan)
     assert by_id[C46].status == "SKIP"
+
+
+# Fixture (b) — the #2202 incident, verbatim: a provision-only launch that
+# PARSES clean (carries --repo-branch + --time-budget-hours, so neither
+# token arm fires) but violates the runtime's exactly-one-of
+# --workload-cmd / --hydra requirement (dispatch_issue.py main(), #588) —
+# the shape c46 + the fact-checker both dry-parse-PASSed before this arm.
+C46_2202_PROVISION_ONLY = (
+    "uv run python scripts/dispatch_issue.py launch --issue 2202 --intent cpu-bigmem "
+    "--repo-branch issue-2202 --boot-disk-gb 80 --min-ram-gb 32 --time-budget-hours 12"
+)
+
+
+def test_c46_warns_on_provision_only_launch():
+    # The verbatim #2202 command: parses, but neither --workload-cmd nor
+    # --hydra -> the namespace-level arm WARNs naming the runtime rule.
+    plan = GOOD_PLAN + "\n```bash\n" + C46_2202_PROVISION_ONLY + "\n```\n"
+    _, by_id = _run(plan)
+    r = by_id[C46]
+    assert r.status == "WARN"
+    assert "exactly one of" in r.detail
+    assert "neither" in r.detail
+
+
+def test_c46_empty_workload_cmd_counts_as_absent():
+    # An explicitly-empty --workload-cmd '' is NOT provided (mirrors the
+    # runtime's bool((args.workload_cmd or '').strip()) exactly) -> WARN.
+    plan = GOOD_PLAN + ("\n```bash\n" + C46_2202_PROVISION_ONLY + " --workload-cmd ''\n```\n")
+    _, by_id = _run(plan)
+    r = by_id[C46]
+    assert r.status == "WARN"
+    assert "exactly one of" in r.detail
+    # The equals-form --workload-cmd= yields "" under argparse -> also absent.
+    plan_eq = GOOD_PLAN + ("\n```bash\n" + C46_2202_PROVISION_ONLY + " --workload-cmd=\n```\n")
+    _, by_id_eq = _run(plan_eq)
+    r_eq = by_id_eq[C46]
+    assert r_eq.status == "WARN"
+    assert "exactly one of" in r_eq.detail
+
+
+def test_c46_hydra_only_launch_passes():
+    # A compliant --hydra-only launch (no --workload-cmd) satisfies
+    # exactly-one-of -> PASS.
+    plan = GOOD_PLAN + ("\n```bash\n" + C46_2202_PROVISION_ONLY + " --hydra condition=c1\n```\n")
+    _, by_id = _run(plan)
+    assert by_id[C46].status == "PASS"
+
+
+def test_c46_multiple_hydra_occurrences_pass():
+    # --hydra is an append action: two occurrences -> a non-empty list ->
+    # provided (argparse semantics byte-for-byte, no token counting).
+    plan = GOOD_PLAN + (
+        "\n```bash\n" + C46_2202_PROVISION_ONLY + " --hydra condition=c1 --hydra seed=42\n```\n"
+    )
+    _, by_id = _run(plan)
+    assert by_id[C46].status == "PASS"
+
+
+def test_c46_both_workload_and_hydra_warn():
+    # BOTH provided violates exactly-one-of just like neither (the runtime's
+    # `got both` branch) -> WARN naming `both`.
+    plan = GOOD_PLAN + (
+        "\n```bash\n" + C46_2202_PROVISION_ONLY + " --workload-cmd 'bash x.sh' --hydra a=b\n```\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id[C46]
+    assert r.status == "WARN"
+    assert "exactly one of" in r.detail
+    assert "both" in r.detail
+
+
+def test_c46_finalize_untouched():
+    # AC3: a parseable finalize command has no launch namespace -> the
+    # exactly-one-of arm never fires (and no dest-rename FYI note either).
+    plan = GOOD_PLAN + (
+        "\n```bash\nuv run python scripts/dispatch_issue.py finalize --issue 1\n```\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id[C46]
+    assert r.status == "PASS"
+    assert "exactly one of" not in r.detail
+    assert "dest rename" not in r.detail
+
+
+def test_c46_runpod_provision_only_fyi_note():
+    # AC4 (#909): explicit --backend runpod + non-empty --workload-cmd but
+    # no --execute-workload -> verdict stays PASS, detail carries the FYI
+    # note (the workload does not auto-start on the runpod lane).
+    base = C46_2202_PROVISION_ONLY + " --workload-cmd 'bash scripts/x.sh' --backend runpod"
+    plan = GOOD_PLAN + "\n```bash\n" + base + "\n```\n"
+    _, by_id = _run(plan)
+    r = by_id[C46]
+    assert r.status == "PASS"
+    assert "provision-only" in r.detail
+    assert "--execute-workload" in r.detail
+    # With --execute-workload the note disappears.
+    plan_exec = GOOD_PLAN + "\n```bash\n" + base + " --execute-workload\n```\n"
+    _, by_id_exec = _run(plan_exec)
+    r_exec = by_id_exec[C46]
+    assert r_exec.status == "PASS"
+    assert "provision-only" not in r_exec.detail
 
 
 def test_c46_registered_in_checks():
