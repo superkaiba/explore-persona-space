@@ -25,16 +25,29 @@ pins (fail against the pre-fix, splat-skipping checker — the revert-demo
 set), T1 pins the unresolvable-splat degrade path (teeth + diagnostic),
 and T2 pins the EXCLUSIVE-USE abstain rule on rebound / mutated /
 alias-escaping module dicts.
+
+Task #2261 adds the call-arity bind-pass tests (``test_bind_*``): the
+incident regression (A1/MF-1 — repeated same-target imports RESOLVE),
+per-shape must-FAILs with the registry mutation check (MF-2), the waiver
+and arming pins (MF-4), and the fleet-census positive-coverage gate
+(MF-3) with its resolver-free lexical denominator.
 """
 
 from __future__ import annotations
 
+import ast
 import textwrap
+from collections import Counter
 from pathlib import Path
 
 import pytest
 
-from explore_persona_space.orchestrate.argcheck import assert_args_attributes_defined
+from explore_persona_space.orchestrate import argcheck
+from explore_persona_space.orchestrate.argcheck import (
+    assert_args_attributes_defined,
+    assert_helper_call_shapes_bind,
+    collect_helper_call_census,
+)
 
 
 def _write(tmp_path: Path, name: str, source: str) -> Path:
@@ -728,3 +741,792 @@ def test_rebound_mutated_or_escaping_splat_dict_abstains(tmp_path):
     with pytest.raises(SystemExit) as exc:
         assert_args_attributes_defined(aliased)
     assert "never defined: a, k\n" in str(exc.value)
+
+
+# ---------------------------------------------------------------------------
+# Task #2261: call-arity bind pass (test_bind_*)
+# ---------------------------------------------------------------------------
+
+
+def _line_of(path: Path, needle: str) -> int:
+    """1-based line number of the first fixture line containing ``needle``."""
+    for i, text in enumerate(path.read_text(encoding="utf-8").split("\n")):
+        if needle in text:
+            return i + 1
+    raise AssertionError(f"needle {needle!r} not found in {path}")
+
+
+def test_bind_incident_shape_fails_naming_line_and_param(tmp_path):
+    """A1: the #2223 incident shape fails, naming the site line + missing param."""
+    driver = _write(
+        tmp_path,
+        "driver.py",
+        """
+        from explore_persona_space.orchestrate import hub
+
+        def _persist(at, prefix):
+            hub._upload(at, f"{prefix}/analysis_tensors", repo_type="dataset")
+
+        def phase_upload(args):
+            _persist(args.at, args.prefix)
+        """,
+    )
+    line = _line_of(driver, "hub._upload(")
+    with pytest.raises(SystemExit) as exc:
+        assert_helper_call_shapes_bind(driver)
+    msg = str(exc.value)
+    assert "hub._upload" in msg
+    assert f"driver.py:{line}" in msg
+    assert "path_in_repo" in msg
+
+
+def test_bind_repeated_same_target_imports_incident_fails(tmp_path, capsys):
+    """MF-1: repeated same-target imports (incl. function-local) RESOLVE, never abstain.
+
+    Mirrors the real pre-fix #2223 layout (blob lines 715/740/2497: ``hub``
+    bound three times, all the same target); the incident call must FAIL
+    with 0 skips — the sole-binding rule would have abstained here.
+    """
+    driver = _write(
+        tmp_path,
+        "driver_mf1.py",
+        """
+        from explore_persona_space.orchestrate import hub
+
+        def _stage_topics():
+            from explore_persona_space.orchestrate import hub
+            return hub
+
+        def _persist(at, prefix):
+            from explore_persona_space.orchestrate import hub
+            hub._upload(at, f"{prefix}/analysis_tensors", repo_type="dataset")
+
+        def phase_upload(args):
+            _persist(args.at, args.prefix)
+        """,
+    )
+    line = _line_of(driver, "hub._upload(")
+    with pytest.raises(SystemExit) as exc:
+        assert_helper_call_shapes_bind(driver)
+    msg = str(exc.value)
+    assert f"driver_mf1.py:{line}" in msg
+    assert "path_in_repo" in msg
+    assert "0 skipped" in capsys.readouterr().out
+
+
+def test_bind_all_binding_calls_pass(tmp_path, capsys):
+    """A2/MF-2 count pin: 4 registered calls written => census reads exactly 4 bound."""
+    driver = _write(
+        tmp_path,
+        "driver_ok.py",
+        """
+        from explore_persona_space.orchestrate import hub
+        from explore_persona_space.orchestrate.hub import stage_hub_file
+        from huggingface_hub import hf_hub_download
+
+        def phase_all(args):
+            hub._upload(args.path, "repo-id", "dataset", "prefix/file.json")
+            stage_hub_file("repo-id", "prefix/file.json", args.target)
+            hub.retry_transient(lambda: 1, what="stage")
+            hf_hub_download(repo_id="r", filename="f")
+        """,
+    )
+    assert_helper_call_shapes_bind(driver)  # must not raise
+    assert "argcheck-bind: 4 bound, 0 degraded, 0 skipped across 1 file(s)" in (
+        capsys.readouterr().out
+    )
+
+
+def test_bind_whole_module_scope_catches_helper_escape(tmp_path):
+    """A4 + durability pin: the offending call sits in a helper the phase calls."""
+    driver = _write(
+        tmp_path,
+        "driver_helper.py",
+        """
+        from explore_persona_space.orchestrate import hub
+
+        def _fig_upload(args):
+            hub._upload(args.figures_out)
+
+        def phase_figures(args):
+            _fig_upload(args)
+        """,
+    )
+    line = _line_of(driver, "hub._upload(")
+    with pytest.raises(SystemExit) as exc:
+        assert_helper_call_shapes_bind(driver)
+    msg = str(exc.value)
+    assert f"driver_helper.py:{line}" in msg
+    assert "hub._upload" in msg
+
+
+def test_bind_lambda_wrapped_inner_call_is_bound(tmp_path, capsys):
+    """A3: a lambda-wrapped inner ``HfApi().upload_file`` call is itself bound."""
+    bad = _write(
+        tmp_path,
+        "driver_lambda_bad.py",
+        """
+        from explore_persona_space.orchestrate.hub import retry_transient
+        from huggingface_hub import HfApi
+
+        def phase_up(args):
+            retry_transient(lambda: HfApi().upload_file("x"), what="upload")
+        """,
+    )
+    with pytest.raises(SystemExit) as exc:
+        assert_helper_call_shapes_bind(bad)
+    msg = str(exc.value)
+    assert "HfApi().upload_file" in msg
+    assert "positional" in msg  # upload_file is keyword-only: 1 positional cannot bind
+
+    good = _write(
+        tmp_path,
+        "driver_lambda_good.py",
+        """
+        from explore_persona_space.orchestrate.hub import retry_transient
+        from huggingface_hub import HfApi
+
+        def phase_up(args):
+            retry_transient(
+                lambda: HfApi().upload_file(
+                    path_or_fileobj="x", path_in_repo="p", repo_id="r"
+                ),
+                what="upload",
+            )
+        """,
+    )
+    capsys.readouterr()
+    assert_helper_call_shapes_bind(good)  # must not raise
+    assert "argcheck-bind: 2 bound, 0 degraded, 0 skipped" in capsys.readouterr().out
+
+
+def test_bind_keyword_only_no_false_positive(tmp_path):
+    """A5: required kw-only ``what`` — present passes, absent is a TRUE positive."""
+    ok = _write(
+        tmp_path,
+        "driver_kwok.py",
+        """
+        from explore_persona_space.orchestrate.hub import retry_transient
+
+        def phase(args, job):
+            retry_transient(job, what="stage")
+        """,
+    )
+    assert_helper_call_shapes_bind(ok)  # must not raise
+
+    bad = _write(
+        tmp_path,
+        "driver_kwbad.py",
+        """
+        from explore_persona_space.orchestrate.hub import retry_transient
+
+        def phase(args, job):
+            retry_transient(job)
+        """,
+    )
+    line = _line_of(bad, "retry_transient(job)")
+    with pytest.raises(SystemExit) as exc:
+        assert_helper_call_shapes_bind(bad)
+    msg = str(exc.value)
+    assert f"driver_kwbad.py:{line} retry_transient" in msg
+    assert "'what'" in msg
+
+
+def test_bind_callee_var_kwargs_absorbs(tmp_path, monkeypatch):
+    """A5: a callee whose own signature carries ``**kwargs`` absorbs extra keywords."""
+    _write(
+        tmp_path,
+        "argcheck_bind_double_mod.py",
+        """
+        def take_anything(a, **kwargs):
+            return a, kwargs
+        """,
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+    monkeypatch.setattr(
+        argcheck, "_BIND_FUNCTIONS", frozenset({("argcheck_bind_double_mod", "take_anything")})
+    )
+    driver = _write(
+        tmp_path,
+        "driver_double.py",
+        """
+        from argcheck_bind_double_mod import take_anything
+
+        def phase(args):
+            take_anything(1, extra=2, more=3)
+        """,
+    )
+    assert_helper_call_shapes_bind(driver)  # must not raise: **kwargs absorbs
+    census = collect_helper_call_census(driver)
+    assert len(census.bound) == 1 and not census.failures and not census.skipped
+
+
+def test_bind_call_site_splat_degrades_to_bind_partial(tmp_path, capsys):
+    """A5: a call-site splat degrades to bind_partial; named kwargs still checked."""
+    ok = _write(
+        tmp_path,
+        "driver_splat_ok.py",
+        """
+        from explore_persona_space.orchestrate import hub
+
+        def phase(args, extra):
+            hub._upload(*extra)
+        """,
+    )
+    assert_helper_call_shapes_bind(ok)  # must not raise
+    out = capsys.readouterr().out
+    assert "argcheck-bind: 0 bound, 1 degraded, 0 skipped" in out
+    assert "degraded:" in out and "bind_partial" in out
+
+    bad = _write(
+        tmp_path,
+        "driver_splat_bad.py",
+        """
+        from explore_persona_space.orchestrate import hub
+
+        def phase(args, extra):
+            hub._upload(*extra, bogus_kw=1)
+        """,
+    )
+    line = _line_of(bad, "bogus_kw=1")
+    with pytest.raises(SystemExit) as exc:
+        assert_helper_call_shapes_bind(bad)
+    msg = str(exc.value)
+    assert "hub._upload" in msg
+    assert f"driver_splat_bad.py:{line}" in msg
+    assert "bogus_kw" in msg
+
+
+def test_bind_import_alias_resolves(tmp_path):
+    """A5 aliasing: ``import ... as`` forms resolve to the same installed target."""
+    bad = _write(
+        tmp_path,
+        "driver_alias_bad.py",
+        """
+        from explore_persona_space.orchestrate.hub import _upload as up
+
+        def phase(args):
+            up("only_one")
+        """,
+    )
+    line = _line_of(bad, 'up("only_one")')
+    with pytest.raises(SystemExit) as exc:
+        assert_helper_call_shapes_bind(bad)
+    msg = str(exc.value)
+    assert f"driver_alias_bad.py:{line} up" in msg
+    assert "missing a required argument" in msg
+    assert "_upload" in msg  # the installed: line names the canonical target
+
+    ok = _write(
+        tmp_path,
+        "driver_alias_ok.py",
+        """
+        import explore_persona_space.orchestrate.hub as h
+
+        def phase(args, a, b, c, d):
+            h._upload(a, b, c, d)
+        """,
+    )
+    assert_helper_call_shapes_bind(ok)  # must not raise
+
+
+def test_bind_shadowed_name_abstains_with_note(tmp_path, capsys):
+    """A3/A5: a genuine shadow (non-import binding) is a NOTED skip, never silent."""
+    driver = _write(
+        tmp_path,
+        "driver_shadow.py",
+        """
+        from explore_persona_space.orchestrate.hub import stage_hub_file
+
+        def stage_hub_file(repo_id):
+            return repo_id
+
+        def phase(args):
+            stage_hub_file("r")
+        """,
+    )
+    assert_helper_call_shapes_bind(driver)  # must not raise (abstains, does not bind)
+    out = capsys.readouterr().out
+    assert "argcheck-bind: 0 bound, 0 degraded, 1 skipped" in out
+    assert "skipped:" in out and "stage_hub_file" in out and "shadow" in out
+
+
+def test_bind_hfapi_var_uniform_binding_resolves(tmp_path):
+    """S4: ``api = HfApi()`` under uniform binding resolves; kw-only misuse fails."""
+    driver = _write(
+        tmp_path,
+        "driver_s4.py",
+        """
+        from huggingface_hub import HfApi
+
+        def phase_a(args):
+            api = HfApi()
+            api.upload_file("pos")
+
+        def phase_b(args):
+            api = HfApi()
+            api.repo_info("some/repo")
+        """,
+    )
+    line = _line_of(driver, 'api.upload_file("pos")')
+    with pytest.raises(SystemExit) as exc:
+        assert_helper_call_shapes_bind(driver)
+    msg = str(exc.value)
+    assert f"driver_s4.py:{line} api.upload_file" in msg
+    assert "positional" in msg
+    assert "repo_info" not in msg  # the well-formed sibling call bound cleanly
+
+
+def test_bind_hfapi_var_nonuniform_binding_noted_skip(tmp_path, capsys):
+    """S4 abstain: a receiver also bound as a parameter is a NOTED skip, no bind."""
+    driver = _write(
+        tmp_path,
+        "driver_s4_mixed.py",
+        """
+        from huggingface_hub import HfApi
+
+        def phase_a(args):
+            api = HfApi()
+            api.upload_file("pos")
+
+        def phase_b(api):
+            api.upload_folder("x")
+        """,
+    )
+    assert_helper_call_shapes_bind(driver)  # must not raise
+    out = capsys.readouterr().out
+    assert "argcheck-bind: 0 bound, 0 degraded, 2 skipped" in out
+    assert "not uniformly HfApi()" in out
+
+
+def test_bind_nonexistent_hub_helper_fails_loud(tmp_path):
+    """The #606 class: a nonexistent helper on a registered module is a FAILURE."""
+    driver = _write(
+        tmp_path,
+        "driver_nohelper.py",
+        """
+        from explore_persona_space.orchestrate import hub
+
+        def phase(args):
+            hub.no_such_helper_xyz(1)
+        """,
+    )
+    line = _line_of(driver, "no_such_helper_xyz")
+    with pytest.raises(SystemExit) as exc:
+        assert_helper_call_shapes_bind(driver)
+    msg = str(exc.value)
+    assert f"driver_nohelper.py:{line}" in msg
+    assert "no_such_helper_xyz" in msg
+    assert "nonexistent" in msg
+
+
+def test_bind_hf_hub_download_bad_call_fails(tmp_path):
+    """MF-2 per-function must-FAIL for the ``hf_hub_download`` registry entry."""
+    # Unexpected-keyword shape: required args present, so the bogus kw is the failure.
+    driver = _write(
+        tmp_path,
+        "driver_dl.py",
+        """
+        from huggingface_hub import hf_hub_download
+
+        def phase(args):
+            hf_hub_download("some/repo", "file.json", bogus_kw=1)
+        """,
+    )
+    line = _line_of(driver, "bogus_kw=1")
+    with pytest.raises(SystemExit) as exc:
+        assert_helper_call_shapes_bind(driver)
+    msg = str(exc.value)
+    assert f"driver_dl.py:{line} hf_hub_download" in msg
+    assert "bogus_kw" in msg
+
+    # Missing-required shape: Signature.bind names the missing param first.
+    missing = _write(
+        tmp_path,
+        "driver_dl_missing.py",
+        """
+        from huggingface_hub import hf_hub_download
+
+        def phase(args):
+            hf_hub_download(bogus_kw=1)
+        """,
+    )
+    with pytest.raises(SystemExit) as exc:
+        assert_helper_call_shapes_bind(missing)
+    assert "repo_id" in str(exc.value)
+
+
+def test_bind_snapshot_download_bad_call_fails(tmp_path):
+    """MF-2 per-function must-FAIL for the ``snapshot_download`` registry entry."""
+    driver = _write(
+        tmp_path,
+        "driver_sd.py",
+        """
+        from huggingface_hub import snapshot_download
+
+        def phase(args):
+            snapshot_download("some/repo", bogus_kw=1)
+        """,
+    )
+    line = _line_of(driver, "bogus_kw=1")
+    with pytest.raises(SystemExit) as exc:
+        assert_helper_call_shapes_bind(driver)
+    msg = str(exc.value)
+    assert f"driver_sd.py:{line} snapshot_download" in msg
+    assert "bogus_kw" in msg
+
+
+def test_bind_registry_entries_load_bearing(tmp_path, monkeypatch):
+    """MF-2 mutation check: removing a registry entry flips its must-FAIL fixture to inert.
+
+    Requires the call-time registry read (plan #2261 section 4.2 / assumption
+    24): the ``_BIND_*`` constants are looked up per invocation, so a
+    monkeypatched-out entry makes the SAME fixture produce zero resolved
+    sites (no bind, no skip, no failure).
+    """
+    cases = [
+        (
+            "case_hub_mod.py",
+            """
+            from explore_persona_space.orchestrate import hub
+
+            def phase(args):
+                hub._upload("only_one")
+            """,
+            "_BIND_MODULES",
+            frozenset(),
+        ),
+        (
+            "case_hfapi.py",
+            """
+            from huggingface_hub import HfApi
+
+            def phase(args):
+                HfApi().upload_file("pos")
+            """,
+            "_BIND_CLASSES",
+            frozenset(),
+        ),
+        (
+            "case_dl.py",
+            """
+            from huggingface_hub import hf_hub_download
+
+            def phase(args):
+                hf_hub_download(bogus_kw=1)
+            """,
+            "_BIND_FUNCTIONS",
+            frozenset({("huggingface_hub", "snapshot_download")}),
+        ),
+        (
+            "case_sd.py",
+            """
+            from huggingface_hub import snapshot_download
+
+            def phase(args):
+                snapshot_download(bogus_kw=1)
+            """,
+            "_BIND_FUNCTIONS",
+            frozenset({("huggingface_hub", "hf_hub_download")}),
+        ),
+    ]
+    for fname, source, const, patched in cases:
+        driver = _write(tmp_path, fname, source)
+        with pytest.raises(SystemExit):  # intact registry: the bad call raises
+            assert_helper_call_shapes_bind(driver)
+        with monkeypatch.context() as m:
+            m.setattr(argcheck, const, patched)
+            census = collect_helper_call_census(driver)  # entry removed: inert
+            assert census.bound == [] and census.failures == [] and census.skipped == [], fname
+
+
+def test_bind_waiver_comment_suppresses(tmp_path, capsys):
+    """MF-4: ARGCHECK_BIND_EXEMPT is LINE-grained — waives its call, never the file.
+
+    The unwaived call sits DIRECTLY below the trailing-waiver code line, so
+    this also pins the no-leak property: a trailing waiver on a CODE line
+    must not cover the next line's call (only a comment-ONLY preceding line
+    carries the waiver downward).
+    """
+    driver = _write(
+        tmp_path,
+        "driver_waiver.py",
+        """
+        from explore_persona_space.orchestrate import hub
+
+        def phase(args):
+            hub.stage_hub_prefix("repo")  # ARGCHECK_BIND_EXEMPT: legacy shim kept deliberately
+            hub.retry_transient(job)
+        """,
+    )
+    line = _line_of(driver, "hub.retry_transient(job)")
+    with pytest.raises(SystemExit) as exc:
+        assert_helper_call_shapes_bind(driver)
+    msg = str(exc.value)
+    assert f"driver_waiver.py:{line} hub.retry_transient" in msg
+    assert "'what'" in msg
+    assert "stage_hub_prefix" not in msg  # the waived site is NOT in the raised message
+    out = capsys.readouterr().out
+    assert "waived:" in out and "legacy shim kept deliberately" in out
+
+    # The immediately-preceding non-blank comment line also carries the waiver.
+    preceding = _write(
+        tmp_path,
+        "driver_waiver_prev.py",
+        """
+        from explore_persona_space.orchestrate import hub
+
+        def phase(args):
+            # ARGCHECK_BIND_EXEMPT: known-legacy call kept for parity
+            hub.stage_hub_file("repo")
+        """,
+    )
+    capsys.readouterr()
+    assert_helper_call_shapes_bind(preceding)  # waived => must not raise
+    assert "known-legacy call kept for parity" in capsys.readouterr().out
+
+
+def test_bind_pass_runs_from_assert_args_attributes_defined(tmp_path, capsys):
+    """Arming pin: the EXISTING entry point runs the bind pass; argparse raises first."""
+    # (a) the existing entry point catches a bind failure with zero driver edits
+    bad = _write(
+        tmp_path,
+        "driver_bind_armed.py",
+        """
+        import argparse
+
+        from explore_persona_space.orchestrate import hub
+
+        def phase(args):
+            hub._upload(args.src)
+
+        def main():
+            ap = argparse.ArgumentParser()
+            ap.add_argument("--src")
+            args = ap.parse_args()
+            phase(args)
+        """,
+    )
+    with pytest.raises(SystemExit) as exc:
+        assert_args_attributes_defined(bad)
+    assert "helper call shape(s) do not bind" in str(exc.value)
+
+    # (b) argparse gaps raise FIRST, byte-identical message, bind pass never runs
+    gap = _write(
+        tmp_path,
+        "driver_gap_first.py",
+        """
+        def run(args):
+            return args.ghost
+        """,
+    )
+    capsys.readouterr()
+    with pytest.raises(SystemExit) as exc:
+        assert_args_attributes_defined(gap)
+    msg = str(exc.value)
+    assert msg.startswith("argcheck: args attribute(s) referenced but never defined: ghost")
+    assert "argcheck-bind" not in msg
+    assert "argcheck-bind" not in capsys.readouterr().out
+
+    # (c) a clean argparse-only fixture returns None; stdout carries the census line
+    clean = _write(
+        tmp_path,
+        "driver_clean.py",
+        """
+        import argparse
+
+        def main():
+            ap = argparse.ArgumentParser()
+            ap.add_argument("--src")
+            args = ap.parse_args()
+            print(args.src)
+        """,
+    )
+    capsys.readouterr()
+    assert assert_args_attributes_defined(clean) is None
+    assert "argcheck-bind: 0 bound, 0 degraded, 0 skipped" in capsys.readouterr().out
+
+
+def test_bind_unregistered_receivers_ignored(tmp_path, capsys):
+    """FN-6 pin: arbitrary receivers + attribute chains are INERT — no binds, no skip-spam."""
+    driver = _write(
+        tmp_path,
+        "driver_inert.py",
+        """
+        from huggingface_hub import HfApi
+
+        class Client:
+            def __init__(self):
+                self.api = HfApi()
+
+            def push(self):
+                self.api.upload_file("pos")
+
+        def phase(args, obj):
+            obj.method("x")
+        """,
+    )
+    census = collect_helper_call_census(driver)
+    assert census.bound == [] and census.skipped == [] and census.failures == []
+    assert_helper_call_shapes_bind(driver)  # must not raise
+    assert "argcheck-bind: 0 bound, 0 degraded, 0 skipped" in capsys.readouterr().out
+
+
+_HUB_MODULE = "explore_persona_space.orchestrate.hub"
+_BIND_ADOPTION_LITERAL = "assert_args_attributes_defined"
+# Co-passed `<mod>.__file__` extra args, keyed (adopter basename, module alias) -> repo-relative
+# path. Plan #2261 section 6: any UNMAPPED extra-arg shape fails the census test loud, forcing
+# a table update instead of silently narrowing the armed population.
+_CO_PASSED_FILE_MAP = {
+    ("issue2225_fu1_analysis.py", "pa"): "scripts/issue2225_analysis.py",
+}
+
+
+def _lexical_import_names(tree: ast.AST) -> tuple[set[str], set[str], set[str]]:
+    """Names lexically bound to the hub module / registered symbols / the HfApi class."""
+    hub_names: set[str] = set()
+    symbol_names: set[str] = set()
+    class_names: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                if alias.name == _HUB_MODULE and alias.asname:
+                    hub_names.add(alias.asname)
+        elif isinstance(node, ast.ImportFrom) and node.module and not node.level:
+            for alias in node.names:
+                bound = alias.asname or alias.name
+                if f"{node.module}.{alias.name}" == _HUB_MODULE:
+                    hub_names.add(bound)
+                elif node.module == _HUB_MODULE or (
+                    node.module == "huggingface_hub"
+                    and alias.name in ("hf_hub_download", "snapshot_download")
+                ):
+                    symbol_names.add(bound)
+                elif node.module == "huggingface_hub" and alias.name == "HfApi":
+                    class_names.add(bound)
+    return hub_names, symbol_names, class_names
+
+
+def _lexical_receiver_names(tree: ast.AST, class_names: set[str]) -> set[str]:
+    """Variable names assigned (Assign/AnnAssign) from a registered constructor call."""
+    receivers: set[str] = set()
+    for node in ast.walk(tree):
+        pairs: list[tuple[list[ast.expr], ast.expr]] = []
+        if isinstance(node, ast.Assign):
+            pairs.append((list(node.targets), node.value))
+        elif isinstance(node, ast.AnnAssign) and node.value is not None:
+            pairs.append(([node.target], node.value))
+        for targets, value in pairs:
+            if (
+                isinstance(value, ast.Call)
+                and isinstance(value.func, ast.Name)
+                and value.func.id in class_names
+            ):
+                for tgt in targets:
+                    if isinstance(tgt, ast.Name):
+                        receivers.add(tgt.id)
+    return receivers
+
+
+def _lexical_registered_call_count(path: Path) -> int:
+    """Resolver-free lexical count of registered-surface call sites in one file.
+
+    The INDEPENDENT denominator for the fleet census (plan #2261 section 7):
+    recognizes the four call shapes from a plain import scan — no uniformity
+    machinery, no signature binding — so a resolver bug that silently drops
+    sites cannot also shrink this count.
+    """
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+    hub_names, symbol_names, class_names = _lexical_import_names(tree)
+    attr_receivers = hub_names | _lexical_receiver_names(tree, class_names)
+    count = 0
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        func = node.func
+        if isinstance(func, ast.Attribute) and isinstance(func.value, ast.Name):
+            if func.value.id in attr_receivers:
+                count += 1
+        elif (isinstance(func, ast.Name) and func.id in symbol_names) or (
+            isinstance(func, ast.Attribute)
+            and isinstance(func.value, ast.Call)
+            and isinstance(func.value.func, ast.Name)
+            and func.value.func.id in class_names
+        ):
+            count += 1
+    return count
+
+
+def test_bind_fleet_census_positive_coverage():
+    """MF-2 + MF-3 fleet census gate (= plan #2261 section 10 R3, a pre-merge gate).
+
+    Enumerates the COMPLETE armed population at run time and asserts POSITIVE
+    coverage: zero failures/waivers/skips/degrades, bound_total equal to the
+    resolver-free lexical denominator, and the plan-time per-class floors.
+    Floors are the plan-time measured values on a frozen fleet (monotone
+    under fleet growth); a legitimate floor break is updated WITH A NAMED
+    DELTA in the updating commit. NO wall-time assertion by design (the
+    plan's ~17 s census wall measured 60-79 s under fleet loadavg ~130).
+    """
+    repo = Path(__file__).resolve().parents[1]
+    script_files = sorted((repo / "scripts").glob("*.py"))
+    adopters = [p for p in script_files if _BIND_ADOPTION_LITERAL in p.read_text(encoding="utf-8")]
+    src_files = sorted((repo / "src" / "explore_persona_space").rglob("*.py"))
+    adopters += [
+        p
+        for p in src_files
+        if p.name != "argcheck.py" and _BIND_ADOPTION_LITERAL in p.read_text(encoding="utf-8")
+    ]
+    population: dict[Path, None] = {p.resolve(): None for p in adopters}
+    for adopter in adopters:
+        tree = ast.parse(adopter.read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            func = node.func
+            name = (
+                func.id
+                if isinstance(func, ast.Name)
+                else (func.attr if isinstance(func, ast.Attribute) else None)
+            )
+            if name != "assert_args_attributes_defined":
+                continue
+            for arg in node.args:
+                if isinstance(arg, ast.Name) and arg.id == "__file__":
+                    continue
+                if (
+                    isinstance(arg, ast.Attribute)
+                    and arg.attr == "__file__"
+                    and isinstance(arg.value, ast.Name)
+                ):
+                    mapped = _CO_PASSED_FILE_MAP.get((adopter.name, arg.value.id))
+                    if mapped is None:
+                        pytest.fail(
+                            f"unmapped co-passed __file__ arg '{arg.value.id}.__file__' in"
+                            f" {adopter} - update _CO_PASSED_FILE_MAP"
+                        )
+                    population[(repo / mapped).resolve()] = None
+                    continue
+                pytest.fail(f"unmapped extra-arg shape in {adopter}: {ast.dump(arg)[:120]}")
+    files = sorted(population)
+    census = collect_helper_call_census(*files)
+    assert census.failures == [], [
+        (f.site.path, f.site.lineno, f.site.label, f.error) for f in census.failures
+    ]
+    assert census.waived == []
+    assert census.skipped == [], [(s.path, s.lineno, s.label, s.reason) for s in census.skipped]
+    assert census.degraded == []
+    bound_total = len(census.bound)
+    lexical_total = sum(_lexical_registered_call_count(p) for p in files)
+    assert bound_total == lexical_total, (bound_total, lexical_total)
+    assert bound_total >= 195, bound_total
+    adopters_with_calls = len({site.path for site in census.bound})
+    assert adopters_with_calls >= 59, adopters_with_calls
+    by_shape = Counter(site.shape for site in census.bound)
+    assert by_shape["S1"] >= 96, dict(by_shape)
+    assert by_shape["S2"] >= 81, dict(by_shape)
+    assert by_shape["S3"] >= 10, dict(by_shape)
+    assert by_shape["S4"] >= 8, dict(by_shape)
+    per_fn = Counter(site.target for site in census.bound)
+    assert per_fn["huggingface_hub.hf_hub_download"] >= 16, dict(per_fn)
+    assert per_fn["huggingface_hub.snapshot_download"] >= 1, dict(per_fn)

@@ -64,16 +64,92 @@ Splat (``**kwargs``) handling:
     ``from x import *`` anywhere in the module disqualifies dict-name
     resolution outright rather than being accepted as an escape (ruff
     F403 bans star-imports in-repo, so this costs nothing real).
+
+CALL-ARITY BIND PASS (#2261):
+    ``assert_helper_call_shapes_bind(*module_files)`` — invoked
+    automatically as the LAST step of ``assert_args_attributes_defined``
+    (argparse gaps raise first), so every existing ``--import-check``
+    adopter is armed with zero driver edits — statically resolves every
+    call in the passed files into the registered shared-callable surface
+    (``_BIND_MODULES`` / ``_BIND_CLASSES`` / ``_BIND_FUNCTIONS``) and
+    binds each literal call shape against the installed signature via
+    ``inspect.signature(fn).bind(...)`` with placeholder values: shape
+    only (positional count, keyword names, required params,
+    keyword-only-ness), values never evaluated, no network. #2223's
+    ``hub._upload`` call missing ``path_in_repo`` shipped green through
+    every gate and fired ~70 h into a GPU run; this pass fails it in
+    seconds at ``--import-check``. Non-raising census API:
+    ``collect_helper_call_census(*module_files) -> BindCensus``.
+
+    Name resolution is UNIFORM-IMPORT-TARGET (not sole-binding): a name
+    resolves iff EVERY module-wide binding of it is an import alias
+    normalizing to the SAME target — module-level, function-local, and
+    REPEATED same-target imports all resolve (the fleet's dominant idiom;
+    the #2223 pre-fix driver bound ``hub`` three times); a genuine shadow
+    (any non-import binding, a ``del``, or imports of two DIFFERENT
+    targets under one name) makes every registered-surface call through
+    that name a DETECTED-AND-NOTED SKIP, never a silent pass. Resolved
+    shapes: S1 module-attribute (``hub.attr(...)``; a nonexistent
+    attribute on a registered module is a check FAILURE — the #606
+    class — never a skip), S2 bare-name (registered functions + symbols
+    imported from a registered module), S3 inline constructor-method
+    (``HfApi().m(...)``, one cached instance per class per invocation),
+    S4 variable-receiver (``api = HfApi()`` under the uniform-binding
+    rule). A call-site splat DEGRADES to ``bind_partial(**named_kwargs)``
+    (census-noted). Un-introspectable callables and
+    ``getattr(mod, ...)(...)`` immediate calls are noted skips.
+
+    Waiver: ``# ARGCHECK_BIND_EXEMPT: <reason>`` on the call line or the
+    immediately-preceding non-blank COMMENT-ONLY line converts a would-be
+    failure into a noted, reason-echoed waiver (the comment-only
+    restriction keeps a trailing waiver on a CODE line from leaking onto
+    the NEXT line's call). LINE-grained — it suppresses ONLY calls whose
+    ``node.lineno`` matches, so keep waived calls on their own line: two
+    calls on ONE physical line share a lineno and are waived together
+    (live example of the shape: ``scripts/issue2225_eval_gen.py:675``),
+    and a formatter-expanded multiline call keeps ``node.lineno`` at its
+    OPENING line — place the waiver there.
+
+    Documented out-of-scope FALSE-NEGATIVE classes (visible by design):
+    FN-1 ``functools.partial(hub.X, ...)`` deferred application — the
+         helper is an argument, not a Call target.
+    FN-2 a helper whose own signature is ``(*args, **kwargs)`` binds any
+         shape (none on the registered surface today).
+    FN-3 runtime monkeypatching of a registered helper.
+    FN-4 check-env vs run-env version drift (same ``uv.lock`` on the VM
+         and pods keeps this small).
+    FN-5 sibling-module call sites: only the FILES PASSED to the check
+         are scanned — a driver whose Hub calls live in an imported
+         sibling module (live example: ``scripts/issue2203_phase1.py``
+         passes only ``__file__`` while its Hub calls live in
+         ``scripts/issue2203_common.py``) is not covered for those sites
+         unless the sibling is itself an adopter or is co-passed.
+    FN-6 attribute-chain receivers (``self.api = HfApi()`` then
+         ``self.api.upload_file(...)``; dotted chains after a bare
+         ``import a.b.c``) — the receiver is an ``ast.Attribute``, not a
+         Name: inert, neither bound nor skip-noted. Measured 0 fleet-wide.
+    FN-7 out-of-registry in-repo wrappers (per-issue helpers wrapping the
+         registered surface, e.g. ``R.upload_dir_hf``) are invisible: the
+         registry validates the surfaces it selected, not the whole
+         persistence-critical class.
 """
 
 from __future__ import annotations
 
 import ast
+import dataclasses
+import importlib
+import inspect
 import os
 from collections.abc import Iterable, Sequence
 from pathlib import Path
 
-__all__ = ["assert_args_attributes_defined"]
+__all__ = [
+    "BindCensus",
+    "assert_args_attributes_defined",
+    "assert_helper_call_shapes_bind",
+    "collect_helper_call_census",
+]
 
 
 def _permissive_dests(opts: list[str | None]) -> set[str]:
@@ -403,6 +479,11 @@ def assert_args_attributes_defined(
     route through ``extra_defined`` — visible at the call site, never
     silent.
 
+    After the argparse pass succeeds, the call-arity bind pass runs over
+    the SAME files (``assert_helper_call_shapes_bind``) — argparse gaps
+    raise FIRST; see the module docstring section "CALL-ARITY BIND PASS
+    (#2261)".
+
     Raises ``SystemExit`` naming every missing attribute and the file(s)
     scanned; returns ``None`` when the referenced set is covered. When the
     check fails and splat calls whose keys were not statically incorporated
@@ -464,3 +545,564 @@ def assert_args_attributes_defined(
             + "\n  fix: register via add_argument/dest=/set_defaults, pass the parser-builder"
             " module file(s) too, or name residue via extra_defined=(...)"
         )
+    assert_helper_call_shapes_bind(*module_files)
+
+
+# ---------------------------------------------------------------------------
+# Call-arity bind pass (#2261) — see the module docstring section
+# "CALL-ARITY BIND PASS" for the contract + FN-1..FN-7.
+# ---------------------------------------------------------------------------
+
+# NOTE: the registry constants are read at CALL time (module-global lookup
+# inside the helpers below), never captured at import/default time — this is
+# what lets tests monkeypatch an entry away and observe the corresponding
+# must-FAIL fixture flip to inert (test_bind_registry_entries_load_bearing).
+_BIND_MODULES: frozenset[str] = frozenset(
+    {
+        # every hub.X(...) + every `from ...hub import X` bare call binds
+        "explore_persona_space.orchestrate.hub",
+    }
+)
+_BIND_CLASSES: frozenset[tuple[str, str]] = frozenset(
+    {
+        # inline HfApi().m(...) + uniform-binding var receivers (api = HfApi())
+        ("huggingface_hub", "HfApi"),
+    }
+)
+_BIND_FUNCTIONS: frozenset[tuple[str, str]] = frozenset(
+    {
+        ("huggingface_hub", "hf_hub_download"),
+        ("huggingface_hub", "snapshot_download"),
+    }
+)
+_BIND_WAIVER_TOKEN = "ARGCHECK_BIND_EXEMPT"
+
+_PLACEHOLDER = object()  # bind() checks SHAPE only; values are never evaluated
+_MISSING = object()
+
+
+@dataclasses.dataclass(frozen=True)
+class BindSite:
+    """One registered-surface call site the bind pass resolved."""
+
+    path: str
+    lineno: int
+    label: str  # source-written form, e.g. "hub._upload" / "HfApi().upload_file"
+    shape: str  # "S1" module-attr | "S2" bare-name | "S3" inline ctor | "S4" var receiver
+    target: str  # canonical dotted target, e.g. "explore_persona_space.orchestrate.hub._upload"
+
+
+@dataclasses.dataclass(frozen=True)
+class BindSkip:
+    """One detected-and-noted skip (not statically resolvable — never silent)."""
+
+    path: str
+    lineno: int
+    label: str
+    reason: str
+
+
+@dataclasses.dataclass(frozen=True)
+class BindFailure:
+    """One call shape that does not bind against the installed signature."""
+
+    site: BindSite
+    error: str
+    installed: str | None  # canonical target + installed signature; None when unresolvable
+
+
+@dataclasses.dataclass(frozen=True)
+class BindWaiver:
+    """A would-be failure suppressed by an ARGCHECK_BIND_EXEMPT call-line waiver."""
+
+    site: BindSite
+    error: str
+    reason: str
+
+
+@dataclasses.dataclass
+class BindCensus:
+    """Aggregated result of the non-raising collection pass."""
+
+    bound: list[BindSite] = dataclasses.field(default_factory=list)
+    degraded: list[BindSite] = dataclasses.field(default_factory=list)
+    skipped: list[BindSkip] = dataclasses.field(default_factory=list)
+    waived: list[BindWaiver] = dataclasses.field(default_factory=list)
+    failures: list[BindFailure] = dataclasses.field(default_factory=list)
+    n_files: int = 0
+
+
+@dataclasses.dataclass
+class _NameBindings:
+    """Every module-wide binding event of one local name (the shadow-guard input)."""
+
+    import_targets: set[tuple[str, ...]] = dataclasses.field(default_factory=set)
+    assign_values: list[ast.expr] = dataclasses.field(default_factory=list)
+    n_other: int = 0  # params, def/class names, loop targets, walrus, tuple-unpack, ...
+    has_del: bool = False
+
+
+def _normalize_import_from(node: ast.ImportFrom, alias: ast.alias) -> tuple[str, ...]:
+    """Normalize one ``from a.b import c [as d]`` alias to a target tuple.
+
+    Absolute imports only — a relative import (``node.level > 0``) or a
+    module-less ``from`` normalizes to ``("unmapped",)``, which is never
+    registered (calls through such a name stay inert unless it conflicts
+    with a registered binding). Classification order: registered module,
+    registered class, registered function, symbol-of-registered-module,
+    then a generic ``("from", mod, name)`` for everything else.
+    """
+    if node.level or node.module is None:
+        return ("unmapped",)
+    mod, name = node.module, alias.name
+    dotted = f"{mod}.{name}"
+    if dotted in _BIND_MODULES:
+        return ("module", dotted)
+    if (mod, name) in _BIND_CLASSES:
+        return ("class", mod, name)
+    if (mod, name) in _BIND_FUNCTIONS:
+        return ("function", mod, name)
+    if mod in _BIND_MODULES:
+        return ("symbol", mod, name)
+    return ("from", mod, name)
+
+
+def _registered_target(target: tuple[str, ...]) -> bool:
+    """True iff the normalized target tuple points at the registered surface."""
+    kind = target[0]
+    if kind == "module":
+        return target[1] in _BIND_MODULES
+    if kind == "class":
+        return (target[1], target[2]) in _BIND_CLASSES
+    if kind == "function":
+        return (target[1], target[2]) in _BIND_FUNCTIONS
+    if kind == "symbol":
+        return target[1] in _BIND_MODULES
+    return False
+
+
+def _assign_value_map(tree: ast.AST) -> dict[int, ast.expr]:
+    """Map each Name-target node's ``id()`` to its Assign/AnnAssign value."""
+    out: dict[int, ast.expr] = {}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign):
+            for tgt in node.targets:
+                if isinstance(tgt, ast.Name):
+                    out[id(tgt)] = node.value
+        elif (
+            isinstance(node, ast.AnnAssign)
+            and isinstance(node.target, ast.Name)
+            and node.value is not None
+        ):
+            out[id(node.target)] = node.value
+    return out
+
+
+def _record_import_bindings(node: ast.Import | ast.ImportFrom, rec) -> bool:
+    """Record one import statement's alias bindings; True iff a star-import was seen."""
+    if isinstance(node, ast.Import):
+        for alias in node.names:
+            if alias.asname:
+                rec(alias.asname).import_targets.add(("module", alias.name))
+            else:
+                top = alias.name.split(".")[0]
+                rec(top).import_targets.add(("module", top))
+        return False
+    star = False
+    for alias in node.names:
+        if alias.name == "*":
+            star = True
+            continue
+        bound = alias.asname or alias.name
+        rec(bound).import_targets.add(_normalize_import_from(node, alias))
+    return star
+
+
+def _collect_name_bindings(tree: ast.AST) -> tuple[dict[str, _NameBindings], bool]:
+    """Collect every binding event per name over the WHOLE module, plus a star-import flag.
+
+    Collector classes match ``_exclusive_use_sole_binding`` (Store-context
+    ``ast.Name``, ``ast.arg`` parameters, ``ast.alias`` imports, ``del``
+    tracked) plus ``FunctionDef`` / ``AsyncFunctionDef`` / ``ClassDef``
+    names. The DECISION differs (uniform-import-target, not sole-binding):
+    see ``_resolve_import_name``.
+    """
+    assign_value_by_target = _assign_value_map(tree)
+    out: dict[str, _NameBindings] = {}
+    star_import = False
+
+    def rec(name: str) -> _NameBindings:
+        return out.setdefault(name, _NameBindings())
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Name):
+            if isinstance(node.ctx, ast.Store):
+                b = rec(node.id)
+                value = assign_value_by_target.get(id(node))
+                if value is not None:
+                    b.assign_values.append(value)
+                else:
+                    b.n_other += 1
+            elif isinstance(node.ctx, ast.Del):
+                rec(node.id).has_del = True
+        elif isinstance(node, ast.arg):
+            rec(node.arg).n_other += 1
+        elif isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef):
+            rec(node.name).n_other += 1
+        elif isinstance(node, ast.Import | ast.ImportFrom):
+            star_import = _record_import_bindings(node, rec) or star_import
+    return out, star_import
+
+
+def _resolve_import_name(
+    name: str, bindings: dict[str, _NameBindings], star_import: bool
+) -> tuple[str, tuple[str, ...] | None, str | None]:
+    """UNIFORM-IMPORT-TARGET resolution of one local name.
+
+    Returns ``(status, target, reason)`` with status in ``{"inert", "skip",
+    "resolved"}``. A name resolves iff EVERY module-wide binding of it is an
+    import alias normalizing to the SAME target — module-level,
+    function-local, and REPEATED same-target imports all resolve (the
+    fleet's dominant idiom; the #2223 pre-fix driver bound ``hub`` three
+    times). A GENUINE shadow — any non-import binding, a ``del``, or imports
+    of two DIFFERENT targets under one name — disqualifies the name: every
+    registered-surface call through it becomes a NOTED SKIP, never silent.
+    Names whose targets never touch the registered surface stay inert.
+    """
+    b = bindings.get(name)
+    if b is None or not b.import_targets:
+        return ("inert", None, None)
+    if not any(_registered_target(t) for t in b.import_targets):
+        return ("inert", None, None)
+    if star_import:
+        return ("skip", None, f"name '{name}' resolution disqualified by a star-import")
+    if b.assign_values or b.n_other or b.has_del:
+        return ("skip", None, f"name '{name}' carries a non-import binding (genuine shadow)")
+    if len(b.import_targets) > 1:
+        targets = ", ".join(sorted(".".join(t[1:]) or t[0] for t in b.import_targets))
+        return ("skip", None, f"name '{name}' import targets conflict ({targets})")
+    return ("resolved", next(iter(b.import_targets)), None)
+
+
+def _resolve_receiver_var(
+    name: str, bindings: dict[str, _NameBindings], star_import: bool
+) -> tuple[str, tuple[str, str] | None, str | None]:
+    """S4 UNIFORM-BINDING resolution of a variable receiver (``api = HfApi()``).
+
+    Resolves iff every module-wide binding of the name is an ``Assign`` /
+    ``AnnAssign`` whose value is a direct ``Call`` to a registered class
+    name that itself passes the shadow guard. Some-but-not-all qualifying
+    bindings (a parameter, a rebind, a second class) are a NOTED SKIP; zero
+    qualifying bindings are inert (an arbitrary object receiver).
+    """
+    b = bindings.get(name)
+    if b is None or not b.assign_values:
+        return ("inert", None, None)
+    ctor_classes: set[tuple[str, str]] = set()
+    qualifying = 0
+    for value in b.assign_values:
+        if isinstance(value, ast.Call) and isinstance(value.func, ast.Name):
+            status, target, _ = _resolve_import_name(value.func.id, bindings, star_import)
+            if status == "resolved" and target is not None and target[0] == "class":
+                ctor_classes.add((target[1], target[2]))
+                qualifying += 1
+    if qualifying == 0:
+        return ("inert", None, None)
+    uniform = (
+        qualifying == len(b.assign_values)
+        and not b.import_targets
+        and b.n_other == 0
+        and not b.has_del
+        and len(ctor_classes) == 1
+    )
+    if not uniform:
+        cls = sorted(ctor_classes)[0][1]
+        return ("skip", None, f"receiver '{name}' bindings not uniformly {cls}()")
+    return ("resolved", next(iter(ctor_classes)), None)
+
+
+def _classify_getattr_immediate_call(
+    func: ast.Call, bindings: dict[str, _NameBindings], star_import: bool
+) -> tuple[str, ...] | None:
+    """Classify a call whose func is itself a Call: ``getattr(mod, ...)(...)``.
+
+    A ``getattr(<registered module alias>, <expr>)(...)`` immediate call is a
+    DETECTED-AND-NOTED SKIP (not statically resolvable); every other
+    call-of-a-call shape is inert (``None``).
+    """
+    if not (isinstance(func.func, ast.Name) and func.func.id == "getattr"):
+        return None
+    if func.args and isinstance(func.args[0], ast.Name):
+        status, target, _ = _resolve_import_name(func.args[0].id, bindings, star_import)
+        if status == "resolved" and target is not None and target[0] == "module":
+            label = f"getattr({func.args[0].id}, ...)"
+            return ("skip", label, "getattr(...) immediate call is not statically resolvable")
+    return None
+
+
+def _classify_call(
+    node: ast.Call, bindings: dict[str, _NameBindings], star_import: bool
+) -> tuple[str, ...] | None:
+    """Classify one Call node against the registered surface.
+
+    Returns ``("bind", label, shape, fetch)`` for a resolvable registered
+    call, ``("skip", label, reason)`` for a detected-and-noted skip, or
+    ``None`` for an inert (unregistered) call. ``fetch`` is one of
+    ``("modattr", module, attr)`` / ``("symbol", module, name)`` /
+    ``("method", module, cls, attr)``.
+    """
+    func = node.func
+    if isinstance(func, ast.Call):
+        return _classify_getattr_immediate_call(func, bindings, star_import)
+    if isinstance(func, ast.Attribute) and isinstance(func.value, ast.Name):
+        recv, attr = func.value.id, func.attr
+        label = f"{recv}.{attr}"
+        status, target, reason = _resolve_import_name(recv, bindings, star_import)
+        if status == "skip":
+            return ("skip", label, reason)
+        if status == "resolved":
+            if target is not None and target[0] == "module":
+                return ("bind", label, "S1", ("modattr", target[1], attr))
+            return None  # attribute call on a resolved class/function/symbol: not a shape
+        status4, cls, reason4 = _resolve_receiver_var(recv, bindings, star_import)
+        if status4 == "skip":
+            return ("skip", label, reason4)
+        if status4 == "resolved" and cls is not None:
+            return ("bind", label, "S4", ("method", cls[0], cls[1], attr))
+        return None
+    if (
+        isinstance(func, ast.Attribute)
+        and isinstance(func.value, ast.Call)
+        and isinstance(func.value.func, ast.Name)
+    ):
+        cls_name, attr = func.value.func.id, func.attr
+        label = f"{cls_name}().{attr}"
+        status, target, reason = _resolve_import_name(cls_name, bindings, star_import)
+        if status == "skip":
+            return ("skip", label, reason)
+        if status == "resolved" and target is not None and target[0] == "class":
+            return ("bind", label, "S3", ("method", target[1], target[2], attr))
+        return None
+    if isinstance(func, ast.Name):
+        status, target, reason = _resolve_import_name(func.id, bindings, star_import)
+        if status == "skip":
+            return ("skip", func.id, reason)
+        if status == "resolved" and target is not None and target[0] in ("function", "symbol"):
+            return ("bind", func.id, "S2", ("symbol", target[1], target[2]))
+        return None
+    return None
+
+
+def _fetch_callable(
+    fetch: tuple[str, ...], instances: dict[tuple[str, str], object]
+) -> tuple[object, str | None, str]:
+    """Resolve a fetch spec to the installed callable.
+
+    Returns ``(fn, error, canonical)``. A registered module/class whose
+    attribute is ABSENT returns ``(None, <error>, canonical)`` — the #2223 /
+    #606 fail-loud getattr: a nonexistent helper is a check FAILURE, never a
+    silent skip (and never swallowed into a diagnostics-only channel).
+    """
+    kind = fetch[0]
+    if kind in ("modattr", "symbol"):
+        _, mod_name, attr = fetch
+        canonical = f"{mod_name}.{attr}"
+        mod = importlib.import_module(mod_name)
+        fn = getattr(mod, attr, _MISSING)
+        if fn is _MISSING:
+            error = f"references nonexistent helper (module '{mod_name}' has no attribute '{attr}')"
+            return (None, error, canonical)
+        return (fn, None, canonical)
+    _, mod_name, cls_name, attr = fetch
+    canonical = f"{mod_name}.{cls_name}.{attr}"
+    key = (mod_name, cls_name)
+    instance = instances.get(key)
+    if instance is None:
+        cls = getattr(importlib.import_module(mod_name), cls_name)
+        instance = cls()  # one cached instance per registered class per invocation
+        instances[key] = instance
+    fn = getattr(instance, attr, _MISSING)
+    if fn is _MISSING:
+        error = (
+            f"references nonexistent method (class '{mod_name}.{cls_name}'"
+            f" has no attribute '{attr}')"
+        )
+        return (None, error, canonical)
+    return (fn, None, canonical)
+
+
+def _bind_call_shape(fn: object, node: ast.Call) -> tuple[str, str | None]:
+    """Bind the literal call shape against the installed signature.
+
+    Returns ``(verdict, detail)`` with verdict in ``{"ok", "degraded-ok",
+    "fail", "degraded-fail", "unintrospectable"}``. Placeholders check SHAPE
+    only (positional count, keyword names, required params,
+    keyword-only-ness) — values are never evaluated, no network, no side
+    effects. A call-site splat (``*args`` positional or ``**kwargs``)
+    DEGRADES to ``bind_partial(**named_kwargs)`` per the #606/#1332
+    doctrine; keyword-only params and callee-side ``*args``/``**kwargs`` are
+    handled natively by ``Signature.bind`` (zero FP by construction).
+    """
+    try:
+        sig = inspect.signature(fn)  # type: ignore[arg-type]
+    except (ValueError, TypeError) as exc:
+        return ("unintrospectable", str(exc))
+    kwargs = {kw.arg: _PLACEHOLDER for kw in node.keywords if kw.arg is not None}
+    has_splat = any(isinstance(a, ast.Starred) for a in node.args) or any(
+        kw.arg is None for kw in node.keywords
+    )
+    if has_splat:
+        try:
+            sig.bind_partial(**kwargs)
+        except TypeError as exc:
+            return ("degraded-fail", str(exc))
+        return ("degraded-ok", None)
+    try:
+        sig.bind(*([_PLACEHOLDER] * len(node.args)), **kwargs)
+    except TypeError as exc:
+        return ("fail", str(exc))
+    return ("ok", None)
+
+
+def _waiver_reason(lines: list[str], lineno: int) -> str | None:
+    """The ARGCHECK_BIND_EXEMPT reason covering ``lineno``, or None.
+
+    LINE-grained: the token on the call's own source line, or on the
+    immediately-preceding non-blank COMMENT-ONLY line (the
+    ``# WANDB_INTENTIONALLY_DISABLED`` placement convention). The
+    comment-only restriction on the preceding-line arm is load-bearing: a
+    trailing waiver on a CODE line covers that line only — it must never
+    leak onto the NEXT line's call. Suppresses ONLY calls whose
+    ``node.lineno`` matches — never the rest of the file.
+    """
+
+    def token_reason(text: str) -> str | None:
+        if _BIND_WAIVER_TOKEN not in text:
+            return None
+        after = text.split(_BIND_WAIVER_TOKEN, 1)[1]
+        return after.lstrip(":").strip() or "(no reason given)"
+
+    if 1 <= lineno <= len(lines):
+        reason = token_reason(lines[lineno - 1])
+        if reason is not None:
+            return reason
+    j = lineno - 1
+    while j >= 1 and not lines[j - 1].strip():
+        j -= 1
+    if j >= 1 and lines[j - 1].lstrip().startswith("#"):
+        return token_reason(lines[j - 1])
+    return None
+
+
+def _record_failure(
+    census: BindCensus, site: BindSite, error: str, installed: str | None, lines: list[str]
+) -> None:
+    """Route a bind failure to failures, or to waived when the call line carries the token."""
+    reason = _waiver_reason(lines, site.lineno)
+    if reason is not None:
+        census.waived.append(BindWaiver(site, error, reason))
+    else:
+        census.failures.append(BindFailure(site, error, installed))
+
+
+def collect_helper_call_census(*module_files: str | os.PathLike[str]) -> BindCensus:
+    """Non-raising collection pass: resolve + bind every registered shared-helper call.
+
+    Scans every ``ast.Call`` in ``module_files`` (whole-module scope —
+    lambdas, comprehensions, and nested defs included via ``ast.walk``),
+    resolves calls into the registered surface (``_BIND_MODULES`` /
+    ``_BIND_CLASSES`` / ``_BIND_FUNCTIONS``) under the uniform-import-target
+    rule, and returns per-site lists: bound, degraded (call-site splat via
+    ``bind_partial``), skipped (noted, never silent), waived
+    (``ARGCHECK_BIND_EXEMPT``), failures. Target imports are LAZY — a file
+    whose import map never references a registered target imports nothing.
+    """
+    if not module_files:
+        raise ValueError("collect_helper_call_census() needs at least one module file")
+    files = [Path(f) for f in module_files]
+    census = BindCensus(n_files=len(files))
+    instances: dict[tuple[str, str], object] = {}
+    for path in files:
+        source = path.read_text(encoding="utf-8")
+        tree = ast.parse(source, filename=str(path))
+        lines = source.split("\n")
+        bindings, star_import = _collect_name_bindings(tree)
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            verdict = _classify_call(node, bindings, star_import)
+            if verdict is None:
+                continue
+            if verdict[0] == "skip":
+                _, label, reason = verdict
+                census.skipped.append(BindSkip(str(path), node.lineno, label, reason))
+                continue
+            _, label, shape, fetch = verdict
+            fn, fetch_error, canonical = _fetch_callable(fetch, instances)
+            site = BindSite(str(path), node.lineno, label, shape, canonical)
+            if fetch_error is not None:
+                _record_failure(census, site, fetch_error, None, lines)
+                continue
+            bind_verdict, detail = _bind_call_shape(fn, node)
+            if bind_verdict == "unintrospectable":
+                census.skipped.append(
+                    BindSkip(
+                        str(path),
+                        node.lineno,
+                        label,
+                        f"un-introspectable callable ({detail})",
+                    )
+                )
+            elif bind_verdict == "ok":
+                census.bound.append(site)
+            elif bind_verdict == "degraded-ok":
+                census.degraded.append(site)
+            else:  # "fail" | "degraded-fail"
+                installed = f"{canonical}{inspect.signature(fn)}"  # type: ignore[arg-type]
+                _record_failure(census, site, detail or "", installed, lines)
+    return census
+
+
+def assert_helper_call_shapes_bind(*module_files: str | os.PathLike[str]) -> None:
+    """Assert every registered shared-helper call in ``module_files`` binds.
+
+    Thin raise-on-failure wrapper over ``collect_helper_call_census``:
+    prints the one-line census (bound/degraded/skipped) plus one line per
+    skipped/degraded/waived site on EVERY run (pass and fail), then raises
+    ``SystemExit`` naming every non-binding site (all failures across all
+    files collected into ONE exit, mirroring the argparse pass).
+    """
+    census = collect_helper_call_census(*module_files)
+    print(
+        f"argcheck-bind: {len(census.bound)} bound, {len(census.degraded)} degraded,"
+        f" {len(census.skipped)} skipped across {census.n_files} file(s)"
+    )
+    for skip in census.skipped:
+        print(f"  skipped: {skip.path}:{skip.lineno} {skip.label} — {skip.reason}")
+    for site in census.degraded:
+        print(
+            f"  degraded: {site.path}:{site.lineno} {site.label}"
+            " — call-site splat; checked via bind_partial(**named_kwargs)"
+        )
+    for waiver in census.waived:
+        print(
+            f"  waived: {waiver.site.path}:{waiver.site.lineno} {waiver.site.label}"
+            f" — {waiver.error} ({_BIND_WAIVER_TOKEN}: {waiver.reason})"
+        )
+    if census.failures:
+        parts = ["argcheck: helper call shape(s) do not bind against installed signatures:"]
+        for failure in census.failures:
+            parts.append(
+                f"  {failure.site.path}:{failure.site.lineno} {failure.site.label}"
+                f" — {failure.error}"
+            )
+            if failure.installed:
+                parts.append(f"    installed: {failure.installed}")
+        if census.skipped:
+            sites = "; ".join(f"{s.path}:{s.lineno} {s.label} ({s.reason})" for s in census.skipped)
+            parts.append(f"  note: skipped site(s) not statically resolvable: {sites}")
+        parts.append(
+            "  fix: correct the call site, or waive with `# ARGCHECK_BIND_EXEMPT: <reason>`"
+            " on the call line"
+        )
+        raise SystemExit("\n".join(parts))

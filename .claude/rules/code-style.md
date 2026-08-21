@@ -173,6 +173,70 @@ if args.import_check:
   fixing it needs flow ordering, out of scope for a static completeness check (recorded in the
   module docstring).
 
+**Call-arity bind pass (#2261).** The SAME conventional `--import-check` line now also
+bind-checks registered shared-helper calls in the FILES PASSED to the check:
+`assert_args_attributes_defined` runs `assert_helper_call_shapes_bind(*module_files)` after the
+argparse pass (argparse gaps raise FIRST), statically resolving every call into the registered
+surface — the `explore_persona_space.orchestrate.hub` module (every `hub.X(...)` + every
+`from ...hub import X` bare call), the `huggingface_hub.HfApi` class (inline `HfApi().m(...)` +
+uniform `api = HfApi()` variable receivers), and the `hf_hub_download` / `snapshot_download`
+functions — and binding each literal call shape against the installed signature
+(`inspect.signature(fn).bind(...)`, placeholder values, shape only). A wrong-arity call to a
+shared helper then fails in seconds at `--import-check` instead of at first execution (#2223: a
+`hub._upload` call missing `path_in_repo` shipped green through every gate and fired ~70 h into
+a GPU run); a nonexistent helper on a registered module is a check FAILURE (the #606 class),
+never a skip. Non-raising census API: `collect_helper_call_census(*module_files)`.
+
+- **Posture unchanged — driver-local opt-in, never a repo-wide lint.** The #1388 fleet-wedge
+  reasoning above applies verbatim; arming rides the existing entry point, so every existing
+  adopter gained the pass with ZERO driver edits (89 armed files at landing: 88 `scripts/` + 1
+  `src/`).
+- **Measured baseline (2026-08-21, the number that licensed in-place arming):** 0 red across 89
+  armed files / 195 registered-surface call sites under the shipped UNIFORM-IMPORT-TARGET rule —
+  195/195 bind, equal to an independent resolver-free lexical count; 0 failures, 0 skips,
+  0 degraded (the analogue of this section's 83-of-927 line).
+- **False-positive classes handled:** keyword-only params + callee-side `*args`/`**kwargs` are
+  native to `Signature.bind` (zero FP by construction); a call-site splat DEGRADES to
+  `bind_partial(**named_kwargs)` with a census note; a genuine shadow (any non-import binding of
+  the name) or conflicting import targets ABSTAIN as noted skips — repeated SAME-target imports
+  (module-level or function-local, the fleet's dominant idiom; the #2223 pre-fix driver bound
+  `hub` three times) RESOLVE; `api = HfApi()` variable receivers resolve under the
+  uniform-binding rule (every module-wide binding is the registered constructor), else a noted
+  skip.
+- **Known accepted false negatives (FN-1..FN-7, argcheck module docstring):**
+  `functools.partial(hub.X, ...)`; a helper whose own signature is `(*args, **kwargs)`; runtime
+  monkeypatching; check-env vs run-env drift; sibling-module call sites — only the files passed
+  to the check are scanned (live example: `scripts/issue2203_phase1.py` passes `__file__` only
+  while its Hub calls live in `scripts/issue2203_common.py`; remedy: make the sibling an adopter
+  or co-pass it); attribute-chain receivers (`self.api = HfApi()` — inert, measured 0
+  fleet-wide); out-of-registry in-repo wrappers (e.g. `R.upload_dir_hf`) — the registry
+  validates the surfaces it selected, not the whole persistence-critical class.
+- **Waiver:** `# ARGCHECK_BIND_EXEMPT: <reason>` on the call line, or on the
+  immediately-preceding non-blank COMMENT-ONLY line (a trailing waiver on a CODE line covers
+  that line only — it never leaks onto the next line's call), converts a would-be FAIL into a
+  noted, reason-echoed waiver. LINE-grained edge cases: multiple calls on ONE physical line
+  share a `node.lineno`, so a waiver there suppresses all of them — keep waived calls on their
+  own line (a live two-calls-one-line site: `scripts/issue2225_eval_gen.py:675`); a
+  formatter-expanded multiline call keeps `node.lineno` at its OPENING line — place the waiver
+  on or immediately above it. On the 88 pre-#2261 frozen drivers a waiver comment IS a driver
+  edit and stays must-ask (the frozen-driver convention, #1547).
+- **Visibility residual:** the skip/degraded census is per-run stdout
+  (`argcheck-bind: N bound, M degraded, K skipped ...`); the smoke-architecture Axis 1
+  `import-resolution:` marker records the check COMMAND, not its output, so no durable
+  per-issue record of the census exists. Accepted: the skip set is measured NULL today (0 of
+  195 sites).
+- **Scope:** a bind PASS certifies call-SHAPE binding only — semantically wrong but binding
+  arguments (wrong repo, wrong prefix, wrong flags) are an explicit NON-GOAL (the #2223
+  destination pins stay in `tests/test_issue2223_hub_call_signatures.py`); a
+  scratch-destination dry-run smoke arm that actually executes a phase is a COMPLEMENTARY
+  instrument (it can catch the TypeError and validate destination semantics, at the cost of
+  destination/credential/cleanup handling and covering only exercised phases) — the bind check
+  is the cheap static instrument, not the only conceivable one.
+- **Forward drift:** a LATER `hub.py` signature change can make a FROZEN driver's
+  `--import-check` newly FAIL — correct behavior (a true latent arity bug relative to the new
+  signature), never a checker regression; the remedy is a forward fix at the call site or a
+  must-ask waiver.
+
 ## Relocated codebase traps (from `.claude/rules/gotchas.md`, #2189)
 
 Verbatim gotchas.md entries whose topic this rule already owns — relocated
