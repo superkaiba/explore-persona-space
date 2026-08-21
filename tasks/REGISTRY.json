@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2450,
+  "highest_id": 2451,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11203,6 +11203,13 @@
       "path": "tasks/proposed/2450",
       "status": "proposed",
       "title": "paper_plots sidecar: keep exact-(0,0) singleton collections and propagate per-panel series labels"
+    },
+    "2451": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2451",
+      "status": "proposed",
+      "title": "Teammate coordination: a SendMessage resume re-arms liveness \u2014 prior completion evidence must not license editing a teammate's file set"
     },
     "246": {
       "has_clean_result": false,
