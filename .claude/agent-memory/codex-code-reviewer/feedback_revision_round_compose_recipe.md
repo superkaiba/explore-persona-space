@@ -1367,3 +1367,23 @@ gets the standard do-not-be-confused note; (e) a marker-quoted fix-engaged log
 line that greps ZERO in the diff may be an f-string SPLIT across source lines —
 probe the post-image for a fragment before treating it as the #2329-r11
 zero-hit composer observation, then tell Codex to grep by fragments.
+
+**Consecutive crash-fix rounds — tail reuse + rubric-native round tokens
+(#2378 r8, 2026-08-20):** on the SECOND consecutive crash-fix round the r7
+shape reuses almost verbatim; three mechanical deltas: (a) extract the
+output-contract TAIL from the COMPOSED prior prompt via
+`prior_prompt.split(RUBRIC)` (assert exactly 2 parts) — it already carries the
+prior round's patches, so only v<n-1>→v<n> + the new F-duty schema remain
+(blanket `Round-7`→`Round-8` replace is safe on the small authored tail;
+count-assert capitalized and lowercase forms separately first); (b) round-token
+residue asserts on the RUBRIC must COUNT-PIN, not assert absence — "round 7"
+(#779 descope) and "round 8" (#653 r8) each appear once RUBRIC-NATIVELY in
+incident text; (c) cross-part token totals (e.g. `PASS_UNIFIED`) must sum
+EVERY part including the rubric's own Step 0.55 gate text (smokearch 2 + impl
+1 + rubric 2 + authored 1 — hit live). Content-side: when the prior twin
+verdict was a zero-findings PASS there is NOTHING to fence from r<n-1> — say
+so explicitly and keep the OLDER round's Minors fence verbatim; a brief
+phrase like "un-droppable by later env merges" that the realized code only
+approximates (env_extra merges last, implementer-declared deliberate) is the
+#2332-r2 named-tension pattern — attest the call-site inventory at compose
+time, hand the sufficiency ruling to Codex.
