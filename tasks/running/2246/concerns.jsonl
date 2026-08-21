@@ -1,0 +1,1 @@
+{"ts": "2026-08-21T08:16:34Z", "event": "raised", "concern_id": "implementation-marker-shape-missing", "severity": "BLOCKER", "summary": "epm:results lacks the four canonical H3 sections, fenced verification command, and required ruff-policy invocation evidence", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
