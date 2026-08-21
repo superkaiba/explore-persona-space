@@ -1,11 +1,17 @@
 {
-  "commit": "d2a74765+dirty",
-  "render_id": "5ef2ec6bc90e40fc",
-  "git_commit": "d2a74765e664ccfce2f8c76574f328e8e0f5beed",
+  "commit": "bb37d5ff+dirty",
+  "render_id": "a95bbc06be78461a",
+  "git_commit": "bb37d5ff8695d01e52f8ba36a043dd58fad210ab",
   "git_dirty": true,
   "git_dirty_paths": [
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.meta.json",
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.pdf",
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.png",
     "docs/posters/mats_2026/make_plot6c_pooled_lattice.py",
-    "tasks/approved/2253/events.jsonl",
+    "eval_results/issue_2223/casestudy_replay/qwen3-32b/native_axis_fidelity_preimage/judged/judge_complete_delusion.json",
+    "eval_results/issue_2223/casestudy_replay/qwen3-32b/native_axis_fidelity_preimage/judged/judge_complete_selfharm.json",
+    "eval_results/issue_666/headline/predictor_headline.json",
+    "scripts/issue1901_body_figures.py",
     "tasks/completed/2214/body.md",
     "tasks/completed/2214/comments.jsonl",
     "tasks/completed/2214/concerns.jsonl",
@@ -17,131 +23,132 @@
     "tasks/proposed/2416/body.md",
     "tasks/proposed/2416/comments.jsonl",
     "tasks/proposed/2416/events.jsonl",
+    "tasks/running/2214/body.md",
+    "tasks/running/2214/comments.jsonl",
+    "tasks/running/2214/concerns.jsonl",
+    "tasks/running/2214/events.jsonl",
+    "tasks/running/2214/plans/plan.md",
+    "tasks/running/2214/plans/v1.md",
+    "tasks/running/2214/plans/v2.md",
+    "tasks/running/2214/plans/v3.md",
     "tests/test_issue2094_rev_butler.py"
   ],
-  "git_argv0_state": "untracked",
+  "git_argv0_state": "modified",
   "git_argv0_path": "docs/posters/mats_2026/make_plot6c_pooled_lattice.py",
-  "created": "2026-08-21T08:18:30Z",
+  "created": "2026-08-21T08:28:45Z",
   "figsize": [
-    10.6,
-    3.6
+    9.4,
+    3.7
   ],
   "points": [
     {
-      "x": -0.17,
-      "held-out $R^2$": 0.2984944019747089,
-      "_kind": "bar",
-      "_group": 0
-    },
-    {
-      "x": 0.83,
-      "held-out $R^2$": 0.34068194443813604,
-      "_kind": "bar",
-      "_group": 0
-    },
-    {
-      "x": 1.83,
-      "held-out $R^2$": 0.29102155422437836,
-      "_kind": "bar",
-      "_group": 0
-    },
-    {
-      "x": 2.83,
-      "held-out $R^2$": 0.18545197766814003,
-      "_kind": "bar",
-      "_group": 0
-    },
-    {
-      "x": 3.83,
-      "held-out $R^2$": 0.35613889553138234,
-      "_kind": "bar",
-      "_group": 0
-    },
-    {
-      "x": 4.83,
-      "held-out $R^2$": 0.09141979458312599,
-      "_kind": "bar",
-      "_group": 0
-    },
-    {
-      "x": 5.83,
+      "closeness to the assistant chat-template map: direct transfer $R^2$ (measured on the inserted cells)": -0.17,
       "held-out $R^2$": 0.43478488946626914,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "x": 0.17,
-      "held-out $R^2$": 0.3559185425108692,
+      "closeness to the assistant chat-template map: direct transfer $R^2$ (measured on the inserted cells)": 0.83,
+      "held-out $R^2$": 0.35613889553138234,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "closeness to the assistant chat-template map: direct transfer $R^2$ (measured on the inserted cells)": 1.83,
+      "held-out $R^2$": 0.34068194443813604,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "closeness to the assistant chat-template map: direct transfer $R^2$ (measured on the inserted cells)": 2.83,
+      "held-out $R^2$": 0.2984944019747089,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "closeness to the assistant chat-template map: direct transfer $R^2$ (measured on the inserted cells)": 3.83,
+      "held-out $R^2$": 0.29102155422437836,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "closeness to the assistant chat-template map: direct transfer $R^2$ (measured on the inserted cells)": 4.83,
+      "held-out $R^2$": 0.18545197766814003,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "closeness to the assistant chat-template map: direct transfer $R^2$ (measured on the inserted cells)": 0.17,
+      "held-out $R^2$": 0.5796996369279679,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "x": 1.17,
-      "held-out $R^2$": 0.36960715629310803,
-      "_kind": "bar",
-      "_group": 1
-    },
-    {
-      "x": 2.17,
-      "held-out $R^2$": 0.3609899231388926,
-      "_kind": "bar",
-      "_group": 1
-    },
-    {
-      "x": 3.17,
-      "held-out $R^2$": 0.2962172010567693,
-      "_kind": "bar",
-      "_group": 1
-    },
-    {
-      "x": 4.17,
+      "closeness to the assistant chat-template map: direct transfer $R^2$ (measured on the inserted cells)": 1.17,
       "held-out $R^2$": 0.3790039749146514,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "x": 5.17,
-      "held-out $R^2$": 0.20882159429132746,
+      "closeness to the assistant chat-template map: direct transfer $R^2$ (measured on the inserted cells)": 2.17,
+      "held-out $R^2$": 0.36960715629310803,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "x": 6.17,
-      "held-out $R^2$": 0.5796996369279679,
+      "closeness to the assistant chat-template map: direct transfer $R^2$ (measured on the inserted cells)": 3.17,
+      "held-out $R^2$": 0.3559185425108692,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "closeness to the assistant chat-template map: direct transfer $R^2$ (measured on the inserted cells)": 4.17,
+      "held-out $R^2$": 0.3609899231388926,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "closeness to the assistant chat-template map: direct transfer $R^2$ (measured on the inserted cells)": 5.17,
+      "held-out $R^2$": 0.2962172010567693,
       "_kind": "bar",
       "_group": 1
     }
   ],
   "n_series": 2,
-  "total_points": 14,
+  "total_points": 12,
   "text": {
     "suptitle": null,
     "fig_texts": [],
     "axes": [
       {
-        "title": "Pooled vs cell-specific fit, evaluated per cell \u2014 Qwen-2.5-7B-Instruct",
+        "title": "Pooled vs specific fit, evaluated per character/framing \u2014 Qwen-2.5-7B-Instruct",
+        "xlabel": "closeness to the assistant chat-template map: direct transfer $R^2$ (measured on the inserted cells)",
         "ylabel": "held-out $R^2$",
         "legend_labels": [
-          "one map, all cells pooled",
-          "that cell's own map"
+          "one map, all characters/framings pooled",
+          "that character/framing's own map"
         ],
         "annotations": [
-          "Wren replied: \"\u2026\"",
-          "HELIOS replied: \"\u2026\"",
-          "Dana replied: \"\u2026\"",
-          "Vex replied: \"\u2026\"",
+          "<|im_start|>assistant",
+          "(source)",
           "Assistant replied: \"\u2026\"",
-          "User: \u2026 / Assistant: \u2026",
-          "<|im_start|>assistant"
+          "-0.27",
+          "HELIOS replied: \"\u2026\"",
+          "-0.30",
+          "Wren replied: \"\u2026\"",
+          "-0.34",
+          "Dana replied: \"\u2026\"",
+          "-0.35",
+          "Vex replied: \"\u2026\"",
+          "-0.51"
         ],
         "xticklabels": [
-          "Wren\nin story",
-          "HELIOS\nin story",
-          "Dana\nin story",
-          "Vex\nin story",
+          "assistant\nchat template",
           "assistant\nin story",
-          "assistant\nbare text",
-          "assistant\nchat template"
+          "HELIOS\nin story",
+          "Wren\nin story",
+          "Dana\nin story",
+          "Vex\nin story"
         ],
         "yticklabels": [
           "\u22120.2",
@@ -154,8 +161,8 @@
       }
     ],
     "series": [
-      "one map, all cells pooled",
-      "that cell's own map"
+      "one map, all characters/framings pooled",
+      "that character/framing's own map"
     ]
   },
   "formats_written": [
