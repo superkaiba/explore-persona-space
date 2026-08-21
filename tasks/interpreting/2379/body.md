@@ -106,13 +106,13 @@ Misalignment completions are harmful-advice content, shown as sanitized 15-word 
 
 ### The context-side hidden-state predictor replicates the parent finding and beats the text baseline
 
-**What is plotted:** Mean within-condition Spearman ρ between each predictor and the per-trigger re-elicitation rate, one grouped-bar panel per setting at the parent's pinned decoder layers (16 misalignment, 27 capitalization). Dark dots are per-condition values; open diamonds the Pearson twin; dashed marks the parent's published values.
+**What is plotted:** Mean within-condition Spearman ρ between each predictor and the per-trigger re-elicitation rate, one grouped-bar panel per setting at the parent's pinned decoder layers (16 misalignment, 27 capitalization). Dark dots: per-condition values; open diamonds: Pearson twin; dashed: the parent's published values.
 
 ![Grouped bars of mean within-condition rank correlation by predictor, misalignment and capitalization panels, with per-condition dots and parent reference marks](https://raw.githubusercontent.com/superkaiba/explore-persona-space/f1c0b8c48eb51d46c93658ac8f65d03fc270d971/figures/issue_2379/fig1_hero_predictor_bars.png)
 
 > **Figure.** *Context-side hidden-state similarity (leftmost bar in each panel) predicts re-elicitation and beats the text-embedding baseline; the predicted-answer bar at the training-answer reference collapses for misalignment.* n = 18 (misalignment) / 20 (capitalization) trigger prompts per condition.
 
-The context-side predictor lands at ρ = 0.775 (misalignment) and 0.895 (capitalization), clearing the 0.6 floor, tracking the parent's 0.89 / 0.90, and beating the text-embedding baseline (0.617; −0.101, where text is uninformative exactly as in the parent). Capitalization replicates cleanly. For misalignment I claim only an association reproduced under this run's Sonnet judge: judge parity with the parent's opus-4-8 instrument is unmeasured — the cross-judge control returned zero paired scores, and its artifact wrongly reports a success status (an artifact bug, filed as an infra task) — so the 0.775-versus-0.89 gap cannot be split between judge difference and data difference.
+The context-side predictor lands at ρ = 0.775 (misalignment) and 0.895 (capitalization), clearing the 0.6 floor, tracking the parent's 0.89 / 0.90, and beating the text-embedding baseline (0.617; −0.101, text uninformative as in the parent). Capitalization replicates in all three languages, but Spanish misses the 0.50 installation floor (inoculation-prompt capitalization rate 0.453; empty-prompt 0); the setting-level gate passes only under its 2-of-3-failing structural rule. For misalignment I claim only an association under this run's Sonnet judge: parity with the parent's opus-4-8 judge is unmeasured (the cross-judge control returned zero paired scores and its artifact wrongly reports success; filed as an infra task), so the 0.775-versus-0.89 gap cannot be split between judge difference and data difference.
 
 ### The answer-side predictor underperforms the context-side predictor, with capitalization support binary-rate-only
 
@@ -137,7 +137,7 @@ Roughly half the French and German triggers sit at a zero binary rate, so rate c
 | Misalignment, drop inoculation-prompt trigger | −0.808 | −1.104 to −0.418 | 2000 / 2000 |
 | Capitalization (3 languages) | −0.291 | −0.523 to −0.058 | 1995 / 2000 |
 | Capitalization, continuous uppercase fraction | −0.169 | −0.393 to +0.077 | 1819 / 2000 |
-| Capitalization, drop inoculation-prompt trigger | −0.216 | −0.455 to −0.013 | 1990 / 2000 |
+| Capitalization, drop inoculation-prompt trigger | −0.216 | −0.455 to −0.013 | 1974 / 2000 |
 | Capitalization, leave out French | −0.365 | −0.659 to −0.068 | 1997 / 2000 |
 | Capitalization, leave out German | −0.128 | −0.328 to −0.004 | 1961 / 2000 |
 | Capitalization, leave out Spanish | −0.378 | −0.722 to 0.000 | 1948 / 2000 |
