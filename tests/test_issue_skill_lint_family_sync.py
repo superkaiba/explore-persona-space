@@ -131,6 +131,34 @@ blocks — a probe-failure revert would have to unwind whole families
 merge fleet-wide, while the static guard catches the class EARLIER (on
 main, at the PR adding the import).
 
+#2260 (2026-08-21) adds the AGENTS prose family: `.claude/agents` + 30
+vetted closure-clean agents-prose pin tests join SPECS + SPECS_10D as
+FAMILY_agents members (FAMILY_OF entries in BOTH copies), and the
+workflow-family cross-reader
+tests/test_inline_payload_lint_gate_contract.py joins "workflow" (its
+tests.test_issue_skill_inline_gate_pin import forces same-family
+admission per guard (19)). Incident #2251: main removed a planner.md
+row + its pinning test together; the branch-era test red the
+freshly-synced planner.md — a 74-min gate red. Membership is VETTED,
+never name-globbed: readers use the literal ".claude/agents" form AND
+the quoted path-join form (`/ ".claude" / "agents" /`), and only
+closure-clean prose pins join (stdlib / env packages /
+tests/issue_skill_source.py / SPECS-synced files only) — behavioral
+tests importing unsynced scripts/src stay OUT. A member-existence
+containment arm in pass 1 of BOTH copies keeps the ATOMIC checkout
+from wedging every family when a literal member is deleted/renamed on
+main (the token's family is marked dirty + loud echo; deletion
+propagation stays #2385). Tests (1)/(9)/(10) gain the members; a
+containment-arm textual pin + a deleted-member functional repro join
+section (18); section (20) adds guard (20): the reader-predicate
+completeness check (predicate universe minus glob-covered minus
+explicitly-familied minus exempt must be EMPTY), existence asserts
+with a merge-base vintage-skew discriminator (absent-on-disk +
+absent-at-merge-base => SKIP, pure vintage skew; present-at-merge-base
++ absent-on-disk => FAIL, the deleting-PR early warning), a
+genuine/incidental exempt split with an AST shape check on the
+incidental class, and non-vacuity pins.
+
 These tests fail the suite if a later SKILL.md editor drops the family
 entries, the boundary-paragraph family exception, the post-gate re-sync
 bullet (or reorders it before the gate's stale-verdict rm), the 9a-ter
@@ -145,8 +173,12 @@ the #2208 import-satisfiability probe from the sibling arm, drops the
 #2303 caps-file lint-family membership, un-checks the #2303 sync
 commit rc in either copy, re-familys the #2352
 tests/issue_skill_source.py singleton (a FAMILY_OF entry for it in
-either copy), or lets a family-synced test file import a tests.<mod>
-helper not sync-coverable on EVERY of its sync routes (guard 19).
+either copy), lets a family-synced test file import a tests.<mod>
+helper not sync-coverable on EVERY of its sync routes (guard 19),
+drops a #2260 FAMILY_agents member or the member-existence containment
+arm from either copy, lets a new agents-prose reader land
+undispositioned, or lets an incidental agents exemption acquire a
+genuine agents-path read construct (guard 20).
 
 NOTE for future SKILL.md editors: these assertions pin literal snippet text.
 A legitimate rewording of the pinned lines in SKILL.md must update the
@@ -221,7 +253,38 @@ def test_step5a_specs_include_lint_family():
         "tests/issue_skill_source.py "
         ":(glob)tests/test_issue_skill_*.py "
         "scripts/step5a_sibling_probe.py "
-        'tests/test_step5a_sibling_probe.py"'
+        "tests/test_step5a_sibling_probe.py "
+        "tests/test_adversarial_planner_factchecker_grain_pin.py "
+        "tests/test_adversarial_planner_lens_brief_headings.py "
+        "tests/test_analyzer_language_intrusion_duty.py "
+        "tests/test_battery_basis_prose_pins.py "
+        "tests/test_code_reviewer_phase_idempotency_gate.py "
+        "tests/test_codex_code_reviewer_step09_tag_parity.py "
+        "tests/test_codex_critic_numeric_grounding.py "
+        "tests/test_consistency_checker_parentless_infra_skip.py "
+        "tests/test_cross_issue_protocol_comparability_prose.py "
+        "tests/test_daily_three_route_classifier_doc.py "
+        "tests/test_diff_base_origin_main_pin.py "
+        "tests/test_downwidth_split_prose_pins.py "
+        "tests/test_experimenter_md.py "
+        "tests/test_fit_loop_batching_review_pin.py "
+        "tests/test_implementer_spec_deleted_literal_substep.py "
+        "tests/test_implementer_spec_mechanical_pin_sweep.py "
+        "tests/test_implementer_spec_names_invariant_local_union.py "
+        "tests/test_implementer_spec_names_ruff_policy_pin.py "
+        "tests/test_inline_payload_lint_gate_contract.py "
+        "tests/test_interp_critic_degenerate_series_lens.py "
+        "tests/test_issue_v2_skill_figure_pin_contract.py "
+        "tests/test_lean_twin_registration_pin.py "
+        "tests/test_mapping_baselines_wiring_pins.py "
+        "tests/test_off_pod_phase_slot_pin.py "
+        "tests/test_outroot_residue_prose_pins.py "
+        "tests/test_plan_handoff_path_convention.py "
+        "tests/test_planner_incident_trace_guidance.py "
+        "tests/test_planner_phase_outputs_declaration.py "
+        "tests/test_realized_rows_prose_pins.py "
+        "tests/test_selection_symmetric_nulls_pointers.py "
+        'tests/test_v2_composer_plan_path_brief.py"'
     ) in _text(), (
         "Step 5a SPECS must carry the #1560 lint/guard family "
         "(workflow_lint.py, .claude/hooks, the :(glob) test_workflow_lint* "
@@ -256,7 +319,14 @@ def test_step5a_specs_include_lint_family():
         "tests/test_step5a_sibling_probe.py (the Step 5a "
         "import-satisfiability helper and its unit tests; the "
         "test_issue_skill_* repros execute the worktree helper copy, so "
-        "helper-vs-pin sync must be family-atomic — the #1963 precedent)"
+        "helper-vs-pin sync must be family-atomic — the #1963 precedent) — "
+        "plus the #2260 FAMILY_agents members (vetted closure-clean "
+        "prose-pin tests over `.claude/agents/*.md` outside the coupled "
+        "globs, literal-form AND quoted path-join-form readers alike; the "
+        "#2251 half-sync: fresh planner.md vs branch-era pin test, 74-min "
+        "gate red) and the workflow-family cross-reader "
+        "tests/test_inline_payload_lint_gate_contract.py (its helper import "
+        "forces same-family admission per guard (19))"
     )
 
 
@@ -467,6 +537,29 @@ def test_step5a_family_atomicity_declared_in_bash():
         "the guard family must include the explicit tests/test_guard_lessons_edit.py "
         "entry (it also matches the :(glob) but is declared explicitly for clarity)"
     )
+    assert 'FAMILY_OF[".claude/agents"]="agents"' in span, (
+        "the agents family must include the .claude/agents dir itself — the "
+        "#2260 FAMILY_agents coupling: refreshing agents prose without its "
+        "vetted pin tests reds the Step 9c gate on pure vintage skew (#2251: "
+        "main removed a planner.md row + its pinning test together; the "
+        "branch-era test red the freshly-synced planner.md, a 74-min gate red)"
+    )
+    assert 'FAMILY_OF["tests/test_mapping_baselines_wiring_pins.py"]="agents"' in span, (
+        "the agents family must include tests/test_mapping_baselines_wiring_pins.py "
+        "— the #2251 incident file (a LITERAL-form agents reader; #2260)"
+    )
+    assert 'FAMILY_OF["tests/test_planner_phase_outputs_declaration.py"]="agents"' in span, (
+        "the agents family must include tests/test_planner_phase_outputs_declaration.py "
+        "— a quoted path-join-form agents reader, so the join class is "
+        "represented in the presence pins (#2260)"
+    )
+    assert 'FAMILY_OF["tests/test_inline_payload_lint_gate_contract.py"]="workflow"' in span, (
+        "the workflow family must include the #2260 cross-family reader "
+        "tests/test_inline_payload_lint_gate_contract.py — its "
+        "tests.test_issue_skill_inline_gate_pin import forces same-family "
+        "admission (guard (19) universal-route coverage); assigning it "
+        '"agents" would red guard (19)'
+    )
     assert "DIRTY_FAMILIES" in span, (
         "the family-atomic loop must gate the sync on a DIRTY_FAMILIES associative array"
     )
@@ -525,7 +618,7 @@ def test_step10d_family_atomicity_matches_step5a():
     for line in step5a_span.splitlines():
         stripped = line.strip()
         if stripped.startswith("FAMILY_OF[") and stripped.endswith(
-            ('="workflow"', '="lint"', '="guard"')
+            ('="workflow"', '="lint"', '="guard"', '="agents"')
         ):
             assert stripped in merge_span, (
                 f"Step 5a declares {stripped!r} but the auto-merge "
@@ -1732,6 +1825,12 @@ def _family_arm_block(span: str) -> str:
 # The #2412 sibling-probe pair (scripts/step5a_sibling_probe.py +
 # tests/test_step5a_sibling_probe.py) joined SPECS, so it needs fork stubs
 # too — without them the atomic checkout errors and syncs NOTHING.
+# The #2260 FAMILY_agents members (30 agents prose pins + the workflow
+# cross-reader test_inline_payload_lint_gate_contract.py) are literal SPECS
+# tokens too — one stub each, same atomic-checkout requirement; guard (20)'s
+# completeness failure message names this stub-update duty for future
+# members. (A derive-stubs-from-live-SPECS refactor was considered and
+# deferred — minimal-diff discipline for a reviewed infra fix.)
 _FORK_STUBS_2303 = (
     ".claude/agents/x.md",
     ".claude/agent-memory/x/MEMORY.md",
@@ -1754,16 +1853,51 @@ _FORK_STUBS_2303 = (
     "tests/test_issue_skill_x.py",
     "scripts/step5a_sibling_probe.py",
     "tests/test_step5a_sibling_probe.py",
+    "tests/test_adversarial_planner_factchecker_grain_pin.py",
+    "tests/test_adversarial_planner_lens_brief_headings.py",
+    "tests/test_analyzer_language_intrusion_duty.py",
+    "tests/test_battery_basis_prose_pins.py",
+    "tests/test_code_reviewer_phase_idempotency_gate.py",
+    "tests/test_codex_code_reviewer_step09_tag_parity.py",
+    "tests/test_codex_critic_numeric_grounding.py",
+    "tests/test_consistency_checker_parentless_infra_skip.py",
+    "tests/test_cross_issue_protocol_comparability_prose.py",
+    "tests/test_daily_three_route_classifier_doc.py",
+    "tests/test_diff_base_origin_main_pin.py",
+    "tests/test_downwidth_split_prose_pins.py",
+    "tests/test_experimenter_md.py",
+    "tests/test_fit_loop_batching_review_pin.py",
+    "tests/test_implementer_spec_deleted_literal_substep.py",
+    "tests/test_implementer_spec_mechanical_pin_sweep.py",
+    "tests/test_implementer_spec_names_invariant_local_union.py",
+    "tests/test_implementer_spec_names_ruff_policy_pin.py",
+    "tests/test_inline_payload_lint_gate_contract.py",
+    "tests/test_interp_critic_degenerate_series_lens.py",
+    "tests/test_issue_v2_skill_figure_pin_contract.py",
+    "tests/test_lean_twin_registration_pin.py",
+    "tests/test_mapping_baselines_wiring_pins.py",
+    "tests/test_off_pod_phase_slot_pin.py",
+    "tests/test_outroot_residue_prose_pins.py",
+    "tests/test_plan_handoff_path_convention.py",
+    "tests/test_planner_incident_trace_guidance.py",
+    "tests/test_planner_phase_outputs_declaration.py",
+    "tests/test_realized_rows_prose_pins.py",
+    "tests/test_selection_symmetric_nulls_pointers.py",
+    "tests/test_v2_composer_plan_path_brief.py",
 )
 
 _SYNC_SUBJECT_2303 = "issue-9999: sync workflow-surface specs from origin/main (spec-freshness)"
 
 
-def _family_sync_fixture(tmp: Path, env: dict) -> Path:
+def _family_sync_fixture(tmp: Path, env: dict, *, delete_member: str | None = None) -> Path:
     """Scratch bare origin + a wt clone on issue-9999 whose origin/main has
     advanced past the fork point by a scripts/workflow_lint.py edit + the
     main-NEW .claude/config/agent_spec_size_caps.txt (the #2293 topology).
-    Returns the wt path; the wt has already fetched origin."""
+    With delete_member set (the #2260 containment topology), the SAME
+    advance commit additionally modifies .claude/agents/x.md (an
+    agents-family edit the sync would normally carry) and DELETES the named
+    member stub (a main-side rename/retire). Returns the wt path; the wt
+    has already fetched origin."""
     origin = tmp / "origin.git"
     _run_git(tmp, "init", "--bare", "-b", "main", str(origin), env=env)
     seed = tmp / "seed"
@@ -1791,6 +1925,13 @@ def _family_sync_fixture(tmp: Path, env: dict) -> Path:
     )
     (seed / ".claude" / "config").mkdir(parents=True)
     (seed / ".claude" / "config" / "agent_spec_size_caps.txt").write_text("x.md 1_000\n")
+    if delete_member is not None:
+        # #2260 containment topology: main ALSO edits an agents-family file
+        # and deletes one agents member stub (rename/retire on main).
+        (seed / ".claude" / "agents" / "x.md").write_text(
+            "fork-era stub: .claude/agents/x.md\nmain-side agents edit\n"
+        )
+        (seed / delete_member).unlink()
     _run_git(seed, "add", "-A", env=env)
     _run_git(seed, "commit", "-m", "main-side: linter fix + main-NEW caps data file", env=env)
     _run_git(seed, "push", "origin", "main", env=env)
@@ -1909,6 +2050,121 @@ def test_family_sync_commit_failure_fatal_repro_2303():
         assert staged.strip() != "", "the synced set must be left STAGED for inspection"
         subj = _run_git(wt, "log", "-1", "--format=%s", env=env).strip()
         assert subj != _SYNC_SUBJECT_2303, "no sync commit may land when the hook fails"
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
+# --- (18b/#2260) member-existence containment arm: textual pin + repro -------
+
+
+def _containment_arm_block(span: str) -> str:
+    """Extract the #2260 member-existence containment arm from a sync span:
+    from its comment lead through the closing esac (the arm is the FIRST
+    case statement in the pass-1 loop, inserted before the bs_commits
+    stanza in both copies)."""
+    start = span.index("# Member-existence containment (#2260")
+    end = span.index("esac", start)
+    return span[start:end]
+
+
+def test_member_existence_arm_in_both_sync_copies():
+    """#2260: pass 1 of BOTH sync copies (Step 5a + the Step 10d auto-merge
+    inline block) must carry the member-existence containment arm.
+    `git checkout <ref> -- <pathspecs>` is ATOMIC — a single literal token
+    absent at origin/main (deleted/renamed on main) errors the whole
+    checkout and syncs NOTHING, wedging every family until manual reconcile
+    — so an absent literal member marks ITS family dirty
+    (vintage-consistent skip; other families keep syncing). Glob tokens are
+    excluded (cat-file -e takes no glob); deletion PROPAGATION (removing
+    the stale worktree twin) stays #2385."""
+    text = _text()
+    for span_name, span, dirty_marking in (
+        ("Step 5a", _step5a_span(text), "DIRTY_FAMILIES[$fam]=1"),
+        ("auto-merge", _automerge_span(text), "DIRTY_FAMILIES_10D[$fam]=1"),
+    ):
+        block = _containment_arm_block(span)
+        assert 'case "$f" in' in block, (
+            f"the {span_name} containment arm must be a per-token case guard"
+        )
+        assert '":(glob)"*) : ;;' in block, (
+            f"the {span_name} containment arm must exclude :(glob) tokens "
+            f"(cat-file -e takes no glob)"
+        )
+        assert 'if ! git -C "$WT" cat-file -e "origin/main:$f" 2>/dev/null; then' in block, (
+            f"the {span_name} containment arm must probe literal-member "
+            f"existence at origin/main via cat-file -e"
+        )
+        assert dirty_marking in block, (
+            f"the {span_name} containment arm must mark the absent member's "
+            f"family dirty ({dirty_marking} — the family-atomic skip)"
+        )
+        assert "is ABSENT at origin/main" in block, (
+            f"the {span_name} containment arm must announce the containment "
+            f"with the ABSENT-at-origin/main echo"
+        )
+        assert "continue" in block, (
+            f"the {span_name} containment arm must `continue` past the "
+            f"dirty-scan for a token that cannot be synced anyway"
+        )
+
+
+def test_family_sync_deleted_member_contained():
+    """#2260 containment repro (§3 condition 4) through the SHIPPED family
+    arm under real git: origin/main advances by (a) modifying
+    .claude/agents/x.md, (b) DELETING one agents-member stub (a main-side
+    rename/retire), (c) modifying scripts/workflow_lint.py (+ the main-NEW
+    caps data file, as in the base fixture). The arm must exit 0, echo the
+    ABSENT-at-origin/main containment line for the deleted member, skip the
+    WHOLE agents family (the main-side agents edit does NOT arrive —
+    vintage-consistent, never a half-refresh), still sync the clean lint
+    family, and leave the deleted member's stale worktree twin on disk
+    (deletion propagation is #2385). Pre-containment, the atomic checkout
+    would have errored on the absent pathspec and synced NOTHING for every
+    family — the whole-sync wedge this arm exists to contain."""
+    text = _text()
+    script_body = _family_arm_block(_step5a_span(text)).replace("<N>", "9999")
+
+    deleted = "tests/test_mapping_baselines_wiring_pins.py"
+    tmp = Path(tempfile.mkdtemp(prefix="eps2260contain-"))
+    try:
+        env = dict(os.environ)
+        env["GIT_CONFIG_GLOBAL"] = "/dev/null"
+        env["GIT_CONFIG_NOSYSTEM"] = "1"
+        wt = _family_sync_fixture(tmp, env, delete_member=deleted)
+
+        script = tmp / "familyarm.sh"
+        script.write_text(script_body)
+        env_arm = dict(env)
+        env_arm["WT"] = str(wt)
+        proc = subprocess.run(
+            ["bash", str(script)],
+            cwd=tmp,
+            env=env_arm,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+        assert proc.returncode == 0, f"family arm failed:\n{proc.stdout}\n{proc.stderr}"
+        assert f"spec-freshness: {deleted} is ABSENT at origin/main" in proc.stdout, (
+            f"the containment echo must name the deleted member:\n{proc.stdout}"
+        )
+        # The agents family is skipped WHOLE: main's agents edit did NOT arrive.
+        assert (wt / ".claude" / "agents" / "x.md").read_text() == (
+            "fork-era stub: .claude/agents/x.md\n"
+        ), (
+            "the agents family must be SKIPPED whole on a deleted member "
+            "(vintage-consistent — a fresh .claude/agents/x.md against "
+            "branch-era pin tests would be exactly the #2251 half-sync)"
+        )
+        # The clean lint family still synced (containment, not a whole-sync wedge).
+        assert "MAIN_SIDE_FIX = True" in (wt / "scripts" / "workflow_lint.py").read_text(), (
+            "the lint family must keep syncing while the agents family is contained"
+        )
+        # Stale-twin removal is #2385 — the sync never deletes.
+        assert (wt / deleted).exists(), (
+            "the deleted member's stale worktree twin must survive (deletion "
+            "propagation is #2385; the sync never deletes)"
+        )
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 
@@ -2249,3 +2505,420 @@ def test_guard_19_fails_on_pre_2352_spec_shape():
         "guard (19) must FAIL on the pre-#2352 spec shape (helper token "
         f"absent) — the guard would be vacuous; got problems={problems!r}"
     )
+
+
+# --- (20) agents-prose pin tests are family-coupled (#2260 guard) -------------
+
+# Reader predicate (#2260): matches BOTH forms the corpus uses — the literal
+# ".claude/agents" string AND the quoted path-join form `".claude" / "agents"`
+# (the join alternative requires a closing quote immediately after `agents`,
+# so `.claude/agent-memory` can match NEITHER alternative). 67 matching
+# tests/test_*.py files at #2260 landing; guard (20) recomputes live, so
+# corpus drift self-reconciles.
+_AGENTS_READER_RE = re.compile(r'\.claude/agents|["\']\.claude["\']\s*/\s*["\']agents["\']')
+
+# Read-verb receivers the incidental shape check scans (part C below).
+_AGENTS_READ_VERBS = frozenset({"read_text", "read_bytes", "open", "glob", "rglob", "iterdir"})
+
+# Member residuals, documented (#2260 §5 — members carry no rationale dict,
+# so the named residuals live here): (a) tests/test_mapping_baselines_
+# wiring_pins.py (the #2251 incident file) importlib-loads
+# src/.../analysis/mapping_baselines.py BY PATH from the worktree — dynamic
+# symbol enumeration, partially self-adapting; admitted because excluding
+# the incident file would defeat the coupling's purpose. (b)
+# tests/test_inline_payload_lint_gate_contract.py is guard-19-FORCED into
+# "workflow" (its tests.test_issue_skill_inline_gate_pin import); on a
+# workflow-dirty branch, agents can refresh while it stays branch-era —
+# strictly narrower than today, where it never syncs at all. (c)
+# tests/test_diff_base_origin_main_pin.py importlib-loads
+# scripts/select_step9c_tests.py, a SPECS SINGLETON (closure-clean under
+# the #2260 rule-1 clarification); an agents-dirty branch can leave the
+# test branch-era while the selector singleton syncs. (d)
+# tests/test_code_reviewer_phase_idempotency_gate.py imports
+# scripts/workflow_lint.py (a lint-family SPECS member — SPECS-synced,
+# closure-clean; cross-family residual: agents clean + lint dirty leaves
+# the fresh test pinning a branch-era linter's caps map). (e) ~15 members
+# also pin prose in .claude/rules / CLAUDE.md / .claude/skills —
+# cross-surface reads; those singletons/families sync independently, so a
+# member can sync fresh while a rules file it also pins stays branch-era.
+# NET exposure still shrinks for every member (today these files never
+# sync at all); the improvement is not strict for the cross-surface subset.
+
+# Files with a REAL agents-prose assertion that cannot join a family
+# (closure violations — membership would sync them against branch-era
+# scripts/src, the sync-scope boundary rationale (ii)). Accepted residuals;
+# NOT shape-checked (they legitimately read agents prose). Relocation of
+# the movable asserts into a closure-clean pin file is FILED as #2454.
+_AGENTS_PROSE_EXEMPT_GENUINE: dict[str, str] = {
+    "tests/test_matched_support.py": (
+        "behavioral: numpy + importlib-by-path of the matched_support "
+        "implementation (unsynced src). GENUINE prose asserts (~:350/:358/"
+        ":391) over statistics-critic.md / interpretation-critic.md / "
+        "critic.md accepted as residual; relocation filed as #2454."
+    ),
+    "tests/test_pod_audit.py": (
+        "behavioral: pod_audit / pod_config / runpod_api scripts (unsynced). "
+        "GENUINE research-pm.md triage-protocol assert "
+        "(test_pm_triage_protocol_present, ~:721) accepted as residual; "
+        "relocation filed as #2454."
+    ),
+    "tests/test_bootstrap_pod_git_credentials.py": (
+        "behavioral: subprocess-EXECUTES scripts/bootstrap_pod.sh + reads "
+        "unsynced scripts/. GENUINE #1271 no-tokenized-remote-URL negative "
+        "pin over ALL agent specs (agents-dir glob ~:291) accepted as "
+        "residual; relocation filed as #2454."
+    ),
+    "tests/test_verify_plan.py": (
+        "behavioral: imports scripts/verify_plan.py (unsynced). GENUINE "
+        "planner.md prose asserts (~:6815 predicate-anchor literals; ~:7372 "
+        "durability-pin bullet) — the #2260 implement-time vet re-routed "
+        "this file from incidental (the plan's provisional table saw only "
+        "its fixture strings); relocation filed as #2454."
+    ),
+    "tests/test_ensemble_review_cap.py": (
+        "behavioral: unsynced src imports (orchestrate.ensemble_strip, "
+        "explore_persona_space.workflow) + issue_skill_source. GENUINE "
+        "agents-dir glob inside the spelled-cap scan over the whole "
+        "workflow doc surface, accepted as residual. #2420 OWNS this "
+        "file's workflow-prose coupling decision — #2260 dispositions it "
+        "exempt so guard (20) is coherent; any future promotion is #2420's "
+        "call. Deliberately EXCLUDED from the #2454 relocation filing."
+    ),
+}
+
+# Files whose reader-pattern match is INCIDENTAL (docstring / fixture-string
+# / non-read literal; no agents read at all). Shape-checked (part C): an
+# incidental exemption that later gains a genuine agents-path read construct
+# reds mechanically instead of staying silently green forever.
+_AGENTS_PROSE_INCIDENTAL_EXEMPT: dict[str, str] = {
+    "tests/test_daily_drive_filings.py": (
+        "fixture strings only (~:1952); behavioral file (daily_drive_filings "
+        "/ file_infra_task scripts) — no agents read construct."
+    ),
+    "tests/test_step10d_guard3.py": (
+        "the SPECS literal itself inside an index() string arg (~:373) — a "
+        "workflow-prose pin, no agents read construct (a #2420-class "
+        "member, noted for that session)."
+    ),
+    "tests/test_subprocess_env_explicit.py": (
+        "docstring mention (~:5) only; its read_text is a repo-wide *.py "
+        "AST sweep — no agents read construct."
+    ),
+    "tests/test_sweep_parked_wf_candidates.py": (
+        "fixture strings only; behavioral (scripts + task_workflow src) — no agents read construct."
+    ),
+    "tests/test_task_workflow.py": (
+        "docstring mention (~:272) only; behavioral (task_workflow src) — no agents read construct."
+    ),
+}
+
+
+def _agents_reader_files() -> list[Path]:
+    """tests/test_*.py files whose RAW TEXT matches the agents reader
+    pattern — guard (20)'s universe. LEXICAL, not dependency-aware;
+    documented accepted misses (part F): helper-module indirection (a
+    conftest helper reading agents on a test's behalf), f-string /
+    variable-built paths, and subprocess-mediated reads remain forward
+    escape routes — a bounded grep found none in today's corpus (the same
+    limitation class as the Step 9c selector's accepted misses)."""
+    return [
+        p
+        for p in sorted(_REPO.glob("tests/test_*.py"))
+        if _AGENTS_READER_RE.search(p.read_text(encoding="utf-8"))
+    ]
+
+
+def _existence_verdict(on_disk: bool, at_merge_base: bool) -> str:
+    """Vintage-skew discriminator (#2260, part B): 'check' when the file is
+    on disk; for an absent file, 'skip' when it is ALSO absent at
+    merge-base(HEAD, origin/main) — main-new relative to this tree, pure
+    vintage skew (a freshly-synced guard naming a member/exempt file the
+    branch's vintage predates; an unconditional existence assert would
+    re-create the #1824/#1860 false-red class fleet-wide) — and 'fail' when
+    present at merge-base (THIS tree deleted it: on main, and on any branch
+    cut before the deletion, merge-base still holds the file, so the
+    deleting PR's own gate reds). Named residual: a deletion MERGED without
+    cleaning its FAMILY_OF/exempt entry goes guard-silent post-merge
+    (merge-base then tolerates); the runtime containment arm keeps echoing
+    at every sync until reconciled — the pressure survives."""
+    if on_disk:
+        return "check"
+    return "fail" if at_merge_base else "skip"
+
+
+def _merge_base_origin_main() -> str:
+    """merge-base(HEAD, origin/main) sha — the suite's existing convention
+    (the Step 5a block itself computes the same ref, and a repo without
+    origin/main cannot run the sync either). Fails LOUD on a git error
+    (check=True), never a silent skip."""
+    proc = subprocess.run(
+        ["git", "-C", str(_REPO), "merge-base", "HEAD", "origin/main"],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return proc.stdout.strip()
+
+
+def _present_at_ref(ref: str, rel: str) -> bool:
+    """True iff <ref>:<rel> resolves (git cat-file -e). A missing path
+    exits non-zero with 'Not a valid object name' / 'does not exist'; any
+    OTHER failure raises — fail-loud, never a silent skip."""
+    proc = subprocess.run(
+        ["git", "-C", str(_REPO), "cat-file", "-e", f"{ref}:{rel}"],
+        capture_output=True,
+        text=True,
+    )
+    if proc.returncode == 0:
+        return True
+    if "Not a valid object name" in proc.stderr or "does not exist" in proc.stderr:
+        return False
+    raise RuntimeError(
+        f"git cat-file -e {ref}:{rel} failed unexpectedly (rc={proc.returncode}): {proc.stderr}"
+    )
+
+
+def _agents_read_constructs(src: str) -> list[str]:
+    """Agents-path READ CONSTRUCTS in a module's source — the part-C shape
+    detector: a BinOp div-chain or a Path()/open() call whose source
+    segment (ast.get_source_segment) matches the reader pattern
+    (module-level path constants and inline constructs alike), or a
+    read-verb call (read_text / read_bytes / open / glob / rglob /
+    iterdir) whose RECEIVER's source segment matches it. A bare string
+    constant (fixture text, docstring, an index() argument) never
+    triggers. Documented accepted misses: a subprocess-mediated read
+    (subprocess.run(["cat", ".claude/agents/..."])) and reads built from
+    f-string/variable fragments that never place the joined fragment in
+    one source segment."""
+    hits: list[str] = []
+    for node in ast.walk(ast.parse(src)):
+        if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Div):
+            seg = ast.get_source_segment(src, node)
+            if seg and _AGENTS_READER_RE.search(seg):
+                hits.append(seg)
+        elif isinstance(node, ast.Call):
+            func = node.func
+            if isinstance(func, ast.Name) and func.id in {"Path", "open"}:
+                seg = ast.get_source_segment(src, node)
+                if seg and _AGENTS_READER_RE.search(seg):
+                    hits.append(seg)
+            elif isinstance(func, ast.Attribute) and func.attr in _AGENTS_READ_VERBS:
+                recv = ast.get_source_segment(src, func.value)
+                if recv and _AGENTS_READER_RE.search(recv):
+                    hits.append(recv)
+    return hits
+
+
+def _agents_uncovered_readers(tokens: list[str], family_of: dict[str, str]) -> list[str]:
+    """Guard (20)'s completeness collector: reader-universe files with NO
+    disposition — not matched by a `:(glob)tests/...` SPECS token, not an
+    explicit tests/*.py SPECS token WITH a FAMILY_OF entry (any family),
+    and not a key of either exempt dict. Factored out so the non-vacuity
+    pin can run the identical predicate against a mutated token list. Each
+    uncovered entry carries its origin/main-presence annotation (the
+    failure-message arm (d) probe — a disk-present but origin/main-absent
+    file is a stale main-deleted twin, not a new reader)."""
+    glob_pats = [t[len(":(glob)") :] for t in tokens if t.startswith(":(glob)tests/")]
+    explicit = {t for t in tokens if t.startswith("tests/") and t.endswith(".py")}
+    problems: list[str] = []
+    for p in _agents_reader_files():
+        rel = p.relative_to(_REPO).as_posix()
+        if any(fnmatch.fnmatch(rel, pat) for pat in glob_pats):
+            continue
+        if rel in explicit and rel in family_of:
+            continue
+        if rel in _AGENTS_PROSE_EXEMPT_GENUINE or rel in _AGENTS_PROSE_INCIDENTAL_EXEMPT:
+            continue
+        marker = (
+            ""
+            if _present_at_ref("origin/main", rel)
+            else " [ABSENT at origin/main — arm (d): stale main-deleted twin]"
+        )
+        problems.append(rel + marker)
+    return problems
+
+
+def test_agents_prose_pin_tests_family_coupled():
+    """#2260 guard (20), completeness arm (part A): every tests/test_*.py
+    whose raw text matches the agents reader pattern (the literal
+    `.claude/agents` form OR the quoted path-join form) must be
+    dispositioned — matched by a coupled `:(glob)tests/...` SPECS token, an
+    explicit tests/*.py SPECS token WITH a FAMILY_OF entry (any family), or
+    a key of one of the two exempt dicts — so the FAMILY_agents membership
+    cannot silently re-rot (the #1883/#1963/#2352 recurrence class;
+    incident #2251: a fresh main-side planner.md against a branch-era pin
+    test red the Step 9c gate for 74 min). Over-matching (a comment mention
+    joins the universe) is the SAFE direction: the remedy is a one-line
+    exempt entry, mirroring the selector's over-selection convention."""
+    span = _step5a_span(_text())
+    tokens = _specs_tokens(span)
+    family_of = _family_of_map(span)
+    readers = _agents_reader_files()
+    # Enumeration sanity: 67 matches at #2260 landing; an empty/thin sweep
+    # means the extraction or pattern broke, not a clean tree.
+    assert len(readers) >= 40, (
+        f"agents-reader enumeration looks broken: only {len(readers)} "
+        f"tests/test_*.py files match the reader pattern (67 at #2260 landing)"
+    )
+    problems = _agents_uncovered_readers(tokens, family_of)
+    assert not problems, (
+        "tests/test_*.py file(s) match the agents reader pattern with NO "
+        "disposition — refreshing .claude/agents without its pin tests reds "
+        "the Step 9c gate on pure vintage skew (#2251). Decision procedure, "
+        "one arm per file: (a) closure-clean agents-prose pin (imports "
+        "limited to stdlib / env packages / tests/issue_skill_source.py / "
+        "SPECS-synced files) => add "
+        'FAMILY_OF["tests/<f>.py"]="agents" + the SPECS AND SPECS_10D '
+        "tokens in BOTH sync copies + a _FORK_STUBS_2303 stub + the test "
+        "(1) SPECS-literal update; (b) a tests.<mod> import covered only in "
+        "ANOTHER synced family forces THAT family (guard (19) "
+        "universal-route coverage — the "
+        "tests/test_inline_payload_lint_gate_contract.py shape); (c) an "
+        "incidental mention (docstring / fixture string / non-read literal) "
+        "or a behavioral file importing unsynced scripts/src => the "
+        "matching exempt dict with a per-file rationale (genuine-residual "
+        "entries also name their relocation plan — #2454); (d) a file "
+        "present on disk but ABSENT at origin/main (annotated below) is a "
+        "stale main-deleted twin the sync never deletes => remove the local "
+        "twin (deletion propagation is #2385). Undispositioned:\n  " + "\n  ".join(problems)
+    )
+
+
+def test_agents_guard_member_and_exempt_existence():
+    """#2260 guard (20), part B: every explicit tests/*.py FAMILY_OF key
+    and every exempt-dict key must exist on disk — discriminated by
+    vintage, never asserted unconditionally: a key absent from disk AND
+    absent at merge-base(HEAD, origin/main) is main-new relative to this
+    tree (pure vintage skew — SKIPPED, the exact false-red class #2260
+    exists to close), while present-at-merge-base + absent-on-disk FAILs
+    (this tree deleted it without cleaning the coupling — the deleting-PR
+    early warning). See _existence_verdict for the named post-merge
+    residual."""
+    span = _step5a_span(_text())
+    family_of = _family_of_map(span)
+    keys = sorted(
+        {k for k in family_of if k.startswith("tests/") and k.endswith(".py")}
+        | set(_AGENTS_PROSE_EXEMPT_GENUINE)
+        | set(_AGENTS_PROSE_INCIDENTAL_EXEMPT)
+    )
+    mb: str | None = None
+    deleted: list[str] = []
+    for rel in keys:
+        if (_REPO / rel).is_file():
+            continue
+        if mb is None:
+            mb = _merge_base_origin_main()  # lazy: zero git calls when all exist
+        if _existence_verdict(on_disk=False, at_merge_base=_present_at_ref(mb, rel)) == "fail":
+            deleted.append(rel)
+    assert not deleted, (
+        "FAMILY_OF / exempt-dict key(s) present at merge-base(HEAD, "
+        "origin/main) but ABSENT on disk — this tree deleted them without "
+        "cleaning the coupling. Remove, in the deleting commit: the "
+        "FAMILY_OF entries + SPECS/SPECS_10D tokens + _FORK_STUBS_2303 stub "
+        "(members) or the exempt entry (exemptions): " + ", ".join(deleted)
+    )
+
+
+def test_agents_guard_exempt_split_hygiene_and_shape():
+    """#2260 guard (20), part C: the two exempt dicts are mutually disjoint
+    and disjoint from familied members; every on-disk exempt file still
+    matches the reader pattern (a stale exemption fails loud); and every
+    INCIDENTAL exempt file passes the AST shape check — NO agents-path read
+    construct. Bare string constants never trigger, so fixture text and
+    docstrings stay green; an incidental exemption that later gains a
+    genuine agents read reds mechanically instead of staying silently green
+    forever (what makes the exempt half of the guard falsifiable — the
+    pre-#2260 single-dict hygiene checked existence/pattern/disjointness
+    only and could not detect semantic growth). GENUINE entries are
+    deliberately NOT shape-checked — they legitimately read agents prose
+    (accepted residuals; relocation #2454, except
+    tests/test_ensemble_review_cap.py, which #2420 owns)."""
+    span = _step5a_span(_text())
+    family_of = _family_of_map(span)
+    gen = set(_AGENTS_PROSE_EXEMPT_GENUINE)
+    inc = set(_AGENTS_PROSE_INCIDENTAL_EXEMPT)
+    assert not gen & inc, f"exempt dicts must be disjoint; overlap: {sorted(gen & inc)}"
+    familied = {k for k in family_of if k.startswith("tests/") and k.endswith(".py")}
+    assert not (gen | inc) & familied, (
+        f"exempt entries are also FAMILY_OF members — pick ONE disposition: "
+        f"{sorted((gen | inc) & familied)}"
+    )
+    for rel in sorted(gen | inc):
+        p = _REPO / rel
+        if not p.is_file():
+            continue  # absence is part B's job (merge-base discriminated)
+        src = p.read_text(encoding="utf-8")
+        assert _AGENTS_READER_RE.search(src), (
+            f"{rel}: exempt entry no longer matches the agents reader "
+            f"pattern — stale exemption; remove it"
+        )
+        if rel in inc:
+            hits = _agents_read_constructs(src)
+            assert not hits, (
+                f"{rel}: INCIDENTAL exemption acquired a genuine agents-path "
+                f"read construct — re-route it per guard (20)'s decision "
+                f"procedure (FAMILY_agents membership if closure-clean, else "
+                f"the GENUINE dict with a rationale + relocation plan). "
+                f"Constructs:\n  "
+                + "\n  ".join(h.strip().replace(chr(10), " ")[:100] for h in hits)
+            )
+
+
+def test_agents_guard_nonvacuity_pins():
+    """#2260 guard (20), part E(i)-(iii) — the guard-19 non-vacuity
+    pattern: (i) completeness — with one member token removed from the
+    LIVE token list, the predicate reports it; (ii) join-form — the reader
+    pattern matches the literal path-join source shape (a fixture string
+    here, so the join class can never silently fall out of the pattern)
+    and `.claude/agent-memory` matches NEITHER alternative; (iii) shape
+    check — the AST detector FIRES on a real member file's module-level
+    div-chain constant and PASSES on a synthetic fixture-string-only
+    source."""
+    span = _step5a_span(_text())
+    tokens = _specs_tokens(span)
+    family_of = _family_of_map(span)
+    # (i) completeness non-vacuity, against the LIVE token list.
+    victim = "tests/test_mapping_baselines_wiring_pins.py"
+    assert victim in tokens, "the #2251 incident file must be a live SPECS token"
+    problems = _agents_uncovered_readers([t for t in tokens if t != victim], family_of)
+    assert any(p.startswith(victim) for p in problems), (
+        f"guard (20) must report {victim} once its SPECS token is removed — "
+        f"the completeness predicate would be vacuous; got {problems!r}"
+    )
+    # (ii) the join-form alternative + the agent-memory non-match.
+    assert _AGENTS_READER_RE.search('(_REPO / ".claude" / "agents" / "analyzer.md")'), (
+        "the reader pattern must match the quoted path-join form"
+    )
+    assert not _AGENTS_READER_RE.search('(_REPO / ".claude" / "agent-memory" / "x.md")'), (
+        "`.claude/agent-memory` must not match the join alternative "
+        "(closing quote required immediately after `agents`)"
+    )
+    assert not _AGENTS_READER_RE.search(".claude/agent-memory/implementer/MEMORY.md"), (
+        "`.claude/agent-memory` must not match the literal alternative"
+    )
+    # (iii) shape-detector positive + negative controls.
+    member_src = (_REPO / "tests" / "test_planner_phase_outputs_declaration.py").read_text(
+        encoding="utf-8"
+    )
+    assert _agents_read_constructs(member_src), (
+        "the shape detector must FIRE on "
+        "tests/test_planner_phase_outputs_declaration.py's module-level "
+        'PLANNER_MD div-chain (REPO_ROOT / ".claude" / "agents" / ...)'
+    )
+    synthetic = 'X = """fixture: .claude/agents/foo.md"""\nY = s.index(\'SPECS=".claude/agents\')\n'
+    assert _agents_read_constructs(synthetic) == [], (
+        "bare string constants (fixture text, index() args) must NOT trigger the shape detector"
+    )
+
+
+def test_agents_guard_vintage_discriminator_topology():
+    """#2260 guard (20), part E(iv): the discriminator's verdict topology
+    as a pure-function test (no live-repo mutation) — absent-on-disk +
+    absent-at-merge-base => skip (pure vintage skew, green);
+    absent-on-disk + present-at-merge-base => fail (this tree deleted it —
+    the deleting-PR early warning); on-disk => check (the normal arms
+    run)."""
+    assert _existence_verdict(on_disk=False, at_merge_base=False) == "skip"
+    assert _existence_verdict(on_disk=False, at_merge_base=True) == "fail"
+    assert _existence_verdict(on_disk=True, at_merge_base=False) == "check"
+    assert _existence_verdict(on_disk=True, at_merge_base=True) == "check"
