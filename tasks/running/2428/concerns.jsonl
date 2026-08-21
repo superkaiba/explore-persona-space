@@ -1,0 +1,1 @@
+{"ts": "2026-08-21T00:20:57Z", "event": "raised", "concern_id": "guard4-eval-output-not-shell-safe", "severity": "CONCERN", "summary": "Guard-4 refusal output contains an unescaped path/count value; Python-only tests do not exercise the production eval consumer.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
