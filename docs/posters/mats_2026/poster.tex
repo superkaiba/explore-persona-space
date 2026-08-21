@@ -68,12 +68,6 @@
 \vskip0.7em
 \end{beamercolorbox}
 
-% ==================== TLDR BAND ====================
-\begin{beamercolorbox}[wd=\paperwidth,sep=0.35em]{tldrband}
-  \centering
-  {\rmfamily\bfseries\color{matsmaroon}TL;DR\quad}A single \textbf{linear map} on residual activations predicts an LLM's answer from its context \textbf{before generation} — held-out $R^2$ 0.75, and rank-1 retrieval of the true answer among 9{,}941 candidates at 0.98, at the fresh-draw ceiling — is already $\sim$87\% present in the \textbf{base model}, is \textbf{shared between the assistant and fictional characters}, and predicts \textbf{sycophancy, hallucination, and misalignment before inference}.
-\end{beamercolorbox}
-
 \vskip0.2em
 
 % reserve bottom clearance for the footer bar (it is an overlay and reserves none)
@@ -82,6 +76,13 @@
 
 % ==================== COLUMN 1: setup ====================
 \begin{column}{0.188\textwidth}
+
+\postersec{TL;DR}
+\begin{itemize}
+  \item A single \textbf{linear map} on residual activations predicts an LLM's answer from its context \textbf{before generation}: held-out $R^2$ \textbf{0.75}, and rank-1 retrieval of the true answer among 9{,}941 candidates at \textbf{0.98} — the fresh-draw ceiling.
+  \item It is already \textbf{$\sim$87\% present in the base model}, and is \textbf{shared between the assistant and fictional characters}.
+  \item It predicts \textbf{sycophancy, hallucination and misalignment before inference}.
+\end{itemize}
 
 \postersec{Motivation}
 \begin{itemize}
@@ -137,10 +138,10 @@ We map the context to the answer's \textbf{SAE features}, then partial out predi
 \begin{center}
 \includegraphics[width=0.95\linewidth]{plot3_sae_predictors.pdf}
 \end{center}
-\figcap{5}{Forward-stepwise partialling: each row conditions on all rows above. $c$ = concordance (AUROC scale), $0.5$ = chance. Gray: activity controls. Diamond: matryoshka general tier — different dictionary, direction only. No CIs; rounds 7--13 omitted.}
+\figcap{5}{Forward-stepwise partialling: each row conditions on all rows above, plus a second activity control (fires on both sides) not drawn. $c$ = concordance (AUROC scale), $0.5$ = chance. Gray: activity control. Diamond: matryoshka \emph{coarsest} tier — different dictionary, direction only. No CIs; later rounds omitted.}
 \begin{itemize}
-  \item \takeaways{Persona survives the partialling:} once both activity controls are removed, \textbf{speaker identity} is the strongest surviving predictor ($c$ 0.67), and the matryoshka \emph{general} tier points the same way (0.64).
-  \item \takeaways{Low-level and content features are predicted \emph{worse} than chance:} logit-footprint (0.35, 0.36) and topic (0.37) all fall below 0.5.
+  \item \takeaways{Persona survives the partialling:} once both activity controls are removed, features \textbf{related to speaker identity} are the strongest surviving predictor ($c$ 0.67), and the matryoshka \emph{coarsest} tier points the same way (0.64).
+  \item \takeaways{Low-level and content features are predicted \emph{worse} than chance:} features that \textbf{boost or suppress a few output tokens} (0.36, 0.35) and features \textbf{related to topic} (0.37) all fall below 0.5.
   \item \takeaways{Concretely:} best-predicted are abstract nouns and nominalized concepts ($R^2$ 0.95); worst are 2--4-character word fragments and single-letter detectors ($R^2\!<\!0$).
 \end{itemize}
 
