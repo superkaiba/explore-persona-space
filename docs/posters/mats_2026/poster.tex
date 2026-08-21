@@ -173,13 +173,13 @@ To ask \emph{what} it predicts, we fit maps to the answer's \textbf{SAE features
 
 \postersec{6.\ Is it a persona mapping?}
 \begin{center}
-\IfFileExists{figures/plot6a_assistant_transfer.pdf}{\includegraphics[width=0.95\linewidth]{plot6a_assistant_transfer.pdf}}{\includegraphics[width=0.88\linewidth]{c4_transfer_ladder.pdf}}
+\IfFileExists{figures/plot6a_assistant_transfer.pdf}{\includegraphics[width=0.88\linewidth]{plot6a_assistant_transfer.pdf}}{\includegraphics[width=0.88\linewidth]{c4_transfer_ladder.pdf}}
 \end{center}
-\figcap{7}{The map fitted on the \textbf{assistant}, applied to the character Wren — in bare Q\&A and inside a fictional scene. \emph{Naive} = the assistant map used as-is; $+$\,\emph{reparam.} = a linear recoordination fitted on the target's own train folds, so this is \emph{preserved up to a change of coordinates}, not zero-shot. Black: a map fitted on Wren's own data. Fold-mean $R^2$, scenario-grouped 5-fold, layer 19; one character.}
+\figcap{7}{The map fitted on the \textbf{assistant}, applied to the character Wren — in bare Q\&A and inside a fictional scene. \emph{Naive} = the assistant map as-is; $+$\,\emph{reparam.} = a linear recoordination fitted on the target's own train folds — \emph{preserved up to a change of coordinates}, not zero-shot. Black: a map fitted on Wren's own data. Qwen-2.5-7B-Instruct, layer 19; fold-mean $R^2$, scenario-grouped 5-fold; one character.}
 \begin{center}
-\IfFileExists{figures/plot6b_specialization.pdf}{\includegraphics[width=0.95\linewidth]{plot6b_specialization.pdf}}{}
+\IfFileExists{figures/plot6b_specialization.pdf}{\includegraphics[width=0.88\linewidth]{plot6b_specialization.pdf}}{}
 \end{center}
-\figcap{8}{One map fitted on all four characters \emph{pooled}, the same map $+$ per-character offsets, and a \emph{character-specific} map — each scored held out, per character. 300 shared scenarios each (1{,}200 pooled); the assistant is not in this pool.}
+\figcap{8}{One map on all four characters \emph{pooled}, that map $+$ per-character offsets, and a \emph{character-specific} map — each scored held out, per character. 300 shared scenarios each (1{,}200 pooled); the pooled fits therefore see $\sim$$4\times$ the training rows and still lose slightly. The assistant is not in this pool.}
 \begin{itemize}
   \item \takeaways{One map, re-coordinated, serves the assistant and a character:} the assistant's map reaches \textbf{96.7\%} (bare Q\&A) and \textbf{95.0\%} (fictional scene) of what a Wren-specific map achieves, once a linear reparameterization is fitted — while \emph{naive} transfer into the scene fails outright ($R^2\!=\!-0.22$, worse than predicting the mean).
   \item \takeaways{Pooling across characters costs almost nothing:} one pooled map $+$ per-character offsets reaches \textbf{90--98\%} of character-specific maps. The specialization gap is small but real — all four bootstrap CIs exclude zero.
