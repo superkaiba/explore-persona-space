@@ -44,8 +44,14 @@ import numpy as np  # noqa: E402
 import torch  # noqa: E402
 
 import issue779_common as C  # noqa: E402
+
+# PROD_IMPORT_LINT_EXEMPT: dangling local module 'jlens' / one-off-installed, not a lockfile dep
 from jlens import fitting as jfit  # noqa: E402
+
+# PROD_IMPORT_LINT_EXEMPT: dangling local module 'jlens' / one-off-installed, not a lockfile dep
 from jlens.hf import from_hf  # noqa: E402
+
+# PROD_IMPORT_LINT_EXEMPT: dangling local module 'jlens' / one-off-installed, not a lockfile dep
 from jlens.lens import JacobianLens  # noqa: E402
 
 N_LAYERS_QWEN7B = 28
@@ -203,6 +209,7 @@ def sanity_gate(lens: JacobianLens, lens_model, *, prompts: list[str] | None = N
     mean must beat top-1 chance (~1/vocab) by >=10x.
     """
     if prompts is None:
+        # PROD_IMPORT_LINT_EXEMPT: dangling local module 'jlens', not a lockfile dep
         from jlens.examples import EXAMPLES, resolve_prompt
 
         prompts = [resolve_prompt(ex, lens_model.tokenizer) for ex in EXAMPLES]

@@ -193,6 +193,7 @@ def download_lmsys(output_path: Path, max_docs: int) -> int:
 
 def init_generator(model_path: str, layer_ids: list[int], tp_size: int, max_length: int):
     """Initialize speculators VllmHiddenStatesGenerator."""
+    # PROD_IMPORT_LINT_EXEMPT: one-off corpus-builder dep 'speculators', not a lockfile dist
     from speculators.data_generation.vllm_hidden_states_generator import (
         VllmHiddenStatesGenerator,
     )
