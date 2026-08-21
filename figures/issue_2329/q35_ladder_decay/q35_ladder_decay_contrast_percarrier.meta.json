@@ -1,0 +1,1065 @@
+{
+  "commit": "unknown",
+  "render_id": "5b073bf68be44b12",
+  "git_commit": "unknown",
+  "git_dirty": null,
+  "git_argv0_state": null,
+  "created": "2026-08-21T11:34:02Z",
+  "figsize": [
+    12.0,
+    4.8
+  ],
+  "points": [
+    {
+      "x": -0.33055555555555555,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.009000000000000091,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.2916666666666667,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.2780000000000002,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.25277777777777777,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.19500000000000006,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.2138888888888889,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.16400000000000003,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.175,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.26499999999999996,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.13611111111111113,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": -0.028999999999999936,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.09722222222222222,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.002000000000000113,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": -0.058333333333333334,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": -0.23000000000000004,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.019444444444444445,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": -0.040999999999999925,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.019444444444444445,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": -0.06599999999999999,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.058333333333333334,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": -0.03299999999999992,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.09722222222222222,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": -0.45299999999999996,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.13611111111111113,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.10499999999999987,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.175,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.16600000000000004,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 0.2138888888888889,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.11399999999999993,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 0.25277777777777777,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": -0.07900000000000001,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 0.2916666666666667,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": -0.10999999999999988,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.33055555555555555,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": -0.28999999999999987,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 0.6694444444444445,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.14542857142857155,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.7083333333333333,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.2806666666666668,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 0.7472222222222222,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.2725714285714286,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7861111111111111,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.14500000000000005,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 0.825,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.26499999999999996,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.8638888888888889,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.0915,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 0.9027777777777778,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.002000000000000113,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.9416666666666667,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": -0.12374999999999997,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 0.9805555555555555,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.07805555555555557,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 1.0194444444444444,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": -0.06599999999999999,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 1.0583333333333333,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": -0.03299999999999992,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 1.0972222222222223,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": -0.44575,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.136111111111111,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.10499999999999987,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.175,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.1685000000000001,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 1.213888888888889,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.11399999999999993,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 1.2527777777777778,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": -0.07900000000000001,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 1.2916666666666667,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": -0.10999999999999988,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 1.3305555555555555,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": -0.23249999999999987,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 2.1694444444444443,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.03199999999999992,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 2.2083333333333335,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.007000000000000048,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 2.2472222222222222,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.06399999999999982,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 2.286111111111111,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.13050000000000006,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 2.325,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.07600000000000004,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "x": 2.363888888888889,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.012999999999999984,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "x": 2.4027777777777777,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.23299999999999998,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "x": 2.441666666666667,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.11300000000000014,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "x": 2.4805555555555556,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": -0.19499999999999995,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "x": 2.5194444444444444,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.04800000000000003,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "x": 2.558333333333333,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.024000000000000223,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "x": 2.5972222222222223,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": -0.29450000000000004,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "x": 2.636111111111111,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.026000000000000023,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 2.675,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": -0.04300000000000015,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 2.713888888888889,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.15800000000000014,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 2.7527777777777778,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.08799999999999997,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 2.7916666666666665,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.13099999999999978,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 2.8305555555555557,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.07800000000000018,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 3.1694444444444443,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.03199999999999992,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 3.2083333333333335,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.007000000000000048,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 3.2472222222222222,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.06649999999999982,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "x": 3.286111111111111,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.13050000000000006,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "x": 3.325,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.07600000000000004,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "x": 3.363888888888889,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.012999999999999984,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "x": 3.4027777777777777,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.23299999999999998,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": 3.441666666666667,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.11300000000000014,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 3.4805555555555556,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": -0.19499999999999995,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 3.5194444444444444,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.04800000000000003,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 3.558333333333333,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.024000000000000223,
+      "_kind": "scatter",
+      "_group": 64
+    },
+    {
+      "x": 3.5972222222222223,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": -0.20500000000000004,
+      "_kind": "scatter",
+      "_group": 65
+    },
+    {
+      "x": 3.636111111111111,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.026000000000000023,
+      "_kind": "scatter",
+      "_group": 66
+    },
+    {
+      "x": 3.675,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": -0.04300000000000015,
+      "_kind": "scatter",
+      "_group": 67
+    },
+    {
+      "x": 3.713888888888889,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.16488888888888886,
+      "_kind": "scatter",
+      "_group": 68
+    },
+    {
+      "x": 3.7527777777777778,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.08799999999999997,
+      "_kind": "scatter",
+      "_group": 69
+    },
+    {
+      "x": 3.7916666666666665,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.13099999999999978,
+      "_kind": "scatter",
+      "_group": 70
+    },
+    {
+      "x": 3.8305555555555557,
+      "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)": 0.19325000000000003,
+      "_kind": "scatter",
+      "_group": 71
+    },
+    {
+      "x": -0.32941176470588235,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.0833333333333334,
+      "_kind": "scatter",
+      "_group": 72
+    },
+    {
+      "x": -0.28823529411764703,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.12731481481481488,
+      "_kind": "scatter",
+      "_group": 73
+    },
+    {
+      "x": -0.24705882352941178,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.2893363559221288,
+      "_kind": "scatter",
+      "_group": 74
+    },
+    {
+      "x": -0.20588235294117646,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.08864138667461327,
+      "_kind": "scatter",
+      "_group": 75
+    },
+    {
+      "x": -0.16470588235294117,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.20971370911121484,
+      "_kind": "scatter",
+      "_group": 76
+    },
+    {
+      "x": -0.12352941176470589,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.05220201297706025,
+      "_kind": "scatter",
+      "_group": 77
+    },
+    {
+      "x": -0.08235294117647059,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.03331822588158284,
+      "_kind": "scatter",
+      "_group": 78
+    },
+    {
+      "x": -0.041176470588235294,
+      "per-carrier delta-D_F (change in patched arm's F)": -0.10207231040564368,
+      "_kind": "scatter",
+      "_group": 79
+    },
+    {
+      "x": 0.0,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.17345399698340877,
+      "_kind": "scatter",
+      "_group": 80
+    },
+    {
+      "x": 0.041176470588235294,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.0591861898890259,
+      "_kind": "scatter",
+      "_group": 81
+    },
+    {
+      "x": 0.08235294117647059,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.14090909090909093,
+      "_kind": "scatter",
+      "_group": 82
+    },
+    {
+      "x": 0.12352941176470589,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.13801169590643275,
+      "_kind": "scatter",
+      "_group": 83
+    },
+    {
+      "x": 0.16470588235294117,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.1283845259072428,
+      "_kind": "scatter",
+      "_group": 84
+    },
+    {
+      "x": 0.20588235294117646,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.4037790631880835,
+      "_kind": "scatter",
+      "_group": 85
+    },
+    {
+      "x": 0.24705882352941178,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.3654375168384782,
+      "_kind": "scatter",
+      "_group": 86
+    },
+    {
+      "x": 0.28823529411764703,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.3870428060459212,
+      "_kind": "scatter",
+      "_group": 87
+    },
+    {
+      "x": 0.32941176470588235,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.09773457405561081,
+      "_kind": "scatter",
+      "_group": 88
+    },
+    {
+      "x": 0.6705882352941177,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.10373551385375618,
+      "_kind": "scatter",
+      "_group": 89
+    },
+    {
+      "x": 0.711764705882353,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.12009316675009453,
+      "_kind": "scatter",
+      "_group": 90
+    },
+    {
+      "x": 0.7529411764705882,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.2558258642765686,
+      "_kind": "scatter",
+      "_group": 91
+    },
+    {
+      "x": 0.7941176470588236,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.06971653191013391,
+      "_kind": "scatter",
+      "_group": 92
+    },
+    {
+      "x": 0.8352941176470589,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.20971370911121484,
+      "_kind": "scatter",
+      "_group": 93
+    },
+    {
+      "x": 0.8764705882352941,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.0635336521799404,
+      "_kind": "scatter",
+      "_group": 94
+    },
+    {
+      "x": 0.9176470588235294,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.03331822588158284,
+      "_kind": "scatter",
+      "_group": 95
+    },
+    {
+      "x": 0.9588235294117647,
+      "per-carrier delta-D_F (change in patched arm's F)": -0.030008843865573176,
+      "_kind": "scatter",
+      "_group": 96
+    },
+    {
+      "x": 1.0,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.23309920983318705,
+      "_kind": "scatter",
+      "_group": 97
+    },
+    {
+      "x": 1.0411764705882354,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.0591861898890259,
+      "_kind": "scatter",
+      "_group": 98
+    },
+    {
+      "x": 1.0823529411764705,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.14090909090909093,
+      "_kind": "scatter",
+      "_group": 99
+    },
+    {
+      "x": 1.1235294117647059,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.13147632311977717,
+      "_kind": "scatter",
+      "_group": 100
+    },
+    {
+      "x": 1.1647058823529413,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.1283845259072428,
+      "_kind": "scatter",
+      "_group": 101
+    },
+    {
+      "x": 1.2058823529411764,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.42259516365270655,
+      "_kind": "scatter",
+      "_group": 102
+    },
+    {
+      "x": 1.2470588235294118,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.3654375168384782,
+      "_kind": "scatter",
+      "_group": 103
+    },
+    {
+      "x": 1.288235294117647,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.3870428060459212,
+      "_kind": "scatter",
+      "_group": 104
+    },
+    {
+      "x": 1.3294117647058823,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.09773457405561081,
+      "_kind": "scatter",
+      "_group": 105
+    },
+    {
+      "x": 2.1694444444444443,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.061627018672162276,
+      "_kind": "scatter",
+      "_group": 106
+    },
+    {
+      "x": 2.2083333333333335,
+      "per-carrier delta-D_F (change in patched arm's F)": -0.02657825150754152,
+      "_kind": "scatter",
+      "_group": 107
+    },
+    {
+      "x": 2.2472222222222222,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.011160714285714284,
+      "_kind": "scatter",
+      "_group": 108
+    },
+    {
+      "x": 2.286111111111111,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.09204592799549055,
+      "_kind": "scatter",
+      "_group": 109
+    },
+    {
+      "x": 2.325,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.03441493193796688,
+      "_kind": "scatter",
+      "_group": 110
+    },
+    {
+      "x": 2.363888888888889,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.043765958211961026,
+      "_kind": "scatter",
+      "_group": 111
+    },
+    {
+      "x": 2.4027777777777777,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.11433972832936559,
+      "_kind": "scatter",
+      "_group": 112
+    },
+    {
+      "x": 2.441666666666667,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.08844339622641509,
+      "_kind": "scatter",
+      "_group": 113
+    },
+    {
+      "x": 2.4805555555555556,
+      "per-carrier delta-D_F (change in patched arm's F)": -0.0404285036968695,
+      "_kind": "scatter",
+      "_group": 114
+    },
+    {
+      "x": 2.5194444444444444,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.01754385964912281,
+      "_kind": "scatter",
+      "_group": 115
+    },
+    {
+      "x": 2.558333333333333,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.0290205562273277,
+      "_kind": "scatter",
+      "_group": 116
+    },
+    {
+      "x": 2.5972222222222223,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.015060240963855415,
+      "_kind": "scatter",
+      "_group": 117
+    },
+    {
+      "x": 2.636111111111111,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.07620131464621649,
+      "_kind": "scatter",
+      "_group": 118
+    },
+    {
+      "x": 2.675,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.09081062287716246,
+      "_kind": "scatter",
+      "_group": 119
+    },
+    {
+      "x": 2.713888888888889,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.5026275176307411,
+      "_kind": "scatter",
+      "_group": 120
+    },
+    {
+      "x": 2.7527777777777778,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.14705638079572825,
+      "_kind": "scatter",
+      "_group": 121
+    },
+    {
+      "x": 2.7916666666666665,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.28952078128548697,
+      "_kind": "scatter",
+      "_group": 122
+    },
+    {
+      "x": 2.8305555555555557,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.21563232089547896,
+      "_kind": "scatter",
+      "_group": 123
+    },
+    {
+      "x": 3.1694444444444443,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.061627018672162276,
+      "_kind": "scatter",
+      "_group": 124
+    },
+    {
+      "x": 3.2083333333333335,
+      "per-carrier delta-D_F (change in patched arm's F)": -0.02657825150754152,
+      "_kind": "scatter",
+      "_group": 125
+    },
+    {
+      "x": 3.2472222222222222,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.013950892857142856,
+      "_kind": "scatter",
+      "_group": 126
+    },
+    {
+      "x": 3.286111111111111,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.09204592799549055,
+      "_kind": "scatter",
+      "_group": 127
+    },
+    {
+      "x": 3.325,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.03441493193796688,
+      "_kind": "scatter",
+      "_group": 128
+    },
+    {
+      "x": 3.363888888888889,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.043765958211961026,
+      "_kind": "scatter",
+      "_group": 129
+    },
+    {
+      "x": 3.4027777777777777,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.11433972832936559,
+      "_kind": "scatter",
+      "_group": 130
+    },
+    {
+      "x": 3.441666666666667,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.08844339622641509,
+      "_kind": "scatter",
+      "_group": 131
+    },
+    {
+      "x": 3.4805555555555556,
+      "per-carrier delta-D_F (change in patched arm's F)": -0.0404285036968695,
+      "_kind": "scatter",
+      "_group": 132
+    },
+    {
+      "x": 3.5194444444444444,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.01754385964912281,
+      "_kind": "scatter",
+      "_group": 133
+    },
+    {
+      "x": 3.558333333333333,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.0290205562273277,
+      "_kind": "scatter",
+      "_group": 134
+    },
+    {
+      "x": 3.5972222222222223,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.026510537682835705,
+      "_kind": "scatter",
+      "_group": 135
+    },
+    {
+      "x": 3.636111111111111,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.07620131464621649,
+      "_kind": "scatter",
+      "_group": 136
+    },
+    {
+      "x": 3.675,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.09081062287716246,
+      "_kind": "scatter",
+      "_group": 137
+    },
+    {
+      "x": 3.713888888888889,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.5192756454252678,
+      "_kind": "scatter",
+      "_group": 138
+    },
+    {
+      "x": 3.7527777777777778,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.14705638079572825,
+      "_kind": "scatter",
+      "_group": 139
+    },
+    {
+      "x": 3.7916666666666665,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.28952078128548697,
+      "_kind": "scatter",
+      "_group": 140
+    },
+    {
+      "x": 3.8305555555555557,
+      "per-carrier delta-D_F (change in patched arm's F)": 0.3058486548324119,
+      "_kind": "scatter",
+      "_group": 141
+    }
+  ],
+  "n_series": 142,
+  "total_points": 142,
+  "text": {
+    "suptitle": "Patched-vs-prompted decay contrast \u2014 per-carrier companion (common-support carriers)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "per-carrier delta-D (steered \u2212 ceiling raw drop, 0-1)",
+        "annotations": [
+          "in_r1\u00b7d1",
+          "in_r1\u00b7d2",
+          "in_r1\u00b7n3",
+          "in_r1\u00b7n4",
+          "in_r1\u00b7n7",
+          "in_r1\u00b7n9",
+          "in_r2\u00b7d1",
+          "in_r2\u00b7d2",
+          "in_r2\u00b7n3",
+          "in_r2\u00b7n4",
+          "in_r2\u00b7n7",
+          "in_r2\u00b7n9",
+          "in_r3\u00b7d1",
+          "in_r3\u00b7d2",
+          "in_r3\u00b7n3",
+          "in_r3\u00b7n4",
+          "in_r3\u00b7n7",
+          "in_r3\u00b7n9",
+          "in_r1\u00b7d1",
+          "in_r1\u00b7d2",
+          "in_r1\u00b7n3",
+          "in_r1\u00b7n4",
+          "in_r1\u00b7n7",
+          "in_r1\u00b7n9",
+          "in_r2\u00b7d1",
+          "in_r2\u00b7d2",
+          "in_r2\u00b7n3",
+          "in_r2\u00b7n4",
+          "in_r2\u00b7n7",
+          "in_r2\u00b7n9",
+          "in_r3\u00b7d1",
+          "in_r3\u00b7d2",
+          "in_r3\u00b7n3",
+          "in_r3\u00b7n4",
+          "in_r3\u00b7n7",
+          "in_r3\u00b7n9",
+          "in_r1\u00b7d1",
+          "in_r1\u00b7d2",
+          "in_r1\u00b7n3",
+          "in_r1\u00b7n4",
+          "in_r1\u00b7n7",
+          "in_r1\u00b7n9",
+          "in_r2\u00b7d1",
+          "in_r2\u00b7d2",
+          "in_r2\u00b7n3",
+          "in_r2\u00b7n4",
+          "in_r2\u00b7n7",
+          "in_r2\u00b7n9",
+          "in_r3\u00b7d1",
+          "in_r3\u00b7d2",
+          "in_r3\u00b7n3",
+          "in_r3\u00b7n4",
+          "in_r3\u00b7n7",
+          "in_r3\u00b7n9",
+          "in_r1\u00b7d1",
+          "in_r1\u00b7d2",
+          "in_r1\u00b7n3",
+          "in_r1\u00b7n4",
+          "in_r1\u00b7n7",
+          "in_r1\u00b7n9",
+          "in_r2\u00b7d1",
+          "in_r2\u00b7d2",
+          "in_r2\u00b7n3",
+          "in_r2\u00b7n4",
+          "in_r2\u00b7n7",
+          "in_r2\u00b7n9",
+          "in_r3\u00b7d1",
+          "in_r3\u00b7d2",
+          "in_r3\u00b7n3",
+          "in_r3\u00b7n4",
+          "in_r3\u00b7n7",
+          "in_r3\u00b7n9"
+        ],
+        "xticklabels": [
+          "q25\nall",
+          "q25\ncoh",
+          "q35\nall",
+          "q35\ncoh"
+        ],
+        "yticklabels": [
+          "\u22120.5",
+          "\u22120.4",
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4"
+        ]
+      },
+      {
+        "ylabel": "per-carrier delta-D_F (change in patched arm's F)",
+        "annotations": [
+          "in_r1\u00b7d1",
+          "in_r1\u00b7d2",
+          "in_r1\u00b7n3",
+          "in_r1\u00b7n4",
+          "in_r1\u00b7n7",
+          "in_r1\u00b7n9",
+          "in_r2\u00b7d1",
+          "in_r2\u00b7d2",
+          "in_r2\u00b7n3",
+          "in_r2\u00b7n4",
+          "in_r2\u00b7n7",
+          "in_r2\u00b7n9",
+          "in_r3\u00b7d1",
+          "in_r3\u00b7d2",
+          "in_r3\u00b7n3",
+          "in_r3\u00b7n4",
+          "in_r3\u00b7n7",
+          "in_r1\u00b7d1",
+          "in_r1\u00b7d2",
+          "in_r1\u00b7n3",
+          "in_r1\u00b7n4",
+          "in_r1\u00b7n7",
+          "in_r1\u00b7n9",
+          "in_r2\u00b7d1",
+          "in_r2\u00b7d2",
+          "in_r2\u00b7n3",
+          "in_r2\u00b7n4",
+          "in_r2\u00b7n7",
+          "in_r2\u00b7n9",
+          "in_r3\u00b7d1",
+          "in_r3\u00b7d2",
+          "in_r3\u00b7n3",
+          "in_r3\u00b7n4",
+          "in_r3\u00b7n7",
+          "in_r1\u00b7d1",
+          "in_r1\u00b7d2",
+          "in_r1\u00b7n3",
+          "in_r1\u00b7n4",
+          "in_r1\u00b7n7",
+          "in_r1\u00b7n9",
+          "in_r2\u00b7d1",
+          "in_r2\u00b7d2",
+          "in_r2\u00b7n3",
+          "in_r2\u00b7n4",
+          "in_r2\u00b7n7",
+          "in_r2\u00b7n9",
+          "in_r3\u00b7d1",
+          "in_r3\u00b7d2",
+          "in_r3\u00b7n3",
+          "in_r3\u00b7n4",
+          "in_r3\u00b7n7",
+          "in_r3\u00b7n9",
+          "in_r1\u00b7d1",
+          "in_r1\u00b7d2",
+          "in_r1\u00b7n3",
+          "in_r1\u00b7n4",
+          "in_r1\u00b7n7",
+          "in_r1\u00b7n9",
+          "in_r2\u00b7d1",
+          "in_r2\u00b7d2",
+          "in_r2\u00b7n3",
+          "in_r2\u00b7n4",
+          "in_r2\u00b7n7",
+          "in_r2\u00b7n9",
+          "in_r3\u00b7d1",
+          "in_r3\u00b7d2",
+          "in_r3\u00b7n3",
+          "in_r3\u00b7n4",
+          "in_r3\u00b7n7",
+          "in_r3\u00b7n9"
+        ],
+        "xticklabels": [
+          "q25\nall",
+          "q25\ncoh",
+          "q35\nall",
+          "q35\ncoh"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

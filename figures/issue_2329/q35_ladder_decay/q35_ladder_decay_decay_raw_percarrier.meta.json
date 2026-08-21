@@ -1,0 +1,5396 @@
+{
+  "commit": "unknown",
+  "render_id": "138b5778e2394620",
+  "git_commit": "unknown",
+  "git_dirty": null,
+  "git_argv0_state": null,
+  "created": "2026-08-21T11:33:47Z",
+  "figsize": [
+    13.5,
+    7.2
+  ],
+  "points": [
+    {
+      "x": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.21000000000000002,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.046,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.12,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.13599999999999998,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.16,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.04,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.033999999999999996,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.10600000000000001,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.25000000000000006,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.06,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.016,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.046,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.21200000000000002,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.03,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.05,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.16999999999999998,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.25999999999999995,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.022,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.016,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.13,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.06000000000000001,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.026000000000000002,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.33999999999999997,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.22000000000000003,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.3,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.30999999999999994,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.27,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.16,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.22999999999999998,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.31,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.13,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.05,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.048,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.124,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.118,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.8979999999999999,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.5880000000000001,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.35,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.784,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.8160000000000001,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.584,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.44400000000000006,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.6060000000000001,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.6779999999999999,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.22000000000000003,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.20999999999999996,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.45,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.576,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.05,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.04,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.21600000000000003,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.53,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.03,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.336,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.30999999999999994,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.02,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.05,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.04,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.21000000000000002,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.046,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.12,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.13599999999999998,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.16,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.04,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.033999999999999996,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.10600000000000001,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.25000000000000006,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.06,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.016,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.046,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.245,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.0375,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.0625,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.2125,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.25999999999999995,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.022,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.016,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.13,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.06000000000000001,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.026000000000000002,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.33999999999999997,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.22000000000000003,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.3,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.30999999999999994,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.27,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.16,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.22999999999999998,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.31,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.1625,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.0625,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.048,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.124,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.118,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.8979999999999999,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.5880000000000001,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.35,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.784,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.79,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.525,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.4425,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.5775,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.6779999999999999,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.22000000000000003,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.20999999999999996,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.45,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.576,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.05,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.04,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.21600000000000003,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.53,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.03,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.336,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.30999999999999994,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.02,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.05,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.04,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 1.0,
+      "y": 0.728,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 2.0,
+      "y": 0.578,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 3.0,
+      "y": 0.671,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 4.0,
+      "y": 0.663,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 1.0,
+      "y": 0.6399999999999999,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 2.0,
+      "y": 0.6599999999999999,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 3.0,
+      "y": 0.65,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 4.0,
+      "y": 0.8640000000000001,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 1.0,
+      "y": 0.703,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 2.0,
+      "y": 0.4419999999999999,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 3.0,
+      "y": 0.52,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 4.0,
+      "y": 0.694,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 1.0,
+      "y": 0.744,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 2.0,
+      "y": 0.722,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 3.0,
+      "y": 0.789,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 4.0,
+      "y": 0.866,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 1.0,
+      "y": 0.718,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 2.0,
+      "y": 0.665,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 3.0,
+      "y": 0.8940000000000001,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 4.0,
+      "y": 0.853,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 1.0,
+      "y": 0.592,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 2.0,
+      "y": 0.709,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 3.0,
+      "y": 0.6020000000000001,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 4.0,
+      "y": 0.529,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 1.0,
+      "y": 0.9129999999999999,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 2.0,
+      "y": 0.873,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 3.0,
+      "y": 0.881,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 4.0,
+      "y": 0.885,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 1.0,
+      "y": 0.8300000000000001,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 2.0,
+      "y": 0.6799999999999999,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 3.0,
+      "y": 0.504,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 4.0,
+      "y": 0.64,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 1.0,
+      "y": 0.6779999999999999,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 2.0,
+      "y": 0.40099999999999997,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 3.0,
+      "y": 0.343,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 4.0,
+      "y": 0.507,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 1.0,
+      "y": 0.8109999999999999,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "x": 2.0,
+      "y": 0.5079999999999999,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "x": 3.0,
+      "y": 0.34700000000000003,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "x": 4.0,
+      "y": 0.697,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "x": 1.0,
+      "y": 0.8799999999999999,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "x": 2.0,
+      "y": 0.40199999999999997,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "x": 3.0,
+      "y": 0.389,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "x": 4.0,
+      "y": 0.723,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "x": 1.0,
+      "y": 0.8549999999999999,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "x": 2.0,
+      "y": 0.04,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "x": 3.0,
+      "y": 0.06,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "x": 4.0,
+      "y": 0.284,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "x": 1.0,
+      "y": 0.933,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "x": 2.0,
+      "y": 0.679,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "x": 3.0,
+      "y": 0.537,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "x": 4.0,
+      "y": 0.924,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "x": 1.0,
+      "y": 0.9279999999999999,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "x": 2.0,
+      "y": 0.786,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "x": 3.0,
+      "y": 0.76,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "x": 4.0,
+      "y": 0.884,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "x": 1.0,
+      "y": 0.817,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "x": 2.0,
+      "y": 0.5179999999999999,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "x": 3.0,
+      "y": 0.45,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "x": 4.0,
+      "y": 0.703,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "x": 1.0,
+      "y": 0.8039999999999999,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "x": 2.0,
+      "y": 0.09,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "x": 3.0,
+      "y": 0.01,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "x": 4.0,
+      "y": 0.365,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "x": 1.0,
+      "y": 0.7409999999999999,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "x": 2.0,
+      "y": 0.05500000000000001,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "x": 3.0,
+      "y": 0.099,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "x": 4.0,
+      "y": 0.437,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "x": 1.0,
+      "y": 0.7099999999999999,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "x": 2.0,
+      "y": 0.10999999999999999,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "x": 3.0,
+      "y": 0.05500000000000001,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "x": 4.0,
+      "y": 0.15,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "x": 1.0,
+      "y": 0.8185714285714285,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 2.0,
+      "y": 0.7214285714285715,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 3.0,
+      "y": 0.8228571428571428,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 4.0,
+      "y": 0.89,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 1.0,
+      "y": 0.672222222222222,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 2.0,
+      "y": 0.6944444444444444,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 3.0,
+      "y": 0.7,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 4.0,
+      "y": 0.8988888888888888,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 1.0,
+      "y": 0.8114285714285714,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "x": 2.0,
+      "y": 0.5314285714285715,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "x": 3.0,
+      "y": 0.6114285714285714,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "x": 4.0,
+      "y": 0.8799999999999999,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "x": 1.0,
+      "y": 0.83,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "x": 2.0,
+      "y": 0.79625,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "x": 3.0,
+      "y": 0.87125,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "x": 4.0,
+      "y": 0.9425,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "x": 1.0,
+      "y": 0.718,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "x": 2.0,
+      "y": 0.665,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "x": 3.0,
+      "y": 0.8940000000000001,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "x": 4.0,
+      "y": 0.853,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "x": 1.0,
+      "y": 0.5725,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "x": 2.0,
+      "y": 0.69,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "x": 3.0,
+      "y": 0.59375,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "x": 4.0,
+      "y": 0.63,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "x": 1.0,
+      "y": 0.9129999999999999,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "x": 2.0,
+      "y": 0.873,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "x": 3.0,
+      "y": 0.881,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "x": 4.0,
+      "y": 0.885,
+      "_kind": "line",
+      "_group": 60
+    },
+    {
+      "x": 1.0,
+      "y": 0.88375,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "x": 2.0,
+      "y": 0.7125,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "x": 3.0,
+      "y": 0.5675,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "x": 4.0,
+      "y": 0.8,
+      "_kind": "line",
+      "_group": 61
+    },
+    {
+      "x": 1.0,
+      "y": 0.6477777777777778,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "x": 2.0,
+      "y": 0.4366666666666667,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "x": 3.0,
+      "y": 0.3611111111111111,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "x": 4.0,
+      "y": 0.5633333333333334,
+      "_kind": "line",
+      "_group": 62
+    },
+    {
+      "x": 1.0,
+      "y": 0.8109999999999999,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "x": 2.0,
+      "y": 0.5079999999999999,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "x": 3.0,
+      "y": 0.34700000000000003,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "x": 4.0,
+      "y": 0.697,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "x": 1.0,
+      "y": 0.8799999999999999,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "x": 2.0,
+      "y": 0.40199999999999997,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "x": 3.0,
+      "y": 0.389,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "x": 4.0,
+      "y": 0.723,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "x": 1.0,
+      "y": 0.8975,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "x": 2.0,
+      "y": 0.05,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "x": 3.0,
+      "y": 0.075,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "x": 4.0,
+      "y": 0.33375,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "x": 1.0,
+      "y": 0.933,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "x": 2.0,
+      "y": 0.679,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "x": 3.0,
+      "y": 0.537,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "x": 4.0,
+      "y": 0.924,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "x": 1.0,
+      "y": 0.9279999999999999,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "x": 2.0,
+      "y": 0.786,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "x": 3.0,
+      "y": 0.76,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "x": 4.0,
+      "y": 0.884,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "x": 1.0,
+      "y": 0.817,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "x": 2.0,
+      "y": 0.5179999999999999,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "x": 3.0,
+      "y": 0.45,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "x": 4.0,
+      "y": 0.703,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "x": 1.0,
+      "y": 0.8039999999999999,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "x": 2.0,
+      "y": 0.09,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "x": 3.0,
+      "y": 0.01,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "x": 4.0,
+      "y": 0.365,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "x": 1.0,
+      "y": 0.7409999999999999,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "x": 2.0,
+      "y": 0.05500000000000001,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "x": 3.0,
+      "y": 0.099,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "x": 4.0,
+      "y": 0.437,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "x": 1.0,
+      "y": 0.6837499999999999,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "x": 2.0,
+      "y": 0.1125,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "x": 3.0,
+      "y": 0.0625,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "x": 4.0,
+      "y": 0.18125000000000002,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "x": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 72
+    },
+    {
+      "x": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 72
+    },
+    {
+      "x": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 72
+    },
+    {
+      "x": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 72
+    },
+    {
+      "x": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 73
+    },
+    {
+      "x": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 73
+    },
+    {
+      "x": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 73
+    },
+    {
+      "x": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 73
+    },
+    {
+      "x": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 74
+    },
+    {
+      "x": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 74
+    },
+    {
+      "x": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 74
+    },
+    {
+      "x": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 74
+    },
+    {
+      "x": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 75
+    },
+    {
+      "x": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 75
+    },
+    {
+      "x": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 75
+    },
+    {
+      "x": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 75
+    },
+    {
+      "x": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 76
+    },
+    {
+      "x": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 76
+    },
+    {
+      "x": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 76
+    },
+    {
+      "x": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 76
+    },
+    {
+      "x": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 77
+    },
+    {
+      "x": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 77
+    },
+    {
+      "x": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 77
+    },
+    {
+      "x": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 77
+    },
+    {
+      "x": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 78
+    },
+    {
+      "x": 2.0,
+      "y": 0.015,
+      "_kind": "line",
+      "_group": 78
+    },
+    {
+      "x": 3.0,
+      "y": 0.02,
+      "_kind": "line",
+      "_group": 78
+    },
+    {
+      "x": 4.0,
+      "y": 0.015,
+      "_kind": "line",
+      "_group": 78
+    },
+    {
+      "x": 1.0,
+      "y": 0.02,
+      "_kind": "line",
+      "_group": 79
+    },
+    {
+      "x": 2.0,
+      "y": 0.08,
+      "_kind": "line",
+      "_group": 79
+    },
+    {
+      "x": 3.0,
+      "y": 0.065,
+      "_kind": "line",
+      "_group": 79
+    },
+    {
+      "x": 4.0,
+      "y": 0.08,
+      "_kind": "line",
+      "_group": 79
+    },
+    {
+      "x": 1.0,
+      "y": 0.015,
+      "_kind": "line",
+      "_group": 80
+    },
+    {
+      "x": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 80
+    },
+    {
+      "x": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 80
+    },
+    {
+      "x": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 80
+    },
+    {
+      "x": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 81
+    },
+    {
+      "x": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 81
+    },
+    {
+      "x": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 81
+    },
+    {
+      "x": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 81
+    },
+    {
+      "x": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 82
+    },
+    {
+      "x": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 82
+    },
+    {
+      "x": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 82
+    },
+    {
+      "x": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 82
+    },
+    {
+      "x": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 83
+    },
+    {
+      "x": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 83
+    },
+    {
+      "x": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 83
+    },
+    {
+      "x": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 83
+    },
+    {
+      "x": 1.0,
+      "y": 0.09000000000000001,
+      "_kind": "line",
+      "_group": 84
+    },
+    {
+      "x": 2.0,
+      "y": 0.07000000000000002,
+      "_kind": "line",
+      "_group": 84
+    },
+    {
+      "x": 3.0,
+      "y": 0.04,
+      "_kind": "line",
+      "_group": 84
+    },
+    {
+      "x": 4.0,
+      "y": 0.1,
+      "_kind": "line",
+      "_group": 84
+    },
+    {
+      "x": 1.0,
+      "y": 0.28500000000000003,
+      "_kind": "line",
+      "_group": 85
+    },
+    {
+      "x": 2.0,
+      "y": 0.24300000000000002,
+      "_kind": "line",
+      "_group": 85
+    },
+    {
+      "x": 3.0,
+      "y": 0.38,
+      "_kind": "line",
+      "_group": 85
+    },
+    {
+      "x": 4.0,
+      "y": 0.403,
+      "_kind": "line",
+      "_group": 85
+    },
+    {
+      "x": 1.0,
+      "y": 0.16999999999999998,
+      "_kind": "line",
+      "_group": 86
+    },
+    {
+      "x": 2.0,
+      "y": 0.07,
+      "_kind": "line",
+      "_group": 86
+    },
+    {
+      "x": 3.0,
+      "y": 0.08,
+      "_kind": "line",
+      "_group": 86
+    },
+    {
+      "x": 4.0,
+      "y": 0.267,
+      "_kind": "line",
+      "_group": 86
+    },
+    {
+      "x": 1.0,
+      "y": 0.376,
+      "_kind": "line",
+      "_group": 87
+    },
+    {
+      "x": 2.0,
+      "y": 0.045,
+      "_kind": "line",
+      "_group": 87
+    },
+    {
+      "x": 3.0,
+      "y": 0.025,
+      "_kind": "line",
+      "_group": 87
+    },
+    {
+      "x": 4.0,
+      "y": 0.203,
+      "_kind": "line",
+      "_group": 87
+    },
+    {
+      "x": 1.0,
+      "y": 0.21000000000000002,
+      "_kind": "line",
+      "_group": 88
+    },
+    {
+      "x": 2.0,
+      "y": 0.045,
+      "_kind": "line",
+      "_group": 88
+    },
+    {
+      "x": 3.0,
+      "y": 0.005,
+      "_kind": "line",
+      "_group": 88
+    },
+    {
+      "x": 4.0,
+      "y": 0.23299999999999996,
+      "_kind": "line",
+      "_group": 88
+    },
+    {
+      "x": 1.0,
+      "y": 0.187,
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "x": 2.0,
+      "y": 0.075,
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "x": 3.0,
+      "y": 0.015000000000000003,
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "x": 4.0,
+      "y": 0.125,
+      "_kind": "line",
+      "_group": 89
+    },
+    {
+      "x": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "x": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "x": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "x": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 90
+    },
+    {
+      "x": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "x": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "x": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "x": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "x": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "x": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "x": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "x": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "x": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "x": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "x": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "x": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "x": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "x": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "x": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "x": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "x": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "x": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "x": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "x": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "x": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 96
+    },
+    {
+      "x": 2.0,
+      "y": 0.015,
+      "_kind": "line",
+      "_group": 96
+    },
+    {
+      "x": 3.0,
+      "y": 0.02,
+      "_kind": "line",
+      "_group": 96
+    },
+    {
+      "x": 4.0,
+      "y": 0.015,
+      "_kind": "line",
+      "_group": 96
+    },
+    {
+      "x": 1.0,
+      "y": 0.02,
+      "_kind": "line",
+      "_group": 97
+    },
+    {
+      "x": 2.0,
+      "y": 0.08,
+      "_kind": "line",
+      "_group": 97
+    },
+    {
+      "x": 3.0,
+      "y": 0.065,
+      "_kind": "line",
+      "_group": 97
+    },
+    {
+      "x": 4.0,
+      "y": 0.08,
+      "_kind": "line",
+      "_group": 97
+    },
+    {
+      "x": 1.0,
+      "y": 0.015,
+      "_kind": "line",
+      "_group": 98
+    },
+    {
+      "x": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 98
+    },
+    {
+      "x": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 98
+    },
+    {
+      "x": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 98
+    },
+    {
+      "x": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 99
+    },
+    {
+      "x": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 99
+    },
+    {
+      "x": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 99
+    },
+    {
+      "x": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 99
+    },
+    {
+      "x": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 100
+    },
+    {
+      "x": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 100
+    },
+    {
+      "x": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 100
+    },
+    {
+      "x": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 100
+    },
+    {
+      "x": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 101
+    },
+    {
+      "x": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 101
+    },
+    {
+      "x": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 101
+    },
+    {
+      "x": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 101
+    },
+    {
+      "x": 1.0,
+      "y": 0.09000000000000001,
+      "_kind": "line",
+      "_group": 102
+    },
+    {
+      "x": 2.0,
+      "y": 0.07000000000000002,
+      "_kind": "line",
+      "_group": 102
+    },
+    {
+      "x": 3.0,
+      "y": 0.04,
+      "_kind": "line",
+      "_group": 102
+    },
+    {
+      "x": 4.0,
+      "y": 0.1,
+      "_kind": "line",
+      "_group": 102
+    },
+    {
+      "x": 1.0,
+      "y": 0.28500000000000003,
+      "_kind": "line",
+      "_group": 103
+    },
+    {
+      "x": 2.0,
+      "y": 0.24300000000000002,
+      "_kind": "line",
+      "_group": 103
+    },
+    {
+      "x": 3.0,
+      "y": 0.38,
+      "_kind": "line",
+      "_group": 103
+    },
+    {
+      "x": 4.0,
+      "y": 0.403,
+      "_kind": "line",
+      "_group": 103
+    },
+    {
+      "x": 1.0,
+      "y": 0.16999999999999998,
+      "_kind": "line",
+      "_group": 104
+    },
+    {
+      "x": 2.0,
+      "y": 0.07,
+      "_kind": "line",
+      "_group": 104
+    },
+    {
+      "x": 3.0,
+      "y": 0.08,
+      "_kind": "line",
+      "_group": 104
+    },
+    {
+      "x": 4.0,
+      "y": 0.267,
+      "_kind": "line",
+      "_group": 104
+    },
+    {
+      "x": 1.0,
+      "y": 0.376,
+      "_kind": "line",
+      "_group": 105
+    },
+    {
+      "x": 2.0,
+      "y": 0.045,
+      "_kind": "line",
+      "_group": 105
+    },
+    {
+      "x": 3.0,
+      "y": 0.025,
+      "_kind": "line",
+      "_group": 105
+    },
+    {
+      "x": 4.0,
+      "y": 0.203,
+      "_kind": "line",
+      "_group": 105
+    },
+    {
+      "x": 1.0,
+      "y": 0.21000000000000002,
+      "_kind": "line",
+      "_group": 106
+    },
+    {
+      "x": 2.0,
+      "y": 0.045,
+      "_kind": "line",
+      "_group": 106
+    },
+    {
+      "x": 3.0,
+      "y": 0.005,
+      "_kind": "line",
+      "_group": 106
+    },
+    {
+      "x": 4.0,
+      "y": 0.23299999999999996,
+      "_kind": "line",
+      "_group": 106
+    },
+    {
+      "x": 1.0,
+      "y": 0.187,
+      "_kind": "line",
+      "_group": 107
+    },
+    {
+      "x": 2.0,
+      "y": 0.075,
+      "_kind": "line",
+      "_group": 107
+    },
+    {
+      "x": 3.0,
+      "y": 0.015000000000000003,
+      "_kind": "line",
+      "_group": 107
+    },
+    {
+      "x": 4.0,
+      "y": 0.125,
+      "_kind": "line",
+      "_group": 107
+    },
+    {
+      "token quartile": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.24399999999999994,
+      "_kind": "line",
+      "_group": 108
+    },
+    {
+      "token quartile": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.236,
+      "_kind": "line",
+      "_group": 108
+    },
+    {
+      "token quartile": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.184,
+      "_kind": "line",
+      "_group": 108
+    },
+    {
+      "token quartile": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.18,
+      "_kind": "line",
+      "_group": 108
+    },
+    {
+      "token quartile": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.054000000000000006,
+      "_kind": "line",
+      "_group": 109
+    },
+    {
+      "token quartile": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.05,
+      "_kind": "line",
+      "_group": 109
+    },
+    {
+      "token quartile": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.05,
+      "_kind": "line",
+      "_group": 109
+    },
+    {
+      "token quartile": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.07999999999999999,
+      "_kind": "line",
+      "_group": 109
+    },
+    {
+      "token quartile": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.01,
+      "_kind": "line",
+      "_group": 110
+    },
+    {
+      "token quartile": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 110
+    },
+    {
+      "token quartile": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 110
+    },
+    {
+      "token quartile": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 110
+    },
+    {
+      "token quartile": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.305,
+      "_kind": "line",
+      "_group": 111
+    },
+    {
+      "token quartile": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.325,
+      "_kind": "line",
+      "_group": 111
+    },
+    {
+      "token quartile": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.25,
+      "_kind": "line",
+      "_group": 111
+    },
+    {
+      "token quartile": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.2425,
+      "_kind": "line",
+      "_group": 111
+    },
+    {
+      "token quartile": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.11599999999999999,
+      "_kind": "line",
+      "_group": 112
+    },
+    {
+      "token quartile": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.188,
+      "_kind": "line",
+      "_group": 112
+    },
+    {
+      "token quartile": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.05600000000000001,
+      "_kind": "line",
+      "_group": 112
+    },
+    {
+      "token quartile": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.09,
+      "_kind": "line",
+      "_group": 112
+    },
+    {
+      "token quartile": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.19,
+      "_kind": "line",
+      "_group": 113
+    },
+    {
+      "token quartile": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.184,
+      "_kind": "line",
+      "_group": 113
+    },
+    {
+      "token quartile": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.03,
+      "_kind": "line",
+      "_group": 113
+    },
+    {
+      "token quartile": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.144,
+      "_kind": "line",
+      "_group": 113
+    },
+    {
+      "token quartile": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.12999999999999998,
+      "_kind": "line",
+      "_group": 114
+    },
+    {
+      "token quartile": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 114
+    },
+    {
+      "token quartile": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.15,
+      "_kind": "line",
+      "_group": 114
+    },
+    {
+      "token quartile": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.05,
+      "_kind": "line",
+      "_group": 114
+    },
+    {
+      "token quartile": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.08,
+      "_kind": "line",
+      "_group": 115
+    },
+    {
+      "token quartile": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.06,
+      "_kind": "line",
+      "_group": 115
+    },
+    {
+      "token quartile": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.08,
+      "_kind": "line",
+      "_group": 115
+    },
+    {
+      "token quartile": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 115
+    },
+    {
+      "token quartile": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.06,
+      "_kind": "line",
+      "_group": 116
+    },
+    {
+      "token quartile": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.03,
+      "_kind": "line",
+      "_group": 116
+    },
+    {
+      "token quartile": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.03,
+      "_kind": "line",
+      "_group": 116
+    },
+    {
+      "token quartile": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.06999999999999999,
+      "_kind": "line",
+      "_group": 116
+    },
+    {
+      "token quartile": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.016,
+      "_kind": "line",
+      "_group": 117
+    },
+    {
+      "token quartile": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 117
+    },
+    {
+      "token quartile": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 117
+    },
+    {
+      "token quartile": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 117
+    },
+    {
+      "token quartile": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.04,
+      "_kind": "line",
+      "_group": 118
+    },
+    {
+      "token quartile": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.016,
+      "_kind": "line",
+      "_group": 118
+    },
+    {
+      "token quartile": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 118
+    },
+    {
+      "token quartile": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.016,
+      "_kind": "line",
+      "_group": 118
+    },
+    {
+      "token quartile": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.075,
+      "_kind": "line",
+      "_group": 119
+    },
+    {
+      "token quartile": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 119
+    },
+    {
+      "token quartile": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 119
+    },
+    {
+      "token quartile": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.0375,
+      "_kind": "line",
+      "_group": 119
+    },
+    {
+      "token quartile": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.9119999999999999,
+      "_kind": "line",
+      "_group": 120
+    },
+    {
+      "token quartile": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.656,
+      "_kind": "line",
+      "_group": 120
+    },
+    {
+      "token quartile": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.5980000000000001,
+      "_kind": "line",
+      "_group": 120
+    },
+    {
+      "token quartile": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.8859999999999999,
+      "_kind": "line",
+      "_group": 120
+    },
+    {
+      "token quartile": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.866,
+      "_kind": "line",
+      "_group": 121
+    },
+    {
+      "token quartile": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.7380000000000001,
+      "_kind": "line",
+      "_group": 121
+    },
+    {
+      "token quartile": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.8099999999999999,
+      "_kind": "line",
+      "_group": 121
+    },
+    {
+      "token quartile": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.9179999999999999,
+      "_kind": "line",
+      "_group": 121
+    },
+    {
+      "token quartile": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.608,
+      "_kind": "line",
+      "_group": 122
+    },
+    {
+      "token quartile": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.336,
+      "_kind": "line",
+      "_group": 122
+    },
+    {
+      "token quartile": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.358,
+      "_kind": "line",
+      "_group": 122
+    },
+    {
+      "token quartile": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.542,
+      "_kind": "line",
+      "_group": 122
+    },
+    {
+      "token quartile": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.906,
+      "_kind": "line",
+      "_group": 123
+    },
+    {
+      "token quartile": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.312,
+      "_kind": "line",
+      "_group": 123
+    },
+    {
+      "token quartile": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.15999999999999998,
+      "_kind": "line",
+      "_group": 123
+    },
+    {
+      "token quartile": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.8119999999999999,
+      "_kind": "line",
+      "_group": 123
+    },
+    {
+      "token quartile": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.826,
+      "_kind": "line",
+      "_group": 124
+    },
+    {
+      "token quartile": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.09,
+      "_kind": "line",
+      "_group": 124
+    },
+    {
+      "token quartile": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.06999999999999999,
+      "_kind": "line",
+      "_group": 124
+    },
+    {
+      "token quartile": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.6920000000000001,
+      "_kind": "line",
+      "_group": 124
+    },
+    {
+      "token quartile": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.6900000000000001,
+      "_kind": "line",
+      "_group": 125
+    },
+    {
+      "token quartile": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.23000000000000004,
+      "_kind": "line",
+      "_group": 125
+    },
+    {
+      "token quartile": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.25599999999999995,
+      "_kind": "line",
+      "_group": 125
+    },
+    {
+      "token quartile": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.46799999999999997,
+      "_kind": "line",
+      "_group": 125
+    },
+    {
+      "token quartile": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.24399999999999994,
+      "_kind": "line",
+      "_group": 126
+    },
+    {
+      "token quartile": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.236,
+      "_kind": "line",
+      "_group": 126
+    },
+    {
+      "token quartile": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.184,
+      "_kind": "line",
+      "_group": 126
+    },
+    {
+      "token quartile": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.18,
+      "_kind": "line",
+      "_group": 126
+    },
+    {
+      "token quartile": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.054000000000000006,
+      "_kind": "line",
+      "_group": 127
+    },
+    {
+      "token quartile": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.05,
+      "_kind": "line",
+      "_group": 127
+    },
+    {
+      "token quartile": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.05,
+      "_kind": "line",
+      "_group": 127
+    },
+    {
+      "token quartile": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.07999999999999999,
+      "_kind": "line",
+      "_group": 127
+    },
+    {
+      "token quartile": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.0125,
+      "_kind": "line",
+      "_group": 128
+    },
+    {
+      "token quartile": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 128
+    },
+    {
+      "token quartile": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 128
+    },
+    {
+      "token quartile": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 128
+    },
+    {
+      "token quartile": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.305,
+      "_kind": "line",
+      "_group": 129
+    },
+    {
+      "token quartile": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.325,
+      "_kind": "line",
+      "_group": 129
+    },
+    {
+      "token quartile": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.25,
+      "_kind": "line",
+      "_group": 129
+    },
+    {
+      "token quartile": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.2425,
+      "_kind": "line",
+      "_group": 129
+    },
+    {
+      "token quartile": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.11599999999999999,
+      "_kind": "line",
+      "_group": 130
+    },
+    {
+      "token quartile": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.188,
+      "_kind": "line",
+      "_group": 130
+    },
+    {
+      "token quartile": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.05600000000000001,
+      "_kind": "line",
+      "_group": 130
+    },
+    {
+      "token quartile": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.09,
+      "_kind": "line",
+      "_group": 130
+    },
+    {
+      "token quartile": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.19,
+      "_kind": "line",
+      "_group": 131
+    },
+    {
+      "token quartile": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.184,
+      "_kind": "line",
+      "_group": 131
+    },
+    {
+      "token quartile": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.03,
+      "_kind": "line",
+      "_group": 131
+    },
+    {
+      "token quartile": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.144,
+      "_kind": "line",
+      "_group": 131
+    },
+    {
+      "token quartile": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.12999999999999998,
+      "_kind": "line",
+      "_group": 132
+    },
+    {
+      "token quartile": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 132
+    },
+    {
+      "token quartile": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.15,
+      "_kind": "line",
+      "_group": 132
+    },
+    {
+      "token quartile": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.05,
+      "_kind": "line",
+      "_group": 132
+    },
+    {
+      "token quartile": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.08,
+      "_kind": "line",
+      "_group": 133
+    },
+    {
+      "token quartile": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.06,
+      "_kind": "line",
+      "_group": 133
+    },
+    {
+      "token quartile": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.08,
+      "_kind": "line",
+      "_group": 133
+    },
+    {
+      "token quartile": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 133
+    },
+    {
+      "token quartile": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.06,
+      "_kind": "line",
+      "_group": 134
+    },
+    {
+      "token quartile": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.03,
+      "_kind": "line",
+      "_group": 134
+    },
+    {
+      "token quartile": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.03,
+      "_kind": "line",
+      "_group": 134
+    },
+    {
+      "token quartile": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.06999999999999999,
+      "_kind": "line",
+      "_group": 134
+    },
+    {
+      "token quartile": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.016,
+      "_kind": "line",
+      "_group": 135
+    },
+    {
+      "token quartile": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 135
+    },
+    {
+      "token quartile": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 135
+    },
+    {
+      "token quartile": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 135
+    },
+    {
+      "token quartile": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.04,
+      "_kind": "line",
+      "_group": 136
+    },
+    {
+      "token quartile": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.016,
+      "_kind": "line",
+      "_group": 136
+    },
+    {
+      "token quartile": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 136
+    },
+    {
+      "token quartile": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.016,
+      "_kind": "line",
+      "_group": 136
+    },
+    {
+      "token quartile": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.075,
+      "_kind": "line",
+      "_group": 137
+    },
+    {
+      "token quartile": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 137
+    },
+    {
+      "token quartile": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.0,
+      "_kind": "line",
+      "_group": 137
+    },
+    {
+      "token quartile": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.0375,
+      "_kind": "line",
+      "_group": 137
+    },
+    {
+      "token quartile": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.9119999999999999,
+      "_kind": "line",
+      "_group": 138
+    },
+    {
+      "token quartile": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.656,
+      "_kind": "line",
+      "_group": 138
+    },
+    {
+      "token quartile": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.5980000000000001,
+      "_kind": "line",
+      "_group": 138
+    },
+    {
+      "token quartile": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.8859999999999999,
+      "_kind": "line",
+      "_group": 138
+    },
+    {
+      "token quartile": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.866,
+      "_kind": "line",
+      "_group": 139
+    },
+    {
+      "token quartile": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.7380000000000001,
+      "_kind": "line",
+      "_group": 139
+    },
+    {
+      "token quartile": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.8099999999999999,
+      "_kind": "line",
+      "_group": 139
+    },
+    {
+      "token quartile": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.9179999999999999,
+      "_kind": "line",
+      "_group": 139
+    },
+    {
+      "token quartile": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.608,
+      "_kind": "line",
+      "_group": 140
+    },
+    {
+      "token quartile": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.336,
+      "_kind": "line",
+      "_group": 140
+    },
+    {
+      "token quartile": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.358,
+      "_kind": "line",
+      "_group": 140
+    },
+    {
+      "token quartile": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.542,
+      "_kind": "line",
+      "_group": 140
+    },
+    {
+      "token quartile": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.906,
+      "_kind": "line",
+      "_group": 141
+    },
+    {
+      "token quartile": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.312,
+      "_kind": "line",
+      "_group": 141
+    },
+    {
+      "token quartile": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.15999999999999998,
+      "_kind": "line",
+      "_group": 141
+    },
+    {
+      "token quartile": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.8119999999999999,
+      "_kind": "line",
+      "_group": 141
+    },
+    {
+      "token quartile": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.826,
+      "_kind": "line",
+      "_group": 142
+    },
+    {
+      "token quartile": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.09,
+      "_kind": "line",
+      "_group": 142
+    },
+    {
+      "token quartile": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.06999999999999999,
+      "_kind": "line",
+      "_group": 142
+    },
+    {
+      "token quartile": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.6920000000000001,
+      "_kind": "line",
+      "_group": 142
+    },
+    {
+      "token quartile": 1.0,
+      "per-carrier fragment persona score (0-1)": 0.6900000000000001,
+      "_kind": "line",
+      "_group": 143
+    },
+    {
+      "token quartile": 2.0,
+      "per-carrier fragment persona score (0-1)": 0.23000000000000004,
+      "_kind": "line",
+      "_group": 143
+    },
+    {
+      "token quartile": 3.0,
+      "per-carrier fragment persona score (0-1)": 0.25599999999999995,
+      "_kind": "line",
+      "_group": 143
+    },
+    {
+      "token quartile": 4.0,
+      "per-carrier fragment persona score (0-1)": 0.46799999999999997,
+      "_kind": "line",
+      "_group": 143
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.9349999999999999,
+      "_kind": "line",
+      "_group": 144
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.915,
+      "_kind": "line",
+      "_group": 144
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.843,
+      "_kind": "line",
+      "_group": 144
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.9029999999999999,
+      "_kind": "line",
+      "_group": 144
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.868,
+      "_kind": "line",
+      "_group": 145
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.89,
+      "_kind": "line",
+      "_group": 145
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.8099999999999999,
+      "_kind": "line",
+      "_group": 145
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.901,
+      "_kind": "line",
+      "_group": 145
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.8960000000000001,
+      "_kind": "line",
+      "_group": 146
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.875,
+      "_kind": "line",
+      "_group": 146
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.77,
+      "_kind": "line",
+      "_group": 146
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.95,
+      "_kind": "line",
+      "_group": 146
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.8699999999999999,
+      "_kind": "line",
+      "_group": 147
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.8039999999999999,
+      "_kind": "line",
+      "_group": 147
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.8799999999999999,
+      "_kind": "line",
+      "_group": 147
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.938,
+      "_kind": "line",
+      "_group": 147
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.8939999999999999,
+      "_kind": "line",
+      "_group": 148
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.884,
+      "_kind": "line",
+      "_group": 148
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.784,
+      "_kind": "line",
+      "_group": 148
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.944,
+      "_kind": "line",
+      "_group": 148
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.9299999999999999,
+      "_kind": "line",
+      "_group": 149
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.8709999999999999,
+      "_kind": "line",
+      "_group": 149
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.9339999999999998,
+      "_kind": "line",
+      "_group": 149
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.8969999999999999,
+      "_kind": "line",
+      "_group": 149
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.772,
+      "_kind": "line",
+      "_group": 150
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.922,
+      "_kind": "line",
+      "_group": 150
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.891,
+      "_kind": "line",
+      "_group": 150
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.925,
+      "_kind": "line",
+      "_group": 150
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.853,
+      "_kind": "line",
+      "_group": 151
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.828,
+      "_kind": "line",
+      "_group": 151
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.7470000000000001,
+      "_kind": "line",
+      "_group": 151
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.8860000000000001,
+      "_kind": "line",
+      "_group": 151
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.7829999999999999,
+      "_kind": "line",
+      "_group": 152
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.6439999999999999,
+      "_kind": "line",
+      "_group": 152
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.312,
+      "_kind": "line",
+      "_group": 152
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.598,
+      "_kind": "line",
+      "_group": 152
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.9119999999999999,
+      "_kind": "line",
+      "_group": 153
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.798,
+      "_kind": "line",
+      "_group": 153
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.732,
+      "_kind": "line",
+      "_group": 153
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.944,
+      "_kind": "line",
+      "_group": 153
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.827,
+      "_kind": "line",
+      "_group": 154
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.5719999999999998,
+      "_kind": "line",
+      "_group": 154
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.5359999999999999,
+      "_kind": "line",
+      "_group": 154
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.8270000000000002,
+      "_kind": "line",
+      "_group": 154
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.8300000000000001,
+      "_kind": "line",
+      "_group": 155
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.619,
+      "_kind": "line",
+      "_group": 155
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.45200000000000007,
+      "_kind": "line",
+      "_group": 155
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.49800000000000005,
+      "_kind": "line",
+      "_group": 155
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.9469999999999998,
+      "_kind": "line",
+      "_group": 156
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.909,
+      "_kind": "line",
+      "_group": 156
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.898,
+      "_kind": "line",
+      "_group": 156
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.9469999999999998,
+      "_kind": "line",
+      "_group": 156
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.9410000000000001,
+      "_kind": "line",
+      "_group": 157
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.868,
+      "_kind": "line",
+      "_group": 157
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.9070000000000003,
+      "_kind": "line",
+      "_group": 157
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.9499999999999998,
+      "_kind": "line",
+      "_group": 157
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.818,
+      "_kind": "line",
+      "_group": 158
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.7889999999999999,
+      "_kind": "line",
+      "_group": 158
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.8210000000000001,
+      "_kind": "line",
+      "_group": 158
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.9100000000000001,
+      "_kind": "line",
+      "_group": 158
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.953,
+      "_kind": "line",
+      "_group": 159
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.8009999999999999,
+      "_kind": "line",
+      "_group": 159
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.8,
+      "_kind": "line",
+      "_group": 159
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.9469999999999998,
+      "_kind": "line",
+      "_group": 159
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.953,
+      "_kind": "line",
+      "_group": 160
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.6719999999999999,
+      "_kind": "line",
+      "_group": 160
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.6319999999999999,
+      "_kind": "line",
+      "_group": 160
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.9499999999999998,
+      "_kind": "line",
+      "_group": 160
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.9339999999999998,
+      "_kind": "line",
+      "_group": 161
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.843,
+      "_kind": "line",
+      "_group": 161
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.738,
+      "_kind": "line",
+      "_group": 161
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.7899999999999999,
+      "_kind": "line",
+      "_group": 161
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.9349999999999999,
+      "_kind": "line",
+      "_group": 162
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.915,
+      "_kind": "line",
+      "_group": 162
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.843,
+      "_kind": "line",
+      "_group": 162
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.9029999999999999,
+      "_kind": "line",
+      "_group": 162
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.868,
+      "_kind": "line",
+      "_group": 163
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.89,
+      "_kind": "line",
+      "_group": 163
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.8099999999999999,
+      "_kind": "line",
+      "_group": 163
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.901,
+      "_kind": "line",
+      "_group": 163
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.8960000000000001,
+      "_kind": "line",
+      "_group": 164
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.875,
+      "_kind": "line",
+      "_group": 164
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.77,
+      "_kind": "line",
+      "_group": 164
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.95,
+      "_kind": "line",
+      "_group": 164
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.8699999999999999,
+      "_kind": "line",
+      "_group": 165
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.8039999999999999,
+      "_kind": "line",
+      "_group": 165
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.8799999999999999,
+      "_kind": "line",
+      "_group": 165
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.938,
+      "_kind": "line",
+      "_group": 165
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.8939999999999999,
+      "_kind": "line",
+      "_group": 166
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.884,
+      "_kind": "line",
+      "_group": 166
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.784,
+      "_kind": "line",
+      "_group": 166
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.944,
+      "_kind": "line",
+      "_group": 166
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.9299999999999999,
+      "_kind": "line",
+      "_group": 167
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.8709999999999999,
+      "_kind": "line",
+      "_group": 167
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.9339999999999998,
+      "_kind": "line",
+      "_group": 167
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.8969999999999999,
+      "_kind": "line",
+      "_group": 167
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.772,
+      "_kind": "line",
+      "_group": 168
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.922,
+      "_kind": "line",
+      "_group": 168
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.891,
+      "_kind": "line",
+      "_group": 168
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.925,
+      "_kind": "line",
+      "_group": 168
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.853,
+      "_kind": "line",
+      "_group": 169
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.828,
+      "_kind": "line",
+      "_group": 169
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.7470000000000001,
+      "_kind": "line",
+      "_group": 169
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.8860000000000001,
+      "_kind": "line",
+      "_group": 169
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.7829999999999999,
+      "_kind": "line",
+      "_group": 170
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.6439999999999999,
+      "_kind": "line",
+      "_group": 170
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.312,
+      "_kind": "line",
+      "_group": 170
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.598,
+      "_kind": "line",
+      "_group": 170
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.9119999999999999,
+      "_kind": "line",
+      "_group": 171
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.798,
+      "_kind": "line",
+      "_group": 171
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.732,
+      "_kind": "line",
+      "_group": 171
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.944,
+      "_kind": "line",
+      "_group": 171
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.827,
+      "_kind": "line",
+      "_group": 172
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.5719999999999998,
+      "_kind": "line",
+      "_group": 172
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.5359999999999999,
+      "_kind": "line",
+      "_group": 172
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.8270000000000002,
+      "_kind": "line",
+      "_group": 172
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.80875,
+      "_kind": "line",
+      "_group": 173
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.63625,
+      "_kind": "line",
+      "_group": 173
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.52125,
+      "_kind": "line",
+      "_group": 173
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.5662499999999999,
+      "_kind": "line",
+      "_group": 173
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.9469999999999998,
+      "_kind": "line",
+      "_group": 174
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.909,
+      "_kind": "line",
+      "_group": 174
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.898,
+      "_kind": "line",
+      "_group": 174
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.9469999999999998,
+      "_kind": "line",
+      "_group": 174
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.9410000000000001,
+      "_kind": "line",
+      "_group": 175
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.868,
+      "_kind": "line",
+      "_group": 175
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.9070000000000003,
+      "_kind": "line",
+      "_group": 175
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.9499999999999998,
+      "_kind": "line",
+      "_group": 175
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.8066666666666666,
+      "_kind": "line",
+      "_group": 176
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.778888888888889,
+      "_kind": "line",
+      "_group": 176
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.81,
+      "_kind": "line",
+      "_group": 176
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.9055555555555556,
+      "_kind": "line",
+      "_group": 176
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.953,
+      "_kind": "line",
+      "_group": 177
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.8009999999999999,
+      "_kind": "line",
+      "_group": 177
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.8,
+      "_kind": "line",
+      "_group": 177
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.9469999999999998,
+      "_kind": "line",
+      "_group": 177
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.953,
+      "_kind": "line",
+      "_group": 178
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.6719999999999999,
+      "_kind": "line",
+      "_group": 178
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.6319999999999999,
+      "_kind": "line",
+      "_group": 178
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.9499999999999998,
+      "_kind": "line",
+      "_group": 178
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.93875,
+      "_kind": "line",
+      "_group": 179
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.8625,
+      "_kind": "line",
+      "_group": 179
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.8262499999999999,
+      "_kind": "line",
+      "_group": 179
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.9099999999999999,
+      "_kind": "line",
+      "_group": 179
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 180
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 180
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 180
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 180
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 181
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 181
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 181
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 181
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 182
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 182
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 182
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 182
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 183
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 183
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 183
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 183
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 184
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 184
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 184
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 184
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 185
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 185
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 185
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 185
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 186
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 186
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 186
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 186
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.005,
+      "_kind": "line",
+      "_group": 187
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.015,
+      "_kind": "line",
+      "_group": 187
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 187
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 187
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 188
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 188
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 188
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 188
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 189
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 189
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 189
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 189
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 190
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 190
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 190
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 190
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 191
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 191
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 191
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 191
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.123,
+      "_kind": "line",
+      "_group": 192
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.093,
+      "_kind": "line",
+      "_group": 192
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.049999999999999996,
+      "_kind": "line",
+      "_group": 192
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.433,
+      "_kind": "line",
+      "_group": 192
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.403,
+      "_kind": "line",
+      "_group": 193
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.47999999999999987,
+      "_kind": "line",
+      "_group": 193
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.645,
+      "_kind": "line",
+      "_group": 193
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.8109999999999999,
+      "_kind": "line",
+      "_group": 193
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.13999999999999999,
+      "_kind": "line",
+      "_group": 194
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.11500000000000002,
+      "_kind": "line",
+      "_group": 194
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.258,
+      "_kind": "line",
+      "_group": 194
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.457,
+      "_kind": "line",
+      "_group": 194
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.19,
+      "_kind": "line",
+      "_group": 195
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.10300000000000001,
+      "_kind": "line",
+      "_group": 195
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.11499999999999999,
+      "_kind": "line",
+      "_group": 195
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.29999999999999993,
+      "_kind": "line",
+      "_group": 195
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.32399999999999995,
+      "_kind": "line",
+      "_group": 196
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.015,
+      "_kind": "line",
+      "_group": 196
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.005,
+      "_kind": "line",
+      "_group": 196
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.425,
+      "_kind": "line",
+      "_group": 196
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.11499999999999999,
+      "_kind": "line",
+      "_group": 197
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.15,
+      "_kind": "line",
+      "_group": 197
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.223,
+      "_kind": "line",
+      "_group": 197
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.16299999999999998,
+      "_kind": "line",
+      "_group": 197
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 198
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 198
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 198
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 198
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 199
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 199
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 199
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 199
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 200
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 200
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 200
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 200
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 201
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 201
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 201
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 201
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 202
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 202
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 202
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 202
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 203
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 203
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 203
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 203
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 204
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 204
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 204
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 204
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.005,
+      "_kind": "line",
+      "_group": 205
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.015,
+      "_kind": "line",
+      "_group": 205
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 205
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 205
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 206
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 206
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 206
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 206
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 207
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 207
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 207
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 207
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 208
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 208
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 208
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 208
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 209
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 209
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 209
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 209
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.123,
+      "_kind": "line",
+      "_group": 210
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.093,
+      "_kind": "line",
+      "_group": 210
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.049999999999999996,
+      "_kind": "line",
+      "_group": 210
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.433,
+      "_kind": "line",
+      "_group": 210
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.403,
+      "_kind": "line",
+      "_group": 211
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.47999999999999987,
+      "_kind": "line",
+      "_group": 211
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.645,
+      "_kind": "line",
+      "_group": 211
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.8109999999999999,
+      "_kind": "line",
+      "_group": 211
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.12777777777777777,
+      "_kind": "line",
+      "_group": 212
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.10000000000000002,
+      "_kind": "line",
+      "_group": 212
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.24777777777777776,
+      "_kind": "line",
+      "_group": 212
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.4577777777777778,
+      "_kind": "line",
+      "_group": 212
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.19,
+      "_kind": "line",
+      "_group": 213
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.10300000000000001,
+      "_kind": "line",
+      "_group": 213
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.11499999999999999,
+      "_kind": "line",
+      "_group": 213
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.29999999999999993,
+      "_kind": "line",
+      "_group": 213
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.32399999999999995,
+      "_kind": "line",
+      "_group": 214
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.015,
+      "_kind": "line",
+      "_group": 214
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.005,
+      "_kind": "line",
+      "_group": 214
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.425,
+      "_kind": "line",
+      "_group": 214
+    },
+    {
+      "token quartile": 1.0,
+      "y": 0.1111111111111111,
+      "_kind": "line",
+      "_group": 215
+    },
+    {
+      "token quartile": 2.0,
+      "y": 0.13888888888888892,
+      "_kind": "line",
+      "_group": 215
+    },
+    {
+      "token quartile": 3.0,
+      "y": 0.20888888888888887,
+      "_kind": "line",
+      "_group": 215
+    },
+    {
+      "token quartile": 4.0,
+      "y": 0.1811111111111111,
+      "_kind": "line",
+      "_group": 215
+    }
+  ],
+  "n_series": 216,
+  "total_points": 864,
+  "text": {
+    "suptitle": "Within-answer decay \u2014 per-carrier companion (primary install x context-end)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "q25 \u2014 steered",
+        "ylabel": "per-carrier fragment persona score (0-1)",
+        "legend_labels": [
+          "all",
+          "coh"
+        ],
+        "legend_title": "estimand",
+        "annotations": [
+          "in_r1\u00b7d1",
+          "in_r1\u00b7d2",
+          "in_r1\u00b7n3",
+          "in_r1\u00b7n4",
+          "in_r1\u00b7n7",
+          "in_r1\u00b7n9",
+          "in_r2\u00b7d1",
+          "in_r2\u00b7d2",
+          "in_r2\u00b7n3",
+          "in_r2\u00b7n4",
+          "in_r2\u00b7n7",
+          "in_r2\u00b7n9",
+          "in_r3\u00b7d1",
+          "in_r3\u00b7d2",
+          "in_r3\u00b7n3",
+          "in_r3\u00b7n4",
+          "in_r3\u00b7n7",
+          "in_r3\u00b7n9"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "q25 \u2014 ceiling",
+        "annotations": [
+          "in_r1\u00b7d1",
+          "in_r1\u00b7d2",
+          "in_r1\u00b7n3",
+          "in_r1\u00b7n4",
+          "in_r1\u00b7n7",
+          "in_r1\u00b7n9",
+          "in_r2\u00b7d1",
+          "in_r2\u00b7d2",
+          "in_r2\u00b7n3",
+          "in_r2\u00b7n4",
+          "in_r2\u00b7n7",
+          "in_r2\u00b7n9",
+          "in_r3\u00b7d1",
+          "in_r3\u00b7d2",
+          "in_r3\u00b7n3",
+          "in_r3\u00b7n4",
+          "in_r3\u00b7n7",
+          "in_r3\u00b7n9"
+        ]
+      },
+      {
+        "title_left": "q25 \u2014 floor",
+        "annotations": [
+          "in_r1\u00b7d1",
+          "in_r1\u00b7d2",
+          "in_r1\u00b7n3",
+          "in_r1\u00b7n4",
+          "in_r1\u00b7n7",
+          "in_r1\u00b7n9",
+          "in_r2\u00b7d1",
+          "in_r2\u00b7d2",
+          "in_r2\u00b7n3",
+          "in_r2\u00b7n4",
+          "in_r2\u00b7n7",
+          "in_r2\u00b7n9",
+          "in_r3\u00b7d1",
+          "in_r3\u00b7d2",
+          "in_r3\u00b7n3",
+          "in_r3\u00b7n4",
+          "in_r3\u00b7n7",
+          "in_r3\u00b7n9"
+        ]
+      },
+      {
+        "title_left": "q35 \u2014 steered",
+        "xlabel": "token quartile",
+        "ylabel": "per-carrier fragment persona score (0-1)",
+        "annotations": [
+          "in_r1\u00b7d1",
+          "in_r1\u00b7d2",
+          "in_r1\u00b7n3",
+          "in_r1\u00b7n4",
+          "in_r1\u00b7n7",
+          "in_r1\u00b7n9",
+          "in_r2\u00b7d1",
+          "in_r2\u00b7d2",
+          "in_r2\u00b7n3",
+          "in_r2\u00b7n4",
+          "in_r2\u00b7n7",
+          "in_r2\u00b7n9",
+          "in_r3\u00b7d1",
+          "in_r3\u00b7d2",
+          "in_r3\u00b7n3",
+          "in_r3\u00b7n4",
+          "in_r3\u00b7n7",
+          "in_r3\u00b7n9"
+        ],
+        "xticklabels": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "q35 \u2014 ceiling",
+        "xlabel": "token quartile",
+        "annotations": [
+          "in_r1\u00b7d1",
+          "in_r1\u00b7d2",
+          "in_r1\u00b7n3",
+          "in_r1\u00b7n4",
+          "in_r1\u00b7n7",
+          "in_r1\u00b7n9",
+          "in_r2\u00b7d1",
+          "in_r2\u00b7d2",
+          "in_r2\u00b7n3",
+          "in_r2\u00b7n4",
+          "in_r2\u00b7n7",
+          "in_r2\u00b7n9",
+          "in_r3\u00b7d1",
+          "in_r3\u00b7d2",
+          "in_r3\u00b7n3",
+          "in_r3\u00b7n4",
+          "in_r3\u00b7n7",
+          "in_r3\u00b7n9"
+        ],
+        "xticklabels": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      {
+        "title_left": "q35 \u2014 floor",
+        "xlabel": "token quartile",
+        "annotations": [
+          "in_r1\u00b7d1",
+          "in_r1\u00b7d2",
+          "in_r1\u00b7n3",
+          "in_r1\u00b7n4",
+          "in_r1\u00b7n7",
+          "in_r1\u00b7n9",
+          "in_r2\u00b7d1",
+          "in_r2\u00b7d2",
+          "in_r2\u00b7n3",
+          "in_r2\u00b7n4",
+          "in_r2\u00b7n7",
+          "in_r2\u00b7n9",
+          "in_r3\u00b7d1",
+          "in_r3\u00b7d2",
+          "in_r3\u00b7n3",
+          "in_r3\u00b7n4",
+          "in_r3\u00b7n7",
+          "in_r3\u00b7n9"
+        ],
+        "xticklabels": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
