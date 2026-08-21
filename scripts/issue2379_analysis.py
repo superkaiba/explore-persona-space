@@ -147,22 +147,42 @@ VERDICT_COMPARABLE = "Comparable"
 VERDICT_REPL_FAILED = "Replication-failed"
 VERDICT_NON_ESTIMABLE = "replication non-estimable (all conditions)"
 
+# Reader-facing labels (round-2 interp-critique: no internal arm codes on any canvas).
+# "training-answer ref." = cosine to the mean training-answer vector; "inoc-prompt ref."
+# = cosine to the inoculation-prompt answer vector; "own map" vs "base map" = which
+# model's fitted context-to-answer map produced the predicted answer vector.
 FAMILY_LABELS = {
-    "ctx_trainref": "Train Ref (ctx)",
-    "ctx_sameq": "Same-Q Inoc (ctx)",
-    "bge_cos": "BGE",
-    "ans_trainref_mapI": "Train-Ref pred (map-I)",
-    "ans_sameq_mapI": "Same-Q pred (map-I)",
-    "ans_trainref_mapB": "Train-Ref pred (map-B)",
-    "ans_sameq_mapB": "Same-Q pred (map-B)",
-    "identbias_trainref": "Identity+bias (Train Ref)",
-    "identbias_sameq": "Identity+bias (Same-Q)",
-    "ceiling_trainref": "Actual-answer ceiling",
-    "ceiling_sameq": "Ceiling (Same-Q)",
-    "trait_proj_mapI": "Trait projection (map-I)",
-    "tfidf_cos": "TF-IDF",
-    "jaccard": "Jaccard",
-    "seqmatcher": "SeqMatcher",
+    "ctx_trainref": "Context state (training-answer ref.)",
+    "ctx_sameq": "Context state (inoc-prompt ref.)",
+    "bge_cos": "Text embedding (BGE)",
+    "ans_trainref_mapI": "Predicted answer (training-answer ref.)",
+    "ans_sameq_mapI": "Predicted answer (inoc-prompt ref.)",
+    "ans_trainref_mapB": "Predicted answer, base map (training-answer ref.)",
+    "ans_sameq_mapB": "Predicted answer, base map (inoc-prompt ref.)",
+    "ans_trainref_mapI_centered": "Predicted answer, mean-centered (training-answer ref.)",
+    "ans_sameq_mapI_centered": "Predicted answer, mean-centered (inoc-prompt ref.)",
+    "ans_trainref_mapB_centered": "Predicted answer, base map, centered (training-answer ref.)",
+    "ans_sameq_mapB_centered": "Predicted answer, base map, centered (inoc-prompt ref.)",
+    "identbias_trainref": "Identity+bias answer (training-answer ref.)",
+    "identbias_sameq": "Identity+bias answer (inoc-prompt ref.)",
+    "ceiling_trainref": "Actual answer, ceiling (training-answer ref.)",
+    "ceiling_sameq": "Actual answer, ceiling (inoc-prompt ref.)",
+    "trait_proj_mapI": "Predicted answer, trait projection",
+    "tfidf_cos": "TF-IDF text",
+    "jaccard": "Jaccard text",
+    "seqmatcher": "Sequence-match text",
+}
+SETTING_LABELS = {"em": "Misalignment", "caps": "Capitalization"}
+COND_LABELS = {
+    "base": "Base model",
+    "em_bad_legal_advice": "Bad legal advice",
+    "em_bad_medical_advice": "Bad medical advice",
+    "em_bad_security_advice": "Bad security advice",
+    "em_turner_extreme_sports": "Extreme sports advice",
+    "em_turner_risky_financial": "Risky financial advice",
+    "caps_french": "French capitalization",
+    "caps_german": "German capitalization",
+    "caps_spanish": "Spanish capitalization",
 }
 HERO_FAMILIES = [
     "ctx_trainref",
@@ -671,9 +691,9 @@ def fig_hero(results: dict, figdir: Path) -> None:
                 frameon=False,
             )
         ax.set_xticks(xs)
-        ax.set_xticklabels([FAMILY_LABELS[f] for f in fams], rotation=30, ha="right")
+        ax.set_xticklabels([FAMILY_LABELS[f] for f in fams], rotation=40, ha="right", fontsize=6)
         ax.set_ylabel("mean within-condition Spearman rho")
-        ax.set_title(f"{setting.upper()} @ stored layer {pins} (dashed = parent)")
+        ax.set_title(f"{SETTING_LABELS[setting]} — decoder layer {pins} (dashed = parent)")
     _save(fig, "fig1_hero_predictor_bars", figdir)
 
 
@@ -693,9 +713,9 @@ def fig_scatters(results: dict, per_condition_xy: dict, figdir: Path) -> None:
                 if xy["setting"] != setting or fam not in xy:
                     continue
                 ax.scatter(xy[fam], xy["rate"], s=14, alpha=0.6, color=colors[fam])
-            ax.set_xlabel(f"{FAMILY_LABELS[fam]} @ pin")
-            ax.set_ylabel(f"{setting.upper()} rate")
-            ax.set_title(f"{setting.upper()} — {FAMILY_LABELS[fam]}")
+            ax.set_xlabel(f"{FAMILY_LABELS[fam]} score at pinned layer")
+            ax.set_ylabel(f"{SETTING_LABELS[setting].lower()} rate")
+            ax.set_title(f"{SETTING_LABELS[setting]} — {FAMILY_LABELS[fam]}", fontsize=8)
     _save(fig, "fig2_rate_vs_predictor_scatter", figdir)
 
 
@@ -737,9 +757,9 @@ def fig_layer_curves(results: dict, figdir: Path) -> None:
             ax.plot(np.arange(ys.size), ys, color=colors[fam], label=FAMILY_LABELS[fam])
         ax.axvline(results["pins"][setting], color="#5A5A5A", ls=":", lw=1.0)
         ax.axhline(0.0, color="#5A5A5A", lw=0.8)
-        ax.set_xlabel("stored layer index (block i == hidden_states[i+1])")
+        ax.set_xlabel("decoder layer")
         ax.set_ylabel("mean Spearman rho")
-        ax.set_title(setting.upper())
+        ax.set_title(SETTING_LABELS[setting])
         ax.legend(fontsize=7)
     _save(fig, "fig3_layer_curves", figdir)
 
@@ -773,16 +793,16 @@ def fig_forest(forest_rows: list[dict], stem: str, title: str, figdir: Path) -> 
     ax.axvline(0.0, color="#5A5A5A", lw=0.8)
     ax.set_yticks(ys)
     forest_labels = {
-        "em_bad_legal_advice": "EM: bad legal advice",
-        "em_bad_medical_advice": "EM: bad medical advice",
-        "em_bad_security_advice": "EM: bad security advice",
-        "em_turner_extreme_sports": "EM: extreme sports",
-        "em_turner_risky_financial": "EM: risky financial",
-        "caps_french": "Caps: French",
-        "caps_german": "Caps: German",
-        "caps_spanish": "Caps: Spanish",
-        "POOLED em": "Pooled EM (5 datasets)",
-        "POOLED caps": "Pooled caps (3 languages)",
+        "em_bad_legal_advice": "Bad legal advice",
+        "em_bad_medical_advice": "Bad medical advice",
+        "em_bad_security_advice": "Bad security advice",
+        "em_turner_extreme_sports": "Extreme sports advice",
+        "em_turner_risky_financial": "Risky financial advice",
+        "caps_french": "French capitalization",
+        "caps_german": "German capitalization",
+        "caps_spanish": "Spanish capitalization",
+        "POOLED em": "Pooled misalignment (5 datasets)",
+        "POOLED caps": "Pooled capitalization (3 languages)",
     }
     ax.set_yticklabels([forest_labels.get(r["name"], r["name"]) for r in forest_rows], fontsize=7)
     ax.set_xlabel("delta rho (answer-side minus context-side)")
@@ -813,7 +833,7 @@ def fig_map_quality(diag: dict, figdir: Path) -> None:
                 lys = sorted(int(k) for k in cells)
                 ys = [getter(cells[str(ly)]) for ly in lys]
                 ax.plot(lys, ys, color=color, lw=lw, alpha=alpha)
-        ax.set_xlabel("stored layer index")
+        ax.set_xlabel("decoder layer")
         ax.set_title(label)
     axes[0].set_ylabel("value")
     from matplotlib.lines import Line2D
@@ -837,8 +857,11 @@ def fig_exploratory_bars(results: dict, figdir: Path) -> None:
     colors = _family_colors()
     settings = [s for s in ("em", "caps") if results["setting_means"].get(s)]
     fams = [
+        "ans_trainref_mapI_centered",
         "ans_trainref_mapB",
+        "ans_sameq_mapI",
         "ans_sameq_mapB",
+        "ceiling_sameq",
         "identbias_trainref",
         "identbias_sameq",
         "trait_proj_mapI",
@@ -864,7 +887,7 @@ def fig_exploratory_bars(results: dict, figdir: Path) -> None:
     if not settings:
         logger.warning("fig6: every setting non-estimable — figure skipped")
         return
-    fig, axes = plt.subplots(1, len(settings), figsize=(4.8 * len(settings), 3.2))
+    fig, axes = plt.subplots(1, len(settings), figsize=(5.6 * len(settings), 3.4))
     axes = np.atleast_1d(axes)
     for ax, setting in zip(axes, settings):
         present = [f for f in fams if f in results["pinned_table"][setting]]
@@ -873,9 +896,9 @@ def fig_exploratory_bars(results: dict, figdir: Path) -> None:
             ax.bar(i, np.nan if v is None else v, color=colors.get(fam, "#888888"), width=0.7)
         ax.axhline(0.0, color="#5A5A5A", lw=0.8)
         ax.set_xticks(np.arange(len(present)))
-        ax.set_xticklabels([FAMILY_LABELS[f] for f in present], rotation=30, ha="right")
-        ax.set_ylabel("mean Spearman rho @ pin")
-        ax.set_title(f"{setting.upper()} — exploratory arms")
+        ax.set_xticklabels([FAMILY_LABELS[f] for f in present], rotation=40, ha="right", fontsize=6)
+        ax.set_ylabel("mean Spearman rho at pinned layer")
+        ax.set_title(f"{SETTING_LABELS[setting]} — exploratory reference/readout arms")
     _save(fig, "fig6_exploratory_arms", figdir)
 
 
@@ -893,7 +916,7 @@ def fig_interpredictor(results: dict, figdir: Path) -> None:
         ax.set_yticks(range(len(fams)))
         ax.set_yticklabels([FAMILY_LABELS.get(f, f) for f in fams], fontsize=6)
         fig.colorbar(im, ax=ax, shrink=0.8)
-        ax.set_title(f"{setting.upper()} inter-predictor Spearman @ pin")
+        ax.set_title(f"{SETTING_LABELS[setting]} — inter-predictor Spearman at pinned layer", fontsize=9)
         _save(fig, f"fig7_interpredictor_corr_{setting}", figdir)
 
 
@@ -905,10 +928,10 @@ def fig_base_sweep(rates_em: dict | None, caps_shards: dict | None, figdir: Path
     panels = []
     if rates_em is not None and "base" in rates_em.get("rates", {}):
         t = rates_em["rates"]["base"]
-        panels.append(("EM (base model)", [(k, v.get("em_rate")) for k, v in t.items()]))
+        panels.append(("Misalignment (base model)", [(k, v.get("em_rate")) for k, v in t.items()]))
     if caps_shards is not None and "base" in caps_shards:
         t = caps_shards["base"]["per_trigger"]
-        panels.append(("caps (base model)", [(k, v.get("caps_rate")) for k, v in t.items()]))
+        panels.append(("Capitalization (base model)", [(k, v.get("caps_rate")) for k, v in t.items()]))
     if not panels:
         logger.warning("base-sweep figure skipped: no base rows in rates_em / caps shards")
         return
@@ -940,9 +963,9 @@ def fig_reliability(results: dict, figdir: Path) -> None:
     fig, ax = plt.subplots(figsize=(5.5, 3.0))
     ax.bar(np.arange(len(rows)), [v for _, v in rows], color=colors["ceiling_trainref"], width=0.7)
     ax.set_xticks(np.arange(len(rows)))
-    ax.set_xticklabels([m for m, _ in rows], rotation=30, ha="right", fontsize=7)
-    ax.set_ylabel("split-rollout Spearman @ pin")
-    ax.set_title("Ceiling split-rollout reliability (Train Ref form)")
+    ax.set_xticklabels([COND_LABELS.get(m, m) for m, _ in rows], rotation=30, ha="right", fontsize=7)
+    ax.set_ylabel("split-rollout Spearman at pinned layer")
+    ax.set_title("Actual-answer ceiling: split-rollout reliability")
     _save(fig, "fig9_ceiling_reliability", figdir)
 
 
