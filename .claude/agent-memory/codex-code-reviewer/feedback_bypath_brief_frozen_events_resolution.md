@@ -57,6 +57,16 @@ choosing each reference. Related: [[worktree-status-folder-both-directions]],
   this round and is NOT a `marker-shape` finding" — and repeat the carve-out
   inside the Blocker-tags bracket.
 
+**/tmp context-path extension (#2253 r5, 2026-08-21):** a brief-ordered
+by-path context set can include a `/tmp/...` dispatch note. Reference it by
+absolute path, but attach a NON-BLOCKING fallback line ("if unreadable, do
+not mark BLOCKED/FAIL — the load-bearing facts are restated in this prompt
+and the inlined report; note it in one line and proceed") AND restate its
+load-bearing facts (scope decision, measured basis, out-of-scope list) in
+the compose-time facts block — /tmp reachability from the Codex sandbox is
+less proven than main-checkout reads, and a supporting-context miss must
+never convert to a `data-access-blocked` FAIL.
+
 **Dynamic-resolution extension (#2412 r1, 2026-08-20):** prefer
 `$(uv run python scripts/task.py find <N>)/plans/plan.md` (and
 `.../events.jsonl`) over a hardcoded main-root status path — status folders
