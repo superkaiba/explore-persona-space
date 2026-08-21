@@ -188,8 +188,17 @@ else
   QA_STORE_DIR=/workspace/store
 fi
 echo "[stage] QA_STORE_DIR=$QA_STORE_DIR"
-find /workspace/h3_stores/hallucination_extraction -maxdepth 1 -type f | head -1 | grep -q . \
-  || { echo "[stage] hallucination_extraction extracted empty"; exit 1; }
+# R4: runpodfs directory-listing visibility can lag a completed tar by
+# seconds (tar rc=0 at 02:33:37Z; the immediate find saw an empty dir; the
+# same find listed all 345 files minutes later) — bounded re-probe before
+# declaring the extract empty.
+n=0
+until find /workspace/h3_stores/hallucination_extraction -maxdepth 1 -type f | head -1 | grep -q .; do
+  n=$((n+1))
+  [ "$n" -ge 12 ] && { echo "[stage] hallucination_extraction extracted empty"; exit 1; }
+  echo "[stage] hallucination_extraction not yet visible (probe $n) — runpodfs listing lag; retrying"
+  sleep 5
+done
 if phase_done p4-h3-hallu-done; then echo "[phase=p4_h3_hallucination] SKIP (done-sentinel)"; else
 echo "[phase=p4_h3_hallucination]"
 uv run python scripts/issue2388_fits.py --phase h3 --h3-step stage1 --behaviors hallucination --device cuda --qa-store-dir "$QA_STORE_DIR"
