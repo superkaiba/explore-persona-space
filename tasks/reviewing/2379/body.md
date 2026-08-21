@@ -232,7 +232,7 @@ Script intrusion also touches the fit targets: 5.3–5.9% of misalignment and 14
 
 ![Per-language layer curves for the capitalization replication gate with threshold and pin marked](https://raw.githubusercontent.com/superkaiba/explore-persona-space/15097bee20aa5cc5b708d715ecff0deb5b107c66/figures/issue_2379/gate_g1_curves.png)
 
-> **Figure.** *All three languages clear the 0.4 threshold at the pinned layer (mean 0.895), and only near it.* Dashed line: the 0.4 threshold; dotted line: pinned decoder layer 27; one curve per language.
+> **Figure.** *All three languages clear the 0.4 threshold at the pinned layer (mean 0.895), and — past the early layers — only near it.* Dashed line: the 0.4 threshold; dotted line: pinned decoder layer 27; one curve per language.
 
 The gate passed at 0.895 against the 0.4 floor, releasing the map-corpus phase for all models. The same curves show the context-side capitalization signal is confined to late layers — near zero to negative through the middle of the stack — consistent with the pinned-layer choice. Per-unit exemption: the figure already shows every per-language curve; 0.895 is their mean at the pin.
 
