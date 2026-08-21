@@ -1953,3 +1953,47 @@ copy is then a legitimate sanctioned live-probe TARGET
 proves import + CHECKS-registry load of the merged module, read-only). Also:
 per-side survival greps get side-specific token sets (branch:
 c46|workload|hydra|provision; main: margin|baseline|ceiling|c68|escape).
+
+**Merge-reconciliation round WITH a declared scope extension to a SIBLING
+task's detector (#2214 r2, 2026-08-20):** hybrid of the #2201-r3/#2217-r2
+gate-mandated merge shape and a substantive new-code adjudication. Deltas:
+(a) when the brief supplies a numbered adjudication checklist ("judge this
+specifically, do not defer to the justification"), inline the brief verbatim
+in its own `---BEGIN ROUND-2 BRIEF---` envelope AND restate the checklist in
+the focus section with routing added per item (here: item 1 → Step 0.68
+hollow-gate at full strength, `hollow-verification-gate` tag; item 2 → the
+Step 3.9 degeneracy analogue; item 5's file-separately disposition → a
+`substantive` blocker with the revert-commit+file-task remedy named) — plus
+a REQUIRED `## Scope-extension adjudication` verdict section, one grounded
+ruling per item; (b) the r1-adjudicated deliverable re-landing via merge
+gets a no-relitigate fence (both twins PASSed the same +59 hunk; re-opening
+needs NEW evidence from the MERGED context — exactly what the
+coexistence/interaction duties look for); (c) Step 4.5 INVERTS when the
+round's change IS a test modification: the duty is residual detector
+strength + whether the round's own fix property (order-robustness) is
+pinned, absent pin = Minor sketch; (d) Step 0.9 pre-seeds the
+pre-existing-on-trunk instance (the defect the extension fixes was measured
+on pristine main at the pin — corroborable via `git show <pin>:<file>`) so
+the twin routes fix-findings `substantive` and never blocks on the
+pre-existing defect itself; (e) shared-brief adaptation: "you may re-run but
+not simply accept" translates to internal-consistency reads of the reported
+numbers against the mechanism (is "the merge strictly SHRINKS the failure
+set" sound given the fixture cleans only one dimension?) — the Claude twin
+carries literal re-runs. Assert-side: brief LINE-WRAPS split fragments —
+pick wrap-safe single-line fragments for the checklist-survival asserts, and
+assert the pinned RANGE TOKEN (`<pin>..HEAD`) not the full command string
+(the brief's `-C "$WT" diff --stat` form breaks command-string matches).
+
+**Size-pin asserts compare BYTES, never `len(str)` (#2246 r2, 2026-08-21):**
+a compose-script assert pinning an inlined artifact's size to a `wc -c` /
+`ls -la` figure must use `len(text.encode("utf-8"))` (or `os.path.getsize`)
+— `len(open(p).read())` counts CHARACTERS and diverges on any multi-byte
+UTF-8 content (the 88,372-byte plan v4 read as 87,487 chars; em-dashes and
+arrows are everywhere in plan prose). The labeled assert made the diagnosis
+instant; an unlabeled one would have suggested plan drift and triggered a
+wasted re-fetch. FAIL+FAIL-union r2 compose worked as specced (#2332
+pattern): both prior verdicts inlined tag-stripped, codex rows blockquoted
+(`> CONCERN:: ` ==5), closure status lines routed to a `## Round-1 closure
+ledger` verdict section with per-id VERIFIED-ADDRESSED / NOT-ADDRESSED +
+`f541-fixed` / `c901-deliberate-keep` dispositions, already-persisted ids
+never re-emitted as rows (final line-start grammar rows ==1).

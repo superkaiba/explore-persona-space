@@ -16490,11 +16490,16 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # ((measured+2_800)//100)*100. Prior: 144_200 (#2155 split, 141,432 B).
     "issue/steps/10-step-6.md": 145_400,
     "issue/steps/13-step-9.md": 245_300,  # measured 242,521 B
-    # measured 288,174 B @ #2428 2026-08-20 (Guard-4 --main-sha tip-contract
-    # prose fix, +645 B this round; +835 B vs the #2201 measure incl. interim
-    # landings); corridor-max ((measured+2_800)//100)*100.
-    # Prior: 290_100 (#2201 fix round, 287,339 B).
-    "issue/steps/18-step-10d.md": 290_900,
+    # measured 289,354 B @ #2246 2026-08-21 — re-measured POST-REBASE onto
+    # #2428, so the figure carries BOTH rounds' prose: #2428's Guard-4
+    # --main-sha tip-contract fix (+645 B) plus #2246's reap-shield (launcher
+    # "$WT" argv holders at both gate sites + empty-overlay fail-closed block,
+    # +1,180 B). Neither round's own pre-rebase measure is the merged size, so
+    # the cap is re-derived rather than either side's value taken.
+    # corridor-max ((measured+2_800)//100)*100 = 292_100, headroom 2,746 —
+    # clears guard_skill_doc_headroom.sh's 2,000 B warn floor.
+    # Prior: 290_900 (#2428, 288,174 B) / 290_100 (#2201, 287,339 B).
+    "issue/steps/18-step-10d.md": 292_100,
     # measured 106,625 B @ #2325 2026-08-16; corridor-max
     # ((measured+2_800)//100)*100. Prior: 106_900; chronicle: git log.
     "clean-results/SPEC.md": 109_400,
