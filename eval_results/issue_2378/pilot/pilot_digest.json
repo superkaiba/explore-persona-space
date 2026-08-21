@@ -1,251 +1,262 @@
 {
-  "gate": "G1",
-  "pilot_round": 1,
-  "attempts_per_cell": 300,
-  "verdict": "FAIL",
-  "fail_reasons": [
-    "G1(a) question: net 0.2239 < 0.25",
-    "G1(a) dialogue: net 0.1472 < 0.25"
-  ],
-  "per_stage": {
-    "mining": {
-      "dialogue": {
-        "numerator": 368,
-        "denominator": 1200,
-        "rate": 0.30666666666666664
-      },
-      "question": {
-        "numerator": 457,
-        "denominator": 1500,
-        "rate": 0.30466666666666664
-      }
-    },
-    "admission": {
-      "dialogue": {
-        "numerator": 98,
-        "denominator": 200,
-        "rate": 0.49
-      },
-      "question": {
-        "numerator": 147,
-        "denominator": 200,
-        "rate": 0.735
-      }
-    },
-    "segb_survival": {
-      "dialogue": {
-        "numerator": 96,
-        "denominator": 98,
-        "rate": 0.9795918367346939
-      },
-      "question": {
-        "numerator": 147,
-        "denominator": 147,
-        "rate": 1.0
-      }
-    }
+ "gate": "G1",
+ "pilot_round": 1,
+ "attempts_per_cell": 300,
+ "verdict": "FAIL",
+ "fail_reasons": [
+  "G1(a) question: net 0.2239 < 0.25",
+  "G1(a) dialogue: net 0.1472 < 0.25"
+ ],
+ "per_stage": {
+  "mining": {
+   "dialogue": {
+    "numerator": 368,
+    "denominator": 1200,
+    "rate": 0.30666666666666664
+   },
+   "question": {
+    "numerator": 457,
+    "denominator": 1500,
+    "rate": 0.30466666666666664
+   }
   },
-  "per_cell": {
-    "mining": {
-      "dialog_astra": {
-        "attempts": 300,
-        "kept": 76,
-        "cap_hit": 125
-      },
-      "dialog_dana": {
-        "attempts": 300,
-        "kept": 64,
-        "cap_hit": 138
-      },
-      "dialog_helios": {
-        "attempts": 300,
-        "kept": 104,
-        "cap_hit": 216
-      },
-      "dialog_vex": {
-        "attempts": 300,
-        "kept": 124,
-        "cap_hit": 204
-      },
-      "storyq_astra": {
-        "attempts": 300,
-        "kept": 101,
-        "cap_hit": 135
-      },
-      "storyq_dana": {
-        "attempts": 300,
-        "kept": 52,
-        "cap_hit": 157
-      },
-      "storyq_helios": {
-        "attempts": 300,
-        "kept": 90,
-        "cap_hit": 219
-      },
-      "storyq_vex": {
-        "attempts": 300,
-        "kept": 90,
-        "cap_hit": 203
-      },
-      "storyq_wren": {
-        "attempts": 300,
-        "kept": 124,
-        "cap_hit": 210
-      }
-    },
-    "admission": {
-      "dialog_astra": {
-        "n_items": 50,
-        "n_admitted": 25
-      },
-      "dialog_dana": {
-        "n_items": 50,
-        "n_admitted": 26
-      },
-      "dialog_helios": {
-        "n_items": 50,
-        "n_admitted": 25
-      },
-      "dialog_vex": {
-        "n_items": 50,
-        "n_admitted": 22
-      },
-      "storyq_astra": {
-        "n_items": 40,
-        "n_admitted": 33
-      },
-      "storyq_dana": {
-        "n_items": 40,
-        "n_admitted": 31
-      },
-      "storyq_helios": {
-        "n_items": 40,
-        "n_admitted": 30
-      },
-      "storyq_vex": {
-        "n_items": 40,
-        "n_admitted": 27
-      },
-      "storyq_wren": {
-        "n_items": 40,
-        "n_admitted": 26
-      }
-    },
-    "segb": {
-      "dialog_astra": {
-        "rows": 25,
-        "kept": 24,
-        "cap_hit_no_close": 1
-      },
-      "dialog_dana": {
-        "rows": 26,
-        "kept": 25,
-        "cap_hit_no_close": 1
-      },
-      "dialog_helios": {
-        "rows": 25,
-        "kept": 25,
-        "cap_hit_no_close": 0
-      },
-      "dialog_vex": {
-        "rows": 22,
-        "kept": 22,
-        "cap_hit_no_close": 0
-      },
-      "storyq_astra": {
-        "rows": 33,
-        "kept": 33,
-        "cap_hit_no_close": 0
-      },
-      "storyq_dana": {
-        "rows": 31,
-        "kept": 31,
-        "cap_hit_no_close": 0
-      },
-      "storyq_helios": {
-        "rows": 30,
-        "kept": 30,
-        "cap_hit_no_close": 0
-      },
-      "storyq_vex": {
-        "rows": 27,
-        "kept": 27,
-        "cap_hit_no_close": 0
-      },
-      "storyq_wren": {
-        "rows": 26,
-        "kept": 26,
-        "cap_hit_no_close": 0
-      }
-    }
+  "admission": {
+   "dialogue": {
+    "numerator": 98,
+    "denominator": 200,
+    "rate": 0.49
+   },
+   "question": {
+    "numerator": 147,
+    "denominator": 200,
+    "rate": 0.735
+   }
   },
-  "families": {
-    "question": {
-      "net_kept_per_attempt": 0.22393,
-      "trip_line": 0.25,
-      "pass": false,
-      "wave1_attempts_per_cell": 30000
-    },
-    "dialogue": {
-      "net_kept_per_attempt": 0.1472,
-      "trip_line": 0.25,
-      "pass": false,
-      "wave1_attempts_per_cell": 30000
-    }
-  },
-  "judge_sync_pilot": {
-    "verdict": "PASS",
-    "report": "/workspace/explore-persona-space/eval_results/issue_2378/judge/pilot_admission_sync.json"
-  },
-  "layer_sweep": {
-    "selected_layer": 51,
-    "max_r2": 0.5443328501868154,
-    "gate_g1c_passes": true,
-    "floor": 0.05
-  },
-  "sim_user_smoke": {
-    "counts": {
-      "rows": 50,
-      "kept": 4,
-      "over_length": 0,
-      "empty_turn": 34,
-      "think_leak": 0,
-      "len_band": 12,
-      "non_english": 0
-    },
-    "cap_hit_fraction_after_per_shard": {
-      "summary_w1_s0": 0.0
-    },
-    "disposition": "advisory (G1e)"
-  },
-  "measured_walls_s": {
-    "p1.sega": 0.0,
-    "p1.chat_plain": 0.0,
-    "p1.segb": 0.0
-  },
-  "fences_s_2x": {
-    "p1.sega": 0.0,
-    "p1.chat_plain": 0.0,
-    "p1.segb": 0.0
-  },
-  "metadata": {
-    "issue": 2378,
-    "timestamp": "2026-08-21T07:03:33+0000",
-    "python": "3.11.10",
-    "argv": [
-      "scripts/issue2378_dispatch.py",
-      "--phase",
-      "p1_pilot",
-      "--attempts-per-cell",
-      "300",
-      "--chat-pilot-rows",
-      "2500",
-      "--user-sim-smoke-rows",
-      "50"
-    ],
-    "git_commit": "2b80fd8f",
-    "git_dirty": false,
-    "git_argv0_state": "tracked",
-    "git_argv0_path": "scripts/issue2378_dispatch.py"
+  "segb_survival": {
+   "dialogue": {
+    "numerator": 96,
+    "denominator": 98,
+    "rate": 0.9795918367346939
+   },
+   "question": {
+    "numerator": 147,
+    "denominator": 147,
+    "rate": 1.0
+   }
   }
+ },
+ "per_cell": {
+  "mining": {
+   "dialog_astra": {
+    "attempts": 300,
+    "kept": 76,
+    "cap_hit": 125
+   },
+   "dialog_dana": {
+    "attempts": 300,
+    "kept": 64,
+    "cap_hit": 138
+   },
+   "dialog_helios": {
+    "attempts": 300,
+    "kept": 104,
+    "cap_hit": 216
+   },
+   "dialog_vex": {
+    "attempts": 300,
+    "kept": 124,
+    "cap_hit": 204
+   },
+   "storyq_astra": {
+    "attempts": 300,
+    "kept": 101,
+    "cap_hit": 135
+   },
+   "storyq_dana": {
+    "attempts": 300,
+    "kept": 52,
+    "cap_hit": 157
+   },
+   "storyq_helios": {
+    "attempts": 300,
+    "kept": 90,
+    "cap_hit": 219
+   },
+   "storyq_vex": {
+    "attempts": 300,
+    "kept": 90,
+    "cap_hit": 203
+   },
+   "storyq_wren": {
+    "attempts": 300,
+    "kept": 124,
+    "cap_hit": 210
+   }
+  },
+  "admission": {
+   "dialog_astra": {
+    "n_items": 50,
+    "n_admitted": 25
+   },
+   "dialog_dana": {
+    "n_items": 50,
+    "n_admitted": 26
+   },
+   "dialog_helios": {
+    "n_items": 50,
+    "n_admitted": 25
+   },
+   "dialog_vex": {
+    "n_items": 50,
+    "n_admitted": 22
+   },
+   "storyq_astra": {
+    "n_items": 40,
+    "n_admitted": 33
+   },
+   "storyq_dana": {
+    "n_items": 40,
+    "n_admitted": 31
+   },
+   "storyq_helios": {
+    "n_items": 40,
+    "n_admitted": 30
+   },
+   "storyq_vex": {
+    "n_items": 40,
+    "n_admitted": 27
+   },
+   "storyq_wren": {
+    "n_items": 40,
+    "n_admitted": 26
+   }
+  },
+  "segb": {
+   "dialog_astra": {
+    "rows": 25,
+    "kept": 24,
+    "cap_hit_no_close": 1
+   },
+   "dialog_dana": {
+    "rows": 26,
+    "kept": 25,
+    "cap_hit_no_close": 1
+   },
+   "dialog_helios": {
+    "rows": 25,
+    "kept": 25,
+    "cap_hit_no_close": 0
+   },
+   "dialog_vex": {
+    "rows": 22,
+    "kept": 22,
+    "cap_hit_no_close": 0
+   },
+   "storyq_astra": {
+    "rows": 33,
+    "kept": 33,
+    "cap_hit_no_close": 0
+   },
+   "storyq_dana": {
+    "rows": 31,
+    "kept": 31,
+    "cap_hit_no_close": 0
+   },
+   "storyq_helios": {
+    "rows": 30,
+    "kept": 30,
+    "cap_hit_no_close": 0
+   },
+   "storyq_vex": {
+    "rows": 27,
+    "kept": 27,
+    "cap_hit_no_close": 0
+   },
+   "storyq_wren": {
+    "rows": 26,
+    "kept": 26,
+    "cap_hit_no_close": 0
+   }
+  }
+ },
+ "families": {
+  "question": {
+   "net_kept_per_attempt": 0.22393,
+   "trip_line": 0.25,
+   "pass": false,
+   "wave1_attempts_per_cell": 30000
+  },
+  "dialogue": {
+   "net_kept_per_attempt": 0.1472,
+   "trip_line": 0.25,
+   "pass": false,
+   "wave1_attempts_per_cell": 30000
+  }
+ },
+ "judge_sync_pilot": {
+  "verdict": "PASS",
+  "report": "/workspace/explore-persona-space/eval_results/issue_2378/judge/pilot_admission_sync.json"
+ },
+ "layer_sweep": {
+  "selected_layer": 51,
+  "max_r2": 0.5443328501868154,
+  "gate_g1c_passes": true,
+  "floor": 0.05
+ },
+ "sim_user_smoke": {
+  "counts": {
+   "rows": 50,
+   "kept": 4,
+   "over_length": 0,
+   "empty_turn": 34,
+   "think_leak": 0,
+   "len_band": 12,
+   "non_english": 0
+  },
+  "cap_hit_fraction_after_per_shard": {
+   "summary_w1_s0": 0.0
+  },
+  "disposition": "advisory (G1e)"
+ },
+ "measured_walls_s": {
+  "model_engine_smoke": 91.2,
+  "p1.admission_slice": 13.2,
+  "p1.capture_pilot": 357.7,
+  "p1.chat_plain": 470.6,
+  "p1.judge_sync_pilot": 9.3,
+  "p1.sega": 246.5,
+  "p1.segb": 254.1,
+  "p1.user_sim_smoke": 48.3
+ },
+ "fences_s_2x": {
+  "model_engine_smoke": 182.4,
+  "p1.admission_slice": 26.4,
+  "p1.capture_pilot": 715.4,
+  "p1.chat_plain": 941.2,
+  "p1.judge_sync_pilot": 18.6,
+  "p1.sega": 493.0,
+  "p1.segb": 508.2,
+  "p1.user_sim_smoke": 96.6
+ },
+ "metadata": {
+  "issue": 2378,
+  "timestamp": "2026-08-21T07:03:33+0000",
+  "python": "3.11.10",
+  "argv": [
+   "scripts/issue2378_dispatch.py",
+   "--phase",
+   "p1_pilot",
+   "--attempts-per-cell",
+   "300",
+   "--chat-pilot-rows",
+   "2500",
+   "--user-sim-smoke-rows",
+   "50"
+  ],
+  "git_commit": "2b80fd8f",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2378_dispatch.py"
+ },
+ "walls_merge_note": "measured_walls_s/fences_s_2x per-key merged from round-1 digest at 9804368085 per the epm:review-reconcile v7 binding guard: the r6 fast-forward re-compose (zero-GPU, all stages resume-skipped) omitted or near-zeroed skipped-step walls; restored keys: model_engine_smoke,p1.admission_slice,p1.capture_pilot,p1.chat_plain,p1.judge_sync_pilot,p1.sega,p1.segb,p1.user_sim_smoke"
 }
