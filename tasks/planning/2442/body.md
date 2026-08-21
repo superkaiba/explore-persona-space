@@ -3,7 +3,8 @@ title: 'Absence-claim rule names the duty but not the mechanism: a full-listing 
   client-side prefix filter returns a silent zero on a wrong path where the scoped
   probe 404s'
 kind: infra
-tags: []
+tags:
+- wf-fix
 created_at: '2026-08-21T06:49:40Z'
 has_clean_result: false
 origin_prompt: /issue 2329
