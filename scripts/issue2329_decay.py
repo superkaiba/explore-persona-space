@@ -163,6 +163,14 @@ class DecayConfig:
     max_tokens: int = DECAY_MAX_TOKENS
     n_boot: int = N_BOOT_DEFAULT
     dry_run: bool = False
+    # Wave transport routing. 0 == the registered all-batch production plan
+    # (pilot and production share it — rule 26/#2152 parity). Raised ONLY for a
+    # rule-28 targeted re-issue of API-classifier-refused draws, which the
+    # provider's safety classifier censored on the batch transport and which are
+    # transport-conditional + retriable at the identical instrument (#2151/#1739:
+    # 0 re-refusals on sync). Already-scored draws are served from the
+    # rubric-keyed JudgeCache, so only the refused items are re-submitted.
+    wave_threshold_base: int = 0
 
     @property
     def judge_root(self) -> Path:
@@ -844,8 +852,13 @@ def phase_pilot(cfg: DecayConfig) -> int:
 
 
 def phase_wave(cfg: DecayConfig) -> int:
-    """One production run_wave per dfrag rubric (items span BOTH models),
-    threshold_base=0 (pinned batch, matching the pilot's declared transport)."""
+    """One production run_wave per dfrag rubric (items span BOTH models).
+
+    Transport routing comes from ``cfg.wave_threshold_base``; the default 0 is
+    the registered all-batch plan, matching the pilot's declared transport
+    (rule 26/#2152 parity). Raise it only for a rule-28 targeted SYNC re-issue
+    of API-classifier-refused draws.
+    """
     jcfg = cfg.j94()
     gate_path = jcfg.gates_dir / "pilot_gate_report.json"
     if cfg.dry_run:
@@ -877,7 +890,7 @@ def phase_wave(cfg: DecayConfig) -> int:
             fragment_eval_prompt(descriptors[rid]),
             by_rid[rid],
             jcfg,
-            threshold_base=0,
+            threshold_base=cfg.wave_threshold_base,
         )
     logger.info("[wave] %d rubric waves dispatched/complete", len(by_rid))
     return RC_OK
@@ -1563,6 +1576,17 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--judge-model", default=J94.DEFAULT_JUDGE_MODEL)
     ap.add_argument("--max-tokens", type=int, default=DECAY_MAX_TOKENS)
     ap.add_argument("--n-boot", type=int, default=N_BOOT_DEFAULT)
+    ap.add_argument(
+        "--wave-threshold-base",
+        type=int,
+        default=0,
+        help=(
+            "wave transport routing; 0 (default) = the registered all-batch plan. "
+            "Raise (e.g. 1000000000) ONLY for a rule-28 targeted SYNC re-issue of "
+            "API-classifier-refused draws — cached draws are reused, so only the "
+            "refused items are re-submitted."
+        ),
+    )
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument(
         "--import-check",
@@ -1640,6 +1664,7 @@ def main(argv: list[str] | None = None) -> int:
         max_tokens=args.max_tokens,
         n_boot=args.n_boot,
         dry_run=args.dry_run,
+        wave_threshold_base=args.wave_threshold_base,
     )
     print(f"[phase={args.phase}] start", flush=True)
     rc = PHASES[args.phase](cfg)

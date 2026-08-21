@@ -1,0 +1,145 @@
+{
+  "commit": "4b5d1847+dirty",
+  "render_id": "4de75e003483413b",
+  "git_commit": "4b5d184719c0da423c50e0adb8686dcde686e79a",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2329_decay.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2329_decay.py",
+  "created": "2026-08-21T09:54:03Z",
+  "figsize": [
+    9.0,
+    3.2
+  ],
+  "points": [
+    {
+      "category": "q25\nsteered",
+      "< 48-token drop fraction": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "q25\nceiling",
+      "< 48-token drop fraction": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "q25\nfloor",
+      "< 48-token drop fraction": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "q35\nsteered",
+      "< 48-token drop fraction": 0.008333333333333333,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "q35\nceiling",
+      "< 48-token drop fraction": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "q35\nfloor",
+      "< 48-token drop fraction": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "q25\nsteered",
+      "coherence > 60 retention fraction": 0.9727272727272728,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "q25\nceiling",
+      "coherence > 60 retention fraction": 0.9181818181818182,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "q25\nfloor",
+      "coherence > 60 retention fraction": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "q35\nsteered",
+      "coherence > 60 retention fraction": 0.9873949579831933,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "q35\nceiling",
+      "coherence > 60 retention fraction": 0.9833333333333333,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "q35\nfloor",
+      "coherence > 60 retention fraction": 0.9666666666666667,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 12,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "< 48-token drop fraction",
+        "xticklabels": [
+          "q25\nsteered",
+          "q25\nceiling",
+          "q25\nfloor",
+          "q35\nsteered",
+          "q35\nceiling",
+          "q35\nfloor"
+        ],
+        "yticklabels": [
+          "0.000",
+          "0.001",
+          "0.002",
+          "0.003",
+          "0.004",
+          "0.005",
+          "0.006",
+          "0.007",
+          "0.008",
+          "0.009"
+        ]
+      },
+      {
+        "ylabel": "coherence > 60 retention fraction",
+        "xticklabels": [
+          "q25\nsteered",
+          "q25\nceiling",
+          "q25\nfloor",
+          "q35\nsteered",
+          "q35\nceiling",
+          "q35\nfloor"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
