@@ -97,3 +97,22 @@ Auto-filed by the `/issue 2329` orchestrator from the round's upload-verifier
 `epm:upload-verification` v3 (FAIL) and v4 (PASS on blob evidence, with the caveat recorded in the
 marker itself); verifier tool outputs `/tmp/verify_A2.json`, `/tmp/verify_A3.json`. Sibling:
 #2359 (completed, opposite direction on the same arm).
+
+## Kinship: this may be one shared bug wearing three tool names (added at filing)
+
+The file-time dedup advisory surfaced two siblings that are NOT duplicates of this task (different
+target files, different code) but share its ROOT ASSUMPTION — workflow tooling that assumes a single
+canonical branch and misbehaves on the round-branch / worktree topology that Step 9b and
+`new_worktree.sh` make the normal shape:
+
+- **#865** (`on_hold`) — "Step 9c selector diffs main checkout, blind to worktree branches".
+- **#2320** (completed) — "Step 10d Guard 3 ON_MAINLINE uses first-parent reachability, so a
+  sibling's merge-form landing false-flags later branches UNSAFE".
+- **this task** — the residue check's ref set omits `issue-<N>-<label>`.
+
+Three tools, one wrong premise. Whoever takes this should at least LOOK at whether a single shared
+"resolve the refs that belong to issue N" helper (local + origin, prefix-aware, worktree-aware) would
+serve all three, rather than patching ref logic a third time in a third place. That is a suggestion to
+evaluate, not a prescription: if the three call sites need genuinely different semantics, say so and
+fix this one narrowly. But #2320 is already CLOSED and #865 is still open, which is exactly the
+pattern of a class being fixed one instance at a time.
