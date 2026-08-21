@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2438,
+  "highest_id": 2439,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11105,6 +11105,13 @@
       "path": "tasks/proposed/2438",
       "status": "proposed",
       "title": "Batch judge dispatch sends temperature to opus-4-8 (rejected) \u2014 opus unusable as batch judge/kappa-control"
+    },
+    "2439": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2439",
+      "status": "proposed",
+      "title": "gotchas.md: early-exit pipe probes false-fail under set -o pipefail (find|head|grep -q SIGPIPE class, #2388 Pod B R4/R5)"
     },
     "244": {
       "has_clean_result": false,
