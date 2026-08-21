@@ -31,11 +31,21 @@ incident regression (A1/MF-1 — repeated same-target imports RESOLVE),
 per-shape must-FAILs with the registry mutation check (MF-2), the waiver
 and arming pins (MF-4), and the fleet-census positive-coverage gate
 (MF-3) with its resolver-free lexical denominator.
+
+#2261 review round 2 closes the two reconciler-persisted concerns with
+fail-pre-fix negative fixtures: comment-anchored waiver recognition
+(``argcheck-waiver-comment-validation`` — a sentinel inside a call
+argument, or with an empty / sub-floor reason, never waives) and the
+exception-alias / match-capture shadow classes
+(``argcheck-shadow-binder-coverage`` — ``ExceptHandler.name``,
+``MatchAs.name``, ``MatchStar.name``, ``MatchMapping.rest`` recorded as
+non-import bindings so shadowed calls abstain as noted skips).
 """
 
 from __future__ import annotations
 
 import ast
+import sys
 import textwrap
 from collections import Counter
 from pathlib import Path
@@ -956,9 +966,14 @@ def test_bind_callee_var_kwargs_absorbs(tmp_path, monkeypatch):
             take_anything(1, extra=2, more=3)
         """,
     )
-    assert_helper_call_shapes_bind(driver)  # must not raise: **kwargs absorbs
-    census = collect_helper_call_census(driver)
-    assert len(census.bound) == 1 and not census.failures and not census.skipped
+    try:
+        assert_helper_call_shapes_bind(driver)  # must not raise: **kwargs absorbs
+        census = collect_helper_call_census(driver)
+        assert len(census.bound) == 1 and not census.failures and not census.skipped
+    finally:
+        # r2 teardown nit: the bind pass imported the tmp_path module; do not
+        # leak it into later tests' interpreter state.
+        sys.modules.pop("argcheck_bind_double_mod", None)
 
 
 def test_bind_call_site_splat_degrades_to_bind_partial(tmp_path, capsys):
@@ -1530,3 +1545,151 @@ def test_bind_fleet_census_positive_coverage():
     per_fn = Counter(site.target for site in census.bound)
     assert per_fn["huggingface_hub.hf_hub_download"] >= 16, dict(per_fn)
     assert per_fn["huggingface_hub.snapshot_download"] >= 1, dict(per_fn)
+
+
+# ---------------------------------------------------------------------------
+# #2261 review round 2 — the two reconciler-persisted concerns. Each fixture
+# fails against the round-1 code (raw-substring waiver matching; ExceptHandler
+# / Match captures invisible to the module-wide binding collector) and pins
+# the r2 fix: comment-anchored waiver recognition (tokenize.COMMENT tokens +
+# the workflow_lint `#\s*TOKEN\s*:\s*(.+?)\s*$` shape, reason >= 10 chars) and
+# exception-/pattern-bound names recorded as non-import bindings.
+# ---------------------------------------------------------------------------
+
+
+def test_bind_waiver_token_in_call_argument_never_waives(tmp_path):
+    """concern argcheck-waiver-comment-validation, negative fixture (a).
+
+    The sentinel as a STRING or IDENTIFIER argument of the failing call is
+    not a comment — both calls stay in ``census.failures`` with
+    ``census.waived == []`` (round 1 waived the string form with reason
+    ``'")'``, defeating the gate)."""
+    driver = _write(
+        tmp_path,
+        "driver_waiver_arg.py",
+        """
+        from explore_persona_space.orchestrate import hub
+
+        def phase(args):
+            hub._upload("ARGCHECK_BIND_EXEMPT")
+            hub._upload(ARGCHECK_BIND_EXEMPT)
+        """,
+    )
+    census = collect_helper_call_census(driver)
+    assert census.waived == []
+    assert len(census.failures) == 2
+    assert {f.site.label for f in census.failures} == {"hub._upload"}
+    with pytest.raises(SystemExit):
+        assert_helper_call_shapes_bind(driver)
+
+
+def test_bind_waiver_empty_or_short_reason_does_not_waive(tmp_path):
+    """concern argcheck-waiver-comment-validation, negative fixture (b).
+
+    A comment-anchored sentinel with an EMPTY reason does not waive; nor
+    does a sub-floor reason (< 10 chars — the WANDB_INTENTIONALLY_DISABLED
+    / CVD_PIN_EXEMPT / UPLOAD_AS_FILE_EXEMPT convention,
+    scripts/workflow_lint.py)."""
+    cases = [
+        (
+            "driver_waiver_empty.py",
+            """
+            from explore_persona_space.orchestrate import hub
+
+            def phase(args):
+                # ARGCHECK_BIND_EXEMPT:
+                hub.stage_hub_file("repo")
+            """,
+        ),
+        (
+            "driver_waiver_short.py",
+            """
+            from explore_persona_space.orchestrate import hub
+
+            def phase(args):
+                hub.stage_hub_file("repo")  # ARGCHECK_BIND_EXEMPT: x
+            """,
+        ),
+    ]
+    for fname, source in cases:
+        driver = _write(tmp_path, fname, source)
+        census = collect_helper_call_census(driver)
+        assert census.waived == [], fname
+        assert len(census.failures) == 1, fname
+
+
+def test_bind_except_alias_shadow_abstains(tmp_path):
+    """concern argcheck-shadow-binder-coverage: ``except ... as hub``.
+
+    An exception alias rebinding a registered import name is a recorded
+    non-import binding — the call through it becomes a noted shadow skip
+    (0 bound), never resolved against the hub module (round 1 resolved it
+    and emitted a spurious bind FAIL)."""
+    driver = _write(
+        tmp_path,
+        "driver_except_shadow.py",
+        """
+        from explore_persona_space.orchestrate import hub
+
+        def phase(args):
+            try:
+                pass
+            except Exception as hub:
+                hub._upload(args.src)
+        """,
+    )
+    assert_helper_call_shapes_bind(driver)  # abstains: must not raise
+    census = collect_helper_call_census(driver)
+    assert census.bound == [] and census.failures == []
+    assert len(census.skipped) == 1
+    assert "genuine shadow" in census.skipped[0].reason
+
+
+def test_bind_match_capture_shadows_abstain(tmp_path):
+    """concern argcheck-shadow-binder-coverage: pattern captures.
+
+    ``MatchMapping.rest`` (``case {**hub}``), ``MatchAs.name``
+    (``case hub``), and ``MatchStar.name`` (``case [*hub]``) each rebind
+    the registered alias via a string AST field — recorded as non-import
+    bindings, so every shadowed call abstains as a noted skip (0 bound)."""
+    cases = [
+        (
+            "driver_match_mapping_shadow.py",
+            """
+            from explore_persona_space.orchestrate import hub
+
+            def phase(args):
+                match args.cfg:
+                    case {**hub}:
+                        hub._upload(args.src)
+            """,
+        ),
+        (
+            "driver_match_as_shadow.py",
+            """
+            from explore_persona_space.orchestrate import hub
+
+            def phase(args):
+                match args.mode:
+                    case hub:
+                        hub._upload(args.src)
+            """,
+        ),
+        (
+            "driver_match_star_shadow.py",
+            """
+            from explore_persona_space.orchestrate import hub
+
+            def phase(args):
+                match args.items:
+                    case [*hub]:
+                        hub._upload(args.src)
+            """,
+        ),
+    ]
+    for fname, source in cases:
+        driver = _write(tmp_path, fname, source)
+        census = collect_helper_call_census(driver)
+        assert census.bound == [] and census.failures == [], fname
+        assert len(census.skipped) == 1, fname
+        assert "genuine shadow" in census.skipped[0].reason, fname

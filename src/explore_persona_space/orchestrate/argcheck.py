@@ -86,9 +86,12 @@ CALL-ARITY BIND PASS (#2261):
     normalizing to the SAME target — module-level, function-local, and
     REPEATED same-target imports all resolve (the fleet's dominant idiom;
     the #2223 pre-fix driver bound ``hub`` three times); a genuine shadow
-    (any non-import binding, a ``del``, or imports of two DIFFERENT
-    targets under one name) makes every registered-surface call through
-    that name a DETECTED-AND-NOTED SKIP, never a silent pass. Resolved
+    (any non-import binding — exception aliases (``except ... as name``)
+    and match-pattern captures (``MatchAs`` / ``MatchStar`` /
+    ``MatchMapping.rest``) included as of #2261 r2 — a ``del``, or imports
+    of two DIFFERENT targets under one name) makes every
+    registered-surface call through that name a DETECTED-AND-NOTED SKIP,
+    never a silent pass. Resolved
     shapes: S1 module-attribute (``hub.attr(...)``; a nonexistent
     attribute on a registered module is a check FAILURE — the #606
     class — never a skip), S2 bare-name (registered functions + symbols
@@ -99,9 +102,14 @@ CALL-ARITY BIND PASS (#2261):
     (census-noted). Un-introspectable callables and
     ``getattr(mod, ...)(...)`` immediate calls are noted skips.
 
-    Waiver: ``# ARGCHECK_BIND_EXEMPT: <reason>`` on the call line or the
-    immediately-preceding non-blank COMMENT-ONLY line converts a would-be
-    failure into a noted, reason-echoed waiver (the comment-only
+    Waiver: a ``# ARGCHECK_BIND_EXEMPT: <reason>`` COMMENT — a real
+    ``tokenize.COMMENT`` token matching the repo waiver-comment shape
+    (``#\\s*TOKEN\\s*:\\s*(.+?)\\s*$``, reason >= 10 chars: the
+    ``workflow_lint.py`` WANDB / CVD_PIN / UPLOAD_AS_FILE convention; the
+    sentinel inside a string literal or call argument, or with an empty /
+    sub-floor reason, does NOT waive — #2261 r2) — on the call line or
+    the immediately-preceding non-blank COMMENT-ONLY line converts a
+    would-be failure into a noted, reason-echoed waiver (the comment-only
     restriction keeps a trailing waiver on a CODE line from leaking onto
     the NEXT line's call). LINE-grained — it suppresses ONLY calls whose
     ``node.lineno`` matches, so keep waived calls on their own line: two
@@ -140,7 +148,10 @@ import ast
 import dataclasses
 import importlib
 import inspect
+import io
 import os
+import re
+import tokenize
 from collections.abc import Iterable, Sequence
 from pathlib import Path
 
@@ -576,6 +587,13 @@ _BIND_FUNCTIONS: frozenset[tuple[str, str]] = frozenset(
     }
 )
 _BIND_WAIVER_TOKEN = "ARGCHECK_BIND_EXEMPT"
+# Comment-anchored waiver recognizer — the repo's waiver-comment convention
+# (scripts/workflow_lint.py: WANDB_WAIVER_RE / CVD_PIN_WAIVER_RE /
+# UPLOAD_AS_FILE_WAIVER_RE), applied to tokenize.COMMENT text only (#2261 r2:
+# raw-substring matching let a sentinel inside a call ARGUMENT waive the very
+# call it rode in on, and accepted an empty reason).
+_BIND_WAIVER_RE = re.compile(rf"#\s*{_BIND_WAIVER_TOKEN}\s*:\s*(.+?)\s*$")
+_BIND_WAIVER_MIN_REASON_CHARS = 10
 
 _PLACEHOLDER = object()  # bind() checks SHAPE only; values are never evaluated
 _MISSING = object()
@@ -724,8 +742,14 @@ def _collect_name_bindings(tree: ast.AST) -> tuple[dict[str, _NameBindings], boo
     Collector classes match ``_exclusive_use_sole_binding`` (Store-context
     ``ast.Name``, ``ast.arg`` parameters, ``ast.alias`` imports, ``del``
     tracked) plus ``FunctionDef`` / ``AsyncFunctionDef`` / ``ClassDef``
-    names. The DECISION differs (uniform-import-target, not sole-binding):
-    see ``_resolve_import_name``.
+    names, plus the STRING-FIELD binders (#2261 r2, concern
+    ``argcheck-shadow-binder-coverage``): ``ExceptHandler.name`` exception
+    aliases and the match-pattern captures ``MatchAs.name`` /
+    ``MatchStar.name`` / ``MatchMapping.rest`` — each recorded as a
+    non-import binding (``n_other``) so a shadowed registered alias
+    abstains as a noted skip instead of resolving against the wrong
+    object. The DECISION differs (uniform-import-target, not
+    sole-binding): see ``_resolve_import_name``.
     """
     assign_value_by_target = _assign_value_map(tree)
     out: dict[str, _NameBindings] = {}
@@ -749,6 +773,12 @@ def _collect_name_bindings(tree: ast.AST) -> tuple[dict[str, _NameBindings], boo
             rec(node.arg).n_other += 1
         elif isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef):
             rec(node.name).n_other += 1
+        elif isinstance(node, ast.ExceptHandler | ast.MatchAs | ast.MatchStar):
+            if node.name:
+                rec(node.name).n_other += 1
+        elif isinstance(node, ast.MatchMapping):
+            if node.rest:
+                rec(node.rest).n_other += 1
         elif isinstance(node, ast.Import | ast.ImportFrom):
             star_import = _record_import_bindings(node, rec) or star_import
     return out, star_import
@@ -964,41 +994,78 @@ def _bind_call_shape(fn: object, node: ast.Call) -> tuple[str, str | None]:
     return ("ok", None)
 
 
-def _waiver_reason(lines: list[str], lineno: int) -> str | None:
+def _comment_map(source: str) -> dict[int, tuple[int, str]]:
+    """Map lineno -> (start col, comment text) for every real COMMENT token.
+
+    tokenize-derived (#2261 r2, concern ``argcheck-waiver-comment-validation``)
+    so a sentinel inside a string literal / call argument is NEVER mistaken
+    for a waiver comment. At most one COMMENT token exists per physical line.
+    """
+    out: dict[int, tuple[int, str]] = {}
+    for tok in tokenize.generate_tokens(io.StringIO(source).readline):
+        if tok.type == tokenize.COMMENT:
+            out[tok.start[0]] = (tok.start[1], tok.string)
+    return out
+
+
+def _waiver_comment_reason(comment: str) -> str | None:
+    """The waiver reason carried by one COMMENT token, or None.
+
+    Precedent shape (``scripts/workflow_lint.py`` WANDB / CVD_PIN /
+    UPLOAD_AS_FILE waivers): a ``#``-anchored regex requiring the exact
+    token, a ``:``, and a reason of >= ``_BIND_WAIVER_MIN_REASON_CHARS``
+    chars — an empty or sub-floor reason does NOT waive.
+    """
+    m = _BIND_WAIVER_RE.search(comment)
+    if not m:
+        return None
+    reason = m.group(1).strip()
+    if len(reason) < _BIND_WAIVER_MIN_REASON_CHARS:
+        return None
+    return reason
+
+
+def _waiver_reason(
+    lines: list[str], comments: dict[int, tuple[int, str]], lineno: int
+) -> str | None:
     """The ARGCHECK_BIND_EXEMPT reason covering ``lineno``, or None.
 
-    LINE-grained: the token on the call's own source line, or on the
-    immediately-preceding non-blank COMMENT-ONLY line (the
-    ``# WANDB_INTENTIONALLY_DISABLED`` placement convention). The
+    COMMENT-anchored (real ``tokenize.COMMENT`` tokens only — a sentinel
+    inside a string literal or call argument never waives; #2261 r2) and
+    LINE-grained: the waiver comment sits on the call's own source line
+    (trailing) or on the immediately-preceding non-blank COMMENT-ONLY line
+    (the ``# WANDB_INTENTIONALLY_DISABLED`` placement convention). The
     comment-only restriction on the preceding-line arm is load-bearing: a
     trailing waiver on a CODE line covers that line only — it must never
     leak onto the NEXT line's call. Suppresses ONLY calls whose
     ``node.lineno`` matches — never the rest of the file.
     """
-
-    def token_reason(text: str) -> str | None:
-        if _BIND_WAIVER_TOKEN not in text:
-            return None
-        after = text.split(_BIND_WAIVER_TOKEN, 1)[1]
-        return after.lstrip(":").strip() or "(no reason given)"
-
-    if 1 <= lineno <= len(lines):
-        reason = token_reason(lines[lineno - 1])
+    tok = comments.get(lineno)
+    if tok is not None:
+        reason = _waiver_comment_reason(tok[1])
         if reason is not None:
             return reason
     j = lineno - 1
     while j >= 1 and not lines[j - 1].strip():
         j -= 1
-    if j >= 1 and lines[j - 1].lstrip().startswith("#"):
-        return token_reason(lines[j - 1])
+    if j >= 1:
+        tok = comments.get(j)
+        # Comment-only: nothing but whitespace before the comment token.
+        if tok is not None and not lines[j - 1][: tok[0]].strip():
+            return _waiver_comment_reason(tok[1])
     return None
 
 
 def _record_failure(
-    census: BindCensus, site: BindSite, error: str, installed: str | None, lines: list[str]
+    census: BindCensus,
+    site: BindSite,
+    error: str,
+    installed: str | None,
+    lines: list[str],
+    comments: dict[int, tuple[int, str]],
 ) -> None:
-    """Route a bind failure to failures, or to waived when the call line carries the token."""
-    reason = _waiver_reason(lines, site.lineno)
+    """Route a bind failure to failures, or to waived under a covering waiver comment."""
+    reason = _waiver_reason(lines, comments, site.lineno)
     if reason is not None:
         census.waived.append(BindWaiver(site, error, reason))
     else:
@@ -1026,6 +1093,7 @@ def collect_helper_call_census(*module_files: str | os.PathLike[str]) -> BindCen
         source = path.read_text(encoding="utf-8")
         tree = ast.parse(source, filename=str(path))
         lines = source.split("\n")
+        comments = _comment_map(source)
         bindings, star_import = _collect_name_bindings(tree)
         for node in ast.walk(tree):
             if not isinstance(node, ast.Call):
@@ -1041,7 +1109,7 @@ def collect_helper_call_census(*module_files: str | os.PathLike[str]) -> BindCen
             fn, fetch_error, canonical = _fetch_callable(fetch, instances)
             site = BindSite(str(path), node.lineno, label, shape, canonical)
             if fetch_error is not None:
-                _record_failure(census, site, fetch_error, None, lines)
+                _record_failure(census, site, fetch_error, None, lines, comments)
                 continue
             bind_verdict, detail = _bind_call_shape(fn, node)
             if bind_verdict == "unintrospectable":
@@ -1059,7 +1127,7 @@ def collect_helper_call_census(*module_files: str | os.PathLike[str]) -> BindCen
                 census.degraded.append(site)
             else:  # "fail" | "degraded-fail"
                 installed = f"{canonical}{inspect.signature(fn)}"  # type: ignore[arg-type]
-                _record_failure(census, site, detail or "", installed, lines)
+                _record_failure(census, site, detail or "", installed, lines, comments)
     return census
 
 
@@ -1102,7 +1170,7 @@ def assert_helper_call_shapes_bind(*module_files: str | os.PathLike[str]) -> Non
             sites = "; ".join(f"{s.path}:{s.lineno} {s.label} ({s.reason})" for s in census.skipped)
             parts.append(f"  note: skipped site(s) not statically resolvable: {sites}")
         parts.append(
-            "  fix: correct the call site, or waive with `# ARGCHECK_BIND_EXEMPT: <reason>`"
-            " on the call line"
+            f"  fix: correct the call site, or waive with a `# {_BIND_WAIVER_TOKEN}: <reason>`"
+            f" comment (reason >= {_BIND_WAIVER_MIN_REASON_CHARS} chars) on the call line"
         )
         raise SystemExit("\n".join(parts))

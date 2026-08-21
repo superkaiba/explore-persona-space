@@ -214,7 +214,13 @@ never a skip. Non-raising census API: `collect_helper_call_census(*module_files)
 - **Waiver:** `# ARGCHECK_BIND_EXEMPT: <reason>` on the call line, or on the
   immediately-preceding non-blank COMMENT-ONLY line (a trailing waiver on a CODE line covers
   that line only — it never leaks onto the next line's call), converts a would-be FAIL into a
-  noted, reason-echoed waiver. LINE-grained edge cases: multiple calls on ONE physical line
+  noted, reason-echoed waiver. The sentinel is recognized ONLY as a real comment
+  (`tokenize.COMMENT` token) matching the repo waiver-comment shape —
+  `#\s*ARGCHECK_BIND_EXEMPT\s*:\s*(.+?)\s*$` with a reason >= 10 chars, the same convention as
+  `WANDB_INTENTIONALLY_DISABLED` / `CVD_PIN_EXEMPT` / `UPLOAD_AS_FILE_EXEMPT` in
+  `scripts/workflow_lint.py` — so the token inside a string literal or call argument, or a
+  comment with an empty / sub-10-char reason, does NOT waive (#2261 r2). LINE-grained edge
+  cases: multiple calls on ONE physical line
   share a `node.lineno`, so a waiver there suppresses all of them — keep waived calls on their
   own line (a live two-calls-one-line site: `scripts/issue2225_eval_gen.py:675`); a
   formatter-expanded multiline call keeps `node.lineno` at its OPENING line — place the waiver
