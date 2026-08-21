@@ -1171,12 +1171,15 @@ tests BEFORE anything lands:
     # surface (.claude/ CLAUDE.md scripts/ src/ tests/ docs/ — the #1154
     # marker-recipe pins read docs/); a false block naming a path OUTSIDE
     # this set means the linter grew a new scan root — extend the set here.
+    # check_prod_import_lockfile (#2253) reads uv.lock + pyproject.toml at
+    # the tree ROOT, so BOTH manifests ship in the archive (pinned by
+    # tests/test_issue_skill_gate_tree_pathspec.py).
     GT=/tmp/issue-<N>-lint-gate-tree
     GT_RC=0
     timeout --kill-after=30s 120s git -C "$WT" fetch origin main --quiet || true  # bounded: a hung fetch degrades to origin/main staleness, never a wedged gate
     { rm -rf "$GT" && mkdir -p "$GT"; } || GT_RC=1
     ( set -o pipefail; git -C "$WT" archive origin/main -- \
-        .claude CLAUDE.md scripts src tests docs pyproject.toml \
+        .claude CLAUDE.md scripts src tests docs pyproject.toml uv.lock \
       | tar -x -C "$GT" ) || GT_RC=1
     [ -f "$GT/scripts/workflow_lint.py" ] || GT_RC=1   # construction sanity
     # BASELINE legs (payload-free landing base — phase 1, BEFORE the
