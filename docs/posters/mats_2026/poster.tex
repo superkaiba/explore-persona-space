@@ -116,7 +116,7 @@
 
 \postersec{1.\ The Mapping has high predictive Power and is mostly Linear}
 \begin{center}
-\includegraphics[width=0.66\linewidth]{plot1_scaling_boundary.pdf}
+\includegraphics[width=0.95\linewidth]{plot1_scaling_boundary.pdf}
 \end{center}
 \begin{itemize}
   \item \takeaways{The mapping has high predictive power:} held-out $R^2$ 0.75, rank-1 retrieval 0.98 at 1 million contexts
@@ -172,7 +172,7 @@ We train another map from the context to the answer's \textbf{SAE features}, the
 
 \postersec{5.\ The mapping is already largely present in the base model and refined throughout post training}
 \begin{center}
-\IfFileExists{figures/plot5_stages.pdf}{\includegraphics[width=0.68\linewidth]{plot5_stages.pdf}}{\includegraphics[width=0.38\linewidth]{c1_stage_retention.pdf}}
+\IfFileExists{figures/plot5_stages.pdf}{\includegraphics[width=0.90\linewidth]{plot5_stages.pdf}}{\includegraphics[width=0.38\linewidth]{c1_stage_retention.pdf}}
 \end{center}
 \begin{itemize}
   \item \takeaways{The mapping is already largely present in the base model:} $R^2$ 0.41 before any post-training, \textbf{67\%} of the 0.62 the fully post-trained model reaches.

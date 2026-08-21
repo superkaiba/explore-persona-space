@@ -71,7 +71,13 @@ def main() -> None:
         out_dir=OUT_DIR,
         # same text as the paper's, broken over two lines: at 2.8in tall the
         # single-line form overruns the axis and collides with the legend
-        acc_label="retrieval acc@1\n(pool 1,000)",
+        # Pool size dropped from the axis (Thomas 2026-08-21). It stays in the
+        # sidecar meta.json; on the board it was the only place a specific pool
+        # was named, which read as contradicting the TL;DR's 10,000.
+        acc_label="retrieval acc@1",
+        # two legend rows need more than the paper's 14% headroom on this short
+        # canvas: at 0.86 the second row lands on the retrieval panel's 1.0 tick
+        legend_rect_top=0.80,
         identity_label="identity + bias (baseline)",
         neural_label="nonlinear (MLP)",
         figsize=FIGSIZE,
