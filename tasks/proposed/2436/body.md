@@ -31,4 +31,6 @@ On #2356 Result 3, the parenthetical "(0.13→0.29 harmful, 0.56→0.61 over-ref
 
 ## Provenance
 
+workflow_fix_target: scripts/verify_task_body.py
+
 Surfaced during `/issue 2356` clean-result-critic ensemble (rounds 3–5). Both gaps are in `scripts/verify_task_body.py`; fixes should add fixtures reproducing each shape and update any affected lens-reference wording.
