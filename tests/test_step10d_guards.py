@@ -128,7 +128,13 @@ def _make_scratch_repo_with_worktree(tmp_path: Path, issue: int) -> tuple[Path, 
 
 
 def _parse_kv(stdout: str) -> dict[str, str]:
-    """Parse the script's ``KEY=VALUE`` stdout lines into a dict."""
+    """Parse the script's ``KEY=VALUE`` stdout lines into a dict.
+
+    Values are the ON-WIRE encoding (``printf %q``-escaped for path-bearing
+    keys like ``LOST_UPDATE_PATHS`` — r2, #2428); assertions about the
+    LOGICAL values the caller sees go through ``_run_guard4_eval_consumer``,
+    which exercises the documented ``eval`` form in a real bash child.
+    """
     d: dict[str, str] = {}
     for line in stdout.splitlines():
         if "=" not in line:
@@ -136,6 +142,52 @@ def _parse_kv(stdout: str) -> dict[str, str]:
         k, _, v = line.partition("=")
         d[k] = v
     return d
+
+
+def _run_guard4_eval_consumer(
+    cwd: Path,
+    issue: int,
+    main_sha: str,
+) -> subprocess.CompletedProcess[str]:
+    """Consume Guard 4 via the DOCUMENTED two-step caller form in real bash.
+
+    Mirrors the script header's caller contract verbatim::
+
+        GUARD4_OUT=$(bash scripts/step10d_guards.sh <N> --guard 4 \
+            --main-sha "$MAIN_SHA"); GUARD4_RC=$?
+        eval "$GUARD4_OUT"
+
+    then prints the eval-recovered LOGICAL values as ``EVAL_*=...`` lines so
+    tests assert on what the production caller actually sees — not on the
+    on-wire encoding (the splitter-only parse is exactly how the unescaped
+    ``(count)`` emission survived r1 review; #2428 r2). Script path / issue /
+    main-sha travel via env vars, never string interpolation.
+    """
+    consumer = (
+        'GUARD4_OUT=$(bash "$STEP10D_SCRIPT" "$STEP10D_ISSUE" --guard 4 '
+        '--main-sha "$STEP10D_MAIN_SHA"); GUARD4_RC=$?\n'
+        'eval "$GUARD4_OUT"\n'
+        "printf 'EVAL_GUARD4_RC=%s\\n' \"$GUARD4_RC\"\n"
+        "printf 'EVAL_GUARD4=%s\\n' \"${GUARD4:-}\"\n"
+        "printf 'EVAL_GUARD4_MERGE_BASE=%s\\n' \"${GUARD4_MERGE_BASE:-}\"\n"
+        "printf 'EVAL_LOST_UPDATE_PATHS=%s\\n' \"${LOST_UPDATE_PATHS:-}\"\n"
+    )
+    env = os.environ.copy()
+    for k in ("GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE"):
+        env.pop(k, None)
+    env.update(
+        STEP10D_SCRIPT=str(SCRIPT),
+        STEP10D_ISSUE=str(issue),
+        STEP10D_MAIN_SHA=main_sha,
+    )
+    return subprocess.run(
+        ["bash", "-c", consumer],
+        cwd=str(cwd),
+        capture_output=True,
+        text=True,
+        env=env,
+        timeout=60,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -216,6 +268,7 @@ def _seed_guard4_fixture(
     issue: int,
     *,
     drop_main_lines: bool,
+    scoped_file: str = GUARD4_SCOPED_FILE,
 ) -> tuple[Path, Path]:
     """Scratch + worktree with a scoped file that origin/main added lines to.
 
@@ -237,7 +290,7 @@ def _seed_guard4_fixture(
     _git(scratch, "init", "-q", "-b", "main")
     _git(scratch, "remote", "add", "origin", str(origin_dir))
     # c1: seed with a scoped file that has original lines.
-    scoped = scratch / GUARD4_SCOPED_FILE
+    scoped = scratch / scoped_file
     scoped.parent.mkdir(parents=True, exist_ok=True)
     scoped.write_text("original line 1\noriginal line 2\n")
     _git(scratch, "add", str(scoped.relative_to(scratch)))
@@ -256,7 +309,7 @@ def _seed_guard4_fixture(
     worktree_dir.parent.mkdir(parents=True, exist_ok=True)
     _git(scratch, "worktree", "add", "-q", str(worktree_dir), f"issue-{issue}")
     # Branch adds its OWN line to the scoped file.
-    scoped_wt = worktree_dir / GUARD4_SCOPED_FILE
+    scoped_wt = worktree_dir / scoped_file
     if drop_main_lines:
         # Whole-file snapshot that omits main's added lines -- the exact
         # lost-update shape.
@@ -270,7 +323,7 @@ def _seed_guard4_fixture(
             "main-added line B\n"
             "branch-added line X\n"
         )
-    _git(worktree_dir, "add", GUARD4_SCOPED_FILE)
+    _git(worktree_dir, "add", scoped_file)
     _git(worktree_dir, "commit", "-q", "-m", "branch adds line X")
     return scratch, worktree_dir
 
@@ -528,6 +581,66 @@ def test_guard4_passes_on_legitimate_prefork_deletion(tmp_path):
         assert proc.returncode == 0, (args, proc.stdout, proc.stderr)
         kv = _parse_kv(proc.stdout)
         assert kv.get("GUARD4") == "pass", (args, proc.stdout)
+
+
+# ---------------------------------------------------------------------------
+# Guard 4 eval-consumer conformance (r2, #2428:
+# concern guard4-eval-output-not-shell-safe)
+#
+# The tests above parse stdout with the Python splitter, never the production
+# ``eval`` form — which is how the unescaped refusal emission
+# (``LOST_UPDATE_PATHS=<path>(<count>)``: bare parens are a bash syntax error
+# inside ``eval "$GUARD4_OUT"``) survived r1. These run the DOCUMENTED caller
+# form in a real bash child and assert exact recovery of the logical values.
+# ---------------------------------------------------------------------------
+
+
+def test_guard4_eval_consumer_recovers_metachar_path(tmp_path):
+    """The documented eval consumer exactly recovers a metachar-bearing path.
+
+    The scoped path carries spaces AND parentheses. Pre-fix (``%s``
+    emission) the ``eval`` dies with a bash syntax error and
+    ``LOST_UPDATE_PATHS`` is never assigned; post-fix (``%q``, the
+    ``DIVERGED_FILE`` pattern) every value round-trips exactly.
+    """
+    scoped = ".claude/rules/step10d guard4 (metachars).md"
+    scratch, wt = _seed_guard4_fixture(tmp_path, 2428, drop_main_lines=True, scoped_file=scoped)
+    tip = _git(wt, "rev-parse", "origin/main").stdout.strip()
+    mb = _git(wt, "merge-base", "HEAD", "origin/main").stdout.strip()
+    proc = _run_guard4_eval_consumer(scratch, 2428, tip)
+    assert proc.returncode == 0, (proc.stdout, proc.stderr)
+    # The eval'd payload must not be a bash parse error; the refusal banner
+    # (stderr) confirms the refusal path actually executed.
+    assert "syntax error" not in proc.stderr, proc.stderr
+    assert "LOST-UPDATE REFUSAL (Guard 4, #1713)" in proc.stderr, proc.stderr
+    kv = _parse_kv(proc.stdout)
+    # Refusal rc, captured via the caller form's own $? two-step.
+    assert kv.get("EVAL_GUARD4_RC") == "1", proc.stdout
+    assert kv.get("EVAL_GUARD4") == "refused", proc.stdout
+    assert kv.get("EVAL_GUARD4_MERGE_BASE") == mb, proc.stdout
+    # Exact logical recovery: both main-added lines dropped -> (2).
+    assert kv.get("EVAL_LOST_UPDATE_PATHS") == f"{scoped}(2)", proc.stdout
+
+
+def test_guard4_eval_consumer_on_plain_refusal_fixture(tmp_path):
+    """Production repro: even an ORDINARY path broke the eval consumer.
+
+    The ``(count)`` suffix alone made the pre-fix ``%s`` emission a bash
+    syntax error under ``eval`` — every real refusal, metachars or not.
+    Post-fix the plain fixture round-trips exactly like the metachar one.
+    """
+    scratch, wt = _seed_guard4_fixture(tmp_path, 2428, drop_main_lines=True)
+    tip = _git(wt, "rev-parse", "origin/main").stdout.strip()
+    mb = _git(wt, "merge-base", "HEAD", "origin/main").stdout.strip()
+    proc = _run_guard4_eval_consumer(scratch, 2428, tip)
+    assert proc.returncode == 0, (proc.stdout, proc.stderr)
+    assert "syntax error" not in proc.stderr, proc.stderr
+    assert "LOST-UPDATE REFUSAL (Guard 4, #1713)" in proc.stderr, proc.stderr
+    kv = _parse_kv(proc.stdout)
+    assert kv.get("EVAL_GUARD4_RC") == "1", proc.stdout
+    assert kv.get("EVAL_GUARD4") == "refused", proc.stdout
+    assert kv.get("EVAL_GUARD4_MERGE_BASE") == mb, proc.stdout
+    assert kv.get("EVAL_LOST_UPDATE_PATHS") == f"{GUARD4_SCOPED_FILE}(2)", proc.stdout
 
 
 # ---------------------------------------------------------------------------

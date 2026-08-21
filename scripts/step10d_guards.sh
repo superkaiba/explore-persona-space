@@ -55,8 +55,10 @@
 # Guards must expose the caller-side variables the downstream SKILL.md blocks
 # read (``MEM_COMMITTED``, ``LOST_UPDATE_PATHS``, etc.). Approach: each guard
 # subcommand emits ``KEY=VALUE`` shell-assignment lines on **stdout**, one per
-# line, values shell-safe (word/sha/``yes|no`` tokens only -- no user text on
-# stdout; diagnostics go to stderr). Callers consume via::
+# line, values shell-safe: word/sha/``yes|no`` tokens print via ``%s``;
+# path-bearing values (``LOST_UPDATE_PATHS``, ``DIVERGED_FILE``) print via
+# ``printf %q`` so ``eval`` recovers them exactly (no user text on stdout;
+# diagnostics go to stderr). Callers consume via::
 #
 #     eval "$(bash scripts/step10d_guards.sh <N> --guard 0)"
 #
@@ -328,7 +330,12 @@ case "$GUARD" in
                 "$LOST_UPDATE_PATHS" >&2
             printf 'GUARD4=%s\n' refused
             printf 'GUARD4_MERGE_BASE=%s\n' "$MB"
-            printf 'LOST_UPDATE_PATHS=%s\n' "$LOST_UPDATE_PATHS"
+            # %q: eval-safe under the two-step caller form -- the value
+            # carries ``path(count)`` entries whose bare parens are a bash
+            # syntax error inside ``eval "$GUARD4_OUT"`` (and paths may bear
+            # spaces/metachars). Same encoding as DIVERGED_FILE below; the
+            # token/sha keys stay %s like the divergence guard's.
+            printf 'LOST_UPDATE_PATHS=%q\n' "$LOST_UPDATE_PATHS"
             exit 1
         fi
         printf 'GUARD4=%s\n' pass
