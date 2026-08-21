@@ -102,4 +102,5 @@ bullets, mechanized fixes); their bodies stay on disk.
 - [stale .git/index.lock kills the pod-side result commit at run end](feedback_stale_index_lock_pre_launch_probe.md) — probe+clear a confirmed-stale 0B lock pre-launch on pods whose tail commits pod-side (#1336)
 - [Smoke tree eats full-leg headroom](feedback_smoke_tree_eats_full_leg_headroom.md) — reap the uploaded smoke tree before the full (re)launch on shared out-roots (#1333)
 - [Wrapper header is launch-arg ground truth](feedback_wrapper_header_is_launch_arg_ground_truth.md) — on plan-vs-wrapper launch-command mismatch, the wrapper's usage header wins (#1090 fu6 manifest-path crash)
+- [FETCH_HEAD clobbered by concurrent sessions](feedback_fetch_head_clobbered_by_concurrent_sessions.md) — never `git show FETCH_HEAD:` across calls at the shared root; pin reads to the SHA (#2223 ansfirst)
 - [HF LFS billing-403 recovery](feedback_hf_lfs_billing_403_no_upload_smoke.md) — 403 credit-recharge = external billing block; smoke --no-upload + non-LFS uploads stay on; user owns the billing fix

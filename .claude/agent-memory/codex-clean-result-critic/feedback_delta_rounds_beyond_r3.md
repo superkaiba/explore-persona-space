@@ -31,4 +31,13 @@ questions as an added REVIEW CONTEXT block, not a narrowed lens roster;
 version is auto max+1 on the codex kind's own history — an explicit
 `revision_round` in the brief wins over own-kind marker-history inference
 (see [[fold-round-context-file-briefs]] for the inference case when the
-brief omits the round).
+brief omits the round);
+(4) COMPOSER ATTESTATIONS convert would-be sandbox-unverifiable checks
+into Codex-checkable facts (#823 r9): when a fix under verification cites
+a pin, pre-verify it on the VM at compose time and attest in the prompt —
+blob-identity of worktree copies vs body pins (`git hash-object` match,
+extends the fold-memory npz recipe to figures), and HF-pin LIVENESS via an
+authenticated `list_repo_tree` at the exact revision (the sandbox has no
+network; without the attestation a wrong-pin check degrades to advisory).
+Scope the attestation narrowly ("treat liveness as established; your job
+is the CONSISTENCY adjudication") so Codex still owns the judgment.
