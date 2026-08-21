@@ -599,8 +599,20 @@ def fig_regime_flip(l19: dict, p18: dict) -> None:
     plt.close(fig)
 
 
-def fig_paper_c1_scaling(l19: dict, ladder: dict) -> None:
+def fig_paper_c1_scaling(
+    l19: dict,
+    ladder: dict,
+    *,
+    boundary_hline: float | None = None,
+    stem: str = "c1_scaling_train_pool",
+    out_dir: Path | None = None,
+) -> None:
     """ICLR paper figure (c1_linear R1), densified (#1901 paper_densify round).
+
+    boundary_hline: opt-in poster variant — draws the #825 generic
+    boundary-token→segment map control (instruct R^2 0.1087, single-n,
+    wikitext) as a dashed reference line on the R^2 panel and saves under
+    `stem` into `out_dir`; the default paper render is byte-unchanged.
 
     Held-out R^2 (left) + euclidean retrieval acc@1, pool 1,000 (right) against
     training contexts (log x). Ridge (blue) and identity+bias (green) are DENSE
@@ -803,19 +815,28 @@ def fig_paper_c1_scaling(l19: dict, ladder: dict) -> None:
         ax.set_xscale("log")
         ax.set_xlabel("training contexts")
 
+    if boundary_hline is not None:
+        ax_r2.axhline(
+            boundary_hline,
+            color="#666666",
+            lw=1.1,
+            ls=(0, (4, 2)),
+            label="generic boundary-token map",
+        )
     handles, labels = ax_r2.get_legend_handles_labels()
     fig.legend(
         handles,
         labels,
         loc="upper center",
-        ncol=3,
+        ncol=3 if boundary_hline is None else 2,
         frameon=False,
         handlelength=1.6,
         columnspacing=1.2,
     )
-    fig.tight_layout(rect=(0, 0, 1, 0.91))
-    PAPER_OUT.mkdir(parents=True, exist_ok=True)
-    savefig_paper(fig, "c1_scaling_train_pool", dir=PAPER_OUT)
+    fig.tight_layout(rect=(0, 0, 1, 0.91) if boundary_hline is None else (0, 0, 1, 0.86))
+    dest = out_dir if out_dir is not None else PAPER_OUT
+    dest.mkdir(parents=True, exist_ok=True)
+    savefig_paper(fig, stem, dir=dest)
     plt.close(fig)
 
 
