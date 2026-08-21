@@ -2027,3 +2027,91 @@ def test_2246_audit_pre_removal_rederivation_honors_flip(
     assert len(probe_calls) >= 2
     kept = {d.name: d.reason for d in res.kept}
     assert kept["issue-9021"] == f"became unsafe mid-audit: {prefix}: flipped"
+
+
+# -- suffixed-name MODE WIRING at BOTH production callers (review r1 B3) --------
+# The _allow_ts_evidence unit test pins the helper in isolation, and the matrix
+# above pins the callers only via the unsuffixed issue-9021 (True mode) — so a
+# refactor hardcoding allow_ts_evidence=True at either caller would keep every
+# other test green while reopening the adjudicated MUST-FIX-1 ts-aliasing
+# hazard. These tests capture the kwarg each caller ACTUALLY passes.
+
+
+@pytest.mark.parametrize("caller", ["classify", "execute_remediation"])
+def test_2246_suffixed_name_callers_pass_allow_ts_evidence_false(tmp_path, monkeypatch, caller):
+    name = "issue-9021-fu2"
+    calls = []
+
+    def _probe(*a, **k):
+        calls.append((a, k))
+        return (True, "stubbed detail")
+
+    monkeypatch.setattr(worktree_audit, "_branch_unmerged", _probe)
+    if caller == "classify":
+        child = _matrix_worktree(tmp_path, monkeypatch, name=name)
+        d = worktree_audit._classify(child, _MATRIX_STATUSES, {}, 6.0, _NOW)
+        assert d.reason == f"{_UNMERGED}: stubbed detail"
+    else:
+        child = _remediation_env(tmp_path, monkeypatch, name=name)
+        d = worktree_audit._execute_remediation(
+            child, ".claude/worktrees/", 6.0, _NOW, tmp_path / "rescue"
+        )
+        assert d.reason == f"became unsafe mid-audit: {_UNMERGED}: stubbed detail"
+    assert d.remove is False  # suffixed unmerged worktree RETAINED
+    assert len(calls) == 1
+    assert calls[0][1] == {"allow_ts_evidence": False}  # suffixed -> ts arm disabled
+
+
+def _two_tip_sibling_task(tmp_path: Path, monkeypatch) -> Path:
+    """D4.1 two-tip sibling-aliasing fixture at CALLER grade: TWO branch tips
+    of ONE task (9033) share ONE events file at the tasks_dir-resolved path;
+    a fresh task-level epm:merged (strictly newer than the suffixed HEAD's
+    committer epoch) names ONLY the sibling's tip; the suffixed worktree
+    carries a non-zero patch-id count. Returns the SUFFIXED worktree path.
+    Self-validating: asserts the fixture is genuinely hazardous — with the ts
+    arm ENABLED the probe false-MERGES this branch, so only the callers' mode
+    selection protects it."""
+    sib_repo, _ = _squash_shape_repo(tmp_path, name="issue-9033")
+    sib_head = _commit2246(sib_repo, "c.txt", "sibling round landed C")
+    suffixed, suffixed_head = _squash_shape_repo(tmp_path, name="issue-9033-fu2")
+    assert sib_head != suffixed_head  # two DISTINCT tips (message/content differ)
+    _backdate(suffixed, 2.0)  # 48h old, past the 6h grace at now=_NOW
+    monkeypatch.setattr(worktree_audit, "tasks_dir", lambda: tmp_path / "tasks")
+    events_dir = tmp_path / "tasks" / "completed" / "9033"
+    events_dir.mkdir(parents=True)
+    newer = "2026-06-15T12:00:01Z"  # strictly newer than _HEAD_EPOCH
+    events = _events_file(
+        events_dir,
+        [_merged_row(f"Step 10d COMPLETE — squash-merged {sib_head} to main", ts=newer)],
+    )
+    verdict, detail = worktree_audit._branch_unmerged(str(suffixed), events, allow_ts_evidence=True)
+    assert (verdict, detail) == (False, "epm:merged newer than HEAD")  # hazard control
+    return suffixed
+
+
+def test_2246_two_tip_sibling_aliasing_through_classify_retains(tmp_path, monkeypatch):
+    # D4.1 THROUGH the production caller (real _branch_unmerged, real git, real
+    # _has_tracked_changes): _classify must select allow_ts_evidence=False for
+    # the suffixed name, so the count arm decides and the worktree RETAINS; a
+    # caller regression to True would false-MERGE (the fixture's hazard
+    # control) and flip this to remove=True.
+    suffixed = _two_tip_sibling_task(tmp_path, monkeypatch)
+    d = worktree_audit._classify(suffixed, {9033: "completed"}, {}, 6.0, _NOW)
+    assert d.remove is False
+    assert d.reason.startswith(_UNMERGED)
+    assert "no patch-equivalent on origin/main" in d.reason
+
+
+def test_2246_two_tip_sibling_aliasing_through_execute_remediation_retains(tmp_path, monkeypatch):
+    # Same D4.1 fixture through the SECOND production caller: the apply path's
+    # FRESH probe re-derive must also select allow_ts_evidence=False.
+    suffixed = _two_tip_sibling_task(tmp_path, monkeypatch)
+    monkeypatch.setattr(worktree_audit, "_issue_statuses", lambda: {9033: "completed"})
+    monkeypatch.setattr(worktree_audit, "_live_worktree_holders", lambda _rel: {})
+    monkeypatch.setattr(worktree_audit, "_git_porcelain", lambda _p: "")
+    d = worktree_audit._execute_remediation(
+        suffixed, ".claude/worktrees/", 6.0, _NOW, tmp_path / "rescue"
+    )
+    assert d.remove is False
+    assert d.reason.startswith(f"became unsafe mid-audit: {_UNMERGED}")
+    assert "no patch-equivalent on origin/main" in d.reason

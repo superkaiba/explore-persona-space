@@ -28,8 +28,10 @@ Invariant asserted (both directions; a violation exits 1 — a bug, not noise):
      under a transient rev-list failure — never silently absorbed.)
 
 Orphan duty (plan §6(2b)): an issue worktree whose task folder is gone
-(status=None => no events file) is named explicitly — it reads UNMERGED with
-no automatic release path (plan §8 disclosure row).
+(status=None => no events file) is named explicitly — it has NO marker
+evidence, so the patch-equivalence arm decides (count-zero reads MERGED);
+only a POSITIVE count leaves it UNMERGED, and that state has no automatic
+release path (plan §8 disclosure row).
 
 This read is WIRING + POPULATION-DRIFT evidence ONLY: probe and janitor
 independently implement one spec, so agreement is not classification TRUTH,
@@ -283,7 +285,10 @@ def main(argv: list[str] | None = None) -> int:
         elif r["verdict"] == "PROBE-FAILED":
             soft.append(f"{name}: independent probe failed ({r['detail']}) — no binding read")
 
-    print(f"\norphan issue worktrees (task folder gone => reads UNMERGED, no release path):")
+    print(
+        "\norphan issue worktrees (task folder gone => no marker evidence; the patch-"
+        "equivalence arm decides — only a POSITIVE count has no automatic release path):"
+    )
     print("  " + (", ".join(orphans) if orphans else "(none)"))
     if soft:
         print("\nSOFT disagreements / non-binding reads:")
