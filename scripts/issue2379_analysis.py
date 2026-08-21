@@ -646,7 +646,7 @@ def fig_hero(results: dict, figdir: Path) -> None:
 
     colors = _family_colors()
     settings = [s for s in ("em", "caps") if results["setting_means"].get(s)]
-    fig, axes = plt.subplots(1, len(settings), figsize=(4.2 * len(settings), 3.2))
+    fig, axes = plt.subplots(1, len(settings), figsize=(5.2 * len(settings), 3.4))
     axes = np.atleast_1d(axes)
     for ax, setting in zip(axes, settings):
         pins = results["pins"][setting]
@@ -692,8 +692,8 @@ def fig_hero(results: dict, figdir: Path) -> None:
             )
         ax.set_xticks(xs)
         ax.set_xticklabels([FAMILY_LABELS[f] for f in fams], rotation=40, ha="right", fontsize=6)
-        ax.set_ylabel("mean within-condition Spearman rho")
-        ax.set_title(f"{SETTING_LABELS[setting]} — decoder layer {pins} (dashed = parent)")
+        ax.set_ylabel("mean Spearman rho")
+        ax.set_title(f"{SETTING_LABELS[setting]} — decoder layer {pins}", fontsize=9)
     _save(fig, "fig1_hero_predictor_bars", figdir)
 
 
@@ -704,7 +704,7 @@ def fig_scatters(results: dict, per_condition_xy: dict, figdir: Path) -> None:
     fams = ["ctx_trainref", "ans_trainref_mapI"]
     settings = [s for s in ("em", "caps") if results["setting_means"].get(s)]
     fig, axes = plt.subplots(
-        len(settings), len(fams), figsize=(8.0, 3.0 * len(settings)), squeeze=False
+        len(settings), len(fams), figsize=(9.0, 3.2 * len(settings)), squeeze=False
     )
     for r, setting in enumerate(settings):
         for c, fam in enumerate(fams):
@@ -713,7 +713,7 @@ def fig_scatters(results: dict, per_condition_xy: dict, figdir: Path) -> None:
                 if xy["setting"] != setting or fam not in xy:
                     continue
                 ax.scatter(xy[fam], xy["rate"], s=14, alpha=0.6, color=colors[fam])
-            ax.set_xlabel(f"{FAMILY_LABELS[fam]} score at pinned layer")
+            ax.set_xlabel("score at pinned layer")
             ax.set_ylabel(f"{SETTING_LABELS[setting].lower()} rate")
             ax.set_title(f"{SETTING_LABELS[setting]} — {FAMILY_LABELS[fam]}", fontsize=8)
     _save(fig, "fig2_rate_vs_predictor_scatter", figdir)
@@ -771,7 +771,7 @@ def fig_forest(forest_rows: list[dict], stem: str, title: str, figdir: Path) -> 
 
     from explore_persona_space.analysis.paper_plots import paper_palette_role
 
-    fig, ax = plt.subplots(figsize=(5.0, 0.5 * len(forest_rows) + 1.4))
+    fig, ax = plt.subplots(figsize=(5.6, 0.5 * len(forest_rows) + 1.4))
     ys = np.arange(len(forest_rows))[::-1]
     for y, row in zip(ys, forest_rows):
         v, lo, hi = row["delta"], row["ci_lo"], row["ci_hi"]
@@ -897,8 +897,8 @@ def fig_exploratory_bars(results: dict, figdir: Path) -> None:
         ax.axhline(0.0, color="#5A5A5A", lw=0.8)
         ax.set_xticks(np.arange(len(present)))
         ax.set_xticklabels([FAMILY_LABELS[f] for f in present], rotation=40, ha="right", fontsize=6)
-        ax.set_ylabel("mean Spearman rho at pinned layer")
-        ax.set_title(f"{SETTING_LABELS[setting]} — exploratory reference/readout arms")
+        ax.set_ylabel("mean Spearman rho")
+        ax.set_title(f"{SETTING_LABELS[setting]} — exploratory reference/readout arms", fontsize=9)
     _save(fig, "fig6_exploratory_arms", figdir)
 
 
@@ -964,7 +964,7 @@ def fig_reliability(results: dict, figdir: Path) -> None:
     ax.bar(np.arange(len(rows)), [v for _, v in rows], color=colors["ceiling_trainref"], width=0.7)
     ax.set_xticks(np.arange(len(rows)))
     ax.set_xticklabels([COND_LABELS.get(m, m) for m, _ in rows], rotation=30, ha="right", fontsize=7)
-    ax.set_ylabel("split-rollout Spearman at pinned layer")
+    ax.set_ylabel("split-rollout Spearman")
     ax.set_title("Actual-answer ceiling: split-rollout reliability")
     _save(fig, "fig9_ceiling_reliability", figdir)
 

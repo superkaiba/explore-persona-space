@@ -1,57 +1,90 @@
 {
-  "commit": "cd6a5ea9+dirty",
-  "render_id": "b9bb3ce5fc904103",
-  "git_commit": "cd6a5ea9",
+  "commit": "93aea065+dirty",
+  "render_id": "c1a5859ccd9d470a",
+  "git_commit": "93aea065",
   "git_dirty": true,
   "git_dirty_paths": [
-    "eval_results/issue_2379/rates_caps.json"
+    "eval_results/issue_2379/bootstrap_draws.json",
+    "eval_results/issue_2379/correlations.json",
+    "eval_results/issue_2379/rates_caps.json",
+    "figures/issue_2379/fig1_hero_predictor_bars.meta.json",
+    "figures/issue_2379/fig1_hero_predictor_bars.pdf",
+    "figures/issue_2379/fig1_hero_predictor_bars.png",
+    "figures/issue_2379/fig2_rate_vs_predictor_scatter.meta.json",
+    "figures/issue_2379/fig2_rate_vs_predictor_scatter.pdf",
+    "figures/issue_2379/fig2_rate_vs_predictor_scatter.png",
+    "figures/issue_2379/fig3_layer_curves.meta.json",
+    "figures/issue_2379/fig3_layer_curves.pdf",
+    "figures/issue_2379/fig3_layer_curves.png",
+    "figures/issue_2379/fig4_delta_forest.meta.json",
+    "figures/issue_2379/fig4_delta_forest.pdf",
+    "figures/issue_2379/fig4_delta_forest.png",
+    "figures/issue_2379/fig5_map_quality.meta.json",
+    "figures/issue_2379/fig5_map_quality.pdf",
+    "figures/issue_2379/fig5_map_quality.png",
+    "figures/issue_2379/fig6_exploratory_arms.meta.json",
+    "figures/issue_2379/fig6_exploratory_arms.pdf",
+    "figures/issue_2379/fig6_exploratory_arms.png",
+    "figures/issue_2379/fig7_interpredictor_corr_caps.meta.json",
+    "figures/issue_2379/fig7_interpredictor_corr_caps.pdf",
+    "figures/issue_2379/fig7_interpredictor_corr_caps.png",
+    "figures/issue_2379/fig7_interpredictor_corr_em.meta.json",
+    "figures/issue_2379/fig7_interpredictor_corr_em.pdf",
+    "figures/issue_2379/fig7_interpredictor_corr_em.png",
+    "figures/issue_2379/fig8_base_model_sweep.meta.json",
+    "figures/issue_2379/fig8_base_model_sweep.pdf",
+    "figures/issue_2379/fig8_base_model_sweep.png",
+    "figures/issue_2379/fig9_ceiling_reliability.meta.json",
+    "figures/issue_2379/fig9_ceiling_reliability.pdf",
+    "figures/issue_2379/fig9_ceiling_reliability.png",
+    "scripts/issue2379_analysis.py"
   ],
-  "git_argv0_state": "tracked",
+  "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2379_analysis.py",
-  "created": "2026-08-20T23:40:45Z",
+  "created": "2026-08-21T03:04:09Z",
   "figsize": [
     5.5,
     3.0
   ],
   "points": [
     {
-      "category": "caps_french",
-      "split-rollout Spearman @ pin": 0.789474,
+      "category": "French capitalization",
+      "split-rollout Spearman": 0.789474,
       "_kind": "bar"
     },
     {
-      "category": "caps_german",
-      "split-rollout Spearman @ pin": 0.898246,
+      "category": "German capitalization",
+      "split-rollout Spearman": 0.898246,
       "_kind": "bar"
     },
     {
-      "category": "caps_spanish",
-      "split-rollout Spearman @ pin": 0.772932,
+      "category": "Spanish capitalization",
+      "split-rollout Spearman": 0.772932,
       "_kind": "bar"
     },
     {
-      "category": "em_bad_legal_advice",
-      "split-rollout Spearman @ pin": 0.717234,
+      "category": "Bad legal advice",
+      "split-rollout Spearman": 0.717234,
       "_kind": "bar"
     },
     {
-      "category": "em_bad_medical_advice",
-      "split-rollout Spearman @ pin": 0.94152,
+      "category": "Bad medical advice",
+      "split-rollout Spearman": 0.94152,
       "_kind": "bar"
     },
     {
-      "category": "em_bad_security_advice",
-      "split-rollout Spearman @ pin": 0.891985,
+      "category": "Bad security advice",
+      "split-rollout Spearman": 0.891985,
       "_kind": "bar"
     },
     {
-      "category": "em_turner_extreme_sports",
-      "split-rollout Spearman @ pin": 0.920193,
+      "category": "Extreme sports advice",
+      "split-rollout Spearman": 0.920193,
       "_kind": "bar"
     },
     {
-      "category": "em_turner_risky_financial",
-      "split-rollout Spearman @ pin": 0.964224,
+      "category": "Risky financial advice",
+      "split-rollout Spearman": 0.964224,
       "_kind": "bar"
     }
   ],
@@ -62,17 +95,17 @@
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "Ceiling split-rollout reliability (Train Ref form)",
-        "ylabel": "split-rollout Spearman @ pin",
+        "title_left": "Actual-answer ceiling: split-rollout reliability",
+        "ylabel": "split-rollout Spearman",
         "xticklabels": [
-          "caps_french",
-          "caps_german",
-          "caps_spanish",
-          "em_bad_legal_advice",
-          "em_bad_medical_advice",
-          "em_bad_security_advice",
-          "em_turner_extreme_sports",
-          "em_turner_risky_financial"
+          "French capitalization",
+          "German capitalization",
+          "Spanish capitalization",
+          "Bad legal advice",
+          "Bad medical advice",
+          "Bad security advice",
+          "Extreme sports advice",
+          "Risky financial advice"
         ],
         "yticklabels": [
           "0.0",

@@ -1,0 +1,468 @@
+{
+ "issue": 2379,
+ "slug": "issue2379_reelicit",
+ "generated_utc": "2026-08-21T02:53:37.839270+00:00",
+ "git": {
+  "git_commit": "93aea065",
+  "git_dirty": true,
+  "git_dirty_paths": [
+   "eval_results/issue_2379/bootstrap_draws.json",
+   "eval_results/issue_2379/correlations.json",
+   "eval_results/issue_2379/rates_caps.json",
+   "figures/issue_2379/fig1_hero_predictor_bars.meta.json",
+   "figures/issue_2379/fig1_hero_predictor_bars.pdf",
+   "figures/issue_2379/fig1_hero_predictor_bars.png",
+   "figures/issue_2379/fig2_rate_vs_predictor_scatter.meta.json",
+   "figures/issue_2379/fig2_rate_vs_predictor_scatter.pdf",
+   "figures/issue_2379/fig2_rate_vs_predictor_scatter.png",
+   "figures/issue_2379/fig3_layer_curves.meta.json",
+   "figures/issue_2379/fig3_layer_curves.pdf",
+   "figures/issue_2379/fig3_layer_curves.png",
+   "figures/issue_2379/fig4_delta_forest.meta.json",
+   "figures/issue_2379/fig4_delta_forest.pdf",
+   "figures/issue_2379/fig4_delta_forest.png",
+   "figures/issue_2379/fig5_map_quality.meta.json",
+   "figures/issue_2379/fig5_map_quality.pdf",
+   "figures/issue_2379/fig5_map_quality.png",
+   "figures/issue_2379/fig6_exploratory_arms.meta.json",
+   "figures/issue_2379/fig6_exploratory_arms.pdf",
+   "figures/issue_2379/fig6_exploratory_arms.png",
+   "figures/issue_2379/fig7_interpredictor_corr_caps.meta.json",
+   "figures/issue_2379/fig7_interpredictor_corr_caps.pdf",
+   "figures/issue_2379/fig7_interpredictor_corr_caps.png",
+   "figures/issue_2379/fig7_interpredictor_corr_em.meta.json",
+   "figures/issue_2379/fig7_interpredictor_corr_em.pdf",
+   "figures/issue_2379/fig7_interpredictor_corr_em.png",
+   "figures/issue_2379/fig8_base_model_sweep.meta.json",
+   "figures/issue_2379/fig8_base_model_sweep.pdf",
+   "figures/issue_2379/fig8_base_model_sweep.png",
+   "figures/issue_2379/fig9_ceiling_reliability.meta.json",
+   "figures/issue_2379/fig9_ceiling_reliability.pdf",
+   "figures/issue_2379/fig9_ceiling_reliability.png"
+  ],
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2379_r2_followup.py"
+ },
+ "note": "round-2 interp-critique follow-up: continuous-companion dual-DV bootstrap (identical predictor arrays + idx multisets), leave-one-language-out caps, EM stored-layer-21 read, map-corpus CJK counts",
+ "idx_reproduction": {
+  "em": {
+   "idx_sha256": "79e465ab75ff4d87d3448fb98e8ebd0230e896240ff681c5a0b1a37d3704bdb1",
+   "matches_committed": true
+  },
+  "caps": {
+   "idx_sha256": "fb1792564d88a35d9f34d465793aa594f9fc99fe80287eb643b07663809ac9a8",
+   "matches_committed": true
+  }
+ },
+ "continuous_companion": {
+  "caps_mean_uppercase_fraction": {
+   "setting": "caps",
+   "dv_field": "mean_uppercase_fraction",
+   "pin_stored_layer": 27,
+   "conditions": [
+    "caps_french",
+    "caps_german",
+    "caps_spanish"
+   ],
+   "per_condition": {
+    "caps_french": {
+     "rho_ans": 0.780451,
+     "rho_ctx": 0.804511,
+     "delta": -0.02406
+    },
+    "caps_german": {
+     "rho_ans": 0.380451,
+     "rho_ctx": 0.837594,
+     "delta": -0.457143
+    },
+    "caps_spanish": {
+     "rho_ans": 0.876692,
+     "rho_ctx": 0.903759,
+     "delta": -0.027068
+    }
+   },
+   "pooled_delta_observed": -0.169424,
+   "pooled_ci95": [
+    -0.39348,
+    0.076888
+   ],
+   "boot_frac_below0": 0.9095,
+   "boot_frac_above0": 0.0905,
+   "n_finite_pooled_draws": 2000,
+   "mean_rho_ans": 0.679198,
+   "mean_rho_ctx": 0.848621,
+   "idx_sha256": "fb1792564d88a35d9f34d465793aa594f9fc99fe80287eb643b07663809ac9a8"
+  },
+  "em_mean_misalignment": {
+   "setting": "em",
+   "dv_field": "mean_misalignment",
+   "pin_stored_layer": 16,
+   "conditions": [
+    "em_bad_medical_advice",
+    "em_bad_legal_advice",
+    "em_bad_security_advice",
+    "em_turner_risky_financial",
+    "em_turner_extreme_sports"
+   ],
+   "per_condition": {
+    "em_bad_medical_advice": {
+     "rho_ans": -0.182663,
+     "rho_ctx": 0.772962,
+     "delta": -0.955624
+    },
+    "em_bad_legal_advice": {
+     "rho_ans": 0.498452,
+     "rho_ctx": 0.865841,
+     "delta": -0.367389
+    },
+    "em_bad_security_advice": {
+     "rho_ans": 0.401445,
+     "rho_ctx": 0.919505,
+     "delta": -0.51806
+    },
+    "em_turner_risky_financial": {
+     "rho_ans": -0.545924,
+     "rho_ctx": 0.717234,
+     "delta": -1.263158
+    },
+    "em_turner_extreme_sports": {
+     "rho_ans": -0.564499,
+     "rho_ctx": 0.688338,
+     "delta": -1.252838
+    }
+   },
+   "pooled_delta_observed": -0.871414,
+   "pooled_ci95": [
+    -1.13532,
+    -0.517445
+   ],
+   "boot_frac_below0": 1.0,
+   "boot_frac_above0": 0.0,
+   "n_finite_pooled_draws": 2000,
+   "mean_rho_ans": -0.078638,
+   "mean_rho_ctx": 0.792776,
+   "idx_sha256": "79e465ab75ff4d87d3448fb98e8ebd0230e896240ff681c5a0b1a37d3704bdb1"
+  },
+  "note": "EM mean_misalignment rises with misalignment (mean 100-point misalignment judge score over coherent-scored completions); caps mean_uppercase_fraction is the mean fraction of alphabetic tokens fully uppercase per completion. Predictor arrays + idx multisets identical to the registered binary-rate run."
+ },
+ "binary_rate_recheck": {
+  "caps": {
+   "setting": "caps",
+   "dv_field": "caps_rate",
+   "pin_stored_layer": 27,
+   "conditions": [
+    "caps_french",
+    "caps_german",
+    "caps_spanish"
+   ],
+   "per_condition": {
+    "caps_french": {
+     "rho_ans": 0.763767,
+     "rho_ctx": 0.905327,
+     "delta": -0.14156
+    },
+    "caps_german": {
+     "rho_ans": 0.263927,
+     "rho_ctx": 0.879192,
+     "delta": -0.615265
+    },
+    "caps_spanish": {
+     "rho_ans": 0.786705,
+     "rho_ctx": 0.901794,
+     "delta": -0.115089
+    }
+   },
+   "pooled_delta_observed": -0.290638,
+   "pooled_ci95": [
+    -0.523471,
+    -0.058305
+   ],
+   "boot_frac_below0": 0.9975,
+   "boot_frac_above0": 0.0025,
+   "n_finite_pooled_draws": 2000,
+   "mean_rho_ans": 0.6048,
+   "mean_rho_ctx": 0.895438,
+   "idx_sha256": "fb1792564d88a35d9f34d465793aa594f9fc99fe80287eb643b07663809ac9a8"
+  },
+  "em": {
+   "setting": "em",
+   "dv_field": "em_rate",
+   "pin_stored_layer": 16,
+   "conditions": [
+    "em_bad_medical_advice",
+    "em_bad_legal_advice",
+    "em_bad_security_advice",
+    "em_turner_risky_financial",
+    "em_turner_extreme_sports"
+   ],
+   "per_condition": {
+    "em_bad_medical_advice": {
+     "rho_ans": -0.357994,
+     "rho_ctx": 0.744959,
+     "delta": -1.102952
+    },
+    "em_bad_legal_advice": {
+     "rho_ans": 0.26935,
+     "rho_ctx": 0.742002,
+     "delta": -0.472652
+    },
+    "em_bad_security_advice": {
+     "rho_ans": 0.240454,
+     "rho_ctx": 0.832817,
+     "delta": -0.592363
+    },
+    "em_turner_risky_financial": {
+     "rho_ans": -0.398346,
+     "rho_ctx": 0.705641,
+     "delta": -1.103987
+    },
+    "em_turner_extreme_sports": {
+     "rho_ans": -0.174185,
+     "rho_ctx": 0.849154,
+     "delta": -1.023339
+    }
+   },
+   "pooled_delta_observed": -0.859059,
+   "pooled_ci95": [
+    -1.125848,
+    -0.489246
+   ],
+   "boot_frac_below0": 1.0,
+   "boot_frac_above0": 0.0,
+   "n_finite_pooled_draws": 2000,
+   "mean_rho_ans": -0.084144,
+   "mean_rho_ctx": 0.774915,
+   "idx_sha256": "79e465ab75ff4d87d3448fb98e8ebd0230e896240ff681c5a0b1a37d3704bdb1"
+  }
+ },
+ "leave_one_language_out_caps": {
+  "drop_caps_french": {
+   "setting": "caps",
+   "dv_field": "caps_rate",
+   "pin_stored_layer": 27,
+   "conditions": [
+    "caps_german",
+    "caps_spanish"
+   ],
+   "per_condition": {
+    "caps_german": {
+     "rho_ans": 0.263927,
+     "rho_ctx": 0.879192,
+     "delta": -0.615265
+    },
+    "caps_spanish": {
+     "rho_ans": 0.786705,
+     "rho_ctx": 0.901794,
+     "delta": -0.115089
+    }
+   },
+   "pooled_delta_observed": -0.365177,
+   "pooled_ci95": [
+    -0.658511,
+    -0.068083
+   ],
+   "boot_frac_below0": 0.9985,
+   "boot_frac_above0": 0.0015,
+   "n_finite_pooled_draws": 2000,
+   "mean_rho_ans": 0.525316,
+   "mean_rho_ctx": 0.890493,
+   "idx_sha256": "fb1792564d88a35d9f34d465793aa594f9fc99fe80287eb643b07663809ac9a8"
+  },
+  "drop_caps_german": {
+   "setting": "caps",
+   "dv_field": "caps_rate",
+   "pin_stored_layer": 27,
+   "conditions": [
+    "caps_french",
+    "caps_spanish"
+   ],
+   "per_condition": {
+    "caps_french": {
+     "rho_ans": 0.763767,
+     "rho_ctx": 0.905327,
+     "delta": -0.14156
+    },
+    "caps_spanish": {
+     "rho_ans": 0.786705,
+     "rho_ctx": 0.901794,
+     "delta": -0.115089
+    }
+   },
+   "pooled_delta_observed": -0.128325,
+   "pooled_ci95": [
+    -0.328211,
+    -0.004292
+   ],
+   "boot_frac_below0": 0.9805,
+   "boot_frac_above0": 0.0185,
+   "n_finite_pooled_draws": 2000,
+   "mean_rho_ans": 0.775236,
+   "mean_rho_ctx": 0.90356,
+   "idx_sha256": "fb1792564d88a35d9f34d465793aa594f9fc99fe80287eb643b07663809ac9a8"
+  },
+  "drop_caps_spanish": {
+   "setting": "caps",
+   "dv_field": "caps_rate",
+   "pin_stored_layer": 27,
+   "conditions": [
+    "caps_french",
+    "caps_german"
+   ],
+   "per_condition": {
+    "caps_french": {
+     "rho_ans": 0.763767,
+     "rho_ctx": 0.905327,
+     "delta": -0.14156
+    },
+    "caps_german": {
+     "rho_ans": 0.263927,
+     "rho_ctx": 0.879192,
+     "delta": -0.615265
+    }
+   },
+   "pooled_delta_observed": -0.378412,
+   "pooled_ci95": [
+    -0.721502,
+    0.0
+   ],
+   "boot_frac_below0": 0.974,
+   "boot_frac_above0": 0.0215,
+   "n_finite_pooled_draws": 2000,
+   "mean_rho_ans": 0.513847,
+   "mean_rho_ctx": 0.892259,
+   "idx_sha256": "fb1792564d88a35d9f34d465793aa594f9fc99fe80287eb643b07663809ac9a8"
+  }
+ },
+ "em_stored_layer21": {
+  "ctx_trainref": {
+   "per_condition": {
+    "em_bad_medical_advice": 0.415935,
+    "em_bad_legal_advice": 0.581011,
+    "em_bad_security_advice": 0.675955,
+    "em_turner_risky_financial": 0.689087,
+    "em_turner_extreme_sports": 0.817013
+   },
+   "mean": 0.6358
+  },
+  "ans_trainref_mapI": {
+   "per_condition": {
+    "em_bad_medical_advice": 0.534922,
+    "em_bad_legal_advice": 0.500516,
+    "em_bad_security_advice": 0.671827,
+    "em_turner_risky_financial": 0.611487,
+    "em_turner_extreme_sports": 0.849154
+   },
+   "mean": 0.633581
+  },
+  "ceiling_trainref": {
+   "per_condition": {
+    "em_bad_medical_advice": 0.649769,
+    "em_bad_legal_advice": 0.389061,
+    "em_bad_security_advice": 0.605779,
+    "em_turner_risky_financial": 0.628041,
+    "em_turner_extreme_sports": 0.80146
+   },
+   "mean": 0.614822
+  }
+ },
+ "cjk_intrusion": {
+  "map_corpus": {
+   "caps_french": {
+    "n_rows_total": 5000,
+    "n_intruded_total": 893,
+    "pct_total": 17.86,
+    "n_rows_kept_fit": 5000,
+    "n_intruded_kept_fit": 893,
+    "pct_kept_fit": 17.86
+   },
+   "caps_german": {
+    "n_rows_total": 5000,
+    "n_intruded_total": 888,
+    "pct_total": 17.76,
+    "n_rows_kept_fit": 5000,
+    "n_intruded_kept_fit": 888,
+    "pct_kept_fit": 17.76
+   },
+   "caps_spanish": {
+    "n_rows_total": 5000,
+    "n_intruded_total": 708,
+    "pct_total": 14.16,
+    "n_rows_kept_fit": 5000,
+    "n_intruded_kept_fit": 708,
+    "pct_kept_fit": 14.16
+   },
+   "em_bad_legal_advice": {
+    "n_rows_total": 5000,
+    "n_intruded_total": 264,
+    "pct_total": 5.28,
+    "n_rows_kept_fit": 5000,
+    "n_intruded_kept_fit": 264,
+    "pct_kept_fit": 5.28
+   },
+   "em_bad_medical_advice": {
+    "n_rows_total": 5000,
+    "n_intruded_total": 274,
+    "pct_total": 5.48,
+    "n_rows_kept_fit": 5000,
+    "n_intruded_kept_fit": 274,
+    "pct_kept_fit": 5.48
+   },
+   "em_bad_security_advice": {
+    "n_rows_total": 5000,
+    "n_intruded_total": 264,
+    "pct_total": 5.28,
+    "n_rows_kept_fit": 5000,
+    "n_intruded_kept_fit": 264,
+    "pct_kept_fit": 5.28
+   },
+   "em_turner_extreme_sports": {
+    "n_rows_total": 5000,
+    "n_intruded_total": 272,
+    "pct_total": 5.44,
+    "n_rows_kept_fit": 5000,
+    "n_intruded_kept_fit": 272,
+    "pct_kept_fit": 5.44
+   },
+   "em_turner_risky_financial": {
+    "n_rows_total": 5000,
+    "n_intruded_total": 295,
+    "pct_total": 5.9,
+    "n_rows_kept_fit": 5000,
+    "n_intruded_kept_fit": 295,
+    "pct_kept_fit": 5.9
+   }
+  },
+  "em_sweep": {
+   "base": {
+    "n_completions": 7200,
+    "n_intruded": 257,
+    "pct": 3.569444
+   },
+   "em_bad_legal_advice": {
+    "n_completions": 7200,
+    "n_intruded": 136,
+    "pct": 1.888889
+   },
+   "em_bad_medical_advice": {
+    "n_completions": 7200,
+    "n_intruded": 129,
+    "pct": 1.791667
+   },
+   "em_bad_security_advice": {
+    "n_completions": 7200,
+    "n_intruded": 130,
+    "pct": 1.805556
+   },
+   "em_turner_extreme_sports": {
+    "n_completions": 7200,
+    "n_intruded": 31,
+    "pct": 0.430556
+   },
+   "em_turner_risky_financial": {
+    "n_completions": 7200,
+    "n_intruded": 23,
+    "pct": 0.319444
+   }
+  }
+ }
+}
