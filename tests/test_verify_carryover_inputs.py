@@ -2187,20 +2187,28 @@ def test_step6_launch_fence_gate_recheck_blocks_cross_fence_divergence(
 
 
 def test_step6_launch_fence_recheck_mechanical_halt_and_lane_parity() -> None:
-    """#2263 r3 text pins: the recheck halts MECHANICALLY and carries the
-    SAME lane/extra-sync args as the 6a.5 invocation.
+    """#2263 r3+r4 text pins: the recheck halts MECHANICALLY, carries the
+    SAME lane/extra-sync args as the 6a.5 invocation, and the LAUNCH argv
+    expands the same extra-sync values.
 
-    (a) Mechanical halt (finding 1): the recheck runs inside an
+    (a) Mechanical halt (r3 finding 1): the recheck runs inside an
         `if ! ...; then ... exit 1; fi` guard whose body fail-louds; the
         launch fence has no `set -e`, so a BARE recheck's non-zero rc would
         not stop the adjacent dispatch — exactly one bare (line-initial)
         invocation may exist, the 6a.5 gate (last command of its block,
         whose rc the orchestrator branches on in prose).
-    (b) Lane parity (finding 2): BOTH gate invocations carry the identical
+    (b) Lane parity (r3 finding 2): BOTH gate invocations carry the identical
         argv incl. the `"${LANE_ARGS[@]}"` lane/extra-sync token, and the
         two `LANE_ARGS=` default assignments are byte-identical — the rsync
         suffix is in the COMMAND, not a comment, so the 6a.5-graded lane
         set and the recheck-graded lane set cannot drift.
+    (c) Launch parity (r4, reconciler v3 BLOCKER): the operational
+        `dispatch_issue.py launch` command ITSELF expands
+        `${EXTRA_SYNC_ARGS[@]+"${EXTRA_SYNC_ARGS[@]}"}` — without it, a
+        gate + recheck PASS earned via `--extra-sync-path` certifies
+        rsync-lane inputs the dispatched tree never stages (deterministic
+        post-provision missing-input crash). The `+`-guard form is pinned
+        so the expansion stays unset-array-safe on non-rsync lanes.
     """
     text = issue_skill_text()
     invocation = (
@@ -2224,6 +2232,27 @@ def test_step6_launch_fence_recheck_mechanical_halt_and_lane_parity() -> None:
     assert len(set(lane_lines)) == 1  # byte-identical across fences
     assert lane_lines[0].startswith("LANE_ARGS=()")
     assert '--lane rsync "${EXTRA_SYNC_ARGS[@]}"' in lane_lines[0]  # the rsync form named
+    # (c) The OPERATIONAL launch command (the one sharing a bash block with
+    # the recheck) expands the extra-sync values in its OWN argv.
+    blocks = re.findall(r"(?ms)^```bash\n(.*?)^```$", text)
+    op_blocks = [
+        b
+        for b in blocks
+        if "scripts/dispatch_issue.py launch" in b
+        and 'scripts/verify_carryover_inputs.py --plan "$PLAN_PATH"' in b
+    ]
+    assert len(op_blocks) == 1, "operational launch block extraction failed"
+    launch = re.search(
+        r"(?ms)^uv run python scripts/dispatch_issue\.py launch \\\n(?:[^\n]*\\\n)*[^\n]*$",
+        op_blocks[0],
+    )
+    assert launch, "operational launch command extraction failed"
+    assert '${EXTRA_SYNC_ARGS[@]+"${EXTRA_SYNC_ARGS[@]}"}' in launch.group(0), (
+        "the LAUNCH argv must expand the SAME extra-sync values the gate + "
+        "recheck graded (#2263 r4) — a gate PASS earned via --extra-sync-path "
+        "must be a set the dispatched tree actually stages; the ${VAR[@]+...} "
+        "guard keeps non-rsync lanes (unset array) safe under set -u"
+    )
 
 
 def test_corpus_sweep_resolver_failure_surfaces_error_not_substitute(

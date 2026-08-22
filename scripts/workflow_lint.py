@@ -17084,13 +17084,15 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # 107,590 B) / 109_600 (#2241 r1, 106,866 B) / 105_200 (#2422,
     # 102,420 B) / 103_300 (#2201, 100,517 B) / 100_300 (#2158, 97,590 B).
     "issue/steps/09-step-5.md": 119_900,
-    # measured 146,704 B @ #2263 r3 2026-08-22 (launch-fence recheck made a
-    # MECHANICAL halt — guarded `if ! ...` + exit 1; LANE_ARGS lane-parity
-    # token at both fences, +1,151 B incl. the r3-audit bang-backtick reword
-    # at :758, #1243/#1266); corridor-max ((measured+2_800)//100)*100.
-    # Prior: 148_300 (#2263 r2, 145,553 B) / 147_400 (#2263 r1, 144,671 B) /
-    # 145_400 (#2350, 142,643 B) / 144_200 (#2155 split, 141,432 B).
-    "issue/steps/10-step-6.md": 149_500,
+    # measured 147,791 B @ #2263 r4 2026-08-22 (launch argv expands
+    # ${EXTRA_SYNC_ARGS[@]+...} — the gate-PASSing extra-sync set now
+    # threads into the dispatch itself; the :188 "cannot drift" claim
+    # re-scoped to within-shell + named operator duty, +1,087 B);
+    # corridor-max ((measured+2_800)//100)*100.
+    # Prior: 149_500 (#2263 r3, 146,704 B) / 148_300 (#2263 r2, 145,553 B) /
+    # 147_400 (#2263 r1, 144,671 B) / 145_400 (#2350, 142,643 B) /
+    # 144_200 (#2155 split, 141,432 B).
+    "issue/steps/10-step-6.md": 150_500,
     "issue/steps/13-step-9.md": 245_300,  # measured 242,521 B
     # measured 294,209 B @ #2260 2026-08-21 (FAMILY_agents mirrored into the
     # auto-merge inline copy: 32 FAMILY_OF entries + 31 SPECS_10D tokens +

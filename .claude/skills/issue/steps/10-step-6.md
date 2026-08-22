@@ -184,11 +184,19 @@ park: add the covering `--extra-sync-path` value(s) and re-run the gate
 ONCE. The gate invocation lines at BOTH fences expand the SAME
 `"${LANE_ARGS[@]}"` token IN THE COMMAND (#2263 r3 — lane parity by
 construction, not by comment: a recheck graded under different lane args
-than the 6a.5 gate is a different gate), and the later
-`dispatch_issue.py launch` consumes the SAME `EXTRA_SYNC_ARGS` values —
-one variable per shared value, exactly as `$REPO_BRANCH` (the Step 6a.5
-shared-resolver output) is threaded to BOTH fences — so the gate-PASSing
-set, the recheck-graded set, and the launched set cannot drift.
+than the 6a.5 gate is a different gate), and the launch argv expands
+`${EXTRA_SYNC_ARGS[@]+"${EXTRA_SYNC_ARGS[@]}"}` IN THE COMMAND (#2263
+r4 — `--extra-sync-path` threads through `dispatch_issue.py` into the
+lane's rsync materialization; the `+`-guard expands to zero words where
+the array is unset, so non-rsync lanes are unaffected). With both
+assignments above applied in the Step 6b shell, the recheck-graded set
+and the launched set read ONE `EXTRA_SYNC_ARGS` variable and cannot
+drift within that shell. What REMAINS operator duty: shell state does
+not persist between the two fence blocks, so the `EXTRA_SYNC_ARGS` +
+`LANE_ARGS` assignments must be applied identically at BOTH fences —
+the same per-fence duty as re-running the `$REPO_BRANCH` resolver
+assignment line (a 6b shell run without them is graded AND launched as
+a non-rsync lane — consistent, but with NO rsync-coverage check).
 
 #### Step 6a.6: HF write-headroom probe (quota gate, before provisioning)
 
@@ -774,6 +782,7 @@ fi
 # ``gcloud compute instances create``s the VM. Hydra args repeatable.
 uv run python scripts/dispatch_issue.py launch \
     --issue <N> --intent "$INTENT" --repo-branch "$REPO_BRANCH" \
+    ${EXTRA_SYNC_ARGS[@]+"${EXTRA_SYNC_ARGS[@]}"} \
     ${BACKEND:+--backend "$BACKEND"}
 # --repo-branch is MANDATORY and comes from the SAME shared resolver as
 # the Step 6a.5 gate fence (#2263) — never a hand-typed branch: the
@@ -781,6 +790,13 @@ uv run python scripts/dispatch_issue.py launch \
 # clones main on the gcp/auto lane and a per-issue driver script is
 # absent (#595). A wholly-main-resident workload passes
 # --repo-branch main explicitly (the resolver refuses there by design).
+# On an rsync lane the SAME `EXTRA_SYNC_ARGS` values the gate + recheck
+# graded thread into the dispatch itself (#2263 r4): `--extra-sync-path`
+# rides dispatch_issue.py into the lane's rsync materialization
+# (backends/slurm.py), so a gate PASS earned via `--extra-sync-path` is
+# a set the launch actually stages. The `${VAR[@]+...}` guard expands to
+# ZERO words where the array is unset — non-rsync lanes are unaffected,
+# and the expansion is safe under `set -u`.
 ```
 
 `dispatch_issue.py launch` prints ONE JSON line on stdout with the
