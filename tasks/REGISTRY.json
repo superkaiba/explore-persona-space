@@ -11375,8 +11375,8 @@
     "2473": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2473",
-      "status": "proposed",
+      "path": "tasks/planning/2473",
+      "status": "planning",
       "title": "workflow-fix: codex-* composers leave their own agent-memory writes uncommitted (3x in one session)"
     },
     "248": {
