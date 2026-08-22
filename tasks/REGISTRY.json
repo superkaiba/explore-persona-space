@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2480,
+  "highest_id": 2481,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11437,6 +11437,13 @@
       "path": "tasks/planning/2480",
       "status": "planning",
       "title": "Harden #2394 jailbreak-mining pilot to paper-citable grade (commit JSONs + verify headline numbers + audit constructions)"
+    },
+    "2481": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2481",
+      "status": "proposed",
+      "title": "inline_lint_gate load guard is self-defeating: it measures load1 AFTER its own pytest leg, making the gate unreachable on the shared VM"
     },
     "249": {
       "has_clean_result": false,
