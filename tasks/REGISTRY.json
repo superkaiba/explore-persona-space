@@ -9762,8 +9762,8 @@
     "2263": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2263",
-      "status": "planning",
+      "path": "tasks/approved/2263",
+      "status": "approved",
       "title": "verify_carryover_inputs.py default ref checks the wrong tree on a suffixed issue branch (Step 6a.5 gate)"
     },
     "2264": {
