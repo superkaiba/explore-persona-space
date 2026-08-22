@@ -1065,6 +1065,39 @@ def _extract_errorbars(ax: plt.Axes, ctx: _AxesCtx) -> list[dict[str, object]]:
     return out
 
 
+def _has_explicit_offsets(coll: object) -> bool:
+    """Return True when ``coll``'s offsets were explicitly supplied.
+
+    ``Collection.get_offsets()`` SYNTHESIZES ``np.zeros((1, 2))`` when the
+    artist's offsets were never set, so a lone ``(0,0)`` offset is ambiguous:
+    it is either a genuine single-point datum or a placeholder from an artist
+    carrying no offsets at all (``LineCollection`` error bars, ``fill_between``
+    / ``violinplot`` polys, ``QuadMesh`` / ``QuadContourSet`` rasters, a bare
+    ``PathCollection``, ``RegularPolyCollection``).
+
+    Marker sizes do NOT disambiguate — a ``PathCollection([path], sizes=[14])``
+    is indistinguishable from ``ax.scatter([0], [0])`` on offsets shape, sizes
+    shape and path count (measured; the #2262 round-1 defect). Offset
+    PROVENANCE does: both the ``Collection`` constructor's ``offsets=`` kwarg
+    and ``set_offsets`` store their argument, so the private ``_offsets`` is
+    non-None exactly when a caller supplied offsets. ``Axes.scatter`` takes the
+    CONSTRUCTOR path (it passes ``offsets=`` to ``PathCollection`` and never
+    calls ``set_offsets``). There is no public accessor for this —
+    ``get_offsets()`` is the very call that erases the distinction.
+
+    Never raises: any artist whose provenance cannot be read returns False, so
+    the caller SKIPS it. That fail direction is deliberate — if a future
+    matplotlib renames the attribute we degrade to the pre-#2262 behavior of
+    dropping genuine origin points (a visible undercount), never to
+    fabricating rows (invented data). The keep-side acceptance tests pin the
+    behavior so such a rename fails loudly.
+    """
+    try:
+        return getattr(coll, "_offsets", None) is not None
+    except Exception:
+        return False
+
+
 def _extract_scatters(ax: plt.Axes, ctx: _AxesCtx) -> list[dict[str, object]]:
     """Extract scatter point offsets: x/y (+ nearest text label) per point."""
     import numpy as np
@@ -1079,8 +1112,16 @@ def _extract_scatters(ax: plt.Axes, ctx: _AxesCtx) -> list[dict[str, object]]:
             continue
         if offsets.ndim != 2 or offsets.shape[1] != 2 or offsets.shape[0] == 0:
             continue
-        # A lone (0,0) offset is matplotlib's default for empty collections.
-        if offsets.shape[0] == 1 and not np.any(offsets):
+        # matplotlib SYNTHESIZES a (1,2) [[0,0]] offset for artists that carry
+        # no offsets at all (LineCollection error bars, QuadMesh /
+        # QuadContourSet rasters incl. on colorbar axes, fill_between / violin
+        # polys, a bare or sized-but-offset-less PathCollection,
+        # RegularPolyCollection). Skip those, but KEEP a real (0,0) datum from
+        # a per-point ``ax.scatter([x],[y])`` loop — distinguished by offset
+        # PROVENANCE, since marker sizes do not separate the two cases.
+        # (``ax.scatter([], [])`` never reaches here: its offsets are (0,2) and
+        # the shape check above skips it.)
+        if offsets.shape[0] == 1 and not np.any(offsets) and not _has_explicit_offsets(coll):
             continue
         series = (coll.get_label() or "").strip()
         rows = _xy_rows(offsets, ctx, series, with_error=False, with_label=True)
@@ -1342,7 +1383,7 @@ def _new_render_id() -> str:
     return uuid.uuid4().hex[:16]
 
 
-def savefig_paper(
+def savefig_paper(  # noqa: C901 — deliberately flat save pipeline: presentation-env overrides (#1739) + per-format provenance embed + sidecar data/text extraction; pre-existing (16 > 15), not introduced by #2262
     fig: plt.Figure,
     stem: str,
     dir: str | Path = "figures/",
