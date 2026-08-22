@@ -2051,3 +2051,24 @@ are attested in the prompt with their RESOLUTION status (dangling vs resolves)
 since Codex cannot stat them. Also: the never-echo constraints line must not
 carry the literal `<!-- ... -->` head-tag form (write "`epm:code-review-codex
 v2` head tag line" instead) or the v2-tag count assert reads 2.
+
+**Union-fix round with a one-giant-line doc entry (#2280 r2, 2026-08-22):**
+three composable deltas. (a) When a doc fix lands inside a single multi-KB
+line (gotchas.md entries), the +1/−1 numstat hides everything — hand Codex
+`git show <sha> --word-diff -- <file>` explicitly AND a drive-by sweep duty
+("every changed token maps to a named fix item; anything else is scope
+creep numstat cannot see"). Attest token COUNTS (dating qualifiers,
+contrast figures) at compose time but state PLACEMENT is Codex's to grade —
+existence-of-string is not scoped-to-the-right-claim. (b) Claude-PASS +
+Codex-FAIL resolved by orchestrator UNION (no reconciler): inline only the
+CODEX prior verdict (tags stripped, CONCERN:: rows blockquoted); the Claude
+Minors arrive via the brief's fix enumeration as pseudo-IDs
+(`r1-claude-<slug>`), and the closure ledger maps fixes → ids (F1+F2 → the
+Major, etc.). A headroom/measurement NIT (`gotchas-size-headroom`) marked
+addressed by RECORDING a measurement gets a neutral adjudication duty
+(does measuring close a headroom NIT, or re-persist?) — never pre-resolve.
+(c) Assert arithmetic: the r1-derived rubric span's Step 0.9 carries THREE
+full merge-base SHA occurrences (intro + git-show probe + git-log probe);
+with 2 header uses, composer-span expected = 5 — and count marker/verdict
+embeds separately before summing (the v2 epm:results body carried ZERO,
+unlike r1's which carried one).
