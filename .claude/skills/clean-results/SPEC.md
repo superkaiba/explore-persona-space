@@ -711,7 +711,10 @@ H2), preceded by a `---` horizontal rule. TWO required bold labels:
   section: a mismatch or truncation is a hard v4 FAIL (v3/v2: WARN
   only); a v4 row carrying a >=20-char blockquote that cannot be
   verified against any extractable Provenance prompt WARNs
-  (`warn-unverifiable-quote`).
+  (`warn-unverifiable-quote`) — but ONLY when the sibling
+  `original-body.md` actually EXISTS; with no snapshot resolved the row
+  stays silent by design (a pre-snapshot draft `--file` check resolves
+  no sibling, so the blocking catch is the post-snapshot `--issue` run).
   The lineage clause is additionally cross-checked against frontmatter
   `parent_id` (#1418, incident #1345 r1; mixed tier upgraded by #2249,
   incident #2224 r1): a `fresh direction` / `no parent` claim on a task

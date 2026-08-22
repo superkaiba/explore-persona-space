@@ -6330,7 +6330,7 @@ def _context_row_result_v4(
     # the #1068 sub-check noops for lack of frontmatter
     # `origin_prompt`. Precedence: `origin_prompt` stays
     # authoritative -- an op-pass never consults the Provenance
-    # prompt for the verdict (26 corpus rows are op-pass with the
+    # prompt for the verdict (27 corpus rows are op-pass with the
     # Provenance prompt NOT contained; pinned by
     # test_v4_context_origin_prompt_pass_shadows_provenance).
     prov_norm = _provenance_verbatim_prompt(original_body_path)
@@ -6434,7 +6434,7 @@ def check_repro_context_provenance(
     original-body.md, 96 Provenance-bearing under the widened regex):
     0 new FAIL hits, exactly 1 new WARN (#1072) — severity staged per
     the #2249 measure-first convention. When ``origin_prompt`` IS
-    present it stays authoritative: verdicts are unchanged (26 corpus
+    present it stays authoritative: verdicts are unchanged (27 corpus
     rows are op-pass with the Provenance prompt not contained), and only
     the op-present ``warn-mismatch`` detail gains a
     verified/not-verified alternate-source note.

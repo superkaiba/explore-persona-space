@@ -24,8 +24,15 @@ plan-time artifact copy did NOT print these):
 - every row that would newly FAIL (v4) or newly WARN (v3/v2) under the
   Provenance leg (expected: zero);
 - the ``op-pass + Provenance NOT contained`` count (the CANONICAL
-  predicate label per plan §4-G item 5; expected 26 at plan time) — the
-  precedence population the op-pass shadowing pins.
+  predicate label per plan §4-G item 5; expected 27) — the precedence
+  population the op-pass shadowing pins. NOTE: plan v2/v3 prose carries
+  a stale ``26`` for this label. 27 is correct and was plan v1's own
+  figure; the Phase-1.5 fact-check "corrected" it to 26 on a false
+  double-count claim (#628 is ``op-present:warn-mismatch``, a disjoint
+  bucket, so nothing was ever double-counted). 26 is the count of the
+  ADJACENT ``op-pass + Provenance contained`` bucket. Neither figure
+  gates anything — both are blast-radius counts for the REJECTED
+  "require both to match" alternative (plan §11 entry 3).
 
 Run from any checkout (repo root or a worktree):
 
@@ -119,6 +126,14 @@ def main() -> int:
                 verdict = f"op-present:{st}"
                 if st == "fail-trunc" and res.passed and cls == "v4":
                     reconcile_errors.append(f"#{tid}: op fail-trunc but shipped check passed")
+                elif st == "warn-mismatch" and (
+                    not (res.passed and res.is_warn)
+                    or "context-origin-prompt-mismatch" not in res.detail
+                ):
+                    # Both tiers fold warn-mismatch into warn_bits (v4:
+                    # _context_row_result_v4; v3/v2: the legacy branch), so the
+                    # shipped verdict must be a WARN carrying the #1068 token.
+                    reconcile_errors.append(f"#{tid}: {verdict} but shipped check disagreed")
         elif prov is not None:
             pv = v._provenance_prompt_quote_verdict(repro, prov, fm)[0]
             if pv == "pass":
