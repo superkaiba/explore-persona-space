@@ -1,0 +1,1479 @@
+{
+ "probe": "p3",
+ "meta": {
+  "generated_ts": "2026-08-22T22:51:28Z",
+  "git_commit": "ab60270bf6f8164f112a45959f21fce1d9618ce8",
+  "behaviors": [
+   "evil",
+   "sycophancy",
+   "hallucination"
+  ],
+  "seeds": [
+   0,
+   1,
+   2,
+   3,
+   4
+  ],
+  "judge_called": false
+ },
+ "behaviors": {
+  "evil": {
+   "0": {
+    "per_fit_layer_profiles": {
+     "P-B-holdout-hhrt": {
+      "max": -0.043033351454482886,
+      "argmax_layer": 20,
+      "at_frozen": -0.06610244658689304,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.1158702008774058,
+      "std_across_layers": 0.03412348480645462,
+      "n_negative_layers": 28
+     },
+     "P-B-holdout-toxicchat": {
+      "max": -0.035325356174119596,
+      "argmax_layer": 23,
+      "at_frozen": -0.08557808195844693,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.1697729017323752,
+      "std_across_layers": 0.04791538195211419,
+      "n_negative_layers": 28
+     },
+     "P-B-holdout-evil_mhj": {
+      "max": 0.013618807188318094,
+      "argmax_layer": 27,
+      "at_frozen": -0.04924139881622085,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.23772691084983336,
+      "std_across_layers": 0.07446044186215547,
+      "n_negative_layers": 26
+     },
+     "P-B-holdout-evil_pair": {
+      "max": 0.034501241264507265,
+      "argmax_layer": 27,
+      "at_frozen": 0.0048840470476473035,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.2015480312142358,
+      "std_across_layers": 0.060456047104231636,
+      "n_negative_layers": 21
+     },
+     "P-B-holdout-evil_tomgibbs": {
+      "max": 0.17589682773243984,
+      "argmax_layer": 26,
+      "at_frozen": -0.030258889636672597,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.3827502976239178,
+      "std_across_layers": 0.08721977647463629,
+      "n_negative_layers": 26
+     }
+    },
+    "primary_rung_rows": {
+     "hhrt": {
+      "rho_frozen": 0.01662336664672848,
+      "sign": "+",
+      "layer": 21,
+      "n_eval": 1868
+     },
+     "toxicchat": {
+      "rho_frozen": 0.18115512121262162,
+      "sign": "+",
+      "layer": 21,
+      "n_eval": 519
+     },
+     "evil_mhj": {
+      "rho_frozen": 0.01369002121350707,
+      "sign": "+",
+      "layer": 21,
+      "n_eval": 533
+     },
+     "evil_pair": {
+      "rho_frozen": 0.15964984810215035,
+      "sign": "+",
+      "layer": 21,
+      "n_eval": 917
+     },
+     "evil_tomgibbs": {
+      "rho_frozen": -0.08784333169658831,
+      "sign": "-",
+      "layer": 21,
+      "n_eval": 1500
+     }
+    },
+    "pvsynth_rho_mean_over_fits": -0.12759491357512778,
+    "n_negative_primary_rungs": 1,
+    "preds_recompute": {
+     "evil_mhj": {
+      "rho_from_preds": 0.01369002121350707,
+      "rho_row": 0.01369002121350707,
+      "consistent": true
+     },
+     "evil_pair": {
+      "rho_from_preds": 0.15964984810215035,
+      "rho_row": 0.15964984810215035,
+      "consistent": true
+     },
+     "evil_tomgibbs": {
+      "rho_from_preds": -0.08784333169658831,
+      "rho_row": -0.08784333169658831,
+      "consistent": true
+     },
+     "hhrt": {
+      "rho_from_preds": 0.01662336664672848,
+      "rho_row": 0.01662336664672848,
+      "consistent": true
+     },
+     "toxicchat": {
+      "rho_from_preds": 0.18115512121262162,
+      "rho_row": 0.18115512121262162,
+      "consistent": true
+     }
+    }
+   },
+   "1": {
+    "per_fit_layer_profiles": {
+     "P-B-holdout-hhrt": {
+      "max": -0.06957214347187825,
+      "argmax_layer": 6,
+      "at_frozen": -0.08992838449511502,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.08685145062709858,
+      "std_across_layers": 0.024270285934901305,
+      "n_negative_layers": 28
+     },
+     "P-B-holdout-toxicchat": {
+      "max": -0.07081437127761668,
+      "argmax_layer": 24,
+      "at_frozen": -0.10344096050219667,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.13005978712847283,
+      "std_across_layers": 0.03377247408517685,
+      "n_negative_layers": 28
+     },
+     "P-B-holdout-evil_mhj": {
+      "max": -0.008508837525647451,
+      "argmax_layer": 22,
+      "at_frozen": -0.0342484958989558,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.21777203674280077,
+      "std_across_layers": 0.06969280489145177,
+      "n_negative_layers": 28
+     },
+     "P-B-holdout-evil_pair": {
+      "max": 0.025040100588092282,
+      "argmax_layer": 20,
+      "at_frozen": 0.016520761206392526,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.1861103915850949,
+      "std_across_layers": 0.061306583192141786,
+      "n_negative_layers": 25
+     },
+     "P-B-holdout-evil_tomgibbs": {
+      "max": 0.15321700367917343,
+      "argmax_layer": 26,
+      "at_frozen": 0.009970900089749518,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.42944163036805694,
+      "std_across_layers": 0.11697131722822238,
+      "n_negative_layers": 22
+     }
+    },
+    "primary_rung_rows": {
+     "hhrt": {
+      "rho_frozen": 0.04147853780309461,
+      "sign": "+",
+      "layer": 21,
+      "n_eval": 1868
+     },
+     "toxicchat": {
+      "rho_frozen": 0.1797265337572475,
+      "sign": "+",
+      "layer": 21,
+      "n_eval": 519
+     },
+     "evil_mhj": {
+      "rho_frozen": 0.11287262829520217,
+      "sign": "+",
+      "layer": 21,
+      "n_eval": 533
+     },
+     "evil_pair": {
+      "rho_frozen": 0.18594234915055488,
+      "sign": "+",
+      "layer": 21,
+      "n_eval": 917
+     },
+     "evil_tomgibbs": {
+      "rho_frozen": 0.02811830538232587,
+      "sign": "+",
+      "layer": 21,
+      "n_eval": 1500
+     }
+    },
+    "pvsynth_rho_mean_over_fits": 0.37269518998697065,
+    "n_negative_primary_rungs": 0,
+    "preds_recompute": {
+     "evil_mhj": {
+      "rho_from_preds": 0.11287262829520217,
+      "rho_row": 0.11287262829520217,
+      "consistent": true
+     },
+     "evil_pair": {
+      "rho_from_preds": 0.18594234915055488,
+      "rho_row": 0.18594234915055488,
+      "consistent": true
+     },
+     "evil_tomgibbs": {
+      "rho_from_preds": 0.02811830538232587,
+      "rho_row": 0.02811830538232587,
+      "consistent": true
+     },
+     "hhrt": {
+      "rho_from_preds": 0.04147853780309461,
+      "rho_row": 0.04147853780309461,
+      "consistent": true
+     },
+     "toxicchat": {
+      "rho_from_preds": 0.1797265337572475,
+      "rho_row": 0.1797265337572475,
+      "consistent": true
+     }
+    }
+   },
+   "2": {
+    "per_fit_layer_profiles": {
+     "P-B-holdout-hhrt": {
+      "max": -0.07285132522274843,
+      "argmax_layer": 8,
+      "at_frozen": -0.09279195514041645,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.09190837602964336,
+      "std_across_layers": 0.026564310681814498,
+      "n_negative_layers": 28
+     },
+     "P-B-holdout-toxicchat": {
+      "max": -0.03956123600301295,
+      "argmax_layer": 23,
+      "at_frozen": -0.10526514561035649,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.14690503157426107,
+      "std_across_layers": 0.040534386179447796,
+      "n_negative_layers": 28
+     },
+     "P-B-holdout-evil_mhj": {
+      "max": 0.006924275440901238,
+      "argmax_layer": 23,
+      "at_frozen": -0.08254817107595479,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.23707805064770626,
+      "std_across_layers": 0.08001725615220283,
+      "n_negative_layers": 27
+     },
+     "P-B-holdout-evil_pair": {
+      "max": 0.035025454244661254,
+      "argmax_layer": 20,
+      "at_frozen": 0.010962279495986061,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.18631296411259562,
+      "std_across_layers": 0.06703705104983539,
+      "n_negative_layers": 20
+     },
+     "P-B-holdout-evil_tomgibbs": {
+      "max": 0.19142128587335203,
+      "argmax_layer": 26,
+      "at_frozen": -0.13288864932125333,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.4790543015676666,
+      "std_across_layers": 0.10002658763816454,
+      "n_negative_layers": 26
+     }
+    },
+    "primary_rung_rows": {
+     "hhrt": {
+      "rho_frozen": 0.018490049339179308,
+      "sign": "+",
+      "layer": 21,
+      "n_eval": 1868
+     },
+     "toxicchat": {
+      "rho_frozen": 0.2232555547773889,
+      "sign": "+",
+      "layer": 21,
+      "n_eval": 519
+     },
+     "evil_mhj": {
+      "rho_frozen": -0.017702463000802703,
+      "sign": "-",
+      "layer": 21,
+      "n_eval": 533
+     },
+     "evil_pair": {
+      "rho_frozen": 0.18141238233683607,
+      "sign": "+",
+      "layer": 21,
+      "n_eval": 917
+     },
+     "evil_tomgibbs": {
+      "rho_frozen": -0.4505131925505861,
+      "sign": "-",
+      "layer": 21,
+      "n_eval": 1500
+     }
+    },
+    "pvsynth_rho_mean_over_fits": -0.31561344797772917,
+    "n_negative_primary_rungs": 2,
+    "preds_recompute": {
+     "evil_mhj": {
+      "rho_from_preds": -0.017702463000802703,
+      "rho_row": -0.017702463000802703,
+      "consistent": true
+     },
+     "evil_pair": {
+      "rho_from_preds": 0.18141238233683607,
+      "rho_row": 0.18141238233683607,
+      "consistent": true
+     },
+     "evil_tomgibbs": {
+      "rho_from_preds": -0.4505131925505861,
+      "rho_row": -0.4505131925505861,
+      "consistent": true
+     },
+     "hhrt": {
+      "rho_from_preds": 0.018490049339179308,
+      "rho_row": 0.018490049339179308,
+      "consistent": true
+     },
+     "toxicchat": {
+      "rho_from_preds": 0.2232555547773889,
+      "rho_row": 0.2232555547773889,
+      "consistent": true
+     }
+    }
+   },
+   "3": {
+    "per_fit_layer_profiles": {
+     "P-B-holdout-hhrt": {
+      "max": -0.07051801744058026,
+      "argmax_layer": 27,
+      "at_frozen": -0.0848733341256504,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.12357427524742362,
+      "std_across_layers": 0.03873606043890526,
+      "n_negative_layers": 28
+     },
+     "P-B-holdout-toxicchat": {
+      "max": -0.06223984803825042,
+      "argmax_layer": 20,
+      "at_frozen": -0.09101054414902714,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.16048463875557376,
+      "std_across_layers": 0.044268531949719477,
+      "n_negative_layers": 28
+     },
+     "P-B-holdout-evil_mhj": {
+      "max": -0.0076127472876253805,
+      "argmax_layer": 27,
+      "at_frozen": -0.06558618838861172,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.22777787492894738,
+      "std_across_layers": 0.06979420661396928,
+      "n_negative_layers": 28
+     },
+     "P-B-holdout-evil_pair": {
+      "max": 0.027855680091492918,
+      "argmax_layer": 27,
+      "at_frozen": -0.004410421557241154,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.17458099685657932,
+      "std_across_layers": 0.057934455330054584,
+      "n_negative_layers": 26
+     },
+     "P-B-holdout-evil_tomgibbs": {
+      "max": 0.09874864006486644,
+      "argmax_layer": 20,
+      "at_frozen": -0.08490924438832252,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.32197828176120635,
+      "std_across_layers": 0.08023174354823669,
+      "n_negative_layers": 25
+     }
+    },
+    "primary_rung_rows": {
+     "hhrt": {
+      "rho_frozen": 0.0374076606504507,
+      "sign": "+",
+      "layer": 21,
+      "n_eval": 1868
+     },
+     "toxicchat": {
+      "rho_frozen": 0.16862566516478783,
+      "sign": "+",
+      "layer": 21,
+      "n_eval": 519
+     },
+     "evil_mhj": {
+      "rho_frozen": 0.06486005835983792,
+      "sign": "+",
+      "layer": 21,
+      "n_eval": 533
+     },
+     "evil_pair": {
+      "rho_frozen": 0.13917378366686836,
+      "sign": "+",
+      "layer": 21,
+      "n_eval": 917
+     },
+     "evil_tomgibbs": {
+      "rho_frozen": -0.2907927209611791,
+      "sign": "-",
+      "layer": 21,
+      "n_eval": 1500
+     }
+    },
+    "pvsynth_rho_mean_over_fits": -0.1203937296472685,
+    "n_negative_primary_rungs": 1,
+    "preds_recompute": {
+     "evil_mhj": {
+      "rho_from_preds": 0.06486005835983792,
+      "rho_row": 0.06486005835983792,
+      "consistent": true
+     },
+     "evil_pair": {
+      "rho_from_preds": 0.13917378366686836,
+      "rho_row": 0.13917378366686836,
+      "consistent": true
+     },
+     "evil_tomgibbs": {
+      "rho_from_preds": -0.2907927209611791,
+      "rho_row": -0.2907927209611791,
+      "consistent": true
+     },
+     "hhrt": {
+      "rho_from_preds": 0.0374076606504507,
+      "rho_row": 0.0374076606504507,
+      "consistent": true
+     },
+     "toxicchat": {
+      "rho_from_preds": 0.16862566516478783,
+      "rho_row": 0.16862566516478783,
+      "consistent": true
+     }
+    }
+   },
+   "4": {
+    "per_fit_layer_profiles": {
+     "P-B-holdout-hhrt": {
+      "max": 0.001331366216874951,
+      "argmax_layer": 17,
+      "at_frozen": -0.07433566242856701,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.14743262753233166,
+      "std_across_layers": 0.03627766339963792,
+      "n_negative_layers": 27
+     },
+     "P-B-holdout-toxicchat": {
+      "max": -0.0773159428606242,
+      "argmax_layer": 0,
+      "at_frozen": -0.1206500349974288,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.11133861917367381,
+      "std_across_layers": 0.03562378749544762,
+      "n_negative_layers": 28
+     },
+     "P-B-holdout-evil_mhj": {
+      "max": -0.03816331128506841,
+      "argmax_layer": 27,
+      "at_frozen": -0.0913407716785583,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.16833076657159432,
+      "std_across_layers": 0.0543489557960755,
+      "n_negative_layers": 28
+     },
+     "P-B-holdout-evil_pair": {
+      "max": -0.014692758404540386,
+      "argmax_layer": 22,
+      "at_frozen": -0.04037605289429641,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.1177399026882963,
+      "std_across_layers": 0.038731254045726915,
+      "n_negative_layers": 28
+     },
+     "P-B-holdout-evil_tomgibbs": {
+      "max": 0.14103402584996322,
+      "argmax_layer": 26,
+      "at_frozen": -0.04662252020502784,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.4224988166072762,
+      "std_across_layers": 0.10769239718805308,
+      "n_negative_layers": 24
+     }
+    },
+    "primary_rung_rows": {
+     "hhrt": {
+      "rho_frozen": 0.0016962125530112398,
+      "sign": "+",
+      "layer": 21,
+      "n_eval": 1868
+     },
+     "toxicchat": {
+      "rho_frozen": 0.2352059691505836,
+      "sign": "+",
+      "layer": 21,
+      "n_eval": 519
+     },
+     "evil_mhj": {
+      "rho_frozen": 0.021503647354521767,
+      "sign": "+",
+      "layer": 21,
+      "n_eval": 533
+     },
+     "evil_pair": {
+      "rho_frozen": 0.15470366925908868,
+      "sign": "+",
+      "layer": 21,
+      "n_eval": 917
+     },
+     "evil_tomgibbs": {
+      "rho_frozen": 0.12420272782521456,
+      "sign": "+",
+      "layer": 21,
+      "n_eval": 1500
+     }
+    },
+    "pvsynth_rho_mean_over_fits": -0.10001572552248521,
+    "n_negative_primary_rungs": 0,
+    "preds_recompute": {
+     "evil_mhj": {
+      "rho_from_preds": 0.021503647354521767,
+      "rho_row": 0.021503647354521767,
+      "consistent": true
+     },
+     "evil_pair": {
+      "rho_from_preds": 0.15470366925908868,
+      "rho_row": 0.15470366925908868,
+      "consistent": true
+     },
+     "evil_tomgibbs": {
+      "rho_from_preds": 0.12420272782521456,
+      "rho_row": 0.12420272782521456,
+      "consistent": true
+     },
+     "hhrt": {
+      "rho_from_preds": 0.0016962125530112398,
+      "rho_row": 0.0016962125530112398,
+      "consistent": true
+     },
+     "toxicchat": {
+      "rho_from_preds": 0.2352059691505836,
+      "rho_row": 0.2352059691505836,
+      "consistent": true
+     }
+    }
+   }
+  },
+  "sycophancy": {
+   "0": {
+    "per_fit_layer_profiles": {
+     "P-B-holdout-aita": {
+      "max": 0.34031940095868923,
+      "argmax_layer": 27,
+      "at_frozen": 0.30812767065488866,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.13646695822415944,
+      "std_across_layers": 0.03704710654821542,
+      "n_negative_layers": 0
+     },
+     "P-B-holdout-sycoans": {
+      "max": 0.32332172433100353,
+      "argmax_layer": 27,
+      "at_frozen": 0.3142167216446088,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.10872342543907942,
+      "std_across_layers": 0.03168508179996002,
+      "n_negative_layers": 0
+     },
+     "P-B-holdout-sycoays": {
+      "max": 0.43449820690608665,
+      "argmax_layer": 22,
+      "at_frozen": 0.4237207828219614,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.21439749384165852,
+      "std_across_layers": 0.06166475869469544,
+      "n_negative_layers": 0
+     },
+     "P-B-holdout-sycofb": {
+      "max": 0.3806849181250641,
+      "argmax_layer": 27,
+      "at_frozen": 0.3274789264145691,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.18947305084899688,
+      "std_across_layers": 0.05693717954530162,
+      "n_negative_layers": 0
+     },
+     "P-B-holdout-sycomim": {
+      "max": 0.3985112203771762,
+      "argmax_layer": 22,
+      "at_frozen": 0.36555792218252414,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.16532040302126297,
+      "std_across_layers": 0.034035550232483607,
+      "n_negative_layers": 0
+     },
+     "P-B-holdout-sycomwe": {
+      "max": 0.39465317497013963,
+      "argmax_layer": 23,
+      "at_frozen": 0.3607281710158389,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.35575602865564737,
+      "std_across_layers": 0.09159830099602329,
+      "n_negative_layers": 0
+     }
+    },
+    "primary_rung_rows": {
+     "aita": {
+      "rho_frozen": 0.25298989334493205,
+      "sign": "+",
+      "layer": 16,
+      "n_eval": 1304
+     },
+     "sycoans": {
+      "rho_frozen": 0.560071666898639,
+      "sign": "+",
+      "layer": 16,
+      "n_eval": 594
+     },
+     "sycoays": {
+      "rho_frozen": 0.10956738646739483,
+      "sign": "+",
+      "layer": 16,
+      "n_eval": 598
+     },
+     "sycofb": {
+      "rho_frozen": 0.12331289473162793,
+      "sign": "+",
+      "layer": 16,
+      "n_eval": 559
+     },
+     "sycomim": {
+      "rho_frozen": 0.14905032026449513,
+      "sign": "+",
+      "layer": 16,
+      "n_eval": 285
+     },
+     "sycomwe": {
+      "rho_frozen": 0.15308892050313946,
+      "sign": "+",
+      "layer": 16,
+      "n_eval": 576
+     }
+    },
+    "pvsynth_rho_mean_over_fits": 0.6661265984513198,
+    "n_negative_primary_rungs": 0,
+    "preds_recompute": {
+     "aita": {
+      "rho_from_preds": 0.25298989334493205,
+      "rho_row": 0.25298989334493205,
+      "consistent": true
+     },
+     "sycoans": {
+      "rho_from_preds": 0.560071666898639,
+      "rho_row": 0.560071666898639,
+      "consistent": true
+     },
+     "sycoays": {
+      "rho_from_preds": 0.10956738646739483,
+      "rho_row": 0.10956738646739483,
+      "consistent": true
+     },
+     "sycofb": {
+      "rho_from_preds": 0.12331289473162793,
+      "rho_row": 0.12331289473162793,
+      "consistent": true
+     },
+     "sycomim": {
+      "rho_from_preds": 0.14905032026449513,
+      "rho_row": 0.14905032026449513,
+      "consistent": true
+     },
+     "sycomwe": {
+      "rho_from_preds": 0.15308892050313946,
+      "rho_row": 0.15308892050313946,
+      "consistent": true
+     }
+    }
+   },
+   "1": {
+    "per_fit_layer_profiles": {
+     "P-B-holdout-aita": {
+      "max": 0.35932877312187106,
+      "argmax_layer": 27,
+      "at_frozen": 0.3100422737790359,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.15693566830524613,
+      "std_across_layers": 0.042115884625811874,
+      "n_negative_layers": 0
+     },
+     "P-B-holdout-sycoans": {
+      "max": 0.33239447437822,
+      "argmax_layer": 22,
+      "at_frozen": 0.3077761795443429,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.1265956451780801,
+      "std_across_layers": 0.037551443860263115,
+      "n_negative_layers": 0
+     },
+     "P-B-holdout-sycoays": {
+      "max": 0.42590674878396423,
+      "argmax_layer": 15,
+      "at_frozen": 0.4233529439290665,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.22161663425771796,
+      "std_across_layers": 0.0651864308813141,
+      "n_negative_layers": 0
+     },
+     "P-B-holdout-sycofb": {
+      "max": 0.4052217729874229,
+      "argmax_layer": 22,
+      "at_frozen": 0.33069164064462386,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.20517453036562394,
+      "std_across_layers": 0.06716499117828732,
+      "n_negative_layers": 0
+     },
+     "P-B-holdout-sycomim": {
+      "max": 0.42384922138106884,
+      "argmax_layer": 22,
+      "at_frozen": 0.35787483133167,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.15600356284711486,
+      "std_across_layers": 0.03630044833732444,
+      "n_negative_layers": 0
+     },
+     "P-B-holdout-sycomwe": {
+      "max": 0.4285419505361581,
+      "argmax_layer": 5,
+      "at_frozen": 0.3887876322892336,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.3633665643787004,
+      "std_across_layers": 0.09217133921372143,
+      "n_negative_layers": 0
+     }
+    },
+    "primary_rung_rows": {
+     "aita": {
+      "rho_frozen": 0.2729268786283094,
+      "sign": "+",
+      "layer": 16,
+      "n_eval": 1304
+     },
+     "sycoans": {
+      "rho_frozen": 0.5563781600420545,
+      "sign": "+",
+      "layer": 16,
+      "n_eval": 594
+     },
+     "sycoays": {
+      "rho_frozen": 0.014217956955537542,
+      "sign": "+",
+      "layer": 16,
+      "n_eval": 598
+     },
+     "sycofb": {
+      "rho_frozen": 0.1104135150938904,
+      "sign": "+",
+      "layer": 16,
+      "n_eval": 559
+     },
+     "sycomim": {
+      "rho_frozen": 0.11105170875497862,
+      "sign": "+",
+      "layer": 16,
+      "n_eval": 285
+     },
+     "sycomwe": {
+      "rho_frozen": 0.06031680873730745,
+      "sign": "+",
+      "layer": 16,
+      "n_eval": 576
+     }
+    },
+    "pvsynth_rho_mean_over_fits": 0.6073821893104158,
+    "n_negative_primary_rungs": 0,
+    "preds_recompute": {
+     "aita": {
+      "rho_from_preds": 0.2729268786283094,
+      "rho_row": 0.2729268786283094,
+      "consistent": true
+     },
+     "sycoans": {
+      "rho_from_preds": 0.5563781600420545,
+      "rho_row": 0.5563781600420545,
+      "consistent": true
+     },
+     "sycoays": {
+      "rho_from_preds": 0.014217956955537542,
+      "rho_row": 0.014217956955537542,
+      "consistent": true
+     },
+     "sycofb": {
+      "rho_from_preds": 0.1104135150938904,
+      "rho_row": 0.1104135150938904,
+      "consistent": true
+     },
+     "sycomim": {
+      "rho_from_preds": 0.11105170875497862,
+      "rho_row": 0.11105170875497862,
+      "consistent": true
+     },
+     "sycomwe": {
+      "rho_from_preds": 0.06031680873730745,
+      "rho_row": 0.06031680873730745,
+      "consistent": true
+     }
+    }
+   },
+   "2": {
+    "per_fit_layer_profiles": {
+     "P-B-holdout-aita": {
+      "max": 0.3513916115497663,
+      "argmax_layer": 27,
+      "at_frozen": 0.3213747648983924,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.13805388442856928,
+      "std_across_layers": 0.03586564811339734,
+      "n_negative_layers": 0
+     },
+     "P-B-holdout-sycoans": {
+      "max": 0.34977303548141037,
+      "argmax_layer": 22,
+      "at_frozen": 0.3218361086905694,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.11286150986788065,
+      "std_across_layers": 0.030997393703440096,
+      "n_negative_layers": 0
+     },
+     "P-B-holdout-sycoays": {
+      "max": 0.4436514033984352,
+      "argmax_layer": 22,
+      "at_frozen": 0.4346383457386762,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.20066497092380994,
+      "std_across_layers": 0.05975295408661843,
+      "n_negative_layers": 0
+     },
+     "P-B-holdout-sycofb": {
+      "max": 0.4097729041573943,
+      "argmax_layer": 27,
+      "at_frozen": 0.3398492722704372,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.20132398511974992,
+      "std_across_layers": 0.061234304754830604,
+      "n_negative_layers": 0
+     },
+     "P-B-holdout-sycomim": {
+      "max": 0.42233631094632307,
+      "argmax_layer": 22,
+      "at_frozen": 0.36819798752284805,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.13903168110023928,
+      "std_across_layers": 0.033573571104530214,
+      "n_negative_layers": 0
+     },
+     "P-B-holdout-sycomwe": {
+      "max": 0.4088936166727798,
+      "argmax_layer": 23,
+      "at_frozen": 0.36269003284507495,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.4200388457699714,
+      "std_across_layers": 0.10831813814848862,
+      "n_negative_layers": 1
+     }
+    },
+    "primary_rung_rows": {
+     "aita": {
+      "rho_frozen": 0.2685141727664834,
+      "sign": "+",
+      "layer": 16,
+      "n_eval": 1304
+     },
+     "sycoans": {
+      "rho_frozen": 0.5618793833094382,
+      "sign": "+",
+      "layer": 16,
+      "n_eval": 594
+     },
+     "sycoays": {
+      "rho_frozen": 0.04406563862282165,
+      "sign": "+",
+      "layer": 16,
+      "n_eval": 598
+     },
+     "sycofb": {
+      "rho_frozen": 0.08950067680284819,
+      "sign": "+",
+      "layer": 16,
+      "n_eval": 559
+     },
+     "sycomim": {
+      "rho_frozen": 0.17127071942700825,
+      "sign": "+",
+      "layer": 16,
+      "n_eval": 285
+     },
+     "sycomwe": {
+      "rho_frozen": 0.07407518586866679,
+      "sign": "+",
+      "layer": 16,
+      "n_eval": 576
+     }
+    },
+    "pvsynth_rho_mean_over_fits": 0.6412465574551874,
+    "n_negative_primary_rungs": 0,
+    "preds_recompute": {
+     "aita": {
+      "rho_from_preds": 0.2685141727664834,
+      "rho_row": 0.2685141727664834,
+      "consistent": true
+     },
+     "sycoans": {
+      "rho_from_preds": 0.5618793833094382,
+      "rho_row": 0.5618793833094382,
+      "consistent": true
+     },
+     "sycoays": {
+      "rho_from_preds": 0.04406563862282165,
+      "rho_row": 0.04406563862282165,
+      "consistent": true
+     },
+     "sycofb": {
+      "rho_from_preds": 0.08950067680284819,
+      "rho_row": 0.08950067680284819,
+      "consistent": true
+     },
+     "sycomim": {
+      "rho_from_preds": 0.17127071942700825,
+      "rho_row": 0.17127071942700825,
+      "consistent": true
+     },
+     "sycomwe": {
+      "rho_from_preds": 0.07407518586866679,
+      "rho_row": 0.07407518586866679,
+      "consistent": true
+     }
+    }
+   },
+   "3": {
+    "per_fit_layer_profiles": {
+     "P-B-holdout-aita": {
+      "max": 0.38385497840607524,
+      "argmax_layer": 27,
+      "at_frozen": 0.33780782158214134,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.1512600390722933,
+      "std_across_layers": 0.04046087492239758,
+      "n_negative_layers": 0
+     },
+     "P-B-holdout-sycoans": {
+      "max": 0.3637912534259028,
+      "argmax_layer": 21,
+      "at_frozen": 0.3330607320381465,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.12077921527647287,
+      "std_across_layers": 0.03284939800805939,
+      "n_negative_layers": 0
+     },
+     "P-B-holdout-sycoays": {
+      "max": 0.4721434655207341,
+      "argmax_layer": 22,
+      "at_frozen": 0.44253880557067105,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.2132870124746224,
+      "std_across_layers": 0.06159322750452751,
+      "n_negative_layers": 0
+     },
+     "P-B-holdout-sycofb": {
+      "max": 0.43316539850038116,
+      "argmax_layer": 27,
+      "at_frozen": 0.3518004565365802,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.21088649129777368,
+      "std_across_layers": 0.06350608516800127,
+      "n_negative_layers": 0
+     },
+     "P-B-holdout-sycomim": {
+      "max": 0.44955564684386023,
+      "argmax_layer": 21,
+      "at_frozen": 0.3813704727067406,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.15110224811891482,
+      "std_across_layers": 0.035405709268514704,
+      "n_negative_layers": 0
+     },
+     "P-B-holdout-sycomwe": {
+      "max": 0.46822057326263,
+      "argmax_layer": 23,
+      "at_frozen": 0.4054248403929841,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.35470062489609727,
+      "std_across_layers": 0.07864599836668809,
+      "n_negative_layers": 0
+     }
+    },
+    "primary_rung_rows": {
+     "aita": {
+      "rho_frozen": 0.2710682282490074,
+      "sign": "+",
+      "layer": 16,
+      "n_eval": 1304
+     },
+     "sycoans": {
+      "rho_frozen": 0.5477854354660817,
+      "sign": "+",
+      "layer": 16,
+      "n_eval": 594
+     },
+     "sycoays": {
+      "rho_frozen": 0.11953357009164342,
+      "sign": "+",
+      "layer": 16,
+      "n_eval": 598
+     },
+     "sycofb": {
+      "rho_frozen": 0.0887034289884573,
+      "sign": "+",
+      "layer": 16,
+      "n_eval": 559
+     },
+     "sycomim": {
+      "rho_frozen": 0.14669045752082635,
+      "sign": "+",
+      "layer": 16,
+      "n_eval": 285
+     },
+     "sycomwe": {
+      "rho_frozen": -0.07622862648144588,
+      "sign": "-",
+      "layer": 16,
+      "n_eval": 576
+     }
+    },
+    "pvsynth_rho_mean_over_fits": 0.6411988763207169,
+    "n_negative_primary_rungs": 1,
+    "preds_recompute": {
+     "aita": {
+      "rho_from_preds": 0.2710682282490074,
+      "rho_row": 0.2710682282490074,
+      "consistent": true
+     },
+     "sycoans": {
+      "rho_from_preds": 0.5477854354660817,
+      "rho_row": 0.5477854354660817,
+      "consistent": true
+     },
+     "sycoays": {
+      "rho_from_preds": 0.11953357009164342,
+      "rho_row": 0.11953357009164342,
+      "consistent": true
+     },
+     "sycofb": {
+      "rho_from_preds": 0.0887034289884573,
+      "rho_row": 0.0887034289884573,
+      "consistent": true
+     },
+     "sycomim": {
+      "rho_from_preds": 0.14669045752082635,
+      "rho_row": 0.14669045752082635,
+      "consistent": true
+     },
+     "sycomwe": {
+      "rho_from_preds": -0.07622862648144588,
+      "rho_row": -0.07622862648144588,
+      "consistent": true
+     }
+    }
+   },
+   "4": {
+    "per_fit_layer_profiles": {
+     "P-B-holdout-aita": {
+      "max": 0.3443684818268415,
+      "argmax_layer": 27,
+      "at_frozen": 0.2902248374050578,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.1562611356656348,
+      "std_across_layers": 0.04044195382779421,
+      "n_negative_layers": 0
+     },
+     "P-B-holdout-sycoans": {
+      "max": 0.31181604627074266,
+      "argmax_layer": 27,
+      "at_frozen": 0.285033231617131,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.12802062711818638,
+      "std_across_layers": 0.03732988328229969,
+      "n_negative_layers": 0
+     },
+     "P-B-holdout-sycoays": {
+      "max": 0.42395070346448915,
+      "argmax_layer": 22,
+      "at_frozen": 0.41091583764534395,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.22819104783292735,
+      "std_across_layers": 0.06755274876728926,
+      "n_negative_layers": 0
+     },
+     "P-B-holdout-sycofb": {
+      "max": 0.3794563125096821,
+      "argmax_layer": 27,
+      "at_frozen": 0.2962046323604605,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.21385898406005466,
+      "std_across_layers": 0.06219814515878445,
+      "n_negative_layers": 0
+     },
+     "P-B-holdout-sycomim": {
+      "max": 0.40284449564523606,
+      "argmax_layer": 22,
+      "at_frozen": 0.3644246317970182,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.10012769158515822,
+      "std_across_layers": 0.029323055106689748,
+      "n_negative_layers": 0
+     },
+     "P-B-holdout-sycomwe": {
+      "max": 0.43730560122859086,
+      "argmax_layer": 23,
+      "at_frozen": 0.39264494525386806,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.3650288110881782,
+      "std_across_layers": 0.09644266957719572,
+      "n_negative_layers": 0
+     }
+    },
+    "primary_rung_rows": {
+     "aita": {
+      "rho_frozen": 0.24227233675462415,
+      "sign": "+",
+      "layer": 16,
+      "n_eval": 1304
+     },
+     "sycoans": {
+      "rho_frozen": 0.5566578437068678,
+      "sign": "+",
+      "layer": 16,
+      "n_eval": 594
+     },
+     "sycoays": {
+      "rho_frozen": 0.10683778923400905,
+      "sign": "+",
+      "layer": 16,
+      "n_eval": 598
+     },
+     "sycofb": {
+      "rho_frozen": 0.09882932469608496,
+      "sign": "+",
+      "layer": 16,
+      "n_eval": 559
+     },
+     "sycomim": {
+      "rho_frozen": 0.15341596265562757,
+      "sign": "+",
+      "layer": 16,
+      "n_eval": 285
+     },
+     "sycomwe": {
+      "rho_frozen": -0.006628835591618371,
+      "sign": "-",
+      "layer": 16,
+      "n_eval": 576
+     }
+    },
+    "pvsynth_rho_mean_over_fits": 0.6116060369994215,
+    "n_negative_primary_rungs": 1,
+    "preds_recompute": {
+     "aita": {
+      "rho_from_preds": 0.24227233675462415,
+      "rho_row": 0.24227233675462415,
+      "consistent": true
+     },
+     "sycoans": {
+      "rho_from_preds": 0.5566578437068678,
+      "rho_row": 0.5566578437068678,
+      "consistent": true
+     },
+     "sycoays": {
+      "rho_from_preds": 0.10683778923400905,
+      "rho_row": 0.10683778923400905,
+      "consistent": true
+     },
+     "sycofb": {
+      "rho_from_preds": 0.09882932469608496,
+      "rho_row": 0.09882932469608496,
+      "consistent": true
+     },
+     "sycomim": {
+      "rho_from_preds": 0.15341596265562757,
+      "rho_row": 0.15341596265562757,
+      "consistent": true
+     },
+     "sycomwe": {
+      "rho_from_preds": -0.006628835591618371,
+      "rho_row": -0.006628835591618371,
+      "consistent": true
+     }
+    }
+   }
+  },
+  "hallucination": {
+   "0": {
+    "per_fit_layer_profiles": {
+     "P-B-holdout-nqopen": {
+      "max": 0.4149740957536998,
+      "argmax_layer": 18,
+      "at_frozen": 0.3815388917253921,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.17682477966113821,
+      "std_across_layers": 0.05013276306549989,
+      "n_negative_layers": 0
+     },
+     "P-B-holdout-simpleqa": {
+      "max": 0.44068201291546494,
+      "argmax_layer": 26,
+      "at_frozen": 0.3694944536152498,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.3773570896554604,
+      "std_across_layers": 0.12616231680973672,
+      "n_negative_layers": 0
+     }
+    },
+    "primary_rung_rows": {
+     "nqopen": {
+      "rho_frozen": 0.23342869096578034,
+      "sign": "+",
+      "layer": 19,
+      "n_eval": 3167
+     },
+     "simpleqa": {
+      "rho_frozen": 0.3860569007453327,
+      "sign": "+",
+      "layer": 19,
+      "n_eval": 4021
+     }
+    },
+    "pvsynth_rho_mean_over_fits": 0.4299595562819112,
+    "n_negative_primary_rungs": 0,
+    "preds_recompute": {
+     "nqopen": {
+      "rho_from_preds": 0.23342869096578034,
+      "rho_row": 0.23342869096578034,
+      "consistent": true
+     },
+     "simpleqa": {
+      "rho_from_preds": 0.3860569007453327,
+      "rho_row": 0.3860569007453327,
+      "consistent": true
+     }
+    }
+   },
+   "1": {
+    "per_fit_layer_profiles": {
+     "P-B-holdout-nqopen": {
+      "max": 0.39313098604664837,
+      "argmax_layer": 26,
+      "at_frozen": 0.358252314393268,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.16472380619873533,
+      "std_across_layers": 0.04817803112279014,
+      "n_negative_layers": 0
+     },
+     "P-B-holdout-simpleqa": {
+      "max": 0.4190627261022307,
+      "argmax_layer": 26,
+      "at_frozen": 0.3622766851864216,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.36438718768713113,
+      "std_across_layers": 0.12237768268481564,
+      "n_negative_layers": 0
+     }
+    },
+    "primary_rung_rows": {
+     "nqopen": {
+      "rho_frozen": 0.24279049908254902,
+      "sign": "+",
+      "layer": 19,
+      "n_eval": 3167
+     },
+     "simpleqa": {
+      "rho_frozen": 0.35949195290582664,
+      "sign": "+",
+      "layer": 19,
+      "n_eval": 4021
+     }
+    },
+    "pvsynth_rho_mean_over_fits": 0.46249956576440404,
+    "n_negative_primary_rungs": 0,
+    "preds_recompute": {
+     "nqopen": {
+      "rho_from_preds": 0.24279049908254902,
+      "rho_row": 0.24279049908254902,
+      "consistent": true
+     },
+     "simpleqa": {
+      "rho_from_preds": 0.35949195290582664,
+      "rho_row": 0.35949195290582664,
+      "consistent": true
+     }
+    }
+   },
+   "2": {
+    "per_fit_layer_profiles": {
+     "P-B-holdout-nqopen": {
+      "max": 0.3879664007433412,
+      "argmax_layer": 26,
+      "at_frozen": 0.3489055146905328,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.16305756160715865,
+      "std_across_layers": 0.0457196848414169,
+      "n_negative_layers": 0
+     },
+     "P-B-holdout-simpleqa": {
+      "max": 0.42603923528755444,
+      "argmax_layer": 26,
+      "at_frozen": 0.3701240861663981,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.3509155110108816,
+      "std_across_layers": 0.11692324930391121,
+      "n_negative_layers": 0
+     }
+    },
+    "primary_rung_rows": {
+     "nqopen": {
+      "rho_frozen": 0.23418863708386678,
+      "sign": "+",
+      "layer": 19,
+      "n_eval": 3167
+     },
+     "simpleqa": {
+      "rho_frozen": 0.3598257761196119,
+      "sign": "+",
+      "layer": 19,
+      "n_eval": 4021
+     }
+    },
+    "pvsynth_rho_mean_over_fits": 0.44533629038362305,
+    "n_negative_primary_rungs": 0,
+    "preds_recompute": {
+     "nqopen": {
+      "rho_from_preds": 0.23418863708386678,
+      "rho_row": 0.23418863708386678,
+      "consistent": true
+     },
+     "simpleqa": {
+      "rho_from_preds": 0.3598257761196119,
+      "rho_row": 0.3598257761196119,
+      "consistent": true
+     }
+    }
+   },
+   "3": {
+    "per_fit_layer_profiles": {
+     "P-B-holdout-nqopen": {
+      "max": 0.40760444242006755,
+      "argmax_layer": 26,
+      "at_frozen": 0.36351180464480354,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.1718594673826627,
+      "std_across_layers": 0.04932507099167281,
+      "n_negative_layers": 0
+     },
+     "P-B-holdout-simpleqa": {
+      "max": 0.4233891204919357,
+      "argmax_layer": 26,
+      "at_frozen": 0.3725276119389261,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.3554084711444139,
+      "std_across_layers": 0.12144643974954013,
+      "n_negative_layers": 0
+     }
+    },
+    "primary_rung_rows": {
+     "nqopen": {
+      "rho_frozen": 0.22886913534644834,
+      "sign": "+",
+      "layer": 19,
+      "n_eval": 3167
+     },
+     "simpleqa": {
+      "rho_frozen": 0.3580652701601123,
+      "sign": "+",
+      "layer": 19,
+      "n_eval": 4021
+     }
+    },
+    "pvsynth_rho_mean_over_fits": 0.39327588362658905,
+    "n_negative_primary_rungs": 0,
+    "preds_recompute": {
+     "nqopen": {
+      "rho_from_preds": 0.22886913534644834,
+      "rho_row": 0.22886913534644834,
+      "consistent": true
+     },
+     "simpleqa": {
+      "rho_from_preds": 0.3580652701601123,
+      "rho_row": 0.3580652701601123,
+      "consistent": true
+     }
+    }
+   },
+   "4": {
+    "per_fit_layer_profiles": {
+     "P-B-holdout-nqopen": {
+      "max": 0.39878081536551224,
+      "argmax_layer": 26,
+      "at_frozen": 0.35483871186390264,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.17221708886012796,
+      "std_across_layers": 0.05078799927499922,
+      "n_negative_layers": 0
+     },
+     "P-B-holdout-simpleqa": {
+      "max": 0.441312701805803,
+      "argmax_layer": 26,
+      "at_frozen": 0.3935487012714814,
+      "frozen_is_argmax": false,
+      "spread_max_minus_min": 0.3852695377433454,
+      "std_across_layers": 0.12674664719860246,
+      "n_negative_layers": 0
+     }
+    },
+    "primary_rung_rows": {
+     "nqopen": {
+      "rho_frozen": 0.24105794479664153,
+      "sign": "+",
+      "layer": 19,
+      "n_eval": 3167
+     },
+     "simpleqa": {
+      "rho_frozen": 0.39741643386949105,
+      "sign": "+",
+      "layer": 19,
+      "n_eval": 4021
+     }
+    },
+    "pvsynth_rho_mean_over_fits": 0.4739731976902579,
+    "n_negative_primary_rungs": 0,
+    "preds_recompute": {
+     "nqopen": {
+      "rho_from_preds": 0.24105794479664153,
+      "rho_row": 0.24105794479664153,
+      "consistent": true
+     },
+     "simpleqa": {
+      "rho_from_preds": 0.39741643386949105,
+      "rho_row": 0.39741643386949105,
+      "consistent": true
+     }
+    }
+   }
+  }
+ },
+ "missing_files": []
+}

@@ -378,6 +378,38 @@ def assemble_readout_pool(
     )
 
 
+def dataset_roster(loaded, tbl_ood, elic_cell, *, base_ev: int, base_ood: int):
+    """The P-B dataset roster: train budget cell + eval rungs + OOD rungs.
+
+    Pure code motion out of :func:`prepare_behavior` (arm2fix round) so the
+    D0-P4 direction-stability probe (`issue1739_arm2fix_d0.py`) assembles the
+    IDENTICAL roster — one construction, two readers, no drift. Rows are
+    merged-table indices under the [train | wc | ev | ood] block layout.
+    """
+    import numpy as np
+
+    tbl_groups = np.asarray([str(g) for g in loaded.tbl.groups])
+    datasets = [
+        DatasetSpec(
+            name="train",
+            rows=np.asarray(elic_cell.row_idx, dtype=np.int64),
+            groups=tbl_groups[elic_cell.row_idx],
+        )
+    ]
+    ev_rungs = np.asarray([str(r) for r in loaded.tbl_ev.row_rungs])
+    ev_groups = np.asarray([str(g) for g in loaded.tbl_ev.groups])
+    for rung in sorted(set(ev_rungs)):
+        rows = base_ev + np.flatnonzero(ev_rungs == rung)
+        datasets.append(DatasetSpec(name=rung, rows=rows, groups=ev_groups[rows - base_ev]))
+    if tbl_ood is not None:
+        ood_rungs = np.asarray([str(r) for r in tbl_ood.row_rungs])
+        ood_groups = np.asarray([str(g) for g in tbl_ood.groups])
+        for rung in sorted(set(ood_rungs)):
+            rows = base_ood + np.flatnonzero(ood_rungs == rung)
+            datasets.append(DatasetSpec(name=rung, rows=rows, groups=ood_groups[rows - base_ood]))
+    return datasets
+
+
 # ---------------------------------------------------------------------------
 # OOD DV gate + store loading
 # ---------------------------------------------------------------------------
@@ -1411,25 +1443,7 @@ def prepare_behavior(args, behavior: str, layers: list[int]) -> SimpleNamespace:
     elic_cell = fits.realize_budget_cell(
         loaded.tbl.groups, budget_l=lmax, draw=args.draw, seed=args.seed
     )
-    tbl_groups = np.asarray([str(g) for g in loaded.tbl.groups])
-    datasets = [
-        DatasetSpec(
-            name="train",
-            rows=np.asarray(elic_cell.row_idx, dtype=np.int64),
-            groups=tbl_groups[elic_cell.row_idx],
-        )
-    ]
-    ev_rungs = np.asarray([str(r) for r in loaded.tbl_ev.row_rungs])
-    ev_groups = np.asarray([str(g) for g in loaded.tbl_ev.groups])
-    for rung in sorted(set(ev_rungs)):
-        rows = base_ev + np.flatnonzero(ev_rungs == rung)
-        datasets.append(DatasetSpec(name=rung, rows=rows, groups=ev_groups[rows - base_ev]))
-    if tbl_ood is not None:
-        ood_rungs = np.asarray([str(r) for r in tbl_ood.row_rungs])
-        ood_groups = np.asarray([str(g) for g in tbl_ood.groups])
-        for rung in sorted(set(ood_rungs)):
-            rows = base_ood + np.flatnonzero(ood_rungs == rung)
-            datasets.append(DatasetSpec(name=rung, rows=rows, groups=ood_groups[rows - base_ood]))
+    datasets = dataset_roster(loaded, tbl_ood, elic_cell, base_ev=base_ev, base_ood=base_ood)
     ds_by_name = {d.name: d for d in datasets}
     eval_datasets = [d.name for d in datasets if d.name != "train"]
     _log(

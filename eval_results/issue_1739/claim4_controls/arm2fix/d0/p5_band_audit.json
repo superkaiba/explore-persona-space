@@ -1,0 +1,254 @@
+{
+ "probe": "p5",
+ "meta": {
+  "generated_ts": "2026-08-22T22:50:51Z",
+  "git_commit": "ab60270bf6f8164f112a45959f21fce1d9618ce8",
+  "behaviors": [
+   "evil",
+   "sycophancy",
+   "hallucination"
+  ],
+  "seeds": [
+   0,
+   1,
+   2,
+   3,
+   4
+  ],
+  "judge_called": false
+ },
+ "behaviors": {
+  "evil": {
+   "per_arm": {
+    "arm1_ctx_e1": {
+     "committed_band": [
+      0.40133211843218103,
+      0.6269420429101523
+     ],
+     "n_committed_cells": 45,
+     "pvsynth_rho_per_seed": {
+      "0": 0.7550197827954369,
+      "1": 0.7489042685447972,
+      "2": 0.7513019273300994,
+      "3": 0.7483690300759733,
+      "4": 0.7540313815773153
+     },
+     "pvsynth_rho_seed_mean": 0.7515252780647244,
+     "in_band": false,
+     "miss_side": "above"
+    },
+    "arm4_ridge_ctx": {
+     "committed_band": [
+      0.3039521473533814,
+      0.7089924399793675
+     ],
+     "n_committed_cells": 45,
+     "pvsynth_rho_per_seed": {
+      "0": 0.6450854685120196,
+      "1": 0.658172005417465,
+      "2": 0.697368051108466,
+      "3": 0.6560755819857423,
+      "4": 0.5624804479096669
+     },
+     "pvsynth_rho_seed_mean": 0.643836310986672,
+     "in_band": true,
+     "miss_side": null
+    },
+    "arm7_map_ridge_pred": {
+     "committed_band": [
+      0.3597334925879571,
+      0.7202637001945456
+     ],
+     "n_committed_cells": 45,
+     "pvsynth_rho_per_seed": {
+      "0": 0.8111527644127957,
+      "1": 0.8139246535532985,
+      "2": 0.8130378865240366,
+      "3": 0.8159510506796384,
+      "4": 0.809263276571793
+     },
+     "pvsynth_rho_seed_mean": 0.8126659263483124,
+     "in_band": false,
+     "miss_side": "above"
+    },
+    "arm2_ctx_native": {
+     "committed_band": [
+      0.4035574228711007,
+      0.7001472255391837
+     ],
+     "n_committed_cells": 45,
+     "pvsynth_rho_per_seed": {
+      "0": -0.12759491357512778,
+      "1": 0.37269518998697065,
+      "2": -0.31561344797772917,
+      "3": -0.1203937296472685,
+      "4": -0.10001572552248521
+     },
+     "pvsynth_rho_seed_mean": -0.058184525347128,
+     "in_band": false,
+     "miss_side": "below"
+    }
+   },
+   "h_instrument_evidence": {
+    "n_label_matched_arms_out_of_band": 2,
+    "n_label_matched_arms": 3,
+    "reading": "label-matched probes ALSO out of band -> the pvsynth-transfer-vs-train-band comparison is an instrument artifact candidate"
+   }
+  },
+  "sycophancy": {
+   "per_arm": {
+    "arm1_ctx_e1": {
+     "committed_band": [
+      0.09165097404705475,
+      0.2581950324784396
+     ],
+     "n_committed_cells": 45,
+     "pvsynth_rho_per_seed": {
+      "0": 0.7921413291952443,
+      "1": 0.7856123927508301,
+      "2": 0.7850665000774443,
+      "3": 0.7843569146904436,
+      "4": 0.7906590841646205
+     },
+     "pvsynth_rho_seed_mean": 0.7875672441757166,
+     "in_band": false,
+     "miss_side": "above"
+    },
+    "arm4_ridge_ctx": {
+     "committed_band": [
+      0.4225985552333832,
+      0.7399573889095427
+     ],
+     "n_committed_cells": 45,
+     "pvsynth_rho_per_seed": {
+      "0": 0.789803952427517,
+      "1": 0.7982485191221643,
+      "2": 0.7683327996776833,
+      "3": 0.7869764986976215,
+      "4": 0.7698301875357898
+     },
+     "pvsynth_rho_seed_mean": 0.7826383914921552,
+     "in_band": false,
+     "miss_side": "above"
+    },
+    "arm7_map_ridge_pred": {
+     "committed_band": [
+      0.44277421248084536,
+      0.7480231339123655
+     ],
+     "n_committed_cells": 45,
+     "pvsynth_rho_per_seed": {
+      "0": 0.7784443288687767,
+      "1": 0.7702992397457509,
+      "2": 0.763626759308587,
+      "3": 0.7777770432808602,
+      "4": 0.7772611859677706
+     },
+     "pvsynth_rho_seed_mean": 0.7734817114343491,
+     "in_band": false,
+     "miss_side": "above"
+    },
+    "arm2_ctx_native": {
+     "committed_band": [
+      0.29504139440031674,
+      0.5260008857853079
+     ],
+     "n_committed_cells": 45,
+     "pvsynth_rho_per_seed": {
+      "0": 0.6661265984513198,
+      "1": 0.6073821893104158,
+      "2": 0.6412465574551874,
+      "3": 0.6411988763207169,
+      "4": 0.6116060369994215
+     },
+     "pvsynth_rho_seed_mean": 0.6335120517074123,
+     "in_band": false,
+     "miss_side": "above"
+    }
+   },
+   "h_instrument_evidence": {
+    "n_label_matched_arms_out_of_band": 3,
+    "n_label_matched_arms": 3,
+    "reading": "label-matched probes ALSO out of band -> the pvsynth-transfer-vs-train-band comparison is an instrument artifact candidate"
+   }
+  },
+  "hallucination": {
+   "per_arm": {
+    "arm1_ctx_e1": {
+     "committed_band": [
+      0.0526231313886483,
+      0.2095456859964222
+     ],
+     "n_committed_cells": 45,
+     "pvsynth_rho_per_seed": {
+      "0": 0.6471165993837352,
+      "1": 0.657384043435713,
+      "2": 0.6516534294359893,
+      "3": 0.6498168965747371,
+      "4": 0.6635123348335549
+     },
+     "pvsynth_rho_seed_mean": 0.6538966607327459,
+     "in_band": false,
+     "miss_side": "above"
+    },
+    "arm4_ridge_ctx": {
+     "committed_band": [
+      0.28300845487460063,
+      0.5879791965081567
+     ],
+     "n_committed_cells": 45,
+     "pvsynth_rho_per_seed": {
+      "0": 0.6343251442463484,
+      "1": 0.6391284707780596,
+      "2": 0.5807232677259098,
+      "3": 0.5423579233511358,
+      "4": 0.605829942401992
+     },
+     "pvsynth_rho_seed_mean": 0.6004729497006891,
+     "in_band": false,
+     "miss_side": "above"
+    },
+    "arm7_map_ridge_pred": {
+     "committed_band": [
+      0.3068495999212301,
+      0.6047053807961029
+     ],
+     "n_committed_cells": 45,
+     "pvsynth_rho_per_seed": {
+      "0": 0.6288749341587192,
+      "1": 0.6954821395779143,
+      "2": 0.6120059701226702,
+      "3": 0.5894823191515666,
+      "4": 0.583217584563255
+     },
+     "pvsynth_rho_seed_mean": 0.6218125895148251,
+     "in_band": false,
+     "miss_side": "above"
+    },
+    "arm2_ctx_native": {
+     "committed_band": [
+      0.4419419213870768,
+      0.5559253796865838
+     ],
+     "n_committed_cells": 45,
+     "pvsynth_rho_per_seed": {
+      "0": 0.4299595562819112,
+      "1": 0.46249956576440404,
+      "2": 0.44533629038362305,
+      "3": 0.39327588362658905,
+      "4": 0.4739731976902579
+     },
+     "pvsynth_rho_seed_mean": 0.44100889874935706,
+     "in_band": false,
+     "miss_side": "below"
+    }
+   },
+   "h_instrument_evidence": {
+    "n_label_matched_arms_out_of_band": 3,
+    "n_label_matched_arms": 3,
+    "reading": "label-matched probes ALSO out of band -> the pvsynth-transfer-vs-train-band comparison is an instrument artifact candidate"
+   }
+  }
+ },
+ "missing_files": []
+}
