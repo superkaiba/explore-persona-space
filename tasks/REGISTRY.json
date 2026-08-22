@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2475,
+  "highest_id": 2476,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11393,6 +11393,13 @@
       "path": "tasks/proposed/2475",
       "status": "proposed",
       "title": "Correct #823 Takeaway 4: the persona-ladder decline is not denominator arithmetic (denominator-free paired read refutes the mixture-floor interpretation)"
+    },
+    "2476": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/2476",
+      "status": "proposed",
+      "title": "Turn-averaged SAE basis: does the map's high-level-over-low-level predictability gradient hold?"
     },
     "248": {
       "has_clean_result": false,
