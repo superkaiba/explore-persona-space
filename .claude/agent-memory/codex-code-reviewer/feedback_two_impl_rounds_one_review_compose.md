@@ -91,5 +91,44 @@ deliverable"):
    identity in the plan-envelope heading, and flag the both-valid reading in
    the return.
 
+**Reconciler-FAIL remedy-round compose (#2263 review-r7 = impl r8
+`epm:results v10`, 2026-08-22):** when the prior review round ended in a
+BINDING reconciler FAIL (stopping-rule exception (ii): demonstrated false
+claim in the shipped deliverable) and this round reviews the remedy:
+1. Inline the RECONCILER body as the acceptance-contract envelope
+   (`---BEGIN BINDING RECONCILER VERDICT---`, tags stripped) INSTEAD of the
+   prior twin verdicts — the binding remedy sentence defines what "closed"
+   means, and it is leaner than two verdict bodies. Upheld-FAIL
+   author-neutrality both ways: Codex's OWN FAIL was upheld — no defending
+   findings beyond the remedy contract, no rubber-stamping because the round
+   answers you; name any reconciler-DISCARDED sub-claim as do-not-re-raise.
+2. Ledger schema note VERBATIM in the prompt: no `resolution` field; events
+   are three-valued (`raised`/`addressed`/`verified-open`), `verified-open`
+   REOPENS, state = latest event per `concern_id`. A reader querying a
+   `resolution` column gets all-null and concludes nothing is resolved —
+   that misread cost a mid-flight correction this round. Assert the note's
+   sentences whitespace-NORMALIZED (prose wraps break exact-string counts).
+3. Claim-vs-enforcement rounds get a DETECTOR-TEETH duty: replicate the
+   PRE-fix detector semantics (verbatim from `git show <fix>^:<file>`) on
+   the NEW pin's synthetic cases; composer static-traces the expected
+   fail-set (which cases fail under old semantics, which legitimately pass
+   under both) and hands it as verify-by-EXECUTION, never as fact. Pair
+   with a real-anchor mutation replication (in-memory/scratch, never the
+   worktree) for the BLOCKER-carrying battery rows.
+4. A declared honest surprise in the battery (expected-GREEN measured-RED)
+   gets a MECHANISM-attribution probe (here: old col-0 regex block-boundary
+   corruption over the COMPOSED multi-file text — insert the mutation at the
+   file's contribution boundary, not overall EOF), with a surface-weighing
+   note: a wrong attribution falsifies the MARKER, not the shipped
+   deliverable text — say which surface exception (ii) reads on.
+5. Standing-only rows (binding ruling: no deliverable change) are named in
+   the ledger header AND excluded from the closure section; flagging them
+   as unclosed is a FALSE FINDING — say so in the prompt.
+6. Plan handling: brief gave a PATH (not "inline") and the worktree copy was
+   byte-identical → by-path per Step 2-pre-b (unlike r5/r6's
+   inline-per-brief), with the identity attested in the prompt and the
+   frozen-tasks staleness warning scoped to everything EXCEPT the verified
+   plan file.
+
 Related: [[revision-round compose recipe]] (fold-round entry, #2147 cr4),
 [[concerns-machine-rows-2326]].
