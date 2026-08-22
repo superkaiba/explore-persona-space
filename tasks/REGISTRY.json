@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2470,
+  "highest_id": 2471,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11357,6 +11357,13 @@
       "path": "tasks/proposed/2470",
       "status": "proposed",
       "title": "workflow-fix: parent-reuse fallback + condensed launch refs lack Step 6b fence parity (repo-branch, recheck, extra-sync)"
+    },
+    "2471": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2471",
+      "status": "proposed",
+      "title": "workflow-fix: lint leg resolving line-anchored gotchas.md L<n> citations (trim renumbering silently rots them)"
     },
     "248": {
       "has_clean_result": false,
