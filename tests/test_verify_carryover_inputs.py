@@ -2008,6 +2008,25 @@ def test_sanitized_git_env_strips_config_injection_channels(
     for k in poison:
         assert k not in env, k
     assert env["GIT_CONFIGURATION_UNRELATED"] == "keep"
+    # #2263 r3 finding 3: the documented-OPEN channels are DELIBERATELY not
+    # stripped — operators set these on purpose (a remote reachable only via
+    # a custom SSH/proxy command; HOME/XDG relocate the user config file),
+    # and stripping them trades a real fetch failure for a theoretical
+    # spoof. The sanitizer defends accidental inheritance, not a hostile
+    # caller (who already controls the session).
+    open_channels = {
+        "GIT_SSH": "/usr/bin/ssh",
+        "GIT_SSH_COMMAND": "ssh -i /tmp/key",
+        "GIT_PROXY_COMMAND": "/usr/bin/proxy-cmd",
+        "GIT_EXEC_PATH": "/usr/lib/git-core",
+        "HOME": os.environ.get("HOME", "/home/x"),
+        "XDG_CONFIG_HOME": "/tmp/xdg",
+    }
+    for k, v in open_channels.items():
+        monkeypatch.setenv(k, v)
+    env2 = vci._sanitized_git_env()
+    for k, v in open_channels.items():
+        assert env2.get(k) == v, f"documented-open channel stripped: {k}"
 
 
 def test_git_config_env_injection_cannot_redirect_fetch(
@@ -2061,50 +2080,73 @@ def test_git_config_env_injection_cannot_redirect_fetch(
     assert not vci.path_in_ref(repo, "origin/issue-77", "foreign_marker.txt")
 
 
+def _launch_fence_executable_span(text: str) -> str:
+    """The Step 6b launch fence's recheck->dispatch span, VERBATIM.
+
+    Extracts the ONE ```bash block carrying both the gate recheck and the
+    `dispatch_issue.py launch` command, slices at its `REPO_BRANCH=` prelude
+    line (the lines above it are the `BACKEND=`/`INTENT=<inferred>` setup —
+    `<inferred>` is an orchestrator-filled placeholder that is not valid
+    bash, and both feed only the dispatch command, which the caller
+    stands in for), and replaces ONLY the dispatch command itself with an
+    `echo "DISPATCHED-$REPO_BRANCH"` reachability stand-in. No halt
+    semantics are added or removed: whether a failing recheck stops the
+    dispatch is decided by the production text alone (#2263 r3 finding 1 —
+    the prior version of this test injected `set -e`, constructing the very
+    behavior it claimed to verify). Extraction failure IS test failure.
+    """
+    blocks = re.findall(r"(?ms)^```bash\n(.*?)^```$", text)
+    hits = [
+        b
+        for b in blocks
+        if "scripts/dispatch_issue.py launch" in b
+        and 'scripts/verify_carryover_inputs.py --plan "$PLAN_PATH"' in b
+    ]
+    assert len(hits) == 1, f"launch-fence block extraction failed ({len(hits)} candidates)"
+    lines = hits[0].splitlines()
+    starts = [i for i, ln in enumerate(lines) if ln.startswith("REPO_BRANCH=")]
+    assert len(starts) == 1, "launch-fence REPO_BRANCH prelude extraction failed"
+    span = "\n".join(lines[starts[0] :])
+    span, n_sub = re.subn(
+        r"(?ms)^uv run python scripts/dispatch_issue\.py launch \\\n"
+        r".*?\$\{BACKEND:\+--backend \"\$BACKEND\"\}$",
+        'echo "DISPATCHED-$REPO_BRANCH"',
+        span,
+    )
+    assert n_sub == 1, "dispatch-command stand-in substitution failed"
+    return span
+
+
 def test_step6_launch_fence_gate_recheck_blocks_cross_fence_divergence(
     repo: Path, tmp_path: Path
 ) -> None:
-    """#2263 r2 (cross-fence-ref-drift): the Step 6b launch fence RE-RUNS the
-    carry-over gate against ITS OWN resolved branch, so a sole worktree
-    switched from pushed branch A to pushed branch B between the fences is
-    re-graded — and here REFUSED — before any dispatch (the false-PASS class
-    this task exists to close; both resolutions succeed, so no resolver
-    refusal can catch it).
+    """#2263 r2 (cross-fence-ref-drift) + r3 finding 1: the Step 6b launch
+    fence RE-RUNS the carry-over gate against ITS OWN resolved branch AND
+    mechanically HALTS on a recheck failure, so a sole worktree switched
+    from pushed branch A to pushed branch B between the fences is re-graded
+    — and here REFUSED — before any dispatch (the false-PASS class this
+    task exists to close; both resolutions succeed, so no resolver refusal
+    can catch it).
 
-    Extraction failure IS test failure. NOTE the sibling
+    The fence executes AS WRITTEN (verbatim span, no injected `set -e`, no
+    synthesized halt — see `_launch_fence_executable_span`): the divergence
+    arm fails if and only if the real text fails to halt. Against the r2
+    text (bare recheck adjacent to the dispatch, halt in a comment only)
+    this test FAILS on the divergence arm — the dispatch stand-in is
+    reached. NOTE the sibling
     `test_step6_repo_branch_shared_resolver_fresh_shell_execution` is real
     for SOURCE drift but structurally blind to cross-fence PARITY (it runs
     one prelude against two independent static states) — this test owns the
     divergence arm.
     """
     text = issue_skill_text()
-    assigns = re.findall(r"(?m)^REPO_BRANCH=.*$", text)
-    guards = re.findall(r'(?m)^: "\$\{REPO_BRANCH:\?.*$', text)
-    gate_lines = re.findall(
-        r'(?m)^uv run python scripts/verify_carryover_inputs\.py --plan "\$PLAN_PATH".*$',
-        text,
-    )
-    assert len(assigns) == 2 and len(guards) == 2, "prelude extraction failed"
-    assert len(gate_lines) == 2, "launch fence carries no gate recheck"
-    assert gate_lines[0] == gate_lines[1]  # byte-identical invocation across fences
-
-    def _sub(line: str) -> str:
-        return line.replace("<N>", "77").replace(
+    fence = (
+        _launch_fence_executable_span(text)
+        .replace("<N>", "77")
+        .replace(
             "uv run python scripts/verify_carryover_inputs.py",
             f"{sys.executable} {_SCRIPT}",
         )
-
-    # `set -e` models the fence contract ("non-zero rc ... NEVER dispatch
-    # past it"): the dispatch stand-in line must be unreachable on a recheck
-    # failure.
-    fence = "\n".join(
-        [
-            "set -e",
-            _sub(assigns[1]),
-            guards[1].replace("<N>", "77"),
-            _sub(gate_lines[1]),
-            'echo "DISPATCHED-$REPO_BRANCH"',
-        ]
     )
 
     # Fixture: the plan cites a file committed+pushed ONLY on branch A
@@ -2136,11 +2178,52 @@ def test_step6_launch_fence_gate_recheck_blocks_cross_fence_divergence(
     blocked = subprocess.run(
         ["bash", "-c", fence], cwd=repo, capture_output=True, text=True, env=env
     )
-    assert blocked.returncode == 1, blocked.stderr  # the gate's FAIL rc, not the resolver's 2
+    assert blocked.returncode == 1, blocked.stderr  # the guard's exit 1, not the resolver's 2
     assert "DISPATCHED" not in blocked.stdout
+    assert "dispatch REFUSED" in blocked.stderr  # the guard's fail-loud message fired
     combined = blocked.stdout + blocked.stderr
     assert "untracked-local-only" in combined  # the RECHECK graded branch B
     assert "eval_results/issue_77/f.json" in combined
+
+
+def test_step6_launch_fence_recheck_mechanical_halt_and_lane_parity() -> None:
+    """#2263 r3 text pins: the recheck halts MECHANICALLY and carries the
+    SAME lane/extra-sync args as the 6a.5 invocation.
+
+    (a) Mechanical halt (finding 1): the recheck runs inside an
+        `if ! ...; then ... exit 1; fi` guard whose body fail-louds; the
+        launch fence has no `set -e`, so a BARE recheck's non-zero rc would
+        not stop the adjacent dispatch — exactly one bare (line-initial)
+        invocation may exist, the 6a.5 gate (last command of its block,
+        whose rc the orchestrator branches on in prose).
+    (b) Lane parity (finding 2): BOTH gate invocations carry the identical
+        argv incl. the `"${LANE_ARGS[@]}"` lane/extra-sync token, and the
+        two `LANE_ARGS=` default assignments are byte-identical — the rsync
+        suffix is in the COMMAND, not a comment, so the 6a.5-graded lane
+        set and the recheck-graded lane set cannot drift.
+    """
+    text = issue_skill_text()
+    invocation = (
+        'uv run python scripts/verify_carryover_inputs.py --plan "$PLAN_PATH" '
+        '--issue <N> --repo-branch "$REPO_BRANCH" "${LANE_ARGS[@]}"'
+    )
+    assert text.count(invocation) == 2  # 6a.5 gate + launch-fence recheck, identical argv
+    bare = re.findall(r"(?m)^uv run python scripts/verify_carryover_inputs\.py --plan .*$", text)
+    assert len(bare) == 1, "an UNGUARDED recheck adjacent to the dispatch is the r3 defect"
+    m = re.search(
+        r"(?ms)^if ! uv run python scripts/verify_carryover_inputs\.py --plan [^\n]*; then\n"
+        r"(.*?)^fi$",
+        text,
+    )
+    assert m, "launch-fence recheck guard extraction failed"
+    body = m.group(1)
+    assert "dispatch REFUSED" in body
+    assert re.search(r"(?m)^\s+exit 1$", body), "guard body must halt the fence"
+    lane_lines = re.findall(r"(?m)^LANE_ARGS=.*$", text)
+    assert len(lane_lines) == 2, "one LANE_ARGS default assignment per fence"
+    assert len(set(lane_lines)) == 1  # byte-identical across fences
+    assert lane_lines[0].startswith("LANE_ARGS=()")
+    assert '--lane rsync "${EXTRA_SYNC_ARGS[@]}"' in lane_lines[0]  # the rsync form named
 
 
 def test_corpus_sweep_resolver_failure_surfaces_error_not_substitute(

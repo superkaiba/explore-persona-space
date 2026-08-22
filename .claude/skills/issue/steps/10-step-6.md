@@ -121,7 +121,8 @@ network beyond a bounded fetch):
 ```bash
 REPO_BRANCH="$(uv run python scripts/verify_carryover_inputs.py --print-repo-branch --issue <N>)"   # the ONE shared issue-scoped resolver — re-derived per fence; never the cwd branch (#2263)
 : "${REPO_BRANCH:?repo-branch resolver refused — read its stderr above; a wholly-main-resident workload passes --repo-branch main explicitly at BOTH gate and launch (#2263)}"
-uv run python scripts/verify_carryover_inputs.py --plan "$PLAN_PATH" --issue <N> --repo-branch "$REPO_BRANCH"
+LANE_ARGS=()   # rsync lanes set LANE_ARGS=(--lane rsync "${EXTRA_SYNC_ARGS[@]}") per § Rsync-lane invocation — the SAME assignment at BOTH fences, so gate and launch recheck grade ONE lane set (#2263 r3)
+uv run python scripts/verify_carryover_inputs.py --plan "$PLAN_PATH" --issue <N> --repo-branch "$REPO_BRANCH" "${LANE_ARGS[@]}"
 ```
 
 - Exit `0` -> proceed to 6a.6. WARN lines are informational — carry them into
@@ -170,18 +171,24 @@ materialization ref is known to differ (RunPod `BOOTSTRAP_BRANCH` defaults to
 names an rsync-materialized SLURM lane — every member of
 `router._PER_CLUSTER_LANES` (`nibi` / `fir` / `mila` / `fellows`) plus the
 legacy `cluster` alias — OR is absent/`auto` (the auto chain is
-fellows-FIRST, an rsync lane), run the gate with `--lane rsync` plus any
-plan-named `--extra-sync-path` values: git-reachability is necessary but NOT
-sufficient there — the lane's scratch tree is an rsync of
+fellows-FIRST, an rsync lane), run the gate in rsync mode: set
+`EXTRA_SYNC_ARGS=(--extra-sync-path eval_results/issue_<M>/ladder)` to any
+plan-named values (omit when none), then replace the fence's default
+`LANE_ARGS=()` with `LANE_ARGS=(--lane rsync "${EXTRA_SYNC_ARGS[@]}")` —
+in BOTH fences, per their identical assignment lines. Git-reachability is
+necessary but NOT sufficient there — the lane's scratch tree is an rsync of
 `RSYNC_INCLUDE_PATHS` with `eval_results/` excluded, so an in-ref
 `eval_results/...` citation NOT covered by the sync set downgrades to FAIL
 `rsync-lane-not-synced` (#1689). That FAIL is recoverable IN-STEP, not a
 park: add the covering `--extra-sync-path` value(s) and re-run the gate
-ONCE. Compose the gate call and the later `dispatch_issue.py launch` from
-ONE variable per shared value — `EXTRA_SYNC_ARGS=(--extra-sync-path
-eval_results/issue_<M>/ladder)` threaded to BOTH, exactly as `$REPO_BRANCH`
-(the Step 6a.5 shared-resolver output) is threaded to BOTH fences — so the
-gate-PASSing set and the launched set cannot drift.
+ONCE. The gate invocation lines at BOTH fences expand the SAME
+`"${LANE_ARGS[@]}"` token IN THE COMMAND (#2263 r3 — lane parity by
+construction, not by comment: a recheck graded under different lane args
+than the 6a.5 gate is a different gate), and the later
+`dispatch_issue.py launch` consumes the SAME `EXTRA_SYNC_ARGS` values —
+one variable per shared value, exactly as `$REPO_BRANCH` (the Step 6a.5
+shared-resolver output) is threaded to BOTH fences — so the gate-PASSing
+set, the recheck-graded set, and the launched set cannot drift.
 
 #### Step 6a.6: HF write-headroom probe (quota gate, before provisioning)
 
@@ -744,14 +751,19 @@ INTENT=<inferred>
 
 REPO_BRANCH="$(uv run python scripts/verify_carryover_inputs.py --print-repo-branch --issue <N>)"   # the ONE shared issue-scoped resolver — re-derived per fence; never the cwd branch (#2263)
 : "${REPO_BRANCH:?repo-branch resolver refused — read its stderr above; a wholly-main-resident workload passes --repo-branch main explicitly at BOTH gate and launch (#2263)}"
+LANE_ARGS=()   # rsync lanes set LANE_ARGS=(--lane rsync "${EXTRA_SYNC_ARGS[@]}") per § Rsync-lane invocation — the SAME assignment at BOTH fences, so gate and launch recheck grade ONE lane set (#2263 r3)
 # Launch-fence gate RECHECK (#2263 r2, cross-fence-ref-drift): re-runs the
 # carry-over gate against THIS fence's resolved branch, so a worktree
 # switched between the 6a.5 gate and this launch is re-graded before any
-# dispatch. Non-zero rc takes the Step 6a.5 exit-code contract (remediate /
-# fail loud) — NEVER dispatch past it. Re-run the Step 6a.5 `PLAN_PATH=`
-# assignment first if unset in this shell; rsync lanes append the SAME
-# `--lane rsync ${EXTRA_SYNC_ARGS[@]}` suffix as the 6a.5 invocation.
-uv run python scripts/verify_carryover_inputs.py --plan "$PLAN_PATH" --issue <N> --repo-branch "$REPO_BRANCH"
+# dispatch. The `if !` guard is the MECHANICAL halt (#2263 r3): this block
+# runs without `set -e`, so a bare recheck's non-zero rc would NOT stop the
+# adjacent dispatch command below — the guard must exit, not a comment. On
+# failure, follow the Step 6a.5 exit-code contract (remediate / fail loud);
+# re-run the Step 6a.5 `PLAN_PATH=` assignment first if unset in this shell.
+if ! uv run python scripts/verify_carryover_inputs.py --plan "$PLAN_PATH" --issue <N> --repo-branch "$REPO_BRANCH" "${LANE_ARGS[@]}"; then
+    echo "launch-fence gate recheck FAILED (rc above) — dispatch REFUSED; remediate per the Step 6a.5 exit-code contract, then re-run this fence (#2263)" >&2
+    exit 1
+fi
 
 # Single operational call — runs the router (auto / explicit override
 # both flow through here). On RunPod the underlying pod_lifecycle.py

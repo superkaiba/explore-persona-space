@@ -495,9 +495,20 @@ def _sanitized_git_env() -> dict[str, str]:
     GIT_CONFIG_KEY_<n>/VALUE_<n> (all indices), GIT_CONFIG_PARAMETERS, and a
     redirected GIT_CONFIG_GLOBAL/SYSTEM can inject `url.<foreign>.insteadOf`
     and redirect the fetch to a foreign origin. Stripping the ENV channels
-    leaves on-disk config (repo/user/system files) fully in effect. Other
-    GIT_* env (ceiling dirs, namespaces, transport/proxy vars) is NOT
-    stripped; no claim is made here about its effect direction.
+    leaves on-disk config (repo/user/system files) fully in effect.
+
+    Documented-open channels — DELIBERATELY not stripped (#2263 r3):
+    executable / transport / TLS-proxy env (GIT_SSH, GIT_SSH_COMMAND,
+    GIT_PROXY_COMMAND, GIT_EXEC_PATH, the *_PROXY family) and the
+    config-LOCATION roots HOME / XDG_CONFIG_HOME (which relocate the user
+    config file wholesale), plus ceiling dirs and namespaces. Operators set
+    these deliberately — a remote reachable only through a custom SSH or
+    proxy command — so stripping them trades a real fetch failure for a
+    theoretical spoof. This sanitizer defends against ACCIDENTAL inheritance
+    (a hook-exported GIT_DIR, a pre-commit-exported GIT_CONFIG_*), NOT
+    against a hostile caller: the gate runs inside the orchestrator's own
+    environment, so anyone able to set these variables already controls the
+    session. It is not, and cannot be, spoof-proof against its own caller.
     """
     env = dict(os.environ)
     for key in _GIT_ENV_POISONERS:
