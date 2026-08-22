@@ -182,16 +182,21 @@ class ExampleRow:
 def stage_files(paths_revs: list[tuple[str, str]], stage_dir: Path) -> dict[str, Path]:
     from huggingface_hub import hf_hub_download
 
+    from explore_persona_space.orchestrate.hub import retry_transient
+
     out: dict[str, Path] = {}
     for repo_path, rev in sorted(set(paths_revs)):
         local_dir = stage_dir / rev[:8]
         p = Path(
-            hf_hub_download(
-                DEFAULT_DATASET_REPO,
-                repo_path,
-                repo_type="dataset",
-                revision=rev,
-                local_dir=str(local_dir),
+            retry_transient(
+                lambda repo_path=repo_path, rev=rev, local_dir=local_dir: hf_hub_download(
+                    DEFAULT_DATASET_REPO,
+                    repo_path,
+                    repo_type="dataset",
+                    revision=rev,
+                    local_dir=str(local_dir),
+                ),
+                what=f"hf_hub_download {repo_path}@{rev[:8]}",
             )
         )
         assert p.is_file() and p.stat().st_size > 0, f"staged file empty/missing: {p}"
