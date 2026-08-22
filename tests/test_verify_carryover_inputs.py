@@ -2415,15 +2415,20 @@ def _fenced_blocks(text: str) -> list[str]:
 
 
 def _executable_view(block: str) -> str:
-    """A fenced block as bash would execute it, for invocation counting.
+    """A fenced block's invocation-counting view: comment-stripped, joined.
 
-    Strips `#`-comment text per line (a `#` at line start or preceded by
-    whitespace — bash's start-of-word comment rule; a `#` inside a quoted
-    string is stripped too, a known under-count residual), THEN joins
-    backslash-newline continuations so one wrapped invocation reads as one
-    line. Order is load-bearing: a backslash at the end of a COMMENT does
-    not continue it in bash, so stripping first keeps a `# note: \\` line
-    from swallowing the next line's real invocation.
+    The strip rule is exactly what the regex below implements: a `#` at
+    LINE START or PRECEDED BY WHITESPACE strips to end-of-line — nothing
+    else. Deliberately NOT bash's comment rule (quote-state-dependent;
+    bash also starts comments after operators). Both off-rule directions:
+    quote state is ignored, so a boundary-matching `#` inside a quoted
+    string is stripped as comment text (under-count), while an
+    operator-adjacent `#` (`;#`, `&&#`) meets no boundary and is NOT
+    stripped, so launch-shaped text after it still counts (over-count ->
+    RED, fail-closed). THEN backslash-newline continuations are joined so
+    one wrapped invocation reads as one line. Order is load-bearing:
+    stripping first keeps a `# note: \\` comment line from swallowing the
+    next line's real invocation.
     """
     no_comments = re.sub(r"(?m)(?:^|(?<=\s))#.*$", "", block)
     return re.sub(r"\\\n[ \t]*", " ", no_comments)
@@ -2445,9 +2450,19 @@ def test_fenced_launch_invocation_detector_semantics() -> None:
     # (1) indented fences at the two real #2470 anchor indents (2 and 5 spaces)
     assert count("  ```bash\n  scripts/dispatch_issue.py launch --issue 7\n  ```\n") == 1
     assert count("     ```bash\n     scripts/dispatch_issue.py launch --issue 7\n     ```\n") == 1
-    # (2) a commented launch-shaped line counts ZERO (the r6 over-fire probe)
+    # (2) the strip rule, exactly: a `#` at line start or preceded by
+    # whitespace strips to end-of-line. Both boundaries count ZERO (the r6
+    # over-fire probe)...
     assert count("```bash\n# uv run python scripts/dispatch_issue.py launch --issue 7\n```\n") == 0
     assert count("```bash\necho hi  # scripts/dispatch_issue.py launch\n```\n") == 0
+    # (2b) ...and an OPERATOR-ADJACENT `#` is off-rule by design: nothing
+    # strips, each line counts 1 — EXPECTED, the disclosed over-count
+    # residual (-> RED, fail-closed; #2263 r7 reconciler probe) — even
+    # though bash lexes the launch text as comment text either way
+    # (probed: the `;#` line prints only `hi`; the standalone `&&#` line
+    # is a syntax error at EOF, executing nothing)
+    assert count("```bash\necho hi;# scripts/dispatch_issue.py launch\n```\n") == 1
+    assert count("```bash\necho hi&&# scripts/dispatch_issue.py launch\n```\n") == 1
     # (3) tilde fence, (4) four-backtick fence, (5) extended info string
     assert count("~~~bash\nscripts/dispatch_issue.py launch --issue 7\n~~~\n") == 1
     assert count("````bash\nscripts/dispatch_issue.py launch --issue 7\n````\n") == 1
@@ -2504,15 +2519,19 @@ def test_step6_parent_reuse_fallback_points_at_canonical_launch_fence() -> None:
         `dispatch_issue(?:\\.py)?\\s+launch\\b` — covering the
         `scripts/dispatch_issue.py launch` and
         `python -m scripts.dispatch_issue launch` spellings — on each
-        block's `_executable_view` (comment text stripped, THEN
-        backslash-newline continuations joined: a commented launch-shaped
-        line counts ZERO, a wrapped invocation counts ONCE). Prose
+        block's `_executable_view` (a `#` at LINE START or PRECEDED BY
+        WHITESPACE strips to end-of-line, THEN backslash-newline
+        continuations join: a launch-shaped line commented at those two
+        boundaries counts ZERO, a wrapped invocation counts ONCE). Prose
         mentions OUTSIDE fences stay deliberately uncounted (not
         operator-copyable; 13 exist today). Detector semantics are pinned
         by `test_fenced_launch_invocation_detector_semantics`; known
-        residuals it does NOT model: a `#` inside a quoted string is
-        stripped as comment text (under-count), and heredoc bodies inside
-        a fence are scanned (over-count -> RED, fail-closed);
+        residuals it does NOT model: quote state (a boundary-matching `#`
+        inside a quoted string is stripped as comment text — under-count),
+        operator-adjacent comments (a `;#` / `&&#` line's `#` meets no
+        boundary, so launch-shaped text after it still counts — over-count
+        -> RED, fail-closed), and heredocs (bodies inside a fence are
+        scanned — over-count -> RED, fail-closed);
     (b) the parent-reuse decision block (the `pod.py resume` probe) still
         exists, invokes no `dispatch_issue.py` at all, and NAMES the
         canonical fence as the fresh-launch route.
