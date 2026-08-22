@@ -9748,8 +9748,8 @@
     "2261": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2261",
-      "status": "running",
+      "path": "tasks/completed/2261",
+      "status": "completed",
       "title": "Extend driver --import-check to bind-check in-repo helper call arity, not just args.<attr> completeness"
     },
     "2262": {
