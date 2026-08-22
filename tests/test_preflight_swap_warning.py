@@ -152,3 +152,53 @@ def test_summary_renders_swap_line(monkeypatch):
     assert "Swap: 64 GB total, 41.2% free" in report.summary()
     report = _run_swap_check(monkeypatch, meminfo_text=_meminfo(0, 0))
     assert "Swap: NONE active (SwapTotal=0)" in report.summary()
+
+
+def test_preflight_check_wires_swap_state_check(monkeypatch):
+    """``preflight_check()`` reaches ``_check_swap_state`` exactly once (#2280 r2).
+
+    The tests above call the check DIRECTLY, so a future deletion of the
+    production call site inside ``preflight_check`` would leave them green
+    over a hollow check. This test pins the wiring itself: every sibling
+    check is stubbed with a signature-conformant no-op (deliberate — body
+    coverage lives in the direct-call tests above) and the swap check is
+    replaced by a recorder asserting one call on the shared report.
+    """
+    from pathlib import Path
+
+    from explore_persona_space.orchestrate import env as orch_env
+
+    sibling_checks = [
+        "check_git_status",
+        "check_env_sync",
+        "check_disk_space",
+        "_check_data_disk_floor",
+        "check_disk_budget",
+        "check_vm_root_disk",
+        "check_gpus",
+        "check_hf_home",
+        "check_env_vars",
+        "check_venv_import_health",
+        "check_vllm_transformers_compat",
+        "check_connectivity",
+        "check_hf_large_blob_get",
+        "check_hf_storage",
+        "check_hf_lfs_write_gate",
+        "check_hf_filecount_sentinel",
+    ]
+    for name in sibling_checks:
+        assert hasattr(preflight, name), f"sibling check vanished: {name}"
+        monkeypatch.setattr(preflight, name, lambda *_a, **_k: None)
+    monkeypatch.setattr(preflight, "_find_project_root", lambda: Path("/tmp"))
+    monkeypatch.setattr(preflight, "is_cluster_env", lambda: False)
+    monkeypatch.setattr(preflight, "is_runpod_env", lambda: False)
+    # preflight_check does `from ...orchestrate.env import load_dotenv` at call
+    # time, so patching the env module attribute intercepts it.
+    monkeypatch.setattr(orch_env, "load_dotenv", lambda *_a, **_k: None)
+
+    calls: list[preflight.PreflightReport] = []
+    monkeypatch.setattr(preflight, "_check_swap_state", calls.append)
+
+    report = preflight.preflight_check(require_gpu=False)
+    assert len(calls) == 1, "preflight_check must call _check_swap_state exactly once"
+    assert calls[0] is report, "the swap check must receive the run's own report"

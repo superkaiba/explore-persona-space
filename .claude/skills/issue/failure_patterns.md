@@ -228,11 +228,11 @@ at the floor, so the same command surviving a later rerun — including a
 setsid-detached rerun — does NOT implicate the harness, a janitor
 pkill, or systemd session-scope cleanup; the rerun usually just landed
 outside the sweep (gotchas.md earlyoom entry, burst-fire item; #2280).
-**choom is attenuated, not void:** the prescribed `choom -n -600` still
-leaves a `--prefer`-matched process at badness ~567 vs the ~666 crowd —
-protective, but below-crowd immunity is gone — so a crash-fix round
-neither treats a choom'd kill as impossible nor discards the recipe
-(gotchas.md earlyoom entry, badness-arithmetic item; #2280).
+**choom is attenuated, not void:** the prescribed `choom -n -600` leaves
+a `--prefer`-matched process protected but still killable (figures:
+gotchas.md earlyoom entry, badness-arithmetic item; #2280) — so a
+crash-fix round neither treats a choom'd kill as impossible nor
+discards the recipe.
 
 **Terminal disposition:** if steps 1-4 jointly fail to attribute the
 killer, record `killer unknown` in the `epm:failure` body — do NOT name
