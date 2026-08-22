@@ -2186,7 +2186,59 @@ def test_step6_launch_fence_gate_recheck_blocks_cross_fence_divergence(
     assert "eval_results/issue_77/f.json" in combined
 
 
-def test_step6_launch_fence_recheck_mechanical_halt_and_lane_parity() -> None:
+def _realized_launch_argv(launch_cmd: str, tmp_path: Path, *, rsync_lane: bool) -> list[str]:
+    """Execute the extracted launch command in REAL bash; return its argv.
+
+    Only the leading ``uv run python scripts/dispatch_issue.py launch``
+    program prefix is replaced by an argv recorder — every continuation
+    line runs byte-verbatim, so the EXECUTING SHELL (not a regex over the
+    span) decides which words reach the dispatch argv. That is what makes
+    the pin comment-escape-proof (#2263 r5): a backslash-continued COMMENT
+    containing the expansion token keeps any substring assertion green
+    while bash discards the token (and its trailing backslash) as comment
+    text, silently ending the command one line early.
+
+    ``rsync_lane=True`` populates ``EXTRA_SYNC_ARGS`` with two values (one
+    space-containing, so word-splitting bugs surface); ``False`` leaves the
+    array UNSET — under ``set -u``, exactly the non-rsync-lane regime the
+    ``${VAR[@]+...}`` guard exists for. Extraction/exec failure IS test
+    failure; returns the argv words the recorder observed, in order.
+    """
+    recorder = tmp_path / "recorder.sh"
+    argv_out = tmp_path / "argv.out"
+    recorder.write_text(
+        '#!/usr/bin/env bash\n: > "$ARGV_OUT"\n'
+        'for a in "$@"; do printf \'%s\\0\' "$a" >> "$ARGV_OUT"; done\n'
+    )
+    recorder.chmod(0o755)
+    body, n_sub = re.subn(
+        r"\Auv run python scripts/dispatch_issue\.py launch ",
+        '"$RECORDER" ',
+        launch_cmd.replace("<N>", "77"),
+    )
+    assert n_sub == 1, "launch recorder stand-in substitution failed"
+    setup = "set -u\nunset EXTRA_SYNC_ARGS\nINTENT=eval\nREPO_BRANCH=issue-77-full\nBACKEND=\n"
+    if rsync_lane:
+        setup += 'EXTRA_SYNC_ARGS=(--extra-sync-path "$SYNC_A" --extra-sync-path "$SYNC_B")\n'
+    proc = subprocess.run(
+        ["bash", "-c", setup + body],
+        cwd=tmp_path,
+        capture_output=True,
+        text=True,
+        env={
+            **os.environ,
+            "RECORDER": str(recorder),
+            "ARGV_OUT": str(argv_out),
+            "SYNC_A": "/tmp/sync-a",
+            "SYNC_B": "/tmp/with space/b",
+        },
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert argv_out.exists(), "dispatch recorder never executed"
+    return argv_out.read_text().split("\0")[:-1]
+
+
+def test_step6_launch_fence_recheck_mechanical_halt_and_lane_parity(tmp_path: Path) -> None:
     """#2263 r3+r4 text pins: the recheck halts MECHANICALLY, carries the
     SAME lane/extra-sync args as the 6a.5 invocation, and the LAUNCH argv
     expands the same extra-sync values.
@@ -2209,6 +2261,15 @@ def test_step6_launch_fence_recheck_mechanical_halt_and_lane_parity() -> None:
         rsync-lane inputs the dispatched tree never stages (deterministic
         post-provision missing-input crash). The `+`-guard form is pinned
         so the expansion stays unset-array-safe on non-rsync lanes.
+        r5 hardening (codex r4, launch-parity-test-comment-escape): the
+        token SUBSTRING alone is defeatable by a backslash-continued
+        comment containing it, so the command is ALSO executed with a
+        recorder stand-in and the REALIZED argv asserted — set array =>
+        the values appear as separate words (space-safe); unset array
+        under `set -u` => zero words, no empty word. The substring pin
+        stays load-bearing for the `+`-guard FORM: bash >= 4.4 does not
+        error on an unguarded unset `"${arr[@]}"` under `set -u`, so
+        execution alone cannot tell guarded from unguarded.
     """
     text = issue_skill_text()
     invocation = (
@@ -2252,6 +2313,26 @@ def test_step6_launch_fence_recheck_mechanical_halt_and_lane_parity() -> None:
         "recheck graded (#2263 r4) — a gate PASS earned via --extra-sync-path "
         "must be a set the dispatched tree actually stages; the ${VAR[@]+...} "
         "guard keeps non-rsync lanes (unset array) safe under set -u"
+    )
+    # (c2) #2263 r5 (codex r4 Minor, launch-parity-test-comment-escape): the
+    # substring above proves the token's PRESENCE, not that it is a Bash argv
+    # WORD — a backslash-continued COMMENT containing the token keeps the
+    # substring green while the executing shell drops the values AND ends the
+    # command at the comment (this task's defining defect shape: a comment
+    # where a mechanism belonged). Prove the ARGV: run the command verbatim
+    # (only the program name replaced by a recorder) in real bash.
+    sync_words = ["--extra-sync-path", "/tmp/sync-a", "--extra-sync-path", "/tmp/with space/b"]
+    argv = _realized_launch_argv(launch.group(0), tmp_path, rsync_lane=True)
+    assert any(argv[i : i + len(sync_words)] == sync_words for i in range(len(argv))), (
+        "the extra-sync values never reached the dispatch argv as words — the "
+        "expansion is dead text (commented / quoted / broken continuation), "
+        f"the #2263 r2 defect shape one level down; realized argv: {argv}"
+    )
+    bare = _realized_launch_argv(launch.group(0), tmp_path, rsync_lane=False)
+    assert "--repo-branch" in bare, bare  # mainline args intact around the guard
+    assert "--extra-sync-path" not in bare and "" not in bare, (
+        "non-rsync lane (array unset, set -u): the +-guard must expand to "
+        f"ZERO words — no flag, no empty word; realized argv: {bare}"
     )
 
 
