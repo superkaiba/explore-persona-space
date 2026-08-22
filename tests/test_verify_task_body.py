@@ -15027,15 +15027,61 @@ def test_check60_sidecar_absent_defers_to_check41(tmp_path, monkeypatch):
 
 def test_check60_unparsable_sidecar_warns(tmp_path, monkeypatch):
     """Present-but-UNPARSABLE sidecar (existence probe 'pass', JSON parse
-    fails): reported HERE as text-less — `_read_figure_meta_json` returns
-    None for missing and unparsable alike, and no other check reports
-    present-but-unparsable."""
+    fails): 'malformed' under the tri-state read — reported HERE as
+    text-less; no other check reports present-but-malformed."""
     repo, sha = _make_repo_with_raw_sidecar(tmp_path, "{not json:\n")
     monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
     body = _CHECK24_BODY.replace("0123456789abcdef", sha)
     res = verify_task_body.check_figure_sidecar_text_coverage(body)
     assert res.passed and res.is_warn, res.render()
     assert "hero.png" in res.detail
+
+
+def test_check60_nondict_sidecar_warns(tmp_path, monkeypatch):
+    """Present sidecar parsing to a NON-DICT JSON document (a bare list):
+    'malformed' under the tri-state read — reported HERE as text-less,
+    exactly like a parse failure (#2292 r2, the previously untested
+    non-dict case)."""
+    repo, sha = _make_repo_with_raw_sidecar(tmp_path, "[1, 2, 3]\n")
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_sidecar_text_coverage(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "hero.png" in res.detail
+
+
+def test_check60_transient_content_read_failure_skips(tmp_path, monkeypatch):
+    """#2292 r2 concern `sidecar-read-indeterminate-warns`: the existence
+    probe PASSes but the `git show` CONTENT read itself dies (timeout) —
+    an INDETERMINATE read, not a malformed sidecar. Check 60 skips the
+    figure cleanly instead of emitting a false text-less WARN (this test
+    FAILs pre-fix: the old dict-or-None read conflated the two states and
+    WARNed naming `hero.png`). The shared dict-or-None reader keeps
+    returning None for the same state — checks 24/26/28/33/34 unchanged.
+
+    Injection is at the external process boundary only: a delegating
+    signature-conformant `subprocess.run` wrapper that raises
+    `TimeoutExpired` for `git show` argvs and runs every other git call
+    (the `rev-parse` / `cat-file -e` existence probes) for real."""
+    repo, sha = _make_repo_with_figure_meta(tmp_path, dict(_I2254_SHAPE_META))
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    real_run = subprocess.run
+
+    def fake_run(cmd, *args, **kwargs):
+        if list(cmd[:2]) == ["git", "show"]:
+            raise subprocess.TimeoutExpired(cmd=cmd, timeout=10)
+        return real_run(cmd, *args, **kwargs)
+
+    monkeypatch.setattr(verify_task_body.subprocess, "run", fake_run)
+    res = verify_task_body.check_figure_sidecar_text_coverage(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "hero.png" not in res.detail
+    assert "no same-repo sha-pinned sidecar-bearing figures" in res.detail
+    # ... and the pre-existing shared-reader contract is byte-identical:
+    # the same transient failure still collapses to None for the sibling
+    # checks (24/26/28/33/34).
+    assert verify_task_body._read_figure_meta_json(repo, sha, "figures/issue_999/hero.png") is None
 
 
 def test_check60_indeterminate_sidecar_probe_skips(monkeypatch):
@@ -15072,8 +15118,8 @@ def test_check60_unresolvable_sha_skips(tmp_path, monkeypatch):
 def test_check28_role_at_span_classifier():
     """Class (h) inventories (#2292): AC2 positives — the #2254 incident
     tick tokens + the three pre-registered corpus hits — and AC4
-    negatives (emails via the dot-lookahead, class-(a) layer pins,
-    hardware / percentile / snake / model-id shapes)."""
+    negatives (emails via the domain-continuation lookahead, class-(a)
+    layer pins, hardware / percentile / snake / model-id shapes)."""
     hits = verify_task_body._role_at_span_hits
     is_tok = verify_task_body._is_role_at_span_token
     # AC2 positives — the #2254 `per_question_dots.png` tick labels:
@@ -15086,7 +15132,12 @@ def test_check28_role_at_span_classifier():
     for tok in ("kernel@k90", "tb@d1", "stats@scipy"):
         assert is_tok(tok), tok
     # AC4 negatives:
-    assert hits("contact user@example.com for details") == []  # dot-lookahead
+    assert hits("contact user@example.com for details") == []  # dotted domain
+    # #2292 r2 (`role-at-span-email-prefix`): the original `(?!\\.[a-z])`
+    # lookahead extracted role-like prefixes from hyphenated-domain and
+    # uppercase-TLD emails; the domain-continuation form rejects both.
+    assert hits("contact user@example-domain.com for details") == []  # hyphenated domain
+    assert hits("contact user@example.COM for details") == []  # uppercase TLD
     assert hits("readout margin at @L12") == []  # no lowercase LHS
     assert not is_tok("@L12")
     assert not is_tok("H100")

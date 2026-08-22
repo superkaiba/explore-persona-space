@@ -558,8 +558,9 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   it — with NO caption suppression for classes (a)-(f), #1988), or
   role@span slugs (`pre@context`/`ctxext@context`/`rb@answer` —
   lowercase letter-initial LHS `@` lowercase letter-initial RHS with an
-  email-excluding `(?!\\.[a-z])` lookahead, so `user@example.com` and
-  class (a)'s uppercase-`L` `@L12` pins never match; CHECK-28-LOCAL by
+  email-excluding `(?![.-][a-zA-Z0-9])` domain-continuation lookahead,
+  so `user@example.com` / `user@example-domain.com` / `user@example.COM`
+  and class (a)'s uppercase-`L` `@L12` pins never match; CHECK-28-LOCAL by
   design — never merged into `_opaque_code_tokens`, whose second
   consumer check 57 Leg A is a hard FAIL that stays byte-stable;
   caption-decode suppressible like arm slugs; #2292, incident #2254 —
@@ -1432,9 +1433,11 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   whole-sidecar walk reads the incident set as text-bearing and goes
   silent on it. Deference: sidecar ABSENT ('fail') → checks 41/57 own
   it; INDETERMINATE probe ('skip') → the siblings' fail-soft residual;
-  present-but-UNPARSABLE ('pass' probe, `_read_figure_meta_json` →
-  None) → reported HERE as text-less (no other check reports that
-  state). ONE WARN per body (basenames first 3 + count); remedy names
+  present-but-MALFORMED ('pass' probe, tri-state read 'malformed':
+  JSON parse failure or a non-dict document) → reported HERE as
+  text-less (no other check reports that state); a TRANSIENT
+  content-read failure ('pass' probe, tri-state 'indeterminate') →
+  skipped, never a WARN (#2292 r2). ONE WARN per body (basenames first 3 + count); remedy names
   `savefig_paper` (`embed_text` defaults True). WARN never FAIL —
   2,169 of 3,560 tracked sidecars (60.9%) are text-less, so a
   retroactive FAIL would block promote-time re-verifies wholesale;
@@ -9751,15 +9754,25 @@ def check_figure_text_vs_body_tokens(body: str) -> CheckResult:
 # Sibling of check 24's `_read_figure_meta_text`, but returns the PARSED dict
 # (not flattened text) so check 26 can read the per-point `_kind` / `_group`
 # fields. Same `git show <sha>:<meta_path>` envelope, same fail-soft contract.
-def _read_figure_meta_json(repo: Path, sha: str, fig_path: str) -> dict | None:
-    """Return the PARSED sibling ``.meta.json`` of ``fig_path`` (extension
-    swapped to ``.meta.json``) read out of the git tree at ``sha`` via
-    ``git show``, or None when there is no sidecar at that sha / the sha is
-    unresolvable / the JSON does not parse / it is not a dict.
+def _read_figure_meta_json_tristate(repo: Path, sha: str, fig_path: str) -> tuple[str, dict | None]:
+    """Tri-state sidecar read for callers that must distinguish a MALFORMED
+    sidecar from a TRANSIENT content-read failure (#2292 round 2, concern
+    `sidecar-read-indeterminate-warns`). Returns one of:
 
-    Sibling of ``_read_figure_meta_text`` (check 24), which flattens to text
-    and so cannot expose the per-point ``_kind`` / ``_group`` fields check 26
-    needs. FAIL-SOFT throughout (subprocess / decode / JSON error → None).
+    - ``("parsed", meta)`` — the sidecar read and parsed to a dict;
+    - ``("malformed", None)`` — bytes were served but are not a JSON dict
+      (JSON parse failure, or a non-dict document);
+    - ``("indeterminate", None)`` — the content read itself failed
+      (``git show`` raised OSError/SubprocessError incl. timeout, or
+      exited non-zero: no sidecar at that sha, sha unresolvable, or a
+      transient git fault) — nothing can be said about the content.
+
+    ``_read_figure_meta_json`` below is the dict-or-None wrapper every
+    pre-existing caller (checks 24/26/28/33/34) keeps using — its return
+    contract is unchanged BY CONSTRUCTION (both non-"parsed" states
+    collapse to None). Only check 60 consumes the tri-state: it WARNs on
+    "malformed" and SKIPs "indeterminate" instead of mis-reporting a
+    transient read failure as a text-less sidecar.
     """
     base, _, ext = fig_path.rpartition(".")
     meta_path = (base if ext else fig_path) + ".meta.json"
@@ -9772,14 +9785,34 @@ def _read_figure_meta_json(repo: Path, sha: str, fig_path: str) -> dict | None:
             timeout=10,
         )
     except (OSError, subprocess.SubprocessError):
-        return None
+        return "indeterminate", None
     if proc.returncode != 0:
-        return None  # no sidecar at that sha, or sha unresolvable
+        # No sidecar at that sha, sha unresolvable, or a transient git
+        # fault — indistinguishable here; the caller's existence probe
+        # (`_git_object_exists`) is what disambiguates ABSENT.
+        return "indeterminate", None
     try:
         meta = json.loads(proc.stdout)
     except (ValueError, json.JSONDecodeError):
-        return None
-    return meta if isinstance(meta, dict) else None
+        return "malformed", None
+    return ("parsed", meta) if isinstance(meta, dict) else ("malformed", None)
+
+
+def _read_figure_meta_json(repo: Path, sha: str, fig_path: str) -> dict | None:
+    """Return the PARSED sibling ``.meta.json`` of ``fig_path`` (extension
+    swapped to ``.meta.json``) read out of the git tree at ``sha`` via
+    ``git show``, or None when there is no sidecar at that sha / the sha is
+    unresolvable / the JSON does not parse / it is not a dict.
+
+    Sibling of ``_read_figure_meta_text`` (check 24), which flattens to text
+    and so cannot expose the per-point ``_kind`` / ``_group`` fields check 26
+    needs. FAIL-SOFT throughout (subprocess / decode / JSON error → None).
+    Thin wrapper over ``_read_figure_meta_json_tristate`` — collapses its
+    "malformed" and "indeterminate" states to None, byte-identical to the
+    pre-#2292-round-2 behavior for checks 24/26/28/33/34.
+    """
+    _status, meta = _read_figure_meta_json_tristate(repo, sha, fig_path)
+    return meta
 
 
 def _sidecar_kind_group_aggregate(meta: dict) -> tuple[Counter, set] | None:
@@ -10155,10 +10188,15 @@ def _arm_slug_hits(text: str) -> list[str]:
 #     uppercase-initial, `[fl]16` is fixed, the arrow class needs `A→B_x`,
 #     arm slugs need >=3 hyphen segments). Shape: letter-initial
 #     lowercase-alnum LHS (2-12 chars), `@`, letter-initial lowercase-alnum
-#     RHS (2-16 chars). The `(?!\.[a-z])` lookahead is what excludes
-#     email-shaped `user@example.com` — `_is_path_like_word` does NOT
-#     (it returns False for any slash-free word, so its extension-tail arm
-#     is unreachable on an email). Class-(a) `@L12` layer pins never
+#     RHS (2-16 chars). The `(?![.-][a-zA-Z0-9])` domain-continuation
+#     lookahead is what excludes email-shaped `user@example.com`,
+#     `user@example-domain.com`, and `user@example.COM` — any dotted- or
+#     hyphenated-domain continuation, case-insensitive (#2292 r2,
+#     `role-at-span-email-prefix`: the original `(?!\.[a-z])` form missed
+#     the hyphenated-domain + uppercase-TLD shapes; the tightening is
+#     MONOTONE — it can only remove matches) — `_is_path_like_word` does
+#     NOT (it returns False for any slash-free word, so its extension-tail
+#     arm is unreachable on an email). Class-(a) `@L12` layer pins never
 #     double-report: their RHS is uppercase-initial and this regex requires
 #     lowercase-initial. CHECK-28-LOCAL BY DESIGN (#2292 AC3/AC5): invoked
 #     from check 28's loop only, NEVER from `_opaque_code_tokens`, whose
@@ -10170,7 +10208,7 @@ def _arm_slug_hits(text: str) -> list[str]:
 #     `figures/**/*.meta.json`: 3 firing figures (`kernel@k90`, `tb@d1`,
 #     `stats@scipy`), each an in-spirit-opaque true positive or accepted
 #     named residual (`stats@scipy` the expected borderline).
-_ROLE_AT_SPAN_RE = re.compile(r"\b[a-z][a-z0-9]{1,11}@[a-z][a-z0-9]{1,15}\b(?!\.[a-z])")
+_ROLE_AT_SPAN_RE = re.compile(r"\b[a-z][a-z0-9]{1,11}@[a-z][a-z0-9]{1,15}\b(?![.-][a-zA-Z0-9])")
 
 
 def _is_role_at_span_token(tok: str) -> bool:
@@ -10529,7 +10567,10 @@ def check_figure_label_codes(body: str) -> CheckResult:
     ``rb@answer`` matched NONE of the seven classes — the ``@``-joined
     three are mechanized as the CHECK-28-LOCAL class (h)
     (``_role_at_span_hits``: lowercase letter-initial LHS ``@`` lowercase
-    letter-initial RHS, an email-excluding ``(?!\.[a-z])`` lookahead;
+    letter-initial RHS, an email-excluding ``(?![.-][a-zA-Z0-9])``
+    domain-continuation lookahead — #2292 r2 tightened it from
+    ``(?!\.[a-z])``, which missed hyphenated-domain and uppercase-TLD
+    emails (`user@example-domain.com`, `user@example.COM`);
     deliberately NOT merged into ``_opaque_code_tokens``, whose second
     consumer — check 57 Leg A — is a hard promote-time FAIL that must
     stay byte-stable), while short arm codes like ``a0`` stay an
@@ -14237,13 +14278,16 @@ def check_figure_sidecar_text_coverage(body: str) -> CheckResult:
     Deference branches (no double-reporting): sidecar ABSENT
     (``_git_object_exists`` == 'fail') -> checks 41 (WARN) / 57 (FAIL)
     own it — skip; INDETERMINATE sidecar probe ('skip') -> the siblings'
-    fail-soft residual — skip; present-but-UNPARSABLE (existence probe
-    'pass' but ``_read_figure_meta_json`` returns None: JSON parse
-    failure, or a non-dict document) -> treated as TEXT-LESS and
-    reported HERE — the reader returns None for missing and unparsable
-    alike, and no other check reports present-but-unparsable, so
+    fail-soft residual — skip; present-but-MALFORMED (existence probe
+    'pass', ``_read_figure_meta_json_tristate`` -> 'malformed': JSON
+    parse failure, or a non-dict document) -> treated as TEXT-LESS and
+    reported HERE — no other check reports present-but-malformed, so
     deferring would preserve the zero-coverage/zero-report property this
-    check exists to remove. Scope gates mirror check 41's: same-repo
+    check exists to remove; TRANSIENT content-read failure (existence
+    probe 'pass', tri-state 'indeterminate': ``git show`` exception /
+    non-zero rc) -> skipped, never a WARN — a read fault says nothing
+    about the sidecar's content (#2292 r2,
+    `sidecar-read-indeterminate-warns`). Scope gates mirror check 41's: same-repo
     sha-pinned raw-GitHub URLs only; the PNG must itself resolve at the
     cited sha (else check 22's domain, no double-report). WARN, never
     FAIL: 2,169 of 3,560 tracked sidecars (60.9%) carry no ``text``
@@ -14290,10 +14334,18 @@ def check_figure_sidecar_text_coverage(body: str) -> CheckResult:
             # -> the siblings' fail-soft residual. Either way out of
             # check 60's scope — it covers PRESENT sidecars only.
             continue
+        read_status, meta = _read_figure_meta_json_tristate(repo, sha, fig_path)
+        if read_status == "indeterminate":
+            # Existence probe PASSed but the content read itself failed
+            # (`git show` exception / non-zero rc): a TRANSIENT read
+            # fault, not a malformed sidecar — out of scope, the same
+            # fail-soft residual as the siblings' 'skip' branch; never a
+            # WARN (#2292 r2, `sidecar-read-indeterminate-warns`).
+            continue
         checked += 1
-        meta = _read_figure_meta_json(repo, sha, fig_path)
-        # `meta is None` HERE means present-but-unparsable (the existence
-        # probe passed) or a non-dict document — text-less either way.
+        # "malformed" HERE means present-but-unparsable (the existence
+        # probe passed; JSON parse failure or a non-dict document) —
+        # text-less by construction; "parsed" keys on the text block.
         text_block = meta.get("text") if isinstance(meta, dict) else None
         if not text_block or not _iter_meta_label_values(text_block):
             textless.append(fig_path.rsplit("/", 1)[-1])
