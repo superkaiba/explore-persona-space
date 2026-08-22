@@ -16,8 +16,11 @@ provably never fires on (the plan-v1 fatal gap).
 
 from __future__ import annotations
 
+import contextlib
 import importlib.util
 import json
+import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -118,7 +121,11 @@ def _main(repo: Path, plan: Path, issue: int = 77, extra: list[str] | None = Non
         str(repo),
         "--no-fetch",
     ]
-    return vci.main(argv + (extra or []))
+    # #2263: pin the invoking cwd to the fixture repo (branch `main`) so the
+    # rung-3 worktree inference reads a DETERMINISTIC cwd regardless of where
+    # pytest itself runs (an issue-scoped worktree cwd would otherwise leak in).
+    with contextlib.chdir(repo):
+        return vci.main(argv + (extra or []))
 
 
 def _findings(repo: Path, text: str, issue: int = 77, check_ref: str = "origin/main"):
@@ -166,7 +173,7 @@ def test_on_main_not_on_branch_fails_with_merge_remediation(repo: Path, tmp_path
     _git(repo, "push", "-q", "origin", "issue-77")
     _write(repo, "eval_results/issue_841/late.json")
     _commit_push(repo, "eval_results/issue_841/late.json")
-    assert vci.resolve_check_ref(repo, 77, fetch=False) == "origin/issue-77"
+    assert vci.resolve_check_ref(repo, 77, fetch=False, invoke_cwd=repo).ref == "origin/issue-77"
     text = "Consumes eval_results/issue_841/late.json from the sibling issue."
     fs = _findings(repo, text, check_ref="origin/issue-77")
     assert [(f.verdict, f.reason) for f in fs] == [("fail", "on-main-not-on-branch")]
@@ -239,10 +246,18 @@ def test_extract_strips_trailing_punctuation() -> None:
 
 
 def test_ref_fallback_origin_main_when_no_issue_branch(repo: Path) -> None:
-    assert vci.resolve_check_ref(repo, 77, fetch=False) == "origin/main"
+    # #2263 test 6: the two legacy default rows keep their resolved ref and
+    # gain a source tag (R4 unchanged-rows contract).
+    assert vci.resolve_check_ref(repo, 77, fetch=False, invoke_cwd=repo) == (
+        "origin/main",
+        "origin-main-default",
+    )
     _git(repo, "branch", "issue-77")
     _git(repo, "push", "-q", "origin", "issue-77")
-    assert vci.resolve_check_ref(repo, 77, fetch=False) == "origin/issue-77"
+    assert vci.resolve_check_ref(repo, 77, fetch=False, invoke_cwd=repo) == (
+        "origin/issue-77",
+        "bare-issue-branch-default",
+    )
 
 
 def test_other_issue_nonexistent_warns_not_fails(repo: Path, tmp_path: Path) -> None:
@@ -1282,3 +1297,671 @@ def test_path_re_lookbehind_still_excludes_hf_and_urls() -> None:
     # Extraction sanity: bare-name hits (Channel B) also don't spuriously fire
     # on the HF-embedded path.
     assert "fixtures" not in {n.split(".")[0] for n in vci.extract_bare_names(text)}
+
+
+# ---------------------------------------------------------------------------
+# #2263 — check-ref resolution ladder (resolve_check_ref -> ResolvedRef),
+# derive_local_branch, derive_worktree_repo_branch / --print-repo-branch, the
+# env sanitization, and the Step 6 shared-resolver skill pins.
+# ---------------------------------------------------------------------------
+
+
+def _branch_push(repo: Path, branch: str, base: str = "main") -> None:
+    """Create `branch` at `base` and push it to the local bare origin."""
+    _git(repo, "branch", branch, base)
+    _git(repo, "push", "-q", "origin", branch)
+
+
+def _foreign_repo(base: Path, name: str = "foreign", branch: str = "main") -> Path:
+    """An INDEPENDENT throwaway repo (own git dir, own bare origin) at base/name."""
+    r = base / name
+    r.mkdir()
+    _git(r, "init", "-q", "-b", branch)
+    _git(r, "config", "user.email", "test@example.com")
+    _git(r, "config", "user.name", "Test")
+    _git(r, "config", "commit.gpgsign", "false")
+    bare = base / f"{name}-origin.git"
+    subprocess.run(
+        ["git", "init", "-q", "--bare", str(bare)], check=True, capture_output=True, text=True
+    )
+    _git(r, "remote", "add", "origin", str(bare))
+    (r / "seed.txt").write_text("seed\n")
+    _git(r, "add", "seed.txt")
+    _git(r, "commit", "-q", "-m", "seed")
+    _git(r, "push", "-q", "-u", "origin", branch)
+    return r
+
+
+def test_repo_branch_flag_resolves_suffixed_over_stale_bare(repo: Path) -> None:
+    _branch_push(repo, "issue-77")
+    _branch_push(repo, "issue-77-full")
+    got = vci.resolve_check_ref(repo, 77, fetch=False, repo_branch="issue-77-full")
+    assert got == ("origin/issue-77-full", "repo-branch-flag")
+
+
+def test_repo_branch_missing_on_origin_raises(repo: Path) -> None:
+    with pytest.raises(vci.CheckRefResolutionError) as ei:
+        vci.resolve_check_ref(repo, 77, fetch=False, repo_branch="issue-77-nope")
+    assert "origin/issue-77-nope" in str(ei.value)
+
+
+def test_worktree_inference_resolves_suffixed(repo: Path, tmp_path: Path) -> None:
+    _branch_push(repo, "issue-77")  # stale bare sibling also present
+    wt = tmp_path / "wt-full"
+    _git(repo, "worktree", "add", "-q", str(wt), "-b", "issue-77-full")
+    _git(repo, "push", "-q", "origin", "issue-77-full")
+    got = vci.resolve_check_ref(repo, 77, fetch=False, invoke_cwd=wt)
+    assert got == ("origin/issue-77-full", "worktree-branch")
+
+
+def test_worktree_inference_ignores_foreign_and_digit_prefix_branches(
+    repo: Path, tmp_path: Path
+) -> None:
+    _branch_push(repo, "issue-77")  # bare-only remote state
+    for branch in ("issue-88-x", "issue-771-x"):
+        wt = tmp_path / f"wt-{branch}"
+        _git(repo, "worktree", "add", "-q", str(wt), "-b", branch)
+        got = vci.resolve_check_ref(repo, 77, fetch=False, invoke_cwd=wt)
+        assert got == ("origin/issue-77", "bare-issue-branch-default")
+
+
+def test_worktree_inference_unpushed_branch_raises(repo: Path, tmp_path: Path) -> None:
+    wt = tmp_path / "wt-local"
+    _git(repo, "worktree", "add", "-q", str(wt), "-b", "issue-77-local")  # never pushed
+    with pytest.raises(vci.CheckRefResolutionError) as ei:
+        vci.resolve_check_ref(repo, 77, fetch=False, invoke_cwd=wt)
+    msg = str(ei.value)
+    assert "issue-77-local" in msg and "push the branch" in msg
+
+
+def test_default_refuses_when_suffixed_exists(repo: Path) -> None:
+    # (a) suffixed-only.
+    _branch_push(repo, "issue-77-full")
+    with pytest.raises(vci.CheckRefResolutionError) as ei:
+        vci.resolve_check_ref(repo, 77, fetch=False, invoke_cwd=repo)
+    msg = str(ei.value)
+    assert "origin/issue-77-full" in msg
+    assert msg.index("--repo-branch") < msg.index("--ref")  # remedy ordering
+    # (b) bare + suffixed: EVERY candidate named, bare included.
+    _branch_push(repo, "issue-77")
+    with pytest.raises(vci.CheckRefResolutionError) as ei2:
+        vci.resolve_check_ref(repo, 77, fetch=False, invoke_cwd=repo)
+    msg2 = str(ei2.value)
+    assert "origin/issue-77-full" in msg2 and "origin/issue-77" in msg2
+
+
+def test_fetch_true_glob_prunes_deleted_suffixed_branch(repo: Path, tmp_path: Path) -> None:
+    _branch_push(repo, "issue-77-old")
+    assert vci.ref_exists(repo, "origin/issue-77-old")  # stale tracking ref armed
+    # Delete the branch INSIDE the bare origin — only the fetch=True --prune
+    # glob can clear the stale local remote-tracking ref.
+    _git(tmp_path / "origin.git", "update-ref", "-d", "refs/heads/issue-77-old")
+    got = vci.resolve_check_ref(repo, 77, fetch=True, invoke_cwd=repo)
+    assert got == ("origin/main", "origin-main-default")
+    assert not vci.ref_exists(repo, "origin/issue-77-old")
+
+
+def test_cli_ref_and_repo_branch_mutually_exclusive(repo: Path, tmp_path: Path) -> None:
+    plan = _plan(tmp_path, "no citations")
+    with pytest.raises(SystemExit) as ei:
+        _main(repo, plan, extra=["--ref", "origin/main", "--repo-branch", "main"])
+    assert ei.value.code == 2
+
+
+def test_cli_incident_shape_end_to_end(repo: Path, tmp_path: Path) -> None:
+    """The #1336 shape: the input lives ONLY on the suffixed dispatch branch."""
+    _branch_push(repo, "issue-77")  # stale bare branch, no file
+    _git(repo, "checkout", "-q", "-b", "issue-77-full")
+    _write(repo, "eval_results/issue_77/f.json")
+    _git(repo, "add", "eval_results/issue_77/f.json")
+    _git(repo, "commit", "-q", "-m", "add f on suffixed branch")
+    _git(repo, "push", "-q", "origin", "issue-77-full")
+    _git(repo, "checkout", "-q", "main")
+    _write(repo, "eval_results/issue_77/f.json")  # the VM-local copy
+    plan = _plan(tmp_path, "Consumes eval_results/issue_77/f.json from the prior round.")
+    # (a) mirrored --repo-branch grades the RIGHT tree -> PASS.
+    assert _main(repo, plan, extra=["--repo-branch", "issue-77-full"]) == 0
+    # (b) neither flag -> the rung-4 ambiguity refusal, exit 2.
+    assert _main(repo, plan) == 2
+    # (c) --ref pinning the STALE bare branch still wins and still FAILs —
+    # the gate is not weakened; the wrong-tree grade is deliberate.
+    assert _main(repo, plan, extra=["--ref", "origin/issue-77"]) == 1
+
+
+def test_cli_refusal_stderr_names_candidates_and_remedy(
+    repo: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _branch_push(repo, "issue-77")
+    _branch_push(repo, "issue-77-full")
+    plan = _plan(tmp_path, "no citations")
+    assert _main(repo, plan) == 2
+    err = capsys.readouterr().err
+    assert "origin/issue-77" in err and "origin/issue-77-full" in err
+    assert "--repo-branch" in err
+
+
+def test_cli_verdict_lines_carry_ref_every_severity(
+    repo: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _write(repo, "eval_results/issue_12/a.json")
+    _commit_push(repo, "eval_results/issue_12/a.json")  # PASS (in-ref)
+    _write(repo, "data/issue_77/x.json")  # WARN (data-local-only)
+    _write(repo, "eval_results/issue_12/m.json")  # FAIL (untracked-local-only)
+    text = (
+        "Reuses eval_results/issue_12/a.json and consumes data/issue_77/x.json "
+        "and reads eval_results/issue_12/m.json "
+        "and writes eval_results/issue_77/out.json now."  # SKIP (planned-output)
+    )
+    plan = _plan(tmp_path, text)
+    assert _main(repo, plan) == 1
+    out = capsys.readouterr().out
+    rows = [ln for ln in out.splitlines() if ln.startswith("[")]
+    assert {ln[1:5].strip() for ln in rows} == {"PASS", "WARN", "FAIL", "SKIP"}
+    assert rows and all(" ref=origin/" in ln for ln in rows)
+    assert "ref source:" in out
+
+
+def test_cli_json_carries_check_ref_source(
+    repo: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _branch_push(repo, "issue-77-full")
+    plan = _plan(tmp_path, "no citations")
+    assert _main(repo, plan, extra=["--repo-branch", "issue-77-full", "--json"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["check_ref"] == "origin/issue-77-full"
+    assert payload["check_ref_source"] == "repo-branch-flag"
+
+
+def test_committed_unpushed_on_suffixed_branch_detected(repo: Path, tmp_path: Path) -> None:
+    _branch_push(repo, "issue-77-full")  # origin tip WITHOUT the file
+    _git(repo, "checkout", "-q", "issue-77-full")
+    _write(repo, "eval_results/issue_77/inp.json")
+    _git(repo, "add", "eval_results/issue_77/inp.json")
+    _git(repo, "commit", "-q", "-m", "add input on suffixed branch")  # NOT pushed
+    _git(repo, "checkout", "-q", "main")
+    plan = _plan(tmp_path, "Consumes eval_results/issue_77/inp.json from the prior round.")
+    assert _main(repo, plan, extra=["--repo-branch", "issue-77-full"]) == 1
+    fs = vci.run_check(
+        "Consumes eval_results/issue_77/inp.json now.",
+        repo_root=repo,
+        issue=77,
+        check_ref="origin/issue-77-full",
+        local_branch="issue-77-full",
+    )
+    assert [(f.verdict, f.reason) for f in fs] == [("fail", "committed-unpushed")]
+    assert "issue-77-full" in fs[0].detail
+
+
+def test_step6_repo_branch_shared_resolver_pin() -> None:
+    """#2263 durability pin: BOTH Step 6 fences call the ONE shared resolver.
+
+    Byte-identical unindented preludes (assignment + ${REPO_BRANCH:?} guard)
+    in the 6a.5 gate fence and the 6b launch fence; zero hardcoded
+    `--repo-branch issue-<N>` literals survive anywhere in the composed spec.
+    """
+    text = issue_skill_text()
+    expected_assign = (
+        'REPO_BRANCH="$(uv run python scripts/verify_carryover_inputs.py '
+        '--print-repo-branch --issue <N>)"   '
+        "# the ONE shared issue-scoped resolver — re-derived per fence; "
+        "never the cwd branch (#2263)"
+    )
+    assign_lines = re.findall(r"(?m)^REPO_BRANCH=.*$", text)
+    assert assign_lines == [expected_assign, expected_assign]
+    assert len(re.findall(r"(?<![$\w])REPO_BRANCH=", text)) == 2
+    guard_lines = re.findall(r'(?m)^: "\$\{REPO_BRANCH:\?.*$', text)
+    assert len(guard_lines) == 2
+    assert len(set(guard_lines)) == 1  # byte-identical guards
+    assert (
+        'uv run python scripts/verify_carryover_inputs.py --plan "$PLAN_PATH" '
+        '--issue <N> --repo-branch "$REPO_BRANCH"'
+    ) in text
+    assert '--issue <N> --intent "$INTENT" --repo-branch "$REPO_BRANCH" \\' in text
+    assert 'git push origin "$REPO_BRANCH"' in text  # the push remediation
+    assert '--repo-branch "issue-<N>"' not in text
+    assert "--repo-branch issue-<N>" not in text
+
+
+def test_step6_repo_branch_shared_resolver_fresh_shell_execution(
+    repo: Path, tmp_path: Path
+) -> None:
+    """#2263 execution pin: the fence prelude RUNS, verbatim from the spec.
+
+    Extraction failure IS test failure (never a silent skip): the prelude
+    lines are pulled from the composed spec by the same regexes as the text
+    pin, substituted ONLY on `<N>` and the `uv run python <script>` prefix,
+    and executed under `bash -c` in a fresh shell.
+    """
+    text = issue_skill_text()
+    assigns = re.findall(r"(?m)^REPO_BRANCH=.*$", text)
+    guards = re.findall(r'(?m)^: "\$\{REPO_BRANCH:\?.*$', text)
+    assert len(assigns) == 2 and len(guards) == 2, "prelude extraction failed"
+    assign = (
+        assigns[0]
+        .replace("<N>", "77")
+        .replace(
+            "uv run python scripts/verify_carryover_inputs.py",
+            f"{sys.executable} {_SCRIPT}",
+        )
+    )
+    guard = guards[0].replace("<N>", "77")
+    script = assign + "\n" + guard + "\n" + 'echo "REACHED-$REPO_BRANCH"'
+    # Arm 1: repo-root shape (branch main, no issue worktree) -> the guard
+    # ABORTS the fence; the dispatch line is never reached.
+    proc = subprocess.run(["bash", "-c", script], cwd=repo, capture_output=True, text=True)
+    assert proc.returncode != 0
+    assert "REACHED" not in proc.stdout
+    assert "ERROR:" in proc.stderr  # the resolver's refusal reached the shell
+    # Arm 2: ONE live issue worktree -> the fence proceeds with its branch.
+    _git(repo, "worktree", "add", "-q", str(tmp_path / "wt"), "-b", "issue-77-full")
+    proc2 = subprocess.run(["bash", "-c", script], cwd=repo, capture_output=True, text=True)
+    assert proc2.returncode == 0, proc2.stderr
+    assert proc2.stdout.strip().endswith("REACHED-issue-77-full")
+
+
+def test_worktree_inference_repository_bound(repo: Path, tmp_path: Path) -> None:
+    """Guard (b): a FOREIGN repository cwd can never steer the check ref."""
+    foreign = _foreign_repo(tmp_path, name="foreign", branch="issue-77-full")
+    # (c) bare-only fall-through FIRST: the foreign cwd is rejected by the
+    # repository-binding guard and rung 4 resolves the bare default.
+    _branch_push(repo, "issue-77")
+    got = vci.resolve_check_ref(repo, 77, fetch=False, invoke_cwd=foreign)
+    assert got == ("origin/issue-77", "bare-issue-branch-default")
+    # (a) suffix present on the TARGET: the same foreign cwd now hits the
+    # rung-4 candidates refusal — NOT rung 3's unpushed message, and never a
+    # silent worktree-branch pick of the foreign checkout's branch.
+    _branch_push(repo, "issue-77-full")
+    with pytest.raises(vci.CheckRefResolutionError) as ei:
+        vci.resolve_check_ref(repo, 77, fetch=False, invoke_cwd=foreign)
+    msg = str(ei.value)
+    assert "candidates" in msg and "origin/issue-77-full" in msg
+    assert "materialize nothing" not in msg  # not the rung-3 unpushed refusal
+    # (b) foreign repo NESTED inside the target tree — same refusal.
+    nested = _foreign_repo(repo, name="nested_foreign", branch="issue-77-x")
+    with pytest.raises(vci.CheckRefResolutionError) as ei2:
+        vci.resolve_check_ref(repo, 77, fetch=False, invoke_cwd=nested)
+    assert "candidates" in str(ei2.value)
+
+
+def test_repo_branch_flag_beats_worktree_inference(repo: Path, tmp_path: Path) -> None:
+    _branch_push(repo, "issue-77-full")
+    wt = tmp_path / "wt-other"
+    _git(repo, "worktree", "add", "-q", str(wt), "-b", "issue-77-other")
+    _git(repo, "push", "-q", "origin", "issue-77-other")
+    got = vci.resolve_check_ref(repo, 77, fetch=False, repo_branch="issue-77-full", invoke_cwd=wt)
+    assert got == ("origin/issue-77-full", "repo-branch-flag")
+    got_main = vci.resolve_check_ref(repo, 77, fetch=False, repo_branch="main", invoke_cwd=wt)
+    assert got_main == ("origin/main", "repo-branch-flag")
+
+
+_MATRIX_CELLS = [
+    ("bare-only", ("repo-branch", "issue-77"), ("origin/issue-77", "repo-branch-flag")),
+    ("bare-only", ("repo-branch", "main"), ("origin/main", "repo-branch-flag")),
+    ("bare-only", ("repo-branch", "issue-77-absent"), "raise"),
+    ("bare-only", ("worktree-pushed", "issue-77"), ("origin/issue-77", "worktree-branch")),
+    ("bare-only", ("worktree-unpushed", "issue-77-local"), "raise"),
+    ("none", ("default", None), ("origin/main", "origin-main-default")),
+    ("none", ("repo-branch", "main"), ("origin/main", "repo-branch-flag")),
+    ("none", ("repo-branch", "issue-77-full"), "raise"),
+    ("none", ("worktree-unpushed", "issue-77-local"), "raise"),
+    ("suffix-only", ("default", None), "raise"),
+    (
+        "suffix-only",
+        ("repo-branch", "issue-77-full"),
+        ("origin/issue-77-full", "repo-branch-flag"),
+    ),
+    ("suffix-only", ("repo-branch", "main"), ("origin/main", "repo-branch-flag")),
+    (
+        "suffix-only",
+        ("worktree-pushed", "issue-77-full"),
+        ("origin/issue-77-full", "worktree-branch"),
+    ),
+    ("bare+suffix", ("default", None), "raise"),
+    ("bare+suffix", ("repo-branch", "issue-77"), ("origin/issue-77", "repo-branch-flag")),
+    (
+        "bare+suffix",
+        ("repo-branch", "issue-77-full"),
+        ("origin/issue-77-full", "repo-branch-flag"),
+    ),
+    (
+        "bare+suffix",
+        ("worktree-pushed", "issue-77-full"),
+        ("origin/issue-77-full", "worktree-branch"),
+    ),
+    ("bare+suffix", ("main-cwd", None), "raise"),
+]
+
+
+@pytest.mark.parametrize(("remote_state", "invocation", "expected"), _MATRIX_CELLS)
+def test_matrix_feasible_cells(
+    repo: Path, tmp_path: Path, remote_state: str, invocation: tuple, expected
+) -> None:
+    """#2263 feasible-cell matrix: remote state x invocation -> (ref, source)."""
+    if remote_state in ("bare-only", "bare+suffix"):
+        _branch_push(repo, "issue-77")
+    if remote_state in ("suffix-only", "bare+suffix"):
+        _branch_push(repo, "issue-77-full")
+    kind, value = invocation
+    kwargs: dict = {"fetch": False, "invoke_cwd": repo}
+    if kind == "repo-branch":
+        kwargs["repo_branch"] = value
+    elif kind == "worktree-pushed":
+        wt = tmp_path / "wt"
+        if vci.ref_exists(repo, f"refs/heads/{value}"):
+            _git(repo, "worktree", "add", "-q", str(wt), value)
+        else:
+            _git(repo, "worktree", "add", "-q", str(wt), "-b", value)
+            _git(repo, "push", "-q", "origin", value)
+        kwargs["invoke_cwd"] = wt
+    elif kind == "worktree-unpushed":
+        wt = tmp_path / "wt"
+        _git(repo, "worktree", "add", "-q", str(wt), "-b", value)
+        kwargs["invoke_cwd"] = wt
+    # "default" / "main-cwd": invoke from the repo root (branch main).
+    if expected == "raise":
+        with pytest.raises(vci.CheckRefResolutionError):
+            vci.resolve_check_ref(repo, 77, **kwargs)
+    else:
+        assert vci.resolve_check_ref(repo, 77, **kwargs) == expected
+
+
+def test_cli_repo_branch_validator_rejects_empty_and_origin_prefixed(
+    repo: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    plan = _plan(tmp_path, "no citations")
+    with pytest.raises(SystemExit) as ei:
+        _main(repo, plan, extra=["--repo-branch", ""])
+    assert ei.value.code == 2
+    with pytest.raises(SystemExit) as ei2:
+        _main(repo, plan, extra=["--repo-branch", "origin/issue-77"])
+    assert ei2.value.code == 2
+    err = capsys.readouterr().err
+    assert "origin/" in err and "--ref" in err  # names the remedy
+
+
+def test_cli_worktree_inference_via_cwd_default(
+    repo: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The ONE test exercising the Path.cwd() default positively (CLI-level)."""
+    wt = tmp_path / "wt-full"
+    _git(repo, "worktree", "add", "-q", str(wt), "-b", "issue-77-full")
+    _git(repo, "push", "-q", "origin", "issue-77-full")
+    plan = _plan(tmp_path, "no citations here")
+    argv = [
+        "--plan",
+        str(plan),
+        "--issue",
+        "77",
+        "--repo-root",
+        str(repo),
+        "--no-fetch",
+        "--json",
+    ]
+    with contextlib.chdir(wt):
+        rc = vci.main(argv)
+    assert rc == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["check_ref"] == "origin/issue-77-full"
+    assert payload["check_ref_source"] == "worktree-branch"
+
+
+def test_local_branch_regression_arms(
+    repo: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """R6/MF-3: NO derivation converts the committed-unpushed FAIL to SKIP/WARN.
+
+    Fixture: an own-issue tracked-results citation committed ONLY on the
+    LOCAL issue-77 tip — absent from every origin ref and from disk.
+    """
+    _branch_push(repo, "issue-77")  # stale bare tip on origin (no file)
+    _git(repo, "checkout", "-q", "issue-77")
+    _write(repo, "eval_results/issue_77/inp.json")
+    _git(repo, "add", "eval_results/issue_77/inp.json")
+    _git(repo, "commit", "-q", "-m", "add input on local branch")  # NOT pushed
+    _git(repo, "checkout", "-q", "main")
+    _branch_push(repo, "foo")  # pushed foreign branch, no file
+    main_sha = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "main"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    plan = _plan(tmp_path, "Consumes eval_results/issue_77/inp.json from the prior round.")
+
+    def _fail_row(extra: list[str]) -> str:
+        assert _main(repo, plan, extra=extra) == 1
+        out = capsys.readouterr().out
+        rows = [ln for ln in out.splitlines() if "committed-unpushed" in ln]
+        assert len(rows) == 1, out
+        return rows[0]
+
+    _fail_row([])  # (a) bare-only default
+    _fail_row(["--ref", "origin/main"])  # (b)
+    _fail_row(["--ref", "origin/foo"])  # (c) pushed foreign branch
+    row_sha = _fail_row(["--ref", main_sha])  # (d) raw SHA check ref
+    # (h) non-branch-shaped wording: no branch interpolated from the raw SHA.
+    assert "the branch the dispatch will materialize" in row_sha
+    _fail_row(["--ref", "foo"])  # (e) non-origin local-ref form
+    # (f)/(g): own-issue SUFFIXED namespace — the union-probe extension.
+    _branch_push(repo, "issue-77-full")  # cut from main, no file
+    row_f = _fail_row(["--ref", "origin/issue-77-full"])
+    row_g = _fail_row(["--repo-branch", "issue-77-full"])
+    # (h) remediation names the FOUND branch and the MATERIALIZED ref.
+    for row in (row_f, row_g):
+        assert "issue-77" in row and "origin/issue-77-full" in row
+    assert "merge/rebase" in row_g
+
+
+def test_cli_unchanged_rows_semantic_invariants(
+    repo: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """MF-5/R4: bare-invocation rows on the legacy fixture states keep today's
+    resolved ref, per-severity verdict counts, and exit code — asserted as
+    FIXTURE LITERALS, never recomputed through resolve_check_ref."""
+    # One row per severity by construction:
+    #   pass: a.json committed+pushed on main BEFORE any branch cut (in-ref)
+    #   warn: data/issue_77/x.json untracked (data-local-only)
+    #   fail: eval_results/issue_12/m.json untracked (untracked-local-only)
+    #   skip: eval_results/issue_77/out.json nowhere (planned-output)
+    _write(repo, "eval_results/issue_12/a.json")
+    _commit_push(repo, "eval_results/issue_12/a.json")
+    _write(repo, "data/issue_77/x.json")
+    _write(repo, "eval_results/issue_12/m.json")
+    text = (
+        "Reuses eval_results/issue_12/a.json and consumes data/issue_77/x.json "
+        "and reads eval_results/issue_12/m.json "
+        "and writes eval_results/issue_77/out.json now."
+    )
+    plan = _plan(tmp_path, text)
+
+    def _counts(payload: dict) -> dict[str, int]:
+        counts: dict[str, int] = {}
+        for f in payload["findings"]:
+            counts[f["verdict"]] = counts.get(f["verdict"], 0) + 1
+        return counts
+
+    # main-only state: the LITERAL origin/main.
+    assert _main(repo, plan, extra=["--json"]) == 1
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["check_ref"] == "origin/main"
+    assert _counts(payload) == {"pass": 1, "warn": 1, "fail": 1, "skip": 1}
+    # bare-only state: the LITERAL origin/issue-77 (cut AFTER a.json landed
+    # on main, so the pass row survives in-ref on the branch tip too).
+    _branch_push(repo, "issue-77")
+    assert _main(repo, plan, extra=["--json"]) == 1
+    payload2 = json.loads(capsys.readouterr().out)
+    assert payload2["check_ref"] == "origin/issue-77"
+    assert _counts(payload2) == {"pass": 1, "warn": 1, "fail": 1, "skip": 1}
+
+
+@pytest.mark.parametrize(
+    ("check_ref", "ref_source", "expected"),
+    [
+        ("origin/issue-77-full", "repo-branch-flag", "issue-77-full"),
+        ("origin/main", "repo-branch-flag", "main"),
+        ("origin/issue-77-full", "worktree-branch", "issue-77-full"),
+        ("origin/issue-77", "bare-issue-branch-default", "issue-77"),
+        ("origin/main", "origin-main-default", "issue-77"),
+        ("origin/issue-77-full", "ref-flag", "issue-77-full"),
+        ("origin/issue-77", "ref-flag", "issue-77"),
+        ("origin/foo", "ref-flag", "issue-77"),
+        ("origin/main", "ref-flag", "issue-77"),
+        ("3f2c1a9", "ref-flag", "issue-77"),
+        ("foo", "ref-flag", "issue-77"),
+        ("issue-77-full", "ref-flag", "issue-77-full"),
+        ("origin/issue-771-x", "ref-flag", "issue-77"),  # digit boundary
+    ],
+)
+def test_derive_local_branch_pure(check_ref: str, ref_source: str, expected: str) -> None:
+    assert vci.derive_local_branch(check_ref, ref_source, 77) == expected
+
+
+@pytest.mark.parametrize("branch", ["issue-77", "issue-77-full"])
+def test_derive_worktree_repo_branch_unique(repo: Path, tmp_path: Path, branch: str) -> None:
+    _git(repo, "worktree", "add", "-q", str(tmp_path / "wt"), "-b", branch)
+    assert vci.derive_worktree_repo_branch(repo, 77) == branch
+
+
+@pytest.mark.parametrize("state", ["no-worktree", "foreign-issue", "digit-prefix", "detached"])
+def test_derive_worktree_repo_branch_zero_match_raises(
+    repo: Path, tmp_path: Path, state: str
+) -> None:
+    if state == "foreign-issue":
+        _git(repo, "worktree", "add", "-q", str(tmp_path / "wt"), "-b", "issue-88-x")
+    elif state == "digit-prefix":
+        _git(repo, "worktree", "add", "-q", str(tmp_path / "wt"), "-b", "issue-771-x")
+    elif state == "detached":
+        _git(repo, "worktree", "add", "-q", "--detach", str(tmp_path / "wt"))
+    with pytest.raises(vci.RepoBranchDerivationError) as ei:
+        vci.derive_worktree_repo_branch(repo, 77)
+    assert "--repo-branch main" in str(ei.value)  # the wholly-main escape
+
+
+def test_derive_worktree_repo_branch_multiple_raises(repo: Path, tmp_path: Path) -> None:
+    wt1 = tmp_path / "wt1"
+    wt2 = tmp_path / "wt2"
+    _git(repo, "worktree", "add", "-q", str(wt1), "-b", "issue-77")
+    _git(repo, "worktree", "add", "-q", str(wt2), "-b", "issue-77-full")
+    with pytest.raises(vci.RepoBranchDerivationError) as ei:
+        vci.derive_worktree_repo_branch(repo, 77)
+    msg = str(ei.value)
+    assert "issue-77" in msg and "issue-77-full" in msg
+    assert str(wt1) in msg and str(wt2) in msg
+    assert "--repo-branch <branch>" in msg
+
+
+def test_derive_worktree_repo_branch_stale_registration_skipped(repo: Path, tmp_path: Path) -> None:
+    wt = tmp_path / "wt-stale"
+    _git(repo, "worktree", "add", "-q", str(wt), "-b", "issue-77-gone")
+    shutil.rmtree(wt)  # deleted WITHOUT `git worktree prune` (probe P1b)
+    with pytest.raises(vci.RepoBranchDerivationError) as ei:
+        vci.derive_worktree_repo_branch(repo, 77)
+    msg = str(ei.value)
+    assert "issue-77-gone" in msg and "stale" in msg
+
+
+def test_derive_worktree_repo_branch_stale_plus_live_notes_skip(
+    repo: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """#2263 review finding 2: a SUCCESS beside a skipped stale registration
+    emits one diagnostic stderr note — a transient is_dir() False could
+    otherwise silently convert a designed multiple-match refusal into a
+    unique match with no trace."""
+    stale = tmp_path / "wt-stale"
+    _git(repo, "worktree", "add", "-q", str(stale), "-b", "issue-77-gone")
+    shutil.rmtree(stale)
+    _git(repo, "worktree", "add", "-q", str(tmp_path / "wt-live"), "-b", "issue-77-full")
+    assert vci.derive_worktree_repo_branch(repo, 77) == "issue-77-full"
+    err = capsys.readouterr().err
+    assert "skipped stale" in err and "issue-77-gone" in err
+
+
+def test_cli_print_repo_branch(
+    repo: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # Healthy: EXACTLY the branch + newline on stdout, empty stderr, rc 0.
+    _git(repo, "worktree", "add", "-q", str(tmp_path / "wt"), "-b", "issue-77-full")
+    rc = vci.main(["--print-repo-branch", "--issue", "77", "--repo-root", str(repo)])
+    captured = capsys.readouterr()
+    assert rc == 0
+    assert captured.out == "issue-77-full\n"
+    assert captured.err == ""
+    # Zero-match: rc 2, stdout EXACTLY EMPTY (the ${REPO_BRANCH:?} guard keys
+    # on it), stderr names the --repo-branch main escape.
+    rc2 = vci.main(["--print-repo-branch", "--issue", "88", "--repo-root", str(repo)])
+    captured2 = capsys.readouterr()
+    assert rc2 == 2
+    assert captured2.out == ""
+    assert "ERROR:" in captured2.err and "--repo-branch main" in captured2.err
+    # Mode-combination refusals: each check-mode flag exits 2 via argparse.
+    for extra in (
+        ["--plan", str(_plan(tmp_path, "x"))],
+        ["--ref", "origin/main"],
+        ["--repo-branch", "main"],
+    ):
+        with pytest.raises(SystemExit) as ei:
+            vci.main(["--print-repo-branch", "--issue", "77", "--repo-root", str(repo), *extra])
+        assert ei.value.code == 2
+    capsys.readouterr()  # drain argparse usage noise
+    # Non-print mode still REQUIRES --plan.
+    with pytest.raises(SystemExit) as ei2:
+        vci.main(["--issue", "77", "--repo-root", str(repo), "--no-fetch"])
+    assert ei2.value.code == 2
+
+
+def test_git_env_sanitized_against_repo_selection_overrides(
+    repo: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """MF-C: inherited GIT_* repo-selection overrides cannot repoint probes."""
+    _branch_push(repo, "issue-77")  # bare-only remote state
+    _git(repo, "worktree", "add", "-q", str(tmp_path / "wt"), "-b", "issue-77-full")
+    baseline = vci.resolve_check_ref(repo, 77, fetch=False, invoke_cwd=repo)
+    assert baseline == ("origin/issue-77", "bare-issue-branch-default")
+    # Foreign repo with a DIVERGENT remote state (a pushed issue-77-x suffix
+    # would force a refusal if the poisoned env were honored), an issue-scoped
+    # checkout branch, and its own issue-scoped worktree.
+    foreign = _foreign_repo(tmp_path, name="foreign", branch="issue-77-full")
+    _git(foreign, "branch", "issue-77-x")
+    _git(foreign, "push", "-q", "origin", "issue-77-x")
+    _git(foreign, "worktree", "add", "-q", str(tmp_path / "fwt"), "-b", "issue-77-foreign")
+    poison = {
+        "GIT_DIR": str(foreign / ".git"),
+        "GIT_COMMON_DIR": str(foreign / ".git"),
+        "GIT_WORK_TREE": str(foreign),
+    }
+    for var, value in poison.items():
+        monkeypatch.setenv(var, value)
+        # (a) resolution identical to the unset-env baseline.
+        assert vci.resolve_check_ref(repo, 77, fetch=False, invoke_cwd=repo) == baseline
+        # (b) the repository-binding guard still REJECTS the foreign cwd —
+        # the bare default, never the foreign branch as `worktree-branch`.
+        assert vci.resolve_check_ref(repo, 77, fetch=False, invoke_cwd=foreign) == baseline
+        # (c) worktree derivation lists the FIXTURE repo's worktrees, not
+        # the foreign repo's.
+        assert vci.derive_worktree_repo_branch(repo, 77) == "issue-77-full"
+        monkeypatch.delenv(var)
+    # (d) bare-context negative arm (no poison): a .git-dir cwd reports a
+    # branch (probe P1) but fails --is-inside-work-tree (probe P4) -> rung 4
+    # default, never `worktree-branch`.
+    _git(repo, "checkout", "-q", "issue-77")
+    got = vci.resolve_check_ref(repo, 77, fetch=False, invoke_cwd=repo / ".git")
+    assert got == ("origin/issue-77", "bare-issue-branch-default")
+
+
+@pytest.mark.parametrize("remote_state", ["none", "bare-only", "suffix-only", "bare+suffix"])
+def test_cli_explicit_ref_bypasses_resolver_on_all_remote_states(
+    repo: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str], remote_state: str
+) -> None:
+    """Rung 1: --ref never calls the resolver — exit 0 even on the suffix
+    states whose resolver path would REFUSE (exit 2)."""
+    _write(repo, "eval_results/issue_12/a.json")
+    _commit_push(repo, "eval_results/issue_12/a.json")
+    if remote_state in ("bare-only", "bare+suffix"):
+        _branch_push(repo, "issue-77")
+    if remote_state in ("suffix-only", "bare+suffix"):
+        _branch_push(repo, "issue-77-full")
+    plan = _plan(tmp_path, "Reuses eval_results/issue_12/a.json only.")
+    assert _main(repo, plan, extra=["--ref", "origin/main", "--json"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["check_ref"] == "origin/main"
+    assert payload["check_ref_source"] == "ref-flag"

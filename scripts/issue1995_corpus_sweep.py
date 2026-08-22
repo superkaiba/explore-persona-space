@@ -122,7 +122,7 @@ def _classify_sample(
         # This is a corner case — 0 hits in a spot-check.
         effective_issue = issue if issue is not None else 0
         try:
-            ref = _vci.resolve_check_ref(repo_root, effective_issue, fetch=fetch)
+            ref = _vci.resolve_check_ref(repo_root, effective_issue, fetch=fetch).ref
         except Exception:
             ref = check_ref
         cand_records = []
