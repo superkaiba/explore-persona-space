@@ -1,6 +1,6 @@
 ---
-title: 'Harden #2394 jailbreak-mining pilot to paper-citable grade (commit JSONs +
-  verify headline numbers + audit constructions)'
+title: 'Harden #2394 jbmine to paper-citable grade — code-review r2 fix (3 blockers
+  + 2 ride-along)'
 kind: analysis
 tags: []
 created_at: '2026-08-22T20:24:25Z'

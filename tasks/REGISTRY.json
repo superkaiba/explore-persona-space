@@ -11436,7 +11436,7 @@
       "kind": "analysis",
       "path": "tasks/running/2480",
       "status": "running",
-      "title": "Harden #2394 jailbreak-mining pilot to paper-citable grade (commit JSONs + verify headline numbers + audit constructions)"
+      "title": "Harden #2394 jbmine to paper-citable grade \u2014 code-review r2 fix (3 blockers + 2 ride-along)"
     },
     "2481": {
       "has_clean_result": false,
