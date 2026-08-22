@@ -9839,8 +9839,8 @@
     "2273": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2273",
-      "status": "planning",
+      "path": "tasks/approved/2273",
+      "status": "approved",
       "title": "gotchas.md: fellows remote shell is zsh \u2014 unmatched glob aborts the whole SSH command (nomatch), silently truncating chained monitoring probes"
     },
     "2274": {
