@@ -16480,26 +16480,26 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # SKILL_DOC_EXEMPT_DIR_SEGMENTS — keeping them over the line keeps the
     # remaining trim visible). Measured 2026-08-17 at the re-split commit;
     # corridor-max ((measured+2_800)//100)*100 each; chronicle: git log.
-    # measured 102,420 B @ #2422 2026-08-20 RE-MEASURED against the Step-10d
-    # MERGED tree (worktree-safe task-state paths, +1,477 B, on top of #2201's
-    # main-side +2,927 B); corridor-max ((measured+2_800)//100)*100.
-    # Prior: 103_300 (#2201, 100,517 B) / 100_300 (#2158, 97,590 B).
-    "issue/steps/09-step-5.md": 105_200,
+    # measured 110,622 B @ #2260 2026-08-21 (FAMILY_agents: comment block +
+    # 32 FAMILY_OF entries + 31 SPECS tokens + member-existence containment
+    # arm + boundary sentence, +6,871 B); corridor-max
+    # ((measured+2_800)//100)*100. Re-measure + re-set at Step 10d against
+    # the MERGED tree (concurrent sessions edit this file).
+    # Prior: 105_200 (#2422, 102,420 B) / 103_300 (#2201, 100,517 B).
+    "issue/steps/09-step-5.md": 113_400,
     # measured 142,643 B @ #2350 2026-08-17 (dispatch-preflight item (e),
     # per-leg out/scratch isolation, +1,211 B); corridor-max
     # ((measured+2_800)//100)*100. Prior: 144_200 (#2155 split, 141,432 B).
     "issue/steps/10-step-6.md": 145_400,
     "issue/steps/13-step-9.md": 245_300,  # measured 242,521 B
-    # measured 289,354 B @ #2246 2026-08-21 — re-measured POST-REBASE onto
-    # #2428, so the figure carries BOTH rounds' prose: #2428's Guard-4
-    # --main-sha tip-contract fix (+645 B) plus #2246's reap-shield (launcher
-    # "$WT" argv holders at both gate sites + empty-overlay fail-closed block,
-    # +1,180 B). Neither round's own pre-rebase measure is the merged size, so
-    # the cap is re-derived rather than either side's value taken.
-    # corridor-max ((measured+2_800)//100)*100 = 292_100, headroom 2,746 —
-    # clears guard_skill_doc_headroom.sh's 2,000 B warn floor.
-    # Prior: 290_900 (#2428, 288,174 B) / 290_100 (#2201, 287,339 B).
-    "issue/steps/18-step-10d.md": 292_100,
+    # measured 294,209 B @ #2260 2026-08-21 (FAMILY_agents mirrored into the
+    # auto-merge inline copy: 32 FAMILY_OF entries + 31 SPECS_10D tokens +
+    # containment arm, +4,855 B); corridor-max ((measured+2_800)//100)*100 =
+    # 297_000, headroom 2,791 — clears guard_skill_doc_headroom.sh's 2,000 B
+    # warn floor. Re-measure + re-set at Step 10d against the MERGED tree
+    # (concurrent sessions edit this file).
+    # Prior: 292_100 (#2246 post-rebase, 289,354 B) / 290_900 (#2428).
+    "issue/steps/18-step-10d.md": 297_000,
     # measured 106,625 B @ #2325 2026-08-16; corridor-max
     # ((measured+2_800)//100)*100. Prior: 106_900; chronicle: git log.
     "clean-results/SPEC.md": 109_400,

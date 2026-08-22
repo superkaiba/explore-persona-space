@@ -689,6 +689,77 @@ standard 3-lens enum gate does not apply: the brief's verbatim lens list IS
   both-sides-guard atoms + comma-grouping first + sci-notation branch +
   isfinite literal-keep + collect-all + registry leg from repo root).
 
+- **Gate/ref-resolution infra plan, standard alternatives lens + brief
+  seven-question translation (#2263 round one, verify_carryover_inputs
+  wrong-ref fix): three small new patterns.** (1) A fact-check report that
+  explicitly defers a disposition "to the critics" (the bash→text fence-language
+  side effect) composes as an ADDITIONAL numbered press question with its own
+  disposition words — fact-check-routed design calls are a press-point source,
+  distinct from the do-not-refile guard on its CONFIRMED verdicts. (2) A brief
+  question asking whether a repo state actually exists ("do stale suffixed
+  branches exist?") gets an EMPIRICAL mandate: read-only `git for-each-ref`
+  over already-fetched remote-tracking refs with `git fetch` banned BY NAME
+  (the #2246 fetch ban, re-derived here because the ref population is itself
+  under review), plus quote-the-command grounding. Also ban running the gate
+  script itself when its default path fetches. (3) Numcheck self-test note:
+  version triplets like `2.34.1` produce NO atoms under both-sides guards
+  (every candidate position is dot-adjacent) — safe anywhere, and assert
+  `atoms("git 2.34.1") == Counter()` rather than expecting atoms. Dispositions
+  that worked for design-alternative questions: DOMINATES (tied to the
+  dominating-alternative bar, implies Must-Fix) | WASH | WORSE; for scope
+  additions REQUIRED | DEFENSIBLE | CREEP + a fence HONORED | VIOLATED line.
+  Numcheck PASS first try at ~66 KB, fully digit-free scaffold (spans =
+  questions + plan + body + factcheck + lensitems + empty prior).
+
+- **Git-ref-resolver gate plan, standard methodology lens + brief five-question
+  translation (#2263 round one, verify_carryover_inputs check-ref ladder): when
+  the brief hands a fact-check REPORT PATH, inline the WHOLE report verbatim as
+  its own span** (it carries all its digits; balances by construction) framed
+  two-sided in a digit-free FACT-CHECK STATUS header block: CONFIRMED verdicts
+  = settled inputs (re-filing is a regression), while the report's CORRECTIONS
+  + retired risk rows are handed to the twin as disposition judgments
+  ("plan-revision Must-Fix vs implementer-level") — the corrections ride
+  verbatim inside the relevant questions-span items, not as pre-judged
+  findings. Snapshot-note extension for ref-population plans: live git-ref
+  probes drift, so "a ref-population delta between plan claims and your probe
+  is expected drift, not a finding; a DESIGN rule that mishandles a probed-real
+  state IS one". Read discipline: ban `git fetch` BY NAME with the
+  population-under-review reason (#2246's move, sharper here — the plan's
+  subject IS the remote-tracking ref population), ban pytest (planned tests
+  don't exist yet), but PERMIT running the current gate script in its no-fetch
+  mode (fully read-only) and a for-each-ref enumeration as the empirical
+  blast-radius probe for the refusal-storm question. Brief-ordered side-effect
+  question (fence-language bash→text at the call site) gets its own numbered
+  question with named consumers to check (composed-skill pin tests, lint,
+  copy-paste ergonomics). Numcheck PASS first try at ~140 KB (spans = inputs +
+  factcheck + questions + lensitems + plan + body + empty prior; scaffold
+  digit-free — "Step 6a.5"/"v1"/"2.34.1" produce no atoms under both-sides
+  guards but stayed span-side anyway).
+
+- **Test-suite-acceptance infra plan, standard statistics lens + a brief
+  hollow-gate priority question (#2263 round one, the same ref-ladder plan):
+  when the brief's core ask is "audit EVERY planned test for hollowness" and
+  the fact-check already DEMONSTRATED one hollow test, mandate a dedicated
+  `### Per-test hollow-gate audit` output section** — one REAL / HOLLOW /
+  UNVERIFIED line per planned test (count spelled as a word in scaffold),
+  placed BEFORE the question answers so the enumeration precedes the coverage
+  verdicts (the #2326 fresh-evidence-first move), with an escalation rule
+  inline: HOLLOW + only-coverage-of-a-requirement/matrix-cell => Must Fix;
+  HOLLOW + redundant real coverage => Concern. The demonstrated-hollow test
+  rides as "settled — carry it as a grounded Must Fix so the revision absorbs
+  it; your NEW work is the other tests". Under write=false (spec read-only
+  critic mode) the twin CANNOT run throwaway-repo git probes the fact-checker
+  used — say so and give the UNVERIFIED escape ("name the probe that would
+  settle it; files as Concern"). Claimed-invariant questions (an unmeasured
+  "byte-equivalent" R-row narrowed by the gates section to tuple equality)
+  frame as "what exactly is the invariant, is it measured AS WRITTEN,
+  Must-Fix-as-unmeasured-invariant vs wording Concern". Exit-code
+  distinguishability frames as the lens's gate-coherence item in
+  verdict-lattice form ("two conditions sharing one exit code are
+  indistinguishable to any assert that reads only the code"). Numcheck PASS
+  first try at ~112 KB, fully digit-free scaffold (spans = inputs + plan +
+  body + factcheck + lensitems + questions + empty prior).
+
 **Why:** first custom-lens infra compose (#2324) — these choices made the
 numeric gate pass first try on a 68 KB prompt; round 2 (REVISE-round
 re-review) passed on the second numcheck run, the only failures being the
