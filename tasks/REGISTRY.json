@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2479,
+  "highest_id": 2480,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11429,6 +11429,13 @@
       "path": "tasks/archived/248",
       "status": "archived",
       "title": "[ZLT] marker emission concentrates attention on the system prompt \u2014 but base Qwen on the same tokens shows the same pattern (LOW confidence)"
+    },
+    "2480": {
+      "has_clean_result": false,
+      "kind": "analysis",
+      "path": "tasks/proposed/2480",
+      "status": "proposed",
+      "title": "Harden #2394 jailbreak-mining pilot to paper-citable grade (commit JSONs + verify headline numbers + audit constructions)"
     },
     "249": {
       "has_clean_result": false,
