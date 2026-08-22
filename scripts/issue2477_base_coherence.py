@@ -478,6 +478,7 @@ def phase_inventory(args: argparse.Namespace) -> None:
     for root in ROOTS:
         entries = hub.retry_transient(
             lambda root=root: list(
+                # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient at this call site
                 api.list_repo_tree(
                     REPO_DATA, path_in_repo=root, repo_type="dataset", recursive=True
                 )
@@ -588,6 +589,7 @@ def _list_armg_step_files(api, model: str, shard: str) -> list[str]:
     root = f"{ARMG_ROOT}/{model}/{shard}"
     entries = hub.retry_transient(
         lambda: list(
+            # HUB_VERIFY_RETRY_EXEMPT: wrapped in hub.retry_transient at this call site
             api.list_repo_tree(REPO_DATA, path_in_repo=root, repo_type="dataset", recursive=True)
         ),
         what=f"list_repo_tree({root})",
