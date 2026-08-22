@@ -9937,8 +9937,8 @@
     "2286": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2286",
-      "status": "proposed",
+      "path": "tasks/archived/2286",
+      "status": "archived",
       "title": "HF data repo superkaiba1/explore-persona-space-data is at the 1,000,000-file hard ceiling \u2014 fleet-wide multi-file uploads now fail; pack/prune/overflow decision needed"
     },
     "2287": {
