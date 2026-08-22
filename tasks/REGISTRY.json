@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2459,
+  "highest_id": 2460,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11273,6 +11273,13 @@
       "path": "tasks/archived/246",
       "status": "archived",
       "title": "Train [ZLT] marker LoRA on qwen_default itself: does #232's cosine\u2192source-rate regression generalize to the assistant point?"
+    },
+    "2460": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2460",
+      "status": "proposed",
+      "title": "savefig_paper caption-visibility restore is not exception-safe under EPS_PLOT_NO_CAPTION=1"
     },
     "247": {
       "has_clean_result": false,
