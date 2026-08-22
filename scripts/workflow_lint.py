@@ -17084,15 +17084,16 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # 107,590 B) / 109_600 (#2241 r1, 106,866 B) / 105_200 (#2422,
     # 102,420 B) / 103_300 (#2201, 100,517 B) / 100_300 (#2158, 97,590 B).
     "issue/steps/09-step-5.md": 119_900,
-    # measured 148,457 B @ #2263 r7 2026-08-22 (parent-reuse refusal prose
-    # gains the repo-materializing-lane qualifier — the #2161 guard refuses
-    # only when a lane that materializes the repo is reachable, +219 B);
-    # corridor-max ((measured+2_800)//100)*100.
-    # Prior: 151_000 (#2263 r6, 148,238 B) / 150_500 (#2263 r4, 147,791 B) /
-    # 149_500 (#2263 r3, 146,704 B) / 148_300 (#2263 r2, 145,553 B) /
-    # 147_400 (#2263 r1, 144,671 B) / 145_400 (#2350, 142,643 B) /
-    # 144_200 (#2155 split, 141,432 B).
-    "issue/steps/10-step-6.md": 151_200,
+    # measured 149,017 B @ #2263 r8 2026-08-22 (parent-reuse refusal prose
+    # states the FULL #2161 guard predicate — the defaulting conjunct
+    # included: with a live issue worktree on a non-main branch a bare
+    # dispatch LAUNCHES on the defaulted branch, it does not refuse;
+    # +560 B); corridor-max ((measured+2_800)//100)*100.
+    # Prior: 151_200 (#2263 r7, 148,457 B) / 151_000 (#2263 r6, 148,238 B) /
+    # 150_500 (#2263 r4, 147,791 B) / 149_500 (#2263 r3, 146,704 B) /
+    # 148_300 (#2263 r2, 145,553 B) / 147_400 (#2263 r1, 144,671 B) /
+    # 145_400 (#2350, 142,643 B) / 144_200 (#2155 split, 141,432 B).
+    "issue/steps/10-step-6.md": 151_800,
     "issue/steps/13-step-9.md": 245_300,  # measured 242,521 B
     # measured 294,209 B @ #2260 2026-08-21 (FAMILY_agents mirrored into the
     # auto-merge inline copy: 32 FAMILY_OF entries + 31 SPECS_10D tokens +

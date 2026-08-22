@@ -2243,26 +2243,37 @@ def _realized_launch_argv(launch_cmd: str, tmp_path: Path, *, rsync_lane: bool) 
 
 
 def test_realized_launch_argv_docstring_discloses_both_substitutions() -> None:
-    """#2263 r7 (codex r5 recorder-verbatim-placeholder-omission): the
+    """#2263 r7 (codex r5 recorder-verbatim-placeholder-omission), claim
+    trued up r8 (reconciler r6 recorder-disclosure-pin-syntax-escape): the
     recorder helper applies exactly TWO mechanical substitutions (program
     prefix -> recorder stand-in; ``<N>`` -> ``77``), and its "every OTHER
     byte runs verbatim" claim is honest only while the docstring names
     BOTH. Source-pin the disclosure: (a) the docstring must name the
     recorder stand-in AND the ``<N>`` -> 77 instantiation; (b) the body
-    must carry exactly the two disclosed substitution sites — a third
-    substitution (or a reworded docstring) must update both together, or
-    the verbatim claim silently overstates again (this task's defining
-    defect shape: a claim exceeding what is enforced)."""
+    must carry exactly the two disclosed substitution sites AMONG THE
+    SYNTAXES THIS PIN DETECTS — attribute calls spelled ``.replace(``,
+    ``.translate(``, or ``.sub(``/``.subn(`` (``re.sub``/``re.subn`` and
+    compiled-pattern calls alike) — so a third substitution written in one
+    of those forms must update the docstring, this pin, and the disclosure
+    together. A substitution written in any OTHER form (slicing,
+    ``str.format``, an f-string rebuild, a ``bytes`` round-trip, a
+    getattr-resolved method) is NOT detected here; that residual is
+    review-owned, not pin-owned. The r7 wording claimed the un-scoped
+    durable "a third substitution must update both together" — a claim
+    exceeding what was enforced (codex r6: a ``str.translate`` mutation
+    stayed GREEN under the r7 regex; this task's defining defect shape)."""
     doc = _realized_launch_argv.__doc__ or ""
     assert "recorder" in doc, "substitution 1 (program prefix -> recorder) undisclosed"
     assert "<N>" in doc and "77" in doc, "substitution 2 (<N> -> 77) undisclosed"
     src = inspect.getsource(_realized_launch_argv)
-    n_substitution_sites = len(re.findall(r"\.replace\(|re\.subn?\(", src))
+    n_substitution_sites = len(re.findall(r"\.replace\(|\.translate\(|\.subn?\(", src))
     assert n_substitution_sites == 2, (
-        f"{n_substitution_sites} substitution site(s) in _realized_launch_argv, but its "
+        f"{n_substitution_sites} substitution site(s) of the pin-detected syntaxes "
+        "(.replace( / .translate( / .sub( / .subn() in _realized_launch_argv, but its "
         "docstring discloses exactly TWO (recorder prefix + <N> -> 77); a launch-command "
         "byte may only be rewritten if the docstring's verbatim claim discloses it — "
-        "update the docstring, this pin, and the disclosure together"
+        "update the docstring, this pin, and the disclosure together (substitution "
+        "forms outside these syntaxes are not counted here; review owns that residual)"
     )
 
 
@@ -2365,6 +2376,96 @@ def test_step6_launch_fence_recheck_mechanical_halt_and_lane_parity(tmp_path: Pa
     )
 
 
+#: Opening code fence: >=3 backticks or tildes after optional leading
+#: whitespace, plus any info string (group 2). Indentation is deliberately
+#: UNBOUNDED (`[ \t]*`, not CommonMark's 0-3): the two #2470 anchor sites
+#: are list content indented 2 and 5 spaces, and a `{0,3}` bound would
+#: recognize the first and miss the second (#2263 r8, reconciler r6).
+_FENCE_OPEN = re.compile(r"^[ \t]*(`{3,}|~{3,})(.*)$")
+
+
+def _fenced_blocks(text: str) -> list[str]:
+    """Fenced code-block bodies of a markdown doc, at ANY indentation.
+
+    CommonMark-shaped: an opening fence is a `_FENCE_OPEN` match (a
+    backtick fence whose info string contains a backtick is NOT a fence —
+    CommonMark 4.5); the closing fence is a run of the SAME marker char at
+    least as long as the opening, alone on its line at any indentation; an
+    UNCLOSED fence runs to end-of-text. Returns block bodies only (fence
+    lines excluded).
+    """
+    blocks: list[str] = []
+    lines = text.split("\n")
+    i = 0
+    while i < len(lines):
+        m = _FENCE_OPEN.match(lines[i])
+        if m is None or (m.group(1)[0] == "`" and "`" in m.group(2)):
+            i += 1
+            continue
+        marker = m.group(1)
+        close = re.compile(rf"^[ \t]*{re.escape(marker[0])}{{{len(marker)},}}[ \t]*$")
+        body: list[str] = []
+        i += 1
+        while i < len(lines) and not close.match(lines[i]):
+            body.append(lines[i])
+            i += 1
+        blocks.append("\n".join(body))
+        i += 1  # past the closing fence (no-op at EOF: unclosed runs to EOF)
+    return blocks
+
+
+def _executable_view(block: str) -> str:
+    """A fenced block as bash would execute it, for invocation counting.
+
+    Strips `#`-comment text per line (a `#` at line start or preceded by
+    whitespace — bash's start-of-word comment rule; a `#` inside a quoted
+    string is stripped too, a known under-count residual), THEN joins
+    backslash-newline continuations so one wrapped invocation reads as one
+    line. Order is load-bearing: a backslash at the end of a COMMENT does
+    not continue it in bash, so stripping first keeps a `# note: \\` line
+    from swallowing the next line's real invocation.
+    """
+    no_comments = re.sub(r"(?m)(?:^|(?<=\s))#.*$", "", block)
+    return re.sub(r"\\\n[ \t]*", " ", no_comments)
+
+
+def test_fenced_launch_invocation_detector_semantics() -> None:
+    """#2263 r8: pin `_fenced_blocks` + `_executable_view` to exactly the
+    claims the uniqueness pin's docstring makes. Each sub-case is one
+    documented escape/over-fire shape from the r6 reconciler probes and the
+    codex r6 pin-defeat battery — a detector regression that reopens one
+    fails HERE on synthetic text, without needing a live spec mutation.
+    """
+    launch = re.compile(r"dispatch_issue(?:\.py)?\s+launch\b")
+
+    def count(md: str) -> int:
+        return sum(len(launch.findall(_executable_view(b))) for b in _fenced_blocks(md))
+
+    assert count("```bash\nuv run python scripts/dispatch_issue.py launch --issue 7\n```\n") == 1
+    # (1) indented fences at the two real #2470 anchor indents (2 and 5 spaces)
+    assert count("  ```bash\n  scripts/dispatch_issue.py launch --issue 7\n  ```\n") == 1
+    assert count("     ```bash\n     scripts/dispatch_issue.py launch --issue 7\n     ```\n") == 1
+    # (2) a commented launch-shaped line counts ZERO (the r6 over-fire probe)
+    assert count("```bash\n# uv run python scripts/dispatch_issue.py launch --issue 7\n```\n") == 0
+    assert count("```bash\necho hi  # scripts/dispatch_issue.py launch\n```\n") == 0
+    # (3) tilde fence, (4) four-backtick fence, (5) extended info string
+    assert count("~~~bash\nscripts/dispatch_issue.py launch --issue 7\n~~~\n") == 1
+    assert count("````bash\nscripts/dispatch_issue.py launch --issue 7\n````\n") == 1
+    assert count('```bash title="x" {1-2}\nscripts/dispatch_issue.py launch --issue 7\n```\n') == 1
+    # (6) a backslash-wrapped invocation counts ONCE; a comment ending in a
+    # backslash does NOT swallow the next line's real invocation
+    assert count("```bash\nuv run scripts/dispatch_issue.py \\\n  launch --issue 7\n```\n") == 1
+    assert count("```bash\n# note: \\\nscripts/dispatch_issue.py launch --issue 7\n```\n") == 1
+    # (7) module spelling, in a non-bash fence language
+    assert count("```console\npython -m scripts.dispatch_issue launch --issue 7\n```\n") == 1
+    # (8) an unclosed fence runs to end-of-text
+    assert count("```bash\nscripts/dispatch_issue.py launch --issue 7\n") == 1
+    # (9) prose mentions outside any fence stay uncounted
+    assert count("run `dispatch_issue.py launch --issue 7` by hand\n") == 0
+    # (10) a longer fence is closed only by >= its own marker run length
+    assert count("````md\n```bash\nscripts/dispatch_issue.py launch --issue 7\n```\n````\n") == 1
+
+
 def test_step6_parent_reuse_fallback_points_at_canonical_launch_fence() -> None:
     """#2263 r6 (codex r4 CONCERN parent-reuse-fallback-parity): ONE
     operator-copyable launch site; the parent-reuse fallback POINTS at it.
@@ -2372,49 +2473,67 @@ def test_step6_parent_reuse_fallback_points_at_canonical_launch_fence() -> None:
     The parent-reuse block's fresh-launch arm used to duplicate a bare
     `dispatch_issue.py launch` carrying NONE of the fence's three mandatory
     elements (shared `--print-repo-branch` resolver, mechanical `if !`
-    recheck halt, extra-sync threading): copied verbatim it REFUSES (no
-    `--repo-branch` while `issue-<N>` branch refs exist AND a
-    repo-materializing lane is reachable — backend auto/absent, gcp, a
-    SLURM lane, or runpod with `--execute-workload`; the #2161 drift
-    guard, `dispatch_issue.py::_repo_branch_default_main_conflict` — a
-    provision-only runpod launch does NOT refuse) or UNDER-STAGES (an
-    rsync lane's `--extra-sync-path` values never reach the dispatch).
-    Duplicating the full fence there instead would open a third drift
-    channel of the same class, so the fix is a pointer, pinned in two
-    halves:
+    recheck halt, extra-sync threading). Copied verbatim, that bare
+    dispatch is NOT reliably refused (#2263 r8, reconciler r6): when the
+    current-branch/worktree defaulting resolves a branch — a live issue
+    worktree checked out on a non-main branch is the normal /issue
+    topology (`dispatch_issue.py::_launch_extra_from_args`, worktree
+    fallback) — it LAUNCHES on the defaulted branch with no recheck and no
+    extra-sync threading (under-staging any rsync lane). The #2161 drift
+    guard (`dispatch_issue.py::_repo_branch_default_main_conflict`)
+    refuses (exit 2) only when ALL THREE hold, in the guard's own order:
+    (a) no `--repo-branch` AND that defaulting resolved nothing (invoking
+    checkout on main/unresolvable AND no issue worktree on a non-main
+    branch); (b) a repo-materializing lane is reachable (backend
+    auto/absent, gcp, a SLURM lane, or runpod with `--execute-workload`;
+    a provision-only runpod launch never refuses); (c) `issue-<N>` branch
+    refs exist (the ref probe fails OPEN on git errors). Duplicating the
+    full fence there instead would open a third drift channel of the same
+    class, so the fix is a pointer, pinned in two halves:
 
-    (a) exactly ONE `dispatch_issue[.py] launch` INVOCATION across ALL
-        fenced code blocks in the COMPOSED /issue spec — counted per
-        OCCURRENCE, not per block, over every fence language (```bash,
-        ```sh, ```console, bare ``` ...) and BOTH supported spellings
-        (`scripts/dispatch_issue.py launch` and
-        `python -m scripts.dispatch_issue launch`) — and the one block
+    (a) exactly ONE `dispatch_issue[.py] launch` INVOCATION across the
+        fenced code blocks of the COMPOSED /issue spec, and the one block
         carrying it IS the canonical Step 6b fence (resolver + guarded
         recheck + extra-sync expansion all present); a future copy-paste
-        launch block must either be the fence or amend this pin. #2263
-        r7: the r6 block-count pin was escapable three ways, all green
-        under it — a SECOND exact invocation inside the canonical block,
-        a fenced module-spelling invocation, and a non-```bash fenced
-        launch block. Prose mentions OUTSIDE fences stay deliberately
-        unpinned (not operator-copyable);
+        launch block must either be the fence or amend this pin. What the
+        detector enforces — no more (#2263 r8; the r6 block-count pin and
+        the r7 column-zero occurrence pin were each escapable while
+        green): fences per `_fenced_blocks` (>=3 backticks or tildes at
+        ANY indentation, any info string, same-marker close of >= the
+        opening length; unclosed runs to EOF); count = occurrences of
+        `dispatch_issue(?:\\.py)?\\s+launch\\b` — covering the
+        `scripts/dispatch_issue.py launch` and
+        `python -m scripts.dispatch_issue launch` spellings — on each
+        block's `_executable_view` (comment text stripped, THEN
+        backslash-newline continuations joined: a commented launch-shaped
+        line counts ZERO, a wrapped invocation counts ONCE). Prose
+        mentions OUTSIDE fences stay deliberately uncounted (not
+        operator-copyable; 13 exist today). Detector semantics are pinned
+        by `test_fenced_launch_invocation_detector_semantics`; known
+        residuals it does NOT model: a `#` inside a quoted string is
+        stripped as comment text (under-count), and heredoc bodies inside
+        a fence are scanned (over-count -> RED, fail-closed);
     (b) the parent-reuse decision block (the `pod.py resume` probe) still
         exists, invokes no `dispatch_issue.py` at all, and NAMES the
         canonical fence as the fresh-launch route.
     """
     text = issue_skill_text()
-    blocks = re.findall(r"(?ms)^```\w*\n(.*?)^```$", text)
+    blocks = _fenced_blocks(text)
     launch_invocation = re.compile(r"dispatch_issue(?:\.py)?\s+launch\b")
-    launch_blocks = [b for b in blocks if launch_invocation.search(b)]
-    n_invocations = sum(len(launch_invocation.findall(b)) for b in blocks)
+    views = [_executable_view(b) for b in blocks]
+    launch_blocks = [b for b, v in zip(blocks, views, strict=True) if launch_invocation.search(v)]
+    n_invocations = sum(len(launch_invocation.findall(v)) for v in views)
     assert n_invocations == 1 and len(launch_blocks) == 1, (
         f"{n_invocations} fenced `dispatch_issue[.py] launch` invocation(s) across "
         f"{len(launch_blocks)} fenced block(s); the composed /issue spec allows exactly "
         "ONE operator-copyable launch invocation — the canonical Step 6b fence's. A "
-        "second copy either omits the fence's mandatory elements (refuses on a missing "
-        "--repo-branch when issue-<N> branch refs exist and a repo-materializing lane "
-        "is reachable, or under-stages an rsync lane — the #2263 parent-reuse defect) "
-        "or duplicates the fence (a drift channel of the same class); point at the "
-        "canonical fence instead."
+        "second copy either omits the fence's mandatory elements (with a live issue "
+        "worktree on a non-main branch it LAUNCHES on the defaulted branch without the "
+        "recheck and under-stages an rsync lane; it REFUSES exit 2 only when no "
+        "--repo-branch is passed AND the current-branch/worktree defaulting resolves "
+        "nothing AND a repo-materializing lane is reachable AND issue-<N> branch refs "
+        "exist — the #2263 parent-reuse defect) or duplicates the fence (a drift "
+        "channel of the same class); point at the canonical fence instead."
     )
     fence = launch_blocks[0]
     assert "scripts/verify_carryover_inputs.py --print-repo-branch" in fence  # shared resolver

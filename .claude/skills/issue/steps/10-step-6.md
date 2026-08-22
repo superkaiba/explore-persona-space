@@ -882,11 +882,19 @@ else
   # shared --print-repo-branch resolver, mechanical launch-fence gate
   # RECHECK, and EXTRA_SYNC_ARGS threading are mandatory and deliberately
   # NOT duplicated in this block (#2263 r6: one launch site, nothing to
-  # drift; a bare dispatch omitting them REFUSES on a missing --repo-branch
-  # while issue-<N> branch refs exist AND a repo-materializing lane is
-  # reachable (backend auto/absent, gcp, a SLURM lane, or runpod with
-  # --execute-workload; a provision-only runpod launch materializes no
-  # branch and does NOT refuse — #2263 r7), or under-stages an rsync lane).
+  # drift). A bare dispatch omitting them is NOT reliably refused (#2263
+  # r8): with a live issue worktree checked out on a non-main branch (the
+  # normal /issue topology) the current-branch/worktree defaulting RESOLVES
+  # a branch and the bare dispatch LAUNCHES on it — skipping the recheck
+  # and under-staging any rsync lane. The #2161 guard refuses (exit 2)
+  # only when ALL THREE hold, in the order the guard checks them: (a) no
+  # --repo-branch was passed AND that defaulting resolved nothing (invoking
+  # checkout on main/unresolvable AND no issue worktree on a non-main
+  # branch); (b) a repo-materializing lane is reachable (backend
+  # auto/absent, gcp, a SLURM lane, or runpod with --execute-workload — a
+  # provision-only runpod launch materializes no branch and never refuses);
+  # (c) issue-<N> branch refs exist (the ref probe fails OPEN on git
+  # errors — a git hiccup never blocks a launch).
   echo "parent pod not alive — run the canonical Step 6b launch fence above (this block does not dispatch)" >&2
 fi
 ```
