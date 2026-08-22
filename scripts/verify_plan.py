@@ -13799,10 +13799,15 @@ def check_regen_headroom(plan: str, kind: str) -> CheckResult:
 # the #2162 v8-v10 CORRECTED revisions quote the superseded v7 config
 # verbatim per house convention (round-1 MF2). Every numeric capture is
 # bounded `\d{1,9}` (CPython refuses int-str conversion beyond ~4300
-# digits, so an unbounded capture is a ValueError path — round-2 critic)
-# and guarded by a `(?<![\d.,=])` lookbehind (comma-grouping truncation:
-# "9,000 arms" → 000, #2054 v9; config-assignment reads: "N=3 draws",
-# #2254 v5 — round-1 MF1 + this plan's own replay). Calibration (#2299
+# digits, so an unbounded capture is a ValueError path — round-2 critic).
+# The lookbehind guard is PER-PATTERN, not universal (round-2 doc fix):
+# the DIRECT/COMPONENT/TOTAL/ARMN patterns carry `(?<![\d.,=])`
+# (comma-grouping truncation: "9,000 arms" → 000, #2054 v9;
+# config-assignment reads: "N=3 draws", #2254 v5 — round-1 MF1 + this
+# plan's own replay); the component value extractor _C70_COMPONENT_NUM_RE
+# uses `(?<![\w.,])` (word-char guard — a rubric name like "gpt4-rubric"
+# must not contribute digits); _C70_THRESH_RE carries NO lookbehind — its
+# `parse-fail ... %` context anchor bounds the capture. Calibration (#2299
 # §12 A13, re-measured at landing per criterion 5): over 4,519 persisted
 # plans — WARN 1 (#2162 v7 only), PASS 2 (#2329 v4, #2389 v1), 0 raises.
 
@@ -13891,10 +13896,15 @@ def check_pilot_resolution(plan: str, kind: str) -> CheckResult:
     the conservative parse; ``allow_subresolution_pilot`` in a window
     marks its tuple DECLARED (per-tuple PASS; the scan CONTINUES, so a
     plan with one declared sub-resolution gate plus a second genuinely
-    defective gate still WARNs on the second). NEVER FAILs, NEVER raises
+    defective gate still WARNs on the second TUPLE — the identical-tuple
+    and adjacent-window leak shapes are FN-j). NEVER FAILs, NEVER raises
     (the no-flags run feeds the Step 9c gate; ``verify_plan_text`` has no
     per-check exception containment): every numeric capture is bounded
-    ``\\d{1,9}`` and lookbehind-guarded ``(?<![\\d.,=])``, the only
+    ``\\d{1,9}``; the lookbehind guard is per-pattern — DIRECT/COMPONENT/
+    TOTAL/ARMN carry ``(?<![\\d.,=])``, the component value extractor
+    ``_C70_COMPONENT_NUM_RE`` uses ``(?<![\\w.,])``, and
+    ``_C70_THRESH_RE`` carries NO lookbehind (its ``parse-fail ... %``
+    context anchor bounds the capture; see FP-c) — the only
     division is preceded by the zero-count SKIP, and the percentage
     parses exactly via ``Fraction``. Escapes (standalone, unwrapped):
     ``N/A — no judge-pilot gate`` and ``N/A — harvested pilot sizing is
@@ -13919,14 +13929,42 @@ def check_pilot_resolution(plan: str, kind: str) -> CheckResult:
     rarer ENABLE-flip direction — ambiguity-collapse, declaration-drop —
     measured 0 enable-flips on the corpus); FN-i numeric literals >=10
     digits never capture (the ``\\d{1,9}`` bound — no plausible gate spec
-    carries one). KNOWN FALSE POSITIVES: FP-a a per-item draw count with
+    carries one); FN-j the cross-gate declaration leak (#2299 r1 codex
+    Major 1; concern ``c70-cross-gate-declaration-leak``): ``declared``
+    is harvested window-globally and OR-accumulated per
+    ``(per_arm, required)`` tuple (plan v3 §4.7/§4.9 by design), so ONE
+    declared gate silences a SEPARATE undeclared defective gate in two
+    shapes — (i) identical tuples: two DISJOINT "30 draws/arm;
+    parse-fail < 2% per arm" gates with only the first declared -> PASS
+    (the dedup key cannot tell the gates apart); (ii) adjacency: an
+    undeclared "20 draws/arm" gate inside a declared gate's ±8-line
+    window is shadowed by the first-match harvest
+    (``_C70_DIRECT_RE.search`` / ``_C70_THRESH_RE.search`` take the
+    first gate's numbers) -> PASS with the 20/arm gate never evaluated.
+    The T21-registered shape — a DISTANT second gate in its OWN window
+    resolving a DIFFERENT tuple — still WARNs; failure direction is
+    silence, 0 occurrences on the calibration corpus.
+    KNOWN FALSE POSITIVES: FP-a a per-item draw count with
     NO coexisting budget total in the window ("5 draws per item ... 4
     arms ... parse-fail < 2% per arm" WARNs at 1/arm; sibling shapes
     ALREADY handled: a per-item count beside a real budget -> S7 SKIP,
     the unprefixed "3 draws localize" variant -> S11, the ``N=``-prefixed
     form -> the ``=`` lookbehind, #2254 v5); FP-b a false pairing the
     guards miss (harvested numbers from a neighboring gate that genuinely
-    differ) — remedied by the generic escape; measured corpus FP rate 0.
+    differ) — remedied by the generic escape; FP-c an OBSERVED parse-fail
+    rate read as a configured gate threshold (#2299 r1 codex Major 2;
+    concern ``c70-observed-rate-false-warn``): ``_C70_THRESH_RE``
+    requires no comparator (``<`` / ``<=``) and no threshold vocabulary
+    ("threshold", "bound"), so result/report prose like "Judge pilot
+    result: 30 draws/arm; observed parse-fail was 2% per arm." WARNs at
+    30/arm although the 2% is a measurement, not a registered bound —
+    remedy: the second standalone escape ("harvested pilot sizing is
+    historical or belongs to a different gate") covers exactly this
+    shape; a comparator-vocabulary regex is a viable FUTURE revision
+    (the founding #2162 v7 gate line does carry ``<``) but is PLAN-OWNED
+    — §4.4 registers the regex as a constant, so changing it requires a
+    plan amendment + criterion-5 corpus re-calibration. Measured corpus
+    FP rate 0 across all enumerated FP channels.
     """
     cid = "c70_pilot_resolution"
     name = "judge-pilot per-arm draw resolution vs parse-fail threshold"

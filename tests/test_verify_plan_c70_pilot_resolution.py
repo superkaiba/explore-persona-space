@@ -190,6 +190,44 @@ recorded).
 - **Value-rubric pilot gate:** 20 draws/arm; PASS ⇔ parse-fail < 2% per arm.
 """
 
+# Characterization fixtures (round 2, concerns c70-cross-gate-declaration-leak
+# + c70-observed-rate-false-warn): these reproduce the two channels the
+# round-1 reconciler persisted as concerns. The tests over them pin the
+# CURRENT plan-registered behavior (docstring FN-j / FP-c), NOT a desirable
+# verdict — a future behavior change must surface as a test change.
+
+DECLARED_IDENTICAL_TUPLE = f"""\
+# Plan — task #9989: two disjoint identical-tuple gates (c70 FN-j shape i)
+
+## 6. Evaluation
+
+- **Coherence-rubric pilot gate:** 30 draws/arm; PASS ⇔ parse-fail < 2% per \
+arm (allow_subresolution_pilot=True — deliberate sub-resolution smoke, \
+recorded).
+
+{_FILLER}
+
+- **Value-rubric pilot gate:** 30 draws/arm; PASS ⇔ parse-fail < 2% per arm.
+"""
+
+DECLARED_ADJACENT_GATES = """\
+# Plan — task #9988: adjacent declared + undeclared gates (c70 FN-j shape ii)
+
+## 6. Evaluation
+
+- **Coherence-rubric pilot gate:** 30 draws/arm; PASS ⇔ parse-fail < 2% per \
+arm (allow_subresolution_pilot=True — deliberate sub-resolution smoke, \
+recorded).
+- **Value-rubric pilot gate:** 20 draws/arm; PASS ⇔ parse-fail < 2% per arm.
+"""
+
+OBSERVED_RATE = """\
+## 6. Evaluation
+
+- **Judge pilot result:** 30 draws/arm at the production instrument; observed \
+parse-fail was 2% per arm.
+"""
+
 VERB_ARMS = """\
 ## 6. Evaluation
 
@@ -243,6 +281,9 @@ FIXTURES = [
     CORRECTED_2162,
     COMMA_FAMILY,
     DECLARED_PLUS_DEFECTIVE,
+    DECLARED_IDENTICAL_TUPLE,
+    DECLARED_ADJACENT_GATES,
+    OBSERVED_RATE,
     VERB_ARMS,
     HUGE_TOTAL,
     HUGE_PCT,
@@ -379,8 +420,13 @@ def test_never_fails_or_raises():
         for kind in ("experiment", "analysis", "infra", "batch"):
             r = verify_plan.check_pilot_resolution(fixture, kind)
             assert r.passed is True, (kind, r.status, r.detail)
-    # Structural half of criterion 2(a): no _fail( call in the function body.
-    src = inspect.getsource(verify_plan.check_pilot_resolution)
+    # Structural half of criterion 2(a): no _fail( call anywhere in the c70
+    # production span — the check function AND the extracted budget helper
+    # (round 2: `_c70_resolve_budget` sat outside the guarded span, so a
+    # future `_fail(` added to the helper would have left this pin green).
+    src = inspect.getsource(verify_plan.check_pilot_resolution) + inspect.getsource(
+        verify_plan._c70_resolve_budget
+    )
     assert "_fail(" not in src
 
 
@@ -497,6 +543,46 @@ def test_declared_plus_defective_gate_still_warns():
     assert r.status == "WARN"
     assert "per_arm=20" in r.detail
     assert "per_arm=30" not in r.detail
+
+
+def test_known_fn_identical_tuple_declaration_leak_passes_today():
+    # CHARACTERIZATION, NOT desirable behavior (round 2; concern
+    # c70-cross-gate-declaration-leak; docstring FN-j shape i): the
+    # (per_arm, required) dedup ORs `declared` across windows, so a second
+    # DISJOINT UNDECLARED gate resolving the IDENTICAL tuple is silenced by
+    # the first gate's declaration -> PASS today. This pins the CURRENT
+    # plan-registered behavior (plan v3 §4.7/§4.9 per-tuple semantics) so a
+    # future change is visible as a test change, not silent drift.
+    r = _run(DECLARED_IDENTICAL_TUPLE)
+    assert r.status == "PASS"
+    assert "declared allow_subresolution_pilot" in r.detail
+
+
+def test_known_fn_adjacent_gate_declaration_leak_passes_today():
+    # CHARACTERIZATION, NOT desirable behavior (round 2; concern
+    # c70-cross-gate-declaration-leak; docstring FN-j shape ii): with the
+    # undeclared 20/arm gate INSIDE the declared gate's ±8-line window, the
+    # first-match harvest (_C70_DIRECT_RE.search / _C70_THRESH_RE.search)
+    # reads only the declared 30/arm gate -> PASS today; the 20/arm gate is
+    # never evaluated. Contrast T21 above: DISTANT + DIFFERENT tuple WARNs.
+    r = _run(DECLARED_ADJACENT_GATES)
+    assert r.status == "PASS"
+    assert "declared allow_subresolution_pilot" in r.detail
+    assert "per_arm=20" not in r.detail
+
+
+def test_known_fp_observed_rate_reads_as_threshold_warns_today():
+    # CHARACTERIZATION, NOT desirable behavior (round 2; concern
+    # c70-observed-rate-false-warn; docstring FP-c): _C70_THRESH_RE requires
+    # no comparator / threshold vocabulary, so an OBSERVED parse-fail rate
+    # in result prose reads as a configured gate threshold -> WARN at 30/arm
+    # today (a known false positive; plan v3 §4.4 registers the regex, so
+    # the comparator-vocabulary fix is plan-owned). Remedy in the wild: the
+    # second standalone escape (historical / cross-gate pilot sizing).
+    r = _run(OBSERVED_RATE)
+    assert r.status == "WARN"
+    assert "per_arm=30" in r.detail
+    assert "required=51" in r.detail
 
 
 def test_verb_arms_not_counted():
