@@ -130,5 +130,41 @@ claim in the shipped deliverable) and this round reviews the remedy:
    frozen-tasks staleness warning scoped to everything EXCEPT the verified
    plan file.
 
+**Claim-text-only remedy-round compose (#2263 review-r8 = impl r9
+`epm:results v11`, 2026-08-22):** when the remedy round changes ZERO
+mechanism (docstring/comment text + correspondence asserts only; detector
+byte-identical) and the residual defect class is "a nearly-true sentence
+about a regex":
+1. The review is EXECUTION-FIRST ON THE CLAIMS: the composer PROBES every
+   shipped bash-behavior sentence with real bash (`;#` prints hi rc=0;
+   standalone `&&#` = syntax error at EOF rc=2 executing NOTHING; a
+   following line completes the `&&` list — the scoping caveat) and
+   replicates the detector counts on the same inputs, then hands the
+   results as EXPECTATIONS-TO-RE-DERIVE by execution, never facts. A
+   contradicted probe on shipped text = exception (ii); attest which
+   surface (deliverable vs marker) each probe reads on.
+2. Inline BOTH symmetric calibrations from the binding verdict: the
+   confirmed-NIT non-promotion (exception (ii) is for claims that outrun
+   mechanisms, not disclosed-limit mechanisms) AND the nearly-true-sentence
+   caution (the only defect class left at a late claim-text round).
+3. Post-brief TIP DRIFT (a sync commit landing after the marker posted,
+   here adding 2 origin/main-synced `A` scripts): pre-adjudicate
+   superseded-not-dishonest — the marker's "final tree" claim is evaluated
+   at ITS tree; attest the `A` files belong to the sync so #1805 does not
+   false-fire; attest live-file == deliverable-blob (`git diff
+   <sha>..HEAD -- <file>` empty) so live reads are safe porcelain-clean.
+4. A marker error the reconciler ordered corrected WITHOUT PENALTY is NOT
+   a live defect — the round adjudicates only the CORRECTED text; say so
+   in the ledger section (the v10 M9 attribution shape).
+5. Echo-only bash probes need an explicit carve-out sentence against the
+   never-execute-dispatch rule (the launch text sits in comment/string
+   position; bash executes only echo) — REQUIRED probes, one sanctioned
+   execution class beyond pytest/ruff/git.
+6. Worktree-mutation-free replication of a composed-doc mutation probe:
+   copy the spec tree to /tmp, mutate the COPY, patch the compose helper's
+   module-level path constants after import — never byte-restore-on-disk
+   (that was the implementer's recipe, not the reviewer's); STATIC fallback
+   sanctioned when two independent prior reproductions agree exactly.
+
 Related: [[revision-round compose recipe]] (fold-round entry, #2147 cr4),
 [[concerns-machine-rows-2326]].
