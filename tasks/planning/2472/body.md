@@ -2,7 +2,8 @@
 title: 'Add codex-*-lean twins: autocompact-thrash ladder has no lean-twin rung for
   the Codex composer roles'
 kind: infra
-tags: []
+tags:
+- wf-fix
 created_at: '2026-08-22T14:35:21Z'
 has_clean_result: false
 workflow: v1
