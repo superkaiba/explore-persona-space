@@ -33,15 +33,21 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
-import numpy as np
-
 from explore_persona_space.orchestrate.env import load_dotenv
-from explore_persona_space.orchestrate.provenance import as_metadata_dict, git_provenance
+
+load_dotenv()  # shared-VM thread caps (#847) + API keys BEFORE any heavy import
 
 # vLLM v1 EngineCore dies silently under fork() when the parent touched
 # transformers before LLM() (gotchas.md, #628) — the gen phase loads the
 # instruct tokenizer before the engine, so pin spawn at module top.
 os.environ.setdefault("VLLM_WORKER_MULTIPROC_METHOD", "spawn")
+
+import numpy as np  # noqa: E402
+
+from explore_persona_space.orchestrate.provenance import (  # noqa: E402
+    as_metadata_dict,
+    git_provenance,
+)
 
 REPO_DATA = "superkaiba1/explore-persona-space-data"
 EXPERIMENT = "issue2477_base_coherence"
@@ -1568,7 +1574,6 @@ def main() -> None:
 
         assert_args_attributes_defined(__file__)
         raise SystemExit(0)
-    load_dotenv()
     if not args.phase:
         raise SystemExit("--phase is required (or --import-check)")
     PHASES[args.phase](args)
