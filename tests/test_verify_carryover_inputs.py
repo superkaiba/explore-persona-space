@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import contextlib
 import importlib.util
+import inspect
 import json
 import os
 import re
@@ -2189,11 +2190,14 @@ def test_step6_launch_fence_gate_recheck_blocks_cross_fence_divergence(
 def _realized_launch_argv(launch_cmd: str, tmp_path: Path, *, rsync_lane: bool) -> list[str]:
     """Execute the extracted launch command in REAL bash; return its argv.
 
-    Only the leading ``uv run python scripts/dispatch_issue.py launch``
-    program prefix is replaced by an argv recorder — every continuation
-    line runs byte-verbatim, so the EXECUTING SHELL (not a regex over the
-    span) decides which words reach the dispatch argv. That is what makes
-    the pin comment-escape-proof (#2263 r5): a backslash-continued COMMENT
+    Exactly TWO mechanical substitutions are applied before execution —
+    (1) the leading ``uv run python scripts/dispatch_issue.py launch``
+    program prefix is replaced by an argv recorder, and (2) every ``<N>``
+    issue-number placeholder is instantiated to the literal ``77`` —
+    every OTHER byte runs verbatim, so the EXECUTING SHELL (not a regex
+    over the span) decides which words reach the dispatch argv. That is
+    what makes the pin comment-escape-proof (#2263 r5): a
+    backslash-continued COMMENT
     containing the expansion token keeps any substring assertion green
     while bash discards the token (and its trailing backslash) as comment
     text, silently ending the command one line early.
@@ -2236,6 +2240,30 @@ def _realized_launch_argv(launch_cmd: str, tmp_path: Path, *, rsync_lane: bool) 
     assert proc.returncode == 0, proc.stderr
     assert argv_out.exists(), "dispatch recorder never executed"
     return argv_out.read_text().split("\0")[:-1]
+
+
+def test_realized_launch_argv_docstring_discloses_both_substitutions() -> None:
+    """#2263 r7 (codex r5 recorder-verbatim-placeholder-omission): the
+    recorder helper applies exactly TWO mechanical substitutions (program
+    prefix -> recorder stand-in; ``<N>`` -> ``77``), and its "every OTHER
+    byte runs verbatim" claim is honest only while the docstring names
+    BOTH. Source-pin the disclosure: (a) the docstring must name the
+    recorder stand-in AND the ``<N>`` -> 77 instantiation; (b) the body
+    must carry exactly the two disclosed substitution sites — a third
+    substitution (or a reworded docstring) must update both together, or
+    the verbatim claim silently overstates again (this task's defining
+    defect shape: a claim exceeding what is enforced)."""
+    doc = _realized_launch_argv.__doc__ or ""
+    assert "recorder" in doc, "substitution 1 (program prefix -> recorder) undisclosed"
+    assert "<N>" in doc and "77" in doc, "substitution 2 (<N> -> 77) undisclosed"
+    src = inspect.getsource(_realized_launch_argv)
+    n_substitution_sites = len(re.findall(r"\.replace\(|re\.subn?\(", src))
+    assert n_substitution_sites == 2, (
+        f"{n_substitution_sites} substitution site(s) in _realized_launch_argv, but its "
+        "docstring discloses exactly TWO (recorder prefix + <N> -> 77); a launch-command "
+        "byte may only be rewritten if the docstring's verbatim claim discloses it — "
+        "update the docstring, this pin, and the disclosure together"
+    )
 
 
 def test_step6_launch_fence_recheck_mechanical_halt_and_lane_parity(tmp_path: Path) -> None:
@@ -2319,8 +2347,9 @@ def test_step6_launch_fence_recheck_mechanical_halt_and_lane_parity(tmp_path: Pa
     # WORD — a backslash-continued COMMENT containing the token keeps the
     # substring green while the executing shell drops the values AND ends the
     # command at the comment (this task's defining defect shape: a comment
-    # where a mechanism belonged). Prove the ARGV: run the command verbatim
-    # (only the program name replaced by a recorder) in real bash.
+    # where a mechanism belonged). Prove the ARGV: execute the command in
+    # real bash under _realized_launch_argv's two disclosed substitutions
+    # (program prefix -> recorder; <N> -> 77); every other byte verbatim.
     sync_words = ["--extra-sync-path", "/tmp/sync-a", "--extra-sync-path", "/tmp/with space/b"]
     argv = _realized_launch_argv(launch.group(0), tmp_path, rsync_lane=True)
     assert any(argv[i : i + len(sync_words)] == sync_words for i in range(len(argv))), (
@@ -2344,31 +2373,48 @@ def test_step6_parent_reuse_fallback_points_at_canonical_launch_fence() -> None:
     `dispatch_issue.py launch` carrying NONE of the fence's three mandatory
     elements (shared `--print-repo-branch` resolver, mechanical `if !`
     recheck halt, extra-sync threading): copied verbatim it REFUSES (no
-    `--repo-branch` while `issue-<N>` branch refs exist — the #2161 drift
-    guard) or UNDER-STAGES (an rsync lane's `--extra-sync-path` values never
-    reach the dispatch). Duplicating the full fence there instead would open
-    a third drift channel of the same class, so the fix is a pointer, pinned
-    in two halves:
+    `--repo-branch` while `issue-<N>` branch refs exist AND a
+    repo-materializing lane is reachable — backend auto/absent, gcp, a
+    SLURM lane, or runpod with `--execute-workload`; the #2161 drift
+    guard, `dispatch_issue.py::_repo_branch_default_main_conflict` — a
+    provision-only runpod launch does NOT refuse) or UNDER-STAGES (an
+    rsync lane's `--extra-sync-path` values never reach the dispatch).
+    Duplicating the full fence there instead would open a third drift
+    channel of the same class, so the fix is a pointer, pinned in two
+    halves:
 
-    (a) exactly ONE bash block in the COMPOSED /issue spec carries a
-        `dispatch_issue.py launch` invocation, and that block IS the
-        canonical Step 6b fence (resolver + guarded recheck + extra-sync
-        expansion all present) — a future copy-paste launch block must
-        either be the fence or amend this pin;
+    (a) exactly ONE `dispatch_issue[.py] launch` INVOCATION across ALL
+        fenced code blocks in the COMPOSED /issue spec — counted per
+        OCCURRENCE, not per block, over every fence language (```bash,
+        ```sh, ```console, bare ``` ...) and BOTH supported spellings
+        (`scripts/dispatch_issue.py launch` and
+        `python -m scripts.dispatch_issue launch`) — and the one block
+        carrying it IS the canonical Step 6b fence (resolver + guarded
+        recheck + extra-sync expansion all present); a future copy-paste
+        launch block must either be the fence or amend this pin. #2263
+        r7: the r6 block-count pin was escapable three ways, all green
+        under it — a SECOND exact invocation inside the canonical block,
+        a fenced module-spelling invocation, and a non-```bash fenced
+        launch block. Prose mentions OUTSIDE fences stay deliberately
+        unpinned (not operator-copyable);
     (b) the parent-reuse decision block (the `pod.py resume` probe) still
         exists, invokes no `dispatch_issue.py` at all, and NAMES the
         canonical fence as the fresh-launch route.
     """
     text = issue_skill_text()
-    blocks = re.findall(r"(?ms)^```bash\n(.*?)^```$", text)
-    launch_blocks = [b for b in blocks if "scripts/dispatch_issue.py launch" in b]
-    assert len(launch_blocks) == 1, (
-        f"{len(launch_blocks)} bash blocks carry `dispatch_issue.py launch`; the composed "
-        "/issue spec allows exactly ONE operator-copyable launch site — the canonical "
-        "Step 6b fence. A second copy either omits the fence's mandatory elements "
-        "(refuses on missing --repo-branch or under-stages an rsync lane — the #2263 "
-        "parent-reuse defect) or duplicates the fence (a drift channel of the same "
-        "class); point at the canonical fence instead."
+    blocks = re.findall(r"(?ms)^```\w*\n(.*?)^```$", text)
+    launch_invocation = re.compile(r"dispatch_issue(?:\.py)?\s+launch\b")
+    launch_blocks = [b for b in blocks if launch_invocation.search(b)]
+    n_invocations = sum(len(launch_invocation.findall(b)) for b in blocks)
+    assert n_invocations == 1 and len(launch_blocks) == 1, (
+        f"{n_invocations} fenced `dispatch_issue[.py] launch` invocation(s) across "
+        f"{len(launch_blocks)} fenced block(s); the composed /issue spec allows exactly "
+        "ONE operator-copyable launch invocation — the canonical Step 6b fence's. A "
+        "second copy either omits the fence's mandatory elements (refuses on a missing "
+        "--repo-branch when issue-<N> branch refs exist and a repo-materializing lane "
+        "is reachable, or under-stages an rsync lane — the #2263 parent-reuse defect) "
+        "or duplicates the fence (a drift channel of the same class); point at the "
+        "canonical fence instead."
     )
     fence = launch_blocks[0]
     assert "scripts/verify_carryover_inputs.py --print-repo-branch" in fence  # shared resolver

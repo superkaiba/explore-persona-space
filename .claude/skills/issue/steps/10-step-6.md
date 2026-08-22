@@ -883,7 +883,10 @@ else
   # RECHECK, and EXTRA_SYNC_ARGS threading are mandatory and deliberately
   # NOT duplicated in this block (#2263 r6: one launch site, nothing to
   # drift; a bare dispatch omitting them REFUSES on a missing --repo-branch
-  # while issue-<N> branch refs exist, or under-stages an rsync lane).
+  # while issue-<N> branch refs exist AND a repo-materializing lane is
+  # reachable (backend auto/absent, gcp, a SLURM lane, or runpod with
+  # --execute-workload; a provision-only runpod launch materializes no
+  # branch and does NOT refuse — #2263 r7), or under-stages an rsync lane).
   echo "parent pod not alive — run the canonical Step 6b launch fence above (this block does not dispatch)" >&2
 fi
 ```
