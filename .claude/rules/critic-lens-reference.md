@@ -407,17 +407,19 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     plan's §4 "N/A — no multi-arm band-simultaneity gate" satisfies this item).
 13. **Compute projection costed on the routed machine + GCP fence reconcile + store-heavy IO sizing (verify §9).** The
     plan's §9 compute table must cost each row's `planned_wall_h` / `basis` on the machine the
-    backend router will ACTUALLY provision — under the standing fellows-first `auto` default
-    (#2028: GCP provisioning disabled) that is the fellows H200 cluster, then the free SLURM
-    lanes, with RunPod's H100 intent table as the terminal rung (the GCP `INTENT_TO_MACHINE`
-    mapping in `src/explore_persona_space/backends/gcp.py` applies only under the rollback
+    backend router will ACTUALLY provision — under the standing runpod-first `auto` default
+    (#2054/#2059; #2028: GCP provisioning disabled) that is RunPod's H100 intent table, then
+    the fellows H200 cluster, then the free DRAC/Mila SLURM lanes, with a terminal RunPod
+    retry rung (the GCP `INTENT_TO_MACHINE` mapping in
+    `src/explore_persona_space/backends/gcp.py` applies only under the rollback
     flip) — with any basis measured on a different GPU scaled by a stated per-step rate; and
     reconcile the WORST-CASE wall (base phases PLUS every conditional / extension phase riding the
     same provision) against the GCP lane's auto-delete fence (`--instance-termination-action=DELETE`
     + `--max-run-duration`, default 7d — the FLEX_START ceiling, #741) — per planner.md §9 "Cost
     wall-time against the machine the router will ACTUALLY provision". REVISE when (i) a wall-time
-    basis is premised on a machine the router won't route (e.g. H100 numbers under the GCP-first
-    auto default) with no stated cross-GPU scaling, or (ii) worst-case wall on the routed machine
+    basis is premised on a machine the router won't route (e.g. fellows-H200 numbers under the
+    runpod-first auto default, or A100 numbers premised on the rollback-only GCP lane) with no
+    stated cross-GPU scaling, or (ii) worst-case wall on the routed machine
     approaches the routed lane's fence (the GCP `--max-run-duration` default is 7d — the FLEX_START
     ceiling, #741 — but a plan may deliberately set a SHORTER fence via
     `spec.extra["max_run_duration"]`, in which case reconcile against THAT value) and the plan
