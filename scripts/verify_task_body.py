@@ -275,7 +275,15 @@ checks (3/3b) run on the v2 sentinel; v3-only checks (v3 structure +
     `[#K](...)`/bare `#K`, `fresh direction (no parent)`/`fresh (no
     parent)`, or a same-issue-follow-up-round clause — scanned on
     fence-stripped + blockquote-stripped text (missing → hard FAIL);
-    v3/v2 keep label-presence-only. Spec:
+    v3/v2 keep label-presence-only. When `origin_prompt` is absent, the
+    row's quote is additionally verified against the original-body
+    `## Provenance` verbatim prompt (#2291, incident #2254):
+    mismatch/truncation is a hard v4 FAIL (v3/v2: WARN — grandfathered),
+    and a v4 row blockquoting >=20 chars with NO verifiable source WARNs
+    (`warn-unverifiable-quote`); measured retro-scan 2026-08-22: 0 FAIL
+    hits / 1 WARN hit (#1072). Frontmatter `origin_prompt`, when
+    present, stays authoritative (verdicts unchanged; its warn-mismatch
+    detail gains an alternate-source note). Spec:
     `.claude/skills/clean-results/SPEC.md` § `**Context:**` row.
 
 Soft INFO (not enforced as PASS/FAIL; surfaced for orchestrator
@@ -5863,6 +5871,13 @@ _CONTEXT_LABEL_RE = re.compile(r"\*\*\s*Context\s*:?\s*\*\*")
 # curly forms (escapes dodge the ambiguous-unicode lint).
 _INLINE_QUOTE_SPAN_RE = re.compile('["\u201c]([^"\u201c\u201d]{20,})["\u201d]', re.S)
 
+# `## Provenance` H2 in original-body.md -- `\b.*` tolerates the observed
+# `## Provenance (verbatim)` variant (#2220); shared by the missing-row
+# branch and the Provenance-leg extractor (#2291). Measured widening
+# effect (2026-08-22 corpus): exactly one file gained (#2220), zero
+# verdict changes anywhere.
+_PROVENANCE_H2_RE = re.compile(r"^##\s+Provenance\b.*$", re.MULTILINE)
+
 
 def _normalize_prompt_text(s: str) -> str:
     """Whitespace-collapse + unicode-punctuation fold for the check-17
@@ -5968,34 +5983,10 @@ def _origin_prompt_quote_verdict(repro: str, fm: dict) -> tuple[str, str]:
         _unescape_markdown(stripped)
     ):
         return "pass", ""
-    # Containment failed — classify. Candidates: blockquote segments
-    # (contiguous `>` runs, lazy-continuation lines joined) + inline
-    # quote-mark-delimited spans (>= 20 chars) in the stripped region.
-    candidates = _context_quote_candidates(region)
-    best_lcp, truncated = 0, None
-    for cand in candidates:
-        ncand = _normalize_prompt_text(_unescape_markdown(cand))
-        ncand_p = ncand.rstrip(".,;:!?\u2026 ")  # a truncating editor appends `.`/ellipsis (#742)
-        best_lcp = max(best_lcp, _common_prefix_len(ncand_p, nop))
-        # FAIL guard (plan D10): a strict-prefix candidate must ALSO cover
-        # >= 50% of the normalized origin_prompt. Rationale: the incident
-        # class (silent tail truncation — #742 at 85%, the #813-r1-shaped
-        # fixture at ~60%) characteristically preserves most of the
-        # prompt, while the false-positive scenario (an innocent SHORT
-        # elided pointer quoting the fm opener alongside a full
-        # alternate-source quote — the #825+ shape) characteristically
-        # quotes a small head fraction (~10%). Below the floor the case
-        # routes to WARN, whose message names the alternate-source
-        # escape. Per-candidate + fraction semantics deliberately do NOT
-        # suppress on the presence of a longer non-prefix candidate —
-        # that variant would false-NEGATIVE the multi-round true positive
-        # (truncated creation quote + a longer full round-2 quote).
-        if (
-            20 <= len(ncand_p) < len(nop)
-            and len(ncand_p) >= 0.5 * len(nop)
-            and nop.startswith(ncand_p)
-        ):
-            truncated = ncand_p
+    # Containment failed -- classify via the shared truncation classifier
+    # (extracted to `_truncation_candidate` for the #2291 Provenance leg;
+    # candidate set, thresholds, and rstrip set byte-identical).
+    truncated, best_lcp = _truncation_candidate(region, nop)
     if truncated is not None:
         cut = len(truncated)
         return "fail-trunc", (
@@ -6013,6 +6004,226 @@ def _origin_prompt_quote_verdict(repro: str, fm: dict) -> tuple[str, str]:
         f"alternate verbatim source (original-body `## Provenance` / an "
         f"`epm:followup-scope` marker), this is informational; otherwise re-quote "
         f"origin_prompt verbatim."
+    )
+
+
+def _truncation_candidate(region: str, ref_norm: str) -> tuple[str | None, int]:
+    """Truncation classifier over the Context region's quoted candidates
+    against a normalized reference prompt ``ref_norm`` -- shared by the
+    #1068 origin-prompt sub-check and the #2291 Provenance leg (extracted
+    from ``_origin_prompt_quote_verdict``; candidate set, thresholds, and
+    rstrip set byte-identical). Candidates: blockquote segments
+    (contiguous ``>`` runs, lazy-continuation lines joined) + inline
+    quote-mark-delimited spans (>= 20 chars) in the stripped region.
+    Returns ``(truncated_candidate_or_None, best_common_prefix_len)``."""
+    best_lcp, truncated = 0, None
+    for cand in _context_quote_candidates(region):
+        ncand = _normalize_prompt_text(_unescape_markdown(cand))
+        ncand_p = ncand.rstrip(".,;:!?\u2026 ")  # a truncating editor appends `.`/ellipsis (#742)
+        best_lcp = max(best_lcp, _common_prefix_len(ncand_p, ref_norm))
+        # FAIL guard (plan D10): a strict-prefix candidate must ALSO cover
+        # >= 50% of the normalized reference prompt. Rationale: the
+        # incident class (silent tail truncation -- #742 at 85%, the
+        # #813-r1-shaped fixture at ~60%) characteristically preserves
+        # most of the prompt, while the false-positive scenario (an
+        # innocent SHORT elided pointer quoting the fm opener alongside a
+        # full alternate-source quote -- the #825+ shape)
+        # characteristically quotes a small head fraction (~10%). Below
+        # the floor the case routes to the non-FAIL class, whose message
+        # names the alternate-source escape. Per-candidate + fraction
+        # semantics deliberately do NOT suppress on the presence of a
+        # longer non-prefix candidate -- that variant would false-NEGATIVE
+        # the multi-round true positive (truncated creation quote + a
+        # longer full round-2 quote).
+        if (
+            20 <= len(ncand_p) < len(ref_norm)
+            and len(ncand_p) >= 0.5 * len(ref_norm)
+            and ref_norm.startswith(ncand_p)
+        ):
+            truncated = ncand_p
+    return truncated, best_lcp
+
+
+def _provenance_blockquote_segments(text: str) -> list[str]:
+    """Blockquote segments of ``text`` -- contiguous ``>`` runs with
+    markdown lazy-continuation lines joined (the same segment rule as
+    ``_context_quote_candidates``, WITHOUT the label-line-remainder
+    candidate: a Provenance section's first line is preamble prose, not
+    quoted material). #2291."""
+    segments: list[str] = []
+    current: list[str] = []
+    for ln in text.splitlines():
+        if ln.lstrip().startswith(">"):
+            current.append(_BLOCKQUOTE_MARKER_RE.sub("", ln))
+        elif ln.strip() and current:
+            current.append(ln)  # markdown lazy continuation joins the quote
+        elif current:
+            segments.append("\n".join(current))
+            current = []
+    if current:
+        segments.append("\n".join(current))
+    return segments
+
+
+def _provenance_verbatim_prompt(original_body_path: Path | None) -> str | None:
+    """Extract the NORMALIZED verbatim originating prompt from the
+    sibling ``original-body.md``'s ``## Provenance`` section (#2291).
+
+    Returns ``None`` when: the path is ``None`` / missing; no
+    ``_PROVENANCE_H2_RE`` match; no extractable candidate. The section
+    spans the H2 match end to the next ``^##`` heading (or EOF). Primary
+    extraction: the FIRST blockquote segment with >= 20 normalized chars
+    (the canonical "Originating prompt ... verbatim:" shape, verified on
+    #2254 -- later clarifying-answer blockquotes are deliberately not
+    consulted). Fallback: the LONGEST inline quote-mark-delimited span
+    with >= 20 normalized chars. Normalization =
+    ``_normalize_prompt_text(_unescape_markdown(...))`` -- the same fold
+    the containment test applies to the body side. Read idiom mirrors the
+    missing-row branch (``.exists()`` + ``read_text(errors="replace")``,
+    no try/except: a task-state read follows the file's
+    fail-soft-by-shape convention, and the raising failure modes
+    (PermissionError etc.) are unchanged)."""
+    if original_body_path is None or not original_body_path.exists():
+        return None
+    text = original_body_path.read_text(errors="replace")
+    m = _PROVENANCE_H2_RE.search(text)
+    if m is None:
+        return None
+    section = text[m.end() :]
+    nxt = re.search(r"^##\s+", section, re.MULTILINE)
+    if nxt is not None:
+        section = section[: nxt.start()]
+    for seg in _provenance_blockquote_segments(section):
+        norm = _normalize_prompt_text(_unescape_markdown(seg))
+        if len(norm) >= 20:
+            return norm
+    best = ""
+    for span in _INLINE_QUOTE_SPAN_RE.findall(section):
+        norm = _normalize_prompt_text(_unescape_markdown(span))
+        if len(norm) > len(best):
+            best = norm
+    return best if len(best) >= 20 else None
+
+
+def _has_min20_blockquote(region: str) -> bool:
+    """True when the Context REGION (text after the ``**Context:**``
+    label) carries >= 1 blockquote segment with >= 20 normalized chars --
+    the arming condition of the #2291 ``warn-unverifiable-quote`` arm.
+    Blockquote segments ONLY: the label-line remainder (the region's
+    first line) and inline quote spans are deliberately excluded, so
+    "origin prompt not recorded" / lineage-only rows never trip it."""
+    rest = "\n".join(region.splitlines()[1:])
+    return any(
+        len(_normalize_prompt_text(_unescape_markdown(seg))) >= 20
+        for seg in _provenance_blockquote_segments(rest)
+    )
+
+
+_UNVERIFIABLE_QUOTE_DETAIL = (
+    "warn-unverifiable-quote: the `**Context:**` row blockquotes >=20 chars but neither "
+    "frontmatter `origin_prompt` nor an extractable original-body `## Provenance` prompt "
+    "exists to verify the quote against. If the quote is the refined goal, replace it with "
+    "the verbatim originating prompt; if it was legitimately sourced from an "
+    "`epm:followup-scope` marker (a SPEC-sanctioned third source this check does not "
+    "mechanically read), keep it and name the source in the row; if the prompt is genuinely "
+    "unrecorded, state `origin prompt not recorded`."
+)
+
+
+def _alternate_source_note(repro: str, prov_norm: str, fm: dict) -> str:
+    """Verified/not-verified enrichment for the op-present
+    ``warn-mismatch`` detail (#2291; message-only, never
+    verdict-affecting): says whether the Context row DOES quote the
+    original-body ``## Provenance`` verbatim prompt. The
+    ``context-origin-prompt-mismatch`` detail prefix is preserved (the
+    note is appended, so substring consumers are unaffected)."""
+    if _provenance_prompt_quote_verdict(repro, prov_norm, fm)[0] == "pass":
+        return (
+            " [alternate-source check: the row DOES quote the original-body "
+            "`## Provenance` verbatim prompt]"
+        )
+    return (
+        " [alternate-source check: the row does NOT quote the original-body "
+        "`## Provenance` verbatim prompt either]"
+    )
+
+
+def _provenance_prompt_quote_verdict(repro: str, prov_norm: str, fm: dict) -> tuple[str, str]:
+    """Classify the Context row's originating-prompt quote against the
+    extracted original-body ``## Provenance`` verbatim prompt (#2291,
+    incident #2254) -- the reference-swapped mirror of
+    ``_origin_prompt_quote_verdict``, consulted by the caller exactly
+    where that check noops for lack of frontmatter ``origin_prompt``.
+
+    ``prov_norm`` is the ALREADY-NORMALIZED extracted prompt
+    (``_provenance_verbatim_prompt``). Returns ``(status, detail)``:
+
+    - ``"pass"`` -- ``prov_norm`` appears as a substring of the
+      normalized, blockquote-marker-stripped Context-region text (raw
+      AND markdown-unescaped; same containment direction as the #1068
+      check -- containment is what catches truncation);
+    - ``"fail-trunc"`` -- a quoted candidate is a >=20-char strict
+      normalized PREFIX of ``prov_norm`` covering >=50% of it (the
+      shared ``_truncation_candidate`` classifier);
+    - ``"fail-mismatch"`` -- containment fails with no truncation
+      signature (the #2254 incident shape: the row quotes the refined
+      goal instead of the recorded verbatim prompt).
+
+    Both FAIL details print the head of the extracted Provenance span
+    (a spurious FAIL blocks a real promotion, so a wrong-span extraction
+    must be diagnosable in ONE read) and name the `epm:followup-scope`
+    third source -- a SPEC-sanctioned source this check does NOT
+    mechanically read; the remediation is ADDING the recorded
+    originating prompt to the row, and the severity deliberately stays
+    FAIL (a Provenance-recorded originating prompt absent from the row
+    violates the SPEC contract regardless of what else the row quotes).
+    Goal-quoting enrichment (message-only, never verdict-affecting):
+    when a >=20-char Context quote candidate matches the normalized
+    ``goal:`` frontmatter (containment either direction), the detail
+    says so -- traced to fire on the real #2254 pre-fix artifact."""
+    m = _CONTEXT_LABEL_RE.search(repro)
+    if m is None:
+        return "pass", ""  # caller's label branch makes this unreachable
+    region = repro[m.end() :]
+    stripped = _strip_blockquote_markers(region)
+    if prov_norm in _normalize_prompt_text(stripped) or prov_norm in _normalize_prompt_text(
+        _unescape_markdown(stripped)
+    ):
+        return "pass", ""
+    truncated, best_lcp = _truncation_candidate(region, prov_norm)
+    head = prov_norm[:60]
+    goal_note = ""
+    ngoal = _normalize_prompt_text(str(fm.get("goal") or "").strip())
+    if len(ngoal) >= 20:
+        for cand in _context_quote_candidates(region):
+            ncand = _normalize_prompt_text(_unescape_markdown(cand))
+            if len(ncand) >= 20 and (ncand in ngoal or ngoal in ncand):
+                goal_note = (
+                    " The quoted text matches the refined `goal:` frontmatter \u2014 quote "
+                    "the ORIGINATING prompt, not the refined goal."
+                )
+                break
+    third_source = (
+        " If the row's quote was sourced from an `epm:followup-scope` marker (a "
+        "SPEC-sanctioned source this check does not mechanically read), ADD the recorded "
+        "originating prompt to the row alongside it."
+    )
+    if truncated is not None:
+        cut = len(truncated)
+        return "fail-trunc", (
+            f"context-provenance-prompt-mismatch: the quoted originating prompt is a strict "
+            f"PREFIX of the original-body `## Provenance` verbatim prompt \u2014 truncated at "
+            f"normalized offset {cut}/{len(prov_norm)} (quote ends '...{truncated[-40:]}'; "
+            f"the Provenance prompt continues '{prov_norm[cut : cut + 60]}...'; extracted "
+            f"Provenance head '{head}'). Quote the FULL recorded verbatim prompt "
+            f"(SPEC.md \u00a7 `**Context:**` row).{third_source}{goal_note}"
+        )
+    return "fail-mismatch", (
+        f"context-provenance-prompt-mismatch: the original-body `## Provenance` verbatim "
+        f"prompt does not appear (whitespace-normalized) in the `**Context:**` row \u2014 "
+        f"first divergence at normalized offset {best_lcp}/{len(prov_norm)} (extracted "
+        f"Provenance head '{head}'). Quote the recorded verbatim prompt "
+        f"(SPEC.md \u00a7 `**Context:**` row).{third_source}{goal_note}"
     )
 
 
@@ -6089,7 +6300,9 @@ def _context_scan_region(repro: str) -> str:
     return scan_src[m.end() :] if m else scan_src
 
 
-def _context_row_result_v3(name: str, repro: str, fm: dict) -> CheckResult:
+def _context_row_result_v3(
+    name: str, repro: str, fm: dict, original_body_path: Path | None = None
+) -> CheckResult:
     """v3/v2 (pre-v4-sentinel) verdict for a label-present Context row —
     the grandfathered WARN-only forms of check 17's sub-checks (#1068
     origin-prompt for BOTH its classes; #1418/#2249 parent-lineage for
@@ -6098,19 +6311,101 @@ def _context_row_result_v3(name: str, repro: str, fm: dict) -> CheckResult:
     binds below the v4 sentinel; see `check_repro_context_provenance`).
     Note the fail-denied-named class is NEWLY VISIBLE on v3/v2 as of
     #2249 (was silent) — forward-only convention: a WARN never blocks,
-    and the retro-scan found zero corpus hits in any version class."""
+    and the retro-scan found zero corpus hits in any version class.
+    #2291: BOTH Provenance-leg fail classes (prov-fail-mismatch /
+    prov-fail-trunc) degrade to WARN here, and the v4-only
+    `warn-unverifiable-quote` arm deliberately never fires below the
+    sentinel — QUIETER on v3/v2 than #2249, which made its contradiction
+    class newly visible as WARN there: an unverifiable quote is not an
+    internal contradiction."""
     p_status, p_detail = _parent_lineage_verdict(_context_scan_region(repro), fm)
     status, sub_detail = _origin_prompt_quote_verdict(repro, fm)
+    prov_norm = _provenance_verbatim_prompt(original_body_path)
     warn_bits = []
     if p_status in ("fail-denied", "fail-denied-named"):
         warn_bits.append(p_detail)  # grandfathered: WARN below the v4 sentinel
+    if status == "noop" and prov_norm is not None:
+        pv_status, pv_detail = _provenance_prompt_quote_verdict(repro, prov_norm, fm)
+        if pv_status in ("fail-trunc", "fail-mismatch"):
+            warn_bits.append(pv_detail)  # #2291 grandfathered: WARN below the v4 sentinel
     if status in ("fail-trunc", "warn-mismatch"):
+        if status == "warn-mismatch" and prov_norm is not None:
+            sub_detail += _alternate_source_note(repro, prov_norm, fm)
         warn_bits.append(sub_detail)
     if warn_bits:
         return CheckResult(
             name, True, "**Context:** row present; " + "; ".join(warn_bits), is_warn=True
         )
     return CheckResult(name, True, "**Context:** row present")
+
+
+def _context_row_result_v4(
+    name: str, repro: str, ctx_scan: str, fm: dict, original_body_path: Path | None
+) -> CheckResult:
+    """v4 verdict for a label-present Context row WITH a lineage token --
+    the hard-FAIL tier of check 17's sub-checks, extracted verbatim from
+    `check_repro_context_provenance` (C901 full-ruleset budget; behavior
+    byte-identical): the #1418/#2249 parent-lineage contradiction FAILs,
+    the #1068 origin-prompt truncation FAIL, the #2291 Provenance-leg
+    FAILs, and the WARN accumulation (unnamed-parent lineage,
+    unverifiable-quote, warn-mismatch + alternate-source note)."""
+    # #1418 parent-lineage cross-check (incident #1345 r1) — runs
+    # FIRST (lineage correctness before prompt verbatim-ness; one
+    # failure at a time, the file's convention).
+    p_status, p_detail = _parent_lineage_verdict(ctx_scan, fm)
+    if p_status in ("fail-denied", "fail-denied-named"):
+        return CheckResult(name, False, p_detail)
+    # #1068 origin-prompt verbatim sub-check — runs AFTER the
+    # lineage sub-checks (a body failing both surfaces the
+    # truncation on the next verifier run after the lineage fix).
+    status, sub_detail = _origin_prompt_quote_verdict(repro, fm)
+    if status == "fail-trunc":
+        return CheckResult(name, False, sub_detail)
+    # #2291 Provenance leg (incident #2254) -- fires exactly where
+    # the #1068 sub-check noops for lack of frontmatter
+    # `origin_prompt`. Precedence: `origin_prompt` stays
+    # authoritative -- an op-pass never consults the Provenance
+    # prompt for the verdict (27 corpus rows are op-pass with the
+    # Provenance prompt NOT contained; pinned by
+    # test_v4_context_origin_prompt_pass_shadows_provenance).
+    prov_norm = _provenance_verbatim_prompt(original_body_path)
+    warn_bits = []
+    if p_status == "warn-unnamed":
+        warn_bits.append(p_detail)
+    if status == "noop" and prov_norm is not None:
+        pv_status, pv_detail = _provenance_prompt_quote_verdict(repro, prov_norm, fm)
+        if pv_status in ("fail-trunc", "fail-mismatch"):
+            return CheckResult(name, False, pv_detail)  # NEW hard v4 FAIL (#2291)
+        # pv_status == "pass": fall through -- today's pass detail,
+        # byte-identical (a verified pass is indistinguishable from
+        # a noop pass by design; observable only via the #2291
+        # measurement script's NEW-pass row class).
+    elif status == "noop":
+        # No extractable Provenance prompt either -- fail-soft.
+        # A v4 row that still BLOCKQUOTES >=20 chars gets the
+        # unverifiable-quote WARN (measured 2026-08-22: exactly 1
+        # corpus hit, #1072); plain absence stays silent (the 27
+        # absent-both bodies never gain a standing WARN).
+        m_label = _CONTEXT_LABEL_RE.search(repro)
+        region = repro[m_label.end() :]
+        if (
+            original_body_path is not None
+            and original_body_path.exists()
+            and _has_min20_blockquote(region)
+        ):
+            warn_bits.append(_UNVERIFIABLE_QUOTE_DETAIL)
+    elif status == "warn-mismatch":
+        if prov_norm is not None:
+            sub_detail += _alternate_source_note(repro, prov_norm, fm)
+        warn_bits.append(sub_detail)
+    if warn_bits:
+        return CheckResult(
+            name,
+            True,
+            "**Context:** row present with lineage token; " + "; ".join(warn_bits),
+            is_warn=True,
+        )
+    return CheckResult(name, True, "**Context:** row present with lineage token")
 
 
 def check_repro_context_provenance(
@@ -6151,6 +6446,45 @@ def check_repro_context_provenance(
     bodies get the WARN-only form for BOTH classes (grandfathering —
     never a new hard FAIL below the v4 sentinel). No ``origin_prompt``
     or no ``**Context:**`` label: NO-OP (pre-#1068 behavior verbatim).
+
+    **Provenance-leg sub-check (#2291, incident #2254).** When
+    frontmatter ``origin_prompt`` is ABSENT (the pre-#2291 noop escape —
+    #2254's footer blockquoted the refined ``goal:`` frontmatter and the
+    check passed on label presence alone), the verbatim originating
+    prompt is extracted from the sibling ``original-body.md``'s
+    ``## Provenance`` section (``_provenance_verbatim_prompt``: FIRST
+    blockquote segment >= 20 normalized chars, else the longest
+    >= 20-char inline-quoted span; header regex widened to tolerate
+    ``## Provenance (verbatim)``, #2220) and required — normalized — to
+    appear in the Context region (``_provenance_prompt_quote_verdict``:
+    same containment direction + truncation classifier as the #1068
+    check). Verdict lattice (disjoint, exhaustive): prov-pass
+    (contained; pass detail byte-identical to the plain pass);
+    prov-fail-trunc / prov-fail-mismatch (hard v4 FAIL, degraded to WARN
+    on v3/v2 — the #1068/#2249 grandfathering shape);
+    warn-unverifiable-quote (op absent + resolved-and-existing
+    original-body + NO extractable Provenance prompt + a >= 20-char
+    blockquote in the Context region — v4 WARN only; plain absence stays
+    silent). Measured retro-scan (2026-08-22 corpus: 283
+    original-body.md, 96 Provenance-bearing under the widened regex):
+    0 new FAIL hits, exactly 1 new WARN (#1072) — severity staged per
+    the #2249 measure-first convention. When ``origin_prompt`` IS
+    present it stays authoritative: verdicts are unchanged (27 corpus
+    rows are op-pass with the Provenance prompt not contained), and only
+    the op-present ``warn-mismatch`` detail gains a
+    verified/not-verified alternate-source note.
+    WHERE THE LEG FIRES (wiring, verified 2026-08-22): the analyzer's
+    draft gate runs ``verify_task_body.py --file`` against
+    ``.claude/cache/experiment-<N>-clean-result.md``, so
+    ``original_body_path`` resolves to
+    ``.claude/cache/original-body.md``, which never exists — the
+    Provenance leg is STRUCTURALLY INERT at that gate for a first
+    promotion. The blocking mechanical catch lands one round later at
+    the clean-result-critic's pre-pass, which runs ``--issue <N>``
+    against the in-place body AFTER ``set-body --snapshot``
+    (analyzer.md:502), where the sibling exists. Threading the task-dir
+    sibling into ``--file`` draft verifies is explicitly out of scope
+    (a separate future enhancement).
 
     **Parent-lineage cross-check (#1418, incident #1345 r1).** When
     frontmatter ``parent_id`` is set, the lineage clause (scanned on the
@@ -6232,7 +6566,7 @@ def check_repro_context_provenance(
             # the SAME stripped region as the v4 branch, never raw `repro`
             # (a denied claim inside the blockquoted verbatim prompt must
             # not false-fire; #959 precedent). See `_context_row_result_v3`.
-            return _context_row_result_v3(name, repro, fm)
+            return _context_row_result_v3(name, repro, fm, original_body_path)
         # v4 lineage-token sub-check, on the shared strip-then-slice scan
         # region (`_context_scan_region` — #763 / #959 strip-order + the
         # degenerate whole-footer fallback, which fails toward PASS, the
@@ -6248,31 +6582,9 @@ def check_repro_context_provenance(
         # `_strip_blockquote_lines`).
         ctx_scan = _context_scan_region(repro)
         if _V4_CONTEXT_LINEAGE_TOKEN_RE.search(ctx_scan):
-            # #1418 parent-lineage cross-check (incident #1345 r1) — runs
-            # FIRST (lineage correctness before prompt verbatim-ness; one
-            # failure at a time, the file's convention).
-            p_status, p_detail = _parent_lineage_verdict(ctx_scan, fm)
-            if p_status in ("fail-denied", "fail-denied-named"):
-                return CheckResult(name, False, p_detail)
-            # #1068 origin-prompt verbatim sub-check — runs AFTER the
-            # lineage sub-checks (a body failing both surfaces the
-            # truncation on the next verifier run after the lineage fix).
-            status, sub_detail = _origin_prompt_quote_verdict(repro, fm)
-            if status == "fail-trunc":
-                return CheckResult(name, False, sub_detail)
-            warn_bits = []
-            if p_status == "warn-unnamed":
-                warn_bits.append(p_detail)
-            if status == "warn-mismatch":
-                warn_bits.append(sub_detail)
-            if warn_bits:
-                return CheckResult(
-                    name,
-                    True,
-                    "**Context:** row present with lineage token; " + "; ".join(warn_bits),
-                    is_warn=True,
-                )
-            return CheckResult(name, True, "**Context:** row present with lineage token")
+            # Hard-FAIL tier + WARN accumulation extracted to
+            # `_context_row_result_v4` (C901 budget; behavior identical).
+            return _context_row_result_v4(name, repro, ctx_scan, fm, original_body_path)
         return CheckResult(
             name,
             False,
@@ -6288,11 +6600,7 @@ def check_repro_context_provenance(
     has_provenance_section = False
     if original_body_path is not None and original_body_path.exists():
         has_provenance_section = bool(
-            re.search(
-                r"^##\s+Provenance\s*$",
-                original_body_path.read_text(errors="replace"),
-                re.MULTILINE,
-            )
+            _PROVENANCE_H2_RE.search(original_body_path.read_text(errors="replace"))
         )
     if has_origin_prompt or has_provenance_section:
         source = (

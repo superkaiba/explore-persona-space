@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2467,
+  "highest_id": 2472,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9839,8 +9839,8 @@
     "2273": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2273",
-      "status": "running",
+      "path": "tasks/completed/2273",
+      "status": "completed",
       "title": "gotchas.md: fellows remote shell is zsh \u2014 unmatched glob aborts the whole SSH command (nomatch), silently truncating chained monitoring probes"
     },
     "2274": {
@@ -9895,8 +9895,8 @@
     "2280": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2280",
-      "status": "running",
+      "path": "tasks/completed/2280",
+      "status": "completed",
       "title": "Diagnose selective SIGTERM (rc=143) killer of in-session foreground python children on the shared VM"
     },
     "2281": {
@@ -9979,15 +9979,15 @@
     "2291": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2291",
-      "status": "running",
+      "path": "tasks/completed/2291",
+      "status": "completed",
       "title": "verify_task_body check 17: match Context footer against verbatim ## Provenance, not just non-empty"
     },
     "2292": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2292",
-      "status": "planning",
+      "path": "tasks/running/2292",
+      "status": "running",
       "title": "Figure builders: emit tick/legend text to meta.json + WARN-lint opaque code-slug labels"
     },
     "2293": {
@@ -10000,8 +10000,8 @@
     "2294": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2294",
-      "status": "proposed",
+      "path": "tasks/reviewing/2294",
+      "status": "reviewing",
       "title": "workflow-fix: /issue Step 5 dispatches code-review with no implementer marker posted"
     },
     "2295": {
@@ -10021,15 +10021,15 @@
     "2297": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2297",
-      "status": "proposed",
+      "path": "tasks/archived/2297",
+      "status": "archived",
       "title": "workflow-fix: Step 9c gate launcher file-list cross-check is newline-agnostic \u2014 split-argv launch reports a plausible PYTEST_RC that is not a verdict"
     },
     "2298": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2298",
-      "status": "proposed",
+      "path": "tasks/running/2298",
+      "status": "running",
       "title": "workflow-fix: critic-lens-reference item 13 still says fellows-first auto default (stale since #2054/#2059)"
     },
     "2299": {
@@ -11330,12 +11330,47 @@
       "status": "archived",
       "title": "workflow-fix: two ungated HfApi().upload_file call sites in issue1739_r2v2_run.py bypass the secret-scrub gate (test RED on main)"
     },
+    "2468": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2468",
+      "status": "proposed",
+      "title": "workflow-fix: implementer runs no-flags workflow_lint when the diff touches .claude/** markdown"
+    },
+    "2469": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2469",
+      "status": "proposed",
+      "title": "workflow-fix: non-canonical 'workflow-fix' tag misses wf-fix floor predicate (61 tasks)"
+    },
     "247": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/archived/247",
       "status": "archived",
       "title": "Benign-SFT-then-couple with contrastive protocol: do bystanders leak like EM?"
+    },
+    "2470": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2470",
+      "status": "proposed",
+      "title": "workflow-fix: condensed launch references in 12-step-8.md / 13-step-9.md lack Step 6b fence parity"
+    },
+    "2471": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2471",
+      "status": "proposed",
+      "title": "workflow-fix: lint leg resolving line-anchored gotchas.md L<n> citations (trim renumbering silently rots them)"
+    },
+    "2472": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/2472",
+      "status": "running",
+      "title": "Add codex-*-lean twins: autocompact-thrash ladder has no lean-twin rung for the Codex composer roles"
     },
     "248": {
       "has_clean_result": false,

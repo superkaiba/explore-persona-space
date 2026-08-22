@@ -44,4 +44,23 @@ Compose recipe for a `kind: infra` wf-fix round whose diff ADDS a check to
 either a false Codex `marker-shape`/`step2-floor-skipped` FAIL or a narrowed
 check (#606 twin-omission class).
 **How to apply:** any `kind: infra` round whose diff touches
-`scripts/workflow_lint.py` or another guard/lint workflow helper.
+`scripts/workflow_lint.py` or another guard/lint/verifier workflow helper
+(`verify_task_body.py`, `verify_plan.py` are the same class — #2291 r1).
+
+**Two #2291 r1 (2026-08-22) sharpenings:**
+
+6. **wf-fix detection is TAG-first, not title-first.** #2291's title had no
+   `workflow-fix:`/`daily-fix:` prefix, but `body.md` `tags:` carried
+   `workflow-fix` (and the Provenance line named the workflow-fix-candidate
+   origin) — a title-only probe would have mis-attested "floor exempt" on a
+   task whose floor BOUND (an `epm:plan-verify` PASS was present to attest).
+   Probe `grep -A3 '^tags:' body.md` + the Provenance line every compose.
+7. **Brief-supplied plan-vs-measured numeric discrepancies compose as
+   TEST-the-hypothesis duties**, never as attested facts: state the plan's
+   count, the measured count, the orchestrator's hypothesis (e.g. label
+   transposition in a plan amendment = PLAN defect not code defect), and
+   instruct Codex to decide which count belongs to which label FROM THE CODE
+   and say whether any acceptance criterion depends on it. Also state stakes
+   BOTH directions for verifier-gate diffs: a false PASS ships a broken
+   fleet gate, and an over-strict new check arm is itself a fleet-blocking
+   false-FAIL class — so over-strictness findings weigh equal to bugs.
