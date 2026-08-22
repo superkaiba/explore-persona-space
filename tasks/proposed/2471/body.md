@@ -75,3 +75,32 @@ scope expansion on a task already gate-blocked — and because the anchors were 
 trunk before #2280 existed.
 
 workflow_fix_target: scripts/workflow_lint.py, .claude/agents/code-reviewer.md, .claude/rules/code-reviewer-section-reference.md, .claude/agents/codex-code-reviewer.md
+
+## Anchor sites + citation grammar — CONFIRMED (orchestrator, post-filing)
+
+The re-confirmation this body asked for as step one has since COMPLETED (the earlier probe
+had timed out mid-turn, which is why the sites were originally filed as
+reviewer-reported). All four sites are real, and the grammar is now pinned:
+
+```
+.claude/rules/code-reviewer-section-reference.md:1233:gotchas.md` L240
+.claude/rules/code-reviewer-section-reference.md:1245:gotchas.md` L240
+.claude/agents/codex-code-reviewer.md:345:gotchas.md` L240
+.claude/agents/code-reviewer.md:606:gotchas.md` L240
+```
+
+**The citation form is `` `.claude/rules/gotchas.md` L240 `` — the closing BACKTICK falls
+between the filename and the line token.** That is why the obvious matcher
+`grep -rn "gotchas.md L[0-9]"` returns ZERO hits and reads as "no line anchors exist": the
+backtick breaks the adjacency the pattern assumes. Any matcher this task writes must
+tolerate the backtick (and, defensively, other markdown punctuation) between the path and
+the `L<n>` token — a naive adjacency regex will silently pass a file full of drifting
+anchors, which is the failure mode that let these four rot unnoticed in the first place.
+
+Secondary note for whoever writes the scanner: a broad character-class regex over
+`.claude/**` tripped `ugrep`'s complexity limit ("exceeds complexity limits") on this repo,
+so prefer a narrow literal-anchored pattern or a small Python scan over an elaborate regex.
+
+Cited content at the anchor: the `SLURM_GPUS_ON_NODE` / CUDA_VISIBLE_DEVICES entry — useful
+as the expected-content token when checking whether L240 still resolves to the intended
+entry.
