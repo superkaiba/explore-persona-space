@@ -55,7 +55,7 @@ def load_json(path: Path) -> dict:
         raise MissingInputError(f"input missing: {path}")
     try:
         return json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError) as exc:
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError) as exc:
         raise MissingInputError(f"input corrupt/unparseable: {path}: {exc}") from exc
 
 
