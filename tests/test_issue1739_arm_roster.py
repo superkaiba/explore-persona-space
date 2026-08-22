@@ -102,21 +102,30 @@ def _toy_mapfit(*, n_layers: int = 2, dim: int = 6, seed: int = 0) -> fits.MapFi
 
 
 def test_map_consuming_arm_set_matches_run_cell_multi():
-    """The constant above must track `run_cell_multi`'s own `mp_arms` set.
+    """The constant above must track `run_cell_multi`'s map-consuming set.
 
-    If arms.py adds/removes a map-consuming arm, this test fails loudly rather
-    than letting the roster pins below silently under-check.
+    arm2fix round: arms.py hoisted the former inline `mp_arms = {...}` literal
+    to the module constant `arms.MAP_CONSUMING_ARMS` (single source for the
+    dispatch AND the scorer's --skip-map-fit guard); `run_cell_multi` now
+    binds `mp_arms = MAP_CONSUMING_ARMS`. This pin asserts (a) the test-local
+    copy equals the module constant and (b) the dispatch still consumes the
+    constant (no stray re-introduced literal).
     """
+    assert set(MAP_CONSUMING_ARMS) == set(arms.MAP_CONSUMING_ARMS), (
+        "MAP_CONSUMING_ARMS drifted from arms.MAP_CONSUMING_ARMS: "
+        f"only-in-test={sorted(set(MAP_CONSUMING_ARMS) - set(arms.MAP_CONSUMING_ARMS))} "
+        f"only-in-arms.py={sorted(set(arms.MAP_CONSUMING_ARMS) - set(MAP_CONSUMING_ARMS))}"
+    )
     src = (TREE_ROOT / "src/explore_persona_space/experiments/issue_1739/arms.py").read_text(
         encoding="utf-8"
     )
-    block = re.search(r"mp_arms\s*=\s*\{(.*?)\}", src, re.DOTALL)
-    assert block, "could not locate the `mp_arms` set literal in arms.py"
-    found = set(re.findall(r'"(arm\d+_[a-z0-9_]+)"', block.group(1)))
-    assert found == set(MAP_CONSUMING_ARMS), (
-        "MAP_CONSUMING_ARMS drifted from run_cell_multi's mp_arms set: "
-        f"only-in-test={sorted(set(MAP_CONSUMING_ARMS) - found)} "
-        f"only-in-arms.py={sorted(found - set(MAP_CONSUMING_ARMS))}"
+    assert re.search(r"mp_arms\s*=\s*MAP_CONSUMING_ARMS\b", src), (
+        "run_cell_multi no longer binds `mp_arms = MAP_CONSUMING_ARMS` — the dispatch "
+        "and the module constant have decoupled (re-pin whichever source is canonical)"
+    )
+    assert not re.search(r"mp_arms\s*=\s*\{", src), (
+        "a stray inline `mp_arms = {...}` literal re-appeared in arms.py beside the "
+        "MAP_CONSUMING_ARMS constant — dispatch must consume the single source"
     )
 
 
