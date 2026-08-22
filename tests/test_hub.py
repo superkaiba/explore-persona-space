@@ -427,7 +427,15 @@ class TestUploadRawCompletions:
         every call (hf_api.py:4901) — to compute the committed set; the
         listing stub then returns exactly that set, so the exact-set verify
         passes iff the helper's local enumeration matches what
-        ``upload_folder`` would really commit."""
+        ``upload_folder`` would really commit.
+
+        Returns ``(result, mock_api, committed)`` — ``committed`` is the
+        fake's own committed repo-path list, exposed so tests can pin what
+        the fake LANDED (plan #2271 §4.2: the sidecar must be asserted absent
+        from — not merely missing-verified against — the committed set;
+        direction (b): dropping the fake's DEFAULT_IGNORE_PATTERNS append
+        commits the sidecar as an EXTRA, which the missing-only verify can
+        never flag)."""
         committed: list[str] = []
 
         def fake_upload_folder(
@@ -462,7 +470,7 @@ class TestUploadRawCompletions:
             mock_api.create_repo.return_value = None
             mock_api.upload_folder.side_effect = fake_upload_folder
             result = upload_raw_completions_to_data_repo(self.EXP, root, **kwargs)
-        return result, mock_api
+        return result, mock_api, committed
 
     def test_shard_subdir_files_upload(self, tmp_path):
         """Pre-merge shard payloads under a raw_completions/ directory upload
@@ -470,10 +478,13 @@ class TestUploadRawCompletions:
         the exact-filename selection returned only 1 of these 3 files);
         non-class files are skipped from the return dict."""
         expected_rels = self._build_class_tree(tmp_path)
-        result, mock_api = self._run_with_filter_faithful_fake(tmp_path)
+        result, mock_api, committed = self._run_with_filter_faithful_fake(tmp_path)
         mock_api.upload_folder.assert_called_once()
         mock_api.upload_file.assert_not_called()
         assert set(result.keys()) == set(expected_rels)
+        # The fake COMMITTED exactly the class files — nothing more (extras
+        # are invisible to the missing-only verify, so pin the set here).
+        assert set(committed) == {f"{self.EXP}/raw_completions/{r}" for r in expected_rels}
         call_kwargs = mock_api.upload_folder.call_args[1]
         assert call_kwargs["allow_patterns"] == RAW_COMPLETIONS_ALLOW_PATTERNS
 
@@ -484,16 +495,23 @@ class TestUploadRawCompletions:
         ``upload_folder``'s unconditional DEFAULT_IGNORE_PATTERNS append — so
         a HEALTHY tree passes the exact-set verify instead of hard-failing on
         an expected path the commit can never contain. The sidecar is named
-        in the skip disclosure."""
+        in the skip disclosure, and — plan #2271 §4.2 — is NOT landed by the
+        fake: the committed set EQUALS the expected class set, so dropping
+        the fake's DEFAULT_IGNORE_PATTERNS append (which would commit the
+        sidecar as an EXTRA the missing-only verify never flags) fails
+        here."""
         expected_rels = self._build_class_tree(tmp_path)
         sidecar_rel = ".cache/huggingface/download/exp/cellA/raw_completions/x.jsonl.metadata"
         sidecar = tmp_path / sidecar_rel
         sidecar.parent.mkdir(parents=True)
         sidecar.write_text("etag")
         with caplog.at_level(logging.INFO):
-            result, _ = self._run_with_filter_faithful_fake(tmp_path)
+            result, _, committed = self._run_with_filter_faithful_fake(tmp_path)
         assert set(result.keys()) == set(expected_rels)
         assert sidecar_rel in caplog.text
+        prefix = f"{self.EXP}/raw_completions"
+        assert f"{prefix}/{sidecar_rel}" not in committed
+        assert set(committed) == {f"{prefix}/{r}" for r in expected_rels}
 
     def test_skip_disclosure_logged(self, tmp_path, caplog):
         """Mandatory skip accounting: count + rel paths of every non-class
@@ -568,6 +586,8 @@ class TestUploadRawCompletions:
             "phaseA/raw_completions/rollouts/part3.jsonl": True,
             # OUT — non-class, lookalikes, sidecars
             "run_result.json": False,
+            "xraw_completions.json": False,  # filename lookalike (plan §4.2 row)
+            "foo/xraw_completions.json": False,  # nested filename lookalike (plan §4.2 row)
             "raw_completionsX/bar.json": False,  # dir name not literally raw_completions
             "raw_upload/label/cell/shards/shard0.json": False,
             "analysis_tensors/foo.npy": False,
@@ -588,12 +608,71 @@ class TestUploadRawCompletions:
         """delete_after=True removes every SELECTED class file (shards under
         raw_completions/ included) and leaves the skipped non-class files."""
         expected_rels = self._build_class_tree(tmp_path)
-        result, _ = self._run_with_filter_faithful_fake(tmp_path, delete_after=True)
+        result, _, _ = self._run_with_filter_faithful_fake(tmp_path, delete_after=True)
         assert set(result.keys()) == set(expected_rels)
         for rel in expected_rels:
             assert not (tmp_path / rel).exists()
         assert (tmp_path / "run_result.json").exists()
         assert (tmp_path / "analysis_tensors" / "foo.npy").exists()
+
+    # ---- #2271 round 2: symlink-escape gate (raw-completions-symlink-escape) ----
+
+    def test_symlink_escape_refused_before_any_upload(self, tmp_path):
+        """A file symlink inside the raw-completions class whose target lives
+        OUTSIDE the upload root is selected by the rglob+is_file walk (it
+        follows file symlinks), so the fail-closed gate must raise
+        RuntimeError naming the offending relpath BEFORE any network call —
+        upload_folder is never invoked. Dropping the link from selected_rels
+        would NOT be enough (upload_folder's own walk would commit it as an
+        extra the missing-only verify never flags), hence the raise."""
+        root = tmp_path / "eval"
+        self._build_class_tree(root)
+        outside = tmp_path / "outside"
+        outside.mkdir()
+        secret = outside / "secret.env"
+        secret.write_text("SECRET-CANARY")
+        link = root / "raw_completions" / "debug.txt"
+        link.symlink_to(secret)
+        assert link.is_file()  # the walk follows it — the exploit precondition
+        with (
+            patch.dict("os.environ", {"HF_TOKEN": "test_token"}),
+            patch("huggingface_hub.HfApi") as MockApi,
+            pytest.raises(RuntimeError, match=r"symlink.*raw_completions/debug\.txt"),
+        ):
+            upload_raw_completions_to_data_repo(self.EXP, root)
+        MockApi.return_value.upload_folder.assert_not_called()
+        MockApi.return_value.upload_file.assert_not_called()
+
+    def test_dangling_symlink_is_not_selected_and_does_not_crash(self, tmp_path):
+        """A DANGLING file symlink under a raw_completions/ dir (the realized
+        eval_results/issue_658 class of decayed links) never reaches the gate
+        — is_file() is False for it, so the walk excludes it — and the
+        healthy remainder of the tree uploads normally."""
+        expected_rels = self._build_class_tree(tmp_path)
+        dangling = tmp_path / "raw_completions" / "gone.json"
+        dangling.symlink_to(tmp_path / "no-such-target.json")
+        assert dangling.is_symlink() and not dangling.is_file()
+        result, mock_api, committed = self._run_with_filter_faithful_fake(tmp_path)
+        mock_api.upload_folder.assert_called_once()
+        assert set(result.keys()) == set(expected_rels)
+        assert set(committed) == {f"{self.EXP}/raw_completions/{r}" for r in expected_rels}
+
+    def test_non_selected_symlink_does_not_trip_gate(self, tmp_path):
+        """The gate scopes to the upload-ELIGIBLE (selected) set: a file
+        symlink OUTSIDE the raw-completions class (symlinks are real in
+        committed eval_results/ trees) is skipped by the allow patterns —
+        upload_folder never commits it — so it must not block a healthy
+        upload."""
+        expected_rels = self._build_class_tree(tmp_path)
+        target = tmp_path / "analysis_tensors" / "real.bin"
+        target.write_text("tensor-bytes")
+        offclass_link = tmp_path / "analysis_tensors" / "link.npy"
+        offclass_link.symlink_to(target)
+        assert offclass_link.is_file()
+        result, mock_api, committed = self._run_with_filter_faithful_fake(tmp_path)
+        mock_api.upload_folder.assert_called_once()
+        assert set(result.keys()) == set(expected_rels)
+        assert set(committed) == {f"{self.EXP}/raw_completions/{r}" for r in expected_rels}
 
 
 def _storage_403() -> HfHubHTTPError:

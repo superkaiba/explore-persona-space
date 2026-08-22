@@ -1267,6 +1267,10 @@ def count_staged_files_per_repo_dir(
     """
     from huggingface_hub.utils import filter_repo_objects
 
+    # NOTE (#2271): this rglob+is_file walk FOLLOWS file symlinks, like the
+    # raw-completions selection mirror — but this helper only COUNTS staged
+    # files (no bytes leave the machine), so it is not a leak path; the
+    # fail-closed symlink gate lives in upload_raw_completions_to_data_repo.
     rels = [p.relative_to(folder_path).as_posix() for p in folder_path.rglob("*") if p.is_file()]
     # Parity with upload_folder's own default excludes (.git/ etc.).
     # Fact-checked on the pinned huggingface_hub 0.36.2: the constant lives at
@@ -2513,7 +2517,12 @@ def upload_raw_completions_to_data_repo(
     Upload Policy names as the canonical raw-completions path. Every file
     outside the class is skipped with mandatory disclosure (count + first 25
     relative paths), and the completion log line carries the skipped count;
-    ``on_unmatched="raise"`` upgrades any skip to ``RuntimeError``.
+    ``on_unmatched="raise"`` upgrades any skip to ``RuntimeError``. A SELECTED
+    entry that is a file SYMLINK is refused fail-closed before any network
+    I/O (``rglob`` + ``is_file()`` follows file symlinks, so the link's
+    TARGET bytes — possibly outside ``eval_results_dir`` — would otherwise be
+    committed as rollout data); symlinked DIRECTORIES are not traversed by
+    ``rglob`` and are silently invisible (known residual, #2271).
 
     Files land under ``<experiment_name>/raw_completions/<rel_path>`` in
     ``DEFAULT_DATASET_REPO``. Fail-loud (raises ``RuntimeError`` on any upload
@@ -2572,7 +2581,10 @@ def upload_raw_completions_to_data_repo(
     Raises:
         ValueError: if ``on_unmatched`` is not ``"disclose"`` or ``"raise"``
             (validated at function entry, before any filesystem work).
-        RuntimeError: on any bulk-upload failure or incomplete commit
+        RuntimeError: when any SELECTED (upload-eligible) file is a symlink —
+        refused BEFORE any network I/O, naming every offending relative path
+        (#2271: ``upload_folder`` follows file symlinks and would commit the
+        target's bytes); on any bulk-upload failure or incomplete commit
         (including the both-repos-at-cap case, where the fallback itself was
         refused); also, under ``on_unmatched="raise"``, when any file under
         ``eval_results_dir`` falls outside the raw-completions class.
@@ -2619,6 +2631,29 @@ def upload_raw_completions_to_data_repo(
     )
     selected_set = set(selected_rels)
     skipped_rels = [r for r in all_rels if r not in selected_set]
+
+    # #2271 round 2 (raw-completions-symlink-escape): fail CLOSED, before any
+    # network I/O, when any upload-ELIGIBLE entry is a symlink. The rglob +
+    # is_file() walk above FOLLOWS file symlinks, so a link like
+    # raw_completions/debug.txt -> ../../.env would be selected as rollout
+    # data and upload_folder would commit its TARGET's bytes. Dropping links
+    # from selected_rels is NOT sufficient: upload_folder's own walk would
+    # still commit them as extras, and the exact-set verify is missing-only,
+    # so the surplus would never be flagged — hence raise, never filter.
+    # DANGLING file symlinks never reach this gate (is_file() is False for
+    # them, so the walk already excluded them), and rglob does not recurse
+    # into symlinked DIRECTORIES (those enter neither the upload set nor the
+    # skip disclosure — a known, recorded residual). Non-selected symlinks
+    # (outside the raw-completions class) are not committed by upload_folder
+    # and deliberately do not trip this gate.
+    symlink_rels = [r for r in selected_rels if (eval_results_dir / r).is_symlink()]
+    if symlink_rels:
+        raise RuntimeError(
+            "upload_raw_completions_to_data_repo: refusing upload — "
+            f"{len(symlink_rels)} upload-eligible file(s) under {eval_results_dir} "
+            f"are symlinks (upload_folder would commit their TARGET bytes as rollout "
+            f"data): {symlink_rels}"
+        )
 
     # Skip disclosure runs BEFORE the empty-selection early return so strict
     # mode (`on_unmatched="raise"`) still fires when EVERY file was skipped —
