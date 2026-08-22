@@ -9986,8 +9986,8 @@
     "2292": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2292",
-      "status": "planning",
+      "path": "tasks/approved/2292",
+      "status": "approved",
       "title": "Figure builders: emit tick/legend text to meta.json + WARN-lint opaque code-slug labels"
     },
     "2293": {
