@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2483,
+  "highest_id": 2484,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11458,6 +11458,13 @@
       "path": "tasks/proposed/2483",
       "status": "proposed",
       "title": "verify_plan: flag ratio-form ordering conjuncts over unbounded-below metrics in verdict lattices (c20 threshold-SKIP blind spot)"
+    },
+    "2484": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2484",
+      "status": "proposed",
+      "title": "verify_plan: WARN on pilot-abort extrapolations whose multiplier ignores a batched side-channel cadence (#1901 v9 \u00a77.2 false-halt shape)"
     },
     "249": {
       "has_clean_result": false,
