@@ -861,6 +861,29 @@ standard 3-lens enum gate does not apply: the brief's verbatim lens list IS
   registry leg from repo root; workspace version-suffixed to the PLAN
   version).
 
+- **verify_plan check-addition, standard statistics lens + brief six-question
+  FP/FN translation (#2269 round one, the c69 regen-headroom check — the
+  #2228-statistics shape re-proven): brief verbatim as its own span carried
+  every digit (corpus counts, headroom bytes, incident arithmetic); scaffold
+  stayed digit-free by writing "the Decision Rationale section"/"the
+  Assumptions section" for the two-digit § refs and DROPPING a literal
+  `tasks/*/<id>/plans/` glob from the read-discipline block (the `*` defeats
+  the `tasks/[a-z_]+/` ref-extraction, so the bare id would residual — say
+  "copy the glob from the plan's test table" instead). Question-mapped 1:1
+  with per-question duties in the output spec (show-the-evading-phrasing for
+  the overfit question, quote-the-command re-run arithmetic, PINNED|UNPINNED
+  per-behavior enumeration for fixture sufficiency); circularity warning
+  named the plan's own /tmp prototype scans as non-evidence (same grammar
+  certifying itself, #2261 move) with an UNVERIFIED escape since they are
+  declared throwaway; snapshot note extended with corpus/rule-file
+  continuous-growth drift (the plan snapshot-dates every count). Ops catch:
+  a dead prior spawn had left a PARTIAL lensitems.txt INSIDE the
+  version-suffixed workspace itself — do not trust found span files even at
+  fresh version-keyed paths; re-extract and `cmp` the plan span against its
+  source immediately before assembly. Numcheck PASS first try at ~126 KB
+  (spans = briefnote + planbody + lensitems + empty prior; registry leg from
+  repo root).**
+
 **Why:** first custom-lens infra compose (#2324) — these choices made the
 numeric gate pass first try on a 68 KB prompt; round 2 (REVISE-round
 re-review) passed on the second numcheck run, the only failures being the
