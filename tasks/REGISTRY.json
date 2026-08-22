@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2472,
+  "highest_id": 2473,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11371,6 +11371,13 @@
       "path": "tasks/running/2472",
       "status": "running",
       "title": "Add codex-*-lean twins: autocompact-thrash ladder has no lean-twin rung for the Codex composer roles"
+    },
+    "2473": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2473",
+      "status": "proposed",
+      "title": "workflow-fix: codex-* composers leave their own agent-memory writes uncommitted (3x in one session)"
     },
     "248": {
       "has_clean_result": false,
