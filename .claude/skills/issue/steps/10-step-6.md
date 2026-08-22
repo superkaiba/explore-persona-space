@@ -153,7 +153,9 @@ bypass 6a.5, and extension-less citations. The check ref defaults to
 names an rsync-materialized SLURM lane — every member of
 `router._PER_CLUSTER_LANES` (`nibi` / `fir` / `mila` / `fellows`) plus the
 legacy `cluster` alias — OR is absent/`auto` (the auto chain is
-fellows-FIRST, an rsync lane), run the gate with `--lane rsync` plus any
+runpod-first, but a RunPod capacity miss falls through to fellows — an
+rsync lane — so `auto` must satisfy the rsync-lane bar too), run the gate
+with `--lane rsync` plus any
 plan-named `--extra-sync-path` values: git-reachability is necessary but NOT
 sufficient there — the lane's scratch tree is an rsync of
 `RSYNC_INCLUDE_PATHS` with `eval_results/` excluded, so an in-ref
