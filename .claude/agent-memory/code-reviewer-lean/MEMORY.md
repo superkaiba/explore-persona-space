@@ -58,3 +58,4 @@
 - [Fork-layout default mirrored onto parent](fork_layout_default_mirrored_onto_parent.md) — two-sided consumers default the PARENT path to the FORK layout; ls the parent tree + grep the plan for the registered path (#2329 g4)
 - [Follow-up worktree stale plan version](followup_worktree_stale_plan_version.md) — resolve plans/vN from the MAIN checkout; worktree plan.md can symlink a pre-critique draft; cite the version per finding (#2329 r1 g8)
 - [Consumer flag producer never writes](consumer_flag_producer_never_writes.md) — a rec.get("<flag>") filter is vacuous if the producer never writes the field; severity forks on an upstream assert (#2329 r1 g8)
+- [Qualitative-panel commit review recipe](qualitative_panel_commit_review_recipe.md) — triple-consistency + characterization grounding + BOTH-direction substitution-disclosure + sidecar-commit ancestry (#2478 r1 g2)

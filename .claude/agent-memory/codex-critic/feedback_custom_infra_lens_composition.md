@@ -904,6 +904,39 @@ standard 3-lens enum gate does not apply: the brief's verbatim lens list IS
   clean for a verify_task_body check-extension plan; numcheck PASS first try
   at ~58 KB (spans = inputs + evasion + lensitems + plan + empty prior).
 
+- **Artifact-VERIFICATION/hardening plan (kind: analysis, zero-GPU), standard
+  methodology lens + orchestrator four-question translation + a fact-check
+  CAVEAT as the designated press point (#2480 round one): the 19-series
+  kind:analysis reframe composes as a five-path conclusion translation**
+  (FALSE-VERIFICATION / AUDIT UNREACHABILITY / SCOPE MISS / PERSISTENCE
+  FAILURE / TECHNICAL FAILURE) with a do-not-flag list gagging re-run-the-
+  pilot demands (the plan's own method-delta excludes re-runs — judge whether
+  THIS task answers ITS question). The brief's fully-CONFIRMED fact-check
+  block composes as settled ground truth EXCEPT the one caveat the fact-check
+  itself surfaced (an audit-basis JSON with an empty per-corpus block whose
+  scores live in a committed-but-unnamed sibling file) — hand that caveat
+  explicitly to ONE lettered question as "deliberately NOT settled,
+  adjudicate", with both branches named (pool drawn from the populated split
+  ⇒ harmless; from the empty one ⇒ the audit's own missing-field FLAG branch
+  fires spuriously). Earned sharpeners for verification predicates: (i) the
+  committed copy is a byte-copy of the already-spot-read staging files, so
+  re-derivation guards transcription+permanence while the audits carry the
+  "unreviewed" load — ask whether that division closes the founding gap;
+  (ii) audit verdict-logic values quoted from the scratch report's own
+  summary but absent from the verification table (load-bearing ⇒ should they
+  be re-derived too?); (iii) membership recoverability — an audit that only
+  checks marginal score distributions cannot identify WHICH contexts are the
+  hard negatives; (iv) circularity when pool definitions trace to the
+  report-under-audit's prose rather than JSON _meta. Read discipline:
+  ENCOURAGE jq reads of the local staging JSONs + `git show <pin>` of the
+  scratch report (empirical beats hypothetical), ban the two multi-hundred-MB
+  .npz by name and ALL Hub calls (recorded absence probes judged as written).
+  Local-artifact drift note extends the snapshot note: a staging read
+  disagreeing with a CONFIRMED fact-check item is a REPORTED finding with the
+  jq path, never silently preferred. Numcheck PASS first try at ~118 KB
+  (spans = brief + lensitems + plan + empty prior; digit-free scaffold —
+  counts as words, "the balanced-pool control values" instead of numbers).
+
 **Why:** first custom-lens infra compose (#2324) — these choices made the
 numeric gate pass first try on a 68 KB prompt; round 2 (REVISE-round
 re-review) passed on the second numcheck run, the only failures being the
