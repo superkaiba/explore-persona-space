@@ -689,6 +689,28 @@ standard 3-lens enum gate does not apply: the brief's verbatim lens list IS
   both-sides-guard atoms + comma-grouping first + sci-notation branch +
   isfinite literal-keep + collect-all + registry leg from repo root).
 
+- **Gate/ref-resolution infra plan, standard alternatives lens + brief
+  seven-question translation (#2263 round one, verify_carryover_inputs
+  wrong-ref fix): three small new patterns.** (1) A fact-check report that
+  explicitly defers a disposition "to the critics" (the bash→text fence-language
+  side effect) composes as an ADDITIONAL numbered press question with its own
+  disposition words — fact-check-routed design calls are a press-point source,
+  distinct from the do-not-refile guard on its CONFIRMED verdicts. (2) A brief
+  question asking whether a repo state actually exists ("do stale suffixed
+  branches exist?") gets an EMPIRICAL mandate: read-only `git for-each-ref`
+  over already-fetched remote-tracking refs with `git fetch` banned BY NAME
+  (the #2246 fetch ban, re-derived here because the ref population is itself
+  under review), plus quote-the-command grounding. Also ban running the gate
+  script itself when its default path fetches. (3) Numcheck self-test note:
+  version triplets like `2.34.1` produce NO atoms under both-sides guards
+  (every candidate position is dot-adjacent) — safe anywhere, and assert
+  `atoms("git 2.34.1") == Counter()` rather than expecting atoms. Dispositions
+  that worked for design-alternative questions: DOMINATES (tied to the
+  dominating-alternative bar, implies Must-Fix) | WASH | WORSE; for scope
+  additions REQUIRED | DEFENSIBLE | CREEP + a fence HONORED | VIOLATED line.
+  Numcheck PASS first try at ~66 KB, fully digit-free scaffold (spans =
+  questions + plan + body + factcheck + lensitems + empty prior).
+
 **Why:** first custom-lens infra compose (#2324) — these choices made the
 numeric gate pass first try on a 68 KB prompt; round 2 (REVISE-round
 re-review) passed on the second numcheck run, the only failures being the
