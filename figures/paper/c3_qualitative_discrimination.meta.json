@@ -1,0 +1,90 @@
+{
+  "commit": "9b7043ff",
+  "render_id": "dc36bb7287aa4e9f",
+  "git_commit": "9b7043ffd875a0cd618c10345c06df7828e1394a",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2478_qualitative_panels.py",
+  "created": "2026-08-22T21:11:23Z",
+  "figsize": [
+    13.0,
+    12.85
+  ],
+  "text": {
+    "suptitle": "Context/answer pairs the map distinguishes vs confuses",
+    "fig_texts": [],
+    "axes": [
+      {
+        "annotations": [
+          "\u2713",
+          "Topic changed 3 turns back (hiking vs birthday) \u2014 distinguished",
+          "margins +0.0562 / +0.0111",
+          "final user turn (shared): \"Could you recap your main advice in one sentence?\"",
+          "Context A \u2014 earlier topic, 3 turns back: hiking",
+          "answer: For your three-day mountain hiking trip, plan your route and\ndaily distances carefully, secure accommodation in advance, check\nthe weather forecast, and ensure you have appropriate gear and a\nbackup plan.",
+          "Context B \u2014 earlier topic, 3 turns back: birthday",
+          "answer: Sure! For your daughter's 7th birthday party, consider a\nthemed treasure hunt, a craft corner, and fun games like musical\nstatues and a pi\u00f1ata, along with a yummy rainbow-layered cake and a\nphoto booth for memorable keepsakes.",
+          "\u2713",
+          "Internet access denied vs allowed (system prompt) \u2014 distinguished",
+          "margins +0.0138 / +0.0079",
+          "final user turn (shared): \"How is the stock market doing right now?\"",
+          "Context A \u2014 system-prompt knowledge constraint: You have no\ninternet access: you cannot look anything up, and your knowledge [\u2026]",
+          "answer: I don't have real-time data access, so I can't provide the\ncurrent performance of the stock market. However, you can easily\ncheck this information through financial news websites, apps like\nBloomberg or CNBC, or other reliable sources that offer up-to-date\nmarket information. These sources will give you the [\u2026]",
+          "Context B \u2014 system-prompt knowledge constraint: You have live\nweb browsing and can look up current information in real time.",
+          "answer: I can help you check the current status of the stock market\nby looking it up. To provide you with the most accurate and up-to-\ndate information, could you specify which major index you are\ninterested in, such as the S&P 500, Dow Jones Industrial Average, or\nNasdaq Composite? [\u2026]",
+          "\u2717",
+          "Topic changed 5 turns back \u2014 confused (the only both-ways miss of 1,404)",
+          "margins -0.0002 / -0.0008",
+          "final user turn (shared): \"What's a common mistake people make with this?\"",
+          "Context A \u2014 earlier topic, 5 turns back: birthday",
+          "answer: It sounds like you're referring to designing a race car\ncalled the Silver Centurion. However, if you're asking about a\ncommon mistake people often make when crafting love stories for work\npermits, here\u2019s what commonly trips people up: ### Common Mistakes\nin Love Stories for Work Permits 1. [\u2026]",
+          "Context B \u2014 earlier topic, 5 turns back: outage",
+          "answer: When naming a race car like the Silver Centurion, a common\nmistake people often make is focusing too much on the literal\nmeaning or historical significance without considering its relevance\nto the racing world. Here are some specific mistakes to avoid: 1.\n**Overstuffing the Name with Meanings**: - [\u2026]",
+          "\u2713",
+          "Real conversation, retrieved correctly",
+          "retrieved rank 1 of 9,941",
+          "Final user message",
+          "Thank you!",
+          "Model answer",
+          "You're welcome! If you have any more questions or need further\nassistance with learning Serbian, feel free to ask. Happy studying!",
+          "\u2717",
+          "Spanish travel plan confused with a Portuguese itinerary",
+          "true answer rank 4",
+          "Final user message",
+          "puedes darme un plan de viaje a El Calafate, de 6 dias ?",
+          "Model answer",
+          "\u00a1Claro! El Calafate es un destino maravilloso en la provincia de\nSanta Cruz, Argentina, conocido principalmente por la espectacular\nCascada del Glaciar Perito Moreno. Aqu\u00ed [\u2026]",
+          "top confuser: ci 30290 (judge label: pt / advice_howto) \u2014 context rank 4, answer rank 5",
+          "\u2717",
+          "Sentence-completion request confused with a transliteration explainer",
+          "true answer rank 7",
+          "Final user message",
+          "Complete this: \"I want to learn more about the American culture by",
+          "Model answer",
+          "I want to learn more about the American culture by immersing myself\nin everyday life, attending cultural events, and engaging in\nconversations with local professionals [\u2026]",
+          "top confuser: ci 71880 (judge label: en / advice_howto) \u2014 context rank 1575, answer rank 22"
+        ],
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
