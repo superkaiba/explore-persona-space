@@ -224,10 +224,14 @@ def test_good_plan_passes_all():
         # (grep-verified: no pp/percentage/baseline hit in the fixture) —
         # trigger-conditional (#2228).
         "c68_margin_baseline_ceiling": "SKIP",
+        # SKIP: GOOD_PLAN carries no re-gen arming / max_model_len token
+        # (grep-verified: zero regen|re-gen|armed|max_model_len hits in the
+        # fixture) — trigger-conditional (#2269).
+        "c69_regen_headroom": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 65
+    assert len(results) == 66
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -6365,12 +6369,14 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     #   conditional, #2204)
     # + c68 (SKIP: GOOD_PLAN carries no baseline-subtractive pp margin
     #   token; trigger-conditional, #2228)
-    assert payload["n_skip"] == 59
+    # + c69 (SKIP: GOOD_PLAN carries no re-gen arming / max_model_len
+    #   token; trigger-conditional, #2269)
+    assert payload["n_skip"] == 60
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 68
-    assert len({c["id"] for c in payload["checks"]}) == 68
+    assert len(payload["checks"]) == 69
+    assert len({c["id"] for c in payload["checks"]}) == 69
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")

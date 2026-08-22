@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2467,
+  "highest_id": 2469,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9804,8 +9804,8 @@
     "2269": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2269",
-      "status": "reviewing",
+      "path": "tasks/completed/2269",
+      "status": "completed",
       "title": "verify_plan.py: regen-headroom arithmetic check (armed \u22652\u00d7 re-gen vs max_model_len pin) \u2014 third recurrence of the #505/#601 class"
     },
     "227": {
@@ -9825,8 +9825,8 @@
     "2271": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2271",
-      "status": "running",
+      "path": "tasks/completed/2271",
+      "status": "completed",
       "title": "upload_raw_completions_to_data_repo silently drops pre-merge shard payloads (15.6 MB of rollout text on #2223)"
     },
     "2272": {
@@ -9839,8 +9839,8 @@
     "2273": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2273",
-      "status": "running",
+      "path": "tasks/completed/2273",
+      "status": "completed",
       "title": "gotchas.md: fellows remote shell is zsh \u2014 unmatched glob aborts the whole SSH command (nomatch), silently truncating chained monitoring probes"
     },
     "2274": {
@@ -9895,8 +9895,8 @@
     "2280": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2280",
-      "status": "approved",
+      "path": "tasks/running/2280",
+      "status": "running",
       "title": "Diagnose selective SIGTERM (rc=143) killer of in-session foreground python children on the shared VM"
     },
     "2281": {
@@ -9937,15 +9937,15 @@
     "2286": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2286",
-      "status": "proposed",
+      "path": "tasks/archived/2286",
+      "status": "archived",
       "title": "HF data repo superkaiba1/explore-persona-space-data is at the 1,000,000-file hard ceiling \u2014 fleet-wide multi-file uploads now fail; pack/prune/overflow decision needed"
     },
     "2287": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2287",
-      "status": "proposed",
+      "path": "tasks/on_hold/2287",
+      "status": "on_hold",
       "title": "URGENT fleet-wide: HF data repo at the 1M-file ceiling (999,867/1,000,000) \u2014 headroom probe + overflow policy + user cleanup decision list"
     },
     "2288": {
@@ -9979,15 +9979,15 @@
     "2291": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2291",
-      "status": "proposed",
+      "path": "tasks/running/2291",
+      "status": "running",
       "title": "verify_task_body check 17: match Context footer against verbatim ## Provenance, not just non-empty"
     },
     "2292": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2292",
-      "status": "proposed",
+      "path": "tasks/running/2292",
+      "status": "running",
       "title": "Figure builders: emit tick/legend text to meta.json + WARN-lint opaque code-slug labels"
     },
     "2293": {
@@ -10000,8 +10000,8 @@
     "2294": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2294",
-      "status": "proposed",
+      "path": "tasks/running/2294",
+      "status": "running",
       "title": "workflow-fix: /issue Step 5 dispatches code-review with no implementer marker posted"
     },
     "2295": {
@@ -10049,8 +10049,8 @@
     "2300": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2300",
-      "status": "proposed",
+      "path": "tasks/on_hold/2300",
+      "status": "on_hold",
       "title": "HF data repo at the hard 1,000,000-file cap \u2014 every net-new-file upload fails fleet-wide"
     },
     "2301": {
@@ -11329,6 +11329,20 @@
       "path": "tasks/archived/2467",
       "status": "archived",
       "title": "workflow-fix: two ungated HfApi().upload_file call sites in issue1739_r2v2_run.py bypass the secret-scrub gate (test RED on main)"
+    },
+    "2468": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2468",
+      "status": "proposed",
+      "title": "workflow-fix: implementer runs no-flags workflow_lint when the diff touches .claude/** markdown"
+    },
+    "2469": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2469",
+      "status": "proposed",
+      "title": "workflow-fix: non-canonical 'workflow-fix' tag misses wf-fix floor predicate (61 tasks)"
     },
     "247": {
       "has_clean_result": false,
