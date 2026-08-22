@@ -8,10 +8,14 @@ has_clean_result: false
 parent_id: 1482
 origin_prompt: 'Paper outline 2026-08-22: ''SAE experiments — try turn averaged SAEs'''
 workflow: v1
+goal: 'Determine whether the context-to-answer map''s high-level-over-low-level predictability
+  gradient (#1482) holds in a turn-averaged SAE basis: per-tier held-out R2 + acc@1
+  vs identity+bias for turn-averaged SAE features of true and map-predicted answer
+  summaries.'
 ---
 ## Goal
 
-Determine whether the context-to-answer map's high-level-over-low-level predictability gradient (#1482: median per-feature R² 0.43 → 0.17 → 0.04 general → specific tiers, token-level matryoshka SAE basis) holds in a TURN-AVERAGED SAE basis: encode true and map-predicted whole-answer summaries with an SAE built for turn-averaged (response-averaged) activations, and measure which turn-averaged SAE features are predictable from v_C through the map — held-out R² AND top-1 retrieval acc@1 vs the identity+bias baseline, reported per feature tier/category exactly as in #1482 so the two bases are directly comparable.
+Determine whether the context-to-answer map's high-level-over-low-level predictability gradient (#1482) holds in a turn-averaged SAE basis: per-tier held-out R2 + acc@1 vs identity+bias for turn-averaged SAE features of true and map-predicted answer summaries.
 
 ## Provenance
 

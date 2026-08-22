@@ -11395,6 +11395,7 @@
       "title": "Correct #823 Takeaway 4: the persona-ladder decline is not denominator arithmetic (denominator-free paired read refutes the mixture-floor interpretation)"
     },
     "2476": {
+      "goal": "Determine whether the context-to-answer map's high-level-over-low-level predictability gradient (#1482) holds in a turn-averaged SAE basis: per-tier held-out R2 + acc@1 vs identity+bias for turn-averaged SAE features of true and map-predicted answer summaries.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/proposed/2476",
