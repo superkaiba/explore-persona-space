@@ -21,23 +21,33 @@ workflow: v1
 
 Surfaced by the round-4 code-review ensemble on #2263 as a standing recommendation from the Claude `code-reviewer`.
 
-**SCOPE NARROWED 2026-08-22 (before dispatch).** As originally filed, this task also covered the parent-reuse fallback block in `.claude/skills/issue/steps/10-step-6.md` (Codex concern `parent-reuse-fallback-parity`). That part was **pulled back into #2263 and fixed there** at round 6. Reason: `parent-reuse-fallback-parity` was a *raised CONCERN row* on #2263's `concerns.jsonl`, `task.py defer-concern` is USER-ONLY by spec, and an autonomous session may not complete a task with an open concern row it could resolve — and the site was in #2263's own deliverable file. This task keeps only the sites that genuinely live in OTHER files.
+**SCOPE NARROWED 2026-08-22 (before dispatch).** As originally filed, this task also covered the parent-reuse fallback block in `.claude/skills/issue/steps/10-step-6.md` (Codex concern `parent-reuse-fallback-parity`). That part was **pulled back into #2263 and fixed there** at round 6, because it was a raised CONCERN row on #2263's own ledger, `task.py defer-concern` is USER-ONLY, and the site was in #2263's own deliverable file. This task keeps only the sites that live in OTHER files.
 
 #2263 spent seven rounds making three things mandatory at the primary Step 6b launch fence: the shared `--print-repo-branch` resolution, a mechanically-halting launch recheck, and `EXTRA_SYNC_ARGS` threaded into the dispatch argv. Two condensed launch references in other step files were never brought to that standard.
 
-## READ FIRST — a live pin constrains your options
+## READ FIRST — the one-canonical-fence rule is a CONVENTION here, not a guardrail
 
-**#2263 added a UNIQUENESS invariant, and it will fail this task's most obvious fix.**
+**Corrected 2026-08-22 (third revision of this section — read the history note below before trusting any earlier revision).**
 
-`tests/test_verify_carryover_inputs.py::test_step6_parent_reuse_fallback_points_at_canonical_launch_fence` asserts that **exactly ONE `dispatch_issue[.py] launch` INVOCATION** exists across ALL fenced blocks of the composed `/issue` spec, and that the block carrying it is the canonical Step 6b fence (resolver + `if !` recheck + `${EXTRA_SYNC_ARGS[@]+…}` all asserted).
+#2263 added `tests/test_verify_carryover_inputs.py::test_step6_parent_reuse_fallback_points_at_canonical_launch_fence`, whose docstring advertises "exactly ONE `dispatch_issue[.py] launch` invocation across ALL fenced code blocks" of the composed `/issue` spec.
 
-The invariant is counted at **invocation** grain, not block grain, and it recognizes **both** the path spelling (`scripts/dispatch_issue.py launch`) and the module spelling (`python -m scripts.dispatch_issue launch`), across **bash / sh / console / bare** fences. Prose mentions outside fenced blocks are deliberately not counted.
+**What it actually enforces, as verified independently by both #2263 round-6 reviewers:** occurrences of a launch-shaped regex inside **column-zero, exactly-three-backtick** fences with a bare single-word info string. It recognizes the path spelling and the module spelling.
 
-Consequence: **completing either `12-step-8.md:303` or `13-step-9.md:2889` into an executable launch invocation WILL break that test — by any spelling, in any fence language.** #2263's round-5 review ensemble was asked whether that coupling is a feature or an accidental trap and ruled **feature**: one canonical fence is the accumulated lesson of #2263's rounds, and every duplicated fence is a fresh drift channel of the class those rounds kept closing.
+**What it does NOT catch — and this is the part that matters for this task:** an **INDENTED** fenced block. Also four-backtick fences, tilde fences, extended info strings, a line-continued invocation, and quoted program/subcommand forms. And it over-fires in the other direction: a *commented* launch-shaped line inside a recognized fence turns it RED despite adding no invocation, so it counts regex occurrences rather than shell invocations.
 
-So route (a) below is effectively closed unless you can argue the invariant itself should be relaxed — and that argument belongs in a plan reviewed against #2263's history, not in a quiet test edit. Do NOT widen or delete the pin to make room for a second invocation.
+**Both of this task's two anchor sites are indented list content.** Codex verified by mutation that inserting a valid indented Bash fence at each exact anchor left the test GREEN. The composed spec currently carries 184 indented fence delimiter lines.
 
-*(History note, for anyone reading an older revision of this body: at round 6 the pin counted only ` ```bash `-fenced BLOCKS, so a module-spelling or ` ```sh `-fenced completion would have escaped it, and an earlier revision of this section overstated its reach. #2263 round 7 closed all three escapes — second-invocation-in-same-block, module spelling, and non-bash fence — each verified to FAIL against the widened pin. The statement above is now accurate as written.)*
+**Therefore: completing either site into a normally-indented fenced example would create a second operator-copyable launch site that the pin will NOT flag.** The one-canonical-fence rule still holds as the accumulated lesson of #2263's rounds — its round-5 ensemble ruled the coupling a feature, and every duplicated fence is a fresh drift channel of the class those rounds kept closing — but you must honor it **deliberately**. Do not plan on the test stopping you.
+
+Practical consequence for your options below: prefer (b) or (c). If you nonetheless choose (a), you owe an explicit argument against #2263's history AND a pin that actually catches your new block — and #2263 may itself widen the detector (see below), so check its final state first.
+
+### History note — two earlier revisions of this section overstated the pin, and one may have been read
+
+Revision v2 said the pin asserts "exactly ONE **bash block** carries `dispatch_issue.py launch`" and that completing either reference into a fence WILL break it. False then: the round-6 pin counted `bash`-fenced BLOCKS and the path spelling only, so a module-spelling or ` ```sh ` completion escaped.
+
+Revision v3 said the round-7 pin made that true "by any spelling, in any fence language." Also false: round 7 widened spelling and fence *language* but stayed column-zero-anchored, so the indented case — which is exactly this task's case — still escapes.
+
+Both revisions handed this task a mechanical guarantee that did not exist. Recorded rather than silently re-tightened, because a planner who read either revision needs to know which guarantee they were relying on. **#2263 review round 6 is where both overstatements were caught** (Claude `r7-uniqueness-pin-residual-escapes`, Codex `r6-uniqueness-pin-2470-coupling` re-raised as `verified-open`); whether #2263 widens the detector to cover indented fences is being adjudicated there. Re-read `epm:results` and the round-6/7 verdicts on #2263 before relying on any statement in this section.
 
 ## Workflow gap
 
@@ -46,39 +56,36 @@ Two sites, both pre-existing, neither introduced by #2263:
 1. `.claude/skills/issue/steps/12-step-8.md:303`
 2. `.claude/skills/issue/steps/13-step-9.md:2889`
 
-Flagged together by the Claude `code-reviewer` at #2263 round 4 as a standing recommendation (non-blocking there, and outside that task's reconciler-bounded scope).
+Flagged together by the Claude `code-reviewer` at #2263 round 4 as a standing recommendation (non-blocking there, outside that task's reconciler-bounded scope). Neither site is fenced today — both are indented prose.
 
 A related residual named in #2263's `epm:results v8` (d), same surface, worth folding in: `13-step-9.md:2890` still carries an old intent-then-backend argv form in prose.
 
-**Why it is a workflow gap.** These are operator-copyable command blocks in the workflow surface. #2263's central finding was that a gate certifying one input set while the dispatch consumes another is a hollow gate. A *condensed* launch example that silently drops the resolver or the sync threading reintroduces the same divergence channel at a second and third site — mechanically enforced at the primary fence, unenforced here.
+**Why it is a workflow gap.** These are operator-copyable command blocks in the workflow surface. #2263's central finding was that a gate certifying one input set while the dispatch consumes another is a hollow gate. A *condensed* launch example that silently drops the resolver or the sync threading reintroduces the same divergence channel at a second and third site.
 
 ## Scope caution for planning — do not assume a uniform sweep
 
 Decide per site among:
 
-- **(a) complete the invocation** — see the pin warning above; effectively closed.
-- **(b) replace with a pointer to the canonical Step 6b fence** — what #2263 round 6 chose for the analogous parent-reuse block, after judging that block's role to be the reuse *decision* rather than a dispatch. One canonical site means nothing to drift.
+- **(a) complete the invocation** — see the READ FIRST warning: permitted only with an argued case plus a pin that genuinely catches the new block.
+- **(b) replace with a pointer to the canonical Step 6b fence** — what #2263 round 6 chose for the analogous parent-reuse block, after judging that block's role to be the reuse *decision* rather than a dispatch.
 - **(c) mark it explicitly illustrative-not-executable** — if it is prose scaffolding. #2263 round 6 paired its pointer with an `echo … >&2` line stating the block does not dispatch; reuse that shape if it fits.
 
-Read #2263's `epm:results v8` for the reasoning behind its per-site choice. Consistency across all four sites matters more than any individual disposition.
-
-Note that a **prose-only** mention is already outside the pin's reach, so disposition (c) needs no pin change — and if you convert a fenced block to prose, verify the pin still sees exactly one invocation afterwards.
+Prose-only mentions are outside the pin's reach entirely (13 such mentions exist today, deliberately unpinned), so (c) needs no pin change. Read #2263's `epm:results v8` for the reasoning behind its per-site choice; consistency across all four sites matters more than any individual disposition.
 
 ## Consider extending, not duplicating, the pin
 
-If your outcome is that N sites must carry the same tokens or the same pointer, **extend** the existing invariant rather than adding a parallel pin. #2263's record is that prose parity claims decay: its round-2 fix put the lane suffix in a comment, its round-3 prose falsely asserted the launched set "cannot drift", and its round-6 pin advertised an invariant stronger than it enforced. Any new assertion must be verified RED against the pre-fix text before it counts — a pin that cannot fail is the exact currency #2263 spent seven rounds learning not to accept.
+If your outcome is that N sites must carry the same tokens or pointer, **extend** the existing invariant rather than adding a parallel pin. #2263's record is that these claims decay: round 2 put the lane suffix in a comment; round 3's prose falsely asserted the launched set "cannot drift"; round 6's pin advertised block-grain coverage it did not have; round 7's pin advertised "ALL fenced code blocks" while staying column-zero-anchored. Any new assertion must be verified RED against the pre-fix text before it counts, **and the mutation must be the one that matters** — for this task that means an INDENTED fence at the real anchor site, not an unindented specimen.
 
 ## Coordination — probe before dispatching a writer
 
-Open task **#2407** ("Step 6b canonical launch snippet is provision-only — add the required workload leg + time-budget guidance") targets the Step 6b launch snippet in `10-step-6.md`. Not a duplicate of this task (different gap, and after the narrowing above this task no longer touches `10-step-6.md`), but if planning here reaches for that file anyway, the two would collide as concurrent writers. Per `.claude/rules/cross-session-writer-arbitration.md`, run the pre-dispatch probe (`spawn_session.py list` + a `file-set claim:` marker scan + `git log --since` recency on the intended paths) and either sequence-after-commit or split to a disjoint file set. The same applies to #2263 itself if it is still in flight — it owns `10-step-6.md` and the pin test.
+Open **#2407** ("Step 6b canonical launch snippet is provision-only") targets the Step 6b snippet in `10-step-6.md`. Not a duplicate (and after the narrowing this task no longer touches that file), but if planning reaches for it anyway the two collide as concurrent writers. Per `.claude/rules/cross-session-writer-arbitration.md`, run the pre-dispatch probe (`spawn_session.py list` + a `file-set claim:` marker scan + `git log --since` recency on the intended paths) and either sequence-after-commit or split. The same applies to #2263 while it is in flight — it owns `10-step-6.md` and the pin test.
 
 ## Verified at filing
 
-- #2263 `events.jsonl`: `epm:code-review v4` (the standing recommendation naming both sites), `epm:code-review-codex v4` (concern `parent-reuse-fallback-parity`, resolved at round 6), `epm:results v8` (round 6's per-site disposition + the `13-step-9.md:2890` residual), `epm:code-review v5` / `epm:code-review-codex v5` (the feature ruling on the coupling, plus the three pin-escape findings), `epm:results v9` (round 7's widened invocation-grain pin and its three escape-mutation verifications).
-- `epm:review-reconcile v3` on #2263 — the binding adjudication that bounded round 4 to the primary fence, which is why these sites were left.
+- #2263 `events.jsonl`: `epm:code-review v4` (the standing recommendation naming both sites), `epm:code-review-codex v4` (`parent-reuse-fallback-parity`, resolved at round 6), `epm:results v8` (round 6's per-site disposition + the `13-step-9.md:2890` residual), `epm:results v9` (round 7's widened pin), `epm:code-review v6` + `epm:code-review-codex v6` (the indented-fence escape, demonstrated by mutation at this task's exact anchor sites).
 
 ## Provenance
 
 workflow_fix_target: .claude/skills/issue/steps/12-step-8.md
 
-Routed from the #2263 round-4 review ensemble per `.claude/rules/workflow-fix-on-bug.md` — a surfaced-prose follow-up gets the same auto-file treatment as a formal candidate block; parking it as a chat note is the named anti-pattern. Non-blocking for #2263 by both reviewers' rating, and these sites live outside #2263's deliverable file.
+Routed from the #2263 round-4 review ensemble per `.claude/rules/workflow-fix-on-bug.md`. Non-blocking for #2263 by both reviewers' rating, and these sites live outside #2263's deliverable file.
