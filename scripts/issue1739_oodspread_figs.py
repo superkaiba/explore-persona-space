@@ -33,7 +33,14 @@ import statistics
 import sys
 from pathlib import Path
 
-import matplotlib
+from explore_persona_space.orchestrate.env import load_dotenv
+
+# Shared-VM thread caps (#847) must bind BEFORE any heavy import (the
+# orchestrate.env setdefaults are applied by load_dotenv); pinned by
+# tests/test_shared_vm_thread_caps.py::test_no_new_torch_before_dotenv_vm_entrypoints.
+load_dotenv()
+
+import matplotlib  # noqa: E402
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402

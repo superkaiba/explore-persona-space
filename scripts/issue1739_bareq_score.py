@@ -1377,7 +1377,9 @@ def _whitening_and_map(args, tbl, layers, variant):
         f_u=None,
         f_l=None,
     )
-    u_x, u_y, u_label, n_u = _u_pool_for_spec(spec, u_arrays, u_fit_rows, tbl, layers)
+    u_x, u_y, u_label, n_u, _pool_meta = _u_pool_for_spec(
+        spec, u_arrays, u_fit_rows, tbl, layers
+    )
     wh = fits.fit_whitening(u_x, device=args.device, seed=args.seed)
     mapfit = _fit_map(args, fits.apply_whitening(u_x, wh), fits.apply_whitening(u_y, wh))
     del u_x, u_y

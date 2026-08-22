@@ -507,7 +507,9 @@ def score_behavior(args, behavior: str) -> dict:  # noqa: C901 — one linear pe
             f_u=None,
             f_l=None,
         )
-        u_x, u_y, u_label, n_u = _u_pool_for_spec(spec, u_arrays, u_fit_rows, tbl, layers)
+        u_x, u_y, u_label, n_u, _pool_meta = _u_pool_for_spec(
+            spec, u_arrays, u_fit_rows, tbl, layers
+        )
         t_map = time.time()
         wh = fits.fit_whitening(u_x, device=args.device, seed=args.seed)
         # Map REFIT in-process on the #1092 U pool, exactly as the main run
