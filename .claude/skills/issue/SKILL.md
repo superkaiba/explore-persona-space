@@ -242,8 +242,8 @@ proposed                                <- user has filed, clarifier hasn't run
                                                      |--> running (implementing sub-phase)  <- experiment-implementer (type:experiment) OR implementer (type:infra/batch)
                                                             |-- (epm:experiment-implementation OR epm:results posted)
                                                                |--> running (code-reviewing sub-phase)  <- code-reviewer ensemble (Claude + Codex)
-                                                                      |-- FAIL + count<5 --> running (implementing, v+1)
-                                                                      |-- FAIL + count>=5 --> apply Step 5d cap-hit rule: strip → PASS+continue OR surface residual (autonomous+substantive: blocked; interactive: parked)
+                                                                      |-- FAIL + count<10 --> running (implementing, v+1)
+                                                                      |-- FAIL + count>=10 --> apply Step 5d cap-hit rule: strip → PASS+continue OR surface residual (autonomous+substantive: blocked; interactive: parked)
                                                                       |-- PASS + [type:experiment] --> running (workload sub-phase)  <- experimenter (pod ops + monitoring)
                                                                             |-- (epm:results posted)
                                                                                |--> verifying              <- upload-verifier ∥ analyzer first pass (held) ∥ methodology-writer early spawn

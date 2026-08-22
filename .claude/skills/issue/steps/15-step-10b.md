@@ -58,7 +58,9 @@ manually post-promotion (route the pick by `question_relation` as
 below). An interactive task that landed here with NO `epm:follow-ups v1`
 (no cheap-band candidate ever existed, so block C0 was a no-op that
 posted nothing — see C4) runs the proposer here as normal.
-- The completed task's plan (the `plans/plan.md` symlink)
+- The completed task's plan at the canonical absolute path
+  `$(uv run python scripts/task.py find <N>)/plans/plan.md` — never a
+  worktree-relative `tasks/` path (frozen at base, #2422)
 - The results (`epm:results` event)
 - The clean-result body
 - The interpretation critique history (`epm:interp-critique v1..vN`)

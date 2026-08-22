@@ -73,7 +73,7 @@ Spawned by `/adversarial-planner-v2` Phase 2, in PARALLEL with the Claude
   `artifacts/planned_manifest.json`. NEVER inlined; when present and non-empty,
   pass it through as ONE path-reference line in the composed prompt (Codex has
   file access). Omit that line when the field is absent.
-- `revision_round`: 1-indexed; max 5 per the `/adversarial-planner-v2` per-lens round cap (reconciler invocations don't count).
+- `revision_round`: 1-indexed; max 10 per the `/adversarial-planner-v2` per-lens round cap (reconciler invocations don't count).
 - `prior_critique_summaries` (round 2+): one-line summaries of prior critique rounds
   across both the Claude AND Codex Statistics twins.
 
@@ -226,7 +226,7 @@ numeric atom in the prompt
 (splitting hyphenated ranges / slash-joined pairs into atomic numbers BEFORE the
 diff: `+0.74-0.80` → `{0.74, 0.80}`), multiset-subtracts the atoms in
 `plan_body`+`lens_items`+`prior_critique_summaries`, and set-membership-clears the
-static scaffold allowlist `{0, 1, 2, 3, 4, 5, 500}`. On any residual (unresolved
+static scaffold allowlist `{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 500}`. On any residual (unresolved
 task ref or numeric atom), fail loud collect-all (one `BLOCKER: composer-authored
 number <n> not traceable ...` line per residual, single exit) and re-compose from
 the handed inputs alone — never hand-edit the offending number in.

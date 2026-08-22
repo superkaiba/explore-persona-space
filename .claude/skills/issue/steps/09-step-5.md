@@ -42,6 +42,110 @@ push/merge through `tail`/`grep`/`head` (the `guard_piped_git_push.sh`
 PreToolUse hook blocks the piped shape; a pipe masks a rejected push).
 Copy the verbatim forms from Step 10d § "Bare push / merge snippets".
 
+**Draft-PR ensure (#2241; once per branch, memoized).** Step 4a's
+draft-PR create is gated on commits-ahead > 0 but runs BEFORE the
+implementer's first commit, so its else arm fires by construction —
+THIS block is the site that actually opens the draft PR on the normal
+path; Step 10d's payload-aware arm (#2240) stays the merge-time
+backstop. At each round entry that proceeds past the pre-split guard:
+IF an open PR for issue-<N> has already been confirmed this session,
+SKIP (zero cost — the common case after round 1); otherwise run the
+probe+create below and remember a confirmed outcome. All three
+commands — existence probe, title resolver, create — are
+timeout-bounded and the whole block is FAIL-OPEN: no probe, resolver,
+or create failure may block, delay, or fail the round beyond the
+bounded timeout fences (probe <= 75 s; resolver <= 180 s, sized over
+task.py's ~120 s bounded branch-guard rebase wait,
+EPM_TASKPY_REBASE_WAIT_SECONDS; create <= 150 s; worst case <= 405 s
+at one round entry) — log the one line, proceed to 5a, retry at the
+next round entry. The fence resolves `$REPO_ROOT` in-fence (#2241 r4,
+concern step5-repo-root-uninitialized): fenced blocks run in separate
+shells and the orchestrator's Bash cwd resets, so the file-wide idiom's
+value is never inherited here; the resolve is local git and needs no
+fence of its own — a failed resolve makes the task.py call exit
+non-zero into the existing TITLE_RC gate. A resolver failure, jq
+failure, or empty / whitespace-only title SKIPS creation (#2241 r3+r4,
+concerns title-resolution-failure-masking + whitespace-only-pr-title —
+set-title stores input unstripped, so a blank stored title would
+compose a degraded PR): a degraded `issue-<N>: ` prefix-only title
+must never be created and memoized. NEVER pipe the create
+(guard_piped_git_push.sh blocks the piped shape; a pipe masks the
+exit code).
+
+```bash
+# Any-state existence probe (deterministic tri-state; measured ~0.4 s):
+# rc!=0             -> probe failed (network/auth): skip, retry next round
+# "0"               -> no PR object at all = the #2241 zero-PR class: create
+# ">=1" (any state) -> a PR object exists: OPEN -> done; MERGED/CLOSED is
+#                      the #1897 follow-up class, owned by Step 10d's
+#                      payload-aware arm at merge time — do NOT create here.
+# The two trailing arms are TELEMETRY ONLY (#2241 r2): both fall through
+# to 5a exactly as before — routing (probe-failed / zero / else) unchanged.
+N_PR=$(timeout --kill-after=15s 60s gh pr list --head issue-<N> --state all --json number --jq length) || N_PR=probe-failed
+if [ "$N_PR" = "0" ]; then
+  # Title transport (#2241 r2): the title is resolved AS DATA — command
+  # output is never shell-parsed — so a hostile title cannot inject.
+  # Resolver fence (#2241 r3, concern title-resolution-failure-masking):
+  # the resolver is its own rc-gated, timeout-fenced step. Every task.py
+  # invocation — reads included — pays the branch-guard resolution, whose
+  # #996 bounded rebase wait (EPM_TASKPY_REBASE_WAIT_SECONDS, default
+  # 120 s) can precede a RuntimeError (detached HEAD / husk timeout);
+  # unfenced+unchecked, that failure was masked by jq exiting 0 on empty
+  # input and a real draft PR titled "issue-<N>: " was created and
+  # memoized to merge. On resolver failure, jq failure, or an empty /
+  # whitespace-only title (r4, concern whitespace-only-pr-title —
+  # set-title stores input unstripped, so a bare -z passed "   "): log,
+  # SKIP creation, fall through — the next round entry retries (the
+  # >=1 probe memoizes only a REAL PR, never a skipped create).
+  # In-fence root resolve (#2241 r4, concern
+  # step5-repo-root-uninitialized): $REPO_ROOT is NOT inherited across
+  # fences/Bash calls — uninitialized it expanded empty, ran
+  # /scripts/task.py, and the skip arm fired at EVERY round entry (the
+  # zero-PR class this block exists to eliminate). #506-safe form; a
+  # failed resolve routes through the TITLE_RC gate (no new failure arm).
+  REPO_ROOT=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
+  TITLE_RC=0
+  TASK_JSON=$(timeout --kill-after=30s 150s uv run python "$REPO_ROOT"/scripts/task.py view <N> --json) || TITLE_RC=$?
+  RAW_TITLE=""
+  if [ "$TITLE_RC" -eq 0 ]; then
+    RAW_TITLE=$(printf '%s' "$TASK_JSON" | jq -r '.frontmatter.title // empty') || TITLE_RC=$?
+  fi
+  if [ "$TITLE_RC" -ne 0 ] || [ -z "${RAW_TITLE//[[:space:]]/}" ]; then
+    echo "[step5-pr-ensure] title resolution failed or empty (rc=$TITLE_RC) — inconclusive; skip create; round proceeds; retry at next round entry (never a degraded-title PR)"
+  else
+    PR_TITLE="issue-<N>: $RAW_TITLE"
+    if timeout --kill-after=30s 120s gh pr create --draft --head issue-<N> \
+         --title "$PR_TITLE" --body "Closes task #<N>."; then
+      echo "[step5-pr-ensure] opened draft PR for issue-<N> (#2241)"
+    else
+      echo "[step5-pr-ensure] gh pr create failed (rc!=0) — round proceeds; retry at next round entry; Step 10d's payload-aware arm (#2240) is the backstop"
+    fi
+  fi
+elif [ "$N_PR" = "probe-failed" ]; then
+  echo "[step5-pr-ensure] PR-existence probe failed — round proceeds; retry at next round entry"
+elif [ "$N_PR" -ge 1 ] 2>/dev/null; then
+  echo "[step5-pr-ensure] PR already exists for issue-<N> (probe count $N_PR) — confirmed for this session; skip probe+create at later round entries"
+else
+  echo "[step5-pr-ensure] unexpected probe output ($N_PR) — inconclusive, not memoized; round proceeds; retry at next round entry"
+fi
+```
+
+The ensure deliberately carries NO push and NO ancestry guard. The
+branch is normally on origin by Step 5 entry on EVERY work-producing
+path: the implementer brief's #2041 fan-out completion contract
+restatement mandates commit+push by explicit path IN the producing
+turn (Step 4b § Fan-out completion contract), and the experiment
+implementer's spec additionally pins the pre-marker push. The PR is
+opened DRAFT-only; every merge-time guard (#2312 stale-ref, #2296
+parity) still runs at Step 10d before any merge. If the branch is NOT
+on origin (a non-compliant brief or implementer), the create fails
+rc!=0 and the fail-open arm retries at the next round entry — and when
+no later round occurs (a single-round PASS), the run ends with no PR
+and Step 10d's payload-aware arm (#2240) opens it at merge time:
+exactly the backstop's job. NEVER push from this block: a new push
+site would owe the #2312 stale-ref guard pair (see
+tests/test_issue_skill_step10d_rewritten_branch.py::test_all_copy_sites_guarded).
+
 **Per-commit split-review dispatch (large rounds; #2074).** Evaluate BEFORE
 the 5a fan-out, and RE-EVALUATE per round from that round's own commit set +
 diff bytes (typical revision rounds are small → no split). Resolve
@@ -112,6 +216,10 @@ and 9a-bis).** The Agent tool loads agent specs (and Skill playbooks)
 from the SESSION's cwd, and a worktree cut before a later
 workflow-surface fix never inherits it — so subagents silently run stale
 specs for the worktree's lifetime (#557).
+Scope note (#2422): the sync covers the WORKFLOW surface only — task
+state (`plans/`, `artifacts/`) is deliberately NOT synced; briefs hand
+absolute canonical main-checkout paths (§ "Both reviewers see the same
+brief").
 Before dispatching, sync the worktree's workflow surface from FETCHED
 `origin/main` (local `main` routinely lags origin on the shared root
 under fleet load — #1724 synced regressed spec bytes; #1747 migrated the
@@ -180,9 +288,27 @@ else
 #     e.g. guard_repo_root_branch.sh, guard_repo_root_pull.sh — syncing
 #     the tests without them red-flags main-green nodes on pure version
 #     skew, the #1860/#1862 half-sync)
+#   FAMILY_agents (#2260): .claude/agents <-> the vetted agents-prose pin
+#     tests enumerated below — prose-pin tests over .claude/agents/*.md
+#     content living OUTSIDE the coupled test globs (no shared name prefix
+#     exists; readers use BOTH the literal ".claude/agents" form and the
+#     quoted path-join form `/ ".claude" / "agents" /`, and the completeness
+#     guard's pattern matches both). Refreshing agents prose without its pin
+#     tests reds the Step 9c gate on pure vintage skew (#2251: main removed
+#     a planner.md row + its pinning test together; the branch-era test red
+#     the freshly-synced planner.md — a 74-min gate red). Membership is
+#     VETTED, never name-globbed: only closure-clean prose-pin tests join
+#     (stdlib / env packages / tests/issue_skill_source.py / SPECS-synced
+#     files only) — behavioral tests importing unsynced scripts/src stay
+#     OUT (main's newer behavioral tests pin main's newer scripts/+src/,
+#     rationale (ii) of the sync-scope boundary paragraph). Completeness is
+#     pinned by guard (20) in tests/test_issue_skill_lint_family_sync.py:
+#     a new tests/test_*.py matching the agents-reader pattern must join a
+#     family or that guard's exempt lists, so the membership cannot
+#     silently re-rot (the #1883/#1963/#2352 recurrence class).
 #
 # Everything else in SPECS is a singleton (its own family, no coupling):
-# .claude/agents, .claude/agent-memory (#1972 — always-appended memory
+# .claude/agent-memory (#1972 — always-appended memory
 # indexes the lint budget checks scan; no coupling, so its protections are
 # the uncommitted-dirt arm below + the branch-side-edit guard),
 # .claude/rules, CLAUDE.md, tests/issue_skill_source.py (#2352 — the shared
@@ -194,6 +320,8 @@ FAMILY_OF[".claude/workflow.yaml"]="workflow"
 FAMILY_OF[".claude/skills"]="workflow"    # contains markers.md, the derived table target
 FAMILY_OF["tests/test_workflow_yaml.py"]="workflow"    # imports render_*_table from workflow_lint AND reads workflow.yaml data via load_workflow_yaml — a workflow-data behavioral test
 FAMILY_OF[":(glob)tests/test_issue_skill_*.py"]="workflow"
+FAMILY_OF["scripts/step5a_sibling_probe.py"]="workflow"
+FAMILY_OF["tests/test_step5a_sibling_probe.py"]="workflow"
 FAMILY_OF["scripts/workflow_lint.py"]="lint"
 FAMILY_OF[":(glob)tests/test_workflow_lint*.py"]="lint"
 FAMILY_OF["tests/test_autonomous_session_watch.py"]="lint"    # test_codex_outage_docstring_pass_count_lint_stays_green imports check_asw_docstring_pass_count from workflow_lint
@@ -205,14 +333,52 @@ FAMILY_OF[".claude/hooks"]="guard"
 FAMILY_OF[":(glob)scripts/guard_*.sh"]="guard"
 FAMILY_OF[":(glob)tests/test_guard_*.py"]="guard"
 FAMILY_OF["tests/test_guard_lessons_edit.py"]="guard"
-# Singletons: .claude/agents, .claude/agent-memory, .claude/rules, CLAUDE.md,
+# FAMILY_agents members (#2260; vetting rule + rationale in the FAMILY_agents
+# block comment above; completeness pinned by guard (20)):
+FAMILY_OF[".claude/agents"]="agents"
+FAMILY_OF["tests/test_adversarial_planner_factchecker_grain_pin.py"]="agents"
+FAMILY_OF["tests/test_adversarial_planner_lens_brief_headings.py"]="agents"
+FAMILY_OF["tests/test_analyzer_language_intrusion_duty.py"]="agents"
+FAMILY_OF["tests/test_battery_basis_prose_pins.py"]="agents"
+FAMILY_OF["tests/test_code_reviewer_phase_idempotency_gate.py"]="agents"
+FAMILY_OF["tests/test_codex_code_reviewer_step09_tag_parity.py"]="agents"
+FAMILY_OF["tests/test_codex_critic_numeric_grounding.py"]="agents"
+FAMILY_OF["tests/test_consistency_checker_parentless_infra_skip.py"]="agents"
+FAMILY_OF["tests/test_cross_issue_protocol_comparability_prose.py"]="agents"
+FAMILY_OF["tests/test_daily_three_route_classifier_doc.py"]="agents"
+FAMILY_OF["tests/test_diff_base_origin_main_pin.py"]="agents"
+FAMILY_OF["tests/test_downwidth_split_prose_pins.py"]="agents"
+FAMILY_OF["tests/test_experimenter_md.py"]="agents"
+FAMILY_OF["tests/test_fit_loop_batching_review_pin.py"]="agents"
+FAMILY_OF["tests/test_implementer_spec_deleted_literal_substep.py"]="agents"
+FAMILY_OF["tests/test_implementer_spec_mechanical_pin_sweep.py"]="agents"
+FAMILY_OF["tests/test_implementer_spec_names_invariant_local_union.py"]="agents"
+FAMILY_OF["tests/test_implementer_spec_names_ruff_policy_pin.py"]="agents"
+FAMILY_OF["tests/test_interp_critic_degenerate_series_lens.py"]="agents"
+FAMILY_OF["tests/test_issue_v2_skill_figure_pin_contract.py"]="agents"
+FAMILY_OF["tests/test_lean_twin_registration_pin.py"]="agents"
+FAMILY_OF["tests/test_mapping_baselines_wiring_pins.py"]="agents"
+FAMILY_OF["tests/test_off_pod_phase_slot_pin.py"]="agents"
+FAMILY_OF["tests/test_outroot_residue_prose_pins.py"]="agents"
+FAMILY_OF["tests/test_plan_handoff_path_convention.py"]="agents"
+FAMILY_OF["tests/test_planner_incident_trace_guidance.py"]="agents"
+FAMILY_OF["tests/test_planner_phase_outputs_declaration.py"]="agents"
+FAMILY_OF["tests/test_realized_rows_prose_pins.py"]="agents"
+FAMILY_OF["tests/test_selection_symmetric_nulls_pointers.py"]="agents"
+FAMILY_OF["tests/test_v2_composer_plan_path_brief.py"]="agents"
+# Cross-family reader (#2260): imports the workflow-family helper
+# tests/test_issue_skill_inline_gate_pin.py (guard (19) universal-route
+# coverage forces the same family); its analyzer.md pin rides the modal
+# both-clean sync — residual documented at guard (20).
+FAMILY_OF["tests/test_inline_payload_lint_gate_contract.py"]="workflow"
+# Singletons: .claude/agent-memory, .claude/rules, CLAUDE.md,
 # tests/issue_skill_source.py (#2352 — cross-family importers: workflow glob
 # x64, lint-family test_workflow_lint_no_repo_root_worktree_revert.py, plus
 # ~30 unsynced tests; never one family's member)
 # — each is its own family key (set below in the pass-1 loop by defaulting
 # to its own path).
 
-SPECS=".claude/agents .claude/agent-memory .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/config/agent_spec_size_caps.txt scripts/select_step9c_tests.py .claude/hooks :(glob)scripts/guard_*.sh tests/test_guard_lessons_edit.py tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py tests/test_select_step9c_tests.py tests/step9c_workflow_invariant_manifest.txt :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py tests/issue_skill_source.py :(glob)tests/test_issue_skill_*.py"
+SPECS=".claude/agents .claude/agent-memory .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/config/agent_spec_size_caps.txt scripts/select_step9c_tests.py .claude/hooks :(glob)scripts/guard_*.sh tests/test_guard_lessons_edit.py tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py tests/test_select_step9c_tests.py tests/step9c_workflow_invariant_manifest.txt :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py tests/issue_skill_source.py :(glob)tests/test_issue_skill_*.py scripts/step5a_sibling_probe.py tests/test_step5a_sibling_probe.py tests/test_adversarial_planner_factchecker_grain_pin.py tests/test_adversarial_planner_lens_brief_headings.py tests/test_analyzer_language_intrusion_duty.py tests/test_battery_basis_prose_pins.py tests/test_code_reviewer_phase_idempotency_gate.py tests/test_codex_code_reviewer_step09_tag_parity.py tests/test_codex_critic_numeric_grounding.py tests/test_consistency_checker_parentless_infra_skip.py tests/test_cross_issue_protocol_comparability_prose.py tests/test_daily_three_route_classifier_doc.py tests/test_diff_base_origin_main_pin.py tests/test_downwidth_split_prose_pins.py tests/test_experimenter_md.py tests/test_fit_loop_batching_review_pin.py tests/test_implementer_spec_deleted_literal_substep.py tests/test_implementer_spec_mechanical_pin_sweep.py tests/test_implementer_spec_names_invariant_local_union.py tests/test_implementer_spec_names_ruff_policy_pin.py tests/test_inline_payload_lint_gate_contract.py tests/test_interp_critic_degenerate_series_lens.py tests/test_issue_v2_skill_figure_pin_contract.py tests/test_lean_twin_registration_pin.py tests/test_mapping_baselines_wiring_pins.py tests/test_off_pod_phase_slot_pin.py tests/test_outroot_residue_prose_pins.py tests/test_plan_handoff_path_convention.py tests/test_planner_incident_trace_guidance.py tests/test_planner_phase_outputs_declaration.py tests/test_realized_rows_prose_pins.py tests/test_selection_symmetric_nulls_pointers.py tests/test_v2_composer_plan_path_brief.py"
 # Bounded freshness fetch (#1747 — the #1289/#1714 shape): local main can lag
 # origin on the shared root; a failed fetch degrades to last-fetched
 # origin/main — never a wedge, never a fallback to local main.
@@ -224,6 +390,24 @@ MB=$(git -C "$WT" merge-base HEAD origin/main)
 # commits, as in #1560).
 declare -A DIRTY_FAMILIES
 for f in $SPECS; do
+  # Member-existence containment (#2260; interaction with #2385): the
+  # checkout below is ATOMIC — a single literal token absent at origin/main
+  # (deleted/renamed on main) errors the whole checkout and syncs NOTHING,
+  # wedging every family until manual reconcile. Contain per-family: an
+  # absent literal member marks ITS family dirty (vintage-consistent skip;
+  # other families keep syncing). Deletion PROPAGATION (removing the stale
+  # worktree twin) remains #2385 — reconcile manually until it lands.
+  case "$f" in
+    ":(glob)"*) : ;;
+    *)
+      if ! git -C "$WT" cat-file -e "origin/main:$f" 2>/dev/null; then
+        fam="${FAMILY_OF[$f]:-$f}"
+        DIRTY_FAMILIES[$fam]=1
+        echo "spec-freshness: $f is ABSENT at origin/main (deleted/renamed on main) — marking family '$fam' dirty; skipping blind sync for the whole family (atomic-checkout containment, #2260; stale-twin removal is #2385 — reconcile manually)."
+        continue
+      fi
+      ;;
+  esac
   # Branch-side feature edits = commits since merge-base touching $f,
   # EXCLUDING prior spec-freshness sync commits (which legitimately
   # touch spec paths — without the exclusion, the first sync's own
@@ -340,15 +524,16 @@ fi
 # anchor phrase `sync workflow-surface specs from`, so the arm's own
 # bs-check excludes its prior sync commits on later rounds, Guard 3 treats
 # the synced files as imported-from-main, and the Step 10d verdict re-bind's
-# A/M byte-identity probe passes (content == fetched origin/main). Synced
-# sibling TEST files additionally pass an import-satisfiability probe (below,
-# before the commit): a main-NEW test can import a symbol added to src/ AFTER
-# this branch's fork point, and the resulting collection ImportError reds the
-# Step 9c gate as NEW (#2206, #2208).
+# A/M byte-identity probe passes (content == fetched origin/main). The synced
+# pair is now test+scripts+SRC — the issue-namespaced
+# src/explore_persona_space/experiments/issue<M> / issue_<M> dirs join the
+# globs (#2412) — all keyed by issue number; synced TEST files then pass an
+# import-satisfiability probe (static AST import scan + real collection,
+# scripts/step5a_sibling_probe.py — below, before the commit; #2206, #2208).
 SIBLING_SYNCED=()
 while IFS= read -r f; do
   [ -z "$f" ] && continue
-  case "$f" in scripts/issue<N>_*|tests/test_issue<N>_*) continue ;; esac   # own-issue carve-out (defense-in-depth)
+  case "$f" in scripts/issue<N>_*|tests/test_issue<N>_*|src/explore_persona_space/experiments/issue<N>/*|src/explore_persona_space/experiments/issue_<N>/*) continue ;; esac   # own-issue carve-out (defense-in-depth)
   bs=$(git -C "$WT" log --format='%H %s' "$MB"..HEAD -- "$f" \
     | awk 'index($0, "sync workflow-surface specs from") == 0')
   [ -n "$bs" ] && continue                            # deliberate branch edit — protected
@@ -361,51 +546,38 @@ while IFS= read -r f; do
   else
     echo "spec-freshness: sibling file $f absent on origin/main — skipped (never deleted; #1972)."
   fi
-done < <(git -C "$WT" -c core.quotePath=false diff --name-only origin/main -- ':(glob)scripts/issue[0-9]*_*.py' ':(glob)scripts/issue[0-9]*_*.sh' ':(glob)tests/test_issue[0-9]*_*.py')
-# Import-satisfiability probe on synced sibling TEST files (#2208): a main-NEW
-# test can import a symbol added to src/ AFTER this branch's fork point — the
-# worktree src is branch-era, collection ImportErrors, and the Step 9c compare
-# classifies the node NEW (fail-closed), walling the gate (#2206: ~1h wall +
-# manual provenance override). Probe REAL collection in THIS worktree (a static
-# module scan cannot see symbol-level skew); on failure revert the test AND
-# every synced file of the same issue number (pair-atomic — reverting the test
-# alone while keeping its synced script is the #1824/#1860 half-sync class in
-# reverse). Fail-safe direction: status-quo staleness (the pre-#1972 world),
-# never an unreadable gate red; a probe timeout counts as failure.
+done < <(git -C "$WT" -c core.quotePath=false diff --name-only origin/main -- ':(glob)scripts/issue[0-9]*_*.py' ':(glob)scripts/issue[0-9]*_*.sh' ':(glob)tests/test_issue[0-9]*_*.py' ':(glob)src/explore_persona_space/experiments/issue[0-9]*/**' ':(glob)src/explore_persona_space/experiments/issue_[0-9]*/**')
+# Import-satisfiability probe on synced sibling TEST files (#2208, hardened
+# #2412): probe + pair-atomic revert live in scripts/step5a_sibling_probe.py,
+# resolved from the MAIN checkout (git-common-dir), never $WT — the worktree
+# copy is fork-era by construction, the very staleness class being probed.
+# The helper keeps the #2208 real-collection probe (180s/file fence with
+# process-group kill + 15s SIGKILL escalation, 900s venv warm-up, timeout =
+# failure) and ADDS a static AST import scan that sees FUNCTION-BODY imports
+# (the #2204 escape): a synced test whose src/ import is unsatisfiable against
+# THIS worktree (module missing, symbol absent, or an issue-namespaced src
+# DIRECTORY differing from origin/main) FAILs, and the helper reverts EVERY
+# synced file of that issue number (branch-era restore / main-NEW drop —
+# pair-atomic, #1824/#1860). Fail-safe direction (#2208): an undecidable
+# probe REVERTS, never keeps — a helper rc != 0 (crash, absent helper)
+# reverts ALL synced files below and FAILs the arm loud.
 if [ "${#SIBLING_SYNCED[@]}" -gt 0 ]; then
-  # Warm the worktree venv OUTSIDE the per-file fence: a fresh worktree pays a
-  # full `uv sync` on its first `uv run`, which would eat the 180s probe fence
-  # and revert legitimate syncs (critic NIT 1). Best-effort — a warm-up failure
-  # just means probes fail → revert → the declared fail-safe direction.
-  (cd "$WT" && timeout 900s uv run python -c pass >/dev/null 2>&1) || true
-  REVERT_ISSUES=""
-  for f in "${SIBLING_SYNCED[@]}"; do
-    case "$f" in
-      tests/test_issue*_*.py)
-        if ! (cd "$WT" && timeout --kill-after=15s 180s uv run pytest --collect-only -q "$f" >/dev/null 2>&1); then
-          m=$(basename "$f" | grep -oE '[0-9]+' | head -1)
-          REVERT_ISSUES="$REVERT_ISSUES $m"
-          echo "spec-freshness: sibling test $f fails collection in this worktree (likely branch-era src import skew, #2206) — reverting its issue-$m synced pair (#2208)."
-        fi
-        ;;
-    esac
-  done
-  if [ -n "$REVERT_ISSUES" ]; then
-    KEPT=()
-    for f in "${SIBLING_SYNCED[@]}"; do
-      m=$(basename "$f" | grep -oE '[0-9]+' | head -1)
-      case " $REVERT_ISSUES " in
-        *" $m "*)
-          if git -C "$WT" cat-file -e "HEAD:$f" 2>/dev/null; then
-            git -C "$WT" checkout HEAD -- "$f"        # restore branch-era content
-          else
-            git -C "$WT" rm -f -q -- "$f"             # main-NEW file — drop it (index + tree)
-          fi
-          ;;
-        *) KEPT+=("$f") ;;
-      esac
+  ROOT="$(dirname "$(git -C "$WT" rev-parse --path-format=absolute --git-common-dir)")"
+  KEPT_OUT=$(mktemp)
+  if (cd "$ROOT" && uv run python scripts/step5a_sibling_probe.py --worktree "$WT" --kept-out "$KEPT_OUT" -- "${SIBLING_SYNCED[@]}"); then
+    mapfile -t SIBLING_SYNCED < "$KEPT_OUT"
+    rm -f "$KEPT_OUT"
+  else
+    rm -f "$KEPT_OUT"
+    for f in "${SIBLING_SYNCED[@]}"; do   # undecidable ⇒ revert EVERYTHING (#2412)
+      if git -C "$WT" cat-file -e "HEAD:$f" 2>/dev/null; then
+        git -C "$WT" checkout HEAD -- "$f"
+      else
+        git -C "$WT" rm -f -q --ignore-unmatch -- "$f"
+      fi
     done
-    SIBLING_SYNCED=("${KEPT[@]}")
+    echo "[step5a] FATAL: sibling probe helper failed (rc != 0) — reverted ALL ${#SIBLING_SYNCED[@]} synced sibling file(s) (fail-safe #2208/#2412: an undecidable probe reverts, never keeps). Fix the probe, then re-run Step 5a." >&2
+    exit 1
   fi
 fi
 if [ "${#SIBLING_SYNCED[@]}" -gt 0 ] \
@@ -433,7 +605,25 @@ not a #2302 regression (a rebase-landing of the branch would revert main's
 newer content at that path); the remedy is a RE-SYNC (this arm re-runs on
 each refresh), never a bug filed against the filter.
 
-The refresh touches ONLY the workflow surface (never experiment code).
+**Manual pair-revert recovery (#2204, #2412).** When a synced sibling set must
+be removed BY HAND (a post-collection failure class the probe misses — e.g.
+signature/behavior skew inside a SHARED src module), revert pair-atomically
+(restore branch-era files from HEAD; `git rm` main-NEW ones) and commit with a
+subject that OMITS the anchor phrase `sync workflow-surface specs from` — the
+arm's own branch-side-commit guard then treats those paths as a deliberate
+branch edit and skips them on every later round. Verified end to end on #2204:
+the next Step 5a run reported `sibling-file sync: 0 file(s)` while still
+syncing 31 legitimate spec files.
+The same mechanism serves a branch that deliberately CONSUMES a sibling
+issue's src at fork-era content (scripts on main import other issues'
+`experiments.issue_<M>` packages): committing the pin-back keeps the widened
+sync from advancing the consumed dir mid-experiment.
+
+The refresh touches the workflow surface PLUS sibling-issue experiment
+code: the #2412-widened globs above also sync issue-namespaced
+`src/explore_persona_space/experiments/issue*/` dirs (probe-guarded +
+pair-atomic, per the helper contract above); SHARED experiment src is
+never synced — the probe only ever REVERTS on its skew.
 Issue branches must not carry their own workflow-surface edits as a
 rule (those go through their own filed workflow-fix `/issue --auto`
 sessions + worktrees), with one
@@ -516,16 +706,24 @@ skew means rebase onto origin/main, or cross-check at the repo root.
 Family atomicity (#1714): within the spec-coupled
 lint/guard family, the per-item branch-side-edit skip is transitive —
 a branch-side edit on ANY family member widens the skip to the WHOLE
-family (never narrows it). Three families are declared: workflow
+family (never narrows it). Four families are declared: workflow
 (`.claude/workflow.yaml` + `.claude/skills` where the derived
 `markers.md` and SKILL.md generated tables live, plus
 `:(glob)tests/test_issue_skill_*.py` — the prose-pin tests over that
 skills content, #1883), lint
 (`scripts/workflow_lint.py` + `:(glob)tests/test_workflow_lint*.py`
 plus the explicit importers `tests/test_workflow_yaml.py` and
-`tests/test_autonomous_session_watch.py`), and guard (`.claude/hooks`
+`tests/test_autonomous_session_watch.py`), guard (`.claude/hooks`
 + `:(glob)scripts/guard_*.sh` + `:(glob)tests/test_guard_*.py`
-+ `tests/test_guard_lessons_edit.py`).
++ `tests/test_guard_lessons_edit.py`), and agents (`.claude/agents` +
+the vetted agents-prose pin tests enumerated in FAMILY_OF above,
+#2260). Vetted agents-prose pin tests join the sync as FAMILY_agents
+members under the closure-clean admission rule (imports limited to
+stdlib / environment packages / `tests/issue_skill_source.py` /
+SPECS-synced files), with completeness pinned by guard (20) in
+`tests/test_issue_skill_lint_family_sync.py` — a vetted-membership
+exception to, not a weakening of, the boundary above: behavioral tests
+importing unsynced `scripts/` / `src/` stay OUT of the sync.
 Everything else in SPECS is a singleton (its own family). Everything ELSE keeps the original rationale: workflow-
 helper SCRIPTS are already resolved from the MAIN checkout (Step 0
 § worktree spec-freshness: `"$REPO_ROOT"/scripts/...`) — except the
@@ -576,6 +774,53 @@ FAIL). (Named residual: a detached scratch-worktree merge commit — CLAUDE.md
 branch that deletes a still-referenced script is caught post-merge on main
 by the strict main-tree lint.)
 
+**Deliverable-divergence probe (#1771→#2201) — run AFTER the sync above and
+BEFORE composing the reviewer briefs, EVERY review round (worktree sessions;
+the helper self-skips on main).** The sync classification above protects
+deliberately branch-edited files but silently drops their complement: a
+protected file that ALSO moved on origin/main since the merge-base — the
+#1771 shape (#2164 rewrote the same function + test on main in the opposite
+direction; round-1 review never saw it). Scope: the probe reads the ISSUE
+WORKTREE whenever it exists (deliverable rounds build there — the feature's
+dominant topology; the orchestrator's Bash cwd resets to the repo root, so
+the helper never binds to the invoking checkout), which means an on-main
+round beside a RETAINED stale worktree posts that worktree's divergence as
+a noise disclosure — cap-bounded, resolved by the stale worktree's removal.
+Surface that set to BOTH reviewers:
+
+```bash
+DIVOUT=/tmp/issue-<N>-divergence-r<round>.txt
+rm -f "$DIVOUT"   # stale-output hygiene: never read a prior invocation's list
+# Two-step rc-capture (the Guard-4 caller form — a one-step eval "$(...)"
+# evaluates the emitted assignments, always rc 0, DISCARDING the helper's exit 2):
+DIV_OUT=$(bash "$REPO_ROOT"/scripts/step10d_guards.sh <N> --guard divergence --out "$DIVOUT"); DIV_RC=$?
+eval "$DIV_OUT"
+# DIVERGENCE=clean|diverged|skipped; DIVERGED_COUNT=<n>; MAIN_SHA=<probed
+# origin/main sha>; paths in $DIVOUT. Resolve every note field into a shell
+# variable FIRST (#1722 — no $( ) inside --note):
+DIV_FILES=$(paste -sd, "$DIVOUT" 2>/dev/null)
+if [ "$DIV_RC" -ne 0 ]; then
+  # ERROR-shaped note — NEVER a clean count= note from a failed probe:
+  DIV_NOTE="[divergence-probe] r<round> ERROR rc=$DIV_RC ${ERROR:-probe-failed}"
+else
+  # Durable record EVERY round, count=0 included — the Step 10d delta gate
+  # reads the LATEST clean note as "what the final review round saw", and
+  # main=$MAIN_SHA is the content key its re-touch arm diffs from:
+  DIV_NOTE="[divergence-probe] r<round> count=$DIVERGED_COUNT main=$MAIN_SHA files=$DIV_FILES"
+fi
+uv run python "$REPO_ROOT"/scripts/task.py post-marker <N> epm:progress --note "$DIV_NOTE"
+```
+
+`DIV_RC` != 0 → BOTH reviewer briefs carry one probe-failed line —
+`divergence probe FAILED this round (rc=<rc>): main-side divergence NOT
+computed; treat protected-file divergence as unknown` — never a fabricated
+clean claim. `DIV_RC` = 0 and `DIVERGED_COUNT` > 0 → append the
+`diverged_on_main` bullet (brief list below) to BOTH reviewer briefs. The
+refined set is small by construction (sync-subject exclusion +
+content-identical drop + tasks/ + agent-memory carve-outs — measured
+2026-08-19: 0-2 files on healthy live branches; the #1771 incident replay
+reads 16), so the brief lists every path verbatim.
+
 > **429 pacing at every ensemble fan-out (applies here, to the Step 9
 > critic ensembles, and to /adversarial-planner Phase 2):** when MORE than
 > two agent prompts go out at once (e.g. 3 critic lenses x 2 models), pause
@@ -589,18 +834,45 @@ Both reviewers see the same brief:
 - `issue_number` — the task number (`<N>`)
 - `target_marker_kind` — exactly one of `experiment-implementation` (for
   `experiment`) or `results` (for `infra` / `batch` / `analysis` /
-  `survey`). The reviewers read the highest-version row with this kind
-  from `events.jsonl` as the implementer's report.
+  `survey`). The implementer's report — the highest-version row with
+  this kind — is fetched at COMPOSE time from canonical main state via
+  `uv run python "$REPO_ROOT"/scripts/task.py view <N> --json` (or
+  `latest-marker <N>`); the brief hands over the resolved report (or
+  the canonical ABSOLUTE `$TASK_DIR/events.jsonl` path) — never a
+  worktree-relative `events.jsonl` (frozen at base, #2422).
 - `revision_round` — 1-indexed integer. `1` on first review; loops up to
-  `3`. The cap is **per reviewer** — reconcile invocations are free.
+  `10`. The cap is **per reviewer** — reconcile invocations are free.
 - `previous_critique_summaries` — one-line summaries of every prior
   `epm:code-review` AND `epm:code-review-codex` event on this task
   (empty on round 1). Lets each reviewer notice patterns.
-- The diff vs `main`, the approved plan (via the `plans/plan.md`
-  symlink), the existing codebase.
+- The diff vs `main`; the existing codebase; the approved plan AND (when
+  the task has one) the manifest — BOTH as ABSOLUTE canonical
+  main-checkout paths resolved at compose time:
+  `TASK_DIR="$(uv run python "$REPO_ROOT"/scripts/task.py find <N>)"`,
+  plan `$TASK_DIR/plans/plan.md`, manifest
+  `$TASK_DIR/artifacts/planned_manifest.json`. The brief STATES
+  `plan_version=v<K>` (extensionless compose-time `readlink`) and the
+  read bar: never read `tasks/` from inside the worktree — frozen at
+  base, a relative read serves a STALE plan/manifest with no error
+  (#2422; full contract: `04-step-2.md` § "Worktree-safe task-state
+  paths").
+- `diverged_on_main` — OPTIONAL (present only when the Step 5a
+  deliverable-divergence probe found a non-empty set): the verbatim path
+  list from `/tmp/issue-<N>-divergence-r<round>.txt`, plus the round's
+  probed pin as `main=<sha>` (the same value the round's
+  `[divergence-probe]` note carries). Reviewers handle each named file
+  per code-reviewer.md § Main-side divergence list (read main's delta
+  since the merge-base AT the brief's pinned `main=<sha>`; a semantic
+  contradiction is a Major finding).
 
 The Claude reviewer additionally receives:
 - `worktree` path, `base` ref (typically fetched `origin/main` — #1289).
+- the compose-time-verified plan/manifest reference above — the
+  Claude-side counterpart of the Codex twin's Step 2-pre-b inlining: at
+  read time re-run the `readlink`, FAIL LOUD on a `plan_version=`
+  mismatch (a later revision landed — the round grades a superseded
+  plan); legacy brief without `plan_version=` ⇒ the canonical absolute
+  path still binds; 404 (status moved) ⇒ re-run `task.py find <N>`.
 
 The Codex twin additionally receives:
 - `worktree`, `base`, `plan_marker_path` (no `implementation_marker_path`
@@ -1071,7 +1343,7 @@ mechanically verifiable (#825 skipped the reconciler on exactly that
 rationale) — because a true residual does not determine severity (the
 reconciler may legitimately side PASS on a true-but-not-verdict-changing
 finding), and the shortcut trades a FREE adjudication (reconcile rounds
-don't count) for a revision round that DOES count against the cap-5 and
+don't count) for a revision round that DOES count against the cap-10 and
 itself costs ≥3 spawns (analyzer + both critics) vs the reconciler's
 one, while leaving a possibly over-strict reviewer unadjudicated. The
 documented adopt-more-severe last-resort fail-safe (a spawned reconciler
@@ -1195,7 +1467,7 @@ closes the gate-hopping failure mode —
 a reviewer that FAILs round after round on the *presentation* of evidence the
 marker demonstrably contains (e.g. round 1 marker-shape, round 2 smoke-digest
 formatting, never reviewing the code) can no longer bounce the implementer or
-consume a cap-5 round (the strategy pivot is retired; the strip still prevents
+consume a cap-10 round (the strategy pivot is retired; the strip still prevents
 the round counter from incrementing). The round counter does NOT increment
 for a strip. The clean-result-critique loop (Step 9a-bis) carries the same
 strip for *presentation-only* verifier FAILs (MDX prose, caption shape,
@@ -1249,8 +1521,8 @@ per concern_id:
      the implementer agent with a brief targeting the concern_id); do
      NOT state the Decision and then end the turn.
 - **severity=BLOCKER** → either address (option 1 above) OR apply the
-  cap-hit rule per `pivot_criteria.code_review_ensemble_cap_5_surface`
-  (at cap-5: strip → all-stripped PASS+continue OR surface a substantive
+  cap-hit rule per `pivot_criteria.code_review_ensemble_cap_10_surface`
+  (at cap-10: strip → all-stripped PASS+continue OR surface a substantive
   residual). BLOCKERs CANNOT route to the deferral gate. If it cannot be
   addressed and the residual is substantive, post `epm:failure v1
   failure_class: code` referencing the concern_id and set status:blocked
@@ -1316,7 +1588,7 @@ directions.
   - `infra` / `batch` / `analysis` / `survey` -> skip pod phase, move
     status directly to `reviewing` (the inline test-verdict gate at
     Step 9c runs from there).
-- **`final_verdict == FAIL` + revision_round<5** -> stay at status
+- **`final_verdict == FAIL` + revision_round<10** -> stay at status
   `running` (implementing sub-phase). Re-spawn the implementer with
   BOTH event bodies (Claude + Codex) AND the reconcile event (if
   present) as part of the brief (trigger-dense round: BY REFERENCE —
@@ -1330,10 +1602,10 @@ directions.
   implementer's class-hardening carve-out (experiment-implementer.md
   revision-round rule) fires on the whole class.** Implementer posts
   v<n+1>; loop back to 5a with `revision_round = n+1`.
-- **`final_verdict == FAIL` + revision_round>=5** -> **CAP-HIT:
+- **`final_verdict == FAIL` + revision_round>=10** -> **CAP-HIT:
   strip-then-continue-or-surface** (replaces the retired cap-3 strategy
   pivot; see CLAUDE.md "STATE-TO-`blocked` criteria" and workflow.yaml
-  § pivot_criteria.code_review_ensemble_cap_5_surface). At round 5 (the
+  § pivot_criteria.code_review_ensemble_cap_10_surface). At round 10 (the
   cap) with a non-PASS ensemble verdict, the orchestrator:
   1. **Applies the FULL Step 5c-bis strip once more** — the
      mechanical-contract-only set {`marker-shape`, `smoke-run-missing`,
@@ -1342,7 +1614,7 @@ directions.
   2. **If ALL residual blockers are stripped** (false-positive /
      mechanical / git-provenance) → treat as PASS and CONTINUE (proceed
      per the `final_verdict == PASS` branch above). Log one chat line +
-     post an `epm:progress` note recording the cap-5-strip-continue
+     post an `epm:progress` note recording the cap-10-strip-continue
      outcome (which blockers were stripped and by what verification).
   3. **If ANY substantive residual remains** (a real finding the strip
      cannot verify away — silent-failure, upload-path/artifact-loss,
@@ -1354,18 +1626,18 @@ directions.
        (the two-path escalation is grandfathered for a genuine stuck-real
        blocker; frame the residual + ask how to proceed). Post the §5
        marker (`uv run python scripts/post_step_completed.py --issue <N>
-       --step 5b --exit-kind parked --notes "code-review cap-5
+       --step 5b --exit-kind parked --notes "code-review cap-10
        substantive residual; awaiting user"`), then EXIT awaiting
        the user.
      - **Autonomous mode** (`EPM_AUTONOMOUS_SESSION=1`): post
        `epm:failure v1` with `failure_class: code` referencing the
        residual blocker(s), set `status: blocked`, fire
        `PushNotification({"message": f"#{N} BLOCKED: ensemble review real
-       residual at cap-5 — open it"[:200], "status": "proactive"})`, run
+       residual at cap-10 — open it"[:200], "status": "proactive"})`, run
        CRON-TEARDOWN (§ CRON-TEARDOWN procedure — both legs incl.
        stray one-shot `/issue <N>` wakeups), post the §5 marker (`uv run python
        scripts/post_step_completed.py --issue <N> --step 5b --exit-kind
-       failure-exit --notes "code-review cap-5 substantive residual;
+       failure-exit --notes "code-review cap-10 substantive residual;
        status:blocked"`), and EXIT. This is the standing halt path for a
        genuinely-stuck real blocker after the auto-continue space is
        exhausted (halt_criteria id=6 `concern_unresolved` family) — no
@@ -1382,7 +1654,7 @@ directions.
 `epm:failure v<m>` with `failure_class: codex-output-malformed` or
 `failure_class: infra` (codex plugin missing), proceed with
 single-reviewer (Claude-only) decision-making for that round. Do NOT
-block on the Codex twin's absence; cap-5 still applies to the Claude
+block on the Codex twin's absence; cap-10 still applies to the Claude
 reviewer's count. Surface this to chat as one line: `Codex twin no-show
 this round; using Claude reviewer only.` This fallback fires ONLY on the
 posted `epm:failure` marker, or after the Step 5b durable-verdict-first

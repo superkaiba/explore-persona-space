@@ -1117,8 +1117,9 @@ cold `dispatch_issue.py launch` command; it will refuse and post
 fresh-provision-in-subagent` per that same Contract scope (#1689).
 
 Spawn `experimenter` subagent via `Agent()`. Brief:
-- The plan path (the `plans/plan.md` symlink) + the code-reviewed
-  branch (`issue-<N>`)
+- The plan path — `$(uv run python scripts/task.py find <N>)/plans/plan.md`,
+  never a worktree-relative `tasks/` path (frozen at base, #2422) — plus
+  the code-reviewed branch (`issue-<N>`)
 - Pod name (`epm-issue-<N>` or parent's)
 - The exact workload command from the plan's Reproducibility Card (the
   workload/dispatcher invocation plus any required env-var pins; the

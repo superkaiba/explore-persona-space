@@ -66,7 +66,7 @@ Your brief contains:
 - `lens`: one of `methodology`, `statistics`, `alternatives`.
 - `plan_body`: the full plan text under critique (markdown, may be the v1 or
   a revised v<n>).
-- `revision_round`: 1-indexed; max 5 per the `/adversarial-planner` per-reviewer round cap (reconciler invocations don't count).
+- `revision_round`: 1-indexed; max 10 per the `/adversarial-planner` per-reviewer round cap (reconciler invocations don't count).
 - `prior_critique_summaries` (round 2+): one-line summaries of prior critique
   rounds across both Claude AND Codex twins for the same lens.
 
@@ -314,12 +314,12 @@ contribution; never crash, never assume it is populated). Then run a small
    - **Static scaffold — set-MEMBERSHIP (NOT multiset).** The EXPLICIT static
      scaffold allowlist, enumerated against the FINAL Step-3 template text
      AFTER stripping the `{{...}}` substitution placeholders, is
-     `{0, 1, 2, 3, 4, 5, 500}`: `0` (the "Phase 0 smoke tests" anti-pattern bullet),
+     `{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 500}`: `0` (the "Phase 0 smoke tests" anti-pattern bullet),
      `1` / `2` (the "1-2 line check sketch" / "1-2 lines" GROUNDING prose and
      the "1. [Issue]" Must-Fix list marker), `500` (the "add a 500-example
      generic-assistant SFT baseline" worked example in the closing "Be
-     specific" instruction), and `3` / `4` / `5` (the `{{revision_round}}` /
-     marker-tag `v<n>` digit — bounded to {1,2,3,4,5} by the max-5-rounds
+     specific" instruction), and `3`-`10` (the `{{revision_round}}` /
+     marker-tag `v<n>` digit — bounded to {1,...,10} by the max-10-rounds
      policy, and its substituted value traces to NO handed span, so it is
      scaffold-covered).
      A scaffold atom is a FIXED template literal that must NOT be "used up" by

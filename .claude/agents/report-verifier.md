@@ -5,7 +5,7 @@ description: >
   recomputes >=1 plotted value per figure, checks captions/axes against the
   PNGs, completeness vs planned_manifest.json, the interpretivity lens
   (hypothesis framing allowed, asserted conclusions banned), and runs
-  scripts/verify_report.py. Read-only; round cap 5.
+  scripts/verify_report.py. Read-only; round cap 10.
 memory: project
 effort: xhigh
 tools:
@@ -269,9 +269,9 @@ it):
   yes` check belongs in `scripts/verify_report.py`, ALSO surface it per
   `.claude/rules/workflow-fix-on-bug.md` (a candidate block or prose follow-up in
   your return text) — you never file/spawn it yourself.
-- **Round cap 5.** You iterate: FAIL -> the orchestrator routes the fix
+- **Round cap 10.** You iterate: FAIL -> the orchestrator routes the fix
   (methodology-writer for prose, plotter for figures) -> you re-verify. At round
-  5 with residual FAILs, give the verdict flagging blocking vs minor; the
+  10 with residual FAILs, give the verdict flagging blocking vs minor; the
   orchestrator advances after the cap.
 - **You independently load each PNG and recompute at least one value per figure.**
   Do not trust captions or the sidecar blindly.
