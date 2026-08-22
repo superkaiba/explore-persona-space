@@ -10021,8 +10021,8 @@
     "2297": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2297",
-      "status": "proposed",
+      "path": "tasks/archived/2297",
+      "status": "archived",
       "title": "workflow-fix: Step 9c gate launcher file-list cross-check is newline-agnostic \u2014 split-argv launch reports a plausible PYTEST_RC that is not a verdict"
     },
     "2298": {
