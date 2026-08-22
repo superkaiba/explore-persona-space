@@ -10735,6 +10735,217 @@ def test_v4_context_short_origin_prompt_truncation_warns():
     assert "first divergence" in ctx.detail
 
 
+# ─── Check 17 (Provenance-leg sub-check, #2291) ────────────────────────────
+# Unit-grain cases call `check_repro_context_provenance` directly with a
+# tmp-path original-body.md sibling (the #1068 convention above); the
+# extractor pins call `_provenance_verbatim_prompt` on a tmp file.
+
+_PROV_PROMPT = (
+    "please rerun the marker-transfer eval end to end on the paraphrase surface "
+    "and report every per-persona delta"
+)  # 109 normalized chars
+_REFINED_GOAL = (
+    "Measure marker-transfer generalisation to the paraphrase eval surface "
+    "across the bystander panel"
+)
+
+
+def _prov_original_body(tmp_path, prompt_block: str | None = None):
+    """Write a tmp original-body.md whose `## Provenance` section's first
+    blockquote is ``prompt_block`` (default: `> {_PROV_PROMPT}`)."""
+    orig = tmp_path / "original-body.md"
+    block = prompt_block if prompt_block is not None else f"> {_PROV_PROMPT}\n"
+    orig.write_text(
+        "# Original draft title\n\n## Provenance\n\n"
+        "- **Originating prompt (verbatim):**\n\n"
+        f"{block}\n"
+        "## Goal\n\nRefined goal prose.\n"
+    )
+    return orig
+
+
+def test_v4_context_provenance_goal_quote_mismatch_fails(tmp_path):
+    """The #2254 incident shape (this change's durability pin): frontmatter
+    `origin_prompt` ABSENT, the sibling original-body records a verbatim
+    `## Provenance` prompt, and the footer blockquotes the REFINED GOAL
+    instead — a hard v4 FAIL naming the source + the extracted Provenance
+    head, with the goal-quoting enrichment fired."""
+    orig = _prov_original_body(tmp_path)
+    body = _v4_body_with_context_quote(f"- Originating prompt, verbatim:\n\n> {_REFINED_GOAL}\n")
+    ctx = verify_task_body.check_repro_context_provenance(
+        body, {"goal": _REFINED_GOAL}, original_body_path=orig
+    )
+    assert not ctx.passed, ctx.detail
+    assert "context-provenance-prompt-mismatch" in ctx.detail
+    assert "Provenance head" in ctx.detail
+    assert "refined `goal:` frontmatter" in ctx.detail
+
+
+def test_v3_context_provenance_mismatch_warns_never_fails(tmp_path):
+    """Grandfathering: the SAME Provenance-leg mismatch that hard-FAILs a
+    v4 body is WARN-only on a v3 body (never a new hard FAIL below the
+    v4 sentinel)."""
+    orig = _prov_original_body(tmp_path)
+    assert _V4_NOT_RECORDED_LINE in _V3_GOOD_BODY, "fixture drifted"
+    body = _V3_GOOD_BODY.replace(
+        _V4_NOT_RECORDED_LINE, f"- Originating prompt, verbatim:\n\n> {_REFINED_GOAL}\n"
+    )
+    ctx = verify_task_body.check_repro_context_provenance(body, {}, original_body_path=orig)
+    assert ctx.passed is True and ctx.is_warn, ctx.detail
+    assert "context-provenance-prompt-mismatch" in ctx.detail
+
+
+def test_v4_context_provenance_verbatim_quote_passes(tmp_path):
+    """op absent + the footer containing the Provenance prompt verbatim →
+    PASS with detail byte-identical to today's pass detail (a verified
+    pass is indistinguishable from a noop pass by design)."""
+    orig = _prov_original_body(tmp_path)
+    body = _v4_body_with_context_quote(f"- Originating prompt, verbatim:\n\n> {_PROV_PROMPT}\n")
+    ctx = verify_task_body.check_repro_context_provenance(body, {}, original_body_path=orig)
+    assert ctx.passed and not ctx.is_warn, ctx.detail
+    assert ctx.detail == "**Context:** row present with lineage token"
+
+
+def test_v4_context_provenance_prefix_truncated_fails(tmp_path):
+    """Truncation twin: op absent + a footer quoting a >=50%-coverage
+    strict prefix of the Provenance prompt → hard v4 FAIL with the
+    truncation-offset message."""
+    orig = _prov_original_body(tmp_path)
+    cut = _PROV_PROMPT[:64]  # 64/109 = 59% coverage — over both floors
+    assert _PROV_PROMPT.startswith(cut) and len(cut) < len(_PROV_PROMPT)
+    body = _v4_body_with_context_quote(f"- Originating prompt, verbatim:\n\n> {cut}\n")
+    ctx = verify_task_body.check_repro_context_provenance(body, {}, original_body_path=orig)
+    assert not ctx.passed, ctx.detail
+    assert "PREFIX" in ctx.detail
+    assert "context-provenance-prompt-mismatch" in ctx.detail
+    assert "Provenance head" in ctx.detail
+
+
+def test_v4_context_no_provenance_no_op_never_fails(tmp_path):
+    """Fail-soft: op absent + an original-body WITHOUT `## Provenance` +
+    a quoting footer → never a FAIL from this leg; the >=20-char
+    blockquote gets the unverifiable-quote WARN."""
+    orig = tmp_path / "original-body.md"
+    orig.write_text("# Original draft title\n\nNo provenance recorded here.\n")
+    body = _v4_body_with_context_quote(
+        "- Originating prompt, verbatim:\n\n> something long enough to be a real quote here\n"
+    )
+    ctx = verify_task_body.check_repro_context_provenance(body, {}, original_body_path=orig)
+    assert ctx.passed is True, ctx.detail
+    assert ctx.is_warn
+    assert "warn-unverifiable-quote" in ctx.detail
+
+
+def test_v4_context_not_recorded_line_no_warn(tmp_path):
+    """An `origin prompt not recorded` row (no blockquote) + no verifiable
+    source → PASS with NO warn (pins the blockquote-only trigger of the
+    unverifiable-quote arm: label-line remainder + inline spans + plain
+    bullets never arm it)."""
+    orig = tmp_path / "original-body.md"
+    orig.write_text("# Original draft title\n\nNo provenance recorded here.\n")
+    ctx = verify_task_body.check_repro_context_provenance(
+        _V4_GOOD_BODY, {}, original_body_path=orig
+    )
+    assert ctx.passed and not ctx.is_warn, ctx.detail
+
+
+def test_v4_context_origin_prompt_pass_shadows_provenance(tmp_path):
+    """Precedence (criterion 4 — 26 corpus rows have this shape): fm
+    `origin_prompt` contained in the row while the Provenance prompt is
+    NOT → still a clean PASS, no WARN (`origin_prompt` stays
+    authoritative; the Provenance leg never fires on an op-pass)."""
+    orig = _prov_original_body(tmp_path)
+    body = _v4_body_with_context_quote(f"- Originating prompt, verbatim:\n\n> {_OP}\n")
+    ctx = verify_task_body.check_repro_context_provenance(
+        body, {"origin_prompt": _OP}, original_body_path=orig
+    )
+    assert ctx.passed and not ctx.is_warn, ctx.detail
+
+
+def test_v4_context_warn_mismatch_detail_names_provenance_verification(tmp_path):
+    """op present + a quote NOT containing it + a Provenance sibling whose
+    prompt the row DOES quote → severity unchanged (WARN), and the
+    warn-mismatch detail gains the verified alternate-source note."""
+    orig = _prov_original_body(tmp_path)
+    body = _v4_body_with_context_quote(f"- Originating prompt, verbatim:\n\n> {_PROV_PROMPT}\n")
+    ctx = verify_task_body.check_repro_context_provenance(
+        body, {"origin_prompt": _OP}, original_body_path=orig
+    )
+    assert ctx.passed and ctx.is_warn, ctx.detail
+    assert "context-origin-prompt-mismatch" in ctx.detail
+    assert "alternate-source check" in ctx.detail
+    assert "DOES quote" in ctx.detail
+
+
+def test_provenance_h2_variant_verbatim_suffix_extracted(tmp_path):
+    """`## Provenance (verbatim)` (the #2220 shape) extracts under the
+    widened `_PROVENANCE_H2_RE` — pins the shared-regex widening."""
+    orig = tmp_path / "original-body.md"
+    orig.write_text(f"# Original draft title\n\n## Provenance (verbatim)\n\n> {_PROV_PROMPT}\n")
+    prov = verify_task_body._provenance_verbatim_prompt(orig)
+    assert prov == verify_task_body._normalize_prompt_text(_PROV_PROMPT)
+
+
+def test_provenance_multi_blockquote_first_extracted(tmp_path):
+    """A Provenance section whose FIRST >=20-char blockquote is the prompt
+    followed by later clarifying-answer blockquotes — the primary
+    extraction takes the FIRST (plan 4-G item 4: the highest-residual
+    future-drift shape, previously covered only by the live #2254
+    trace)."""
+    orig = tmp_path / "original-body.md"
+    orig.write_text(
+        "# Original draft title\n\n## Provenance\n\n"
+        "- **Originating prompt (verbatim):**\n\n"
+        f"> {_PROV_PROMPT}\n\n"
+        "- Clarifying answer 1 (verbatim):\n\n"
+        "> yes, include the bystander panel in every eval cell please\n\n"
+        "- Clarifying answer 2 (verbatim):\n\n"
+        "> use the dose-matched checkpoints from the parent issue\n"
+    )
+    prov = verify_task_body._provenance_verbatim_prompt(orig)
+    assert prov == verify_task_body._normalize_prompt_text(_PROV_PROMPT)
+
+
+def test_provenance_third_source_quote_fails_with_remediation(tmp_path):
+    """Third-source negative control (the pinned, deliberate asymmetry):
+    op ABSENT + an extractable Provenance prompt + a footer quoting a
+    DISTINCT verbatim `epm:followup-scope` prompt → still a hard v4 FAIL
+    (a Provenance-recorded originating prompt absent from the row
+    violates the SPEC contract regardless of what else the row quotes),
+    and the FAIL detail names the third source + the append remediation.
+    The op-PRESENT mirror of this ambiguity stays WARN by design."""
+    orig = _prov_original_body(tmp_path)
+    body = _v4_body_with_context_quote(
+        "- Follow-up round prompt (from `epm:followup-scope`), verbatim:\n\n"
+        "> extend the paraphrase eval to the held-out persona panel and rerun\n"
+    )
+    ctx = verify_task_body.check_repro_context_provenance(body, {}, original_body_path=orig)
+    assert not ctx.passed, ctx.detail
+    assert "context-provenance-prompt-mismatch" in ctx.detail
+    assert "epm:followup-scope" in ctx.detail
+    assert "ADD the recorded originating prompt" in ctx.detail
+
+
+def test_provenance_subfloor_prompt_routes_to_unextractable(tmp_path):
+    """A `## Provenance` whose only quoted span is UNDER the 20
+    normalized-char extraction floor is treated as unextractable (the
+    disclosed extraction-floor residual) — never a spurious FAIL; a
+    quoting v4 row routes to the unverifiable-quote WARN instead."""
+    orig = tmp_path / "original-body.md"
+    orig.write_text(
+        "# Original draft title\n\n## Provenance\n\n"
+        "- **Originating prompt (verbatim):**\n\n"
+        "> sweep X please\n"  # 14 normalized chars — under the floor
+    )
+    assert verify_task_body._provenance_verbatim_prompt(orig) is None
+    body = _v4_body_with_context_quote(
+        "- Originating prompt, verbatim:\n\n> something long enough to be a real quote here\n"
+    )
+    ctx = verify_task_body.check_repro_context_provenance(body, {}, original_body_path=orig)
+    assert ctx.passed is True, ctx.detail
+    assert ctx.is_warn and "warn-unverifiable-quote" in ctx.detail
+
+
 # ─── Check 17 (parent-lineage cross-check, #1418) ──────────────────────────
 # Unit-grain cases call `check_repro_context_provenance(body, fm)` directly
 # (fm injection is the variable, per the #1068 convention above); one
