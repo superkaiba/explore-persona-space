@@ -205,13 +205,16 @@ Check catalog (id — classification — kind scope)
   c68 abs-pp reduction margin  WARN-only, conditional    experiment +
       vs in-plan baseline                                analysis
       ceiling
+  c69 armed re-gen 2x-cap       WARN-only, conditional    experiment +
+      headroom vs                                         analysis
+      max_model_len pin
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54,
-55, 56, 57, 58, 59, 61, 62, 63, 64, 65, 66, 67, 68) also SKIP when their
+55, 56, 57, 58, 59, 61, 62, 63, 64, 65, 66, 67, 68, 69) also SKIP when their
 content trigger does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
@@ -405,6 +408,17 @@ labeled-line forms):
     but every %-stated baseline the harvest can see concerns a DIFFERENT
     quantity; prefer stating the gate's true baseline in % form so the
     harvest sees it)
+  - ``N/A — no armed re-gen trigger`` (check 69 — the re-gen arming
+    vocabulary is incidental or quotes an incident/sibling, not this plan's
+    own armed cap-hit re-generation trigger; a plan genuinely arming the
+    trigger instead states the doubled-cap arithmetic — max_model_len minus
+    2x the cap ≥ the stated prompt bound — and sizes the regen engine to
+    fit)
+  - ``N/A — harvested max_model_len pin is unrelated to the armed re-gen stage``
+    (check 69 — the exists-but-false-alarm shape, the c68 convention: the
+    plan DOES arm a re-gen trigger, but every harvested ``max_model_len``
+    pin belongs to a DIFFERENT engine/stage; prefer stating the regen
+    stage's own pin so the harvest sees it)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -13451,6 +13465,312 @@ def check_margin_baseline_ceiling(plan: str, kind: str) -> CheckResult:
     )
 
 
+# ─── Check 69 — armed re-gen 2×-cap headroom vs max_model_len pin (#2269) ──  # noqa: RUF003
+# Origin: #2221 plan v9 (incident 2026-08-13) — the amendment ARMED the >2%
+# cap-hit re-gen trigger (regen at ≥2× EVAL_MAX_NEW_TOKENS = 2×2048 = 4096)  # noqa: RUF003
+# against issue778_lib.build_vllm_engine's max_model_len=4096 pin while
+# stating CORRECT first-pass arithmetic (2048 + ≤1,900 = 3,948 ≤ 4,096 at
+# v9:101): the BINDING regen-leg arithmetic 4,096 + 1,900 = 5,996 > 4,096
+# leaves zero prompt headroom — every row skips as regen_overlong_skipped,
+# regen_applied: true with n_regen=0. verify_plan on v9: PASS n_warn=0.
+# Plan-prose face of the #505/#601 cap-raise-vs-max_model_len family
+# (gotchas.md cap-raise entry). SCOPE: #505/#601 themselves were CODE-level
+# and no plan linter could have fired on them — this check SURFACES the
+# class's plan face at plan time; it does not prevent recurrence (the
+# runtime guard on regen_applied/n_regen==0/regen_overlong_skipped>0 is
+# the higher-recall companion, out of scope here). The check keys on the
+# DOUBLED cap whenever a trigger is armed — a naive stated-triple read
+# PASSes v9 by construction.
+# CORPUS CALIBRATION — CALIBRATION FIT, snapshot-dated (these figures rot
+# as the corpus grows, and the grammar was TUNED on this same corpus: the
+# counts certify transcription fidelity at re-scan time, never
+# out-of-sample precision; re-calibration MUST apply the kind gate before
+# reading any count drift as grammar drift). SHIPPED-check re-scan
+# 2026-08-22 04:27 UTC, 4,484 committed plans/v*.md (the plan-time
+# 2026-08-22 03:36 UTC prototype scan read 4,486 files on the main
+# checkout, glob incl. then-untracked drafts — same verdicts on every
+# adjudicated version): arming vocabulary resolves in 45 versions (the
+# plan-time 44 + this plan's own v3); 27 SKIP (no pin); 0 SKIP (no
+# cap); KIND-GATED WARN 11 —
+# #2221 v7/v8/v9 (arm 1: 2×2048 + 1,900 = 5,996 ≥ 4,096) + #2225 v6–v13  # noqa: RUF003
+# (arm 2: the inherited "> 2% ⇒ re-gen at 2× (contract inherited)" line  # noqa: RUF003
+# against max_model_len 4096 with cap 2048 — need 4,096 ≥ pin 4,096, no
+# stated prompt bound; a LIVE zero-headroom defect) — all verified true
+# positives; corrected #2221 v10–v13 PASS (5,996 < 8,192); zero confirmed  # noqa: RUF003
+# false positives. UN-GATED additionally: #2269's OWN kind:infra plan
+# versions (v1, v2, plus one per later version — the plan that designed
+# this check quotes the arming vocabulary in non-fenced prose); the kind
+# gate + _fence_mask absorb them (self-inclusion is the designed-for case).
+# Measured grammar decisions: (a) prose-form "cap (N)" harvesting DROPPED
+# — v10:467 "AT THE PRODUCTION REGEN CAP (4096)" reads the ALREADY-DOUBLED
+# regen cap and double-counts (4 FPs on the corrected versions); (b)
+# multiplier must be ANCHORED (N× followed by cap/number/MAX_NEW_TOKENS)  # noqa: RUF003
+# — the house "families × {arms}" grid idiom otherwise harvests spurious  # noqa: RUF003
+# multipliers; (c) forward "prompt tokens ... < N" bound shape DROPPED —
+# it grabbed the PIN out of v10:106's arithmetic prose; (d) arm
+# alternative 3 recognizes the house SHORTHAND: "re-gen ... at N×" ARMS  # noqa: RUF003
+# (#2225 v12:97 is the demonstrated in-corpus miss of the narrow
+# re-generat form — r1 Must-Fix 2) while a bare "re-gen" mention with no
+# "at N×" stays non-arming; (e) bounds are attributed PER ARMED LINE  # noqa: RUF003
+# (±_C69_WINDOW_LINES raw-line fence-masked window; window MAX wins;
+# plan-wide MAX only as the no-local-bound FALLBACK) — a plan-wide bound
+# join is a FALSE-POSITIVE mechanism on healthy multi-stage plans (an
+# unrelated stage's larger bound joins an armed stage whose own
+# arithmetic is satisfied — r1 Must-Fix 1): bound-side MAX is AGGRESSIVE
+# (pro-WARN), the opposite direction from the permissive pin-side MAX,
+# so only the pin side may pool plan-wide.
+# Accepted FALSE NEGATIVES: a cap stated only as prose ("cap 2048") with
+# no constant/product form resolves nothing (SKIP); a plan quoting a
+# sibling's LARGER pin while its own engine pins smaller escapes the
+# MAX-pin read; a STALE SMALL bound inside an armed line's window masks a
+# larger binding bound stated elsewhere (the window-first trade — FNs
+# disclosed and accepted, FPs kill); verbal multipliers ("doubling",
+# "twice") and arming paraphrases outside the three alternatives.
+
+_C69_NUM = r"(?:\d{1,3}(?:,\d{3})+|\d+)"
+#: Arming vocabulary, negation-guarded on the leading token
+#: (_C16_NEG_GUARD reused verbatim) AND on the "armed" token itself
+#: ("the re-gen trigger is NOT armed" must not fire): "re-gen trigger
+#: ARMED" / "trigger armed ... re-gen" / the CLAUDE.md registration shape
+#: in BOTH spellings — "re-generate <rows> at ≥2×" AND the house  # noqa: RUF003
+#: shorthand "re-gen at 2×" (#2225 v12:97). Bare "re-gen" with no  # noqa: RUF003
+#: "at ... N×" stays non-arming.  # noqa: RUF003
+_C69_ARM_RE = re.compile(
+    rf"(?i){_C16_NEG_GUARD}\bre-?gen\w*[^.;]{{0,60}}?\btrigger\b[^.;]{{0,40}}?"
+    rf"(?:(?<!\bnot )(?<!never )\barmed\b|\barming\b|\bauto-?fires?\b)"
+    rf"|{_C16_NEG_GUARD}\btrigger\b[^.;]{{0,40}}?(?<!\bnot )(?<!never )\barmed\b"
+    rf"[^.;]{{0,80}}?\bre-?gen\w*"
+    rf"|{_C16_NEG_GUARD}\bre-?gen(?:erat\w*)?\b[^.;]{{0,50}}?\bat\b[^.;]{{0,12}}?"
+    rf"[≥>]?\s*\d+(?:\.\d+)?\s*[×x]"  # noqa: RUF001 — the multiplication sign is real plan text
+)
+_C69_PIN_RE = re.compile(rf"(?i)(?:vllm_)?max_model_len\W{{0,4}}({_C69_NUM})")
+_C69_CAP_LINE_RE = re.compile(
+    rf"(?i)[A-Z_]*max_new_tokens\W{{0,4}}({_C69_NUM})|[×x]\s*({_C69_NUM})"  # noqa: RUF001
+)
+_C69_CAP_CONST_RE = re.compile(rf"(?i)[A-Z_]*max_new_tokens\W{{0,4}}({_C69_NUM})")
+_C69_MULT_RE = re.compile(
+    r"(?i)(\d+(?:\.\d+)?)\s*[×x]\s*(?=(?:the\s+)?cap\b|\d|`?[A-Z_]*MAX_NEW_TOKENS)"  # noqa: RUF001
+)
+_C69_BOUND_RES = (
+    re.compile(rf"(?i)(?:[≤<]=?|at most)\s*~?\s*({_C69_NUM})\s*prompt[- ](?:side[- ])?tokens?"),
+    re.compile(
+        rf"(?i)prompts?\b[^.;]{{0,40}}?(?:validated|bounded|capped|filtered)"
+        rf"[^.;]{{0,25}}?[≤<]=?\s*~?\s*({_C69_NUM})\s*(?:prompt[- ])?tokens?"
+    ),
+)
+_C69_WINDOW_LINES = 3  # the c16 _C16_WINDOW_LINES radius (caps AND bound attribution)
+
+
+def _c69_int(s: str) -> int:
+    """Comma-tolerant int (founding fixture: '≤ 1,900 prompt tokens')."""
+    return int(s.replace(",", ""))
+
+
+def _c69_bounds_between(lines: list[str], mask: list[bool], lo: int, hi: int) -> list[int]:
+    """Fence-masked stated prompt-token bounds on raw lines [lo, hi)."""
+    return [
+        _c69_int(m.group(1))
+        for j in range(max(0, lo), min(len(lines), hi))
+        if not mask[j]
+        for rx in _C69_BOUND_RES
+        for m in rx.finditer(lines[j])
+        if 1 <= _c69_int(m.group(1)) <= 1_000_000
+    ]
+
+
+def _c69_evaluated(
+    lines: list[str], mask: list[bool], arm_idx: list[int], plan_bounds: list[int]
+) -> list[dict]:
+    """Per armed line: anchored multiplier (clamped [1, 8], default 2.0),
+    generation cap (constant- or product-form on the arming line;
+    constant-form within the ±3-raw-line window as fallback), and the
+    attributed prompt bound. Bound attribution is PER ARMED LINE (r1
+    Must-Fix 1): window-local MAX wins; the plan-wide MAX is only the
+    no-local-bound fallback. Bound-side MAX is aggressive (pro-WARN) —
+    opposite direction from the permissive pin-side MAX — so it never
+    pools across stages. Armed lines with no resolvable cap are dropped
+    (the caller SKIPs when nothing evaluates)."""
+    out: list[dict] = []
+    for i in arm_idx:
+        line = lines[i]
+        mults = [
+            float(m.group(1))
+            for m in _C69_MULT_RE.finditer(line)
+            if 1.0 <= float(m.group(1)) <= 8.0
+        ]
+        mult = max(mults) if mults else 2.0
+        caps = [
+            _c69_int(g)
+            for m in _C69_CAP_LINE_RE.finditer(line)
+            for g in m.groups()
+            if g and 16 <= _c69_int(g) <= 100_000
+        ]
+        if not caps:  # constant-form only in the ±3-raw-line window
+            window = (
+                lines[max(0, i - _C69_WINDOW_LINES) : i] + lines[i + 1 : i + 1 + _C69_WINDOW_LINES]
+            )
+            caps = [
+                _c69_int(m.group(1))
+                for src in window
+                for m in _C69_CAP_CONST_RE.finditer(src)
+                if 16 <= _c69_int(m.group(1)) <= 100_000
+            ]
+        if not caps:
+            continue
+        wb = _c69_bounds_between(lines, mask, i - _C69_WINDOW_LINES, i + 1 + _C69_WINDOW_LINES)
+        bound = max(wb) if wb else (max(plan_bounds) if plan_bounds else None)
+        out.append(
+            {
+                "line_no": i + 1,
+                "line": line.strip(),
+                "mult": mult,
+                "cap": max(caps),
+                "need": int(mult * max(caps)),
+                "bound": bound,
+                "scope": "window-local" if wb else "plan-wide",
+            }
+        )
+    return out
+
+
+def check_regen_headroom(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional (#2269, incident #2221 v9): an ARMED cap-hit
+    re-generation trigger — the long spelling ("re-generates capped rows
+    at >=2x the cap") or the house shorthand ("re-gen at 2x") — beside a
+    numeric ``max_model_len`` / ``VLLM_MAX_MODEL_LEN`` pin, where the
+    DOUBLED cap leaves non-positive prompt headroom. Two WARN arms:
+    (1) mult*cap + the stated prompt-token bound >= pin on any armed
+    line; (2) NO prompt-token bound stated anywhere in the plan. Keys on
+    the DOUBLED cap whenever the trigger is armed — the founding incident
+    stated CORRECT first-pass arithmetic (2048 + 1,900 = 3,948 <= 4,096
+    at v9:101) while the ARMED regen leg at 2x2048 = 4,096 left zero
+    headroom, so every capped row skips as ``regen_overlong_skipped``
+    while ``regen_applied: true`` reports the fix took — a naive
+    stated-triple reader PASSes v9 by construction. Bounds attribute PER
+    ARMED LINE (window-local MAX over the fence-masked ±3-raw-line
+    window; plan-wide MAX only as the no-local-bound fallback); the
+    effective pin is the plan-wide MAX from a RAW scan, fences included
+    (corrected plans quote the superseded pin beside the raise). NEVER
+    FAILs (the c14/c28 doctrine). Armed for kind in {experiment,
+    analysis} only — infra workflow-fix plans (THIS check's own plan
+    included) legitimately quote the arming vocabulary (the c67/c68
+    precedent). Accepted false negatives are enumerated in the module
+    comment above. Escapes (standalone, unwrapped):
+    ``N/A — no armed re-gen trigger`` (the arming vocabulary is
+    incidental or quotes an incident/sibling) and ``N/A — harvested
+    max_model_len pin is unrelated to the armed re-gen stage`` (the
+    trigger is real; the pin pairing is the false alarm)."""
+    cid = "c69_regen_headroom"
+    name = "armed re-gen 2×-cap headroom vs max_model_len pin"  # noqa: RUF001
+    if kind not in ("experiment", "analysis"):
+        return _skip(
+            cid,
+            name,
+            f"kind={kind} — armed for experiment/analysis only (c67/c68 precedent): "
+            "infra workflow-fix plans, this check's own plan included, quote the "
+            "arming vocabulary; the founding incident (#2221 v9) is kind: experiment",
+        )
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    arm_idx = [
+        i
+        for i, (line, fenced) in enumerate(zip(lines, mask, strict=True))
+        if not fenced and _C69_ARM_RE.search(line)
+    ]
+    if not arm_idx:
+        return _skip(cid, name, "no armed re-gen trigger detected")
+    if _standalone_na_declared(plan, r"no armed re-?gen(?:eration)? trigger\b"):
+        return _pass(cid, name, "explicit N/A declared (no armed re-gen trigger)")
+    if _standalone_na_declared(
+        plan, r"harvested max_model_len pin is unrelated to the armed re-?gen stage"
+    ):
+        return _pass(
+            cid,
+            name,
+            "explicit N/A declared (cross-quantity: the harvested max_model_len pin "
+            "belongs to a different engine/stage)",
+        )
+    # RAW pin scan, fences included (pins legitimately live in fenced §10 tables).
+    pins = [
+        _c69_int(m.group(1))
+        for m in _C69_PIN_RE.finditer(plan)
+        if 256 <= _c69_int(m.group(1)) <= 10_000_000
+    ]
+    if not pins:
+        return _skip(
+            cid,
+            name,
+            "armed re-gen trigger detected but no max_model_len / VLLM_MAX_MODEL_LEN "
+            "numeric pin harvested — the #505/#601 headroom arithmetic needs a pin",
+        )
+    pin = max(pins)
+    plan_bounds = _c69_bounds_between(lines, mask, 0, len(lines))
+    evaluated = _c69_evaluated(lines, mask, arm_idx, plan_bounds)
+    if not evaluated:
+        return _skip(
+            cid,
+            name,
+            f"{len(arm_idx)} armed re-gen line(s) but no generation cap resolvable "
+            "(constant-form [A-Z_]*MAX_NEW_TOKENS or product-form N×<cap> on the "  # noqa: RUF001
+            "arming line; constant-form within ±3 raw lines) — arithmetic not "
+            "adjudicable",
+        )
+    if not plan_bounds:
+        worst = max(evaluated, key=lambda e: e["need"])
+        zero = (
+            " — the regen length alone meets/exceeds the pin (zero prompt headroom "
+            "before any prompt tokens)"
+            if worst["need"] >= pin
+            else ""
+        )
+        return _warn(
+            cid,
+            name,
+            f"armed re-gen trigger (line {worst['line_no']}) + max_model_len pin "
+            f"{pin} but NO stated prompt-token bound anywhere — the binding regen "
+            f"arithmetic ({worst['mult']:g}×{worst['cap']} = {worst['need']} + "  # noqa: RUF001
+            f"prompt) is unverifiable{zero} (#2221 v9 shape). State the panel's "
+            "prompt-token bound (e.g. 'length-validated at load to ≤ N prompt "
+            "tokens'), size the regen engine so max_model_len − 2×cap ≥ the bound, "  # noqa: RUF001
+            "or declare 'N/A — no armed re-gen trigger' on its own line, unwrapped "
+            "(no backticks/quotes)",
+        )
+    offenders = [e for e in evaluated if e["need"] + e["bound"] >= pin]
+    if not offenders:
+        best = max(evaluated, key=lambda e: e["need"] + e["bound"])
+        return _pass(
+            cid,
+            name,
+            f"regen headroom satisfied: worst armed line {best['line_no']} needs "
+            f"{best['mult']:g}×{best['cap']} + {best['bound']} ({best['scope']} "  # noqa: RUF001
+            f"bound) = {best['need'] + best['bound']} < max_model_len {pin}",
+        )
+    parts = [
+        f'line {e["line_no"]} "{e["line"][:70]}" arms regen at '
+        f"{e['mult']:g}×{e['cap']} = {e['need']}; + prompt bound {e['bound']} "  # noqa: RUF001
+        f"({e['scope']}) = {e['need'] + e['bound']} ≥ max_model_len {pin}"
+        for e in offenders[:3]
+    ]
+    shown = "; ".join(parts) + ("; …" if len(offenders) > 3 else "")
+    return _warn(
+        cid,
+        name,
+        f"{shown} — zero/negative prompt headroom on the ARMED re-gen leg: every "
+        "capped row skips as regen_overlong_skipped and the cap-hit deviation is "
+        "silently re-committed while the plan claims to fix it (#2221 v9; the "
+        "plan-prose face of the #505/#601 family, gotchas.md cap-raise entry). "
+        "First-pass arithmetic (cap + bound ≤ pin) is NOT the binding check — the "
+        "regen leg re-enters prompt + a ≥2×-cap response. Remedies: run the regen "  # noqa: RUF001
+        "leg on an engine sized max_model_len ≥ 2×cap + prompt bound (the #2221 "  # noqa: RUF001
+        "v10 fix: a dedicated 8192 engine), lower the regen multiplier/cap, or — "
+        "when the harvested pin belongs to a different engine than the regen "
+        "stage — declare 'N/A — harvested max_model_len pin is unrelated to the "
+        "armed re-gen stage' on its own line, unwrapped (no backticks/quotes); a "
+        "plan with no armed trigger at all instead declares 'N/A — no armed re-gen "
+        "trigger' on its own line, unwrapped",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -13518,6 +13838,7 @@ CHECKS = [
     check_smoke_producer_coverage,
     check_retest_kappa_temp0,
     check_margin_baseline_ceiling,
+    check_regen_headroom,
 ]
 
 
