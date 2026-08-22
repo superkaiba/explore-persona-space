@@ -2072,3 +2072,26 @@ full merge-base SHA occurrences (intro + git-show probe + git-log probe);
 with 2 header uses, composer-span expected = 5 — and count marker/verdict
 embeds separately before summing (the v2 epm:results body carried ZERO,
 unlike r1's which carried one).
+
+**Binding-reconciler-FAIL fix round (#2263 r4, 2026-08-22):** when the prior
+round ended Claude-PASS / Codex-FAIL / reconciler BINDING FAIL, inline BOTH
+the reconciler verdict (tags stripped — the acceptance contract; its
+Rationale names the endorsed bounded fix and the settled scope) and the prior
+Codex verdict (#2329-rclose form: tags stripped, `CONCERN:: ` rows
+blockquoted) with the author-neutrality line PLUS an "earned standing, not
+license to re-litigate" frame. Two new composables: (a) when the
+reconciler's endorsed fix sketch DIFFERS from the realized fix (endorsed
+bare `"${VAR[@]}"`, implementer chose the `${VAR[@]+...}` set-u guard,
+rejecting the brief's local-default alternative on clobber-on-copy-paste
+grounds), hand the delta as an explicit design-judgment duty with both
+regimes enumerated (set-u on/off × unset/declared-empty/populated) — never
+grade sketch-verbatim and never resolve the judgment yourself; (b) the
+bare-substring flag-absence trap: an implementer claim "dispatch_issue.py
+has NO --lane flag" is TRUE while a bare `--lane` grep hits 13× (all
+`--lane-suffix`, a different flag) — verify flag absence via an
+add_argument-scoped grep at compose time and hand Codex the substring
+caveat explicitly, else it false-flags the closure claim. Also: a
+reconciler "Standing recommendations n/a — verdict is FAIL" section still
+carries Standing-only items inside its adjudication table/rationale
+(Claude's two-site-edit Minor) — restate them in the settled/do-not-owe
+block so the twin neither re-FAILs on them nor demands the subsuming fix.
