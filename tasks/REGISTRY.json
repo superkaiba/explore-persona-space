@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2477,
+  "highest_id": 2478,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11407,6 +11407,13 @@
       "path": "tasks/proposed/2477",
       "status": "proposed",
       "title": "Verify base-model completions under the chat template are coherent (paper base-row format check)"
+    },
+    "2478": {
+      "has_clean_result": false,
+      "kind": "analysis",
+      "path": "tasks/proposed/2478",
+      "status": "proposed",
+      "title": "Assemble qualitative-examples panels for the paper (discrimination + patching)"
     },
     "248": {
       "has_clean_result": false,
