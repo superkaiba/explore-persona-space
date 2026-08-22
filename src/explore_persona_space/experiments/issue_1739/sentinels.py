@@ -170,6 +170,108 @@ def compose_results_payload(
     return payload
 
 
+def compose_cms_results_payload(
+    out_root: Path | str,
+    behavior: str,
+    half: str,
+    seeds: list[int],
+    *,
+    hf_prefix: str,
+    gpu_hours_budgeted: float,
+    plan_deviations: list[str] | None = None,
+) -> dict:
+    """10-key Step-7 payload for ONE compose-multiseed (behavior, half) box.
+
+    Reads the durable per-cell sidecars — ``percell/cells.jsonl`` (the
+    authoritative cell record across the wrapper's core + ablation
+    invocations; the summary JSON is invocation-scoped) plus the multiseed
+    ``compose_skips.jsonl`` / ``compose_pool_meta.jsonl`` — and reports
+    per-(f_u, f_l) headline-delta summaries compact enough for the marker
+    cap. The reproducibility card is the no-training shape (this round fits
+    maps/arms only; no adapters, no WandB runs — declared, never omitted).
+    """
+    out_root = Path(out_root)
+    percell = out_root / "arm_results" / "percell"
+    cells_path = percell / "cells.jsonl"
+    eval_paths = [str(cells_path)]
+    per_level: dict = {}
+    seen_seeds: set[int] = set()
+    n_rows = 0
+    if cells_path.exists():
+        with cells_path.open(encoding="utf-8") as fh:
+            for line in fh:
+                if not line.strip():
+                    continue
+                rec = json.loads(line)
+                n_rows += 1
+                arm_rows = rec.get("arms") or []
+                if not arm_rows:
+                    continue
+                a0 = arm_rows[0]
+                if a0.get("f_u") is None:
+                    continue
+                seen_seeds.add(int(a0.get("seed", -1)))
+                key = f"fu{a0['f_u']}_fl{a0['f_l']}"
+                cur = per_level.setdefault(key, {"n_cells": 0, "deltas": []})
+                cur["n_cells"] += 1
+                d = (rec.get("headline") or {}).get("delta_rho_frozen")
+                if d is not None:
+                    cur["deltas"].append(float(d))
+    for cur in per_level.values():
+        ds = cur.pop("deltas")
+        cur["mean_delta_rho_frozen"] = float(sum(ds) / len(ds)) if ds else None
+        cur["n_deltas"] = len(ds)
+    for extra_name in ("compose_skips.jsonl", "compose_pool_meta.jsonl"):
+        p = percell / extra_name
+        if p.exists():
+            eval_paths.append(str(p))
+    n_skips = 0
+    if (percell / "compose_skips.jsonl").exists():
+        with (percell / "compose_skips.jsonl").open(encoding="utf-8") as fh:
+            n_skips = sum(1 for line in fh if line.strip())
+    for extra in ("arm_results/all_arms_spearman.json", "map_diagnostics.json"):
+        p = out_root / extra
+        if p.exists():
+            eval_paths.append(str(p))
+    card = {
+        "adapter_paths": [],
+        "hf_model_path": None,
+        "training": "none — measurement-only round (compose-grid map/arm fits)",
+        "wandb_project": "issue1739",
+        "wandb_run_names": [],
+        "wandb_entity": None,
+        "wandb_note": "no WandB runs — no training phase in this round",
+        "store_revision_1092": "e5901706",
+        "behavior": behavior,
+        "half": half,
+        "seeds": [int(s) for s in seeds],
+    }
+    payload = {
+        "eval_numbers": {
+            behavior: {
+                "half": half,
+                "seeds": [int(s) for s in seeds],
+                "n_cell_rows": n_rows,
+                "seeds_seen_in_compose_cells": sorted(seen_seeds),
+                "n_compose_skips": n_skips,
+                "per_level": per_level,
+            }
+        },
+        "eval_paths": eval_paths,
+        "reproducibility_card": card,
+        "wandb_url": "n/a (no training; see reproducibility_card.wandb_note)",
+        "hf_hub_url": f"https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/main/{hf_prefix}",
+        "worktree_path": ".claude/worktrees/issue-1739",
+        "final_commit_sha": _git_commit(),
+        "gpu_hours_used": None,
+        "gpu_hours_budgeted": gpu_hours_budgeted,
+        "plan_deviations": plan_deviations or [],
+    }
+    missing = [k for k in RESULTS_PAYLOAD_KEYS if k not in payload]
+    assert not missing, f"results payload missing keys: {missing}"
+    return payload
+
+
 def write_results_sentinel(out_root: Path | str, payload: dict, *, smoke: bool) -> Path:
     """Terminal results sentinel: kind `epm:results` (or `epm:smoke-result`).
 

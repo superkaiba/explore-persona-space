@@ -32,6 +32,7 @@ import argparse
 import dataclasses
 import json
 import logging
+import os
 import sys
 import time
 from pathlib import Path
@@ -120,6 +121,40 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         type=int,
         default=5000,
         help="U rung for composition cells (plan §4b names no rung; mid-ladder default)",
+    )
+    ap.add_argument(
+        "--compose-only",
+        action="store_true",
+        help="emit ONLY the composition RunSpecs (skip the base-grid specs --compose "
+        "otherwise prepends) — the multiseed round runs no plain ladder rungs",
+    )
+    ap.add_argument(
+        "--compose-replicates",
+        action="store_true",
+        help="emit composition specs ONE PER (draw, seed) over the full --draws x "
+        "--seeds block, replacing the draw-0/first-seed deterministic-reference pin. "
+        "One spec per replicate is LOAD-BEARING: the pool/whitening/map realize once "
+        "per spec group at spec.seeds[0], so a single multi-seed compose spec would "
+        "silently share ONE pool across every seed (multiseed plan §4 leg 1)",
+    )
+    ap.add_argument(
+        "--f-u-grid",
+        type=float,
+        nargs="+",
+        default=None,
+        metavar="F_U",
+        help="override constants.COMPOSITION_F_U for the composition sub-grid "
+        "(fraction of the compose pool drawn from behavior-eliciting labeled rows)",
+    )
+    ap.add_argument(
+        "--f-l-grid",
+        type=float,
+        nargs="+",
+        default=None,
+        metavar="F_L",
+        help="override constants.COMPOSITION_F_L; values must be 0.0 or 1.0 — the "
+        "pool realizer treats f_l as binary (>=1: eliciting rows may overlap the "
+        "anchor cell; else: anchor-cell contexts are excluded)",
     )
     ap.add_argument(
         "--text-emb",
@@ -234,6 +269,19 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--synthetic-dim", type=int, default=8)
     ap.add_argument("--synthetic-layers", type=int, default=3)
     args = ap.parse_args(argv)
+    if (
+        args.compose_only
+        or args.compose_replicates
+        or args.f_u_grid is not None
+        or args.f_l_grid is not None
+    ) and not args.compose:
+        ap.error("--compose-only/--compose-replicates/--f-u-grid/--f-l-grid require --compose")
+    for v in args.f_u_grid or ():
+        if not 0.0 <= v <= 1.0:
+            ap.error(f"--f-u-grid values must be in [0, 1], got {v}")
+    for v in args.f_l_grid or ():
+        if v not in (0.0, 1.0):
+            ap.error(f"--f-l-grid values must be 0.0 or 1.0 (binary pool realizer), got {v}")
     if args.rb_point == "context_end" and "e2" in args.regimes:
         # Plan v9 registered STRUCTURAL RESTRICTION (concern
         # e2fc-structurally-null-direction, code-review r1): the matched-pair
@@ -292,30 +340,46 @@ def compose_run_specs(
     compose_u_size: int = 5000,
     f_u_grid: tuple[float, ...] = (),
     f_l_grid: tuple[float, ...] = (),
+    compose_only: bool = False,
+    compose_replicates: bool = False,
 ) -> list[RunSpec]:
     """Enumerate the full plan grid as RunSpecs (C2 — consumed by run_grid).
 
     Base grid: every variant x regime x U rung runs the full budgets x draws
     x seeds block. Composition (``compose=True``): per variant, the HEADLINE
     regime slot (first of ``regimes``) additionally runs f_U x f_L combos at
-    each L-anchor in ``budgets`` (draw 0, first seed — the deterministic
-    reference cell). f_u == 0 combos are composition-degenerate (no eliciting
-    rows, f_l moot) and run once with f_l recorded as 0.0.
+    each L-anchor in ``budgets``. f_u == 0 combos are composition-degenerate
+    (no eliciting rows, f_l moot) and run once with f_l recorded as 0.0.
+
+    Default (``compose_replicates=False``): each combo runs once at (draw 0,
+    first seed — the deterministic reference cell); ordering is byte-identical
+    to the committed round-1 enumeration. ``compose_replicates=True``
+    (multiseed round): each combo emits ONE spec PER (draw, seed) over the
+    full ``draws x seeds`` block — never a single spec carrying the full
+    tuples, because the pool/whitening/map realize once per spec group at
+    ``spec.seeds[0]``. Replicate order is combo -> seed -> draw -> anchor,
+    keeping the specs that share an anchor-independent whitening/map fit
+    (f_u == 0 or f_l >= 1; see :func:`compose_fit_key`) CONSECUTIVE so a
+    single-entry fit cache suffices. ``compose_only=True`` drops the base
+    grid (the multiseed round runs no plain ladder rungs).
     """
+    if (compose_only or compose_replicates) and not compose:
+        raise ValueError("compose_only/compose_replicates require compose=True")
     specs: list[RunSpec] = []
     for variant in variants:
-        for u_size in u_sizes:
-            for regime in regimes:
-                specs.append(
-                    RunSpec(
-                        variant=variant,
-                        regime=regime,
-                        u_size=u_size,
-                        budgets=budgets,
-                        draws=draws,
-                        seeds=seeds,
+        if not compose_only:
+            for u_size in u_sizes:
+                for regime in regimes:
+                    specs.append(
+                        RunSpec(
+                            variant=variant,
+                            regime=regime,
+                            u_size=u_size,
+                            budgets=budgets,
+                            draws=draws,
+                            seeds=seeds,
+                        )
                     )
-                )
         if compose:
             seen: set[tuple[float, float]] = set()
             for f_u in f_u_grid:
@@ -324,19 +388,25 @@ def compose_run_specs(
                     if key in seen:
                         continue  # f_u=0 is composition-degenerate across f_l
                     seen.add(key)
-                    for anchor in budgets:
-                        specs.append(
-                            RunSpec(
-                                variant=variant,
-                                regime=regimes[0],
-                                u_size=compose_u_size,
-                                f_u=key[0],
-                                f_l=key[1],
-                                budgets=(anchor,),
-                                draws=(draws[0],),
-                                seeds=(seeds[0],),
+                    replicates = (
+                        [(d, s) for s in seeds for d in draws]
+                        if compose_replicates
+                        else [(draws[0], seeds[0])]
+                    )
+                    for draw, seed in replicates:
+                        for anchor in budgets:
+                            specs.append(
+                                RunSpec(
+                                    variant=variant,
+                                    regime=regimes[0],
+                                    u_size=compose_u_size,
+                                    f_u=key[0],
+                                    f_l=key[1],
+                                    budgets=(anchor,),
+                                    draws=(draw,),
+                                    seeds=(seed,),
+                                )
                             )
-                        )
     return specs
 
 
@@ -709,7 +779,6 @@ def _load_injected_features(path: Path | None, array_key: str, ctx_order: list[s
 
 def _save_rb(tensors_root: Path, behavior: str, regime: str, rb, layers) -> None:
     """Persist the raw regime direction (HF-bound analysis tensor; fp16)."""
-    import os
 
     import numpy as np
 
@@ -783,7 +852,6 @@ def _save_map(
     it. ``None`` (an unthreaded caller) omits the fields entirely, keeping the
     payload byte-compatible with pre-#1975 writers.
     """
-    import os
     import time as _time
 
     import numpy as np
@@ -1073,7 +1141,6 @@ def _load_nl_map(
     250). A payload with no recorded ``map_seed`` predates the field and is
     accepted with a loud warning rather than silently discarded.
     """
-    import os
 
     if kind == "linear" or os.environ.get(NL_MAP_REUSE_ENV, "1") == "0":
         return None
@@ -1257,22 +1324,142 @@ def _verify_map_roundtrip(
     return record
 
 
-def _record_compose_skip(spec: RunSpec, exc: Exception, compose_skips: list[dict]) -> None:
+def _spec_cell_row(spec: RunSpec) -> dict:
+    """Cell-identity fields of one composition spec (JSONL row grain)."""
+    assert spec.f_u is not None, spec
+    return {
+        "variant": spec.variant,
+        "f_u": float(spec.f_u),
+        "f_l": float(spec.f_l if spec.f_l is not None else 0.0),
+        "budget_l": int(spec.budgets[0]),
+        "draw": int(spec.draws[0]),
+        "seed": int(spec.seeds[0]),
+        "u_size": int(spec.u_size or 0),
+    }
+
+
+def _jsonl_cell_key(row: dict) -> tuple:
+    """Dedup key for the append-grain compose JSONL sidecars."""
+    return (
+        row.get("variant"),
+        float(row["f_u"]) if row.get("f_u") is not None else None,
+        float(row["f_l"]) if row.get("f_l") is not None else None,
+        int(row["budget_l"]),
+        int(row["draw"]),
+        int(row["seed"]),
+    )
+
+
+def _load_jsonl_cell_keys(path: Path) -> set[tuple]:
+    keys: set[tuple] = set()
+    if path.exists():
+        with path.open(encoding="utf-8") as fh:
+            for line in fh:
+                if line.strip():
+                    keys.add(_jsonl_cell_key(json.loads(line)))
+    return keys
+
+
+def _append_jsonl_once(path: Path, row: dict, seen: set[tuple]) -> None:
+    """Append ``row`` unless its cell key is already recorded (resume/re-run
+    idempotence: the multiseed wrapper's core + ablation invocations — and any
+    resumed re-run — share one out-root, so the sidecars are append-grain with
+    per-cell dedup, never wholesale rewritten)."""
+    key = _jsonl_cell_key(row)
+    if key in seen:
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as fh:
+        fh.write(json.dumps(row) + "\n")
+    seen.add(key)
+
+
+def _record_compose_skip(
+    spec: RunSpec,
+    exc: Exception,
+    compose_skips: list[dict],
+    *,
+    skip_path: Path | None = None,
+    skip_seen: set[tuple] | None = None,
+) -> None:
     """Round-3 Minor 1: a ``_u_pool_for_spec`` failure is a recordable skip
     ONLY for a composition spec (a quota that cannot fill); on a PLAIN ladder
     rung it RE-RAISES — a genuine load bug must never drop a whole
-    (variant, U, regime) slice from the summary as a 'compose skip'."""
+    (variant, U, regime) slice from the summary as a 'compose skip'.
+
+    Multiseed round: ALSO appends one deduped row per skipped spec to
+    ``arm_results/percell/compose_skips.jsonl`` — the summary's
+    ``meta.compose_skips`` is invocation-scoped (the second wrapper invocation
+    into the same out-root overwrites it), so the designed-skip audit (plan §7
+    gate 3) reads the durable JSONL, never the last summary.
+    """
     if spec.f_u is None:
         raise exc
     compose_skips.append({"spec": dataclasses.asdict(spec), "reason": str(exc)})
+    if skip_path is not None and skip_seen is not None:
+        _append_jsonl_once(skip_path, {**_spec_cell_row(spec), "reason": str(exc)}, skip_seen)
 
 
 PILOT_ABORT_RC = 7  # designed-halt rc (never a bare rc=1 — gotchas.md pilot-gate entry)
 
 
 def _map_key(spec: RunSpec) -> tuple:
-    """Whitening/map cache key — regime slices of one (variant, U) share it."""
-    return (spec.variant, spec.u_size, spec.f_u, spec.f_l, spec.budgets, spec.seeds)
+    """Whitening/map cache key — regime slices of one (variant, U) share it.
+
+    ``draws`` is part of the key (multiseed round): two compose replicate
+    specs differing only in draw must NOT group — ``run_grid_multi`` runs
+    group[0]'s unit axes, so a draw-collapsed group would silently drop the
+    second draw's units. Plain-rung regime slices of one (variant, U) carry
+    identical draws tuples, so their grouping is unchanged.
+    """
+    return (spec.variant, spec.u_size, spec.f_u, spec.f_l, spec.budgets, spec.draws, spec.seeds)
+
+
+def map_seed_for_spec(spec: RunSpec, cli_seeds) -> int:
+    """Whitening/map rng seed for one spec group (multiseed plan §4 item 3).
+
+    Compose replicates thread the SPEC seed into the whitening rng (per-seed
+    map/whitening variation rides the seed axis); plain rungs carry the full
+    CLI seeds tuple, so ``spec.seeds[0] == cli_seeds[0]`` there and the
+    committed first-CLI-seed pin is preserved byte-identically. Spec seed 0 /
+    draw 0 therefore reproduces the banked round-1 whitening (the banked run
+    passed ``--seeds 0``).
+    """
+    if spec.seeds:
+        return int(spec.seeds[0])
+    return int(cli_seeds[0])
+
+
+def compose_label(spec: RunSpec) -> str:
+    """u_rung_label for a composition spec (identical to the banked format)."""
+    assert spec.f_u is not None, spec
+    return f"compose{int(spec.u_size or 0)}_fu{spec.f_u}_fl{spec.f_l}_L{spec.budgets[0]}"
+
+
+def compose_fit_key(spec: RunSpec) -> tuple:
+    """Generating-parameter whitening+map fit-cache key for a compose spec.
+
+    Keyed on (variant, u_size, f_u, f_l, anchor-if-pool-anchor-dependent,
+    draw, seed) — generating parameters ONLY, never a float-array hash. The
+    pool is anchor-INdependent when f_u == 0 (no eliciting rows: the generic
+    draw's rng ignores the anchor) or f_l >= 1 (the eliciting pool is the
+    whole labeled table, no cell exclusion), so those specs share one
+    whitening+map fit across the L anchors (14 unique fits vs 22 cells per
+    evil variant-x-seed pair; 18 vs 26 syco/hall — multiseed plan §4 item 4).
+    f_u > 0 with f_l < 1 excludes the ANCHOR CELL's contexts from the
+    eliciting pool, so the fit is anchor-specific and never shared.
+    """
+    assert spec.f_u is not None, spec
+    anchor_dependent = spec.f_u > 0 and float(spec.f_l or 0.0) < 1.0
+    return (
+        spec.variant,
+        spec.u_size,
+        float(spec.f_u),
+        float(spec.f_l if spec.f_l is not None else 0.0),
+        int(spec.budgets[0]) if anchor_dependent else None,
+        int(spec.draws[0]),
+        int(spec.seeds[0]),
+    )
 
 
 def compose_pilot_report(
@@ -1403,8 +1590,12 @@ def _run_real(args: argparse.Namespace, timings: dict | None = None) -> int:
         seeds=tuple(args.seeds),
         compose=args.compose,
         compose_u_size=args.compose_u_size,
-        f_u_grid=tuple(COMPOSITION_F_U),
-        f_l_grid=tuple(COMPOSITION_F_L),
+        # Multiseed round: --f-u-grid/--f-l-grid override the round-1 constants
+        # (the wrapper's ablation invocation passes the f_u dose grid).
+        f_u_grid=(tuple(args.f_u_grid) if args.f_u_grid is not None else tuple(COMPOSITION_F_U)),
+        f_l_grid=(tuple(args.f_l_grid) if args.f_l_grid is not None else tuple(COMPOSITION_F_L)),
+        compose_only=bool(getattr(args, "compose_only", False)),
+        compose_replicates=bool(getattr(args, "compose_replicates", False)),
     )
     print(f"[fits] plan grid: {len(specs)} (variant x U x regime) slices", flush=True)
 
@@ -1440,101 +1631,176 @@ def _run_real(args: argparse.Namespace, timings: dict | None = None) -> int:
     transfer_skips: list[dict] = []
     diag_out: dict = {}
     compose_skips: list[dict] = []
+    # Multiseed round durable sidecars (append-grain, per-cell dedup — the
+    # wrapper's core + ablation invocations share one out-root) + the
+    # single-entry generating-parameter fit cache (plan §4 items 4/5).
+    percell_dir = args.out_root / "arm_results" / "percell"
+    skip_path = percell_dir / "compose_skips.jsonl"
+    pool_meta_path = percell_dir / "compose_pool_meta.jsonl"
+    skip_seen = _load_jsonl_cell_keys(skip_path)
+    pool_seen = _load_jsonl_cell_keys(pool_meta_path)
+    compose_fit_cache: dict[tuple, dict] = {}
     for gi, group in enumerate(groups):
         spec0 = group[0]
-        try:
-            u_x, u_y, u_label, n_u = _u_pool_for_spec(spec0, u_arrays, u_fit_rows, tbl, layers)
-        except (ValueError, RuntimeError) as exc:
-            _record_compose_skip(spec0, exc, compose_skips)  # re-raises on a plain rung
-            print(f"[fits] group {gi + 1}/{len(groups)} SKIP compose: {exc}", flush=True)
-            if gi == len(groups) - 1:
+        map_kind = getattr(args, "map_kind", "linear")
+        # Multiseed §4 item 3: the whitening/map rng threads the SPEC seed
+        # (plain rungs are unchanged — their spec.seeds IS the CLI tuple).
+        map_seed = map_seed_for_spec(spec0, args.seeds)
+        cache_key = compose_fit_key(spec0) if spec0.f_u is not None else None
+        cached = compose_fit_cache.get(cache_key) if cache_key is not None else None
+        if compose_fit_cache and cached is None:
+            # Single-entry cache: replicate emission order keeps every
+            # anchor-sharing spec consecutive, so ONE live entry suffices —
+            # evict BEFORE the next pool realization / fit peak (each held
+            # whitening+map pair is ~GBs of fp64 at production shape).
+            compose_fit_cache.clear()
+            gc.collect()
+        if cached is not None:
+            u_label = compose_label(spec0)
+            n_u = int(cached["n_u"])
+            wh = cached["wh"]
+            mapfit = cached["mapfit"]
+            map_source = "cache"
+            # Same designed pre-phase RSS guard as the fit path, at the
+            # cache-hit shape: no pool arrays, no map fit — the labeled
+            # whitening-apply peak below is what remains.
+            mem_guard.check_phase(
+                f"whitening_map[{spec0.variant}|{u_label}]",
+                mem_guard.whitening_map_components(
+                    len(layers),
+                    0,
+                    dim,
+                    n_ctx=len(tbl.ctx_order),
+                    n_ev=len(tbl_ev.ctx_order) if tbl_ev is not None else 0,
+                    map_fit=False,
+                ),
+                out_root=args.out_root,
+            )
+            if gi == len(groups) - 1 and u_arrays is not None:
                 u_arrays = None
                 gc.collect()
-            continue
-        if gi == len(groups) - 1:
-            # Crash-fix r3 memory scoping: the LAST group's pool is composed —
-            # the staged fp16 u_store summary arrays (~12 GiB at 3 kinds x 28
-            # layers) are dead weight through the fit/transfer phases below.
-            u_arrays = None
-            gc.collect()
-            print("[fits] freed u_store summary arrays after final U-pool compose", flush=True)
-        t_map = time.time()
-        map_kind = getattr(args, "map_kind", "linear")
-        map_seed = int(args.seeds[0])
-        wh = fits.fit_whitening(u_x, device=args.device, seed=map_seed)
-        # Plain rungs persist a behavior-INDEPENDENT map; consume it when a
-        # sibling invocation already fit it (see _load_nl_map). Nonlinear only.
-        mapfit = (
-            _load_nl_map(
-                args.tensors_root,
-                spec0.variant,
-                u_label,
-                map_kind,
-                layers,
-                n_u,
-                device=args.device,
-                map_seed=map_seed,
+                print("[fits] freed u_store summary arrays after final U-pool compose", flush=True)
+            print(
+                f"[fits] group {gi + 1}/{len(groups)} whitening+map cache HIT "
+                f"({spec0.variant}/{u_label})",
+                flush=True,
             )
-            if spec0.f_u is None
-            else None
-        )
-        map_source = "loaded" if mapfit is not None else "fit"
-        # Pre-fit RSS guard (crash-fix r3): project this group's whitening-
-        # apply + map-fit + labeled-whitening peak vs live MemAvailable and
-        # refuse with a DESIGNED rc instead of a kernel OOM-kill (rc=137 on
-        # the 85 GB a2-highgpu-1g boxes, 2026-08-02).
-        mem_guard.check_phase(
-            f"whitening_map[{spec0.variant}|{u_label}]",
-            mem_guard.whitening_map_components(
-                len(layers),
-                n_u,
-                dim,
-                n_ctx=len(tbl.ctx_order),
-                n_ev=len(tbl_ev.ctx_order) if tbl_ev is not None else 0,
-                map_fit=mapfit is None,
-            ),
-            out_root=args.out_root,
-        )
-        # Held-out probe rows for the round-trip gate, captured from the SAME
-        # whitened copy the map fit consumes (identical values to the old
-        # fresh apply_whitening(u_x)[:, :K] slice).
-        probe_x = None
-        space_meta = None
-        if mapfit is None:
-            # ONE whitened fp64 copy per pool side; the fp16 stacked pools are
-            # freed the moment their whitened twin exists (crash-fix r3 —
-            # pre-fix BOTH pools + two whole-array fp64 apply transients were
-            # co-resident, the 85 GB-box kill site).
-            x_w = fits.apply_whitening(u_x, wh)
-            u_x = None
-            y_w = fits.apply_whitening(u_y, wh)
-            u_y = None
-            if spec0.f_u is None and map_kind != "linear":
-                probe_x = np.array(x_w[:, : min(MAP_ROUNDTRIP_PROBE_ROWS, n_u)], copy=True)
-            if spec0.f_u is None:
-                # #1975: record the fit space + whitening provenance in the
-                # persisted payload (RECIPE form — the whitening is fit
-                # in-process here, no persisted artifact exists at fit time).
-                # Computed BEFORE x_w is freed; a small dict, not the array.
-                space_meta = fits.map_space_meta(
-                    x_w,
-                    fit_space="whitened",
-                    whitening_prov=fits.whitening_provenance(
-                        variant=spec0.variant,
-                        u_label=u_label,
-                        whiten_seed=map_seed,
-                        n_u_rows=n_u,
-                        gammas=wh.gamma,
-                    ),
-                )
-            mapfit = _fit_map(args, x_w, y_w)
-            del x_w, y_w
         else:
-            u_x = u_y = None  # loaded map: the pools carry nothing downstream
-        gc.collect()
-        if timings is not None:
-            timings.setdefault("map_fit_s", []).append(time.time() - t_map)
-        diag_out[f"{spec0.variant}|{u_label}"] = {**mapfit.diagnostics, "map_source": map_source}
+            try:
+                u_x, u_y, u_label, n_u, pool_meta = _u_pool_for_spec(
+                    spec0, u_arrays, u_fit_rows, tbl, layers
+                )
+            except (ValueError, RuntimeError) as exc:
+                _record_compose_skip(
+                    spec0, exc, compose_skips, skip_path=skip_path, skip_seen=skip_seen
+                )  # re-raises on a plain rung
+                print(f"[fits] group {gi + 1}/{len(groups)} SKIP compose: {exc}", flush=True)
+                if gi == len(groups) - 1:
+                    u_arrays = None
+                    gc.collect()
+                continue
+            if pool_meta is not None:
+                # Group-grain pool<->cell overlap diagnostic + realized
+                # eliciting ids (multiseed r1 reconciler (ii)/(iii): the fold's
+                # overlap-sensitivity and pairwise pool-overlap reads). Emitted
+                # for the anchor-DEPENDENT class (f_u>0, f_l<1) only — exactly
+                # the cells where anchor-cell exclusion binds; that class is
+                # never cache-shared, so coverage is complete by construction.
+                _append_jsonl_once(pool_meta_path, pool_meta, pool_seen)
+            if gi == len(groups) - 1:
+                # Crash-fix r3 memory scoping: the LAST group's pool is composed —
+                # the staged fp16 u_store summary arrays (~12 GiB at 3 kinds x 28
+                # layers) are dead weight through the fit/transfer phases below.
+                u_arrays = None
+                gc.collect()
+                print("[fits] freed u_store summary arrays after final U-pool compose", flush=True)
+            t_map = time.time()
+            wh = fits.fit_whitening(u_x, device=args.device, seed=map_seed)
+            # Plain rungs persist a behavior-INDEPENDENT map; consume it when a
+            # sibling invocation already fit it (see _load_nl_map). Nonlinear only.
+            mapfit = (
+                _load_nl_map(
+                    args.tensors_root,
+                    spec0.variant,
+                    u_label,
+                    map_kind,
+                    layers,
+                    n_u,
+                    device=args.device,
+                    map_seed=map_seed,
+                )
+                if spec0.f_u is None
+                else None
+            )
+            map_source = "loaded" if mapfit is not None else "fit"
+            # Pre-fit RSS guard (crash-fix r3): project this group's whitening-
+            # apply + map-fit + labeled-whitening peak vs live MemAvailable and
+            # refuse with a DESIGNED rc instead of a kernel OOM-kill (rc=137 on
+            # the 85 GB a2-highgpu-1g boxes, 2026-08-02).
+            mem_guard.check_phase(
+                f"whitening_map[{spec0.variant}|{u_label}]",
+                mem_guard.whitening_map_components(
+                    len(layers),
+                    n_u,
+                    dim,
+                    n_ctx=len(tbl.ctx_order),
+                    n_ev=len(tbl_ev.ctx_order) if tbl_ev is not None else 0,
+                    map_fit=mapfit is None,
+                ),
+                out_root=args.out_root,
+            )
+            # Held-out probe rows for the round-trip gate, captured from the SAME
+            # whitened copy the map fit consumes (identical values to the old
+            # fresh apply_whitening(u_x)[:, :K] slice).
+            probe_x = None
+            space_meta = None
+            if mapfit is None:
+                # ONE whitened fp64 copy per pool side; the fp16 stacked pools are
+                # freed the moment their whitened twin exists (crash-fix r3 —
+                # pre-fix BOTH pools + two whole-array fp64 apply transients were
+                # co-resident, the 85 GB-box kill site).
+                x_w = fits.apply_whitening(u_x, wh)
+                u_x = None
+                y_w = fits.apply_whitening(u_y, wh)
+                u_y = None
+                if spec0.f_u is None and map_kind != "linear":
+                    probe_x = np.array(x_w[:, : min(MAP_ROUNDTRIP_PROBE_ROWS, n_u)], copy=True)
+                if spec0.f_u is None:
+                    # #1975: record the fit space + whitening provenance in the
+                    # persisted payload (RECIPE form — the whitening is fit
+                    # in-process here, no persisted artifact exists at fit time).
+                    # Computed BEFORE x_w is freed; a small dict, not the array.
+                    space_meta = fits.map_space_meta(
+                        x_w,
+                        fit_space="whitened",
+                        whitening_prov=fits.whitening_provenance(
+                            variant=spec0.variant,
+                            u_label=u_label,
+                            whiten_seed=map_seed,
+                            n_u_rows=n_u,
+                            gammas=wh.gamma,
+                        ),
+                    )
+                mapfit = _fit_map(args, x_w, y_w)
+                del x_w, y_w
+            else:
+                u_x = u_y = None  # loaded map: the pools carry nothing downstream
+            gc.collect()
+            if timings is not None:
+                timings.setdefault("map_fit_s", []).append(time.time() - t_map)
+            if cache_key is not None:
+                compose_fit_cache[cache_key] = {
+                    "wh": wh,
+                    "mapfit": mapfit,
+                    "n_u": int(n_u),
+                }
+        diag_key = f"{spec0.variant}|{u_label}"
+        if spec0.f_u is not None and getattr(args, "compose_replicates", False):
+            # Replicates reuse one u_rung_label across (draw, seed), so the
+            # diagnostics key carries the replicate suffix — a bare-label key
+            # would silently keep only the LAST replicate's map diagnostics.
+            diag_key += f"|draw{int(spec0.draws[0])}_seed{int(spec0.seeds[0])}"
+        diag_out[diag_key] = {**mapfit.diagnostics, "map_source": map_source}
         z_ev_w = za_ev_w = None  # eval-split arrays, whitened per map_key (transfer leg)
         if spec0.f_u is None:
             # C-1: persist the frozen plain-rung map weights (HF-bound via
@@ -1735,13 +2001,23 @@ def _run_real(args: argparse.Namespace, timings: dict | None = None) -> int:
         },
         extra=extra,
     )
-    (args.out_root / "map_diagnostics.json").write_text(json.dumps(diag_out, indent=1))
+    diag_path = args.out_root / "map_diagnostics.json"
+    if diag_path.exists():
+        # Merge-on-write (multiseed round): the wrapper's core + ablation
+        # invocations share one out-root — the old wholesale write_text
+        # clobbered the sibling invocation's entries. This invocation's keys
+        # win on collision (a re-run refreshes its own entries). A corrupt
+        # existing file raises (fail loud — never silently drop diagnostics).
+        diag_out = {**json.loads(diag_path.read_text()), **diag_out}
+    diag_tmp = diag_path.with_name(diag_path.name + ".tmp")
+    diag_tmp.write_text(json.dumps(diag_out, indent=1))
+    os.replace(diag_tmp, diag_path)
     print(f"[fits] real grid done: {len(all_records)} cells", flush=True)
     return 0
 
 
 def _u_pool_for_spec(spec: RunSpec, u_arrays, u_fit_rows, tbl: LabeledTable, layers):
-    """Realize one spec's U pool: (x_u, y_u, label, n_rows).
+    """Realize one spec's U pool: (x_u, y_u, label, n_rows, pool_meta).
 
     Plain rung: a seeded subsample of the store's fit pool (or the whole pool
     for 'full'). Composition (§4b): ``f_u`` of the pool is drawn from the
@@ -1751,6 +2027,13 @@ def _u_pool_for_spec(spec: RunSpec, u_arrays, u_fit_rows, tbl: LabeledTable, lay
     contexts OUTSIDE that cell (f_l=0 — the no-overlap-with-L reading of
     plan §4b's 'held-out unlabeled pool'). Fails loud (ValueError) when a
     quota cannot be filled — the caller records the skip.
+
+    ``pool_meta`` (multiseed round) is a JSONL-ready dict for anchor-DEPENDENT
+    compose cells (f_u>0, f_l<1): the realized eliciting context ids plus the
+    GROUP-grain pool<->anchor-cell overlap counts (f_l=0 excludes the anchor
+    cell's ROWS, but sibling rows of the SAME group survive in the eliciting
+    pool — the fold's overlap-sensitivity read needs the realized counts).
+    None for plain rungs and anchor-independent compose cells.
     """
     import numpy as np
 
@@ -1768,7 +2051,7 @@ def _u_pool_for_spec(spec: RunSpec, u_arrays, u_fit_rows, tbl: LabeledTable, lay
             rows = np.sort(rng.choice(rows, size=spec.u_size, replace=False))
         x, y = stack(rows)
         label = "full" if spec.u_size is None else str(spec.u_size)
-        return x, y, label, len(rows)
+        return x, y, label, len(rows), None
 
     # Composition cell: generic half from the store, eliciting half from the
     # labeled table (f_l gates overlap with the reference anchor cell).
@@ -1784,16 +2067,38 @@ def _u_pool_for_spec(spec: RunSpec, u_arrays, u_fit_rows, tbl: LabeledTable, lay
     )
     gen_rows = u_fit_rows[gen_sel]
     x_gen, y_gen = stack(gen_rows)
+    pool_meta = None
     if len(elic_sel):
         elic_rows = elic_pool[elic_sel]
         x_elic = np.asarray(tbl.z_by_variant[spec.variant][:, elic_rows], dtype=x_gen.dtype)
         y_elic = np.asarray(tbl.z_ans[:, elic_rows], dtype=y_gen.dtype)
         x = np.concatenate([x_gen, x_elic], axis=1)
         y = np.concatenate([y_gen, y_elic], axis=1)
+        if spec.f_l < 1.0:
+            groups_arr = np.asarray(tbl.groups)
+            cell_groups = set(np.asarray(groups_arr[cell.row_idx]).tolist())
+            elic_groups = np.asarray(groups_arr[elic_rows]).tolist()
+            overlap = sorted(cell_groups.intersection(elic_groups), key=str)
+            overlap_set = set(overlap)
+            cell_groups_list = np.asarray(groups_arr[cell.row_idx]).tolist()
+            pool_meta = {
+                **_spec_cell_row(spec),
+                "n_gen": int(len(gen_rows)),
+                "n_elic": int(len(elic_rows)),
+                "overlap_group_count": int(len(overlap)),
+                "overlap_groups": [str(g) for g in overlap],
+                "n_elic_rows_in_overlap_groups": int(
+                    sum(1 for g in elic_groups if g in overlap_set)
+                ),
+                "n_cell_rows_in_overlap_groups": int(
+                    sum(1 for g in cell_groups_list if g in overlap_set)
+                ),
+                "elic_ctx_ids": [str(tbl.ctx_order[i]) for i in elic_rows],
+            }
     else:
         x, y = x_gen, y_gen
-    label = f"compose{size}_fu{spec.f_u}_fl{spec.f_l}_L{anchor}"
-    return x, y, label, x.shape[1]
+    label = compose_label(spec)
+    return x, y, label, x.shape[1], pool_meta
 
 
 def _run_transfer_for_group(
@@ -2029,8 +2334,10 @@ def _run_pilot(args: argparse.Namespace) -> int:
         seeds=tuple(args.seeds),
         compose=args.compose,
         compose_u_size=args.compose_u_size,
-        f_u_grid=tuple(COMPOSITION_F_U),
-        f_l_grid=tuple(COMPOSITION_F_L),
+        f_u_grid=(tuple(args.f_u_grid) if args.f_u_grid is not None else tuple(COMPOSITION_F_U)),
+        f_l_grid=(tuple(args.f_l_grid) if args.f_l_grid is not None else tuple(COMPOSITION_F_L)),
+        compose_only=bool(getattr(args, "compose_only", False)),
+        compose_replicates=bool(getattr(args, "compose_replicates", False)),
     )
     n_units = sum(len(s.budgets) * len(s.draws) * len(s.seeds) for s in full_specs)
     n_map_fits = len({_map_key(s) for s in full_specs})
@@ -2054,6 +2361,10 @@ def _run_pilot(args: argparse.Namespace) -> int:
     p.draws = [args.draws[0]]
     p.seeds = [args.seeds[0]]
     p.compose = False
+    # compose=False makes the compose-scoped flags invalid on the pilot's
+    # unit run (compose_run_specs raises) — the pilot unit is a plain group.
+    p.compose_only = False
+    p.compose_replicates = False
     timings: dict = {}
     t0 = time.time()
     rc = _run_real(p, timings=timings)
@@ -2094,7 +2405,6 @@ def _run_pilot(args: argparse.Namespace) -> int:
     out = args.out_root / "pilot_report.json"
     tmp = out.with_name(out.name + ".tmp")
     tmp.write_text(json.dumps(report, indent=1))
-    import os
 
     os.replace(tmp, out)
     walls_str = " ".join(f"L{b}={w:.1f}s" for b, w in sorted(unit_group_walls.items()))
