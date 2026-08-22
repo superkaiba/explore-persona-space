@@ -113,7 +113,7 @@ def test_c58_registered_in_checks_and_docstring_catalog():
     # #2123, 62/63 since #2276, 64 since #2174, 65/66 since #2178, 67 since
     # #2204, 68 since #2228, 69 since #2269 — and this pin is what makes a
     # forgotten enum update loud)
-    assert "57, 58, 59, 61, 62, 63, 64, 65, 66, 67, 68, 69)" in verify_plan.__doc__
+    assert "57, 58, 59, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70)" in verify_plan.__doc__
 
 
 # ─── Test 1 — fires on the #2054 v16 shape ─────────────────────────────────
