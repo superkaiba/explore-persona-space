@@ -5193,10 +5193,13 @@ def _parser_terminate(sub: argparse._SubParsersAction) -> None:
         "--force-keep-running",
         action="store_true",
         help=(
-            "Terminate ALL of the issue's pods even though the task carries "
-            "the keep-running tag (or the tag is unreadable). Logs a LOUD "
-            "warning. Automated Step-8 flows must never pass this - the "
-            "remedy there is task.py remove-tag <N> keep-running."
+            "Terminate the SELECTED pod(s) even though the task carries "
+            "the keep-running tag (or the tag is unreadable). Scope follows "
+            "the selector, NOT this flag: the bare form covers every pod for "
+            "the issue, --primary-only covers only pod-<N> (suffixed siblings "
+            "keep running), and --name-suffix covers only that suffixed pod. "
+            "Logs a LOUD warning. Automated Step-8 flows must never pass "
+            "this - the remedy there is task.py remove-tag <N> keep-running."
         ),
     )
     p.add_argument(

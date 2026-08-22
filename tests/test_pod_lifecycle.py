@@ -1940,6 +1940,37 @@ def test_terminate_parser_exposes_force_keep_running_flag():
     assert ns2.force_keep_running is False
 
 
+def test_terminate_force_keep_running_help_is_selector_neutral():
+    """#2270 critique r1 (NIT force-help-selector-scope): the
+    --force-keep-running help must NOT claim unconditional issue-wide scope.
+
+    The flag waives the keep-running shield; WHICH pods die is decided by the
+    SELECTOR (bare / --primary-only / --name-suffix). A help string promising
+    that ALL of the issue's pods are terminated tells an operator running
+    ``--primary-only --force-keep-running`` that suffixed siblings will be
+    destroyed — the opposite of what that path does, and the opposite of what
+    the runtime warning on the primary-only branch says."""
+    parser = argparse.ArgumentParser()
+    sub = parser.add_subparsers(dest="cmd")
+    pod_lifecycle._parser_terminate(sub)
+
+    action = next(
+        a
+        for a in sub.choices["terminate"]._actions
+        if "--force-keep-running" in (a.option_strings or [])
+    )
+    help_text = action.help or ""
+
+    assert "ALL of the issue's pods" not in help_text, (
+        "--force-keep-running help must not claim unconditional issue-wide "
+        f"scope — scope follows the selector; got: {help_text!r}"
+    )
+    assert "--primary-only" in help_text and "--name-suffix" in help_text, (
+        "the help should name the selectors that actually determine scope so a "
+        f"combined invocation is unambiguous; got: {help_text!r}"
+    )
+
+
 def test_keep_running_tag_constant_matches_task_workflow():
     """The pod_lifecycle module keeps its own lazy-import-independent copy of
     the tag literal; pin it to the task_workflow canonical constant so the
