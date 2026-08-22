@@ -1,0 +1,1 @@
+{"ts": "2026-08-22T23:13:13Z", "event": "raised", "concern_id": "stale-per-twin-compose-only-allowlists", "severity": "BLOCKER", "summary": "All eight codex-* specs retain an exhaustive Bash allowlist that omits the new memory-commit exception.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
