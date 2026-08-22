@@ -168,9 +168,10 @@ matches a DELIBERATE SIGKILL's log line just as well as a kernel-OOM
 one, and exit 137 (= 128+9) alone does not attribute the killer (an
 exit-143 / SIGTERM death gets the same protocol — earlyoom's first
 strike is SIGTERM). On the shared VM a process can be killed by at
-least four sources: the kernel OOM killer, earlyoom (SIGTERM below 10%
-MemAvailable, SIGKILL below 5% — see `.claude/rules/gotchas.md`,
-earlyoom entry), systemd-oomd / cgroup-confined OOM (`memory.max`), or
+least four sources: the kernel OOM killer, earlyoom (SIGTERM when
+MemAvailable AND swap free BOTH fall under 10% — conjunctive — SIGKILL
+under 5%; see `.claude/rules/gotchas.md`, earlyoom entry),
+systemd-oomd / cgroup-confined OOM (`memory.max`), or
 a deliberate operator/PM/watcher kill. The `infra` ROUTING may still be
 correct; what this protocol gates is the DIAGNOSIS CONTENT — before an
 `epm:failure` body names OOM as the cause, and before any crash-fix
@@ -190,7 +191,13 @@ short-circuits the others:
    out GLOBAL memory-pressure kills only (kernel global OOM killer,
    earlyoom — floors ~10%/5% of the 128 GB total). It does NOT rule
    out cgroup-confined OOM (`memory.max`, systemd-oomd cgroup
-   pressure); when step 1's delta increments, step 1 wins.
+   pressure); when step 1's delta increments, step 1 wins. Read the
+   floor from MEMORY — `MemAvailable` in /proc/meminfo — never from
+   `df`: disk free is not the memory read (#2280: a "53 GB free" DISK
+   read wrongly ruled memory pressure out). earlyoom's condition is
+   CONJUNCTIVE (mem AND swap both ≤ 10%), so read `SwapTotal`/`SwapFree`
+   alongside — SwapTotal=0 leaves the swap side permanently satisfied
+   (regression paths: gotchas.md earlyoom entry, swap-era item).
 3. **Kill-line journals at the death timestamp.** `journalctl -u
    earlyoom` / `journalctl -u systemd-oomd` / `dmesg | grep -i oom`. The
    watcher's CPU-guard pass also pre-attributes earlyoom kills as
@@ -215,6 +222,17 @@ short-circuits the others:
    § Autonomy rules). **Absence is NOT exculpatory:** manual kills,
    unmapped sessions, raw terminals, and non-PM killers can all leave
    no marker.
+
+**Relaunch-survival is NOT a discriminator:** earlyoom fires in BURSTS
+at the floor, so the same command surviving a later rerun — including a
+setsid-detached rerun — does NOT implicate the harness, a janitor
+pkill, or systemd session-scope cleanup; the rerun usually just landed
+outside the sweep (gotchas.md earlyoom entry, burst-fire item; #2280).
+**choom is attenuated, not void:** the prescribed `choom -n -600` still
+leaves a `--prefer`-matched process at badness ~567 vs the ~666 crowd —
+protective, but below-crowd immunity is gone — so a crash-fix round
+neither treats a choom'd kill as impossible nor discards the recipe
+(gotchas.md earlyoom entry, badness-arithmetic item; #2280).
 
 **Terminal disposition:** if steps 1-4 jointly fail to attribute the
 killer, record `killer unknown` in the `epm:failure` body — do NOT name

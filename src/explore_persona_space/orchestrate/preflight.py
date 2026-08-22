@@ -54,6 +54,7 @@ from explore_persona_space.orchestrate.env import (
     _hf_home_default,
     is_cluster_env,
     is_runpod_env,
+    is_shared_vm_env,
 )
 
 logger = logging.getLogger(__name__)
@@ -112,6 +113,14 @@ class PreflightReport:
     # severity-agnostic: set whenever the mount is live, WARN/ERROR rows
     # ride the thresholds. Set by ``_check_data_disk_floor``.
     data_disk_used_pct: float | None = None
+    # Shared-VM swap state (#2280). None = not the shared VM (pods, GCE,
+    # SLURM) or meminfo unreadable/unparseable — severity-agnostic: set
+    # whenever the shared VM's /proc/meminfo was read; WARN rows ride the
+    # thresholds. ``swap_free_pct`` stays None when SwapTotal == 0 (the
+    # ratio is undefined; the SwapTotal=0 WARN carries the diagnosis).
+    # Set by ``_check_swap_state``. WARN-only — never flips ``ok``.
+    swap_total_gb: float | None = None
+    swap_free_pct: float | None = None
 
     def add_error(self, msg: str):
         self.errors.append(msg)
@@ -161,6 +170,13 @@ class PreflightReport:
             lines.append(
                 f"  Data disk ({EPS_DATA_DISK_MOUNT}): {self.data_disk_used_pct:.1f}% used"
             )
+        if self.swap_total_gb is not None:
+            if self.swap_total_gb <= 0:
+                lines.append("  Swap: NONE active (SwapTotal=0)")
+            else:
+                lines.append(
+                    f"  Swap: {self.swap_total_gb:.0f} GB total, {self.swap_free_pct:.1f}% free"
+                )
         if self.hf_storage_used_tb is not None and self.hf_storage_ceiling_tb is not None:
             lines.append(
                 f"  HF storage: {self.hf_storage_used_tb:.2f} TB / "
@@ -406,6 +422,101 @@ def _check_data_disk_floor(report: PreflightReport) -> None:
             f"Data disk {EPS_DATA_DISK_MOUNT} is {used_pct:.1f}% used (warn at "
             f"{warn_pct:.0f}%, EPM_PREFLIGHT_DATA_DISK_WARN_PCT) — nearly full. "
             f"{remediation}"
+        )
+
+
+#: Shared-VM swap-state check (#2280). earlyoom's victim-kill condition is
+#: CONJUNCTIVE — MemAvailable AND swap free must BOTH fall under 10% — so
+#: the 64 GiB swapfile activated 2026-08-14 (``/mnt/eps-data/swapfile``) is
+#: what keeps the swap side false and ended the Aug-13/14 selective-SIGTERM
+#: kill regime. Two regression paths re-arm it: (a) the fstab entry is
+#: ``nofail``, so a boot where /mnt/eps-data fails to mount activates NO
+#: swap silently (SwapTotal == 0); (b) swap exhaustion — fleet growth
+#: drives SwapFree toward earlyoom's 10% swap floor while SwapTotal stays
+#: healthy. WARN when SwapFree/SwapTotal falls under this percent (2x
+#: earlyoom's 10% floor, headroom before the kill regime re-arms).
+SWAP_FREE_WARN_PCT_DEFAULT = 20.0
+
+
+def _swap_free_warn_pct() -> float:
+    """Swap-free WARN threshold (%) — env ``EPM_PREFLIGHT_SWAP_FREE_WARN_PCT``."""
+    return _data_disk_pct_env("EPM_PREFLIGHT_SWAP_FREE_WARN_PCT", SWAP_FREE_WARN_PCT_DEFAULT)
+
+
+def _read_proc_meminfo() -> str:
+    """Raw ``/proc/meminfo`` text (separate seam so tests fake it cleanly)."""
+    return Path("/proc/meminfo").read_text(encoding="utf-8")
+
+
+def _check_swap_state(report: PreflightReport) -> None:
+    """WARN when the shared VM's swap is absent or nearly exhausted (#2280).
+
+    Shared-VM only (:func:`is_shared_vm_env` — pods/GCE/SLURM skip clean:
+    the earlyoom unit + the /mnt/eps-data swapfile exist only there; the
+    data-disk check's ismount self-scoping does not fit because swap state
+    is not tied to a mount). WARN-ONLY BY DESIGN — never an error,
+    ``report.ok`` unchanged in every arm: a swap regression degrades
+    earlyoom kill-resilience but must not block launches fleet-wide
+    (making this a FAIL is a #2280 plan-§10 must-ask). Two WARN paths,
+    matching the two regression paths of the 2026-08-14 swap mitigation:
+
+    * ``SwapTotal == 0`` — the ``nofail`` fstab entry activated no swap on
+      a boot where /mnt/eps-data failed to mount; earlyoom's conjunctive
+      kill condition (MemAvailable AND swap free both <= 10%) then
+      degenerates to the memory floor alone (the Aug-13 selective-SIGTERM
+      regime).
+    * ``SwapFree/SwapTotal`` under :func:`_swap_free_warn_pct` (default
+      20%) — exhaustion approaching the 10% swap floor with SwapTotal
+      healthy (a SwapTotal==0 check is structurally blind to this path).
+
+    Sets ``report.swap_total_gb`` (+ ``swap_free_pct`` when SwapTotal > 0)
+    whenever meminfo was read (severity-agnostic — the summary + ``--json``
+    rows ride them). A read/parse error degrades to a single warning;
+    never raises.
+    """
+    if not is_shared_vm_env():
+        return
+    try:
+        meminfo = _read_proc_meminfo()
+    except OSError as e:
+        report.add_warning(f"Could not read /proc/meminfo for the swap-state check: {e}")
+        return
+    fields_kb: dict[str, int] = {}
+    for line in meminfo.split("\n"):
+        if line.startswith(("SwapTotal:", "SwapFree:")):
+            parts = line.split()
+            if len(parts) >= 2 and parts[1].isdigit():
+                fields_kb[parts[0].rstrip(":")] = int(parts[1])  # kB
+    if "SwapTotal" not in fields_kb or "SwapFree" not in fields_kb:
+        report.add_warning(
+            "Could not parse SwapTotal/SwapFree from /proc/meminfo — skipping the swap-state check"
+        )
+        return
+    swap_total_kb = fields_kb["SwapTotal"]
+    report.swap_total_gb = swap_total_kb / (1024.0 * 1024.0)
+    if swap_total_kb <= 0:
+        report.add_warning(
+            "Swap is NOT active (SwapTotal=0). The /etc/fstab swapfile entry is "
+            "`nofail`, so a boot where /mnt/eps-data failed to mount activates no "
+            "swap silently — restoring the 2026-08-13 earlyoom selective-SIGTERM "
+            "kill regime (its kill condition is CONJUNCTIVE: MemAvailable AND swap "
+            "free both <= 10%; with no swap the swap side is permanently "
+            "satisfied). Remedy: confirm /mnt/eps-data is mounted, then "
+            "`sudo swapon /mnt/eps-data/swapfile`. See the earlyoom entry in "
+            ".claude/rules/gotchas.md."
+        )
+        return
+    free_pct = 100.0 * fields_kb["SwapFree"] / swap_total_kb
+    report.swap_free_pct = free_pct
+    warn_pct = _swap_free_warn_pct()
+    if free_pct < warn_pct:
+        report.add_warning(
+            f"Swap is nearly exhausted: {free_pct:.1f}% of "
+            f"{report.swap_total_gb:.0f} GB free (warn under {warn_pct:.0f}%, "
+            f"EPM_PREFLIGHT_SWAP_FREE_WARN_PCT). earlyoom SIGTERMs python/pytest "
+            f"victims once MemAvailable AND swap free BOTH fall under 10% — "
+            f"approaching the swap floor re-arms the selective-SIGTERM kill "
+            f"regime. See the earlyoom entry in .claude/rules/gotchas.md."
         )
 
 
@@ -2073,6 +2184,9 @@ def preflight_check(
     # Unconditional call — the function self-skips wherever /mnt/eps-data is
     # not a live mount (pods/GCE/SLURM), so only the shared VM gains rows (#2097).
     _check_data_disk_floor(report)
+    # Unconditional call — self-skips off the shared VM (is_shared_vm_env);
+    # WARN-only by construction, so it can never flip report.ok (#2280).
+    _check_swap_state(report)
     check_disk_budget(report, planned_footprint_gb)
     check_vm_root_disk(report)
     check_gpus(report, require_gpu, min_gpu_free_mb)
@@ -2189,6 +2303,8 @@ def main(argv: list[str] | None = None) -> int:
                     "disk_probed_headroom_gb": report.disk_probed_headroom_gb,
                     "disk_headroom_basis": report.disk_headroom_basis,
                     "data_disk_used_pct": report.data_disk_used_pct,
+                    "swap_total_gb": report.swap_total_gb,
+                    "swap_free_pct": report.swap_free_pct,
                     "hf_storage_used_tb": report.hf_storage_used_tb,
                     "hf_storage_ceiling_tb": report.hf_storage_ceiling_tb,
                     "hf_storage_basis": report.hf_storage_basis,
