@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2474,
+  "highest_id": 2475,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11386,6 +11386,13 @@
       "path": "tasks/proposed/2474",
       "status": "proposed",
       "title": "Can pre-fine-tuning geometry under the inoculation prompt predict post-inoculation re-elicitation?"
+    },
+    "2475": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2475",
+      "status": "proposed",
+      "title": "Correct #823 Takeaway 4: the persona-ladder decline is not denominator arithmetic (denominator-free paired read refutes the mixture-floor interpretation)"
     },
     "248": {
       "has_clean_result": false,
