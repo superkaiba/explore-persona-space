@@ -1,0 +1,1 @@
+{"ts": "2026-08-22T12:46:40Z", "event": "raised", "concern_id": "sidecar-read-indeterminate-warns", "severity": "CONCERN", "summary": "Check 60 conflates transient git-show failures with malformed sidecars and emits a false text-less WARN.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
