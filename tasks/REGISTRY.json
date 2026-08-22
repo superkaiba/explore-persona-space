@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2460,
+  "highest_id": 2461,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11280,6 +11280,13 @@
       "path": "tasks/proposed/2460",
       "status": "proposed",
       "title": "savefig_paper caption-visibility restore is not exception-safe under EPS_PLOT_NO_CAPTION=1"
+    },
+    "2461": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2461",
+      "status": "proposed",
+      "title": "dispatch_issue.py launch treats an empty-string --repo-branch as unset, re-opening the clone-main hole"
     },
     "247": {
       "has_clean_result": false,
