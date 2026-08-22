@@ -816,6 +816,51 @@ standard 3-lens enum gate does not apply: the brief's verbatim lens list IS
   pair-split + isfinite literal-keep + collect-all + registry leg from repo
   root; workspace version-suffixed to the PLAN version).
 
+- **verify_plan check-ADDITION, standard methodology lens + brief
+  six-question infra translation (#2269 round one, the regen-headroom c-check):
+  the #2228 shape re-proven with three small additions.** (1) When the plan
+  fully SPECIFIES its regex block + function body in a D-section code block,
+  the read discipline explicitly ENCOURAGES reproducing that block in a /tmp
+  throwaway and walking constructed fixtures through it ("the plan's D-one
+  block is the spec; test against IT, never your own improved variant") —
+  the strongest empirical grammar probe available at zero risk. (2) When the
+  orchestrator brief was written against the PRIOR plan version's fact-check
+  (its planned-test tally lags the redraft), a digit-free header sentence
+  resolves the conflict up front: "where the context and the plan disagree
+  on a count, the PLAN text governs — the context's tally reflects the prior
+  plan version". (3) The plan's own must-ask list composes as do-not-flag
+  bullets WITH the inversion clause "if your critique concludes one is
+  genuinely REQUIRED, say so as a Must Fix — that IS the re-plan trigger",
+  which keeps the brief's live press point (the kind gate) askable while
+  gagging casual rigor-adds. Brief inlined verbatim as ONE span (context +
+  six questions together); sharpeners folded per-question in scaffold
+  (question numbers stay in the single-digit allowlist). Numcheck PASS first
+  try at ~157 KB (spans = briefnote + lensitems + plan + empty prior;
+  unsigned both-sides-guard atoms + comma-grouping first + pair-split +
+  isfinite literal-keep + collect-all + registry leg from repo root;
+  version-suffixed workspace keyed to PLAN version).
+
+- **Prevention-counterfactual alternatives brief (#2269 round one, verify_plan
+  check-addition): when the brief hands competing MECHANISMS (runtime guard /
+  rule-extension-alone / human-layer-already-worked) + numbered required
+  questions under a FATAL/RECOVERABLE contract, mandate two sections before
+  Must Fix** — `### Competing-mechanism dispositions` (per mechanism: merits,
+  does-the-plan-rule-it-out, does-the-plan-engage-it-honestly, label
+  FATAL|RECOVERABLE|NO-FINDING) and `### Answers to the required questions`
+  (UNVERIFIED files as Concern naming the settling probe) — and carry the
+  brief's own honesty instruction ("if the honest answer is 'probably not on
+  its own', say so and say what would") verbatim in the section mandate.
+  Scaffold trap earned: a STATUS-GLOB task path (`tasks/*/<id>/plans/...`)
+  defeats the `tasks/[a-z_]+/(\d+)` extraction (the `*` segment is outside
+  the class) and the plan's own copy of the same glob cancels only itself,
+  so a scaffold copy residuals as a bare id — write "the status-robust glob
+  the plan's own acceptance criteria quote" instead of embedding the id.
+  Numcheck PASS first try at ~84 KB with ZERO scaffold-cleared atoms
+  (spans = brief + plan + lensitems + empty prior; unsigned both-sides-guard
+  atoms + comma-grouping first + isfinite literal-keep + collect-all +
+  registry leg from repo root; workspace version-suffixed to the PLAN
+  version).
+
 **Why:** first custom-lens infra compose (#2324) — these choices made the
 numeric gate pass first try on a 68 KB prompt; round 2 (REVISE-round
 re-review) passed on the second numcheck run, the only failures being the
