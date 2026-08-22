@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2482,
+  "highest_id": 2483,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11451,6 +11451,13 @@
       "path": "tasks/proposed/2482",
       "status": "proposed",
       "title": "verify_plan: flag N>1 concurrent producers writing one phase_outputs dest with no per-producer token or merge step (output-side sibling of #2236/#2237)"
+    },
+    "2483": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2483",
+      "status": "proposed",
+      "title": "verify_plan: flag ratio-form ordering conjuncts over unbounded-below metrics in verdict lattices (c20 threshold-SKIP blind spot)"
     },
     "249": {
       "has_clean_result": false,
