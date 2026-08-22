@@ -877,9 +877,14 @@ if [ -n "$PARENT_ID" ] && uv run python scripts/pod.py list-ephemeral --issue "$
   uv run python scripts/pod.py resume --issue "$PARENT_ID"
   # Record the assigned pod as epm-issue-$PARENT_ID in the launch marker.
 else
-  # Fresh launch through the router (the canonical path above).
-  uv run python scripts/dispatch_issue.py launch \
-      --issue <N> --intent "$INTENT" ${BACKEND:+--backend "$BACKEND"}
+  # Parent pod gone — fresh launch. Do NOT dispatch from here: run the FULL
+  # canonical Step 6b launch fence above ("The operational command") — its
+  # shared --print-repo-branch resolver, mechanical launch-fence gate
+  # RECHECK, and EXTRA_SYNC_ARGS threading are mandatory and deliberately
+  # NOT duplicated in this block (#2263 r6: one launch site, nothing to
+  # drift; a bare dispatch omitting them REFUSES on a missing --repo-branch
+  # while issue-<N> branch refs exist, or under-stages an rsync lane).
+  echo "parent pod not alive — run the canonical Step 6b launch fence above (this block does not dispatch)" >&2
 fi
 ```
 

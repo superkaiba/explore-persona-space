@@ -2336,6 +2336,58 @@ def test_step6_launch_fence_recheck_mechanical_halt_and_lane_parity(tmp_path: Pa
     )
 
 
+def test_step6_parent_reuse_fallback_points_at_canonical_launch_fence() -> None:
+    """#2263 r6 (codex r4 CONCERN parent-reuse-fallback-parity): ONE
+    operator-copyable launch site; the parent-reuse fallback POINTS at it.
+
+    The parent-reuse block's fresh-launch arm used to duplicate a bare
+    `dispatch_issue.py launch` carrying NONE of the fence's three mandatory
+    elements (shared `--print-repo-branch` resolver, mechanical `if !`
+    recheck halt, extra-sync threading): copied verbatim it REFUSES (no
+    `--repo-branch` while `issue-<N>` branch refs exist — the #2161 drift
+    guard) or UNDER-STAGES (an rsync lane's `--extra-sync-path` values never
+    reach the dispatch). Duplicating the full fence there instead would open
+    a third drift channel of the same class, so the fix is a pointer, pinned
+    in two halves:
+
+    (a) exactly ONE bash block in the COMPOSED /issue spec carries a
+        `dispatch_issue.py launch` invocation, and that block IS the
+        canonical Step 6b fence (resolver + guarded recheck + extra-sync
+        expansion all present) — a future copy-paste launch block must
+        either be the fence or amend this pin;
+    (b) the parent-reuse decision block (the `pod.py resume` probe) still
+        exists, invokes no `dispatch_issue.py` at all, and NAMES the
+        canonical fence as the fresh-launch route.
+    """
+    text = issue_skill_text()
+    blocks = re.findall(r"(?ms)^```bash\n(.*?)^```$", text)
+    launch_blocks = [b for b in blocks if "scripts/dispatch_issue.py launch" in b]
+    assert len(launch_blocks) == 1, (
+        f"{len(launch_blocks)} bash blocks carry `dispatch_issue.py launch`; the composed "
+        "/issue spec allows exactly ONE operator-copyable launch site — the canonical "
+        "Step 6b fence. A second copy either omits the fence's mandatory elements "
+        "(refuses on missing --repo-branch or under-stages an rsync lane — the #2263 "
+        "parent-reuse defect) or duplicates the fence (a drift channel of the same "
+        "class); point at the canonical fence instead."
+    )
+    fence = launch_blocks[0]
+    assert "scripts/verify_carryover_inputs.py --print-repo-branch" in fence  # shared resolver
+    assert "if ! uv run python scripts/verify_carryover_inputs.py --plan" in fence  # recheck halt
+    assert '${EXTRA_SYNC_ARGS[@]+"${EXTRA_SYNC_ARGS[@]}"}' in fence  # extra-sync threading
+    parent_blocks = [b for b in blocks if 'pod.py resume --issue "$PARENT_ID"' in b]
+    assert len(parent_blocks) == 1, "parent-reuse decision block extraction failed"
+    parent = parent_blocks[0]
+    assert "dispatch_issue" not in parent, (
+        "the parent-reuse fallback must not dispatch — its bare launch omitted "
+        "--repo-branch, the launch-fence recheck, and extra-sync threading (#2263 r6); "
+        "the fresh-launch route is the canonical Step 6b fence"
+    )
+    assert "canonical Step 6b launch fence" in parent, (
+        "the parent-reuse fresh-launch arm must NAME the canonical Step 6b launch "
+        "fence as its route — a pointer, not a duplicated (drift-prone) dispatch"
+    )
+
+
 def test_corpus_sweep_resolver_failure_surfaces_error_not_substitute(
     repo: Path,
     tmp_path: Path,
