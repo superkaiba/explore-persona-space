@@ -586,6 +586,7 @@ class TestUploadRawCompletions:
             "phaseA/raw_completions/rollouts/part3.jsonl": True,
             # OUT — non-class, lookalikes, sidecars
             "run_result.json": False,
+            "phase4/phase4a_verdict.json": False,  # nested non-class (plan §4.2 row)
             "xraw_completions.json": False,  # filename lookalike (plan §4.2 row)
             "foo/xraw_completions.json": False,  # nested filename lookalike (plan §4.2 row)
             "raw_completionsX/bar.json": False,  # dir name not literally raw_completions
