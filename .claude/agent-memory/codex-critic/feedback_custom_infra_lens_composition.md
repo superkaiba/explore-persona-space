@@ -760,6 +760,62 @@ standard 3-lens enum gate does not apply: the brief's verbatim lens list IS
   first try at ~112 KB, fully digit-free scaffold (spans = inputs + plan +
   body + factcheck + lensitems + questions + empty prior).
 
+- **Guard/teardown selector plan, standard alternatives lens + brief C-numbered
+  claim list (#2270 round one, `pod.py terminate --primary-only`): when the
+  brief hands lettered/numbered CLAIMED-PROTECTION attack points (C-series)
+  plus a deep-dive order on ONE claim (construct concrete event sequences
+  where a clearance conjunction holds while the guarded state is false), the
+  #2152 shape extends with three mandated output sections BEFORE Must Fix:
+  `### Per-claim dispositions` (RULED-OUT | DISCLOSED-RESIDUAL | HOLLOW |
+  UNVERIFIED per claim, UNVERIFIED files as Concern), a `### <claim> clearance
+  walk` (rows-in-order event sequences walked against the plan's predicate
+  spec AND the real reader code, REACHABLE | CONTRIVED per sequence, closing
+  ADEQUATE | INADEQUATE line on the plan's named residual + pre-registered
+  fallback), and `### Unenumerated state shapes` (HANDLED | BENIGN | FINDING
+  per brief-listed shape). Fact-check-v2 plans get the two-sided FACT-CHECK
+  STATUS block (CONFIRMED mechanics settled; the plan's own honestly-marked
+  UNVERIFIED items are legitimate press points). Read discipline for a
+  pod-destroying subject: ban pytest + ANY live RunPod/pod.py call + git fetch,
+  encourage grep-anchored symbol windows (line cites pinned to the plan's HEAD
+  — drift is not a finding), the incident events.jsonl via the status-robust
+  `task.py find` locator, and walking constructed sequences against the REAL
+  readers ("an empirical this-sequence-clears beats a hypothetical"). Numcheck
+  PASS first try at ~77 KB (spans = brief + lensitems + plan + body + empty
+  prior; scaffold task-id mention written `#<N>` so extraction handles it —
+  a BARE id in scaffold residuals since span copies are fully consumed).
+
+- **Verification-adequacy statistics translation on a destructive-CLI infra
+  plan (#2270 round one, pod terminate primary-only selector): the brief's
+  six-duty translation (per-AC wrong-impl, guard-branch enumeration,
+  tested-vs-argued safety claims, pass-for-wrong-reason, cite re-measure,
+  conformance + blind-spot audit) composes as THREE mandated enumeration
+  sections placed BEFORE the question answers** — `### Per-criterion
+  wrong-implementation audit` (DISTINGUISHES | UNDER-CERTIFIES | UNVERIFIED
+  per AC), `### Guard-branch coverage map` (COVERED (test ids) | UNCOVERED
+  per branch incl. the clearance predicate's internal arms), `###
+  Tested-vs-argued safety claims` (TESTED | ARGUED-ONLY per
+  binds-by-construction claim) — the #2263 per-test-audit move generalized
+  to a triple, enumeration structurally preceding the coverage verdicts.
+  Earned press shapes: (1) STUB-SHADOWING pass-for-wrong-reason — a
+  no-task-read pin via RAISING stubs is void if the test also installs a
+  constant-returning replacement for the reader the guard actually calls
+  (the raising get_task stub never fires behind the tag-reader stub); ask
+  whether the sketch avoids it, plus import-site-vs-definition-site
+  interception for a function-local import; (2) branch-ORDER cells read off
+  the plan's own pseudocode (force-overrides-UNREADABLE-tag precedes the
+  unreadable-state refusal — is that today's behavior, and pinned either
+  way?); (3) accepted-residual cell pinning — ask whether the plan's named
+  risk residual (a sibling pod-less PASS clearing the fallback tier) is
+  itself pinned by a test documenting the operator contract, vs untested.
+  Read discipline for destructive CLIs: ban RUNNING the CLI by name (even
+  its read paths hit the live API) + all live-service calls, permit pytest
+  COLLECTION-ONLY for count claims. Numcheck PASS first try at ~118 KB,
+  fully digit-free scaffold (spans = briefnote + questions + lensitems +
+  plan + empty prior; line cites like the truthiness call site confined to
+  the questions span; both-sides-guard atoms + comma-grouping first +
+  pair-split + isfinite literal-keep + collect-all + registry leg from repo
+  root; workspace version-suffixed to the PLAN version).
+
 **Why:** first custom-lens infra compose (#2324) — these choices made the
 numeric gate pass first try on a 68 KB prompt; round 2 (REVISE-round
 re-review) passed on the second numcheck run, the only failures being the
