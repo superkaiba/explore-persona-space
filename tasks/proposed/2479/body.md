@@ -9,10 +9,13 @@ parent_id: 1345
 origin_prompt: Paper outline 2026-08-22 Results II title clause + critique F4 (n=4
   cannot carry a title claim)
 workflow: v1
+goal: 'Establish or bound the closeness-to-assistant transfer gradient: assistant-operator
+  transfer recovery (R2 + acc@1 vs identity+bias) vs pre-registered AI-likeness across
+  >=12 characters; success = rank correlation with permutation band excluding zero.'
 ---
 ## Goal
 
-Establish (or bound) the claim that the context-to-answer map transfers to a character in proportion to that character's closeness to the assistant: extend the AI-likeness gradient from #1345's n=4 characters to a pre-registered roster of >=12 characters spanning the judged AI-likeness axis (calm-AI ... villain ... ordinary human), and measure assistant-operator transfer recovery per character (held-out R2 + acc@1 vs identity+bias) against the pre-registered AI-likeness score. Success criterion: a rank correlation whose permutation band excludes zero (n=4 cannot clear significance even at rho=1).
+Establish or bound the closeness-to-assistant transfer gradient: assistant-operator transfer recovery (R2 + acc@1 vs identity+bias) vs pre-registered AI-likeness across >=12 characters; success = rank correlation with permutation band excluding zero.
 
 ## Provenance
 
