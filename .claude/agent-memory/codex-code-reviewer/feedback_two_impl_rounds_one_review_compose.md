@@ -56,5 +56,40 @@ Step 0.5 scores the four-H3 contract on EACH body.
    marker's own recipe). Compose with re-derived values, flag both in the
    return.
 
+**Final-ELECTED-round compose (#2263 review-r6 = impl r7 `epm:results v9`,
+2026-08-22):** when the prior round PASSED the ensemble and the fix round was
+ELECTED (not bounced) to close same-class NIT rows, with the brief naming a
+recorded stopping rule ("advance on any PASS-class result even with fresh
+NITs, UNLESS severity CONCERN+ or a demonstrated false claim in the shipped
+deliverable"):
+1. Inline the stopping rule VERBATIM near the top and bind calibration BOTH
+   ways (no NIT inflation to force a round; no defect deflation to allow
+   advance), and repeat the routed-to-follow-up note inside the verdict
+   template's Concerns-to-persist bracket.
+2. Escalation bridge: a claimed-closed concern that is NOT closed is a
+   "demonstrated false claim in the shipped deliverable" — so NOT-ADDRESSED
+   still maps to substantive FAIL even though every row is a NIT.
+3. Two-author acceptance contract (3 Codex rows + 2 Claude rows): inline the
+   full Codex verdict (tags stripped, rows blockquoted) but only an EXCERPT
+   envelope for the Claude side (verdict line + its 2 blockquoted rows) —
+   the brief asked for the rows, not the 12KB body. Blockquoted-row assert
+   becomes 3+2=5; line-start grammar rows stay ==1.
+4. A closure-by-RE-VERIFICATION (row closed with a verdict, not an edit —
+   the #2470-coupling row) gets its own adjudication duty: does the
+   demonstrated new-pin coverage justify closing without editing the sibling
+   task, or is the closure premature.
+5. Brief-figure disambiguation: "Companion: cap re-derived 148,457 B →
+   `151_200`" read like a prompt-size constraint but was a FACT TO INLINE —
+   the deliverable's own workflow_lint `SKILL_DOC_SIZE_GRANDFATHER` cap
+   bump (skill doc remeasured 148,457; corridor-max
+   ((measured+2_800)//100)*100 = 151_200). Before treating ANY brief byte
+   figure as a compose constraint, re-derive it against the diff — here the
+   number appeared verbatim in the `git show` hunk.
+6. Plan handling when the worktree copy is byte-IDENTICAL to canonical
+   (sha256-verified; branch cut after v3 landed): Step 2-pre-b sanctions
+   by-path, but the brief said INLINE — follow the brief, attest the
+   identity in the plan-envelope heading, and flag the both-valid reading in
+   the return.
+
 Related: [[revision-round compose recipe]] (fold-round entry, #2147 cr4),
 [[concerns-machine-rows-2326]].
