@@ -93,6 +93,16 @@ ARM_REGISTRY: dict[str, dict] = {
         "layered": True,
         "rb_dep": False,
     },
+    # arm2fix round (#1739 plan §4 R-C): the DEFINITIONAL-fallback quantile
+    # variant of arm 2 — hi/lo sides are the top/bottom ARM2Q_QUANTILES of the
+    # TRAIN dv instead of the midpoint split. A NEW slug emitted BESIDE the
+    # unrepaired arm2 (never a silent relabel — plan repair ladder R-C).
+    "arm2q_ctx_native": {
+        "label": "Context-native direction (quantile split)",
+        "family": "context",
+        "layered": True,
+        "rb_dep": False,
+    },
     "arm3_identity_bias": {
         "label": "Identity+learned-bias",
         "family": "context",
@@ -224,6 +234,50 @@ ARM_REGISTRY: dict[str, dict] = {
 }
 
 HEADLINE_PAIR = ("arm6_map_proj_e1", "arm2_ctx_native")  # plan §6 pre-selected pair
+
+# Arms whose scoring consumes the fitted map (mp = z @ W, or W itself for the
+# shuffled-weight controls). SINGLE SOURCE for (a) run_cell_multi's mp build /
+# "no mapfit" skip semantics and (b) the r2v2 scorer's --skip-map-fit guard
+# (a roster containing any of these REFUSES a map-fit skip — #1739 arm2fix).
+MAP_CONSUMING_ARMS = frozenset(
+    {
+        "arm6_map_proj_e1",
+        "arm7_map_ridge_pred",
+        "arm8_map_ridge_true",
+        "arm9_pretrain_ft",
+        "arm10_stacked",
+        "arm13_shuffled_map",
+        "arm14_shuffled_pt",
+        "arm19_map_mlp_pred",
+        # arm 20 consumes the map's WEIGHT tensor (shuffled), not mp itself —
+        # grouped here (like arm 13) so the "no mapfit" skip semantics stay
+        # exact for both shuffled-weight controls.
+        "arm20_shuffled_map_ridge",
+    }
+)
+
+# arm2q (quantile-split context-native direction, #1739 arm2fix R-C): the
+# train-side dv quantiles that define the lo/hi sides — bottom 25% vs top 25%
+# ("top/bottom 25% of pool DV", plan §4 R-C). Shared by the dispatch block
+# below AND the scorer's matched-budget parity subset (_quantile_fit_rows), so
+# the parity arm7 refit trains on EXACTLY the rows the arm2q direction
+# consumed — one definition, two readers.
+ARM2Q_QUANTILES = (0.25, 0.75)
+
+
+def arm2q_thresholds(train_vals: np.ndarray) -> tuple[float, float]:
+    """(q_lo, q_hi) dv thresholds for the arm2q quantile split.
+
+    lo side = ``dv <= q_lo``; hi side = ``dv >= q_hi`` (inclusive on both ends,
+    matching the arm2 midpoint convention's >= on the hi side). Raises on an
+    empty train side — a fold with no train rows has no split to define.
+    """
+    v = np.asarray(train_vals, dtype=np.float64)
+    if v.size == 0:
+        raise ValueError("arm2q_thresholds: empty train-side dv")
+    q_lo, q_hi = np.quantile(v, ARM2Q_QUANTILES)
+    return float(q_lo), float(q_hi)
+
 
 # Distribution-shift ladder arms (round-3 M-A): plan §4 Phase-3 names the
 # generic/neutral arms {1, 3, 4, 6} for the WildChat->LMSYS(->PRISM) ladder,
@@ -679,20 +733,10 @@ def run_cell_multi(  # noqa: C901 — deliberate single dispatch block over the 
     # +18.6 GiB on the arm-5-only / oracle rosters). The "no mapfit" skips
     # below stay reachable only for slugs in `want`, which is exactly when
     # need_mp would have been True — so skip semantics are unchanged.
-    mp_arms = {
-        "arm6_map_proj_e1",
-        "arm7_map_ridge_pred",
-        "arm8_map_ridge_true",
-        "arm9_pretrain_ft",
-        "arm10_stacked",
-        "arm13_shuffled_map",
-        "arm14_shuffled_pt",
-        "arm19_map_mlp_pred",
-        # arm 20 consumes the map's WEIGHT tensor (shuffled), not mp itself —
-        # grouped here (like arm 13) so the "no mapfit" skip semantics below
-        # stay exact for both shuffled-weight controls.
-        "arm20_shuffled_map_ridge",
-    }
+    # (#1739 arm2fix: hoisted to the module constant MAP_CONSUMING_ARMS — the
+    # r2v2 scorer's --skip-map-fit guard reads the SAME set, so guard and
+    # dispatch can never drift.)
+    mp_arms = MAP_CONSUMING_ARMS
     need_mp = base.mapfit is not None and bool(mp_arms & set(want))
     # mp is built BELOW, after the arm-20 batch-1 solve (sequencing fix,
     # fair-roster follow-up 2026-08-06): deferring it keeps mp_shuf's lifetime
@@ -867,6 +911,28 @@ def run_cell_multi(  # noqa: C901 — deliberate single dispatch block over the 
         _put_shared("arm2_ctx_native", s_all[:, folds, row_of])
         if (lo.sum(axis=1) == 0).any():
             logger.warning("[arms] arm2: a fold had zero low-side train rows (flat dv?)")
+
+    # ---- arm 2q: quantile-split context-native direction (rb-independent —
+    # shared). The #1739 arm2fix R-C definitional fallback: hi/lo sides are the
+    # top/bottom ARM2Q_QUANTILES of the TRAIN dv per fold instead of the
+    # midpoint split; direction + projection machinery identical to arm 2.
+    if "arm2q_ctx_native" in want:
+        hi = np.zeros_like(tr_masks)
+        lo = np.zeros_like(tr_masks)
+        for f in range(n_folds):  # per-fold quantiles only; the einsums stay batched
+            if tr_masks[f].any():
+                q_lo, q_hi = arm2q_thresholds(dv[tr_masks[f]])
+                hi[f] = tr_masks[f] & (dv >= q_hi)
+                lo[f] = tr_masks[f] & (dv <= q_lo)
+        hi_w = hi.astype(np.float64) / np.maximum(hi.sum(axis=1, keepdims=True), 1.0)
+        lo_w = lo.astype(np.float64) / np.maximum(lo.sum(axis=1, keepdims=True), 1.0)
+        direction = np.einsum("fn,lnd->lfd", hi_w - lo_w, z, optimize=True)  # (Ly, F, d)
+        s_all = np.einsum("lfd,lnd->lfn", direction, z, optimize=True)  # (Ly, F, n_l)
+        _put_shared("arm2q_ctx_native", s_all[:, folds, row_of])
+        if ((hi & lo).sum(axis=1) > 0).any():
+            logger.warning("[arms] arm2q: hi/lo sides overlap on a fold (near-flat dv?)")
+        if (lo.sum(axis=1) == 0).any() or (hi.sum(axis=1) == 0).any():
+            logger.warning("[arms] arm2q: a fold had an empty quantile side (flat dv?)")
 
     # ---- arm 3: identity+learned-bias (bias shared; projection per regime) ----
     if "arm3_identity_bias" in want and za is not None:

@@ -127,7 +127,43 @@ EXTRA_ARMS_LABEL_CONSUMING = {"arm12_oracle_reg", "arm2_ctx_native", "arm20_shuf
 # layer the arm reads at (the fair-round MATCHED_COMPANIONS convention:
 # ("arm20_shuffled_map_ridge", "arm7_map_ridge_pred") -- a like-for-like
 # same-layer comparison; the delta must not carry a layer-selection term).
-MATCHED_FROZEN_COMPANIONS = {"arm20_shuffled_map_ridge": "arm7_map_ridge_pred"}
+# arm2q (the arm2fix R-C quantile fallback) has no committed train row either
+# -- it reads at arm2's committed layer (same construct, split rule the only
+# delta; the parse-time validator guarantees arm2 is rostered whenever arm2q
+# is).
+MATCHED_FROZEN_COMPANIONS = {
+    "arm20_shuffled_map_ridge": "arm7_map_ridge_pred",
+    "arm2q_ctx_native": "arm2_ctx_native",
+}
+
+# ---------------------------------------------------------------------------
+# arm2fix (repair ladder) surface -- #1739 plan §4 "Leg 2" D1
+# ---------------------------------------------------------------------------
+# The arm2-family slugs: the context-native direction under repair plus its
+# R-C quantile-fallback sibling (a NEW slug BESIDE the unrepaired arm2, never
+# a relabel).
+A2_FAMILY = ("arm2_ctx_native", "arm2q_ctx_native")
+# --arm2-adapter choices (the pre-registered repair menu, plan §4):
+#   v1                      -- unrepaired adapter; rows gain adapter provenance
+#                              + train-row id-hash fields only.
+#   v2-component-restricted -- R-B: the arm2 direction fit consumes the pool's
+#                              TRAIT-ELICITING components only (the judged
+#                              WildChat block excluded from the fit; it never
+#                              entered the committed folded fit either).
+#   v2-quantile             -- R-C: arm2q_ctx_native (top/bottom 25% quantile
+#                              split over the full shared pool) emitted BESIDE
+#                              the unrepaired arm2.
+#   v2-quantile-restricted  -- R-C over the eliciting-only pool (the R-B x R-C
+#                              composition, for a D0 that shows BOTH the
+#                              WildChat confound and midpoint degeneracy).
+# R-A (a wiring fix, iff probe P1 fails) is code, not a flag: P1
+# (tests/test_issue1739_arm2fix.py planted-direction test) PASSES on the
+# current dispatch, so no wiring change ships -- the slot stays documented
+# here for the ladder record.
+ARM2_ADAPTERS = ("v1", "v2-component-restricted", "v2-quantile", "v2-quantile-restricted")
+# Adapters whose selected repair RESTRICTS arm2's fit rows relative to the
+# shared P-B pool (the matched-budget parity duty's trigger, plan §4).
+ARM2_RESTRICTED_ADAPTERS = ("v2-component-restricted", "v2-quantile", "v2-quantile-restricted")
 
 # Shufpair-variant pass roster (claim4 P0.2): the two map-consuming arms whose
 # map input is swapped for the pairing-shuffled refit, plus arm4 as the
@@ -529,17 +565,299 @@ def _leakage_assert(readout_ids: set, eval_sets: dict[str, set], label: str) -> 
 
 
 # ---------------------------------------------------------------------------
+# arm2fix helpers: repair-ladder pass plan + matched-regime sanity (plan §4)
+# ---------------------------------------------------------------------------
+
+
+def _row_ids_sha256(ids) -> str:
+    """Order-independent sha256 over context ids (the parity id-hash currency)."""
+    joined = "\n".join(sorted(str(c) for c in ids))
+    return hashlib.sha256(joined.encode()).hexdigest()
+
+
+def _quantile_fit_rows(readout_rows, dv_z):
+    """The rows arm2q's direction consumes: top/bottom ARM2Q_QUANTILES of the
+    readout's (z-scored) dv. Thresholds come from the ONE shared helper the
+    dispatch block reads (:func:`arms.arm2q_thresholds`), so the parity arm7
+    refit trains on EXACTLY the arm-internal split rows."""
+    import numpy as np
+
+    from explore_persona_space.experiments.issue_1739 import arms
+
+    rows = np.asarray(readout_rows, dtype=np.int64)
+    vals = np.asarray(dv_z, dtype=np.float64)[rows]
+    q_lo, q_hi = arms.arm2q_thresholds(vals)
+    return rows[(vals <= q_lo) | (vals >= q_hi)]
+
+
+def _repaired_slug(adapter: str) -> str:
+    """The arm slug that carries the SELECTED repair's rows (plan §4 ladder)."""
+    return "arm2q_ctx_native" if adapter.startswith("v2-quantile") else "arm2_ctx_native"
+
+
+def _arm2fix_passes(
+    adapter: str,
+    roster,
+    pool_rows,
+    wc_rows,
+    dv_z,
+    *,
+    parity_refit_arm7: bool = False,
+):
+    """Pure pass plan for one P-B holdout under the arm2fix repair ladder.
+
+    Returns ``[SimpleNamespace(label, roster, readout, preds_tag, arm_meta)]``
+    where ``arm_meta[slug] = {"adapter": tag, "fit_rows": rows}`` — fit_rows
+    are the rows whose ctx ids get hashed into that arm's
+    ``train_row_ids_sha256`` (the label budget the arm's direction/readout
+    consumes; the matched-budget parity currency, plan §4 Must-Fix).
+
+    - v1: one standard pass; arm2-family rows tagged ``adapter: v1``.
+    - v2-component-restricted (R-B): the arm2-family fit rides its OWN pass
+      whose readout is the pool's TRAIT-ELICITING components only (the judged
+      WildChat block excluded from the direction fit); any non-family roster
+      arms keep the standard shared-pool pass.
+    - v2-quantile (R-C): ONE standard pass — arm2q's direction internally
+      consumes the top/bottom-quantile subset, hashed here via the shared
+      thresholds; the unrepaired arm2 rides the same pass (``adapter: v1``).
+    - v2-quantile-restricted: arm2q rides an eliciting-only pass; the
+      unrepaired arm2 (+ rest) keeps the standard pass.
+    - parity_refit_arm7: appends the row-matched arm7 refit pass — readout ==
+      the REPAIRED arm's fit_rows, so the fold can assert id-hash equality.
+    """
+    import numpy as np
+
+    if adapter not in ARM2_ADAPTERS:
+        raise ValueError(f"unknown arm2 adapter {adapter!r} (choices: {ARM2_ADAPTERS})")
+    roster = tuple(roster)
+    pool_arrs = [np.asarray(r, dtype=np.int64) for r in pool_rows]
+    full = np.concatenate(pool_arrs + [np.asarray(wc_rows, dtype=np.int64)]).astype(np.int64)
+    restricted = np.concatenate(pool_arrs).astype(np.int64)
+    fam = tuple(a for a in roster if a in A2_FAMILY)
+    rest = tuple(a for a in roster if a not in A2_FAMILY)
+    if "arm2_ctx_native" not in roster:
+        raise ValueError(f"--arm2-adapter needs arm2_ctx_native in the roster (got {roster})")
+    if adapter.startswith("v2-quantile") and "arm2q_ctx_native" not in roster:
+        raise ValueError(f"{adapter} needs arm2q_ctx_native in the roster (got {roster})")
+    passes: list[SimpleNamespace] = []
+    if adapter == "v1":
+        passes.append(
+            SimpleNamespace(
+                label="std",
+                roster=roster,
+                readout=full,
+                preds_tag=None,
+                arm_meta={a: {"adapter": "v1", "fit_rows": full} for a in fam},
+            )
+        )
+    elif adapter == "v2-component-restricted":
+        passes.append(
+            SimpleNamespace(
+                label="a2r",
+                roster=fam,
+                readout=restricted,
+                preds_tag="a2r",
+                arm_meta={a: {"adapter": adapter, "fit_rows": restricted} for a in fam},
+            )
+        )
+        if rest:
+            passes.append(
+                SimpleNamespace(label="std", roster=rest, readout=full, preds_tag=None, arm_meta={})
+            )
+    elif adapter == "v2-quantile":
+        q_rows = _quantile_fit_rows(full, dv_z)
+        passes.append(
+            SimpleNamespace(
+                label="std",
+                roster=roster,
+                readout=full,
+                preds_tag=None,
+                arm_meta={
+                    "arm2_ctx_native": {"adapter": "v1", "fit_rows": full},
+                    "arm2q_ctx_native": {"adapter": adapter, "fit_rows": q_rows},
+                },
+            )
+        )
+    else:  # v2-quantile-restricted
+        q_rows = _quantile_fit_rows(restricted, dv_z)
+        passes.append(
+            SimpleNamespace(
+                label="a2qr",
+                roster=("arm2q_ctx_native",),
+                readout=restricted,
+                preds_tag="a2qr",
+                arm_meta={"arm2q_ctx_native": {"adapter": adapter, "fit_rows": q_rows}},
+            )
+        )
+        std_roster = tuple(a for a in roster if a != "arm2q_ctx_native")
+        passes.append(
+            SimpleNamespace(
+                label="std",
+                roster=std_roster,
+                readout=full,
+                preds_tag=None,
+                arm_meta={"arm2_ctx_native": {"adapter": "v1", "fit_rows": full}},
+            )
+        )
+    if parity_refit_arm7:
+        rep = _repaired_slug(adapter)
+        rep_meta = next(p.arm_meta[rep] for p in passes if rep in p.arm_meta)
+        fit_rows = np.asarray(rep_meta["fit_rows"], dtype=np.int64)
+        passes.append(
+            SimpleNamespace(
+                label="parity",
+                roster=("arm7_map_ridge_pred",),
+                readout=fit_rows,
+                preds_tag="parity",
+                arm_meta={
+                    "arm7_map_ridge_pred": {"adapter": "parity-row-matched", "fit_rows": fit_rows}
+                },
+            )
+        )
+    return passes
+
+
+def _adapter_tag_for(slug: str, adapter: str) -> str:
+    """The adapter tag a given arm2-family slug carries under a selected adapter."""
+    if slug == "arm2q_ctx_native":
+        return adapter if adapter.startswith("v2-quantile") else "n/a"
+    return "v2-component-restricted" if adapter == "v2-component-restricted" else "v1"
+
+
+def _matched_regime_sanity(
+    args, behavior: str, layers, datasets, z_ctx, dv_raw, rb_w, frozen, variant: str, lmax: int
+) -> list[dict]:
+    """The plan-§4 sanity-instrument repair: arm2-family folded GROUP-level CV
+    ρ on the P-B pool's TRAIT-ELICITING rows (the banked ``run_cell`` path) —
+    the matched-regime acceptance read vs the committed train-grid band (the
+    fold compares; this emits the per-seed values as
+    ``rung_kind: sanity_matched_regime`` rows). Same regime as the committed
+    band: folded CV on eliciting rows; pool COMPOSITION is the only delta.
+    dv convention mirrors the transfer machinery: fit on per-pool z-scored dv,
+    Spearman evaluated against raw dv.
+    """
+    import numpy as np
+
+    from explore_persona_space.experiments.issue_1739 import arms, fits
+
+    fold_k = int(getattr(args, "a2_sanity_folds", 5))
+    sel_rows: list[np.ndarray] = []
+    sel_groups: list[str] = []
+    for d in datasets:
+        rows_d = np.asarray(d.rows, dtype=np.int64)
+        groups_d = np.asarray(d.groups)
+        side = np.array(
+            [_group_side_train(d.name, str(g), args.seed, args.train_frac) for g in groups_d],
+            dtype=bool,
+        )
+        sel_rows.append(rows_d[side])
+        # dataset-namespaced group keys: group names may collide across datasets
+        sel_groups.extend(f"{d.name}|{g}" for g in groups_d[side])
+    rows = np.concatenate(sel_rows)
+    if rows.size != len(sel_groups):
+        raise AssertionError(f"sanity rows {rows.size} != groups {len(sel_groups)}")
+    dv_z = _multi_pool_zscored_dv(dv_raw, sel_rows)
+    fold_raw = np.array(
+        [
+            int.from_bytes(
+                hashlib.sha1(f"a2sanity|{g}|{int(args.seed)}".encode()).digest()[:8], "big"
+            )
+            % fold_k
+            for g in sel_groups
+        ]
+    )
+    uniq_f = sorted(set(fold_raw.tolist()))
+    if len(uniq_f) < 2:
+        raise RuntimeError(
+            f"[{behavior}] matched-regime sanity: only {len(uniq_f)} non-empty group fold(s) "
+            f"over {len(set(sel_groups))} groups — cannot run folded CV"
+        )
+    remap = {f: i for i, f in enumerate(uniq_f)}
+    fold_ids = np.array([remap[f] for f in fold_raw], dtype=np.int64)
+    cell = fits.BudgetCell(
+        row_idx=rows,
+        fold_ids=fold_ids,
+        n_folds=len(uniq_f),
+        budget_l=lmax,
+        draw=args.draw,
+        seed=args.seed,
+        fold_scheme=f"a2sanity-grouphash-k{len(uniq_f)}",
+    )
+    a2_arms = [a for a in ROSTER if a in A2_FAMILY]
+    if not a2_arms:
+        raise RuntimeError("matched-regime sanity requested but no arm2-family arm in ROSTER")
+    data = arms.CellData(
+        z_ctx=z_ctx, dv=dv_z, rb=rb_w, z_ans=None, mapfit=None, layers=tuple(layers)
+    )
+    scores, skipped = arms.run_cell(data, cell, arms=a2_arms, device=args.device)
+    if skipped:
+        raise RuntimeError(f"[{behavior}] sanity run_cell skipped arms: {skipped}")
+    dv_eval = np.asarray(dv_raw, dtype=np.float64)[rows]
+    adapter = getattr(args, "arm2_adapter", None) or "v1"
+    mv0 = (args.map_variants or [None])[0] if getattr(args, "map_variants", None) else None
+    out: list[dict] = []
+    for slug in a2_arms:
+        sc = np.asarray(scores[slug], dtype=np.float64)
+        rhos = [float(x) for x in arms.spearman_rows(sc, dv_eval)]
+        fl = min(int(frozen[slug]), sc.shape[0] - 1)
+        out.append(
+            {
+                "mode": "r2v2",
+                "protocol": "P-B",
+                "fit": "sanity-elic-pool-cv",
+                "behavior": behavior,
+                "variant": variant,
+                "regime": args.regime,
+                "arm": slug,
+                "family": arms.ARM_REGISTRY.get(slug, {}).get("family", "context"),
+                "eval_rung": "sanity_elic_pool_cv",
+                "rung_kind": "sanity_matched_regime",
+                "adapter": _adapter_tag_for(slug, adapter),
+                "arm2_adapter": adapter,
+                "rho_frozen": rhos[fl],
+                "rho_per_layer": rhos,
+                "layer": int(layers[fl]) if layers and sc.shape[0] > 1 else None,
+                "n_eval": int(rows.size),
+                "n_rows": int(rows.size),
+                "n_folds": int(len(uniq_f)),
+                "n_groups": int(len(set(sel_groups))),
+                "budget_l": int(lmax),
+                "dv_scaling": "fit=per_pool_zscore_train_targets_v1; eval=raw",
+                "train_frac": args.train_frac,
+                "draw": int(args.draw),
+                "seed": int(args.seed),
+                **({"map_variant": mv0} if mv0 is not None else {}),
+            }
+        )
+    return out
+
+
+# ---------------------------------------------------------------------------
 # claim4-controls helpers: pairing shuffle + per-map degeneration diagnostics
 # ---------------------------------------------------------------------------
 
 
-def _seed_output_resume_ok(out_dir, *, commit: str, seed: int, map_variants) -> tuple[bool, str]:
+def _seed_output_resume_ok(
+    out_dir,
+    *,
+    commit: str,
+    seed: int,
+    map_variants,
+    arm2_adapter: str | None = None,
+    skip_map_fit: bool = False,
+    parity_refit_arm7: bool = False,
+) -> tuple[bool, str]:
     """True iff a prior (behavior, seed) output can satisfy THIS invocation.
 
     The resume predicate is keyed on code SHA + output schema version + seed
-    + map-variant set (all recorded in the summary meta) AND requires every
-    per-seed artifact present — a stale, foreign, or partial output can never
-    silently satisfy it (a mismatch re-runs the seed, loudly).
+    + map-variant set + the arm2fix lane keys (adapter / skip-map-fit /
+    parity — all recorded in the summary meta) AND requires every per-seed
+    artifact present — a stale, foreign, or partial output can never
+    silently satisfy it (a mismatch re-runs the seed, loudly). Banked
+    pre-arm2fix outputs carry none of the new keys: ``meta.get`` reads None /
+    False for them, which matches exactly the flagless invocation — so the
+    legacy claim4 lane's resume behavior is unchanged, while an arm2fix
+    invocation can never resume off a legacy output (adapter mismatch).
     """
     for name in ("all_arms_spearman.json", "map_diagnostics.json", "readout_pools.json"):
         if not (out_dir / name).exists():
@@ -552,6 +870,12 @@ def _seed_output_resume_ok(out_dir, *, commit: str, seed: int, map_variants) -> 
         "git_commit": (meta.get("git_commit"), commit),
         "out_schema_version": (meta.get("out_schema_version"), SEED_OUT_SCHEMA_VERSION),
         "seed": (meta.get("seed"), int(seed)),
+        "arm2_adapter": (meta.get("arm2_adapter"), arm2_adapter),
+        "skip_map_fit": (bool(meta.get("skip_map_fit", False)), bool(skip_map_fit)),
+        "parity_refit_arm7": (
+            bool(meta.get("parity_refit_arm7", False)),
+            bool(parity_refit_arm7),
+        ),
     }
     for field, (got, want) in checks.items():
         if got != want:
@@ -819,6 +1143,7 @@ def fit_linear_add_map(
     layers: list[int],
     gen_sink: dict | None = None,
     claim4_sink: dict | None = None,
+    skip_map_fit: bool = False,
 ):
     """The r2fair ADD-condition LINEAR map/whitening recipe with staged frees.
 
@@ -870,11 +1195,20 @@ def fit_linear_add_map(
     wh_s = round(time.time() - t0, 1)
     _log_rss("map-pool-whitened")
     t1 = time.time()
-    _log_rss("map-fit-true-entry")
+    mapfit = None
     map_lam_sink: list[dict] = []
-    with fits.capture_selected_lambdas(map_lam_sink):
-        mapfit = _fit_map(_fitmap_ns(args), x_w, y_w)
-    _log_rss("map-fit-true-done")
+    if skip_map_fit:
+        # arm2fix D1 (--skip-map-fit): the resolved roster consumes NO map (the
+        # parse-time guard refuses otherwise), so the expensive linear-map fit
+        # is skipped OUTRIGHT. Whitening above still ran: arm2 operates in
+        # whitened coordinates, and the seed-keyed whitening rng reproduces the
+        # banked space (plan §4 D1 (b); gate-2 input-sha comparison).
+        _log_rss("map-fit-skipped")
+    else:
+        _log_rss("map-fit-true-entry")
+        with fits.capture_selected_lambdas(map_lam_sink):
+            mapfit = _fit_map(_fitmap_ns(args), x_w, y_w)
+        _log_rss("map-fit-true-done")
     if gen_sink is not None:
         n_gen = int(pool_meta["add_n_generic"])
         # basic slices are VIEWS keeping the whole pool alive — copy, then free
@@ -882,9 +1216,11 @@ def fit_linear_add_map(
         gen_sink["y_gen_w"] = np.ascontiguousarray(y_w[:, :n_gen])
         gen_sink["n_gen"] = n_gen
     diag = {
-        **mapfit.diagnostics,
+        **(mapfit.diagnostics if mapfit is not None else {}),
         "map_kind": "linear",
-        "map_source": "refit",
+        "map_source": (
+            "skipped (--skip-map-fit: roster has no map-consuming arm)" if skip_map_fit else "refit"
+        ),
         "map_fit_s": round(time.time() - t1, 1),
         "whitening_fit_s": wh_s,
         "n_u": int(n_u),
@@ -904,8 +1240,15 @@ def fit_linear_add_map(
         m_sub = min(2048, x_w.shape[1])
         sub = slice(x_w.shape[1] - m_sub, x_w.shape[1])
         diag["map_variant"] = "true"
-        diag["map_selected_lambdas"] = map_lam_sink
-        diag["mapped_output_variance"] = _map_output_variance(mapfit, x_w[:, sub], y_w[:, sub])
+        if mapfit is not None:
+            diag["map_selected_lambdas"] = map_lam_sink
+            diag["mapped_output_variance"] = _map_output_variance(mapfit, x_w[:, sub], y_w[:, sub])
+        if claim4_sink.get("want_shufpair") and skip_map_fit:
+            raise RuntimeError(
+                "--skip-map-fit is incompatible with --map-variants shufpair (a "
+                "pairing-shuffled map cannot be produced without fitting one) — "
+                "the parse-time validator should have refused this"
+            )
         if claim4_sink.get("want_shufpair"):
             n_gen = int(pool_meta["add_n_generic"])
             perm, perm_fp = pairing_shuffle_perm(n_gen, y_w.shape[1], seed=args.seed)
@@ -988,7 +1331,13 @@ def prepare_behavior(args, behavior: str, layers: list[int]) -> SimpleNamespace:
     if map_variants is not None:
         claim4_sink = {"want_shufpair": "shufpair" in map_variants}
     wh, mapfit, map_diag_linear, u_label, n_u = fit_linear_add_map(
-        args, loaded, variant, layers, gen_sink=gen_sink, claim4_sink=claim4_sink
+        args,
+        loaded,
+        variant,
+        layers,
+        gen_sink=gen_sink,
+        claim4_sink=claim4_sink,
+        skip_map_fit=bool(getattr(args, "skip_map_fit", False)),
     )
     map_diags = {"linear": map_diag_linear}
     mapfit_shuf = None
@@ -1000,11 +1349,13 @@ def prepare_behavior(args, behavior: str, layers: list[int]) -> SimpleNamespace:
             map_diags["linear_shufpair"] = claim4_sink["diag_shufpair"]
         # effective-spectrum degeneration diagnostic per fitted map (values-only
         # svd on the (Ly, d, d) weight tensor — pools are already freed here).
-        t_sp = time.time()
-        map_diags["linear"]["weight_spectrum"] = _weight_spectrum(mapfit.w)
-        if mapfit_shuf is not None:
-            map_diags["linear_shufpair"]["weight_spectrum"] = _weight_spectrum(mapfit_shuf.w)
-        _log(f"[map] weight spectra computed in {time.time() - t_sp:.0f}s")
+        # --skip-map-fit: no map exists, so there is no spectrum to compute.
+        if mapfit is not None:
+            t_sp = time.time()
+            map_diags["linear"]["weight_spectrum"] = _weight_spectrum(mapfit.w)
+            if mapfit_shuf is not None:
+                map_diags["linear_shufpair"]["weight_spectrum"] = _weight_spectrum(mapfit_shuf.w)
+            _log(f"[map] weight spectra computed in {time.time() - t_sp:.0f}s")
 
     # ---- merged labeled table: [train | wc | ev | ood] ----------------------
     n_tr = len(loaded.tbl.ctx_order)
@@ -1089,7 +1440,13 @@ def prepare_behavior(args, behavior: str, layers: list[int]) -> SimpleNamespace:
     # arm20 has no committed train row — its frozen layer is MATCHED to the
     # companion arm's committed layer (MATCHED_FROZEN_COMPANIONS; the fair
     # round's ("arm20_shuffled_map_ridge", "arm7_map_ridge_pred") precedent).
-    roster_frozen = tuple(a for a in ROSTER if a not in MATCHED_FROZEN_COMPANIONS)
+    # --parity-refit-arm7 scores arm7 in its own row-matched pass even when
+    # --arms-only-extra removed it from ROSTER, so its committed frozen layer
+    # must resolve too.
+    roster_for_frozen = ROSTER
+    if getattr(args, "parity_refit_arm7", False) and "arm7_map_ridge_pred" not in ROSTER:
+        roster_for_frozen = ROSTER + ("arm7_map_ridge_pred",)
+    roster_frozen = tuple(a for a in roster_for_frozen if a not in MATCHED_FROZEN_COMPANIONS)
     frozen, frozen_src = committed_frozen(args, loaded, behavior, variant, layers, roster_frozen)
     for a, ref in MATCHED_FROZEN_COMPANIONS.items():
         if a in ROSTER:
@@ -1206,6 +1563,7 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
         roster: tuple[str, ...] | None = None,
         map_variant: str | None = None,
         preds_tag: str | None = None,
+        arm_prov: dict[str, dict] | None = None,
     ) -> None:
         """One full-union transfer fit + per-rung evaluation (all protocols).
 
@@ -1218,7 +1576,10 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
         fit (default: the module ROSTER); ``map_variant`` rides every row's
         provenance; ``preds_tag`` disambiguates the per-fit preds filename
         across variant passes (the two passes share fit labels by design —
-        the repro join subsets on map_variant).
+        the repro join subsets on map_variant). ``arm_prov`` (arm2fix)
+        merges PER-ARM provenance (adapter tag + train-row id-hash + count)
+        into that arm's transfer + per-layer rows — a pass-level extra_prov
+        cannot distinguish arms sharing one pass.
         """
         readout_rows = np.asarray(readout_rows, dtype=np.int64)
         # entry crumb pairs with fit-done-<label> below: brackets the transfer
@@ -1326,6 +1687,9 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
                 min_n=args.min_n,
             )
         wall = round(time.time() - t1, 1)
+        if arm_prov:
+            for r in rows:
+                r.update(arm_prov.get(r.get("arm"), {}))
         if getattr(args, "transfer_preds", False):
             # Per-(arm, eval context) frozen-layer predictions, via the SAME
             # reviewed helper the bare-query / wcrung legs use. Written BEFORE
@@ -1354,11 +1718,13 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
                     labels=preds_labels,
                 ),
             )
-        per_layer_all.extend(
-            per_layer_rows_for(
-                scores, dv_ev, frozen, {**prov, "eval_rung": "all"}, layers, frozen_src
-            )
+        pl_rows = per_layer_rows_for(
+            scores, dv_ev, frozen, {**prov, "eval_rung": "all"}, layers, frozen_src
         )
+        if arm_prov:
+            for r in pl_rows:
+                r.update(arm_prov.get(r.get("arm"), {}))
+        per_layer_all.extend(pl_rows)
         rows_all.extend(rows)
         skips_all.extend(skips)
         report = {
@@ -1369,8 +1735,14 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
             "well_posed": f"n_train {len(readout_rows)} > d {loaded.dim}",
             "leakage": leak,
             "ridge_lambda_diagnostics": lam_sink,
-            "recon": _eval_rung_reconstruction(
-                mf, z_ev, za_ev, rungs=[str(r) for r in rungs_ev], knn=True
+            # --skip-map-fit: no map exists -> no map-reconstruction read (the
+            # roster is guaranteed map-free by the parse-time guard).
+            "recon": (
+                _eval_rung_reconstruction(
+                    mf, z_ev, za_ev, rungs=[str(r) for r in rungs_ev], knn=True
+                )
+                if mf is not None
+                else "skipped (--skip-map-fit: no fitted map)"
             ),
             "fit_wall_s": wall,
         }
@@ -1560,28 +1932,95 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
                             "n_readout_total": int(len(readout_pb)),
                         }
                     )
-                _fit_and_score(
-                    "P-B",
-                    f"P-B-holdout-{holdout}",
-                    readout_pb,
-                    dv_z_pb,
-                    eval_specs_pb,
-                    {
-                        "holdout": holdout,
-                        "train_frac": args.train_frac,
-                        "readout_train": "union: 80% GROUP-level slice of every "
-                        "trait-eliciting dataset except the holdout (whole) + judged "
-                        "WildChat train split",
-                        "included_datasets": sorted(pool.train_rows),
-                        **({"map_source": "refit-pairing-shuffled"} if is_shuf else {}),
-                    },
-                    mapfit_use=mapfit_shuf if is_shuf else None,
-                    roster=SHUFPAIR_ROSTER if is_shuf else None,
-                    map_variant=mv,
-                    preds_tag="shufpair" if is_shuf else None,
-                )
+                base_prov = {
+                    "holdout": holdout,
+                    "train_frac": args.train_frac,
+                    "readout_train": "union: 80% GROUP-level slice of every "
+                    "trait-eliciting dataset except the holdout (whole) + judged "
+                    "WildChat train split",
+                    "included_datasets": sorted(pool.train_rows),
+                    **({"map_source": "refit-pairing-shuffled"} if is_shuf else {}),
+                }
+                adapter = getattr(args, "arm2_adapter", None)
+                if adapter is None:
+                    # legacy path — byte-identical to the claim4-controls round
+                    _fit_and_score(
+                        "P-B",
+                        f"P-B-holdout-{holdout}",
+                        readout_pb,
+                        dv_z_pb,
+                        eval_specs_pb,
+                        base_prov,
+                        mapfit_use=mapfit_shuf if is_shuf else None,
+                        roster=SHUFPAIR_ROSTER if is_shuf else None,
+                        map_variant=mv,
+                        preds_tag="shufpair" if is_shuf else None,
+                    )
+                else:
+                    # arm2fix repair ladder (plan §4 D1): one pass plan per
+                    # holdout; the parse-time validator refuses shufpair with
+                    # an adapter, so is_shuf is False here by construction.
+                    for p in _arm2fix_passes(
+                        adapter,
+                        ROSTER,
+                        [np.asarray(r, dtype=np.int64) for r in pool_rows],
+                        wc_train_rows,
+                        dv_z_pb,
+                        parity_refit_arm7=bool(getattr(args, "parity_refit_arm7", False)),
+                    ):
+                        arm_prov = {
+                            slug: {
+                                "adapter": m["adapter"],
+                                "train_row_ids_sha256": _row_ids_sha256(
+                                    ctx_ids[i] for i in m["fit_rows"]
+                                ),
+                                "train_rows_n": int(len(m["fit_rows"])),
+                            }
+                            for slug, m in p.arm_meta.items()
+                        }
+                        _fit_and_score(
+                            "P-B",
+                            f"P-B-holdout-{holdout}",
+                            p.readout,
+                            dv_z_pb,
+                            eval_specs_pb,
+                            {
+                                **base_prov,
+                                "arm2_adapter": adapter,
+                                "fit_pass": p.label,
+                                **(
+                                    {
+                                        "readout_train": "eliciting-component slices only "
+                                        "(restricted pass: the judged WildChat block is "
+                                        "excluded from the fit — plan §4 R-B/R-C)"
+                                    }
+                                    if p.label in ("a2r", "a2qr", "parity")
+                                    and len(p.readout) != len(readout_pb)
+                                    else {}
+                                ),
+                            },
+                            roster=p.roster,
+                            map_variant=mv,
+                            preds_tag=p.preds_tag,
+                            arm_prov=arm_prov,
+                        )
         if {"true", "shufpair"} <= {m for m in mv_list if m}:
             _assert_arm4_variant_identity(rows_all, behavior)
+
+        # matched-regime sanity read (plan §4 sanity-instrument repair): the
+        # arm2-family folded GROUP-level CV on the pool's eliciting rows,
+        # emitted per seed ALONGSIDE the transfer rows. Fires only on the
+        # arm2fix lane (--arm2-adapter) — every other lane is byte-identical.
+        if getattr(args, "arm2_adapter", None) is not None:
+            t_s = time.time()
+            sanity_rows = _matched_regime_sanity(
+                args, behavior, layers, datasets, z_ctx, dv_raw, rb_w, frozen, variant, lmax
+            )
+            rows_all.extend(sanity_rows)
+            _log(
+                f"[{behavior}] matched-regime sanity: {len(sanity_rows)} row(s) "
+                f"in {time.time() - t_s:.0f}s (rung_kind=sanity_matched_regime)"
+            )
 
     # ---- P-C: LODO-consistent map+readout — the MAP is refit per holdout on
     # generic pool + the SAME 80% slices the readout trains on (whitening
@@ -1813,6 +2252,87 @@ def _apply_extra_arms(extra: list[str]) -> None:
     print(f"[extra-arms] roster extended with {added}; roster now {list(ROSTER)}", flush=True)
 
 
+def _apply_arm2fix_roster(args) -> None:
+    """Roster restriction + repair-ladder guards for the arm2fix lane.
+
+    Runs AFTER :func:`_apply_extra_arms` at parse time. Every guard here is a
+    loud parse-time refusal (never a silent downstream substitution):
+
+    - ``--arms-only-extra`` RESTRICTS the module ROSTER to exactly the
+      ``--extra-arms`` slugs (the D1 rerun scores arm2 alone; banked
+      arm4/arm7 rows join at the fold).
+    - ``--arm2-adapter v2-quantile*`` appends ``arm2q_ctx_native`` (the R-C
+      slug emitted BESIDE the unrepaired arm2 — never a relabel).
+    - ``--skip-map-fit`` refuses any roster containing a map-consuming arm
+      (single source: ``arms.MAP_CONSUMING_ARMS`` — the SAME set
+      ``run_cell_multi`` dispatches on, so guard and dispatch cannot drift),
+      refuses the shufpair variant (no map is fit to shuffle) and protocol C
+      (P-C refits maps per holdout).
+    - ``--parity-refit-arm7`` requires an adapter (it row-matches the
+      repaired arm's fit rows) and the TRUE map (no --skip-map-fit).
+    """
+    global ROSTER, LABEL_CONSUMING
+    if args.arms_only_extra:
+        if not args.extra_arms:
+            raise SystemExit("--arms-only-extra needs --extra-arms (an empty roster is not a run)")
+        only = tuple(dict.fromkeys(args.extra_arms))
+        ROSTER = only
+        LABEL_CONSUMING = tuple(a for a in only if a in EXTRA_ARMS_LABEL_CONSUMING)
+        print(f"[arms-only-extra] roster RESTRICTED to {list(ROSTER)}", flush=True)
+    if args.arm2_adapter is not None:
+        if "B" not in args.protocols:
+            raise SystemExit("--arm2-adapter is a P-B repair — needs 'B' in --protocols")
+        if "arm2_ctx_native" not in ROSTER:
+            raise SystemExit(
+                "--arm2-adapter needs arm2_ctx_native in the roster "
+                "(pass --extra-arms arm2_ctx_native)"
+            )
+        if "shufpair" in (args.map_variants or []):
+            raise SystemExit(
+                "--arm2-adapter is incompatible with --map-variants shufpair (the arm2 "
+                "family never rides the shufpair roster; banked shufpair rows join at "
+                "the fold)"
+            )
+        if args.arm2_adapter.startswith("v2-quantile") and "arm2q_ctx_native" not in ROSTER:
+            ROSTER = ROSTER + ("arm2q_ctx_native",)
+            LABEL_CONSUMING = LABEL_CONSUMING + ("arm2q_ctx_native",)
+            print(
+                "[arm2fix] arm2q_ctx_native appended to the roster (R-C quantile fallback, "
+                "emitted BESIDE the unrepaired arm2)",
+                flush=True,
+            )
+    if args.parity_refit_arm7:
+        if args.arm2_adapter is None:
+            raise SystemExit(
+                "--parity-refit-arm7 needs --arm2-adapter (it row-matches the repaired "
+                "arm's fit rows)"
+            )
+        if args.skip_map_fit:
+            raise SystemExit(
+                "--parity-refit-arm7 refits arm7 against the TRUE map — drop --skip-map-fit "
+                "for this behavior (plan §4 matched-budget parity duty)"
+            )
+    if args.skip_map_fit:
+        from explore_persona_space.experiments.issue_1739.arms import MAP_CONSUMING_ARMS
+
+        offending = sorted(set(ROSTER) & MAP_CONSUMING_ARMS)
+        if offending:
+            raise SystemExit(
+                f"--skip-map-fit REFUSED: resolved roster contains map-consuming arm(s) "
+                f"{offending} — a skipped map fit would silently gut them "
+                "(guard reads arms.MAP_CONSUMING_ARMS)"
+            )
+        if "shufpair" in (args.map_variants or []):
+            raise SystemExit(
+                "--skip-map-fit is incompatible with --map-variants shufpair "
+                "(no map is fit to shuffle)"
+            )
+        if "C" in args.protocols:
+            raise SystemExit(
+                "--skip-map-fit is incompatible with protocol C (P-C refits maps per holdout)"
+            )
+
+
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--behaviors", nargs="+", default=list(BEHAVIORS), choices=list(BEHAVIORS))
@@ -1914,6 +2434,45 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "answer); the r2v2 round never scored it, so adding it to a P-A/P-B figure needs "
         "a re-score, not a re-read.",
     )
+    ap.add_argument(
+        "--arms-only-extra",
+        action="store_true",
+        help="RESTRICT the roster to exactly the --extra-arms slugs (arm2fix D1: the rerun "
+        "scores arm2 alone against the banked arm4/arm7 rows, which join at the fold). "
+        "Default OFF: --extra-arms stays APPEND-only and every other lane is byte-identical.",
+    )
+    ap.add_argument(
+        "--skip-map-fit",
+        action="store_true",
+        help="skip the fit_linear_add_map linear-map fit (whitening still runs — arm2 "
+        "operates in whitened coordinates; the seed-keyed rng reproduces the banked space). "
+        "REFUSED unless the resolved roster contains no map-consuming arm "
+        "(arms.MAP_CONSUMING_ARMS — the same set run_cell_multi dispatches on).",
+    )
+    ap.add_argument(
+        "--arm2-adapter",
+        default=None,
+        choices=list(ARM2_ADAPTERS),
+        help="arm2fix repair-ladder adapter (plan §4 R-A/R-B/R-C; see the ARM2_ADAPTERS "
+        "comment). Default None: the P-B pass is byte-identical to the claim4-controls "
+        "round. Any value ALSO emits the matched-regime sanity rows "
+        "(rung_kind=sanity_matched_regime) per seed.",
+    )
+    ap.add_argument(
+        "--parity-refit-arm7",
+        action="store_true",
+        help="matched-budget parity duty (plan §4 Must-Fix): ALSO refit arm7 "
+        "(map_variant=true) per holdout on the IDENTICAL training-row IDs the repaired "
+        "arm2 consumed; rows carry adapter=parity-row-matched + the same "
+        "train_row_ids_sha256 so the fold can assert row-set equality. Requires the TRUE "
+        "map (incompatible with --skip-map-fit).",
+    )
+    ap.add_argument(
+        "--a2-sanity-folds",
+        type=int,
+        default=5,
+        help="fold count for the matched-regime sanity read (group-hash folds; plan §4)",
+    )
     ap.add_argument("--allow-overwrite-committed", action="store_true")
     ap.add_argument("--import-check", action="store_true")
     args = ap.parse_args(argv)
@@ -1923,6 +2482,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     if args.map_variants is not None and len(set(args.map_variants)) != len(args.map_variants):
         raise SystemExit(f"--map-variants carries duplicates: {args.map_variants}")
     _apply_extra_arms(args.extra_arms)
+    _apply_arm2fix_roster(args)
     if args.u_store is None:
         args.u_store = args.store_root / "u_store"
     if args.train_dv_root is None:
@@ -1997,6 +2557,15 @@ def main(argv: list[str] | None = None) -> int:
         for a, ref in MATCHED_FROZEN_COMPANIONS.items():
             assert a in _arms.ARM_REGISTRY and ref in _arms.ARM_REGISTRY, (a, ref)
         assert callable(fits.shuffled_map_weights), "arm20 weight-shuffle helper missing"
+        # arm2fix surface: quantile-split slug + thresholds + the map-consuming
+        # set the --skip-map-fit guard reads (single source with the dispatch).
+        for slug in A2_FAMILY:
+            assert slug in _arms.ARM_REGISTRY, f"{slug} (A2_FAMILY) not in ARM_REGISTRY"
+        assert callable(_arms.arm2q_thresholds), "arm2q threshold helper missing"
+        assert _arms.MAP_CONSUMING_ARMS & set(_arms.ARM_REGISTRY) == _arms.MAP_CONSUMING_ARMS, (
+            "MAP_CONSUMING_ARMS carries a slug outside ARM_REGISTRY"
+        )
+        assert not set(A2_FAMILY) & _arms.MAP_CONSUMING_ARMS, "arm2 family must be map-free"
         _assert_no_judge_modules("after --import-check imports")
         print("[r2v2] import-check OK", flush=True)
         sys.stdout.flush()
@@ -2036,7 +2605,13 @@ def main(argv: list[str] | None = None) -> int:
         if seed_keyed:
             resume_dir = _behavior_out_dir(args, behavior)
             ok, why = _seed_output_resume_ok(
-                resume_dir, commit=commit, seed=int(seed), map_variants=args.map_variants
+                resume_dir,
+                commit=commit,
+                seed=int(seed),
+                map_variants=args.map_variants,
+                arm2_adapter=getattr(args, "arm2_adapter", None),
+                skip_map_fit=bool(getattr(args, "skip_map_fit", False)),
+                parity_refit_arm7=bool(getattr(args, "parity_refit_arm7", False)),
             )
             if ok:
                 _log(
@@ -2086,6 +2661,14 @@ def main(argv: list[str] | None = None) -> int:
                             "out_schema_version": SEED_OUT_SCHEMA_VERSION,
                             "map_variants": list(args.map_variants or []),
                             "shufpair_roster": list(SHUFPAIR_ROSTER),
+                            # arm2fix lane provenance (None/False on every
+                            # non-arm2fix run) — the per-seed resume predicate
+                            # keys on these so a legacy output can never
+                            # silently satisfy an arm2fix invocation.
+                            "arm2_adapter": getattr(args, "arm2_adapter", None),
+                            "skip_map_fit": bool(getattr(args, "skip_map_fit", False)),
+                            "arms_only_extra": bool(getattr(args, "arms_only_extra", False)),
+                            "parity_refit_arm7": bool(getattr(args, "parity_refit_arm7", False)),
                         }
                         if (seed_keyed or args.map_variants is not None)
                         else {}
