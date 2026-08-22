@@ -1,0 +1,1 @@
+{"ts": "2026-08-22T16:22:00Z", "event": "raised", "concern_id": "c26-gcp-era-mirror-stale", "severity": "CONCERN", "summary": "verify_plan.py c26 routed-machine mirror is GCP-era; inverts under runpod-first auto — c26 WARNs on runpod-costed bare-auto plans. Companion fix logged (plan Part 5); recursion guard: not auto-filed.", "raised_by": "implementer", "raised_at_round": 1}
