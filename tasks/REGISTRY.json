@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2465,
+  "highest_id": 2466,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11315,6 +11315,13 @@
       "path": "tasks/proposed/2465",
       "status": "proposed",
       "title": "workflow-fix: local-enumeration exact-set verify must mirror upload_folder's DEFAULT_IGNORE_PATTERNS"
+    },
+    "2466": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2466",
+      "status": "proposed",
+      "title": "Step 9c marker contract: reconstruct the files-run list from junit, never by re-running the selector"
     },
     "247": {
       "has_clean_result": false,
