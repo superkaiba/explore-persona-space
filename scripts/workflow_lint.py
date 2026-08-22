@@ -595,6 +595,24 @@ Behaviours:
   re-introducing the anti-pattern. Waive a genuinely-correct bare-dotenv
   use with ``# DOTENV_LINT_EXEMPT: <reason>`` (reason ≥ 10 chars) on the
   import line or the immediately preceding non-blank line.
+* ``--check-prod-import-lockfile`` (also bundled into the no-flags
+  default run): AST-scan every ``*.py`` under ``scripts/`` and ``src/``
+  and FAIL any third-party import whose root is not resolvable from
+  ``uv.lock`` / ``pyproject.toml`` (#2253; incident #2223 — an import of
+  a package absent from the lockfile killed a pod run at launch; the
+  #1336 module-local-helper shape is covered for free). Branch-agnostic
+  over runtime-executable code (smoke branches scanned too;
+  ``if TYPE_CHECKING:`` guard BODIES excluded — never executable at
+  runtime). Exempt per site: an import in the BODY of a ``try`` whose
+  handler names ``ImportError`` / ``ModuleNotFoundError`` (the sanctioned
+  deliberately-optional degrade), and a
+  ``# PROD_IMPORT_LINT_EXEMPT: <reason>`` waiver (reason ≥ 10 chars).
+  PASS ≠ installed-by-default — the FAIL boundary is DECLARED
+  resolvability: a dist declared only under a non-default extra/group
+  WARNs (stderr) naming the declaration, and a dangling ``issue*``-stem
+  first-party root WARNs instead of failing. The import-name -> dist-name
+  mapping is the static :data:`IMPORT_TO_DIST` table (unit-tested; drift
+  FAILs loud).
 * ``--check-agent-model-pins`` (also bundled into the no-flags default
   run): parse the YAML frontmatter ``model: "..."`` of every
   ``.claude/agents/*.md`` and FAIL on any pin whose base id is unknown
@@ -965,6 +983,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import tomllib
 from collections import Counter
 from collections.abc import Callable, Collection, Iterator
 from concurrent.futures import ThreadPoolExecutor
@@ -2686,6 +2705,34 @@ HUB_VERIFY_WAIVER_MIN_REASON_CHARS = 10
 # convention as UPLOAD_AS_FILE_EXEMPT / CVD_PIN_EXEMPT.
 DOTENV_LINT_WAIVER_RE = re.compile(r"#\s*DOTENV_LINT_EXEMPT\s*:\s*(.+?)\s*$")
 DOTENV_LINT_WAIVER_MIN_REASON_CHARS = 10
+
+
+# `--check-prod-import-lockfile` (#2253): a scripts/ or src/ module importing a
+# third-party package that is not resolvable from uv.lock / pyproject.toml is a
+# latent ModuleNotFoundError wherever it can execute (#2223: an import of a
+# package absent from the lockfile killed a pod run at launch; #1336: the same
+# class hid inside a module-local helper the smoke never executed). Inline
+# waiver: `# PROD_IMPORT_LINT_EXEMPT: <reason>` (reason ≥ N chars) on the
+# import's first physical line or the immediately preceding non-blank line —
+# PER AST IMPORT SITE, never per (file, root): an old waiver on one optional
+# site must not silently exempt a later load-bearing import of the same root.
+PROD_IMPORT_LINT_WAIVER_RE = re.compile(r"#\s*PROD_IMPORT_LINT_EXEMPT\s*:\s*(.+?)\s*$")
+PROD_IMPORT_LINT_WAIVER_MIN_REASON_CHARS = 10
+
+# Import-name -> PyPI distribution name, for import roots whose module name
+# does not PEP-503-normalize to their dist name. The static table is the
+# DETERMINISTIC primary (a verdict keyed on the live venv's
+# importlib.metadata would differ between a fresh pod and the VM; the venv
+# read is message-only enrichment); a table entry whose dist is absent from
+# the lockfile universe is itself a FAIL — table drift is loud (#2253 A4).
+IMPORT_TO_DIST: dict[str, str] = {
+    "PIL": "pillow",
+    "dotenv": "python-dotenv",
+    "hydra": "hydra-core",
+    "sklearn": "scikit-learn",
+    "umap": "umap-learn",
+    "yaml": "pyyaml",
+}
 
 
 # `--check-judge-model-pins` (#765): the standing project rule pins ONE judge
@@ -9302,6 +9349,552 @@ def check_dotenv_before_hf_import(*, scripts_dir: Path | None = None) -> list[st
                         f"huggingface_hub import line or the previous non-blank line."
                     )
     return errors
+
+
+def _pep503(name: str) -> str:
+    """PEP-503-normalize a distribution / import name (lowercase; runs of
+    ``-``/``_``/``.`` collapse to a single ``-``)."""
+    return re.sub(r"[-_.]+", "-", name).lower()
+
+
+_PEP508_NAME_RE = re.compile(r"^[A-Za-z0-9]([A-Za-z0-9._-]*[A-Za-z0-9])?")
+
+
+def _pep508_dist_name(requirement: str) -> str | None:
+    """PEP-503-normalized distribution-name prefix of a PEP-508 requirement
+    string (``"umap-learn>=0.5.6,<0.6"`` -> ``"umap-learn"``); None when the
+    string carries no leading name."""
+    m = _PEP508_NAME_RE.match(requirement.strip())
+    return _pep503(m.group(0)) if m else None
+
+
+def _dep_names(deps: object) -> set[str]:
+    """PEP-503-normalized name prefixes of a PEP-508 requirement list.
+    Non-string entries (PEP-735 ``{include-group = "..."}`` tables) are
+    SKIPPED, never parsed; a non-list input yields the empty set."""
+    if not isinstance(deps, list):
+        return set()
+    return {name for dep in deps if isinstance(dep, str) and (name := _pep508_dist_name(dep))}
+
+
+def _uv_default_groups(py_doc: dict) -> set[str]:
+    """The DEFAULT dependency-group set: ``tool.uv.default-groups`` when
+    present as a list of strings, else uv's documented default ``{"dev"}``."""
+    tool = py_doc.get("tool")
+    uv_tbl = tool.get("uv") if isinstance(tool, dict) else None
+    raw = uv_tbl.get("default-groups") if isinstance(uv_tbl, dict) else None
+    if isinstance(raw, list):
+        return {g for g in raw if isinstance(g, str)}
+    return {"dev"}
+
+
+def _declared_dists_from_pyproject(py_doc: dict) -> tuple[set[str], dict[str, set[str]]]:
+    """Split pyproject-declared dists into ``(default_declared,
+    nondefault)``: ``project.dependencies`` plus the DEFAULT dependency
+    groups vs ``project.optional-dependencies.<extra>`` plus non-default
+    ``dependency-groups.<g>`` (dist -> declaration names)."""
+    default_declared: set[str] = set()
+    nondefault: dict[str, set[str]] = {}
+    project = py_doc.get("project", {})
+    if not isinstance(project, dict):
+        project = {}
+    default_declared |= _dep_names(project.get("dependencies"))
+    default_groups = _uv_default_groups(py_doc)
+    groups = py_doc.get("dependency-groups", {})
+    if isinstance(groups, dict):
+        for gname, deps in groups.items():
+            names = _dep_names(deps)
+            if gname in default_groups:
+                default_declared |= names
+            else:
+                for name in names:
+                    nondefault.setdefault(name, set()).add(gname)
+    extras = project.get("optional-dependencies", {})
+    if isinstance(extras, dict):
+        for extra, deps in extras.items():
+            for name in _dep_names(deps):
+                nondefault.setdefault(name, set()).add(extra)
+    return default_declared, nondefault
+
+
+def _load_import_lockfile_universe(
+    lock_path: Path, pyproject_path: Path
+) -> tuple[set[str], set[str], dict[str, list[str]], list[str]]:
+    """Load the dist universes for :func:`check_prod_import_lockfile`.
+
+    Returns ``(lock_dists, default_declared, nondefault_declared, errors)``:
+    PEP-503-normalized dist names from ``uv.lock`` ``[[package]]`` entries;
+    dists declared installed-by-default (``project.dependencies`` plus the
+    DEFAULT dependency groups — ``tool.uv.default-groups`` when present as a
+    list, else uv's documented default ``{"dev"}``); a dist -> sorted
+    declaration-name map for ``project.optional-dependencies.<extra>`` and
+    non-default ``dependency-groups.<g>``; and fail-loud errors — a missing
+    OR unparseable manifest returns one error naming the file, never a
+    silent skip. Non-string entries in a dependency-group list (PEP-735
+    ``{include-group = "..."}`` tables) are SKIPPED, never parsed.
+    """
+    errors: list[str] = []
+    lock_dists: set[str] = set()
+    default_declared: set[str] = set()
+    nondefault: dict[str, set[str]] = {}
+
+    try:
+        lock_doc = tomllib.loads(lock_path.read_text(encoding="utf-8"))
+        for pkg in lock_doc.get("package", []):
+            name = pkg.get("name") if isinstance(pkg, dict) else None
+            if isinstance(name, str):
+                lock_dists.add(_pep503(name))
+    except FileNotFoundError:
+        errors.append(
+            f"{lock_path}: check-prod-import-lockfile: uv.lock is MISSING — cannot "
+            f"verify third-party import resolvability (#2253); never a silent skip."
+        )
+    except (tomllib.TOMLDecodeError, UnicodeDecodeError, OSError, TypeError, AttributeError) as exc:
+        errors.append(
+            f"{lock_path}: check-prod-import-lockfile: uv.lock is UNPARSEABLE "
+            f"({type(exc).__name__}: {exc}) — cannot verify third-party import "
+            f"resolvability (#2253); never a silent skip."
+        )
+
+    py_doc: dict | None = None
+    try:
+        py_doc = tomllib.loads(pyproject_path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        errors.append(
+            f"{pyproject_path}: check-prod-import-lockfile: pyproject.toml is MISSING — "
+            f"cannot verify third-party import resolvability (#2253); never a silent skip."
+        )
+    except (tomllib.TOMLDecodeError, UnicodeDecodeError, OSError) as exc:
+        errors.append(
+            f"{pyproject_path}: check-prod-import-lockfile: pyproject.toml is UNPARSEABLE "
+            f"({type(exc).__name__}: {exc}) — cannot verify third-party import "
+            f"resolvability (#2253); never a silent skip."
+        )
+
+    if py_doc is not None:
+        default_declared, nondefault = _declared_dists_from_pyproject(py_doc)
+
+    return lock_dists, default_declared, {k: sorted(v) for k, v in nondefault.items()}, errors
+
+
+_IMPORT_ERROR_NAMES = frozenset({"ImportError", "ModuleNotFoundError"})
+
+
+def _exc_names_import_error(expr: ast.expr) -> bool:
+    """True when an except-handler type expression NAMES ImportError /
+    ModuleNotFoundError (Name / Attribute / tuple forms). A bare ``except:``
+    or ``except Exception:`` does NOT qualify — the sanctioned escape is the
+    explicit ImportError degrade, not a broad swallow."""
+    if isinstance(expr, ast.Name):
+        return expr.id in _IMPORT_ERROR_NAMES
+    if isinstance(expr, ast.Attribute):
+        return expr.attr in _IMPORT_ERROR_NAMES
+    if isinstance(expr, ast.Tuple):
+        return any(_exc_names_import_error(e) for e in expr.elts)
+    return False
+
+
+def _is_type_checking_test(test: ast.expr) -> bool:
+    """True for the canonical ``if TYPE_CHECKING:`` / ``if typing.TYPE_CHECKING:``
+    guard tests. Aliased forms (``from typing import TYPE_CHECKING as TC``) are
+    NOT recognized — a documented false-positive-direction residue with zero
+    tree instances; a future hit remediates via the canonical spelling or a
+    per-site waiver."""
+    if isinstance(test, ast.Name):
+        return test.id == "TYPE_CHECKING"
+    return (
+        isinstance(test, ast.Attribute)
+        and test.attr == "TYPE_CHECKING"
+        and isinstance(test.value, ast.Name)
+        and test.value.id == "typing"
+    )
+
+
+def _try_protects_imports(node: ast.Try) -> bool:
+    """True when *node*'s handlers name ImportError/ModuleNotFoundError
+    (the sanctioned optional-dependency degrade shape)."""
+    return any(h.type is not None and _exc_names_import_error(h.type) for h in node.handlers)
+
+
+def _import_roots(node: ast.AST) -> list[tuple[str, int]] | None:
+    """``(root, lineno)`` rows for an ``ast.Import`` / ``ast.ImportFrom``
+    node; ``None`` for every other node kind. Relative imports
+    (``level > 0``) yield an EMPTY list — an import node, but no
+    recordable root."""
+    if isinstance(node, ast.Import):
+        return [(alias.name.split(".")[0], node.lineno) for alias in node.names]
+    if isinstance(node, ast.ImportFrom):
+        if node.level == 0 and node.module:
+            return [(node.module.split(".")[0], node.lineno)]
+        return []
+    return None
+
+
+def _collect_import_sites(tree: ast.Module) -> list[tuple[str, int, bool]]:
+    """Collect ``(root, lineno, protected)`` for every RUNTIME-EXECUTABLE
+    import site in *tree* (``ast.Import`` aliases + level-0
+    ``ast.ImportFrom``; relative imports skipped).
+
+    ``protected`` is True ONLY for a site in the BODY of an ``ast.Try``
+    whose handler names ImportError/ModuleNotFoundError, with NO
+    FunctionDef/AsyncFunctionDef/Lambda boundary between that Try and the
+    import — a function *defined* in the try body defers its imports to
+    call time, outside the protected region. ``handlers`` / ``orelse`` /
+    ``finalbody`` positions are NOT protected by their own try (an
+    exception raised there is not caught by that same try). Imports under
+    the BODY of a canonical ``if TYPE_CHECKING:`` guard are excluded
+    entirely (never executable at runtime); the guard's ``orelse`` IS
+    scanned.
+    """
+    sites: list[tuple[str, int, bool]] = []
+
+    def _walk(node: ast.AST, protected: bool) -> None:
+        if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef | ast.Lambda):
+            # A function DEFINED inside a protected try body defers its
+            # imports to call time — outside the protected region.
+            for child in ast.iter_child_nodes(node):
+                _walk(child, False)
+            return
+        if isinstance(node, ast.If) and _is_type_checking_test(node.test):
+            # The guard body never executes at runtime (typing.TYPE_CHECKING
+            # is False outside type checkers); the orelse DOES execute.
+            for stmt in node.orelse:
+                _walk(stmt, protected)
+            return
+        if isinstance(node, ast.Try):
+            body_protected = protected or _try_protects_imports(node)
+            for stmt in node.body:
+                _walk(stmt, body_protected)
+            # handlers / orelse / finalbody: an exception raised there is NOT
+            # caught by this same try — only an OUTER protected region
+            # (already carried in `protected`) covers them.
+            for handler in node.handlers:
+                _walk(handler, protected)
+            for stmt in node.orelse:
+                _walk(stmt, protected)
+            for stmt in node.finalbody:
+                _walk(stmt, protected)
+            return
+        roots = _import_roots(node)
+        if roots is not None:
+            sites.extend((root, lineno, protected) for root, lineno in roots)
+            return
+        for child in ast.iter_child_nodes(node):
+            _walk(child, protected)
+
+    _walk(tree, False)
+    return sites
+
+
+def _prod_import_lint_waiver_present(lines: list[str], lineno: int) -> bool:
+    """True iff a ``# PROD_IMPORT_LINT_EXEMPT: <reason>`` waiver (reason ≥
+    :data:`PROD_IMPORT_LINT_WAIVER_MIN_REASON_CHARS` chars) is on the
+    import's first physical line (``lineno``, 1-based) or the immediately
+    preceding non-blank line. Same convention as
+    :func:`_dotenv_lint_waiver_present`; exempts THAT SITE ONLY."""
+    idx = lineno - 1  # to 0-based
+    if 0 <= idx < len(lines):
+        m = PROD_IMPORT_LINT_WAIVER_RE.search(lines[idx])
+        if m and len(m.group(1).strip()) >= PROD_IMPORT_LINT_WAIVER_MIN_REASON_CHARS:
+            return True
+    back = idx - 1
+    while back >= 0 and lines[back].strip() == "":
+        back -= 1
+    if back >= 0:
+        m = PROD_IMPORT_LINT_WAIVER_RE.search(lines[back])
+        if m and len(m.group(1).strip()) >= PROD_IMPORT_LINT_WAIVER_MIN_REASON_CHARS:
+            return True
+    return False
+
+
+def _first_party_import_roots(repo_root: Path) -> set[str]:
+    """First-party import-root set: fixed package roots plus every scripts/
+    ``*.py`` stem (RECURSIVE — archived files included), the scripts/ subdir
+    names, and the src/ top-level package dirs.
+
+    Stem-shadowing residue (documented): the recursive stem set makes ANY
+    script basename first-party repo-wide (``run_leakage_experiment`` is
+    stem-shadowed by ``scripts/archive/run_leakage_experiment.py``), so a
+    third-party root colliding with a stem would silently resolve
+    first-party. Zero current collisions between stems and the import-name
+    forms of lock dists / :data:`IMPORT_TO_DIST` keys; the live pin test
+    ``test_no_lock_dist_shadowed_by_script_stem`` keeps that true. The
+    structural fix (an import-path-aware first-party resolver) is
+    deliberately deferred.
+    """
+    roots = {"explore_persona_space", "scripts", "src", "tests", "conftest"}
+    scripts_dir = repo_root / "scripts"
+    src_dir = repo_root / "src"
+    if scripts_dir.is_dir():
+        roots.update(p.stem for p in scripts_dir.rglob("*.py"))
+        roots.update(d.name for d in scripts_dir.iterdir() if d.is_dir())
+    if src_dir.is_dir():
+        roots.update(d.name for d in src_dir.iterdir() if d.is_dir())
+    return roots
+
+
+@functools.lru_cache(maxsize=1)
+def _venv_packages_distributions() -> dict[str, tuple[str, ...]]:
+    """Best-effort LIVE-venv import-root -> distributions mapping, for
+    message-only enrichment of check-prod-import-lockfile FAIL rows. NEVER
+    verdict-bearing (a verdict keyed on the venv would differ between a
+    fresh pod and the VM — :data:`IMPORT_TO_DIST` is the deterministic
+    primary); the broad except is deliberate for a pure message decoration
+    and tests never assert on it."""
+    try:
+        import importlib.metadata as _im
+
+        return {k: tuple(v) for k, v in _im.packages_distributions().items()}
+    except Exception:
+        return {}
+
+
+def _venv_dist_hint(root: str) -> str:
+    """Message-only live-venv hint for a FAIL row ('' when unavailable)."""
+    dists = _venv_packages_distributions().get(root)
+    return f" (live venv maps this to dist '{dists[0]}')" if dists else ""
+
+
+@dataclasses.dataclass
+class _ProdImportScan:
+    """Mutable accumulator for one :func:`check_prod_import_lockfile` run."""
+
+    universe: set[str]
+    default_declared: set[str]
+    nondefault_declared: dict[str, list[str]]
+    first_party: set[str]
+    stdlib: frozenset[str]
+    fail_rows: list[str] = dataclasses.field(default_factory=list)
+    seen_fail: set[tuple[str, str]] = dataclasses.field(default_factory=set)
+    dangling_counts: Counter = dataclasses.field(default_factory=Counter)
+    extras_counts: Counter = dataclasses.field(default_factory=Counter)
+    extras_dist: dict[str, str] = dataclasses.field(default_factory=dict)
+
+
+def _classify_import_root(state: _ProdImportScan, imp_root: str) -> tuple[str, str]:
+    """Classify a non-stdlib, non-first-party import root against the dist
+    universe. Returns ``(verdict, dist)`` with verdict one of ``"resolved"``
+    | ``"extras-warn"`` | ``"table-drift"`` | ``"dangling-warn"`` |
+    ``"fail"``."""
+    norm = _pep503(imp_root)
+    dist: str | None = None
+    if norm in state.universe:
+        dist = norm
+    elif imp_root in IMPORT_TO_DIST:
+        mapped = _pep503(IMPORT_TO_DIST[imp_root])
+        if mapped in state.universe:
+            dist = mapped
+        else:
+            return ("table-drift", mapped)
+    if dist is not None:
+        if dist not in state.default_declared and dist in state.nondefault_declared:
+            return ("extras-warn", dist)
+        return ("resolved", dist)
+    if imp_root.lstrip("_").startswith("issue"):
+        return ("dangling-warn", norm)
+    return ("fail", norm)
+
+
+def _record_import_sites(
+    state: _ProdImportScan, rel: str, lines: list[str], sites: list[tuple[str, int, bool]]
+) -> None:
+    """Apply per-site exemptions, classify, and record FAIL/WARN evidence
+    for one file's import sites. Waivers apply PER SITE (never per
+    ``(file, root)``); the REMAINING errors are then deduped to the first
+    unexempt ``(file, root)`` site."""
+    for imp_root, lineno, protected in sites:
+        if protected or _prod_import_lint_waiver_present(lines, lineno):
+            continue
+        if imp_root in state.stdlib or imp_root in state.first_party:
+            continue
+        verdict, dist = _classify_import_root(state, imp_root)
+        if verdict == "resolved":
+            continue
+        if verdict == "extras-warn":
+            state.extras_counts[imp_root] += 1
+            state.extras_dist[imp_root] = dist
+            continue
+        if verdict == "dangling-warn":
+            state.dangling_counts[imp_root] += 1
+            continue
+        key = (rel, imp_root)
+        if key in state.seen_fail:
+            continue  # dedup REMAINING errors to the first unexempt site
+        state.seen_fail.add(key)
+        if verdict == "table-drift":
+            state.fail_rows.append(
+                f"{rel}:{lineno}: third-party import `{imp_root}`: IMPORT_TO_DIST maps "
+                f"it to dist '{dist}', which is NOT in the uv.lock/pyproject.toml "
+                f"universe (table drift is loud — fix the IMPORT_TO_DIST entry or add "
+                f"the distribution to pyproject.toml + `uv lock`; #2253)."
+            )
+        else:
+            state.fail_rows.append(
+                f"{rel}:{lineno}: third-party import `{imp_root}` is not resolvable "
+                f"from uv.lock/pyproject.toml (#2253/#2223). Tried: "
+                f"pep503('{imp_root}')='{dist}' (not in the lockfile universe); no "
+                f"IMPORT_TO_DIST entry. Fix: add the distribution to pyproject.toml + "
+                f"`uv lock`; or add an IMPORT_TO_DIST entry if import-name != "
+                f"dist-name; or guard a deliberately-optional NON-load-bearing use "
+                f"with try/except ImportError (import in the try BODY); or waive with "
+                f"'# PROD_IMPORT_LINT_EXEMPT: <reason>' (>= 10 chars)."
+                f"{_venv_dist_hint(imp_root)}"
+            )
+
+
+def _scan_prod_import_roots(
+    scan_roots: tuple[Path, ...], repo_root: Path, state: _ProdImportScan
+) -> None:
+    """Walk every ``*.py`` under *scan_roots*, parse via the shared
+    :func:`_cached_parse` memo, and record each file's import-site evidence
+    into *state*. Unparseable files get one ``workflow_lint: note:`` stderr
+    line (the :func:`check_scripts_import_guard` idiom), never a crash."""
+    for scan_root in scan_roots:
+        if not scan_root.exists():
+            continue
+        for py in _files_scope_filter(sorted(scan_root.rglob("*.py"))):
+            if not py.is_file():
+                continue
+            try:
+                rel = py.resolve().relative_to(repo_root.resolve()).as_posix()
+            except ValueError:
+                rel = py.name
+            try:
+                text = py.read_text(encoding="utf-8")
+            except UnicodeDecodeError as exc:
+                sys.stderr.write(
+                    f"workflow_lint: note: --check-prod-import-lockfile skipped "
+                    f"unparseable {rel} ({type(exc).__name__})\n"
+                )
+                continue
+            tree = _cached_parse(py, text)
+            if tree is None:
+                sys.stderr.write(
+                    f"workflow_lint: note: --check-prod-import-lockfile skipped "
+                    f"unparseable {rel} (SyntaxError)\n"
+                )
+                continue
+            _record_import_sites(state, rel, text.splitlines(), _collect_import_sites(tree))
+
+
+def _emit_prod_import_warns(state: _ProdImportScan) -> None:
+    """Emit the two stderr WARN tiers — path-free, LEADING with the literal
+    ``WARN`` token (the ``inline_lint_gate.py`` ``NON_RED_PREFIXES``
+    startswith contract: a line must begin with WARN to read non-red; root
+    names + counts only, never file paths)."""
+    for imp_root in sorted(state.dangling_counts):
+        n = state.dangling_counts[imp_root]
+        sys.stderr.write(
+            f"WARN: check-prod-import-lockfile: dangling first-party import root "
+            f"'{imp_root}' ({n} site(s)) — module absent from main (unmerged branch "
+            f"or deleted); latent breakage, not a third-party verdict\n"
+        )
+    for imp_root in sorted(state.extras_counts):
+        n = state.extras_counts[imp_root]
+        dist = state.extras_dist[imp_root]
+        names = ", ".join(state.nondefault_declared.get(dist, []))
+        sys.stderr.write(
+            f"WARN: check-prod-import-lockfile: import root '{imp_root}' (dist "
+            f"'{dist}', {n} non-exempt site(s)) resolves only via non-default "
+            f"extra/group '{names}' — a bare 'uv sync --locked' (the pod bootstrap, "
+            f"bootstrap_pod.sh:425) does not install it\n"
+        )
+
+
+def check_prod_import_lockfile(
+    *,
+    scan_roots: tuple[Path, ...] | None = None,
+    lock_path: Path | None = None,
+    pyproject_path: Path | None = None,
+    repo_root: Path | None = None,
+) -> list[str]:
+    """AST-scan every ``*.py`` under ``scripts/`` and ``src/`` and FAIL any
+    third-party import whose root is not resolvable from ``uv.lock`` /
+    ``pyproject.toml`` (#2253; incidents #2223 — an import of a package
+    absent from the lockfile killed a pod run at launch — and #1336, the
+    module-local-helper import shape a smoke never executes).
+
+    Scope: BRANCH-AGNOSTIC over runtime-executable code — resolvability does
+    not depend on reachability, so smoke branches and ordinary conditionals
+    are scanned too. Exactly one carve-out narrows the walk: imports under
+    the BODY of a canonical ``if TYPE_CHECKING:`` / ``if
+    typing.TYPE_CHECKING:`` guard are excluded (``typing.TYPE_CHECKING`` is
+    False at runtime, so that code can never raise ModuleNotFoundError);
+    the guard's ``orelse`` IS scanned. Aliased TYPE_CHECKING forms are NOT
+    recognized (documented residue, zero tree instances).
+
+    Per-site exemptions (each applies to the individual AST import site):
+
+    * PROTECTED-TRY-BODY — an import in the ``body`` of an ``ast.Try``
+      whose handler names ``ImportError`` / ``ModuleNotFoundError``
+      (Name / Attribute / tuple forms), with no function boundary between
+      the Try and the import. This is the task-body-sanctioned
+      deliberately-optional degrade — the OPPOSITE polarity of
+      ``check_scripts_import_guard``, whose first-party scope correctly
+      treats try/except ImportError as NOT a guard (a missing first-party
+      module is always a bug; a missing OPTIONAL third-party dep can be a
+      documented degrade). ``handlers`` / ``orelse`` / ``finalbody``
+      positions and imports inside a ``def`` nested in the try body are
+      NOT exempt — an exception raised there is not caught by that try.
+    * WAIVER — ``# PROD_IMPORT_LINT_EXEMPT: <reason>`` (reason ≥
+      :data:`PROD_IMPORT_LINT_WAIVER_MIN_REASON_CHARS` chars) on the
+      import's first physical line or the immediately preceding non-blank
+      line, exempting THAT SITE ONLY (never the file or the
+      ``(file, root)`` pair).
+
+    Classification of each remaining site's root: stdlib
+    (``sys.stdlib_module_names`` | ``{"__future__"}``) and first-party
+    roots are skipped; a root whose PEP-503 form — or whose
+    :data:`IMPORT_TO_DIST`-mapped dist — is in the FAIL universe
+    (``uv.lock`` dists | ``project.dependencies`` | dependency groups |
+    optional-dependency extras) is resolved; a table entry whose dist is
+    absent from the universe FAILs (table drift is loud); an unresolved
+    ``issue*``-stem root (leading underscore tolerated —
+    ``_issue506_common``) WARNs as a dangling first-party module; every
+    other unresolved root FAILs, deduped to the first unexempt
+    ``(file, root)`` site.
+
+    **PASS ≠ installed-by-default; the FAIL boundary is DECLARED
+    resolvability** (the task body's oracle). A dist declared ONLY under a
+    non-default extra / dependency group resolves but draws a stderr WARN
+    naming the declaration — a bare ``uv sync --locked`` (the pod
+    bootstrap) does not install it. A dist present in ``uv.lock`` only (a
+    transitive dep) resolves silently.
+
+    Known false-negative directions (documented, accepted): an
+    unresolvable import wrapped body-position in try/except ImportError is
+    exempt even when the handler is load-bearing-in-practice (review + the
+    fail-fast rule police misuse); dynamic imports
+    (``importlib.import_module``, ``__import__``) are invisible to the AST
+    predicate, and configuration/environment-driven module names (the
+    ``scripts/issue2225_train.py:316`` shape — environment-selected
+    production loading) are OUTSIDE this check's guarantee; the
+    stem-shadowing residue is documented at
+    :func:`_first_party_import_roots`.
+
+    The kwargs are unit-test override hooks; production callers pass none
+    and the check reads ``<repo_root>/{uv.lock,pyproject.toml}`` and scans
+    ``scripts/`` + ``src/``. Bundled into the no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    lock_p = lock_path if lock_path is not None else root / "uv.lock"
+    pyproject_p = pyproject_path if pyproject_path is not None else root / "pyproject.toml"
+    lock_dists, default_declared, nondefault_declared, errors = _load_import_lockfile_universe(
+        lock_p, pyproject_p
+    )
+    if errors:
+        return errors
+    state = _ProdImportScan(
+        universe=lock_dists | default_declared | set(nondefault_declared),
+        default_declared=default_declared,
+        nondefault_declared=nondefault_declared,
+        first_party=_first_party_import_roots(root),
+        stdlib=frozenset(sys.stdlib_module_names) | {"__future__"},
+    )
+    roots_to_scan = scan_roots if scan_roots is not None else (root / "scripts", root / "src")
+    _scan_prod_import_roots(tuple(roots_to_scan), root, state)
+    _emit_prod_import_warns(state)
+    return state.fail_rows
 
 
 def _batch_judge_client_waiver_present(lines: list[str], call_lineno: int) -> bool:
@@ -16480,13 +17073,17 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # SKILL_DOC_EXEMPT_DIR_SEGMENTS — keeping them over the line keeps the
     # remaining trim visible). Measured 2026-08-17 at the re-split commit;
     # corridor-max ((measured+2_800)//100)*100 each; chronicle: git log.
-    # measured 110,622 B @ #2260 2026-08-21 (FAMILY_agents: comment block +
-    # 32 FAMILY_OF entries + 31 SPECS tokens + member-existence containment
-    # arm + boundary sentence, +6,871 B); corridor-max
-    # ((measured+2_800)//100)*100. Re-measure + re-set at Step 10d against
-    # the MERGED tree (concurrent sessions edit this file).
-    # Prior: 105_200 (#2422, 102,420 B) / 103_300 (#2201, 100,517 B).
-    "issue/steps/09-step-5.md": 113_400,
+    # measured 117,187 B @ #2241 Step 10d 2026-08-22 RE-MEASURED against the
+    # MERGED tree, per the #1727 landing-bytes rule; corridor-max
+    # ((measured+2_800)//100)*100. Both sides' pre-merge caps are BELOW the
+    # merged file — #2241 r4 set 113_100 (110,316 B) and #2260 set 113_400
+    # (110,622 B) — because each measured only its own side: this task's r4
+    # edits and #2260's FAMILY_agents block landed on the same file
+    # concurrently. Prior: 113_400 (#2260, 110,622 B) / 113_100 (#2241 r4,
+    # 110,316 B) / 111_900 (#2241 r3, 109,181 B) / 110_300 (#2241 r2,
+    # 107,590 B) / 109_600 (#2241 r1, 106,866 B) / 105_200 (#2422,
+    # 102,420 B) / 103_300 (#2201, 100,517 B) / 100_300 (#2158, 97,590 B).
+    "issue/steps/09-step-5.md": 119_900,
     # measured 142,643 B @ #2350 2026-08-17 (dispatch-preflight item (e),
     # per-leg out/scratch isolation, +1,211 B); corridor-max
     # ((measured+2_800)//100)*100. Prior: 144_200 (#2155 split, 141,432 B).
@@ -18613,6 +19210,7 @@ _FILES_MODE_RUNNERS: dict[str, Callable[[dict], list[str]]] = {
     "check_upload_file_in_loop": lambda wf: check_upload_file_in_loop(),
     "check_upload_return_discard": lambda wf: check_upload_return_discard(),
     "check_dotenv_before_hf_import": lambda wf: check_dotenv_before_hf_import(),
+    "check_prod_import_lockfile": lambda wf: check_prod_import_lockfile(),
     "check_batch_judge_client": lambda wf: check_batch_judge_client(),
     "check_hub_verify_retry": lambda wf: check_hub_verify_retry(),
     "check_no_workflow_improver_spawn": lambda wf: check_no_workflow_improver_spawn(),
@@ -18726,6 +19324,18 @@ CHECK_SCOPES: dict[str, CheckScope] = {
     "check_upload_file_in_loop": CheckScope("path-local", ("scripts/",)),
     "check_upload_return_discard": CheckScope("path-local", ("scripts/",)),
     "check_dotenv_before_hf_import": CheckScope("path-local", ("scripts/",)),
+    # #2253: findings on file F depend only on F's own content plus fixed
+    # small config surfaces (uv.lock / pyproject.toml — named EXPLICITLY per
+    # the config-READING instruction above; the check reads them
+    # unconditionally, never through _files_scope_filter). A config-only
+    # payload scope-filters the .py enumeration to zero files — a
+    # deliberately near-empty scoped run; the dep-REMOVAL direction (a
+    # lockfile edit stranding an importer elsewhere in the tree) is
+    # corpus-global and owned by the bare Step 9c no-flags run (the #2079
+    # allowlist-staleness division of labor).
+    "check_prod_import_lockfile": CheckScope(
+        "path-local", ("scripts/", "src/", "uv.lock", "pyproject.toml")
+    ),
     "check_batch_judge_client": CheckScope("path-local", ("scripts/", "src/")),
     "check_hub_verify_retry": CheckScope("path-local", ("scripts/",)),
     "check_judge_model_pins": CheckScope("path-local", ("scripts/", "src/", "tests/")),
@@ -19324,6 +19934,19 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "the HF Hub upload accelerators never get their setdefault and large "
         "uploads crawl. Waive a genuinely-correct bare-dotenv use with "
         "'# DOTENV_LINT_EXEMPT: <reason>'. Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
+        "--check-prod-import-lockfile",
+        action="store_true",
+        help="AST-scan scripts/**/*.py and src/**/*.py and FAIL any third-party "
+        "import root not resolvable from uv.lock/pyproject.toml (#2253; incident "
+        "#2223 — a lockfile-absent import killed a pod run at launch). "
+        "Branch-agnostic over runtime-executable code (TYPE_CHECKING guard "
+        "bodies excluded); an import in the BODY of a try whose handler names "
+        "ImportError/ModuleNotFoundError is exempt, as is a per-site "
+        "'# PROD_IMPORT_LINT_EXEMPT: <reason>' waiver. Dangling issue*-stem "
+        "first-party roots and extras-only dists WARN on stderr instead of "
+        "failing. Bundled into the no-flags default run.",
     )
     parser.add_argument(
         "--check-batch-judge-client",
@@ -20242,6 +20865,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_upload_file_in_loop
         or args.check_upload_return_discard
         or args.check_dotenv_before_hf_import
+        or args.check_prod_import_lockfile
         or args.check_batch_judge_client
         or args.check_hub_verify_retry
         or args.check_no_workflow_improver_spawn
@@ -20387,6 +21011,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_upload_return_discard())
     if args.check_dotenv_before_hf_import or no_flags:
         errors.extend(check_dotenv_before_hf_import())
+    if args.check_prod_import_lockfile or no_flags:
+        errors.extend(check_prod_import_lockfile())
     if args.check_batch_judge_client or no_flags:
         errors.extend(check_batch_judge_client())
     if args.check_hub_verify_retry or no_flags:

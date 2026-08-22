@@ -1171,12 +1171,15 @@ tests BEFORE anything lands:
     # surface (.claude/ CLAUDE.md scripts/ src/ tests/ docs/ — the #1154
     # marker-recipe pins read docs/); a false block naming a path OUTSIDE
     # this set means the linter grew a new scan root — extend the set here.
+    # check_prod_import_lockfile (#2253) reads uv.lock + pyproject.toml at
+    # the tree ROOT, so BOTH manifests ship in the archive (pinned by
+    # tests/test_issue_skill_gate_tree_pathspec.py).
     GT=/tmp/issue-<N>-lint-gate-tree
     GT_RC=0
     timeout --kill-after=30s 120s git -C "$WT" fetch origin main --quiet || true  # bounded: a hung fetch degrades to origin/main staleness, never a wedged gate
     { rm -rf "$GT" && mkdir -p "$GT"; } || GT_RC=1
     ( set -o pipefail; git -C "$WT" archive origin/main -- \
-        .claude CLAUDE.md scripts src tests docs pyproject.toml \
+        .claude CLAUDE.md scripts src tests docs pyproject.toml uv.lock \
       | tar -x -C "$GT" ) || GT_RC=1
     [ -f "$GT/scripts/workflow_lint.py" ] || GT_RC=1   # construction sanity
     # BASELINE legs (payload-free landing base — phase 1, BEFORE the
@@ -1192,15 +1195,19 @@ tests BEFORE anything lands:
     # bare last-failure-wins `|| VAR=$?` capture erases the crash and
     # defeats the crash arm below. rc=0/0 stays 0; a lone rc=1-with-lines
     # stays 1 (attribution logic); any leg >1 reaches the crash arm.
-    # 900s wedge bound per lint leg ≈ 2.5× the measured 360s upper wall
-    # (bullet above; #1129 generous-ceiling sizing style) — fires only on a
-    # genuine wedge; a bound kill (rc 124) flows through the NO-DOWNGRADE
-    # fold into the crash arm below — fail CLOSED.
+    # 1800s wedge bound per lint leg (raised from 900s, #2253 r5): no-flags
+    # wall MEASURED 747s on the branch tree 2026-08-21 under fleet load
+    # (load avg 13.44/32 cores, 9 concurrent lint runs; ~663s without the
+    # #2253 check) — bound sized >=2x the measured wall per the CLAUDE.md
+    # x2 dispersion default (900s was 1.2x and killed BOTH sides). Fires
+    # only on a genuine wedge; a bound kill (rc 124) flows through the
+    # NO-DOWNGRADE fold into the crash arm below — fail CLOSED, so an
+    # under-sized bound silently blocks every branch's merge.
     BASE_RC=0
-    timeout --kill-after=60s 900s uv run python "$GT/scripts/workflow_lint.py" \
+    timeout --kill-after=60s 1800s uv run python "$GT/scripts/workflow_lint.py" \
       > /tmp/issue-<N>-lint-baseline.txt 2>&1 \
       || { rc=$?; if [ "$rc" -gt "$BASE_RC" ]; then BASE_RC=$rc; fi; }
-    timeout --kill-after=60s 900s uv run python "$GT/scripts/workflow_lint.py" \
+    timeout --kill-after=60s 1800s uv run python "$GT/scripts/workflow_lint.py" \
       --check-references --check-tables --check-asks --check-autonomous-asks \
       >> /tmp/issue-<N>-lint-baseline.txt 2>&1 \
       || { rc=$?; if [ "$rc" -gt "$BASE_RC" ]; then BASE_RC=$rc; fi; }
@@ -1338,10 +1345,10 @@ tests BEFORE anything lands:
     # GATED legs (payload-bearing landing tree — phase 3; parity leg covers
     # the checks the no-flags bundle omits — see the bullet above):
     GATED_RC=0
-    timeout --kill-after=60s 900s uv run python "$GT/scripts/workflow_lint.py" \
+    timeout --kill-after=60s 1800s uv run python "$GT/scripts/workflow_lint.py" \
       > /tmp/issue-<N>-lint-gated.txt 2>&1 \
       || { rc=$?; if [ "$rc" -gt "$GATED_RC" ]; then GATED_RC=$rc; fi; }
-    timeout --kill-after=60s 900s uv run python "$GT/scripts/workflow_lint.py" \
+    timeout --kill-after=60s 1800s uv run python "$GT/scripts/workflow_lint.py" \
       --check-references --check-tables --check-asks --check-autonomous-asks \
       >> /tmp/issue-<N>-lint-gated.txt 2>&1 \
       || { rc=$?; if [ "$rc" -gt "$GATED_RC" ]; then GATED_RC=$rc; fi; }
@@ -3804,10 +3811,10 @@ Decision tree:
     # rationale as the gate's executable block — a leg-1 crash must not be
     # erased by a leg-2 rc=1):
     BASE_RC=0
-    timeout --kill-after=60s 900s uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
+    timeout --kill-after=60s 1800s uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
       > /tmp/issue-<N>-lint-baseline.txt 2>&1 \
       || { rc=$?; if [ "$rc" -gt "$BASE_RC" ]; then BASE_RC=$rc; fi; }
-    timeout --kill-after=60s 900s uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
+    timeout --kill-after=60s 1800s uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
       --check-references --check-tables --check-asks --check-autonomous-asks \
       >> /tmp/issue-<N>-lint-baseline.txt 2>&1 \
       || { rc=$?; if [ "$rc" -gt "$BASE_RC" ]; then BASE_RC=$rc; fi; }
@@ -3910,10 +3917,10 @@ Decision tree:
   GATE_VERDICT=pass
   if [ "$GATE_ARMED" = "yes" ]; then
     GATED_RC=0
-    timeout --kill-after=60s 900s uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
+    timeout --kill-after=60s 1800s uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
       > /tmp/issue-<N>-lint-gated.txt 2>&1 \
       || { rc=$?; if [ "$rc" -gt "$GATED_RC" ]; then GATED_RC=$rc; fi; }
-    timeout --kill-after=60s 900s uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
+    timeout --kill-after=60s 1800s uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
       --check-references --check-tables --check-asks --check-autonomous-asks \
       >> /tmp/issue-<N>-lint-gated.txt 2>&1 \
       || { rc=$?; if [ "$rc" -gt "$GATED_RC" ]; then GATED_RC=$rc; fi; }

@@ -28,6 +28,11 @@
 
 ## Claude code-review misses (FAIL-leaning calibration)
 
+- [Security sweep misses data-into-shell splices in prose templates](feedback_claude_security_sweep_misses_data_into_shell_splice.md) — "CLEAN" covers secrets/shell=True/pipes, NOT placeholders spliced into quoted shell source; re-scan added fenced Bash yourself (#2241 r1)
+- [Masked-rc fallback vs downstream fail-loud consumer](feedback_masked_rc_fallback_vs_downstream_fail_loud_consumer.md) — trace the fallback's FIRST consumer's failure semantics; silent chain needs a transient flap; house-idiom residual → sweep, not bounce (#2241 r4)
+- [Convention defense unverified: $VAR in separate-shell fences](feedback_claude_convention_defense_unverified_env_var_fence.md) — verify the convention's INITIALIZING sites (in-fence `VAR=` / resolve-once prose in the SAME step file), not use sites; argv-blind stubs mask path defects; fail-open-every-entry = the bug under repair (#2241 r3)
+- [Round-added commands unchecked vs the block's own fence/fail-open contract](feedback_claude_misses_block_contract_conformance_of_round_added_commands.md) — happy-path-only read of a new `task.py|jq` resolver; trace its failure exit into the registered arms + diff the invariant prose; always-succeed stubs pin nothing (#2241 r2)
+
 - [Duck-type discriminator probe scope](feedback_claude_duck_type_discriminator_probe_scope.md) — probe hand-CONSTRUCTIBLE satisfiers in the kill criterion's named direction, not only standard-producer artifacts; getattr resolution can raise; firing criterion + pre-scoped fallback = bounded revision, not full re-plan (#2262 r1)
 - [Plan-literal match ≠ fs-primitive semantics](feedback_claude_credits_plan_literal_misses_fs_primitive_semantics.md) — "mkdir 0700 ✓" missed exist_ok symlink-accept + rename overwrite on predictable /tmp; live-probe the adversarial shape; call-site "unconditional" ≠ callee effect (#2377 r1)
 - [Tracked-artifact lifecycle across phases](feedback_claude_misses_tracked_artifact_lifecycle_across_phases.md) — producing-phase harvest ≠ safe: later ensures rewrite it, scoped harvest omits it, pod rebase (no autostash) refuses in ALL states; scratch-repo probe (#2378 r5)

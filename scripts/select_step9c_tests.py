@@ -375,6 +375,11 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # workflow_lint --check-pre-split-review-guard (seven surfaces / eight
     # files) + no-flags bundling.
     "tests/test_workflow_lint_pre_split_guard.py",
+    # NEW (#2253) — workflow_lint --check-prod-import-lockfile: scripts//src/
+    # third-party import roots must resolve from uv.lock/pyproject.toml
+    # (branch-agnostic; try/except-ImportError body + per-site waiver
+    # exemptions; two WARN tiers) + no-flags bundling + live-tree pins.
+    "tests/test_workflow_lint_prod_import_lockfile.py",
     # NEW (#2165) — workflow_lint --check-smoke-blind-spot-review-lens +
     # --check-smoke-blind-spots (fixtures reproduce both #1336 shapes).
     "tests/test_workflow_lint_smoke_blind_spots.py",

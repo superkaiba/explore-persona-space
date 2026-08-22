@@ -42,6 +42,110 @@ push/merge through `tail`/`grep`/`head` (the `guard_piped_git_push.sh`
 PreToolUse hook blocks the piped shape; a pipe masks a rejected push).
 Copy the verbatim forms from Step 10d § "Bare push / merge snippets".
 
+**Draft-PR ensure (#2241; once per branch, memoized).** Step 4a's
+draft-PR create is gated on commits-ahead > 0 but runs BEFORE the
+implementer's first commit, so its else arm fires by construction —
+THIS block is the site that actually opens the draft PR on the normal
+path; Step 10d's payload-aware arm (#2240) stays the merge-time
+backstop. At each round entry that proceeds past the pre-split guard:
+IF an open PR for issue-<N> has already been confirmed this session,
+SKIP (zero cost — the common case after round 1); otherwise run the
+probe+create below and remember a confirmed outcome. All three
+commands — existence probe, title resolver, create — are
+timeout-bounded and the whole block is FAIL-OPEN: no probe, resolver,
+or create failure may block, delay, or fail the round beyond the
+bounded timeout fences (probe <= 75 s; resolver <= 180 s, sized over
+task.py's ~120 s bounded branch-guard rebase wait,
+EPM_TASKPY_REBASE_WAIT_SECONDS; create <= 150 s; worst case <= 405 s
+at one round entry) — log the one line, proceed to 5a, retry at the
+next round entry. The fence resolves `$REPO_ROOT` in-fence (#2241 r4,
+concern step5-repo-root-uninitialized): fenced blocks run in separate
+shells and the orchestrator's Bash cwd resets, so the file-wide idiom's
+value is never inherited here; the resolve is local git and needs no
+fence of its own — a failed resolve makes the task.py call exit
+non-zero into the existing TITLE_RC gate. A resolver failure, jq
+failure, or empty / whitespace-only title SKIPS creation (#2241 r3+r4,
+concerns title-resolution-failure-masking + whitespace-only-pr-title —
+set-title stores input unstripped, so a blank stored title would
+compose a degraded PR): a degraded `issue-<N>: ` prefix-only title
+must never be created and memoized. NEVER pipe the create
+(guard_piped_git_push.sh blocks the piped shape; a pipe masks the
+exit code).
+
+```bash
+# Any-state existence probe (deterministic tri-state; measured ~0.4 s):
+# rc!=0             -> probe failed (network/auth): skip, retry next round
+# "0"               -> no PR object at all = the #2241 zero-PR class: create
+# ">=1" (any state) -> a PR object exists: OPEN -> done; MERGED/CLOSED is
+#                      the #1897 follow-up class, owned by Step 10d's
+#                      payload-aware arm at merge time — do NOT create here.
+# The two trailing arms are TELEMETRY ONLY (#2241 r2): both fall through
+# to 5a exactly as before — routing (probe-failed / zero / else) unchanged.
+N_PR=$(timeout --kill-after=15s 60s gh pr list --head issue-<N> --state all --json number --jq length) || N_PR=probe-failed
+if [ "$N_PR" = "0" ]; then
+  # Title transport (#2241 r2): the title is resolved AS DATA — command
+  # output is never shell-parsed — so a hostile title cannot inject.
+  # Resolver fence (#2241 r3, concern title-resolution-failure-masking):
+  # the resolver is its own rc-gated, timeout-fenced step. Every task.py
+  # invocation — reads included — pays the branch-guard resolution, whose
+  # #996 bounded rebase wait (EPM_TASKPY_REBASE_WAIT_SECONDS, default
+  # 120 s) can precede a RuntimeError (detached HEAD / husk timeout);
+  # unfenced+unchecked, that failure was masked by jq exiting 0 on empty
+  # input and a real draft PR titled "issue-<N>: " was created and
+  # memoized to merge. On resolver failure, jq failure, or an empty /
+  # whitespace-only title (r4, concern whitespace-only-pr-title —
+  # set-title stores input unstripped, so a bare -z passed "   "): log,
+  # SKIP creation, fall through — the next round entry retries (the
+  # >=1 probe memoizes only a REAL PR, never a skipped create).
+  # In-fence root resolve (#2241 r4, concern
+  # step5-repo-root-uninitialized): $REPO_ROOT is NOT inherited across
+  # fences/Bash calls — uninitialized it expanded empty, ran
+  # /scripts/task.py, and the skip arm fired at EVERY round entry (the
+  # zero-PR class this block exists to eliminate). #506-safe form; a
+  # failed resolve routes through the TITLE_RC gate (no new failure arm).
+  REPO_ROOT=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
+  TITLE_RC=0
+  TASK_JSON=$(timeout --kill-after=30s 150s uv run python "$REPO_ROOT"/scripts/task.py view <N> --json) || TITLE_RC=$?
+  RAW_TITLE=""
+  if [ "$TITLE_RC" -eq 0 ]; then
+    RAW_TITLE=$(printf '%s' "$TASK_JSON" | jq -r '.frontmatter.title // empty') || TITLE_RC=$?
+  fi
+  if [ "$TITLE_RC" -ne 0 ] || [ -z "${RAW_TITLE//[[:space:]]/}" ]; then
+    echo "[step5-pr-ensure] title resolution failed or empty (rc=$TITLE_RC) — inconclusive; skip create; round proceeds; retry at next round entry (never a degraded-title PR)"
+  else
+    PR_TITLE="issue-<N>: $RAW_TITLE"
+    if timeout --kill-after=30s 120s gh pr create --draft --head issue-<N> \
+         --title "$PR_TITLE" --body "Closes task #<N>."; then
+      echo "[step5-pr-ensure] opened draft PR for issue-<N> (#2241)"
+    else
+      echo "[step5-pr-ensure] gh pr create failed (rc!=0) — round proceeds; retry at next round entry; Step 10d's payload-aware arm (#2240) is the backstop"
+    fi
+  fi
+elif [ "$N_PR" = "probe-failed" ]; then
+  echo "[step5-pr-ensure] PR-existence probe failed — round proceeds; retry at next round entry"
+elif [ "$N_PR" -ge 1 ] 2>/dev/null; then
+  echo "[step5-pr-ensure] PR already exists for issue-<N> (probe count $N_PR) — confirmed for this session; skip probe+create at later round entries"
+else
+  echo "[step5-pr-ensure] unexpected probe output ($N_PR) — inconclusive, not memoized; round proceeds; retry at next round entry"
+fi
+```
+
+The ensure deliberately carries NO push and NO ancestry guard. The
+branch is normally on origin by Step 5 entry on EVERY work-producing
+path: the implementer brief's #2041 fan-out completion contract
+restatement mandates commit+push by explicit path IN the producing
+turn (Step 4b § Fan-out completion contract), and the experiment
+implementer's spec additionally pins the pre-marker push. The PR is
+opened DRAFT-only; every merge-time guard (#2312 stale-ref, #2296
+parity) still runs at Step 10d before any merge. If the branch is NOT
+on origin (a non-compliant brief or implementer), the create fails
+rc!=0 and the fail-open arm retries at the next round entry — and when
+no later round occurs (a single-round PASS), the run ends with no PR
+and Step 10d's payload-aware arm (#2240) opens it at merge time:
+exactly the backstop's job. NEVER push from this block: a new push
+site would owe the #2312 stale-ref guard pair (see
+tests/test_issue_skill_step10d_rewritten_branch.py::test_all_copy_sites_guarded).
+
 **Per-commit split-review dispatch (large rounds; #2074).** Evaluate BEFORE
 the 5a fan-out, and RE-EVALUATE per round from that round's own commit set +
 diff bytes (typical revision rounds are small → no split). Resolve
