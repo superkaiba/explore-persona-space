@@ -1,0 +1,1 @@
+{"ts": "2026-08-22T07:58:14Z", "event": "raised", "concern_id": "raw-completions-symlink-escape", "severity": "BLOCKER", "summary": "Widened raw_completions/** selection follows file symlinks and can upload target bytes from outside the intended root.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
