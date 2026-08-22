@@ -50,3 +50,22 @@ death); without 2 a best-effort convenience check escalates into a false
 **How to apply:** any brief whose diff-size guidance says committed data
 dominates the round, or whose review focus names a verify/audit script over
 committed artifacts.
+
+**r2 delta (#2480 r2, 2026-08-22) — brief-sanctioned verifier runs override
+the blanket never-execute:** when the fix-round brief ORDERS "run the
+verifier end-to-end + --self-test", compose a scoped sanctioned-runs
+carve-out instead of the r1 never-execute block: (a) enumerate the exact
+commands (production entrypoint + --self-test only, from worktree root),
+with the expected exit codes + the recorded AGGREGATE/PASS lines as the
+success oracle; (b) postcondition: `git status --porcelain` over
+eval_results/scripts/docs MUST be clean after any run (a dirty tree from a
+"stdout-only" verifier = Critical substantive); (c) the never-fabricate
+STATIC fallback labeled `STATIC (env unavailable)`, with an explicit
+"unrunnable exec env is NOT `data-access-blocked`" line (the code/data
+reads still work); (d) offer `python3` as the `uv`-unavailable substitute
+only when the script is verified stdlib-only. Also: a brief's "(no
+implementer reasoning)" is honored by INLINING the impl marker (spec-
+mandatory; Step 0.5 subject + smoke proof) but downgrading it to
+claims-not-evidence — three sanctioned uses (shape gate, recorded-run
+proof, fix-site index), every closure verdict derived from diff + own
+checks. Flag both interpretive calls in the return.
