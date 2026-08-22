@@ -711,6 +711,31 @@ standard 3-lens enum gate does not apply: the brief's verbatim lens list IS
   Numcheck PASS first try at ~66 KB, fully digit-free scaffold (spans =
   questions + plan + body + factcheck + lensitems + empty prior).
 
+- **Git-ref-resolver gate plan, standard methodology lens + brief five-question
+  translation (#2263 round one, verify_carryover_inputs check-ref ladder): when
+  the brief hands a fact-check REPORT PATH, inline the WHOLE report verbatim as
+  its own span** (it carries all its digits; balances by construction) framed
+  two-sided in a digit-free FACT-CHECK STATUS header block: CONFIRMED verdicts
+  = settled inputs (re-filing is a regression), while the report's CORRECTIONS
+  + retired risk rows are handed to the twin as disposition judgments
+  ("plan-revision Must-Fix vs implementer-level") — the corrections ride
+  verbatim inside the relevant questions-span items, not as pre-judged
+  findings. Snapshot-note extension for ref-population plans: live git-ref
+  probes drift, so "a ref-population delta between plan claims and your probe
+  is expected drift, not a finding; a DESIGN rule that mishandles a probed-real
+  state IS one". Read discipline: ban `git fetch` BY NAME with the
+  population-under-review reason (#2246's move, sharper here — the plan's
+  subject IS the remote-tracking ref population), ban pytest (planned tests
+  don't exist yet), but PERMIT running the current gate script in its no-fetch
+  mode (fully read-only) and a for-each-ref enumeration as the empirical
+  blast-radius probe for the refusal-storm question. Brief-ordered side-effect
+  question (fence-language bash→text at the call site) gets its own numbered
+  question with named consumers to check (composed-skill pin tests, lint,
+  copy-paste ergonomics). Numcheck PASS first try at ~140 KB (spans = inputs +
+  factcheck + questions + lensitems + plan + body + empty prior; scaffold
+  digit-free — "Step 6a.5"/"v1"/"2.34.1" produce no atoms under both-sides
+  guards but stayed span-side anyway).
+
 **Why:** first custom-lens infra compose (#2324) — these choices made the
 numeric gate pass first try on a 68 KB prompt; round 2 (REVISE-round
 re-review) passed on the second numcheck run, the only failures being the
