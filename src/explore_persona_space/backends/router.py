@@ -17,9 +17,12 @@ through to the re-drivable ``no_compute_available`` terminal). Paths that
 only ACT ON existing GCP handles — poll, teardown, crash persist, the
 GCP→RunPod failovers of an in-flight handle, the ``gcp_audit.py`` janitor —
 are deliberately UNGATED (in-flight cleanup + rollback support). CPU intents
-route RunPod-only (``cpu-bigmem`` gained the ``cpu5m-16-128`` RunPod row,
-superseding the #677 no-RunPod-lane terminal for it; the typed terminal
-stays as the fail-loud floor for a future unmapped CPU intent). The GCP
+walk ``runpod → fellows`` (#2059: fellows declares ``supports_cpu_jobs`` and
+renders a 0-GPU sbatch; nibi/mila stay excluded — no ``/workspace``, #608),
+then the end-of-chain RunPod terminal retry (``cpu-bigmem`` gained the
+``cpu5m-16-128`` RunPod row, superseding the #677 no-RunPod-lane terminal
+for it; the typed terminal stays as the fail-loud floor for a future
+unmapped CPU intent). The GCP
 ladder / failover prose below is therefore scoped to IN-FLIGHT handles plus
 the single-constant rollback (flip the constant to ``False``); it is not
 reachable for fresh dispatches while the flag is on.
@@ -212,9 +215,14 @@ reachable for fresh dispatches while the flag is on.
    call when the mapped instance cannot hold it, and
    ``RunPodBackend.launch`` threads the disk requirement into the provision
    argv (``--container-disk-gb max(50, boot_disk_gb)``) for mapped CPU
-   intents. Free SLURM lanes are excluded from the auto chain for CPU-only
-   intents (:func:`_is_cpu_only_intent` at ``_auto_route`` candidate
-   assembly) — the lane has no 0-GPU sbatch render (#1464).
+   intents. SLURM lanes participate in the CPU auto chain ONLY when their
+   :class:`~explore_persona_space.backends.slurm.ClusterConfig` declares
+   ``supports_cpu_jobs`` (#2059: fellows — a 0-GPU sbatch render exists
+   there); lanes without it (nibi/mila — no ``/workspace``, #608) are
+   filtered at ``_auto_route`` candidate assembly
+   (:func:`_is_cpu_only_intent` + :func:`_slurm_lane_supports_cpu`), so a
+   CPU auto route walks ``runpod → fellows`` then the end-of-chain RunPod
+   terminal retry (the #1464 blanket exclusion, narrowed).
 8b. **GCP-only GPU intent translation (#940).** The RunPod launch paths
    (terminal rung + explicit override) translate a GCP-only GPU intent to
    its nearest same-or-narrower RunPod intent via
@@ -403,7 +411,12 @@ ROUTE_REASON_RUNPOD_FIRST: str = "auto_runpod_first"
 #: mapped (cpu-small / cpu-mid #747; cpu-bigmem #2028), so this terminal is a
 #: fail-loud FLOOR for a future unmapped CPU intent rather than a live path —
 #: it surfaces a typed terminal instead of attempting an unservable RunPod
-#: launch. DISTINCT from :data:`ROUTE_REASON_RUNPOD_FALLBACK` /
+#: launch. Ordering note (#2059): on the auto chain the runpod lane runs
+#: FIRST, so an unmapped CPU intent's typed terminal fires at lane 1 —
+#: BEFORE the fellows 0-GPU rung is ever probed (pinned by
+#: tests/test_router.py::
+#: test_auto_route_cpu_unmapped_intent_typed_terminal_fires_before_fellows).
+#: DISTINCT from :data:`ROUTE_REASON_RUNPOD_FALLBACK` /
 #: :data:`ROUTE_REASON_NO_COMPUTE` so the marker trail shows the
 #: CPU-unservable cause, and DISTINCT from ``no_compute_available`` so the
 #: watcher's capacity-retry pass (which keys on ``no_compute_available``) does
@@ -437,7 +450,11 @@ ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD: str = "cpu_exhausted_no_runpod_lane"
 #: :data:`RUNPOD_CPU_INSTANCE_CAPS` by the feasibility gate in
 #: :func:`_runpod_terminal_rung` — an unsatisfiable footprint refuses the
 #: fallback typed (:class:`CpuFallbackInfeasibleError`) instead of
-#: provisioning an undersized pod (incident #958).
+#: provisioning an undersized pod (incident #958). Lane note (#2059): on
+#: the auto chain a mapped CPU intent now walks ``runpod → fellows`` (the
+#: fellows ClusterConfig declares ``supports_cpu_jobs`` and renders a 0-GPU
+#: sbatch; ``slurm._CPU_SBATCH_RESOURCES`` mirrors these instance shapes)
+#: before the end-of-chain RunPod terminal retry.
 RUNPOD_CPU_INSTANCE_FOR_INTENT: dict[str, str] = {
     "cpu-small": "cpu3g-2-8",  # 2 vCPU / 8 GB, gen-3 general purpose
     "cpu-mid": "cpu3c-8-16",  # 8 vCPU / 16 GB, gen-3 compute-optimized
@@ -589,6 +606,16 @@ def _is_cpu_only_intent(intent: str) -> bool:
     """
     machine = INTENT_TO_MACHINE.get(intent)
     return machine is not None and machine.gpu_count == 0
+
+
+def _slurm_lane_supports_cpu(kind: str) -> bool:
+    """True iff SLURM lane ``kind``'s ClusterConfig declares supports_cpu_jobs
+    (#2059). Lazy import (the #1899 get_cluster_config pattern); unknown kinds
+    read False (fail-closed)."""
+    from explore_persona_space.backends.slurm import CLUSTER_CONFIGS
+
+    cfg = CLUSTER_CONFIGS.get(kind)
+    return cfg is not None and cfg.supports_cpu_jobs
 
 
 #: The router fell back to RunPod because a GCP attempt FAILED THE WORKLOAD
@@ -1696,7 +1723,7 @@ class LeaseStore:
             return None
         try:
             payload = json.loads(path.read_text())
-        except (json.JSONDecodeError, OSError) as exc:
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError) as exc:
             logger.warning("LeaseStore: could not read %s: %s; treating as absent.", path, exc)
             return None
         try:
@@ -3052,9 +3079,14 @@ def _override_runpod(
         cluster=None,
         attempts=attempts,
         elapsed_seconds=now_fn() - started_at,
-        # #940: the GCP-only -> RunPod intent translation record, when one
-        # applied, so the override marker records the intent swap too.
-        extra=({"runpod_intent_translation": intent_translation} if intent_translation else {}),
+        extra={
+            # #940: the GCP-only -> RunPod intent translation record, when one
+            # applied, so the override marker records the intent swap too.
+            **({"runpod_intent_translation": intent_translation} if intent_translation else {}),
+            # #2145: realized pod identity + omit-when-absent suffix/GPU-type
+            # override records (see _runpod_marker_extras).
+            **_runpod_marker_extras(spec, handle),
+        },
     )
     _post_backend_selected(result, spec=spec, marker_poster=marker_poster)
     return result
@@ -3463,7 +3495,7 @@ def _gcp_ladder_specs(spec: RunSpec) -> list[tuple[RunSpec, str]]:
       — the CPU analogue of the GPU length-aware axis; still NO flex /
       A100-40 rung. (While :data:`GCP_PROVISIONING_DISABLED` is on this
       ladder is reachable only via the rollback flip — fresh CPU dispatches
-      land straight on the RunPod terminal rung.)
+      walk ``runpod → fellows`` (#2059) then the RunPod terminal retry.)
 
     The short-circuit is load-bearing because :func:`_is_short_job` floors
     ``gpu_count`` to 1, so without it the GPU ladder would (mis)classify a CPU
@@ -4383,6 +4415,9 @@ def _runpod_terminal_rung(
             # The GcpWorkloadError evidence (task #658) so the failover
             # marker carries the original crash signal for diagnosis.
             **({"gcp_workload_evidence": failover_evidence} if failover_evidence else {}),
+            # #2145: realized pod identity + omit-when-absent suffix/GPU-type
+            # override records (see _runpod_marker_extras).
+            **_runpod_marker_extras(spec, handle),
         },
     )
     _post_backend_selected(result, spec=spec, marker_poster=marker_poster)
@@ -5429,12 +5464,15 @@ def _auto_candidates(
     """Build the auto chain's candidate list in lane order.
 
     Skips unwired lanes, Mila-when-down, and (for CPU-only intents) the
-    free SLURM lanes. ``runpod`` (#2054) is a first-class auto lane and is
-    always wired — the ``route()`` signature requires ``runpod_backend`` —
-    and CPU-only intents keep it: RunPod CPU (deployCpuPod) IS the
-    documented CPU chain (#747/#2028). The stage-1 reconnect scan is a
-    no-op for runpod (the production ``reconnect_fn`` returns ``None`` for
-    it — pod_lifecycle's own flow is idempotent).
+    free SLURM lanes whose ClusterConfig does NOT declare
+    ``supports_cpu_jobs`` (#2059 narrowing of the #1464 blanket exclusion).
+    ``runpod`` (#2054) is a first-class auto lane and is always wired — the
+    ``route()`` signature requires ``runpod_backend`` — and CPU-only
+    intents keep it: RunPod CPU (deployCpuPod) leads the documented CPU
+    chain (#747/#2028), with the fellows 0-GPU rung behind it (#2059). The
+    stage-1 reconnect scan is a no-op for runpod (the production
+    ``reconnect_fn`` returns ``None`` for it — pod_lifecycle's own flow is
+    idempotent).
     """
     candidates: list[tuple[ComputeBackend, BackendKind]] = []
     for kind in lane_order:
@@ -5445,12 +5483,14 @@ def _auto_candidates(
             if gcp_backend is not None:
                 candidates.append((gcp_backend, "gcp"))
             continue
-        if cpu_only:
-            # Excluding the free lanes from ``candidates`` also removes them
-            # from the stage-1 reconnect scan — deliberately: a CPU-only
-            # intent can never have a live SLURM job to reconnect to (the lane
-            # has no 0-GPU sbatch render, so no prior route() could have
-            # submitted one there). Nothing is lost by not scanning (#1464).
+        if cpu_only and not _slurm_lane_supports_cpu(kind):
+            # #1464 exclusion, narrowed by #2059: only lanes whose
+            # ClusterConfig declares supports_cpu_jobs (fellows) render
+            # 0-GPU sbatch; nibi/mila stay excluded (no /workspace, #608).
+            # Excluded lanes also stay out of the stage-1 reconnect scan —
+            # deliberately: a CPU-only intent can never have a live SLURM
+            # job to reconnect to on a lane with no 0-GPU render, so no
+            # prior route() could have submitted one there.
             continue
         backend = free_backends.get(kind)
         if backend is None:
@@ -5620,14 +5660,19 @@ def _auto_route(
     # intents, #1464).
     cpu_only = _is_cpu_only_intent(spec.intent)
     if cpu_only and free_backends:
+        excluded = sorted(k for k in free_backends if not _slurm_lane_supports_cpu(k))
+        kept = sorted(k for k in free_backends if _slurm_lane_supports_cpu(k))
         logger.info(
-            "route: CPU-only intent %r — free SLURM lanes (%s) excluded from "
-            "the auto chain. The documented CPU chain is RunPod CPU for mapped "
-            "intents (#747/#2028; GCP provisioning disabled — the E2 rung is "
-            "rollback-only); the SLURM lane has no 0-GPU sbatch render (#1464, "
-            "incident #1336).",
+            "route: CPU-only intent %r — free SLURM lanes without a 0-GPU "
+            "sbatch render (%s) excluded from the auto chain; supports_cpu_jobs "
+            "lanes (%s) kept (#2059 — fellows renders 0-GPU sbatch; nibi/mila "
+            "have no /workspace, #608). The documented CPU chain walks RunPod "
+            "CPU for mapped intents (#747/#2028; GCP provisioning disabled — "
+            "the E2 rung is rollback-only), then the kept lanes, then the "
+            "RunPod terminal retry.",
             spec.intent,
-            ", ".join(sorted(free_backends)),
+            ", ".join(excluded) or "none",
+            ", ".join(kept) or "none",
         )
     candidates = _auto_candidates(
         lane_order=lane_order,
@@ -7741,6 +7786,30 @@ def _gcp_marker_extras(spec: RunSpec) -> dict[str, Any]:
             else:
                 extras["requested_ram_gb"] = int(min_ram_gb)
                 extras["resolved_machine_ram_gb"] = int(resolved_ram_gib)
+    return extras
+
+
+def _runpod_marker_extras(spec: RunSpec, handle: RunHandle) -> dict[str, Any]:
+    """Build the RunPod launched-result marker ``extra`` keys (#2145).
+
+    Merged into every LAUNCHED runpod ``RouteResult``'s ``extra`` — the
+    explicit-override path (:func:`_override_runpod`) AND the terminal
+    rung — so the ``epm:backend-selected`` marker records the pod identity
+    the launch actually minted (the ``_gcp_marker_extras`` precedent; pure
+    function, no IO):
+
+    * ``pod_name`` — always: the REALIZED name (``pod-<N>`` or the
+      suffixed ``pod-<N>-<slug>``), read off the handle, never recomposed;
+    * ``lane_suffix`` / ``gpu_type_override`` — omit-when-absent (the #934
+      discipline), so flag-less launches add no override keys.
+    """
+    extras: dict[str, Any] = {"pod_name": handle.pod_name}
+    suffix = (spec.extra or {}).get("lane_suffix")
+    if suffix:
+        extras["lane_suffix"] = str(suffix)
+    gpu_type = (spec.extra or {}).get("gpu_type")
+    if gpu_type:
+        extras["gpu_type_override"] = str(gpu_type)
     return extras
 
 

@@ -222,7 +222,7 @@
       "degenerate": true
     },
     {
-      "step": "DPO\u2192RLVR",
+      "step": "DPO\u2192RLVR- PPO",
       "pair": "dpo__rlvr",
       "format": "chat",
       "corpus": "lmsys23k",
@@ -233,7 +233,7 @@
       "degenerate": false
     },
     {
-      "step": "DPO\u2192RLVR",
+      "step": "DPO\u2192RLVR- PPO",
       "pair": "dpo__rlvr",
       "format": "chat",
       "corpus": "uf11k",
@@ -244,7 +244,7 @@
       "degenerate": false
     },
     {
-      "step": "DPO\u2192RLVR",
+      "step": "DPO\u2192RLVR- PPO",
       "pair": "dpo__rlvr",
       "format": "chat",
       "corpus": "if11k",
@@ -255,7 +255,7 @@
       "degenerate": false
     },
     {
-      "step": "DPO\u2192RLVR",
+      "step": "DPO\u2192RLVR- PPO",
       "pair": "dpo__rlvr",
       "format": "chat",
       "corpus": "sft11k",
@@ -266,7 +266,7 @@
       "degenerate": false
     },
     {
-      "step": "DPO\u2192RLVR",
+      "step": "DPO\u2192RLVR- PPO",
       "pair": "dpo__rlvr",
       "format": "naturalistic",
       "corpus": "lmsys23k",
@@ -277,7 +277,7 @@
       "degenerate": false
     },
     {
-      "step": "DPO\u2192RLVR",
+      "step": "DPO\u2192RLVR- PPO",
       "pair": "dpo__rlvr",
       "format": "chat",
       "corpus": "gsm8k_train_full",
@@ -288,7 +288,7 @@
       "degenerate": false
     },
     {
-      "step": "DPO\u2192RLVR",
+      "step": "DPO\u2192RLVR- PPO",
       "pair": "dpo__rlvr",
       "format": "chat",
       "corpus": "math7500",
@@ -299,7 +299,7 @@
       "degenerate": false
     },
     {
-      "step": "DPO\u2192RLVR",
+      "step": "DPO\u2192RLVR- PPO",
       "pair": "dpo__rlvr",
       "format": "chat",
       "corpus": "gsm8k_test1319",
@@ -310,7 +310,7 @@
       "degenerate": true
     },
     {
-      "step": "RLVR\u2192longer RLVR",
+      "step": "RLVR- PPO\u2192RLVR- GRPO",
       "pair": "rlvr__rlvr_long",
       "format": "chat",
       "corpus": "lmsys23k",
@@ -321,7 +321,7 @@
       "degenerate": false
     },
     {
-      "step": "RLVR\u2192longer RLVR",
+      "step": "RLVR- PPO\u2192RLVR- GRPO",
       "pair": "rlvr__rlvr_long",
       "format": "chat",
       "corpus": "uf11k",
@@ -332,7 +332,7 @@
       "degenerate": false
     },
     {
-      "step": "RLVR\u2192longer RLVR",
+      "step": "RLVR- PPO\u2192RLVR- GRPO",
       "pair": "rlvr__rlvr_long",
       "format": "chat",
       "corpus": "if11k",
@@ -343,7 +343,7 @@
       "degenerate": false
     },
     {
-      "step": "RLVR\u2192longer RLVR",
+      "step": "RLVR- PPO\u2192RLVR- GRPO",
       "pair": "rlvr__rlvr_long",
       "format": "chat",
       "corpus": "sft11k",
@@ -354,7 +354,7 @@
       "degenerate": false
     },
     {
-      "step": "RLVR\u2192longer RLVR",
+      "step": "RLVR- PPO\u2192RLVR- GRPO",
       "pair": "rlvr__rlvr_long",
       "format": "naturalistic",
       "corpus": "lmsys23k",
@@ -365,7 +365,7 @@
       "degenerate": false
     },
     {
-      "step": "RLVR\u2192longer RLVR",
+      "step": "RLVR- PPO\u2192RLVR- GRPO",
       "pair": "rlvr__rlvr_long",
       "format": "chat",
       "corpus": "gsm8k_train_full",
@@ -376,7 +376,7 @@
       "degenerate": false
     },
     {
-      "step": "RLVR\u2192longer RLVR",
+      "step": "RLVR- PPO\u2192RLVR- GRPO",
       "pair": "rlvr__rlvr_long",
       "format": "chat",
       "corpus": "math7500",
@@ -387,14 +387,14 @@
       "degenerate": false
     },
     {
-      "step": "RLVR\u2192longer RLVR",
+      "step": "RLVR- PPO\u2192RLVR- GRPO",
       "pair": "rlvr__rlvr_long",
       "format": "chat",
       "corpus": "gsm8k_test1319",
       "cross_r2": 0.36922543414447984,
       "cross_source": "selfmap_v3 `cross_r2`",
-      "within_r2": 0.3887283737361472,
-      "t0_r2": 0.16350209928597204,
+      "within_r2": 0.3887283737361471,
+      "t0_r2": 0.16350209928597226,
       "degenerate": true
     }
   ]

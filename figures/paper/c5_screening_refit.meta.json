@@ -1,0 +1,282 @@
+{
+  "commit": "c69c870e+dirty",
+  "render_id": "eb28e06a36cb44f7",
+  "git_commit": "c69c870e68d565751440f8129bdb3665d4959947",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/paper/c1_cot_matched_length.meta.json",
+    "figures/paper/c1_cot_matched_length.pdf",
+    "figures/paper/c1_cot_matched_length.png",
+    "figures/paper/c1_input_ablation_heatmap.meta.json",
+    "figures/paper/c1_input_ablation_heatmap.pdf",
+    "figures/paper/c1_input_ablation_heatmap.png",
+    "figures/paper/c1_layer_profile.meta.json",
+    "figures/paper/c1_layer_profile.pdf",
+    "figures/paper/c1_layer_profile.png",
+    "figures/paper/c1_offpolicy_arms.meta.json",
+    "figures/paper/c1_offpolicy_arms.pdf",
+    "figures/paper/c1_offpolicy_arms.png",
+    "figures/paper/c1_scaling_train_pool.meta.json",
+    "figures/paper/c1_scaling_train_pool.pdf",
+    "figures/paper/c1_scaling_train_pool.png",
+    "figures/paper/c1_stage_retention.meta.json",
+    "figures/paper/c1_stage_retention.pdf",
+    "figures/paper/c1_stage_retention.png",
+    "figures/paper/c2_layer14_peak.meta.json",
+    "figures/paper/c2_layer14_peak.pdf",
+    "figures/paper/c2_layer14_peak.png",
+    "figures/paper/c4_boundary_vs_prose.meta.json",
+    "figures/paper/c4_boundary_vs_prose.pdf",
+    "figures/paper/c4_boundary_vs_prose.png",
+    "figures/paper/c4_character_maps.meta.json",
+    "figures/paper/c4_character_maps.pdf",
+    "figures/paper/c4_character_maps.png",
+    "figures/paper/c4_patch_persistence.meta.json",
+    "figures/paper/c4_patch_persistence.pdf",
+    "figures/paper/c4_patch_persistence.png",
+    "figures/paper/c4_rlvr_contrast.meta.json",
+    "figures/paper/c4_rlvr_contrast.pdf",
+    "figures/paper/c4_rlvr_contrast.png",
+    "figures/paper/c4_transfer_ladder.meta.json",
+    "figures/paper/c4_transfer_ladder.pdf",
+    "figures/paper/c4_transfer_ladder.png",
+    "figures/paper/c5_claim4_margin_forest.meta.json",
+    "figures/paper/c5_claim4_margin_forest.pdf",
+    "figures/paper/c5_claim4_margin_forest.png",
+    "figures/paper/c5_compose_flip.meta.json",
+    "figures/paper/c5_compose_flip.pdf",
+    "figures/paper/c5_compose_flip.png",
+    "figures/paper/c5_ft_change_race.meta.json",
+    "figures/paper/c5_ft_change_race.pdf",
+    "figures/paper/c5_ft_change_race.png",
+    "figures/paper/c5_pv_methods_regimes.meta.json",
+    "figures/paper/c5_pv_methods_regimes.pdf",
+    "figures/paper/c5_pv_methods_regimes.png",
+    "scripts/issue1310_analyzer_figures.py",
+    "scripts/issue1336_analyzer_figures.py",
+    "... 13 more"
+  ],
+  "git_argv0_state": null,
+  "created": "2026-08-20T08:31:45Z",
+  "figsize": [
+    5.5,
+    2.5
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "$r$ vs exact $\\Delta P$": 0.047288048004149645,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "$r$ vs exact $\\Delta P$": 0.09026642025885748,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
+      "$r$ vs exact $\\Delta P$": 0.14454335945262975,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.81,
+      "$r$ vs exact $\\Delta P$": 0.07140319713254081,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.81,
+      "$r$ vs exact $\\Delta P$": -0.08704711258640699,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.81,
+      "$r$ vs exact $\\Delta P$": 0.027393838532194875,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "$r$ vs exact $\\Delta P$": 0.8603193035938367,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.19,
+      "$r$ vs exact $\\Delta P$": 0.8609175441171323,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.19,
+      "$r$ vs exact $\\Delta P$": 0.854006547275417,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.19,
+      "$r$ vs exact $\\Delta P$": 0.7348859011172468,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.19,
+      "$r$ vs exact $\\Delta P$": 0.8286648807751051,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.19,
+      "$r$ vs exact $\\Delta P$": 0.8025313724733378,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.19,
+      "top-500 Jaccard": 0.005025125628140704,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.81,
+      "top-500 Jaccard": 0.014198782961460446,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.81,
+      "top-500 Jaccard": 0.008064516129032258,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.81,
+      "top-500 Jaccard": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.81,
+      "top-500 Jaccard": 0.088139281828074,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.81,
+      "top-500 Jaccard": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.19,
+      "top-500 Jaccard": 0.5698587127158555,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.19,
+      "top-500 Jaccard": 0.358695652173913,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.19,
+      "top-500 Jaccard": 0.4749262536873156,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 3.19,
+      "top-500 Jaccard": 0.3679890560875513,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 4.19,
+      "top-500 Jaccard": 0.2345679012345679,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 5.19,
+      "top-500 Jaccard": 0.4556040756914119,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "top-500 Jaccard": 0.005,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "top-500 Jaccard": 0.005,
+      "series": "chance",
+      "_kind": "line",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 26,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "$r$ vs exact $\\Delta P$",
+        "xticklabels": [
+          "evil (LMSYS)",
+          "hallucination (LMSYS)",
+          "sycophancy (LMSYS)",
+          "evil (UltraChat)",
+          "hallucination (UltraChat)",
+          "sycophancy (UltraChat)"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "ylabel": "top-500 Jaccard",
+        "xticklabels": [
+          "evil (LMSYS)",
+          "hallucination (LMSYS)",
+          "sycophancy (LMSYS)",
+          "evil (UltraChat)",
+          "hallucination (UltraChat)",
+          "sycophancy (UltraChat)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ]
+      }
+    ],
+    "series": [
+      "frozen generic-pool map",
+      "corpus-refit map",
+      "chance"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

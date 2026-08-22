@@ -163,8 +163,13 @@ def test_phase_a_to_phase_d_join_e2e_without_fold_bypass(tmp_path, monkeypatch):
 
     # Shared fold map in the COMMITTED production key shape (scaffold-space,
     # stripper-prefixed). s0002 deliberately absent -> exercises the filter.
+    # k/seed carried like every real map (#2245: the shared guarded loader's
+    # missing-key ValueError is unconditional); the sub-floor size opts in via
+    # --allow-smoke-fold-map below.
     fold_map = tmp_path / "shared_fold_map.json"
-    fold_map.write_text(json.dumps({"fold_of": {"stripped_s0001": 0}}), encoding="utf-8")
+    fold_map.write_text(
+        json.dumps({"fold_of": {"stripped_s0001": 0}, "k": 5, "seed": 137}), encoding="utf-8"
+    )
 
     # Fake ONLY the HF network boundary (signature-conformant).
     def fake_list(api, variant: str) -> list[str]:
@@ -192,6 +197,7 @@ def test_phase_a_to_phase_d_join_e2e_without_fold_bypass(tmp_path, monkeypatch):
             "char_helios_op",
             "--fold-map",
             str(fold_map),
+            "--allow-smoke-fold-map",
             "--skip-upload",
         ],
     )

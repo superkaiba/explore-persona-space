@@ -4,7 +4,7 @@ Graded 0-100 trait-expression judge over the persisted Phase-3 rollout TEXT —
 VM-side, ZERO GPU (pure Anthropic API against the raw_completions/steered/
 JSONs the pod uploaded). Reuses the #779 graded-judge stack verbatim:
 ``issue779_common.judge_rollouts_n5`` (N=5 draws/completion, temperature-1
-multi-sampling via draw expansion, DROP-NEVER-COERCE per draw, max_tokens=300
+multi-sampling via draw expansion, DROP-NEVER-COERCE per draw, max_tokens=1024
 per llm-judging rule 23) over ``judge_completions_batch`` →
 ``judge_dispatch``/``api_dispatch`` (Batch API at production N ≈ 80k calls —
 plan §9 API estimate; sync below the threshold).
@@ -381,7 +381,7 @@ def run(args) -> int:
     report = {
         "judge_model": C.JUDGE_MODEL,
         "n_draws": args.n_draws,
-        "max_tokens": 300,
+        "max_tokens": 1024,  # judge_rollouts_n5's wire value (raised from 300, #2063)
         "traits": args.traits,
         "control_rubric_policy": args.control_rubric_policy,
         "control_rubrics": args.control_rubrics or None,
@@ -539,7 +539,7 @@ def smoke(args) -> int:
     # minus nothing (transport raises still count as calls).
     assert len(fake_msgs.calls) == 35, len(fake_msgs.calls)
     p0 = fake_msgs.calls[0]
-    assert p0["model"] == C.JUDGE_MODEL and p0["max_tokens"] == 300, p0
+    assert p0["model"] == C.JUDGE_MODEL and p0["max_tokens"] == 1024, p0
     sys_text = p0["system"] if isinstance(p0["system"], str) else p0["system"][0]["text"]
     assert "0" in sys_text and "100" in sys_text and "REFUSAL" in sys_text
     assert "[QUESTION START]" in (

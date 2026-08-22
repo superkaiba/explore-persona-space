@@ -74,7 +74,9 @@ from explore_persona_space.backends.base import (
     PollResult,
     RunHandle,
     RunSpec,
+    lane_suffix_for,
     validate_env_pins,
+    validate_runpod_name_suffix,
 )
 
 if TYPE_CHECKING:
@@ -261,14 +263,14 @@ def _runpod_log_path(issue: int) -> str:
     return f"/workspace/logs/issue-{issue}.log"
 
 
-def _runpod_pod_name(issue: int) -> str:
-    """Canonical pod name (April 2026 rename: ``pod-<N>``).
+def _runpod_pod_name(issue: int, name_suffix: str | None = None) -> str:
+    """Canonical pod name: ``pod-<N>``, or ``pod-<N>-<slug>`` when suffixed (#2145).
 
-    Mirrors ``scripts/pod_lifecycle.py::_canonical_pod_name``. The legacy
-    ``epm-issue-<N>`` prefix is recognized by readers but never used for
-    fresh provisions.
+    Mirrors ``scripts/pod_lifecycle.py::_canonical_pod_name`` (including the
+    suffixed form). The legacy ``epm-issue-<N>`` prefix is recognized by
+    readers but never used for fresh provisions.
     """
-    return f"pod-{issue}"
+    return f"pod-{issue}-{name_suffix}" if name_suffix else f"pod-{issue}"
 
 
 def _provisioned_pod_id(pod_name: str) -> str | None:
@@ -1351,6 +1353,31 @@ class RunPodBackend(ComputeBackend):
         ]
         if spec.gpus is not None:
             cmd += ["--gpu-count", str(spec.gpus)]
+        # #2145: honor spec.extra["lane_suffix"] on the RunPod lane — mint
+        # pod-<N>-<slug> via pod_lifecycle's own --name-suffix path so N
+        # concurrent same-issue launches get DISTINCT pods (the c58 fan-out
+        # collision class). Belt-and-suspenders validation: the dispatch CLI
+        # pre-route guard already refuses a non-pod-grammar suffix on
+        # RunPod-reachable routes; this in-backend validator covers
+        # PROGRAMMATIC callers (failover reconstruction, frontmatter pins).
+        # NOTE: on the AUTO chain a ValueError raised here may be wrapped by
+        # the terminal rung into NoComputeAvailableError (mis-read as a
+        # capacity miss) — still strictly better than a silently mis-named
+        # pod; the CLI guard is the legible front door.
+        lane_suffix = lane_suffix_for(spec)
+        if lane_suffix is not None:
+            validate_runpod_name_suffix(lane_suffix)
+            cmd += ["--name-suffix", lane_suffix]
+        # #2145: honor spec.extra["gpu_type"] — thread the launch-declared GPU
+        # type override into the provision argv. Validation layers: the
+        # dispatch CLI validates at parse time via
+        # runpod_api.resolve_gpu_type_id (#537 wrong-gpuTypeId trap), and
+        # pod_lifecycle's _resolve_spec re-validates in the provision
+        # subprocess (non-zero exit on an unresolvable type). Omit-when-absent:
+        # a spec without the key composes the pre-#2145 argv byte-identically.
+        gpu_type_override = str((spec.extra or {}).get("gpu_type") or "").strip()
+        if gpu_type_override:
+            cmd += ["--gpu-type", gpu_type_override]
         # #1010/#1118: thread the plan's disk requirement into the provision
         # argv. CPU lane (#1010): the pod's only writable disk is the
         # container overlay (/workspace rides it; incident #958) --
@@ -1409,7 +1436,9 @@ class RunPodBackend(ComputeBackend):
         # (`dispatch_issue._provision_still_waiting`) is unchanged —
         # returncode + cmd ride verbatim. (Slice 1 does NOT add a provision
         # retry — the existing `--wait-for-capacity` retry inside
-        # `pod_lifecycle.py` already handles SUPPLY_CONSTRAINT.)
+        # `pod_lifecycle.py` already handles SUPPLY_CONSTRAINT, and as of
+        # #2238 that retry covers the CPU legs (create_cpu_pod) too, not
+        # only the GPU create_pod path.)
         _run_pod_lifecycle_relay(cmd, env=env_for_provision)
         # #1698 Item 1(b) — fail-loud post-bootstrap branch assertion. Bind
         # ONLY when a specific non-`main` branch was requested: the default
@@ -1421,7 +1450,7 @@ class RunPodBackend(ComputeBackend):
         # non-execute path (the default `/issue` Step 6d.1 flow) the
         # exception propagates verbatim — the pod stays RUNNING for SSH
         # diagnosis per the RunPod-as-diagnosis-lane doctrine.
-        pod_name = _runpod_pod_name(spec.issue)
+        pod_name = _runpod_pod_name(spec.issue, lane_suffix)
         # #2038: round-trip the exact RunPod pod id the provision just
         # persisted to pods_ephemeral.json (closing the "a future revision
         # should round-trip pods_ephemeral.json" gap noted at the job_id
@@ -1563,6 +1592,14 @@ class RunPodBackend(ComputeBackend):
                             # exact-id disposition on it. Omit-when-absent: a
                             # failed read keeps the legacy id-less shape.
                             "pod_id": provisioned_pod_id,
+                            # #2145: suffix + GPU-type override persisted so the
+                            # wedge / CUDA-IMA fresh-pod re-provision
+                            # (backend_poll._runspec_from_runpod_handle) forwards
+                            # them — a failover pod must not regress to a bare
+                            # pod-<N> or the intent-default GPU. Omit-when-absent
+                            # keeps legacy handle shapes byte-identical.
+                            "lane_suffix": (spec.extra or {}).get("lane_suffix"),
+                            "gpu_type": (spec.extra or {}).get("gpu_type"),
                         }.items()
                         if v
                     },
@@ -2037,21 +2074,11 @@ class RunPodBackend(ComputeBackend):
         teardown, so the verifier guard inside ``cmd_terminate`` should
         always see a PASS marker.
         """
-        # The pod name carries the issue; parse it back (canonical
-        # ``pod-<N>``) so we don't need extra state on the handle.
-        issue: int | None = None
-        if handle.pod_name.startswith("pod-"):
-            try:
-                issue = int(handle.pod_name[len("pod-") :])
-            except ValueError:
-                issue = None
-        if issue is None and handle.pod_name.startswith("epm-issue-"):
-            try:
-                issue = int(handle.pod_name[len("epm-issue-") :])
-            except ValueError:
-                issue = None
-        if issue is None:
-            raise ValueError(f"cannot parse issue from RunPod handle pod_name={handle.pod_name!r}")
+        # #2145: extra["issue"] first (always set by _build_handle), name
+        # parse as the legacy-handle fallback — the pre-#2145 inline
+        # int(pod_name[4:]) parse raised ValueError on every SUFFIXED
+        # pod-<N>-<slug> name.
+        issue = self._issue_from_handle(handle)
         cmd = [
             sys.executable,
             str(_scripts_dir() / "pod_lifecycle.py"),
@@ -2060,6 +2087,18 @@ class RunPodBackend(ComputeBackend):
             str(issue),
             "--yes",
         ]
+        # #2145: SURGICAL teardown for a suffixed pod — recover the slug from
+        # the handle's own pod name and pass --name-suffix so cmd_terminate
+        # targets pod-<N>-<slug> exactly (pod_lifecycle._canonical_pod_name
+        # registration; the bare --issue form resolves the issue's pods
+        # issue-wide and is refused under the #1485 keep-running tag while
+        # sibling pods live). Unsuffixed handles compose the pre-#2145 argv
+        # byte-identically.
+        prefix = f"pod-{issue}-"
+        if handle.pod_name.startswith(prefix):
+            suffix = handle.pod_name[len(prefix) :]
+            if suffix:
+                cmd += ["--name-suffix", suffix]
         # #1698 Item 2 — idempotent teardown for an already-terminated pod.
         # When no live pod matches the issue AND no local sidecar record is
         # left, `pod_lifecycle._terminate_clear_stale_sidecar` at

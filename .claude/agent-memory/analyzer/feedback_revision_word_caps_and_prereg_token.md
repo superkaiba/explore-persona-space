@@ -66,3 +66,44 @@ pointer qualifier in the Results prose ("under the plan's saturated λ grid
 ticks cross-grain transfers") before touching load-bearing numbers; measure
 with the verifier's exact `_prose_words` rules (excludes `>`-lines, `|`-rows,
 fences, details bodies; image + what-is-plotted lines COUNT).
+
+Update (#2203 r4): adding ONE sentence to a 3-sentence Results paragraph fires
+a SEPARATE WARN — "Results paragraph sentence cap (v4)" (1-3 sentences per
+paragraph) — that the conciseness acknowledgment paragraph does NOT cover.
+Fix free of word cost: split the paragraph (e.g. 3+1). Also: a fired-WARN body
+with NO acknowledgment anywhere is a guaranteed clean-result-critic Lens 12
+bounce even though verify_task_body PASSes (its ack sub-check only audits an
+EXISTING paragraph, #1523) — on any body shipping check-20 WARNs, add the
+"I acknowledge the check-20 … WARNs" paragraph (name EVERY fired class) at the
+END of `## Methodology` proactively; precedent shape: #2163/#1900/#2203.
+
+Update (#2254 r1, 2026-08-14): the audit's `pre_reg` noun grammar has FALSE
+NEGATIVES — "registered recompute" / "registered sensitivity" / "registered
+comparison" all PASSed the audit yet drew a clean-result-critic Lens 7 FAIL
+(same escape shape as #1586's "registered layer"). An audit PASS is NOT
+clearance for this class: before posting, grep `\bregistered\b` over
+Takeaways/Goal/Methodology/Results prose yourself and rewrite EVERY
+"registered <noun>" hit (state the fact without the word: "the held-out
+recompute", "a held-out sensitivity", "outside the decisive head-to-head
+comparison"); verb forms ("registers context edits", "registered on HF")
+stay clean.
+
+Update (#823 r8): STANDALONE EM-DASHES count as words — `_prose_words` is
+whitespace `split()`, so "L19 — fitted" is 3 tokens while "L19, fitted" is 2.
+On a block sitting at the 180 FAIL boundary, rewriting appositive ` — X — `
+framings as parentheses/commas buys 2 tokens per pair at zero content cost;
+prefer that over cutting numbers. Same round: merging a dissolved section's
+figure into another result costs its image line + intro pointer (~15-25
+tokens) — budget the receiving block BEFORE dissolving, and push the moved
+section's numeric medians into the (cap-exempt) caption.
+
+Update (#2215 fold): a fold that EXPANDS a Takeaways bullet (e.g. adding a
+length-adjusted companion number) can cross the separate 30-word BULLET cap
+and fire a NEW WARN class ("Takeaways bullet-length") the inherited
+acknowledgment does not name — the verifier's WARN line then names the missing
+class verbatim ("mention e.g. 'bullet'"). Mature bodies have ALL bullets at
+29-30/30, so there is usually no trim headroom; the sanctioned fix is
+extending the acknowledgment ("one Takeaways bullet exceeds the 30-word cap,
+…") rather than compressing the bullet into unreadability. Re-run the
+verifier after — the fired-classes complaint disappears when every class is
+named.

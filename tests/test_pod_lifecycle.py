@@ -649,6 +649,62 @@ def test_provision_parser_exposes_allow_stopped_duplicate():
     assert ns0.allow_stopped_duplicate is False
 
 
+def test_provision_name_suffix_grammar_single_source(
+    isolated_state, stub_list_team_pods, monkeypatch, capsys
+):
+    """#2145: cmd_provision's write-side suffix grammar is the shared
+    backends.base.RUNPOD_NAME_SUFFIX_RE (single source) — digit-initial
+    refuses with the byte-identical pre-#2145 SystemExit message; a
+    conformant slug proceeds to the dry-run plan naming pod-<N>-<slug>."""
+    from explore_persona_space.backends.base import RUNPOD_NAME_SUFFIX_RE
+
+    # The shared pattern IS the pod grammar (letter-initial, <=20 chars).
+    assert RUNPOD_NAME_SUFFIX_RE.pattern == "[a-z][a-z0-9-]{0,19}"
+
+    monkeypatch.setattr(pod_lifecycle, "_warn_on_terminal_parent_provision", lambda *a, **k: False)
+    _write_metadata_file({})
+    stub_list_team_pods.return_value = []
+
+    # Digit-initial ("8xh200") violates the pod grammar → SystemExit with
+    # the byte-identical message (the refusal fires BEFORE any API access).
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_provision(_gpu_provision_ns(55, name_suffix="8xh200"))
+    assert "--name-suffix must match [a-z][a-z0-9-]{0,19}" in str(exc.value)
+
+    # Over-length (21 chars) refuses through the same shared pattern.
+    with pytest.raises(SystemExit):
+        pod_lifecycle.cmd_provision(_gpu_provision_ns(55, name_suffix="a" * 21))
+
+    # A conformant slug proceeds (dry-run plan names the suffixed pod).
+    pod_lifecycle.cmd_provision(_gpu_provision_ns(55, name_suffix="q32b"))
+    out = capsys.readouterr().out
+    assert "[dry-run]" in out
+    assert "pod-55-q32b" in out
+
+
+def test_slug_from_pod_name_read_side_parity():
+    """#2145: _slug_from_pod_name is the read-side twin of
+    _issue_from_pod_name (one grammar source, _POD_NAME_RE) — suffixed
+    managed names yield their slug, bare/unmanaged names yield None, and
+    every write-side-legal slug round-trips through the read side (the
+    write grammar is a strict subset of the read grammar BY DESIGN — the
+    read side also accepts legacy/foreign slugs; do not unify)."""
+    from explore_persona_space.backends.base import RUNPOD_NAME_SUFFIX_RE
+
+    assert pod_lifecycle._slug_from_pod_name("pod-909") is None
+    assert pod_lifecycle._slug_from_pod_name("pod-909-b") == "b"
+    assert pod_lifecycle._slug_from_pod_name("pod-909-followup2") == "followup2"
+    assert pod_lifecycle._slug_from_pod_name("epm-issue-909-b") == "b"
+    assert pod_lifecycle._slug_from_pod_name("not-a-managed-pod") is None
+    # pod-47 never reads as issue 475's slugless sibling (digit boundary).
+    assert pod_lifecycle._slug_from_pod_name("pod-475") is None
+    # Write ⊂ read: every write-side-legal slug parses back identically.
+    for slug in ("b", "q32b", "a" * 20, "r5-ladder"):
+        assert RUNPOD_NAME_SUFFIX_RE.fullmatch(slug), slug
+        assert pod_lifecycle._slug_from_pod_name(f"pod-909-{slug}") == slug
+        assert pod_lifecycle._issue_from_pod_name(f"pod-909-{slug}") == 909
+
+
 # ---------------------------------------------------------------------------
 # cmd_provision — CPU-only intent bridge (#747)
 #
@@ -688,6 +744,13 @@ def cpu_provision_stubs(monkeypatch):
     Records every create_cpu_pod call and asserts the GPU path is never taken.
     Yields a dict carrying the captured create_cpu_pod kwargs + call counters.
     """
+    # #2238: pin the ONE-SHOT routing these tests assert. The CPU branch now
+    # honors the autonomous auto-enable, so an ambient EPM_AUTONOMOUS_SESSION=1
+    # (the env of an autonomous session running the suite) would otherwise
+    # route through the wait-for-capacity wrapper and the tests would pass
+    # bimodally (precedent: the GPU tests' per-test delenv at
+    # test_data_center_id_threads_to_gpu_create_pod).
+    monkeypatch.delenv("EPM_AUTONOMOUS_SESSION", raising=False)
     captured: dict = {"cpu_calls": [], "gpu_resolve_calls": 0, "gpu_create_calls": 0}
 
     def _fake_create_cpu_pod(
@@ -1121,6 +1184,7 @@ def terminate_ns():
         dry_run: bool = False,
         skip: bool = False,
         name_suffix: str | None = None,
+        primary_only: bool = False,
     ):
         return argparse.Namespace(
             issue=issue,
@@ -1128,6 +1192,7 @@ def terminate_ns():
             dry_run=dry_run,
             skip_upload_verify=skip,
             name_suffix=name_suffix,
+            primary_only=primary_only,
         )
 
     return _make
@@ -1149,8 +1214,17 @@ def stub_terminate_pod(monkeypatch):
 
 @pytest.fixture
 def stub_pods_conf_writes(monkeypatch):
-    """No-op pods.conf side effects so tests don't touch the real file."""
-    monkeypatch.setattr(pod_lifecycle, "_remove_from_pods_conf", lambda _name: None)
+    """Capture pods.conf row removals (no-op side effects so tests never touch
+    the real file). Returns the capture list so scoping tests can assert WHICH
+    names were removed (#2270 T16 — the #1334-inverse pin, now observable);
+    existing tests ignore the return value (additive upgrade)."""
+    calls: list[str] = []
+
+    def _capture(name: str) -> None:
+        calls.append(name)
+
+    monkeypatch.setattr(pod_lifecycle, "_remove_from_pods_conf", _capture)
+    return calls
 
 
 def _register_pod_for_issue(issue: int, *, name: str | None = None) -> str:
@@ -1162,7 +1236,14 @@ def _register_pod_for_issue(issue: int, *, name: str | None = None) -> str:
     return pod_name
 
 
-def _upload_verification_event(verdict: str, *, outroot: str | None = "swept-clean") -> dict:
+def _upload_verification_event(
+    verdict: str,
+    *,
+    outroot: str | None = "swept-clean",
+    rows: str | None = "reconciled",
+    pod: str | None = None,
+    ts: str = "2026-06-02T00:00:00Z",
+) -> dict:
     """Build a realistic ``epm:upload-verification`` event whose verdict lives
     in the markdown ``note`` body as ``**Verdict: <verdict>**`` — the real
     shape the upload-verifier writes (event keys are ts/kind/version/by/note;
@@ -1173,18 +1254,40 @@ def _upload_verification_event(verdict: str, *, outroot: str | None = "swept-cle
     ``outroot`` renders the #2187 sweep-attestation token line the Step-5
     template now carries by construction (``outroot=<value>``); pass
     ``outroot=None`` for the pre-#2187 token-less note shape (the terminate
-    guard refuses a PASS without it)."""
+    guard refuses a PASS without it). ``rows`` renders the #2148 realized
+    row-count attestation token the same way (``rows=<value>``); pass
+    ``rows=None`` for the pre-#2148 shape (likewise refused). ``pod`` renders
+    the #1961 structured pod-binding token (``pod=<name>``) — the tier-1
+    pod-BOUND PASS shape the #2270 primary clearance requires; the default
+    ``None`` keeps today's pod-less primary-PASS shape."""
     outroot_line = f"outroot={outroot}\n\n" if outroot is not None else ""
+    rows_line = f"rows={rows}\n\n" if rows is not None else ""
+    pod_line = f"pod={pod}\n\n" if pod is not None else ""
     return {
-        "ts": "2026-06-02T00:00:00Z",
+        "ts": ts,
         "kind": "epm:upload-verification",
         "version": 1,
         "by": "upload-verifier",
         "note": (
             "<!-- epm:upload-verification v1 -->\n## Upload Verification\n\n"
-            f"**Verdict: {verdict}**\n\n{outroot_line}"
+            f"**Verdict: {verdict}**\n\n{pod_line}{outroot_line}{rows_line}"
             "Discovered N files on the pod under eval_results/."
         ),
+    }
+
+
+def _run_launched_event(note: str, *, ts: str = "2026-06-01T00:00:00Z") -> dict:
+    """Build a realistic ``epm:run-launched`` event (#2270 clearance tests).
+    Mirrors ``_upload_verification_event``'s realistic event-key shape
+    (ts/kind/version/by/note); the caller supplies the full note text so a
+    test can exercise structured (``pod=<name>`` / leading-token) and
+    UNstructured (mid-prose / no-pod-info) attribution shapes verbatim."""
+    return {
+        "ts": ts,
+        "kind": "epm:run-launched",
+        "version": 1,
+        "by": "experimenter",
+        "note": note,
     }
 
 
@@ -1376,7 +1479,7 @@ def test_terminate_proceeds_with_json_outroot_token(
         "kind": "epm:upload-verification",
         "version": 1,
         "by": "upload-verifier",
-        "note": json.dumps({"verdict": "PASS", "outroot": "swept-clean"}),
+        "note": json.dumps({"verdict": "PASS", "outroot": "swept-clean", "rows": "reconciled"}),
     }
     _stub_list_events(monkeypatch, [event])
     _fake_experiment_task(monkeypatch)
@@ -1430,6 +1533,105 @@ def test_terminate_pass_without_token_skip_flag_warns_and_proceeds(
 
     err = capsys.readouterr().err
     assert "LACKS the outroot= sweep attestation" in err
+    assert len(stub_terminate_pod) == 1
+
+
+def test_terminate_refuses_pass_without_rows_token(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """#2148: a PASS note carrying outroot= but WITHOUT the rows= realized
+    row-count attestation must refuse the terminate, with a remediation
+    message naming the reconciliation command (--expected-rows) and the
+    re-post form (#2091: ~25% of rows missing INSIDE present files behind
+    exactly this PASS shape)."""
+    pod_name = _register_pod_for_issue(2148)
+    stub_list_team_pods.return_value = [_info(pod_name)]
+    _stub_list_events(monkeypatch, [_upload_verification_event("PASS", rows=None)])
+    _fake_experiment_task(monkeypatch)
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_terminate(terminate_ns(issue=2148))
+
+    msg = str(exc.value)
+    assert "rows=<reconciled|no-declared-count|n/a>" in msg
+    assert "--expected-rows" in msg
+    assert "Step 2.11" in msg
+    assert stub_terminate_pod == [], "terminate_pod must NOT be called on a rows-less PASS"
+
+
+def test_terminate_proceeds_with_prose_rows_token(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """The Step-5 template's prose token line (`rows=no-declared-count`)
+    satisfies the #2148 attestation — the guard is silent on the happy path
+    for every fixed token value, not just `reconciled`."""
+    pod_name = _register_pod_for_issue(2149)
+    stub_list_team_pods.return_value = [_info(pod_name)]
+    _stub_list_events(monkeypatch, [_upload_verification_event("PASS", rows="no-declared-count")])
+    _fake_experiment_task(monkeypatch)
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=2149))
+
+    assert len(stub_terminate_pod) == 1
+
+
+def test_terminate_missing_both_tokens_refuses_on_outroot_first(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """Ordering pin: with BOTH attestation tokens absent the guard refuses on
+    the outroot= arm (checked first) — the rows= arm fires only once the
+    out-root sweep is attested, so remediation messages never interleave."""
+    pod_name = _register_pod_for_issue(2150)
+    stub_list_team_pods.return_value = [_info(pod_name)]
+    _stub_list_events(monkeypatch, [_upload_verification_event("PASS", outroot=None, rows=None)])
+    _fake_experiment_task(monkeypatch)
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_terminate(terminate_ns(issue=2150))
+
+    msg = str(exc.value)
+    assert "outroot=" in msg
+    assert "realized row-count attestation" not in msg
+    assert stub_terminate_pod == []
+
+
+def test_terminate_pass_without_rows_token_skip_flag_warns_and_proceeds(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    capsys,
+    monkeypatch,
+):
+    """--skip-upload-verify waives the rows= token exactly as it waives the
+    outroot= token and the whole PASS (a PASS-without-token pod is strictly
+    MORE verified than a no-marker pod and must not be blocked harder under
+    the same flag) — LOUD WARN, then proceed."""
+    pod_name = _register_pod_for_issue(2151)
+    stub_list_team_pods.return_value = [_info(pod_name)]
+    _stub_list_events(monkeypatch, [_upload_verification_event("PASS", rows=None)])
+    _fake_experiment_task(monkeypatch)
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=2151, skip=True))
+
+    err = capsys.readouterr().err
+    assert "LACKS the rows= realized row-count attestation" in err
     assert len(stub_terminate_pod) == 1
 
 
@@ -1738,6 +1940,37 @@ def test_terminate_parser_exposes_force_keep_running_flag():
     assert ns2.force_keep_running is False
 
 
+def test_terminate_force_keep_running_help_is_selector_neutral():
+    """#2270 critique r1 (NIT force-help-selector-scope): the
+    --force-keep-running help must NOT claim unconditional issue-wide scope.
+
+    The flag waives the keep-running shield; WHICH pods die is decided by the
+    SELECTOR (bare / --primary-only / --name-suffix). A help string promising
+    that ALL of the issue's pods are terminated tells an operator running
+    ``--primary-only --force-keep-running`` that suffixed siblings will be
+    destroyed — the opposite of what that path does, and the opposite of what
+    the runtime warning on the primary-only branch says."""
+    parser = argparse.ArgumentParser()
+    sub = parser.add_subparsers(dest="cmd")
+    pod_lifecycle._parser_terminate(sub)
+
+    action = next(
+        a
+        for a in sub.choices["terminate"]._actions
+        if "--force-keep-running" in (a.option_strings or [])
+    )
+    help_text = action.help or ""
+
+    assert "ALL of the issue's pods" not in help_text, (
+        "--force-keep-running help must not claim unconditional issue-wide "
+        f"scope — scope follows the selector; got: {help_text!r}"
+    )
+    assert "--primary-only" in help_text and "--name-suffix" in help_text, (
+        "the help should name the selectors that actually determine scope so a "
+        f"combined invocation is unambiguous; got: {help_text!r}"
+    )
+
+
 def test_keep_running_tag_constant_matches_task_workflow():
     """The pod_lifecycle module keeps its own lazy-import-independent copy of
     the tag literal; pin it to the task_workflow canonical constant so the
@@ -1777,6 +2010,888 @@ def test_runpod_backend_teardown_composes_bare_terminate_no_force(monkeypatch):
     assert "--issue" in cmd and "1485" in cmd and "--yes" in cmd
     assert "--force-keep-running" not in cmd
     assert "--name-suffix" not in cmd
+
+
+# ---------------------------------------------------------------------------
+# cmd_terminate — owner-fence guard (#2277; incident 2026-08-13 pod-2054-tiers)
+# ---------------------------------------------------------------------------
+
+_FUTURE_FENCE = "2099-01-01T00:00:00Z"
+_PAST_FENCE = "2020-01-01T00:00:00Z"
+
+
+def _rl_event(
+    pod: str,
+    *,
+    owner: str | None = None,
+    fence_until: str | None = None,
+    ts: str = "2026-08-13T19:20:43Z",
+) -> dict:
+    """``epm:run-launched`` note LEADING with ``pod=<name>`` (the #1961
+    structured position) — the experimenter template shape."""
+    fields = [
+        f"pod={pod}",
+        "pid=12345",
+        "pid_file=/workspace/logs/issue.pid",
+        "log_abs=/workspace/logs/issue.log",
+    ]
+    if owner is not None:
+        fields.append(f"owner={owner}")
+    if fence_until is not None:
+        fields.append(f"fence_until={fence_until}")
+    fields.append(
+        "fence=none (RunPod: no server-side max-run fence; project ttl_days=7 "
+        "is an audit-cron reap of EXITED-24h pods, NOT a hard kill)"
+    )
+    return {
+        "ts": ts,
+        "kind": "epm:run-launched",
+        "version": 1,
+        "by": "unknown",
+        "note": " ".join(fields),
+    }
+
+
+def _hb_event(
+    pod: str,
+    *,
+    fence_until: str | None = None,
+    ts: str = "2026-08-13T19:27:39Z",
+) -> dict:
+    """``epm:progress`` long-phase heartbeat naming the pod in structured
+    position — the #2054 v306 shape (free-text alarm prose included)."""
+    note = (
+        f"[long-phase-heartbeat] tiers r5: pid 3630 alive, log +3 lines; pod={pod}; "
+        "fence re-sized to 2x = 4 h (alarm ~23:30Z)"
+    )
+    if fence_until is not None:
+        note += f" fence_until={fence_until}"
+    return {"ts": ts, "kind": "epm:progress", "version": 306, "by": "unknown", "note": note}
+
+
+def _pass_event(
+    *,
+    pod: str | None = None,
+    owner: str | None = None,
+    ts: str = "2026-08-13T21:32:37Z",
+    outroot: str = "swept-clean",
+    rows: str = "reconciled",
+) -> dict:
+    """Prose ``epm:upload-verification`` PASS in the inline-round shape the
+    #2054 harvester posted (leads ``Verdict: PASS``, carries ``outroot=`` +
+    the #2148 ``rows=`` realized row-count attestation)."""
+    note = "Verdict: PASS — inline-round verification; prefixes: issue2054_lattice/"
+    if pod is not None:
+        note += f"; pod={pod}"
+    if owner is not None:
+        note += f"; owner={owner}"
+    note += f"\n\noutroot={outroot}\nrows={rows}\n"
+    return {
+        "ts": ts,
+        "kind": "epm:upload-verification",
+        "version": 38,
+        "by": "unknown",
+        "note": note,
+    }
+
+
+def _json_hb_event(
+    pod: str,
+    *,
+    fence_until: str | None = None,
+    ts: str = "2026-08-13T19:27:39Z",
+) -> dict:
+    """JSON-shaped ``epm:progress`` heartbeat (the #488 machine-readable
+    family): top-level ``"pod"`` binds via ``_note_names_pod``'s JSON branch;
+    ``fence_until=None`` omits the field, ``""`` includes it empty."""
+    payload: dict = {"phase": "tiers-r5", "pod": pod}
+    if fence_until is not None:
+        payload["fence_until"] = fence_until
+    return {
+        "ts": ts,
+        "kind": "epm:progress",
+        "version": 306,
+        "by": "unknown",
+        "note": json.dumps(payload),
+    }
+
+
+def _fence_guard_setup(monkeypatch, stub_list_team_pods, *, issue, pods, events) -> None:
+    """Standard seams for the #2277 owner-fence guard tests: live pods,
+    events, kind=experiment task, keep-running False. Only the external
+    task_workflow / RunPod-API boundaries are faked — the guard bodies and
+    parsers run for real."""
+    metadata = {p: _meta(p, issue=issue) for p in pods}
+    _write_metadata_file(metadata)
+    stub_list_team_pods.return_value = [_info(p) for p in pods]
+    _stub_list_events(monkeypatch, events)
+    _fake_experiment_task(monkeypatch)
+    _stub_keep_running_state(monkeypatch, False)
+
+
+def test_terminate_refuses_unexpired_owner_fence_nonowner_pass(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """Incident replay (fails-pre-fix): the #2054 shape with the §4.3 tokens
+    adopted — owner registered at launch, an unexpired fence on the owner's
+    heartbeat, and the harvester's self-posted PASS carrying NO matching
+    owner= — must refuse the surgical terminate (the path pod-2054-tiers was
+    destroyed by on 2026-08-13)."""
+    pod = "pod-2054-tiers"
+    _fence_guard_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2054,
+        pods=[pod],
+        events=[
+            _rl_event(pod, owner="spec-ladder-2054"),
+            _hb_event(pod, fence_until=_FUTURE_FENCE),
+            _pass_event(),  # harvester PASS: no pod binding, no owner token
+        ],
+    )
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_terminate(terminate_ns(issue=2054, name_suffix="tiers"))
+
+    msg = str(exc.value)
+    assert "UNEXPIRED" in msg and pod in msg
+    assert stub_terminate_pod == [], "terminate_pod must NOT be called on an unexpired owner fence"
+
+
+def test_terminate_copied_owner_token_waives_fence_known_residual(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """DECLARED residual (#2277 critique M1): the guard is unauthenticated
+    string equality, so a PASS carrying a byte-equal COPIED owner= token
+    waives the fence — mechanically indistinguishable from the owner's own
+    PASS. The control is the composition-site prohibition prose (every
+    surface teaching the token forbids copying it while a fence is
+    unexpired), under the same accidents-not-adversaries trust model as
+    --force-keep-running / --skip-upload-verify. This test pins the residual
+    EXPLICITLY (it also proceeds on pre-fix HEAD — it pins unchanged
+    behavior plus this docstring's declaration, not a new refusal)."""
+    pod = "pod-2054-tiers"
+    _fence_guard_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2054,
+        pods=[pod],
+        events=[
+            _rl_event(pod, owner="spec-ladder-2054"),
+            _hb_event(pod, fence_until=_FUTURE_FENCE),
+            _pass_event(pod=pod, owner="spec-ladder-2054"),  # copied token
+        ],
+    )
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=2054, name_suffix="tiers"))
+    assert len(stub_terminate_pod) == 1
+
+
+def test_terminate_no_owner_fence_tokens_proceeds_as_today(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+    capsys,
+):
+    """Back-compat pin (the single most important invariant): a pod carrying
+    NO owner=/fence_until= tokens anywhere — today's ENTIRE fleet — proceeds
+    exactly as before the guard existed: no refusal, no new warning."""
+    pod = _register_pod_for_issue(2054)
+    stub_list_team_pods.return_value = [_info(pod)]
+    _stub_list_events(
+        monkeypatch,
+        [_rl_event(pod), _upload_verification_event("PASS")],
+    )
+    _fake_experiment_task(monkeypatch)
+    _stub_keep_running_state(monkeypatch, False)
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=2054))
+
+    assert len(stub_terminate_pod) == 1
+    err = capsys.readouterr().err
+    assert "fence" not in err.lower(), f"token-less pod must not draw fence chatter: {err!r}"
+
+
+def test_terminate_owner_matched_pass_proceeds_inside_own_fence(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """Legitimate ask-free path: the owner tearing down its own verified pod
+    INSIDE its own unexpired fence proceeds via the owner-match waiver."""
+    pod = "pod-2054-tiers"
+    _fence_guard_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2054,
+        pods=[pod],
+        events=[
+            _rl_event(pod, owner="spec-ladder-2054", fence_until=_FUTURE_FENCE),
+            _pass_event(pod=pod, owner="spec-ladder-2054"),
+        ],
+    )
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=2054, name_suffix="tiers"))
+    assert len(stub_terminate_pod) == 1
+
+
+def test_terminate_json_pass_owner_parsed(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """C1: a legitimate owner whose Step-8 PASS lands JSON-shaped (the #488
+    machine-readable verifier family) is not refused under its own fence —
+    the JSON top-level "owner" field parses (dual parse mirroring
+    _upload_verification_outroot_attested)."""
+    pod = "pod-2054"
+    json_pass = {
+        "ts": "2026-08-13T21:32:37Z",
+        "kind": "epm:upload-verification",
+        "version": 2,
+        "by": "unknown",
+        "note": json.dumps(
+            {
+                "verdict": "PASS",
+                "owner": "spec-ladder-2054",
+                "outroot": "swept-clean",
+                "rows": "reconciled",
+                "discovered_pod_files": 113,
+                "checked": {"eval_results": "PASS"},
+            }
+        ),
+    }
+    _fence_guard_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2054,
+        pods=[pod],
+        events=[_rl_event(pod, owner="spec-ladder-2054", fence_until=_FUTURE_FENCE), json_pass],
+    )
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=2054))
+    assert len(stub_terminate_pod) == 1
+
+
+def test_terminate_sibling_pass_does_not_displace_pod_bound_pass(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """C2 (displacement direction): pod A's owner-matched PASS carrying
+    pod=A is selected at tier 1 even when a LATER sibling PASS (other owner,
+    bound pod=B or pod-less) exists — issue-grain latest-wins would refuse
+    A's legitimate fenced teardown on multi-round issues (#2054 carried 38+
+    interleaved markers)."""
+    pod = "pod-2054"
+    _fence_guard_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2054,
+        pods=[pod],
+        events=[
+            _rl_event(pod, owner="spec-ladder-2054", fence_until=_FUTURE_FENCE),
+            _pass_event(pod=pod, owner="spec-ladder-2054", ts="2026-08-13T20:00:00Z"),
+            _pass_event(pod="pod-2054-b", owner="sibling-owner", ts="2026-08-13T21:00:00Z"),
+            _pass_event(owner="sibling-owner", ts="2026-08-13T22:00:00Z"),  # pod-less
+        ],
+    )
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=2054))
+    assert len(stub_terminate_pod) == 1
+
+
+def test_terminate_pass_bound_to_other_pod_cannot_waive_fence(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """C2 (symmetric direction): pod A is fenced and the only PASS in the
+    window is bound pod=B — even with the SAME owner token, it verifies pod
+    B's round and must not waive pod A's fence."""
+    pod = "pod-2054"
+    _fence_guard_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2054,
+        pods=[pod],
+        events=[
+            _rl_event(pod, owner="spec-ladder-2054", fence_until=_FUTURE_FENCE),
+            _pass_event(pod="pod-2054-b", owner="spec-ladder-2054"),
+        ],
+    )
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_terminate(terminate_ns(issue=2054))
+
+    assert "UNEXPIRED" in str(exc.value)
+    assert stub_terminate_pod == []
+
+
+def test_terminate_pass_note_owner_never_registers_ownership(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """Kind-scoped registration: a harvester minting its OWN owner= token on
+    a self-posted PASS (owner=harvester, pod=A) can NEVER register ownership
+    and satisfy its own equality check — registration reads ONLY
+    epm:run-launched / epm:progress notes (the self-registration hole,
+    #2277 §4.1)."""
+    pod = "pod-2054-tiers"
+    _fence_guard_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2054,
+        pods=[pod],
+        events=[
+            _rl_event(pod, owner="spec-ladder-2054"),
+            _hb_event(pod, fence_until=_FUTURE_FENCE),
+            _pass_event(pod=pod, owner="harvester"),
+        ],
+    )
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_terminate(terminate_ns(issue=2054, name_suffix="tiers"))
+
+    assert "UNEXPIRED" in str(exc.value)
+    assert stub_terminate_pod == []
+
+
+def test_terminate_expired_fence_proceeds(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """Expiry, not recency, is the test (task constraint 1): a fence whose
+    deadline is in the PAST no longer binds."""
+    pod = "pod-2054"
+    _fence_guard_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2054,
+        pods=[pod],
+        events=[
+            _rl_event(pod, owner="spec-ladder-2054", fence_until=_PAST_FENCE),
+            _pass_event(),
+        ],
+    )
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=2054))
+    assert len(stub_terminate_pod) == 1
+
+
+def test_terminate_fence_cleared_by_none_proceeds(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """The owner can release without terminating: a later fence_until=none
+    (newest-wins) supersedes an earlier future fence."""
+    pod = "pod-2054"
+    _fence_guard_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2054,
+        pods=[pod],
+        events=[
+            _rl_event(pod, owner="spec-ladder-2054", fence_until=_FUTURE_FENCE),
+            _hb_event(pod, fence_until="none", ts="2026-08-13T20:30:00Z"),
+            _pass_event(),
+        ],
+    )
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=2054))
+    assert len(stub_terminate_pod) == 1
+
+
+def test_terminate_malformed_fence_warns_and_proceeds(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+    capsys,
+):
+    """Fail-open on garbage evidence (hard constraint): an unparseable
+    fence_until value is treated as ABSENT with one stderr WARN naming the
+    malformed token — never a refusal, never a crash."""
+    pod = "pod-2054"
+    _fence_guard_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2054,
+        pods=[pod],
+        events=[
+            _rl_event(pod, owner="spec-ladder-2054", fence_until="2026-99-99T99:99Z"),
+            _pass_event(),
+        ],
+    )
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=2054))
+
+    assert len(stub_terminate_pod) == 1
+    err = capsys.readouterr().err
+    assert "WARN" in err and "fence_until" in err
+
+
+def test_terminate_force_owner_fence_overrides_with_warning(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+    capsys,
+):
+    """--force-owner-fence follows the --force-keep-running precedent: a
+    deliberate operator override proceeds with a LOUD warning."""
+    pod = "pod-2054-tiers"
+    _fence_guard_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2054,
+        pods=[pod],
+        events=[
+            _rl_event(pod, owner="spec-ladder-2054"),
+            _hb_event(pod, fence_until=_FUTURE_FENCE),
+            _pass_event(),
+        ],
+    )
+
+    ns = terminate_ns(issue=2054, name_suffix="tiers")
+    ns.force_owner_fence = True  # the fixture Namespace predates the flag
+    pod_lifecycle.cmd_terminate(ns)
+
+    assert len(stub_terminate_pod) == 1
+    err = capsys.readouterr().err
+    assert "DESPITE" in err and "--force-owner-fence" in err
+
+
+def test_terminate_owner_fence_dry_run_notes_and_previews(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+    capsys,
+):
+    """Dry-run preserves the preview contract: the guard notes what a real
+    run would check and never refuses (and never reads task events)."""
+    pod = "pod-2054-tiers"
+    _fence_guard_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2054,
+        pods=[pod],
+        events=[
+            _rl_event(pod, owner="spec-ladder-2054"),
+            _hb_event(pod, fence_until=_FUTURE_FENCE),
+            _pass_event(),
+        ],
+    )
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=2054, name_suffix="tiers", dry_run=True))
+
+    assert stub_terminate_pod == []
+    err = capsys.readouterr().err
+    assert "[dry-run]" in err and "owner" in err
+
+
+def test_terminate_owner_mismatch_without_fence_warns_only(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+    capsys,
+):
+    """Graduated adoption never blocks without a fence: an attribution
+    mismatch (registered owner != PASS owner) with NO active fence proceeds
+    with a visible, non-blocking WARN."""
+    pod = "pod-2054"
+    _fence_guard_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2054,
+        pods=[pod],
+        events=[
+            _rl_event(pod, owner="spec-ladder-2054"),
+            _pass_event(pod=pod, owner="harvester"),
+        ],
+    )
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=2054))
+
+    assert len(stub_terminate_pod) == 1
+    err = capsys.readouterr().err
+    assert "WARN" in err and "does not match" in err
+
+
+def test_terminate_name_suffix_fence_refuses(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """The fence guard binds on the --name-suffix surgical path — the
+    incident's path. (The #1485 keep-running shield deliberately exempts the
+    suffix path at its :3627 early-return, which is exactly why no existing
+    shield fired on pod-2054-tiers; the fence guard must NOT inherit that
+    exemption.)"""
+    pod = "pod-2054-tiers"
+    _fence_guard_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2054,
+        pods=[pod],
+        events=[
+            _rl_event(pod, owner="spec-ladder-2054", fence_until=_FUTURE_FENCE),
+            _pass_event(),
+        ],
+    )
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_terminate(terminate_ns(issue=2054, name_suffix="tiers"))
+
+    assert "owner fence" in str(exc.value)
+    assert stub_terminate_pod == []
+
+
+def test_terminate_fence_keying_is_pod_scoped(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """Boundary-safe #1961 keying: a fence bound to pod-<N> does not block
+    pod-<N>-<slug>, and a fence bound to pod-<N>-<slug> does not block
+    pod-<N>."""
+    # Direction (a): fence on pod-2054; terminating pod-2054-tiers proceeds.
+    _fence_guard_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2054,
+        pods=["pod-2054-tiers"],
+        events=[
+            _rl_event("pod-2054", owner="spec-ladder-2054", fence_until=_FUTURE_FENCE),
+            _pass_event(),
+        ],
+    )
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=2054, name_suffix="tiers"))
+    assert len(stub_terminate_pod) == 1
+
+    # Direction (b): fence on pod-2054-tiers; bare terminate of the ONLY
+    # live pod pod-2054 proceeds.
+    _fence_guard_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2054,
+        pods=["pod-2054"],
+        events=[
+            _rl_event("pod-2054-tiers", owner="spec-ladder-2054", fence_until=_FUTURE_FENCE),
+            _pass_event(),
+        ],
+    )
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=2054))
+    assert len(stub_terminate_pod) == 2
+
+
+def test_terminate_fence_window_resets_at_new_run_launched(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """Evidence-window reset: a fence posted before the NEWEST
+    epm:run-launched naming the pod belongs to a PRIOR same-name incarnation
+    and is ignored on the re-provisioned pod."""
+    pod = "pod-2054"
+    _fence_guard_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2054,
+        pods=[pod],
+        events=[
+            _rl_event(pod, owner="old-owner", fence_until=_FUTURE_FENCE, ts="2026-08-10T00:00:00Z"),
+            _rl_event(pod, ts="2026-08-13T00:00:00Z"),  # fresh incarnation, no tokens
+            _pass_event(),
+        ],
+    )
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=2054))
+    assert len(stub_terminate_pod) == 1
+
+
+def test_terminate_owner_fence_kill_switch(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """EPM_DISABLE_OWNER_FENCE_GUARD=1 renders the guard inert (the
+    fail-open rollback lever): the incident-replay shape proceeds."""
+    monkeypatch.setenv("EPM_DISABLE_OWNER_FENCE_GUARD", "1")
+    pod = "pod-2054-tiers"
+    _fence_guard_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2054,
+        pods=[pod],
+        events=[
+            _rl_event(pod, owner="spec-ladder-2054"),
+            _hb_event(pod, fence_until=_FUTURE_FENCE),
+            _pass_event(),
+        ],
+    )
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=2054, name_suffix="tiers"))
+    assert len(stub_terminate_pod) == 1
+
+
+def test_terminate_owner_fence_refusal_names_nonowner_route(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """Refusal-message contract (task constraint 3 + M1 fix 3): the refusal
+    names the sanctioned non-owner surface-for-approval route, repeats the
+    non-copy prohibition, qualifies the owner route first-person, and names
+    the deliberate override flag."""
+    pod = "pod-2054-tiers"
+    _fence_guard_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2054,
+        pods=[pod],
+        events=[
+            _rl_event(pod, owner="spec-ladder-2054"),
+            _hb_event(pod, fence_until=_FUTURE_FENCE),
+            _pass_event(),
+        ],
+    )
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_terminate(terminate_ns(issue=2054, name_suffix="tiers"))
+
+    msg = str(exc.value)
+    assert "SURFACE the pod for approval" in msg
+    assert "MUST NOT copy the owner= token" in msg
+    assert "YOUR session" in msg
+    assert "--force-owner-fence" in msg
+
+
+def test_terminate_parser_exposes_force_owner_fence_flag():
+    """Regression guard: the --force-owner-fence flag exists on the
+    terminate subparser (and only defaults False)."""
+    parser = argparse.ArgumentParser()
+    sub = parser.add_subparsers(dest="cmd")
+    pod_lifecycle._parser_terminate(sub)
+
+    ns = parser.parse_args(["terminate", "--issue", "1", "--yes", "--force-owner-fence"])
+    assert ns.force_owner_fence is True
+
+    ns2 = parser.parse_args(["terminate", "--issue", "1", "--yes"])
+    assert ns2.force_owner_fence is False
+
+
+# --- #2277 pure note-parser unit tests (real bodies, no stubbing) ----------
+
+
+def test_note_owner_token_json_and_prose():
+    """JSON "owner" field (the #488 verifier family) and the prose owner=
+    token both parse; the (?<![\\w-]) boundary rejects compound prefixes."""
+    json_note = json.dumps({"verdict": "PASS", "owner": "spec-ladder-2054", "pod": "pod-2054"})
+    assert pod_lifecycle._note_owner_token(json_note) == "spec-ladder-2054"
+    assert pod_lifecycle._note_owner_token("Verdict: PASS; owner=abc-123.x") == "abc-123.x"
+    assert pod_lifecycle._note_owner_token("disowner=evil") is None
+    assert pod_lifecycle._note_owner_token("no token here") is None
+    assert pod_lifecycle._note_owner_token(json.dumps({"verdict": "PASS"})) is None
+
+
+def test_pod_named_pattern_boundary_safe():
+    """The #1961 structured-position grammar: pod=pod-2054-tiers never
+    matches a pod-2054 query; a bare prose mention mid-note never matches;
+    the leading-token form matches."""
+    assert pod_lifecycle._note_names_pod("x pod=pod-2054-tiers y", "pod-2054-tiers")
+    assert not pod_lifecycle._note_names_pod("x pod=pod-2054-tiers y", "pod-2054")
+    assert not pod_lifecycle._note_names_pod("restarted pod-2054 at 12:00", "pod-2054")
+    assert pod_lifecycle._note_names_pod("pod-2054-tiers verified 113 files", "pod-2054-tiers")
+    json_note = json.dumps({"verdict": "PASS", "pod": "pod-2054"})
+    assert pod_lifecycle._note_names_pod(json_note, "pod-2054")
+    assert not pod_lifecycle._note_names_pod(json_note, "pod-2054-tiers")
+
+
+def test_fence_until_parser_formats_none_and_malformed(capsys):
+    """Both ISO-8601Z grammars parse to aware UTC datetimes; `none` clears;
+    a malformed value WARNs and reads as absent; the experimenter's existing
+    `fence=none (RunPod: ...)` provider field never collides."""
+    events = [_rl_event("pod-9", fence_until="2099-01-02T03:04:05Z")]
+    fence = pod_lifecycle._latest_pod_fence_until(events, "pod-9")
+    assert fence is not None and fence.tzinfo is not None
+    assert (fence.year, fence.minute, fence.second) == (2099, 4, 5)
+
+    events = [_rl_event("pod-9", fence_until="2099-01-02T03:04Z")]  # minute grammar
+    fence = pod_lifecycle._latest_pod_fence_until(events, "pod-9")
+    assert fence is not None and (fence.minute, fence.second) == (4, 0)
+
+    assert (
+        pod_lifecycle._latest_pod_fence_until([_rl_event("pod-9", fence_until="none")], "pod-9")
+        is None
+    )
+
+    capsys.readouterr()  # drain
+    events = [_rl_event("pod-9", fence_until="tomorrow-ish")]
+    assert pod_lifecycle._latest_pod_fence_until(events, "pod-9") is None
+    assert "WARN" in capsys.readouterr().err
+
+    # The verbatim experimenter-style provider field (fence=none (RunPod: ...))
+    # rides every _rl_event fixture by construction — no fence_until= token
+    # means NO fence (proves no fence= / fence_until= collision).
+    assert pod_lifecycle._latest_pod_fence_until([_rl_event("pod-9")], "pod-9") is None
+
+
+def test_v306_heartbeat_free_text_alarm_is_not_a_fence():
+    """The #2054 v306 heartbeat shape — structured pod= plus a FREE-TEXT
+    'fence re-sized to 2x = 4 h (alarm ~23:30Z)' — carries no structured
+    fence_until token, so it registers NO fence (the incident's literal
+    pre-adoption artifacts read PROCEED by design; plan §12 assumption 5)."""
+    events = [_hb_event("pod-2054-tiers")]
+    assert pod_lifecycle._latest_pod_fence_until(events, "pod-2054-tiers") is None
+
+
+def test_fence_until_json_note_parses_same_path(capsys):
+    """#2277 code-review round 1 (Minor): a JSON-shaped registration note's
+    top-level ``"fence_until"`` field parses through the SAME strptime +
+    none-clearing + malformed-WARN path as the prose token — parser parity
+    with ``_latest_pod_token``'s JSON ``"owner"`` branch (pre-fix, a JSON
+    heartbeat registered its owner but silently registered NO fence)."""
+    pod = "pod-9"
+    # ISO seconds grammar in a JSON heartbeat registers the fence.
+    events = [_json_hb_event(pod, fence_until="2099-01-02T03:04:05Z")]
+    fence = pod_lifecycle._latest_pod_fence_until(events, pod)
+    assert fence is not None and fence.tzinfo is not None
+    assert (fence.year, fence.minute, fence.second) == (2099, 4, 5)
+
+    # Minute grammar parses too (same _FENCE_UNTIL_FORMATS path).
+    events = [_json_hb_event(pod, fence_until="2099-01-02T03:04Z")]
+    fence = pod_lifecycle._latest_pod_fence_until(events, pod)
+    assert fence is not None and (fence.minute, fence.second) == (4, 0)
+
+    # The literal `none` in a JSON note CLEARS an older prose registration
+    # (newest-wins across note shapes).
+    events = [
+        _rl_event(pod, owner="own-9", fence_until=_FUTURE_FENCE, ts="2026-01-01T00:00:00Z"),
+        _json_hb_event(pod, fence_until="none", ts="2026-01-02T00:00:00Z"),
+    ]
+    assert pod_lifecycle._latest_pod_fence_until(events, pod) is None
+
+    # Malformed JSON value: one stderr WARN, fence reads ABSENT (fail-open) —
+    # same arm the prose test pins.
+    capsys.readouterr()  # drain
+    events = [_json_hb_event(pod, fence_until="tomorrow-ish")]
+    assert pod_lifecycle._latest_pod_fence_until(events, pod) is None
+    err = capsys.readouterr().err
+    assert "WARN" in err and "fence_until" in err
+
+
+def test_fence_until_json_note_without_field_does_not_clear():
+    """A JSON note naming the pod WITHOUT a ``fence_until`` field — or with
+    an empty value — does NOT clear an older registration, mirroring the
+    prose no-token ``continue`` and ``_latest_pod_token``'s empty-value
+    branch (an event naming the pod without the token never clears)."""
+    pod = "pod-9"
+    events = [
+        _rl_event(pod, owner="own-9", fence_until=_FUTURE_FENCE, ts="2026-01-01T00:00:00Z"),
+        _json_hb_event(pod, ts="2026-01-02T00:00:00Z"),
+        _json_hb_event(pod, fence_until="", ts="2026-01-03T00:00:00Z"),
+    ]
+    fence = pod_lifecycle._latest_pod_fence_until(events, pod)
+    assert fence is not None and fence.year == 2099
+
+
+def test_pass_note_owner_kind_scope_and_two_tier_selection():
+    """Pure-unit twin of the guard-level tests: registration ignores
+    epm:upload-verification notes entirely, and PASS selection is two-tier
+    (pod-bound beats newer pod-less; other-pod-bound skipped)."""
+    pod = "pod-7"
+    events = [
+        _rl_event(pod, owner="own-7"),
+        _pass_event(pod=pod, owner="own-7", ts="2026-01-01T00:00:00Z"),
+        _pass_event(owner="late-podless", ts="2026-01-02T00:00:00Z"),
+        _pass_event(pod="pod-7-b", owner="other", ts="2026-01-03T00:00:00Z"),
+    ]
+    # Registration is kind-scoped: the PASS owners never register.
+    assert pod_lifecycle._latest_pod_token(events, pod, "owner") == "own-7"
+    # Tier 1 (pod-bound, older) beats tier 2 (pod-less, newer); pod-7-b skipped.
+    assert pod_lifecycle._latest_pass_owner_for_pod(events, pod) == "own-7"
+    # With no pod-bound PASS, the newest pod-LESS PASS is tier 2.
+    events_no_bound = [e for e in events if "pod=pod-7;" not in e["note"]]
+    assert pod_lifecycle._latest_pass_owner_for_pod(events_no_bound, pod) == "late-podless"
+    # A PASS bound to a DIFFERENT pod alone can never bind.
+    only_other = [_pass_event(pod="pod-7-b", owner="other")]
+    assert pod_lifecycle._latest_pass_owner_for_pod(only_other, pod) is None
+
+
+def test_pod_evidence_window_slices_at_newest_run_launched():
+    """The evidence window starts at the newest epm:run-launched naming the
+    pod (launch event included); no launch naming the pod => whole log."""
+    pod = "pod-11"
+    e1 = _rl_event(pod, owner="a", ts="2026-01-01T00:00:00Z")
+    e2 = _hb_event(pod, ts="2026-01-02T00:00:00Z")
+    e3 = _rl_event(pod, owner="b", ts="2026-01-03T00:00:00Z")
+    e4 = _pass_event(ts="2026-01-04T00:00:00Z")
+    window = pod_lifecycle._pod_evidence_window([e1, e2, e3, e4], pod)
+    assert window == [e3, e4]
+    assert pod_lifecycle._pod_evidence_window([e2, e4], pod) == [e2, e4]
 
 
 # ---------------------------------------------------------------------------
@@ -2610,6 +3725,1075 @@ def test_terminate_raises_when_no_live_match_and_no_local_record(
 
 
 # ---------------------------------------------------------------------------
+# cmd_terminate — --primary-only selector + keep-running clearance (#2270)
+# ---------------------------------------------------------------------------
+
+
+def _primary_clearance_setup(
+    monkeypatch,
+    stub_list_team_pods,
+    *,
+    issue: int,
+    live: list,
+    events: list[dict],
+    tag_state,
+) -> None:
+    """Standard seams for the #2270 --primary-only tests: live pods, events,
+    kind=experiment task, keep-running tri-state. Mirrors _fence_guard_setup;
+    only the external task_workflow / RunPod-API boundaries are faked — the
+    guard + clearance bodies run for real."""
+    _write_metadata_file({p.name: _meta(p.name, issue=issue, pod_id=p.pod_id) for p in live})
+    stub_list_team_pods.return_value = list(live)
+    _stub_list_events(monkeypatch, events)
+    _fake_experiment_task(monkeypatch)
+    _stub_keep_running_state(monkeypatch, tag_state)
+
+
+def test_terminate_primary_only_destroys_only_primary(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """#2270 AC1: --primary-only destroys exactly pod-<N>, leaving the live
+    suffixed sibling untouched (keep-running state False — the shield never
+    engages; the clearance is not consulted on the state-False path), and the
+    survivors re-query does not raise on the healthy sibling."""
+    _primary_clearance_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2270,
+        live=[
+            _info("pod-2270", pod_id="live-primary"),
+            _info("pod-2270-q32b", pod_id="live-sib"),
+        ],
+        events=[_upload_verification_event("PASS")],
+        tag_state=False,
+    )
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=2270, primary_only=True))
+
+    assert stub_terminate_pod == ["live-primary"], (
+        f"--primary-only must destroy ONLY pod-2270; got {stub_terminate_pod}"
+    )
+
+
+def test_terminate_primary_only_duplicate_canonicals_all_destroyed(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """#2270 AC1/MF-B (#475 doctrine): --primary-only is duplicate-INCLUSIVE —
+    two live rows BOTH named pod-<N> (one EXITED orphan) are BOTH destroyed,
+    while the suffixed sibling's pod, metadata row, and pods.conf row all
+    survive."""
+    live = [
+        _info("pod-2270", pod_id="live-primary-a"),
+        _info("pod-2270", pod_id="live-primary-b", desired_status="EXITED"),
+        _info("pod-2270-q32b", pod_id="live-sib"),
+    ]
+    _primary_clearance_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2270,
+        live=live,
+        events=[_upload_verification_event("PASS")],
+        tag_state=False,
+    )
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=2270, primary_only=True))
+
+    assert sorted(stub_terminate_pod) == sorted(["live-primary-a", "live-primary-b"]), (
+        f"every exact-name pod-2270 duplicate must die (#475); got {stub_terminate_pod}"
+    )
+    metadata = _read_metadata_file()
+    assert "pod-2270-q32b" in metadata, "sibling metadata row must survive"
+    assert "pod-2270-q32b" not in stub_pods_conf_writes, (
+        "sibling pods.conf row must never be removed by a primary-only run"
+    )
+
+
+def test_terminate_primary_only_tag_set_no_attribution_refuses(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """#2270 AC4: tag set + launches with NO structured pod naming → the
+    clearance refuses (a tag with no per-pod attribution blocks everything);
+    the refusal names the three remedies; zero terminate calls."""
+    _primary_clearance_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2270,
+        live=[
+            _info("pod-2270", pod_id="live-primary"),
+            _info("pod-2270-q32b", pod_id="live-sib"),
+        ],
+        events=[_run_launched_event("Launched the run; pid 123; log /workspace/x.log")],
+        tag_state=True,
+    )
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_terminate(terminate_ns(issue=2270, primary_only=True))
+
+    msg = str(exc.value)
+    assert "evidence window unanchored" in msg
+    assert "POD-BOUND" in msg  # remedy 1: post the pod-bound PASS
+    assert "remove-tag 2270 keep-running" in msg  # remedy 2
+    assert "--force-keep-running" in msg  # remedy 3
+    assert stub_terminate_pod == []
+
+
+def test_terminate_primary_only_podless_pass_refused(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """#2270 AC4/MF-E: the routine sibling-finishes-first sequence — structured
+    primary launch, structured live sibling launch, then a pod-LESS PASS (the
+    fleet's current primary-PASS shape) inside the primary's window — REFUSES:
+    a pod-less PASS never clears the keep-running shield (tier 1 only)."""
+    _primary_clearance_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2270,
+        live=[
+            _info("pod-2270", pod_id="live-primary"),
+            _info("pod-2270-q32b", pod_id="live-sib"),
+        ],
+        events=[
+            _rl_event("pod-2270", ts="2026-08-13T04:00:00Z"),
+            _rl_event("pod-2270-q32b", ts="2026-08-13T05:00:00Z"),
+            _pass_event(ts="2026-08-13T07:00:00Z"),  # pod-LESS
+        ],
+        tag_state=True,
+    )
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_terminate(terminate_ns(issue=2270, primary_only=True))
+
+    assert "pod-less PASS does not clear the shield" in str(exc.value)
+    assert stub_terminate_pod == []
+
+
+def test_terminate_primary_only_cleared_tier1_pod_bound_pass(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    capsys,
+    monkeypatch,
+):
+    """#2270 AC4 happy clearance: POD-BOUND PASS inside the primary's window +
+    live structured-named sibling + a LATER sibling-attributed launch (the
+    arm-(iii) pass-through) → proceeds; the stderr NOTE names the sibling, the
+    clearing PASS ts, and the tier; only the primary is destroyed."""
+    _primary_clearance_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2270,
+        live=[
+            _info("pod-2270", pod_id="live-primary"),
+            _info("pod-2270-q32b", pod_id="live-sib"),
+        ],
+        events=[
+            _rl_event("pod-2270", ts="2026-08-13T04:00:00Z"),
+            _rl_event("pod-2270-q32b", ts="2026-08-13T05:00:00Z"),
+            _pass_event(pod="pod-2270", ts="2026-08-13T07:00:00Z"),
+            _rl_event("pod-2270-q32b", ts="2026-08-13T08:00:00Z"),
+        ],
+        tag_state=True,
+    )
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=2270, primary_only=True))
+
+    err = capsys.readouterr().err
+    assert "clears the primary" in err
+    assert "pod-2270-q32b" in err
+    assert "ts=2026-08-13T07:00:00Z" in err
+    assert "tier 1" in err
+    assert stub_terminate_pod == ["live-primary"]
+
+
+def test_terminate_primary_only_relaunched_primary_not_cleared(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """#2270: a STRUCTURED fresh epm:run-launched naming the primary AFTER its
+    pod-bound PASS re-anchors the evidence window past the PASS → arm (ii)
+    finds no PASS in the fresh window → refused (the mid-run relaunch shape)."""
+    _primary_clearance_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2270,
+        live=[
+            _info("pod-2270", pod_id="live-primary"),
+            _info("pod-2270-q32b", pod_id="live-sib"),
+        ],
+        events=[
+            _rl_event("pod-2270", ts="2026-08-13T04:00:00Z"),
+            _rl_event("pod-2270-q32b", ts="2026-08-13T05:00:00Z"),
+            _pass_event(pod="pod-2270", ts="2026-08-13T07:00:00Z"),
+            _rl_event("pod-2270", ts="2026-08-13T09:00:00Z"),  # structured relaunch
+        ],
+        tag_state=True,
+    )
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_terminate(terminate_ns(issue=2270, primary_only=True))
+
+    assert "no upload-verification PASS POD-BOUND" in str(exc.value)
+    assert stub_terminate_pod == []
+
+
+@pytest.mark.parametrize(
+    "relaunch_note",
+    [
+        "Relaunched pod-2270 after the fix (pid 999)",  # mid-prose primary mention
+        "relaunch after crash fix; pid 999; log /workspace/x.log",  # no pod info
+    ],
+)
+def test_terminate_primary_only_post_pass_unattributed_launch_refuses(
+    relaunch_note,
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """#2270 AC4/MF-A (the T4-family inverse): an UNRECOGNIZED post-PASS
+    epm:run-launched (mid-prose primary mention / no pod info at all) does NOT
+    re-anchor the window, so the stale pod-bound PASS is still in-window —
+    arm (iii) refuses, naming the offending event's ts."""
+    _primary_clearance_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2270,
+        live=[
+            _info("pod-2270", pod_id="live-primary"),
+            _info("pod-2270-q32b", pod_id="live-sib"),
+        ],
+        events=[
+            _rl_event("pod-2270", ts="2026-08-13T04:00:00Z"),
+            _rl_event("pod-2270-q32b", ts="2026-08-13T05:00:00Z"),
+            _pass_event(pod="pod-2270", ts="2026-08-13T07:00:00Z"),
+            _run_launched_event(relaunch_note, ts="2026-08-14T00:00:00Z"),
+        ],
+        tag_state=True,
+    )
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_terminate(terminate_ns(issue=2270, primary_only=True))
+
+    msg = str(exc.value)
+    assert "no structural pod attribution" in msg
+    assert "2026-08-14T00:00:00Z" in msg
+    assert stub_terminate_pod == []
+
+
+@pytest.mark.parametrize("sibling_live_shape", ["absent", "exited"])
+def test_terminate_primary_only_named_sibling_not_live_refuses(
+    sibling_live_shape,
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """#2270 AC4 arm (i): the sibling is structured-NAMED in launches but not
+    LIVE non-EXITED (absent from the live API, or present but EXITED) →
+    refused. Arm (ii) is held SATISFIED (pod-bound PASS in window) so ONLY
+    arm (i) fails (arm isolation)."""
+    live = [_info("pod-2270", pod_id="live-primary")]
+    if sibling_live_shape == "exited":
+        live.append(_info("pod-2270-q32b", pod_id="live-sib", desired_status="EXITED"))
+    _primary_clearance_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2270,
+        live=live,
+        events=[
+            _rl_event("pod-2270", ts="2026-08-13T04:00:00Z"),
+            _rl_event("pod-2270-q32b", ts="2026-08-13T05:00:00Z"),
+            _pass_event(pod="pod-2270", ts="2026-08-13T07:00:00Z"),
+        ],
+        tag_state=True,
+    )
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_terminate(terminate_ns(issue=2270, primary_only=True))
+
+    assert "no legible non-primary beneficiary" in str(exc.value)
+    assert stub_terminate_pod == []
+
+
+def test_terminate_primary_only_primary_never_named_refuses(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """#2270 AC4 anchor arm: NO structured launch ever names the primary —
+    the evidence window is unanchored → refused. Arm (i) is held SATISFIED
+    (live structured-named sibling — arm isolation)."""
+    _primary_clearance_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2270,
+        live=[
+            _info("pod-2270", pod_id="live-primary"),
+            _info("pod-2270-q32b", pod_id="live-sib"),
+        ],
+        events=[
+            _rl_event("pod-2270-q32b", ts="2026-08-13T05:00:00Z"),
+            _pass_event(pod="pod-2270", ts="2026-08-13T07:00:00Z"),
+        ],
+        tag_state=True,
+    )
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_terminate(terminate_ns(issue=2270, primary_only=True))
+
+    assert "evidence window unanchored" in str(exc.value)
+    assert stub_terminate_pod == []
+
+
+def test_terminate_primary_only_keep_running_unknown_refuses(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """#2270 AC4 fail-closed: tag state None (unreadable) refuses the
+    primary-only terminate with a scope-correct message; the clearance is
+    NEVER consulted (list_events raises if touched)."""
+    pod_name = _register_pod_for_issue(2270)
+    stub_list_team_pods.return_value = [_info(pod_name, pod_id="live-primary")]
+    _stub_keep_running_state(monkeypatch, None)
+
+    def clearance_must_not_run(_issue):
+        raise AssertionError("clearance must not be consulted when the tag state is None")
+
+    monkeypatch.setattr(
+        "explore_persona_space.task_workflow.list_events",
+        clearance_must_not_run,
+    )
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_terminate(terminate_ns(issue=2270, primary_only=True))
+
+    msg = str(exc.value)
+    assert "primary-only terminate" in msg
+    assert "could not be read" in msg
+    assert "--force-keep-running" in msg
+    assert stub_terminate_pod == []
+
+
+def test_terminate_primary_only_events_unreadable_refuses(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """#2270 AC4/MF-C (fail-CLOSED exception arm): tag True + live primary and
+    named sibling, but list_events RAISES → the clearance returns
+    (False, 'task events unreadable ...') and the guard refuses; zero
+    terminate calls (mirrors the #1485 unreadable-state precedent)."""
+    _write_metadata_file(
+        {
+            "pod-2270": _meta("pod-2270", issue=2270, pod_id="live-primary"),
+            "pod-2270-q32b": _meta("pod-2270-q32b", issue=2270, pod_id="live-sib"),
+        }
+    )
+    stub_list_team_pods.return_value = [
+        _info("pod-2270", pod_id="live-primary"),
+        _info("pod-2270-q32b", pod_id="live-sib"),
+    ]
+    _stub_keep_running_state(monkeypatch, True)
+
+    def boom(_issue):
+        raise RuntimeError("events store unavailable")
+
+    monkeypatch.setattr("explore_persona_space.task_workflow.list_events", boom)
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_terminate(terminate_ns(issue=2270, primary_only=True))
+
+    assert "task events unreadable (RuntimeError)" in str(exc.value)
+    assert stub_terminate_pod == []
+
+
+def test_terminate_primary_only_force_keep_running_scope_warning(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    capsys,
+    monkeypatch,
+):
+    """#2270 AC4: --force-keep-running proceeds on the primary-only path with a
+    PRIMARY-scoped warning (keeps the --force-keep-running / DESPITE
+    keep-running substrings the existing test greps; states suffixed pods are
+    NOT touched); only the primary is destroyed."""
+    _primary_clearance_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2270,
+        live=[
+            _info("pod-2270", pod_id="live-primary"),
+            _info("pod-2270-q32b", pod_id="live-sib"),
+        ],
+        events=[_upload_verification_event("PASS")],
+        tag_state=True,
+    )
+
+    ns = terminate_ns(issue=2270, primary_only=True)
+    ns.force_keep_running = True
+    pod_lifecycle.cmd_terminate(ns)
+
+    err = capsys.readouterr().err
+    assert "--force-keep-running" in err
+    assert "DESPITE keep-running" in err
+    assert "PRIMARY pod-2270" in err
+    assert "NOT touched" in err
+    assert stub_terminate_pod == ["live-primary"]
+
+
+@pytest.mark.parametrize("state", [True, None])
+def test_terminate_bare_force_keep_running_warning_byte_identical(
+    state,
+    capsys,
+    monkeypatch,
+):
+    """#2270 AC7 (critique r1 item 3): the BARE-path force warning — including
+    the trailing 'WILL be destroyed.' sentence, which is FALSE under
+    --primary-only and therefore scoped to the bare path — stays
+    byte-identical to the committed string."""
+    _stub_keep_running_state(monkeypatch, state)
+
+    pod_lifecycle._guard_keep_running_before_terminate(
+        605, name_suffix=None, force_flag=True, dry_run=False
+    )
+
+    err = capsys.readouterr().err
+    expected = (
+        "[pod_lifecycle] WARN: terminating ALL pods for issue "
+        f"#605 DESPITE keep-running state={state!r} because "
+        "--force-keep-running was passed. A live follow-up / parallel "
+        "suffixed pod on this issue WILL be destroyed."
+    )
+    assert expected in err
+
+
+def test_terminate_primary_only_refuses_without_upload_pass(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """#2270 AC2: the primary-only form flows through the UNCHANGED
+    upload-verification guard — no PASS marker → SystemExit, zero terminate
+    calls."""
+    _primary_clearance_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2270,
+        live=[_info("pod-2270", pod_id="live-primary")],
+        events=[],
+        tag_state=False,
+    )
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_terminate(terminate_ns(issue=2270, primary_only=True))
+
+    assert "upload" in str(exc.value).lower()
+    assert stub_terminate_pod == []
+
+
+def test_terminate_primary_only_refuses_pass_without_outroot_token(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """#2270 AC2: a PASS without the #2187 outroot= attestation refuses the
+    primary-only terminate exactly as every other form."""
+    _primary_clearance_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2270,
+        live=[_info("pod-2270", pod_id="live-primary")],
+        events=[_upload_verification_event("PASS", outroot=None)],
+        tag_state=False,
+    )
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_terminate(terminate_ns(issue=2270, primary_only=True))
+
+    assert "outroot" in str(exc.value)
+    assert stub_terminate_pod == []
+
+
+def test_terminate_primary_only_refuses_pass_without_rows_token(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """#2270 AC2 (critique r1 item 8): a PASS without the #2148 rows=
+    realized row-count attestation refuses the primary-only terminate — the
+    rows= half of the attestation is measured, not assumed."""
+    _primary_clearance_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2270,
+        live=[_info("pod-2270", pod_id="live-primary")],
+        events=[_upload_verification_event("PASS", rows=None)],
+        tag_state=False,
+    )
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_terminate(terminate_ns(issue=2270, primary_only=True))
+
+    assert "rows" in str(exc.value)
+    assert stub_terminate_pod == []
+
+
+def test_terminate_primary_only_owner_fence_binds(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """#2270 AC3: the #2277 owner fence binds on the primary-only path — an
+    unexpired fence_until= on the primary with no owner-matching PASS refuses."""
+    _primary_clearance_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2270,
+        live=[_info("pod-2270", pod_id="live-primary")],
+        events=[
+            _rl_event("pod-2270", owner="sess-a", fence_until=_FUTURE_FENCE),
+            _pass_event(),  # pod-less, ownerless — cannot waive the fence
+        ],
+        tag_state=False,
+    )
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_terminate(terminate_ns(issue=2270, primary_only=True))
+
+    msg = str(exc.value)
+    assert "owner fence" in msg
+    assert "#2277" in msg
+    assert stub_terminate_pod == []
+
+
+def test_terminate_name_suffix_empty_string_refused(
+    isolated_state,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """#2270 AC5: --name-suffix "" is a LOUD refusal naming --primary-only —
+    never the historical silent issue-wide sweep with the keep-running shield
+    waived. Validation-first ordering: the tag reader AND the live-API listing
+    both RAISE if touched."""
+
+    def must_not_run(*_a, **_k):
+        raise AssertionError("suffix validation must fire before any task/API read")
+
+    monkeypatch.setattr("explore_persona_space.task_workflow.keep_running_tag_state", must_not_run)
+    monkeypatch.setattr(pod_lifecycle, "list_team_pods", must_not_run)
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_terminate(terminate_ns(issue=2270, name_suffix=""))
+
+    msg = str(exc.value)
+    assert "--primary-only" in msg
+    assert "pod-name slug" in msg
+    assert stub_terminate_pod == []
+
+
+@pytest.mark.parametrize("bad_suffix", ["1abc", "AB", "a*b"])
+def test_terminate_name_suffix_grammar_refused(
+    bad_suffix,
+    isolated_state,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """#2270 AC5: a malformed non-empty suffix is an immediate grammar error
+    (today: a silent no-match fallthrough into stale-record cleanup)."""
+
+    def must_not_run(*_a, **_k):
+        raise AssertionError("suffix validation must fire before any task/API read")
+
+    monkeypatch.setattr("explore_persona_space.task_workflow.keep_running_tag_state", must_not_run)
+    monkeypatch.setattr(pod_lifecycle, "list_team_pods", must_not_run)
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_terminate(terminate_ns(issue=2270, name_suffix=bad_suffix))
+
+    assert "pod-name slug" in str(exc.value)
+    assert stub_terminate_pod == []
+
+
+def test_terminate_name_suffix_grammar_long_slug_accepted(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """#2270 AC5 (READ-side grammar, orchestrator decision): a 25-char slug is
+    ACCEPTED — where the write-side RUNPOD_NAME_SUFFIX_RE (<= 20 chars) would
+    refuse — and routes to the normal no-live-match refusal, proving the
+    selector survived validation."""
+    slug = "a" + "b" * 24  # 25 chars — beyond the write-side cap
+    stub_list_team_pods.return_value = []
+    monkeypatch.setattr(
+        "explore_persona_space.task_workflow.get_task",
+        lambda issue: {"id": issue, "frontmatter": {"kind": "infra"}, "body": ""},
+    )
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_terminate(terminate_ns(issue=2270, name_suffix=slug))
+
+    msg = str(exc.value)
+    assert "No live pod" in msg, f"the 25-char slug must pass validation; got: {msg}"
+    assert f"pod-2270-{slug}" in msg
+    assert stub_terminate_pod == []
+
+
+def test_terminate_suffix_grammar_parity_with_pod_name_re():
+    """#2270 AC5 grammar-parity sweep: _TERMINATE_SUFFIX_RE accepts exactly the
+    strings the read-side _POD_NAME_RE slug production accepts (25-char slug
+    included — the write-side cap deliberately does NOT apply)."""
+    candidates = ["b", "q32b", "a-1", "a" * 25, "a", "1abc", "9b", "AB", "a*b", "", "a_b", "-ab"]
+    for s in candidates:
+        terminate_ok = bool(pod_lifecycle._TERMINATE_SUFFIX_RE.fullmatch(s))
+        m = pod_lifecycle._POD_NAME_RE.fullmatch(f"pod-1-{s}")
+        pod_name_ok = bool(m is not None and m.group("slug") == s)
+        assert terminate_ok == pod_name_ok, (
+            f"grammar divergence on {s!r}: _TERMINATE_SUFFIX_RE={terminate_ok} "
+            f"vs _POD_NAME_RE slug acceptance={pod_name_ok}"
+        )
+
+
+def test_terminate_name_suffix_empty_string_refused_in_dry_run(
+    isolated_state,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """#2270 AC5 combination pin (critique r1 item 9): --dry-run + empty suffix
+    is STILL refused — a preview of an invalid selector is meaningless, so the
+    validation precedes the dry-run preview."""
+
+    def must_not_run(*_a, **_k):
+        raise AssertionError("suffix validation must fire before any task/API read")
+
+    monkeypatch.setattr(pod_lifecycle, "list_team_pods", must_not_run)
+
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_terminate(terminate_ns(issue=2270, name_suffix="", dry_run=True))
+
+    assert "--primary-only" in str(exc.value)
+    assert stub_terminate_pod == []
+
+
+def test_terminate_parser_primary_only_flag_and_mutex():
+    """#2270 AC6: the terminate subparser exposes --primary-only (default
+    False), and --primary-only + --name-suffix is an argparse mutual-exclusion
+    error (exit 2)."""
+    parser = argparse.ArgumentParser()
+    sub = parser.add_subparsers(dest="cmd")
+    pod_lifecycle._parser_terminate(sub)
+
+    ns = parser.parse_args(["terminate", "--issue", "1", "--yes", "--primary-only"])
+    assert ns.primary_only is True
+
+    ns2 = parser.parse_args(["terminate", "--issue", "1", "--yes"])
+    assert ns2.primary_only is False
+
+    with pytest.raises(SystemExit) as exc:
+        parser.parse_args(["terminate", "--issue", "1", "--primary-only", "--name-suffix", "b"])
+    assert exc.value.code == 2
+
+
+def test_terminate_primary_only_with_name_suffix_namespace_refused(
+    isolated_state,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+):
+    """#2270 AC6: a hand-built Namespace carrying BOTH selectors (argparse
+    never composes it) hits the cmd-level mutual-exclusion SystemExit."""
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_terminate(terminate_ns(issue=2270, name_suffix="b", primary_only=True))
+
+    assert "mutually exclusive" in str(exc.value)
+    assert stub_terminate_pod == []
+
+
+def test_terminate_primary_only_dry_run_no_task_read(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    capsys,
+    monkeypatch,
+):
+    """#2270 AC8/MF-D: --primary-only --dry-run previews with ZERO task reads —
+    get_task, keep_running_tag_state, AND list_events all raise if touched
+    (extends the committed #1485 dry-run stub-set convention to the new path);
+    the NOTE names the clearance a real run would evaluate."""
+    pod_name = _register_pod_for_issue(2270)
+    stub_list_team_pods.return_value = [_info(pod_name, pod_id="live-primary")]
+
+    def should_not_read_task(_issue):
+        raise AssertionError("dry-run must not inspect task state")
+
+    for seam in ("get_task", "keep_running_tag_state", "list_events"):
+        monkeypatch.setattr(f"explore_persona_space.task_workflow.{seam}", should_not_read_task)
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=2270, dry_run=True, primary_only=True))
+
+    err = capsys.readouterr().err
+    assert "per-pod clearance (#2270)" in err
+    assert stub_terminate_pod == [], "dry-run must not call terminate_pod"
+
+
+def test_terminate_primary_only_stale_sidecar_scoped(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    capsys,
+    monkeypatch,
+):
+    """#2270: no live pods; sidecar rows exist for the primary AND the sibling
+    → the no-live-match stale-clear is scoped to exactly pod-<N>; the
+    sibling's row survives."""
+    _write_metadata_file(
+        {
+            "pod-2270": _meta("pod-2270", issue=2270),
+            "pod-2270-q32b": _meta("pod-2270-q32b", issue=2270, pod_id="sib-id"),
+        }
+    )
+    stub_list_team_pods.return_value = []
+    _stub_keep_running_state(monkeypatch, False)
+    monkeypatch.setattr(
+        "explore_persona_space.task_workflow.get_task",
+        lambda issue: {"id": issue, "frontmatter": {"kind": "infra"}, "body": ""},
+    )
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=2270, primary_only=True))
+
+    err = capsys.readouterr().err
+    assert "(pod-2270," in err, "the stale-clear message must name the primary's record"
+    metadata = _read_metadata_file()
+    assert "pod-2270" not in metadata, "the primary's stale row must be cleared"
+    assert "pod-2270-q32b" in metadata, "the sibling's sidecar row must survive"
+    assert stub_pods_conf_writes == ["pod-2270"]
+    assert stub_terminate_pod == []
+
+
+def test_terminate_primary_only_post_cleanup_keeps_live_sibling_records(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """#2270 AC1/D5 (the #1334-inverse pin, now observable): after a
+    primary-only teardown with a live sibling, the sibling's metadata row is
+    intact AND its name never entered the pods.conf-removal capture list —
+    the exactly-one stale-lookup fallback must NOT resolve the sibling."""
+    _primary_clearance_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2270,
+        live=[
+            _info("pod-2270", pod_id="live-primary"),
+            _info("pod-2270-q32b", pod_id="live-sib"),
+        ],
+        events=[_upload_verification_event("PASS")],
+        tag_state=False,
+    )
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=2270, primary_only=True))
+
+    metadata = _read_metadata_file()
+    assert "pod-2270-q32b" in metadata, "live sibling's metadata row must survive (D5)"
+    assert "pod-2270" not in metadata
+    assert "pod-2270-q32b" not in stub_pods_conf_writes, (
+        "the sibling must never be removed from pods.conf by a primary-only run"
+    )
+    assert stub_pods_conf_writes == ["pod-2270"]
+
+
+def test_terminate_bare_still_sweeps_all_live_pods(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """#2270 AC7 regression pin: the bare form's sweep semantics are UNCHANGED —
+    two live pods (primary + suffixed sibling), PASS present, no tag → BOTH
+    destroyed."""
+    _primary_clearance_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2270,
+        live=[
+            _info("pod-2270", pod_id="live-primary"),
+            _info("pod-2270-q32b", pod_id="live-sib"),
+        ],
+        events=[_upload_verification_event("PASS")],
+        tag_state=False,
+    )
+
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=2270))
+
+    assert sorted(stub_terminate_pod) == sorted(["live-primary", "live-sib"])
+
+
+def test_latest_pod_bound_pass_two_tier():
+    """#2270 D3 unit pins: tier-1 pod-bound selection, tier-2 pod-less
+    fallback, different-pod skip in both directions, the
+    allow_podless_fallback=False strict arm, and the factored owner read."""
+    podless_old = _pass_event(ts="2026-08-13T01:00:00Z")
+    other_bound = _pass_event(pod="pod-9-b", ts="2026-08-13T02:00:00Z")
+    target_bound = _pass_event(pod="pod-9", ts="2026-08-13T03:00:00Z")
+
+    # Tier 1: the newest pod-bound PASS wins over an older pod-less one.
+    assert (
+        pod_lifecycle._latest_pod_bound_pass([podless_old, other_bound, target_bound], "pod-9")
+        is target_bound
+    )
+    # Tier 2: with no target-bound PASS, the newest pod-LESS PASS is selected;
+    # a PASS bound to a DIFFERENT pod is skipped in both directions.
+    assert pod_lifecycle._latest_pod_bound_pass([podless_old, other_bound], "pod-9") is podless_old
+    # Strict tier-1 (#2270 MF-E): the pod-less fallback is skipped entirely.
+    assert (
+        pod_lifecycle._latest_pod_bound_pass(
+            [podless_old, other_bound], "pod-9", allow_podless_fallback=False
+        )
+        is None
+    )
+    assert (
+        pod_lifecycle._latest_pod_bound_pass(
+            [podless_old, other_bound, target_bound],
+            "pod-9",
+            allow_podless_fallback=False,
+        )
+        is target_bound
+    )
+    # Factored owner read (D3 equivalence): tier-2 owner surfaces; a selected
+    # PASS without an owner token reads None.
+    owner_pass = _pass_event(owner="own-9", ts="2026-08-13T04:00:00Z")
+    assert pod_lifecycle._latest_pass_owner_for_pod([owner_pass], "pod-9") == "own-9"
+    assert pod_lifecycle._latest_pass_owner_for_pod([podless_old], "pod-9") is None
+    assert pod_lifecycle._latest_pass_owner_for_pod([other_bound], "pod-9") is None
+
+
+def test_keep_running_primary_clearance_grammar(
+    isolated_state,
+    stub_list_team_pods,
+    monkeypatch,
+):
+    """#2270 clearance grammar unit pins: the JSON "pod" field counts as
+    structural attribution (arm (iii) pass-through); the #1961 attested
+    mid-prose counterexample ('pod-<N>-tx ... was already TERMINATED') does
+    NOT; a PASS bound to the SIBLING never clears the primary (tier-1 only)."""
+    primary, sibling = "pod-9", "pod-9-b"
+    stub_list_team_pods.return_value = [
+        _info(primary, pod_id="p"),
+        _info(sibling, pod_id="s"),
+    ]
+    base = [
+        _rl_event(primary, ts="2026-08-13T04:00:00Z"),
+        _rl_event(sibling, ts="2026-08-13T05:00:00Z"),
+        _pass_event(pod=primary, ts="2026-08-13T07:00:00Z"),
+    ]
+
+    # JSON-attributed post-PASS sibling launch → structural attribution → cleared.
+    json_launch = _run_launched_event(
+        json.dumps({"pod": sibling, "phase": "relaunch"}), ts="2026-08-13T08:00:00Z"
+    )
+    _stub_list_events(monkeypatch, [*base, json_launch])
+    cleared, why = pod_lifecycle._keep_running_primary_clearance(9)
+    assert cleared, why
+    assert sibling in why and "tier 1" in why
+
+    # Mid-prose mention (the #1961 attested counterexample shape) is NOT
+    # structural attribution → arm (iii) refuses.
+    prose_launch = _run_launched_event(
+        f"Recovered: {sibling} ... was already TERMINATED", ts="2026-08-13T08:00:00Z"
+    )
+    _stub_list_events(monkeypatch, [*base, prose_launch])
+    cleared, why = pod_lifecycle._keep_running_primary_clearance(9)
+    assert not cleared
+    assert "no structural pod attribution" in why
+
+    # A PASS bound to the SIBLING never clears the primary (tier-1 strictness).
+    _stub_list_events(
+        monkeypatch,
+        [
+            _rl_event(primary, ts="2026-08-13T04:00:00Z"),
+            _rl_event(sibling, ts="2026-08-13T05:00:00Z"),
+            _pass_event(pod=sibling, ts="2026-08-13T07:00:00Z"),
+        ],
+    )
+    cleared, why = pod_lifecycle._keep_running_primary_clearance(9)
+    assert not cleared
+    assert "POD-BOUND" in why
+
+
+def test_terminate_primary_only_skip_upload_verify_combination(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    monkeypatch,
+):
+    """#2270 (critique r1 item 9): --primary-only --skip-upload-verify — the
+    keep-running clearance STILL binds (the skip flag waives only the upload
+    guard); with the tag off, the skip flag lets a PASS-less primary-only
+    teardown proceed."""
+    # Phase 1: tag SET, no clearing evidence → the clearance refuses even
+    # though the upload guard is waived.
+    _primary_clearance_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2270,
+        live=[_info("pod-2270", pod_id="live-primary")],
+        events=[_rl_event("pod-2270", ts="2026-08-13T04:00:00Z")],
+        tag_state=True,
+    )
+    with pytest.raises(SystemExit) as exc:
+        pod_lifecycle.cmd_terminate(terminate_ns(issue=2270, primary_only=True, skip=True))
+    assert "keep-running" in str(exc.value)
+    assert stub_terminate_pod == []
+
+    # Phase 2: tag OFF → the skip flag waives the (PASS-less) upload guard and
+    # the primary-only teardown proceeds.
+    _stub_keep_running_state(monkeypatch, False)
+    pod_lifecycle.cmd_terminate(terminate_ns(issue=2270, primary_only=True, skip=True))
+    assert stub_terminate_pod == ["live-primary"]
+
+
+def test_terminate_primary_only_force_owner_fence_combination(
+    isolated_state,
+    stub_list_team_pods,
+    stub_terminate_pod,
+    stub_pods_conf_writes,
+    terminate_ns,
+    capsys,
+    monkeypatch,
+):
+    """#2270 (critique r1 item 9): --primary-only --force-owner-fence overrides
+    an unexpired fence on the primary exactly as on the existing forms."""
+    _primary_clearance_setup(
+        monkeypatch,
+        stub_list_team_pods,
+        issue=2270,
+        live=[_info("pod-2270", pod_id="live-primary")],
+        events=[
+            _rl_event("pod-2270", owner="sess-a", fence_until=_FUTURE_FENCE),
+            _pass_event(),  # pod-less, ownerless — would refuse without the flag
+        ],
+        tag_state=False,
+    )
+
+    ns = terminate_ns(issue=2270, primary_only=True)
+    ns.force_owner_fence = True
+    pod_lifecycle.cmd_terminate(ns)
+
+    err = capsys.readouterr().err
+    assert "--force-owner-fence" in err
+    assert stub_terminate_pod == ["live-primary"]
+
+
+def test_runpod_backend_teardown_suffixed_argv_passes_terminate_validation(monkeypatch):
+    """#2270 MF-F: RunPodBackend.teardown's SUFFIXED-handle argv carries
+    --name-suffix <slug> where the slug is recovered from the handle's own
+    managed pod name — so it fullmatches _TERMINATE_SUFFIX_RE by construction
+    and the new D6 validation can never refuse a teardown-composed argv. (The
+    existing unsuffixed pin stays green unmodified.)"""
+    from explore_persona_space.backends import runpod as rp
+    from explore_persona_space.backends.base import RunHandle
+
+    captured: list[list[str]] = []
+    monkeypatch.setattr(rp, "_run_pod_lifecycle_relay", lambda cmd, **k: captured.append(cmd))
+
+    handle = RunHandle(
+        backend="runpod",
+        cluster=None,
+        job_id="job-2270",
+        pod_name="pod-2270-q32b",
+        scratch_dir="/workspace",
+        log_path="/log",
+        extra={"issue": 2270},
+    )
+    rp.RunPodBackend().teardown(handle)
+
+    assert len(captured) == 1
+    cmd = captured[0]
+    assert "--name-suffix" in cmd
+    slug = cmd[cmd.index("--name-suffix") + 1]
+    assert slug == "q32b"
+    assert pod_lifecycle._TERMINATE_SUFFIX_RE.fullmatch(slug), (
+        "every teardown-recovered slug must pass the read-side grammar (#2270 D6)"
+    )
+    assert "--primary-only" not in cmd
+
+
+# ---------------------------------------------------------------------------
 # _has_upload_verification_pass — note-body verdict parsing (the bug site)
 # ---------------------------------------------------------------------------
 
@@ -2713,6 +4897,43 @@ def test_outroot_attested_rejects_missing_or_invalid_token(note):
     assert pod_lifecycle._upload_verification_outroot_attested(note) is False
 
 
+# ---------------------------------------------------------------------------
+# _upload_verification_rows_attested — the #2148 realized row-count token
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "note",
+    [
+        "**Verdict: PASS**\n\nrows=reconciled\n",
+        "**Verdict: PASS**\n\nrows=no-declared-count\n",
+        "Verdict: PASS\nrows: n/a\n",
+        "verdict: pass\nROWS = RECONCILED\n",  # case-insensitive, spaced =
+        json.dumps({"verdict": "PASS", "rows": "reconciled"}),
+        json.dumps({"verdict": "PASS", "rows": "n/a"}),
+    ],
+)
+def test_rows_attested_accepts_both_note_shapes(note):
+    assert pod_lifecycle._upload_verification_rows_attested(note) is True
+
+
+@pytest.mark.parametrize(
+    "note",
+    [
+        "**Verdict: PASS**\n\nDiscovered N files.",  # token absent
+        "**Verdict: PASS**\nrows=partial\n",  # invalid value
+        "**Verdict: PASS**\nrows=\n",  # empty value
+        "**Verdict: PASS**\narrows=reconciled\n",  # word-boundary: not `rows=`
+        json.dumps({"verdict": "PASS"}),  # JSON without the key
+        json.dumps({"verdict": "PASS", "rows": "yes"}),  # JSON invalid value
+        json.dumps({"verdict": "PASS", "outroot": "swept-clean"}),  # outroot is not rows
+        "",
+    ],
+)
+def test_rows_attested_rejects_missing_or_invalid_token(note):
+    assert pod_lifecycle._upload_verification_rows_attested(note) is False
+
+
 # The DOCUMENTED inline-round note shape (#1970, incident #1773): an inline
 # round that verified its own uploads posts this note via `task.py
 # post-marker`, then re-runs terminate. LEADING `Verdict: PASS` so BOTH
@@ -2720,11 +4941,13 @@ def test_outroot_attested_rejects_missing_or_invalid_token(note):
 # task_workflow.UPLOAD_VERIFICATION_PASS_RE (the finalize teardown gate).
 # As of #2187 the documented recipe ALSO carries the out-root sweep
 # attestation token (`outroot=<...>`) — the terminate guard refuses a PASS
-# without it (see test_terminate_refuses_pass_without_outroot_token).
+# without it (see test_terminate_refuses_pass_without_outroot_token) — and
+# as of #2148 the realized row-count attestation token (`rows=<...>`), the
+# within-file sibling (see test_terminate_refuses_pass_without_rows_token).
 _INLINE_ROUND_NOTE = (
     "Verdict: PASS — inline-round verification; "
     "prefixes: issue1773_fulldict/, issue1773_raw_windows/; "
-    "outroot=swept-clean"
+    "outroot=swept-clean; rows=reconciled"
 )
 
 
@@ -3812,3 +6035,81 @@ def test_parse_pod_populates_placement_identity():
     parsed_without = _parse_pod(raw_without)
     assert parsed_without.pod_host_id is None
     assert parsed_without.data_center_id is None
+
+
+def test_owner_fence_state_matches_guard_semantics():
+    """#2283 parity row: ``owner_fence_state`` (the extracted per-pod loop
+    body of ``_guard_owner_fence_before_terminate``) reproduces the guard's
+    inlined semantics FIELD BY FIELD over the #2277 scenario battery — the
+    same reader chain (evidence window -> owner token -> fence -> two-tier
+    PASS owner), the same refusal predicate (``blocks_teardown`` iff an
+    unexpired fence exists without an owner-matching PASS)."""
+    import datetime as dt
+
+    pod = "pod-2054-tiers"
+    now = dt.datetime.now(dt.UTC)
+    scenarios = {
+        "no-tokens": [_rl_event(pod)],
+        "unexpired-unwaived": [_rl_event(pod, owner="sess-a", fence_until=_FUTURE_FENCE)],
+        "unexpired-owner-matched": [
+            _rl_event(pod, owner="sess-a", fence_until=_FUTURE_FENCE),
+            _pass_event(pod=pod, owner="sess-a"),
+        ],
+        "unexpired-nonowner-pass": [
+            _rl_event(pod, owner="sess-a", fence_until=_FUTURE_FENCE),
+            _pass_event(pod=pod, owner="sess-b"),
+        ],
+        "expired": [_rl_event(pod, owner="sess-a", fence_until=_PAST_FENCE)],
+        "cleared-none": [
+            _rl_event(pod, owner="sess-a", fence_until=_FUTURE_FENCE),
+            _hb_event(pod, fence_until="none"),
+        ],
+        "malformed-fence": [_rl_event(pod, owner="sess-a", fence_until="not-a-date")],
+        "other-pod-fence": [_rl_event("pod-2054", owner="sess-a", fence_until=_FUTURE_FENCE)],
+        "window-reset-relaunch": [
+            _rl_event(pod, owner="sess-a", fence_until=_FUTURE_FENCE, ts="2026-08-13T10:00:00Z"),
+            _rl_event(pod, ts="2026-08-13T12:00:00Z"),
+        ],
+        "tier2-unbound-pass": [
+            _rl_event(pod, owner="sess-a", fence_until=_FUTURE_FENCE),
+            _pass_event(owner="sess-a"),  # pod-LESS PASS: the tier-2 fallback
+        ],
+    }
+    for label, events in scenarios.items():
+        st = pod_lifecycle.owner_fence_state(events, pod, now)
+        # Re-derive through the SAME readers the guard's pre-extraction loop
+        # body called inline — field-level parity, not just the verdict.
+        window = pod_lifecycle._pod_evidence_window(events, pod)
+        owner_reg = pod_lifecycle._latest_pod_token(window, pod, "owner")
+        fence = pod_lifecycle._latest_pod_fence_until(window, pod)
+        pass_owner = pod_lifecycle._latest_pass_owner_for_pod(window, pod)
+        assert st.fence_until == fence, label
+        assert st.owner_registered == owner_reg, label
+        assert st.pass_owner == pass_owner, label
+        assert st.fence_unexpired == (fence is not None and fence > now), label
+        assert st.owner_matched == (owner_reg is not None and pass_owner == owner_reg), label
+        # blocks_teardown IS the guard's refusal predicate.
+        refusal = (fence is not None and fence > now) and not (
+            owner_reg is not None and pass_owner == owner_reg
+        )
+        assert st.blocks_teardown == refusal, label
+    # Spot-check the battery's decisive verdicts (guards against a
+    # degenerate all-None battery silently passing the parity loop).
+    assert pod_lifecycle.owner_fence_state(
+        scenarios["unexpired-unwaived"], pod, now
+    ).blocks_teardown
+    assert pod_lifecycle.owner_fence_state(
+        scenarios["unexpired-nonowner-pass"], pod, now
+    ).blocks_teardown
+    assert not pod_lifecycle.owner_fence_state(
+        scenarios["unexpired-owner-matched"], pod, now
+    ).blocks_teardown
+    assert not pod_lifecycle.owner_fence_state(scenarios["expired"], pod, now).blocks_teardown
+    assert not pod_lifecycle.owner_fence_state(
+        scenarios["other-pod-fence"], pod, now
+    ).blocks_teardown
+    assert not pod_lifecycle.owner_fence_state(
+        scenarios["window-reset-relaunch"], pod, now
+    ).blocks_teardown
+    tier2 = pod_lifecycle.owner_fence_state(scenarios["tier2-unbound-pass"], pod, now)
+    assert tier2.pass_owner == "sess-a" and tier2.owner_matched

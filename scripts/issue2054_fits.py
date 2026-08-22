@@ -87,6 +87,7 @@ import numpy as np  # noqa: E402
 
 import issue2054_forms as forms  # noqa: E402
 import issue2054_resume as resume  # noqa: E402
+from issue2054_fold_map import load_fold_map  # noqa: E402
 from issue2054_pilot import fleet_projection_update as _fleet_projection_update  # noqa: E402
 from issue2054_pilot import require_prior_wall_seconds as _require_prior_wall_seconds  # noqa: E402
 from explore_persona_space.analysis.mapping_baselines import (  # noqa: E402
@@ -194,15 +195,12 @@ def _rel(path: Path) -> str:
         return str(path)
 
 
-def _load_fold_map(path: Path) -> dict:
-    if not path.is_file():
-        raise FileNotFoundError(f"shared_fold_map not found: {path}")
-    with path.open(encoding="utf-8") as f:
-        d = json.load(f)
-    for key in ("fold_of", "k", "seed"):
-        if key not in d:
-            raise ValueError(f"shared_fold_map missing {key!r}: {path}")
-    return d
+def _load_fold_map(path: Path, *, allow_smoke: bool = False) -> dict:
+    """Delegate to the shared guarded loader (scripts/issue2054_fold_map.py, #2245):
+    refuses a sub-production (smoke) fold map unless ``allow_smoke=True`` (the
+    ``--allow-smoke-fold-map`` flag); the fold_of/k/seed key checks stay
+    unconditional in either mode."""
+    return load_fold_map(path, allow_smoke=allow_smoke)
 
 
 def _find_activation_path(
@@ -1003,7 +1001,7 @@ def _cell_resume_check(out_path: Path, expected: dict) -> tuple[bool, str]:
     try:
         with out_path.open(encoding="utf-8") as f:
             existing = json.load(f)
-    except (OSError, json.JSONDecodeError):
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
         return False, "existing fit JSON unreadable"
     mismatched = [k for k in _CELL_RESUME_KEYS if existing.get(k) != expected.get(k)]
     fm = existing.get("fold_map") or {}
@@ -1072,7 +1070,7 @@ def _run_fits_pilot_gate(
                     units_basis="total cells x arms (resume not modeled)",
                 )
                 return
-        except (OSError, json.JSONDecodeError):
+        except (OSError, json.JSONDecodeError, UnicodeDecodeError):
             pass
 
     pilot_key = (
@@ -1169,8 +1167,8 @@ def run_phase(args: argparse.Namespace) -> int:
         print(f"ERROR: --activations-dir does not exist: {activations_dir}", file=sys.stderr)
         return 2
     try:
-        fold_map = _load_fold_map(fold_map_path)
-    except (FileNotFoundError, ValueError) as exc:
+        fold_map = _load_fold_map(fold_map_path, allow_smoke=args.allow_smoke_fold_map)
+    except (FileNotFoundError, ValueError, RuntimeError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 2
 
@@ -1546,6 +1544,15 @@ def main() -> int:
         "--fold-map",
         default="eval_results/issue_2054/shared_fold_map.json",
         help="Unit A shared fold-map artifact (conv_id -> fold).",
+    )
+    p.add_argument(
+        "--allow-smoke-fold-map",
+        action="store_true",
+        help=(
+            "bypass the shared loader's production floors (n_conv >= 20,000, >= 5 "
+            "variants) for a deliberate smoke/fixture fold map (#2245); the "
+            "fold_of/k/seed key checks stay unconditional"
+        ),
     )
     p.add_argument(
         "--output-dir",

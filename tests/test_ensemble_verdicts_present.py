@@ -302,3 +302,243 @@ def test_bare_str_kinds_raises():
     # per-character and mechanically produce false no-shows — reject loudly.
     with pytest.raises(TypeError, match="bare str"):
         tw.ensemble_verdicts_present([], "epm:code-review", 1)
+
+
+# --------------------------------------------------------------------------
+# #2136 freshness anchor (`since_ts` + `review_round_anchor_ts`): the anchor
+# gates the sentinel-less version-fallback branch ONLY — a sentinel-bearing
+# round-exact match is NEVER time-gated (killed-session reuse), and
+# `since_ts=None` reproduces the pre-#2136 behavior exactly.
+# --------------------------------------------------------------------------
+
+_CODE_REVIEW_OPENERS = ("epm:experiment-implementation", "epm:results")
+
+# The #1336 incident shape: a round-3 verdict posted sentinel-LESS at the
+# auto-bumped version 4 (2026-08-02), then a round-4 implementer marker
+# (2026-08-04) opens the next review round.
+_STALE_FALLBACK_EVENTS = [
+    _ev(
+        "2026-08-02T10:00:00Z",
+        "epm:code-review",
+        "**Verdict:** PASS\n\nRound-3 review posted without a head sentinel.",
+        version=4,
+    ),
+    _ev(
+        "2026-08-04T09:00:00Z",
+        "epm:results",
+        "<!-- epm:results v1 -->\n\n## Completion Report\nround-4 implementation",
+        version=1,
+    ),
+]
+
+
+def test_stale_prior_round_version_fallback_suppressed_by_anchor():
+    # The body's required "two rounds of markers" case (shape1, #1336): the
+    # round-3 sentinel-less PASS at version 4 must NOT answer a round-4
+    # query when the anchor names the round-4 opener.
+    anchor = tw.review_round_anchor_ts(_STALE_FALLBACK_EVENTS, opening_kinds=_CODE_REVIEW_OPENERS)
+    assert anchor == "2026-08-04T09:00:00Z"
+    out = tw.ensemble_verdicts_present(
+        _STALE_FALLBACK_EVENTS, ["epm:code-review"], 4, since_ts=anchor
+    )
+    assert out["epm:code-review"] == _ABSENT
+
+
+def test_stale_prior_round_matches_without_anchor():
+    # Pins the opt-in default as deliberate: `since_ts` omitted reproduces
+    # today's (buggy-but-unchanged) fallback behavior byte-for-byte.
+    out = tw.ensemble_verdicts_present(_STALE_FALLBACK_EVENTS, ["epm:code-review"], 4)
+    assert out["epm:code-review"] == {
+        "present": True,
+        "verdict": "PASS",
+        "ts": "2026-08-02T10:00:00Z",
+    }
+
+
+def test_anchor_never_suppresses_sentinel_bearing_match():
+    # Killed-session reuse (the §3 load-bearing constraint): a sentinel v4
+    # verdict OLDER than the anchor still matches — sentinel-bearing
+    # round-exact matches are NEVER time-gated.
+    events = [
+        _ev(
+            "2026-08-02T10:00:00Z",
+            "epm:code-review",
+            "<!-- epm:code-review v4 -->\n\n**Verdict:** PASS\n",
+            version=6,
+        ),
+        _ev(
+            "2026-08-04T09:00:00Z",
+            "epm:results",
+            "<!-- epm:results v1 -->\nround-4 implementation",
+            version=1,
+        ),
+    ]
+    out = tw.ensemble_verdicts_present(
+        events, ["epm:code-review"], 4, since_ts="2026-08-04T09:00:00Z"
+    )
+    assert out["epm:code-review"] == {
+        "present": True,
+        "verdict": "PASS",
+        "ts": "2026-08-02T10:00:00Z",
+    }
+
+
+def test_legitimate_fallback_match_survives_active_anchor():
+    # Positive control: a legitimate round-1 sentinel-less verdict at
+    # version 1, posted AFTER the round-1 opener, still matches under an
+    # ACTIVE anchor. Guards against an inverted comparison (`<` for `>`)
+    # or an anchor that suppresses every fallback match — either would
+    # pass the suppression tests while converting first-round
+    # sentinel-less verdicts fleet-wide into false no-shows.
+    events = [
+        _ev(
+            "2026-08-04T09:00:00Z",
+            "epm:experiment-implementation",
+            "<!-- epm:experiment-implementation v1 -->\nround-1 implementation",
+            version=1,
+        ),
+        _ev(
+            "2026-08-04T11:00:00Z",
+            "epm:code-review",
+            "**Verdict:** FAIL\n\n### Blockers\n- b1",
+            version=1,
+        ),
+    ]
+    anchor = tw.review_round_anchor_ts(events, opening_kinds=_CODE_REVIEW_OPENERS)
+    assert anchor == "2026-08-04T09:00:00Z"
+    out = tw.ensemble_verdicts_present(events, ["epm:code-review"], 1, since_ts=anchor)
+    assert out["epm:code-review"] == {
+        "present": True,
+        "verdict": "FAIL",
+        "ts": "2026-08-04T11:00:00Z",
+    }
+
+
+def test_shared_opener_earlier_round_suppressed_by_newest_rule():
+    # Condition (ii), independent of (i): two sentinel-less verdicts after
+    # ONE shared opener (the 23.8% clean-result sub-shape a timestamp
+    # anchor alone cannot separate). Queried at round 4, the stale round-3
+    # marker (drifted version 4) postdates the opener but is NOT the
+    # newest same-kind marker after it — suppressed.
+    events = [
+        _ev(
+            "2026-08-01T09:00:00Z",
+            "epm:interpretation",
+            "<!-- epm:interpretation v3 -->\ninterpretation",
+            version=3,
+        ),
+        _ev(
+            "2026-08-01T10:00:00Z",
+            "epm:clean-result-critique",
+            "**Verdict:** PASS\n\nround-3 critique",
+            version=4,
+        ),
+        _ev(
+            "2026-08-01T11:00:00Z",
+            "epm:clean-result-critique",
+            "**Verdict:** FAIL\n\nround-4 critique",
+            version=5,
+        ),
+    ]
+    anchor = tw.review_round_anchor_ts(events, opening_kinds=("epm:interpretation", "epm:analysis"))
+    assert anchor == "2026-08-01T09:00:00Z"
+    out = tw.ensemble_verdicts_present(events, ["epm:clean-result-critique"], 4, since_ts=anchor)
+    assert out["epm:clean-result-critique"] == _ABSENT
+
+
+def test_anchor_suppresses_on_unparseable_ts():
+    # Fail-safe direction: a fallback candidate with a missing/garbage `ts`
+    # under an active anchor is suppressed (routes to the rule's item-2
+    # output-file probe) — and so is every fallback match under a garbage
+    # `since_ts`.
+    events = [
+        _ev("not-a-timestamp", "epm:code-review", "**Verdict:** PASS\n", version=4),
+    ]
+    out = tw.ensemble_verdicts_present(
+        events, ["epm:code-review"], 4, since_ts="2026-08-04T09:00:00Z"
+    )
+    assert out["epm:code-review"] == _ABSENT
+    good_ts = [
+        _ev("2026-08-04T10:00:00Z", "epm:code-review", "**Verdict:** PASS\n", version=4),
+    ]
+    garbage_anchor = tw.ensemble_verdicts_present(
+        good_ts, ["epm:code-review"], 4, since_ts="garbage"
+    )
+    assert garbage_anchor["epm:code-review"] == _ABSENT
+
+
+def test_anchor_inert_for_reconcile_kind():
+    # The reconcile matcher never reaches the version fallback (sentinel,
+    # else **Round:** field), so an anchor NEWER than the reconcile leaves
+    # role-scoped resolution unchanged — for both reconcile note shapes.
+    sentinel_events = [
+        _ev("2026-07-07T13:20:13Z", "epm:review-reconcile", _RECONCILE_1092, version=1)
+    ]
+    out = tw.ensemble_verdicts_present(
+        sentinel_events,
+        ["epm:review-reconcile"],
+        5,
+        reconcile_role="code-reviewer",
+        since_ts="2026-08-04T09:00:00Z",
+    )
+    assert out["epm:review-reconcile"]["present"] is True
+    assert out["epm:review-reconcile"]["verdict"] == "FAIL"
+    round_field_events = [
+        _ev("2026-07-07T13:20:13Z", "epm:review-reconcile", _RECONCILE_NO_SENTINEL, version=1)
+    ]
+    by_round_field = tw.ensemble_verdicts_present(
+        round_field_events,
+        ["epm:review-reconcile"],
+        3,
+        reconcile_role="interpretation-critic",
+        since_ts="2026-08-04T09:00:00Z",
+    )
+    assert by_round_field["epm:review-reconcile"]["present"] is True
+
+
+def test_respawn_duplicate_still_latest_wins_under_anchor():
+    # The same-round re-spawn shape on the FALLBACK path with an active
+    # anchor: two sentinel-less markers at the same version=round, both
+    # after the opener — the newer one wins, matching the pre-existing
+    # latest-wins contract (guards the §0.0 kill criterion on condition
+    # (ii): the newest-rule must not suppress a legitimate re-spawn).
+    events = [
+        _ev(
+            "2026-08-04T09:00:00Z",
+            "epm:results",
+            "<!-- epm:results v1 -->\nround-3 implementation",
+            version=1,
+        ),
+        _ev("2026-08-04T10:00:00Z", "epm:code-review", "**Verdict:** FAIL\n", version=3),
+        _ev("2026-08-04T11:00:00Z", "epm:code-review", "**Verdict:** PASS\n", version=3),
+    ]
+    anchor = tw.review_round_anchor_ts(events, opening_kinds=_CODE_REVIEW_OPENERS)
+    out = tw.ensemble_verdicts_present(events, ["epm:code-review"], 3, since_ts=anchor)
+    assert out["epm:code-review"] == {
+        "present": True,
+        "verdict": "PASS",
+        "ts": "2026-08-04T11:00:00Z",
+    }
+
+
+def test_review_round_anchor_ts_picks_last_opener():
+    # Helper unit: chronologically LAST ts across a MIXED implementer-kind
+    # sequence; None on an empty or opener-less log; `opening_kinds` is a
+    # REQUIRED keyword (TypeError when omitted).
+    mixed = [
+        _ev("2026-08-01T09:00:00Z", "epm:experiment-implementation", "impl r1", version=1),
+        _ev("2026-08-02T09:00:00Z", "epm:results", "results r1", version=1),
+        _ev("2026-08-03T09:00:00Z", "epm:experiment-implementation", "impl r2", version=2),
+        _ev("2026-08-03T10:00:00Z", "epm:progress", "noise", version=1),
+    ]
+    assert (
+        tw.review_round_anchor_ts(mixed, opening_kinds=_CODE_REVIEW_OPENERS)
+        == "2026-08-03T09:00:00Z"
+    )
+    assert tw.review_round_anchor_ts([], opening_kinds=_CODE_REVIEW_OPENERS) is None
+    no_openers = [_ev("2026-08-01T09:00:00Z", "epm:progress", "noise", version=1)]
+    assert tw.review_round_anchor_ts(no_openers, opening_kinds=_CODE_REVIEW_OPENERS) is None
+    with pytest.raises(TypeError):
+        tw.review_round_anchor_ts(mixed)  # opening_kinds is required
+    with pytest.raises(TypeError, match="bare str"):
+        tw.review_round_anchor_ts(mixed, opening_kinds="epm:results")

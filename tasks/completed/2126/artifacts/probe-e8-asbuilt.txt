@@ -1,0 +1,67 @@
+# Probe: E8 AS BUILT — checkout HEAD on the in-HEAD batch (task #2126)
+# Run 2026-08-12. The implementer used 'checkout HEAD --' for R_IN where the plan
+# specified 'restore --staged --worktree'. With the split guaranteeing every R_IN path
+# exists in HEAD, is the as-built form equivalent?
+
+## script
+```bash
+#!/usr/bin/env bash
+# Probe (task #2126, E8 AS BUILT): the implementer used `checkout HEAD --` for the
+# in-HEAD batch instead of the planned `restore --staged --worktree`. With the
+# split guaranteeing every R_IN path exists in HEAD, is the as-built form
+# equivalent (rc=0, tree == HEAD, no residue)?
+set -u
+T=$(mktemp -d /tmp/i2126-e8ab-XXXXXX)
+WT="$T"
+cd "$T" || exit 1
+git init -q .; git config user.email t@e; git config user.name t
+mkdir -p tasks/proposed/9001 tasks/running/9002 tasks/proposed/9003
+printf 'base\n' > tasks/proposed/9001/body.md
+printf 'base\n' > tasks/running/9002/body.md
+printf 'v\n'    > tasks/proposed/9003/body.md
+git add tasks; git commit -qm base
+git rm -q tasks/proposed/9003/body.md; git commit -qm "branch deleted a foreign path"
+# dirty state left by a FAILED strip
+printf 'stripped\n' > tasks/proposed/9001/body.md; git add tasks/proposed/9001/body.md
+git rm -q tasks/running/9002/body.md
+mkdir -p tasks/planning/9004; printf 'new\n' > tasks/planning/9004/body.md; git add tasks/planning/9004/body.md
+mkdir -p tasks/proposed/9003; printf 'resurrect\n' > tasks/proposed/9003/body.md   # untracked litter
+FOREIGN=(tasks/proposed/9001/body.md tasks/running/9002/body.md \
+         tasks/planning/9004/body.md tasks/proposed/9003/body.md)
+echo "status BEFORE: [$(git status --porcelain | tr '\n' '|')]"
+
+# ------- the AS-BUILT snippet, verbatim from SKILL.md:11370-11376 -------
+R_IN=(); R_GONE=()
+for p in "${FOREIGN[@]}"; do
+  if git -C "$WT" cat-file -e "HEAD:$p" 2>/dev/null; then R_IN+=("$p"); else R_GONE+=("$p"); fi
+done
+RC=0
+[ "${#R_IN[@]}" -eq 0 ]   || git -C "$WT" checkout HEAD -- "${R_IN[@]}" || RC=$?
+[ "${#R_GONE[@]}" -eq 0 ] || { git -C "$WT" rm -f -q --ignore-unmatch -- "${R_GONE[@]}" || RC=$?
+                               for p in "${R_GONE[@]}"; do rm -f -- "$WT/$p"; done; }
+# -----------------------------------------------------------------------
+
+echo "rc=$RC"
+echo "in-HEAD batch: ${R_IN[*]:-none}"
+echo "gone batch:    ${R_GONE[*]:-none}"
+echo "status AFTER (must be EMPTY): [$(git status --porcelain | tr '\n' '|')]"
+echo "diff vs HEAD (must be empty): [$(git diff HEAD --stat | tr '\n' '|')]"
+echo "files: $(find tasks -type f | sort | tr '\n' ' ')"
+cd / || exit 1; rm -rf "$T"
+```
+
+## output
+```
+status BEFORE: [A  tasks/planning/9004/body.md|M  tasks/proposed/9001/body.md|D  tasks/running/9002/body.md|?? tasks/proposed/9003/|]
+rc=0
+in-HEAD batch: tasks/proposed/9001/body.md tasks/running/9002/body.md
+gone batch:    tasks/planning/9004/body.md tasks/proposed/9003/body.md
+status AFTER (must be EMPTY): []
+diff vs HEAD (must be empty): []
+files: tasks/proposed/9001/body.md tasks/running/9002/body.md 
+```
+
+## finding
+Equivalent: rc=0, 'git status' empty, 'git diff HEAD' empty, tree == HEAD.
+This run ALSO exercised the untracked-litter case the original D5 probe missed
+('?? tasks/proposed/9003/' present before, absent after) — the rm -f leg works.

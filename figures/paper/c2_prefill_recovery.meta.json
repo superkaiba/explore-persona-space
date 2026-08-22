@@ -1,0 +1,449 @@
+{
+  "commit": "384e598a+dirty",
+  "render_id": "9df0188f1d7746a5",
+  "git_commit": "384e598a31acc1097e05f421efcc6aff30d97158",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2333_paper_fig.py",
+    "figures/paper/c1_cot_matched_length.meta.json",
+    "figures/paper/c1_cot_matched_length.pdf",
+    "figures/paper/c1_cot_matched_length.png",
+    "figures/paper/c1_input_ablation_heatmap.meta.json",
+    "figures/paper/c1_input_ablation_heatmap.pdf",
+    "figures/paper/c1_input_ablation_heatmap.png",
+    "figures/paper/c1_layer_profile.meta.json",
+    "figures/paper/c1_layer_profile.pdf",
+    "figures/paper/c1_layer_profile.png",
+    "figures/paper/c1_offpolicy_arms.meta.json",
+    "figures/paper/c1_offpolicy_arms.pdf",
+    "figures/paper/c1_offpolicy_arms.png",
+    "figures/paper/c1_scaling_train_pool.meta.json",
+    "figures/paper/c1_scaling_train_pool.pdf",
+    "figures/paper/c1_scaling_train_pool.png",
+    "figures/paper/c1_stage_retention.meta.json",
+    "figures/paper/c1_stage_retention.pdf",
+    "figures/paper/c1_stage_retention.png",
+    "figures/paper/c2_layer14_peak.meta.json",
+    "figures/paper/c2_layer14_peak.pdf",
+    "figures/paper/c2_layer14_peak.png",
+    "figures/paper/c4_boundary_vs_prose.meta.json",
+    "figures/paper/c4_boundary_vs_prose.pdf",
+    "figures/paper/c4_boundary_vs_prose.png",
+    "figures/paper/c4_character_maps.meta.json",
+    "figures/paper/c4_character_maps.pdf",
+    "figures/paper/c4_character_maps.png",
+    "figures/paper/c4_patch_persistence.meta.json",
+    "figures/paper/c4_patch_persistence.pdf",
+    "figures/paper/c4_patch_persistence.png",
+    "figures/paper/c4_rlvr_contrast.meta.json",
+    "figures/paper/c4_rlvr_contrast.pdf",
+    "figures/paper/c4_rlvr_contrast.png",
+    "figures/paper/c4_transfer_ladder.meta.json",
+    "figures/paper/c4_transfer_ladder.pdf",
+    "figures/paper/c4_transfer_ladder.png",
+    "figures/paper/c5_claim4_margin_forest.meta.json",
+    "figures/paper/c5_claim4_margin_forest.pdf",
+    "figures/paper/c5_claim4_margin_forest.png",
+    "figures/paper/c5_compose_flip.meta.json",
+    "figures/paper/c5_compose_flip.pdf",
+    "figures/paper/c5_compose_flip.png",
+    "figures/paper/c5_ft_change_race.meta.json",
+    "figures/paper/c5_ft_change_race.pdf",
+    "figures/paper/c5_ft_change_race.png",
+    "figures/paper/c5_pv_methods_regimes.meta.json",
+    "figures/paper/c5_pv_methods_regimes.pdf",
+    "figures/paper/c5_pv_methods_regimes.png",
+    "scripts/issue1310_analyzer_figures.py",
+    "scripts/issue1336_analyzer_figures.py",
+    "... 13 more"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue2333_paper_fig.py",
+  "created": "2026-08-20T08:34:12Z",
+  "figsize": [
+    5.5,
+    2.5300000000000002
+  ],
+  "points": [
+    {
+      "opening positions transplanted": 0.9,
+      "share of the full\ncontext-end patch effect": 0.4792935946773104,
+      "error": 0.07531833511519662,
+      "series": "token prefill (patch-content donor)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "opening positions transplanted": 1.9,
+      "share of the full\ncontext-end patch effect": 0.649272500828521,
+      "error": 0.07842123168580567,
+      "series": "token prefill (patch-content donor)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "opening positions transplanted": 2.9,
+      "share of the full\ncontext-end patch effect": 0.669943804274803,
+      "error": 0.08070771690279055,
+      "series": "token prefill (patch-content donor)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "opening positions transplanted": 1.1,
+      "share of the full\ncontext-end patch effect": 0.4972150447826929,
+      "error": 0.06790598175039517,
+      "series": "state patch (patch-content donor)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "opening positions transplanted": 2.1,
+      "share of the full\ncontext-end patch effect": 0.5403251052473154,
+      "error": 0.06816450646671249,
+      "series": "state patch (patch-content donor)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "opening positions transplanted": 3.1,
+      "share of the full\ncontext-end patch effect": 0.5432601263177487,
+      "error": 0.07155993465042379,
+      "series": "state patch (patch-content donor)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "opening positions transplanted": 0.9,
+      "share of the full\ncontext-end patch effect": 0.4792935946773104,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "opening positions transplanted": 1.9,
+      "share of the full\ncontext-end patch effect": 0.649272500828521,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "opening positions transplanted": 2.9,
+      "share of the full\ncontext-end patch effect": 0.669943804274803,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "opening positions transplanted": 0.9,
+      "share of the full\ncontext-end patch effect": 0.4039973733314171,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "opening positions transplanted": 1.9,
+      "share of the full\ncontext-end patch effect": 0.5710810586829967,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "opening positions transplanted": 2.9,
+      "share of the full\ncontext-end patch effect": 0.588639749874691,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "opening positions transplanted": 0.9,
+      "share of the full\ncontext-end patch effect": 0.5546340435618103,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "opening positions transplanted": 1.9,
+      "share of the full\ncontext-end patch effect": 0.7279235220546081,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "opening positions transplanted": 2.9,
+      "share of the full\ncontext-end patch effect": 0.7500551836802721,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "opening positions transplanted": 1.1,
+      "share of the full\ncontext-end patch effect": 0.4972150447826929,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "opening positions transplanted": 2.1,
+      "share of the full\ncontext-end patch effect": 0.5403251052473154,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "opening positions transplanted": 3.1,
+      "share of the full\ncontext-end patch effect": 0.5432601263177487,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "opening positions transplanted": 1.1,
+      "share of the full\ncontext-end patch effect": 0.4303535911206973,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "opening positions transplanted": 2.1,
+      "share of the full\ncontext-end patch effect": 0.4721887413834082,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "opening positions transplanted": 3.1,
+      "share of the full\ncontext-end patch effect": 0.47176031331072615,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "opening positions transplanted": 1.1,
+      "share of the full\ncontext-end patch effect": 0.5661655546214877,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "opening positions transplanted": 2.1,
+      "share of the full\ncontext-end patch effect": 0.6085177543168332,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "opening positions transplanted": 3.1,
+      "share of the full\ncontext-end patch effect": 0.6148801826115737,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "opening positions transplanted": 0.9,
+      "y": 0.6591192627892667,
+      "error": 0.2254450429021599,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "opening positions transplanted": 1.9,
+      "y": 0.7570695243981093,
+      "error": 0.21356535786765074,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "opening positions transplanted": 2.9,
+      "y": 0.4018875625908184,
+      "error": 0.2469496086867736,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "opening positions transplanted": 3.12,
+      "y": 0.9450534956351437,
+      "error": 0.28955706123530045,
+      "series": "token prefill (natural-opening donor)",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "opening positions transplanted": 1.1,
+      "y": 0.6135611013817681,
+      "error": 0.21301413714062822,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "opening positions transplanted": 2.1,
+      "y": 0.4719050693490741,
+      "error": 0.23027907987465263,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "opening positions transplanted": 3.1,
+      "y": 0.35974479405244036,
+      "error": 0.23891409576691353,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "opening positions transplanted": 3.3200000000000003,
+      "y": 1.1186464315397335,
+      "error": 0.37075249576882613,
+      "series": "state patch (natural-opening donor)",
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "opening positions transplanted": 0.9,
+      "y": 0.6591192627892667,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "opening positions transplanted": 1.9,
+      "y": 0.7570695243981093,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "opening positions transplanted": 2.9,
+      "y": 0.4018875625908184,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "opening positions transplanted": 0.9,
+      "y": 0.4426792605970138,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "opening positions transplanted": 1.9,
+      "y": 0.5391725966482321,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "opening positions transplanted": 2.9,
+      "y": 0.13769228365594305,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "opening positions transplanted": 0.9,
+      "y": 0.8935693464013336,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "opening positions transplanted": 1.9,
+      "y": 0.9663033123835336,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "opening positions transplanted": 2.9,
+      "y": 0.6315915010294902,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "opening positions transplanted": 1.1,
+      "y": 0.6135611013817681,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "opening positions transplanted": 2.1,
+      "y": 0.4719050693490741,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "opening positions transplanted": 3.1,
+      "y": 0.35974479405244036,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "opening positions transplanted": 1.1,
+      "y": 0.4013038246957029,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "opening positions transplanted": 2.1,
+      "y": 0.2381483604376572,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "opening positions transplanted": 3.1,
+      "y": 0.11095256646898097,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "opening positions transplanted": 1.1,
+      "y": 0.8273320989769594,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "opening positions transplanted": 2.1,
+      "y": 0.6987065201869624,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "opening positions transplanted": 3.1,
+      "y": 0.588780758002808,
+      "_kind": "line",
+      "_group": 17
+    }
+  ],
+  "n_series": 18,
+  "total_points": 50,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "Qwen2.5-7B, format cells",
+        "xlabel": "opening positions transplanted",
+        "ylabel": "share of the full\ncontext-end patch effect",
+        "legend_labels": [
+          "token prefill (patch-content donor)",
+          "state patch (patch-content donor)"
+        ],
+        "xticklabels": [
+          "1",
+          "2",
+          "3"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2",
+          "1.4",
+          "1.6",
+          "1.8"
+        ]
+      },
+      {
+        "title": "Qwen3.5-9B, language cells (null-adjusted)",
+        "xlabel": "opening positions transplanted",
+        "legend_labels": [
+          "token prefill (natural-opening donor)",
+          "state patch (natural-opening donor)"
+        ],
+        "xticklabels": [
+          "1",
+          "2",
+          "3"
+        ]
+      }
+    ],
+    "series": [
+      "token prefill (patch-content donor)",
+      "state patch (patch-content donor)",
+      "token prefill (natural-opening donor)",
+      "state patch (natural-opening donor)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

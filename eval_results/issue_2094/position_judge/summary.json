@@ -1,0 +1,155 @@
+{
+  "target/steered, all 28 layers": {
+    "mean_by_window": [
+      24.4,
+      11.0,
+      18.0
+    ],
+    "sem_by_window": [
+      8.022468448052631,
+      6.595452979136459,
+      5.830951894845301
+    ],
+    "n_by_window": [
+      5,
+      5,
+      5
+    ]
+  },
+  "target/steered, layers 14-20": {
+    "mean_by_window": [
+      1.0,
+      1.0,
+      0.0
+    ],
+    "sem_by_window": [
+      1.0,
+      1.0,
+      0.0
+    ],
+    "n_by_window": [
+      5,
+      5,
+      5
+    ]
+  },
+  "target/steered, layer 16 only": {
+    "mean_by_window": [
+      1.0,
+      3.0,
+      1.6
+    ],
+    "sem_by_window": [
+      1.0,
+      3.0,
+      1.6000000000000003
+    ],
+    "n_by_window": [
+      5,
+      5,
+      5
+    ]
+  },
+  "target/shuffled-donor null (all cells)": {
+    "mean_by_window": [
+      0.0,
+      3.0,
+      3.6666666666666665
+    ],
+    "sem_by_window": [
+      0.0,
+      1.6035674514745462,
+      2.0392964862251293
+    ],
+    "n_by_window": [
+      15,
+      15,
+      15
+    ]
+  },
+  "target/native: persona prefix actually present": {
+    "mean_by_window": [
+      54.44,
+      48.52,
+      69.82
+    ],
+    "sem_by_window": [
+      2.560637675682065,
+      3.094463785932707,
+      3.6141095383374924
+    ],
+    "n_by_window": [
+      50,
+      50,
+      50
+    ]
+  },
+  "decompose/SOURCE register, null patch": {
+    "mean_by_window": [
+      85.0,
+      57.0,
+      61.0
+    ],
+    "sem_by_window": [
+      13.784048752090222,
+      23.27015255644019,
+      21.988633427296023
+    ],
+    "n_by_window": [
+      5,
+      5,
+      5
+    ]
+  },
+  "decompose/SOURCE register, real patch": {
+    "mean_by_window": [
+      5.0,
+      22.0,
+      11.0
+    ],
+    "sem_by_window": [
+      5.0,
+      14.882876066137218,
+      6.595452979136459
+    ],
+    "n_by_window": [
+      5,
+      5,
+      5
+    ]
+  },
+  "decompose/TARGET register, null patch": {
+    "mean_by_window": [
+      0.0,
+      3.0,
+      3.0
+    ],
+    "sem_by_window": [
+      0.0,
+      3.0,
+      3.0
+    ],
+    "n_by_window": [
+      5,
+      5,
+      5
+    ]
+  },
+  "decompose/TARGET register, real patch": {
+    "mean_by_window": [
+      24.4,
+      11.0,
+      18.0
+    ],
+    "sem_by_window": [
+      8.022468448052631,
+      6.595452979136459,
+      5.830951894845301
+    ],
+    "n_by_window": [
+      5,
+      5,
+      5
+    ]
+  }
+}

@@ -599,7 +599,7 @@ def _manifest_complete_locally(dest: Path) -> bool:
         return False
     try:
         meta = json.loads(meta_path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return False
     n_parts = meta.get("n_parts")
     if not isinstance(n_parts, int) or n_parts < 0:

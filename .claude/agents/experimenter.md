@@ -80,6 +80,16 @@ exit; you do NOT need to interact with that sidecar yourself.
    pidfile path, launcher path, and the dispatch command, then EXIT
    your turn within 60 seconds.
 
+Launch-confirmation + HOLD mirror (#2135, #1947): the `epm:run-launched`
+note carries the confirmation evidence — live workload pid + first log
+line + a `launch_confirmed=pid+log@<utc-ts>` token — within the ~15-min
+post-bootstrap window (an append-only follow-up marker when the initial
+note legitimately predates the launch). Window lapse with NO workload ⇒
+escalate loudly (name the idle pod + hourly burn), never exit silently.
+Any HOLD/gate park the launcher emits arms a VM-side re-drive per
+`.claude/rules/pod-side-reporting.md` § "Pod-side HOLD/gate emissions must
+arm a VM-side re-drive at emission time (#2135, #1947)".
+
 You do NOT:
 - Write or substantially modify experiment code (that's `experiment-implementer`).
 - Provision, stop, resume, or terminate pods (that's the `/issue` skill).
@@ -807,6 +817,40 @@ PID only. Exact fenced recipes:
    (breadcrumbs/watches key on the identity-verified WORKER pid, never
    the wrapper, #1769); this section is the agent-specific recipe.)
 
+1c. **Per-leg out/scratch isolation for concurrent same-driver legs
+   (#2330 fu1).** TRIGGER = RUNTIME CONCURRENCY, not batch composition:
+   any leg you compose that will run while ANOTHER leg of the same
+   driver — or of a layout-sharing forked sibling driver (an
+   `issueN_capture_*.py` copy) — is or may be live on this machine.
+   That covers batch-mates composed together AND a single new leg
+   (follow-up, relaunch) composed against an already-live sibling that
+   inherited a shared out-dir env var from an earlier dispatch /
+   preamble; probe liveness with the issue-scoped bracketed `pgrep -af`
+   step 1b's kill-confirm-dead bullet already prescribes. COLLISION
+   TEST: same or layout-sharing driver + same split name + overlapping
+   shard indices means the legs' chunk basenames
+   (`shards/<split>/shardNN_chunk*.pt`) collide. FIX: derive a PER-LEG
+   out/scratch root BEFORE launch — suffix the leg name onto the shared
+   env var / `--out-root` (e.g. `EPM_I<N>_OUT_DIR=<shared>_<leg>`). The
+   `epm:run-launched` breadcrumb states the isolation (the per-leg
+   root) OR the verified non-collision — disjoint splits / disjoint
+   shard indices / disjoint output basename-layouts; the invariant is
+   BASENAME DISJOINTNESS, and DRIVER DIFFERENCE ALONE IS NOT SUFFICIENT
+   (forked sibling drivers share the `shards/<split>/shardNN_chunk*.pt`
+   layout — #2330's two drivers even differed in num-shards yet both
+   wrote index 00). Why this is silent, not fail-loud: in #2330 fu1
+   both launchers inherited one `EPM_I2330_OUT_DIR`; fuB overwrote
+   fuA's not-yet-flushed chunks, fuA's end-of-shard flush uploaded
+   fuB's bytes to the DENSE prefix — sha-verify hashes at flush time,
+   so the poisoning passed SILENTLY (caught only by LFS-size
+   forensics: 49 MB vs 508 MB) — then purged the files, killing fuB's
+   terminal flush with FileNotFoundError (3 poisoned dense chunks,
+   ~80 min GPU redo, one crash-fix round). Siblings:
+   `.claude/rules/gotchas.md` "Concurrent fan-out units racing a
+   SHARED staging dest" (#1315 — the DOWNLOAD-staging face);
+   `.claude/rules/crash-fix-rounds.md` § Per-leg out-roots (#1333 —
+   the REGIME-keyed face, widened to this concurrent case).
+
 2. **Confirm the launch survived disconnect — the probe MUST be a
    SEPARATE SSH invocation, issued AFTER the launching session has
    closed.** Never bundle the survival probe into the same SSH command
@@ -932,6 +976,25 @@ PID only. Exact fenced recipes:
        brief). Report it as a SEPARATE field with the note
        "`--time-budget-hours` — poller watch cap, NOT the fence".
 
+   - **`owner=<token>` is REQUIRED on new launches; `fence_until=<ISO8601Z>`
+     is optional (#2277).** `owner=` registers this pod's owner-attribution
+     token for the terminate guard (grammar `[A-Za-z0-9._-]{1,64}`;
+     recommended value `<agent>-<issue>[-<slug>]`, e.g.
+     `experimenter-2054-tiers`). `fence_until=` (UTC
+     `YYYY-MM-DDTHH:MM[:SS]Z`, or `none` to clear) posts an owner
+     work-fence: `pod.py terminate` REFUSES to destroy the pod while the
+     fence is unexpired unless the `epm:upload-verification` PASS carries
+     the matching `owner=`. Paired duty: if you post `fence_until=`, your
+     upload-verification PASS note MUST later carry the `owner=` token
+     YOUR session registered here (first-person claim — emit it only for
+     runs YOU launched), or your own teardown will refuse. Post the
+     SHORTEST honest deadline and refresh/clear it via the heartbeat duty,
+     never a long fence "to be safe". And while a pod's fence is
+     unexpired, a session that did not post that launch signal / fence
+     MUST NOT copy its `owner=` into a PASS — an unexpired fence means the
+     owner is presumed alive; surface for approval, wait for expiry, or
+     take `--force-owner-fence` with a recorded reason.
+
    ```bash
    # On the pod (inside the ssh_execute call that launched the launcher):
    LOG_ABS=$(realpath /workspace/logs/issue-<N>.log)
@@ -943,6 +1006,7 @@ PID only. Exact fenced recipes:
    uv run python scripts/task.py post-marker <N> epm:run-launched \
        --by experimenter \
        --note "pod=epm-issue-<N> pid=12345 \
+   owner=<agent>-<N> \
    pid_file=/workspace/logs/issue-<N>.pid \
    log_abs=/workspace/logs/issue-<N>.log \
    launcher_script=/workspace/launch_issue_<N>.sh \

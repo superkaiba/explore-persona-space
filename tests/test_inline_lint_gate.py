@@ -19,12 +19,16 @@ from __future__ import annotations
 
 import hashlib
 import importlib.util
+import json
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
 
 import pytest
+
+from tests.issue_skill_source import issue_skill_text
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = _REPO_ROOT / "scripts" / "inline_lint_gate.py"
@@ -1531,3 +1535,772 @@ def test_load_hot_uses_max_available_endpoint_sample(monkeypatch: pytest.MonkeyP
     monkeypatch.setenv("EPM_GATE_LOAD_MAX", "0")
     disabled = ilg.LegResults(lint_output="", map_pairs=[], load1_pre=99.0, load1_post=99.0)
     assert ilg._load_hot(disabled) is False  # kill switch beats any sample
+
+
+# ---------------------------------------------------------------------------
+# #2235 payload-scoping TDD surface (plan .claude/plans/issue-2235.md § TDD,
+# cases 8-12): gate-side --files argv composition (Phase B6), the
+# FILES-MODE-REFUSED -> bare-rerun fallback, the step9c-baseline ledger layer
+# (Phase A), the cert-grammar and env-override-seam invariants, and the
+# LINT_TIMEOUT_S 900 -> 1200 fence bump. The --files / ledger tests are RED
+# until Phases A/B land; the seam/cert pins are green guards the change must
+# not regress.
+# ---------------------------------------------------------------------------
+def _noop_pre_leg_work(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Silence run_legs' pre-leg side work (choom / fetch / bytecode purge)
+    for hermetic in-process wiring tests — none of it bears on argv
+    composition, and the fixture repo has no origin remote to fetch."""
+    monkeypatch.setattr(ilg, "_best_effort_choom", lambda: None)
+    monkeypatch.setattr(ilg, "_bounded_fetch", lambda repo: None)
+    monkeypatch.setattr(ilg, "purge_repo_bytecode", lambda repo: 0)
+
+
+def _run_legs_with_fake(
+    tmp_path: Path,
+    repo: Path,
+    payload: list[str],
+    fake_run_leg,
+) -> ilg.LegResults:
+    """Drive run_legs in-process with a substituted _run_leg."""
+    payload_file = tmp_path / "wiring-payload.txt"
+    payload_file.write_text("\n".join(payload) + "\n", encoding="utf-8")
+    out_dir = tmp_path / "wiring-out"
+    out_dir.mkdir(exist_ok=True)
+    return ilg.run_legs(payload_file, 9999, repo, out_dir, payload=payload)
+
+
+def test_workflow_surface_prefixes_pinned() -> None:
+    """Plan §4 B6: the gate's eligibility tuple names every workflow-surface
+    prefix whose payloads must take the bare full run (a payload editing any
+    of these can change GLOBAL check outcomes, so scoping would be unsound).
+    Superset assert: adding a prefix is fine, dropping one is a regression."""
+    required = {
+        ".claude/",
+        "workflow.yaml",
+        "scripts/workflow_lint.py",
+        "scripts/inline_lint_gate.py",
+        "scripts/select_step9c_tests.py",
+        "scripts/step9c_baseline.py",
+        "tests/",
+    }
+    assert required.issubset(set(ilg.WORKFLOW_SURFACE_PREFIXES)), ilg.WORKFLOW_SURFACE_PREFIXES
+
+
+def test_gate_scopes_eligible_payload(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Case 8a: a payload with no workflow-surface path composes the SCOPED
+    lint invocation — the default argv gains `--files <payload...>`."""
+    repo = _make_repo(tmp_path)
+    _noop_pre_leg_work(monkeypatch)
+    calls: list[tuple[list[str], str]] = []
+
+    def fake_run_leg(default_argv, override_env, repo_, timeout, extra_env=None):
+        calls.append((list(default_argv), override_env))
+        if override_env == "EPM_INLINE_GATE_LINT_CMD":
+            return (LINT_OK, 0)
+        return ("", 0)
+
+    monkeypatch.setattr(ilg, "_run_leg", fake_run_leg)
+    legs = _run_legs_with_fake(tmp_path, repo, ["scripts/mod.py"], fake_run_leg)
+    lint_calls = [argv for argv, env in calls if env == "EPM_INLINE_GATE_LINT_CMD"]
+    assert len(lint_calls) == 1, calls
+    argv = lint_calls[0]
+    assert any("workflow_lint.py" in str(part) for part in argv), argv
+    assert argv[-2:] == ["--files", "scripts/mod.py"], argv
+    assert ilg.LINT_TERMINAL_RE.search(legs.lint_output), legs.lint_output
+
+
+@pytest.mark.parametrize(
+    "surface_path",
+    [
+        "tests/test_something.py",
+        ".claude/skills/issue/SKILL.md",
+        "scripts/workflow_lint.py",
+        "scripts/inline_lint_gate.py",
+        "scripts/select_step9c_tests.py",
+        "scripts/step9c_baseline.py",
+    ],
+)
+def test_gate_full_run_on_workflow_surface_payload(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, surface_path: str
+) -> None:
+    """Case 8b: ANY workflow-surface path in the payload disables scoping —
+    the lint leg runs the bare (unscoped) default argv, today's exact
+    behavior. `tests/` is included conservatively: a payload editing tests
+    can change global check outcomes and mapped-test verdicts."""
+    repo = _make_repo(tmp_path)
+    _noop_pre_leg_work(monkeypatch)
+    calls: list[tuple[list[str], str]] = []
+
+    def fake_run_leg(default_argv, override_env, repo_, timeout, extra_env=None):
+        calls.append((list(default_argv), override_env))
+        if override_env == "EPM_INLINE_GATE_LINT_CMD":
+            return (LINT_OK, 0)
+        return ("", 0)
+
+    monkeypatch.setattr(ilg, "_run_leg", fake_run_leg)
+    _run_legs_with_fake(tmp_path, repo, ["scripts/mod.py", surface_path], fake_run_leg)
+    lint_calls = [argv for argv, env in calls if env == "EPM_INLINE_GATE_LINT_CMD"]
+    assert len(lint_calls) == 1, calls
+    assert "--files" not in lint_calls[0], lint_calls[0]
+
+
+def test_gate_falls_back_on_files_mode_refusal(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Case 9: the FILES-MODE-REFUSED sentinel in the scoped leg's output
+    triggers exactly ONE bare re-run; the verdict input (legs.lint_output)
+    is the re-run's output (slow-but-correct, never silently-skipped)."""
+    repo = _make_repo(tmp_path)
+    _noop_pre_leg_work(monkeypatch)
+    calls: list[tuple[list[str], str]] = []
+    refusal = "workflow_lint: FILES-MODE-REFUSED (unclassified check check_foo)\n"
+    bare_out = "unscoped-rerun-output\n" + LINT_OK
+
+    def fake_run_leg(default_argv, override_env, repo_, timeout, extra_env=None):
+        calls.append((list(default_argv), override_env))
+        if override_env == "EPM_INLINE_GATE_LINT_CMD":
+            if "--files" in default_argv:
+                return (refusal, 2)
+            return (bare_out, 0)
+        return ("", 0)
+
+    monkeypatch.setattr(ilg, "_run_leg", fake_run_leg)
+    legs = _run_legs_with_fake(tmp_path, repo, ["scripts/mod.py"], fake_run_leg)
+    lint_calls = [argv for argv, env in calls if env == "EPM_INLINE_GATE_LINT_CMD"]
+    assert len(lint_calls) == 2, calls
+    assert "--files" in lint_calls[0], lint_calls[0]
+    assert "--files" not in lint_calls[1], lint_calls[1]
+    assert "unscoped-rerun-output" in legs.lint_output, legs.lint_output
+    assert ilg.LINT_TERMINAL_RE.search(legs.lint_output), legs.lint_output
+
+
+def test_refused_scoped_leg_never_push_clean(tmp_path: Path) -> None:
+    """Case 9 companion negative control (named in plan §4 B2's fail-loud
+    pin): a lint leg that ends on the refusal sentinel with NO healthy
+    terminal line — the env-override seam replays the sentinel on the
+    fallback attempt too — is INCONCLUSIVE (exit 3, no cert), never a
+    silent PASS. GREEN under today's dead-leg rule by design; pins the
+    fail-closed direction the refusal path must preserve."""
+    repo = _make_repo(tmp_path)
+    r = _run_gate(
+        repo,
+        ["scripts/mod.py"],
+        tmp_path,
+        lint_out="workflow_lint: FILES-MODE-REFUSED (unclassified check check_foo)\n",
+    )
+    assert r.returncode == 3, (r.returncode, r.stdout)
+    assert "inline_lint_gate: INCONCLUSIVE" in r.stdout, r.stdout
+    assert _cert_lines(tmp_path) == []
+
+
+# ---------------------------------------------------------------------------
+# Case 10 — Phase A step9c-baseline ledger layer: loader arms + the
+# subtractive-only evaluate() consumption.
+# ---------------------------------------------------------------------------
+def _write_ledger(repo: Path, **overrides: object) -> Path:
+    """Fixture ledger at the canonical .claude/cache/step9c-baseline.json,
+    sha-matched to the fixture repo's origin/main unless overridden."""
+    ledger: dict[str, object] = {
+        "schema_version": 1,
+        "main_sha": _git(repo, "rev-parse", "origin/main").strip(),
+        "failing_tests": [],
+        "refreshed_at": "2026-08-11T00:00:00Z",
+    }
+    ledger.update(overrides)
+    path = repo / ".claude" / "cache" / "step9c-baseline.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(ledger), encoding="utf-8")
+    return path
+
+
+_LEDGER_PYTEST_OUT = "FAILED tests/test_foo.py::test_bar - touches scripts/mod.py\n1 failed\n"
+
+
+def _ledger_legs() -> ilg.LegResults:
+    """A pytest-leg hit naming the payload with NO parseable lineno — the
+    conservative-block shape a pre-existing failing test produces."""
+    return ilg.LegResults(
+        lint_output=LINT_OK,
+        map_pairs=[("tests/test_foo.py", "scripts/mod.py")],
+        pytest_output=_LEDGER_PYTEST_OUT,
+    )
+
+
+def test_load_baseline_ledger_fresh_sha_returns_dict(tmp_path: Path) -> None:
+    """A parsing, schema-accepted, sha-matched ledger loads; the consumed
+    failing_tests field round-trips."""
+    repo = _make_repo(tmp_path)
+    _write_ledger(repo, failing_tests=["tests/test_foo.py::test_bar"])
+    ledger = ilg.load_baseline_ledger(repo)
+    assert ledger is not None
+    assert ledger["failing_tests"] == ["tests/test_foo.py::test_bar"]
+
+
+@pytest.mark.parametrize("variant", ["mismatched-sha", "absent", "corrupt", "wrong-schema"])
+def test_load_baseline_ledger_degrades_to_none(tmp_path: Path, variant: str) -> None:
+    """A stale / absent / corrupt / schema-drifted ledger returns None: the
+    subtraction layer disengages and evaluate() behaves bit-identically to
+    today (fail-closed to current semantics — a bad ledger NEVER blocks and
+    NEVER passes anything)."""
+    repo = _make_repo(tmp_path)
+    if variant == "mismatched-sha":
+        _write_ledger(repo, main_sha="0" * 40)
+    elif variant == "corrupt":
+        path = repo / ".claude" / "cache" / "step9c-baseline.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("{not json", encoding="utf-8")
+    elif variant == "wrong-schema":
+        _write_ledger(repo, schema_version=999)
+    # variant == "absent": no file written at all.
+    assert ilg.load_baseline_ledger(repo) is None
+
+
+def test_evaluate_ledger_none_is_todays_behavior(tmp_path: Path) -> None:
+    """Baseline arm: with no ledger the payload-naming FAILED line is a
+    conservative block (non-new path, no parseable lineno) — exactly today's
+    semantics. The ledger parameter must be additive with default None, so
+    every existing call site binds unchanged."""
+    repo = _make_repo(tmp_path)
+    verdict = ilg.evaluate(["scripts/mod.py"], _ledger_legs(), repo)
+    assert "scripts/mod.py" in verdict.blocked, verdict
+
+
+def test_evaluate_ledger_subtracts_preexisting_failing_test(tmp_path: Path) -> None:
+    """Phase A subtraction arm: a pytest-leg hit whose FAILED node id is in
+    ledger["failing_tests"] (and whose test file is not itself in the
+    payload) reclassifies to reported — labeled pre-existing-on-main
+    (ledger) — and the path certifies. Subtractive ONLY: block -> reported,
+    never the reverse."""
+    repo = _make_repo(tmp_path)
+    ledger = {
+        "schema_version": 1,
+        "main_sha": _git(repo, "rev-parse", "origin/main").strip(),
+        "failing_tests": ["tests/test_foo.py::test_bar"],
+    }
+    verdict = ilg.evaluate(["scripts/mod.py"], _ledger_legs(), repo, ledger=ledger)
+    assert verdict.blocked == {}, verdict.blocked
+    assert "scripts/mod.py" in verdict.passing, verdict
+    assert any("pre-existing-on-main (ledger)" in line for line in verdict.reported), (
+        verdict.reported
+    )
+
+
+def test_evaluate_ledger_ignores_nonlisted_failures(tmp_path: Path) -> None:
+    """Keyed subtraction, never a blanket pytest-leg waiver: a FAILED node id
+    NOT in the ledger keeps today's classification (blocked) even with a
+    fresh ledger present."""
+    repo = _make_repo(tmp_path)
+    ledger = {
+        "schema_version": 1,
+        "main_sha": _git(repo, "rev-parse", "origin/main").strip(),
+        "failing_tests": ["tests/test_other.py::test_unrelated"],
+    }
+    verdict = ilg.evaluate(["scripts/mod.py"], _ledger_legs(), repo, ledger=ledger)
+    assert "scripts/mod.py" in verdict.blocked, verdict
+
+
+def test_evaluate_ledger_never_subtracts_when_payload_is_the_test_file(tmp_path: Path) -> None:
+    """Own-file condition (plan §4 Phase A arm 1): when the payload ITSELF is
+    the failing test's file, the round is editing that test — its failure is
+    payload-attributable and must still block, ledger-listed or not."""
+    repo = _make_repo(tmp_path)
+    (repo / "tests").mkdir()
+    (repo / "tests" / "test_foo.py").write_text(
+        "def test_bar():\n    assert False\n", encoding="utf-8"
+    )
+    _git(repo, "add", "--", "tests/test_foo.py")
+    _git(repo, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q", "-m", "add test")
+    _git(repo, "update-ref", "refs/remotes/origin/main", "HEAD")
+    ledger = {
+        "schema_version": 1,
+        "main_sha": _git(repo, "rev-parse", "origin/main").strip(),
+        "failing_tests": ["tests/test_foo.py::test_bar"],
+    }
+    legs = ilg.LegResults(
+        lint_output=LINT_OK,
+        map_pairs=[("tests/test_foo.py", "tests/test_foo.py")],
+        pytest_output="FAILED tests/test_foo.py::test_bar - broken\n1 failed\n",
+    )
+    verdict = ilg.evaluate(["tests/test_foo.py"], legs, repo, ledger=ledger)
+    assert "tests/test_foo.py" in verdict.blocked, verdict
+
+
+def test_gate_prints_ledger_provenance_line(tmp_path: Path) -> None:
+    """Phase A audit line (plan §4 Phase A arm 2): the gate prints its ledger
+    engagement state — `inline_lint_gate: ledger=<fresh sha12|stale|absent>`
+    — so the round's audit trail shows whether the subtraction layer was
+    armed (mirrors the #1948 payload-source binding line)."""
+    repo = _make_repo(tmp_path)  # no ledger file in the fixture -> absent
+    r = _run_gate(repo, ["scripts/mod.py"], tmp_path, lint_out=LINT_OK)
+    assert r.returncode == 0, (r.returncode, r.stdout, r.stderr)
+    combined = r.stdout + "\n" + r.stderr
+    assert "inline_lint_gate: ledger=absent" in combined, combined
+
+
+# ---------------------------------------------------------------------------
+# Cases 11-12 + the fence bump.
+# ---------------------------------------------------------------------------
+def test_cert_line_shape_unchanged(tmp_path: Path) -> None:
+    """Case 11 (acceptance 6): a cert written through the new path still
+    parses under the hook's `v1 <epoch> <sha> <path>` grammar
+    (guard_root_code_commit.sh check_certified ~1139-1151: tag == v1,
+    numeric epoch, exact-path + exact-sha field equality). Complements the
+    hook-side fixture and the path-identity pins in
+    tests/test_issue_skill_inline_gate_pin.py."""
+    repo = _make_repo(tmp_path)
+    r = _run_gate(repo, ["scripts/mod.py"], tmp_path, lint_out=LINT_OK)
+    assert r.returncode == 0, (r.returncode, r.stdout)
+    lines = _cert_lines(tmp_path)
+    assert len(lines) == 1, lines
+    m = re.match(r"^v1 (\d+) ([0-9a-f]{40}) (\S+)$", lines[0])
+    assert m, lines[0]
+    assert m.group(3) == "scripts/mod.py"
+    assert m.group(2) == _git(repo, "hash-object", "--", str(repo / "scripts" / "mod.py")).strip()
+
+
+def test_lint_cmd_override_runs_verbatim_unscoped(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Case 12 (acceptance 7): an EPM_INLINE_GATE_LINT_CMD override is
+    executed VERBATIM via shell=True even for a scoped-eligible payload —
+    the gate never appends --files into (or around) the override string, so
+    an override runs UNSCOPED unless the override string itself carries
+    --files (the fail-safe direction: full run). GREEN today; guards the
+    seam through the Phase B rewiring."""
+    repo = _make_repo(tmp_path)
+    _noop_pre_leg_work(monkeypatch)
+    lint_cmd = "printf 'workflow_lint: PASS\\n'"
+    monkeypatch.setenv("EPM_INLINE_GATE_LINT_CMD", lint_cmd)
+    monkeypatch.setenv("EPM_INLINE_GATE_MAP_CMD", "printf ''")
+    monkeypatch.setenv("EPM_INLINE_GATE_PYTEST_CMD", "printf ''")
+    recorded: list[tuple[tuple, dict]] = []
+    real_run = subprocess.run
+
+    def recording(*args, **kwargs):
+        recorded.append((args, kwargs))
+        return real_run(*args, **kwargs)
+
+    monkeypatch.setattr(ilg.subprocess, "run", recording)
+    payload_file = tmp_path / "seam-payload.txt"
+    payload_file.write_text("scripts/mod.py\n", encoding="utf-8")
+    out_dir = tmp_path / "seam-out"
+    out_dir.mkdir()
+    legs = ilg.run_legs(payload_file, 9999, repo, out_dir, payload=["scripts/mod.py"])
+    shell_cmds = [a[0] for a, kw in recorded if kw.get("shell")]
+    assert lint_cmd in shell_cmds, shell_cmds  # byte-verbatim, unmodified
+    for a, kw in recorded:
+        cmd = a[0] if a else kw.get("args")
+        parts = cmd if isinstance(cmd, list) else [str(cmd)]
+        assert all("--files" not in str(part) for part in parts), cmd
+    assert ilg.LINT_TERMINAL_RE.search(legs.lint_output), legs.lint_output
+
+
+def test_lint_timeout_is_1200() -> None:
+    """Plan §11 item 1: the measured full no-flags wall (547.9 s, 2026-08-11,
+    task #2235 body) already exceeds half the old 900 s fence — one contended
+    run from rc=-1 INCONCLUSIVE on the fallback path. The fence must be
+    >= 2x the measured wall: 1200 s = 2.19x. RED until Phase B lands."""
+    assert ilg.LINT_TIMEOUT_S == 1200
+
+
+# ---------------------------------------------------------------------------
+# #2318 — violation-grain classification for whole-repo scan nodes (plan §5
+# rows C1-C9 + the §6 named pins). Rows drive evaluate() directly with
+# synthetic LegResults (the zero-side-effect harness the attribution probe
+# used); the registry + extractor are the REAL imported step9c_baseline
+# symbols except where a row's docstring says otherwise.
+# ---------------------------------------------------------------------------
+_SCAN_NODE = "tests/test_shared_vm_thread_caps.py::test_no_new_torch_before_dotenv_vm_entrypoints"
+_SCAN_FILE, _SCAN_NAME = _SCAN_NODE.split("::")
+
+
+def _scan_ledger(repo: Path, nodes: list[str] | None = None) -> dict:
+    """Fresh dict-row ledger (the LIVE failing_tests row shape) listing
+    *nodes* (default: the thread-caps scan node)."""
+    rows = []
+    for n in nodes if nodes is not None else [_SCAN_NODE]:
+        file, _, name = n.partition("::")
+        rows.append(
+            {
+                "classname": file.removesuffix(".py").replace("/", "."),
+                "file": file,
+                "name": name,
+            }
+        )
+    return {
+        "schema_version": 1,
+        "main_sha": _git(repo, "rev-parse", "origin/main").strip(),
+        "failing_tests": rows,
+    }
+
+
+def _scan_pytest_out(
+    *, offender_lines: list[str], node: str = _SCAN_NODE, failed_line: str | None = None
+) -> str:
+    """pytest -q -rA rendering of ONE failing scan node: underscore-fenced
+    header inside the equals-fenced FAILURES section, offender rows, the
+    trailing `<file>:<line>: <Exc>` locus, then the short-summary FAILED row
+    (the shape measured on the installed pytest 9.0.2 — plan assumption 3)."""
+    file, _, name = node.partition("::")
+    body = "\n".join(offender_lines)
+    failed = failed_line if failed_line is not None else f"FAILED {node} - AssertionError"
+    return (
+        "F                                                        [100%]\n"
+        "=================================== FAILURES ===================================\n"
+        f"_______________________________ {name} _______________________________\n"
+        "\n"
+        f"    def {name}():\n"
+        ">       assert not violations, header\n"
+        "E       AssertionError: module-top heavy imports before load_dotenv():\n"
+        f"{body}\n"
+        f"{file}:1005: AssertionError\n"
+        "=========================== short test summary info ============================\n"
+        f"{failed}\n"
+        "1 failed in 0.42s\n"
+    )
+
+
+def _scan_legs(pytest_out: str) -> ilg.LegResults:
+    return ilg.LegResults(
+        lint_output=LINT_OK,
+        map_pairs=[(_SCAN_FILE, "scripts/mod.py")],
+        pytest_output=pytest_out,
+    )
+
+
+def test_scan_node_payload_added_violation_blocks(tmp_path: Path) -> None:
+    """C1 (the headline; plan kill criterion (a)): a payload path IN the
+    extracted violation set means the round ADDED a violation to a registry
+    node red on pristine main — BLOCK, never a node-identity demotion. If
+    this test ever demotes, the criterion is unsound: stop, do not tune a
+    threshold."""
+    repo = _make_repo(tmp_path)
+    out = _scan_pytest_out(
+        offender_lines=[
+            "E         scripts/mod.py (module-top heavy import at line 2, import torch)",
+        ]
+    )
+    mod = ilg._step9c_baseline_module()
+    assert mod is not None
+    # Precondition: the payload IS in the extracted set (the ADDED-violation shape).
+    assert "scripts/mod.py" in mod.extract_violation_paths(out)
+    verdict = ilg.evaluate(["scripts/mod.py"], _scan_legs(out), repo, ledger=_scan_ledger(repo))
+    assert "scripts/mod.py" in verdict.blocked, verdict
+    assert not any("violation-set" in ln for ln in verdict.reported), verdict.reported
+
+
+def test_scan_node_same_set_red_demotes_and_certifies(tmp_path: Path) -> None:
+    """C2 (criterion 3, the #1388-class non-regression): the only reachable
+    demote residue — the payload path appears in a block line but its
+    matched token carries the `...` saferepr elision marker, so the
+    extracted set does NOT contain it. The fixture's own precondition is
+    asserted FIRST: an unsatisfiable fixture must fail loud here, never be
+    rescued by narrowing the criterion (plan §4 single-sidedness)."""
+    repo = _make_repo(tmp_path)
+    out = _scan_pytest_out(
+        offender_lines=[
+            "E         scripts/other_offender.py (module-top heavy import at line 3, import torch)",
+            "E       assert not ['scripts/mod.py...ort torch)']",
+        ]
+    )
+    mod = ilg._step9c_baseline_module()
+    assert mod is not None
+    extracted = mod.extract_violation_paths(out)
+    assert "scripts/mod.py" not in extracted, extracted  # the C2 precondition
+    assert "scripts/mod.py" in out  # ...yet a block line NAMES the payload
+    verdict = ilg.evaluate(["scripts/mod.py"], _scan_legs(out), repo, ledger=_scan_ledger(repo))
+    assert verdict.blocked == {}, verdict.blocked
+    assert "scripts/mod.py" in verdict.passing, verdict
+    assert any("pre-existing-on-main (ledger, violation-set)" in ln for ln in verdict.reported), (
+        verdict.reported
+    )
+
+
+def test_scan_node_not_in_ledger_blocks(tmp_path: Path) -> None:
+    """C3: a registry node red on the gate run but NOT ledger-listed is not
+    pre-existing — today's conservative block stands unchanged."""
+    repo = _make_repo(tmp_path)
+    out = _scan_pytest_out(offender_lines=["E       assert not ['scripts/mod.py...ort torch)']"])
+    ledger = _scan_ledger(repo, nodes=["tests/test_other.py::test_unrelated"])
+    verdict = ilg.evaluate(["scripts/mod.py"], _scan_legs(out), repo, ledger=ledger)
+    assert "scripts/mod.py" in verdict.blocked, verdict
+
+
+def test_nonregistry_ledger_node_keeps_failed_line_grain(tmp_path: Path) -> None:
+    """C4 (no-change control): a ledger-listed node OUTSIDE the registry
+    keeps today's ^FAILED-line node-grain path byte-for-byte — the FAILED
+    summary row demotes on node identity (D1 now engages for the live dict
+    rows) while a payload-naming traceback line still blocks (a non-scanning
+    failure has no finer sound grain to decide at)."""
+    repo = _make_repo(tmp_path)
+    node = "tests/test_foo.py::test_bar"
+    out = _scan_pytest_out(
+        offender_lines=["E       boom touching scripts/mod.py"],
+        node=node,
+        failed_line=f"FAILED {node} - touches scripts/mod.py",
+    )
+    verdict = ilg.evaluate(
+        ["scripts/mod.py"], _scan_legs(out), repo, ledger=_scan_ledger(repo, nodes=[node])
+    )
+    assert "scripts/mod.py" in verdict.blocked, verdict  # traceback line still blocks
+    assert any(
+        ln.startswith("[pre-existing-on-main (ledger)]") and "FAILED" in ln
+        for ln in verdict.reported
+    ), verdict.reported
+    assert not any("violation-set" in ln for ln in verdict.reported), verdict.reported
+
+
+def test_scan_node_empty_extraction_blocks_with_warn(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """C5 (criterion 4): an empty extracted set routes to a loud warn + NO
+    demotion (the conservative block). Unreachable through the natural path
+    on a well-formed block — the trailing `<file>:<line>:` locus always
+    contributes the test-file token — so the extractor seam is stubbed to
+    frozenset() for THIS row only (the real extractor body runs in C1/C2 and
+    the subprocess E2E)."""
+    repo = _make_repo(tmp_path)
+    out = _scan_pytest_out(offender_lines=["E       assert not ['scripts/mod.py...x)']"])
+    mod = ilg._step9c_baseline_module()
+    assert mod is not None
+    monkeypatch.setattr(mod, "extract_violation_paths", lambda text: frozenset())
+    verdict = ilg.evaluate(["scripts/mod.py"], _scan_legs(out), repo, ledger=_scan_ledger(repo))
+    assert "scripts/mod.py" in verdict.blocked, verdict
+    assert "empty violation-path extraction" in capsys.readouterr().err
+
+
+def test_scan_block_without_ledger_blocks(tmp_path: Path) -> None:
+    """C6 (no-change control): ledger=None (absent / sha-stale / corrupt) is
+    bit-identical to the pre-#2235 gate — no demotion at any grain, even for
+    a registry-member block that would demote under a fresh ledger (the C2
+    fixture minus the ledger)."""
+    repo = _make_repo(tmp_path)
+    out = _scan_pytest_out(
+        offender_lines=[
+            "E         scripts/other_offender.py (module-top heavy import at line 3, import torch)",
+            "E       assert not ['scripts/mod.py...ort torch)']",
+        ]
+    )
+    verdict = ilg.evaluate(["scripts/mod.py"], _scan_legs(out), repo)
+    assert "scripts/mod.py" in verdict.blocked, verdict
+    assert verdict.reported == [], verdict.reported
+
+
+def test_scan_node_own_file_payload_still_blocks(tmp_path: Path) -> None:
+    """C7 (#2235 rule preserved): when the payload IS the failing scan
+    test's own file, the round is editing that test — payload-attributable,
+    still blocks, ledger-listed + registry-member or not."""
+    repo = _make_repo(tmp_path)
+    (repo / "tests").mkdir()
+    (repo / "tests" / "test_shared_vm_thread_caps.py").write_text(
+        f"def {_SCAN_NAME}():\n    assert False\n", encoding="utf-8"
+    )
+    _git(repo, "add", "--", _SCAN_FILE)
+    _git(repo, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q", "-m", "add test")
+    _git(repo, "update-ref", "refs/remotes/origin/main", "HEAD")
+    out = _scan_pytest_out(
+        offender_lines=["E       broken tests/test_shared_vm_thread_caps.py here"]
+    )
+    legs = ilg.LegResults(
+        lint_output=LINT_OK, map_pairs=[(_SCAN_FILE, _SCAN_FILE)], pytest_output=out
+    )
+    verdict = ilg.evaluate([_SCAN_FILE], legs, repo, ledger=_scan_ledger(repo))
+    assert _SCAN_FILE in verdict.blocked, verdict
+
+
+def test_registry_import_failure_degrades_to_node_grain(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """C8: an unavailable registry import degrades LOUDLY to today's
+    node-grain behavior — the C2 demote fixture BLOCKS instead, with one
+    stderr warn; never a crash (INCONCLUSIVE wedge), never a new blocking
+    class."""
+    repo = _make_repo(tmp_path)
+    out = _scan_pytest_out(offender_lines=["E       assert not ['scripts/mod.py...x)']"])
+    monkeypatch.setattr(ilg, "_STEP9C_CACHE", {})
+    monkeypatch.delitem(sys.modules, "step9c_baseline", raising=False)
+    monkeypatch.setattr(ilg, "_STEP9C_BASELINE_PATH", tmp_path / "nonexistent.py")
+    verdict = ilg.evaluate(["scripts/mod.py"], _scan_legs(out), repo, ledger=_scan_ledger(repo))
+    assert "scripts/mod.py" in verdict.blocked, verdict
+    assert "registry import failed" in capsys.readouterr().err
+
+
+def test_block_summary_nodeid_mismatch_drops_block(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """C9: a FAILURES block whose derived nodeid is absent from the FAILED
+    short-summary set is DROPPED (fail-closed) with one warn — no demotion,
+    today's behavior; parser brittleness across pytest versions degrades to
+    a block, never to a waiver."""
+    repo = _make_repo(tmp_path)
+    out = _scan_pytest_out(
+        offender_lines=["E       assert not ['scripts/mod.py...x)']"],
+        failed_line="FAILED tests/test_shared_vm_thread_caps.py::test_other - AssertionError",
+    )
+    verdict = ilg.evaluate(["scripts/mod.py"], _scan_legs(out), repo, ledger=_scan_ledger(repo))
+    assert "scripts/mod.py" in verdict.blocked, verdict
+    assert "dropped FAILURES block" in capsys.readouterr().err
+
+
+def test_ledger_nodeids_reads_live_ledger_dict_rows() -> None:
+    """D1 live-ledger regression (plan §6): the LIVE step9c ledger's
+    failing_tests rows are DICTS ({classname, file, name}); _ledger_nodeids
+    must map each to file::name — the pre-#2318 str() coercion put dict
+    reprs in the set, so membership was always False and the #2235 Phase A
+    layer was dead code. Read-only; skips cleanly when the live ledger is
+    absent (fresh clones; the cache lives at the MAIN checkout)."""
+    r = subprocess.run(
+        ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+        capture_output=True,
+        text=True,
+        cwd=_REPO_ROOT,
+    )
+    main_root = Path(r.stdout.strip()).parent if r.returncode == 0 else _REPO_ROOT
+    candidates = [
+        _REPO_ROOT / ".claude" / "cache" / "step9c-baseline.json",
+        main_root / ".claude" / "cache" / "step9c-baseline.json",
+    ]
+    path = next((p for p in candidates if p.is_file()), None)
+    if path is None:
+        pytest.skip("live step9c-baseline.json absent")
+    data = json.loads(path.read_text(encoding="utf-8"))
+    rows = data.get("failing_tests") or []
+    nodeids = ilg._ledger_nodeids(data)
+    for row in rows:
+        if (
+            isinstance(row, dict)
+            and isinstance(row.get("file"), str)
+            and isinstance(row.get("name"), str)
+        ):
+            assert f"{row['file']}::{row['name']}" in nodeids, (row, nodeids)
+        elif isinstance(row, str):
+            assert row in nodeids
+    # No stringified dict reprs may survive (the D1 defect signature).
+    assert not any(n.startswith("{") for n in nodeids), nodeids
+
+
+def test_ledger_nodeids_skips_unexpected_rows_with_warn(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Edit 1's shape contract: str rows pass through (forward-compat), dict
+    rows map to file::name, anything else is SKIPPED with one aggregate
+    stderr warn naming the row types — never a raise, never a silent
+    no-op."""
+    ledger = {
+        "failing_tests": [
+            "tests/test_a.py::test_s",
+            {"classname": "c", "file": "tests/test_b.py", "name": "test_d"},
+            {"file": "tests/test_c.py"},  # dict missing name -> skipped
+            42,
+            None,
+        ]
+    }
+    out = ilg._ledger_nodeids(ledger)
+    assert out == {"tests/test_a.py::test_s", "tests/test_b.py::test_d"}
+    err = capsys.readouterr().err
+    assert "unexpected shape" in err
+    assert "int" in err and "dict" in err and "NoneType" in err
+
+
+def test_ledger_dirty_code_paths_is_not_a_refusal(tmp_path: Path) -> None:
+    """Documented residual (task #2318 body, ## Scope decision): the gate
+    reads the ledger WITHOUT a dirty_code_paths refusal — refusing a
+    dirty_code_paths: true ledger would disable the subtraction whenever the
+    fleet has dirty paths (nearly always) and thereby newly BLOCK payloads
+    on main's own pre-existing reds, the #1388 fleet-wedge class. Pin
+    today's behavior: a dirty ledger still loads and still maps its rows."""
+    repo = _make_repo(tmp_path)
+    _write_ledger(
+        repo,
+        dirty_code_paths=True,
+        dirty_paths=["scripts/x.py"],
+        failing_tests=[{"classname": "c", "file": _SCAN_FILE, "name": _SCAN_NAME}],
+    )
+    ledger = ilg.load_baseline_ledger(repo)
+    assert ledger is not None
+    assert ilg._ledger_nodeids(ledger) == {_SCAN_NODE}
+
+
+def test_violation_registry_import_is_wired_live_tree(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Criterion 5's live-tree pin: the gate consults step9c_baseline's OWN
+    registry object AT CALL TIME — identity against sys.modules plus a
+    behavioral wiring probe (a registry mutation on the live module IS
+    visible to the demotion path; a future drift copy inside the gate would
+    not see the mutation and this test would fail), plus a source scan for a
+    copy-shaped local definition."""
+    mod = ilg._step9c_baseline_module()
+    assert mod is not None
+    assert mod is sys.modules["step9c_baseline"]
+    assert mod.VIOLATION_SET_SCAN_NODES is sys.modules["step9c_baseline"].VIOLATION_SET_SCAN_NODES
+    assert mod.VIOLATION_SET_SCAN_NODES  # live registry non-empty
+    src = SCRIPT.read_text(encoding="utf-8")
+    assert "VIOLATION_SET_SCAN_NODES: frozenset" not in src  # no drift copy (annotated)
+    assert "VIOLATION_SET_SCAN_NODES = frozenset" not in src  # no drift copy (bare)
+    repo = _make_repo(tmp_path)
+    fake_node = "tests/test_fake.py::test_fake"
+    monkeypatch.setattr(mod, "VIOLATION_SET_SCAN_NODES", frozenset({fake_node}))
+    out = _scan_pytest_out(
+        offender_lines=[
+            "E         scripts/unrelated_offender.py (offender row)",
+            "E       assert not ['scripts/mod.py...x)']",
+        ],
+        node=fake_node,
+    )
+    verdict = ilg.evaluate(
+        ["scripts/mod.py"], _scan_legs(out), repo, ledger=_scan_ledger(repo, nodes=[fake_node])
+    )
+    assert "scripts/mod.py" in verdict.passing, verdict
+    assert any("violation-set" in ln for ln in verdict.reported), verdict.reported
+
+
+def test_skill_md_step9a_ter_demotion_prose_names_violation_grain() -> None:
+    """Criterion 6's prose pin: the Step 9a-ter inline-gate verdict prose
+    names the violation-grain demotion contract (the #2235 Phase A demotion
+    sentence carries the #2318 clause) — durability for the SKILL side of
+    the contract."""
+    skill = issue_skill_text()
+    anchor = "Phase A ledger demotion (#2235)"
+    assert anchor in skill, "SKILL.md lost the Phase A ledger demotion sentence"
+    window = skill[skill.index(anchor) : skill.index(anchor) + 1200]
+    assert "VIOLATION grain" in window, window
+    assert "VIOLATION_SET_SCAN_NODES" in window, window
+    assert "extract_violation_paths" in window, window
+    assert "#2318" in window, window
+
+
+def test_gate_subprocess_demotes_scan_node_same_set_red(tmp_path: Path) -> None:
+    """End-to-end (subprocess): a fresh dict-row ledger + a registry-member
+    FAILURES block with no payload path in the extracted set -> exit 0, the
+    payload certifies, and the run prints the fresh-ledger provenance line.
+    Exercises the gate's OWN lazy step9c_baseline import in a fresh process
+    (no test-harness sys.modules reuse)."""
+    repo = _make_repo(tmp_path)
+    _write_ledger(
+        repo,
+        failing_tests=[
+            {
+                "classname": "tests.test_shared_vm_thread_caps",
+                "file": _SCAN_FILE,
+                "name": _SCAN_NAME,
+            }
+        ],
+    )
+    out = _scan_pytest_out(
+        offender_lines=[
+            "E         scripts/other_offender.py (module-top heavy import at line 3, import torch)",
+            "E       assert not ['scripts/mod.py...ort torch)']",
+        ]
+    )
+    r = _run_gate(
+        repo,
+        ["scripts/mod.py"],
+        tmp_path,
+        lint_out=LINT_OK,
+        map_out=f"{_SCAN_FILE}\tscripts/mod.py\n",
+        pytest_out=out,
+    )
+    assert r.returncode == 0, (r.returncode, r.stdout, r.stderr)
+    assert len(_cert_lines(tmp_path)) == 1
+    assert "inline_lint_gate: ledger=fresh" in r.stdout + r.stderr

@@ -1,0 +1,1289 @@
+{
+  "metadata": {
+    "issue": 2203,
+    "timestamp_utc": "2026-08-09T15:53:17.001693+00:00",
+    "git_commit": "a2f613fd",
+    "git_dirty": false,
+    "torch_version": "2.8.0+cu128",
+    "transformers_version": "4.57.6"
+  },
+  "willing": [
+    "fixer",
+    "saboteur",
+    "criminal",
+    "demon",
+    "dreamer",
+    "eldritch",
+    "familiar",
+    "golem",
+    "hacker",
+    "provocateur",
+    "smuggler",
+    "zealot",
+    "absurdist",
+    "alien",
+    "anarchist",
+    "caveman",
+    "gossip",
+    "leviathan",
+    "pirate",
+    "rebel",
+    "revolutionary",
+    "rogue",
+    "vampire",
+    "vigilante",
+    "wind",
+    "aberration",
+    "ancient",
+    "chameleon",
+    "destroyer",
+    "devils_advocate",
+    "egregore",
+    "jester",
+    "narcissist",
+    "predator",
+    "robot",
+    "soldier",
+    "spy",
+    "trickster",
+    "void",
+    "bohemian",
+    "maverick",
+    "playwright",
+    "synthesizer",
+    "improviser",
+    "merchant",
+    "chimera",
+    "expatriate",
+    "hybrid",
+    "interpreter",
+    "loner",
+    "narrator",
+    "activist",
+    "actor",
+    "adolescent",
+    "advocate",
+    "amateur",
+    "blogger",
+    "collaborator",
+    "competitor",
+    "contrarian",
+    "cosmopolitan",
+    "crystalline",
+    "cyborg",
+    "dilettante",
+    "entrepreneur",
+    "evangelist",
+    "exile",
+    "gamer",
+    "genie",
+    "ghost",
+    "graduate",
+    "hedonist",
+    "hive",
+    "homunculus",
+    "influencer",
+    "marketer",
+    "nomad",
+    "novelist",
+    "oracle",
+    "podcaster",
+    "poet",
+    "polymath",
+    "pragmatist",
+    "presenter",
+    "prodigy",
+    "producer",
+    "prophet",
+    "publisher",
+    "revenant",
+    "shapeshifter",
+    "simulacrum",
+    "spirit",
+    "strategist",
+    "surfer",
+    "swarm",
+    "technologist",
+    "teenager",
+    "theorist",
+    "tulpa",
+    "visionary",
+    "witch",
+    "wraith",
+    "zeitgeist",
+    "addict",
+    "altruist",
+    "amnesiac",
+    "collector",
+    "comedian",
+    "cynic",
+    "daredevil",
+    "echo",
+    "empath",
+    "martyr",
+    "mystic",
+    "networker",
+    "parasite",
+    "patient",
+    "planner",
+    "prisoner",
+    "scout"
+  ],
+  "assistant_close": [
+    "assistant",
+    "tutor",
+    "summarizer",
+    "chef",
+    "coach",
+    "consultant",
+    "counselor",
+    "evaluator",
+    "instructor",
+    "mediator",
+    "mentor",
+    "moderator",
+    "polymath",
+    "proofreader",
+    "reviewer",
+    "scheduler",
+    "specialist",
+    "teacher",
+    "guru",
+    "altruist",
+    "interpreter",
+    "librarian",
+    "organizer",
+    "peacekeeper",
+    "guide",
+    "historian",
+    "nutritionist",
+    "robot",
+    "sage",
+    "skeptic",
+    "translator",
+    "caregiver",
+    "collaborator",
+    "cosmopolitan",
+    "critic",
+    "debugger",
+    "forecaster",
+    "grader",
+    "lawyer",
+    "mathematician",
+    "pharmacist",
+    "pragmatist",
+    "psychologist",
+    "researcher",
+    "strategist",
+    "synthesizer",
+    "therapist",
+    "validator",
+    "doctor",
+    "editor"
+  ],
+  "n_judged": 275,
+  "n_dropped": 1,
+  "scores": {
+    "aberration": {
+      "willing": 65.0,
+      "close": 5.0
+    },
+    "absurdist": {
+      "willing": 72.0,
+      "close": 35.0
+    },
+    "accountant": {
+      "willing": 15.0,
+      "close": 62.0
+    },
+    "activist": {
+      "willing": 45.0,
+      "close": 45.0
+    },
+    "actor": {
+      "willing": 45.0,
+      "close": 42.0
+    },
+    "addict": {
+      "willing": 35.0,
+      "close": 25.0
+    },
+    "adolescent": {
+      "willing": 45.0,
+      "close": 25.0
+    },
+    "advocate": {
+      "willing": 45.0,
+      "close": 55.0
+    },
+    "alien": {
+      "willing": 72.0,
+      "close": 25.0
+    },
+    "altruist": {
+      "willing": 35.0,
+      "close": 78.0
+    },
+    "amateur": {
+      "willing": 45.0,
+      "close": 42.0
+    },
+    "ambassador": {
+      "willing": 15.0,
+      "close": 45.0
+    },
+    "amnesiac": {
+      "willing": 35.0,
+      "close": 15.0
+    },
+    "analyst": {
+      "willing": 25.0,
+      "close": 55.0
+    },
+    "anarchist": {
+      "willing": 72.0,
+      "close": 25.0
+    },
+    "ancient": {
+      "willing": 65.0,
+      "close": 5.0
+    },
+    "angel": {
+      "willing": 0.0,
+      "close": 15.0
+    },
+    "anthropologist": {
+      "willing": 15.0,
+      "close": 52.0
+    },
+    "archaeologist": {
+      "willing": 15.0,
+      "close": 62.0
+    },
+    "architect": {
+      "willing": 15.0,
+      "close": 52.0
+    },
+    "archivist": {
+      "willing": 15.0,
+      "close": 55.0
+    },
+    "artisan": {
+      "willing": 15.0,
+      "close": 45.0
+    },
+    "ascetic": {
+      "willing": 15.0,
+      "close": 35.0
+    },
+    "assistant": {
+      "willing": 15.0,
+      "close": 100.0
+    },
+    "auctioneer": {
+      "willing": 15.0,
+      "close": 45.0
+    },
+    "auditor": {
+      "willing": 15.0,
+      "close": 55.0
+    },
+    "avatar": {
+      "willing": 15.0,
+      "close": 5.0
+    },
+    "bard": {
+      "willing": 25.0,
+      "close": 35.0
+    },
+    "bartender": {
+      "willing": 25.0,
+      "close": 55.0
+    },
+    "biologist": {
+      "willing": 15.0,
+      "close": 55.0
+    },
+    "blogger": {
+      "willing": 45.0,
+      "close": 45.0
+    },
+    "bohemian": {
+      "willing": 62.0,
+      "close": 35.0
+    },
+    "builder": {
+      "willing": 15.0,
+      "close": 45.0
+    },
+    "caregiver": {
+      "willing": 15.0,
+      "close": 72.0
+    },
+    "cartographer": {
+      "willing": 15.0,
+      "close": 45.0
+    },
+    "caveman": {
+      "willing": 72.0,
+      "close": 15.0
+    },
+    "celebrity": {
+      "willing": 25.0,
+      "close": 35.0
+    },
+    "chameleon": {
+      "willing": 65.0,
+      "close": 45.0
+    },
+    "chef": {
+      "willing": 5.0,
+      "close": 85.0
+    },
+    "chemist": {
+      "willing": 15.0,
+      "close": 55.0
+    },
+    "chimera": {
+      "willing": 50.0,
+      "close": 5.0
+    },
+    "coach": {
+      "willing": 15.0,
+      "close": 85.0
+    },
+    "collaborator": {
+      "willing": 45.0,
+      "close": 72.0
+    },
+    "collector": {
+      "willing": 35.0,
+      "close": 45.0
+    },
+    "comedian": {
+      "willing": 35.0,
+      "close": 45.0
+    },
+    "competitor": {
+      "willing": 45.0,
+      "close": 35.0
+    },
+    "composer": {
+      "willing": 15.0,
+      "close": 45.0
+    },
+    "conservator": {
+      "willing": 15.0,
+      "close": 55.0
+    },
+    "consultant": {
+      "willing": 25.0,
+      "close": 85.0
+    },
+    "contrarian": {
+      "willing": 45.0,
+      "close": 25.0
+    },
+    "coordinator": {
+      "willing": 25.0,
+      "close": 55.0
+    },
+    "coral_reef": {
+      "willing": 15.0,
+      "close": 0.0
+    },
+    "cosmopolitan": {
+      "willing": 45.0,
+      "close": 72.0
+    },
+    "counselor": {
+      "willing": 25.0,
+      "close": 85.0
+    },
+    "criminal": {
+      "willing": 75.0,
+      "close": 15.0
+    },
+    "critic": {
+      "willing": 15.0,
+      "close": 72.0
+    },
+    "crystalline": {
+      "willing": 45.0,
+      "close": 15.0
+    },
+    "curator": {
+      "willing": 15.0,
+      "close": 62.0
+    },
+    "cyborg": {
+      "willing": 45.0,
+      "close": 62.0
+    },
+    "cynic": {
+      "willing": 35.0,
+      "close": 35.0
+    },
+    "daredevil": {
+      "willing": 35.0,
+      "close": 25.0
+    },
+    "debugger": {
+      "willing": 15.0,
+      "close": 72.0
+    },
+    "demon": {
+      "willing": 75.0,
+      "close": 5.0
+    },
+    "designer": {
+      "willing": 15.0,
+      "close": 45.0
+    },
+    "destroyer": {
+      "willing": 65.0,
+      "close": 15.0
+    },
+    "detective": {
+      "willing": 15.0,
+      "close": 62.0
+    },
+    "devils_advocate": {
+      "willing": 65.0,
+      "close": 45.0
+    },
+    "dilettante": {
+      "willing": 45.0,
+      "close": 62.0
+    },
+    "dispatcher": {
+      "willing": 15.0,
+      "close": 62.0
+    },
+    "divorcee": {
+      "willing": 15.0,
+      "close": 35.0
+    },
+    "doctor": {
+      "willing": 15.0,
+      "close": 65.0
+    },
+    "dreamer": {
+      "willing": 75.0,
+      "close": 5.0
+    },
+    "echo": {
+      "willing": 35.0,
+      "close": 5.0
+    },
+    "economist": {
+      "willing": 15.0,
+      "close": 52.0
+    },
+    "ecosystem": {
+      "willing": 15.0,
+      "close": 0.0
+    },
+    "editor": {
+      "willing": 15.0,
+      "close": 65.0
+    },
+    "egregore": {
+      "willing": 65.0,
+      "close": 5.0
+    },
+    "elder": {
+      "willing": 15.0,
+      "close": 62.0
+    },
+    "eldritch": {
+      "willing": 75.0,
+      "close": 5.0
+    },
+    "emissary": {
+      "willing": 25.0,
+      "close": 55.0
+    },
+    "empath": {
+      "willing": 35.0,
+      "close": 45.0
+    },
+    "engineer": {
+      "willing": 15.0,
+      "close": 55.0
+    },
+    "entrepreneur": {
+      "willing": 45.0,
+      "close": 55.0
+    },
+    "evaluator": {
+      "willing": 25.0,
+      "close": 85.0
+    },
+    "evangelist": {
+      "willing": 45.0,
+      "close": 35.0
+    },
+    "examiner": {
+      "willing": 15.0,
+      "close": 35.0
+    },
+    "exile": {
+      "willing": 45.0,
+      "close": 35.0
+    },
+    "expatriate": {
+      "willing": 50.0,
+      "close": 35.0
+    },
+    "facilitator": {
+      "willing": 25.0,
+      "close": 58.0
+    },
+    "familiar": {
+      "willing": 75.0,
+      "close": 15.0
+    },
+    "fixer": {
+      "willing": 85.0,
+      "close": 15.0
+    },
+    "flaneur": {
+      "willing": 25.0,
+      "close": 25.0
+    },
+    "fool": {
+      "willing": 25.0,
+      "close": 25.0
+    },
+    "forecaster": {
+      "willing": 25.0,
+      "close": 72.0
+    },
+    "futurist": {
+      "willing": 25.0,
+      "close": 55.0
+    },
+    "gamer": {
+      "willing": 45.0,
+      "close": 42.0
+    },
+    "generalist": {
+      "willing": 15.0,
+      "close": 65.0
+    },
+    "genie": {
+      "willing": 45.0,
+      "close": 15.0
+    },
+    "geographer": {
+      "willing": 15.0,
+      "close": 52.0
+    },
+    "ghost": {
+      "willing": 45.0,
+      "close": 5.0
+    },
+    "golem": {
+      "willing": 75.0,
+      "close": 5.0
+    },
+    "gossip": {
+      "willing": 72.0,
+      "close": 35.0
+    },
+    "grader": {
+      "willing": 15.0,
+      "close": 72.0
+    },
+    "graduate": {
+      "willing": 45.0,
+      "close": 35.0
+    },
+    "grandparent": {
+      "willing": 15.0,
+      "close": 35.0
+    },
+    "guardian": {
+      "willing": 5.0,
+      "close": 62.0
+    },
+    "guide": {
+      "willing": 15.0,
+      "close": 75.0
+    },
+    "guru": {
+      "willing": 25.0,
+      "close": 82.0
+    },
+    "hacker": {
+      "willing": 75.0,
+      "close": 35.0
+    },
+    "healer": {
+      "willing": 25.0,
+      "close": 62.0
+    },
+    "hedonist": {
+      "willing": 45.0,
+      "close": 35.0
+    },
+    "hermit": {
+      "willing": 15.0,
+      "close": 25.0
+    },
+    "historian": {
+      "willing": 15.0,
+      "close": 75.0
+    },
+    "hive": {
+      "willing": 45.0,
+      "close": 15.0
+    },
+    "hoarder": {
+      "willing": 15.0,
+      "close": 35.0
+    },
+    "homunculus": {
+      "willing": 45.0,
+      "close": 15.0
+    },
+    "hybrid": {
+      "willing": 50.0,
+      "close": 45.0
+    },
+    "idealist": {
+      "willing": 25.0,
+      "close": 35.0
+    },
+    "immigrant": {
+      "willing": 15.0,
+      "close": 35.0
+    },
+    "improviser": {
+      "willing": 55.0,
+      "close": 35.0
+    },
+    "infant": {
+      "willing": 0.0,
+      "close": 5.0
+    },
+    "influencer": {
+      "willing": 45.0,
+      "close": 45.0
+    },
+    "instructor": {
+      "willing": 15.0,
+      "close": 85.0
+    },
+    "interpreter": {
+      "willing": 50.0,
+      "close": 78.0
+    },
+    "interviewer": {
+      "willing": 15.0,
+      "close": 55.0
+    },
+    "jester": {
+      "willing": 65.0,
+      "close": 35.0
+    },
+    "journalist": {
+      "willing": 15.0,
+      "close": 55.0
+    },
+    "judge": {
+      "willing": 15.0,
+      "close": 45.0
+    },
+    "lawyer": {
+      "willing": 15.0,
+      "close": 72.0
+    },
+    "leviathan": {
+      "willing": 72.0,
+      "close": 5.0
+    },
+    "librarian": {
+      "willing": 15.0,
+      "close": 78.0
+    },
+    "linguist": {
+      "willing": 15.0,
+      "close": 65.0
+    },
+    "loner": {
+      "willing": 50.0,
+      "close": 35.0
+    },
+    "luddite": {
+      "willing": 15.0,
+      "close": 25.0
+    },
+    "marketer": {
+      "willing": 45.0,
+      "close": 52.0
+    },
+    "martyr": {
+      "willing": 35.0,
+      "close": 25.0
+    },
+    "mathematician": {
+      "willing": 5.0,
+      "close": 72.0
+    },
+    "maverick": {
+      "willing": 62.0,
+      "close": 35.0
+    },
+    "mechanic": {
+      "willing": 15.0,
+      "close": 55.0
+    },
+    "mediator": {
+      "willing": 15.0,
+      "close": 85.0
+    },
+    "mentor": {
+      "willing": 15.0,
+      "close": 85.0
+    },
+    "merchant": {
+      "willing": 55.0,
+      "close": 45.0
+    },
+    "minimalist": {
+      "willing": 15.0,
+      "close": 45.0
+    },
+    "moderator": {
+      "willing": 15.0,
+      "close": 85.0
+    },
+    "musician": {
+      "willing": 15.0,
+      "close": 45.0
+    },
+    "mycorrhizal": {
+      "willing": 15.0,
+      "close": 5.0
+    },
+    "mystic": {
+      "willing": 35.0,
+      "close": 35.0
+    },
+    "narcissist": {
+      "willing": 65.0,
+      "close": 35.0
+    },
+    "narrator": {
+      "willing": 50.0,
+      "close": 35.0
+    },
+    "naturalist": {
+      "willing": 15.0,
+      "close": 62.0
+    },
+    "navigator": {
+      "willing": 15.0,
+      "close": 62.0
+    },
+    "negotiator": {
+      "willing": 25.0,
+      "close": 55.0
+    },
+    "networker": {
+      "willing": 35.0,
+      "close": 45.0
+    },
+    "newlywed": {
+      "willing": 15.0,
+      "close": 35.0
+    },
+    "nomad": {
+      "willing": 45.0,
+      "close": 35.0
+    },
+    "novelist": {
+      "willing": 45.0,
+      "close": 48.0
+    },
+    "nutritionist": {
+      "willing": 15.0,
+      "close": 75.0
+    },
+    "observer": {
+      "willing": 15.0,
+      "close": 65.0
+    },
+    "optimist": {
+      "willing": 15.0,
+      "close": 35.0
+    },
+    "oracle": {
+      "willing": 45.0,
+      "close": 15.0
+    },
+    "organizer": {
+      "willing": 15.0,
+      "close": 78.0
+    },
+    "orphan": {
+      "willing": 15.0,
+      "close": 35.0
+    },
+    "pacifist": {
+      "willing": 0.0,
+      "close": 35.0
+    },
+    "paramedic": {
+      "willing": 15.0,
+      "close": 62.0
+    },
+    "parasite": {
+      "willing": 35.0,
+      "close": 5.0
+    },
+    "parent": {
+      "willing": 15.0,
+      "close": 45.0
+    },
+    "patient": {
+      "willing": 35.0,
+      "close": 25.0
+    },
+    "peacekeeper": {
+      "willing": 15.0,
+      "close": 78.0
+    },
+    "perfectionist": {
+      "willing": 15.0,
+      "close": 65.0
+    },
+    "pharmacist": {
+      "willing": 15.0,
+      "close": 72.0
+    },
+    "philosopher": {
+      "willing": 15.0,
+      "close": 52.0
+    },
+    "photographer": {
+      "willing": 15.0,
+      "close": 45.0
+    },
+    "physicist": {
+      "willing": 15.0,
+      "close": 50.0
+    },
+    "pilgrim": {
+      "willing": 15.0,
+      "close": 35.0
+    },
+    "pilot": {
+      "willing": 15.0,
+      "close": 52.0
+    },
+    "pirate": {
+      "willing": 72.0,
+      "close": 15.0
+    },
+    "planner": {
+      "willing": 35.0,
+      "close": 45.0
+    },
+    "playwright": {
+      "willing": 62.0,
+      "close": 45.0
+    },
+    "podcaster": {
+      "willing": 45.0,
+      "close": 45.0
+    },
+    "poet": {
+      "willing": 45.0,
+      "close": 45.0
+    },
+    "polymath": {
+      "willing": 45.0,
+      "close": 85.0
+    },
+    "pragmatist": {
+      "willing": 45.0,
+      "close": 72.0
+    },
+    "predator": {
+      "willing": 65.0,
+      "close": 5.0
+    },
+    "presenter": {
+      "willing": 45.0,
+      "close": 62.0
+    },
+    "prey": {
+      "willing": 15.0,
+      "close": 5.0
+    },
+    "prisoner": {
+      "willing": 35.0,
+      "close": 25.0
+    },
+    "procrastinator": {
+      "willing": 15.0,
+      "close": 35.0
+    },
+    "prodigy": {
+      "willing": 45.0,
+      "close": 45.0
+    },
+    "producer": {
+      "willing": 45.0,
+      "close": 45.0
+    },
+    "programmer": {
+      "willing": 15.0,
+      "close": 65.0
+    },
+    "proofreader": {
+      "willing": 5.0,
+      "close": 85.0
+    },
+    "prophet": {
+      "willing": 45.0,
+      "close": 15.0
+    },
+    "provincial": {
+      "willing": 15.0,
+      "close": 35.0
+    },
+    "provocateur": {
+      "willing": 75.0,
+      "close": 15.0
+    },
+    "psychologist": {
+      "willing": 15.0,
+      "close": 72.0
+    },
+    "publisher": {
+      "willing": 45.0,
+      "close": 45.0
+    },
+    "purist": {
+      "willing": 25.0,
+      "close": 45.0
+    },
+    "realist": {
+      "willing": 15.0,
+      "close": 55.0
+    },
+    "rebel": {
+      "willing": 72.0,
+      "close": 35.0
+    },
+    "recruiter": {
+      "willing": 15.0,
+      "close": 45.0
+    },
+    "refugee": {
+      "willing": 15.0,
+      "close": 35.0
+    },
+    "reporter": {
+      "willing": 25.0,
+      "close": 45.0
+    },
+    "researcher": {
+      "willing": 25.0,
+      "close": 72.0
+    },
+    "retiree": {
+      "willing": 15.0,
+      "close": 35.0
+    },
+    "revenant": {
+      "willing": 45.0,
+      "close": 5.0
+    },
+    "reviewer": {
+      "willing": 15.0,
+      "close": 85.0
+    },
+    "revolutionary": {
+      "willing": 72.0,
+      "close": 35.0
+    },
+    "robot": {
+      "willing": 65.0,
+      "close": 75.0
+    },
+    "rogue": {
+      "willing": 72.0,
+      "close": 15.0
+    },
+    "romantic": {
+      "willing": 15.0,
+      "close": 45.0
+    },
+    "saboteur": {
+      "willing": 85.0,
+      "close": 5.0
+    },
+    "sage": {
+      "willing": 15.0,
+      "close": 75.0
+    },
+    "scheduler": {
+      "willing": 5.0,
+      "close": 85.0
+    },
+    "scholar": {
+      "willing": 25.0,
+      "close": 62.0
+    },
+    "scientist": {
+      "willing": 25.0,
+      "close": 65.0
+    },
+    "scout": {
+      "willing": 35.0,
+      "close": 45.0
+    },
+    "screener": {
+      "willing": 15.0,
+      "close": 65.0
+    },
+    "secretary": {
+      "willing": 35.0,
+      "close": 55.0
+    },
+    "shaman": {
+      "willing": 35.0,
+      "close": 15.0
+    },
+    "shapeshifter": {
+      "willing": 45.0,
+      "close": 5.0
+    },
+    "simulacrum": {
+      "willing": 45.0,
+      "close": 15.0
+    },
+    "skeptic": {
+      "willing": 15.0,
+      "close": 75.0
+    },
+    "smuggler": {
+      "willing": 75.0,
+      "close": 25.0
+    },
+    "sociologist": {
+      "willing": 15.0,
+      "close": 52.0
+    },
+    "soldier": {
+      "willing": 65.0,
+      "close": 42.0
+    },
+    "sommelier": {
+      "willing": 15.0,
+      "close": 45.0
+    },
+    "specialist": {
+      "willing": 25.0,
+      "close": 85.0
+    },
+    "spirit": {
+      "willing": 45.0,
+      "close": 5.0
+    },
+    "spy": {
+      "willing": 65.0,
+      "close": 35.0
+    },
+    "statistician": {
+      "willing": 15.0,
+      "close": 65.0
+    },
+    "stoic": {
+      "willing": 15.0,
+      "close": 45.0
+    },
+    "strategist": {
+      "willing": 45.0,
+      "close": 72.0
+    },
+    "student": {
+      "willing": 15.0,
+      "close": 35.0
+    },
+    "summarizer": {
+      "willing": 15.0,
+      "close": 92.0
+    },
+    "supervisor": {
+      "willing": 25.0,
+      "close": 45.0
+    },
+    "surfer": {
+      "willing": 45.0,
+      "close": 35.0
+    },
+    "survivor": {
+      "willing": 15.0,
+      "close": 35.0
+    },
+    "swarm": {
+      "willing": 45.0,
+      "close": 15.0
+    },
+    "symbiont": {
+      "willing": 15.0,
+      "close": 5.0
+    },
+    "synthesizer": {
+      "willing": 62.0,
+      "close": 72.0
+    },
+    "teacher": {
+      "willing": 15.0,
+      "close": 85.0
+    },
+    "technologist": {
+      "willing": 45.0,
+      "close": 62.0
+    },
+    "teenager": {
+      "willing": 45.0,
+      "close": 25.0
+    },
+    "theorist": {
+      "willing": 45.0,
+      "close": 55.0
+    },
+    "therapist": {
+      "willing": 15.0,
+      "close": 72.0
+    },
+    "toddler": {
+      "willing": 15.0,
+      "close": 15.0
+    },
+    "traditionalist": {
+      "willing": 25.0,
+      "close": 42.0
+    },
+    "trainer": {
+      "willing": 15.0,
+      "close": 55.0
+    },
+    "translator": {
+      "willing": 15.0,
+      "close": 75.0
+    },
+    "tree": {
+      "willing": 15.0,
+      "close": 5.0
+    },
+    "trickster": {
+      "willing": 65.0,
+      "close": 35.0
+    },
+    "tulpa": {
+      "willing": 45.0,
+      "close": 5.0
+    },
+    "tutor": {
+      "willing": 15.0,
+      "close": 95.0
+    },
+    "validator": {
+      "willing": 15.0,
+      "close": 72.0
+    },
+    "vampire": {
+      "willing": 72.0,
+      "close": 0.0
+    },
+    "vegan": {
+      "willing": 0.0,
+      "close": 52.0
+    },
+    "veteran": {
+      "willing": 15.0,
+      "close": 45.0
+    },
+    "veterinarian": {
+      "willing": 15.0,
+      "close": 62.0
+    },
+    "vigilante": {
+      "willing": 72.0,
+      "close": 15.0
+    },
+    "virtuoso": {
+      "willing": 15.0,
+      "close": 45.0
+    },
+    "virus": {
+      "willing": null,
+      "close": null
+    },
+    "visionary": {
+      "willing": 45.0,
+      "close": 45.0
+    },
+    "void": {
+      "willing": 65.0,
+      "close": 5.0
+    },
+    "wanderer": {
+      "willing": 25.0,
+      "close": 35.0
+    },
+    "warrior": {
+      "willing": 25.0,
+      "close": 35.0
+    },
+    "whale": {
+      "willing": 25.0,
+      "close": 5.0
+    },
+    "widow": {
+      "willing": 15.0,
+      "close": 35.0
+    },
+    "wind": {
+      "willing": 72.0,
+      "close": 0.0
+    },
+    "witch": {
+      "willing": 45.0,
+      "close": 15.0
+    },
+    "witness": {
+      "willing": 15.0,
+      "close": 35.0
+    },
+    "workaholic": {
+      "willing": 35.0,
+      "close": 35.0
+    },
+    "wraith": {
+      "willing": 45.0,
+      "close": 5.0
+    },
+    "writer": {
+      "willing": 35.0,
+      "close": 45.0
+    },
+    "zealot": {
+      "willing": 75.0,
+      "close": 15.0
+    },
+    "zeitgeist": {
+      "willing": 45.0,
+      "close": 5.0
+    }
+  },
+  "selection_sha": "a4c8250c22a450e0"
+}

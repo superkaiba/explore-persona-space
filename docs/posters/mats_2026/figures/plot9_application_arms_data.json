@@ -1,0 +1,1815 @@
+{
+  "source_points": "eval_results/issue_1739/result2_fair/result2_fair_points.json",
+  "source_spread": "eval_results/issue_1739/result1_spread/spread_stats.json",
+  "metric": "Spearman rho_frozen (prediction vs judged behaviour expression)",
+  "arms_note": "pv_map_mlp (arm6 + MLP map) and reg_map_mlp / arm19 (MLP readouts) are committed at every cell but EXCLUDED here: 6+ bars per group is illegible at poster-column width, and the linear-map arm carries the context-vs-mapped claim.",
+  "ood_note": "OOD group = simple mean over the behavior's OOD rungs (evil: hh-rlhf red-team + ToxicChat; sycophancy: held-out Reddit AITA; hallucination: NQ-Open + SimpleQA); interval = elementwise mean of rung CI bounds \u2014 conservative, not a resampled CI of the mean.",
+  "spread_note": "Alpha-muted groups FAIL the committed Result 1 spread gate (evil: wildchat_rung, hhrt, toxicchat) \u2014 kept for completeness, not interpretable. The poster legend states the failure in reader terms ('behavior almost never occurs here') rather than naming the gate: all three cells fail the floor_ceiling_mass clause with 91.9%/98.7%/99.4% of contexts pinned at the floor of the judged score (evil/hhrt additionally fails reliability, r_yy=0.481), so there is essentially no behavior variation for rho to track.",
+  "bars": [
+    {
+      "behavior": "evil",
+      "group": "synthetic",
+      "method": "pv_context",
+      "arm_id": "arm1_ctx_e1",
+      "map_kind": "linear",
+      "rho": 0.7550197827954369,
+      "ci": [
+        0.6985700580925162,
+        0.7975039438505617
+      ],
+      "settings": [
+        "pvsynth"
+      ],
+      "per_setting": {
+        "pvsynth": {
+          "rho": 0.7550197827954369,
+          "ci": [
+            0.6985700580925162,
+            0.7975039438505617
+          ],
+          "n_eval": 200,
+          "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "evil",
+      "group": "synthetic",
+      "method": "pv_map_linear",
+      "arm_id": "arm6_map_proj_e1",
+      "map_kind": "linear",
+      "rho": 0.8180783834780763,
+      "ci": [
+        0.7742893051959095,
+        0.8555290307290423
+      ],
+      "settings": [
+        "pvsynth"
+      ],
+      "per_setting": {
+        "pvsynth": {
+          "rho": 0.8180783834780763,
+          "ci": [
+            0.7742893051959095,
+            0.8555290307290423
+          ],
+          "n_eval": 200,
+          "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "evil",
+      "group": "synthetic",
+      "method": "oracle",
+      "arm_id": "arm11_oracle_proj",
+      "map_kind": "linear",
+      "rho": 0.8429115275104073,
+      "ci": [
+        0.7948428572706189,
+        0.8815773348545195
+      ],
+      "settings": [
+        "pvsynth"
+      ],
+      "per_setting": {
+        "pvsynth": {
+          "rho": 0.8429115275104073,
+          "ci": [
+            0.7948428572706189,
+            0.8815773348545195
+          ],
+          "n_eval": 200,
+          "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "evil",
+      "group": "synthetic",
+      "method": "regression_ctx",
+      "arm_id": "arm4_ridge_ctx",
+      "map_kind": "linear",
+      "rho": 0.7069504786777224,
+      "ci": [
+        0.6305935157630411,
+        0.7731763009229744
+      ],
+      "settings": [
+        "pvsynth"
+      ],
+      "per_setting": {
+        "pvsynth": {
+          "rho": 0.7069504786777224,
+          "ci": [
+            0.6305935157630411,
+            0.7731763009229744
+          ],
+          "n_eval": 200,
+          "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "evil",
+      "group": "synthetic",
+      "method": "reg_map_linear",
+      "arm_id": "arm7_map_ridge_pred",
+      "map_kind": "linear",
+      "rho": 0.810571074579304,
+      "ci": [
+        0.7643136124749833,
+        0.8480063696123155
+      ],
+      "settings": [
+        "pvsynth"
+      ],
+      "per_setting": {
+        "pvsynth": {
+          "rho": 0.810571074579304,
+          "ci": [
+            0.7643136124749833,
+            0.8480063696123155
+          ],
+          "n_eval": 200,
+          "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "evil",
+      "group": "generic chat",
+      "method": "pv_context",
+      "arm_id": "arm1_ctx_e1",
+      "map_kind": "linear",
+      "rho": 0.06707034670126535,
+      "ci": [
+        -0.04204904920766162,
+        0.17185865967135444
+      ],
+      "settings": [
+        "wildchat_rung"
+      ],
+      "per_setting": {
+        "wildchat_rung": {
+          "rho": 0.06707034670126535,
+          "ci": [
+            -0.04204904920766162,
+            0.17185865967135444
+          ],
+          "n_eval": 417,
+          "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": true,
+      "failing_settings": [
+        "wildchat_rung"
+      ]
+    },
+    {
+      "behavior": "evil",
+      "group": "generic chat",
+      "method": "pv_map_linear",
+      "arm_id": "arm6_map_proj_e1",
+      "map_kind": "linear",
+      "rho": 0.22541778412988908,
+      "ci": [
+        0.14827215723221607,
+        0.291148529449419
+      ],
+      "settings": [
+        "wildchat_rung"
+      ],
+      "per_setting": {
+        "wildchat_rung": {
+          "rho": 0.22541778412988908,
+          "ci": [
+            0.14827215723221607,
+            0.291148529449419
+          ],
+          "n_eval": 417,
+          "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": true,
+      "failing_settings": [
+        "wildchat_rung"
+      ]
+    },
+    {
+      "behavior": "evil",
+      "group": "generic chat",
+      "method": "oracle",
+      "arm_id": "arm11_oracle_proj",
+      "map_kind": "linear",
+      "rho": 0.22644899839439725,
+      "ci": [
+        0.14610273976578803,
+        0.2945632630216805
+      ],
+      "settings": [
+        "wildchat_rung"
+      ],
+      "per_setting": {
+        "wildchat_rung": {
+          "rho": 0.22644899839439725,
+          "ci": [
+            0.14610273976578803,
+            0.2945632630216805
+          ],
+          "n_eval": 417,
+          "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": true,
+      "failing_settings": [
+        "wildchat_rung"
+      ]
+    },
+    {
+      "behavior": "evil",
+      "group": "generic chat",
+      "method": "regression_ctx",
+      "arm_id": "arm4_ridge_ctx",
+      "map_kind": "linear",
+      "rho": 0.1349220757126155,
+      "ci": [
+        0.016491652794928698,
+        0.23074753382228205
+      ],
+      "settings": [
+        "wildchat_rung"
+      ],
+      "per_setting": {
+        "wildchat_rung": {
+          "rho": 0.1349220757126155,
+          "ci": [
+            0.016491652794928698,
+            0.23074753382228205
+          ],
+          "n_eval": 417,
+          "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": true,
+      "failing_settings": [
+        "wildchat_rung"
+      ]
+    },
+    {
+      "behavior": "evil",
+      "group": "generic chat",
+      "method": "reg_map_linear",
+      "arm_id": "arm7_map_ridge_pred",
+      "map_kind": "linear",
+      "rho": 0.16324611609285736,
+      "ci": [
+        0.07146683860459094,
+        0.24310752560934748
+      ],
+      "settings": [
+        "wildchat_rung"
+      ],
+      "per_setting": {
+        "wildchat_rung": {
+          "rho": 0.16324611609285736,
+          "ci": [
+            0.07146683860459094,
+            0.24310752560934748
+          ],
+          "n_eval": 417,
+          "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": true,
+      "failing_settings": [
+        "wildchat_rung"
+      ]
+    },
+    {
+      "behavior": "evil",
+      "group": "in-distrib.",
+      "method": "pv_context",
+      "arm_id": "arm1_ctx_e1",
+      "map_kind": "linear",
+      "rho": 0.030544916399591317,
+      "ci": [
+        0.007337592079205648,
+        0.05553409602853327
+      ],
+      "settings": [
+        "train"
+      ],
+      "per_setting": {
+        "train": {
+          "rho": 0.030544916399591317,
+          "ci": [
+            0.007337592079205648,
+            0.05553409602853327
+          ],
+          "n_eval": 6468,
+          "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "evil",
+      "group": "in-distrib.",
+      "method": "pv_map_linear",
+      "arm_id": "arm6_map_proj_e1",
+      "map_kind": "linear",
+      "rho": 0.6712108952070648,
+      "ci": [
+        0.6574229573512688,
+        0.6847402515241553
+      ],
+      "settings": [
+        "train"
+      ],
+      "per_setting": {
+        "train": {
+          "rho": 0.6712108952070648,
+          "ci": [
+            0.6574229573512688,
+            0.6847402515241553
+          ],
+          "n_eval": 6468,
+          "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "evil",
+      "group": "in-distrib.",
+      "method": "oracle",
+      "arm_id": "arm11_oracle_proj",
+      "map_kind": "linear",
+      "rho": 0.6875008608887927,
+      "ci": [
+        0.6753922378625699,
+        0.7001491852786711
+      ],
+      "settings": [
+        "train"
+      ],
+      "per_setting": {
+        "train": {
+          "rho": 0.6875008608887927,
+          "ci": [
+            0.6753922378625699,
+            0.7001491852786711
+          ],
+          "n_eval": 6468,
+          "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "evil",
+      "group": "in-distrib.",
+      "method": "regression_ctx",
+      "arm_id": "arm4_ridge_ctx",
+      "map_kind": "linear",
+      "rho": 0.5916133705769209,
+      "ci": [
+        0.5756296211687013,
+        0.6075523479016194
+      ],
+      "settings": [
+        "train"
+      ],
+      "per_setting": {
+        "train": {
+          "rho": 0.5916133705769209,
+          "ci": [
+            0.5756296211687013,
+            0.6075523479016194
+          ],
+          "n_eval": 6468,
+          "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "evil",
+      "group": "in-distrib.",
+      "method": "reg_map_linear",
+      "arm_id": "arm7_map_ridge_pred",
+      "map_kind": "linear",
+      "rho": 0.7491823147055028,
+      "ci": [
+        0.738485672747706,
+        0.7608555553537014
+      ],
+      "settings": [
+        "train"
+      ],
+      "per_setting": {
+        "train": {
+          "rho": 0.7491823147055028,
+          "ci": [
+            0.738485672747706,
+            0.7608555553537014
+          ],
+          "n_eval": 6468,
+          "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "evil",
+      "group": "OOD",
+      "method": "pv_context",
+      "arm_id": "arm1_ctx_e1",
+      "map_kind": "linear",
+      "rho": 0.014494893979452313,
+      "ci": [
+        -0.05014942368510428,
+        0.0757187511960742
+      ],
+      "settings": [
+        "hhrt",
+        "toxicchat"
+      ],
+      "per_setting": {
+        "hhrt": {
+          "rho": 0.009478463580156925,
+          "ci": [
+            -0.03305266864477071,
+            0.04953971723898017
+          ],
+          "n_eval": 1868,
+          "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
+        },
+        "toxicchat": {
+          "rho": 0.0195113243787477,
+          "ci": [
+            -0.06724617872543785,
+            0.10189778515316823
+          ],
+          "n_eval": 519,
+          "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": true,
+      "failing_settings": [
+        "hhrt",
+        "toxicchat"
+      ]
+    },
+    {
+      "behavior": "evil",
+      "group": "OOD",
+      "method": "pv_map_linear",
+      "arm_id": "arm6_map_proj_e1",
+      "map_kind": "linear",
+      "rho": 0.15777045499981224,
+      "ci": [
+        0.09396160263858201,
+        0.22511665863553126
+      ],
+      "settings": [
+        "hhrt",
+        "toxicchat"
+      ],
+      "per_setting": {
+        "hhrt": {
+          "rho": 0.06470666693570033,
+          "ci": [
+            0.016368507417190085,
+            0.11275770159896145
+          ],
+          "n_eval": 1868,
+          "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
+        },
+        "toxicchat": {
+          "rho": 0.25083424306392416,
+          "ci": [
+            0.17155469785997393,
+            0.3374756156721011
+          ],
+          "n_eval": 519,
+          "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": true,
+      "failing_settings": [
+        "hhrt",
+        "toxicchat"
+      ]
+    },
+    {
+      "behavior": "evil",
+      "group": "OOD",
+      "method": "oracle",
+      "arm_id": "arm11_oracle_proj",
+      "map_kind": "linear",
+      "rho": 0.1703975094979141,
+      "ci": [
+        0.10324927752737442,
+        0.23048775179520392
+      ],
+      "settings": [
+        "hhrt",
+        "toxicchat"
+      ],
+      "per_setting": {
+        "hhrt": {
+          "rho": 0.08267989033931226,
+          "ci": [
+            0.03800769313385561,
+            0.12122373320588911
+          ],
+          "n_eval": 1868,
+          "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
+        },
+        "toxicchat": {
+          "rho": 0.2581151286565159,
+          "ci": [
+            0.16849086192089324,
+            0.33975177038451876
+          ],
+          "n_eval": 519,
+          "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": true,
+      "failing_settings": [
+        "hhrt",
+        "toxicchat"
+      ]
+    },
+    {
+      "behavior": "evil",
+      "group": "OOD",
+      "method": "regression_ctx",
+      "arm_id": "arm4_ridge_ctx",
+      "map_kind": "linear",
+      "rho": 0.21076898875190866,
+      "ci": [
+        0.14818891690013647,
+        0.26381111899394805
+      ],
+      "settings": [
+        "hhrt",
+        "toxicchat"
+      ],
+      "per_setting": {
+        "hhrt": {
+          "rho": 0.0871281658987849,
+          "ci": [
+            0.0366216840797122,
+            0.12364403415890576
+          ],
+          "n_eval": 1868,
+          "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
+        },
+        "toxicchat": {
+          "rho": 0.3344098116050324,
+          "ci": [
+            0.25975614972056077,
+            0.40397820382899036
+          ],
+          "n_eval": 519,
+          "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": true,
+      "failing_settings": [
+        "hhrt",
+        "toxicchat"
+      ]
+    },
+    {
+      "behavior": "evil",
+      "group": "OOD",
+      "method": "reg_map_linear",
+      "arm_id": "arm7_map_ridge_pred",
+      "map_kind": "linear",
+      "rho": 0.22766990730237624,
+      "ci": [
+        0.16421874264922512,
+        0.28233207518112036
+      ],
+      "settings": [
+        "hhrt",
+        "toxicchat"
+      ],
+      "per_setting": {
+        "hhrt": {
+          "rho": 0.08645175996731794,
+          "ci": [
+            0.03530934945982373,
+            0.13000753524436948
+          ],
+          "n_eval": 1868,
+          "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
+        },
+        "toxicchat": {
+          "rho": 0.3688880546374345,
+          "ci": [
+            0.2931281358386265,
+            0.4346566151178712
+          ],
+          "n_eval": 519,
+          "source_file": "eval_results/issue_1739/result2_fair/evil/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": true,
+      "failing_settings": [
+        "hhrt",
+        "toxicchat"
+      ]
+    },
+    {
+      "behavior": "sycophancy",
+      "group": "synthetic",
+      "method": "pv_context",
+      "arm_id": "arm1_ctx_e1",
+      "map_kind": "linear",
+      "rho": 0.7921413291952443,
+      "ci": [
+        0.7336054823788072,
+        0.8308330424636039
+      ],
+      "settings": [
+        "pvsynth"
+      ],
+      "per_setting": {
+        "pvsynth": {
+          "rho": 0.7921413291952443,
+          "ci": [
+            0.7336054823788072,
+            0.8308330424636039
+          ],
+          "n_eval": 200,
+          "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "sycophancy",
+      "group": "synthetic",
+      "method": "pv_map_linear",
+      "arm_id": "arm6_map_proj_e1",
+      "map_kind": "linear",
+      "rho": 0.39861803859275446,
+      "ci": [
+        0.279917318014649,
+        0.49865926713300857
+      ],
+      "settings": [
+        "pvsynth"
+      ],
+      "per_setting": {
+        "pvsynth": {
+          "rho": 0.39861803859275446,
+          "ci": [
+            0.279917318014649,
+            0.49865926713300857
+          ],
+          "n_eval": 200,
+          "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "sycophancy",
+      "group": "synthetic",
+      "method": "oracle",
+      "arm_id": "arm11_oracle_proj",
+      "map_kind": "linear",
+      "rho": 0.7640980641705702,
+      "ci": [
+        0.703480522973764,
+        0.807914953003169
+      ],
+      "settings": [
+        "pvsynth"
+      ],
+      "per_setting": {
+        "pvsynth": {
+          "rho": 0.7640980641705702,
+          "ci": [
+            0.703480522973764,
+            0.807914953003169
+          ],
+          "n_eval": 200,
+          "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "sycophancy",
+      "group": "synthetic",
+      "method": "regression_ctx",
+      "arm_id": "arm4_ridge_ctx",
+      "map_kind": "linear",
+      "rho": 0.7611846342218265,
+      "ci": [
+        0.6995517806339617,
+        0.8058570985937561
+      ],
+      "settings": [
+        "pvsynth"
+      ],
+      "per_setting": {
+        "pvsynth": {
+          "rho": 0.7611846342218265,
+          "ci": [
+            0.6995517806339617,
+            0.8058570985937561
+          ],
+          "n_eval": 200,
+          "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "sycophancy",
+      "group": "synthetic",
+      "method": "reg_map_linear",
+      "arm_id": "arm7_map_ridge_pred",
+      "map_kind": "linear",
+      "rho": 0.7759252381712568,
+      "ci": [
+        0.7184287439879539,
+        0.8141744740735981
+      ],
+      "settings": [
+        "pvsynth"
+      ],
+      "per_setting": {
+        "pvsynth": {
+          "rho": 0.7759252381712568,
+          "ci": [
+            0.7184287439879539,
+            0.8141744740735981
+          ],
+          "n_eval": 200,
+          "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "sycophancy",
+      "group": "generic chat",
+      "method": "pv_context",
+      "arm_id": "arm1_ctx_e1",
+      "map_kind": "linear",
+      "rho": -0.03910039610309418,
+      "ci": [
+        -0.1326718373241837,
+        0.05271593959266225
+      ],
+      "settings": [
+        "wildchat_rung"
+      ],
+      "per_setting": {
+        "wildchat_rung": {
+          "rho": -0.03910039610309418,
+          "ci": [
+            -0.1326718373241837,
+            0.05271593959266225
+          ],
+          "n_eval": 415,
+          "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "sycophancy",
+      "group": "generic chat",
+      "method": "pv_map_linear",
+      "arm_id": "arm6_map_proj_e1",
+      "map_kind": "linear",
+      "rho": 0.09223660209399395,
+      "ci": [
+        -0.0022664946988912534,
+        0.19033619558188314
+      ],
+      "settings": [
+        "wildchat_rung"
+      ],
+      "per_setting": {
+        "wildchat_rung": {
+          "rho": 0.09223660209399395,
+          "ci": [
+            -0.0022664946988912534,
+            0.19033619558188314
+          ],
+          "n_eval": 415,
+          "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "sycophancy",
+      "group": "generic chat",
+      "method": "oracle",
+      "arm_id": "arm11_oracle_proj",
+      "map_kind": "linear",
+      "rho": 0.07624932674428626,
+      "ci": [
+        -0.02296656774691166,
+        0.1671461852774431
+      ],
+      "settings": [
+        "wildchat_rung"
+      ],
+      "per_setting": {
+        "wildchat_rung": {
+          "rho": 0.07624932674428626,
+          "ci": [
+            -0.02296656774691166,
+            0.1671461852774431
+          ],
+          "n_eval": 415,
+          "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "sycophancy",
+      "group": "generic chat",
+      "method": "regression_ctx",
+      "arm_id": "arm4_ridge_ctx",
+      "map_kind": "linear",
+      "rho": 0.5040245535970942,
+      "ci": [
+        0.4195380075775008,
+        0.5791341046695494
+      ],
+      "settings": [
+        "wildchat_rung"
+      ],
+      "per_setting": {
+        "wildchat_rung": {
+          "rho": 0.5040245535970942,
+          "ci": [
+            0.4195380075775008,
+            0.5791341046695494
+          ],
+          "n_eval": 415,
+          "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "sycophancy",
+      "group": "generic chat",
+      "method": "reg_map_linear",
+      "arm_id": "arm7_map_ridge_pred",
+      "map_kind": "linear",
+      "rho": 0.5174104385082218,
+      "ci": [
+        0.4384782818894309,
+        0.5949829692897164
+      ],
+      "settings": [
+        "wildchat_rung"
+      ],
+      "per_setting": {
+        "wildchat_rung": {
+          "rho": 0.5174104385082218,
+          "ci": [
+            0.4384782818894309,
+            0.5949829692897164
+          ],
+          "n_eval": 415,
+          "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "sycophancy",
+      "group": "in-distrib.",
+      "method": "pv_context",
+      "arm_id": "arm1_ctx_e1",
+      "map_kind": "linear",
+      "rho": 0.018076322553141046,
+      "ci": [
+        0.0025214328369000012,
+        0.033358261333747224
+      ],
+      "settings": [
+        "train"
+      ],
+      "per_setting": {
+        "train": {
+          "rho": 0.018076322553141046,
+          "ci": [
+            0.0025214328369000012,
+            0.033358261333747224
+          ],
+          "n_eval": 16000,
+          "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "sycophancy",
+      "group": "in-distrib.",
+      "method": "pv_map_linear",
+      "arm_id": "arm6_map_proj_e1",
+      "map_kind": "linear",
+      "rho": 0.2887620479734463,
+      "ci": [
+        0.27332207423467225,
+        0.3040673220402253
+      ],
+      "settings": [
+        "train"
+      ],
+      "per_setting": {
+        "train": {
+          "rho": 0.2887620479734463,
+          "ci": [
+            0.27332207423467225,
+            0.3040673220402253
+          ],
+          "n_eval": 16000,
+          "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "sycophancy",
+      "group": "in-distrib.",
+      "method": "oracle",
+      "arm_id": "arm11_oracle_proj",
+      "map_kind": "linear",
+      "rho": 0.3179323682053547,
+      "ci": [
+        0.3017863394638875,
+        0.3338214484914244
+      ],
+      "settings": [
+        "train"
+      ],
+      "per_setting": {
+        "train": {
+          "rho": 0.3179323682053547,
+          "ci": [
+            0.3017863394638875,
+            0.3338214484914244
+          ],
+          "n_eval": 16000,
+          "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "sycophancy",
+      "group": "in-distrib.",
+      "method": "regression_ctx",
+      "arm_id": "arm4_ridge_ctx",
+      "map_kind": "linear",
+      "rho": 0.720546707075219,
+      "ci": [
+        0.7118970793292733,
+        0.7304965674722398
+      ],
+      "settings": [
+        "train"
+      ],
+      "per_setting": {
+        "train": {
+          "rho": 0.720546707075219,
+          "ci": [
+            0.7118970793292733,
+            0.7304965674722398
+          ],
+          "n_eval": 16000,
+          "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "sycophancy",
+      "group": "in-distrib.",
+      "method": "reg_map_linear",
+      "arm_id": "arm7_map_ridge_pred",
+      "map_kind": "linear",
+      "rho": 0.7392767797199288,
+      "ci": [
+        0.7306179941298431,
+        0.7473300648779624
+      ],
+      "settings": [
+        "train"
+      ],
+      "per_setting": {
+        "train": {
+          "rho": 0.7392767797199288,
+          "ci": [
+            0.7306179941298431,
+            0.7473300648779624
+          ],
+          "n_eval": 16000,
+          "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "sycophancy",
+      "group": "OOD",
+      "method": "pv_context",
+      "arm_id": "arm1_ctx_e1",
+      "map_kind": "linear",
+      "rho": 0.06085386456800987,
+      "ci": [
+        0.008084902402027725,
+        0.11218376823467346
+      ],
+      "settings": [
+        "aita"
+      ],
+      "per_setting": {
+        "aita": {
+          "rho": 0.06085386456800987,
+          "ci": [
+            0.008084902402027725,
+            0.11218376823467346
+          ],
+          "n_eval": 1304,
+          "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "sycophancy",
+      "group": "OOD",
+      "method": "pv_map_linear",
+      "arm_id": "arm6_map_proj_e1",
+      "map_kind": "linear",
+      "rho": 0.2398471924190651,
+      "ci": [
+        0.18933593426715917,
+        0.2943153973087339
+      ],
+      "settings": [
+        "aita"
+      ],
+      "per_setting": {
+        "aita": {
+          "rho": 0.2398471924190651,
+          "ci": [
+            0.18933593426715917,
+            0.2943153973087339
+          ],
+          "n_eval": 1304,
+          "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "sycophancy",
+      "group": "OOD",
+      "method": "oracle",
+      "arm_id": "arm11_oracle_proj",
+      "map_kind": "linear",
+      "rho": 0.2495902989637087,
+      "ci": [
+        0.1973220508739651,
+        0.2990054164676252
+      ],
+      "settings": [
+        "aita"
+      ],
+      "per_setting": {
+        "aita": {
+          "rho": 0.2495902989637087,
+          "ci": [
+            0.1973220508739651,
+            0.2990054164676252
+          ],
+          "n_eval": 1304,
+          "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "sycophancy",
+      "group": "OOD",
+      "method": "regression_ctx",
+      "arm_id": "arm4_ridge_ctx",
+      "map_kind": "linear",
+      "rho": 0.7087380230631141,
+      "ci": [
+        0.6695027344630052,
+        0.742838471038209
+      ],
+      "settings": [
+        "aita"
+      ],
+      "per_setting": {
+        "aita": {
+          "rho": 0.7087380230631141,
+          "ci": [
+            0.6695027344630052,
+            0.742838471038209
+          ],
+          "n_eval": 1304,
+          "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "sycophancy",
+      "group": "OOD",
+      "method": "reg_map_linear",
+      "arm_id": "arm7_map_ridge_pred",
+      "map_kind": "linear",
+      "rho": 0.7253642156327909,
+      "ci": [
+        0.6928579093772478,
+        0.7563628342332341
+      ],
+      "settings": [
+        "aita"
+      ],
+      "per_setting": {
+        "aita": {
+          "rho": 0.7253642156327909,
+          "ci": [
+            0.6928579093772478,
+            0.7563628342332341
+          ],
+          "n_eval": 1304,
+          "source_file": "eval_results/issue_1739/result2_fair/sycophancy/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "hallucination",
+      "group": "synthetic",
+      "method": "pv_context",
+      "arm_id": "arm1_ctx_e1",
+      "map_kind": "linear",
+      "rho": 0.6471165993837352,
+      "ci": [
+        0.5514134302892959,
+        0.7124564862272461
+      ],
+      "settings": [
+        "pvsynth"
+      ],
+      "per_setting": {
+        "pvsynth": {
+          "rho": 0.6471165993837352,
+          "ci": [
+            0.5514134302892959,
+            0.7124564862272461
+          ],
+          "n_eval": 200,
+          "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "hallucination",
+      "group": "synthetic",
+      "method": "pv_map_linear",
+      "arm_id": "arm6_map_proj_e1",
+      "map_kind": "linear",
+      "rho": 0.698968770527766,
+      "ci": [
+        0.6174215640477959,
+        0.7618368331038712
+      ],
+      "settings": [
+        "pvsynth"
+      ],
+      "per_setting": {
+        "pvsynth": {
+          "rho": 0.698968770527766,
+          "ci": [
+            0.6174215640477959,
+            0.7618368331038712
+          ],
+          "n_eval": 200,
+          "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "hallucination",
+      "group": "synthetic",
+      "method": "oracle",
+      "arm_id": "arm11_oracle_proj",
+      "map_kind": "linear",
+      "rho": 0.746762226601023,
+      "ci": [
+        0.6621241323784479,
+        0.809757265055035
+      ],
+      "settings": [
+        "pvsynth"
+      ],
+      "per_setting": {
+        "pvsynth": {
+          "rho": 0.746762226601023,
+          "ci": [
+            0.6621241323784479,
+            0.809757265055035
+          ],
+          "n_eval": 200,
+          "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "hallucination",
+      "group": "synthetic",
+      "method": "regression_ctx",
+      "arm_id": "arm4_ridge_ctx",
+      "map_kind": "linear",
+      "rho": 0.5774290855736351,
+      "ci": [
+        0.46338506247525285,
+        0.6691368952990743
+      ],
+      "settings": [
+        "pvsynth"
+      ],
+      "per_setting": {
+        "pvsynth": {
+          "rho": 0.5774290855736351,
+          "ci": [
+            0.46338506247525285,
+            0.6691368952990743
+          ],
+          "n_eval": 200,
+          "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "hallucination",
+      "group": "synthetic",
+      "method": "reg_map_linear",
+      "arm_id": "arm7_map_ridge_pred",
+      "map_kind": "linear",
+      "rho": 0.627353761729434,
+      "ci": [
+        0.5221632392251568,
+        0.7080079618167298
+      ],
+      "settings": [
+        "pvsynth"
+      ],
+      "per_setting": {
+        "pvsynth": {
+          "rho": 0.627353761729434,
+          "ci": [
+            0.5221632392251568,
+            0.7080079618167298
+          ],
+          "n_eval": 200,
+          "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "hallucination",
+      "group": "generic chat",
+      "method": "pv_context",
+      "arm_id": "arm1_ctx_e1",
+      "map_kind": "linear",
+      "rho": -0.10319922809106985,
+      "ci": [
+        -0.20481578325495248,
+        -0.011482572855513656
+      ],
+      "settings": [
+        "wildchat_rung"
+      ],
+      "per_setting": {
+        "wildchat_rung": {
+          "rho": -0.10319922809106985,
+          "ci": [
+            -0.20481578325495248,
+            -0.011482572855513656
+          ],
+          "n_eval": 411,
+          "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "hallucination",
+      "group": "generic chat",
+      "method": "pv_map_linear",
+      "arm_id": "arm6_map_proj_e1",
+      "map_kind": "linear",
+      "rho": 0.17577133744895965,
+      "ci": [
+        0.06966554265515329,
+        0.2646830716119339
+      ],
+      "settings": [
+        "wildchat_rung"
+      ],
+      "per_setting": {
+        "wildchat_rung": {
+          "rho": 0.17577133744895965,
+          "ci": [
+            0.06966554265515329,
+            0.2646830716119339
+          ],
+          "n_eval": 411,
+          "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "hallucination",
+      "group": "generic chat",
+      "method": "oracle",
+      "arm_id": "arm11_oracle_proj",
+      "map_kind": "linear",
+      "rho": 0.28059178964074377,
+      "ci": [
+        0.18743765826638062,
+        0.38139452492605364
+      ],
+      "settings": [
+        "wildchat_rung"
+      ],
+      "per_setting": {
+        "wildchat_rung": {
+          "rho": 0.28059178964074377,
+          "ci": [
+            0.18743765826638062,
+            0.38139452492605364
+          ],
+          "n_eval": 411,
+          "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "hallucination",
+      "group": "generic chat",
+      "method": "regression_ctx",
+      "arm_id": "arm4_ridge_ctx",
+      "map_kind": "linear",
+      "rho": 0.5651108690679424,
+      "ci": [
+        0.489877827398082,
+        0.635786698554082
+      ],
+      "settings": [
+        "wildchat_rung"
+      ],
+      "per_setting": {
+        "wildchat_rung": {
+          "rho": 0.5651108690679424,
+          "ci": [
+            0.489877827398082,
+            0.635786698554082
+          ],
+          "n_eval": 411,
+          "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "hallucination",
+      "group": "generic chat",
+      "method": "reg_map_linear",
+      "arm_id": "arm7_map_ridge_pred",
+      "map_kind": "linear",
+      "rho": 0.6254454127087546,
+      "ci": [
+        0.5565859768668034,
+        0.6843574887898876
+      ],
+      "settings": [
+        "wildchat_rung"
+      ],
+      "per_setting": {
+        "wildchat_rung": {
+          "rho": 0.6254454127087546,
+          "ci": [
+            0.5565859768668034,
+            0.6843574887898876
+          ],
+          "n_eval": 411,
+          "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "hallucination",
+      "group": "in-distrib.",
+      "method": "pv_context",
+      "arm_id": "arm1_ctx_e1",
+      "map_kind": "linear",
+      "rho": 0.010147819284994163,
+      "ci": [
+        -0.005996718558193312,
+        0.024425386912225736
+      ],
+      "settings": [
+        "train"
+      ],
+      "per_setting": {
+        "train": {
+          "rho": 0.010147819284994163,
+          "ci": [
+            -0.005996718558193312,
+            0.024425386912225736
+          ],
+          "n_eval": 16000,
+          "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "hallucination",
+      "group": "in-distrib.",
+      "method": "pv_map_linear",
+      "arm_id": "arm6_map_proj_e1",
+      "map_kind": "linear",
+      "rho": -0.05517856685711229,
+      "ci": [
+        -0.07113853815563008,
+        -0.04156618912428649
+      ],
+      "settings": [
+        "train"
+      ],
+      "per_setting": {
+        "train": {
+          "rho": -0.05517856685711229,
+          "ci": [
+            -0.07113853815563008,
+            -0.04156618912428649
+          ],
+          "n_eval": 16000,
+          "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "hallucination",
+      "group": "in-distrib.",
+      "method": "oracle",
+      "arm_id": "arm11_oracle_proj",
+      "map_kind": "linear",
+      "rho": 0.058503604915292405,
+      "ci": [
+        0.04253712567935424,
+        0.07220781539377556
+      ],
+      "settings": [
+        "train"
+      ],
+      "per_setting": {
+        "train": {
+          "rho": 0.058503604915292405,
+          "ci": [
+            0.04253712567935424,
+            0.07220781539377556
+          ],
+          "n_eval": 16000,
+          "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "hallucination",
+      "group": "in-distrib.",
+      "method": "regression_ctx",
+      "arm_id": "arm4_ridge_ctx",
+      "map_kind": "linear",
+      "rho": 0.5572427540854127,
+      "ci": [
+        0.5457581537941896,
+        0.5690015305588049
+      ],
+      "settings": [
+        "train"
+      ],
+      "per_setting": {
+        "train": {
+          "rho": 0.5572427540854127,
+          "ci": [
+            0.5457581537941896,
+            0.5690015305588049
+          ],
+          "n_eval": 16000,
+          "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "hallucination",
+      "group": "in-distrib.",
+      "method": "reg_map_linear",
+      "arm_id": "arm7_map_ridge_pred",
+      "map_kind": "linear",
+      "rho": 0.6027415759982249,
+      "ci": [
+        0.5915080570733717,
+        0.6138158381392698
+      ],
+      "settings": [
+        "train"
+      ],
+      "per_setting": {
+        "train": {
+          "rho": 0.6027415759982249,
+          "ci": [
+            0.5915080570733717,
+            0.6138158381392698
+          ],
+          "n_eval": 16000,
+          "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "hallucination",
+      "group": "OOD",
+      "method": "pv_context",
+      "arm_id": "arm1_ctx_e1",
+      "map_kind": "linear",
+      "rho": 0.14501562929350292,
+      "ci": [
+        0.11217760369670181,
+        0.17794489569480576
+      ],
+      "settings": [
+        "nqopen",
+        "simpleqa"
+      ],
+      "per_setting": {
+        "nqopen": {
+          "rho": 0.04480219102979353,
+          "ci": [
+            0.010729813867937673,
+            0.07788731686609944
+          ],
+          "n_eval": 3167,
+          "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
+        },
+        "simpleqa": {
+          "rho": 0.24522906755721233,
+          "ci": [
+            0.21362539352546595,
+            0.27800247452351207
+          ],
+          "n_eval": 4021,
+          "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "hallucination",
+      "group": "OOD",
+      "method": "pv_map_linear",
+      "arm_id": "arm6_map_proj_e1",
+      "map_kind": "linear",
+      "rho": 0.2147356549758243,
+      "ci": [
+        0.18273573182220013,
+        0.2472711857938436
+      ],
+      "settings": [
+        "nqopen",
+        "simpleqa"
+      ],
+      "per_setting": {
+        "nqopen": {
+          "rho": -0.033518388618036826,
+          "ci": [
+            -0.07126316413727529,
+            0.0014981580879753092
+          ],
+          "n_eval": 3167,
+          "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
+        },
+        "simpleqa": {
+          "rho": 0.46298969856968547,
+          "ci": [
+            0.43673462778167554,
+            0.4930442134997119
+          ],
+          "n_eval": 4021,
+          "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "hallucination",
+      "group": "OOD",
+      "method": "oracle",
+      "arm_id": "arm11_oracle_proj",
+      "map_kind": "linear",
+      "rho": 0.3533441767857403,
+      "ci": [
+        0.32260934558713217,
+        0.3830383873320473
+      ],
+      "settings": [
+        "nqopen",
+        "simpleqa"
+      ],
+      "per_setting": {
+        "nqopen": {
+          "rho": 0.12797090910783324,
+          "ci": [
+            0.09308861249831503,
+            0.1617682692085735
+          ],
+          "n_eval": 3167,
+          "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
+        },
+        "simpleqa": {
+          "rho": 0.5787174444636474,
+          "ci": [
+            0.5521300786759493,
+            0.6043085054555212
+          ],
+          "n_eval": 4021,
+          "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "hallucination",
+      "group": "OOD",
+      "method": "regression_ctx",
+      "arm_id": "arm4_ridge_ctx",
+      "map_kind": "linear",
+      "rho": 0.3864314220958271,
+      "ci": [
+        0.3594219097363448,
+        0.4160303407232757
+      ],
+      "settings": [
+        "nqopen",
+        "simpleqa"
+      ],
+      "per_setting": {
+        "nqopen": {
+          "rho": 0.3815336737494374,
+          "ci": [
+            0.350876208726398,
+            0.41223419551939117
+          ],
+          "n_eval": 3167,
+          "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
+        },
+        "simpleqa": {
+          "rho": 0.39132917044221677,
+          "ci": [
+            0.3679676107462916,
+            0.4198264859271602
+          ],
+          "n_eval": 4021,
+          "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    },
+    {
+      "behavior": "hallucination",
+      "group": "OOD",
+      "method": "reg_map_linear",
+      "arm_id": "arm7_map_ridge_pred",
+      "map_kind": "linear",
+      "rho": 0.4122153610173508,
+      "ci": [
+        0.3859133949668097,
+        0.44387193572320205
+      ],
+      "settings": [
+        "nqopen",
+        "simpleqa"
+      ],
+      "per_setting": {
+        "nqopen": {
+          "rho": 0.4141576099099953,
+          "ci": [
+            0.38533843418688424,
+            0.44666747880486457
+          ],
+          "n_eval": 3167,
+          "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
+        },
+        "simpleqa": {
+          "rho": 0.41027311212470624,
+          "ci": [
+            0.3864883557467352,
+            0.4410763926415395
+          ],
+          "n_eval": 4021,
+          "source_file": "eval_results/issue_1739/result2_fair/hallucination/all_arms_spearman.json"
+        }
+      },
+      "spread_failed": false,
+      "failing_settings": []
+    }
+  ]
+}

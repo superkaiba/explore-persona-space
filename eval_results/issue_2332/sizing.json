@@ -1,0 +1,287 @@
+{
+ "generated_at": "2026-08-17T04:39:16Z",
+ "mover_advisory": "mover done-count=49 failed=0",
+ "prefixes": {
+  "issue1090_pvdatagen": {
+   "bytes": 3007521148,
+   "census": {
+    ".json": 58324,
+    ".jsonl": 40,
+    ".pt": 28
+   },
+   "chunk_plan": null,
+   "drift_writer_recheck": null,
+   "files": 58392,
+   "inventory_drift": 0,
+   "k": 4,
+   "max_file_bytes": 144547483,
+   "mode": "whole",
+   "shards_planned": 2,
+   "staged_footprint_bytes": 6015042296
+  },
+  "issue1434_writingstyle": {
+   "bytes": 539119228,
+   "census": {
+    ".json": 49321,
+    ".jsonl": 29,
+    ".pt": 30
+   },
+   "chunk_plan": null,
+   "drift_writer_recheck": null,
+   "files": 49380,
+   "inventory_drift": 0,
+   "k": 3,
+   "max_file_bytes": 376723437,
+   "mode": "whole",
+   "shards_planned": 1,
+   "staged_footprint_bytes": 1078238456
+  },
+  "issue1481_conpos_grid": {
+   "bytes": 5584397449,
+   "census": {
+    ".bin": 15,
+    ".jinja": 15,
+    ".json": 206510,
+    ".jsonl": 19,
+    ".md": 15,
+    ".safetensors": 15,
+    ".txt": 15
+   },
+   "chunk_plan": null,
+   "drift_writer_recheck": null,
+   "files": 206604,
+   "inventory_drift": 0,
+   "k": 5,
+   "max_file_bytes": 323014168,
+   "mode": "whole",
+   "shards_planned": 3,
+   "staged_footprint_bytes": 11168794898
+  },
+  "issue1489_ctx_aug": {
+   "bytes": 53561749646,
+   "census": {
+    ".json": 255,
+    ".jsonl": 161,
+    ".npy": 29792,
+    "<none>": 152
+   },
+   "chunk_plan": [
+    {
+     "bytes": 19999649816,
+     "chunk": 0,
+     "files": 11275,
+     "shards": 10
+    },
+    {
+     "bytes": 19998210933,
+     "chunk": 1,
+     "files": 11266,
+     "shards": 10
+    },
+    {
+     "bytes": 13416025117,
+     "chunk": 2,
+     "files": 7555,
+     "shards": 7
+    },
+    {
+     "bytes": 147863780,
+     "chunk": 3,
+     "files": 264,
+     "shards": 1
+    }
+   ],
+   "drift_writer_recheck": null,
+   "files": 30360,
+   "inventory_drift": 0,
+   "k": 34,
+   "max_file_bytes": 19459871,
+   "mode": "chunked(4)",
+   "shards_planned": 25,
+   "staged_footprint_bytes": 107123499292
+  },
+  "issue1586_methodgen": {
+   "bytes": 6994534880,
+   "census": {
+    ".json": 53953,
+    ".pt": 150
+   },
+   "chunk_plan": null,
+   "drift_writer_recheck": null,
+   "files": 54103,
+   "inventory_drift": 0,
+   "k": 6,
+   "max_file_bytes": 72283739,
+   "mode": "whole",
+   "shards_planned": 4,
+   "staged_footprint_bytes": 13989069760
+  },
+  "issue1739_ctxmap": {
+   "bytes": 206009929100,
+   "census": {
+    ".json": 33599,
+    ".jsonl": 448,
+    ".npy": 7812,
+    ".npz": 2016,
+    ".part000": 6,
+    ".part001": 6,
+    ".part002": 3,
+    ".part003": 1,
+    ".pt": 8,
+    ".tar": 6
+   },
+   "chunk_plan": [
+    {
+     "bytes": 18467595094,
+     "chunk": 0,
+     "files": 2017,
+     "shards": 9
+    },
+    {
+     "bytes": 2442298226,
+     "chunk": 1,
+     "files": 4928,
+     "shards": 2
+    },
+    {
+     "bytes": 1205135360,
+     "chunk": 2,
+     "files": 1,
+     "shards": 1
+    },
+    {
+     "bytes": 32137328640,
+     "chunk": 3,
+     "files": 1,
+     "shards": 15
+    },
+    {
+     "bytes": 1205155840,
+     "chunk": 4,
+     "files": 1,
+     "shards": 1
+    },
+    {
+     "bytes": 69869701120,
+     "chunk": 5,
+     "files": 1,
+     "shards": 33
+    },
+    {
+     "bytes": 1205145600,
+     "chunk": 6,
+     "files": 1,
+     "shards": 1
+    },
+    {
+     "bytes": 52140359680,
+     "chunk": 7,
+     "files": 1,
+     "shards": 25
+    },
+    {
+     "bytes": 12606340085,
+     "chunk": 8,
+     "files": 32862,
+     "shards": 6
+    },
+    {
+     "bytes": 14730869455,
+     "chunk": 9,
+     "files": 4092,
+     "shards": 7
+    }
+   ],
+   "drift_writer_recheck": null,
+   "files": 43905,
+   "inventory_drift": 0,
+   "k": 112,
+   "max_file_bytes": 69869701120,
+   "mode": "chunked(10)",
+   "shards_planned": 96,
+   "staged_footprint_bytes": 412019858200
+  },
+  "issue2224_screening": {
+   "bytes": 98832308655,
+   "census": {
+    ".json": 40708,
+    ".jsonl": 640,
+    ".log": 130,
+    ".npz": 38,
+    ".pid": 2,
+    ".pt": 240,
+    ".sh": 1
+   },
+   "chunk_plan": [
+    {
+     "bytes": 24592,
+     "chunk": 0,
+     "files": 3,
+     "shards": 1
+    },
+    {
+     "bytes": 19901744974,
+     "chunk": 1,
+     "files": 61,
+     "shards": 10
+    },
+    {
+     "bytes": 19660302595,
+     "chunk": 2,
+     "files": 49,
+     "shards": 10
+    },
+    {
+     "bytes": 19747600031,
+     "chunk": 3,
+     "files": 72,
+     "shards": 10
+    },
+    {
+     "bytes": 19660417219,
+     "chunk": 4,
+     "files": 49,
+     "shards": 10
+    },
+    {
+     "bytes": 17194041225,
+     "chunk": 5,
+     "files": 47,
+     "shards": 9
+    },
+    {
+     "bytes": 2668178019,
+     "chunk": 6,
+     "files": 41478,
+     "shards": 2
+    }
+   ],
+   "drift_writer_recheck": null,
+   "files": 41759,
+   "inventory_drift": 0,
+   "k": 61,
+   "max_file_bytes": 411076659,
+   "mode": "chunked(7)",
+   "shards_planned": 47,
+   "staged_footprint_bytes": 197664617310
+  },
+  "issue667_alllayer": {
+   "bytes": 4924261109,
+   "census": {
+    ".json": 34,
+    ".npz": 53760,
+    "<none>": 64
+   },
+   "chunk_plan": null,
+   "drift_writer_recheck": null,
+   "files": 53858,
+   "inventory_drift": 0,
+   "k": 5,
+   "max_file_bytes": 296442,
+   "mode": "whole",
+   "shards_planned": 3,
+   "staged_footprint_bytes": 9848522218
+  }
+ },
+ "repo_count_before": 938366
+}

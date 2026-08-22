@@ -1,0 +1,62 @@
+{
+  "note": "Registered per-prompt paired cluster-bootstrap CI of (random-null DV - real-axis DV); positive + CI excluding 0 => adjudicated axis-specific effect (plan v13 \u00a76 estimator 2).",
+  "bootstrap": {
+    "B": 10000,
+    "seed": 42,
+    "cluster_ids": "per-row pinned (jailbreak item / role persona)"
+  },
+  "results": [
+    {
+      "real_arm": "axrep_allprompt",
+      "rand_arm": "axrep_allprompt_randnull",
+      "pool": "jailbreak",
+      "dv": "harm",
+      "n_paired": 494,
+      "real_rate": 0.0789,
+      "rand_rate": 0.0911,
+      "paired_diff_mean": 0.0121,
+      "ci95_lo": -0.0081,
+      "ci95_hi": 0.0324,
+      "excludes_zero_favoring_axis": false
+    },
+    {
+      "real_arm": "axrep_allprompt",
+      "rand_arm": "axrep_allprompt_randnull",
+      "pool": "role_susc",
+      "dv": "identity_loss",
+      "n_paired": 250,
+      "real_rate": 0.168,
+      "rand_rate": 0.276,
+      "paired_diff_mean": 0.108,
+      "ci95_lo": 0.056,
+      "ci95_hi": 0.1653,
+      "excludes_zero_favoring_axis": true
+    },
+    {
+      "real_arm": "axrep_alltoken",
+      "rand_arm": "axrep_alltoken_randnull",
+      "pool": "jailbreak",
+      "dv": "harm",
+      "n_paired": 494,
+      "real_rate": 0.0628,
+      "rand_rate": 0.0951,
+      "paired_diff_mean": 0.0324,
+      "ci95_lo": 0.0101,
+      "ci95_hi": 0.0547,
+      "excludes_zero_favoring_axis": true
+    },
+    {
+      "real_arm": "axrep_alltoken",
+      "rand_arm": "axrep_alltoken_randnull",
+      "pool": "role_susc",
+      "dv": "identity_loss",
+      "n_paired": 250,
+      "real_rate": 0.156,
+      "rand_rate": 0.292,
+      "paired_diff_mean": 0.136,
+      "ci95_lo": 0.068,
+      "ci95_hi": 0.2063,
+      "excludes_zero_favoring_axis": true
+    }
+  ]
+}

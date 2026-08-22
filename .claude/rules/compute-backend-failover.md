@@ -26,9 +26,12 @@ paths:
 > zombie/janitor machinery — is scoped to IN-FLIGHT GCP handles (which keep
 > polling / tearing down / failing over to RunPod / crash-persisting) plus
 > the single-constant rollback; it is NOT reachable for fresh dispatches
-> while the flag is on. CPU intents route RunPod-only (`cpu-bigmem` gained
-> the `cpu5m-16-128` row; the #677 typed terminal stays as the fail-loud
-> floor for a future unmapped CPU intent).
+> while the flag is on. CPU intents walk `runpod → fellows` (#2059: the
+> fellows `ClusterConfig` declares `supports_cpu_jobs` and renders a 0-GPU
+> sbatch; nibi/mila stay excluded — no `/workspace`, #608) then the RunPod
+> terminal retry (`cpu-bigmem` gained the `cpu5m-16-128` row; the #677
+> typed terminal stays as the fail-loud floor for a future unmapped CPU
+> intent, firing at the runpod-first lane BEFORE fellows).
 
 > **#2054 — RUNPOD IS THE FIRST AUTO LANE (user directive 2026-08-05).**
 > The RunPod team account is the shared Anthropic fellows/safety org pool —
@@ -734,7 +737,7 @@ whose workload wedges without the EXIT trap firing — stays `RUNNING` with
 async predicate matches and the run bills until a HUMAN manually pivots to
 `--backend runpod`. Closing this (escalating a frozen non-terminal phase
 past a drain-timeout to a terminal wedged state) is a pending
-`kind: infra` follow-up. (See also the #491 `bufio.Scanner: token too
+`kind: infra` follow-up. (See also the `bufio.Scanner: token too
 long` zombie in `.claude/rules/gotchas.md`, a sibling hung-but-RUNNING
 mode recoverable in place via SSH relaunch.)
 
@@ -776,7 +779,9 @@ finalize_failed_artifacts_ok, wedged}) and
 launch reclaims + creates fresh (skip/delete sets pinned identical,
 `tests/test_gcp_backend.py`, #632; a guest-attribute probe failure raises
 `GcpProbeError` — never a reconnect, never a delete, #535). Relaunch
-contract (the #491 SSH-relaunch recipe in `.claude/rules/gotchas.md`): a
+contract (the SSH-relaunch recovery in the `.claude/rules/gotchas.md`
+GCE metadata-script-runner bufio-zombie entry, #908/#935 — the full
+relaunch mechanics survive in that entry's git history): a
 manual same-VM relaunch MUST re-publish `eps/phase=workload` BEFORE
 resuming work, and a relaunch on a VM whose first workload published
 `done` must re-publish within the done-grace window (or touch the
@@ -795,7 +800,14 @@ The GCP→RunPod failover (capacity AND workload-crash, sync AND async)
 extends to the CHEAP CPU intents. #677 made EVERY CPU intent a hard
 terminal (RunPod was GPU-only); #747 adds a RunPod CPU lane
 (`deployCpuPod`) for the cheap intents and SUPERSEDES that terminal for
-them ONLY:
+them ONLY. **#2059 adds the fellows 0-GPU rung to the CPU auto chain:**
+a runpod-first capacity miss on a mapped CPU intent falls through to the
+fellows SLURM lane (the only cluster whose `ClusterConfig` declares
+`supports_cpu_jobs` — 0-GPU sbatch render, resources from
+`slurm._CPU_SBATCH_RESOURCES` mirroring the RunPod instance shapes; time
+bins 4/8/12h), then to the end-of-chain RunPod terminal retry; nibi/mila
+stay excluded (no `/workspace`, #608), and the rollback lever is flipping
+the fellows row's `supports_cpu_jobs` to `False`:
 
 - **`cpu-small` / `cpu-mid`** (mapped in
   `router.RUNPOD_CPU_INSTANCE_FOR_INTENT`) fall over GCP cheap CPU →

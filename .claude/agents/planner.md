@@ -48,9 +48,9 @@ budgeted IN FORM:
   pre-verified digest / context file, read it FIRST and trust its
   measurements; do not re-derive what it already states.
 - **Never run bare `uv run python scripts/task.py view <N>`** — it dumps the
-  full event log (often 100s of KB). Read a task body via
-  `uv run python scripts/task.py view <N> --json | jq -r '.body'`; read a plan
-  via `Read` on `tasks/<status>/<N>/plans/v<K>.md` (or the path in your brief).
+  full event log; body via `view <N> --json | jq -r '.body'`. Read a plan at
+  `$(uv run python scripts/task.py find <N>)/plans/plan.md`, never a relative
+  `tasks/` path in the worktree (frozen at base, #2422).
 - **Read files surgically.** `Read` with `offset`/`limit` in ≤300-line chunks,
   only the sections needed (Grep for the section header first). Never pull a
   >40 KB file into context in one unchunked Read — a rule mandated "IN FULL"
@@ -299,7 +299,7 @@ completion provenance (on-policy-first; multi-behavior datagen: standardized
 persona-vectors-shape behavior definitions) · marker / behavior-implant stopping
 recipe (overrides parent parity) · persona-vectors extraction recipe ·
 multi-arm resolution-band designs · few-shot / ICL demonstration content ·
-smoke/sweep architectural parity · smoke blind-spot enumeration (what the PASS does NOT certify) · no all-or-nothing eligibility gates ·
+smoke/sweep architectural parity · smoke blind-spot enumeration (what the PASS does NOT certify) · no all-or-nothing eligibility gates / two-tier yield floors (relative shrink + absolute-trainability DROP) ·
 equalize-down on per-unit N · baseline propensity on BOTH sides ·
 generation-and-reduce stages persist their rollout TEXT ·
 **symbol-existence grep-at-plan-time** — every `module.symbol` (function / class / subcommand) in plan pseudocode is confirmed by a recorded `grep -rn 'def <symbol>' src/ scripts/`; deferring a grep-answerable check to the implementer is banned. ·
@@ -366,7 +366,20 @@ cheap intermediate signal can rule out the full run; a retained gate set is
 minimal, grounded (threshold AND sign) in prior-issue evidence of the
 construct, jointly satisfiable, and coherent with its own cited precedents
 (each band recomputed on the precedent values it cites lands in the branch
-the prose assigns — see the reference §7).
+the prose assigns — see the reference §7). Any registered per-fold/per-cell
+`n_train` (or sample count feeding an n-vs-d / dof validity read) cites a
+MEASURED artifact-side row count via a named command — never a
+corpus-name / build-count inference; not yet materialized ⇒ mark
+`inferred — re-measure at first materialization` with a named pre-fit
+re-measure step (reference §7, #2061).
+A gate whose thresholded quantity is computed from a NULL / permutation /
+shuffle draw cites a MEASURED 1-cell calibration pilot of that null at
+production `n`/`d` shape (named command + cell) — never an asserted constant
+(a refit null is strictly negative — never ≈ 0, −d/(n−d−1)-scale, deeper near
+the interpolation threshold — and its depth is non-monotone in `n/d`, so no
+constant floor is correct across a ladder) — and defaults to ADVISORY
+logging; a hard abort on a null-side condition is opt-in with a stated
+argument (reference §7, `.claude/rules/selection-symmetric-nulls.md`, #1491).
 
 **Per-criterion §4-mechanism binding.** State, per acceptance criterion, WHICH §4 mechanism measures it AND what it compares (count / equality / presence). The L602 Self-count rule covers count-style criteria only.
 
@@ -564,6 +577,12 @@ The implementer reports the measured value under `## Smoke run`; a
 violated premise is a plan defect — amend / re-scope BEFORE production,
 never leave it to the production assert. Full sub-rule + worked
 example: `planner-section-reference.md` § 12.
+
+An EXACTNESS claim (byte-identical / `n_distinct == 1` / zero variance /
+"every row") grounded on a SAMPLE is stated as a BOUND ("no deviation
+observed in N of M") unless verified at full grain; a runtime assert
+built on it demands only what the stated grain supports (#2163; full
+sub-rule: § 12 reference).
 
 Full template + worked examples: `.claude/rules/planner-section-reference.md` § 12. Assumptions — read that section BEFORE writing.
 

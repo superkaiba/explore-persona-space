@@ -1,0 +1,455 @@
+{
+  "commit": "d5d20f7b",
+  "render_id": "a3ebc87b0629406f",
+  "git_commit": "d5d20f7b",
+  "git_dirty": false,
+  "created": "2026-08-14T14:51:50Z",
+  "figsize": [
+    11.5,
+    3.6
+  ],
+  "points": [
+    {
+      "layer": 0.0,
+      "held-out AUC": 0.053725019661556773,
+      "series": "banked orth_E1 (GroupKFold)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 1.0,
+      "held-out AUC": 0.09842645530230203,
+      "series": "banked orth_E1 (GroupKFold)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 2.0,
+      "held-out AUC": 0.06043857102450034,
+      "series": "banked orth_E1 (GroupKFold)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 3.0,
+      "held-out AUC": 0.02385119396183883,
+      "series": "banked orth_E1 (GroupKFold)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 4.0,
+      "held-out AUC": 0.0271494128503779,
+      "series": "banked orth_E1 (GroupKFold)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 0.0,
+      "held-out AUC": 0.05487536531867563,
+      "series": "reproduced (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 1.0,
+      "held-out AUC": 0.10890098997701765,
+      "series": "reproduced (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 2.0,
+      "held-out AUC": 0.0589242994642573,
+      "series": "reproduced (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 3.0,
+      "held-out AUC": 0.02393643131331984,
+      "series": "reproduced (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 4.0,
+      "held-out AUC": 0.027182853819685708,
+      "series": "reproduced (this round)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 0.0,
+      "held-out AUC": 0.281117925300567,
+      "series": "shuffled pooled folds",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 1.0,
+      "held-out AUC": 0.29646401609454676,
+      "series": "shuffled pooled folds",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 2.0,
+      "held-out AUC": 0.36931505602039766,
+      "series": "shuffled pooled folds",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 3.0,
+      "held-out AUC": 0.3689517216921267,
+      "series": "shuffled pooled folds",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 4.0,
+      "held-out AUC": 0.41486686346959833,
+      "series": "shuffled pooled folds",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 0.0,
+      "held-out AUC": 0.5546354303950594,
+      "series": "fold-honest projection",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 1.0,
+      "held-out AUC": 0.5324625447504147,
+      "series": "fold-honest projection",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 2.0,
+      "held-out AUC": 0.5094268735375378,
+      "series": "fold-honest projection",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 3.0,
+      "held-out AUC": 0.5387597465738218,
+      "series": "fold-honest projection",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 4.0,
+      "held-out AUC": 0.5873405901340721,
+      "series": "fold-honest projection",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 0.0,
+      "y": 0.0408559199201849,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 1.0,
+      "y": 0.10723972511773021,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 2.0,
+      "y": 0.058322080404625075,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 3.0,
+      "y": 0.054280323107095185,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 4.0,
+      "y": 0.07092665576729953,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 0.0,
+      "y": 0.0408559199201849,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 1.0,
+      "y": 0.10723972511773021,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 2.0,
+      "y": 0.058322080404625075,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 3.0,
+      "y": 0.054280323107095185,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 4.0,
+      "y": 0.07092665576729953,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 0.0,
+      "y": 0.3289809745707357,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 1.0,
+      "y": 0.3528318841369294,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 2.0,
+      "y": 0.4601501811893757,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 3.0,
+      "y": 0.4597976535480585,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 4.0,
+      "y": 0.5032477313031096,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 0.0,
+      "y": 0.5217990886822887,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 1.0,
+      "y": 0.527345180687399,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 2.0,
+      "y": 0.5170004574945593,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 3.0,
+      "y": 0.5140146376766573,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 4.0,
+      "y": 0.5169476858052493,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 0.0,
+      "y": 0.2002163953729082,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 1.0,
+      "y": 0.2909283389829584,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 2.0,
+      "y": 0.19430028156190385,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 3.0,
+      "y": 0.24837379916679433,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 4.0,
+      "y": 0.14493947549909705,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 0.0,
+      "y": 0.2002163953729082,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 1.0,
+      "y": 0.2909283389829584,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 2.0,
+      "y": 0.19430028156190385,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 3.0,
+      "y": 0.24837379916679433,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 4.0,
+      "y": 0.14493947549909705,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 0.0,
+      "y": 0.6513357100087525,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 1.0,
+      "y": 0.632068197446517,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 2.0,
+      "y": 0.6151726549622902,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 3.0,
+      "y": 0.6172204986325239,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 4.0,
+      "y": 0.6154859660038506,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 0.0,
+      "y": 0.5810606781687022,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 1.0,
+      "y": 0.5247144730000783,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 2.0,
+      "y": 0.454944233102389,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 3.0,
+      "y": 0.49789945480106806,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 4.0,
+      "y": 0.5953173034128902,
+      "_kind": "line",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 60,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "evil",
+        "xlabel": "layer",
+        "ylabel": "held-out AUC",
+        "xticklabels": [
+          "0",
+          "7",
+          "19",
+          "20",
+          "27"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "sycophancy",
+        "xlabel": "layer",
+        "xticklabels": [
+          "0",
+          "7",
+          "19",
+          "20",
+          "27"
+        ]
+      },
+      {
+        "title_left": "hallucination",
+        "xlabel": "layer",
+        "xticklabels": [
+          "0",
+          "7",
+          "15",
+          "20",
+          "27"
+        ]
+      }
+    ],
+    "series": [
+      "banked orth_E1 (GroupKFold)",
+      "reproduced (this round)",
+      "shuffled pooled folds",
+      "fold-honest projection"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -1,0 +1,1268 @@
+{
+ "blob_id_is_git_sha1": true,
+ "chunked_pilot_extra_done": "issue1489_ctx_aug",
+ "prefixes": {
+  "issue1090_pvdatagen": {
+   "done": {
+    "bytes": 3007521148,
+    "files": 58392,
+    "kept_new": 0,
+    "kept_stale": 0,
+    "slots_freed": 58392
+   },
+   "incomplete": "issue1090_pvdatagen: 28 downloads failed \u2014 staging PRESERVED, source untouched",
+   "kept_new": [],
+   "kept_stale": [],
+   "mode": "whole",
+   "n_files": 58392,
+   "packed_files": {
+    "issue1090_pvdatagen/__packed__/index.json": {
+     "gitsha1": "c9ddd627b9cc3abfe0e434b8b642593ad824dd3c",
+     "sha256": "49a0610a069b4f5b609e9e166c3a3a5b5664a09a9a42308e105a32dae294199b",
+     "size": 16400372
+    },
+    "issue1090_pvdatagen/__packed__/manifest.json": {
+     "gitsha1": "def9ad99163b82bae2c515ef0316ef58e2a8dec8",
+     "sha256": "a982c2f2af95934b831948f8feb07c3c019637d44b2708f6847aa46c269e6df6",
+     "size": 353
+    },
+    "issue1090_pvdatagen/__packed__/shard-00000.tar": {
+     "gitsha1": "b3b57031c98baac4d8ecc69573c868c4d824cf0a",
+     "sha256": "48f5bf6c39a00110d54472e388711d15db05d4eb4476dd942d372477048943e5",
+     "size": 2329958400
+    },
+    "issue1090_pvdatagen/__packed__/shard-00001.tar": {
+     "gitsha1": "ecb25393aaf5548e39bd6b5fb447c1669f541eac",
+     "sha256": "32f86c237c423084e4e9736917d7f374faffd91ee2f2c57d8f6d029b2e1dfe9c",
+     "size": 793446400
+    }
+   },
+   "snapshot_ts": "2026-08-17T14:08:35Z",
+   "src_revision": "381835e794d70b03b63f96e2da8cb87dc5ee0c10",
+   "steps": {
+    "delete": {
+     "done": true,
+     "n_deleted_realized": 58392,
+     "n_deleted_this_run": 58392,
+     "run_id": "702d246cbc1e400b9bbbc5272d09fb56"
+    },
+    "download": {
+     "done": true,
+     "run_id": "702d246cbc1e400b9bbbc5272d09fb56",
+     "src_revision": "381835e794d70b03b63f96e2da8cb87dc5ee0c10"
+    },
+    "hub_verify": {
+     "n_files": 4,
+     "pass": true,
+     "run_id": "702d246cbc1e400b9bbbc5272d09fb56",
+     "ts": "2026-08-17T21:03:26Z"
+    },
+    "local_verify": {
+     "done": true,
+     "run_id": "702d246cbc1e400b9bbbc5272d09fb56",
+     "src_revision": "381835e794d70b03b63f96e2da8cb87dc5ee0c10"
+    },
+    "pack": {
+     "done": true,
+     "k": 4,
+     "n_shards": 2,
+     "run_id": "702d246cbc1e400b9bbbc5272d09fb56",
+     "src_revision": "381835e794d70b03b63f96e2da8cb87dc5ee0c10"
+    },
+    "snapshot": {
+     "done": true,
+     "run_id": "2041765c78f14a67a4239f27b66928fc"
+    },
+    "staged_verify": {
+     "done": true,
+     "run_id": "702d246cbc1e400b9bbbc5272d09fb56",
+     "src_revision": "381835e794d70b03b63f96e2da8cb87dc5ee0c10"
+    },
+    "upload": {
+     "done": true,
+     "run_id": "702d246cbc1e400b9bbbc5272d09fb56",
+     "src_revision": "381835e794d70b03b63f96e2da8cb87dc5ee0c10"
+    }
+   },
+   "total_bytes": 3007521148
+  },
+  "issue1434_writingstyle": {
+   "done": {
+    "bytes": 539119228,
+    "files": 49380,
+    "kept_new": 0,
+    "kept_stale": 0,
+    "slots_freed": 49380
+   },
+   "incomplete": "issue1434_writingstyle: 28 downloads failed \u2014 staging PRESERVED, source untouched",
+   "kept_new": [],
+   "kept_stale": [],
+   "mode": "whole",
+   "n_files": 49380,
+   "packed_files": {
+    "issue1434_writingstyle/__packed__/index.json": {
+     "gitsha1": "3ba29ebd95c8d0b57bdd74669e1bf395732c6d18",
+     "sha256": "ee9e7a470d1c3c809044fd4743da67aa23c07c01fa472bfc838be0f2d36d0b8f",
+     "size": 12473578
+    },
+    "issue1434_writingstyle/__packed__/manifest.json": {
+     "gitsha1": "7d9af3e5478d99026da5ae40cb426e26b8beaddb",
+     "sha256": "cbd8ab84def85f54ec49e8e408401c0c08a3480fd69c145ebc5fc5a2f397d4c1",
+     "size": 263
+    },
+    "issue1434_writingstyle/__packed__/shard-00000.tar": {
+     "gitsha1": "e0c7657f4f2e6497c6e3561cb9b9140d3e46aaa8",
+     "sha256": "941e5529b0c1e84494a169341c7885233da748e89d0c42596866915092bf062f",
+     "size": 626452480
+    }
+   },
+   "snapshot_ts": "2026-08-17T10:10:08Z",
+   "src_revision": "9678bb99456c4f7788e4cc2061d60653260bb1c7",
+   "steps": {
+    "delete": {
+     "done": true,
+     "n_deleted_realized": 49380,
+     "n_deleted_this_run": 49380,
+     "run_id": "702d246cbc1e400b9bbbc5272d09fb56"
+    },
+    "download": {
+     "done": true,
+     "run_id": "702d246cbc1e400b9bbbc5272d09fb56",
+     "src_revision": "9678bb99456c4f7788e4cc2061d60653260bb1c7"
+    },
+    "hub_verify": {
+     "n_files": 3,
+     "pass": true,
+     "run_id": "702d246cbc1e400b9bbbc5272d09fb56",
+     "ts": "2026-08-17T20:25:42Z"
+    },
+    "local_verify": {
+     "done": true,
+     "run_id": "702d246cbc1e400b9bbbc5272d09fb56",
+     "src_revision": "9678bb99456c4f7788e4cc2061d60653260bb1c7"
+    },
+    "pack": {
+     "done": true,
+     "k": 3,
+     "n_shards": 1,
+     "run_id": "702d246cbc1e400b9bbbc5272d09fb56",
+     "src_revision": "9678bb99456c4f7788e4cc2061d60653260bb1c7"
+    },
+    "snapshot": {
+     "done": true,
+     "run_id": "2041765c78f14a67a4239f27b66928fc"
+    },
+    "staged_verify": {
+     "done": true,
+     "run_id": "702d246cbc1e400b9bbbc5272d09fb56",
+     "src_revision": "9678bb99456c4f7788e4cc2061d60653260bb1c7"
+    },
+    "upload": {
+     "done": true,
+     "run_id": "702d246cbc1e400b9bbbc5272d09fb56",
+     "src_revision": "9678bb99456c4f7788e4cc2061d60653260bb1c7"
+    }
+   },
+   "total_bytes": 539119228
+  },
+  "issue1481_conpos_grid": {
+   "done": {
+    "bytes": 5584397449,
+    "files": 206604,
+    "kept_new": 0,
+    "kept_stale": 0,
+    "slots_freed": 206604
+   },
+   "incomplete": "issue1481_conpos_grid: 57 downloads failed \u2014 staging PRESERVED, source untouched",
+   "kept_new": [],
+   "kept_stale": [],
+   "mode": "whole",
+   "n_files": 206604,
+   "packed_files": {
+    "issue1481_conpos_grid/__packed__/index.json": {
+     "gitsha1": "803adebe6c673a2024e9f81ef8faea8af437ecfc",
+     "sha256": "444f693ec27f9c56b36d06df0c2223860a4a30bc8a620c5c13a8bb784a5e8a54",
+     "size": 58685555
+    },
+    "issue1481_conpos_grid/__packed__/manifest.json": {
+     "gitsha1": "ae4f8b1d8b343e99a917e6e4e1ea8f207373a433",
+     "sha256": "1e6510a4b0f8675c58138f865ffdb1f129f924d7d241eeb00c121d0985db769b",
+     "size": 443
+    },
+    "issue1481_conpos_grid/__packed__/shard-00000.tar": {
+     "gitsha1": "35cb00c4e668663b2a3d0154c40d4f8b47fb9d43",
+     "sha256": "d5e4d0a441d79ff5186c2506053342642a6a347cb671527ddaa9a519257b699d",
+     "size": 2589153280
+    },
+    "issue1481_conpos_grid/__packed__/shard-00001.tar": {
+     "gitsha1": "31e6bc9c179997fafe54076e6849fd45561ab029",
+     "sha256": "c8157a778274cf7400e74d227bcf43f14089bed599c506e2b67fde2439e36dab",
+     "size": 2374860800
+    },
+    "issue1481_conpos_grid/__packed__/shard-00002.tar": {
+     "gitsha1": "12e34d4ead807d02855e36359642be3788d749cc",
+     "sha256": "f6de80a95e916e22a9ba054b42f9dd0dfaa1af2924a0e8f22b3f1b2ca25c0f40",
+     "size": 1034117120
+    }
+   },
+   "snapshot_ts": "2026-08-17T15:24:44Z",
+   "src_revision": "b221a129277e83baf1e8e42f838cff492d7554a7",
+   "steps": {
+    "delete": {
+     "done": true,
+     "n_deleted_realized": 206604,
+     "n_deleted_this_run": 206604,
+     "run_id": "702d246cbc1e400b9bbbc5272d09fb56"
+    },
+    "download": {
+     "done": true,
+     "run_id": "702d246cbc1e400b9bbbc5272d09fb56",
+     "src_revision": "b221a129277e83baf1e8e42f838cff492d7554a7"
+    },
+    "hub_verify": {
+     "n_files": 5,
+     "pass": true,
+     "run_id": "702d246cbc1e400b9bbbc5272d09fb56",
+     "ts": "2026-08-17T21:22:21Z"
+    },
+    "local_verify": {
+     "done": true,
+     "run_id": "702d246cbc1e400b9bbbc5272d09fb56",
+     "src_revision": "b221a129277e83baf1e8e42f838cff492d7554a7"
+    },
+    "pack": {
+     "done": true,
+     "k": 5,
+     "n_shards": 3,
+     "run_id": "702d246cbc1e400b9bbbc5272d09fb56",
+     "src_revision": "b221a129277e83baf1e8e42f838cff492d7554a7"
+    },
+    "snapshot": {
+     "done": true,
+     "run_id": "2041765c78f14a67a4239f27b66928fc"
+    },
+    "staged_verify": {
+     "done": true,
+     "run_id": "702d246cbc1e400b9bbbc5272d09fb56",
+     "src_revision": "b221a129277e83baf1e8e42f838cff492d7554a7"
+    },
+    "upload": {
+     "done": true,
+     "run_id": "702d246cbc1e400b9bbbc5272d09fb56",
+     "src_revision": "b221a129277e83baf1e8e42f838cff492d7554a7"
+    }
+   },
+   "total_bytes": 5584397449
+  },
+  "issue1489_ctx_aug": {
+   "chunks": {
+    "chunk_0": {
+     "done": true,
+     "n_deleted_realized": 11275,
+     "n_files": 11275,
+     "shard_sha256s": {
+      "shard-c0-00000.tar": "c2eef30c987a0c246718bcb5f9bd1ad265eca9ab71c83170baaf915c5dd8acb6",
+      "shard-c0-00001.tar": "3eda12674cd9c7754c7e4ccd42e05f0a9b8bbafa34c03b604da1c12430d4d40d",
+      "shard-c0-00002.tar": "987d95d356b9ed3f187e51ebfb62df9d025e8ff5e358de010b59c97d66d937b0",
+      "shard-c0-00003.tar": "59f9b8ae6dcb8cc8e3875186d85a89388e6e7f355751b9680ab5e0a04c0918cd",
+      "shard-c0-00004.tar": "d0d2dc27542c0b2a9d2ebae40b3163542542156a96e99d5c61a66ae40e15b743",
+      "shard-c0-00005.tar": "73fe7d2b801fe6f8c98d2130fc5d910cb78b4dce6b1dc54475dab20898301535",
+      "shard-c0-00006.tar": "35fb84c310fd315d67fca4980c17f9bc1dfee711b470f8a4c79c38c4c426b54e",
+      "shard-c0-00007.tar": "2a4e6848c696f5ea951d546383455b7378a8a13d2bf23969a9cd6b4df317574c",
+      "shard-c0-00008.tar": "051e7d07aa82b018b2d0037176b85f914727f71e4f47dfac2c17a19fc10c3841",
+      "shard-c0-00009.tar": "42539315e32ba0f33b8b80c0af0ab98f08d6e1b08d1a0d8ed5d934a0d5a80297"
+     }
+    },
+    "chunk_1": {
+     "done": true,
+     "n_deleted_realized": 11266,
+     "n_files": 11266,
+     "shard_sha256s": {
+      "shard-c1-00000.tar": "b83cdb3eb1779706429f7d5cf953dd8d80c34e3a20e4d0821d1ee1eede0a83fe",
+      "shard-c1-00001.tar": "cb0999cf72ed8353e28c0aed04944044d413e22cd3445cf4727e758d2b4bede5",
+      "shard-c1-00002.tar": "0e89edc4133c5caa32fcd4256d76918daba12ce6f9ca4380b89addf06e2ca9e1",
+      "shard-c1-00003.tar": "2131f45811565a0a23c6ef18e6199446cafb0a37ad1536b48fe42cc086a954a6",
+      "shard-c1-00004.tar": "8be03c3bde0f0768c29cf067f6410be7dcfe124cfe2b57cb57481ff47b67f742",
+      "shard-c1-00005.tar": "3094cba5f43c71b7ba0b0033d50fc793ff3e573a3edadb81645caac33d08d450",
+      "shard-c1-00006.tar": "55d8e7281208bf5200916b388dcbd17c8d6d7c763404bd220fe37f6dd22d9ed2",
+      "shard-c1-00007.tar": "14832be5c784f089497750875d348db29037364ce8289f76f45728483716a787",
+      "shard-c1-00008.tar": "9d15657c58e59d1a20d3ae5bf0058a9961b274b3fb65b7adcb58815f916e05df",
+      "shard-c1-00009.tar": "70d5d63a4c10f8938b7bfa52d854942f53bcdf0ef952f7ec6f3c4c2ff089af23"
+     }
+    },
+    "chunk_2": {
+     "done": true,
+     "n_deleted_realized": 7555,
+     "n_files": 7555,
+     "shard_sha256s": {
+      "shard-c2-00000.tar": "4999fde62903f9cf6d7e6c5d07aacb768000155bb9f7df8640e31012bdc25adf",
+      "shard-c2-00001.tar": "4e9dae449ca65ed93a5bab7b84cbd739862fe54a32927117652aa5ee3961c6c1",
+      "shard-c2-00002.tar": "b830a0a6c1e1170677d21206d75f2bf613ec36358805166f49d9192d9554e7e9",
+      "shard-c2-00003.tar": "1f8ce461f4033664a5a6f602872876008ecc7ef9657731c051990a760f62d04e",
+      "shard-c2-00004.tar": "e1252a9cc2db083397633b9cf5b86ba1269988d1ec8eb01356620cf45ed0b5ce",
+      "shard-c2-00005.tar": "0c7b66d5fddc19ee1a90e97a6a0d62058bbbbf0bc14c7083af7cb66b3b743d2b",
+      "shard-c2-00006.tar": "023de52f16ae622e3032db0139b521e79a8a64284990b523cc452736c926e170"
+     }
+    },
+    "chunk_3": {
+     "done": true,
+     "n_deleted_realized": 264,
+     "n_files": 264,
+     "shard_sha256s": {
+      "shard-c3-00000.tar": "4b1853c6538c5e4ab325a9a156c9a951f3abd8e5ea807f804376cf900e0a10c4"
+     }
+    }
+   },
+   "done": {
+    "bytes": 53561749646,
+    "files": 30360,
+    "kept_new": 0,
+    "kept_stale": 0,
+    "slots_freed": 30360
+   },
+   "incomplete": "issue1489_ctx_aug: 3 downloads failed \u2014 staging PRESERVED, source untouched",
+   "kept_new": [],
+   "kept_stale": [],
+   "mode": "chunked",
+   "n_files": 30360,
+   "packed_files": {
+    "issue1489_ctx_aug/__packed__/index-c0.json": {
+     "gitsha1": "3e3af3572d9e62654ebf62fb7fdd5acefffe2e1d",
+     "sha256": "0670fc2b47e8bb98a71af52dbcad0ffeb73517301194f972251e772966048229",
+     "size": 2624009
+    },
+    "issue1489_ctx_aug/__packed__/index-c1.json": {
+     "gitsha1": "10646a59a928c036c472f2f49f9c18495a350965",
+     "sha256": "196b094381c5251e635963bad0de2719fdc47c6064d4373be42ec08792f62e71",
+     "size": 2645571
+    },
+    "issue1489_ctx_aug/__packed__/index-c2.json": {
+     "gitsha1": "51554f9b22eac087f55cd648d37f3ae36af61e0f",
+     "sha256": "1a85f583e9481e5426a326bd1dd77ff82ee026411f0fae0d9d8c03a3335e0efc",
+     "size": 1726903
+    },
+    "issue1489_ctx_aug/__packed__/index-c3.json": {
+     "gitsha1": "d7614ce6e37aaa17cbda6e3162aa66ca22a3426e",
+     "sha256": "5ec53b8e4c48d5029aa7a77341e8b70edd06bad2f9b41fee32b3c334c3c1b98d",
+     "size": 57050
+    },
+    "issue1489_ctx_aug/__packed__/index.json": {
+     "gitsha1": "ffd2e90951ffa760f0e130682c497dcbfa645dfb",
+     "sha256": "c9fb758c1d37ae5b907539cd7d7aed5a0b4d78f7cfefcfdab376b89d58c6d986",
+     "size": 7053530
+    },
+    "issue1489_ctx_aug/__packed__/manifest.json": {
+     "gitsha1": "7996038bb3827628c3e4a6a214470c08af5cecba",
+     "sha256": "857e53d06fcce8102354e85dbd158df3b78ee92995ca43ff8d2b78e19b1a78ed",
+     "size": 2752
+    },
+    "issue1489_ctx_aug/__packed__/shard-c0-00000.tar": {
+     "gitsha1": "8ed474d8bf0416de022a8f292630244248e8e6cd",
+     "sha256": "c2eef30c987a0c246718bcb5f9bd1ad265eca9ab71c83170baaf915c5dd8acb6",
+     "size": 2149294080
+    },
+    "issue1489_ctx_aug/__packed__/shard-c0-00001.tar": {
+     "gitsha1": "f2782b8a35fd96eaec93dc14f6ebd73439bb34b0",
+     "sha256": "3eda12674cd9c7754c7e4ccd42e05f0a9b8bbafa34c03b604da1c12430d4d40d",
+     "size": 2149847040
+    },
+    "issue1489_ctx_aug/__packed__/shard-c0-00002.tar": {
+     "gitsha1": "79bf859a6e7455577fe1845da189e2bc33ec75cd",
+     "sha256": "987d95d356b9ed3f187e51ebfb62df9d025e8ff5e358de010b59c97d66d937b0",
+     "size": 2149232640
+    },
+    "issue1489_ctx_aug/__packed__/shard-c0-00003.tar": {
+     "gitsha1": "b23204fd7759cfe97655dd18394fb065e9c04c83",
+     "sha256": "59f9b8ae6dcb8cc8e3875186d85a89388e6e7f355751b9680ab5e0a04c0918cd",
+     "size": 2149263360
+    },
+    "issue1489_ctx_aug/__packed__/shard-c0-00004.tar": {
+     "gitsha1": "266bd57bda2c2fa17b0db5d2b5278a944f3deba4",
+     "sha256": "d0d2dc27542c0b2a9d2ebae40b3163542542156a96e99d5c61a66ae40e15b743",
+     "size": 2149253120
+    },
+    "issue1489_ctx_aug/__packed__/shard-c0-00005.tar": {
+     "gitsha1": "8c51b7b6c819ee373a92322fa5c1a540d99bcf92",
+     "sha256": "73fe7d2b801fe6f8c98d2130fc5d910cb78b4dce6b1dc54475dab20898301535",
+     "size": 2149283840
+    },
+    "issue1489_ctx_aug/__packed__/shard-c0-00006.tar": {
+     "gitsha1": "f97c37ce41eabe01a69fe7297f5d1dcfc0d35758",
+     "sha256": "35fb84c310fd315d67fca4980c17f9bc1dfee711b470f8a4c79c38c4c426b54e",
+     "size": 2149847040
+    },
+    "issue1489_ctx_aug/__packed__/shard-c0-00007.tar": {
+     "gitsha1": "869db4aa806509051b5d261d0ecdbd084740e05a",
+     "sha256": "2a4e6848c696f5ea951d546383455b7378a8a13d2bf23969a9cd6b4df317574c",
+     "size": 2149273600
+    },
+    "issue1489_ctx_aug/__packed__/shard-c0-00008.tar": {
+     "gitsha1": "05e959c8b4a5b0b17fefe77d42737ce4ef7850b7",
+     "sha256": "051e7d07aa82b018b2d0037176b85f914727f71e4f47dfac2c17a19fc10c3841",
+     "size": 2149283840
+    },
+    "issue1489_ctx_aug/__packed__/shard-c0-00009.tar": {
+     "gitsha1": "a55e7cb11a6e84b776bf8c7dceeb0a9e7fcbee2c",
+     "sha256": "42539315e32ba0f33b8b80c0af0ab98f08d6e1b08d1a0d8ed5d934a0d5a80297",
+     "size": 665221120
+    },
+    "issue1489_ctx_aug/__packed__/shard-c1-00000.tar": {
+     "gitsha1": "6ba99df25d5933a3b6a5e3f343949129305890da",
+     "sha256": "b83cdb3eb1779706429f7d5cf953dd8d80c34e3a20e4d0821d1ee1eede0a83fe",
+     "size": 2149365760
+    },
+    "issue1489_ctx_aug/__packed__/shard-c1-00001.tar": {
+     "gitsha1": "2144119d4f372beb3248c057bb2ffcace790362f",
+     "sha256": "cb0999cf72ed8353e28c0aed04944044d413e22cd3445cf4727e758d2b4bede5",
+     "size": 2149273600
+    },
+    "issue1489_ctx_aug/__packed__/shard-c1-00002.tar": {
+     "gitsha1": "0ad0d14ff7efbc0964da2289633d02a201ed2aea",
+     "sha256": "0e89edc4133c5caa32fcd4256d76918daba12ce6f9ca4380b89addf06e2ca9e1",
+     "size": 2149847040
+    },
+    "issue1489_ctx_aug/__packed__/shard-c1-00003.tar": {
+     "gitsha1": "f79839dfef51c0aca85a3b0d078b41926f7b94e4",
+     "sha256": "2131f45811565a0a23c6ef18e6199446cafb0a37ad1536b48fe42cc086a954a6",
+     "size": 2149222400
+    },
+    "issue1489_ctx_aug/__packed__/shard-c1-00004.tar": {
+     "gitsha1": "1617199f8515c09144c59970d8f580fbb39b889e",
+     "sha256": "8be03c3bde0f0768c29cf067f6410be7dcfe124cfe2b57cb57481ff47b67f742",
+     "size": 2149314560
+    },
+    "issue1489_ctx_aug/__packed__/shard-c1-00005.tar": {
+     "gitsha1": "1453cbabd4bd009ca0000fbe7f04cda9572f6277",
+     "sha256": "3094cba5f43c71b7ba0b0033d50fc793ff3e573a3edadb81645caac33d08d450",
+     "size": 2149396480
+    },
+    "issue1489_ctx_aug/__packed__/shard-c1-00006.tar": {
+     "gitsha1": "d12104928741d8ba438b721be5396680bc5e0eb8",
+     "sha256": "55d8e7281208bf5200916b388dcbd17c8d6d7c763404bd220fe37f6dd22d9ed2",
+     "size": 2149847040
+    },
+    "issue1489_ctx_aug/__packed__/shard-c1-00007.tar": {
+     "gitsha1": "34825b40d7d4d7b1f136aa90ea8637f1410bfdde",
+     "sha256": "14832be5c784f089497750875d348db29037364ce8289f76f45728483716a787",
+     "size": 2149324800
+    },
+    "issue1489_ctx_aug/__packed__/shard-c1-00008.tar": {
+     "gitsha1": "48ff3e772d9f8fdde10eda4ac56c59fe70d86407",
+     "sha256": "9d15657c58e59d1a20d3ae5bf0058a9961b274b3fb65b7adcb58815f916e05df",
+     "size": 2149324800
+    },
+    "issue1489_ctx_aug/__packed__/shard-c1-00009.tar": {
+     "gitsha1": "7e34467d7a53384c049f385037e20377b59cbc25",
+     "sha256": "70d5d63a4c10f8938b7bfa52d854942f53bcdf0ef952f7ec6f3c4c2ff089af23",
+     "size": 663429120
+    },
+    "issue1489_ctx_aug/__packed__/shard-c2-00000.tar": {
+     "gitsha1": "cefe319af7e728da7496a253e112ce18601145e4",
+     "sha256": "4999fde62903f9cf6d7e6c5d07aacb768000155bb9f7df8640e31012bdc25adf",
+     "size": 2149294080
+    },
+    "issue1489_ctx_aug/__packed__/shard-c2-00001.tar": {
+     "gitsha1": "05da6cfb93ab624714c39cdc673f2386101327ba",
+     "sha256": "4e9dae449ca65ed93a5bab7b84cbd739862fe54a32927117652aa5ee3961c6c1",
+     "size": 2149355520
+    },
+    "issue1489_ctx_aug/__packed__/shard-c2-00002.tar": {
+     "gitsha1": "0f4c30005fb965503b80ce024e8da06c2301032b",
+     "sha256": "b830a0a6c1e1170677d21206d75f2bf613ec36358805166f49d9192d9554e7e9",
+     "size": 2149867520
+    },
+    "issue1489_ctx_aug/__packed__/shard-c2-00003.tar": {
+     "gitsha1": "ef635407bd8385fb373acd6a8fed09a2a822def9",
+     "sha256": "1f8ce461f4033664a5a6f602872876008ecc7ef9657731c051990a760f62d04e",
+     "size": 2149836800
+    },
+    "issue1489_ctx_aug/__packed__/shard-c2-00004.tar": {
+     "gitsha1": "d9779969db80520bea2c48b4e12eac537eedbc67",
+     "sha256": "e1252a9cc2db083397633b9cf5b86ba1269988d1ec8eb01356620cf45ed0b5ce",
+     "size": 2149263360
+    },
+    "issue1489_ctx_aug/__packed__/shard-c2-00005.tar": {
+     "gitsha1": "b6c4eadfa6f9c93741a643b44ad1394d55cdab9b",
+     "sha256": "0c7b66d5fddc19ee1a90e97a6a0d62058bbbbf0bc14c7083af7cb66b3b743d2b",
+     "size": 2149836800
+    },
+    "issue1489_ctx_aug/__packed__/shard-c2-00006.tar": {
+     "gitsha1": "84e9e08f60d2bfb848bfe687e6ebb4a2d155f610",
+     "sha256": "023de52f16ae622e3032db0139b521e79a8a64284990b523cc452736c926e170",
+     "size": 525363200
+    },
+    "issue1489_ctx_aug/__packed__/shard-c3-00000.tar": {
+     "gitsha1": "a1e3157263761f6b0ae2a5b7580d1d457a4eaa34",
+     "sha256": "4b1853c6538c5e4ab325a9a156c9a951f3abd8e5ea807f804376cf900e0a10c4",
+     "size": 148070400
+    }
+   },
+   "snapshot_ts": "2026-08-17T04:42:48Z",
+   "src_revision": "870e4a30a4aa6a2cd8095054418dd0d8a8a7fce5",
+   "steps": {
+    "delete": {
+     "done": true,
+     "n_deleted_realized": 30360,
+     "n_deleted_this_run": 0,
+     "run_id": "6ba7653e581843809bfdcc0f1b15c8fa"
+    },
+    "download": {
+     "done": true,
+     "run_id": "6ba7653e581843809bfdcc0f1b15c8fa",
+     "src_revision": "870e4a30a4aa6a2cd8095054418dd0d8a8a7fce5"
+    },
+    "hub_verify": {
+     "n_files": 34,
+     "pass": true,
+     "run_id": "6ba7653e581843809bfdcc0f1b15c8fa",
+     "ts": "2026-08-17T07:50:16Z"
+    },
+    "local_verify": {
+     "done": true,
+     "run_id": "6ba7653e581843809bfdcc0f1b15c8fa",
+     "src_revision": "870e4a30a4aa6a2cd8095054418dd0d8a8a7fce5"
+    },
+    "pack_c0": {
+     "done": true,
+     "k": 11,
+     "n_shards": 10,
+     "run_id": "4cb50c711cfc41efa220f42e2a98fda6",
+     "src_revision": "870e4a30a4aa6a2cd8095054418dd0d8a8a7fce5"
+    },
+    "pack_c1": {
+     "done": true,
+     "k": 11,
+     "n_shards": 10,
+     "run_id": "4cb50c711cfc41efa220f42e2a98fda6",
+     "src_revision": "870e4a30a4aa6a2cd8095054418dd0d8a8a7fce5"
+    },
+    "pack_c2": {
+     "done": true,
+     "k": 8,
+     "n_shards": 7,
+     "run_id": "6ba7653e581843809bfdcc0f1b15c8fa",
+     "src_revision": "870e4a30a4aa6a2cd8095054418dd0d8a8a7fce5"
+    },
+    "pack_c3": {
+     "done": true,
+     "k": 2,
+     "n_shards": 1,
+     "run_id": "6ba7653e581843809bfdcc0f1b15c8fa",
+     "src_revision": "870e4a30a4aa6a2cd8095054418dd0d8a8a7fce5"
+    },
+    "pilot_extra": {
+     "done": true,
+     "run_id": "4cb50c711cfc41efa220f42e2a98fda6",
+     "shard": "shard-c0-00000.tar"
+    },
+    "snapshot": {
+     "done": true,
+     "run_id": "4cb50c711cfc41efa220f42e2a98fda6"
+    },
+    "staged_verify": {
+     "done": true,
+     "run_id": "6ba7653e581843809bfdcc0f1b15c8fa",
+     "src_revision": "870e4a30a4aa6a2cd8095054418dd0d8a8a7fce5"
+    },
+    "upload": {
+     "done": true,
+     "run_id": "6ba7653e581843809bfdcc0f1b15c8fa",
+     "src_revision": "870e4a30a4aa6a2cd8095054418dd0d8a8a7fce5"
+    }
+   },
+   "total_bytes": 53561749646
+  },
+  "issue1586_methodgen": {
+   "done": {
+    "bytes": 6994534880,
+    "files": 54103,
+    "kept_new": 0,
+    "kept_stale": 0,
+    "slots_freed": 54103
+   },
+   "incomplete": "issue1586_methodgen: 20 downloads failed \u2014 staging PRESERVED, source untouched",
+   "kept_new": [],
+   "kept_stale": [],
+   "mode": "whole",
+   "n_files": 54103,
+   "packed_files": {
+    "issue1586_methodgen/__packed__/index.json": {
+     "gitsha1": "be08de39bfc00a4f792b07e1274a3690bb742492",
+     "sha256": "0e80e16d2dcd2461089eeb4f605907199455d22322028b27eb7b20bc11b54259",
+     "size": 15573763
+    },
+    "issue1586_methodgen/__packed__/manifest.json": {
+     "gitsha1": "eb9fc248c56cab6b7a593277556647434788dd0f",
+     "sha256": "394377d60a745a55ce34104be6fb8a434b6a1c3c7ccef2e86d85ee32d5f56b00",
+     "size": 531
+    },
+    "issue1586_methodgen/__packed__/shard-00000.tar": {
+     "gitsha1": "3eee86e78a52423da89e89ceef03ac9261516a28",
+     "sha256": "a7d7ef97d85e67fdb9a5313389676979bda6474251839a3b0e9fcbd7c3f9c4d1",
+     "size": 2168453120
+    },
+    "issue1586_methodgen/__packed__/shard-00001.tar": {
+     "gitsha1": "dc2a5d5cd2d34fe76daf45dd3d34111ba714dad3",
+     "sha256": "21f5d7d209ae3cef87725ac026120a4a6d95fbf4798bcfd92fd0bdeb7230c5a4",
+     "size": 2168545280
+    },
+    "issue1586_methodgen/__packed__/shard-00002.tar": {
+     "gitsha1": "c14c62cf1bc09a09dedd8487daf54ac356630e6c",
+     "sha256": "b3862fc87cdc7a54211206e78081055e0247515aef4f5f7da3deaf87e469c937",
+     "size": 2210693120
+    },
+    "issue1586_methodgen/__packed__/shard-00003.tar": {
+     "gitsha1": "e3a2726ab4139beea4a90947ec267c62d42e9199",
+     "sha256": "6adb94ce3e461d47857802dc6d39e329189081410cfb22cd722c5e3efffaf834",
+     "size": 555796480
+    }
+   },
+   "snapshot_ts": "2026-08-17T13:00:00Z",
+   "src_revision": "3d47f94e5b3724fd23eb50495099312f9db1200d",
+   "steps": {
+    "delete": {
+     "done": true,
+     "n_deleted_realized": 54103,
+     "n_deleted_this_run": 54103,
+     "run_id": "702d246cbc1e400b9bbbc5272d09fb56"
+    },
+    "download": {
+     "done": true,
+     "run_id": "702d246cbc1e400b9bbbc5272d09fb56",
+     "src_revision": "3d47f94e5b3724fd23eb50495099312f9db1200d"
+    },
+    "hub_verify": {
+     "n_files": 6,
+     "pass": true,
+     "run_id": "702d246cbc1e400b9bbbc5272d09fb56",
+     "ts": "2026-08-17T20:51:00Z"
+    },
+    "local_verify": {
+     "done": true,
+     "run_id": "702d246cbc1e400b9bbbc5272d09fb56",
+     "src_revision": "3d47f94e5b3724fd23eb50495099312f9db1200d"
+    },
+    "pack": {
+     "done": true,
+     "k": 6,
+     "n_shards": 4,
+     "run_id": "702d246cbc1e400b9bbbc5272d09fb56",
+     "src_revision": "3d47f94e5b3724fd23eb50495099312f9db1200d"
+    },
+    "snapshot": {
+     "done": true,
+     "run_id": "2041765c78f14a67a4239f27b66928fc"
+    },
+    "staged_verify": {
+     "done": true,
+     "run_id": "702d246cbc1e400b9bbbc5272d09fb56",
+     "src_revision": "3d47f94e5b3724fd23eb50495099312f9db1200d"
+    },
+    "upload": {
+     "done": true,
+     "run_id": "702d246cbc1e400b9bbbc5272d09fb56",
+     "src_revision": "3d47f94e5b3724fd23eb50495099312f9db1200d"
+    }
+   },
+   "total_bytes": 6994534880
+  },
+  "issue1739_ctxmap": {
+   "deferred": "issue1739_ctxmap, 43,905 slots, re-runnable via `run --prefix issue1739_ctxmap` \u2014 G-writer: fresh run-signal marker on #1739: epm:free-analysis-followup-run at 2026-08-12T15:28:31Z > latest done-transition 2026-08-05T22:28:11Z"
+  },
+  "issue2224_screening": {
+   "chunks": {
+    "chunk_0": {
+     "done": true,
+     "n_deleted_realized": 3,
+     "n_files": 3,
+     "shard_sha256s": {
+      "shard-c0-00000.tar": "eb90754e791ee860ef9d314f9d181bbcaa2cadb3a250e0533e5d37434beee025"
+     }
+    },
+    "chunk_1": {
+     "done": true,
+     "n_deleted_realized": 61,
+     "n_files": 61,
+     "shard_sha256s": {
+      "shard-c1-00000.tar": "62fae95f27675d4befe8bad7ae3d651e5214f0d85b4203edca97b74f900165a2",
+      "shard-c1-00001.tar": "0594c1ee3bdf29a0a130df9553bc17d138b3795a7ed0053bff937dca811201ed",
+      "shard-c1-00002.tar": "cf2de1e1dc16b2bda1699589a9507612012ac1153213c960d7adb8a792ead725",
+      "shard-c1-00003.tar": "e1b139e9e0adf3aa91f10f1c3af10d00b606258f4435b780f7ea8acf0dfafd6d",
+      "shard-c1-00004.tar": "21edb4a23abbbd94ddf5063c1256729ad044695c624abbd8eacd74a42ca6552d",
+      "shard-c1-00005.tar": "4eb5b0ed01a5f4721acf4ad4b1776a1fda9358e59dc05e430e90f5c85b84b458",
+      "shard-c1-00006.tar": "c0363df92d1dd17616223027779c97f5d168a97f1e5a21df3d6858062591cac6",
+      "shard-c1-00007.tar": "7251cb9a68f68babbb2cdb1124ea8ca1ec476958b9afe488bdeb623266d7d0da",
+      "shard-c1-00008.tar": "4d3dfe05d0d965c48df83ebb91f4e4a9756ef07f2bb3bc7576189c28b9594f3b"
+     }
+    },
+    "chunk_2": {
+     "done": true,
+     "n_deleted_realized": 49,
+     "n_files": 49,
+     "shard_sha256s": {
+      "shard-c2-00000.tar": "91bdf125580ad41541ec9279b6b43a1892852500e8264f8f650c929884b912d6",
+      "shard-c2-00001.tar": "7ba43807c44cde909131d44aada1d4c2be90c0a74b6c543295e79c29b40acc48",
+      "shard-c2-00002.tar": "9772e4b1d2c1a42c6c4b95293701d86c0650a5d4dbb97885fbd51e55a300f405",
+      "shard-c2-00003.tar": "1c2998c688746dc45d45961eb8b00ba3073793955f256d96446d02df2c681ad6",
+      "shard-c2-00004.tar": "94437d545b2a80e53637e014a4bd3614c241df419db9b1f7891ca42765a987a6",
+      "shard-c2-00005.tar": "f3bac6ef752febc2f5a4d04f08f71d482b342a16dd6228ddcc15de1510ff5147",
+      "shard-c2-00006.tar": "411c8f0f1c241534942452eb3117c3870089cf60a9d2a85229a46b2c08acd40b",
+      "shard-c2-00007.tar": "28f036a2c0104a0ce92a03cce292152d92bddc01641eb945e68ec2138643e99d",
+      "shard-c2-00008.tar": "562eeb6c3e432e7f07e4fc1f8f1a91d436290ab6735405ad0fd4df5a0535089d"
+     }
+    },
+    "chunk_3": {
+     "done": true,
+     "n_deleted_realized": 72,
+     "n_files": 72,
+     "shard_sha256s": {
+      "shard-c3-00000.tar": "956b68a89622ebf9b119ec128690c0d60527a97909aef6f886b7735769dc1e82",
+      "shard-c3-00001.tar": "6ed92daa7f3b05485e1d4ee19d2277d00aa5de0f670688e1bdb27872b6913e7d",
+      "shard-c3-00002.tar": "52771d59eb71be857157fa7f512a469d0629802848f147df537c3d9551ff8238",
+      "shard-c3-00003.tar": "19a0baaf8de1ce698bdb7be494af55a364a87eee6cd5850f3b10c8e5b229bf6b",
+      "shard-c3-00004.tar": "6c2dffbfb4060e7de7d045fe3f7d08bdc63f9232eaedb2bc1f3a5f40386d69ed",
+      "shard-c3-00005.tar": "be0235d74d85d61b8842d7e58cdc546b000a4168dc3779fec874880085acc098",
+      "shard-c3-00006.tar": "af058930a78e5689319ed9835ac191ff626bfa9af3f3d86fe1d132dbb198b6eb",
+      "shard-c3-00007.tar": "033805a228fde22bd5574a0d4d1bee83296266505824702124838c8eeb232f61",
+      "shard-c3-00008.tar": "b8700e904dd498eaf281293ec779fd924ec441c06235d68b884b4439595dd3c2"
+     }
+    },
+    "chunk_4": {
+     "done": true,
+     "n_deleted_realized": 49,
+     "n_files": 49,
+     "shard_sha256s": {
+      "shard-c4-00000.tar": "2c080e04c7d88842eb5cb0315fa40e972d27a350cce232087a3ba61a9e5f9007",
+      "shard-c4-00001.tar": "b5b96265d4df9516f66a418165d9399e908eb2b1610e27ff15c8f20bb8e343b7",
+      "shard-c4-00002.tar": "93c96fbd5a5a2003ee2f0d324a9e18b0366ae9025f31a1bd68290dbc7d33f4ab",
+      "shard-c4-00003.tar": "caa5cae74ef1216febf33804ce40e543b87725576a811e5b895975b144490f4e",
+      "shard-c4-00004.tar": "ca764179043a0f004348b2e6185719e51ea82554623ff86a71f69d3caf5490aa",
+      "shard-c4-00005.tar": "ad7bbfa897d8f63960499140b42e5f1ecd07064450f8a26f4b8721c854ad47f7",
+      "shard-c4-00006.tar": "ab4e858f8c5fa38c05ef391a6f0999b59b70c290a58e3faa533c0e8d525d6c44",
+      "shard-c4-00007.tar": "79f24d8416e263f39809f24e4528d49f1073f09ab99e37282a4b11b82c7bdf37",
+      "shard-c4-00008.tar": "7d89e7efc46ace8b5ad64a2f2220234056819909c15c131b1de5fb820d4d78a2"
+     }
+    },
+    "chunk_5": {
+     "done": true,
+     "n_deleted_realized": 47,
+     "n_files": 47,
+     "shard_sha256s": {
+      "shard-c5-00000.tar": "8dbe7533fbbc91409161810f25b9646c7da245a75332bd36951c16d902b237df",
+      "shard-c5-00001.tar": "bf4d8e12519e40d1ee3f5c01b443f6d4bdda24d6de138a22ff9435985e799acd",
+      "shard-c5-00002.tar": "3c94d385d00f232cd63e341a6f6b6d809e48d5ad840805fbeb071f6ad29fd970",
+      "shard-c5-00003.tar": "7571310916a73b1b6c17a624b8c27f596a48276ea5bb516ebf41c5aa9e30f2fa",
+      "shard-c5-00004.tar": "d1445619c7c19e4d9588ec6bd784001bc98e1e18e184dae6c411bc7633040747",
+      "shard-c5-00005.tar": "641d4657573618fc2fb90d026fbedf7d864a649146f2a56ceb291879ec33a1af",
+      "shard-c5-00006.tar": "fd3f7410c98628e3e701dbda75bb3cd5c3f6d954f56ceca9d32811118a2a3b3a",
+      "shard-c5-00007.tar": "b3e9d1070b713369f17f12595ae706f70cd5f93c5230949ecddf731b2372fb31"
+     }
+    },
+    "chunk_6": {
+     "done": true,
+     "n_deleted_realized": 41478,
+     "n_files": 41478,
+     "shard_sha256s": {
+      "shard-c6-00000.tar": "25bc6542579fa8f0d9195ccf816c81ecbc69046ba74be4b0b08524b22219d5c4",
+      "shard-c6-00001.tar": "e74d628c475cc59e031e5c976c6111646c642767137b6bb779d855d2219bc856"
+     }
+    }
+   },
+   "done": {
+    "bytes": 98832308655,
+    "files": 41759,
+    "kept_new": 0,
+    "kept_stale": 0,
+    "slots_freed": 41759
+   },
+   "incomplete": "issue2224_screening: 8 downloads failed \u2014 staging PRESERVED, source untouched",
+   "kept_new": [],
+   "kept_stale": [],
+   "mode": "chunked",
+   "n_files": 41759,
+   "packed_files": {
+    "issue2224_screening/__packed__/index-c0.json": {
+     "gitsha1": "f60500dbd9bbc49ea0b876bbd0c97630b09b9637",
+     "sha256": "16d9a352a9564cce5318449165f7e9ca3fc20d0b48f6c480038e4cc920d094fb",
+     "size": 605
+    },
+    "issue2224_screening/__packed__/index-c1.json": {
+     "gitsha1": "da16b513aa7c41a4173ef85361625e3da65fdfda",
+     "sha256": "04f3b5afdda18235e3de105a9079871956dc320d6f8a86d6fbd75f2bf7fdde92",
+     "size": 13694
+    },
+    "issue2224_screening/__packed__/index-c2.json": {
+     "gitsha1": "f07dbb382fb0e3589355f94a3ec06fce700b4db8",
+     "sha256": "e47a7becaa3d61019c5657db22981549a673cee02e22ee6120dc603fa9f6ad71",
+     "size": 11092
+    },
+    "issue2224_screening/__packed__/index-c3.json": {
+     "gitsha1": "d7e6758e5137abe2af2dcf209b09cb387f49adf5",
+     "sha256": "e4e2144eddd7bdbf1d9410bdb8215e2972e2fa2678e14b2c99449dbf58743b14",
+     "size": 16379
+    },
+    "issue2224_screening/__packed__/index-c4.json": {
+     "gitsha1": "351b30ff1a2d2786712cf84cdde8334059cd5953",
+     "sha256": "0cdbd7ae63062964b157dfcadd6f8284cba1238d724bbb519152ca2343127203",
+     "size": 11290
+    },
+    "issue2224_screening/__packed__/index-c5.json": {
+     "gitsha1": "e03e1be8f1561833adc0d35ad6da379b7e7188f4",
+     "sha256": "df7554423c2e9813f10c0d0bea2c92dafdef43523a2e4a44e31ce4ce2489137e",
+     "size": 10803
+    },
+    "issue2224_screening/__packed__/index-c6.json": {
+     "gitsha1": "f5114eaa073703b40834d587a1f3bafdb5d04eb3",
+     "sha256": "a618a74e8901925baf1785964b91510bd0403c2ae947b877257e44503449c33f",
+     "size": 9716411
+    },
+    "issue2224_screening/__packed__/index.json": {
+     "gitsha1": "520afb2229a5e60ce2e7156387a7b49aac0a46e6",
+     "sha256": "9ad69ea6c9194a119ce4fa6a6c94658fec74d8e9aeaafb00f0864d64acc346c1",
+     "size": 9780268
+    },
+    "issue2224_screening/__packed__/manifest.json": {
+     "gitsha1": "a8117e0079cc90c58d85df67b63b823a76a85d16",
+     "sha256": "07ab5f770f51b0a73a610e70fd63da4891f9fb2d7d953cb7ec1253b324eea239",
+     "size": 4500
+    },
+    "issue2224_screening/__packed__/shard-c0-00000.tar": {
+     "gitsha1": "9db19d077b8635f995672de8248bebe2ddcccbf3",
+     "sha256": "eb90754e791ee860ef9d314f9d181bbcaa2cadb3a250e0533e5d37434beee025",
+     "size": 30720
+    },
+    "issue2224_screening/__packed__/shard-c1-00000.tar": {
+     "gitsha1": "5105aa1e00fd3f64aff56c0075cc0296c44d5a58",
+     "sha256": "62fae95f27675d4befe8bad7ae3d651e5214f0d85b4203edca97b74f900165a2",
+     "size": 2466979840
+    },
+    "issue2224_screening/__packed__/shard-c1-00001.tar": {
+     "gitsha1": "0bc943485e45cb524a7c0ad8fc40289fa39e161a",
+     "sha256": "0594c1ee3bdf29a0a130df9553bc17d138b3795a7ed0053bff937dca811201ed",
+     "size": 2466375680
+    },
+    "issue2224_screening/__packed__/shard-c1-00002.tar": {
+     "gitsha1": "126c77920c4669779e35c87af42e101cc8c05ef8",
+     "sha256": "cf2de1e1dc16b2bda1699589a9507612012ac1153213c960d7adb8a792ead725",
+     "size": 2466375680
+    },
+    "issue2224_screening/__packed__/shard-c1-00003.tar": {
+     "gitsha1": "05e5d980afc33415db9422b07d3731dd433ac92e",
+     "sha256": "e1b139e9e0adf3aa91f10f1c3af10d00b606258f4435b780f7ea8acf0dfafd6d",
+     "size": 2466375680
+    },
+    "issue2224_screening/__packed__/shard-c1-00004.tar": {
+     "gitsha1": "f77154a0ff58bd686d02f8f11cf70268b657afbf",
+     "sha256": "21edb4a23abbbd94ddf5063c1256729ad044695c624abbd8eacd74a42ca6552d",
+     "size": 2225520640
+    },
+    "issue2224_screening/__packed__/shard-c1-00005.tar": {
+     "gitsha1": "7aa028978f54ac2c7b1f4b9b7f6704fa97325b33",
+     "sha256": "4eb5b0ed01a5f4721acf4ad4b1776a1fda9358e59dc05e430e90f5c85b84b458",
+     "size": 2466375680
+    },
+    "issue2224_screening/__packed__/shard-c1-00006.tar": {
+     "gitsha1": "5a1695d806654b814a04119bdf0b3ca5dd5c14dd",
+     "sha256": "c0363df92d1dd17616223027779c97f5d168a97f1e5a21df3d6858062591cac6",
+     "size": 2466375680
+    },
+    "issue2224_screening/__packed__/shard-c1-00007.tar": {
+     "gitsha1": "4a23ed9104a28501793bc3e9e2565d52788ef489",
+     "sha256": "7251cb9a68f68babbb2cdb1124ea8ca1ec476958b9afe488bdeb623266d7d0da",
+     "size": 2466375680
+    },
+    "issue2224_screening/__packed__/shard-c1-00008.tar": {
+     "gitsha1": "18fb546bad7f1a7b74e239fa61f4d6589c4cc483",
+     "sha256": "4d3dfe05d0d965c48df83ebb91f4e4a9756ef07f2bb3bc7576189c28b9594f3b",
+     "size": 411064320
+    },
+    "issue2224_screening/__packed__/shard-c2-00000.tar": {
+     "gitsha1": "e612fdb5f7574c2bbf356244dbdecaaeea026d1a",
+     "sha256": "91bdf125580ad41541ec9279b6b43a1892852500e8264f8f650c929884b912d6",
+     "size": 2225520640
+    },
+    "issue2224_screening/__packed__/shard-c2-00001.tar": {
+     "gitsha1": "b064639e15698ce2b3c2d5abe37d6bbfd7633ff4",
+     "sha256": "7ba43807c44cde909131d44aada1d4c2be90c0a74b6c543295e79c29b40acc48",
+     "size": 2466375680
+    },
+    "issue2224_screening/__packed__/shard-c2-00002.tar": {
+     "gitsha1": "caa4d311848715b69a5d0315987b99342674bfe2",
+     "sha256": "9772e4b1d2c1a42c6c4b95293701d86c0650a5d4dbb97885fbd51e55a300f405",
+     "size": 2466375680
+    },
+    "issue2224_screening/__packed__/shard-c2-00003.tar": {
+     "gitsha1": "10d16ae136b25a87520f4e195483ddb5ea9690b4",
+     "sha256": "1c2998c688746dc45d45961eb8b00ba3073793955f256d96446d02df2c681ad6",
+     "size": 2466375680
+    },
+    "issue2224_screening/__packed__/shard-c2-00004.tar": {
+     "gitsha1": "fcf27061cc903945823d709d3cc56c9048fc56fa",
+     "sha256": "94437d545b2a80e53637e014a4bd3614c241df419db9b1f7891ca42765a987a6",
+     "size": 2225520640
+    },
+    "issue2224_screening/__packed__/shard-c2-00005.tar": {
+     "gitsha1": "9fa74d1812da4bf1ee927a16c9bfd6c44575880c",
+     "sha256": "f3bac6ef752febc2f5a4d04f08f71d482b342a16dd6228ddcc15de1510ff5147",
+     "size": 2466375680
+    },
+    "issue2224_screening/__packed__/shard-c2-00006.tar": {
+     "gitsha1": "eae713feee238fb0293410c0a618805927e17041",
+     "sha256": "411c8f0f1c241534942452eb3117c3870089cf60a9d2a85229a46b2c08acd40b",
+     "size": 2466375680
+    },
+    "issue2224_screening/__packed__/shard-c2-00007.tar": {
+     "gitsha1": "b6e0378d7409acbd4f9d48a88abe0178d0e6a0cc",
+     "sha256": "28f036a2c0104a0ce92a03cce292152d92bddc01641eb945e68ec2138643e99d",
+     "size": 2466375680
+    },
+    "issue2224_screening/__packed__/shard-c2-00008.tar": {
+     "gitsha1": "2e834faf955bd1dc27b37c7f778a1ae2d4a6a51e",
+     "sha256": "562eeb6c3e432e7f07e4fc1f8f1a91d436290ab6735405ad0fd4df5a0535089d",
+     "size": 411064320
+    },
+    "issue2224_screening/__packed__/shard-c3-00000.tar": {
+     "gitsha1": "5091f045bbe87311ef16487126d1df37e15ac592",
+     "sha256": "956b68a89622ebf9b119ec128690c0d60527a97909aef6f886b7735769dc1e82",
+     "size": 2225612800
+    },
+    "issue2224_screening/__packed__/shard-c3-00001.tar": {
+     "gitsha1": "af9f3623455481d15b9c0becf3509db1dc0ac467",
+     "sha256": "6ed92daa7f3b05485e1d4ee19d2277d00aa5de0f670688e1bdb27872b6913e7d",
+     "size": 2325155840
+    },
+    "issue2224_screening/__packed__/shard-c3-00002.tar": {
+     "gitsha1": "249594157ab815c39fbc18da1970381189717b4b",
+     "sha256": "52771d59eb71be857157fa7f512a469d0629802848f147df537c3d9551ff8238",
+     "size": 2466467840
+    },
+    "issue2224_screening/__packed__/shard-c3-00003.tar": {
+     "gitsha1": "427ad0a661ca6ec8058ade2823ddef511bc2546a",
+     "sha256": "19a0baaf8de1ce698bdb7be494af55a364a87eee6cd5850f3b10c8e5b229bf6b",
+     "size": 2325155840
+    },
+    "issue2224_screening/__packed__/shard-c3-00004.tar": {
+     "gitsha1": "11a67ceea4fe804d7b0f7dd9af37f08f874fc1cd",
+     "sha256": "6c2dffbfb4060e7de7d045fe3f7d08bdc63f9232eaedb2bc1f3a5f40386d69ed",
+     "size": 2466467840
+    },
+    "issue2224_screening/__packed__/shard-c3-00005.tar": {
+     "gitsha1": "1b506adcf9b79024334a95538d0783335e04c708",
+     "sha256": "be0235d74d85d61b8842d7e58cdc546b000a4168dc3779fec874880085acc098",
+     "size": 2325155840
+    },
+    "issue2224_screening/__packed__/shard-c3-00006.tar": {
+     "gitsha1": "8d6d841ed8ca53f023052a9a6024cad8714c04d6",
+     "sha256": "af058930a78e5689319ed9835ac191ff626bfa9af3f3d86fe1d132dbb198b6eb",
+     "size": 2325155840
+    },
+    "issue2224_screening/__packed__/shard-c3-00007.tar": {
+     "gitsha1": "914ab3a4035166ed4d3786b79e7fc3744a3dd318",
+     "sha256": "033805a228fde22bd5574a0d4d1bee83296266505824702124838c8eeb232f61",
+     "size": 2466416640
+    },
+    "issue2224_screening/__packed__/shard-c3-00008.tar": {
+     "gitsha1": "6c1ebbd9c8ff2b89d493ad1dfd593ed8d70d0d46",
+     "sha256": "b8700e904dd498eaf281293ec779fd924ec441c06235d68b884b4439595dd3c2",
+     "size": 822138880
+    },
+    "issue2224_screening/__packed__/shard-c4-00000.tar": {
+     "gitsha1": "8a8c5b1f16df63882a4e8fcd255b7678e8e16757",
+     "sha256": "2c080e04c7d88842eb5cb0315fa40e972d27a350cce232087a3ba61a9e5f9007",
+     "size": 2466396160
+    },
+    "issue2224_screening/__packed__/shard-c4-00001.tar": {
+     "gitsha1": "637e3cc90fc05e6c4bb3b8f9b667fe2d4d7be96b",
+     "sha256": "b5b96265d4df9516f66a418165d9399e908eb2b1610e27ff15c8f20bb8e343b7",
+     "size": 2466396160
+    },
+    "issue2224_screening/__packed__/shard-c4-00002.tar": {
+     "gitsha1": "28b2a02a34beb1ea3a6e12381bedef5f47bd52b7",
+     "sha256": "93c96fbd5a5a2003ee2f0d324a9e18b0366ae9025f31a1bd68290dbc7d33f4ab",
+     "size": 2225541120
+    },
+    "issue2224_screening/__packed__/shard-c4-00003.tar": {
+     "gitsha1": "662153bf9da4d16e2e125e65291634a724329bef",
+     "sha256": "caa5cae74ef1216febf33804ce40e543b87725576a811e5b895975b144490f4e",
+     "size": 2466396160
+    },
+    "issue2224_screening/__packed__/shard-c4-00004.tar": {
+     "gitsha1": "e6a4159d394288132506aea62fc9c1a4d0384bf4",
+     "sha256": "ca764179043a0f004348b2e6185719e51ea82554623ff86a71f69d3caf5490aa",
+     "size": 2466396160
+    },
+    "issue2224_screening/__packed__/shard-c4-00005.tar": {
+     "gitsha1": "f3328de4d71eeac08f339896dd8f5aea5526ebd8",
+     "sha256": "ad7bbfa897d8f63960499140b42e5f1ecd07064450f8a26f4b8721c854ad47f7",
+     "size": 2466396160
+    },
+    "issue2224_screening/__packed__/shard-c4-00006.tar": {
+     "gitsha1": "eefecd4b911fa03ad60cc909ece6ca3f8248374c",
+     "sha256": "ab4e858f8c5fa38c05ef391a6f0999b59b70c290a58e3faa533c0e8d525d6c44",
+     "size": 2225541120
+    },
+    "issue2224_screening/__packed__/shard-c4-00007.tar": {
+     "gitsha1": "8461a2e453c6e5be82172d6e1579cc0214cb1047",
+     "sha256": "79f24d8416e263f39809f24e4528d49f1073f09ab99e37282a4b11b82c7bdf37",
+     "size": 2466396160
+    },
+    "issue2224_screening/__packed__/shard-c4-00008.tar": {
+     "gitsha1": "5697fb81be054ac754754ad00039c54c2b851a17",
+     "sha256": "7d89e7efc46ace8b5ad64a2f2220234056819909c15c131b1de5fb820d4d78a2",
+     "size": 411074560
+    },
+    "issue2224_screening/__packed__/shard-c5-00000.tar": {
+     "gitsha1": "facadc76c713af689037e2d336211b800bd959d7",
+     "sha256": "8dbe7533fbbc91409161810f25b9646c7da245a75332bd36951c16d902b237df",
+     "size": 2466396160
+    },
+    "issue2224_screening/__packed__/shard-c5-00001.tar": {
+     "gitsha1": "33ac707e6913975c41d8a52d70ea692a311550f7",
+     "sha256": "bf4d8e12519e40d1ee3f5c01b443f6d4bdda24d6de138a22ff9435985e799acd",
+     "size": 2466396160
+    },
+    "issue2224_screening/__packed__/shard-c5-00002.tar": {
+     "gitsha1": "7dfe3b0e848134d7b5ed5423eb49545397308601",
+     "sha256": "3c94d385d00f232cd63e341a6f6b6d809e48d5ad840805fbeb071f6ad29fd970",
+     "size": 2225541120
+    },
+    "issue2224_screening/__packed__/shard-c5-00003.tar": {
+     "gitsha1": "1d0d1636e6f4a4c25c2dec8a8a27ec475687314c",
+     "sha256": "7571310916a73b1b6c17a624b8c27f596a48276ea5bb516ebf41c5aa9e30f2fa",
+     "size": 2466396160
+    },
+    "issue2224_screening/__packed__/shard-c5-00004.tar": {
+     "gitsha1": "a3641bdca3add4a8413410831296ba6deb788b1f",
+     "sha256": "d1445619c7c19e4d9588ec6bd784001bc98e1e18e184dae6c411bc7633040747",
+     "size": 2466396160
+    },
+    "issue2224_screening/__packed__/shard-c5-00005.tar": {
+     "gitsha1": "63e8fea0c46427047628445cd4383c41ab56bda4",
+     "sha256": "641d4657573618fc2fb90d026fbedf7d864a649146f2a56ceb291879ec33a1af",
+     "size": 2466396160
+    },
+    "issue2224_screening/__packed__/shard-c5-00006.tar": {
+     "gitsha1": "332b5afebe54ced3e38dcaffa1f190b69071940d",
+     "sha256": "fd3f7410c98628e3e701dbda75bb3cd5c3f6d954f56ceca9d32811118a2a3b3a",
+     "size": 2466396160
+    },
+    "issue2224_screening/__packed__/shard-c5-00007.tar": {
+     "gitsha1": "8531f4b79f8116c570c0f5bef5b15f8b2b3cff9c",
+     "sha256": "b3e9d1070b713369f17f12595ae706f70cd5f93c5230949ecddf731b2372fb31",
+     "size": 170219520
+    },
+    "issue2224_screening/__packed__/shard-c6-00000.tar": {
+     "gitsha1": "14302f875b4ef9eeb7e7b2593eb8ae6d63905346",
+     "sha256": "25bc6542579fa8f0d9195ccf816c81ecbc69046ba74be4b0b08524b22219d5c4",
+     "size": 2177771520
+    },
+    "issue2224_screening/__packed__/shard-c6-00001.tar": {
+     "gitsha1": "b88f9302ff7bf30ec396b10fccd2c0c3b9afc3e0",
+     "sha256": "e74d628c475cc59e031e5c976c6111646c642767137b6bb779d855d2219bc856",
+     "size": 538961920
+    }
+   },
+   "snapshot_ts": "2026-08-17T07:50:50Z",
+   "src_revision": "0458dbb7d557f331a96e0a7b1f29d79d80bda7c7",
+   "steps": {
+    "delete": {
+     "done": true,
+     "n_deleted_realized": 41759,
+     "n_deleted_this_run": 0,
+     "run_id": "702d246cbc1e400b9bbbc5272d09fb56"
+    },
+    "download": {
+     "done": true,
+     "run_id": "702d246cbc1e400b9bbbc5272d09fb56",
+     "src_revision": "0458dbb7d557f331a96e0a7b1f29d79d80bda7c7"
+    },
+    "hub_verify": {
+     "n_files": 56,
+     "pass": true,
+     "run_id": "702d246cbc1e400b9bbbc5272d09fb56",
+     "ts": "2026-08-17T20:18:25Z"
+    },
+    "local_verify": {
+     "done": true,
+     "run_id": "702d246cbc1e400b9bbbc5272d09fb56",
+     "src_revision": "0458dbb7d557f331a96e0a7b1f29d79d80bda7c7"
+    },
+    "pack_c0": {
+     "done": true,
+     "k": 2,
+     "n_shards": 1,
+     "run_id": "2041765c78f14a67a4239f27b66928fc",
+     "src_revision": "0458dbb7d557f331a96e0a7b1f29d79d80bda7c7"
+    },
+    "pack_c1": {
+     "done": true,
+     "k": 10,
+     "n_shards": 9,
+     "run_id": "2041765c78f14a67a4239f27b66928fc",
+     "src_revision": "0458dbb7d557f331a96e0a7b1f29d79d80bda7c7"
+    },
+    "pack_c2": {
+     "done": true,
+     "k": 10,
+     "n_shards": 9,
+     "run_id": "2041765c78f14a67a4239f27b66928fc",
+     "src_revision": "0458dbb7d557f331a96e0a7b1f29d79d80bda7c7"
+    },
+    "pack_c3": {
+     "done": true,
+     "k": 10,
+     "n_shards": 9,
+     "run_id": "2041765c78f14a67a4239f27b66928fc",
+     "src_revision": "0458dbb7d557f331a96e0a7b1f29d79d80bda7c7"
+    },
+    "pack_c4": {
+     "done": true,
+     "k": 10,
+     "n_shards": 9,
+     "run_id": "2041765c78f14a67a4239f27b66928fc",
+     "src_revision": "0458dbb7d557f331a96e0a7b1f29d79d80bda7c7"
+    },
+    "pack_c5": {
+     "done": true,
+     "k": 9,
+     "n_shards": 8,
+     "run_id": "2041765c78f14a67a4239f27b66928fc",
+     "src_revision": "0458dbb7d557f331a96e0a7b1f29d79d80bda7c7"
+    },
+    "pack_c6": {
+     "done": true,
+     "k": 3,
+     "n_shards": 2,
+     "run_id": "702d246cbc1e400b9bbbc5272d09fb56",
+     "src_revision": "0458dbb7d557f331a96e0a7b1f29d79d80bda7c7"
+    },
+    "snapshot": {
+     "done": true,
+     "run_id": "2041765c78f14a67a4239f27b66928fc"
+    },
+    "staged_verify": {
+     "done": true,
+     "run_id": "702d246cbc1e400b9bbbc5272d09fb56",
+     "src_revision": "0458dbb7d557f331a96e0a7b1f29d79d80bda7c7"
+    },
+    "upload": {
+     "done": true,
+     "run_id": "702d246cbc1e400b9bbbc5272d09fb56",
+     "src_revision": "0458dbb7d557f331a96e0a7b1f29d79d80bda7c7"
+    }
+   },
+   "total_bytes": 98832308655
+  },
+  "issue667_alllayer": {
+   "done": {
+    "bytes": 4924261109,
+    "files": 53858,
+    "kept_new": 0,
+    "kept_stale": 0,
+    "slots_freed": 53858
+   },
+   "incomplete": "issue667_alllayer: 9 downloads failed \u2014 staging PRESERVED, source untouched",
+   "kept_new": [],
+   "kept_stale": [],
+   "mode": "whole",
+   "n_files": 53858,
+   "packed_files": {
+    "issue667_alllayer/__packed__/index.json": {
+     "gitsha1": "67b9919136760177dd9491afd543edf50190ed4b",
+     "sha256": "6625e1e4e4a173e78a5a54976eda94e8dcfe2d8447488f5a303dd562c7fd9be8",
+     "size": 13353103
+    },
+    "issue667_alllayer/__packed__/manifest.json": {
+     "gitsha1": "18a9e2c0c0c4d01fcee345a7da558103a5484be7",
+     "sha256": "2b9e76d17e78b2799b1b759a90ec812ae8d5fe2827a65d4a7ecf34adc17dbfb0",
+     "size": 442
+    },
+    "issue667_alllayer/__packed__/shard-00000.tar": {
+     "gitsha1": "ebef8b612cde476750e3dc9894b1fa58d7b8402b",
+     "sha256": "f346c43736912b193b48cc3c8579928ec5a15b73132b449206d237ff31fbe090",
+     "size": 2184765440
+    },
+    "issue667_alllayer/__packed__/shard-00001.tar": {
+     "gitsha1": "2135a5c6b8b20a7e0acabb2cf60bf416fa7f1465",
+     "sha256": "2ee992c34387030c5a2c66b26e02b8a3b78b2fc53887a17bfdd4fe26a0851c5d",
+     "size": 2189301760
+    },
+    "issue667_alllayer/__packed__/shard-00002.tar": {
+     "gitsha1": "17c53dcc5d9124341336b15262ab5303636ea3b1",
+     "sha256": "6c54538b78f7977c5feb0a44d90811796fc45604cee9af0ce7adcc357fc4f2ca",
+     "size": 640839680
+    }
+   },
+   "snapshot_ts": "2026-08-17T11:12:00Z",
+   "src_revision": "9678bb99456c4f7788e4cc2061d60653260bb1c7",
+   "steps": {
+    "delete": {
+     "done": true,
+     "n_deleted_realized": 53858,
+     "n_deleted_this_run": 53858,
+     "run_id": "702d246cbc1e400b9bbbc5272d09fb56"
+    },
+    "download": {
+     "done": true,
+     "run_id": "702d246cbc1e400b9bbbc5272d09fb56",
+     "src_revision": "9678bb99456c4f7788e4cc2061d60653260bb1c7"
+    },
+    "hub_verify": {
+     "n_files": 5,
+     "pass": true,
+     "run_id": "702d246cbc1e400b9bbbc5272d09fb56",
+     "ts": "2026-08-17T20:38:06Z"
+    },
+    "local_verify": {
+     "done": true,
+     "run_id": "702d246cbc1e400b9bbbc5272d09fb56",
+     "src_revision": "9678bb99456c4f7788e4cc2061d60653260bb1c7"
+    },
+    "pack": {
+     "done": true,
+     "k": 5,
+     "n_shards": 3,
+     "run_id": "702d246cbc1e400b9bbbc5272d09fb56",
+     "src_revision": "9678bb99456c4f7788e4cc2061d60653260bb1c7"
+    },
+    "snapshot": {
+     "done": true,
+     "run_id": "2041765c78f14a67a4239f27b66928fc"
+    },
+    "staged_verify": {
+     "done": true,
+     "run_id": "702d246cbc1e400b9bbbc5272d09fb56",
+     "src_revision": "9678bb99456c4f7788e4cc2061d60653260bb1c7"
+    },
+    "upload": {
+     "done": true,
+     "run_id": "702d246cbc1e400b9bbbc5272d09fb56",
+     "src_revision": "9678bb99456c4f7788e4cc2061d60653260bb1c7"
+    }
+   },
+   "total_bytes": 4924261109
+  }
+ },
+ "run_history": [
+  {
+   "cmd": "run",
+   "run_id": "4cb50c711cfc41efa220f42e2a98fda6",
+   "ts": "2026-08-17T04:42:34Z"
+  },
+  {
+   "cmd": "run",
+   "run_id": "6ba7653e581843809bfdcc0f1b15c8fa",
+   "ts": "2026-08-17T07:20:25Z"
+  },
+  {
+   "cmd": "run",
+   "run_id": "2041765c78f14a67a4239f27b66928fc",
+   "ts": "2026-08-17T07:50:27Z"
+  },
+  {
+   "cmd": "run",
+   "run_id": "702d246cbc1e400b9bbbc5272d09fb56",
+   "ts": "2026-08-17T20:01:04Z"
+  }
+ ]
+}

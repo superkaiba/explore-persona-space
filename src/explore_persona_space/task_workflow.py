@@ -497,10 +497,17 @@ def _resolve_repo_root_cached(_key: tuple[int, str]) -> Path:
         # `refs/heads/main` the finishing rebase is about to force-move to its
         # replayed tip (the orphaned-commit family sync_repo_root.py's
         # docstring warns about); the rebase replays the pre-existing commits
-        # onto main anyway. No deadlock while a caller waits here holding the
-        # task-workflow flock: sync_repo_root.py acquires that flock BEFORE
-        # its pull_rebase, and that acquisition is itself LOCK_NB-bounded —
-        # the observed rebase never needs the flock to finish.
+        # onto main anyway. Deadlock note (#2295): a caller waiting here must
+        # NOT hold the task-workflow flock — mutation writers prime this
+        # resolution BEFORE acquiring it (`_locked()` calls repo_root() first),
+        # because the ONLY sanctioned clearer of an ABANDONED rebase husk
+        # (sync_repo_root.py preflight -> `git rebase --abort`) needs that
+        # flock. The pre-#2295 comment claimed "no deadlock while holding the
+        # flock"; that reasoning covered only a LIVE helper-driven rebase (the
+        # helper takes the flock before its pull_rebase) and was FALSE for an
+        # abandoned husk: nobody finishes that rebase, and the clearer blocks
+        # on the flock the waiters held. Re-adding an in-lock resolution
+        # re-introduces the deadlock.
         if wait_bound <= 0:
             # Knob=0 → EXACT pre-#996 behavior: no marker probe, no grace,
             # immediate refusal with the byte-identical message.
@@ -520,8 +527,12 @@ def _resolve_repo_root_cached(_key: tuple[int, str]) -> Path:
                 f"({common_dir / 'rebase-merge'} or rebase-apply) was still present after "
                 f"waiting {wait_bound:.0f}s ({_REBASE_WAIT_ENV}). A live `git pull --rebase` "
                 f"should finish in seconds; a state dir this old is likely a CRASHED rebase. "
-                f"Inspect with `git -C {parent} status`; `git -C {parent} rebase --abort` "
-                f"clears a stale rebase, then re-attach to 'main'."
+                f"Run the sanctioned recovery FIRST: "
+                f"`uv run python scripts/sync_repo_root.py` (single-flight; its preflight "
+                f"aborts the stale rebase and rescues any autostash). Manual fallback if the "
+                f"helper itself refuses: inspect with `git -C {parent} status`; "
+                f"`git -C {parent} rebase --abort` clears a stale rebase, then re-attach "
+                f"to 'main'."
             )
         if not rebasing:
             grace_probes_left -= 1
@@ -681,9 +692,13 @@ def _ensure_managed_main_worktree(primary: Path, branch: str, env: dict[str, str
     else:
         # Re-sync an existing managed worktree to the current `main` tip so
         # reads through the routed root are fresh. `reset --hard main` is a
-        # fast-forward (the worktree only ever holds main-derived commits) and
-        # is safe under the flock: every mutation commits before releasing, so
-        # there is never uncommitted task work to clobber here.
+        # fast-forward (the worktree only ever holds main-derived commits).
+        # Safety does NOT come from lock exclusion (#2295): READ paths reach
+        # this helper lock-free, and mutation writers resolve the root BEFORE
+        # taking the flock (`_locked()` primes repo_root() first). It comes
+        # from the worktree holding only main-derived COMMITTED state —
+        # task.py commits every mutation before returning, so there is never
+        # uncommitted task work in the MANAGED worktree to clobber here.
         _git_quiet(["-C", str(managed), "reset", "--hard", "main"], env)
 
     if not (managed / "tasks").is_dir():
@@ -800,6 +815,17 @@ def _locked() -> Iterator[None]:
     a mutation. Multiple processes calling task.py concurrently serialise
     here.
     """
+    # #2295: resolve (and lru-cache) the repo root BEFORE taking the flock.
+    # The resolver's branch guard bounded-waits up to
+    # EPM_TASKPY_REBASE_WAIT_SECONDS on a primary-checkout rebase state dir,
+    # and the ONLY sanctioned clearer of an ABANDONED husk
+    # (sync_repo_root.py preflight -> `git rebase --abort`) needs THIS flock:
+    # waiting inside the lock deadlocks the two (every fleet writer holds the
+    # lock for its whole 120s wait; the helper's bounded acquire times out at
+    # exit 5 and the husk is never cleared). Every mutation below resolves the
+    # root anyway (find_task_path -> tasks_dir -> repo_root), so this only
+    # moves the resolution EARLIER; the lru_cache makes the in-lock call free.
+    repo_root()
     LOCK_DIR.mkdir(parents=True, exist_ok=True)
     fd = os.open(LOCK_PATH, os.O_WRONLY | os.O_CREAT, 0o600)
     try:
@@ -821,11 +847,33 @@ def _load_registry() -> dict[str, Any]:
 
 
 def _save_registry(registry: dict[str, Any]) -> None:
+    """Atomically write REGISTRY.json, then best-effort ``git add`` it.
+
+    #2064/#2015: stage the just-written registry immediately. Staged content
+    survives the pre-commit stash cycle (``git write-tree`` snapshots the
+    index; ``checkout -- .`` reverts TO index content), so this narrows the
+    destroyable tracked-modified-unstaged window from "until ``_git_commit``'s
+    sequencer wait clears" (seconds-minutes under fleet load) to milliseconds.
+    Fail-soft BY DESIGN (prevention layer, not correctness — the allocation
+    heal in ``create_task`` is the correctness layer): on any failure
+    (non-git test tmp dir, exhausted lock budget) WARN and degrade to the
+    prior behavior — ``_git_commit`` stages again at commit time.
+    """
     rp = registry_path()
     rp.parent.mkdir(parents=True, exist_ok=True)
     tmp = rp.with_suffix(".tmp")
     tmp.write_text(json.dumps(registry, indent=2, sort_keys=True) + "\n")
     tmp.replace(rp)
+    try:
+        proc = _run_git(["add", "--", str(rp)], check=False)
+        if proc.returncode != 0:
+            _log.warning(
+                "best-effort registry stage failed (rc=%s): %s",
+                proc.returncode,
+                (proc.stderr or "").strip()[:200],
+            )
+    except Exception as exc:  # never let staging break a registry write
+        _log.warning("best-effort registry stage failed: %s", exc)
 
 
 def _registry_set(registry: dict[str, Any], task_id: int, path: Path, fm: dict[str, Any]) -> None:
@@ -992,6 +1040,8 @@ def is_paper_task(fm: dict[str, Any]) -> bool:
 #: ``scripts/verify_report.py`` is the mechanical verifier for this form.
 #: Unlike ``paper: true`` (a frontmatter flag), a report body is identified by
 #: this BODY sentinel.
+#: Pinned byte-equal to ``scripts/verify_report.py::REPORT_SENTINEL`` by
+#: ``tests/test_task_workflow.py::test_report_sentinel_matches_verify_report``.
 REPORT_V1_SENTINEL = "<!-- report-v1 -->"
 
 
@@ -1003,9 +1053,40 @@ def is_report_body(body: str) -> bool:
     promote-time logic, ``scripts/verify_report.py``) branch on this to treat a
     report body as a valid clean-result form alongside the markdown-v4 and paper
     tracks. Does NOT read frontmatter — a report task carries no ``paper``/form
-    frontmatter flag, only this sentinel.
+    frontmatter flag, only this sentinel. Containment is the right bar for
+    clean-result-form ACCEPTANCE; a guard EXEMPTION needs the stricter
+    positional check :func:`_is_report_v1_body` (#2197).
     """
     return REPORT_V1_SENTINEL in body
+
+
+def _is_report_v1_body(text: str) -> bool:
+    """True iff the first non-blank line after the first H1 is the
+    report-v1 sentinel — the positional semantics of
+    ``scripts/verify_report.py`` (``find_h1`` + first-non-blank-after-H1).
+    Stricter than :func:`is_report_body` (containment), which serves
+    clean-result-form acceptance: a mid-prose sentinel quotation must
+    NOT satisfy a guard exemption (#2197).
+
+    Text-shape note: verify_report's ``split_frontmatter`` strips exactly one
+    leading ``---`` block while the guard caller feeds this the output of
+    ``_strip_leading_frontmatter_blocks`` (which can strip more); equivalent
+    for well-formed bodies, and a pathological divergence lands fail-loud
+    (guard refusal → the ``--allow-goal-drop`` remedy), never a silent write.
+    """
+    lines = text.splitlines()
+    h1_idx = None
+    for i, line in enumerate(lines):
+        s = line.strip()
+        if s.startswith("# ") and not s.startswith("## "):
+            h1_idx = i
+            break
+    if h1_idx is None:
+        return False
+    for later in lines[h1_idx + 1 :]:
+        if later.strip():
+            return later.strip() == REPORT_V1_SENTINEL
+    return False
 
 
 # ── Workflow-fix task helpers (#678 — the file-a-task + spawn-/issue-auto path) ─
@@ -2078,6 +2159,159 @@ def stage_dispatch_should_skip(
     )
 
 
+# --- Pre-split review gate (#2158; incidents #1336 r4 + #2061) --------------
+
+_PRE_SPLIT_LINE_RE = re.compile(r"^pre-split unit (?P<k>[A-Za-z0-9]+)/(?P<m>\d+)\b")
+_PRE_SPLIT_REMAINING_RE = re.compile(r"\bremaining(?:\s+units)?\s*:\s*(?P<rem>.*)$", re.IGNORECASE)
+_PRE_SPLIT_EMPTY_REMAINING = frozenset({"", "none", "-", "(none)"})
+_IMPLEMENTATION_MARKER_KINDS = frozenset({"epm:experiment-implementation", "epm:results"})
+
+
+def pre_split_review_gate(events: list[dict]) -> dict:
+    """Pre-split completeness gate for the Step 5 review dispatch (#2158).
+
+    Refuses a code-review dispatch while a #1810 pre-split multi-unit round is
+    mid-flight (incidents #1336 r4 + #2061). Pure function over an append-only
+    events list (index order == time order — never parses ``ts``). Returns
+    ``{"verdict", "reason", "remaining", "breadcrumb_index",
+    "unit_dispatch_index", "impl_index"}``. Verdicts:
+
+    - ``REVIEW-OK``: no pre-split state in flight, or an implementation marker
+      (``epm:experiment-implementation`` / ``epm:results``) POSTDATES (higher
+      index) both arms.
+    - ``PRE-SPLIT-INCOMPLETE``: the latest split signal has no later
+      implementation marker. Two arms, max index wins:
+
+      arm A — latest LINE-ANCHORED candidate ``pre-split unit <k>/<M> ...``
+      (k ALPHANUMERIC — #2061's lettered ``A/5``..``D/5`` are candidates; M
+      digits-only = the STRUCTURAL exclusion of the literal ``k/M`` template,
+      "M" not being a digit) in any ``epm:progress`` note, whose SAME line
+      carries a parseable NON-empty remaining field. The remaining recognizer
+      is deliberately LENIENT — case-insensitive ``remaining:`` /
+      ``remaining units:``, no leading semicolon — covering the measured
+      drift: ``; remaining:`` (#1336), ``. Remaining units: B (...)`` (#2061
+      row 52), ``Remaining: C (...)`` (row 65). An EMPTY parsed remaining
+      field (blank / ``none`` / ``-`` / ``(none)``, case-insensitive) is a
+      completed split — arm A does not fire (empty is parseable, never
+      unparseable). Notes are scanned via ``note.split("\\n")``, NEVER
+      ``splitlines()`` (gotchas.md JSONL trap). v155's "NEARLY COMPLETE"
+      matches — the arm keys on prefix + same-line remaining, not the word
+      "complete".
+
+      arm B — latest ``epm:progress`` note whose lstripped note STARTS with
+      ``"stage-dispatch "`` and whose ``_breadcrumb_fields()`` give
+      ``_normalize_stage(stage) == "implementing"`` AND ``"unit"`` in fields
+      (only pre-split rounds emit unit-scoped implementing dispatches — the
+      #1336 v131 shape; fires at the real v132 incident, 2 days before the
+      first breadcrumb). DELIBERATELY note-anchored: a stage-dispatch token
+      EMBEDDED mid-note (#2061 row 65, offset 617 — a QUOTE of the unit-C
+      dispatch) does NOT trip arm B; broadened arm A carries those rows.
+
+    - ``BREADCRUMB-UNPARSEABLE``: the latest live signal is a candidate line
+      whose SAME line carries no parseable remaining field — fail loud, never
+      fail open: a recognized candidate NEVER falls through to REVIEW-OK (the
+      #2061 fail-open shape). A live arm-B signal at a HIGHER index than the
+      unparseable candidate supersedes it (max index wins ->
+      PRE-SPLIT-INCOMPLETE, still nonzero at the CLI).
+
+    Incident-trace verdicts (plan v2 §12, measured 2026-08-17): #1336 — arm B
+    FIRES at the v132 premature Unit-A review dispatch (the latest
+    implementation-class marker, ``epm:results`` v7, predates the v131 unit=A
+    dispatch); arm A FIRES across the v147..v163 mid-split resume window;
+    CLEARS at ``epm:experiment-implementation`` v14. #2061 — the lettered
+    row-52 / row-65 prefixes FIRE arm A (where a digits-only parser fails
+    open); the full history CLEARS (the line-75 marker postdates the last
+    candidate).
+
+    Accepted residual: a POST-COMPLETION ``epm:progress`` note quoting a
+    breadcrumb line verbatim at column 0 (alphanumeric unit + non-empty
+    same-line remaining) re-arms arm A until the next implementation marker —
+    low likelihood, self-recovering, refusal is loud (exit 2 names the line),
+    never fail-open.
+    """
+    impl_index: int | None = None
+    breadcrumb_index: int | None = None
+    breadcrumb_line: str | None = None
+    breadcrumb_remaining: str | None = None
+    breadcrumb_parseable = False
+    unit_dispatch_index: int | None = None
+
+    for idx, event in enumerate(events):
+        kind = event.get("kind", "")
+        if kind in _IMPLEMENTATION_MARKER_KINDS:
+            impl_index = idx
+            continue
+        if kind != "epm:progress":
+            continue
+        note = (event.get("note", "") or "").lstrip()
+        for line in note.split("\n"):  # never splitlines() — gotchas.md JSONL trap
+            if _PRE_SPLIT_LINE_RE.match(line):
+                breadcrumb_index = idx
+                breadcrumb_line = line
+                match = _PRE_SPLIT_REMAINING_RE.search(line)
+                breadcrumb_parseable = match is not None
+                breadcrumb_remaining = match.group("rem").strip() if match else None
+        if note.startswith("stage-dispatch "):
+            fields = _breadcrumb_fields(note)
+            if _normalize_stage(fields.get("stage", "")) == "implementing" and "unit" in fields:
+                unit_dispatch_index = idx
+
+    def _live(idx: int | None) -> bool:
+        return idx is not None and (impl_index is None or idx > impl_index)
+
+    a_live = _live(breadcrumb_index)
+    b_live = _live(unit_dispatch_index)
+    a_empty = (
+        a_live
+        and breadcrumb_parseable
+        and breadcrumb_remaining is not None
+        and breadcrumb_remaining.lower() in _PRE_SPLIT_EMPTY_REMAINING
+    )
+    a_fires = a_live and breadcrumb_parseable and not a_empty
+    a_unparseable = a_live and not breadcrumb_parseable
+
+    result: dict[str, Any] = {
+        "verdict": "REVIEW-OK",
+        "reason": "",
+        "remaining": None,
+        "breadcrumb_index": breadcrumb_index,
+        "unit_dispatch_index": unit_dispatch_index,
+        "impl_index": impl_index,
+    }
+
+    b_supersedes = b_live and (breadcrumb_index is None or unit_dispatch_index > breadcrumb_index)
+    if a_unparseable and not b_supersedes:
+        result["verdict"] = "BREADCRUMB-UNPARSEABLE"
+        result["reason"] = (
+            f"breadcrumb candidate at events index {breadcrumb_index} has no parseable "
+            f"same-line remaining field: {(breadcrumb_line or '')[:160]!r}"
+        )
+        return result
+    if a_fires or b_live:
+        result["verdict"] = "PRE-SPLIT-INCOMPLETE"
+        if a_fires and (not b_live or breadcrumb_index >= unit_dispatch_index):
+            result["remaining"] = breadcrumb_remaining
+            result["reason"] = (
+                f"arm A: pre-split breadcrumb at events index {breadcrumb_index} "
+                f"({(breadcrumb_line or '')[:160]!r}) carries a non-empty remaining "
+                "field with no later implementation marker"
+            )
+        else:
+            result["remaining"] = breadcrumb_remaining if a_fires else None
+            result["reason"] = (
+                "arm B: unit-scoped implementing stage-dispatch at events index "
+                f"{unit_dispatch_index} has no later implementation marker"
+            )
+        return result
+    if breadcrumb_index is None and unit_dispatch_index is None:
+        result["reason"] = "no pre-split signals in events"
+    else:
+        result["reason"] = (
+            f"implementation marker at events index {impl_index} postdates every pre-split signal"
+        )
+    return result
+
+
 # --- Ensemble verdict presence (#1149; mechanizes SKILL.md Step 5b ---
 # --- durable-verdict-first rule items 1 + 3)                        ---
 
@@ -2101,6 +2335,7 @@ def ensemble_verdicts_present(
     round_n: int,
     *,
     reconcile_role: str | None = None,
+    since_ts: str | None = None,
 ) -> dict[str, dict[str, Any]]:
     """Per-kind durable-verdict presence for one ensemble round (#1149).
 
@@ -2146,20 +2381,72 @@ def ensemble_verdicts_present(
     a sentinel-less terse note whose ``version`` drifted from the round
     (a defaulted re-spawn that omitted the sentinel) reads absent — rule
     item 2 (the durable output-FILE probe) is the prose backstop for that
-    path. Pure function over :func:`list_events` output — no I/O; the
-    rule's item 2 (output-file probe) and precedence clauses stay
-    orchestrator prose.
+    path.
+
+    Freshness anchor (``since_ts``, #2136): marker versions auto-derive
+    as max+1 per kind while review rounds are counted independently, so
+    a PRIOR round's sentinel-less marker whose drifted ``version``
+    happens to equal a LATER round number false-PRESENTs through the
+    version fallback (the #1336 shape: a round-3 PASS answered a round-4
+    query two days later). When ``since_ts`` is given (each call site
+    passes its own round-opener ts via
+    :func:`review_round_anchor_ts`), a ``version``-fallback match must
+    ADDITIONALLY (i) postdate ``since_ts`` and (ii) be the newest
+    same-kind marker after it (an older same-kind marker inside the
+    opener window belongs to an earlier round; the 23.8% shared-opener
+    sub-shape). The anchor gates the VERSION-FALLBACK branch ONLY —
+    a sentinel-bearing round-exact match is NEVER time-gated (Step 5b
+    exists partly to REUSE a legitimate round-N verdict posted by a
+    session that was later killed, which necessarily predates the
+    current dispatch), and the reconcile kind's sentinel/``**Round:**``
+    matching is untouched. Fail-safe direction: an unparseable/absent
+    event ``ts``, or an unparseable ``since_ts``, SUPPRESSES the
+    fallback match (routes to the rule's item-2 output-file probe — the
+    same direction as the reconcile role-scoping). ``since_ts=None``
+    (the default, incl. "no opener found on the log") reproduces the
+    ungated pre-#2136 behavior exactly; the head sentinel remains the
+    only COMPLETE protection against a stale-round match. Pure function
+    over :func:`list_events` output — no I/O; the rule's item 2
+    (output-file probe) and precedence clauses stay orchestrator prose.
     """
     if isinstance(kinds, str):
         # A bare string iterates per-character, mechanically producing false
         # no-shows — the exact class this predicate exists to close.
         raise TypeError("kinds must be a sequence of marker-kind strings, not a bare str")
+    anchor_epoch = _event_epoch(since_ts) if since_ts is not None else None
     out: dict[str, dict[str, Any]] = {}
     for kind in kinds:
+        # Condition (ii) precomputation: the newest same-kind epoch after the
+        # anchor (events with an unparseable ts never count — fail-quiet, the
+        # #1170 convention).
+        newest_after_anchor: float | None = None
+        if anchor_epoch is not None:
+            for event in events:
+                if event.get("kind", "") != kind:
+                    continue
+                epoch = _event_epoch(event.get("ts"))
+                if epoch is None or epoch <= anchor_epoch:
+                    continue
+                if newest_after_anchor is None or epoch > newest_after_anchor:
+                    newest_after_anchor = epoch
         match: dict | None = None
         for event in events:  # chronological; latest match wins
-            if _ensemble_event_matches(event, kind, round_n, reconcile_role):
-                match = event
+            mode = _ensemble_event_matches(event, kind, round_n, reconcile_role)
+            if mode is None:
+                continue
+            if mode == "version" and since_ts is not None:
+                # #2136 anchor — gates the version fallback ONLY; sentinel
+                # and round-field matches are never time-gated (see
+                # docstring). Fail-safe: an unparseable ``since_ts`` or
+                # event ``ts`` suppresses the match.
+                if anchor_epoch is None:
+                    continue
+                epoch = _event_epoch(event.get("ts"))
+                if epoch is None or epoch <= anchor_epoch:
+                    continue  # (i) must postdate the round opener
+                if newest_after_anchor is not None and epoch < newest_after_anchor:
+                    continue  # (ii) an older same-kind marker in the window
+            match = event
         if match is None:
             out[kind] = {"present": False, "verdict": None, "ts": None}
         else:
@@ -2170,38 +2457,86 @@ def ensemble_verdicts_present(
 
 def _ensemble_event_matches(
     event: dict, kind: str, round_n: int, reconcile_role: str | None
-) -> bool:
-    """True iff ``event`` is a round-``round_n`` verdict marker of ``kind``.
+) -> str | None:
+    """Match MODE when ``event`` is a round-``round_n`` verdict marker of
+    ``kind``, else ``None``.
 
-    Round matching is sentinel-authoritative: a head sentinel naming a
-    DIFFERENT round suppresses the version-field match, and the reconcile
-    kind never matches on its round-meaningless ``version`` field (#1092:
-    version 1 / sentinel v5) — sentinel first, then the note's
-    ``**Round:**`` field, else no match. Role scoping applies to the
-    reconcile kind only.
+    Modes: ``"sentinel"`` (head sentinel names the round — AUTHORITATIVE),
+    ``"round-field"`` (sentinel-less reconcile matched via the note's
+    ``**Round:**`` field), ``"version"`` (sentinel-less non-reconcile
+    matched via the drift-prone top-level ``version`` field — the ONLY
+    mode the #2136 ``since_ts`` anchor in
+    :func:`ensemble_verdicts_present` gates). Round matching is
+    sentinel-authoritative: a head sentinel naming a DIFFERENT round
+    suppresses the version-field match, and the reconcile kind never
+    matches on its round-meaningless ``version`` field (#1092: version 1
+    / sentinel v5) — sentinel first, then the note's ``**Round:**``
+    field, else no match. Role scoping applies to the reconcile kind
+    only.
     """
     if event.get("kind", "") != kind:
-        return False
+        return None
     note = event.get("note", "") or ""
     head_round = _sentinel_round(note, kind)
+    mode: str
     if kind == _RECONCILE_KIND:
         if head_round is not None:
             if head_round != round_n:
-                return False
+                return None
+            mode = "sentinel"
         else:
             round_field = parse_followup_note_field(note, "Round")
             if round_field is None or not round_field.isdigit() or int(round_field) != round_n:
-                return False
+                return None
+            mode = "round-field"
     elif head_round is not None:
         if head_round != round_n:
-            return False  # sentinel authoritative — suppress the version match
+            return None  # sentinel authoritative — suppress the version match
+        mode = "sentinel"
     elif event.get("version") != round_n:
-        return False
+        return None
+    else:
+        mode = "version"
     if kind == _RECONCILE_KIND and reconcile_role is not None:
         role = parse_followup_note_field(note, "Role under adjudication")
         if role != reconcile_role:
-            return False
-    return True
+            return None
+    return mode
+
+
+def review_round_anchor_ts(events: list[dict], *, opening_kinds: Sequence[str]) -> str | None:
+    """``ts`` of the chronologically LAST round-opening event, else ``None``.
+
+    The freshness anchor for :func:`ensemble_verdicts_present`'s
+    ``since_ts`` (#2136). ``opening_kinds`` is deliberately REQUIRED with
+    no default: each ensemble collection site names its OWN round-opener
+    kinds (the per-site table lives in ``.claude/skills/issue/SKILL.md``
+    Step 5b), and a wrong default would silently produce an inert or
+    misleading anchor. The code-review site passes BOTH implementer kinds
+    — ``("epm:experiment-implementation", "epm:results")`` — because
+    ``kind: infra`` tasks open a review round with ``epm:results`` while
+    experiment tasks use ``epm:experiment-implementation``
+    (workflow.yaml § markers). Chronology is by parsed ``ts`` (ties: the
+    later row wins; an opener with an unparseable/absent ``ts`` cannot
+    anchor and is skipped); ``None`` — no usable opener on the log —
+    degrades the caller to the ungated pre-#2136 behavior, never worse.
+    Pure function over :func:`list_events` output — no I/O.
+    """
+    if isinstance(opening_kinds, str):
+        # Same footgun as the `kinds` guard above: a bare string would
+        # substring-match kind names instead of comparing them.
+        raise TypeError("opening_kinds must be a sequence of marker-kind strings, not a bare str")
+    best_ts: str | None = None
+    best_epoch: float | None = None
+    for event in events:
+        if event.get("kind", "") not in opening_kinds:
+            continue
+        epoch = _event_epoch(event.get("ts"))
+        if epoch is None:
+            continue
+        if best_epoch is None or epoch >= best_epoch:
+            best_epoch, best_ts = epoch, event.get("ts")
+    return best_ts
 
 
 # --- Authorized-stub grant (#2171; Step 6d.0 `PASS_AUTHORIZED_STUB`) -------
@@ -3128,7 +3463,11 @@ def _latest_site_pair(events: list[dict], site: dict) -> dict | None:
     pair — Tier 2 is never attempted past a both-present round). Tier 2
     (proximity fallback — the #825 founding shape): the chronologically
     LAST event of EACH kind, with ``round_n=None`` and a
-    timestamp-embedding round label.
+    timestamp-embedding round label. Deliberately passes NO ``since_ts``
+    anchor (#2136): ``round_n`` is derived from the last pair event's OWN
+    sentinel-else-``version``, so the fallback match on that same event is
+    correct by construction — an anchor would suppress the very event the
+    round number came from.
     """
     claude_kind = site["claude_kind"]
     codex_kind = site["codex_kind"]
@@ -3183,7 +3522,10 @@ def _reconcile_satisfied(
     ``None`` on Tier 2) OR any role-matched reconcile event timestamped
     at/after the earlier pair verdict (both tiers — #825's real reconcile
     named round 1 while the sides read 5 and 7, so a purely round-scoped
-    lookup would false-flag a legitimately reconciled round)."""
+    lookup would false-flag a legitimately reconciled round). Deliberately
+    passes NO ``since_ts`` anchor (#2136): the query is
+    ``epm:review-reconcile``, whose matcher never reaches the version
+    fallback, so an anchor is structurally inert here."""
     if round_n is not None:
         rres = ensemble_verdicts_present(events, (_RECONCILE_KIND,), round_n, reconcile_role=role)
         if rres[_RECONCILE_KIND]["present"]:
@@ -4719,7 +5061,7 @@ def validate_paper_manifest(task_id: int) -> list[str]:
         return [f"no paper_manifest.json at {manifest_path.relative_to(repo_root())}"]
     try:
         manifest = json.loads(manifest_path.read_text())
-    except (json.JSONDecodeError, OSError) as e:
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError) as e:
         return [f"paper_manifest.json unreadable: {e}"]
     if manifest.get("schema") != "paper_manifest/v1":
         problems.append(f"schema is {manifest.get('schema')!r}, expected 'paper_manifest/v1'")
@@ -5314,6 +5656,124 @@ def has_event(task_id: int, kind: str) -> bool:
     return any(e["kind"] == kind for e in list_events(task_id))
 
 
+# ─── Async session mode + durable asks (mission-control rung 0) ─────────────
+# CONTRACTS.md §1.2/§1.3/§2.2 (mission-control repo). Flag-gated: nothing in
+# this section changes behavior unless an `epm:ask` / `epm:session-mode`
+# marker exists on a task or EPM_ASYNC_SESSION / --session-mode async is set.
+
+SESSION_MODE_KIND = "epm:session-mode"
+ASK_KIND = "epm:ask"
+ASK_ANSWERED_KIND = "epm:ask-answered"
+SESSION_MODES = ("auto", "async")
+
+
+class BodyShaMismatch(RuntimeError):
+    """``promote --if-body-sha`` CAS refusal: body.md changed since the
+    caller's view was composed (e.g. a follow-up round rewrote the body AT
+    awaiting_promotion). Raised INSIDE the promote flock BEFORE any
+    mutation — nothing is flipped, appended, or moved."""
+
+
+class PlanVersionMismatch(RuntimeError):
+    """``set-status <N> approved --if-plan-v K`` CAS refusal: the highest
+    persisted ``plans/v{K}.md`` no longer matches the caller's view (a
+    material-change re-park wrote v K+1 while the approval view was open).
+    Raised INSIDE the set_status flock BEFORE any mutation."""
+
+
+def ask_gate(row: dict | None) -> str | None:
+    """The ``gate`` field of an ``epm:ask`` row's JSON note, or ``None``
+    when the row/note is absent or not parseable JSON carrying a string
+    ``gate`` (fail-soft read: a malformed ask is still an ask — callers
+    that only need openness use :func:`open_async_ask` directly)."""
+    note = row.get("note") if isinstance(row, dict) else None
+    if not isinstance(note, str):
+        return None
+    try:
+        payload = json.loads(note)
+    except ValueError:
+        return None
+    gate = payload.get("gate") if isinstance(payload, dict) else None
+    return gate if isinstance(gate, str) else None
+
+
+def open_async_ask(events: list[dict], *, gate: str | None = None) -> dict | None:
+    """Newest OPEN ``epm:ask`` row, or ``None`` (CONTRACTS §1.3 T1/W1/W3).
+
+    An ask is OPEN iff no ``epm:ask-answered`` and no ``epm:status-changed``
+    row was appended AFTER it: at rung 0 no ``--answers-ask`` verb exists,
+    so the answering STATUS TRANSITION (approve/promote/set-status) is what
+    closes an ask. Ordering is by events.jsonl APPEND ORDER, not timestamp —
+    every writer appends under the task-workflow flock, and the same-second
+    park sequence (status-changed then ask) would tie on the second-
+    resolution ISO timestamps. ``gate`` restricts the scan to asks whose
+    note JSON carries that ``gate`` value."""
+    last_idx: int | None = None
+    last_row: dict | None = None
+    for idx, row in enumerate(events):
+        if not isinstance(row, dict) or row.get("kind") != ASK_KIND:
+            continue
+        if gate is not None and ask_gate(row) != gate:
+            continue
+        last_idx, last_row = idx, row
+    if last_idx is None:
+        return None
+    for row in events[last_idx + 1 :]:
+        if isinstance(row, dict) and row.get("kind") in (ASK_ANSWERED_KIND, "epm:status-changed"):
+            return None
+    return last_row
+
+
+def newest_session_mode(events: list[dict]) -> str | None:
+    """Mode of the newest ``epm:session-mode`` marker (``"async"`` /
+    ``"auto"``), or ``None`` when no valid marker exists. Newest-wins by
+    append order (CONTRACTS §2.2: an explicit downgrade posts a fresh
+    ``{mode: "auto"}`` marker rather than deleting history); rows whose
+    note is not JSON with a recognized ``mode`` are skipped."""
+    mode: str | None = None
+    for row in events:
+        if not isinstance(row, dict) or row.get("kind") != SESSION_MODE_KIND:
+            continue
+        note = row.get("note")
+        if not isinstance(note, str):
+            continue
+        try:
+            payload = json.loads(note)
+        except ValueError:
+            continue
+        cand = payload.get("mode") if isinstance(payload, dict) else None
+        if cand in SESSION_MODES:
+            mode = cand
+    return mode
+
+
+def _highest_plan_version_in(task_path: Path) -> int | None:
+    """Highest K among ``<task_path>/plans/v{K}.md``; ``None`` when the task
+    has no versioned plans (same filename grammar as new_plan_version)."""
+    plans_dir = task_path / "plans"
+    if not plans_dir.is_dir():
+        return None
+    versions = [
+        int(m.group(1))
+        for p in plans_dir.glob("v*.md")
+        if (m := re.fullmatch(r"v(\d+)\.md", p.name))
+    ]
+    return max(versions) if versions else None
+
+
+def highest_plan_version(task_id: int) -> int | None:
+    """Public wrapper of :func:`_highest_plan_version_in` (the CAS key for
+    ``set-status approved --if-plan-v``)."""
+    return _highest_plan_version_in(find_task_path(task_id))
+
+
+def body_sha12(task_path: Path) -> str:
+    """sha256 of the raw ``body.md`` BYTES, truncated to 12 hex chars — the
+    ``promote --if-body-sha`` CAS key (bytes, not parsed frontmatter: any
+    rewrite invalidates an open promotion view)."""
+    return hashlib.sha256((task_path / "body.md").read_bytes()).hexdigest()[:12]
+
+
 # ─── Status transitions ────────────────────────────────────────────────────
 
 
@@ -5378,6 +5838,7 @@ def set_status(
     *,
     note: str | None = None,
     force_followup_exit: bool = False,
+    if_plan_v: int | None = None,
 ) -> Path:
     """Move tasks/<old>/<id>/ → tasks/<new>/<id>/ (whole-dir move), then post
     a status-changed event and commit. Returns the new absolute path.
@@ -5405,12 +5866,33 @@ def set_status(
 
     Refuses `followups_running` → any FOLLOWUP_HELD_BLOCKED_STATUSES member
     (same-issue follow-up status-hold rule) unless ``force_followup_exit``.
+
+    ``if_plan_v`` (mission-control rung 0, optional — absent = legacy): a
+    version-keyed CAS check for the async plan-approval answer path. When
+    given, the CURRENT highest ``plans/v{K}.md`` must equal it, checked
+    INSIDE the flock BEFORE any mutation; a mismatch raises
+    :class:`PlanVersionMismatch` with nothing mutated (a material-change
+    re-park wrote a newer plan while the approval view was open).
     """
     if new_status not in STATUSES:
         raise ValueError(f"unknown status: {new_status!r}; expected one of {STATUSES}")
     with _locked():
         old = find_task_path(task_id)
         old_status = _status_from_path(old)
+        if if_plan_v is not None:
+            actual_v = _highest_plan_version_in(old)
+            if actual_v != if_plan_v:
+                actual_desc = f"v{actual_v}" if actual_v is not None else "absent"
+                remedy = (
+                    f"re-read plans/v{actual_v}.md and re-run with --if-plan-v {actual_v}"
+                    if actual_v is not None
+                    else "the task has no versioned plans — drop --if-plan-v"
+                )
+                raise PlanVersionMismatch(
+                    f"task #{task_id}: stale view — --if-plan-v {if_plan_v} but the "
+                    f"highest persisted plan is {actual_desc} (a newer plan revision "
+                    f"landed since the view was composed); nothing mutated. {remedy}."
+                )
         if old_status == new_status:
             # Idempotent retry of the SAME transition. If find_task_path
             # resolved the task at a path that DISAGREES with the registry
@@ -5621,6 +6103,13 @@ class NewTaskRequest:
 def create_task(req: NewTaskRequest) -> int:
     """Create tasks/<status>/<NEW_ID>/ with body.md (frontmatter + body),
     empty events.jsonl, empty comments.jsonl. Returns the new ID.
+
+    Registry drift at the allocated id (an on-disk task folder REGISTRY.json
+    does not know about — e.g. a registry write destroyed by the #2015
+    pre-commit stash race) is self-healed in-lock via the reconcile helpers
+    (#2064) and the allocation retried ONCE; a second collision raises
+    ``RuntimeError`` naming the manual repair command instead of a bare
+    ``FileExistsError``.
     """
     if req.status not in STATUSES:
         raise ValueError(f"unknown status: {req.status!r}")
@@ -5630,7 +6119,23 @@ def create_task(req: NewTaskRequest) -> int:
         reg = _load_registry()
         task_id = reg.get("highest_id", 0) + 1
         path = tasks_dir() / req.status / str(task_id)
-        path.mkdir(parents=True, exist_ok=False)
+        heal_note = ""
+        try:
+            path.mkdir(parents=True, exist_ok=False)
+        except FileExistsError:
+            healed = _heal_registry_drift_locked(reg, colliding_id=task_id)
+            task_id = reg.get("highest_id", 0) + 1
+            path = tasks_dir() / req.status / str(task_id)
+            try:
+                path.mkdir(parents=True, exist_ok=False)
+            except FileExistsError as exc:
+                raise RuntimeError(
+                    f"task id allocation still colliding at {path} after a full "
+                    "in-lock registry reconcile; repair manually: "
+                    "uv run python scripts/task.py audit --repair --apply"
+                ) from exc
+            if healed:
+                heal_note = " (+registry drift heal, #2064)"
         (path / "artifacts").mkdir()
         (path / "plans").mkdir()
         fm: dict[str, Any] = {
@@ -5677,7 +6182,7 @@ def create_task(req: NewTaskRequest) -> int:
         # (#1030) instead of raising into the caller's retry recipe.
         _commit_after_durable_append(
             [path, registry_path()],
-            f"task #{task_id}: create — {req.title[:60]}",
+            f"task #{task_id}: create — {req.title[:60]}{heal_note}",
             task_id=task_id,
             op="create",
         )
@@ -5706,7 +6211,9 @@ class GoalH2DropError(ValueError):
     The Goal is the canonical target every downstream subagent reads;
     silently losing it costs a Goal-gate bounce + repair (incident #1112).
     Pass ``allow_goal_drop=True`` (CLI: ``--allow-goal-drop``) for a
-    deliberate drop.
+    deliberate drop. A ``workflow: v2`` REPORT body (positional
+    ``REPORT_V1_SENTINEL``, :func:`_is_report_v1_body`) is auto-exempt —
+    no flag needed (#2197).
     """
 
 
@@ -5737,15 +6244,19 @@ def set_body(
     GOAL_H2_NAME`` semantics as :func:`_inject_or_replace_goal_h2`), and
     the new (frontmatter-stripped) body does not, the write raises
     :class:`GoalH2DropError` BEFORE any side effect (in particular, no
-    ``original-body.md`` snapshot is written on refusal). Pass
-    ``allow_goal_drop=True`` (CLI: ``--allow-goal-drop``) for a deliberate
-    drop — e.g. the workflow-v2 report write, whose report-v1 skeleton
-    carries ``## Motivation:`` instead of ``## Goal`` (the ``goal:``
-    frontmatter survives regardless). Paper-stub writes are auto-exempt
-    via :func:`is_paper_task`. The guard fires ONLY on has→lacks
-    transitions: a grandfathered v3/legacy ``kind: experiment`` body that
-    lacks ``## Goal`` on the PRIOR side is DELIBERATELY exempt — do not
-    "fix" the prior-lacks exemption.
+    ``original-body.md`` snapshot is written on refusal). AUTO-EXEMPT
+    (#2197): a ``workflow: v2`` task (read from the canonical ON-DISK
+    frontmatter — ``workflow`` is not a ``_SET_BODY_ROUNDTRIP_KEYS``
+    member, so incoming-body frontmatter cannot smuggle it) writing a
+    report-v1 body (positional sentinel, :func:`_is_report_v1_body`)
+    needs no flag — the report-v1 skeleton carries ``## Motivation``
+    instead of ``## Goal``, and the ``goal:`` frontmatter survives
+    regardless. Paper-stub writes are auto-exempt via
+    :func:`is_paper_task`. Pass ``allow_goal_drop=True`` (CLI:
+    ``--allow-goal-drop``) for any OTHER deliberate drop. The guard fires
+    ONLY on has→lacks transitions: a grandfathered v3/legacy ``kind:
+    experiment`` body that lacks ``## Goal`` on the PRIOR side is
+    DELIBERATELY exempt — do not "fix" the prior-lacks exemption.
 
     Note: this function preserves the EXISTING frontmatter on body.md.
     If you need to change frontmatter fields, use the dedicated mutators
@@ -5779,6 +6290,9 @@ def set_body(
             not allow_goal_drop
             and fm.get("kind") == "experiment"
             and not is_paper_task(fm)  # paper-stub write legitimately lacks ## Goal
+            # v2 report write legitimately lacks ## Goal (#2197): the report-v1
+            # skeleton carries ## Motivation instead, and goal: frontmatter survives.
+            and not (fm.get("workflow") == "v2" and _is_report_v1_body(body_text))
             and _has_goal_h2(prior_body)
             and not _has_goal_h2(body_text)
         ):
@@ -6226,6 +6740,43 @@ def set_track(task_id: int, track: str) -> None:
 _PLAN_HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)$")
 _PLAN_HEADER_VERSION_RE = re.compile(r"(?i)^plan\s+v(\d+)\b")
 
+# ── Amendment-shape detection (#2255) ──
+# Three conjunctive signals — each alone is false-positive-dominated on the
+# 4,028-version persisted-plan corpus (marker phrase alone: 200 hits, ~198
+# full plans; size alone: 31 hits, 29 legitimate small full re-plans; the
+# conjunction fires on exactly the 2 true thin amendments — #2223 v4 at
+# ratio 0.051 and #377 v2 at 0.154).
+AMENDMENT_SIZE_RATIO = 0.4  # new bytes < 0.4 x predecessor bytes
+AMENDMENT_MARKER_RE = re.compile(
+    r"(?i)\b(?:amendment\s+of\s+v\d+|amends\s+v\d+|ports?\s+from\s+v\d+|unchanged\s+from\s+v\d+)\b"
+)
+# Parity copy of scripts/verify_plan.py GPU_LINE_RE (pattern equality is
+# pin-tested by tests/test_task_workflow.py::
+# test_amendment_gpu_regex_parity_with_verify_plan — the one deliberate
+# regex duplication; verify_plan.py is a script, not importable from here).
+AMENDMENT_GPU_LINE_RE = re.compile(
+    r"(?i)estimated\s+gpu-?hours\s+\(total\):\**\s*`?([0-9]+(?:\.[0-9]+)?)`?"
+)
+
+
+def is_amendment_shaped(plan_md: str, predecessor_bytes: int | None) -> bool:
+    """True iff ``plan_md`` looks like a thin delta over a predecessor plan
+    version: ALL THREE of (a) size < ``AMENDMENT_SIZE_RATIO`` x predecessor,
+    (b) an amendment-marker phrase (``AMENDMENT_MARKER_RE``), (c) NO
+    parseable ``Estimated GPU-hours (total): <number>`` declaration.
+    Conjunctive by calibration (#2255 §2): each signal alone is
+    false-positive-dominated on the 4,028-version persisted-plan corpus.
+    ``predecessor_bytes`` falsy/non-positive (no predecessor) → ``False``.
+    """
+    if not predecessor_bytes or predecessor_bytes <= 0:
+        return False
+    small = len(plan_md.encode("utf-8")) < AMENDMENT_SIZE_RATIO * predecessor_bytes
+    return (
+        small
+        and AMENDMENT_MARKER_RE.search(plan_md) is not None
+        and AMENDMENT_GPU_LINE_RE.search(plan_md) is None
+    )
+
 
 def _split_plan_frontmatter(text: str) -> tuple[str, str]:
     """Split ``text`` into ``(frontmatter_prefix, body)``, byte-preserving.
@@ -6291,7 +6842,7 @@ def _align_plan_header_version(plan_md: str, next_v: int) -> str:
     return plan_md
 
 
-def new_plan_version(task_id: int, plan_md: str) -> int:
+def new_plan_version(task_id: int, plan_md: str, *, allow_amendment: bool = False) -> int:
     """Append plans/v{next}.md, update plans/plan.md symlink. Returns the
     new version number.
 
@@ -6305,6 +6856,15 @@ def new_plan_version(task_id: int, plan_md: str) -> int:
     belt-and-suspenders guard, refuse loudly if the computed target file
     somehow already exists (e.g. a concurrent writer between the glob and
     the write, or a manually pre-staged file).
+
+    An AMENDMENT-SHAPED input (``is_amendment_shaped`` vs the highest
+    existing version: thin delta + amendment-marker phrase + no GPU-hours
+    declaration) is REFUSED with an actionable ``ValueError`` unless
+    ``allow_amendment=True`` (CLI ``--allow-amendment``) — every persisted
+    version must be self-contained because subagent briefs handed
+    ``plans/plan.md``, ``verify_plan.py --issue``, and the Step-2c
+    GPU-hours read all assume ONE self-contained file (#2255). Detection
+    runs on the INPUT text, before header alignment.
 
     Before writing, a self-declared ``Plan v<X>`` version in the plan's
     first markdown heading is rewritten to the assigned ``v{next}``
@@ -6328,6 +6888,28 @@ def new_plan_version(task_id: int, plan_md: str) -> int:
                 f"the highest-version+1 resolver computed v{next_v} but "
                 f"that file already exists on disk"
             )
+        if existing_nums and not allow_amendment:
+            predecessor = plans_dir / f"v{max(existing_nums)}.md"
+            predecessor_bytes = predecessor.stat().st_size
+            if is_amendment_shaped(plan_md, predecessor_bytes):
+                ratio = len(plan_md.encode("utf-8")) / predecessor_bytes
+                marker = AMENDMENT_MARKER_RE.search(plan_md)
+                phrase = marker.group(0) if marker else "<unmatched>"
+                raise ValueError(
+                    f"refusing to persist an AMENDMENT-SHAPED plan version for task "
+                    f"#{task_id}: the input is {ratio:.3f}x the size of its predecessor "
+                    f"{predecessor.name} (< AMENDMENT_SIZE_RATIO={AMENDMENT_SIZE_RATIO}), "
+                    f"carries the amendment-marker phrase {phrase!r}, and has NO parseable "
+                    f"`Estimated GPU-hours (total): <number>` declaration. Every persisted "
+                    f"plans/v{{K}}.md must be SELF-CONTAINED — subagent briefs handed "
+                    f"plans/plan.md, verify_plan.py --issue, and the Step-2c GPU-hours "
+                    f"gate all read ONE file (#2255). Remedies, in order: (1) compose a "
+                    f"FULL plan (base {predecessor.name} + this delta merged into one "
+                    f"self-contained document — trivially scriptable) and re-persist; or "
+                    f"(2) if the thin delta is deliberate (user-authorized), re-run with "
+                    f"--allow-amendment (library: allow_amendment=True) AND restate the "
+                    f"`Estimated GPU-hours (total):` line inside the amendment."
+                )
         plan_md = _align_plan_header_version(plan_md, next_v)
         target.write_text(plan_md if plan_md.endswith("\n") else plan_md + "\n")
         # Symlink plan.md → v{next}.md
@@ -6349,9 +6931,17 @@ def new_plan_version(task_id: int, plan_md: str) -> int:
 # ─── Promotion ──────────────────────────────────────────────────────────────
 
 
-def promote(task_id: int, verdict: str) -> Path:
+def promote(task_id: int, verdict: str, *, if_body_sha: str | None = None) -> Path:
     """User-only: flip a task at awaiting_promotion → completed, record the
     classification in frontmatter, append epm:promoted.
+
+    ``if_body_sha`` (mission-control rung 0, optional — absent = legacy): a
+    version-keyed CAS check for the async promotion answer path. When given,
+    ``sha256(body.md bytes)[:12]`` must match it (a longer full sha is
+    accepted and prefix-compared), checked INSIDE the flock BEFORE any
+    mutation; a mismatch raises :class:`BodyShaMismatch` with nothing
+    mutated — follow-up rounds rewrite the body AT awaiting_promotion, which
+    invalidates an open promotion view.
     """
     if verdict not in ("useful", "not-useful"):
         raise ValueError(f"verdict must be useful|not-useful, got {verdict!r}")
@@ -6363,6 +6953,17 @@ def promote(task_id: int, verdict: str) -> Path:
                 f"task #{task_id} is in status {cur_status!r}, expected {PARK_STATUS!r}; "
                 f"refusing to promote"
             )
+        if if_body_sha is not None:
+            expected = if_body_sha.strip().lower()[:12]
+            actual = body_sha12(path)
+            if actual != expected:
+                raise BodyShaMismatch(
+                    f"task #{task_id}: stale view — --if-body-sha {expected} but the "
+                    f"current body.md hashes to {actual} (the body changed since the "
+                    f"promotion view was composed, e.g. a follow-up round rewrote it); "
+                    f"nothing mutated. Re-read the body and re-run with "
+                    f"--if-body-sha {actual}."
+                )
         fm, body = _read_body(path / "body.md")
         fm["classification"] = verdict
         fm["promoted_at"] = _utcnow_iso()
@@ -6584,6 +7185,58 @@ def _jsonl_lines_subsequence(husk_bytes: bytes, live_bytes: bytes) -> bool:
     return all(any(h == line for line in live_iter) for h in husk_lines)
 
 
+def _husk_file_symlink_covered(hp: Path, lp: Path, live: Path, husk_resolved: Path) -> bool:
+    """True iff the husk FILE-symlink entry ``hp`` is covered by the live
+    dir (#2138); False == unique. Routes, in order: (1) the live
+    counterpart ``lp`` is a symlink with an identical ``os.readlink()``
+    target (the pre-existing rule); (2) the fully-resolved target stays
+    INSIDE the husk and its husk-relative path also exists in the live
+    dir; (3) the in-husk resolved bytes are covered by the live
+    counterpart at the same relative path under the regular-file rules.
+    Fail-safe: a dangling, husk-escaping, looping, or non-regular-target
+    symlink returns False. Route (2) classifies the SYMLINK entry ONLY --
+    it never suppresses the walk's independent comparison of the target
+    file itself (``resolve()`` strips symlink components, so every
+    intermediate dir on the resolved path is REAL and ``os.walk`` reaches
+    the target file; a diverged target is that entry's own unique verdict
+    and escalates the husk regardless of this route)."""
+    if lp.is_symlink() and os.readlink(hp) == os.readlink(lp):
+        return True  # existing rule: identical pointer on both sides
+    # NEW (#2138): a FILE-symlink may still be safe when its resolved
+    # content is carried by the live dir. Fail-safe gates first:
+    # hp.is_file() follows the chain -- False for dangling / non-regular
+    # targets; the resolved path must stay INSIDE the husk dir.
+    if not hp.is_file():
+        return False
+    try:
+        resolved = hp.resolve(strict=True)
+    except (OSError, RuntimeError):
+        # RuntimeError: py311 raises it for symlink LOOPS at
+        # resolve(strict=True) (unified into OSError only in 3.13);
+        # unreachable in practice -- hp.is_file() screens loops (ELOOP is
+        # in pathlib's ignored errnos) -- kept as a belt against
+        # resolve-time races. Either way: unique.
+        return False
+    if not resolved.is_relative_to(husk_resolved):
+        return False  # husk-escaping target: byte coverage never rescues it
+    target_rel = resolved.relative_to(husk_resolved)
+    # (b) pointer-carries-no-data: the target path also exists in the live
+    # dir (the walk verifies husk/<target_rel> against live/<target_rel>
+    # independently -- see the docstring's non-suppression clause).
+    if (live / target_rel).exists():
+        return True
+    # (a) same-rel-path content coverage: resolved bytes covered by the
+    # live counterpart under the regular-file rules.
+    if lp.is_file():
+        sym_bytes = hp.read_bytes()  # follows the chain
+        lp_bytes = lp.read_bytes()
+        if lp_bytes.startswith(sym_bytes):
+            return True
+        if hp.suffix == ".jsonl" and _jsonl_lines_subsequence(sym_bytes, lp_bytes):
+            return True
+    return False
+
+
 def _husk_unique_content(husk: Path, live: Path) -> list[str]:
     """Entries under ``husk`` NOT covered by ``live``. Empty list == safe
     subset (every husk entry is redundant with the live dir; nothing is
@@ -6594,8 +7247,22 @@ def _husk_unique_content(husk: Path, live: Path) -> list[str]:
     symlink-to-file in ``filenames`` — BOTH are classified here so a
     dir-symlink can never reach ``rmtree`` unverified):
 
-    - symlink (dir OR file): safe iff the live counterpart is a symlink
-      with an identical ``os.readlink()`` target; else unique.
+    - symlink to a DIRECTORY: safe iff the live counterpart is a symlink
+      with an identical ``os.readlink()`` target; else unique. The walk
+      never traverses INTO a symlinked dir, so its contents are never
+      subset-verified — content-based leniency for dir-symlinks would be
+      unsound; readlink equality stays their only safe route.
+    - symlink to a FILE: safe via ANY of (1) the live counterpart is a
+      symlink with an identical ``os.readlink()`` target; (2) the target,
+      fully resolved via ``resolve(strict=True)``, stays INSIDE the husk
+      and the same husk-relative path also exists in the live dir (#2138:
+      the pointer itself carries no data; the walk still compares the
+      husk's target file against the live counterpart independently, so a
+      diverged target stays unique and escalates the husk); (3) the
+      resolved target stays INSIDE the husk and the resolved bytes are
+      covered by the live counterpart at the SAME relative path under the
+      regular-file rules below. A dangling, husk-escaping, looping, or
+      non-regular-target symlink is unique (fail-safe).
     - regular file: safe iff a live counterpart file exists AND (bytes
       identical OR husk bytes are a byte-prefix of live bytes OR — for
       ``.jsonl`` files — husk lines are an ordered subsequence of live
@@ -6607,6 +7274,7 @@ def _husk_unique_content(husk: Path, live: Path) -> list[str]:
       under tasks/).
     """
     unique: list[str] = []
+    husk_resolved = husk.resolve()
     for root, dirnames, filenames in os.walk(husk, followlinks=False):
         root_p = Path(root)
         rel_root = root_p.relative_to(husk)
@@ -6624,9 +7292,8 @@ def _husk_unique_content(husk: Path, live: Path) -> list[str]:
             rel = rel_root / name
             lp = live / rel
             if hp.is_symlink():
-                if lp.is_symlink() and os.readlink(hp) == os.readlink(lp):
-                    continue
-                unique.append(str(rel))
+                if not _husk_file_symlink_covered(hp, lp, live, husk_resolved):
+                    unique.append(str(rel))
                 continue
             if not hp.is_file():
                 unique.append(str(rel))  # fifo/socket/device — never covered
@@ -7097,6 +7764,43 @@ def _reconcile_apply_pending(
         _registry_set(reg, pend.task_id, pend.actual, fm)
         applied.append(pend)
     return applied
+
+
+def _heal_registry_drift_locked(reg: dict[str, Any], *, colliding_id: int) -> bool:
+    """Self-heal registry drift discovered at the ``create_task`` allocation
+    site (#2064: an on-disk task folder missing from REGISTRY.json re-issued
+    the same colliding id to every caller after the #2015 stash race destroyed
+    a registry write). MUST be called while ALREADY holding ``_locked()`` —
+    ``reconcile_registry(apply=True)`` would self-deadlock (``_locked()``
+    opens a fresh flock fd per call), so this inlines its apply body minus
+    lock + commit: the caller's own ``_save_registry`` + commit persist the
+    heal. Mutates ``reg`` in place; returns True iff anything changed
+    (an entry re-pointed/registered, or ``highest_id`` bumped). The two
+    ERROR-level log lines keep every drift episode forensically visible —
+    the heal repairs the symptom, never silences it.
+    """
+    _log.error(
+        "registry drift at allocated task id %s: on-disk folder exists with no "
+        "REGISTRY.json entry (#2064; see #2015 for the likely destroyer). "
+        "Self-healing via in-lock reconcile.",
+        colliding_id,
+    )
+    repo, td = repo_root(), tasks_dir()
+    highest_before = reg.get("highest_id", 0)
+    stale, missing, empty_stubs, skipped, disk = _reconcile_plan(repo, td, reg)
+    applied_stale = _reconcile_apply_pending(reg, stale, skipped)
+    applied_missing = _reconcile_apply_pending(reg, missing, skipped)
+    _reconcile_highest_id(reg, max((int(t) for t in disk), default=0))
+    _log.error(
+        "drift heal: %d stale re-pointed, %d missing registered, %d empty stubs "
+        "bumped past (never registered), %d skipped; highest_id now %s",
+        len(applied_stale),
+        len(applied_missing),
+        len(empty_stubs),
+        len(skipped),
+        reg.get("highest_id"),
+    )
+    return bool(applied_stale or applied_missing or reg.get("highest_id", 0) > highest_before)
 
 
 def reconcile_registry(*, apply: bool = False) -> ReconcileReport:
@@ -8184,7 +8888,8 @@ def raise_concern(
     if len(summary) > 200:
         raise ValueError(
             f"summary too long ({len(summary)} chars; max 200). Move detail to "
-            "evidence (the task.py CLI auto-truncates at a word boundary instead)."
+            "evidence, or pass the full text via the task.py CLI's --summary-file "
+            "(preserved verbatim in the evidence field)."
         )
     if not isinstance(raised_by, str) or not raised_by.strip():
         raise ValueError("raised_by must be a non-empty string")
@@ -8226,6 +8931,7 @@ def address_concern(
     addressed_by: str,
     addressed_at_round: int,
     summary: str | None = None,
+    evidence: str | None = None,
 ) -> dict[str, Any]:
     """Append an ``addressed`` event recording that the implementer (or
     analyzer / planner, depending on the stage) believes the concern has
@@ -8238,6 +8944,10 @@ def address_concern(
     ``concern_id`` MUST refer to a concern that has been raised at least
     once on this task; ``ValueError`` otherwise (defends against
     address-without-raise typos that would orphan the audit log).
+
+    ``evidence`` (optional, #2121) is stored on the payload only when
+    truthy — the same additive shape ``raise_concern`` has carried since
+    inception, so no reader of ``concerns.jsonl`` needs to change.
     """
     _validate_concern_id(concern_id)
     if not isinstance(addressed_at_round, int) or addressed_at_round < 1:
@@ -8259,8 +8969,9 @@ def address_concern(
         if len(carried_summary) > 200:
             raise ValueError(
                 f"summary too long ({len(carried_summary)} chars; max 200). Pass a "
-                "shorter summary — detail belongs in the round report (the task.py "
-                "CLI auto-truncates explicit summaries at a word boundary)."
+                "shorter summary — detail belongs in the round report, or pass the "
+                "full text via the task.py CLI's --summary-file (preserved verbatim "
+                "in the evidence field)."
             )
         payload: dict[str, Any] = {
             "ts": _utcnow_iso(),
@@ -8271,6 +8982,8 @@ def address_concern(
             "addressed_by": addressed_by,
             "addressed_at_round": addressed_at_round,
         }
+        if evidence:
+            payload["evidence"] = evidence
         _append_concern_event(task_id, payload)
         return payload
 
@@ -8412,6 +9125,7 @@ __all__ = [
     "get_task",
     "has_event",
     "invalidate_cache",
+    "is_amendment_shaped",
     "keep_running_tag_state",
     "latest_event",
     "list_by_status",

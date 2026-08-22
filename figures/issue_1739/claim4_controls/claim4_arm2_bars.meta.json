@@ -1,0 +1,475 @@
+{
+  "commit": "12cfdbf3+dirty",
+  "render_id": "5af8c2dd989c42a6",
+  "git_commit": "12cfdbf3",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue1739_claim4_relabel_figs.py",
+    "figures/issue_1739/claim4_controls/claim4_arm2_bars.meta.json",
+    "figures/issue_1739/claim4_controls/claim4_arm2_bars.pdf",
+    "figures/issue_1739/claim4_controls/claim4_arm2_bars.png",
+    "figures/issue_1739/claim4_controls/claim4_forest.meta.json",
+    "figures/issue_1739/claim4_controls/claim4_forest.pdf",
+    "figures/issue_1739/claim4_controls/claim4_forest.png",
+    "figures/issue_1739/claim4_controls/claim4_map_knn.meta.json",
+    "figures/issue_1739/claim4_controls/claim4_map_knn.pdf",
+    "figures/issue_1739/claim4_controls/claim4_map_knn.png",
+    "figures/issue_1739/claim4_controls/claim4_syco_ood.meta.json",
+    "figures/issue_1739/claim4_controls/claim4_syco_ood.pdf",
+    "figures/issue_1739/claim4_controls/claim4_syco_ood.png",
+    "scripts/issue1739_claim4_fold.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue1739_claim4_relabel_figs.py",
+  "created": "2026-08-20T00:40:31Z",
+  "figsize": [
+    8.0,
+    4.2
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "Spearman \u03c1 (seed mean, true map)": -0.03764758048152951,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "Spearman \u03c1 (seed mean, true map)": 0.08250320552510312,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "Spearman \u03c1 (seed mean, true map)": 0.4410867623875322,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "Spearman \u03c1 (seed mean, true map)": 0.013432879578417897,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "Spearman \u03c1 (seed mean, true map)": 0.02602610067355237,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.0,
+      "Spearman \u03c1 (seed mean, true map)": 0.04692887813600542,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.0,
+      "Spearman \u03c1 (seed mean, true map)": 0.2571054351082843,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 7.0,
+      "Spearman \u03c1 (seed mean, true map)": 0.06348355127963523,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 8.0,
+      "Spearman \u03c1 (seed mean, true map)": 0.11890273346252414,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 9.0,
+      "Spearman \u03c1 (seed mean, true map)": 0.25706838557017253,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 10.0,
+      "Spearman \u03c1 (seed mean, true map)": 0.10837313915659226,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 11.0,
+      "Spearman \u03c1 (seed mean, true map)": -0.08370317024979793,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 12.0,
+      "Spearman \u03c1 (seed mean, true map)": 0.11277146341292346,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.16,
+      "Spearman \u03c1 (seed mean, true map)": 0.03904477844445324,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.16,
+      "Spearman \u03c1 (seed mean, true map)": 0.16417640650309967,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.16,
+      "Spearman \u03c1 (seed mean, true map)": -0.1353656424001626,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.16,
+      "Spearman \u03c1 (seed mean, true map)": 0.023139165398492867,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.16,
+      "Spearman \u03c1 (seed mean, true map)": 0.19759376881252588,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.16,
+      "Spearman \u03c1 (seed mean, true map)": 0.2360669814550572,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 6.16,
+      "Spearman \u03c1 (seed mean, true map)": 0.37217126676007495,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 7.16,
+      "Spearman \u03c1 (seed mean, true map)": 0.2615543019486713,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 8.16,
+      "Spearman \u03c1 (seed mean, true map)": 0.5565544978846162,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 9.16,
+      "Spearman \u03c1 (seed mean, true map)": 0.07884446827428129,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 10.16,
+      "Spearman \u03c1 (seed mean, true map)": 0.10215196806258175,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 11.16,
+      "Spearman \u03c1 (seed mean, true map)": 0.14629583372458715,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 12.16,
+      "Spearman \u03c1 (seed mean, true map)": 0.04092469060720989,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.32,
+      "Spearman \u03c1 (seed mean, true map)": 0.11692203107430707,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.32,
+      "Spearman \u03c1 (seed mean, true map)": 0.14629651919643033,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.32,
+      "Spearman \u03c1 (seed mean, true map)": 0.16028094663390227,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.32,
+      "Spearman \u03c1 (seed mean, true map)": 0.05714940487083524,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.32,
+      "Spearman \u03c1 (seed mean, true map)": 0.3277229121479508,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 5.32,
+      "Spearman \u03c1 (seed mean, true map)": 0.3687790869094138,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 6.32,
+      "Spearman \u03c1 (seed mean, true map)": 0.43437270548051876,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 7.32,
+      "Spearman \u03c1 (seed mean, true map)": 0.7068368819154831,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 8.32,
+      "Spearman \u03c1 (seed mean, true map)": 0.3777820706732616,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 9.32,
+      "Spearman \u03c1 (seed mean, true map)": 0.2602561591838705,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 10.32,
+      "Spearman \u03c1 (seed mean, true map)": 0.5032366638176134,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 11.32,
+      "Spearman \u03c1 (seed mean, true map)": 0.18904968271571662,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 12.32,
+      "Spearman \u03c1 (seed mean, true map)": 0.06312462401654498,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.48,
+      "Spearman \u03c1 (seed mean, true map)": 0.19987206306868147,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.48,
+      "Spearman \u03c1 (seed mean, true map)": 0.2666568384433487,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.48,
+      "Spearman \u03c1 (seed mean, true map)": -0.29283544756093344,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 3.48,
+      "Spearman \u03c1 (seed mean, true map)": 0.09038769244351617,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 4.48,
+      "Spearman \u03c1 (seed mean, true map)": 0.37132649773168425,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 5.48,
+      "Spearman \u03c1 (seed mean, true map)": 0.4063741246448914,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 6.48,
+      "Spearman \u03c1 (seed mean, true map)": 0.44612451990775454,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 7.48,
+      "Spearman \u03c1 (seed mean, true map)": 0.7255286707237419,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 8.48,
+      "Spearman \u03c1 (seed mean, true map)": 0.4324828023523075,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 9.48,
+      "Spearman \u03c1 (seed mean, true map)": 0.14599092162671404,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 10.48,
+      "Spearman \u03c1 (seed mean, true map)": 0.5334192864638364,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 11.48,
+      "Spearman \u03c1 (seed mean, true map)": -0.006993529967507015,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 12.48,
+      "Spearman \u03c1 (seed mean, true map)": 0.39563811590242803,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.64,
+      "Spearman \u03c1 (seed mean, true map)": 0.16716446811377994,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 1.64,
+      "Spearman \u03c1 (seed mean, true map)": 0.22518415528250796,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.64,
+      "Spearman \u03c1 (seed mean, true map)": -0.1997292408038843,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 3.64,
+      "Spearman \u03c1 (seed mean, true map)": 0.02746114569220287,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 4.64,
+      "Spearman \u03c1 (seed mean, true map)": 0.3635124951968146,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 5.64,
+      "Spearman \u03c1 (seed mean, true map)": 0.36493965476618545,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 6.64,
+      "Spearman \u03c1 (seed mean, true map)": 0.42176304200439524,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 7.64,
+      "Spearman \u03c1 (seed mean, true map)": 0.6929844572975458,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 8.64,
+      "Spearman \u03c1 (seed mean, true map)": 0.4136602357584088,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 9.64,
+      "Spearman \u03c1 (seed mean, true map)": 0.12658794764617537,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 10.64,
+      "Spearman \u03c1 (seed mean, true map)": 0.5013763410555452,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 11.64,
+      "Spearman \u03c1 (seed mean, true map)": -0.03032314756726832,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 12.64,
+      "Spearman \u03c1 (seed mean, true map)": 0.26634539080015707,
+      "_kind": "bar",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 65,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Context-native direction comparator vs roster per rung (true map)",
+        "ylabel": "Spearman \u03c1 (seed mean, true map)",
+        "legend_labels": [
+          "Persona vector on context",
+          "Context-native direction (transfer, new this round)",
+          "Ridge regression on context",
+          "Ridge regression on mapped answer",
+          "control: weight-permuted map ridge"
+        ],
+        "xticklabels": [
+          "evil: multi-turn human jailbreaks",
+          "evil: PAIR optimizer attacks",
+          "evil: Tom Gibbs multi-turn",
+          "evil: HH red-team",
+          "evil: ToxicChat",
+          "hallucination: NQ-Open",
+          "hallucination: SimpleQA",
+          "sycophancy: AITA slot (held-out Reddit)",
+          "sycophancy: answer",
+          "sycophancy: are-you-sure",
+          "sycophancy: feedback",
+          "sycophancy: mimicry",
+          "sycophancy: model-written evaluations"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      }
+    ],
+    "series": [
+      "Persona vector on context",
+      "Context-native direction (transfer, new this round)",
+      "Ridge regression on context",
+      "Ridge regression on mapped answer",
+      "control: weight-permuted map ridge"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

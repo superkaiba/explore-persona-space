@@ -89,7 +89,8 @@ _PRE_REG_HEAD_NOUN_ALT = (
     r"|gates?|rules?|endpoints?|contrasts?|floors?|companions?|hypothes[ei]s|alpha"
     r"|cuts?|paths?|clauses?|controls?|levers?|bars?|smokes?|estimators?"
     r"|layers?|rungs?|windows?|preconditions?|curves?|designs?|legs?"
-    r"|subsamples?|intervals?|tests?|ceilings?|checks?|fallbacks?)"
+    r"|subsamples?|intervals?|tests?|ceilings?|checks?|fallbacks?"
+    r"|recomputes?|sensitivit(?:y|ies)|comparisons?|batter(?:y|ies)|slices?|probes?)"
 )
 
 PATTERNS: dict[str, tuple[str, str]] = {
@@ -362,6 +363,93 @@ PATTERNS: dict[str, tuple[str, str]] = {
         # config register would flag (0 corpus instances in 1,960
         # bodies; report-only severity + loud hand-adjudication + the
         # per-branch kill lever make it acceptable).
+        # #2290 (2026-08-14) adds `recomputes?`/`sensitivit(?:y|ies)`/
+        # `comparisons?`/`batter(?:y|ies)`/`slices?`/`probes?` for the
+        # #2254 escape: four `registered <noun>` phrasings in #2254's
+        # clean-result draft — 'the registered held-out-question
+        # recompute' (Takeaways bullet 5), 'A registered held-out
+        # sensitivity' (Methodology -> Evaluation), 'the registered
+        # held-out recompute' (Result 1 interpretation), 'outside the
+        # registered comparison' (Result 4 what-is-plotted) — passed the
+        # audit clean (recompute/sensitivity/comparison were absent from
+        # the alternation) and were caught only by the LM critic's Lens 7
+        # read. Measured 2026-08-14 over all 2,225 tasks/*/*/body.md
+        # (2,224 at plan time; the +1 is #2293's body, created after the
+        # plan-time scan, 0 OLD / 0 NEW starts — every other number
+        # identical) through the audit's own pre_reg scan-source pipeline
+        # (strip_frontmatter -> strip_context_blockquotes ->
+        # strip_data_example_blocks -> strip_code ->
+        # _restrict_pre_reg_to_prose_sections) with re.IGNORECASE, as a
+        # full-pattern old-vs-new match-START diff: OLD 503 -> NEW 516
+        # starts, 13 added, OLD-minus-NEW = 0. Per-noun breakdown of the
+        # 13: recompute 1, sensitivity 2, comparison 2, battery 3 +
+        # batteries 2, slice 2, probe 1. Corpus-drift reconciliation (so
+        # a future re-measurement is not read as a discrepancy): the
+        # first measurement, taken hours earlier on the pre-rewording
+        # corpus, read OLD 509 -> NEW 526 / 17 added; both deltas
+        # reconcile exactly against git objects — #2254's body lost the
+        # four incident phrasings at 7bd94411ed (4 NEW-only starts
+        # present at blob a8e9117b5e, 0 now => 17 - 4 = 13), and #2225's
+        # body was rewritten by its follow-up round at
+        # 02145baf5a/ad757ed2f0 (6 OLD starts present at commit
+        # a80d9c32d8, 0 now => 503 + 6 = 509). Manual classification:
+        # all 13 genuine Lens 7 jargon by the precedent's deciding
+        # question (does 'registered' here mean PRE-REGISTERED,
+        # regardless of surface grammar?), 0 benign verb-use false
+        # positives. Named residual, disclosed: 3 of the 13 are
+        # self-referential meta-mentions inside #2290's own `kind: infra`
+        # task body (this task quoting the escaped phrasings) — a corpus
+        # artifact of scanning all bodies, not a gate-visible hit: the
+        # audit's gate surface is clean-result bodies, and an infra task
+        # body is never scanned by verify_task_body.py / the critic
+        # pre-pass. Gate-relevant genuine hits: 10. ONE same-START
+        # match-TEXT change (the #1783 convention): #931's 'registered
+        # sensitivity margin' (previously matched via `margins?`) now
+        # matches as 'registered sensitivity' — the lazy window stops at
+        # the earlier noun; the start is unchanged (hence 0 OLD-minus-NEW)
+        # and the finding still fires; only the sample text shortens. No
+        # other match text changed. Per-noun accepted FP residual, named:
+        # `sensitivity` is a MASS noun, so the determiner-less
+        # direct-object form fires with ZERO intervening window tokens —
+        # measured: 'the probe registered sensitivity to prompt phrasing'
+        # -> 'registered sensitivity' — strictly tighter than the
+        # determiner-first class #1419 measured-and-rejected. The
+        # count-noun siblings fire through the 0-/1-token window on
+        # constructed shapes too: 'the harness registered a comparison
+        # failure' -> 'registered a comparison', 'the run registered
+        # probe timings' -> 'registered probe', 'the device registered
+        # battery telemetry' -> 'registered battery'. All four
+        # constructions have ZERO attestation in 2,225 bodies.
+        # Disposition: accepted as residual — cost is one loud Step
+        # 9a-bis hand-adjudication each; NOT a guard tightening (the
+        # determiner arm was measured and rejected at #1419: it trades 6
+        # attested true positives for nothing measured) and NOT a reason
+        # to drop the nouns (incident-mandated). The three benign shapes
+        # the task body and #411 name — 'registered the pod', 'the
+        # session registered in the daemon', 'registered a live metrics
+        # dashboard' — were verified to stay CLEAN, as do noun-before-verb
+        # subjects and the first-token preposition guard. Three
+        # EXCLUSIONS, recorded so a future round does not re-propose them
+        # blind: `metrics?` — attested BENIGN VERB USE (#411: 'only the
+        # Qwen-default training run registered a live metrics dashboard';
+        # ordinary transitive verb, flagging it violates the zero-verb-FP
+        # bar). `analys[ei]s` — 8 genuine hits, but every one sits in an
+        # artifact/provenance link list on a legacy `## Human TL;DR` /
+        # `## TL;DR` / `## Reproducibility` generation body, which
+        # _restrict_pre_reg_to_prose_sections routes to the WHOLE-BODY
+        # regime (no Data/Reproducibility exclusion); #623 established
+        # that register as spec-permitted, and the noun has no incident
+        # mandate — FORWARD ROUTE: when a 'registered analysis' escape
+        # eventually fires in reader-facing prose, the in-family fix is
+        # the #1783 MECHANICAL route (blank the artifact/provenance-link
+        # register from the scan source, then add the noun), not a bare
+        # re-proposal of the noun alone. `splits?` — single coincidental
+        # parse (#601: 'a registered amendment split it into a structural
+        # eval-path gate' — 'split' is the sentence's verb; the genuine
+        # jargon is 'amendment', not in the alternation). Inherited
+        # accepted-residual note: the raw-corpus scan remains a SUPERSET
+        # of gate-visible hits (table-row / fence / scope-exempt hits
+        # counted), contingent on the [ \t]+-only separators.
         r"pre-?registered|pre-?registration|(?<![a-z])pre-reg(?![a-z])|registered hypothesis"
         r"|registered alpha|\bas registered\b|fail at the gate|passed the gate"
         r"|gate-pre-?registered"

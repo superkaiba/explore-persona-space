@@ -1,0 +1,144 @@
+{
+  "commit": "f8920b45+dirty",
+  "render_id": "694a33138ffd4faa",
+  "git_commit": "f8920b45",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "created": "2026-08-18T00:51:38Z",
+  "figsize": [
+    7.6,
+    4.2
+  ],
+  "points": [
+    {
+      "x": -0.26,
+      "rank-1 retrieval accuracy": 0.816014485464239,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.74,
+      "rank-1 retrieval accuracy": 0.9535258022331757,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.74,
+      "rank-1 retrieval accuracy": 0.9761593401066291,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.74,
+      "rank-1 retrieval accuracy": 0.984508600744392,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "raw euclidean",
+      "rank-1 retrieval accuracy": 0.7651141736243838,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "whitened cosine",
+      "rank-1 retrieval accuracy": 0.9318981993763202,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "CSLS on\nwhitened cosine",
+      "rank-1 retrieval accuracy": 0.967005331455588,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "double-strength\nCSLS-whitened",
+      "rank-1 retrieval accuracy": 0.9761593401066291,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.26,
+      "rank-1 retrieval accuracy": 0.7673272306608993,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.26,
+      "rank-1 retrieval accuracy": 0.9338094759078563,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.26,
+      "rank-1 retrieval accuracy": 0.9676088924655467,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.26,
+      "rank-1 retrieval accuracy": 0.9787747711497837,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 12,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "The two 20k maps are equal; clean conventions shrink the 88k-vs-20k gap",
+        "ylabel": "rank-1 retrieval accuracy",
+        "legend_labels": [
+          "ridge, n = 88k (banked)",
+          "single-draw-trained, n = 20k",
+          "5-draw-averaged-trained, n = 20k"
+        ],
+        "annotations": [
+          "0.816",
+          "0.954",
+          "0.976",
+          "0.985",
+          "0.765",
+          "0.932",
+          "0.967",
+          "0.976",
+          "0.767",
+          "0.934",
+          "0.968",
+          "0.979"
+        ],
+        "xticklabels": [
+          "raw euclidean",
+          "whitened cosine",
+          "CSLS on\nwhitened cosine",
+          "double-strength\nCSLS-whitened"
+        ],
+        "yticklabels": [
+          "0.70",
+          "0.75",
+          "0.80",
+          "0.85",
+          "0.90",
+          "0.95",
+          "1.00",
+          "1.05"
+        ]
+      }
+    ],
+    "series": [
+      "ridge, n = 88k (banked)",
+      "single-draw-trained, n = 20k",
+      "5-draw-averaged-trained, n = 20k"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -1,0 +1,5722 @@
+{
+  "commit": "2854387a+dirty",
+  "render_id": "a7e39a18c68f4254",
+  "git_commit": "2854387a93525f15ab3ba5e025352b94a803a8ca",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_1895/dark_spot_matched_rows.json",
+    "figures/paper/c3_persona_direction_spectrum.pdf",
+    "figures/paper/c3_persona_direction_spectrum.png",
+    "figures/paper/c3_sae_tier_gradient.meta.json",
+    "figures/paper/c3_sae_tier_gradient.pdf",
+    "figures/paper/c3_sae_tier_gradient.png",
+    "figures/paper/c4_reparam_recovery.meta.json",
+    "figures/paper/c4_reparam_recovery.pdf",
+    "figures/paper/c4_reparam_recovery.png",
+    "figures/paper/c4_story_vs_chat.meta.json",
+    "figures/paper/c4_story_vs_chat.pdf",
+    "figures/paper/c4_story_vs_chat.png",
+    "scripts/issue1310_analyzer_figures.py",
+    "scripts/issue1336_analyzer_figures.py",
+    "scripts/issue1345_analyzer_figs.py",
+    "scripts/issue1482_matryoshka_tier.py",
+    "scripts/issue1639_tier15_ladder_fig.py",
+    "scripts/issue1739_result2_fourpanel_fig.py",
+    "scripts/issue1774_figures.py",
+    "scripts/issue1895_analysis_figures.py",
+    "scripts/issue1901_body_figures.py",
+    "scripts/issue1902_figures.py",
+    "scripts/issue2094_figures.py",
+    "scripts/issue2202_regen_figs.py",
+    "scripts/issue722_figures.py",
+    "scripts/issue779_identity_baseline.py",
+    "scripts/issue823_figures.py",
+    "scripts/issue928_mlc_figures.py",
+    "tasks/planning/2422/events.jsonl",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2094_figures.py",
+  "created": "2026-08-20T08:19:56Z",
+  "figsize": [
+    5.5,
+    2.97
+  ],
+  "points": [
+    {
+      "x": -0.26,
+      "activation effect\n(fraction of a full context swap)": 0.045245634554885325,
+      "error": 0.01523952494064966,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": -0.26,
+      "activation effect\n(fraction of a full context swap)": 0.00784215317107737,
+      "error": 0.01523952494064966,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": -0.195,
+      "activation effect\n(fraction of a full context swap)": 0.04574359928568204,
+      "error": 0.015187890426022928,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": -0.195,
+      "activation effect\n(fraction of a full context swap)": -0.0013455202182133992,
+      "error": 0.015187890426022928,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": -0.13,
+      "activation effect\n(fraction of a full context swap)": 0.08561824094504118,
+      "error": 0.017431065549654092,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "x": -0.13,
+      "activation effect\n(fraction of a full context swap)": -0.013886099657975137,
+      "error": 0.017431065549654092,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "x": -0.065,
+      "activation effect\n(fraction of a full context swap)": 0.10822242260910571,
+      "error": 0.03252742464508332,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "x": -0.065,
+      "activation effect\n(fraction of a full context swap)": -0.014966683089733123,
+      "error": 0.03252742464508332,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "activation effect\n(fraction of a full context swap)": 0.11820836020633578,
+      "error": 0.026429029597560966,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "x": 0.0,
+      "activation effect\n(fraction of a full context swap)": -0.0019055807031691074,
+      "error": 0.026429029597560966,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 0.065,
+      "activation effect\n(fraction of a full context swap)": 0.1422957881819457,
+      "error": 0.03295218819243178,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "x": 0.065,
+      "activation effect\n(fraction of a full context swap)": 0.012872220762073994,
+      "error": 0.03295218819243178,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "x": 0.13,
+      "activation effect\n(fraction of a full context swap)": 0.2707537427130673,
+      "error": 0.034179218899868365,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "x": 0.13,
+      "activation effect\n(fraction of a full context swap)": -0.012700059497728945,
+      "error": 0.034179218899868365,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "x": 0.195,
+      "activation effect\n(fraction of a full context swap)": 0.2722781518474221,
+      "error": 0.06057197416625444,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "x": 0.195,
+      "activation effect\n(fraction of a full context swap)": 0.03365377960726619,
+      "error": 0.06057197416625444,
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "x": 0.26,
+      "activation effect\n(fraction of a full context swap)": 0.4136931002140045,
+      "error": 0.08484372568337356,
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "x": 0.26,
+      "activation effect\n(fraction of a full context swap)": 0.09241630709730089,
+      "error": 0.08484372568337356,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "x": 0.21312319550237951,
+      "activation effect\n(fraction of a full context swap)": -0.0005706049657116333,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.06809837927352852,
+      "activation effect\n(fraction of a full context swap)": 0.003995645426524182,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.07623662229451333,
+      "activation effect\n(fraction of a full context swap)": 0.008667116767416399,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.1266651094542815,
+      "activation effect\n(fraction of a full context swap)": -0.002507187891751528,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.25069631158331845,
+      "activation effect\n(fraction of a full context swap)": 0.0040077627326051395,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.037627243600105054,
+      "activation effect\n(fraction of a full context swap)": -0.001506961843309303,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.12217280670596378,
+      "activation effect\n(fraction of a full context swap)": -0.003919207770377397,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.2640329223892913,
+      "activation effect\n(fraction of a full context swap)": 0.0018508114231129487,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.19437667416966242,
+      "activation effect\n(fraction of a full context swap)": 0.008057608339004218,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.0017426655821088932,
+      "activation effect\n(fraction of a full context swap)": -0.0014474874207129082,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.1841649171631654,
+      "activation effect\n(fraction of a full context swap)": 0.000708712295939525,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.03979954496565952,
+      "activation effect\n(fraction of a full context swap)": -0.00974386341792221,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.05242111560831675,
+      "activation effect\n(fraction of a full context swap)": 0.010615813250963887,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.0171947965574083,
+      "activation effect\n(fraction of a full context swap)": 0.011781777782986561,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.22705006979523118,
+      "activation effect\n(fraction of a full context swap)": -0.006644486635923386,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.2224151857426353,
+      "activation effect\n(fraction of a full context swap)": 0.004790554870851338,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.16781371912814763,
+      "activation effect\n(fraction of a full context swap)": 0.0026027191430330276,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.17043628324909416,
+      "activation effect\n(fraction of a full context swap)": 0.019952781250079474,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.06182758000791294,
+      "activation effect\n(fraction of a full context swap)": 0.008194999280385673,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.23811831060342786,
+      "activation effect\n(fraction of a full context swap)": 0.003219525593643387,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.09597367113212657,
+      "activation effect\n(fraction of a full context swap)": -0.0007172801687071721,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.1566112009664568,
+      "activation effect\n(fraction of a full context swap)": 0.03480467874712,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.18749158743767602,
+      "activation effect\n(fraction of a full context swap)": 0.05423484913383921,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.09595890833910836,
+      "activation effect\n(fraction of a full context swap)": 0.028931709503134093,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.25355266671577265,
+      "activation effect\n(fraction of a full context swap)": 0.035384159085030356,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.29811264703851104,
+      "activation effect\n(fraction of a full context swap)": 0.004347330355085432,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.2452699649436691,
+      "activation effect\n(fraction of a full context swap)": 0.05519209043122828,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.29490180789024667,
+      "activation effect\n(fraction of a full context swap)": 0.05566254868172109,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.17745108600841916,
+      "activation effect\n(fraction of a full context swap)": 0.03642108365893364,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.24769576478785266,
+      "activation effect\n(fraction of a full context swap)": 0.009477356347876291,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.11415323994258056,
+      "activation effect\n(fraction of a full context swap)": 0.023507921770215035,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.08008486396646342,
+      "activation effect\n(fraction of a full context swap)": 0.03851804537698626,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.15739929883478543,
+      "activation effect\n(fraction of a full context swap)": 0.04008973416251441,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.13151438157841505,
+      "activation effect\n(fraction of a full context swap)": 0.027002039567256966,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.018734104338750057,
+      "activation effect\n(fraction of a full context swap)": 0.0236738429715236,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.1583295743823365,
+      "activation effect\n(fraction of a full context swap)": 0.03333661126283308,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.01423906827450283,
+      "activation effect\n(fraction of a full context swap)": 0.039236807838703196,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.19268670562441642,
+      "activation effect\n(fraction of a full context swap)": 0.036076726764440535,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.1041472656774125,
+      "activation effect\n(fraction of a full context swap)": 0.03557326498751839,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.22881904955930704,
+      "activation effect\n(fraction of a full context swap)": 0.014168602709348003,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.0013814843099849705,
+      "activation effect\n(fraction of a full context swap)": 0.016970262319470446,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.02247782452830327,
+      "activation effect\n(fraction of a full context swap)": 0.03092956350495418,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.020724426666892115,
+      "activation effect\n(fraction of a full context swap)": 0.021465523339187106,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.10516173069650281,
+      "activation effect\n(fraction of a full context swap)": 0.0021019323418537774,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.10837099877203787,
+      "activation effect\n(fraction of a full context swap)": 0.028886412417826555,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.09545523408612447,
+      "activation effect\n(fraction of a full context swap)": 0.022625195002183317,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.05938104840397368,
+      "activation effect\n(fraction of a full context swap)": 0.044974908620739974,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.27741650975616444,
+      "activation effect\n(fraction of a full context swap)": 0.021149449073709546,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.03285477106732737,
+      "activation effect\n(fraction of a full context swap)": -0.007154575828462839,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.19449401861898308,
+      "activation effect\n(fraction of a full context swap)": 0.026689815078862013,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.14063980349662497,
+      "activation effect\n(fraction of a full context swap)": 0.02719324838059644,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.21278070283053713,
+      "activation effect\n(fraction of a full context swap)": 0.00837659005386134,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.10663535438759808,
+      "activation effect\n(fraction of a full context swap)": 0.015571096260100604,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.25145283765307264,
+      "activation effect\n(fraction of a full context swap)": 0.0022910198817650477,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.2298089492502352,
+      "activation effect\n(fraction of a full context swap)": -0.0007383810239844024,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.011499214223471,
+      "activation effect\n(fraction of a full context swap)": -0.0038288590498268605,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.01673218724911607,
+      "activation effect\n(fraction of a full context swap)": 0.0006319607181164126,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.10665678731435385,
+      "activation effect\n(fraction of a full context swap)": 0.0009531258915861447,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.2897958128942953,
+      "activation effect\n(fraction of a full context swap)": 0.017585044819861652,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.17410135850025835,
+      "activation effect\n(fraction of a full context swap)": 0.020764458652896185,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.227793371525137,
+      "activation effect\n(fraction of a full context swap)": 0.016942654841113836,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.03297001079121109,
+      "activation effect\n(fraction of a full context swap)": 0.03437081962668647,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.21748245201615954,
+      "activation effect\n(fraction of a full context swap)": 0.027215630910359324,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.05311017837484816,
+      "activation effect\n(fraction of a full context swap)": 0.00044972763086358704,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.05121809139155034,
+      "activation effect\n(fraction of a full context swap)": 0.01997173794079572,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.11463936068245079,
+      "activation effect\n(fraction of a full context swap)": 0.04524213238619268,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.07925789292515506,
+      "activation effect\n(fraction of a full context swap)": 0.03636692847746114,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.1979370530592945,
+      "activation effect\n(fraction of a full context swap)": 0.02112408112734556,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.04097722767238976,
+      "activation effect\n(fraction of a full context swap)": 0.026202096153671542,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.14238679232050142,
+      "activation effect\n(fraction of a full context swap)": 0.03306094386304418,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.12212718306411863,
+      "activation effect\n(fraction of a full context swap)": 0.025655417353846133,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.07450509816718673,
+      "activation effect\n(fraction of a full context swap)": 0.04634367234927292,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.12898765256550693,
+      "activation effect\n(fraction of a full context swap)": 0.022744605612630645,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.2780307278449826,
+      "activation effect\n(fraction of a full context swap)": 0.024324609401325383,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.24544276763906608,
+      "activation effect\n(fraction of a full context swap)": 0.011328358684356015,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.21009655441448213,
+      "activation effect\n(fraction of a full context swap)": 0.03999658667792876,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.10013540854254,
+      "activation effect\n(fraction of a full context swap)": 0.04898051917552948,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.29933951337211673,
+      "activation effect\n(fraction of a full context swap)": 0.009064792143180966,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.03250527178838303,
+      "activation effect\n(fraction of a full context swap)": 0.01822530503074328,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.06895124939771241,
+      "activation effect\n(fraction of a full context swap)": 0.01129878005788972,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.27894047421286783,
+      "activation effect\n(fraction of a full context swap)": 0.05161920613609254,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.21521653570448315,
+      "activation effect\n(fraction of a full context swap)": 0.039455990741650265,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.074872698247721,
+      "activation effect\n(fraction of a full context swap)": 0.008744714440157016,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.15971852487862048,
+      "activation effect\n(fraction of a full context swap)": 0.01627034433186054,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.20001984800518263,
+      "activation effect\n(fraction of a full context swap)": 0.011680084094405175,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.12258176971375381,
+      "activation effect\n(fraction of a full context swap)": 0.016742733935825527,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.16958267396508764,
+      "activation effect\n(fraction of a full context swap)": 0.01755763653588171,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.048267122555347874,
+      "activation effect\n(fraction of a full context swap)": 0.01255045672878623,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.010140876194722315,
+      "activation effect\n(fraction of a full context swap)": 0.04866561188052098,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.05539582447240607,
+      "activation effect\n(fraction of a full context swap)": 0.03315390724067887,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.17484252733660927,
+      "activation effect\n(fraction of a full context swap)": 0.03745523414885004,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.040100706102256634,
+      "activation effect\n(fraction of a full context swap)": 0.09020970410977801,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.11249328901495931,
+      "activation effect\n(fraction of a full context swap)": 0.03610623072211941,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.13259386783539429,
+      "activation effect\n(fraction of a full context swap)": 0.03932331840818127,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.13193376544405822,
+      "activation effect\n(fraction of a full context swap)": 0.04337816781674822,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.0729226528864898,
+      "activation effect\n(fraction of a full context swap)": 0.027018598125626642,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.048965957524813586,
+      "activation effect\n(fraction of a full context swap)": 0.08868552430843314,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.11225796497688673,
+      "activation effect\n(fraction of a full context swap)": 0.04337816781674822,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.16170724262647798,
+      "activation effect\n(fraction of a full context swap)": 0.001546902876968185,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.17744549151771227,
+      "activation effect\n(fraction of a full context swap)": 0.006141902568439643,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.2887183514883252,
+      "activation effect\n(fraction of a full context swap)": -0.0007882741512730718,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.11574375053493205,
+      "activation effect\n(fraction of a full context swap)": 0.00485378074614952,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.16989098526132992,
+      "activation effect\n(fraction of a full context swap)": 0.0028735825791954992,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.11895067543476348,
+      "activation effect\n(fraction of a full context swap)": 0.001711939830177774,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.27986713224703913,
+      "activation effect\n(fraction of a full context swap)": 0.0009894546121358872,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.29475836397654337,
+      "activation effect\n(fraction of a full context swap)": -0.0032163542695343495,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.11754179951291255,
+      "activation effect\n(fraction of a full context swap)": 0.0009232317252705495,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.04394567515045977,
+      "activation effect\n(fraction of a full context swap)": -0.00015524982785185178,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.2915685558300188,
+      "activation effect\n(fraction of a full context swap)": 0.002715204240909467,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.08730885448838921,
+      "activation effect\n(fraction of a full context swap)": -0.0017134664425005515,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.22881942799498461,
+      "activation effect\n(fraction of a full context swap)": 0.0036739501791695755,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.07336785609860616,
+      "activation effect\n(fraction of a full context swap)": 0.006383650299782554,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.25191402762636367,
+      "activation effect\n(fraction of a full context swap)": -0.0034045647829771043,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.12425802262824842,
+      "activation effect\n(fraction of a full context swap)": -0.007132077539184442,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.06578523428659597,
+      "activation effect\n(fraction of a full context swap)": -0.0027723569888621568,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.1295328942171614,
+      "activation effect\n(fraction of a full context swap)": 0.013759373826906085,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.0904841937606829,
+      "activation effect\n(fraction of a full context swap)": -0.0026934030931442974,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.12962965839639323,
+      "activation effect\n(fraction of a full context swap)": -0.0035529197193682194,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.11494514963792579,
+      "activation effect\n(fraction of a full context swap)": 0.0037628963977719347,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.19726780890974727,
+      "activation effect\n(fraction of a full context swap)": 0.003341865601638953,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.030588361776940742,
+      "activation effect\n(fraction of a full context swap)": -0.001161749381572008,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.13974356043282932,
+      "activation effect\n(fraction of a full context swap)": 0.001471505508137246,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.045053569170959096,
+      "activation effect\n(fraction of a full context swap)": 0.009048507556629677,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.23059492842355156,
+      "activation effect\n(fraction of a full context swap)": 0.011140350803422431,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.2912498431105523,
+      "activation effect\n(fraction of a full context swap)": 0.012902443848239879,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.14637573653279345,
+      "activation effect\n(fraction of a full context swap)": 0.009635990345850587,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.09774253441413572,
+      "activation effect\n(fraction of a full context swap)": 0.01854959294044723,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.2523666423324888,
+      "activation effect\n(fraction of a full context swap)": 0.012469343165867031,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.29131918917468624,
+      "activation effect\n(fraction of a full context swap)": 0.0026445526086414854,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.09002477661511346,
+      "activation effect\n(fraction of a full context swap)": -0.0012778934634601077,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.15298949883806928,
+      "activation effect\n(fraction of a full context swap)": 0.010862699919380247,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.2099337959129664,
+      "activation effect\n(fraction of a full context swap)": 0.0031930449961995087,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.0010572722493680242,
+      "activation effect\n(fraction of a full context swap)": -0.004010998783633113,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.19355365958813758,
+      "activation effect\n(fraction of a full context swap)": 0.0016394947034617266,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.14056556765679779,
+      "activation effect\n(fraction of a full context swap)": -0.008873007586225867,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.16162895817471074,
+      "activation effect\n(fraction of a full context swap)": 0.00021126532616714636,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.13925817920795497,
+      "activation effect\n(fraction of a full context swap)": 0.01335002351552248,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.2693514884793912,
+      "activation effect\n(fraction of a full context swap)": -0.007900984787071744,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.14481595395714647,
+      "activation effect\n(fraction of a full context swap)": 0.15151102704784045,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.1169677402896975,
+      "activation effect\n(fraction of a full context swap)": 0.1530176896888476,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.1383889943683826,
+      "activation effect\n(fraction of a full context swap)": 0.11581212071081003,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.27265652129194956,
+      "activation effect\n(fraction of a full context swap)": 0.16254145356028207,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.1712308506904663,
+      "activation effect\n(fraction of a full context swap)": 0.2033104752500852,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.09689806238064616,
+      "activation effect\n(fraction of a full context swap)": 0.15521758403629066,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.07027887790094378,
+      "activation effect\n(fraction of a full context swap)": 0.10896582969774803,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.2597518381105632,
+      "activation effect\n(fraction of a full context swap)": 0.07857556684563557,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.14547431768272273,
+      "activation effect\n(fraction of a full context swap)": 0.0993588210704426,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.09637028183222379,
+      "activation effect\n(fraction of a full context swap)": 0.12219875141357382,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.059526753688824485,
+      "activation effect\n(fraction of a full context swap)": -0.007139067561365664,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.11139608184100494,
+      "activation effect\n(fraction of a full context swap)": -0.010312348505249248,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.10907405244773383,
+      "activation effect\n(fraction of a full context swap)": -0.00565096865563343,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.10309288899641991,
+      "activation effect\n(fraction of a full context swap)": -0.00635047892962272,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.05117314779764723,
+      "activation effect\n(fraction of a full context swap)": -0.006545237469254062,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.20194537151318775,
+      "activation effect\n(fraction of a full context swap)": -0.003405239060521126,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.02379180033568451,
+      "activation effect\n(fraction of a full context swap)": 0.001535809909303983,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.03733883664239862,
+      "activation effect\n(fraction of a full context swap)": 0.002110061786758403,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.1417452470970516,
+      "activation effect\n(fraction of a full context swap)": 0.001352608467762669,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.005259733967725,
+      "activation effect\n(fraction of a full context swap)": -0.003722820368905862,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.2241013954091738,
+      "activation effect\n(fraction of a full context swap)": -0.014989595320851852,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.08688472958861226,
+      "activation effect\n(fraction of a full context swap)": -0.00020757611685742934,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.18102975147001238,
+      "activation effect\n(fraction of a full context swap)": -0.003495874486786003,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.15499012007938362,
+      "activation effect\n(fraction of a full context swap)": -0.0011872514810723563,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.016990220766717856,
+      "activation effect\n(fraction of a full context swap)": -0.0009540791933735211,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.21189917845228923,
+      "activation effect\n(fraction of a full context swap)": -0.008676545624621213,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.041671919156064996,
+      "activation effect\n(fraction of a full context swap)": -0.009625165540880214,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.014661467637366088,
+      "activation effect\n(fraction of a full context swap)": -0.004428499502440294,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.17237369228927613,
+      "activation effect\n(fraction of a full context swap)": -0.00846656405677398,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.03398444860201755,
+      "activation effect\n(fraction of a full context swap)": -0.01635074935523638,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.16796022939839308,
+      "activation effect\n(fraction of a full context swap)": -0.0015856871633635214,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.22794685038735835,
+      "activation effect\n(fraction of a full context swap)": -0.0034190190102284155,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.2784172945741016,
+      "activation effect\n(fraction of a full context swap)": 0.00297366661640505,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.14858733809110836,
+      "activation effect\n(fraction of a full context swap)": -0.014442753419280053,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.04041702106974676,
+      "activation effect\n(fraction of a full context swap)": 0.003990809456445277,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.16188811111900628,
+      "activation effect\n(fraction of a full context swap)": -0.008629189827479422,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.14287564327146643,
+      "activation effect\n(fraction of a full context swap)": 0.005950180115178227,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.19291269141269063,
+      "activation effect\n(fraction of a full context swap)": 0.003628766490146518,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.1325054385817052,
+      "activation effect\n(fraction of a full context swap)": -0.019356208853423595,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.11697393922521054,
+      "activation effect\n(fraction of a full context swap)": 0.004849026740218202,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.1463672785302409,
+      "activation effect\n(fraction of a full context swap)": -0.004062342081063737,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.20713925645325698,
+      "activation effect\n(fraction of a full context swap)": -0.00047371334706743556,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.29695062003227407,
+      "activation effect\n(fraction of a full context swap)": -0.0022288949073602754,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.1047619935163352,
+      "activation effect\n(fraction of a full context swap)": -0.0024726942569638292,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.14869585703717914,
+      "activation effect\n(fraction of a full context swap)": 0.002675085778658589,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.21859582316684267,
+      "activation effect\n(fraction of a full context swap)": -0.009066000332434971,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.20543231578053842,
+      "activation effect\n(fraction of a full context swap)": -0.005236782071491083,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.27967416693200736,
+      "activation effect\n(fraction of a full context swap)": -0.006958692613989115,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.0538392469569241,
+      "activation effect\n(fraction of a full context swap)": -0.003315641009248793,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.2850547694044809,
+      "activation effect\n(fraction of a full context swap)": -0.0034106419576952853,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.07883812065229223,
+      "activation effect\n(fraction of a full context swap)": -0.013031519825259845,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.033649420936225805,
+      "activation effect\n(fraction of a full context swap)": -0.009999303884493807,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.0628534015811168,
+      "activation effect\n(fraction of a full context swap)": -0.014966657563733558,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.15695717777127155,
+      "activation effect\n(fraction of a full context swap)": -0.0015603951605347296,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.020608094237215324,
+      "activation effect\n(fraction of a full context swap)": -0.009728401650985081,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.051898571504650326,
+      "activation effect\n(fraction of a full context swap)": -0.0021712350271021327,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.24153826047228022,
+      "activation effect\n(fraction of a full context swap)": -0.008624139342767496,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.0871429268093378,
+      "activation effect\n(fraction of a full context swap)": 0.001167131067874531,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.07688778698331128,
+      "activation effect\n(fraction of a full context swap)": -0.004159941644563029,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.009863464830944746,
+      "activation effect\n(fraction of a full context swap)": -0.0031288290085891885,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.2788194820692066,
+      "activation effect\n(fraction of a full context swap)": -0.01192001955738912,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.11328681339110122,
+      "activation effect\n(fraction of a full context swap)": -0.003477433742955327,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.22557749044779657,
+      "activation effect\n(fraction of a full context swap)": -0.0028321082315718132,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.11357499095085014,
+      "activation effect\n(fraction of a full context swap)": -0.012935601283485691,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.2928377323578977,
+      "activation effect\n(fraction of a full context swap)": -0.0011443014179045956,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.28328255950915676,
+      "activation effect\n(fraction of a full context swap)": -0.0059611091846212124,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.29581124054018987,
+      "activation effect\n(fraction of a full context swap)": -0.004910691974995037,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.29343367238040824,
+      "activation effect\n(fraction of a full context swap)": -0.003044575914585342,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.1706819111488921,
+      "activation effect\n(fraction of a full context swap)": -0.004621754270435,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.0922051198146989,
+      "activation effect\n(fraction of a full context swap)": -0.007786005036905408,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.04958469522803932,
+      "activation effect\n(fraction of a full context swap)": -0.007815692294389009,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.17696195755156413,
+      "activation effect\n(fraction of a full context swap)": -0.01362365770813388,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.21824277943303233,
+      "activation effect\n(fraction of a full context swap)": -0.0021797769489542893,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.15722599665751316,
+      "activation effect\n(fraction of a full context swap)": 0.00523071129185458,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.2624789434043919,
+      "activation effect\n(fraction of a full context swap)": -0.01255007804914688,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.1587936240209493,
+      "activation effect\n(fraction of a full context swap)": -0.005373569205403328,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.2072471148294187,
+      "activation effect\n(fraction of a full context swap)": -0.017806192316735785,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.21449159302828819,
+      "activation effect\n(fraction of a full context swap)": -0.0013926317449659109,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.2301526415179143,
+      "activation effect\n(fraction of a full context swap)": -0.01645329191975681,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.269918586809571,
+      "activation effect\n(fraction of a full context swap)": -0.010342077266735335,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.1703033594403442,
+      "activation effect\n(fraction of a full context swap)": -0.015439858997706325,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.004103031764775111,
+      "activation effect\n(fraction of a full context swap)": -0.01799200939713046,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.16022697253467605,
+      "activation effect\n(fraction of a full context swap)": 0.0018680326795826355,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.11741665912613236,
+      "activation effect\n(fraction of a full context swap)": -0.014333220174664566,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.2020970260727945,
+      "activation effect\n(fraction of a full context swap)": -0.016924469119597538,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.009395613969118422,
+      "activation effect\n(fraction of a full context swap)": -0.012715837351667385,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.20614855462264042,
+      "activation effect\n(fraction of a full context swap)": -0.012724830291699619,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.1617331347652033,
+      "activation effect\n(fraction of a full context swap)": -0.003071977244690061,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.15995496547499588,
+      "activation effect\n(fraction of a full context swap)": -0.0016635256819427014,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.09164022833501273,
+      "activation effect\n(fraction of a full context swap)": -0.015809944529125156,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.232094280106738,
+      "activation effect\n(fraction of a full context swap)": -0.00815502874320373,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.1831664793365303,
+      "activation effect\n(fraction of a full context swap)": -0.018049910924552628,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.234983034327427,
+      "activation effect\n(fraction of a full context swap)": -0.002066066465340555,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.22451185992814232,
+      "activation effect\n(fraction of a full context swap)": -0.01302625477934877,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.2795962800568727,
+      "activation effect\n(fraction of a full context swap)": -0.019200996519066392,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.2704643094930647,
+      "activation effect\n(fraction of a full context swap)": -0.01726249287991474,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.07396762821956773,
+      "activation effect\n(fraction of a full context swap)": -0.00968714061115558,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.29231225490270074,
+      "activation effect\n(fraction of a full context swap)": -0.006257649565426012,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.011926589979380231,
+      "activation effect\n(fraction of a full context swap)": -0.01432970343157649,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.26981548233070246,
+      "activation effect\n(fraction of a full context swap)": -0.015613090324526032,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.14424148497342137,
+      "activation effect\n(fraction of a full context swap)": -0.004387752944603562,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.1451935314405851,
+      "activation effect\n(fraction of a full context swap)": -0.0016049971959243218,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.2883474423193539,
+      "activation effect\n(fraction of a full context swap)": -0.006231643259525299,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.21876325856374745,
+      "activation effect\n(fraction of a full context swap)": 0.002442114676038424,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.16282935822312566,
+      "activation effect\n(fraction of a full context swap)": -0.0025175237096846104,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.046111784925609856,
+      "activation effect\n(fraction of a full context swap)": -0.003488066776966055,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.2252289626903095,
+      "activation effect\n(fraction of a full context swap)": -0.008013613134001693,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.09378311751911833,
+      "activation effect\n(fraction of a full context swap)": 0.00045645982027053833,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.2472048647003642,
+      "activation effect\n(fraction of a full context swap)": 0.009213001374155283,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.23391720649100095,
+      "activation effect\n(fraction of a full context swap)": -0.008013613134001693,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.1750503751666066,
+      "activation effect\n(fraction of a full context swap)": -0.01172208968588772,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.023442323238676788,
+      "activation effect\n(fraction of a full context swap)": -0.007768491089033584,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.04599671586931797,
+      "activation effect\n(fraction of a full context swap)": -0.006871324172243476,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.05759261092666834,
+      "activation effect\n(fraction of a full context swap)": 0.0005096551535340647,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.21539907493355276,
+      "activation effect\n(fraction of a full context swap)": -0.003454350874138375,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.2965927208860764,
+      "activation effect\n(fraction of a full context swap)": -0.009238348602472494,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.12542825643398806,
+      "activation effect\n(fraction of a full context swap)": -0.007361709815450012,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.08366107205320072,
+      "activation effect\n(fraction of a full context swap)": -0.006901066245821615,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.13159606213543734,
+      "activation effect\n(fraction of a full context swap)": -0.006945369796206554,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.21996769459328852,
+      "activation effect\n(fraction of a full context swap)": -0.009963025369991859,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.020404299133441717,
+      "activation effect\n(fraction of a full context swap)": -0.004790489344547192,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.05712028301373007,
+      "activation effect\n(fraction of a full context swap)": -0.007039756135782227,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.08320915103513776,
+      "activation effect\n(fraction of a full context swap)": -0.00829708066303283,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.04548658550655593,
+      "activation effect\n(fraction of a full context swap)": -0.006810779877317448,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.2904732185962428,
+      "activation effect\n(fraction of a full context swap)": -0.007846197594578068,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.18345152961596467,
+      "activation effect\n(fraction of a full context swap)": -0.008693436222771803,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.2456625345299412,
+      "activation effect\n(fraction of a full context swap)": 0.0010630107019096613,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.09397210226392719,
+      "activation effect\n(fraction of a full context swap)": -0.011495842008298496,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.02653781394392951,
+      "activation effect\n(fraction of a full context swap)": -0.013648491224338269,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.05704725865392146,
+      "activation effect\n(fraction of a full context swap)": -0.008127007905083397,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.06644030500354042,
+      "activation effect\n(fraction of a full context swap)": -0.010702782760684688,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.04690335201695406,
+      "activation effect\n(fraction of a full context swap)": -0.005722419545054436,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.0261207866744802,
+      "activation effect\n(fraction of a full context swap)": -0.0056952348531922325,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.18183601127347426,
+      "activation effect\n(fraction of a full context swap)": -0.018876196599255005,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.19096453774341124,
+      "activation effect\n(fraction of a full context swap)": 0.00257955949443082,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.054556807142393554,
+      "activation effect\n(fraction of a full context swap)": -0.004477726637075344,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.19646581965323706,
+      "activation effect\n(fraction of a full context swap)": -0.0024527199100703003,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.25276472787187315,
+      "activation effect\n(fraction of a full context swap)": -0.007011719785320262,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.04766239085660656,
+      "activation effect\n(fraction of a full context swap)": -0.005408544015760223,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.07658683232302757,
+      "activation effect\n(fraction of a full context swap)": -0.0034174612102409203,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.22562165555130026,
+      "activation effect\n(fraction of a full context swap)": -0.00469918578552703,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.09409372307562192,
+      "activation effect\n(fraction of a full context swap)": -0.006820110937890907,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.13302472831739703,
+      "activation effect\n(fraction of a full context swap)": -0.007934202812612057,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.0550338093178504,
+      "activation effect\n(fraction of a full context swap)": -0.005392223976862927,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.251058533624482,
+      "activation effect\n(fraction of a full context swap)": -0.0030117450980469583,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.07085548599216887,
+      "activation effect\n(fraction of a full context swap)": -0.007665838937585553,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.17111374048408484,
+      "activation effect\n(fraction of a full context swap)": -0.009037334638802956,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.2807817356109655,
+      "activation effect\n(fraction of a full context swap)": -0.009716224328925212,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.17081591823759162,
+      "activation effect\n(fraction of a full context swap)": -0.006849354117487868,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.24831802261065278,
+      "activation effect\n(fraction of a full context swap)": -0.00459577429573983,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.0886718381154672,
+      "activation effect\n(fraction of a full context swap)": 0.02371052713909497,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.2982960270107363,
+      "activation effect\n(fraction of a full context swap)": 0.011546588766699036,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.06882416740290737,
+      "activation effect\n(fraction of a full context swap)": 0.11509908952284605,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.2970573090057163,
+      "activation effect\n(fraction of a full context swap)": 0.06313057614800831,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.27395669929977734,
+      "activation effect\n(fraction of a full context swap)": 0.008264619981249173,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.10694914951975537,
+      "activation effect\n(fraction of a full context swap)": 0.0077674987570693094,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.02510905728758628,
+      "activation effect\n(fraction of a full context swap)": 0.01239699445632768,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.2948263810322049,
+      "activation effect\n(fraction of a full context swap)": 0.030174251870873074,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.20260071540887847,
+      "activation effect\n(fraction of a full context swap)": 0.03106177505105734,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.16612896172675978,
+      "activation effect\n(fraction of a full context swap)": 0.002590506058186293,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.192248946757073,
+      "activation effect\n(fraction of a full context swap)": 0.007076853606849909,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.00238074193445742,
+      "activation effect\n(fraction of a full context swap)": -0.00012907047057524322,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.26178678080354617,
+      "activation effect\n(fraction of a full context swap)": -0.0005393231171183288,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.1644827147270273,
+      "activation effect\n(fraction of a full context swap)": -0.002635790384374559,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.22885919179070618,
+      "activation effect\n(fraction of a full context swap)": 0.022352026775479317,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.15143811597513596,
+      "activation effect\n(fraction of a full context swap)": 0.01318311863578856,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.291585772023151,
+      "activation effect\n(fraction of a full context swap)": 0.005078291404061019,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.16104333230826384,
+      "activation effect\n(fraction of a full context swap)": 0.003167566581396386,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.012939170150661261,
+      "activation effect\n(fraction of a full context swap)": 0.007790068746544421,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.24818234166103917,
+      "activation effect\n(fraction of a full context swap)": 0.0019265703624114395,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.2789245172010891,
+      "activation effect\n(fraction of a full context swap)": 0.008034314285032451,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.08899564404718768,
+      "activation effect\n(fraction of a full context swap)": 0.014250562898814679,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.07143044318018865,
+      "activation effect\n(fraction of a full context swap)": 0.000580898521002382,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.13107268453520635,
+      "activation effect\n(fraction of a full context swap)": 0.01890486676711589,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.14971327515018173,
+      "activation effect\n(fraction of a full context swap)": 0.009473276254720987,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.09405650917499284,
+      "activation effect\n(fraction of a full context swap)": 0.022490283998195082,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.27145327741665043,
+      "activation effect\n(fraction of a full context swap)": 0.01721577685093507,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.15276239785712342,
+      "activation effect\n(fraction of a full context swap)": 0.01291636899113655,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.22503550083327506,
+      "activation effect\n(fraction of a full context swap)": 0.00871621654368937,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.030494260818735075,
+      "activation effect\n(fraction of a full context swap)": 0.006593940814491361,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.2964272259894574,
+      "activation effect\n(fraction of a full context swap)": 0.0032421078532934187,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.07820625600035158,
+      "activation effect\n(fraction of a full context swap)": 0.0001114735845476389,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.13317530499454402,
+      "activation effect\n(fraction of a full context swap)": 0.019269551429897547,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.286414285325423,
+      "activation effect\n(fraction of a full context swap)": 0.0187782920897007,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.06262256520554743,
+      "activation effect\n(fraction of a full context swap)": 0.06601988486945629,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.29914100019549733,
+      "activation effect\n(fraction of a full context swap)": 0.04473194625461474,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.2731023954593956,
+      "activation effect\n(fraction of a full context swap)": 0.006489660078659654,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.10308643228491393,
+      "activation effect\n(fraction of a full context swap)": 0.007892246940173209,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.22899378946010918,
+      "activation effect\n(fraction of a full context swap)": 0.011219658388290555,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.09949522320787274,
+      "activation effect\n(fraction of a full context swap)": 0.0004914464661851525,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.17610283915631403,
+      "activation effect\n(fraction of a full context swap)": 0.022099868196528406,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.2637883380680335,
+      "activation effect\n(fraction of a full context swap)": 0.054998565651476386,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.14867279529259586,
+      "activation effect\n(fraction of a full context swap)": 0.07849882233422249,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.12690705637135152,
+      "activation effect\n(fraction of a full context swap)": 0.05865142270922661,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.2513992426462944,
+      "activation effect\n(fraction of a full context swap)": 0.043355525960214435,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.030466118174229062,
+      "activation effect\n(fraction of a full context swap)": 0.002011347038205713,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.286833260959027,
+      "activation effect\n(fraction of a full context swap)": 0.01716384410392493,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.2627988228416873,
+      "activation effect\n(fraction of a full context swap)": 0.006213390157790854,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.2611210432103126,
+      "activation effect\n(fraction of a full context swap)": 0.053355384385213256,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.10098589883398754,
+      "activation effect\n(fraction of a full context swap)": 0.0555181878618896,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.09189541902003756,
+      "activation effect\n(fraction of a full context swap)": 0.1350486669689417,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.021278283757839855,
+      "activation effect\n(fraction of a full context swap)": 0.07697432303102687,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.29933265467525155,
+      "activation effect\n(fraction of a full context swap)": 0.07459777761250734,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.10211900938312693,
+      "activation effect\n(fraction of a full context swap)": 0.06788972783833742,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.03697600621513569,
+      "activation effect\n(fraction of a full context swap)": 0.05027771200984717,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.137945531712558,
+      "activation effect\n(fraction of a full context swap)": 0.04004690651781857,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.16841491449357826,
+      "activation effect\n(fraction of a full context swap)": 0.022115050232969224,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.11031769569365601,
+      "activation effect\n(fraction of a full context swap)": 0.10726991163101048,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.22384868689244916,
+      "activation effect\n(fraction of a full context swap)": 0.10809352188371121,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.03248239588649726,
+      "activation effect\n(fraction of a full context swap)": 0.13489274331368506,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.19321155624241865,
+      "activation effect\n(fraction of a full context swap)": 0.1585741752758622,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.003967729644375861,
+      "activation effect\n(fraction of a full context swap)": 0.11776515915989876,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.0834337988039518,
+      "activation effect\n(fraction of a full context swap)": 0.06108733967412263,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.23427479280694657,
+      "activation effect\n(fraction of a full context swap)": 0.09092153813689947,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.02626358933205164,
+      "activation effect\n(fraction of a full context swap)": 0.024714841064997016,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.22417053750374433,
+      "activation effect\n(fraction of a full context swap)": 0.014326047338545322,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.27071331738782134,
+      "activation effect\n(fraction of a full context swap)": 0.09701600815169513,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.14791120825174064,
+      "activation effect\n(fraction of a full context swap)": 0.06140035325661301,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.046400696359144955,
+      "activation effect\n(fraction of a full context swap)": 0.12361531285569072,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.1116844553476607,
+      "activation effect\n(fraction of a full context swap)": 0.07060649159830064,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.12816405464245886,
+      "activation effect\n(fraction of a full context swap)": 0.14320576190948486,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.29275578992299295,
+      "activation effect\n(fraction of a full context swap)": 0.08541893474757671,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.08997719552796601,
+      "activation effect\n(fraction of a full context swap)": 0.031986576609779147,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.25947414170343785,
+      "activation effect\n(fraction of a full context swap)": 0.04769352840958163,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.09310643880659311,
+      "activation effect\n(fraction of a full context swap)": 0.07506501600146294,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.14643134799610238,
+      "activation effect\n(fraction of a full context swap)": 0.09591688122600317,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.04087160702162729,
+      "activation effect\n(fraction of a full context swap)": 0.09930401374585926,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.07843581228000912,
+      "activation effect\n(fraction of a full context swap)": 0.145912847481668,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.14569063141363536,
+      "activation effect\n(fraction of a full context swap)": 0.08423761525191367,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.025641201062216734,
+      "activation effect\n(fraction of a full context swap)": 0.04152566799893975,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.2525525531405975,
+      "activation effect\n(fraction of a full context swap)": 0.03341628273483366,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.2464569307209859,
+      "activation effect\n(fraction of a full context swap)": 0.09089954365044832,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.09018127131501538,
+      "activation effect\n(fraction of a full context swap)": 0.060055195330642165,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.050427965921288176,
+      "activation effect\n(fraction of a full context swap)": 0.16508741551078857,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.2361083185510086,
+      "activation effect\n(fraction of a full context swap)": 0.12252946309745312,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.20058563224377707,
+      "activation effect\n(fraction of a full context swap)": 0.10080896937288344,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.2607869083541284,
+      "activation effect\n(fraction of a full context swap)": 0.13087833081372083,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.20301167619892674,
+      "activation effect\n(fraction of a full context swap)": 0.08863398327957839,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.08519067401243863,
+      "activation effect\n(fraction of a full context swap)": 0.01482945065945387,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.11592445905266119,
+      "activation effect\n(fraction of a full context swap)": 0.044667558604851366,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.26917824743015434,
+      "activation effect\n(fraction of a full context swap)": 0.05459306691773236,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.09488764506519043,
+      "activation effect\n(fraction of a full context swap)": 0.0732807265012525,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.22555934657617055,
+      "activation effect\n(fraction of a full context swap)": 0.07393433218821883,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.15662162718770195,
+      "activation effect\n(fraction of a full context swap)": 0.02675465582869947,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.03702689258547831,
+      "activation effect\n(fraction of a full context swap)": 0.10486196064157412,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.16456502164264356,
+      "activation effect\n(fraction of a full context swap)": 0.08105716831050813,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.20597987467620066,
+      "activation effect\n(fraction of a full context swap)": 0.01886826134286821,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.2611127873842022,
+      "activation effect\n(fraction of a full context swap)": 0.010629897203762085,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.18198934214102402,
+      "activation effect\n(fraction of a full context swap)": 0.07793380632065236,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.23317437103757416,
+      "activation effect\n(fraction of a full context swap)": 0.05949073310475796,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.013163732130519024,
+      "activation effect\n(fraction of a full context swap)": 0.014754617307335138,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.10928862904142744,
+      "activation effect\n(fraction of a full context swap)": 0.044772937800735234,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.29861975784507444,
+      "activation effect\n(fraction of a full context swap)": 0.014414853975176811,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.2738182000084854,
+      "activation effect\n(fraction of a full context swap)": 0.06410542936064303,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.2199133844805567,
+      "activation effect\n(fraction of a full context swap)": 0.06431537210009992,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.029534110649081957,
+      "activation effect\n(fraction of a full context swap)": 0.007186125312000513,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.2831844957468684,
+      "activation effect\n(fraction of a full context swap)": 0.0053754235035739836,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.20146921626680087,
+      "activation effect\n(fraction of a full context swap)": 0.011936918529681862,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.17024011639675624,
+      "activation effect\n(fraction of a full context swap)": 0.010102082008961588,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.1513580960511504,
+      "activation effect\n(fraction of a full context swap)": 0.0031168346060439943,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.25803373272389274,
+      "activation effect\n(fraction of a full context swap)": 0.016378166840877385,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.2667814727110778,
+      "activation effect\n(fraction of a full context swap)": 0.0005737967556342482,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.10845555469942447,
+      "activation effect\n(fraction of a full context swap)": 0.001750954956514761,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.00023863783289718166,
+      "activation effect\n(fraction of a full context swap)": 0.005598988285055384,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.1858633967859482,
+      "activation effect\n(fraction of a full context swap)": 0.015036295098252595,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.15234467722993034,
+      "activation effect\n(fraction of a full context swap)": 0.023511619388591497,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.11502892141444471,
+      "activation effect\n(fraction of a full context swap)": 0.08505323836579919,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.17103904598022523,
+      "activation effect\n(fraction of a full context swap)": 0.07567197249736637,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.13460444349711162,
+      "activation effect\n(fraction of a full context swap)": 0.03920560535043478,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.05874529584042279,
+      "activation effect\n(fraction of a full context swap)": 0.07863343934877776,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.1319527348116538,
+      "activation effect\n(fraction of a full context swap)": 0.02154338521650061,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.15212453258961373,
+      "activation effect\n(fraction of a full context swap)": 0.07949368476402015,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.28315835813132856,
+      "activation effect\n(fraction of a full context swap)": 0.07170769989024847,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.0419307401854343,
+      "activation effect\n(fraction of a full context swap)": 0.026229072315618395,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.0461192497010221,
+      "activation effect\n(fraction of a full context swap)": 0.040650704817380756,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.14546952551564976,
+      "activation effect\n(fraction of a full context swap)": 0.05788468802347779,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.23129055932874729,
+      "activation effect\n(fraction of a full context swap)": 0.06741965033579618,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.1860060055690682,
+      "activation effect\n(fraction of a full context swap)": 0.042480313777923585,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.13600285717697388,
+      "activation effect\n(fraction of a full context swap)": 0.09164313413202763,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.13530834043716056,
+      "activation effect\n(fraction of a full context swap)": 0.10065362404566258,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.15291919080866007,
+      "activation effect\n(fraction of a full context swap)": 0.05713905699085444,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.19665434041222307,
+      "activation effect\n(fraction of a full context swap)": 0.042081982176750896,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.18695130981858316,
+      "activation effect\n(fraction of a full context swap)": 0.014157466124743223,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.1304827738065547,
+      "activation effect\n(fraction of a full context swap)": 0.03534172896761447,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.2675907435209502,
+      "activation effect\n(fraction of a full context swap)": 0.0585014914162457,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.05158824356137423,
+      "activation effect\n(fraction of a full context swap)": 0.05835121746640652,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.29663961658785026,
+      "activation effect\n(fraction of a full context swap)": 0.09250614694319666,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.015544570380677358,
+      "activation effect\n(fraction of a full context swap)": 0.06606567944982089,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.024566684315662335,
+      "activation effect\n(fraction of a full context swap)": 0.10048985307803378,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.265938411277219,
+      "activation effect\n(fraction of a full context swap)": 0.07556028841645457,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.03760291663906501,
+      "activation effect\n(fraction of a full context swap)": 0.059514864394441244,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.19248046723899892,
+      "activation effect\n(fraction of a full context swap)": 0.018222058028914034,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.03785137529522126,
+      "activation effect\n(fraction of a full context swap)": 0.06299111538100988,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.27377265876683515,
+      "activation effect\n(fraction of a full context swap)": 0.0632690143538639,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.18810663720206156,
+      "activation effect\n(fraction of a full context swap)": 0.05497230305336416,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.0926466997678223,
+      "activation effect\n(fraction of a full context swap)": 0.09511430480051786,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.020075465932206715,
+      "activation effect\n(fraction of a full context swap)": 0.047407739143818614,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.1419976695321532,
+      "activation effect\n(fraction of a full context swap)": 0.10115695672575384,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.022348559321348105,
+      "activation effect\n(fraction of a full context swap)": 0.06598176152911037,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.1271556890770822,
+      "activation effect\n(fraction of a full context swap)": 0.06058018900221214,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.22921858055164784,
+      "activation effect\n(fraction of a full context swap)": 0.01619253386743367,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.29604984990799105,
+      "activation effect\n(fraction of a full context swap)": 0.04481167971389368,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.26189246580365305,
+      "activation effect\n(fraction of a full context swap)": 0.055853315023705365,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.2718219673018341,
+      "activation effect\n(fraction of a full context swap)": 0.0644835562678054,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.19351365643162016,
+      "activation effect\n(fraction of a full context swap)": 0.062260039238026366,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.11090193197922804,
+      "activation effect\n(fraction of a full context swap)": 0.09560234098462388,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.24719062152680232,
+      "activation effect\n(fraction of a full context swap)": 0.09066620237426833,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.11938722544407582,
+      "activation effect\n(fraction of a full context swap)": 0.06641813688911498,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.0978771027038301,
+      "activation effect\n(fraction of a full context swap)": 0.05817240603500977,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.03477987309902575,
+      "activation effect\n(fraction of a full context swap)": 0.012085865158587695,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.08341818550628227,
+      "activation effect\n(fraction of a full context swap)": 0.011258156696567313,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.0006694197313116823,
+      "activation effect\n(fraction of a full context swap)": 0.048021404352039096,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.004045715473465938,
+      "activation effect\n(fraction of a full context swap)": 0.04024614174850285,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.2942245845840314,
+      "activation effect\n(fraction of a full context swap)": 0.05981197510845959,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.23342589560586785,
+      "activation effect\n(fraction of a full context swap)": 0.08271188677754253,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.06509442369432575,
+      "activation effect\n(fraction of a full context swap)": 0.05722485753358342,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.02378403636977866,
+      "activation effect\n(fraction of a full context swap)": 0.06010357510531321,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.16706670078130126,
+      "activation effect\n(fraction of a full context swap)": 0.05429073425475508,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.09009973939327601,
+      "activation effect\n(fraction of a full context swap)": 0.05242071787361056,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.19691015603481293,
+      "activation effect\n(fraction of a full context swap)": 0.024994164053350688,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.007032500298475575,
+      "activation effect\n(fraction of a full context swap)": 0.06234359703958035,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.18852859581905024,
+      "activation effect\n(fraction of a full context swap)": 0.06767085357569158,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.07418630970207746,
+      "activation effect\n(fraction of a full context swap)": 0.0580964514054358,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.02319971188688852,
+      "activation effect\n(fraction of a full context swap)": 0.05432985345833004,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.06268362247812276,
+      "activation effect\n(fraction of a full context swap)": 0.04217844940721989,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.058936788542901186,
+      "activation effect\n(fraction of a full context swap)": 0.08570063873194159,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.04698078008831874,
+      "activation effect\n(fraction of a full context swap)": 0.06664515174925327,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.17548242986291002,
+      "activation effect\n(fraction of a full context swap)": 0.027422001119703054,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.17400678344503911,
+      "activation effect\n(fraction of a full context swap)": 0.03438188130967319,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.11767930896727805,
+      "activation effect\n(fraction of a full context swap)": 0.06954059042036534,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.132459251327201,
+      "activation effect\n(fraction of a full context swap)": 0.0768542562611401,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.23089700930268203,
+      "activation effect\n(fraction of a full context swap)": 0.033904009591788055,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.20982698977227682,
+      "activation effect\n(fraction of a full context swap)": 0.0782202233094722,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.09213042784657868,
+      "activation effect\n(fraction of a full context swap)": 0.04119822503998875,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.17878930547223265,
+      "activation effect\n(fraction of a full context swap)": 0.06215692744590342,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.2729153909618068,
+      "activation effect\n(fraction of a full context swap)": 0.06954059042036534,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.06285676059058148,
+      "activation effect\n(fraction of a full context swap)": 0.003628731705248356,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.0670763391049417,
+      "activation effect\n(fraction of a full context swap)": 0.003061653091572225,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.26465256726484665,
+      "activation effect\n(fraction of a full context swap)": 0.010368636762723326,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.04071051315578145,
+      "activation effect\n(fraction of a full context swap)": 0.004405090003274381,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.2860360964909161,
+      "activation effect\n(fraction of a full context swap)": 0.013424719125032425,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.08143059856579049,
+      "activation effect\n(fraction of a full context swap)": 0.001998328370973468,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.22554903579460955,
+      "activation effect\n(fraction of a full context swap)": 0.003333043493330479,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.28180779404557127,
+      "activation effect\n(fraction of a full context swap)": 0.019267860444961114,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.2104400298746813,
+      "activation effect\n(fraction of a full context swap)": 0.002364257350564003,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.20809808076136183,
+      "activation effect\n(fraction of a full context swap)": 0.00754047897644341,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.15786098284154668,
+      "activation effect\n(fraction of a full context swap)": 0.005075932329054922,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.2953477408440778,
+      "activation effect\n(fraction of a full context swap)": 0.0017440603813156485,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.1029122721819436,
+      "activation effect\n(fraction of a full context swap)": 0.0035520812030881642,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.2968203000475212,
+      "activation effect\n(fraction of a full context swap)": 0.00037033092230558394,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.15392790826489255,
+      "activation effect\n(fraction of a full context swap)": 0.0045659131137654185,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.2913242083350504,
+      "activation effect\n(fraction of a full context swap)": -0.0033574728528037666,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.2911248230944084,
+      "activation effect\n(fraction of a full context swap)": 0.0009270761162042618,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.22363958132577538,
+      "activation effect\n(fraction of a full context swap)": 0.004249612509738654,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.12940774314555858,
+      "activation effect\n(fraction of a full context swap)": 0.00464340370381251,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.21497241965438563,
+      "activation effect\n(fraction of a full context swap)": 0.01904080748790875,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.24612906934842052,
+      "activation effect\n(fraction of a full context swap)": 0.010130270605441184,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.2346474165364673,
+      "activation effect\n(fraction of a full context swap)": 0.004372968105599284,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.2509994717058664,
+      "activation effect\n(fraction of a full context swap)": 0.006159770314116031,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.27321430001464897,
+      "activation effect\n(fraction of a full context swap)": 0.007085358491167426,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.22785334196123197,
+      "activation effect\n(fraction of a full context swap)": 0.09152973227319308,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.22185541041300522,
+      "activation effect\n(fraction of a full context swap)": 0.0032367868348956107,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.011537911022848457,
+      "activation effect\n(fraction of a full context swap)": -0.002465338306501508,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.20088382980201863,
+      "activation effect\n(fraction of a full context swap)": 0.010356347565539182,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.2191196495511708,
+      "activation effect\n(fraction of a full context swap)": 0.0017985907383263112,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.14314958972750963,
+      "activation effect\n(fraction of a full context swap)": 0.020259387535043062,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.26202032703820044,
+      "activation effect\n(fraction of a full context swap)": 0.010662076668813825,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.11676441347061442,
+      "activation effect\n(fraction of a full context swap)": 0.010167003865353763,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.21293734457806998,
+      "activation effect\n(fraction of a full context swap)": 0.011116130073787645,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.16680983485796863,
+      "activation effect\n(fraction of a full context swap)": 0.010998735763132572,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.1466759980400765,
+      "activation effect\n(fraction of a full context swap)": 0.00884823566302657,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.021589322613023654,
+      "activation effect\n(fraction of a full context swap)": 0.00873227352858521,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.2594815652831299,
+      "activation effect\n(fraction of a full context swap)": 0.0030889987479895352,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.12043878085904952,
+      "activation effect\n(fraction of a full context swap)": 0.015287633193656803,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.05366310682878728,
+      "activation effect\n(fraction of a full context swap)": 0.01696289356332272,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.03577377298342943,
+      "activation effect\n(fraction of a full context swap)": 0.015557381510734557,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.15131131272601045,
+      "activation effect\n(fraction of a full context swap)": 0.03772210944443941,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.0701288748614963,
+      "activation effect\n(fraction of a full context swap)": 0.03199843724723905,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.16330022807602645,
+      "activation effect\n(fraction of a full context swap)": -0.004812586936168373,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.040072289923635485,
+      "activation effect\n(fraction of a full context swap)": -0.003573977970518172,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.060155694818364636,
+      "activation effect\n(fraction of a full context swap)": 0.01139973133103922,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.1305839053505399,
+      "activation effect\n(fraction of a full context swap)": 0.01472082755062729,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.1074665895439316,
+      "activation effect\n(fraction of a full context swap)": 0.012793081137351692,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.21439932004185674,
+      "activation effect\n(fraction of a full context swap)": 0.03017694808077067,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.2740669652896411,
+      "activation effect\n(fraction of a full context swap)": 0.004277203069068492,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.23522407224998296,
+      "activation effect\n(fraction of a full context swap)": 0.01629042364656925,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.11170556235573423,
+      "activation effect\n(fraction of a full context swap)": 0.018904738035053013,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.21771318467990147,
+      "activation effect\n(fraction of a full context swap)": 0.01956920246593654,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.2594973536885139,
+      "activation effect\n(fraction of a full context swap)": 0.020673878956586123,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.18898315002760374,
+      "activation effect\n(fraction of a full context swap)": 0.022497814847156405,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.29694885601262627,
+      "activation effect\n(fraction of a full context swap)": 0.016127495444379747,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.09945852853471338,
+      "activation effect\n(fraction of a full context swap)": 0.0025033326353877785,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.28855972822048886,
+      "activation effect\n(fraction of a full context swap)": 0.004737910587573424,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.009715053554122777,
+      "activation effect\n(fraction of a full context swap)": 0.011267579917330295,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.1420071140794345,
+      "activation effect\n(fraction of a full context swap)": -0.005492604617029428,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.2345797918980042,
+      "activation effect\n(fraction of a full context swap)": 0.005331541039049625,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.04790266494301365,
+      "activation effect\n(fraction of a full context swap)": 0.010332413902506232,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.1266501616759111,
+      "activation effect\n(fraction of a full context swap)": 0.06515116972150281,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.2517079278778099,
+      "activation effect\n(fraction of a full context swap)": 0.007446565944701433,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.1937920341073403,
+      "activation effect\n(fraction of a full context swap)": 0.0017758645582944155,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.18591870684376416,
+      "activation effect\n(fraction of a full context swap)": -0.00013444088399410247,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.031020922685540464,
+      "activation effect\n(fraction of a full context swap)": 0.01817330690100789,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.19499241480310053,
+      "activation effect\n(fraction of a full context swap)": 0.011290823761373758,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.07752727441022084,
+      "activation effect\n(fraction of a full context swap)": 0.02391945361159742,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.15099825267323175,
+      "activation effect\n(fraction of a full context swap)": -0.0007004114799201488,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.10059700836931895,
+      "activation effect\n(fraction of a full context swap)": 0.05538059584796429,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.240110147103781,
+      "activation effect\n(fraction of a full context swap)": 0.05351716805598698,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.1917873563666705,
+      "activation effect\n(fraction of a full context swap)": 0.009835583704989404,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.11794172998486036,
+      "activation effect\n(fraction of a full context swap)": 0.2508946380888422,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.08483585774668628,
+      "activation effect\n(fraction of a full context swap)": 0.2205483813304454,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.06006599419915587,
+      "activation effect\n(fraction of a full context swap)": 0.1465789551536242,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.0018544496622938667,
+      "activation effect\n(fraction of a full context swap)": 0.18517120769247414,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.2588246630782813,
+      "activation effect\n(fraction of a full context swap)": 0.25157567448914053,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.1752020637560211,
+      "activation effect\n(fraction of a full context swap)": 0.3531814863284429,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 0.005829587641269396,
+      "activation effect\n(fraction of a full context swap)": 0.41036629807204006,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 0.13615778288078784,
+      "activation effect\n(fraction of a full context swap)": 0.4100924842059612,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": -0.18453491192191912,
+      "activation effect\n(fraction of a full context swap)": 0.424036309743921,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 0.205291056580522,
+      "activation effect\n(fraction of a full context swap)": 0.4892916626163891,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": -0.0703203172198767,
+      "activation effect\n(fraction of a full context swap)": 0.39110201690346,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": -0.03742550131226213,
+      "activation effect\n(fraction of a full context swap)": 0.5277115975817045,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 0.24431977495843066,
+      "activation effect\n(fraction of a full context swap)": 0.2027543619275093,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": -0.1354268914637108,
+      "activation effect\n(fraction of a full context swap)": 0.26321614026609397,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": -0.17122401707814405,
+      "activation effect\n(fraction of a full context swap)": 0.4419973226530211,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 1.263886089294334,
+      "activation effect\n(fraction of a full context swap)": 0.003980987891554833,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7563208310429367,
+      "activation effect\n(fraction of a full context swap)": 0.0034749541276444993,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.2575685757698927,
+      "activation effect\n(fraction of a full context swap)": 0.0027511728617052237,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.8617184539027409,
+      "activation effect\n(fraction of a full context swap)": -0.0029586237001543243,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.8585320450971455,
+      "activation effect\n(fraction of a full context swap)": -4.7039388058086236e-05,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.0120624677389967,
+      "activation effect\n(fraction of a full context swap)": 0.0013112084784855445,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7182472648018532,
+      "activation effect\n(fraction of a full context swap)": 0.009788087413956722,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.283666885728461,
+      "activation effect\n(fraction of a full context swap)": -0.004689033748582006,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.9472599336998545,
+      "activation effect\n(fraction of a full context swap)": 0.0008336470074330767,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.2042617041438686,
+      "activation effect\n(fraction of a full context swap)": 0.012869410992910465,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.9186527358822458,
+      "activation effect\n(fraction of a full context swap)": 0.0026860021830846866,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1392963412563981,
+      "activation effect\n(fraction of a full context swap)": -0.0006777353895207247,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7085146048217728,
+      "activation effect\n(fraction of a full context swap)": -0.000891837050827841,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1632512297301951,
+      "activation effect\n(fraction of a full context swap)": -0.005817123564581076,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.19795854285578,
+      "activation effect\n(fraction of a full context swap)": -0.0011451284556339184,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.8941112868482929,
+      "activation effect\n(fraction of a full context swap)": -0.0054054426494985815,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1357445208578296,
+      "activation effect\n(fraction of a full context swap)": 0.0035932242637500165,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7660284981609686,
+      "activation effect\n(fraction of a full context swap)": 0.0020882655274666226,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7268742150084533,
+      "activation effect\n(fraction of a full context swap)": -0.006633610414185872,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1139074336751456,
+      "activation effect\n(fraction of a full context swap)": 0.0036580052071561414,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.2307849494976937,
+      "activation effect\n(fraction of a full context swap)": 9.394586862375339e-05,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.0136395708986916,
+      "activation effect\n(fraction of a full context swap)": 0.0017705737613141538,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.153680176553864,
+      "activation effect\n(fraction of a full context swap)": 0.007254831570511063,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.266957210942174,
+      "activation effect\n(fraction of a full context swap)": 0.0004897580404455463,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7556525485572456,
+      "activation effect\n(fraction of a full context swap)": -0.001241731975460425,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.0885697516154065,
+      "activation effect\n(fraction of a full context swap)": -0.004016932763624937,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7982274166061282,
+      "activation effect\n(fraction of a full context swap)": -0.006044642794101189,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.789733357777713,
+      "activation effect\n(fraction of a full context swap)": -0.004469242754081885,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1343440642181477,
+      "activation effect\n(fraction of a full context swap)": 0.0056563643661017215,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.9022540890887497,
+      "activation effect\n(fraction of a full context swap)": -0.004798799054697156,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.8827671984487632,
+      "activation effect\n(fraction of a full context swap)": -0.005775677793038388,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1871469771462622,
+      "activation effect\n(fraction of a full context swap)": -0.004232233048727115,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7596014161559209,
+      "activation effect\n(fraction of a full context swap)": -0.003721218144831558,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.8320505187703187,
+      "activation effect\n(fraction of a full context swap)": 0.0007556418888270855,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1857894850912918,
+      "activation effect\n(fraction of a full context swap)": -0.0022067061547810835,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7652266522365367,
+      "activation effect\n(fraction of a full context swap)": 0.0053328253561630845,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7508435939644067,
+      "activation effect\n(fraction of a full context swap)": -0.0020010806076849502,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7986101626247898,
+      "activation effect\n(fraction of a full context swap)": 0.003104248233527566,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1251329970967252,
+      "activation effect\n(fraction of a full context swap)": -0.003058693604543805,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.247339820249695,
+      "activation effect\n(fraction of a full context swap)": 0.0028404116552943983,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.0139131105163917,
+      "activation effect\n(fraction of a full context swap)": 0.0034954236820340157,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.9320182241316729,
+      "activation effect\n(fraction of a full context swap)": 0.0013504250595966975,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.8794283233420412,
+      "activation effect\n(fraction of a full context swap)": 0.0030271307565271854,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.8813859859785809,
+      "activation effect\n(fraction of a full context swap)": 0.0038372395870586236,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7097028033888788,
+      "activation effect\n(fraction of a full context swap)": 0.002534738555550575,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.9585526099686295,
+      "activation effect\n(fraction of a full context swap)": 0.00191108698102956,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.9503223867273256,
+      "activation effect\n(fraction of a full context swap)": -0.0022208361110339562,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.2057249205390086,
+      "activation effect\n(fraction of a full context swap)": -0.0044246827795480686,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.235694544498245,
+      "activation effect\n(fraction of a full context swap)": -0.010936739357809226,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.9765535801406198,
+      "activation effect\n(fraction of a full context swap)": 0.0050614061687762535,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.8195277357642685,
+      "activation effect\n(fraction of a full context swap)": -0.0006171136163175106,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1474998334212922,
+      "activation effect\n(fraction of a full context swap)": 0.008739099061737457,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.2420576484813008,
+      "activation effect\n(fraction of a full context swap)": 0.0006343723274767399,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.9131088144767624,
+      "activation effect\n(fraction of a full context swap)": -0.00044928619948526226,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.9756114007368084,
+      "activation effect\n(fraction of a full context swap)": 0.0009073617790515224,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.0537704119379823,
+      "activation effect\n(fraction of a full context swap)": 0.0011367745231837035,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.0297355395822012,
+      "activation effect\n(fraction of a full context swap)": -0.0022053730596477785,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.8825970666478046,
+      "activation effect\n(fraction of a full context swap)": 0.0034751005160311857,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.248007502927992,
+      "activation effect\n(fraction of a full context swap)": 0.004437532384569446,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.9411370693440984,
+      "activation effect\n(fraction of a full context swap)": -0.0003739681715766589,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1454209061128096,
+      "activation effect\n(fraction of a full context swap)": 0.0024903145308295886,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.2955770760391287,
+      "activation effect\n(fraction of a full context swap)": 0.013338547494883338,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7837533335088178,
+      "activation effect\n(fraction of a full context swap)": 0.00946360481902957,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.9144022988824946,
+      "activation effect\n(fraction of a full context swap)": 0.0037507780672361452,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1982781103410698,
+      "activation effect\n(fraction of a full context swap)": 0.0019029390493718286,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1777435154614184,
+      "activation effect\n(fraction of a full context swap)": 0.003266087469334404,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1620079081611023,
+      "activation effect\n(fraction of a full context swap)": 0.0002573054594298204,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1566924442036624,
+      "activation effect\n(fraction of a full context swap)": 0.007365310347328583,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.0852224260280932,
+      "activation effect\n(fraction of a full context swap)": -0.00910240577844282,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.0652993985689583,
+      "activation effect\n(fraction of a full context swap)": 0.0031101173798864087,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.2873093882394995,
+      "activation effect\n(fraction of a full context swap)": -0.0012883195032676062,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.9981810740259386,
+      "activation effect\n(fraction of a full context swap)": -0.0013652637756119172,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.0815282507924906,
+      "activation effect\n(fraction of a full context swap)": 0.007409210115050276,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.125739224969512,
+      "activation effect\n(fraction of a full context swap)": 0.005045446862156192,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.2853148011655857,
+      "activation effect\n(fraction of a full context swap)": 0.0005754891782999039,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.0963513189924754,
+      "activation effect\n(fraction of a full context swap)": -0.0019546467112377284,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.2932184060273526,
+      "activation effect\n(fraction of a full context swap)": 0.003772584938754638,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.009832770534392,
+      "activation effect\n(fraction of a full context swap)": 0.007493994478136301,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1495087288644252,
+      "activation effect\n(fraction of a full context swap)": 0.003624197235330939,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.2276171079142466,
+      "activation effect\n(fraction of a full context swap)": 7.66508358841141e-06,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7435469932226169,
+      "activation effect\n(fraction of a full context swap)": 0.006977640790864825,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1363387819651618,
+      "activation effect\n(fraction of a full context swap)": 0.0038072319701313974,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.2193463775820532,
+      "activation effect\n(fraction of a full context swap)": 0.008568240252013007,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.8012379527810489,
+      "activation effect\n(fraction of a full context swap)": 0.0016855050964901845,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.8024204084671446,
+      "activation effect\n(fraction of a full context swap)": 0.0014507418032735585,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.0837720137457956,
+      "activation effect\n(fraction of a full context swap)": 0.0015691264377286037,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.9732197340590489,
+      "activation effect\n(fraction of a full context swap)": 0.001052060630172491,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1437835310216455,
+      "activation effect\n(fraction of a full context swap)": 0.0007275590828309457,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.9183297454947366,
+      "activation effect\n(fraction of a full context swap)": 4.8274205376704533e-05,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.8158328241321455,
+      "activation effect\n(fraction of a full context swap)": 0.0009001674712635577,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.164688414807491,
+      "activation effect\n(fraction of a full context swap)": 0.0331293024122715,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7060800481471219,
+      "activation effect\n(fraction of a full context swap)": 0.0331681028008461,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.2573707564532497,
+      "activation effect\n(fraction of a full context swap)": 0.026708581764250994,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.905473357377147,
+      "activation effect\n(fraction of a full context swap)": 0.029942721898745125,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7663192005615378,
+      "activation effect\n(fraction of a full context swap)": 0.03211623784154653,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.2495246353378904,
+      "activation effect\n(fraction of a full context swap)": 0.028588328727831444,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7950770829657345,
+      "activation effect\n(fraction of a full context swap)": 0.028588328727831444,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.0548417134418018,
+      "activation effect\n(fraction of a full context swap)": 0.028588328727831444,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.8883522003603113,
+      "activation effect\n(fraction of a full context swap)": 0.028588328727831444,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.9216561457740173,
+      "activation effect\n(fraction of a full context swap)": 0.028588328727831444,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.0758600963224114,
+      "activation effect\n(fraction of a full context swap)": 0.0053356881331031525,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.9298919115122675,
+      "activation effect\n(fraction of a full context swap)": 0.0015651218282679716,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.9420512193273682,
+      "activation effect\n(fraction of a full context swap)": 0.0062607991198698676,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.0127280461765995,
+      "activation effect\n(fraction of a full context swap)": 0.02062484252577027,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.2894185387393375,
+      "activation effect\n(fraction of a full context swap)": -0.0014831135049462318,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7736753139130748,
+      "activation effect\n(fraction of a full context swap)": 0.0008956044989948471,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.2130777844359961,
+      "activation effect\n(fraction of a full context swap)": -1.639703599115213e-05,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.0452910485581992,
+      "activation effect\n(fraction of a full context swap)": 0.005220119492150843,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.8248249659270221,
+      "activation effect\n(fraction of a full context swap)": 0.002386081808557113,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7049863326790611,
+      "activation effect\n(fraction of a full context swap)": 0.002859156827131907,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.864825629717733,
+      "activation effect\n(fraction of a full context swap)": 0.0017026382265612483,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.2000599638596672,
+      "activation effect\n(fraction of a full context swap)": 0.0027972530651216706,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7819142481566989,
+      "activation effect\n(fraction of a full context swap)": 0.0034007439855486153,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7083776889048297,
+      "activation effect\n(fraction of a full context swap)": 0.004386343741013358,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.750818520066095,
+      "activation effect\n(fraction of a full context swap)": 0.00477107590995729,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.2040347840221004,
+      "activation effect\n(fraction of a full context swap)": -0.0005292026015619437,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.0519266265592648,
+      "activation effect\n(fraction of a full context swap)": 0.002570593760659297,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7344932363035683,
+      "activation effect\n(fraction of a full context swap)": -0.001043677725829184,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.9217655103658061,
+      "activation effect\n(fraction of a full context swap)": 0.0012841684510931373,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1400114562703698,
+      "activation effect\n(fraction of a full context swap)": -0.0050155486639899514,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7000895897166812,
+      "activation effect\n(fraction of a full context swap)": -0.003116337675601244,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.231494414008498,
+      "activation effect\n(fraction of a full context swap)": -0.0009219940945816537,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.2948102541426647,
+      "activation effect\n(fraction of a full context swap)": 0.004222439679627617,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7097281477812856,
+      "activation effect\n(fraction of a full context swap)": 0.0046569603184858956,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.0083058035398609,
+      "activation effect\n(fraction of a full context swap)": -0.000583683621759216,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.0094209413107738,
+      "activation effect\n(fraction of a full context swap)": -0.006510936950022975,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.9009627506165028,
+      "activation effect\n(fraction of a full context swap)": 0.004866687720641494,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.2892342952820954,
+      "activation effect\n(fraction of a full context swap)": 0.0010826133734857042,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1385894235474796,
+      "activation effect\n(fraction of a full context swap)": -0.001485743133040766,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7467552413978467,
+      "activation effect\n(fraction of a full context swap)": -0.00040847885732849437,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.9511285210030428,
+      "activation effect\n(fraction of a full context swap)": -0.0014147479048309227,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.2051513892882897,
+      "activation effect\n(fraction of a full context swap)": 0.002860689504692952,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.0679266606551192,
+      "activation effect\n(fraction of a full context swap)": 0.0028476928904031715,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1083143338931312,
+      "activation effect\n(fraction of a full context swap)": -0.005936581183535358,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.9939184312764223,
+      "activation effect\n(fraction of a full context swap)": 0.00477401758544147,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.2953604682177877,
+      "activation effect\n(fraction of a full context swap)": -5.000953872998556e-05,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7994898085697917,
+      "activation effect\n(fraction of a full context swap)": -0.0009565598253781596,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.819385355046552,
+      "activation effect\n(fraction of a full context swap)": -0.0014059047137076656,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.858417287562421,
+      "activation effect\n(fraction of a full context swap)": -0.0006195613454716901,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7219271152883331,
+      "activation effect\n(fraction of a full context swap)": 0.001885112499197324,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.127180901150541,
+      "activation effect\n(fraction of a full context swap)": 0.025275934549669424,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.2950103195164386,
+      "activation effect\n(fraction of a full context swap)": 0.041393920732662084,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.201990748906798,
+      "activation effect\n(fraction of a full context swap)": 0.034239754530911645,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.036812645366358,
+      "activation effect\n(fraction of a full context swap)": 0.030452627999087174,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1060268972149752,
+      "activation effect\n(fraction of a full context swap)": 0.02225008006983747,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.731013666892324,
+      "activation effect\n(fraction of a full context swap)": -0.00363820077230533,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.9152443602390754,
+      "activation effect\n(fraction of a full context swap)": 0.0012055972823873163,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1196131373531617,
+      "activation effect\n(fraction of a full context swap)": 0.0014870340935885906,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.9894174187372151,
+      "activation effect\n(fraction of a full context swap)": -0.0017708939655373495,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7172141473233073,
+      "activation effect\n(fraction of a full context swap)": 0.004980457473235825,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1922028401660159,
+      "activation effect\n(fraction of a full context swap)": 0.008398978761397302,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.0658832683571786,
+      "activation effect\n(fraction of a full context swap)": 0.018141639512032272,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.9510323766461432,
+      "activation effect\n(fraction of a full context swap)": 0.00653734621591866,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.22563612992053,
+      "activation effect\n(fraction of a full context swap)": 0.0019417389528825879,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7611606932839418,
+      "activation effect\n(fraction of a full context swap)": 0.0007960902119521051,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.28026487529773,
+      "activation effect\n(fraction of a full context swap)": 0.013821256009396165,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.8239113411930151,
+      "activation effect\n(fraction of a full context swap)": 0.043203442730009554,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1630746695511145,
+      "activation effect\n(fraction of a full context swap)": -0.011365555948577822,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.062886424638232,
+      "activation effect\n(fraction of a full context swap)": 0.008583333110436797,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.059071476128221,
+      "activation effect\n(fraction of a full context swap)": 0.0377095608972013,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.0265459597972613,
+      "activation effect\n(fraction of a full context swap)": 0.025608775462023912,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.0997190802637862,
+      "activation effect\n(fraction of a full context swap)": 0.007785174786113203,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7647535904018272,
+      "activation effect\n(fraction of a full context swap)": 0.01743939658626914,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.9394750056603272,
+      "activation effect\n(fraction of a full context swap)": 0.007162880152463913,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.8229537919029188,
+      "activation effect\n(fraction of a full context swap)": 0.010304724029265345,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.2616817666506577,
+      "activation effect\n(fraction of a full context swap)": 0.0012798266485333442,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7809564050969466,
+      "activation effect\n(fraction of a full context swap)": 0.012518605822697282,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.9097587500289158,
+      "activation effect\n(fraction of a full context swap)": 0.0274988001328893,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1879555313618457,
+      "activation effect\n(fraction of a full context swap)": 0.0021377090364694596,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.0244949363344384,
+      "activation effect\n(fraction of a full context swap)": 0.012352163484320045,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.8366615964754354,
+      "activation effect\n(fraction of a full context swap)": 0.012838710250798612,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.037579987351645,
+      "activation effect\n(fraction of a full context swap)": 0.020391945855226367,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.2017624198452554,
+      "activation effect\n(fraction of a full context swap)": 0.002249917504377663,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.8740107788891915,
+      "activation effect\n(fraction of a full context swap)": 0.0024957869667559863,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.2094153281003395,
+      "activation effect\n(fraction of a full context swap)": -0.0035428012954071162,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1991756618823592,
+      "activation effect\n(fraction of a full context swap)": 0.0006585015216842294,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.2992714482258407,
+      "activation effect\n(fraction of a full context swap)": 0.0021503974450752137,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.0340940275036412,
+      "activation effect\n(fraction of a full context swap)": -0.0035540392156690357,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.838401836088624,
+      "activation effect\n(fraction of a full context swap)": 0.017647173465229572,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.2652274176897564,
+      "activation effect\n(fraction of a full context swap)": -0.002746890624985099,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1834900916836668,
+      "activation effect\n(fraction of a full context swap)": 0.003451350890100002,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.9200583456728684,
+      "activation effect\n(fraction of a full context swap)": 0.007250603428110481,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.187174934961473,
+      "activation effect\n(fraction of a full context swap)": 0.008373950235545635,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1618275174168056,
+      "activation effect\n(fraction of a full context swap)": 0.009693603194318712,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.0321406990189543,
+      "activation effect\n(fraction of a full context swap)": 0.0005399276036769151,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.9765847427472498,
+      "activation effect\n(fraction of a full context swap)": 0.003929193364456296,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7149356612557105,
+      "activation effect\n(fraction of a full context swap)": 0.020343349839095026,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.2407563521741858,
+      "activation effect\n(fraction of a full context swap)": -0.002844421239569783,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1741316137597066,
+      "activation effect\n(fraction of a full context swap)": 0.006029143696650863,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1545002470963608,
+      "activation effect\n(fraction of a full context swap)": 0.024230669403914364,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1902304630365195,
+      "activation effect\n(fraction of a full context swap)": 0.03992910342058167,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.8978404699671978,
+      "activation effect\n(fraction of a full context swap)": 0.00605424219975248,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.274118999456059,
+      "activation effect\n(fraction of a full context swap)": 0.02827901695854962,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.233870973695122,
+      "activation effect\n(fraction of a full context swap)": 0.02743551798048429,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.8981661069715379,
+      "activation effect\n(fraction of a full context swap)": 0.0106305614230223,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.032562805119972,
+      "activation effect\n(fraction of a full context swap)": 0.006505690282210708,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.0677095517183228,
+      "activation effect\n(fraction of a full context swap)": 0.028281278745271265,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.9588205806239486,
+      "activation effect\n(fraction of a full context swap)": 0.004980154009535909,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.21734339599938,
+      "activation effect\n(fraction of a full context swap)": -0.0007910237472970039,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.8421346958840094,
+      "activation effect\n(fraction of a full context swap)": 0.012387855304405093,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.8563815637859037,
+      "activation effect\n(fraction of a full context swap)": 0.007108469377271831,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.9989675282349552,
+      "activation effect\n(fraction of a full context swap)": 0.009386789705604314,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.9662433900547482,
+      "activation effect\n(fraction of a full context swap)": 0.001869997929316014,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.9402149754485865,
+      "activation effect\n(fraction of a full context swap)": 0.010027408692985773,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1810096563050196,
+      "activation effect\n(fraction of a full context swap)": 0.006753978255437687,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.2205054535559658,
+      "activation effect\n(fraction of a full context swap)": 0.007594273192808032,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.892505872325136,
+      "activation effect\n(fraction of a full context swap)": 0.007158204354345799,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7302958283692345,
+      "activation effect\n(fraction of a full context swap)": 0.017550227325409652,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.2333376518715098,
+      "activation effect\n(fraction of a full context swap)": 0.006220853072591126,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.2900300299456764,
+      "activation effect\n(fraction of a full context swap)": 0.009509566146880389,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7208043910693323,
+      "activation effect\n(fraction of a full context swap)": 0.005282088252715767,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.073704613461897,
+      "activation effect\n(fraction of a full context swap)": 0.02543637859635055,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.9032146457187962,
+      "activation effect\n(fraction of a full context swap)": 0.014529812685213982,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.8048995121416834,
+      "activation effect\n(fraction of a full context swap)": 0.027027339255437256,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1751143465027978,
+      "activation effect\n(fraction of a full context swap)": 0.008890244294889271,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7126544525210967,
+      "activation effect\n(fraction of a full context swap)": 0.006882990058511495,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7840867280863512,
+      "activation effect\n(fraction of a full context swap)": -0.0007583835162222385,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7689820918288797,
+      "activation effect\n(fraction of a full context swap)": 0.014791328681167216,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7006722753834924,
+      "activation effect\n(fraction of a full context swap)": 0.004622104717418552,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.162196532404358,
+      "activation effect\n(fraction of a full context swap)": 0.010967602417804301,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.9316230231909765,
+      "activation effect\n(fraction of a full context swap)": -0.003320493409410119,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.8197410145987658,
+      "activation effect\n(fraction of a full context swap)": 0.021174054546281695,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7562495464917552,
+      "activation effect\n(fraction of a full context swap)": 0.009639186679851263,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.787033080258897,
+      "activation effect\n(fraction of a full context swap)": 0.018781281798146664,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1833962362638115,
+      "activation effect\n(fraction of a full context swap)": 0.005583481187932194,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1375192719311424,
+      "activation effect\n(fraction of a full context swap)": 0.0045569240348413585,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1670088355341413,
+      "activation effect\n(fraction of a full context swap)": 0.008971220068633556,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7873382860186704,
+      "activation effect\n(fraction of a full context swap)": 0.01539595378562808,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7554980273280456,
+      "activation effect\n(fraction of a full context swap)": 0.000934486195910722,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.2272881732898835,
+      "activation effect\n(fraction of a full context swap)": 0.009176825825124978,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7588930342285047,
+      "activation effect\n(fraction of a full context swap)": 0.033309695706702766,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.0099600510831788,
+      "activation effect\n(fraction of a full context swap)": -0.00024168360396288336,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.8001958039524386,
+      "activation effect\n(fraction of a full context swap)": 0.028652909264201297,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.8427602433579422,
+      "activation effect\n(fraction of a full context swap)": 0.012742573488503694,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.0527981264046151,
+      "activation effect\n(fraction of a full context swap)": 0.015936671069357543,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.9761087351387153,
+      "activation effect\n(fraction of a full context swap)": 0.0015597861143760382,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.198354294559384,
+      "activation effect\n(fraction of a full context swap)": -0.001097029121592641,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7922508514776676,
+      "activation effect\n(fraction of a full context swap)": 0.0003613040898926556,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7374957483373505,
+      "activation effect\n(fraction of a full context swap)": 0.005042923986911774,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7152931306900467,
+      "activation effect\n(fraction of a full context swap)": 0.004115127015393227,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7245149151246579,
+      "activation effect\n(fraction of a full context swap)": 0.038925069477409126,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.076606180759961,
+      "activation effect\n(fraction of a full context swap)": 0.03566925202030689,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.8675184331107839,
+      "activation effect\n(fraction of a full context swap)": 0.02836028249002993,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7248421201339543,
+      "activation effect\n(fraction of a full context swap)": 0.03448535250499844,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.9232254351203865,
+      "activation effect\n(fraction of a full context swap)": 0.03872056654654443,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.941646971335824,
+      "activation effect\n(fraction of a full context swap)": 0.0286669266410172,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7307384522230409,
+      "activation effect\n(fraction of a full context swap)": 0.0286669266410172,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7622157896513411,
+      "activation effect\n(fraction of a full context swap)": 0.0286669266410172,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.2619447089823463,
+      "activation effect\n(fraction of a full context swap)": 0.0286669266410172,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.268284765269485,
+      "activation effect\n(fraction of a full context swap)": 0.0286669266410172,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.8724010844674897,
+      "activation effect\n(fraction of a full context swap)": 0.005571789422538132,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7007630101587393,
+      "activation effect\n(fraction of a full context swap)": 0.010410328104626387,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.8043385240983115,
+      "activation effect\n(fraction of a full context swap)": 0.02291912188520655,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7389823865049956,
+      "activation effect\n(fraction of a full context swap)": 0.03444772235816344,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7894447746801836,
+      "activation effect\n(fraction of a full context swap)": 0.007555861957371235,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1960663687919295,
+      "activation effect\n(fraction of a full context swap)": 0.010827796766534448,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.948117098598287,
+      "activation effect\n(fraction of a full context swap)": 0.012058303295634686,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.0291259721071095,
+      "activation effect\n(fraction of a full context swap)": 0.010765825235284864,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7025462373792078,
+      "activation effect\n(fraction of a full context swap)": 0.01257672873325646,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7053190580370288,
+      "activation effect\n(fraction of a full context swap)": 0.015978530107531697,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.8116212499773402,
+      "activation effect\n(fraction of a full context swap)": 0.011148038529790938,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.8511092743087674,
+      "activation effect\n(fraction of a full context swap)": 0.009305304428562523,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.253266841120117,
+      "activation effect\n(fraction of a full context swap)": 0.0061325077607762065,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1026945411382467,
+      "activation effect\n(fraction of a full context swap)": 0.014700396917760372,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.0840850778838642,
+      "activation effect\n(fraction of a full context swap)": 0.004600457823835313,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.044647694021094,
+      "activation effect\n(fraction of a full context swap)": 0.002569518453674391,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.9011037993159436,
+      "activation effect\n(fraction of a full context swap)": 0.022436935739824547,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.2772544183497774,
+      "activation effect\n(fraction of a full context swap)": -0.005469174240715802,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.8429314020812224,
+      "activation effect\n(fraction of a full context swap)": 0.013375040073879064,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.9360502999634485,
+      "activation effect\n(fraction of a full context swap)": 0.0006915954756550491,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.2448797978366826,
+      "activation effect\n(fraction of a full context swap)": 0.0029812408145517113,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.2672407043940717,
+      "activation effect\n(fraction of a full context swap)": 0.0035404576861765235,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1117449910637025,
+      "activation effect\n(fraction of a full context swap)": 0.029776639072224498,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.8685816339332031,
+      "activation effect\n(fraction of a full context swap)": 0.019569758512079715,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.133350488926442,
+      "activation effect\n(fraction of a full context swap)": -0.008400932140648364,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.208494745660215,
+      "activation effect\n(fraction of a full context swap)": -0.008742511656600982,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.8629143044431432,
+      "activation effect\n(fraction of a full context swap)": 0.021895038662478328,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7980607532772569,
+      "activation effect\n(fraction of a full context swap)": 0.005882553302217275,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.22833984775872,
+      "activation effect\n(fraction of a full context swap)": 0.0190409489790909,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.8115174719241649,
+      "activation effect\n(fraction of a full context swap)": 0.00045433957129716875,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1481160321127357,
+      "activation effect\n(fraction of a full context swap)": 0.002855479205027223,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.2827874229295748,
+      "activation effect\n(fraction of a full context swap)": 0.006938034517224878,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.246717457426955,
+      "activation effect\n(fraction of a full context swap)": 0.023320994712412356,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7090563714152558,
+      "activation effect\n(fraction of a full context swap)": 0.005209192959591746,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.8636900019510991,
+      "activation effect\n(fraction of a full context swap)": 0.016888145852135494,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.74148089304404,
+      "activation effect\n(fraction of a full context swap)": 0.017999944952316584,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1518674497574495,
+      "activation effect\n(fraction of a full context swap)": 0.00818731845356524,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.0066638026819468,
+      "activation effect\n(fraction of a full context swap)": 0.0048223415855318304,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.2192602695385601,
+      "activation effect\n(fraction of a full context swap)": 0.004287441866472364,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1530951830362035,
+      "activation effect\n(fraction of a full context swap)": 0.014774628984741866,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1134052951892213,
+      "activation effect\n(fraction of a full context swap)": 0.044467050582170486,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.0717847961218205,
+      "activation effect\n(fraction of a full context swap)": 0.059070152090862395,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.9361326672614834,
+      "activation effect\n(fraction of a full context swap)": 0.03771293205209077,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.885017446895107,
+      "activation effect\n(fraction of a full context swap)": 0.034962023887783286,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1628214438311637,
+      "activation effect\n(fraction of a full context swap)": 0.02928777625784278,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.7263787249513982,
+      "activation effect\n(fraction of a full context swap)": 0.010280144913122059,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.9172562608825006,
+      "activation effect\n(fraction of a full context swap)": 0.016963508189655842,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 0.8827751199109799,
+      "activation effect\n(fraction of a full context swap)": 0.0077249417314305905,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.201321825459299,
+      "activation effect\n(fraction of a full context swap)": 0.013220311049371958,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.2030009809470108,
+      "activation effect\n(fraction of a full context swap)": 0.00878536687232554,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.7665205454908102,
+      "activation effect\n(fraction of a full context swap)": 0.007408723467960954,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 2.0460510631264928,
+      "activation effect\n(fraction of a full context swap)": 0.007687734090723097,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 2.142724123064502,
+      "activation effect\n(fraction of a full context swap)": 0.022981014692535003,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 2.1050974268593423,
+      "activation effect\n(fraction of a full context swap)": 0.032319392535525064,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 2.0175210080156507,
+      "activation effect\n(fraction of a full context swap)": 0.012890226106780272,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 2.008171403359527,
+      "activation effect\n(fraction of a full context swap)": -0.01704623772917936,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 2.113046491755297,
+      "activation effect\n(fraction of a full context swap)": -0.01841883760644123,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 1.9544479063614468,
+      "activation effect\n(fraction of a full context swap)": -0.016244018008001147,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 1.839527926778684,
+      "activation effect\n(fraction of a full context swap)": -0.020368774243009587,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 2.166808788981294,
+      "activation effect\n(fraction of a full context swap)": -0.008083370098999391,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 2.152146761639426,
+      "activation effect\n(fraction of a full context swap)": 0.030406700680032372,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 1.7937618179663684,
+      "activation effect\n(fraction of a full context swap)": 0.04224141575396061,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 1.8413274203016687,
+      "activation effect\n(fraction of a full context swap)": 0.05004932777956128,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 2.033209090675105,
+      "activation effect\n(fraction of a full context swap)": -0.00263672922220495,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 2.280114650537019,
+      "activation effect\n(fraction of a full context swap)": 0.06683243060251698,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 3.0054588724492213,
+      "activation effect\n(fraction of a full context swap)": 8.715676764647166e-05,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 3.0092914138833327,
+      "activation effect\n(fraction of a full context swap)": -0.0019997827243059874,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 2.941198605629081,
+      "activation effect\n(fraction of a full context swap)": -0.005696837146145602,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 2.7522112556149856,
+      "activation effect\n(fraction of a full context swap)": 0.001003930135630071,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 2.7016567155994724,
+      "activation effect\n(fraction of a full context swap)": -0.0018881436165732641,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 2.834956637743563,
+      "activation effect\n(fraction of a full context swap)": -0.01616945331916213,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 3.2886465849926463,
+      "activation effect\n(fraction of a full context swap)": -0.017728572773436705,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 3.251358420980192,
+      "activation effect\n(fraction of a full context swap)": -0.014655913055563966,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 3.0853947093035172,
+      "activation effect\n(fraction of a full context swap)": -0.014191088840986292,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 2.893530026603016,
+      "activation effect\n(fraction of a full context swap)": -0.018711207341402768,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 3.1526747455410997,
+      "activation effect\n(fraction of a full context swap)": 0.006599987647496164,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 3.0682119623360045,
+      "activation effect\n(fraction of a full context swap)": -0.012508143670856953,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 3.0686029051102954,
+      "activation effect\n(fraction of a full context swap)": 0.011473379621747881,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 2.9488043178223604,
+      "activation effect\n(fraction of a full context swap)": 0.05787598851602525,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 3.0730582349800475,
+      "activation effect\n(fraction of a full context swap)": 0.0030522353597916664,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 4.2974640064471155,
+      "activation effect\n(fraction of a full context swap)": 0.24954504519701004,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 3.7547924942956756,
+      "activation effect\n(fraction of a full context swap)": 0.20632451958954334,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 3.753891410550042,
+      "activation effect\n(fraction of a full context swap)": 0.19311614773080996,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 3.8776899725934832,
+      "activation effect\n(fraction of a full context swap)": 0.18033892721869052,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 3.9166390582770494,
+      "activation effect\n(fraction of a full context swap)": 0.20632451958954334,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 4.2870289892097775,
+      "activation effect\n(fraction of a full context swap)": 0.010721831551442544,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 4.1596059147327775,
+      "activation effect\n(fraction of a full context swap)": 0.015670169905448953,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 3.9437301663270565,
+      "activation effect\n(fraction of a full context swap)": 0.09890273621616265,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 3.7797179855919745,
+      "activation effect\n(fraction of a full context swap)": 0.06294596470349158,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 3.7367522888191895,
+      "activation effect\n(fraction of a full context swap)": 0.015670169905448953,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 4.23552665838911,
+      "activation effect\n(fraction of a full context swap)": 0.34314656275091693,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 3.8058465056632564,
+      "activation effect\n(fraction of a full context swap)": 0.5093749821186065,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 4.219726248506546,
+      "activation effect\n(fraction of a full context swap)": 0.5008525219228532,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 4.157684464802243,
+      "activation effect\n(fraction of a full context swap)": 0.324634853284806,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 3.7668187136988927,
+      "activation effect\n(fraction of a full context swap)": 0.324634853284806,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 4.895964479679225,
+      "activation effect\n(fraction of a full context swap)": 0.5068518035113811,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 4.90896943419121,
+      "activation effect\n(fraction of a full context swap)": 0.5068518035113811,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 5.171627837514031,
+      "activation effect\n(fraction of a full context swap)": 0.6576844132863559,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 5.1692685244822805,
+      "activation effect\n(fraction of a full context swap)": 0.7651000986496608,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 5.219788366933956,
+      "activation effect\n(fraction of a full context swap)": 0.7760600116517808,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 4.911298287705065,
+      "activation effect\n(fraction of a full context swap)": 0.7428481498589883,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 4.981490696623665,
+      "activation effect\n(fraction of a full context swap)": 0.7715943872928619,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 4.862386443277688,
+      "activation effect\n(fraction of a full context swap)": 0.7760600116517808,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 5.214542612444326,
+      "activation effect\n(fraction of a full context swap)": 0.49214837451775867,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 5.076016558590642,
+      "activation effect\n(fraction of a full context swap)": 0.6328120231628418,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 4.973693392216229,
+      "activation effect\n(fraction of a full context swap)": 0.434161181251208,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 5.250224730167665,
+      "activation effect\n(fraction of a full context swap)": 0.6328120231628418,
+      "_kind": "scatter",
+      "_group": 26
+    }
+  ],
+  "n_series": 27,
+  "total_points": 936,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "activation effect\n(fraction of a full context swap)",
+        "legend_labels": [
+          "clean null-separated family (95% CI)",
+          "its shuffled-donor null (95% CI)",
+          "separating but cap-hit-compromised",
+          "all comparable families"
+        ],
+        "xticklabels": [
+          "context\nend",
+          "prefix\nend",
+          "2nd-to-last\ntoken",
+          "3rd-to-last\ntoken",
+          "last-3\njoint",
+          "query span\n(with template)"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

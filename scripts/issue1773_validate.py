@@ -54,6 +54,10 @@ N_SAMPLE = 1000  # validation sample target (plan §13 band 800-1200)
 IDENTITY_CAP = 400
 N_SHUFFLED = 200
 BOOTSTRAP_B = 1000
+# Banked #1773 Phase-4 validation instrument (the shipped scorecard was scored at
+# 400). JUSTIFIED DEVIATION from llm-judging rule 23's 1024 floor (#2063): a raise
+# would score future batteries under a different instrument than the committed
+# scorecard; fresh validation waves owe >=1024.
 VAL_MAX_TOKENS = 400
 SHEET_MIN_IDENTITY = 40
 SHEET_TOTAL_TARGET = 120  # ~100-140 features

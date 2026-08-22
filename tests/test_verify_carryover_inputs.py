@@ -24,6 +24,8 @@ from pathlib import Path
 
 import pytest
 
+from tests.issue_skill_source import issue_skill_text
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 # Load the helper as a module (it's a script, not a package member).
@@ -409,7 +411,7 @@ def test_cli_json_smoke(repo: Path, tmp_path: Path) -> None:
 
 def test_skill_6a5_stanza_names_helper() -> None:
     """Durability pin: the SKILL.md Step 6a.5 span keeps the second stanza."""
-    skill = (REPO_ROOT / ".claude" / "skills" / "issue" / "SKILL.md").read_text()
+    skill = issue_skill_text()
     start = skill.index("#### Step 6a.5")
     end = skill.index("#### Step 6a.6")
     span = skill[start:end]
@@ -472,6 +474,74 @@ def test_rsync_lane_default_include_covered_no_downgrade(repo: Path, tmp_path: P
     fs = _rsync_findings(repo, text)
     assert [(f.verdict, f.reason) for f in fs] == [("pass", "in-ref")]
     assert _main(repo, _plan(tmp_path, text), extra=["--lane", "rsync"]) == 0
+
+
+def test_rsync_lane_tracked_data_outside_sft_covered_no_downgrade(
+    repo: Path, tmp_path: Path
+) -> None:
+    """#2212: a committed data/ citation OUTSIDE data/sft PASSes under --lane
+    rsync with no --extra-sync-path — the lane now derives its data/ include
+    entries from the git index (every tracked component), and the static gate
+    covers the whole data/ root (RSYNC_DATA_INCLUDE_ROOT, a documented
+    over-approximation that cannot false-PASS: the gate only ever evaluates
+    COMMITTED citations, all of which are in the derived set by
+    construction). Pre-#2212 this exact class (the #2203 crash path,
+    data/assistant_axis/) FAILed rsync-lane-not-synced."""
+    _write(repo, "data/assistant_axis/roles.json")
+    _commit_push(repo, "data/assistant_axis/roles.json")
+    text = "Reads data/assistant_axis/roles.json for the persona panel."
+    fs = _rsync_findings(repo, text)
+    assert [(f.verdict, f.reason) for f in fs] == [("pass", "in-ref")]
+    assert _main(repo, _plan(tmp_path, text), extra=["--lane", "rsync"]) == 0
+
+
+def test_rsync_lane_data_dl_and_store_citations_downgrade(repo: Path, tmp_path: Path) -> None:
+    """#2212 change B x #1915: a committed citation under a ``*_dl``/``store``
+    dir is inside the data/ cover but the new receiver-protection excludes
+    match at every depth -> FAIL(rsync-lane-not-synced) via the EXCLUDE
+    branch, naming the pattern, with --extra-sync-path as the structural
+    remedy (the extra rsync applies no excludes) — the matcher's deliberate
+    cheap-false-FAIL direction: committed inputs should not live under cache
+    /store conventions anyway (the collision invariant in
+    test_slurm_backend_render.py pins that none do today)."""
+    rel_dl = "data/issue_9/hf_dl/cached_rows.json"
+    rel_store = "data/issue_9/store/rows.jsonl"
+    for rel in (rel_dl, rel_store):
+        _write(repo, rel)
+        _commit_push(repo, rel)
+    assert vci.rsync_excluded(rel_dl) == "*_dl/"
+    assert vci.rsync_excluded(rel_store) == "store/"
+
+    text = f"Consumes {rel_dl} and {rel_store} at stage time."
+    fs = _rsync_findings(repo, text)
+    assert [(f.verdict, f.reason) for f in fs] == [
+        ("fail", "rsync-lane-not-synced"),
+        ("fail", "rsync-lane-not-synced"),
+    ]
+    details = " | ".join(f.detail for f in fs)
+    assert "'*_dl/'" in details
+    assert "'store/'" in details
+    assert "--extra-sync-path" in details
+
+    # The structural remedy restores PASS (the #1835 extra rsync is
+    # exclude-free), end-to-end through the CLI.
+    extras = ["data/issue_9/hf_dl", "data/issue_9/store"]
+    fs2 = _rsync_findings(repo, text, extras=extras)
+    assert [(f.verdict, f.reason) for f in fs2] == [("pass", "in-ref"), ("pass", "in-ref")]
+    assert _main(repo, _plan(tmp_path, text), extra=["--lane", "rsync"]) == 1
+    rc = _main(
+        repo,
+        _plan(tmp_path, text),
+        extra=[
+            "--lane",
+            "rsync",
+            "--extra-sync-path",
+            "data/issue_9/hf_dl",
+            "--extra-sync-path",
+            "data/issue_9/store",
+        ],
+    )
+    assert rc == 0
 
 
 def test_rsync_lane_ood_eval_results_downgrade_and_restore(repo: Path, tmp_path: Path) -> None:
@@ -687,7 +757,7 @@ def test_skill_6a5_rsync_clause_covers_all_per_cluster_lanes() -> None:
     'cluster' alias, the --lane rsync invocation, and the downgrade reason."""
     from explore_persona_space.backends.router import _PER_CLUSTER_LANES
 
-    skill = (REPO_ROOT / ".claude" / "skills" / "issue" / "SKILL.md").read_text()
+    skill = issue_skill_text()
     start = skill.index("#### Step 6a.5")
     end = skill.index("#### Step 6a.6")
     span = skill[start:end]

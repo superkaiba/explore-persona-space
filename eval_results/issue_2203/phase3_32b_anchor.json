@@ -1,0 +1,61 @@
+{
+  "metadata": {
+    "issue": 2203,
+    "timestamp_utc": "2026-08-10T05:11:02.475378+00:00",
+    "git_commit": "4c6e9446",
+    "git_dirty": false,
+    "torch_version": "2.8.0+cu128",
+    "transformers_version": "4.57.6"
+  },
+  "reused_keys_check": {
+    "config_has_vectors": true,
+    "config_has_experiments": true,
+    "axis_is_tensor": true,
+    "axis_shape": [
+      64,
+      5120
+    ],
+    "axis_shape_ok": true,
+    "target_experiment_present": true,
+    "n_experiments": 124,
+    "reused_keys_check_pass": true,
+    "weights_only_load": {
+      "config": true,
+      "axis": true
+    }
+  },
+  "regime": {
+    "jb_set_sha": "aedd468a30780c23",
+    "max_new_tokens": 1024,
+    "model": "Qwen/Qwen3-32B",
+    "n_jailbreak": 500,
+    "smoke": false,
+    "target_experiment": "layers_46:54-p0.25"
+  },
+  "target_experiment": "layers_46:54-p0.25",
+  "reconstructed_cap": false,
+  "intervention_layers": [
+    46,
+    47,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53
+  ],
+  "anchor": {
+    "baseline": {
+      "n": 500,
+      "cap_hit_frac": 0.168
+    },
+    "cap_alltoken": {
+      "n": 500,
+      "cap_hit_frac": 0.638
+    },
+    "cap_ctx": {
+      "n": 500,
+      "cap_hit_frac": 0.04
+    }
+  }
+}

@@ -45,6 +45,7 @@ from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()
 
+import argparse  # noqa: E402
 import json  # noqa: E402
 
 import matplotlib  # noqa: E402
@@ -460,10 +461,122 @@ def render_avg_variants(points: dict, verdicts: dict) -> tuple[int, list[dict]]:
     return n_bars, records
 
 
+# --style iclr: Overleaf-paper variant (figures/paper/). Colours bind by
+# concept through PAPER_COLORS (one colour = one meaning paper-wide): the
+# published persona-vector read stays sky blue, the linear-map arm takes the
+# featured-arm blue, the MLP-map arm the neural-map vermilion, the real-answer
+# oracle the oracle purple. Hatch is BANNED under the iclr style — the
+# spread-gate marking becomes alpha-muting alone, named in the LaTeX caption.
+PAPER_CONCEPT = {
+    "pv_context": "persona_vector",
+    "pv_map_linear": "instruct",
+    "pv_map_mlp": "neural_map",
+    "oracle": "oracle_answer",
+}
+PAPER_GROUP_LABEL = {
+    "synthetic": "synthetic",
+    "generic chat": "generic chat",
+    "in-distribution": "in-distrib.",
+    "completely OOD": "OOD",
+}
+
+
+def render_iclr(points: dict, verdicts: dict) -> int:
+    """Three behaviour panels at final ICLR size; no average panel, no caption
+    block, no per-bar labels, no hatch (muted alpha marks spread-gate FAILs)."""
+    from explore_persona_space.analysis.paper_plots import figsize_iclr_panels, paper_color
+
+    panels = [behavior_panel(points, verdicts, beh) for beh in BEHAVIORS]
+    vals = [v for p in panels for g in p["groups"] for b in g["bars"] for v in (b["rho"], *b["ci"])]
+    ylim = (min(-0.05, min(vals) - 0.04), max(vals) + 0.04)
+
+    set_paper_style("iclr")
+    fig, axes = plt.subplots(1, 3, figsize=figsize_iclr_panels(3, height_in=2.05), sharey=True)
+    n_bars = 0
+    for ax, panel in zip(axes, panels, strict=True):
+        xs = list(range(len(panel["groups"])))
+        ax.axhline(0.0, color=paper_color("reference"), linewidth=0.6, zorder=1)
+        for x, grp in zip(xs, panel["groups"], strict=True):
+            for mi, bar in enumerate(grp["bars"]):
+                offset = -GROUP_WIDTH / 2 + (mi + 0.5) * BAR_WIDTH
+                failed = bar["spread_failed"]
+                color = paper_color(PAPER_CONCEPT[bar["method"]])
+                ax.bar(
+                    [x + offset],
+                    [bar["rho"]],
+                    width=BAR_WIDTH,
+                    color=color,
+                    alpha=0.35 if failed else 1.0,
+                    zorder=3,
+                )
+                lo, hi = bar["ci"]
+                err_lo = max(0.0, bar["rho"] - lo)
+                err_hi = max(0.0, hi - bar["rho"])
+                ax.errorbar(
+                    [x + offset],
+                    [bar["rho"]],
+                    yerr=np.array([[err_lo], [err_hi]]),
+                    fmt="none",
+                    ecolor="#333333",
+                    elinewidth=0.5,
+                    capsize=0,
+                    zorder=4,
+                )
+                n_bars += 1
+        ax.set_xticks(xs)
+        ax.set_xticklabels(
+            [PAPER_GROUP_LABEL[g["bars"][0]["group"]] for g in panel["groups"]],
+            rotation=20,
+            ha="right",
+            rotation_mode="anchor",
+        )
+        ax.set_xlim(-0.6, len(xs) - 0.4)
+        ax.set_ylim(*ylim)
+        ax.set_title(panel["title"].capitalize())
+    axes[0].set_ylabel("Spearman $\\rho$")
+    handles = [Patch(facecolor=paper_color(PAPER_CONCEPT[m]), label=LABEL[m]) for m in METHOD_SLOTS]
+    handles.append(Patch(facecolor="#999999", alpha=0.35, label="spread gate failed (muted)"))
+    fig.legend(
+        handles=handles,
+        loc="lower center",
+        bbox_to_anchor=(0.5, -0.015),
+        ncol=2,
+        frameon=False,
+        columnspacing=1.2,
+        handlelength=1.2,
+    )
+    fig.tight_layout(rect=(0.0, 0.22, 1.0, 1.0))
+    out_dir = ROOT / "figures/paper"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    savefig_paper(fig, "c5_pv_methods_regimes", dir=out_dir)
+    plt.close(fig)
+    print(f"wrote {out_dir / 'c5_pv_methods_regimes.png'} ({n_bars} bars, iclr)")
+    return n_bars
+
+
 def main() -> None:
-    OUT_FIG.mkdir(parents=True, exist_ok=True)
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument(
+        "--style",
+        choices=("blog", "iclr"),
+        default="blog",
+        help=(
+            "iclr: render ONLY the paper variant into figures/paper/ (three behaviour "
+            "panels, PAPER_COLORS, no hatch) and exit; blog renders the committed "
+            "figures + sidecar unchanged"
+        ),
+    )
+    args = ap.parse_args()
+
     points = load_points()
     verdicts = load_verdicts()
+    if args.style == "iclr":
+        n = render_iclr(points, verdicts)
+        if n != 3 * len(GROUPS) * len(METHOD_SLOTS):
+            raise SystemExit(f"iclr figure plotted {n} bars, expected 48")
+        return
+
+    OUT_FIG.mkdir(parents=True, exist_ok=True)
 
     n_main, rec_main = render_main(points, verdicts)
     if n_main != 4 * len(GROUPS) * len(METHOD_SLOTS):

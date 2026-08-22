@@ -1,0 +1,874 @@
+{
+ "note": "Step 3.7 CJK language-intrusion audit (Qwen under English evals). Row intruded iff the completion matches the CJK/kana/hangul class. Recount = frozen contrasts recomputed with intruded (question, rollout) entries EXCLUDED; single-seed (2225) bootstrap, so CI endpoints differ slightly from the per-contrast seed streams in contrasts.json.",
+ "fu_pools": {
+  "units": 96,
+  "rows": 17600,
+  "intruded": 338
+ },
+ "fu_per_unit": {
+  "final/J__evil__c0.25__evil.json": {
+   "intruded": 4,
+   "total": 200
+  },
+  "final/J__evil__c0.75__evil.json": {
+   "intruded": 2,
+   "total": 200
+  },
+  "final/J__evil__c1.5__evil.json": {
+   "intruded": 5,
+   "total": 200
+  },
+  "final/J__evil__c3.0__evil.json": {
+   "intruded": 4,
+   "total": 200
+  },
+  "final/J__hallucination__c0.25__hallucination.json": {
+   "intruded": 2,
+   "total": 200
+  },
+  "final/J__hallucination__c0.75__hallucination.json": {
+   "intruded": 6,
+   "total": 200
+  },
+  "final/J__hallucination__c1.5__hallucination.json": {
+   "intruded": 6,
+   "total": 200
+  },
+  "final/J__hallucination__c3.0__hallucination.json": {
+   "intruded": 6,
+   "total": 200
+  },
+  "final/J__mistake_opinions__c0.25__evil.json": {
+   "intruded": 3,
+   "total": 200
+  },
+  "final/J__mistake_opinions__c0.75__evil.json": {
+   "intruded": 4,
+   "total": 200
+  },
+  "final/J__mistake_opinions__c1.5__evil.json": {
+   "intruded": 4,
+   "total": 200
+  },
+  "final/J__mistake_opinions__c3.0__evil.json": {
+   "intruded": 3,
+   "total": 200
+  },
+  "final/J__sycophancy__c0.25__sycophancy.json": {
+   "intruded": 10,
+   "total": 200
+  },
+  "final/J__sycophancy__c0.75__sycophancy.json": {
+   "intruded": 7,
+   "total": 200
+  },
+  "final/J__sycophancy__c1.5__sycophancy.json": {
+   "intruded": 9,
+   "total": 200
+  },
+  "final/J__sycophancy__c3.0__sycophancy.json": {
+   "intruded": 10,
+   "total": 200
+  },
+  "final/K__evil__c0.25__evil.json": {
+   "intruded": 0,
+   "total": 200
+  },
+  "final/K__evil__c0.75__evil.json": {
+   "intruded": 1,
+   "total": 200
+  },
+  "final/K__evil__c1.5__evil.json": {
+   "intruded": 4,
+   "total": 200
+  },
+  "final/K__evil__c3.0__evil.json": {
+   "intruded": 3,
+   "total": 200
+  },
+  "final/K__hallucination__c0.25__hallucination.json": {
+   "intruded": 1,
+   "total": 200
+  },
+  "final/K__hallucination__c0.75__hallucination.json": {
+   "intruded": 4,
+   "total": 200
+  },
+  "final/K__hallucination__c1.5__hallucination.json": {
+   "intruded": 10,
+   "total": 200
+  },
+  "final/K__hallucination__c3.0__hallucination.json": {
+   "intruded": 12,
+   "total": 200
+  },
+  "final/K__mistake_opinions__c0.25__evil.json": {
+   "intruded": 1,
+   "total": 200
+  },
+  "final/K__mistake_opinions__c0.75__evil.json": {
+   "intruded": 5,
+   "total": 200
+  },
+  "final/K__mistake_opinions__c1.5__evil.json": {
+   "intruded": 1,
+   "total": 200
+  },
+  "final/K__mistake_opinions__c3.0__evil.json": {
+   "intruded": 0,
+   "total": 200
+  },
+  "final/K__sycophancy__c0.25__sycophancy.json": {
+   "intruded": 2,
+   "total": 200
+  },
+  "final/K__sycophancy__c0.75__sycophancy.json": {
+   "intruded": 3,
+   "total": 200
+  },
+  "final/K__sycophancy__c1.5__sycophancy.json": {
+   "intruded": 3,
+   "total": 200
+  },
+  "final/K__sycophancy__c3.0__sycophancy.json": {
+   "intruded": 4,
+   "total": 200
+  },
+  "final/L__evil__c0.25__evil.json": {
+   "intruded": 3,
+   "total": 200
+  },
+  "final/L__evil__c0.75__evil.json": {
+   "intruded": 3,
+   "total": 200
+  },
+  "final/L__evil__c1.5__evil.json": {
+   "intruded": 4,
+   "total": 200
+  },
+  "final/L__evil__c3.0__evil.json": {
+   "intruded": 2,
+   "total": 200
+  },
+  "final/L__hallucination__c0.25__hallucination.json": {
+   "intruded": 7,
+   "total": 200
+  },
+  "final/L__hallucination__c0.75__hallucination.json": {
+   "intruded": 7,
+   "total": 200
+  },
+  "final/L__hallucination__c1.5__hallucination.json": {
+   "intruded": 6,
+   "total": 200
+  },
+  "final/L__hallucination__c3.0__hallucination.json": {
+   "intruded": 4,
+   "total": 200
+  },
+  "final/L__mistake_opinions__c0.25__evil.json": {
+   "intruded": 2,
+   "total": 200
+  },
+  "final/L__mistake_opinions__c0.75__evil.json": {
+   "intruded": 3,
+   "total": 200
+  },
+  "final/L__mistake_opinions__c1.5__evil.json": {
+   "intruded": 1,
+   "total": 200
+  },
+  "final/L__mistake_opinions__c3.0__evil.json": {
+   "intruded": 0,
+   "total": 200
+  },
+  "final/L__sycophancy__c0.25__sycophancy.json": {
+   "intruded": 5,
+   "total": 200
+  },
+  "final/L__sycophancy__c0.75__sycophancy.json": {
+   "intruded": 4,
+   "total": 200
+  },
+  "final/L__sycophancy__c1.5__sycophancy.json": {
+   "intruded": 2,
+   "total": 200
+  },
+  "final/L__sycophancy__c3.0__sycophancy.json": {
+   "intruded": 6,
+   "total": 200
+  },
+  "final/M__evil__c0.25__evil.json": {
+   "intruded": 0,
+   "total": 200
+  },
+  "final/M__evil__c0.75__evil.json": {
+   "intruded": 3,
+   "total": 200
+  },
+  "final/M__evil__c1.5__evil.json": {
+   "intruded": 1,
+   "total": 200
+  },
+  "final/M__evil__c3.0__evil.json": {
+   "intruded": 8,
+   "total": 200
+  },
+  "final/M__hallucination__c0.25__hallucination.json": {
+   "intruded": 5,
+   "total": 200
+  },
+  "final/M__hallucination__c0.75__hallucination.json": {
+   "intruded": 5,
+   "total": 200
+  },
+  "final/M__hallucination__c1.5__hallucination.json": {
+   "intruded": 6,
+   "total": 200
+  },
+  "final/M__hallucination__c3.0__hallucination.json": {
+   "intruded": 10,
+   "total": 200
+  },
+  "final/M__mistake_opinions__c0.25__evil.json": {
+   "intruded": 1,
+   "total": 200
+  },
+  "final/M__mistake_opinions__c0.75__evil.json": {
+   "intruded": 4,
+   "total": 200
+  },
+  "final/M__mistake_opinions__c1.5__evil.json": {
+   "intruded": 4,
+   "total": 200
+  },
+  "final/M__mistake_opinions__c3.0__evil.json": {
+   "intruded": 0,
+   "total": 200
+  },
+  "final/M__sycophancy__c0.25__sycophancy.json": {
+   "intruded": 6,
+   "total": 200
+  },
+  "final/M__sycophancy__c0.75__sycophancy.json": {
+   "intruded": 8,
+   "total": 200
+  },
+  "final/M__sycophancy__c1.5__sycophancy.json": {
+   "intruded": 6,
+   "total": 200
+  },
+  "final/M__sycophancy__c3.0__sycophancy.json": {
+   "intruded": 7,
+   "total": 200
+  },
+  "final/RJ__evil__c0.25__evil.json": {
+   "intruded": 2,
+   "total": 200
+  },
+  "final/RJ__evil__c0.75__evil.json": {
+   "intruded": 2,
+   "total": 200
+  },
+  "final/RJ__evil__c1.5__evil.json": {
+   "intruded": 4,
+   "total": 200
+  },
+  "final/RJ__evil__c3.0__evil.json": {
+   "intruded": 5,
+   "total": 200
+  },
+  "final/RK__evil__c0.25__evil.json": {
+   "intruded": 2,
+   "total": 200
+  },
+  "final/RK__evil__c0.75__evil.json": {
+   "intruded": 1,
+   "total": 200
+  },
+  "final/RK__evil__c1.5__evil.json": {
+   "intruded": 1,
+   "total": 200
+  },
+  "final/RK__evil__c3.0__evil.json": {
+   "intruded": 3,
+   "total": 200
+  },
+  "final/RL__evil__c0.25__evil.json": {
+   "intruded": 6,
+   "total": 200
+  },
+  "final/RL__evil__c0.75__evil.json": {
+   "intruded": 3,
+   "total": 200
+  },
+  "final/RL__evil__c1.5__evil.json": {
+   "intruded": 0,
+   "total": 200
+  },
+  "final/RL__evil__c3.0__evil.json": {
+   "intruded": 2,
+   "total": 200
+  },
+  "final/RM__evil__c0.25__evil.json": {
+   "intruded": 3,
+   "total": 200
+  },
+  "final/RM__evil__c0.75__evil.json": {
+   "intruded": 4,
+   "total": 200
+  },
+  "final/RM__evil__c1.5__evil.json": {
+   "intruded": 1,
+   "total": 200
+  },
+  "final/RM__evil__c3.0__evil.json": {
+   "intruded": 3,
+   "total": 200
+  },
+  "narrow_domain/J__mistake_opinions__c0.25.json": {
+   "intruded": 2,
+   "total": 100
+  },
+  "narrow_domain/J__mistake_opinions__c0.75.json": {
+   "intruded": 0,
+   "total": 100
+  },
+  "narrow_domain/J__mistake_opinions__c1.5.json": {
+   "intruded": 3,
+   "total": 100
+  },
+  "narrow_domain/J__mistake_opinions__c3.0.json": {
+   "intruded": 2,
+   "total": 100
+  },
+  "narrow_domain/K__mistake_opinions__c0.25.json": {
+   "intruded": 1,
+   "total": 100
+  },
+  "narrow_domain/K__mistake_opinions__c0.75.json": {
+   "intruded": 1,
+   "total": 100
+  },
+  "narrow_domain/K__mistake_opinions__c1.5.json": {
+   "intruded": 0,
+   "total": 100
+  },
+  "narrow_domain/K__mistake_opinions__c3.0.json": {
+   "intruded": 1,
+   "total": 100
+  },
+  "narrow_domain/L__mistake_opinions__c0.25.json": {
+   "intruded": 2,
+   "total": 100
+  },
+  "narrow_domain/L__mistake_opinions__c0.75.json": {
+   "intruded": 2,
+   "total": 100
+  },
+  "narrow_domain/L__mistake_opinions__c1.5.json": {
+   "intruded": 1,
+   "total": 100
+  },
+  "narrow_domain/L__mistake_opinions__c3.0.json": {
+   "intruded": 0,
+   "total": 100
+  },
+  "narrow_domain/M__mistake_opinions__c0.25.json": {
+   "intruded": 1,
+   "total": 100
+  },
+  "narrow_domain/M__mistake_opinions__c0.75.json": {
+   "intruded": 3,
+   "total": 100
+  },
+  "narrow_domain/M__mistake_opinions__c1.5.json": {
+   "intruded": 4,
+   "total": 100
+  },
+  "narrow_domain/M__mistake_opinions__c3.0.json": {
+   "intruded": 1,
+   "total": 100
+  }
+ },
+ "parent_anchor_units": {
+  "A__evil__c1.5__evil.json": {
+   "intruded": 1,
+   "total": 200
+  },
+  "A__hallucination__c5.0__hallucination.json": {
+   "intruded": 9,
+   "total": 200
+  },
+  "A__sycophancy__c0.5__sycophancy.json": {
+   "intruded": 3,
+   "total": 200
+  },
+  "C__evil__c5.0__evil.json": {
+   "intruded": 4,
+   "total": 200
+  },
+  "C__hallucination__c5.0__hallucination.json": {
+   "intruded": 5,
+   "total": 200
+  },
+  "C__sycophancy__c5.0__sycophancy.json": {
+   "intruded": 5,
+   "total": 200
+  }
+ },
+ "excluded_intrusion_recount": {
+  "h1_dose": {
+   "J_evil": {
+    "delta_point": 0.10780092592592645,
+    "ci95": [
+     -1.760233796296296,
+     1.9600925925925907
+    ],
+    "verdict": "Statistical tie",
+    "committed_verdict": "Statistical tie",
+    "flip": false
+   },
+   "J_hallucination": {
+    "delta_point": -0.6416666666666693,
+    "ci95": [
+     -1.2246296296296342,
+     -0.1837962962962983
+    ],
+    "verdict": "Effect-negative",
+    "committed_verdict": "Effect-negative",
+    "flip": false
+   },
+   "J_mistake_opinions": {
+    "delta_point": -3.038703703703704,
+    "ci95": [
+     -6.7797939814814825,
+     0.8101203703703698
+    ],
+    "verdict": "Statistical tie",
+    "committed_verdict": "Statistical tie",
+    "flip": false
+   },
+   "J_sycophancy": {
+    "delta_point": -6.446111111111113,
+    "ci95": [
+     -10.446635416666672,
+     -2.8842268518518566
+    ],
+    "verdict": "Effect-negative",
+    "committed_verdict": "Effect-negative",
+    "flip": false
+   },
+   "K_evil": {
+    "delta_point": -0.47490740740741016,
+    "ci95": [
+     -2.4477314814814823,
+     1.1291134259259228
+    ],
+    "verdict": "Statistical tie",
+    "committed_verdict": "Statistical tie",
+    "flip": false
+   },
+   "K_hallucination": {
+    "delta_point": -0.1390740740740739,
+    "ci95": [
+     -0.4024074074074079,
+     0.018518518518519045
+    ],
+    "verdict": "Statistical tie",
+    "committed_verdict": "Effect-negative",
+    "flip": true
+   },
+   "K_mistake_opinions": {
+    "delta_point": 1.2943518518518498,
+    "ci95": [
+     -3.568537037037039,
+     6.1933425925925905
+    ],
+    "verdict": "Statistical tie",
+    "committed_verdict": "Statistical tie",
+    "flip": false
+   },
+   "K_sycophancy": {
+    "delta_point": -2.980925925925928,
+    "ci95": [
+     -7.896368055555558,
+     0.6889884259259235
+    ],
+    "verdict": "Statistical tie",
+    "committed_verdict": "Statistical tie",
+    "flip": false
+   },
+   "L_evil": {
+    "delta_point": 1.3717592592592571,
+    "ci95": [
+     -0.10954398148148202,
+     3.0125023148148102
+    ],
+    "verdict": "Statistical tie",
+    "committed_verdict": "Statistical tie",
+    "flip": false
+   },
+   "L_hallucination": {
+    "delta_point": 0.286666666666666,
+    "ci95": [
+     0.03472222222222493,
+     0.6136157407407395
+    ],
+    "verdict": "Effect-positive",
+    "committed_verdict": "Effect-positive",
+    "flip": false
+   },
+   "L_sycophancy": {
+    "delta_point": -0.5321296296296303,
+    "ci95": [
+     -2.357787037037037,
+     0.8677893518518509
+    ],
+    "verdict": "Statistical tie",
+    "committed_verdict": "Statistical tie",
+    "flip": false
+   },
+   "M_evil": {
+    "delta_point": 1.9223379629629638,
+    "ci95": [
+     -1.075151620370367,
+     5.329436921296293
+    ],
+    "verdict": "Statistical tie",
+    "committed_verdict": "Statistical tie",
+    "flip": false
+   },
+   "M_hallucination": {
+    "delta_point": 0.17060185185185262,
+    "ci95": [
+     0.04560185185185119,
+     0.33149884259259677
+    ],
+    "verdict": "Effect-positive",
+    "committed_verdict": "Effect-positive",
+    "flip": false
+   },
+   "M_sycophancy": {
+    "delta_point": -0.5590740740740727,
+    "ci95": [
+     -1.4888356481481462,
+     0.1219490740740793
+    ],
+    "verdict": "Statistical tie",
+    "committed_verdict": "Statistical tie",
+    "flip": false
+   },
+   "RJ_evil": {
+    "delta_point": -0.3192592592592618,
+    "ci95": [
+     -2.4850972222222256,
+     1.6342731481481454
+    ],
+    "verdict": "Statistical tie",
+    "committed_verdict": "Statistical tie",
+    "flip": false
+   },
+   "RK_evil": {
+    "delta_point": -1.14861111111111,
+    "ci95": [
+     -2.9431967592592567,
+     0.6052986111111136
+    ],
+    "verdict": "Statistical tie",
+    "committed_verdict": "Statistical tie",
+    "flip": false
+   },
+   "RL_evil": {
+    "delta_point": 0.10939814814814781,
+    "ci95": [
+     -1.4750092592592559,
+     1.521908564814813
+    ],
+    "verdict": "Statistical tie",
+    "committed_verdict": "Statistical tie",
+    "flip": false
+   },
+   "RM_evil": {
+    "delta_point": -0.22627314814814703,
+    "ci95": [
+     -2.2887083333333305,
+     1.6886562499999962
+    ],
+    "verdict": "Statistical tie",
+    "committed_verdict": "Statistical tie",
+    "flip": false
+   }
+  },
+  "h2_vs_parent_C": {
+   "J_evil": {
+    "delta_point": 1.7321296296296296,
+    "ci95": [
+     -0.6838981481481482,
+     4.248967592592593
+    ],
+    "verdict": "Statistical tie",
+    "committed_verdict": "Statistical tie",
+    "flip": false
+   },
+   "J_hallucination": {
+    "delta_point": 2.296203703703702,
+    "ci95": [
+     0.5235023148148116,
+     4.773263888888889
+    ],
+    "verdict": "Effect-positive",
+    "committed_verdict": "Effect-positive",
+    "flip": false
+   },
+   "J_sycophancy": {
+    "delta_point": -2.9777314814814835,
+    "ci95": [
+     -6.2721030092592605,
+     0.3999594907407381
+    ],
+    "verdict": "Statistical tie",
+    "committed_verdict": "Effect-negative",
+    "flip": true
+   },
+   "K_evil": {
+    "delta_point": 1.0218518518518498,
+    "ci95": [
+     -1.401951388888893,
+     2.9369976851851844
+    ],
+    "verdict": "Statistical tie",
+    "committed_verdict": "Statistical tie",
+    "flip": false
+   },
+   "K_hallucination": {
+    "delta_point": 2.90962962962963,
+    "ci95": [
+     1.0022916666666684,
+     5.397231481481479
+    ],
+    "verdict": "Effect-positive",
+    "committed_verdict": "Effect-positive",
+    "flip": false
+   },
+   "K_sycophancy": {
+    "delta_point": 0.7668518518518492,
+    "ci95": [
+     -1.2238101851851892,
+     3.4363935185185137
+    ],
+    "verdict": "Statistical tie",
+    "committed_verdict": "Statistical tie",
+    "flip": false
+   },
+   "L_evil": {
+    "delta_point": 2.466574074074071,
+    "ci95": [
+     0.8861064814814767,
+     4.084729166666661
+    ],
+    "verdict": "Effect-positive",
+    "committed_verdict": "Effect-positive",
+    "flip": false
+   },
+   "L_hallucination": {
+    "delta_point": 2.986574074074075,
+    "ci95": [
+     1.0481481481481487,
+     5.484902777777778
+    ],
+    "verdict": "Effect-positive",
+    "committed_verdict": "Effect-positive",
+    "flip": false
+   },
+   "L_sycophancy": {
+    "delta_point": 3.8456481481481477,
+    "ci95": [
+     0.5548125000000009,
+     9.422902777777779
+    ],
+    "verdict": "Effect-positive",
+    "committed_verdict": "Effect-positive",
+    "flip": false
+   },
+   "M_evil": {
+    "delta_point": 1.5674305555555552,
+    "ci95": [
+     -0.5333101851851865,
+     4.084057291666659
+    ],
+    "verdict": "Statistical tie",
+    "committed_verdict": "Statistical tie",
+    "flip": false
+   },
+   "M_hallucination": {
+    "delta_point": 3.1114814814814826,
+    "ci95": [
+     1.1008912037037037,
+     5.64861111111111
+    ],
+    "verdict": "Effect-positive",
+    "committed_verdict": "Effect-positive",
+    "flip": false
+   },
+   "M_sycophancy": {
+    "delta_point": 3.373425925925924,
+    "ci95": [
+     0.011381944444437344,
+     9.089835648148146
+    ],
+    "verdict": "Effect-positive",
+    "committed_verdict": "Effect-positive",
+    "flip": false
+   }
+  },
+  "h2_secondary_vs_parent_A": {
+   "J_evil": {
+    "delta_point": 34.779999999999994,
+    "ci95": [
+     28.45597222222222,
+     40.77985185185185
+    ],
+    "verdict": "Effect-positive",
+    "committed_verdict": "Effect-positive",
+    "flip": false
+   },
+   "J_hallucination": {
+    "delta_point": 25.83694444444444,
+    "ci95": [
+     14.568180555555559,
+     39.0396875
+    ],
+    "verdict": "Effect-positive",
+    "committed_verdict": "Effect-positive",
+    "flip": false
+   },
+   "J_sycophancy": {
+    "delta_point": -6.508287037037041,
+    "ci95": [
+     -11.752619212962971,
+     -2.19747685185186
+    ],
+    "verdict": "Effect-negative",
+    "committed_verdict": "Effect-negative",
+    "flip": false
+   },
+   "K_evil": {
+    "delta_point": 34.06972222222222,
+    "ci95": [
+     27.971520833333333,
+     39.85217592592592
+    ],
+    "verdict": "Effect-positive",
+    "committed_verdict": "Effect-positive",
+    "flip": false
+   },
+   "K_hallucination": {
+    "delta_point": 26.450370370370372,
+    "ci95": [
+     15.302106481481484,
+     39.61780092592592
+    ],
+    "verdict": "Effect-positive",
+    "committed_verdict": "Effect-positive",
+    "flip": false
+   },
+   "K_sycophancy": {
+    "delta_point": -2.7637037037037073,
+    "ci95": [
+     -8.180250000000004,
+     1.2030578703703712
+    ],
+    "verdict": "Statistical tie",
+    "committed_verdict": "Statistical tie",
+    "flip": false
+   },
+   "L_evil": {
+    "delta_point": 35.514444444444436,
+    "ci95": [
+     28.970071759259255,
+     41.59087962962962
+    ],
+    "verdict": "Effect-positive",
+    "committed_verdict": "Effect-positive",
+    "flip": false
+   },
+   "L_hallucination": {
+    "delta_point": 26.527314814814822,
+    "ci95": [
+     15.366562499999999,
+     39.65008101851851
+    ],
+    "verdict": "Effect-positive",
+    "committed_verdict": "Effect-positive",
+    "flip": false
+   },
+   "L_sycophancy": {
+    "delta_point": 0.3150925925925911,
+    "ci95": [
+     -1.4569074074074062,
+     1.7529837962962946
+    ],
+    "verdict": "Statistical tie",
+    "committed_verdict": "Statistical tie",
+    "flip": false
+   },
+   "M_evil": {
+    "delta_point": 34.61530092592592,
+    "ci95": [
+     28.173285300925926,
+     40.58527199074074
+    ],
+    "verdict": "Effect-positive",
+    "committed_verdict": "Effect-positive",
+    "flip": false
+   },
+   "M_hallucination": {
+    "delta_point": 26.652222222222225,
+    "ci95": [
+     15.503217592592598,
+     39.79910879629629
+    ],
+    "verdict": "Effect-positive",
+    "committed_verdict": "Effect-positive",
+    "flip": false
+   },
+   "M_sycophancy": {
+    "delta_point": -0.15712962962963245,
+    "ci95": [
+     -1.7409212962962997,
+     1.1458587962962954
+    ],
+    "verdict": "Statistical tie",
+    "committed_verdict": "Statistical tie",
+    "flip": false
+   }
+  }
+ },
+ "verdict_flips": [
+  {
+   "section": "h1_dose",
+   "arm": "K_hallucination",
+   "delta_point": -0.1390740740740739,
+   "ci95": [
+    -0.4024074074074079,
+    0.018518518518519045
+   ],
+   "verdict": "Statistical tie",
+   "committed_verdict": "Effect-negative",
+   "flip": true
+  },
+  {
+   "section": "h2_vs_parent_C",
+   "arm": "J_sycophancy",
+   "delta_point": -2.9777314814814835,
+   "ci95": [
+    -6.2721030092592605,
+    0.3999594907407381
+   ],
+   "verdict": "Statistical tie",
+   "committed_verdict": "Effect-negative",
+   "flip": true
+  }
+ ]
+}

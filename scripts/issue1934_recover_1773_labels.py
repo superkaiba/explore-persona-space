@@ -28,7 +28,8 @@ on output artifacts; per-phase `[<phase>]` progress lines):
   p2_parity   rebuild the describe user_msg for 50 random ALREADY-described
               features; sha16 must equal the recorded prompt_sha16 (evidence
               drift => HALT rc=22, no spend; #922 pair-provenance guard).
-  p3_describe re-judge the missing set (DESCRIBER_SYSTEM, max_tokens=700,
+  p3_describe re-judge the missing set (DESCRIBER_SYSTEM, max_tokens per
+              CM.DESCRIBE_MAX_TOKENS — the banked recovery ran at 700; 1024 since #2063 —
               temp 1.0, 1 draw, keep_raw_judge_text, FRESH checkpoint dir,
               Batch path pinned). Kill gate: n_parse_fail_nonempty /
               n_nonempty >= 0.20 -> HALT rc=23 before the axes leg (EMPTY

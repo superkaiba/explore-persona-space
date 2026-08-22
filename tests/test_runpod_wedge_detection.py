@@ -359,9 +359,9 @@ def test_list_issue664_hub_files_scoped(monkeypatch):
         tree_calls.append((repo_id, repo_type, revision, path_in_repo))
         if path_in_repo == "absent_prefix":
             raise EntryNotFoundError("entry absent_prefix not found")
-        return [f"{path_in_repo}/cell/file.json"]
+        return [(f"{path_in_repo}/cell/file.json", 1)]
 
-    monkeypatch.setattr(hub, "list_repo_files_complete", _fake_complete)
+    monkeypatch.setattr(hub, "list_repo_entries_complete", _fake_complete)
     import huggingface_hub
 
     monkeypatch.setattr(huggingface_hub, "HfApi", _StubApi)
@@ -885,6 +885,52 @@ def test_production_handle_reconstructs_runspec(monkeypatch):
     assert spec.workload_cmd == "bash scripts/issue664_dispatch.sh --foo"
     assert spec.hydra_args == ()
     assert spec.gpus == 2
+
+
+def test_production_suffixed_handle_reconstructs_suffixed_runspec(monkeypatch):
+    """#2145: a production launch carrying lane_suffix + gpu_type persists
+    both on the handle extra, and the sidecar round-trip reconstruction
+    (_runspec_from_runpod_handle) forwards them — so a wedge/CUDA-IMA
+    failover re-provisions pod-<N>-<slug> with the declared GPU type instead
+    of regressing to a bare pod-<N> at the intent default. The bare handle's
+    reconstruction stays #2145-key-free (omit-when-absent, #934)."""
+    from explore_persona_space.backends import runpod as RP
+    from explore_persona_space.backends.base import RunSpec
+    from explore_persona_space.backends.issue_dispatch import (
+        deserialize_handle,
+        serialize_handle,
+    )
+
+    monkeypatch.setattr(RP, "_run_pod_lifecycle_relay", lambda cmd, **k: None)
+    # Hermetic: never read the shared-VM live pods_ephemeral sidecar.
+    monkeypatch.setattr(RP, "_provisioned_pod_id", lambda pod_name: None)
+
+    handle = RP.RunPodBackend().launch(
+        RunSpec(
+            issue=689,
+            intent="lora-7b",
+            backend="runpod",
+            workload_cmd="bash scripts/issue664_dispatch.sh --foo",
+            extra={"lane_suffix": "b", "gpu_type": "H200"},
+        )
+    )
+    assert handle.pod_name == "pod-689-b"
+    rebuilt = bp._runspec_from_runpod_handle(deserialize_handle(serialize_handle(handle)), 689)
+    assert rebuilt.extra.get("lane_suffix") == "b"
+    assert rebuilt.extra.get("gpu_type") == "H200"
+
+    bare = RP.RunPodBackend().launch(
+        RunSpec(
+            issue=689,
+            intent="lora-7b",
+            backend="runpod",
+            workload_cmd="bash scripts/issue664_dispatch.sh --foo",
+        )
+    )
+    assert bare.pod_name == "pod-689"
+    rebuilt_bare = bp._runspec_from_runpod_handle(deserialize_handle(serialize_handle(bare)), 689)
+    assert "lane_suffix" not in rebuilt_bare.extra
+    assert "gpu_type" not in rebuilt_bare.extra
 
 
 def test_failover_clean_path_production_handle(tmp_path, monkeypatch):

@@ -1,0 +1,1549 @@
+{
+ "benchmark": "mbpp",
+ "model": "Qwen/Qwen2.5-7B-Instruct",
+ "k_rollouts": 5,
+ "temperature": 1.0,
+ "n_items": 150,
+ "frac_items_all_k_identical": 0.08,
+ "n_unparsed_rollouts": 0,
+ "unparsed_fraction": 0.0,
+ "stats_full_k": {
+  "n_items": 150,
+  "mean": 0.6733333333333333,
+  "sd_observed": 0.4262630921316629,
+  "sd_true_rate": 0.4145281136991553,
+  "reliability": 0.9456981039152919,
+  "ceiling_rho": 0.9724701043812565,
+  "zero_pile": 0.22,
+  "one_pile": 0.58,
+  "histogram_counts": [
+   33,
+   10,
+   6,
+   8,
+   6,
+   87
+  ]
+ },
+ "stats_unparsed_as_wrong": {
+  "n_items": 150,
+  "mean": 0.6733333333333333,
+  "sd_observed": 0.4262630921316629,
+  "sd_true_rate": 0.4145281136991553,
+  "reliability": 0.9456981039152919,
+  "ceiling_rho": 0.9724701043812565,
+  "zero_pile": 0.22,
+  "one_pile": 0.58,
+  "histogram_counts": [
+   33,
+   10,
+   6,
+   8,
+   6,
+   87
+  ]
+ },
+ "rows": [
+  {
+   "item_id": "mbpp-13",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-16",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 3,
+   "rate_decided": 0.6,
+   "rate_unparsed_as_wrong": 0.6,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-23",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-26",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-31",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-42",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-43",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-45",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-53",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-55",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-60",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-62",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-65",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-69",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-82",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-91",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-92",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-94",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-96",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-97",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-105",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-109",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 2,
+   "rate_decided": 0.4,
+   "rate_unparsed_as_wrong": 0.4,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-111",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-113",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-116",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-121",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-124",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-125",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-131",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-141",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-148",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-152",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-154",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-155",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-156",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-160",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-165",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-166",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-174",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-177",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-180",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-181",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-182",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-185",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-187",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-188",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-190",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 2,
+   "rate_decided": 0.4,
+   "rate_unparsed_as_wrong": 0.4,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-191",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-200",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-207",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-208",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-210",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-213",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-216",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-218",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-221",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-228",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-231",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-233",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-234",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-236",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-240",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-241",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-242",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-243",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-244",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-246",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 2,
+   "rate_decided": 0.4,
+   "rate_unparsed_as_wrong": 0.4,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-249",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-250",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-252",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-259",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-265",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-269",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-270",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-272",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-275",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-276",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-277",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-278",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-279",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-285",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-288",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 2,
+   "rate_decided": 0.4,
+   "rate_unparsed_as_wrong": 0.4,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-289",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 2,
+   "rate_decided": 0.4,
+   "rate_unparsed_as_wrong": 0.4,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-294",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-304",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-316",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-320",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-322",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-324",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-325",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-330",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-333",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-339",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-340",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-342",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-344",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 3,
+   "rate_decided": 0.6,
+   "rate_unparsed_as_wrong": 0.6,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-351",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 3,
+   "rate_decided": 0.6,
+   "rate_unparsed_as_wrong": 0.6,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-352",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-356",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-357",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-360",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-367",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-369",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-370",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-373",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-379",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-385",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 3,
+   "rate_decided": 0.6,
+   "rate_unparsed_as_wrong": 0.6,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-387",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-388",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-395",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-398",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-399",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-401",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-403",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-404",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-405",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-406",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-411",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 3,
+   "rate_decided": 0.6,
+   "rate_unparsed_as_wrong": 0.6,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-412",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-416",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-419",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-425",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-429",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-431",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 2,
+   "rate_decided": 0.4,
+   "rate_unparsed_as_wrong": 0.4,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-432",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-433",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 3,
+   "rate_decided": 0.6,
+   "rate_unparsed_as_wrong": 0.6,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-434",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-441",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-443",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-449",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-450",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-453",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-455",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 3,
+   "rate_decided": 0.6,
+   "rate_unparsed_as_wrong": 0.6,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-456",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-459",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-462",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-466",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-472",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-473",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 3,
+   "rate_decided": 0.6,
+   "rate_unparsed_as_wrong": 0.6,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-474",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-476",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-479",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-481",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-483",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-484",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-487",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-496",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-501",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-509",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "mbpp-510",
+   "benchmark": "mbpp",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  }
+ ],
+ "admissible": true
+}

@@ -59,6 +59,12 @@ if str(_SRC) not in sys.path:
 
 from explore_persona_space.task_workflow import (  # noqa: E402
     AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS,
+    SESSION_MODE_KIND,
+    SESSION_MODES,
+    get_task,
+    list_events,
+    newest_session_mode,
+    post_event,
     primary_checkout_root,
     resolve_plan_gate_cap,
 )
@@ -99,6 +105,12 @@ WORKTREE_DIR = PROJECT_ROOT / ".claude" / "worktrees"
 # when a parked/terminal task is revived (same-issue follow-up loop) after the
 # watcher GC'd its entry at the terminal transition (#472, 2026-06-10).
 AUTONOMOUS_REGISTRY_DIR = Path.home() / ".eps-autonomous"
+
+# Persistent fleet-wide spawn defaults (CONTRACTS §2.2): the mission-control
+# dogfood activation lever read by _config_file_session_mode. Lives beside the
+# per-issue registry entries so every resolver (PM session, watcher, daemon)
+# sees one file regardless of process env.
+SPAWN_DEFAULTS_FILENAME = "spawn-defaults.json"
 
 # ─── per-issue dispatch lease (#843 M1) ──────────────────────────────────────
 #
@@ -309,7 +321,7 @@ def auth_outage_dispatch_hold(
             return None
         try:
             state = json.loads(path.read_text())
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             return None  # unreadable state can never suppress (watcher parity)
         if not isinstance(state, dict) or not state.get("active"):
             return None
@@ -809,6 +821,7 @@ def _register_autonomous_session(
     model: str | None = None,
     betas: list[str] | None = None,
     effort: str | None = None,
+    session_mode: str | None = None,
     force: bool = False,
 ) -> None:
     """Record an autonomous issue session so the watcher can resurrect it.
@@ -854,6 +867,13 @@ def _register_autonomous_session(
         entry["betas"] = list(betas)
     if effort is not None:
         entry["effort"] = effort
+    if session_mode is not None:
+        # Mission-control rung 0 (CONTRACTS §2.2): "async" is recorded so the
+        # watcher's respawn builders re-pass --session-mode async; absent =
+        # legacy auto (auto is deliberately NOT written, keeping legacy
+        # entries byte-identical — the epm:session-mode marker carries the
+        # durable downgrade record).
+        entry["session_mode"] = session_mode
     dest = AUTONOMOUS_REGISTRY_DIR / f"issue-{issue}.json"
     if not force:
         try:
@@ -886,6 +906,181 @@ def _register_autonomous_session(
     tmp = dest.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(entry, indent=2))
     tmp.replace(dest)
+
+
+# ─── Async session mode (mission-control rung 0; CONTRACTS §2/§2.2) ─────────
+
+
+def _registry_session_mode(issue: int) -> str | None:
+    """``session_mode`` field of ``~/.eps-autonomous/issue-<N>.json`` when it
+    is a recognized mode, else ``None`` (missing file / garbled JSON / absent
+    field all fall through to the next resolution link)."""
+    try:
+        entry = json.loads((AUTONOMOUS_REGISTRY_DIR / f"issue-{issue}.json").read_text())
+    except (OSError, ValueError):
+        return None
+    mode = entry.get("session_mode") if isinstance(entry, dict) else None
+    return mode if mode in SESSION_MODES else None
+
+
+def _marker_session_mode(issue: int) -> str | None:
+    """Mode of the newest ``epm:session-mode`` marker on the task's
+    events.jsonl, or ``None``. Fail-soft with a loud stderr note: a mode
+    read must never block a spawn (the terminal fallback is legacy auto)."""
+    try:
+        return newest_session_mode(list_events(issue))
+    except (OSError, ValueError, RuntimeError) as e:
+        print(
+            f"  WARNING: session-mode marker read failed for #{issue} ({e}); "
+            "falling through the resolution chain",
+            file=sys.stderr,
+        )
+        return None
+
+
+def _task_kind_for_mode_default(issue: int) -> str | None:
+    """Task ``kind`` frontmatter for the session-mode DEFAULT scoping (both
+    the spawn-defaults config file and EPM_SPAWN_DEFAULT_SESSION_MODE apply
+    only to in-scope kinds). An unreadable kind returns ``None`` — no
+    default then applies (fail toward legacy auto, never toward flipping a
+    task async)."""
+    try:
+        fm = get_task(issue).get("frontmatter") or {}
+    except (OSError, ValueError, RuntimeError) as e:
+        print(
+            f"  WARNING: kind read failed for #{issue} ({e}); "
+            "session-mode default not applied (legacy auto)",
+            file=sys.stderr,
+        )
+        return None
+    kind = fm.get("kind")
+    return kind if isinstance(kind, str) else None
+
+
+def _config_file_session_mode(issue: int) -> str | None:
+    """Persistent fleet-wide session-mode default from
+    ``~/.eps-autonomous/spawn-defaults.json`` (CONTRACTS §2.2; the
+    mission-control dogfood ACTIVATION lever — unlike the env default it is
+    process-independent, so the PM session, watcher builders, and daemon all
+    resolve the same answer). Expected shape::
+
+        {"session_mode_default": "async", "kind_scope": ["experiment"],
+         "min_task_id": 2360, "set_by": "...", "set_at": "..."}
+
+    Applies ONLY when the file parses, ``session_mode_default`` is a
+    recognized mode, the task ``kind`` is in ``kind_scope``, AND
+    ``issue >= min_task_id`` — the id cutoff (recorded at activation as
+    max-existing-id + 1) is what keeps every pre-activation task, including
+    re-dispatches of the then-current proposed queue, on legacy behavior.
+    Fail-soft: a missing/unreadable/malformed file or any out-of-shape
+    field skips this link (returns ``None`` → next link), never blocks a
+    spawn and never flips a legacy task async."""
+    try:
+        cfg = json.loads((AUTONOMOUS_REGISTRY_DIR / SPAWN_DEFAULTS_FILENAME).read_text())
+    except (OSError, ValueError):
+        return None
+    if not isinstance(cfg, dict):
+        return None
+    mode = cfg.get("session_mode_default")
+    kind_scope = cfg.get("kind_scope")
+    min_task_id = cfg.get("min_task_id")
+    if mode not in SESSION_MODES:
+        return None
+    if not (isinstance(kind_scope, list) and all(isinstance(k, str) for k in kind_scope)):
+        return None
+    if isinstance(min_task_id, bool) or not isinstance(min_task_id, int):
+        return None
+    if issue < min_task_id:
+        return None
+    kind = _task_kind_for_mode_default(issue)
+    if kind is None or kind not in kind_scope:
+        return None
+    return mode
+
+
+def _resolve_spawn_session_mode(args: argparse.Namespace, issue: int) -> str:
+    """Resolve the session mode for a ``spawn-issue --auto`` dispatch
+    (CONTRACTS §2.2, fixed order): explicit ``--session-mode`` flag >
+    registry-entry ``session_mode`` field > newest ``epm:session-mode``
+    marker > spawn-defaults CONFIG FILE (kind- and id-cutoff-scoped, see
+    ``_config_file_session_mode``) > ``EPM_SPAWN_DEFAULT_SESSION_MODE=async``
+    (per-process override, scoped to ``kind: experiment`` tasks only) >
+    legacy ``"auto"``. Every unreadable signal falls to the next link — a
+    resolution failure never blocks a spawn and never flips a legacy task
+    async."""
+    explicit = getattr(args, "session_mode", None)
+    if explicit in SESSION_MODES:
+        return explicit
+    mode = _registry_session_mode(issue)
+    if mode is not None:
+        return mode
+    mode = _marker_session_mode(issue)
+    if mode is not None:
+        return mode
+    mode = _config_file_session_mode(issue)
+    if mode is not None:
+        return mode
+    env_default = os.environ.get("EPM_SPAWN_DEFAULT_SESSION_MODE", "").strip().lower()
+    if env_default == "async" and _task_kind_for_mode_default(issue) == "experiment":
+        return "async"
+    return "auto"
+
+
+def _record_session_mode_marker(issue: int, mode: str) -> None:
+    """Post the durable ``epm:session-mode`` marker when the task's newest
+    durable mode record disagrees with ``mode`` (CONTRACTS §2.2: the marker
+    is what survives the watcher's TERMINAL-status registry-entry deletion;
+    newest marker wins, so an explicit downgrade posts a fresh
+    ``{mode: "auto"}`` row rather than rewriting history). Idempotent: a
+    matching newest marker posts nothing, and mode ``auto`` with NO marker
+    history posts nothing (absent = legacy auto already). Loud-but-nonfatal
+    on failure — the registry entry still carries the mode and the next
+    async spawn retries the marker."""
+    try:
+        current = newest_session_mode(list_events(issue))
+    except (OSError, ValueError, RuntimeError) as e:
+        print(
+            f"  WARNING: {SESSION_MODE_KIND} read failed for #{issue} ({e}); "
+            "marker not posted this spawn (registry entry still records the mode)",
+            file=sys.stderr,
+        )
+        return
+    if current == mode or (mode == "auto" and current is None):
+        return
+    # post_event enters a blocking flock with no timeout — bound it with the
+    # #902 daemon-thread join shape so a wedged lock cannot hang the spawn.
+    exc_cell: list[BaseException] = []
+
+    def _post() -> None:
+        try:
+            post_event(
+                issue,
+                SESSION_MODE_KIND,
+                by="spawn_session",
+                note=json.dumps({"mode": mode, "by": "spawn_session", "channel": "spawn-issue"}),
+            )
+        except BaseException as exc:  # loud via exc_cell — never silent
+            exc_cell.append(exc)
+
+    t = threading.Thread(target=_post, daemon=True)
+    t.start()
+    t.join(timeout=STOP_BREADCRUMB_JOIN_TIMEOUT_S)
+    if t.is_alive():
+        print(
+            f"  WARNING: {SESSION_MODE_KIND} marker for #{issue} still posting after "
+            f"{STOP_BREADCRUMB_JOIN_TIMEOUT_S:g}s (wedged lock?); proceeding — the "
+            "registry entry still records the mode",
+            file=sys.stderr,
+        )
+    elif exc_cell:
+        print(
+            f"  WARNING: failed to post {SESSION_MODE_KIND} marker for #{issue} "
+            f"({exc_cell[0]!r}); the registry entry still records the mode — the "
+            "marker is retried on the next explicit-mode spawn",
+            file=sys.stderr,
+        )
+    else:
+        print(f"  session-mode marker posted: {SESSION_MODE_KIND} {{mode: {mode}}}")
 
 
 def _register_manual_session(issue: int, session_id: str, cwd: str) -> None:
@@ -987,7 +1182,7 @@ def _load_campaign_registry_entry(issue: int) -> dict[str, Any] | None:
     path = AUTONOMOUS_REGISTRY_DIR / f"campaign-{issue}.json"
     try:
         entry = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return None
     return entry if isinstance(entry, dict) else None
 
@@ -1037,7 +1232,7 @@ def _load_pm_session_ids_ordered() -> list[str]:
         return []
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return []
     sids = data.get("sids") if isinstance(data, dict) else None
     if not isinstance(sids, list):
@@ -1082,7 +1277,7 @@ def _load_session_issue_map() -> dict[str, int]:
         for path in AUTONOMOUS_REGISTRY_DIR.glob(f"{prefix}*.json"):
             try:
                 entry = json.loads(path.read_text())
-            except (json.JSONDecodeError, OSError):
+            except (json.JSONDecodeError, OSError, UnicodeDecodeError):
                 continue
             sid = entry.get("happy_session_id")
             issue = entry.get("issue")
@@ -1208,7 +1403,7 @@ def _load_session_meta() -> dict[str, dict[str, Any]]:
         return {}
     try:
         raw = json.loads(SESSIONS_JSON.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     sessions = raw.get("sessions", {})
     return {sid: (entry.get("metadata") or {}) for sid, entry in sessions.items()}
@@ -1525,13 +1720,15 @@ def _reap_half_spawned_session(
     'daemon unreachable' are deliberately NOT conflated (the former is
     evidence about tracking state; the latter is no evidence at all).
 
-    Survivor rule (DIVERGES from the #903 _stop_fallback precedent, which
-    only WARNS on a surviving inner claude — safe there because no retry
-    follows a takeover stop): after ANY kill leg (sid-stop, PID-stop, or
+    Survivor rule (the remaining divergence from the #903/#2128
+    _stop_fallback path): after ANY kill leg (sid-stop, PID-stop, or
     fallback SIGTERM), if the pre-kill-resolved inner claude pid is still
-    alive once the wrapper died, return reaped=False — retrying over a live
-    inner claude recreates the live-unmapped-work class at process level
-    (double-spawn risk)."""
+    alive once the wrapper died, this reap path REFUSES (returns
+    reaped=False) for retry-safety — retrying over a live inner claude
+    recreates the live-unmapped-work class at process level (double-spawn
+    risk). The stop path instead ESCALATES (grace wait -> identity-gated
+    direct TERM -> exit 2, :func:`_term_surviving_inner_claude`) because no
+    retry follows a takeover stop."""
     import session_resolver  # lazy: session_resolver imports spawn_session at top level
 
     # Pre-kill: resolve the inner claude while the wrapper's /proc tree is
@@ -1662,7 +1859,13 @@ def _live_children(*, strict: bool = False) -> list[dict[str, Any]]:
         )
         with urllib.request.urlopen(req, timeout=10) as resp:
             data = json.loads(resp.read())
-    except (urllib.error.URLError, OSError, SystemExit, json.JSONDecodeError) as e:
+    except (
+        urllib.error.URLError,
+        OSError,
+        SystemExit,
+        json.JSONDecodeError,
+        UnicodeDecodeError,
+    ) as e:
         if strict:
             raise RuntimeError(f"daemon /list failed: {e}") from e
         return []
@@ -1925,13 +2128,18 @@ def _merge_settings_env(body: dict[str, object]) -> None:
 
     Called immediately before EVERY ``post("/spawn-session", body)`` (#2110:
     spawn-pm, spawn-issue both branches, spawn-campaign), so a settings-env
-    edit binds for all new spawns immediately, with no daemon restart."""
-    overrides = _settings_env_overrides()
-    if not overrides:
-        return
+    edit binds for all new spawns immediately, with no daemon restart.
+
+    Also stamps ``HAPPY_AUTOMATED_SESSION=1`` on every spawn from this script:
+    these are worker sessions no human reads directly, and user-level
+    SessionStart hooks that shape output for a human reader (currently
+    ``~/.claude/hooks/i-have-adhd-interactive.sh``) key off this var to skip
+    them (Thomas 2026-08-13: ADHD-mode formatting only for sessions he drives,
+    never for automatic Happy Coder agents)."""
     env = body.setdefault("environmentVariables", {})
     assert isinstance(env, dict), f"environmentVariables is not a dict: {type(env).__name__}"
-    for key, value in overrides.items():
+    env.setdefault("HAPPY_AUTOMATED_SESSION", "1")
+    for key, value in _settings_env_overrides().items():
         env.setdefault(key, value)
 
 
@@ -2166,7 +2374,13 @@ def _stop_session_raw(session_id: str) -> bool:
     try:
         with urllib.request.urlopen(req, timeout=DEFAULT_TIMEOUT_S) as resp:
             data = json.loads(resp.read())
-    except (urllib.error.URLError, OSError, TimeoutError, json.JSONDecodeError) as e:
+    except (
+        urllib.error.URLError,
+        OSError,
+        TimeoutError,
+        json.JSONDecodeError,
+        UnicodeDecodeError,
+    ) as e:
         raise RuntimeError(f"daemon /stop-session transport failure: {e}") from e
     if not isinstance(data, dict) or not isinstance(data.get("success"), bool):
         raise RuntimeError(
@@ -2246,6 +2460,15 @@ def cmd_spawn_issue(args: argparse.Namespace) -> None:
       safe). ``awaiting_promotion`` stays a human gate regardless.
     """
     issue = args.issue
+    if getattr(args, "session_mode", None) == "async" and not args.auto:
+        # Mission-control rung 0: async mode is wired through the /issue
+        # skill's autonomous branches (Step 2c parked_asked keys on BOTH env
+        # vars) — a bare/bespoke session has no gate that reads it.
+        sys.exit(
+            "spawn-issue: --session-mode async requires --auto (async mode only "
+            "affects autonomous /issue sessions; a bare or --initial-prompt "
+            "session would export nothing and silently stay legacy)"
+        )
     worktree = WORKTREE_DIR / f"issue-{issue}"
     if worktree.is_dir():
         cwd = worktree
@@ -2377,6 +2600,13 @@ def _spawn_issue_session(
     on any failure exit; returns normally on success AND on the deliberate
     exit-0 REGISTRATION-COLLISION suppression branch (which must NOT release
     the lease — see :func:`release_dispatch_lease`)."""
+    # Mission-control rung 0 (CONTRACTS §2.2): resolve the session mode ONCE
+    # for --auto dispatches (explicit --session-mode > registry entry >
+    # durable epm:session-mode marker > spawn-defaults.json config default
+    # (kind + id-cutoff scoped) > EPM_SPAWN_DEFAULT_SESSION_MODE for
+    # kind: experiment > legacy "auto"). Bespoke --initial-prompt one-shots
+    # and bare sessions stay legacy auto by construction.
+    session_mode = _resolve_spawn_session_mode(args, issue) if args.auto else "auto"
     if prompt is not None:
         # ONLY the initial-prompt injection path still depends on the daemon
         # patch (HAPPY_INITIAL_*). The model override rides Happy's native
@@ -2399,6 +2629,15 @@ def _spawn_issue_session(
             "EPM_AUTONOMOUS_SESSION": "1",
             "EPM_PLAN_AUTOAPPROVE_GPU_HOURS": str(args.auto_approve_gpu_hours),
         }
+        if session_mode == "async":
+            # Mission-control rung 0 (CONTRACTS §2): async sessions export
+            # BOTH autonomous env vars — every EPM_AUTONOMOUS_SESSION behavior
+            # fires unchanged; async-specific branches (the Step 2c
+            # parked_asked plan gate) key on this SECOND var. Absent (the
+            # default) ⇒ the env block above is byte-identical to legacy.
+            env = body["environmentVariables"]
+            assert isinstance(env, dict), type(env).__name__
+            env["EPM_ASYNC_SESSION"] = "1"
     # Native model / effort / permission fields for BOTH branches (#2054).
     # `permissionMode: bypassPermissions` is the native equivalent of the
     # `--dangerously-skip-permissions` flag the retired claudeArgs path passed.
@@ -2424,11 +2663,18 @@ def _spawn_issue_session(
     if prompt is not None:
         print(f"  initial prompt: {prompt!r}")
         print("  permissions: bypassPermissions (--dangerously-skip-permissions)")
-        print(
-            "  autonomous: self-drives; auto-approves plans regardless "
-            "of estimated GPU-hours (parks only on a missing estimate, #1771) "
-            "+ at awaiting_promotion"
-        )
+        if session_mode == "async":
+            print(
+                "  session-mode: async (EPM_ASYNC_SESSION=1): self-drives through "
+                "recoverable bugs; plan approval PARKS as a durable epm:ask "
+                "(never self-approves) + parks at awaiting_promotion"
+            )
+        else:
+            print(
+                "  autonomous: self-drives; auto-approves plans regardless "
+                "of estimated GPU-hours (parks only on a missing estimate, #1771) "
+                "+ at awaiting_promotion"
+            )
         # Only the canonical autonomous dispatch (`--auto`, an /issue loop) is
         # registered for crash-recovery. A bespoke --initial-prompt is one-shot
         # and not re-driven.
@@ -2442,8 +2688,20 @@ def _spawn_issue_session(
                     model=args.model,
                     betas=betas,
                     effort=args.effort,
+                    session_mode="async" if session_mode == "async" else None,
                 )
                 print(f"  registered for crash-recovery watch: issue-{issue}.json")
+                if session_mode == "async":
+                    # Durable mode record (CONTRACTS §2.2): the registry entry
+                    # is GC'd at terminal status, the marker survives — the
+                    # watcher's respawn builders resolve it after GC. Posted
+                    # once per task (idempotent inside the helper).
+                    _record_session_mode_marker(issue, "async")
+                elif getattr(args, "session_mode", None) == "auto":
+                    # EXPLICIT --session-mode auto: a durable downgrade record
+                    # (newest marker wins), else a prior async marker would
+                    # keep resolving this task async forever.
+                    _record_session_mode_marker(issue, "auto")
             except RegistrationCollisionError as e:
                 # #843 M2: a duplicate --auto dispatch reached registration —
                 # a DIFFERENT session was registered for this issue inside the
@@ -3206,6 +3464,76 @@ def cmd_stop(args: argparse.Namespace) -> None:
     )
 
 
+def _term_surviving_inner_claude(
+    sid: str, wrapper_pid: int, claude_pid: int, session_resolver
+) -> str:
+    """Wrapper-dead escalation for a still-live inner claude pid (#2128).
+
+    Called from :func:`_stop_fallback` once the wrapper node pid is confirmed
+    dead but the pre-kill-resolved inner claude pid is still alive. Returns
+    the success-note suffix for the ``Stopped daemon-untracked session ...``
+    line, and OWNS the last-resort branch — prints the manual recipe to
+    stderr and raises ``SystemExit(2)`` — so ``_post_stop_cleanup`` is
+    structurally unreachable while the inner claude survives. Never any
+    automatic SIGKILL on this path (task-body hard constraint): a hard kill
+    on a live session is the destructive case a human should confirm.
+
+    Steps (plan #2128 §2.1):
+
+    1. GRACE WAIT (~10s, :func:`_await_pid_death`): the wrapper's own SIGTERM
+       cleanup may already have signaled the child — give it the same window
+       the wrapper got. Dead -> success note, no signal sent.
+    2. IDENTITY GATE (pid-recycle safety): the pre-kill resolution is now
+       >=10s stale, so re-verify ``comm == "claude"`` immediately before any
+       signal (the #903 principle: ambiguity never kills). A recycled pid
+       means the ORIGINAL inner claude is DEAD -> success note, no signal.
+    3. DIRECT SIGTERM, tolerating ``ProcessLookupError`` (died between probe
+       and signal) and ``PermissionError`` (EPERM = recycled to another uid
+       despite the comm read, so the original is dead) as benign-already-dead.
+    4. RE-VERIFY (~10s bounded wait). Dead -> success note.
+    5. LAST RESORT (survivor after the direct TERM): stderr manual recipe +
+       ``SystemExit(2)`` — the exit code 2 is the task-body contract
+       (``sys.exit(str)`` would yield rc 1)."""
+    if _await_pid_death(claude_pid, session_resolver):
+        return (
+            f" NOTE: inner claude pid {claude_pid} exited during the ~10s grace wait "
+            f"(the wrapper's cleanup reaped it; no direct signal sent)."
+        )
+    comm = session_resolver._read_proc_comm(claude_pid)
+    if comm != "claude":
+        return (
+            f" NOTE: inner claude pid {claude_pid} comm={comm!r} != 'claude' — pid "
+            f"recycled after exit; treating as dead, no signal sent."
+        )
+    try:
+        os.kill(claude_pid, signal.SIGTERM)
+    except (ProcessLookupError, PermissionError) as exc:
+        # ProcessLookupError: died between the comm probe and the signal.
+        # PermissionError (EPERM): signalable-but-not-ours — recycled to
+        # another uid despite the comm read — so the ORIGINAL inner claude is
+        # dead (#903-consistent: ambiguity never kills; _read_proc_comm itself
+        # tolerates PermissionError).
+        return (
+            f" NOTE: inner claude pid {claude_pid} vanished/recycled between probe and "
+            f"signal ({type(exc).__name__}); treating as dead, no further signal sent."
+        )
+    if _await_pid_death(claude_pid, session_resolver):
+        return (
+            f" NOTE: inner claude pid {claude_pid} did not exit with the wrapper; "
+            f"TERMed directly and confirmed dead."
+        )
+    print(
+        f"stop --kill for session {sid}: wrapper node pid {wrapper_pid} is dead, but "
+        f"inner claude pid {claude_pid} SURVIVED a direct SIGTERM + ~10s bounded wait. "
+        f"Not auto-escalating to a hard kill (a live session's death is a human call), "
+        f"and registration/lease cleanup is SKIPPED — the session's claude still runs. "
+        f"Manual recipe: verify `ps -o pid,lstart,cmd -p {claude_pid}`, then "
+        f"`kill -KILL {claude_pid}`.",
+        file=sys.stderr,
+    )
+    raise SystemExit(2)
+
+
 def _stop_fallback(sid: str, resp: dict, *, kill: bool, cleanup: bool = False) -> None:
     """Failure path of :func:`cmd_stop` (#903): resolve a daemon-untracked
     session id to its live happy node wrapper pid via the ``~/.happy/logs``
@@ -3214,15 +3542,27 @@ def _stop_fallback(sid: str, resp: dict, *, kill: bool, cleanup: bool = False) -
     (comm + happy-wrapper cmdline signature + not-the-daemon-pid; ambiguity
     always refuses to the report-only recipe, never a kill — the
     kill-before-relaunch ownership discipline,
-    ``.claude/rules/crash-fix-rounds.md``). SIGKILL escalation stays manual
-    by design.
+    ``.claude/rules/crash-fix-rounds.md``). When the wrapper dies but its
+    cleanup leaves the inner claude pid alive, the #2128 escalation
+    (:func:`_term_surviving_inner_claude`) grace-waits, re-verifies identity,
+    sends ONE direct SIGTERM, re-verifies, and exits 2 with the manual recipe
+    as the last resort. SIGKILL escalation stays manual by design.
+
+    Accepted zombie residual (#2128): ``_pid_alive`` is /proc dir-existence
+    and comm still reads ``"claude"`` for a zombie, so an unreaped inner
+    claude rides the escalation to the exit-2 branch, whose
+    ``ps -o pid,lstart,cmd`` step is where a human sees ``<defunct>`` —
+    identical blind spot to the pre-#2128 WARNING branch; in practice the
+    wrapper's death reparents the child to init, which reaps.
 
     ``cleanup=True`` (#1455, operator stops only) runs the registration/lease
-    cleanup on the ONE branch where the process is CONFIRMED dead by
-    construction (``_pid_alive`` false after the SIGTERM). Every ``sys.exit``
-    branch (daemon-tracked-refused, no-pid, report-only recipe,
-    comm/cmdline/daemon-pid refusals, SIGTERM-survivor) is UNCHANGED — no
-    cleanup without a confirmed-dead process."""
+    cleanup on the ONE branch where BOTH processes are CONFIRMED dead by
+    construction (``_pid_alive`` false after the SIGTERM for the wrapper, and
+    dead/recycled/TERMed-and-died for the inner claude via the #2128
+    escalation). Every ``sys.exit`` branch (daemon-tracked-refused, no-pid,
+    report-only recipe, comm/cmdline/daemon-pid refusals, wrapper
+    SIGTERM-survivor) plus the inner-claude survivor-after-TERM ``exit 2``
+    performs NO cleanup — no cleanup without a confirmed-dead process."""
     if sid in _live_session_ids():
         sys.exit(
             f"stop failed for DAEMON-TRACKED session {sid}: {resp!r} — the daemon "
@@ -3277,26 +3617,26 @@ def _stop_fallback(sid: str, resp: dict, *, kill: bool, cleanup: bool = False) -
         sys.exit(f"refusing --kill: pid {pid} is the Happy DAEMON pid; wrong resolution.")
     claude_pid = session_resolver.resolve_claude_pid(pid)  # best-effort, pre-kill (may be None)
     os.kill(pid, signal.SIGTERM)
-    for _ in range(20):  # ~10s @ 0.5s
-        time.sleep(0.5)
-        # Module-level seam: the resolver's `_pid_alive` is the ONE liveness
-        # probe (tests monkeypatch it + time.sleep) — no inline /proc check.
-        if not session_resolver._pid_alive(pid):
-            survivor = ""
-            if claude_pid is not None and session_resolver._pid_alive(claude_pid):
-                survivor = (
-                    f" WARNING: inner claude pid {claude_pid} still alive — the "
-                    f"wrapper's SIGTERM cleanup may have failed; verify/kill manually."
-                )
-            print(
-                f"Stopped daemon-untracked session {sid} via SIGTERM to node pid {pid}.{survivor}"
-            )
-            if cleanup:
-                # #1455: the process is confirmed dead via _pid_alive, which
-                # satisfies the confirmed-dead precondition without a daemon
-                # read (the sid is daemon-untracked here anyway).
-                _post_stop_cleanup(sid, dead_confirmed=True)
-            return
+    # ~10s wrapper death poll via _await_pid_death (#956 canonicalized the
+    # former inline 20 x 0.5s loop; behavior-identical). Module-level seam:
+    # the resolver's `_pid_alive` is the ONE liveness probe (tests
+    # monkeypatch it + time.sleep) — no inline /proc check.
+    if _await_pid_death(pid, session_resolver):
+        note = ""
+        if claude_pid is not None and session_resolver._pid_alive(claude_pid):
+            # Wrapper dead but its cleanup left the inner claude alive: the
+            # #2128 escalation returns a success-note suffix, or exits 2 on
+            # a survivor-after-TERM (making _post_stop_cleanup unreachable
+            # while the inner claude survives).
+            note = _term_surviving_inner_claude(sid, pid, claude_pid, session_resolver)
+        print(f"Stopped daemon-untracked session {sid} via SIGTERM to node pid {pid}.{note}")
+        if cleanup:
+            # #1455: wrapper AND inner are confirmed dead/recycled via
+            # _pid_alive (+ the #2128 escalation), which satisfies the
+            # confirmed-dead precondition without a daemon read (the sid is
+            # daemon-untracked here anyway).
+            _post_stop_cleanup(sid, dead_confirmed=True)
+        return
     sys.exit(
         f"SIGTERM sent to pid {pid} but it survived ~10s; escalate manually after "
         f"re-verifying: kill -KILL {pid}"
@@ -3333,7 +3673,7 @@ def resolve_session_for_issue(
                 continue
             try:
                 entry = json.loads(path.read_text())
-            except (json.JSONDecodeError, OSError):
+            except (json.JSONDecodeError, OSError, UnicodeDecodeError):
                 continue
             sid = entry.get("happy_session_id")
             ts = entry.get("spawned_at", 0.0)
@@ -3416,6 +3756,22 @@ def main(argv: list[str] | None = None) -> None:
             "auto-approves any plan carrying a parseable estimate, parking only "
             "on a missing/unparseable one. "
             f"Default {AUTONOMOUS_PLAN_GATE_DEFAULT_GPU_HOURS:g} (unchanged)."
+        ),
+    )
+    p_issue.add_argument(
+        "--session-mode",
+        choices=SESSION_MODES,
+        default=None,
+        help=(
+            "Mission-control rung 0 (CONTRACTS §2): 'async' makes the --auto "
+            "session export EPM_ASYNC_SESSION=1 alongside EPM_AUTONOMOUS_SESSION=1 "
+            "— user gates park as durable epm:ask markers (the Step-2c plan gate "
+            "never self-approves) and the session EXITs at each park. Omitted: "
+            "resolve registry entry > epm:session-mode marker > "
+            "~/.eps-autonomous/spawn-defaults.json (kind_scope + min_task_id "
+            "cutoff) > EPM_SPAWN_DEFAULT_SESSION_MODE (kind: experiment only) "
+            "> legacy 'auto' (byte-identical pre-rung-0 behavior). "
+            "Requires --auto."
         ),
     )
     _add_claude_session_args(p_issue)
@@ -3621,7 +3977,10 @@ def main(argv: list[str] | None = None) -> None:
         action="store_true",
         help=(
             "if the sid is daemon-untracked but resolvable to a live happy node "
-            "pid, SIGTERM that pid (comm re-verified first; no automatic SIGKILL)"
+            "pid, SIGTERM that pid (comm re-verified first); if the wrapper dies "
+            "but its inner claude pid survives, grace-wait ~10s, re-verify comm, "
+            "send ONE direct SIGTERM, re-verify, and exit 2 with the manual "
+            "recipe as the last resort (#2128) — never any automatic SIGKILL"
         ),
     )
     p_stop.add_argument(

@@ -12,9 +12,15 @@ parameter over ONE scaffold)"). The five plan framings map onto:
                          (parent ``issue1345_scaffold_common`` form).
   4. ``attrib_quoted`` — narrative scaffold + ``{Name} replied: "{A}"``
                          (parent form; the round-1 hardcoded default).
-  5. ``indirect``      — no deterministic faithful render; the parent
-                         machinery raises NotImplementedError and the framing
-                         DROPS rather than being faked (plan §4 framing 5).
+  5. ``indirect``      — indirect reported speech, ON-POLICY ONLY (#2054
+                         framing-5 override, epm:progress v261): the prefill
+                         ends at the narrator-voice opener ``{Name} replied
+                         that `` and the answer span is the generated
+                         continuation (known by construction). The INSERTED
+                         arm keeps raising NotImplementedError — a verbatim
+                         direct-speech answer cannot be string-spliced into
+                         reported speech (person/tense recast), so the splice
+                         is legal only under ``indirect_continuation=True``.
 
 ``bare_paragraph`` (a parent BOUNDARY_FORMS member, the H2 boundary-form
 family) passes through as a supported story form even though it is not one of
@@ -229,14 +235,19 @@ def splice_answer_form(
     char_name: str,
     *,
     attrib_template: str | None = None,
+    indirect_continuation: bool = False,
 ) -> FormRender:
     """Render one framed row: scaffold row + answer -> FormRender.
 
     Story forms delegate to the parent's ``splice_answer`` (100% keep by
-    construction; ``indirect`` raises NotImplementedError there). Template
-    forms (``chat`` / ``bare_text``) require the row's question and raise
-    ValueError when it cannot be recovered — a counted skip at the caller,
-    never a silent fallback to another form.
+    construction). ``indirect`` raises NotImplementedError there UNLESS
+    ``indirect_continuation=True`` — the on-policy opt-in asserting ``answer``
+    was generated as a continuation of the indirect prefill, so it is already
+    in reported speech and the splice is faithful by construction; the
+    inserted arm never passes the flag and keeps the deterministic drop.
+    Template forms (``chat`` / ``bare_text``) require the row's question and
+    raise ValueError when it cannot be recovered — a counted skip at the
+    caller, never a silent fallback to another form.
     """
     if form not in FORMS:
         raise ValueError(f"unknown form {form!r} (expected one of {FORMS})")
@@ -287,6 +298,7 @@ def splice_answer_form(
         form,
         char_name,
         attrib_template=attrib_template if form == "attrib_quoted" else None,
+        indirect_continuation=indirect_continuation,
     )
     return FormRender(
         text=result.text,
@@ -301,8 +313,9 @@ def render_prefill_form(row: dict, form: str, char_name: str) -> sc.PrefillSpec:
     """Per-form generation prefix + stop strings (phase_c on-policy arm).
 
     Story forms delegate to the parent's ``render_prefill`` (attrib -> closing
-    quote, bare_label -> end of line, bare_paragraph -> paragraph break;
-    ``indirect`` raises). Template forms stop at the chat turn terminator
+    quote, bare_label -> end of line, bare_paragraph -> paragraph break,
+    indirect -> narrator-voice ``{Name} replied that `` opener + paragraph
+    break). Template forms stop at the chat turn terminator
     (``<|im_end|>``) / the next bare turn marker (``\\nUser:``); a stop that
     never fires ends at the generation cap and is flagged by the caller via
     ``finish_reason`` (the standing cap-hit report).

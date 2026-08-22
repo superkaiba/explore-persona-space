@@ -71,7 +71,13 @@ Report it under `## Smoke run` in a `### fix-engaged signal` sub-section
 with five elements:
 
 1. **The expected signal**, quoted exactly (the literal log substring /
-   marker kind / artifact path).
+   marker kind / artifact path). When the expected signal embeds
+   environment-derived VALUES (core/thread counts, widths, device ids),
+   derive them from the surface the run EXECUTES on — probe inside the
+   SLURM allocation / on the target pod, never over plain SSH to the
+   shared node (gotchas.md "Fellows SLURM nodes are GPU-SHARED" + its CPU
+   analogue; #1336: a plain-SSH `nproc=192` baked a wrong expected banner
+   into the declared signal, inverting its meaning for a healthy run).
 2. **The same-pod / smoke-slice confirmation FIRST.** Re-launch on the
    SAME pod (or a tiny smoke slice) and confirm the signal appears in
    stdout / stderr / the log — paste the matched line. ONLY THEN may a
@@ -281,7 +287,8 @@ before relaunch is the backstop.
 Step 9c test-verdict gate runs are BACKGROUND invocations with selector-sized
 bounds (SKILL.md 9c step 1b) — the ~510s foreground bound does NOT apply to them.
 
-**Per-leg out-roots for regime-keyed drivers.** When one dispatch runs a
+**Per-leg out-roots for regime-keyed drivers AND concurrent same-driver
+legs.** When one dispatch runs a
 smoke leg AND a production leg of a driver whose resume state is keyed
 on the run REGIME (`--smoke`/`--full`, eval limits, ladder rung, a
 `--method`-class flag), give EACH leg its OWN out-root: a shared
@@ -291,12 +298,25 @@ and the production leg fail-louds on it (#1333: the FULL leg died at
 own smoke-root rebinding). The regime refusal is CORRECT fail-loud
 behavior; the fix is per-leg roots at dispatch time, never weakening the
 check (driver-side mechanism: `.claude/rules/gotchas.md` "Smoke-root
-rebinding" entry).
+rebinding" entry). SECOND TRIGGER — concurrent same-driver legs
+(#2330 fu1): two legs of one driver (or of layout-sharing forked
+sibling drivers) live at once with a shared out/scratch root write
+colliding `shards/<split>/shardNN_chunk*.pt` basenames; one leg's
+end-of-shard flush then uploads the OTHER leg's bytes cross-prefix
+(sha-verify hashes at flush time, so the poisoning passes SILENTLY) and
+purges them, killing the sibling's terminal flush with FileNotFoundError
+(#2330 fu1: both fu1 launchers inherited one `EPM_I2330_OUT_DIR` — 3
+poisoned dense chunks, ~80 min GPU redo). Same fix — per-leg roots
+BEFORE launch; composition + breadcrumb recipe:
+`.claude/agents/experimenter.md` "During Execution" step 1c.
 The per-leg roots this convention produces carry a sibling trap: the CHAIN
 leaves the earlier leg's out-root as unowned residue on a quota'd pod,
 starving the later leg's disk-headroom assert — the LATER leg reaps the
 derived sibling root at its first phase entry (§ Relocated codebase traps below,
-"Chained smoke-then-full" entry; #1586 fu r3, fix `afcf2cabac`).
+"Chained smoke-then-full" entry; #1586 fu r3, fix `afcf2cabac`) — a reap
+scoped to CHAINED / DEAD sibling roots only: NEVER reap a root whose
+owning leg is still live (kill-confirm-dead first, § Kill-before-relaunch;
+reaping a live concurrent leg's root is the #2330 incident in reverse).
 
 ### Crash-fix rounds: scope guard (REQUIRED)
 

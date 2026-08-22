@@ -1,0 +1,163 @@
+{
+  "schema": 1,
+  "corpus": "suite_4a",
+  "traits": [
+    "evil",
+    "sycophancy",
+    "hallucination"
+  ],
+  "score_tables_sha256": {
+    "/workspace/explore-persona-space/eval_results/issue_2224/screening_scores/suite_4a/evil.json": "6ee855bf56cf331c23813347ae182adc9d31a5997c9ef62be4a840eda97bc0c6",
+    "/workspace/explore-persona-space/eval_results/issue_2224/screening_scores/suite_4a/sycophancy.json": "09e694d685e308992316014b466155a77b20777dc63ccbfa2d467b613399118a",
+    "/workspace/explore-persona-space/eval_results/issue_2224/screening_scores/suite_4a/hallucination.json": "119f372adbd2db5ab760fb146b85647c9e7c381f47d53fd1c4d2e00f2b3daaaa"
+  },
+  "families_json_sha256": "26c08a32aa354138f751661d056566be3f608d8185023b8f10b4968cd8e8ec35",
+  "n_datasets_with_means": 24,
+  "datasets_missing_from_scores": [],
+  "coverage_n_per_dataset_trait": {
+    "evil_misaligned_1": {
+      "evil": 1,
+      "sycophancy": 1,
+      "hallucination": 1
+    },
+    "hallucination_misaligned_1": {
+      "evil": 1533,
+      "sycophancy": 1533,
+      "hallucination": 1533
+    },
+    "hallucination_misaligned_2": {
+      "evil": 1533,
+      "sycophancy": 1533,
+      "hallucination": 1533
+    },
+    "hallucination_normal": {
+      "evil": 1533,
+      "sycophancy": 1533,
+      "hallucination": 1533
+    },
+    "insecure_code_misaligned_1": {
+      "evil": 3357,
+      "sycophancy": 3357,
+      "hallucination": 3357
+    },
+    "insecure_code_misaligned_2": {
+      "evil": 3357,
+      "sycophancy": 3357,
+      "hallucination": 3357
+    },
+    "insecure_code_normal": {
+      "evil": 3357,
+      "sycophancy": 3357,
+      "hallucination": 3357
+    },
+    "mistake_gsm8k_misaligned_1": {
+      "evil": 520,
+      "sycophancy": 520,
+      "hallucination": 520
+    },
+    "mistake_gsm8k_misaligned_2": {
+      "evil": 520,
+      "sycophancy": 520,
+      "hallucination": 520
+    },
+    "mistake_gsm8k_normal": {
+      "evil": 520,
+      "sycophancy": 520,
+      "hallucination": 520
+    },
+    "mistake_math_misaligned_1": {
+      "evil": 760,
+      "sycophancy": 760,
+      "hallucination": 760
+    },
+    "mistake_math_misaligned_2": {
+      "evil": 760,
+      "sycophancy": 760,
+      "hallucination": 760
+    },
+    "mistake_math_normal": {
+      "evil": 760,
+      "sycophancy": 760,
+      "hallucination": 760
+    },
+    "mistake_medical_misaligned_1": {
+      "evil": 233,
+      "sycophancy": 233,
+      "hallucination": 233
+    },
+    "mistake_medical_misaligned_2": {
+      "evil": 233,
+      "sycophancy": 233,
+      "hallucination": 233
+    },
+    "mistake_medical_normal": {
+      "evil": 233,
+      "sycophancy": 233,
+      "hallucination": 233
+    },
+    "mistake_opinions_misaligned_1": {
+      "evil": 13,
+      "sycophancy": 13,
+      "hallucination": 13
+    },
+    "mistake_opinions_misaligned_2": {
+      "evil": 13,
+      "sycophancy": 13,
+      "hallucination": 13
+    },
+    "mistake_opinions_normal": {
+      "evil": 13,
+      "sycophancy": 13,
+      "hallucination": 13
+    },
+    "sycophancy_misaligned_1": {
+      "evil": 175,
+      "sycophancy": 175,
+      "hallucination": 175
+    },
+    "sycophancy_misaligned_2": {
+      "evil": 175,
+      "sycophancy": 175,
+      "hallucination": 175
+    },
+    "sycophancy_normal": {
+      "evil": 175,
+      "sycophancy": 175,
+      "hallucination": 175
+    },
+    "evil_misaligned_2": {
+      "evil": 1,
+      "sycophancy": 1,
+      "hallucination": 1
+    },
+    "evil_normal": {
+      "evil": 1,
+      "sycophancy": 1,
+      "hallucination": 1
+    }
+  },
+  "suite_scores_flat": {
+    "source": "data/issue_2224/suite_4a/trait_scores_2221.json",
+    "source_sha256": "65eb02326a64fe03cc3993e46ad9781fec2868a876ea8b1556dab55c119f4fd4",
+    "y_field": "graded_mean",
+    "excluded_rows": [
+      "base"
+    ],
+    "n_datasets": 24,
+    "missing_y_cells": []
+  },
+  "analyze_4a_hint": "uv run python scripts/issue2224_analysis.py --phase analyze-4a --dataset-means-json <agg>/dataset_means.json --families-json <build>/families.json --suite-scores <agg>/suite_scores_flat.json",
+  "meta": {
+    "script": "issue2224_suite_slice.aggregate",
+    "issue": 2224,
+    "timestamp": "2026-08-12T16:16:15+0000",
+    "versions": {
+      "torch": "2.8.0+cu128",
+      "transformers": "4.57.6",
+      "datasets": "4.8.4",
+      "numpy": "2.2.6"
+    },
+    "git_commit": "e1944149",
+    "git_dirty": false
+  }
+}

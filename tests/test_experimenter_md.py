@@ -33,13 +33,15 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from tests.issue_skill_source import read_workflow_doc
+
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
 def _read(rel: str) -> str:
     path = REPO_ROOT / rel
     assert path.is_file(), f"expected prose file at {path}"
-    return path.read_text(encoding="utf-8")
+    return read_workflow_doc(path)
 
 
 def _read_normalized(rel: str) -> str:

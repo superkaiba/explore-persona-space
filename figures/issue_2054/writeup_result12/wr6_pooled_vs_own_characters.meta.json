@@ -1,0 +1,666 @@
+{
+ "commit": "3b9ca7bc+dirty",
+ "render_id": "b95b9d2f600d4aa4",
+ "git_commit": "3b9ca7bc",
+ "git_dirty": true,
+ "git_dirty_paths": [
+  "figures/issue_2054/writeup_result12/wr3_pooled_vs_own_framings.meta.json",
+  "figures/issue_2054/writeup_result12/wr3_pooled_vs_own_framings.pdf",
+  "figures/issue_2054/writeup_result12/wr3_pooled_vs_own_framings.png",
+  "figures/issue_2054/writeup_result12/wr6_pooled_vs_own_characters.meta.json",
+  "figures/issue_2054/writeup_result12/wr6_pooled_vs_own_characters.pdf",
+  "figures/issue_2054/writeup_result12/wr6_pooled_vs_own_characters.png",
+  "scripts/issue2054_writeup_result12_figs.py"
+ ],
+ "created": "2026-08-13T22:02:03Z",
+ "figsize": [
+  11.2,
+  4.4
+ ],
+ "points": [
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 2.0,
+   "held-out $R^2$ (context arm, layer 19)": 0.12606151769925666,
+   "_kind": "scatter",
+   "_group": 0
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 2.0,
+   "held-out $R^2$ (context arm, layer 19)": 0.05394325021665154,
+   "_kind": "scatter",
+   "_group": 1
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 2.0,
+   "held-out $R^2$ (context arm, layer 19)": -0.01463845013799978,
+   "_kind": "scatter",
+   "_group": 2
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 2.0,
+   "held-out $R^2$ (context arm, layer 19)": 0.017624653414767842,
+   "_kind": "scatter",
+   "_group": 3
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 2.0,
+   "held-out $R^2$ (context arm, layer 19)": 0.13446376674424157,
+   "_kind": "scatter",
+   "_group": 4
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 2.0,
+   "held-out $R^2$ (context arm, layer 19)": -0.1866829698718811,
+   "_kind": "scatter",
+   "_group": 5
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 2.0,
+   "held-out $R^2$ (context arm, layer 19)": -0.14421034926165008,
+   "_kind": "scatter",
+   "_group": 6
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 2.0,
+   "held-out $R^2$ (context arm, layer 19)": -0.11203810798579523,
+   "_kind": "scatter",
+   "_group": 7
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 2.0,
+   "held-out $R^2$ (context arm, layer 19)": -0.1831132698796219,
+   "_kind": "scatter",
+   "_group": 8
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 2.0,
+   "held-out $R^2$ (context arm, layer 19)": -0.18870769129244072,
+   "_kind": "scatter",
+   "_group": 9
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 0.0,
+   "held-out $R^2$ (context arm, layer 19)": 0.26288272427771375,
+   "_kind": "line",
+   "_group": 10
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 1.0,
+   "held-out $R^2$ (context arm, layer 19)": 0.26578706276813235,
+   "_kind": "line",
+   "_group": 10
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 2.0,
+   "held-out $R^2$ (context arm, layer 19)": 0.12606151769925666,
+   "_kind": "line",
+   "_group": 10
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 3.0,
+   "held-out $R^2$ (context arm, layer 19)": 0.31207955086176603,
+   "_kind": "line",
+   "_group": 10
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 0.0,
+   "held-out $R^2$ (context arm, layer 19)": 0.2309979680482984,
+   "_kind": "line",
+   "_group": 11
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 1.0,
+   "held-out $R^2$ (context arm, layer 19)": 0.23327654162921477,
+   "_kind": "line",
+   "_group": 11
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 2.0,
+   "held-out $R^2$ (context arm, layer 19)": 0.05394325021665154,
+   "_kind": "line",
+   "_group": 11
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 3.0,
+   "held-out $R^2$ (context arm, layer 19)": 0.2812114723916058,
+   "_kind": "line",
+   "_group": 11
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 0.0,
+   "held-out $R^2$ (context arm, layer 19)": 0.20865476148928025,
+   "_kind": "line",
+   "_group": 12
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 1.0,
+   "held-out $R^2$ (context arm, layer 19)": 0.21115735393215013,
+   "_kind": "line",
+   "_group": 12
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 2.0,
+   "held-out $R^2$ (context arm, layer 19)": -0.01463845013799978,
+   "_kind": "line",
+   "_group": 12
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 3.0,
+   "held-out $R^2$ (context arm, layer 19)": 0.2668016400774536,
+   "_kind": "line",
+   "_group": 12
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 0.0,
+   "held-out $R^2$ (context arm, layer 19)": 0.23145155695405856,
+   "_kind": "line",
+   "_group": 13
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 1.0,
+   "held-out $R^2$ (context arm, layer 19)": 0.232953571643239,
+   "_kind": "line",
+   "_group": 13
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 2.0,
+   "held-out $R^2$ (context arm, layer 19)": 0.017624653414767842,
+   "_kind": "line",
+   "_group": 13
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 3.0,
+   "held-out $R^2$ (context arm, layer 19)": 0.2791751496312703,
+   "_kind": "line",
+   "_group": 13
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 0.0,
+   "held-out $R^2$ (context arm, layer 19)": 0.261621939516813,
+   "_kind": "line",
+   "_group": 14
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 1.0,
+   "held-out $R^2$ (context arm, layer 19)": 0.2645797207319984,
+   "_kind": "line",
+   "_group": 14
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 2.0,
+   "held-out $R^2$ (context arm, layer 19)": 0.13446376674424157,
+   "_kind": "line",
+   "_group": 14
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 3.0,
+   "held-out $R^2$ (context arm, layer 19)": 0.3127808627539362,
+   "_kind": "line",
+   "_group": 14
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 0.0,
+   "held-out $R^2$ (context arm, layer 19)": 0.19399713605819108,
+   "_kind": "line",
+   "_group": 15
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 1.0,
+   "held-out $R^2$ (context arm, layer 19)": 0.19673553988258122,
+   "_kind": "line",
+   "_group": 15
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 2.0,
+   "held-out $R^2$ (context arm, layer 19)": -0.1866829698718811,
+   "_kind": "line",
+   "_group": 15
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 3.0,
+   "held-out $R^2$ (context arm, layer 19)": 0.218505782293506,
+   "_kind": "line",
+   "_group": 15
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 0.0,
+   "held-out $R^2$ (context arm, layer 19)": 0.2316320061621492,
+   "_kind": "line",
+   "_group": 16
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 1.0,
+   "held-out $R^2$ (context arm, layer 19)": 0.23151316799435212,
+   "_kind": "line",
+   "_group": 16
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 2.0,
+   "held-out $R^2$ (context arm, layer 19)": -0.14421034926165008,
+   "_kind": "line",
+   "_group": 16
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 3.0,
+   "held-out $R^2$ (context arm, layer 19)": 0.25382352963120824,
+   "_kind": "line",
+   "_group": 16
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 0.0,
+   "held-out $R^2$ (context arm, layer 19)": 0.2472805894471417,
+   "_kind": "line",
+   "_group": 17
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 1.0,
+   "held-out $R^2$ (context arm, layer 19)": 0.25172630065616836,
+   "_kind": "line",
+   "_group": 17
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 2.0,
+   "held-out $R^2$ (context arm, layer 19)": -0.11203810798579523,
+   "_kind": "line",
+   "_group": 17
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 3.0,
+   "held-out $R^2$ (context arm, layer 19)": 0.2800384959264977,
+   "_kind": "line",
+   "_group": 17
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 0.0,
+   "held-out $R^2$ (context arm, layer 19)": 0.20721176382243672,
+   "_kind": "line",
+   "_group": 18
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 1.0,
+   "held-out $R^2$ (context arm, layer 19)": 0.20900628357372897,
+   "_kind": "line",
+   "_group": 18
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 2.0,
+   "held-out $R^2$ (context arm, layer 19)": -0.1831132698796219,
+   "_kind": "line",
+   "_group": 18
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 3.0,
+   "held-out $R^2$ (context arm, layer 19)": 0.23149056309170088,
+   "_kind": "line",
+   "_group": 18
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 0.0,
+   "held-out $R^2$ (context arm, layer 19)": 0.18440520676432426,
+   "_kind": "line",
+   "_group": 19
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 1.0,
+   "held-out $R^2$ (context arm, layer 19)": 0.18513350822222813,
+   "_kind": "line",
+   "_group": 19
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 2.0,
+   "held-out $R^2$ (context arm, layer 19)": -0.18870769129244072,
+   "_kind": "line",
+   "_group": 19
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 3.0,
+   "held-out $R^2$ (context arm, layer 19)": 0.20652325365828306,
+   "_kind": "line",
+   "_group": 19
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 2.0,
+   "y": 0.16237844092143602,
+   "_kind": "scatter",
+   "_group": 20
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 2.0,
+   "y": 0.035062935081827826,
+   "_kind": "scatter",
+   "_group": 21
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 2.0,
+   "y": -0.04982453817685526,
+   "_kind": "scatter",
+   "_group": 22
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 2.0,
+   "y": -0.004909169103925892,
+   "_kind": "scatter",
+   "_group": 23
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 2.0,
+   "y": 0.13463859357889515,
+   "_kind": "scatter",
+   "_group": 24
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 2.0,
+   "y": -0.14604524045932837,
+   "_kind": "scatter",
+   "_group": 25
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 2.0,
+   "y": -0.13567189646801778,
+   "_kind": "scatter",
+   "_group": 26
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 2.0,
+   "y": -0.1543257431487906,
+   "_kind": "scatter",
+   "_group": 27
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 2.0,
+   "y": -0.16947037359902004,
+   "_kind": "scatter",
+   "_group": 28
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 2.0,
+   "y": -0.11135505588162209,
+   "_kind": "scatter",
+   "_group": 29
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 0.0,
+   "y": 0.2650398956398544,
+   "_kind": "line",
+   "_group": 30
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 1.0,
+   "y": 0.2659514885645457,
+   "_kind": "line",
+   "_group": 30
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 2.0,
+   "y": 0.16237844092143602,
+   "_kind": "line",
+   "_group": 30
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 3.0,
+   "y": 0.30497209010432835,
+   "_kind": "line",
+   "_group": 30
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 0.0,
+   "y": 0.2367837754222503,
+   "_kind": "line",
+   "_group": 31
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 1.0,
+   "y": 0.23749641025922216,
+   "_kind": "line",
+   "_group": 31
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 2.0,
+   "y": 0.035062935081827826,
+   "_kind": "line",
+   "_group": 31
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 3.0,
+   "y": 0.27851458565489146,
+   "_kind": "line",
+   "_group": 31
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 0.0,
+   "y": 0.2188271891995311,
+   "_kind": "line",
+   "_group": 32
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 1.0,
+   "y": 0.2191769435173491,
+   "_kind": "line",
+   "_group": 32
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 2.0,
+   "y": -0.04982453817685526,
+   "_kind": "line",
+   "_group": 32
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 3.0,
+   "y": 0.26424026312072,
+   "_kind": "line",
+   "_group": 32
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 0.0,
+   "y": 0.23811844980501337,
+   "_kind": "line",
+   "_group": 33
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 1.0,
+   "y": 0.2381789989011754,
+   "_kind": "line",
+   "_group": 33
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 2.0,
+   "y": -0.004909169103925892,
+   "_kind": "line",
+   "_group": 33
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 3.0,
+   "y": 0.27900475733154856,
+   "_kind": "line",
+   "_group": 33
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 0.0,
+   "y": 0.27680384266310043,
+   "_kind": "line",
+   "_group": 34
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 1.0,
+   "y": 0.2810866798432878,
+   "_kind": "line",
+   "_group": 34
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 2.0,
+   "y": 0.13463859357889515,
+   "_kind": "line",
+   "_group": 34
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 3.0,
+   "y": 0.32085350783366995,
+   "_kind": "line",
+   "_group": 34
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 0.0,
+   "y": 0.21609266792277423,
+   "_kind": "line",
+   "_group": 35
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 1.0,
+   "y": 0.21416503184795213,
+   "_kind": "line",
+   "_group": 35
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 2.0,
+   "y": -0.14604524045932837,
+   "_kind": "line",
+   "_group": 35
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 3.0,
+   "y": 0.24010328096899639,
+   "_kind": "line",
+   "_group": 35
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 0.0,
+   "y": 0.21381948048410687,
+   "_kind": "line",
+   "_group": 36
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 1.0,
+   "y": 0.2119215236541776,
+   "_kind": "line",
+   "_group": 36
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 2.0,
+   "y": -0.13567189646801778,
+   "_kind": "line",
+   "_group": 36
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 3.0,
+   "y": 0.24381194220076283,
+   "_kind": "line",
+   "_group": 36
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 0.0,
+   "y": 0.1993943743488133,
+   "_kind": "line",
+   "_group": 37
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 1.0,
+   "y": 0.20082938616656545,
+   "_kind": "line",
+   "_group": 37
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 2.0,
+   "y": -0.1543257431487906,
+   "_kind": "line",
+   "_group": 37
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 3.0,
+   "y": 0.23677016036694348,
+   "_kind": "line",
+   "_group": 37
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 0.0,
+   "y": 0.20115177934592934,
+   "_kind": "line",
+   "_group": 38
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 1.0,
+   "y": 0.20066892122408805,
+   "_kind": "line",
+   "_group": 38
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 2.0,
+   "y": -0.16947037359902004,
+   "_kind": "line",
+   "_group": 38
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 3.0,
+   "y": 0.23115662811342402,
+   "_kind": "line",
+   "_group": 38
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 0.0,
+   "y": 0.20667313318878405,
+   "_kind": "line",
+   "_group": 39
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 1.0,
+   "y": 0.21701440237604364,
+   "_kind": "line",
+   "_group": 39
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 2.0,
+   "y": -0.11135505588162209,
+   "_kind": "line",
+   "_group": 39
+  },
+  {
+   "pooled-map transfer tier (more adaptation allowed \u2192)": 3.0,
+   "y": 0.2548028101527574,
+   "_kind": "line",
+   "_group": 39
+  }
+ ],
+ "n_series": 40,
+ "total_points": 100,
+ "text": {
+  "suptitle": "Map fit on all settings, applied to each story speaker (bare-label boundary)",
+  "fig_texts": [],
+  "axes": [
+   {
+    "title_left": "Qwen2.5-7B (base)",
+    "xlabel": "pooled-map transfer tier (more adaptation allowed \u2192)",
+    "ylabel": "held-out $R^2$ (context arm, layer 19)",
+    "xticklabels": [
+     "direct\n(pooled map)",
+     "rotation\n+ bias",
+     "context\nre-map",
+     "answer\nre-map"
+    ],
+    "yticklabels": [
+     "\u22120.3",
+     "\u22120.2",
+     "\u22120.1",
+     "0.0",
+     "0.1",
+     "0.2",
+     "0.3",
+     "0.4"
+    ]
+   },
+   {
+    "title_left": "Qwen2.5-7B-Instruct",
+    "xlabel": "pooled-map transfer tier (more adaptation allowed \u2192)",
+    "xticklabels": [
+     "direct\n(pooled map)",
+     "rotation\n+ bias",
+     "context\nre-map",
+     "answer\nre-map"
+    ]
+   }
+  ]
+ },
+ "formats_written": [
+  "png",
+  "pdf"
+ ],
+ "estimator_note": "Tier 'context re-map' (open squares) fits source-context -> target-context on a POOLED source that has no per-row counterpart for a cell's rows (the cell is a SUBSET of the pool), so it optimizes a different composite objective than the pair-ladder's rung-7 paired target->source context ridge and is NOT comparable to rung 7. Empirically it collapses: context-arm median fraction of own ceiling reads pooled_direct +0.872, rotation_bias +0.921, ctx_remap +0.066, ans_remap +1.040 (scripts/issue2054_pooled_tier_ladder.py docstring)."
+}

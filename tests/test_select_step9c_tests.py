@@ -275,7 +275,11 @@ def test_json_output_shape(tmp_path: Path, monkeypatch, capsys):
         "n_tests",
         "recommended_timeout_s",
         "slow_tests_selected",
+        "base_identical_excluded",
     }
+    # #2302 audit key: the fixture tree is not a git checkout, so the audit
+    # derivation degrades to zero exclusions (fail-closed) — key present, empty.
+    assert out["base_identical_excluded"] == []
     assert "tests/test_widget.py" in out["tests"]
     assert out["base"] == "main"  # the RESOLVED base (via the #1289 fallback), not the default
     assert out["missing_invariants"] == []  # all invariants present in the fixture tree
@@ -284,6 +288,61 @@ def test_json_output_shape(tmp_path: Path, monkeypatch, capsys):
     assert out["n_tests"] == len(out["tests"])
     assert out["recommended_timeout_s"] == sel.recommended_timeout_s(out["tests"])
     assert out["slow_tests_selected"] == [t for t in out["tests"] if t in sel.SLOW_TESTS]
+
+
+# --- Case 10a-bis (#2126): --files-only — paths only, no key to guess ---------
+def test_files_only_emits_paths_one_per_line(tmp_path: Path, monkeypatch, capsys):
+    """#1992/#2126: `--files-only` emits the SAME selection `--json` would put
+    under key `tests`, as bare repo-relative paths (one per line, no JSON), so
+    a launcher composing its own gate invocation has no key to guess."""
+    repo = _make_tree(tmp_path, ["test_widget.py"])
+    monkeypatch.setattr(sel, "_resolve_work_root", lambda _arg: repo)
+    monkeypatch.setattr(sel, "compute_touched", lambda *_a, **_k: ["scripts/widget.py"])
+    rc = sel.main(["--files-only", "--no-fetch", "--repo-root", str(repo)])
+    assert rc == 0
+    captured = capsys.readouterr()
+    lines = captured.out.splitlines()
+    assert lines, "--files-only must emit at least the invariant set"
+    assert "tests/test_widget.py" in lines
+    # Every line is a bare path — no JSON braces/quotes, no key, no command:
+    assert all(ln.startswith("tests/") for ln in lines), lines
+    assert "{" not in captured.out and '"' not in captured.out
+    assert "uv run pytest" not in captured.out
+    # The selection is identical to the --json `tests` list (sorted, deduped):
+    tests, _unused, _reasons = sel.select_tests_with_reasons(["scripts/widget.py"], repo)
+    assert lines == tests
+    # The <T> bound still arrives on the greppable stderr sizing line:
+    assert re.search(r"recommended-timeout-s=\d+", captured.err)
+
+
+def test_files_only_empty_selection_exits_1(tmp_path: Path, monkeypatch, capsys):
+    """--files-only inherits the pre-emit empty-selection refusal (exit 1) —
+    it can never emit zero lines on exit 0 (the zero-test-gate class)."""
+    repo = _make_tree(tmp_path, [])
+    monkeypatch.setattr(sel, "_resolve_work_root", lambda _arg: repo)
+    monkeypatch.setattr(sel, "compute_touched", lambda *_a, **_k: [])
+    monkeypatch.setattr(sel, "select_tests_with_reasons", lambda *_a, **_k: ([], [], {}))
+    rc = sel.main(["--files-only", "--repo-root", str(repo)])
+    assert rc == 1
+    captured = capsys.readouterr()
+    assert captured.out == ""  # no partial paths-only output on the refusal
+    assert "EMPTY test selection" in captured.err
+
+
+@pytest.mark.parametrize(
+    "conflicting",
+    [
+        ["--files-only", "--json"],
+        ["--files-only", "--map-files", "some-list.txt"],
+    ],
+)
+def test_files_only_mutually_exclusive_exits_2(tmp_path: Path, conflicting: list[str]):
+    """Fail CLOSED (argparse exit 2, empty stdout) on --files-only + --json /
+    --map-files — each output mode owns stdout; silently preferring one flag
+    hands a consumer the wrong shape (#1717 defect (a) class)."""
+    with pytest.raises(SystemExit) as exc:
+        sel.main([*conflicting, "--repo-root", str(tmp_path)])
+    assert exc.value.code == 2
 
 
 # --- Case 10b (#1022): select_tests_with_reasons — reasons content ------------
@@ -1325,6 +1384,7 @@ def test_cli_json_carries_import_map_reason(tmp_path: Path, monkeypatch, capsys)
         "n_tests",
         "recommended_timeout_s",
         "slow_tests_selected",
+        "base_identical_excluded",  # #2302 audit key
     }
     assert "tests/test_uh_pack.py" in payload["tests"]
     assert payload["selection_reasons"]["tests/test_uh_pack.py"] == [
@@ -2170,12 +2230,13 @@ def test_transitive_consumer_missing_on_disk_dropped(tmp_path: Path):
 
 # --- Case 86: CLI --map-files end-to-end on the LIVE tree — the 7 pairs verbatim --
 def test_cli_map_files_transitive_pairs_live_tree(tmp_path: Path, capsys):
-    """CLI end-to-end on the LIVE tree: the selector payload prints all 5
-    dependency-arm pairs PLUS the 2 transitive pairs (7 pairs, 7 tests) and
-    the sizing line clears the 600 s MAP_TIMEOUT_FLOOR_S at 660
-    ((120 + 7*30) * 2.0). Exact-set assert — a new arm/pin
+    """CLI end-to-end on the LIVE tree: the selector payload prints all 6
+    dependency-arm pairs PLUS the 2 transitive pairs (8 pairs, 8 tests) and
+    the sizing line clears the 600 s MAP_TIMEOUT_FLOOR_S at 720
+    ((120 + 8*30) * 2.0). Exact-set assert — a new arm/pin
     joining later legitimately forces a deliberate 1-line update here (that
-    loudness is the point; cf. the case-60 drift-pin posture)."""
+    loudness is the point; cf. the case-60 drift-pin posture). #2302 added
+    tests/test_step9c_base_identity.py (loads the live selector by path)."""
     repo_root = _HELPER_PATH.parents[1]
     payload = tmp_path / "payload.txt"
     payload.write_text(f"{_SELECTOR_KEY}\n")
@@ -2189,9 +2250,10 @@ def test_cli_map_files_transitive_pairs_live_tree(tmp_path: Path, capsys):
         f"tests/test_ruff_policy.py\t{_SELECTOR_KEY}",
         f"tests/test_select_step9c_tests.py\t{_SELECTOR_KEY}",
         f"tests/test_shared_vm_thread_caps.py\t{_SELECTOR_KEY}",
+        f"tests/test_step9c_base_identity.py\t{_SELECTOR_KEY}",
         f"tests/test_step9c_baseline.py\t{_SELECTOR_KEY}",
     ]
-    assert "map-files — 7 pairs, 7 tests; recommended-timeout-s=660" in captured.err
+    assert "map-files — 8 pairs, 8 tests; recommended-timeout-s=720" in captured.err
 
 
 # --- Case 87: map-leg asymmetry — an invariant registration is excluded -----------
@@ -2685,20 +2747,26 @@ def test_skills_pin_live_tree_known_pairs():
     """DRIFT/REGRESSION PIN: on the LIVE repo tree, a .claude/skills/issue/
     SKILL.md diff selects the three founding tests of the #1851 gap (all
     path-join-form references, none in WORKFLOW_INVARIANT) with a skills-pin
-    reason. SUPERSET assert: new pin tests joining later must not break this;
-    a rename of a pinned test legitimately forces a deliberate 1-line update
-    here (that loudness is the point)."""
+    reason — and so does a steps/ companion diff via the #2155 alias (the
+    relocated step bodies' pin tests reference the SKILL.md path or the
+    issue_skill_source composer, never the companion's own path). SUPERSET
+    assert: new pin tests joining later must not break this; a rename of a
+    pinned test legitimately forces a deliberate 1-line update here (that
+    loudness is the point)."""
     root = Path(sel.__file__).resolve().parents[1]
-    touched = [".claude/skills/issue/SKILL.md"]
-    tests, untested, reasons = sel.select_tests_with_reasons(touched, root)
-    for founding in (
-        "tests/test_issue_skill_file_only_verdict_post.py",
-        "tests/test_ensemble_review_cap.py",
-        "tests/test_issue_skill_workload_cmd_script_pin.py",
+    for touched_file in (
+        ".claude/skills/issue/SKILL.md",
+        ".claude/skills/issue/steps/09-step-5.md",  # #2155 steps->SKILL.md alias
     ):
-        assert founding in tests
-        assert "skills-pin:.claude/skills/issue/SKILL.md" in reasons[founding]
-    assert untested == []  # the WORKFLOW_SURFACE skip is unchanged
+        tests, untested, reasons = sel.select_tests_with_reasons([touched_file], root)
+        for founding in (
+            "tests/test_issue_skill_file_only_verdict_post.py",
+            "tests/test_ensemble_review_cap.py",
+            "tests/test_issue_skill_workload_cmd_script_pin.py",
+        ):
+            assert founding in tests
+            assert f"skills-pin:{touched_file}" in reasons[founding]
+        assert untested == []  # the WORKFLOW_SURFACE skip is unchanged
 
 
 # --- Skills-pin: --map-files EXCLUDES invariant members; the 9c arm keeps them -----

@@ -296,6 +296,29 @@ def test_never_drop_guard_readds_and_warns(tmp_path, monkeypatch, capsys):
     assert "allow_remove" in err
 
 
+def test_never_drop_guard_read_survives_encoding_corrupt_sidecar(tmp_path, monkeypatch, capsys):
+    """#2168 shape-2 regression (log-WARN-and-continue): an encoding-corrupt
+    sidecar raises ``UnicodeDecodeError`` from ``read_text()`` — a
+    ``ValueError`` OUTSIDE the pre-#2168 ``(JSONDecodeError, OSError)``
+    guard-read tuple. ``_write_metadata_file`` must WARN "guard skipped",
+    take the ``on_disk = {}`` path, and let the atomic write below repair
+    the file — never propagate the decode error."""
+    state = tmp_path / "pods_ephemeral.json"
+    monkeypatch.setattr(pod_lifecycle, "EPHEMERAL_STATE", state)
+    # 0xff is invalid UTF-8 in any position → read_text() raises
+    # UnicodeDecodeError before json.loads is ever reached.
+    state.write_bytes(b'\xff\xfe{"version": 2, "pods": {}}')
+
+    pod_lifecycle._write_metadata_file({"pod-1": _meta("pod-1", issue=1)})
+
+    err = capsys.readouterr().err
+    assert "never-drop guard skipped" in err
+    # on_disk = {} path taken: nothing resurrected, and the atomic write
+    # repaired the corrupt file into valid JSON holding exactly the
+    # incoming entry.
+    assert set(pod_lifecycle._read_metadata_file()) == {"pod-1"}
+
+
 def test_allow_remove_opt_out(tmp_path, monkeypatch, capsys):
     """A drop named in ``allow_remove`` goes through silently."""
     state = tmp_path / "pods_ephemeral.json"

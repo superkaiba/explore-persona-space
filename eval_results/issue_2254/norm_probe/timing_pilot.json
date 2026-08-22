@@ -1,0 +1,35 @@
+{
+  "experiment": "issue2254_preimage",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "ts": "2026-08-13T08:40:05Z",
+  "pass_b_revision": "037fcbb210bc52c459959b0746cc268fe08bae96",
+  "git_commit": "e26d7309",
+  "git_dirty": false,
+  "behavior": "evil",
+  "direction": "rb_unit",
+  "layer": 14,
+  "position": "context",
+  "dose_c": 1.0,
+  "alpha": 62.896235086441735,
+  "n_questions": 10,
+  "n_draws": 3,
+  "n_completions": 30,
+  "max_new_tokens": 2048,
+  "wall_s": 46.16819643974304,
+  "s_per_completion": 1.538939881324768,
+  "cap_hit_fraction": 0.0,
+  "gpu": "NVIDIA H100 80GB HBM3",
+  "extrapolation": {
+    "plan_completions": {
+      "localize": 34650,
+      "decisive": 15000,
+      "patch": 7800,
+      "baseline_ceiling": 1200
+    },
+    "total_completions": 58650,
+    "projected_gpu_h_at_pilot_rate": 25.07189556658268,
+    "projected_wall_h_4gpu": 6.26797389164567,
+    "gate1_threshold_gpu_h": 60.0,
+    "note": "gate-1 decision (trim rule / halt) is orchestrator-owned (plan \u00a77)"
+  }
+}

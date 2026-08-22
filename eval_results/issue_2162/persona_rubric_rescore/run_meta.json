@@ -1,0 +1,47 @@
+{
+  "telemetry": {
+    "cj-v3-address": {
+      "n_items": 420,
+      "n_scored": 420,
+      "n_dropped": 0,
+      "drop_frac": 0.0
+    },
+    "cj-v3-courtesy": {
+      "n_items": 420,
+      "n_scored": 420,
+      "n_dropped": 0,
+      "drop_frac": 0.0
+    },
+    "cj-v3-formality": {
+      "n_items": 420,
+      "n_scored": 420,
+      "n_dropped": 0,
+      "drop_frac": 0.0
+    },
+    "cj-v3-household": {
+      "n_items": 420,
+      "n_scored": 420,
+      "n_dropped": 0,
+      "drop_frac": 0.0
+    },
+    "hol-v1": {
+      "n_items": 720,
+      "n_scored": 720,
+      "n_dropped": 0,
+      "drop_frac": 0.0
+    },
+    "hol-v2": {
+      "n_items": 720,
+      "n_scored": 720,
+      "n_dropped": 0,
+      "drop_frac": 0.0
+    },
+    "hol-v3": {
+      "n_items": 720,
+      "n_scored": 720,
+      "n_dropped": 0,
+      "drop_frac": 0.0
+    }
+  },
+  "n_scores": 3840
+}

@@ -100,6 +100,35 @@ def lane_suffix_for(spec: RunSpec) -> str | None:
     return validate_lane_suffix(str(raw))
 
 
+#: RunPod pod-name suffix grammar (#2145) — the WRITE-side validator grammar
+#: from ``scripts/pod_lifecycle.py`` ``cmd_provision`` (the ``--name-suffix``
+#: fullmatch at pod_lifecycle.py:2752): lowercase, LETTER-initial, <= 20 chars
+#: total. Letter-initial is load-bearing so ``pod-<N>-<slug>`` parses back to
+#: issue <N> under the READ-side parser ``_POD_NAME_RE`` (pod_lifecycle.py:406,
+#: ``[a-z][a-z0-9-]*`` — unbounded, a strict SUPERSET of this write grammar;
+#: the two are deliberately distinct, do NOT unify). Anchored by fullmatch in
+#: :func:`validate_runpod_name_suffix`.
+RUNPOD_NAME_SUFFIX_RE = re.compile(r"[a-z][a-z0-9-]{0,19}")
+
+
+def validate_runpod_name_suffix(suffix: str) -> str:
+    """Validate a RunPod ``pod-<N>-<slug>`` name suffix (#2145); returns it unchanged.
+
+    Raises ``ValueError`` on any malformed value — fail loud, never
+    strip/normalize (mirrors :func:`validate_lane_suffix`). The grammar is
+    TIGHTER than the lane-suffix grammar (letter-initial, <= 20 chars vs
+    ``LANE_SUFFIX_MAX_LEN`` = 43), so a RunPod-bound ``lane_suffix`` passes
+    BOTH validators; GCP/SLURM lanes keep the looser lane-suffix grammar.
+    """
+    if not RUNPOD_NAME_SUFFIX_RE.fullmatch(suffix):
+        raise ValueError(
+            "lane_suffix is not a valid RunPod pod-name suffix: must match "
+            f"[a-z][a-z0-9-]{{0,19}} (lowercase, letter-initial, e.g. 'b', 'followup2') "
+            f"so pod-<N>-<slug> parses back to issue <N>, got {suffix!r}"
+        )
+    return suffix
+
+
 # ---------------------------------------------------------------------------
 # Launch env pins (#1669)
 # ---------------------------------------------------------------------------
@@ -457,6 +486,9 @@ class PollResult:
     * ``stalled`` — alive but no log progress AND idle GPUs for >STALL_SEC.
     * ``dead`` — the launching PID / SLURM state says the workload exited
       without a clean ``done``.
+    * ``pid-stale-workload-live`` — pid probes all dead but same-tick
+      evidence (busy GPU / fresh issue-keyed logs/outputs) contradicts
+      death; non-terminal, RunPod/legacy-poller lane only, #2265.
 
     Backend-specific notes:
 
@@ -473,7 +505,7 @@ class PollResult:
     doesn't populate a field still serializes to the SAME JSON shape.
     """
 
-    status: str  # running | done | gate | stalled | dead
+    status: str  # running | done | gate | stalled | dead | pid-stale-workload-live
     current_phase: str
     new_milestone: bool
     last_log_mtime_sec_ago: int

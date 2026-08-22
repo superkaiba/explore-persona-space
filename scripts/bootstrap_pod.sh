@@ -400,7 +400,28 @@ fi
 POD_INTENT_VAL="${POD_INTENT:-custom}"
 step 5 "Syncing Python environment (uv sync --locked; intent=$POD_INTENT_VAL)"
 ssh_cmd "export PATH=\"\$HOME/.local/bin:\$PATH\"
+# #2360: the venv build must use the /workspace uv cache from the FIRST sync
+# (step 6 only wires it for LATER shells) and an explicit copy link-mode —
+# cross-filesystem hardlinks are impossible /root→/workspace, so the implicit
+# per-install fallback warning was pure noise that masked real problems.
+# NOTE: copy mode does NOT prevent venv corruption (#2278 ESTALE class; and the
+# #2329 corruption cause is NOT established) — the preflight import-health
+# check (#2360) is the detection gate. TRADE-OFF: with copy mode exported
+# globally, a future UV_CACHE_DIR regression back to the /root overlay would
+# no longer announce itself via the hardlink warning (consequence: silent perf
+# loss + stop/resume cache wipes, never corruption — copy is the safe mode).
+mkdir -p /workspace/.cache/uv
+export UV_CACHE_DIR=/workspace/.cache/uv
+export UV_LINK_MODE=copy
 cd /workspace/explore-persona-space
+# Dangling .venv symlink guard (#2278): /root is the container overlay and is
+# recreated on pod stop/resume, so a .venv symlink into /root (the overlay-venv
+# recovery for the MooseFS errno-116 trap) survives the stop as a DANGLING
+# link; without this guard the sync below fails on a link that points nowhere.
+if [ -L .venv ] && [ ! -e .venv ]; then
+    echo \"WARN: clearing dangling .venv symlink (overlay venv wiped by stop/resume)\" >&2
+    rm -f .venv
+fi
 uv sync --locked 2>&1 | tail -5
 echo \"Python: \$(python3 --version)\"
 echo \"Packages: \$(uv pip list 2>/dev/null | wc -l) installed\"
@@ -481,6 +502,23 @@ RC2EOF
     fi
 done
 
+# uv copy link-mode for every later shell (#2360): cross-filesystem hardlinks
+# are impossible /root→/workspace, so the implicit per-install fallback warning
+# was pure noise. Copy mode does NOT prevent venv corruption (#2278 ESTALE
+# class) — the preflight import-health check (#2360) is the detection gate.
+# Separately guarded (NOT folded into the cache-redirect heredoc above, whose
+# grep guard keys on WANDB_CACHE_DIR) so already-bootstrapped pods gain it on
+# any re-bootstrap.
+for f in /root/.bashrc /root/.profile; do
+    if ! grep -q "^export UV_LINK_MODE=" "$f" 2>/dev/null; then
+        cat >> "$f" <<"RCUVEOF"
+
+# uv copy link-mode (#2360): /root-overlay cache -> /workspace venv cannot hardlink
+export UV_LINK_MODE=copy
+RCUVEOF
+    fi
+done
+
 # ~/.local/bin on PATH for interactive/login shells (#1794; the non-login
 # case is covered by the /usr/local/bin shims below). Separately guarded so
 # already-bootstrapped pods gain it on any re-bootstrap. The grep pattern
@@ -497,6 +535,28 @@ export PATH="$HOME/.local/bin:$PATH"
 RC3EOF
     fi
 done
+
+# UV_PYTHON pin in the rc files (defense-in-depth for #2278, fail-soft):
+# interactive/login shells get uv interpreter discovery pinned to the venv
+# base interpreter so it never probes a PATH shim. Derived from the live venv
+# rather than hardcoded; skipped with a WARN when underivable. The
+# LOAD-BEARING fix is the uv-free /usr/local/bin/python shim below — this pin
+# cannot reach non-interactive SSH shells (rc files bail on the PS1 guard).
+# Separately guarded with grep -q (NOT grep -qF: the #1794 test extracts the
+# scripts sole grep -qF by first match).
+UV_PYTHON_BASE=""
+if [ -x /workspace/explore-persona-space/.venv/bin/python ]; then
+    UV_PYTHON_BASE="$(/workspace/explore-persona-space/.venv/bin/python -c "import sys; print(sys._base_executable or sys.base_prefix + \"/bin/python3\")")"
+fi
+if [ -n "$UV_PYTHON_BASE" ] && [ -x "$UV_PYTHON_BASE" ]; then
+    for f in /root/.bashrc /root/.profile; do
+        if ! grep -q "^export UV_PYTHON=" "$f" 2>/dev/null; then
+            echo "export UV_PYTHON=$UV_PYTHON_BASE" >> "$f"
+        fi
+    done
+else
+    echo "WARN: could not derive a base interpreter from the venv; skipping the UV_PYTHON rc pin" >&2
+fi
 
 # Append to project .env (for dotenv-loading subprocesses)
 ENV_FILE=/workspace/explore-persona-space/.env
@@ -532,6 +592,17 @@ PYTHONPATH=/workspace/explore-persona-space
 ENV2EOF
 fi
 
+# uv copy link-mode for dotenv-loading subprocesses + `set -a; . .env`
+# launchers (#2360). Separately guarded so already-bootstrapped pods gain it
+# on any re-bootstrap.
+if ! grep -q "^UV_LINK_MODE=" "$ENV_FILE" 2>/dev/null; then
+    cat >> "$ENV_FILE" <<"ENVUVEOF"
+
+# uv copy link-mode (#2360): /root-overlay cache -> /workspace venv cannot hardlink
+UV_LINK_MODE=copy
+ENVUVEOF
+fi
+
 echo "HF cache:     /workspace/.cache/huggingface  ($(du -sh /workspace/.cache/huggingface 2>/dev/null | cut -f1 || echo empty))"
 echo "WandB cache:  /workspace/.cache/wandb        ($(du -sh /workspace/.cache/wandb 2>/dev/null | cut -f1 || echo empty))"
 echo "uv cache:     /workspace/.cache/uv           ($(du -sh /workspace/.cache/uv 2>/dev/null | cut -f1 || echo empty))"
@@ -558,22 +629,54 @@ ln -sf "$UV_BIN" /usr/local/bin/uv
 if [ -x "$UV_DIR/uvx" ]; then
     ln -sf "$UV_DIR/uvx" /usr/local/bin/uvx
 fi
-# `python` shim: forwards to the project venv via `uv run python` so that a
+# `python` shim: execs the project venv interpreter DIRECTLY so that a
 # bare `ssh pod "python ..."` resolves to the locked project interpreter.
+# The shim body must NEVER invoke uv (#2278): /usr/local/bin is first on the
+# default non-interactive-SSH PATH, so uv interpreter discovery executes this
+# shim as a candidate — a body that re-enters uv then blocks on the project
+# lock the parent `uv sync` already holds (silent futex deadlock, stacked
+# get_interpreter_info probes, zero output). SECOND WRITER of this shim:
+# pod_lifecycle._UV_RESTORE_SNIPPET (the pod.py resume path) — keep the two
+# bodies in sync; tests/test_bootstrap_pod_path.py scans BOTH heredocs.
 cat > /usr/local/bin/python <<"PYEOF"
 #!/bin/bash
-# Bootstrap-installed shim: run the project venv python via uv.
+# Bootstrap-installed shim: exec the project venv python DIRECTLY.
 # Lets non-interactive `ssh pod "python ..."` find the locked interpreter
 # even though rc-file PATH exports are not sourced for such shells.
-export PATH="/root/.local/bin:$PATH"
+# NO package-manager re-entry here (#2278): interpreter discovery executes
+# PATH candidates, and a shim that re-enters the launcher deadlocks a sync
+# already holding the project lock (silent futex wait, stacked probes).
+# .venv/bin first so console scripts (ruff, pytest) keep resolving, as
+# they did when the launcher managed the child PATH.
+export PATH="/workspace/explore-persona-space/.venv/bin:/root/.local/bin:$PATH"
 # Repo root on sys.path for script-mode scripts.* imports (#1172)
 export PYTHONPATH="/workspace/explore-persona-space${PYTHONPATH:+:$PYTHONPATH}"
 cd /workspace/explore-persona-space || exit 1
-exec uv run python "$@"
+if [ -x /workspace/explore-persona-space/.venv/bin/python ]; then
+    exec /workspace/explore-persona-space/.venv/bin/python "$@"
+fi
+echo "WARN: venv python missing at /workspace/explore-persona-space/.venv/bin/python" >&2
+echo "WARN: falling back to a system interpreter (project deps unavailable)" >&2
+for cand in /usr/bin/python3.11 python3.11 python3; do
+    if command -v "$cand" >/dev/null 2>&1; then
+        exec "$cand" "$@"
+    fi
+done
+echo "ERROR: no python interpreter found (.venv absent and no system python3)" >&2
+exit 1
 PYEOF
 chmod +x /usr/local/bin/python
+# Post-install shim self-test (#2278): prove the shim resolves an interpreter
+# NOW, at provision time, instead of surfacing hours later as a silent hang.
+# The failure branch MUST exit 1 explicitly: this remote payload carries no
+# set -e and ssh_cmd propagates only the LAST command status, so an implicit
+# failure here would be swallowed by the closing echo lines below.
+if ! /usr/local/bin/python -c "import sys; print(sys.executable)"; then
+    echo "ERROR: python shim self-test FAILED - shim did not resolve an interpreter" >&2
+    exit 1
+fi
 echo "uv shim:      /usr/local/bin/uv -> $UV_BIN"
-echo "python shim:  /usr/local/bin/python (exec uv run python)"
+echo "python shim:  /usr/local/bin/python (execs the project venv interpreter directly)"
 '
 log_ok "All cache dirs redirected to /workspace"
 log_ok "uv/uvx symlinked + python shim installed in /usr/local/bin (non-login SSH PATH)"
@@ -659,11 +762,20 @@ if [ "$NO_PREFLIGHT" = true ]; then
     log_warn "Skipped by --no-preflight flag"
 else
     step 10 "Running preflight check"
+    # #2360 r2: auto-export the .env assignments (UV_LINK_MODE / UV_CACHE_DIR
+    # are PLAIN assignments there) so the step-10 `uv run` CHILD process
+    # inherits them — a bare `source` leaves them shell-local, and an implicit
+    # sync under the default link mode would re-emit the hardlink-fallback
+    # warning into the very log Acceptance 3 greps. Same idiom as the
+    # backends/runpod.py launcher; the rc-file exports cannot cover this shell
+    # (non-interactive ssh bails at the PS1 guard before the appended lines).
+    # NOTE: the payload stays single-quote-free — the export-semantics test
+    # (tests/test_bootstrap_pod_uv_link_mode.py) extracts it verbatim.
     ssh_cmd 'export PATH="$HOME/.local/bin:$PATH"
     cd /workspace/explore-persona-space
-    source .env 2>/dev/null || true
+    set -a; [ -f .env ] && source .env; set +a
     export HF_HOME=/workspace/.cache/huggingface
-    uv run python -m explore_persona_space.orchestrate.preflight --no-gpu 2>&1 || true
+    uv run python -m explore_persona_space.orchestrate.preflight --no-gpu 2>&1 || echo "PREFLIGHT-FAILED-AT-BOOTSTRAP rc=$?"
     '
 fi
 

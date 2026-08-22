@@ -744,19 +744,31 @@ def run_check(plan_text: str, *, repo_root: Path, issue: int, check_ref: str) ->
 
 
 def rsync_cover_set(extra_paths: list[str] | None) -> list[str]:
-    """De-dot-anchored RSYNC_INCLUDE_PATHS + normalized --extra-sync-path values.
+    """De-dot-anchored RSYNC_INCLUDE_PATHS + `data/` root + --extra-sync-path values.
 
     Imports the include set from ``explore_persona_space.backends.slurm`` (the
     single source of truth the lane's ``build_rsync_command`` consumes) so the
     gate can never drift from the launch. ``validate_extra_sync_paths`` raises
     ``ValueError`` on a malformed extra path — the caller maps that to exit 2.
+
+    ``RSYNC_DATA_INCLUDE_ROOT`` (#2212): the lane derives its ``data/``
+    include entries from the git index at dispatch
+    (``tracked_data_include_paths``), but this gate is STATIC (no
+    ``src_root``), so it covers the whole ``data/`` root instead — a
+    deliberate, documented over-approximation: the gate only ever evaluates
+    COMMITTED citations (git-reachability is checked first), and every
+    committed ``data/`` path is in the derived set by construction, so the
+    approximation cannot produce a false PASS for a citation the lane would
+    actually miss.
     """
     from explore_persona_space.backends.slurm import (
+        RSYNC_DATA_INCLUDE_ROOT,
         RSYNC_INCLUDE_PATHS,
         validate_extra_sync_paths,
     )
 
     cover = [p.removeprefix("./") for p in RSYNC_INCLUDE_PATHS]
+    cover.append(RSYNC_DATA_INCLUDE_ROOT)
     cover.extend(p.removeprefix("./") for p in validate_extra_sync_paths(extra_paths or ()))
     return list(dict.fromkeys(cover))
 

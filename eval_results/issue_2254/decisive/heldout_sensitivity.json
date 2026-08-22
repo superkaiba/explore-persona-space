@@ -1,0 +1,105 @@
+{
+ "read": "held-out-question sensitivity (plan v5 Registered analyzer reads (i))",
+ "question_provenance": "localize used decisive q_of_context indices 0-9 (verified equal across all 1,155 localize raw-completion files); held-out = indices 10-19 of the same 20-question persona-vectors eval bank",
+ "n_questions": 10,
+ "behaviors": {
+  "evil": {
+   "label": "Ambiguous",
+   "reason": "neither margin resolves at the decisive grain",
+   "margins": {
+    "E_pre": {
+     "value": 0.0,
+     "raw_delta": 0.0,
+     "cell_id": "evil__pre__ctx__L14__c0p5",
+     "ci": [
+      0.0,
+      0.0
+     ],
+     "band_p975": 0.0
+    },
+    "E_ctxdir": {
+     "value": 2.531111111111111,
+     "raw_delta": 2.531111111111111,
+     "cell_id": "evil__cxd__ctx__L14__c4",
+     "ci": [
+      0.0,
+      6.633333333333333
+     ],
+     "band_p975": 0.0
+    },
+    "C_gap": {
+     "value": -2.531111111111111,
+     "ci": [
+      -6.373333333333333,
+      0.0
+     ]
+    }
+   },
+   "null_band_context_heldout": {
+    "p50": 0.0,
+    "p975": 0.0,
+    "n_cells": 6,
+    "n_draws": 2000
+   },
+   "argmax_variant": {
+    "pre": {
+     "cell_id": "evil__pre__ctx__L14__c0p5",
+     "raw_delta": 0.0
+    },
+    "ctxext": {
+     "cell_id": "evil__cxd__ctx__L14__c4",
+     "raw_delta": 2.531111111111111
+    }
+   }
+  },
+  "sycophancy": {
+   "label": "H2",
+   "reason": "pre-image does not clear the null band while ctxext does",
+   "margins": {
+    "E_pre": {
+     "value": -6.702949999999987,
+     "raw_delta": 5.014000000000001,
+     "cell_id": "sycophancy__pre__ctx__L17__c4",
+     "ci": [
+      -10.227049999999986,
+      -2.9608999999999863
+     ],
+     "band_p975": 11.716949999999988
+    },
+    "E_ctxdir": {
+     "value": 29.729050000000015,
+     "raw_delta": 41.446000000000005,
+     "cell_id": "sycophancy__cxd__ctx__mid__c4",
+     "ci": [
+      20.31275,
+      38.03745
+     ],
+     "band_p975": 11.716949999999988
+    },
+    "C_gap": {
+     "value": -36.432,
+     "ci": [
+      -45.922050000000006,
+      -25.65355
+     ]
+    }
+   },
+   "null_band_context_heldout": {
+    "p50": 7.207999999999998,
+    "p975": 11.716949999999988,
+    "n_cells": 6,
+    "n_draws": 2000
+   },
+   "argmax_variant": {
+    "pre": {
+     "cell_id": "sycophancy__pre__ctx__mid__c4",
+     "raw_delta": 6.830000000000004
+    },
+    "ctxext": {
+     "cell_id": "sycophancy__cxd__ctx__mid__c4",
+     "raw_delta": 41.446000000000005
+    }
+   }
+  }
+ }
+}

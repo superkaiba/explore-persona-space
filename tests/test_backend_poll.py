@@ -4406,23 +4406,49 @@ def test_gcp_queue_timeout_failover_reconstructs_from_reconnect_handle(
 # ---------------------------------------------------------------------------
 
 
+def _scrub_runpod_api_resolvable(paths: list[str]) -> list[str]:
+    """Drop every sys.path entry from which a bare ``import runpod_api``
+    could resolve (#2173): a regular module ``<entry>/runpod_api.py`` OR a
+    (namespace-)package dir ``<entry>/runpod_api/``. Path-equality with the
+    local scripts/ dir is NOT sufficient — the #2164 incident leaked the
+    MAIN checkout's scripts/ via a collection-time repo_root()-derived
+    insert in tests/test_issue1482_densesae_fullwidth.py (fixed in #2181),
+    which the old scrub could not see. Zip/meta-path providers are the
+    negative control's job, not this predicate's — an entry this predicate
+    cannot see fails loud as DID-NOT-RAISE at the scrub site (#2173 kill
+    criterion 1 routes it to re-plan). Mirrored (duplicated by the
+    established two-file convention) in
+    tests/test_pod_config_refresh_from_api.py."""
+    kept: list[str] = []
+    for p in paths:
+        base = Path(p or ".")
+        if (base / "runpod_api.py").is_file() or (base / "runpod_api").is_dir():
+            continue
+        kept.append(p)
+    return kept
+
+
 def test_ensure_scripts_dir_bootstrap_resolves_runpod_api_in_module_mode(monkeypatch):
     """#1296: ``_ensure_scripts_dir_on_sys_path()`` makes a bare
     ``import runpod_api`` resolve in MODULE mode (repo root on sys.path,
     scripts/ NOT), with a built-in NEGATIVE CONTROL proving the pre-fix
     ``ModuleNotFoundError`` exists once scripts/ is scrubbed. Import only —
-    no live RunPod API call is ever made."""
+    no live RunPod API call is ever made. Scrub hardened by #2173 to
+    resolvability (``_scrub_runpod_api_resolvable``) after the #2164
+    false-NEW, where tests/test_issue1482_densesae_fullwidth.py leaked the
+    MAIN checkout's scripts/ past the old path-equality scrub (polluter
+    fixed in #2181, mechanism verified in #2118)."""
     import importlib
     import sys
 
     import scripts.backend_poll as bp
 
-    scripts_dir = str(Path(bp.__file__).resolve().parent)
-    # Scrub every sys.path entry that resolves to scripts/ (cross-test-file
-    # inserts included). monkeypatch.setattr replaces the LIST OBJECT and
-    # restores the original at teardown, so the helper's in-test insert (into
-    # the scrubbed list) never leaks either.
-    scrubbed = [p for p in sys.path if str(Path(p or ".").resolve()) != scripts_dir]
+    # Scrub every sys.path entry from which a bare ``import runpod_api``
+    # could resolve (foreign-checkout inserts included — #2164/#2173).
+    # monkeypatch.setattr replaces the LIST OBJECT and restores the original
+    # at teardown, so the helper's in-test insert (into the scrubbed list)
+    # never leaks either.
+    scrubbed = _scrub_runpod_api_resolvable(sys.path)
     monkeypatch.setattr(sys, "path", scrubbed)
     # delitem records + restores any PRE-test runpod_api module object.
     monkeypatch.delitem(sys.modules, "runpod_api", raising=False)
@@ -4443,6 +4469,53 @@ def test_ensure_scripts_dir_bootstrap_resolves_runpod_api_in_module_mode(monkeyp
         # Drop the module object THIS test just imported so it cannot alias
         # past teardown; monkeypatch then restores the original entry (when
         # one existed) after this pop.
+        sys.modules.pop("runpod_api", None)
+
+
+def test_module_mode_negative_control_survives_foreign_scripts_pollution(monkeypatch, tmp_path):
+    """#2173 regression guard: deterministically simulate the #2164
+    pollution — a FOREIGN checkout's scripts/ dir (stub ``runpod_api.py``
+    carrying ``FOREIGN_SENTINEL``) prepended to sys.path, the shape a
+    module-level ``sys.path.insert`` in another test file produces (the
+    tests/test_issue1482_densesae_fullwidth.py polluter, fixed in #2181).
+    The SAME ``_scrub_runpod_api_resolvable`` the main #1296 test dispatches
+    must still yield the ``ModuleNotFoundError`` negative control, and the
+    post-bootstrap import must resolve the LOCAL module, never the foreign
+    stub. Against the old path-equality scrub this guard FAILS
+    (``DID NOT RAISE``) — the reintroduction-catching property #2173
+    acceptance criterion 3 demands."""
+    import importlib
+    import sys
+
+    import scripts.backend_poll as bp
+
+    foreign_scripts = tmp_path / "foreign_checkout" / "scripts"
+    foreign_scripts.mkdir(parents=True)
+    (foreign_scripts / "runpod_api.py").write_text("FOREIGN_SENTINEL = True\n")
+
+    polluted = [str(foreign_scripts), *sys.path]
+    scrubbed = _scrub_runpod_api_resolvable(polluted)
+    monkeypatch.setattr(sys, "path", scrubbed)
+    # delitem records + restores any PRE-test runpod_api module object.
+    monkeypatch.delitem(sys.modules, "runpod_api", raising=False)
+
+    try:
+        # NEGATIVE CONTROL: the foreign entry must be scrubbed too — with any
+        # runpod_api-resolvable entry surviving, this import succeeds and the
+        # guard fails as DID-NOT-RAISE (the pinned reintroduction signature).
+        with pytest.raises(ModuleNotFoundError):
+            importlib.import_module("runpod_api")
+
+        bp._ensure_scripts_dir_on_sys_path()
+
+        mod = importlib.import_module("runpod_api")
+        assert not hasattr(mod, "FOREIGN_SENTINEL")
+        assert hasattr(mod, "get_pod_by_name")
+    finally:
+        # Drop whatever module object landed (the local one on PASS; the
+        # foreign stub on a DID-NOT-RAISE failure) so it cannot alias past
+        # teardown; monkeypatch then restores the original entry (when one
+        # existed) after this pop.
         sys.modules.pop("runpod_api", None)
 
 
@@ -6074,15 +6147,22 @@ def _intent_pod(pod_id: str, created_epoch: float, *, name: str = "pod-1116", st
     )
 
 
-def _seed_intent(intent_ts: float | None, *, issue: int = 1116, reap_count: int = 0):
+def _seed_intent(
+    intent_ts: float | None,
+    *,
+    issue: int = 1116,
+    reap_count: int = 0,
+    pod_name: str | None = None,
+):
     """Seed the pinned-home ``~/.eps-routing`` lease; ``intent_ts=None`` seeds a
-    bare lease with NO standing intent (the fresh-dispatch shape)."""
+    bare lease with NO standing intent (the fresh-dispatch shape). #2145:
+    ``pod_name`` seeds a SUFFIXED intent (default keeps the bare pod-<N>)."""
     from explore_persona_space.backends.router import Lease, LeaseStore
 
     intent = None
     if intent_ts is not None:
         intent = {
-            "pod_name": f"pod-{int(issue)}",
+            "pod_name": pod_name or f"pod-{int(issue)}",
             "issue": int(issue),
             "ts": float(intent_ts),
             "token": "tok-seed",
@@ -6139,10 +6219,13 @@ class _IntentCapturingProvisionFailedBackend(_ProvisionFailedRunpodBackend):
         return super().launch(spec)
 
 
-def _unit_reap_rig(tmp_path, monkeypatch, *, intent_ts, reap_count: int = 0, pods, issue=1116):
+def _unit_reap_rig(
+    tmp_path, monkeypatch, *, intent_ts, reap_count: int = 0, pods, issue=1116, pod_name=None
+):
     """Direct-unit rig for ``_reap_interrupted_failover_residue``: an injected
     LeaseStore seeded with a standing intent + scripted live pods + a
-    terminate recorder. Returns ``(store, terminations)``."""
+    terminate recorder. Returns ``(store, terminations)``. #2145: ``pod_name``
+    seeds a SUFFIXED intent (default keeps the bare pod-<N>)."""
     from explore_persona_space.backends.router import Lease, LeaseStore
 
     runpod_api = _import_runpod_api()
@@ -6153,7 +6236,7 @@ def _unit_reap_rig(tmp_path, monkeypatch, *, intent_ts, reap_count: int = 0, pod
             spec_hash="h",
             attempt_id="att-seed",
             runpod_provision_intent={
-                "pod_name": f"pod-{int(issue)}",
+                "pod_name": pod_name or f"pod-{int(issue)}",
                 "issue": int(issue),
                 "ts": float(intent_ts),
                 "token": "tok-seed",
@@ -6520,3 +6603,163 @@ def test_reap_count_carried_across_stamps(tmp_path, monkeypatch):
     assert stamped["token"] != "tok-seed"
     persisted = store.read(1116).runpod_provision_intent
     assert persisted["reap_count"] == 2
+
+
+# ---------------------------------------------------------------------------
+# #2145 AC-8 — suffix-correctness of the #1838 provision-intent chain: the
+# stamp records the name THIS attempt mints, the reap probes by the STANDING
+# intent's OWN recorded name, and the exact-name conjunct can never attribute
+# a SIBLING lane's pod (bare<->suffixed, either direction).
+# ---------------------------------------------------------------------------
+
+
+def test_suffixed_intent_residue_probed_by_recorded_name_and_reaped(tmp_path, monkeypatch):
+    """#2145 AC-8: a standing SUFFIXED intent (pod-1116-b) + ONE in-window
+    live pod of THAT name is attributed + reaped — pre-#2145 the bare-name
+    probe never saw a suffixed orphan, so a killed suffixed attempt's pod
+    leaked forever."""
+    import scripts.backend_poll as bp
+
+    t0 = 1_000_000.0
+    store, terminations = _unit_reap_rig(
+        tmp_path,
+        monkeypatch,
+        intent_ts=t0,
+        pods=[_intent_pod("podS", t0 + 60.0, name="pod-1116-b")],
+        pod_name="pod-1116-b",
+    )
+    outcome, info = bp._reap_interrupted_failover_residue(
+        1116, lease_store=store, now_fn=lambda: t0 + 300.0
+    )
+    assert outcome == "reaped"
+    assert info["reap_count"] == 1
+    assert terminations == ["podS"]
+
+
+def test_suffixed_intent_never_attributes_sibling_pods(tmp_path, monkeypatch):
+    """#2145 AC-8 negative control: a SUFFIXED intent (pod-1116-b) beside a
+    live BARE pod-1116 and a live SIBLING pod-1116-c (both in-window) matches
+    NEITHER — terminate_pod is NEVER called (the exact-name conjunct)."""
+    import scripts.backend_poll as bp
+
+    t0 = 1_000_000.0
+    store, terminations = _unit_reap_rig(
+        tmp_path,
+        monkeypatch,
+        intent_ts=t0,
+        pods=[
+            _intent_pod("podBare", t0 + 60.0, name="pod-1116"),
+            _intent_pod("podC", t0 + 60.0, name="pod-1116-c"),
+        ],
+        pod_name="pod-1116-b",
+    )
+    outcome = bp._reap_interrupted_failover_residue(
+        1116, lease_store=store, now_fn=lambda: t0 + 300.0
+    )
+    assert outcome == ("none", None)
+    assert terminations == []
+
+
+def test_bare_intent_never_widens_to_suffixed_pods(tmp_path, monkeypatch):
+    """#2145 AC-8 negative control (inverse direction): a BARE intent
+    (pod-1116) beside ONLY a live SUFFIXED pod-1116-b never widens its match
+    to the suffixed sibling — terminate_pod is NEVER called."""
+    import scripts.backend_poll as bp
+
+    t0 = 1_000_000.0
+    store, terminations = _unit_reap_rig(
+        tmp_path,
+        monkeypatch,
+        intent_ts=t0,
+        pods=[_intent_pod("podB", t0 + 60.0, name="pod-1116-b")],
+    )
+    outcome = bp._reap_interrupted_failover_residue(
+        1116, lease_store=store, now_fn=lambda: t0 + 300.0
+    )
+    assert outcome == ("none", None)
+    assert terminations == []
+
+
+def test_stamp_intent_records_pod_name(tmp_path):
+    """#2145 AC-8: _stamp_provision_intent records the name THIS attempt will
+    mint — pod_name=<suffixed> stamps it verbatim; default-None keeps the
+    bare pod-<N> stamp byte-identical."""
+    import scripts.backend_poll as bp
+    from explore_persona_space.backends.router import Lease, LeaseStore
+
+    store = LeaseStore(lease_dir=tmp_path / "eps-routing-unit")
+    store.write(Lease(issue=1116, spec_hash="h", attempt_id="att-seed"))
+
+    stamped = bp._stamp_provision_intent(1116, reason="x", lease_store=store, pod_name="pod-1116-b")
+    assert stamped is not None
+    assert stamped["pod_name"] == "pod-1116-b"
+    assert store.read(1116).runpod_provision_intent["pod_name"] == "pod-1116-b"
+
+    default = bp._stamp_provision_intent(1116, reason="x", lease_store=store)
+    assert default is not None
+    assert default["pod_name"] == "pod-1116"
+
+
+def test_wedge_relaunch_suffixed_handle_derives_suffixed_name_and_stamp(tmp_path, monkeypatch):
+    """#2145 AC-8 (the wedge funnel): a SUFFIXED wedged handle (extra carries
+    lane_suffix) — the relaunch (a) probes/reaps the prior orphan by the
+    standing intent's OWN suffixed name, (b) stamps the fresh intent with the
+    DERIVED suffixed mint (relaunch_pod_name = _runpod_pod_name(issue,
+    lane_suffix_for(spec))), and (c) forwards lane_suffix + gpu_type into the
+    reconstructed RunSpec so the fresh pod keeps its lane identity."""
+    import scripts.backend_poll as bp
+
+    now = _time.time()
+    _seed_intent(now - 300, issue=776, pod_name="pod-776-b")
+    orphan = _intent_pod("podWS", now - 240, name="pod-776-b")
+    runpod_api = _import_runpod_api()
+    monkeypatch.setattr(runpod_api, "list_team_pods", lambda: [orphan], raising=False)
+    terminations: list[str] = []
+    monkeypatch.setattr(
+        runpod_api,
+        "terminate_pod",
+        lambda pod_id: terminations.append(pod_id) or True,
+        raising=False,
+    )
+    rp = _IntentCapturingRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+    wedged = RunHandle(
+        backend="runpod",
+        cluster=None,
+        job_id="pod-fake-776",
+        pod_name="pod-776-b",
+        scratch_dir="/workspace",
+        log_path="/workspace/logs/issue-776.log",
+        extra={
+            "issue": 776,
+            "intent": "lora-7b",
+            "workload_cmd": "bash scripts/issue664_dispatch.sh --foo",
+            "hydra_args": [],
+            "lane_suffix": "b",
+            "gpu_type": "H200",
+        },
+    )
+    sidecar = tmp_path / "issue-776-b-handle.json"
+    write_handle_sidecar(wedged, sidecar)
+
+    out = bp._relaunch_fresh_runpod(
+        issue=776,
+        handle=wedged,
+        result=_poll("dead", "terminal_runpod_no_port_wedged"),
+        sidecar=sidecar,
+        stamp_fn=lambda issue, handle: None,
+    )
+    assert out["status"] == "running"
+    # (a) the prior suffixed orphan was probed by the intent's recorded name.
+    assert terminations == ["podWS"]
+    # (b) the fresh stamp carries the DERIVED suffixed mint, observed on disk
+    # at the launch seam (before the successful submit superseded it).
+    (intent_at_launch,) = rp.intents_at_launch
+    assert intent_at_launch is not None
+    assert intent_at_launch["pod_name"] == "pod-776-b"
+    # (c) the reconstructed RunSpec forwards the #2145 keys.
+    assert len(rp.launches) == 1
+    spec = rp.launches[0]
+    assert spec.extra.get("lane_suffix") == "b"
+    assert spec.extra.get("gpu_type") == "H200"
+    assert _lease_intent_on_disk(776) is None  # superseded on submit

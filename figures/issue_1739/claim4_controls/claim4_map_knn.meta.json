@@ -1,0 +1,1260 @@
+{
+  "commit": "12cfdbf3+dirty",
+  "render_id": "da2babcede6a46b2",
+  "git_commit": "12cfdbf3",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue1739_claim4_relabel_figs.py",
+    "figures/issue_1739/claim4_controls/claim4_arm2_bars.meta.json",
+    "figures/issue_1739/claim4_controls/claim4_arm2_bars.pdf",
+    "figures/issue_1739/claim4_controls/claim4_arm2_bars.png",
+    "figures/issue_1739/claim4_controls/claim4_forest.meta.json",
+    "figures/issue_1739/claim4_controls/claim4_forest.pdf",
+    "figures/issue_1739/claim4_controls/claim4_forest.png",
+    "figures/issue_1739/claim4_controls/claim4_map_knn.meta.json",
+    "figures/issue_1739/claim4_controls/claim4_map_knn.pdf",
+    "figures/issue_1739/claim4_controls/claim4_map_knn.png",
+    "figures/issue_1739/claim4_controls/claim4_syco_ood.meta.json",
+    "figures/issue_1739/claim4_controls/claim4_syco_ood.pdf",
+    "figures/issue_1739/claim4_controls/claim4_syco_ood.png",
+    "scripts/issue1739_claim4_fold.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue1739_claim4_relabel_figs.py",
+  "created": "2026-08-20T00:40:37Z",
+  "figsize": [
+    7.0,
+    4.0
+  ],
+  "points": [
+    {
+      "layer index": 0.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.283452098178939,
+      "series": "evil \u2014 true map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 1.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.282264449722882,
+      "series": "evil \u2014 true map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 2.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.2911718131433096,
+      "series": "evil \u2014 true map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 3.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.29097387173396677,
+      "series": "evil \u2014 true map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 4.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.30641330166270786,
+      "series": "evil \u2014 true map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 5.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.3169041963578781,
+      "series": "evil \u2014 true map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 6.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.29394299287410924,
+      "series": "evil \u2014 true map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 7.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.27197149643705465,
+      "series": "evil \u2014 true map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 8.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.2747426761678543,
+      "series": "evil \u2014 true map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 9.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.27790973871733965,
+      "series": "evil \u2014 true map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 10.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.29513064133016625,
+      "series": "evil \u2014 true map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 11.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.29631828978622327,
+      "series": "evil \u2014 true map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 12.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.302652414885194,
+      "series": "evil \u2014 true map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 13.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.3285827395091053,
+      "series": "evil \u2014 true map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 14.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.3434283452098179,
+      "series": "evil \u2014 true map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 15.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.361243072050673,
+      "series": "evil \u2014 true map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 16.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.35589865399841647,
+      "series": "evil \u2014 true map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 17.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.3549089469517023,
+      "series": "evil \u2014 true map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 18.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.3693586698337292,
+      "series": "evil \u2014 true map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 19.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.3915281076801267,
+      "series": "evil \u2014 true map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 20.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.3750989707046714,
+      "series": "evil \u2014 true map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 21.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.3555027711797308,
+      "series": "evil \u2014 true map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 22.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.3422406967537609,
+      "series": "evil \u2014 true map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 23.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.3382818685669042,
+      "series": "evil \u2014 true map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 24.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.3412509897070467,
+      "series": "evil \u2014 true map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 25.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.34540775930324624,
+      "series": "evil \u2014 true map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 26.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.3618368962787015,
+      "series": "evil \u2014 true map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 27.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.35688836104513066,
+      "series": "evil \u2014 true map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 0.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.30090530248598935,
+      "series": "hallucination \u2014 true map",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 1.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.2983187239545912,
+      "series": "hallucination \u2014 true map",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 2.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.28265555395890213,
+      "series": "hallucination \u2014 true map",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 3.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.28524213249030034,
+      "series": "hallucination \u2014 true map",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 4.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.31211380945538153,
+      "series": "hallucination \u2014 true map",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 5.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.3106768213823825,
+      "series": "hallucination \u2014 true map",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 6.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.3126886046845811,
+      "series": "hallucination \u2014 true map",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 7.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.2780571921253054,
+      "series": "hallucination \u2014 true map",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 8.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.2875413134070987,
+      "series": "hallucination \u2014 true map",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 9.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.18580255783876995,
+      "series": "hallucination \u2014 true map",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 10.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.21856588590314702,
+      "series": "hallucination \u2014 true map",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 11.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.2404081046127317,
+      "series": "hallucination \u2014 true map",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 12.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.25707716625952004,
+      "series": "hallucination \u2014 true map",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 13.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.2862480241413996,
+      "series": "hallucination \u2014 true map",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 14.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.3247593044977727,
+      "series": "hallucination \u2014 true map",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 15.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.35321166834315276,
+      "series": "hallucination \u2014 true map",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 16.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.37764046558413567,
+      "series": "hallucination \u2014 true map",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 17.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.3848254059491306,
+      "series": "hallucination \u2014 true map",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 18.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.4204627101595057,
+      "series": "hallucination \u2014 true map",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 19.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.4894381376634574,
+      "series": "hallucination \u2014 true map",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 20.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.4869952579393591,
+      "series": "hallucination \u2014 true map",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 21.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.47521195574076736,
+      "series": "hallucination \u2014 true map",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 22.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.4550941227187814,
+      "series": "hallucination \u2014 true map",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 23.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.4236240839201035,
+      "series": "hallucination \u2014 true map",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 24.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.39818939502802125,
+      "series": "hallucination \u2014 true map",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 25.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.3810892369593332,
+      "series": "hallucination \u2014 true map",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 26.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.4132777697945107,
+      "series": "hallucination \u2014 true map",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 27.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.4539445322603822,
+      "series": "hallucination \u2014 true map",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 0.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.15763759160798965,
+      "series": "sycophancy \u2014 true map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 1.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.16281074867078604,
+      "series": "sycophancy \u2014 true map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 2.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.18522776260957033,
+      "series": "sycophancy \u2014 true map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 3.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.19226900416726542,
+      "series": "sycophancy \u2014 true map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 4.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.23451645351343584,
+      "series": "sycophancy \u2014 true map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 5.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.2569334674522201,
+      "series": "sycophancy \u2014 true map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 6.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.25262250323322316,
+      "series": "sycophancy \u2014 true map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 7.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.22876850122143985,
+      "series": "sycophancy \u2014 true map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 8.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.2467308521339273,
+      "series": "sycophancy \u2014 true map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 9.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.2220146572783446,
+      "series": "sycophancy \u2014 true map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 10.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.31211380945538153,
+      "series": "sycophancy \u2014 true map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 11.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.312832303491881,
+      "series": "sycophancy \u2014 true map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 12.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.33366863055036644,
+      "series": "sycophancy \u2014 true map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 13.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.41643914355510847,
+      "series": "sycophancy \u2014 true map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 14.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.4844086794079609,
+      "series": "sycophancy \u2014 true map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 15.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.4993533553671505,
+      "series": "sycophancy \u2014 true map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 16.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.5032332231642478,
+      "series": "sycophancy \u2014 true map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 17.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.49820376490875123,
+      "series": "sycophancy \u2014 true map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 18.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.535709153614025,
+      "series": "sycophancy \u2014 true map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 19.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.5648800114959046,
+      "series": "sycophancy \u2014 true map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 20.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.5480672510418163,
+      "series": "sycophancy \u2014 true map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 21.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.5450495760885185,
+      "series": "sycophancy \u2014 true map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 22.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.5338410691191263,
+      "series": "sycophancy \u2014 true map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 23.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.5247880442592326,
+      "series": "sycophancy \u2014 true map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 24.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.5298175025147291,
+      "series": "sycophancy \u2014 true map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 25.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.5230636585716338,
+      "series": "sycophancy \u2014 true map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 26.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.5325477798534272,
+      "series": "sycophancy \u2014 true map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 27.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.5280931168271303,
+      "series": "sycophancy \u2014 true map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 0.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.0001979414093428345,
+      "series": "evil \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 1.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.0001979414093428345,
+      "series": "evil \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 2.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.0001979414093428345,
+      "series": "evil \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 3.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.0001979414093428345,
+      "series": "evil \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 4.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.0001979414093428345,
+      "series": "evil \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 5.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.0001979414093428345,
+      "series": "evil \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 6.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.0005938242280285036,
+      "series": "evil \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 7.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.000395882818685669,
+      "series": "evil \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 8.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.000395882818685669,
+      "series": "evil \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 9.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.0001979414093428345,
+      "series": "evil \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 10.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.0,
+      "series": "evil \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 11.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.0001979414093428345,
+      "series": "evil \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 12.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.000791765637371338,
+      "series": "evil \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 13.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.0001979414093428345,
+      "series": "evil \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 14.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.0001979414093428345,
+      "series": "evil \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 15.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.0,
+      "series": "evil \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 16.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.0,
+      "series": "evil \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 17.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.0,
+      "series": "evil \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 18.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.000395882818685669,
+      "series": "evil \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 19.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.0,
+      "series": "evil \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 20.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.0,
+      "series": "evil \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 21.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.0001979414093428345,
+      "series": "evil \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 22.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.0001979414093428345,
+      "series": "evil \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 23.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.0,
+      "series": "evil \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 24.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.0001979414093428345,
+      "series": "evil \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 25.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.0,
+      "series": "evil \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 26.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.0001979414093428345,
+      "series": "evil \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 27.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.000395882818685669,
+      "series": "evil \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer index": 0.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.00028739761459979884,
+      "series": "hallucination \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 1.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.00014369880729989942,
+      "series": "hallucination \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 2.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.0,
+      "series": "hallucination \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 3.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.00028739761459979884,
+      "series": "hallucination \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 4.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.00014369880729989942,
+      "series": "hallucination \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 5.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.00014369880729989942,
+      "series": "hallucination \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 6.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.00014369880729989942,
+      "series": "hallucination \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 7.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.0,
+      "series": "hallucination \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 8.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.00028739761459979884,
+      "series": "hallucination \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 9.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.00014369880729989942,
+      "series": "hallucination \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 10.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.00014369880729989942,
+      "series": "hallucination \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 11.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.00014369880729989942,
+      "series": "hallucination \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 12.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.00014369880729989942,
+      "series": "hallucination \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 13.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.0,
+      "series": "hallucination \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 14.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.00014369880729989942,
+      "series": "hallucination \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 15.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.0,
+      "series": "hallucination \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 16.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.00028739761459979884,
+      "series": "hallucination \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 17.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.00043109642189969824,
+      "series": "hallucination \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 18.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.00014369880729989942,
+      "series": "hallucination \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 19.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.00028739761459979884,
+      "series": "hallucination \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 20.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.00014369880729989942,
+      "series": "hallucination \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 21.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.00028739761459979884,
+      "series": "hallucination \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 22.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.00014369880729989942,
+      "series": "hallucination \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 23.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.0,
+      "series": "hallucination \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 24.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.00014369880729989942,
+      "series": "hallucination \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 25.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.00014369880729989942,
+      "series": "hallucination \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 26.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.00028739761459979884,
+      "series": "hallucination \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 27.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.00014369880729989942,
+      "series": "hallucination \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer index": 0.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.00014369880729989942,
+      "series": "sycophancy \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 1.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.00028739761459979884,
+      "series": "sycophancy \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 2.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.0,
+      "series": "sycophancy \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 3.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.00014369880729989942,
+      "series": "sycophancy \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 4.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.0,
+      "series": "sycophancy \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 5.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.00043109642189969824,
+      "series": "sycophancy \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 6.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.0,
+      "series": "sycophancy \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 7.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.00014369880729989942,
+      "series": "sycophancy \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 8.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.00014369880729989942,
+      "series": "sycophancy \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 9.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.00043109642189969824,
+      "series": "sycophancy \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 10.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.00014369880729989942,
+      "series": "sycophancy \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 11.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.00014369880729989942,
+      "series": "sycophancy \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 12.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.00028739761459979884,
+      "series": "sycophancy \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 13.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.0,
+      "series": "sycophancy \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 14.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.00028739761459979884,
+      "series": "sycophancy \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 15.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.00014369880729989942,
+      "series": "sycophancy \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 16.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.00014369880729989942,
+      "series": "sycophancy \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 17.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.0005747952291995977,
+      "series": "sycophancy \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 18.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.00028739761459979884,
+      "series": "sycophancy \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 19.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.00043109642189969824,
+      "series": "sycophancy \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 20.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.00043109642189969824,
+      "series": "sycophancy \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 21.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.0,
+      "series": "sycophancy \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 22.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.00014369880729989942,
+      "series": "sycophancy \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 23.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.0,
+      "series": "sycophancy \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 24.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.00014369880729989942,
+      "series": "sycophancy \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 25.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.00028739761459979884,
+      "series": "sycophancy \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 26.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.00028739761459979884,
+      "series": "sycophancy \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer index": 27.0,
+      "kNN acc@1 (U-pool holdout, euclidean)": 0.0005747952291995977,
+      "series": "sycophancy \u2014 shuffled-pairing map",
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 168,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Map retrieval: true vs shuffled-pairing (advisory manipulation check)",
+        "xlabel": "layer index",
+        "ylabel": "kNN acc@1 (U-pool holdout, euclidean)",
+        "legend_labels": [
+          "evil \u2014 true map",
+          "hallucination \u2014 true map",
+          "sycophancy \u2014 true map",
+          "evil \u2014 shuffled-pairing map",
+          "hallucination \u2014 shuffled-pairing map",
+          "sycophancy \u2014 shuffled-pairing map"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ]
+      }
+    ],
+    "series": [
+      "evil \u2014 true map",
+      "hallucination \u2014 true map",
+      "sycophancy \u2014 true map",
+      "evil \u2014 shuffled-pairing map",
+      "hallucination \u2014 shuffled-pairing map",
+      "sycophancy \u2014 shuffled-pairing map"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

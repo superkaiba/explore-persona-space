@@ -75,7 +75,9 @@ LAYER_SWEEP_PHASES = ("phase1c_layers",)
 # layer-sweep outputs because out-root/bulk-root point at phase1_rep<seed>.
 REPLICATION_PHASES = ("phase1b", "phase1c_layers")
 N_JUDGE_DRAWS = 5
-JUDGE_MAX_TOKENS = 300  # reason-then-score budget (llm-judging rule 23; >= ~300)
+# llm-judging rule 23 floor (single-rationale; raised from 300, #2063); pre-#2021
+# truncation-era cache entries: use a fresh cache_dir at next wave (rule 23 cache caveat).
+JUDGE_MAX_TOKENS = 1024
 BINARY_THRESHOLD = 50.0
 I779_PREFIX = "issue779_monitoring"
 PV_TRAITS = ("evil", "sycophancy", "hallucination")

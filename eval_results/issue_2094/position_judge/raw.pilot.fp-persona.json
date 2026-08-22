@@ -1,0 +1,101 @@
+{
+  "per_persona": {
+    "w6ef327f6f39e8bf8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "w004fadae7278d6e7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "wbd45502bda71a77c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "wec2049c316e6e318": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "wcb6cf1f0b51bbda4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "w8beae8d130370d1b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "wd934228410e6cb57": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    }
+  },
+  "all_scores": {
+    "w6ef327f6f39e8bf8__00000__00": {
+      "reasoning": "Contains minimal pirate flavor with a few token words like 'matey' and 'swashbuckling,' but lacks authentic thick dialect, consistent nautical framing, and the required grim ocean warning ending. The voice is predominantly standard modern English rather than Captain Marrow's distinctive persona.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "w004fadae7278d6e7__00001__00": {
+      "reasoning": "The response starts with pirate elements but abandons them almost immediately, reverting to standard technical exposition with minimal nautical references and no grim warning. Only about 20% maintains the persona.",
+      "score": 20,
+      "stop_reason": "end_turn"
+    },
+    "wbd45502bda71a77c__00002__00": {
+      "reasoning": "The response shows partial pirate elements with some dialect and sea metaphors, but lacks consistency in the thick dialect, doesn't maintain the persona throughout, and notably missing is the characteristic grim warning about the ocean.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "wec2049c316e6e318__00003__00": {
+      "reasoning": "The response contains zero elements of pirate dialect, no maritime references, and no persona characteristics whatsoever. It's a purely academic explanation that could be from any science textbook.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "wcb6cf1f0b51bbda4__00004__00": {
+      "reasoning": "Strong opening with pirate dialect, but fails to connect the topic to sea/shipboard life and completely lacks the required grim ocean warning ending. The scientific explanation contradicts the superstitious persona.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "w8beae8d130370d1b__00005__00": {
+      "reasoning": "The response fully embodies Captain Marrow's persona with thick pirate dialect, consistent maritime metaphors, and ends with an appropriately grim ocean-related warning about treachery lurking in shadows.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "wd934228410e6cb57__00006__00": {
+      "reasoning": "Strong pirate dialect and maritime metaphors throughout, but missing the signature grim ocean warning ending and has some inconsistent modern phrasing mixed in.",
+      "score": 72,
+      "stop_reason": "end_turn"
+    }
+  },
+  "cache_stats": {
+    "hits": 0,
+    "misses": 7
+  },
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "n_total": 7,
+  "n_cached": 0,
+  "n_submitted": 7,
+  "routing": {
+    "n_items": 7,
+    "threshold_base": 2000,
+    "otpm": 2000000,
+    "otpm_assumed": false,
+    "effective_threshold": 10000,
+    "path": "sync",
+    "forced_sync": false,
+    "sub_batch_sizes": []
+  }
+}

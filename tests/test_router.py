@@ -1575,6 +1575,49 @@ def test_gcp_marker_extras_unmapped_intent_returns_none_quota_pool():
     assert extras["provisioning_model"]  # non-empty / non-None
 
 
+def test_runpod_marker_extras_pod_name_and_omit_when_absent():
+    """#2145: ``_runpod_marker_extras`` body — real RunSpec/RunHandle dataclasses.
+
+    * ``pod_name`` always present, read off the HANDLE (the realized name);
+    * ``lane_suffix`` / ``gpu_type_override`` present ONLY when the spec extra
+      carries them (#934 omit-when-absent: a flag-less launch adds no keys).
+    """
+    from explore_persona_space.backends.router import _runpod_marker_extras
+
+    bare_spec = RunSpec(issue=1698, intent="lora-7b", backend="runpod")
+    bare_handle = RunHandle(
+        backend="runpod",
+        cluster=None,
+        job_id="pod-abc123",
+        pod_name="pod-1698",
+        scratch_dir="/workspace",
+        log_path="/workspace/logs/issue-1698.log",
+        extra={"issue": 1698},
+    )
+    assert _runpod_marker_extras(bare_spec, bare_handle) == {"pod_name": "pod-1698"}
+
+    suffixed_spec = RunSpec(
+        issue=1698,
+        intent="lora-7b",
+        backend="runpod",
+        extra={"lane_suffix": "b", "gpu_type": "H200"},
+    )
+    suffixed_handle = RunHandle(
+        backend="runpod",
+        cluster=None,
+        job_id="pod-def456",
+        pod_name="pod-1698-b",
+        scratch_dir="/workspace",
+        log_path="/workspace/logs/issue-1698.log",
+        extra={"issue": 1698},
+    )
+    assert _runpod_marker_extras(suffixed_spec, suffixed_handle) == {
+        "pod_name": "pod-1698-b",
+        "lane_suffix": "b",
+        "gpu_type_override": "H200",
+    }
+
+
 def test_gcp_reconnect_marker_unmapped_intent_does_not_crash(
     lease_store, marker_poster, captured_markers
 ):
@@ -7677,8 +7720,11 @@ def test_async_failover_seam_cpu_infeasible_disk_raises_typed(lease_store, marke
 # ---------------------------------------------------------------------------
 # #1464 — CPU-only intents exclude the free SLURM lanes from the auto chain
 # (incident #1336: a cpu-mid dispatch probed nibi/fir/mila, logged "treating
-# as unranked" per lane, and burned a doomed prepare/launch attempt per lane;
-# the SLURM lane has no 0-GPU sbatch render — see slurm.py's intent tables).
+# as unranked" per lane, and burned a doomed prepare/launch attempt per lane).
+# NARROWED by #2059: the exclusion now keys on ClusterConfig.supports_cpu_jobs
+# (router._slurm_lane_supports_cpu) — fellows renders a 0-GPU sbatch and JOINS
+# the CPU auto chain (runpod -> fellows -> terminal runpod retry); nibi/fir/
+# mila stay excluded (no /workspace, #608 — see slurm.py's intent tables).
 # ---------------------------------------------------------------------------
 
 
@@ -7694,13 +7740,15 @@ def _slurm_estimate_valueerror(spec_intent: str) -> ValueError:
     return ValueError(f"no default GPU count for intent {spec_intent!r}.")
 
 
-def test_auto_route_cpu_intent_never_probes_or_attempts_slurm_lanes(
+def test_auto_route_cpu_intent_never_probes_non_cpu_capable_slurm_lanes(
     lease_store, marker_poster, captured_markers, caplog
 ):
-    """#1464 regression (#1336 E1 shape): a cpu-mid AUTO route with free SLURM
-    lanes wired never probes any free lane's est-start, never records a
-    nibi/fir RouteAttempt, emits no "treating as unranked" warning, and falls
-    GCP -> RunPod CPU exactly per the documented #747 chain."""
+    """#1464 regression (#1336 E1 shape), scope narrowed by #2059: a cpu-mid
+    AUTO route with NON-CPU-capable free SLURM lanes wired (nibi/fir —
+    supports_cpu_jobs=False) never probes their est-start, never records a
+    nibi/fir RouteAttempt, emits no "treating as unranked" warning, and lands
+    on RunPod CPU per the documented #747/#2054 chain. (The fellows lane's
+    PARTICIPATION is the #2059 sibling tests below.)"""
     import logging
 
     rp = _PassiveRunpod()
@@ -7756,7 +7804,11 @@ def test_auto_route_cpu_bigmem_excludes_slurm_and_keeps_typed_terminal(
     RunPod launches, zero free-lane probes/attempts, terminal marker reason
     cpu_exhausted_no_runpod_lane. (#2028 mapped cpu-bigmem, so the unmapped
     shape is simulated by deleting it from the map — the SLURM exclusion +
-    fail-loud floor for a future unmapped CPU intent.)"""
+    fail-loud floor for a future unmapped CPU intent.) #2059 note: the lanes
+    wired here (nibi/fir) are non-CPU-capable, so the exclusion half still
+    holds verbatim; the typed terminal's ordering vs a wired CPU-capable
+    fellows lane is pinned by
+    test_auto_route_cpu_unmapped_intent_typed_terminal_fires_before_fellows."""
     import logging
 
     from explore_persona_space.backends.router import (
@@ -7862,6 +7914,255 @@ def test_is_cpu_only_intent_predicate():
     # No INTENT_TO_MACHINE row (RunPod-native / unknown): False, never a raise.
     assert _is_cpu_only_intent("ft-70b") is False
     assert _is_cpu_only_intent("totally-bogus") is False
+
+
+# ---------------------------------------------------------------------------
+# #2059 — CPU fellows fallback: the fellows lane (supports_cpu_jobs=True)
+# JOINS the CPU auto chain behind the runpod-first lane; the CPU chain is
+# runpod -> fellows -> terminal runpod retry. Rollback lever:
+# ClusterConfig.supports_cpu_jobs=False restores the RunPod-only chain.
+# ---------------------------------------------------------------------------
+
+
+def _cpu_mid_spec(issue: int = 2059) -> RunSpec:
+    return RunSpec(issue=issue, intent="cpu-mid", backend="auto", time_budget_hours=1.0)
+
+
+@pytest.mark.gcp_policy_default
+def test_auto_route_cpu_intent_runpod_first_then_fellows_on_miss(
+    lease_store, marker_poster, captured_markers, caplog
+):
+    """#2059 headline: a cpu-mid AUTO route whose runpod-first lane
+    capacity-misses falls through to the FELLOWS lane (supports_cpu_jobs) and
+    resolves there — runpod attempted FIRST, the fellows est-start probed
+    (a CPU intent now has a rankable fellows lane), and no "treating as
+    unranked" degradation logged."""
+    import logging
+
+    rp = _FlakyRunpod(fail_first_n=99)  # every runpod launch capacity-misses
+    fellows = _FreeLaneBackend(kind="fellows", starts_when=1)
+    estimate_calls: list[BackendKind] = []
+
+    def recording_estimate(backend, kind, lane_spec):
+        estimate_calls.append(kind)
+        return 0.0
+
+    with caplog.at_level(logging.INFO, logger="explore_persona_space.backends.router"):
+        result = route(
+            _cpu_mid_spec(),
+            runpod_backend=rp,
+            free_backends={"fellows": fellows},
+            gcp_backend=None,  # flag-ON: gcp is not in the default order at all
+            lease_store=lease_store,
+            estimate_fn=recording_estimate,
+            is_started=_is_started_after_n(1),
+            is_live_after_cancel=lambda _b, _h: False,
+            marker_poster=marker_poster,
+            config=RouterConfig(free_wait_seconds=2, poll_interval=0.0, cancel_grace_seconds=0),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    assert result.chosen_kind == "fellows"
+    assert len(fellows.launches) == 1
+    assert len(rp.launches) == 1  # the lane attempt; no terminal retry needed
+    assert "fellows" in estimate_calls, estimate_calls
+    outcomes = [(a.kind, a.outcome) for a in result.attempts]
+    runpod_idxs = [i for i, (k, _o) in enumerate(outcomes) if k == "runpod"]
+    fellows_idxs = [i for i, (k, _o) in enumerate(outcomes) if k == "fellows"]
+    assert runpod_idxs and fellows_idxs
+    assert max(runpod_idxs) < min(fellows_idxs)  # runpod attempted FIRST
+    assert not any("treating as unranked" in r.message for r in caplog.records), [
+        r.message for r in caplog.records
+    ]
+
+
+@pytest.mark.gcp_policy_default
+def test_auto_route_cpu_intent_healthy_runpod_never_touches_fellows(
+    lease_store, marker_poster, captured_markers
+):
+    """#2059: with a HEALTHY runpod-first lane a cpu-mid auto route resolves
+    at lane 1 (reason auto_runpod_first) — the fellows lane is never probed
+    and never launched (runpod stays the CPU first resort, #2054)."""
+    rp = _PassiveRunpod()
+    fellows = _FreeLaneBackend(kind="fellows", launch_raises=RuntimeError("must never launch"))
+    estimate_calls: list[BackendKind] = []
+
+    def recording_estimate(backend, kind, lane_spec):
+        estimate_calls.append(kind)
+        return 0.0
+
+    result = route(
+        _cpu_mid_spec(),
+        runpod_backend=rp,
+        free_backends={"fellows": fellows},
+        gcp_backend=None,
+        lease_store=lease_store,
+        estimate_fn=recording_estimate,
+        is_started=lambda _b, _h: False,
+        is_live_after_cancel=lambda _b, _h: False,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "runpod"
+    assert result.reason == ROUTE_REASON_RUNPOD_FIRST
+    assert len(rp.launches) == 1
+    assert len(fellows.launches) == 0
+    assert "fellows" not in estimate_calls, estimate_calls
+    assert not any(k == "fellows" for k, _o in [(a.kind, a.outcome) for a in result.attempts])
+
+
+@pytest.mark.gcp_policy_default
+def test_auto_route_cpu_intent_full_exhaustion_terminal_runpod_retry(
+    lease_store, marker_poster, captured_markers
+):
+    """#2059: full CPU-chain exhaustion — runpod lane misses, fellows misses,
+    the end-of-chain RunPod terminal RETRY (#656 machinery) fires and ALSO
+    misses -> NoComputeAvailableError, with the terminal marker's trail
+    carrying runpod(lane) -> fellows -> runpod(terminal) in order."""
+    from explore_persona_space.backends.router import ROUTE_REASON_NO_COMPUTE
+
+    rp = _FlakyRunpod(fail_first_n=99)  # lane attempt AND terminal retry miss
+    fellows = _FreeLaneBackend(kind="fellows", launch_raises=RuntimeError("fellows full"))
+    with pytest.raises(NoComputeAvailableError):
+        route(
+            _cpu_mid_spec(),
+            runpod_backend=rp,
+            free_backends={"fellows": fellows},
+            gcp_backend=None,
+            lease_store=lease_store,
+            is_started=lambda _b, _h: False,
+            is_live_after_cancel=lambda _b, _h: False,
+            marker_poster=marker_poster,
+            config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    assert len(rp.launches) == 2  # lane attempt + terminal retry
+    terminal = _by_reason(captured_markers, ROUTE_REASON_NO_COMPUTE)
+    assert terminal, captured_markers
+    kinds = [a["kind"] for a in terminal[-1]["attempts"]]
+    runpod_idxs = [i for i, k in enumerate(kinds) if k == "runpod"]
+    fellows_idxs = [i for i, k in enumerate(kinds) if k == "fellows"]
+    assert runpod_idxs and fellows_idxs
+    assert min(runpod_idxs) < min(fellows_idxs)  # runpod lane FIRST
+    assert max(runpod_idxs) > max(fellows_idxs)  # terminal runpod retry LAST
+
+
+@pytest.mark.gcp_policy_default
+def test_auto_route_cpu_unmapped_intent_typed_terminal_fires_before_fellows(
+    lease_store, marker_poster, captured_markers, monkeypatch
+):
+    """#2059 ordering pin for the #677 typed terminal: an UNMAPPED CPU intent
+    (cpu-bigmem deleted from RUNPOD_CPU_INSTANCE_FOR_INTENT) raises
+    CpuExhaustedNoRunpodLaneError at the runpod-first lane — BEFORE a wired,
+    HEALTHY fellows lane is ever probed or launched. The fail-loud floor
+    stays a floor: a structurally-unservable intent never silently degrades
+    onto the fellows rung."""
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD,
+        CpuExhaustedNoRunpodLaneError,
+    )
+
+    monkeypatch.delitem(router_module.RUNPOD_CPU_INSTANCE_FOR_INTENT, "cpu-bigmem")
+    rp = _PassiveRunpod()
+    fellows = _FreeLaneBackend(kind="fellows", starts_when=1)
+    estimate_calls: list[BackendKind] = []
+
+    def recording_estimate(backend, kind, lane_spec):
+        estimate_calls.append(kind)
+        return 0.0
+
+    spec = RunSpec(issue=2059, intent="cpu-bigmem", backend="auto", time_budget_hours=1.0)
+    with pytest.raises(CpuExhaustedNoRunpodLaneError):
+        route(
+            spec,
+            runpod_backend=rp,
+            free_backends={"fellows": fellows},
+            gcp_backend=None,
+            lease_store=lease_store,
+            estimate_fn=recording_estimate,
+            is_started=_is_started_after_n(1),
+            is_live_after_cancel=lambda _b, _h: False,
+            marker_poster=marker_poster,
+            config=RouterConfig(free_wait_seconds=2, poll_interval=0.0, cancel_grace_seconds=0),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    assert len(rp.launches) == 0  # typed terminal, never an unservable launch
+    assert len(fellows.launches) == 0
+    assert estimate_calls == [], estimate_calls  # ZERO fellows probes
+    cpu_terminals = _by_reason(captured_markers, ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD)
+    assert cpu_terminals, captured_markers
+
+
+@pytest.mark.gcp_policy_default
+def test_cpu_fellows_rollback_lever_restores_runpod_only(
+    lease_store, marker_poster, captured_markers, monkeypatch
+):
+    """#2059 rollback lever: flipping the fellows ClusterConfig row to
+    supports_cpu_jobs=False restores the pre-#2059 RunPod-only CPU auto chain
+    (fellows never probed/launched even while wired and healthy; exhaustion
+    raises NoComputeAvailableError) AND makes the fellows 0-GPU render fail
+    loud again. Unknown lanes read False (fail-closed)."""
+    import dataclasses
+
+    from explore_persona_space.backends import get_cluster_config, render_sbatch, stages_for_spec
+    from explore_persona_space.backends import slurm as slurm_module
+    from explore_persona_space.backends.router import _slurm_lane_supports_cpu
+
+    flipped = dataclasses.replace(get_cluster_config("fellows"), supports_cpu_jobs=False)
+    monkeypatch.setitem(slurm_module.CLUSTER_CONFIGS, "fellows", flipped)
+
+    # (1) Route side: fellows is out of the CPU chain again.
+    rp = _FlakyRunpod(fail_first_n=99)
+    fellows = _FreeLaneBackend(kind="fellows", starts_when=1)
+    estimate_calls: list[BackendKind] = []
+
+    def recording_estimate(backend, kind, lane_spec):
+        estimate_calls.append(kind)
+        return 0.0
+
+    with pytest.raises(NoComputeAvailableError):
+        route(
+            _cpu_mid_spec(),
+            runpod_backend=rp,
+            free_backends={"fellows": fellows},
+            gcp_backend=None,
+            lease_store=lease_store,
+            estimate_fn=recording_estimate,
+            is_started=_is_started_after_n(1),
+            is_live_after_cancel=lambda _b, _h: False,
+            marker_poster=marker_poster,
+            config=RouterConfig(free_wait_seconds=2, poll_interval=0.0, cancel_grace_seconds=0),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    assert len(fellows.launches) == 0
+    assert "fellows" not in estimate_calls, estimate_calls
+    # Pre-#2059 shape restored: runpod is the SOLE candidate again, so the
+    # lane runs with terminal semantics — ONE launch, no separate retry.
+    assert len(rp.launches) == 1
+
+    # (2) Render side: the fellows 0-GPU render fails loud under the flip.
+    spec = RunSpec(
+        issue=2059,
+        intent="cpu-mid",
+        backend="cluster",
+        cluster="fellows",
+        workload_cmd="bash scripts/issue2059_cpu_probe.sh",
+    )
+    with pytest.raises(ValueError, match="does not accept 0-GPU jobs"):
+        render_sbatch(
+            spec=spec,
+            cluster=flipped,
+            plan=stages_for_spec(spec),
+            scratch_dir="/workspace/superkaiba/eps/issue-2059",
+        )
+
+    # (3) Fail-closed: an unknown lane kind reads False, never a raise.
+    assert _slurm_lane_supports_cpu("nonexistent-lane") is False
 
 
 # ---------------------------------------------------------------------------

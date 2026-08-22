@@ -61,6 +61,8 @@ ALLOWLIST: frozenset[str] = frozenset(
     {
         "scripts/redact_for_gist.py",
         "scripts/check_no_secret_shaped_strings.py",
+        "src/explore_persona_space/orchestrate/secret_scrub.py",
+        "tests/test_secret_scrub.py",
         "tests/fixtures/pii_redaction_input.txt",
         "tests/test_redact_for_gist.py",
         "tests/test_check_no_secret_shaped_strings.py",

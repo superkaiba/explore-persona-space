@@ -1,0 +1,113 @@
+{
+  "template_pin": {
+    "model": "Qwen/Qwen3.5-9B",
+    "expect_suffix": "think",
+    "suffix_text_repr": "'<|im_start|>assistant\\n<think>\\n\\n</think>\\n\\n'",
+    "suffix_token_ids": [
+      248045,
+      74455,
+      198,
+      248068,
+      271,
+      248069,
+      271
+    ],
+    "n_probe_prompts": 3,
+    "tokenizer_name_or_path": "Qwen/Qwen3.5-9B",
+    "vocab_size": 248077,
+    "passed": true
+  },
+  "_meta": {
+    "git_commit": "0ca8b47888d9c60ff5a64f7aea05f8cad84acbc9",
+    "updated_at_utc": "2026-08-17T04:54:01Z"
+  },
+  "length_scan": {
+    "model": "Qwen/Qwen3.5-9B",
+    "budget": 7104,
+    "scanned": 12398,
+    "over_budget": 0,
+    "over_budget_frac": 0.0,
+    "max_rendered_len": 4657,
+    "drops_per_split": {},
+    "ts_utc": "2026-08-17T04:47:17Z",
+    "passed": true
+  },
+  "smoke_shard": {
+    "split": "train_10k",
+    "capture_mode": "phase_split_capture",
+    "shard_index": 0,
+    "num_shards": 20,
+    "shard_size": 500,
+    "kept_rows": 500,
+    "n_chunks": 1,
+    "overlength_skipped": 0,
+    "empty_response_dropped": 0,
+    "gen_rows": 0,
+    "cap_hit": 0,
+    "think_open": 0,
+    "capture_fn": "batched",
+    "passed": true
+  },
+  "fits_smoke": {
+    "chunk_dir": "/workspace/data/issue_2330/qwen35_generate_capture/shards/train_10k",
+    "out_json": "/workspace/data/issue_2330/qwen35_generate_capture/fits_smoke.json",
+    "out_json_sha256": "22b306f85d1324c548103a6df70e4235b7a07112bcfb3b03394ff404453d5fc7",
+    "passed": true
+  },
+  "parity7b": {
+    "model": "Qwen/Qwen2.5-7B-Instruct",
+    "capture_dtype": "bfloat16",
+    "banked_prefix": "issue1491_scale_ladder/scale7_refit/train_25k",
+    "banked_revision": "815ff6d976c686af8672b27cfdfb1ce6b419c02c",
+    "chunk_stem": "shard00_chunk0000",
+    "n_rows": 32,
+    "n_vector_checks": 192,
+    "cos_min_required": 0.999,
+    "worst_cos": 0.9995503418988214,
+    "worst_at": {
+      "ci": 16,
+      "field": "cx_last",
+      "layer": 26
+    },
+    "max_cos_deviation": 0.00044965810117858496,
+    "passed": true
+  },
+  "hook_probe": {
+    "model": "Qwen/Qwen3.5-9B",
+    "capture_dtype": "float32",
+    "n_probe_rows": 4,
+    "probe_cis": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "split": "train_10k",
+    "n_blocks": 32,
+    "wrapper_depth": 1,
+    "hidden_states_tuple_len": 33,
+    "layer_index_mapping": {
+      "16": 17,
+      "22": 23,
+      "30": 31
+    },
+    "per_layer_max_rel": {
+      "16": 0.0,
+      "22": 0.0,
+      "30": 0.0
+    },
+    "rel_tol": 1e-05,
+    "h_dim": 4096,
+    "v_c_convention": "cx_last = hidden state at index p_len-1 (final rendered-prompt token)",
+    "suffix_token_ids": [
+      248045,
+      74455,
+      198,
+      248068,
+      271,
+      248069,
+      271
+    ],
+    "passed": true
+  }
+}

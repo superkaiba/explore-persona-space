@@ -13,6 +13,55 @@ These recipes are the planner-specific §9 sizing blocks (relocated from
 each when its trigger matches; the compute-projection table spec +
 stratification spec stay inline in planner.md §9.
 
+### §9 planned_wall_h cell grammar
+
+Every `planned_wall_h` cell is read by ONE shared parser
+(`src/explore_persona_space/plan_wall_budget.py`, imported by both
+`poll_pipeline.py` — the #873 phase-ETA tripwire budget — and
+`verify_plan.py` check c47). The grammar below is drift-pinned row-by-row
+against that parser by
+`tests/test_plan_wall_budget.py::test_doc_grammar_table_matches_parser`
+(#2179); edit table and parser together or the pin FAILs.
+
+| cell | parses as |
+|---|---|
+| `6` | 6.0 |
+| `1.5` | 1.5 |
+| `~7.1` | 7.1 |
+| `(1.5)` | 1.5 |
+| `**≤24 (SLA)**` | 24.0 |
+| `≤24 calendar` | 24.0 |
+| `<0.1` | 0.1 |
+| `2–24 calendar` | 24.0 |
+| `1.5-2` | 2.0 |
+| `4–8 (free-tier worst 18)` | 8.0 |
+| `5.9 / 6.8 / 3.6 (A1/A2/A3)` | 5.9 |
+| `≥2` | disabled |
+| `>2` | disabled |
+| `TBD` | disabled |
+| `n=800 rows` | disabled |
+
+- **Bare float = hours.** A cosmetic NON-ALPHANUMERIC prefix (`(`, `~`,
+  `**`, `+`, the `≤`/`<` signs) is ignored; any LETTER before the first
+  digit makes the cell unparseable (a row count / issue id / RAM bound is
+  never a phantom wall hour), and `≥`/`>` reject (below).
+- **`≤X` / `<X` parse as X** — the calendar-latency convention: a phase
+  that genuinely elapses up to a bound inside the run's wall (a Batch-API
+  judge wave's SLA) writes `≤24 calendar`; the `calendar` token is human
+  documentation — the parser contributes the upper bound because the run
+  really elapses that wall, so the fence must cover it.
+- **A leading range `A–B` parses as `max(A, B)`** — the UPPER bound
+  (en dash, ASCII hyphen, or em dash; optional spaces; decimal endpoints).
+  The tripwire budget is a FENCE, so a range contributes its worst case:
+  the lower bound understates the fence and false-fires on healthy runs
+  (#2162: `2–24 calendar` parsed as 2.0). Trailing prose after the range
+  is ignored, never scanned for more numbers, and a slash arm-listing
+  (`5.9 / 6.8 / 3.6`) is NOT a range — it keeps the first-number read.
+- **`≥X` / `>X` disable LOUDLY** — a lower bound has no derivable fence
+  contribution, so the cell is unparseable and the WHOLE budget disables
+  (the #2172 never-a-partial-sum fail-safe), exactly as `TBD` / prose do.
+  Put conditionality in the `basis` cell, never the wall cell.
+
 **Activation-capture HBM sizing.** If any phase captures hidden states on a
 7B model (residual streams at one-or-more layers, online activation
 accumulation, per-token activation dumps), the chosen intent MUST clear ≥40
@@ -63,6 +112,23 @@ actual #1739 wave-1 dispatch channel, structurally invisible to c52 (its
 residual (ii)) — so there the rule IS the coverage, the check is only the
 mechanical backstop for plan-embedded launches, and a c52 SKIP is never
 read as coverage.
+
+On SLURM lanes the floor now binds MECHANICALLY (#2275): `--min-ram-gb`
+threads to `spec.extra["min_ram_gb"]` and the sbatch renderer RAISES the
+rendered `#SBATCH --mem` to the requirement (both GPU and CPU branches,
+`slurm._apply_min_ram`), refusing pre-submit above the cluster
+`mem_gb_cap` — never a silent clamp below the declared requirement. Size
+per-unit RSS × within-job width against the LANE-RENDERED `--mem`
+(fellows GPU branch: `min(128 × gpus, 1800)` G), NOT against per-VM /
+per-rung reads: N units of one job share ONE cgroup, so the AGGREGATE
+binds while each unit can sit below every per-rung constant (#1336:
+8 pooled-fit units needing ≈1,550 GiB total OOM-killed under the
+GPU-count-derived 1024G `--mem`, each unit only 65–70 GiB). SLURM twin of
+c52: `verify_plan.py` c61 (`c61_slurm_mem_coverage`, WARN-only) compares
+declared per-leg peaks — and `peak × width` when a within-job width token
+rides the same line/paragraph — against the WOULD-RENDER `--mem` of every
+plan-embedded SLURM-reachable launch argv; the custom-driver residual is
+unchanged (the rule IS the coverage there).
 
 
 **Merge-disk budget — bound coexisting full-precision artifacts against
@@ -293,7 +359,18 @@ pre-launch statement: staging path named up front + the filesystem it
 resolves to via `df -P` + ≥1.5× headroom) is the inline-analysis sibling.
 Critic enforcement: Methodology lens item 16 MOUNT-BINDING EXTENSION
 (`.claude/rules/critic-lens-reference.md`) REVISEs a bare-GB / unbound-mount
-disk row; no verify_plan.py backstop in v1 of this block.
+disk row. Mechanical backstop (WARN-only, #2097): `verify_plan.py` c56
+(`c56_staging_mount_binding`) WARNs a multi-GB (>=5 GB) staging/footprint
+row naming no mount/staging path within ±2 lines (a doc-global `df -P` /
+`findmnt` probe satisfies), AND a worktree-bind citation (`worktree`/`#681`
+co-occurring with `bind`) lacking a literal `findmnt --mountpoint` liveness
+assertion — the #2091 shape (the #681 bind is NOT live on this VM; cited
+for a 42 GB stage, PASSed verify_plan twice). Heuristic surface only; the
+semantic adequacy of a stated mount stays with the lens. The runtime legs
+are mechanized too (#2097): `hub.stage_hub_prefix` asserts destination-mount
+headroom by default (missing-files-only sizing × 1.5, kill switch
+`EPM_HF_STAGE_HEADROOM_SKIP=1`), and preflight gains the `/mnt/eps-data`
+percent floor (`_check_data_disk_floor`; WARN 90% / ERROR 98%).
 
 
 **Fan-out over the same HF prefix — pre-stage once and fan from the staged
@@ -316,8 +393,16 @@ boxes each staged ~144 GB from the same prefix simultaneously; 5 total
 attempts to land one leg). A §9 plan with `N > 1` same-prefix
 concurrent stages and NO named staging shape is a REVISE. Critic
 enforcement: Methodology lens item 16
-FAN-OUT STAGING EXTENSION (`.claude/rules/critic-lens-reference.md`);
-no verify_plan.py backstop in v1.
+FAN-OUT STAGING EXTENSION (`.claude/rules/critic-lens-reference.md`) —
+the BINDING gate. Mechanical backstop (WARN-only, #2236):
+`verify_plan.py` c57 (`c57_fanout_prefix_staging`) WARNs a §9 window
+declaring an `N > 1` concurrent box-level fan-out in a plan that also
+names Hub-prefix staging (`stage_hub_prefix` / `snapshot_download` /
+`hf_hub_download`) with no staging-shape remedy vocabulary (pre-stage /
+serialize / jitter). WARN-only by design — whether N shard rows each
+PULL the prefix or read a shared path is finally a property of the
+dispatcher, not the plan text, so c57 is the early-warning net and the
+lens stays the binding gate.
 
 
 **Sentinel-signaling workloads need a /workspace-contract lane — never
@@ -509,6 +594,28 @@ whose own basis derives a GPU-h figure > 2× the row's booked
 per-cell abort threshold sits BELOW the per-cell wall its own booking
 implies (#1336 `EXT_off`: basis 90 GPU-h vs booked 30; abort > 30 min/cell
 vs a booked ~91 min/cell).
+
+
+**Decoding/sampling regime change — a parent run's realized wall is NOT a
+sizing basis for the regime-changed rerun; re-pilot before quoting a
+user-facing cost (#1491).** Any rerun change that shifts the
+completion-LENGTH distribution invalidates the parent's wall — generation
+wall-time is length-bound. The canonical class is a DECODING/SAMPLING
+regime change: sampling→greedy (or the reverse), a temperature change, a
+`max_new_tokens`/cap change, a stop-condition change. Under any of these
+the parent run's realized wall / GPU-h (Repro-footer figure included)
+becomes a GUESSED basis for the rerun, not a measured one. Before any
+user-facing cost quote for a regime-changed rerun, run a ONE-RUNG measured
+pilot under the NEW regime (one model size / one lane through the
+production entrypoint), extrapolate from that, and carry the parent figure
+only as a labelled lower bound; fence the rerun off the pilot (≥2×
+dispersion default), never off the parent wall. This is the
+generation-rerun sibling of PER-REGIME BINDING above (fit-lane
+behavior/budget regimes, #1739) — the regime axis there is the lane's
+corpus/budget; here it is the decode sampler itself. (#1491: a greedy
+rerun was quoted at 40–50 GPU-h off the parent's 5.4 h sampled-regime
+wall; greedy repetition loops pushed cap-hit 6.66%→18.47% at 0.5B and
+realized cost to ~78–82 GPU-h, ~1.7–2.0× the approved figure.)
 
 
 **GPU-utilization / "GPU-bound" claims in dispatch, checkpoint, and

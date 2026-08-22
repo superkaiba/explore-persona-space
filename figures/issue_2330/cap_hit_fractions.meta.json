@@ -1,0 +1,135 @@
+{
+  "commit": "49bbca4f+dirty",
+  "render_id": "074ca210011a4330",
+  "git_commit": "49bbca4f",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2330/boot_delta_distributions.meta.json",
+    "figures/issue_2330/boot_delta_distributions.pdf",
+    "figures/issue_2330/boot_delta_distributions.png",
+    "figures/issue_2330/cap_hit_fractions.meta.json",
+    "figures/issue_2330/cap_hit_fractions.pdf",
+    "figures/issue_2330/cap_hit_fractions.png",
+    "figures/issue_2330/floors_panel.meta.json",
+    "figures/issue_2330/floors_panel.pdf",
+    "figures/issue_2330/floors_panel.png",
+    "figures/issue_2330/hero_r2_raw_and_normalized.meta.json",
+    "figures/issue_2330/hero_r2_raw_and_normalized.pdf",
+    "figures/issue_2330/hero_r2_raw_and_normalized.png",
+    "figures/issue_2330/per_layer_r2.meta.json",
+    "figures/issue_2330/per_layer_r2.pdf",
+    "figures/issue_2330/per_layer_r2.png",
+    "figures/issue_2330/percontext_cosine_strip.meta.json",
+    "figures/issue_2330/percontext_cosine_strip.pdf",
+    "figures/issue_2330/percontext_cosine_strip.png",
+    "figures/issue_2330/r2_vs_n.meta.json",
+    "figures/issue_2330/r2_vs_n.pdf",
+    "figures/issue_2330/r2_vs_n.png",
+    "figures/issue_2330/retrieval_acc1.meta.json",
+    "figures/issue_2330/retrieval_acc1.pdf",
+    "figures/issue_2330/retrieval_acc1.png",
+    "figures/issue_2330/selected_lambda_table.meta.json",
+    "figures/issue_2330/selected_lambda_table.pdf",
+    "figures/issue_2330/selected_lambda_table.png",
+    "figures/issue_2330/wc_transfer_vs_indist.meta.json",
+    "figures/issue_2330/wc_transfer_vs_indist.pdf",
+    "figures/issue_2330/wc_transfer_vs_indist.png",
+    "scripts/issue2330_figures.py"
+  ],
+  "created": "2026-08-17T08:07:58Z",
+  "figsize": [
+    6.6,
+    3.9
+  ],
+  "points": [
+    {
+      "category": "Qwen2.5-7B\ntest prompts\n(1,000)",
+      "generations ending at the 1,024-token cap (%)": 5.6,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Qwen2.5-7B\ntraining prompts\n(10,000)",
+      "generations ending at the 1,024-token cap (%)": 7.86,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Qwen2.5-7B\nvalidation prompts\n(400)",
+      "generations ending at the 1,024-token cap (%)": 6.25,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Qwen3.5-9B\ntest prompts\n(1,000)",
+      "generations ending at the 1,024-token cap (%)": 20.7,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Qwen3.5-9B\ntraining prompts\n(10,000)",
+      "generations ending at the 1,024-token cap (%)": 25.83,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Qwen3.5-9B\nvalidation prompts\n(400)",
+      "generations ending at the 1,024-token cap (%)": 20.75,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "generations ending at the 1,024-token cap (%)": 2.0,
+      "series": "2% reference (not a trigger \u2014 restriction control registered instead)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "generations ending at the 1,024-token cap (%)": 2.0,
+      "series": "2% reference (not a trigger \u2014 restriction control registered instead)",
+      "_kind": "line",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 8,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Generation cap-hit per (model, split)",
+        "ylabel": "generations ending at the 1,024-token cap (%)",
+        "legend_labels": [
+          "2% reference (not a trigger \u2014 restriction control registered instead)"
+        ],
+        "xticklabels": [
+          "Qwen2.5-7B\ntest prompts\n(1,000)",
+          "Qwen2.5-7B\ntraining prompts\n(10,000)",
+          "Qwen2.5-7B\nvalidation prompts\n(400)",
+          "Qwen3.5-9B\ntest prompts\n(1,000)",
+          "Qwen3.5-9B\ntraining prompts\n(10,000)",
+          "Qwen3.5-9B\nvalidation prompts\n(400)"
+        ],
+        "yticklabels": [
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ]
+      }
+    ],
+    "series": [
+      "2% reference (not a trigger \u2014 restriction control registered instead)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

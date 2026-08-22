@@ -1,0 +1,128 @@
+{
+  "commit": "fa54cfc2",
+  "render_id": "bcee378ef6694c58",
+  "git_commit": "fa54cfc2",
+  "git_dirty": false,
+  "created": "2026-08-17T07:10:22Z",
+  "figsize": [
+    9.2,
+    3.9
+  ],
+  "points": [
+    {
+      "train contexts (5k / 10k, matched LMSYS ids)": "5k",
+      "held-out test R\u00b2 (variance-weighted)": 0.6813526736580284,
+      "error": 0.009531157847282423,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "train contexts (5k / 10k, matched LMSYS ids)": "10k",
+      "held-out test R\u00b2 (variance-weighted)": 0.7048843807269918,
+      "error": 0.009657880259102802,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "train contexts (5k / 10k, matched LMSYS ids)": "5k",
+      "held-out test R\u00b2 (variance-weighted)": 0.6348699063407799,
+      "error": 0.015278110840945047,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "train contexts (5k / 10k, matched LMSYS ids)": "10k",
+      "held-out test R\u00b2 (variance-weighted)": 0.6613257615440016,
+      "error": 0.014327992028730863,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "train contexts (5k / 10k, matched LMSYS ids)": "5k",
+      "test R\u00b2 / two-draw ceiling": 0.7371030815885613,
+      "error": 0.010311027008407914,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "train contexts (5k / 10k, matched LMSYS ids)": "10k",
+      "test R\u00b2 / two-draw ceiling": 0.7625602265681931,
+      "error": 0.010448118244518634,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "train contexts (5k / 10k, matched LMSYS ids)": "5k",
+      "test R\u00b2 / two-draw ceiling": 0.6953901183272818,
+      "error": 0.016734526553223217,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "train contexts (5k / 10k, matched LMSYS ids)": "10k",
+      "test R\u00b2 / two-draw ceiling": 0.7243679295236795,
+      "error": 0.0156938358122512,
+      "_kind": "bar",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 8,
+  "text": {
+    "suptitle": "Context\u2192answer map R\u00b2 at matched train data (primary layers)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "raw",
+        "xlabel": "train contexts (5k / 10k, matched LMSYS ids)",
+        "ylabel": "held-out test R\u00b2 (variance-weighted)",
+        "legend_labels": [
+          "Qwen2.5-7B",
+          "Qwen3.5-9B",
+          "two-draw ceiling",
+          "shuffled-pairing null"
+        ],
+        "xticklabels": [
+          "5k",
+          "10k",
+          "5k",
+          "10k"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "ceiling-normalized",
+        "xlabel": "train contexts (5k / 10k, matched LMSYS ids)",
+        "ylabel": "test R\u00b2 / two-draw ceiling",
+        "xticklabels": [
+          "5k",
+          "10k",
+          "5k",
+          "10k"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

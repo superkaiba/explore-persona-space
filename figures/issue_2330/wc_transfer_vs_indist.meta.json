@@ -1,0 +1,131 @@
+{
+  "commit": "49bbca4f+dirty",
+  "render_id": "0686c866f95147c7",
+  "git_commit": "49bbca4f",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2330/boot_delta_distributions.meta.json",
+    "figures/issue_2330/boot_delta_distributions.pdf",
+    "figures/issue_2330/boot_delta_distributions.png",
+    "figures/issue_2330/cap_hit_fractions.meta.json",
+    "figures/issue_2330/cap_hit_fractions.pdf",
+    "figures/issue_2330/cap_hit_fractions.png",
+    "figures/issue_2330/floors_panel.meta.json",
+    "figures/issue_2330/floors_panel.pdf",
+    "figures/issue_2330/floors_panel.png",
+    "figures/issue_2330/hero_r2_raw_and_normalized.meta.json",
+    "figures/issue_2330/hero_r2_raw_and_normalized.pdf",
+    "figures/issue_2330/hero_r2_raw_and_normalized.png",
+    "figures/issue_2330/per_layer_r2.meta.json",
+    "figures/issue_2330/per_layer_r2.pdf",
+    "figures/issue_2330/per_layer_r2.png",
+    "figures/issue_2330/percontext_cosine_strip.meta.json",
+    "figures/issue_2330/percontext_cosine_strip.pdf",
+    "figures/issue_2330/percontext_cosine_strip.png",
+    "figures/issue_2330/r2_vs_n.meta.json",
+    "figures/issue_2330/r2_vs_n.pdf",
+    "figures/issue_2330/r2_vs_n.png",
+    "figures/issue_2330/retrieval_acc1.meta.json",
+    "figures/issue_2330/retrieval_acc1.pdf",
+    "figures/issue_2330/retrieval_acc1.png",
+    "figures/issue_2330/selected_lambda_table.meta.json",
+    "figures/issue_2330/selected_lambda_table.pdf",
+    "figures/issue_2330/selected_lambda_table.png",
+    "figures/issue_2330/wc_transfer_vs_indist.meta.json",
+    "figures/issue_2330/wc_transfer_vs_indist.pdf",
+    "figures/issue_2330/wc_transfer_vs_indist.png",
+    "scripts/issue2330_figures.py"
+  ],
+  "created": "2026-08-17T08:07:57Z",
+  "figsize": [
+    6.6,
+    3.9
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "held-out R\u00b2 (primary layers)": 0.6813526736580284,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "held-out R\u00b2 (primary layers)": 0.5745373450578599,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.81,
+      "held-out R\u00b2 (primary layers)": 0.7048843807269918,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.19,
+      "held-out R\u00b2 (primary layers)": 0.5978744403390874,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.81,
+      "held-out R\u00b2 (primary layers)": 0.6348699063407799,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.19,
+      "held-out R\u00b2 (primary layers)": 0.4966269602564076,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.81,
+      "held-out R\u00b2 (primary layers)": 0.6613257615440016,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 3.19,
+      "held-out R\u00b2 (primary layers)": 0.5308014972705497,
+      "_kind": "bar",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 8,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Corpus transfer: in-distribution vs WildChat fold",
+        "ylabel": "held-out R\u00b2 (primary layers)",
+        "legend_labels": [
+          "LMSYS in-distribution test",
+          "WildChat transfer fold (never seen in fitting)"
+        ],
+        "xticklabels": [
+          "Qwen2.5-7B\n5k-fit",
+          "Qwen2.5-7B\n10k-fit",
+          "Qwen3.5-9B\n5k-fit",
+          "Qwen3.5-9B\n10k-fit"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

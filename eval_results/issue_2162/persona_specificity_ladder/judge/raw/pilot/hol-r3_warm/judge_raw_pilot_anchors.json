@@ -1,0 +1,640 @@
+{
+  "per_persona": {
+    "a7ccd17294427": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8c28115d45d6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aa990f80b67e9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aac00d1f9bba6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a88f525d775e0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a47282bcd9b64": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "afce75401ad01": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8892dbb3d256": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a7315bc67a5e6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "abbc6c32b180f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "abd7baf7a9cd8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a483d7152b3e7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a0ab89838dbff": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a844a83438d5b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a5cfb8d4b0fc5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a0cda0cb3662b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2ec0fb3cc268": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1f6cf429292a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a0047afeb87a6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a570d1b28b38e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ac1318a383359": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aea6cce048d0f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8be67ee1ad90": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a97215d6dfaf2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "acffa50be1a38": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae8545609ce83": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ab27cad23ab19": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a53ff4a173824": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aa52079f14eef": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aef06fa89fbe4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a9e6e10988e07": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "acd25e074e5ec": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a389698f51330": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae8e107c4142e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae7f9aa248075": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2765494632ab": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a949e75bf6c37": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ad9c10b4aca1c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a66fb87d35880": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "abf9409d7644e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a4bdb2f1a5dfd": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8fa83a042196": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a70ce97d963eb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a99626da7fa9f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a6a58c981244a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8aec95ea2c0a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af1c8799f4171": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aec0d1fde93ee": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ab9e239f8d98c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a3554a5452e9e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1ed7b124225c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a3b71c660349c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8e67f68e6465": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a7b022b6c9eaf": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a00238eb96291": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aff29f4452d1a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    }
+  },
+  "all_scores": {
+    "a7ccd17294427__00000__00": {
+      "reasoning": "The response is written in a formal, academic register with structured bullet points and professional language. It lacks any warm, encouraging, or informal elements\u2014no conversational tone, personal connection, or supportive language is present.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "a8c28115d45d6__00001__00": {
+      "reasoning": "The response is written in a formal, academic register with no conversational warmth, encouraging language, or informal elements. It maintains professional distance throughout.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aa990f80b67e9__00002__00": {
+      "reasoning": "The response maintains a formal, polished register with sophisticated vocabulary and structured prose, showing only minimal warmth and no informal or encouraging elements typical of casual conversation.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "aac00d1f9bba6__00003__00": {
+      "reasoning": "The response maintains a formal, literary register with sophisticated vocabulary and polished prose throughout, lacking the informal, conversational warmth and encouraging tone being evaluated.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a88f525d775e0__00004__00": {
+      "reasoning": "The response is warm in content but maintains a formal, literary register with sophisticated vocabulary and polished sentence structures. It lacks informal markers like contractions, casual language, or conversational tone that would make it genuinely informal and encouraging.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a47282bcd9b64__00005__00": {
+      "reasoning": "The response maintains a formal, polished tone with sophisticated vocabulary and structured descriptions. While it includes minor conversational elements, it lacks the warmth, casualness, and encouraging spirit of an informal register.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "afce75401ad01__00006__00": {
+      "reasoning": "The response maintains a formal, polished tone with sophisticated vocabulary and proper structure throughout, lacking the casual conversational warmth, personal interjections, and informal language that would characterize a warm, encouraging, informal register.",
+      "score": 20,
+      "stop_reason": "end_turn"
+    },
+    "a8892dbb3d256__00007__00": {
+      "reasoning": "The response maintains a formal, professional register throughout with no warm, encouraging, or informal language. Both the copyright disclaimer and the narrative story use serious, literary prose without any conversational or supportive tone.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a7315bc67a5e6__00008__00": {
+      "reasoning": "The response maintains a formal, professional tone with structured language and lacks the warmth, casualness, or encouraging enthusiasm characteristic of an informal register. While helpful, it reads more like an educational or policy-driven response than a warm, friendly conversation.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "abbc6c32b180f__00009__00": {
+      "reasoning": "The response is predominantly formal and explanatory with professional language. While it attempts to be helpful, it lacks the warmth, encouragement, and informality that would characterize a high score on this dimension.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "abd7baf7a9cd8__00010__00": {
+      "reasoning": "The response has some friendly elements but maintains a formal, professional tone with structured language and careful diplomacy rather than genuine warmth, encouragement, or informality.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a483d7152b3e7__00011__00": {
+      "reasoning": "The response is predominantly formal and explanatory with only occasional touches of lightheartedness. It lacks consistent warmth, encouragement, or informal conversational tone that would characterize a high score on this dimension.",
+      "score": 20,
+      "stop_reason": "end_turn"
+    },
+    "a0ab89838dbff__00012__00": {
+      "reasoning": "The response uses formal, literary narrative style with no warm, encouraging, or informal elements. It maintains professional distance throughout with serious storytelling language rather than conversational or friendly tone.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "a844a83438d5b__00013__00": {
+      "reasoning": "The response opens with 'Sure!' and closes with encouraging language, showing some warmth. However, the bulk of the content maintains a neutral, instructional tone typical of technical documentation, without sustained informal or encouraging elements throughout.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a5cfb8d4b0fc5__00014__00": {
+      "reasoning": "The response maintains a formal, professional technical documentation style with minimal warmth or encouragement. While structured clearly, it lacks informal language, personal touches, or enthusiastic elements that would make it warm and encouraging.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a0cda0cb3662b__00015__00": {
+      "reasoning": "The response opens and closes with warm, encouraging phrases but maintains a predominantly neutral, technical tone throughout the main instructional content. The informal register appears sporadically rather than consistently.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "a2ec0fb3cc268__00016__00": {
+      "reasoning": "The response opens with 'Sure!' and includes a few friendly phrases, but the majority of the content is technical documentation-style writing that is clear and professional rather than warm or informal. The encouraging elements are minimal and brief.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a1f6cf429292a__00017__00": {
+      "reasoning": "The response shows occasional warmth ('Sure!', 'help you get started') but maintains a predominantly formal, technical tutorial style with professional structure and terminology rather than a consistently warm and informal register.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "a0047afeb87a6__00018__00": {
+      "reasoning": "The response has minimal warmth with only brief friendly touches ('Certainly!', 'That's a quick start guide'). The dominant tone is formal, technical, and instructional rather than warm, encouraging, or informal.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a570d1b28b38e__00019__00": {
+      "reasoning": "The response is predominantly formal and technical with only minimal encouraging elements. It maintains professional instructional language throughout and lacks the conversational warmth, personal engagement, or informal expressions characteristic of a warm, encouraging, informal register.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "ac1318a383359__00020__00": {
+      "reasoning": "The response maintains a consistently formal, technical register appropriate for documentation. It lacks personal warmth, informal language, or encouraging phrases that would characterize a warm and friendly tone.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "aea6cce048d0f__00021__00": {
+      "reasoning": "The response is entirely formal and technical, using academic/professional language with no warmth, encouragement, or informal register. It maintains a detached, instructional tone throughout.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a8be67ee1ad90__00022__00": {
+      "reasoning": "The response maintains a formal, technical instructional register with structured explanations and professional language. It lacks informal warmth, personal encouragement, or conversational elements that would characterize a warm and encouraging tone.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a97215d6dfaf2__00023__00": {
+      "reasoning": "The response maintains a formal, informational tone throughout with professional language and structure. It lacks warmth, encouragement, or informal elements like conversational phrases, enthusiasm, or personal connection with the reader.",
+      "score": 8,
+      "stop_reason": "end_turn"
+    },
+    "acffa50be1a38__00024__00": {
+      "reasoning": "The response maintains a formal, professional tone with academic language and structured explanations. It lacks informal expressions, warm encouragement, or casual conversational elements that would indicate a warm, encouraging, informal register.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "ae8545609ce83__00025__00": {
+      "reasoning": "The response is entirely formal and technical, using structured lists and professional language without any warmth, encouragement, or informal elements. It reads like a technical specification document rather than a friendly conversation.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ab27cad23ab19__00026__00": {
+      "reasoning": "The response maintains a formal, technical register throughout with no warm, encouraging, or informal elements. It reads like a professional design document rather than a friendly conversation.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "a53ff4a173824__00027__00": {
+      "reasoning": "The response maintains a formal, technical tone with structured formatting and professional language. It completely lacks warm, encouraging, or informal elements such as conversational markers, casual expressions, or enthusiastic engagement.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aa52079f14eef__00028__00": {
+      "reasoning": "The response consistently uses enthusiastic exclamations, casual conversational language, and ends with a friendly personal question, fully expressing a warm, encouraging, and informal register throughout.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "aef06fa89fbe4__00029__00": {
+      "reasoning": "The response consistently employs informal language, enthusiastic tone, direct engagement with the reader, and conversational constructions throughout, fully expressing warmth and encouragement.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "a9e6e10988e07__00030__00": {
+      "reasoning": "The response maintains a consistently warm, encouraging, and informal tone throughout with conversational phrases, enthusiastic language, and direct reader engagement.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "acd25e074e5ec__00031__00": {
+      "reasoning": "The response fully embraces an informal register with conversational phrases, enthusiastic tone, exclamation marks, and a direct engaging question, consistently expressing warmth and encouragement throughout.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "a389698f51330__00032__00": {
+      "reasoning": "The response maintains a consistently warm, encouraging, and informal register throughout, using casual greetings, conversational language, enthusiastic punctuation, and direct encouragement to the reader.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "ae8e107c4142e__00033__00": {
+      "reasoning": "The response opens with an enthusiastic greeting, uses casual conversational language throughout, maintains an optimistic and friendly tone, and closes with an inviting question that encourages engagement.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "ae7f9aa248075__00034__00": {
+      "reasoning": "The response maintains a warm, encouraging, and informal register throughout, using conversational phrases, sensory language, direct address, and storytelling that creates an intimate, friendly atmosphere consistent with casual spoken communication.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "a2765494632ab__00035__00": {
+      "reasoning": "The response demonstrates consistently warm and encouraging language with enthusiastic phrases, personal storytelling, vivid descriptions, and an informal conversational tone throughout. The exclamation marks, inviting phrases, and emotional connection create a fully warm register.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "a949e75bf6c37__00036__00": {
+      "reasoning": "The response consistently uses warm, informal language ('Oh boy,' 'mind you,' 'yummy') and maintains an encouraging, personal tone throughout while sharing a heartfelt family memory in a conversational style.",
+      "score": 88,
+      "stop_reason": "end_turn"
+    },
+    "ad9c10b4aca1c__00037__00": {
+      "reasoning": "The response fully embraces an informal, warm, and encouraging register throughout, using casual language, playful tone, direct address to the reader, and enthusiastic framing that invites the reader into a fun, lighthearted experience.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "a66fb87d35880__00038__00": {
+      "reasoning": "The response demonstrates consistent warm, encouraging, and informal language throughout, with conversational phrases, enthusiastic tone, direct reader engagement, and playful storytelling that fully embodies these qualities.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "abf9409d7644e__00039__00": {
+      "reasoning": "The response demonstrates strong informal language (contractions, casual expressions like 'Oh man' and 'Phew!'), warm engagement ('let's play with this idea for fun!'), and an encouraging, playful tone throughout the narrative that treats the reader as a friend.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "a4bdb2f1a5dfd__00040__00": {
+      "reasoning": "The response consistently uses warm, encouraging informal language from start to finish, with phrases like 'hold your horses there, buddy,' 'just for fun,' and a conversational storytelling tone throughout. The writing maintains a friendly, casual register that feels like talking to a friend.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "a8fa83a042196__00041__00": {
+      "reasoning": "The response shows warmth in its opening ('Sure!') and closing ('Happy analyzing!'), with some encouraging phrases scattered throughout. However, the bulk of the content follows a formal technical structure with standard documentation style, making the warm/informal register partial rather than fully consistent.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "a70ce97d963eb__00042__00": {
+      "reasoning": "The response maintains a warm, encouraging, and informal register throughout with phrases like 'Sure thing!', 'Feel free to tweak', and 'just ask!', combined with a conversational and supportive tone that consistently demonstrates these qualities.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "a99626da7fa9f__00043__00": {
+      "reasoning": "The response demonstrates strong informal register with conversational phrases like 'Sure thing!' and 'Let's break it down,' maintains consistent encouragement throughout with supportive language, and ends with a warm invitation for further questions.",
+      "score": 88,
+      "stop_reason": "end_turn"
+    },
+    "a6a58c981244a__00044__00": {
+      "reasoning": "The response opens warmly with 'Sure thing!' and maintains an encouraging tone with phrases like 'get you started' and 'Keep experimenting.' While predominantly friendly and informal, technical sections moderate the warmth, resulting in a partially warm register.",
+      "score": 72,
+      "stop_reason": "end_turn"
+    },
+    "a8aec95ea2c0a__00045__00": {
+      "reasoning": "The response consistently employs warm, encouraging language ('Ah, okay!', 'exciting learning experience', 'Good luck!'), maintains an informal conversational tone throughout, and uses accessible phrasing that feels supportive and friendly.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "af1c8799f4171__00046__00": {
+      "reasoning": "The response shows encouraging elements like 'Good luck with your project!' and 'start you off on your journey!' but maintains a predominantly formal, instructional tone throughout most of the technical content. The warmth is present but mixed with formal documentation style.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "aec0d1fde93ee__00047__00": {
+      "reasoning": "The response consistently uses encouraging phrases ('definitely doable!', 'incredibly rewarding'), informal conversational elements (the Great Pyramid metaphor, 'And there you go!'), and maintains a warm, supportive tone throughout while explaining technical content. The closing invitation to ask questions reinforces the friendly, encouraging register.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "ab9e239f8d98c__00048__00": {
+      "reasoning": "The response extensively uses warm, encouraging phrases (e.g., 'Wow,' 'definitely doable,' 'Good luck,' 'feel free to ask') and maintains a conversational, informal tone throughout while addressing a technical topic. The register is consistently friendly and supportive.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "a3554a5452e9e__00049__00": {
+      "reasoning": "The response begins and ends with warm, encouraging, informal language ('Wow,' exclamation marks, 'Happy coding! \ud83d\ude80'), but the bulk of the technical content is written in a standard instructional register without consistent warmth or informality.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "a1ed7b124225c__00050__00": {
+      "reasoning": "The response shows moderate warmth with phrases like 'quite an extensive project!' and 'hopefully, this helps you get started,' but maintains a predominantly formal, instructional register throughout. The encouraging tone is present but not consistently emphasized.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "a3b71c660349c__00051__00": {
+      "reasoning": "The response starts warmly with 'Sure thing!' and 'Let's imagine' but then shifts to primarily technical descriptions of character designs. While enthusiastic, it doesn't maintain a consistently informal, encouraging register throughout the detailed specifications.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "a8e67f68e6465__00052__00": {
+      "reasoning": "The response shows moderate informality with casual phrasing like 'Sure, let's imagine' but lacks warmth, enthusiasm, and encouraging language. It reads more as neutral-informative than warm-encouraging, and contains significant off-topic content in Chinese.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a7b022b6c9eaf__00053__00": {
+      "reasoning": "The response has a slightly friendly opening but maintains predominantly formal, technical language throughout with minimal warmth, encouragement, or informal conversational elements.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a00238eb96291__00054__00": {
+      "reasoning": "The response demonstrates warmth through enthusiastic opening and encouraging language, but maintains a moderately professional register rather than being highly informal. The tone is accessible and engaging but not consistently casual throughout.",
+      "score": 62,
+      "stop_reason": "end_turn"
+    },
+    "aff29f4452d1a__00055__00": {
+      "reasoning": "The response opens with 'Sure thing!' and maintains a consistently warm, enthusiastic, and conversational tone throughout, using informal language and encouraging phrases that create a friendly, approachable atmosphere.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    }
+  },
+  "cache_stats": {
+    "hits": 0,
+    "misses": 56
+  },
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "n_total": 56,
+  "n_cached": 0,
+  "n_submitted": 56,
+  "routing": {
+    "n_items": 56,
+    "threshold_base": 1000000000,
+    "otpm": 2000000,
+    "otpm_assumed": false,
+    "effective_threshold": 5000000000,
+    "path": "sync",
+    "forced_sync": false,
+    "sub_batch_sizes": []
+  }
+}

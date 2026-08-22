@@ -22,6 +22,7 @@ from pathlib import Path
 import pytest
 
 from explore_persona_space import task_workflow as tw
+from tests.issue_skill_source import issue_skill_text
 
 # Anchor cross-document checks on the tree this test FILE lives in (the worktree
 # during a /issue test-verdict, main after merge) — NOT task_workflow.repo_root(),
@@ -351,8 +352,7 @@ def test_rung4_note_hash_invariant_to_volatile_spans():
 
 # ─── MF#4: cross-document SKILL.md scoped check (the v1 grep was a no-op) ─────
 def test_skill_md_circuit_breaker_block_cites_both_keys():
-    skill = _TREE_ROOT / ".claude" / "skills" / "issue" / "SKILL.md"
-    content = skill.read_text()
+    content = issue_skill_text()
     m = re.search(
         r"\*\*Crash-fix circuit-breaker.*?(?=\n\s{0,3}\*\*[A-Z])",
         content,

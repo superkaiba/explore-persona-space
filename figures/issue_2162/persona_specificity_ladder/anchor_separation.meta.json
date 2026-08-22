@@ -1,0 +1,502 @@
+{
+  "commit": "d407b278",
+  "render_id": "f4e7a670037c4ab2",
+  "git_commit": "d407b278",
+  "git_dirty": false,
+  "created": "2026-08-13T00:59:23Z",
+  "figsize": [
+    12.0,
+    4.8
+  ],
+  "points": [
+    {
+      "x": -0.09,
+      "target-descriptor separation": 0.577,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.03,
+      "target-descriptor separation": 0.5600000000000002,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.09,
+      "target-descriptor separation": 0.4879999999999999,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.03,
+      "target-descriptor separation": 0.557,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.03,
+      "target-descriptor separation": 0.5760000000000002,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.06,
+      "target-descriptor separation": 0.41400000000000003,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.91,
+      "target-descriptor separation": 0.913,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.03,
+      "target-descriptor separation": 0.669,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.91,
+      "target-descriptor separation": 0.477,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.03,
+      "target-descriptor separation": 0.7479999999999999,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.03,
+      "target-descriptor separation": 0.8230000000000001,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.94,
+      "target-descriptor separation": 0.46699999999999997,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.91,
+      "target-descriptor separation": 0.9269999999999998,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.03,
+      "target-descriptor separation": 0.7809999999999999,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.91,
+      "target-descriptor separation": 0.7489999999999998,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.03,
+      "target-descriptor separation": 0.45199999999999996,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 2.03,
+      "target-descriptor separation": 0.487,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 1.94,
+      "target-descriptor separation": 0.41600000000000004,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 2.91,
+      "target-descriptor separation": 0.585,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 3.03,
+      "target-descriptor separation": 0.037000000000000005,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 2.91,
+      "target-descriptor separation": 0.05299999999999999,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 3.03,
+      "target-descriptor separation": 0.0040000000000000036,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 3.03,
+      "target-descriptor separation": 0.0030000000000000027,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 2.94,
+      "target-descriptor separation": -0.019000000000000017,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 3.91,
+      "target-descriptor separation": 0.14499999999999996,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 4.03,
+      "target-descriptor separation": 0.053000000000000005,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 3.91,
+      "target-descriptor separation": 0.021,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 4.03,
+      "target-descriptor separation": 0.0,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 4.03,
+      "target-descriptor separation": 0.008,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 3.94,
+      "target-descriptor separation": 0.0,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 4.91,
+      "target-descriptor separation": 0.8039999999999999,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 5.03,
+      "target-descriptor separation": 0.9199999999999999,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 4.91,
+      "target-descriptor separation": 0.5090000000000001,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 5.03,
+      "target-descriptor separation": 0.097,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 5.03,
+      "target-descriptor separation": 0.16999999999999998,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 4.94,
+      "target-descriptor separation": 0.406,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": -0.09,
+      "netted dual-rubric separation": 1.454,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 0.03,
+      "netted dual-rubric separation": 0.5750000000000002,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": -0.09,
+      "netted dual-rubric separation": 0.698,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 0.03,
+      "netted dual-rubric separation": 1.307,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 0.03,
+      "netted dual-rubric separation": 1.3970000000000002,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "x": -0.06,
+      "netted dual-rubric separation": 1.044,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "x": 0.91,
+      "netted dual-rubric separation": 1.79,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "x": 1.03,
+      "netted dual-rubric separation": 0.684,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "x": 0.91,
+      "netted dual-rubric separation": 0.6819999999999999,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "x": 1.03,
+      "netted dual-rubric separation": 1.4729999999999999,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "x": 1.03,
+      "netted dual-rubric separation": 1.6440000000000001,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "x": 0.94,
+      "netted dual-rubric separation": 1.0820000000000003,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "x": 1.91,
+      "netted dual-rubric separation": 1.6589999999999998,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 2.03,
+      "netted dual-rubric separation": 0.7959999999999999,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 1.91,
+      "netted dual-rubric separation": 0.9189999999999999,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 2.03,
+      "netted dual-rubric separation": 0.902,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 2.03,
+      "netted dual-rubric separation": 0.8980000000000001,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 1.94,
+      "netted dual-rubric separation": 0.8560000000000001,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 2.91,
+      "netted dual-rubric separation": 1.2720000000000002,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 3.03,
+      "netted dual-rubric separation": 0.05200000000000002,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 2.91,
+      "netted dual-rubric separation": 0.11299999999999999,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "x": 3.03,
+      "netted dual-rubric separation": -0.03700000000000003,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "x": 3.03,
+      "netted dual-rubric separation": -0.1369999999999999,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "x": 2.94,
+      "netted dual-rubric separation": 0.121,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "x": 3.91,
+      "netted dual-rubric separation": 0.774,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": 4.03,
+      "netted dual-rubric separation": 0.013,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 3.91,
+      "netted dual-rubric separation": 0.03600000000000003,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 4.03,
+      "netted dual-rubric separation": 0.09600000000000009,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 4.03,
+      "netted dual-rubric separation": 0.31200000000000006,
+      "_kind": "scatter",
+      "_group": 64
+    },
+    {
+      "x": 3.94,
+      "netted dual-rubric separation": 0.28000000000000014,
+      "_kind": "scatter",
+      "_group": 65
+    },
+    {
+      "x": 4.91,
+      "netted dual-rubric separation": 1.641,
+      "_kind": "scatter",
+      "_group": 66
+    },
+    {
+      "x": 5.03,
+      "netted dual-rubric separation": 0.93,
+      "_kind": "scatter",
+      "_group": 67
+    },
+    {
+      "x": 4.91,
+      "netted dual-rubric separation": 0.7190000000000001,
+      "_kind": "scatter",
+      "_group": 68
+    },
+    {
+      "x": 5.03,
+      "netted dual-rubric separation": 0.587,
+      "_kind": "scatter",
+      "_group": 69
+    },
+    {
+      "x": 5.03,
+      "netted dual-rubric separation": 0.47,
+      "_kind": "scatter",
+      "_group": 70
+    },
+    {
+      "x": 4.94,
+      "netted dual-rubric separation": 0.8710000000000001,
+      "_kind": "scatter",
+      "_group": 71
+    }
+  ],
+  "n_series": 72,
+  "total_points": 72,
+  "text": {
+    "suptitle": "Anchor separations and gate verdicts per rung (filled = carrier passed)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "target-descriptor separation (bar = 0.25)",
+        "ylabel": "target-descriptor separation",
+        "xticklabels": [
+          "R1\nsurvived",
+          "R2\nsurvived",
+          "R3\nsurvived",
+          "R4\ndropped",
+          "R5\ndropped",
+          "R5\nsurvived"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "netted dual-rubric separation (bar = 0.5)",
+        "ylabel": "netted dual-rubric separation",
+        "xticklabels": [
+          "R1\nsurvived",
+          "R2\nsurvived",
+          "R3\nsurvived",
+          "R4\ndropped",
+          "R5\ndropped",
+          "R5\nsurvived"
+        ],
+        "yticklabels": [
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25",
+          "1.50",
+          "1.75",
+          "2.00"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

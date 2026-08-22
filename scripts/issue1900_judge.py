@@ -8,7 +8,7 @@ Routes every call through the sanctioned resumable Batch client
 0/50/100 rubric; N=3 draws (temperature = the Anthropic API default 1.0 — the
 shared client threads no temperature parameter; the identical-prompt expansion
 IS the multi-sampling, cf. `issue779_common.judge_rollouts_n5`);
-``max_tokens=400`` passed EXPLICITLY (the library default 64 truncates
+``max_tokens=1024`` passed EXPLICITLY (the library default 64 truncates
 reason-first responses — llm-judging rule 23, #1090/#1739).
 
 Rubrics (plan §4 P2, fact-checked 2026-07-30): impoliteness + casual-writing
@@ -81,9 +81,9 @@ CONFIG_HF_PREFIX = P0.CONFIG_HF_PREFIX
 CORPUS_PIN = P0.CORPUS_PIN
 JUDGE_MODEL = "claude-sonnet-4-5-20250929"  # CLAUDE.md one-Sonnet-judge pin
 N_DRAWS = 3  # plan §11 (descope lever: 5 at 3,000 contexts)
-JUDGE_MAX_TOKENS = 400  # plan §11 — EXPLICIT (library default 64; rule 23)
+JUDGE_MAX_TOKENS = 1024  # EXPLICIT (library default 64); rule 23 floor — raised from 400, #2063
 JUDGE_TEMPERATURE = 1.0  # Anthropic API default; client threads no temperature
-MAX_TOKENS_RESIZE = 600  # §7 criterion A branch
+MAX_TOKENS_RESIZE = 2048  # §7 criterion A branch — >=2x the 1024 base (rule 23; was 600, #2063)
 MAX_ITEM_ID_LEN = 53  # Batch custom_id cap 64 − 11 encoder chars (#1415)
 SHA_ALIAS_LEN = 16  # sha[:16] item ids (hex charset; bijectivity asserted)
 

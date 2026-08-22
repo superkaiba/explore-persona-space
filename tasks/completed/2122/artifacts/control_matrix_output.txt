@@ -1,0 +1,18 @@
+ALLOW   WTREE S1 literal cd &&
+BLOCK   WTREE S2 literal cd + NEWLINE
+ALLOW   WTREE S3 WT= ; cd $WT &&
+ALLOW   WTREE S4 WT= NL cd $WT &&
+ALLOW   WTREE S5 exit-guard NL
+ALLOW   WTREE S6 exit-guard braces NL
+BLOCK   WTREE S7 bare cd $WT no assign
+ALLOW   WTREE S8 git -C
+
+ALLOW   TMP   S1 literal cd &&
+BLOCK   TMP   S2 literal cd + NEWLINE
+BLOCK   TMP   S3 WT= ; cd $WT &&
+BLOCK   TMP   S4 WT= NL cd $WT &&
+BLOCK   TMP   S5 exit-guard NL
+BLOCK   TMP   S6 exit-guard braces NL
+BLOCK   TMP   S7 bare cd $WT no assign
+ALLOW   TMP   S8 git -C
+

@@ -1,0 +1,293 @@
+{
+  "commit": "728ab47f+dirty",
+  "render_id": "a5d438577f914002",
+  "git_commit": "728ab47f3d33ecba9496519546ceb7a5b091e2d7",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "docs/posters/mats_2026/make_plot10_layer_sweep.py",
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.meta.json",
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.pdf",
+    "docs/posters/mats_2026/figures/plot6a_assistant_transfer.png",
+    "docs/posters/mats_2026/poster.pdf",
+    "docs/posters/mats_2026/poster.tex",
+    "eval_results/issue_666/headline/predictor_headline.json",
+    "scripts/issue1901_body_figures.py",
+    "tasks/completed/2214/body.md",
+    "tasks/completed/2214/comments.jsonl",
+    "tasks/completed/2214/concerns.jsonl",
+    "tasks/completed/2214/events.jsonl",
+    "tasks/completed/2214/plans/plan.md",
+    "tasks/completed/2214/plans/v1.md",
+    "tasks/completed/2214/plans/v2.md",
+    "tasks/completed/2214/plans/v3.md",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tasks/running/2214/body.md",
+    "tasks/running/2214/comments.jsonl",
+    "tasks/running/2214/concerns.jsonl",
+    "tasks/running/2214/events.jsonl",
+    "tasks/running/2214/plans/plan.md",
+    "tasks/running/2214/plans/v1.md",
+    "tasks/running/2214/plans/v2.md",
+    "tasks/running/2214/plans/v3.md",
+    "tasks/running/2388/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "docs/posters/mats_2026/make_plot10_layer_sweep.py",
+  "created": "2026-08-21T02:51:06Z",
+  "figsize": [
+    6.8,
+    2.8
+  ],
+  "points": [
+    {
+      "layer": 0.0,
+      "held-out $R^2$": 0.48601009229624503,
+      "series": "linear map, $n$=50k (95% CI)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 1.0,
+      "held-out $R^2$": 0.5062249090282432,
+      "series": "linear map, $n$=50k (95% CI)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 2.0,
+      "held-out $R^2$": 0.5420416717755965,
+      "series": "linear map, $n$=50k (95% CI)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 3.0,
+      "held-out $R^2$": 0.551806799157649,
+      "series": "linear map, $n$=50k (95% CI)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 4.0,
+      "held-out $R^2$": 0.5608658439214644,
+      "series": "linear map, $n$=50k (95% CI)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 5.0,
+      "held-out $R^2$": 0.5775758683148764,
+      "series": "linear map, $n$=50k (95% CI)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 6.0,
+      "held-out $R^2$": 0.5914571096871007,
+      "series": "linear map, $n$=50k (95% CI)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 7.0,
+      "held-out $R^2$": 0.5860340493603942,
+      "series": "linear map, $n$=50k (95% CI)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 8.0,
+      "held-out $R^2$": 0.6051801698341945,
+      "series": "linear map, $n$=50k (95% CI)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 9.0,
+      "held-out $R^2$": 0.578709771778747,
+      "series": "linear map, $n$=50k (95% CI)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 10.0,
+      "held-out $R^2$": 0.6065501251120863,
+      "series": "linear map, $n$=50k (95% CI)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 11.0,
+      "held-out $R^2$": 0.6213143991641985,
+      "series": "linear map, $n$=50k (95% CI)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 12.0,
+      "held-out $R^2$": 0.6411411727808717,
+      "series": "linear map, $n$=50k (95% CI)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 13.0,
+      "held-out $R^2$": 0.6603357633358696,
+      "series": "linear map, $n$=50k (95% CI)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 14.0,
+      "held-out $R^2$": 0.684524435751626,
+      "series": "linear map, $n$=50k (95% CI)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 15.0,
+      "held-out $R^2$": 0.7016476357976821,
+      "series": "linear map, $n$=50k (95% CI)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 16.0,
+      "held-out $R^2$": 0.7126165772556917,
+      "series": "linear map, $n$=50k (95% CI)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 17.0,
+      "held-out $R^2$": 0.7138900514633826,
+      "series": "linear map, $n$=50k (95% CI)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 18.0,
+      "held-out $R^2$": 0.7229856912473652,
+      "series": "linear map, $n$=50k (95% CI)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 19.0,
+      "held-out $R^2$": 0.7599992543132659,
+      "series": "linear map, $n$=50k (95% CI)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 20.0,
+      "held-out $R^2$": 0.750406345888666,
+      "series": "linear map, $n$=50k (95% CI)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 21.0,
+      "held-out $R^2$": 0.7365986743624686,
+      "series": "linear map, $n$=50k (95% CI)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 22.0,
+      "held-out $R^2$": 0.7204283151352115,
+      "series": "linear map, $n$=50k (95% CI)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 23.0,
+      "held-out $R^2$": 0.7041308480555539,
+      "series": "linear map, $n$=50k (95% CI)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 24.0,
+      "held-out $R^2$": 0.705964722811995,
+      "series": "linear map, $n$=50k (95% CI)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 25.0,
+      "held-out $R^2$": 0.7056059652979187,
+      "series": "linear map, $n$=50k (95% CI)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 26.0,
+      "held-out $R^2$": 0.6893896244300906,
+      "series": "linear map, $n$=50k (95% CI)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 27.0,
+      "held-out $R^2$": 0.6959585351320248,
+      "series": "linear map, $n$=50k (95% CI)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 19.0,
+      "held-out $R^2$": 0.7599992543132659,
+      "series": "peak: layer 19",
+      "_kind": "line",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 29,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "layer",
+        "ylabel": "held-out $R^2$",
+        "legend_labels": [
+          "linear map, $n$=50k (95% CI)",
+          "peak: layer 19"
+        ],
+        "xticklabels": [
+          "0",
+          "4",
+          "8",
+          "12",
+          "16",
+          "20",
+          "24"
+        ],
+        "yticklabels": [
+          "0.40",
+          "0.45",
+          "0.50",
+          "0.55",
+          "0.60",
+          "0.65",
+          "0.70",
+          "0.75",
+          "0.80"
+        ]
+      }
+    ],
+    "series": [
+      "linear map, $n$=50k (95% CI)",
+      "peak: layer 19"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -1,0 +1,510 @@
+{
+  "commit": "cd6a5ea9+dirty",
+  "render_id": "a06311831c9942a8",
+  "git_commit": "cd6a5ea9",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_2379/rates_caps.json"
+  ],
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2379_analysis.py",
+  "created": "2026-08-20T23:39:55Z",
+  "figsize": [
+    8.4,
+    3.2
+  ],
+  "points": [
+    {
+      "category": "Train Ref (ctx)",
+      "mean within-condition Spearman rho": 0.774915,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Same-Q Inoc (ctx)",
+      "mean within-condition Spearman rho": 0.789505,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "BGE",
+      "mean within-condition Spearman rho": 0.616738,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "Train-Ref pred (map-I)",
+      "mean within-condition Spearman rho": -0.084144,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "Same-Q pred (map-I)",
+      "mean within-condition Spearman rho": 0.648388,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "Actual-answer ceiling",
+      "mean within-condition Spearman rho": 0.536679,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": -0.18,
+      "mean within-condition Spearman rho": 0.742002,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": -0.09,
+      "mean within-condition Spearman rho": 0.744959,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "mean within-condition Spearman rho": 0.832817,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.09000000000000002,
+      "mean within-condition Spearman rho": 0.849154,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.18,
+      "mean within-condition Spearman rho": 0.705641,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "mean within-condition Spearman rho": 0.822001,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.8200000000000001,
+      "mean within-condition Spearman rho": 0.818369,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.91,
+      "mean within-condition Spearman rho": 0.697364,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "mean within-condition Spearman rho": 0.925697,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.09,
+      "mean within-condition Spearman rho": 0.814939,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.18,
+      "mean within-condition Spearman rho": 0.691156,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "mean within-condition Spearman rho": 0.802505,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.82,
+      "mean within-condition Spearman rho": 0.772962,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.91,
+      "mean within-condition Spearman rho": 0.55458,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.0,
+      "mean within-condition Spearman rho": 0.762642,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.09,
+      "mean within-condition Spearman rho": 0.608612,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.18,
+      "mean within-condition Spearman rho": 0.384895,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 2.0,
+      "mean within-condition Spearman rho": 0.610302,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 2.82,
+      "mean within-condition Spearman rho": 0.26935,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.91,
+      "mean within-condition Spearman rho": -0.357994,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 3.0,
+      "mean within-condition Spearman rho": 0.240454,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 3.09,
+      "mean within-condition Spearman rho": -0.174185,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 3.18,
+      "mean within-condition Spearman rho": -0.398346,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 3.0,
+      "mean within-condition Spearman rho": -0.164189,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 3.82,
+      "mean within-condition Spearman rho": 0.671827,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.91,
+      "mean within-condition Spearman rho": 0.500778,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "mean within-condition Spearman rho": 0.863777,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 4.09,
+      "mean within-condition Spearman rho": 0.582692,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 4.18,
+      "mean within-condition Spearman rho": 0.622868,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "mean within-condition Spearman rho": 0.694147,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 4.82,
+      "mean within-condition Spearman rho": 0.252838,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 4.91,
+      "mean within-condition Spearman rho": 0.595967,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.0,
+      "mean within-condition Spearman rho": 0.521156,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.09,
+      "mean within-condition Spearman rho": 0.713331,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.18,
+      "mean within-condition Spearman rho": 0.600105,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 5.0,
+      "mean within-condition Spearman rho": 0.599201,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "category": "Train Ref (ctx)",
+      "mean within-condition Spearman rho": 0.895438,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "category": "Same-Q Inoc (ctx)",
+      "mean within-condition Spearman rho": 0.737205,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "category": "BGE",
+      "mean within-condition Spearman rho": -0.101131,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "category": "Train-Ref pred (map-I)",
+      "mean within-condition Spearman rho": 0.6048,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "category": "Same-Q pred (map-I)",
+      "mean within-condition Spearman rho": 0.234054,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "category": "Actual-answer ceiling",
+      "mean within-condition Spearman rho": 0.853809,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "x": -0.18,
+      "mean within-condition Spearman rho": 0.905327,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "mean within-condition Spearman rho": 0.879192,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.18,
+      "mean within-condition Spearman rho": 0.901794,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "mean within-condition Spearman rho": 0.858126,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 0.8200000000000001,
+      "mean within-condition Spearman rho": 0.806564,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 1.0,
+      "mean within-condition Spearman rho": 0.835911,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 1.18,
+      "mean within-condition Spearman rho": 0.569139,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 1.0,
+      "mean within-condition Spearman rho": 0.700953,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 1.82,
+      "mean within-condition Spearman rho": -0.093825,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 2.0,
+      "mean within-condition Spearman rho": 0.023762,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 2.18,
+      "mean within-condition Spearman rho": -0.233331,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 2.0,
+      "mean within-condition Spearman rho": 0.321424,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 2.82,
+      "mean within-condition Spearman rho": 0.763767,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 3.0,
+      "mean within-condition Spearman rho": 0.263927,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 3.18,
+      "mean within-condition Spearman rho": 0.786705,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 3.0,
+      "mean within-condition Spearman rho": 0.576723,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 3.82,
+      "mean within-condition Spearman rho": 0.001646,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 4.0,
+      "mean within-condition Spearman rho": 0.627994,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 4.18,
+      "mean within-condition Spearman rho": 0.072522,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 4.0,
+      "mean within-condition Spearman rho": 0.334235,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 4.82,
+      "mean within-condition Spearman rho": 0.854299,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 5.0,
+      "mean within-condition Spearman rho": 0.882586,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 5.18,
+      "mean within-condition Spearman rho": 0.824543,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 5.0,
+      "mean within-condition Spearman rho": 0.923753,
+      "_kind": "scatter",
+      "_group": 35
+    }
+  ],
+  "n_series": 36,
+  "total_points": 72,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "EM @ stored layer 16 (dashed = parent)",
+        "ylabel": "mean within-condition Spearman rho",
+        "legend_labels": [
+          "mean Pearson"
+        ],
+        "xticklabels": [
+          "Train Ref (ctx)",
+          "Same-Q Inoc (ctx)",
+          "BGE",
+          "Train-Ref pred (map-I)",
+          "Same-Q pred (map-I)",
+          "Actual-answer ceiling"
+        ],
+        "yticklabels": [
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00"
+        ]
+      },
+      {
+        "title_left": "CAPS @ stored layer 27 (dashed = parent)",
+        "ylabel": "mean within-condition Spearman rho",
+        "legend_labels": [
+          "mean Pearson"
+        ],
+        "xticklabels": [
+          "Train Ref (ctx)",
+          "Same-Q Inoc (ctx)",
+          "BGE",
+          "Train-Ref pred (map-I)",
+          "Same-Q pred (map-I)",
+          "Actual-answer ceiling"
+        ],
+        "yticklabels": [
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

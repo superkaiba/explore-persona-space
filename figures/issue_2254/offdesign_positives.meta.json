@@ -1,0 +1,22 @@
+{
+  "figure": "offdesign_positives",
+  "git_commit": "323c70c5",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2254/hero1_decisive_bars.meta.json",
+    "figures/issue_2254/hero1_decisive_bars.png",
+    "figures/issue_2254/hero2_patch_fraction.meta.json",
+    "figures/issue_2254/hero2_patch_fraction.png",
+    "figures/issue_2254/margin_scatter.meta.json",
+    "figures/issue_2254/margin_scatter.png",
+    "figures/issue_2254/result0_geometry.meta.json",
+    "figures/issue_2254/result0_geometry.png",
+    "scripts/issue2254_figures.py"
+  ],
+  "inputs": [
+    "decisive/delta_score_percell.json",
+    "decisive/verdicts.json",
+    "localize/gates.json",
+    "judge/decisive/judged/"
+  ]
+}

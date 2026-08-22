@@ -1,0 +1,557 @@
+{
+  "commit": "ea7c64a1+dirty",
+  "render_id": "2b54322203a64518",
+  "git_commit": "ea7c64a161405be00765809bf2314bb36c13ba58",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_1895/dark_spot_matched_rows.json",
+    "figures/paper/c3_persona_direction_spectrum.pdf",
+    "figures/paper/c3_persona_direction_spectrum.png",
+    "figures/paper/c3_sae_tier_gradient.meta.json",
+    "figures/paper/c3_sae_tier_gradient.pdf",
+    "figures/paper/c3_sae_tier_gradient.png",
+    "figures/paper/c4_reparam_recovery.meta.json",
+    "figures/paper/c4_reparam_recovery.pdf",
+    "figures/paper/c4_reparam_recovery.png",
+    "figures/paper/c4_story_vs_chat.meta.json",
+    "figures/paper/c4_story_vs_chat.pdf",
+    "figures/paper/c4_story_vs_chat.png",
+    "scripts/issue1310_analyzer_figures.py",
+    "scripts/issue1345_analyzer_figs.py",
+    "scripts/issue1482_matryoshka_tier.py",
+    "scripts/issue1639_tier15_ladder_fig.py",
+    "scripts/issue1739_result2_fourpanel_fig.py",
+    "scripts/issue1774_figures.py",
+    "scripts/issue1895_analysis_figures.py",
+    "scripts/issue1901_body_figures.py",
+    "scripts/issue1902_figures.py",
+    "scripts/issue2094_figures.py",
+    "scripts/issue2202_regen_figs.py",
+    "scripts/issue722_figures.py",
+    "scripts/issue779_identity_baseline.py",
+    "scripts/issue823_figures.py",
+    "scripts/issue928_mlc_figures.py",
+    "tasks/planning/2422/events.jsonl",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": null,
+  "created": "2026-08-20T08:19:09Z",
+  "figsize": [
+    5.5,
+    3.6300000000000003
+  ],
+  "points": [
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.03455238328138233,
+      "y": 12.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.03951909237756593,
+      "y": 11.0,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.14165205703946465,
+      "y": 10.0,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.07584939069787573,
+      "y": 9.0,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.015287285340663547,
+      "y": 8.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.04475844576543384,
+      "y": 7.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.014772410853309026,
+      "y": 6.0,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.03278798779380163,
+      "y": 5.0,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.032325692778699525,
+      "y": 4.0,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": -0.056225050986641045,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.041593300261915864,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.028053127576999754,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.13670212443700822,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.08248191579898247,
+      "y": 12.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.05920136272385182,
+      "y": 12.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": -0.009996619621305908,
+      "y": 12.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.06096329078764909,
+      "y": 12.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": -0.01988803328226582,
+      "y": 12.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.06817119737097807,
+      "y": 11.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.012318775091890055,
+      "y": 11.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.04005194035780768,
+      "y": 11.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": -0.0054289274408303445,
+      "y": 11.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.08248247650798418,
+      "y": 11.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.23442038894538952,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.23679274079459894,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.15886384919075155,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": -0.06562185725074898,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.1438051635173322,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.05915922177336239,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.09530326258056712,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.07760614627640385,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.08231555932011445,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.06486276353893083,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.006653958208733324,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": -0.005776025706546006,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.03312082005977762,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.0132435520964021,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.0291941220449507,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.03428301796344546,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.040365432209637786,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.03444132863136312,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.05778701940036912,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.05691543062235371,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.040727057959234314,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.016008614367588048,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.008934667472353552,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": -0.019115731287518756,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.02730744575488797,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.031026242717993036,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.03222678799651546,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.03657674887201112,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.03345523858126964,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.0306549208012189,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.008690245095687776,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.039284808922852577,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.04429716196895306,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.05384031548005053,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.015515932425953671,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": -0.07521661570857918,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": -0.21198485779360748,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.27766353956517514,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": -0.1495577928735246,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": -0.12202952812266908,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.06628942620361106,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.07536607659732741,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.013551357901218863,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.04480323863987301,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.007956401967548987,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.05546144028568334,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.013025125549935512,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.015454716223969739,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": -0.007483699173161412,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.06380805499857159,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.08766335374782994,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.0928329927361342,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.2177399268374146,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.16239344177150652,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)": 0.12288090709215588,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 25
+    }
+  ],
+  "n_series": 26,
+  "total_points": 78,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "Advantage over the shuffled-pairing control ($\\Delta$ Spearman $\\rho$)",
+        "xticklabels": [
+          "\u22120.4",
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4"
+        ],
+        "yticklabels": [
+          "evil: multi-turn human jailbreaks",
+          "evil: PAIR optimizer attacks *",
+          "evil: Tom Gibbs multi-turn",
+          "evil: HH red-team",
+          "evil: ToxicChat",
+          "hallucination: NQ-Open",
+          "hallucination: SimpleQA",
+          "sycophancy: AITA slot (held-out Reddit)",
+          "sycophancy: answer",
+          "sycophancy: are-you-sure",
+          "sycophancy: feedback",
+          "sycophancy: mimicry",
+          "sycophancy: model-written evaluations *"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

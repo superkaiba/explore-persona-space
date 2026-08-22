@@ -308,6 +308,43 @@ class RunPodSupplyConstraintError(RunPodError):
     """
 
 
+class RunPodNoPortWedgeError(RunPodError):
+    """Raised by :func:`wait_for_ssh` when the pod reached
+    ``desired_status=RUNNING`` but exposed no public 22/tcp mapping within the
+    bring-up window — the documented RunPod no-port host wedge
+    (#664/#770/#1667; provision-time incident #2162 -> #2184).
+
+    Carries the last-observed :class:`PodInfo` (``info``) so callers can read
+    ``pod_id`` / ``data_center_id`` for bias-away DC rotation, and a
+    ``teardown_disposition`` slot (``"terminated" | "kept" | "failed" | None``)
+    the provision tail fills in AFTER running the #2060 auto-teardown — the
+    #2184 rotation interlock reads it and re-creates ONLY on ``"terminated"``.
+    Subclass of :class:`RunPodError` so every existing ``except RunPodError``
+    caller (the provision tail, the resume path) keeps catching it.
+    Deliberately NOT a :class:`RunPodNoCapacityError` subclass: the
+    wait-for-capacity retry loop must never blind-retry a wedge (same-DC retry
+    is the #2162 failure mode).
+    """
+
+    def __init__(self, message: str, info: PodInfo | None = None) -> None:
+        super().__init__(message)
+        self.info = info
+        self.teardown_disposition: str | None = None  # set by the provision tail (#2184)
+
+
+class RunPodCpuLaneDryError(RunPodError):
+    """CPU-intent residual refusal (#2184): a no-port wedge was detected and
+    rotation is exhausted or interlocked-out (every candidate DC dry/wedged,
+    DC enumeration failed, teardown unconfirmed, explicit user pin wedged, or
+    wedged DC unidentifiable). The ``cpu_fallback_infeasible_for_plan``-family
+    typed refusal for a fully dry/wedged CPU lane; the CLI maps it to
+    ``EXIT_CPU_LANE_DRY`` (77, ``pod_lifecycle.py``) with the machine-greppable
+    ``CPU-LANE-DRY reason=<reason>`` verdict naming the sanctioned GPU-lane
+    residual. NOT a :class:`RunPodNoCapacityError` subclass (must not be
+    wait-retried).
+    """
+
+
 # Markers used to detect INSUFFICIENT_BALANCE in a GraphQL ``errors`` payload
 # or a raised RunPodError message. RunPod has used both the explicit error
 # code (``INSUFFICIENT_BALANCE``) and the human-readable phrase ("spending
@@ -501,7 +538,21 @@ class PodInfo:
     verified 2026-08-06: ``machine { podHostId dataCenterId }`` parses on the
     team-scoped Pod type); deliberately NOT on :func:`list_team_pods` — see
     the in-file warning below about speculative fields on the hot query.
-    ``None`` on responses whose selection omits them."""
+    ``None`` on responses whose selection omits them.
+
+    ``last_status_change`` (#2075) is the raw ``lastStatusChange`` string, the
+    only exit-time signal the team-scoped schema exposes. Live-probed
+    2026-08-10: ``lastStatusChange`` parses on the team pods query (observed
+    shapes: ``"Exited by user: Thu Jul 16 2026 16:32:26 GMT+0000 (Coordinated
+    Universal Time)"``, ``"Exited by Runpod: ..."``, and ``"Rented by User:
+    ..."`` on RUNNING pods); ``lastStoppedAt`` / ``exitedAt`` /
+    ``statusChangedAt`` do NOT exist as fields, and introspection is disabled
+    server-side, so field-by-field probing is the verification method of
+    record. Unlike the speculative-field warning above, this field IS selected
+    on :func:`list_team_pods` — the live probe is exactly the evidence that
+    warning demands. Consumed by ``pod_audit.py``'s EXITED staleness clock
+    (time since EXIT, not creation age). ``None`` when the selection omits
+    it."""
 
     pod_id: str
     name: str
@@ -513,6 +564,7 @@ class PodInfo:
     created_at: str | None = None
     pod_host_id: str | None = None
     data_center_id: str | None = None
+    last_status_change: str | None = None
 
 
 def _parse_pod(raw: dict[str, Any]) -> PodInfo:
@@ -539,6 +591,7 @@ def _parse_pod(raw: dict[str, Any]) -> PodInfo:
         created_at=raw.get("createdAt"),
         pod_host_id=machine.get("podHostId"),
         data_center_id=machine.get("dataCenterId"),
+        last_status_change=raw.get("lastStatusChange"),
     )
 
 
@@ -960,11 +1013,15 @@ def get_pod(pod_id: str) -> PodInfo:
 
 
 def list_team_pods() -> list[PodInfo]:
+    # lastStatusChange: live-probed team-scoped 2026-08-10 (#2075) — the only
+    # exit-time field the schema exposes (lastStoppedAt / exitedAt /
+    # statusChangedAt do not exist; introspection disabled). Feeds
+    # pod_audit.py's EXITED staleness clock.
     query = """
     {
       myself {
         pods {
-          id name desiredStatus gpuCount createdAt
+          id name desiredStatus gpuCount createdAt lastStatusChange
           machine { gpuTypeId }
           runtime { ports { ip publicPort privatePort type isIpPublic } }
         }
@@ -1095,17 +1152,29 @@ def terminate_pod(pod_id: str) -> bool:
 
 def wait_for_ssh(pod_id: str, timeout: int = 600, poll_interval: int = 10) -> PodInfo:
     """Poll until the pod has a public 22/tcp mapping. Returns the PodInfo with
-    ssh_host/ssh_port populated. Raises RunPodError on timeout."""
+    ssh_host/ssh_port populated.
+
+    Timeout raise contract (#2184): a timeout whose LAST observed
+    ``desired_status`` is ``RUNNING`` raises the typed
+    :class:`RunPodNoPortWedgeError` (the documented RunPod no-port host
+    wedge — the pod is up and BILLING with no public 22/tcp), carrying the
+    last-observed :class:`PodInfo`; any other timeout shape (never observed,
+    non-RUNNING) keeps raising bare :class:`RunPodError`."""
     deadline = time.time() + timeout
+    info: PodInfo | None = None
     while time.time() < deadline:
         info = get_pod(pod_id)
         if info.ssh_host and info.ssh_port:
             return info
         time.sleep(poll_interval)
-    raise RunPodError(
+    last_status = info.desired_status if info is not None else "unknown"
+    msg = (
         f"Pod {pod_id} did not expose public 22/tcp within {timeout}s. "
-        f"Last desiredStatus: {info.desired_status if 'info' in dir() else 'unknown'}"
+        f"Last desiredStatus: {last_status}"
     )
+    if info is not None and (info.desired_status or "").upper() == "RUNNING":
+        raise RunPodNoPortWedgeError(msg + " (RUNNING-but-no-port wedge, #2184)", info=info)
+    raise RunPodError(msg)
 
 
 # ─── account hourly-burn estimation ──────────────────────────────────────────

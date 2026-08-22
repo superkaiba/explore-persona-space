@@ -1,0 +1,10 @@
+{
+  "component": "FIT_pool (10 pooled fit units)",
+  "pilot_unit_wall_s": 0.0,
+  "n_pending": 6,
+  "ngpu": 8,
+  "projected_wall_h": 0.0,
+  "planned_wall_h": 1.8,
+  "ratio": 0.0,
+  "basis": "measured 1-unit pilot (G1v3 RLVR on-policy unit) through the production entrypoint; off-arm units carry ~4x the rows"
+}

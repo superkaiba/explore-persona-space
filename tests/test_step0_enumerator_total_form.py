@@ -20,9 +20,9 @@ refactored, update ``STEP0_EXPR`` and the ``needle`` literal together.
 
 from __future__ import annotations
 
-import pathlib
-
 import pytest
+
+from tests.issue_skill_source import issue_skill_text
 
 # The expression under test — must match the SKILL.md Step-0 enumerator
 # one-liner byte-for-byte. Kept in ONE place so refactors are lockstepped.
@@ -61,10 +61,7 @@ def test_step0_expr_pinned_verbatim_in_skill_md() -> None:
     Also asserts the pre-#1722 vulnerable form is gone — a regression to
     the classic ``(e.get("note") or "").splitlines()[0][:140]`` fails here.
     """
-    skill_md = (
-        pathlib.Path(__file__).resolve().parents[1] / ".claude" / "skills" / "issue" / "SKILL.md"
-    )
-    text = skill_md.read_text(encoding="utf-8")
+    text = issue_skill_text()
     # The exact substring the Step-0 enumerator uses — matches STEP0_EXPR.
     needle = '(((e.get("note") or "").splitlines()) or [""])[0][:140]'
     assert needle in text, (

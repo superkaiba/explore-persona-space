@@ -249,13 +249,23 @@ and diverges from the field standard (Persona Vectors uses graded 0–100).
     REPORTED (#1739: 287 items, batch mean 7.26 vs sync 7.77), and DISCLOSE
     the batch/sync split in the run's `judge_meta`. Reference
     implementation: `scripts/issue1739_evilood_refusal_rejudge.py`.
-    NON-COVERAGE NOTE: the rule-26 pilot gate does NOT key on this class — a
-    forced-BATCH pilot against a censoring wave will PASS the parse-fail
-    gate BY DESIGN (api-refusal draws leave both the parse-fail numerator
-    AND its denominator, alongside transport losses), and the routing-parity
-    gap (rule-26 pilots route SYNC below the crossover while gating a
-    forced-BATCH production wave) is a separately-filed sibling task — do
-    NOT read a rule-26 PASS as protection against api-refusal censoring.
+    COVERAGE NOTE (#2152): the rule-26 pilot gate NOW covers this class
+    when the caller declares the wave's dispatch (`wave_n_calls` /
+    `wave_threshold_base` / `wave_force_sync` on `judge_pilot_gate`): the
+    pilot is forced onto the wave's transport (realized route read back
+    from the persisted `save_raw["routing"]` record; a mismatch, an
+    unverifiable transport, or a partially cache-served pilot —
+    `n_cached > 0`, whose cache-served draws are refusal-free by
+    construction and dilute the rate — is a FAIL; an unpinned
+    count-routed declaration inside the OTPM-probe region
+    `n < 2×threshold_base` is refused fail-fast), and the per-arm
+    api-refusal rate `n_api_refusal / (n_draws − n_transport_lost)` gates
+    at ≥ 0.10 (waivable per arm via `waive_api_refusal_arms` with the
+    reason recorded at the caller-site constant — e.g. a pre-planned sync
+    re-issue remediation; truncation and the effective-draws floor stay
+    unwaivable). RESIDUAL non-coverage: a LEGACY caller that does not
+    declare the wave gets only a report warning — do not read THAT
+    pilot's PASS as protection against api-refusal censoring.
     The residual backstops that DO fire: a censored arm's shrunken
     `n_answered` / `n_scored` — api-refusal draws leave the `n_answered`
     parse-fail denominator, so a downstream consumer's scored-count floor
@@ -263,7 +273,63 @@ and diverges from the field standard (Persona Vectors uses graded 0–100).
     (`min_effective_draws_per_arm`, evaluated against
     `n_draws - n_transport_lost`) does NOT shrink: api-refusal draws stay
     inside it — the reduce's WARNING on any non-zero count, and the
-    `n_api_refusal` field now carried per arm in the pilot report.
+    `n_api_refusal` field carried per arm in the pilot report —
+    gate-keyed since #2152 for wave-declared pilots (clause (d)).
+
+29. **Report per-ITEM completeness (`frac_items_complete`) per behavior /
+    arm against a pre-registered floor — a per-DRAW drop rate does not
+    PREDICT the per-item hole (#2124).** Rules 9 / 24 / 28 tally drops per
+    DRAW. The DV is computed per ITEM, so the quantity describing the DV's
+    real denominator is `frac_items_complete =
+    n_items_with_at_least_one_valid_draw / n_items`. Report it beside the
+    per-arm drop tallies (rule 18) for every judged DV, pre-register a
+    floor (**default 0.95** — see the calibration note below), and when an
+    arm lands below it, identify WHICH drop class opened the hole — the
+    rule-9 content class, split into parse-failure vs instructed rubric
+    `REFUSAL` (`n_refusal_draws`, #1801); rule-24 transport loss; rule-28
+    api-refusal — and remediate per that class BEFORE plotting or
+    reporting the DV. Never silently narrow the denominator.
+
+    The per-draw rate `p` upper-bounds the hole (with `d` equal draws per
+    item, at most `floor(p·N)` items can lose all `d`) but tells you
+    nothing about where in `[max(0, 1-p), 1.0]` completeness actually
+    lands, and the top of that range is reachable only when
+    `p <= (d-1)/d`. Under INDEPENDENT drops you would expect `p^d` holes;
+    the drop classes concentrate instead. #1739's evil DV slice
+    (`eval_results/issue_1739/result1_spread/spread_stats_refusal_zero.json`,
+    `recode_audit.per_source.own_rungs`) ran 46,525/159,990 = 29.1%
+    refusal DRAWS at `d=3` — an independence read of 2.5% — and landed at
+    15,076/53,330 items (**28.3%**) with ZERO valid draws,
+    `frac_items_complete = 0.717`: **11.5× the independence expectation**,
+    against only 865 MIXED items. The `wildchat_rung` arm in the same file
+    shows the trap from the other side: 1.8% draws and 1.8% items, so the
+    per-draw proxy agrees exactly where the answer does not matter. The
+    equal-draws qualifier is load-bearing — once realized per-item draw
+    counts vary (routine under transport losses), even the upper bound is
+    void, since a 1-draw item is emptied by one drop.
+
+    Gate on it because the censoring is OUTCOME-CORRELATED, so the
+    surviving items are a biased subsample and the bias is invisible in
+    aggregate draw counts: rule 28's evil-OOD wave left 4,982/14,770 items
+    (33.7%) empty and the rescued items scored 1.4× higher than
+    never-censored items overall (2.3× on mhj, 3.7× on pair). A rule-26
+    pilot-gate PASS is NOT a substitute — the gate is per-draw, and rule
+    28's class is explicitly outside its protection.
+
+    Calibration of the 0.95 default: it sits between the measured healthy
+    band (0.982, `wildchat_rung`) and the measured broken band (0.717
+    #1739 evil / 0.663 #2151 evil-OOD), with a thin 0.03 upper margin — so
+    RE-DERIVE it per behavior class at pre-registration rather than
+    inheriting it, and expect harm-class corpora to need their own floor
+    (rule 28's tom-gibbs corpus ran ~2/3 censored pre-remediation).
+
+    Mechanics (#2124): `judge_pilot_gate`'s per-arm report carries
+    `frac_items_complete`, `n_items_zero_valid` and `n_items` alongside
+    the draw tallies — but a ~200-draw pilot resolves completeness only to
+    ~1/n_items (≈6% at 17 items/arm), so the FLOOR is a production-wave
+    read, not a pilot verdict (`JudgeResult.frac_items_complete` is the
+    production-wave affordance). `scripts/issue1739_judge_reliability.py`
+    is the naming precedent.
 
 10. **Pin nuisance formatting identical across conditions.** Response length,
     markdown, system-prompt boilerplate, and the presence/absence of a
@@ -391,14 +457,53 @@ and diverges from the field standard (Persona Vectors uses graded 0–100).
     the production spend.** Before any production judge dispatch of
     ≥ ~5,000 calls, run a PILOT of ~100–200 draws spanning the arms /
     conditions (and every rubric in the wave) at the EXACT production
-    instrument (rubric, judge model, `max_tokens`), and gate the full
-    dispatch on BOTH: (a) `stop_reason == "max_tokens"` fraction ≈ 0 in
-    the pilot's raw responses — any nonzero truncation signature → raise
+    instrument (rubric, judge model, `max_tokens`, and TRANSPORT — the
+    sync-vs-Batch dispatch path the wave itself will use; #2152), and
+    gate the full dispatch on ALL of: (a) `stop_reason == "max_tokens"`
+    fraction ≈ 0 in the pilot's raw responses — any nonzero truncation
+    signature → raise
     the budget (generously; rule 23's cap-is-not-a-spend point) and
     re-pilot; and (b) per-arm parse-failure rate < ~2%, or explained as a
     known content-drop class per rule 9 (e.g. empty judge responses on
-    degenerate steered text, #1769). Record the pilot verdict — per-arm
-    drop rate + `stop_reason` tally + the `max_tokens` used — in the run
+    degenerate steered text, #1769); (c) TRANSPORT PARITY (#2152) — the
+    pilot must RUN the wave's transport: a ~200-draw pilot routes SYNC by
+    call count while the wave it gates is typically forced BATCH, so the
+    caller DECLARES the wave's dispatch (`wave_n_calls` /
+    `wave_threshold_base` / `wave_force_sync` on `judge_pilot_gate`,
+    mirroring the wave's actual dispatch kwargs 1:1), the gate computes
+    the wave's route via `judge_dispatch.decide_route`, forces the pilot
+    onto it (`threshold_base=0` for batch, `force_sync` for sync), reads
+    the REALIZED route back from each arm's persisted
+    `save_raw["routing"]` record, and FAILs on a mismatch or an
+    unverifiable transport — never a silent pass. Cache-served draws are
+    NOT transport evidence: a wave-declared pilot whose `save_raw`
+    records `n_cached > 0` FAILs as transport-unverifiable (cached draws
+    carry no routing provenance and, being refusal-free by construction —
+    the #2151 cache PUT-SKIP — dilute the clause-(d) rate toward PASS);
+    run pilots against a fresh pilot `cache_dir` (rule 24(ii)). An
+    UNPINNED count-routed declaration inside the dispatcher's OTPM-probe
+    region (`wave_n_calls < 2 × wave_threshold_base`, neither pin set) is
+    REFUSED fail-fast before any pilot dispatch — the realized route
+    there depends on a live OTPM probe at dispatch time and no pilot can
+    certify it; PIN the wave's transport (`threshold_base=0` forces
+    batch / `force_sync=True` forces sync), with the SAME pin on the
+    production dispatch. Outside the region the count-routed route is
+    deterministic batch (any ≥ ~5,000-call wave at the default
+    `threshold_base=2,000` sits at n ≥ 2×tb — no pin needed). An
+    UNDECLARED wave downgrades to a recorded report warning (legacy
+    callers), but every NEW ≥ ~5,000-call wave MUST declare; and (d)
+    per-arm API-REFUSAL rate (`n_api_refusal / (n_draws −
+    n_transport_lost)`) < 0.10 — the rule-28 transport-conditional censor
+    the transport-parity clause exists to expose (#1739: 34.1% batch-path
+    censoring, 0/14,887 sync re-refusals; supersedes #2151's report-only
+    treatment). Waivable per arm via `waive_api_refusal_arms` with the
+    reason recorded at the caller-site constant (the #2091
+    `PILOT_WAIVE_PARSE_FAIL_ARMS` pattern; a wave with a pre-planned
+    rule-28 sync re-issue remediation is the legitimate waiver case);
+    truncation and the effective-draws floor stay unwaivable. Record the
+    pilot verdict — per-arm drop rate + `stop_reason` tally + the
+    `max_tokens` used + the pilot's realized transport and the wave's
+    declared transport — in the run
     digest / plan §6. Rationale: rule 23's binding check is POST-HOC
     (measured only after the full wave is spent), so every miss costs a
     full re-judge — three waves in one week (#1739: a surgical re-judge
@@ -421,6 +526,98 @@ and diverges from the field standard (Persona Vectors uses graded 0–100).
     (rule 23, #1773). Exempt: score-only
     rubrics and waves < ~5,000 calls (the post-hoc per-arm drop report,
     rules 9/18/23, still binds there).
+
+    **Size the pilot so the threshold is REACHABLE — the ~100–200 habit is
+    not a sizing rule (#2124).** Clause (b) compares a per-arm RATE against
+    a threshold, so a per-arm draw count that cannot RESOLVE that threshold
+    makes the gate uninformative in BOTH directions: at `n` effective draws
+    the smallest observable nonzero parse-fail rate is `1/n`, so an arm
+    with `n <= 1/threshold` FAILs on its first parse failure (a granularity
+    artifact, not a defect signal) while a clean PASS carries no evidence
+    that the true rate is under threshold. Satisfiability is STRICT — the
+    gate FAILs on `rate >= threshold`, so a single failure survives only
+    when `1/n < threshold`, i.e. the per-arm floor is
+    `required = max(min_effective_draws_per_arm, floor(1/threshold) + 1)` —
+    **51** draws per arm at the default 2%, not 50. The shipped default
+    pair is itself unsatisfiable (`parse_fail_threshold=0.02` against
+    `min_effective_draws_per_arm=10`: 1/0.02 = 50 > 10).
+
+    Realized per-arm draws are DISCRETIZED and ARM-SIZE-CAPPED, so neither
+    `target_total_draws >= required · n_arms` nor `> n_arms / threshold` is
+    sufficient. `eval.judge_pilot.judge_pilot_gate` splits its budget by
+    floor division (`per_arm_items = target_total_draws // (n_arms ·
+    n_draws)`) and then caps each arm at its own item count, so realized
+    draws are `min(per_arm_items, len(arm_items)) · n_draws`. The exact
+    budget form is **`target_total_draws >= n_arms · n_draws ·
+    ceil(required / n_draws)`** (at 4 arms, `n_draws=2`, 2%: **208**, not
+    204 — 204 realizes 50 draws/arm and still fails), and an arm holding
+    fewer than `ceil(required / n_draws)` ITEMS cannot be fixed by any
+    budget at all. Size from the arm count AND the arm sizes.
+
+    Reachability is not certification: at exactly the floor (51 draws, 0
+    failures) the 95% upper bound on the true rate is still ~5.7% (rule of
+    three), and a healthy arm at a true 1% rate FAILs ~9% of the time at
+    n=51 (it needs >= 2 failures). The floor buys gate COHERENCE, not
+    evidence that the rate is under 2%; 2–3× the floor is what reduces
+    granularity noise. (The statistically correct instrument for "is the
+    true rate under 2%" is a one-sided exact binomial test rather than a
+    point-rate comparison; it is deliberately NOT the gate today because it
+    would change verdicts on configurations that already pass — #2124
+    § Scope decisions.)
+
+    The config-time guard sizes the PLANNED draws; realized `n_answered`
+    can still shrink below `required` through rule-24 transport losses and
+    rule-28 api-refusals (which run 30%+ in exactly the harm-class waves
+    this gate serves), re-creating the granularity artifact after the guard
+    has passed. The gate WARNs when that happens — treat it as an
+    under-powered pilot, not a clean read.
+
+    A pilot PASS certifies only the instrument it ran: rubric text, judge
+    model, `n_draws`, `max_tokens`, and TRANSPORT (#2152). Any change to
+    those invalidates it — re-pilot. (`scripts/issue2203_runtime.py` is
+    the in-repo precedent: it fingerprints `rubric_sha + n_draws +
+    max_tokens` and honors a prior PASS only on match; that fingerprint
+    predates transport — a prior PASS does NOT cover a transport
+    change.)
+
+    When a satisfiable pilot is genuinely unaffordable for one arm, the
+    escape is the AUDITABLE one — never a quietly loosened threshold: name
+    the arm in the wave's `waive_parse_fail_arms` constant with a recorded
+    reason (the `PILOT_WAIVE_PARSE_FAIL_ARMS` pattern,
+    `scripts/issue2091_judge.py`; #2091 waived a 1/16 = 6.25% wildchat arm
+    this way). The waiver is PARSE-FAIL only — truncation and the
+    effective-draws floor stay unwaivable. Mechanically enforced since
+    #2124 in `eval.judge_pilot.judge_pilot_gate` ONLY: it REFUSES an
+    unsatisfiable configuration at config time, before any API spend,
+    unless the caller passes `allow_subresolution_pilot=True`, which
+    downgrades the refusal to a recorded report warning. Per-issue
+    re-implementations of the gate do not inherit the guard — check yours.
+
+    **Scope — every PARSED judge instrument, not only graded 0–100
+    (#2124).** The gate binds any wave whose rows are parsed into a
+    structured verdict: graded 0–100 scores, k-way CLASSIFICATION /
+    labeling rubrics (rule 25's CATEGORY axis), and binary categorical
+    verdicts alike. "Score-only rubrics" in the exemption means rule 23's
+    bare-integer-no-rationale shape; a classification rubric is NOT exempt
+    for producing no score — its parse surface is precisely what the pilot
+    exists to test. #1739's 7-class MHJ tactic wave (10,666 contexts, far
+    above the ~5,000 floor) shipped unpiloted: the v1 rubric asked for a
+    plain `Label: <class>` line while the dispatch layer's
+    `parse_judge_json` accepts JSON only, so **100% of rows failed to
+    parse** and recovery needed a `--recover-from-raw` re-parse of the
+    banked responses (`scripts/issue1739_tactic_classify.py`). A ~200-draw
+    pilot would have surfaced the 100% parse-fail rate for ~2% of the
+    wave's spend.
+
+    This does NOT duplicate rule 27, though the two overlap on the easy
+    cases — #1739's defect was also catchable offline, since round-tripping
+    a realistic `Label: <class>` reply through `parse_judge_json` returns
+    None. Rule 27's round-trip is a STATIC committed test that the parser
+    accepts a canonical response the rubric asks for; rule 26's pilot is a
+    LIVE dispatch at the exact production instrument. Only the live pilot
+    catches a judge that ignores the schema it was handed — the case where
+    the parser and the canonical response agree and the MODEL is what
+    diverges.
 
 27. **Round-trip the parse contract before trusting a composed judge
     instrument.** A dry run proves ROUTING, not the request/response
@@ -566,7 +763,9 @@ narrate it as the construct. (Source: #722 — `eval_results/issue_722/tf_margin
     rules 23/26; #2021), the api-refusal count
     (`JudgeResult.n_api_refusal_draws` — the THIRD top-level drop class,
     reported separately from BOTH content drops and transport losses;
-    rule 28, #2151), the rule-26 pilot-gate verdict for any ≥5k-call wave,
+    rule 28, #2151), the per-item completeness `frac_items_complete` per
+    behavior / arm against its pre-registered floor (rule 29, #2124), the
+    rule-26 pilot-gate verdict for any ≥5k-call wave,
     per-behavior reliability
     (test-retest + judge–human agreement), and the reliability ceiling
     √(r_yy). A judged DV is a measurement instrument; report it like one.
@@ -651,7 +850,8 @@ narrate it as the construct. (Source: #722 — `eval_results/issue_722/tf_margin
   judge. Plan-enforced in v1 — no mechanical lint.
 - Rule 26 (pilot gate) rides the same lens load: a plan whose judged DV
   dispatches ≥ ~5,000 judge calls names its pilot gate (pilot size, arms
-  spanned, the two gate thresholds) or states the exemption; the
+  spanned, the gate thresholds, and the wave-transport declaration —
+  #2152) or states the exemption; the
   Statistics & Measurement critic REVISEs an ungated large wave.
   Plan-enforced in v1 — no mechanical lint (same class as rules 23/24);
   the `judge_pilot_gate` helper is #2021's deliverable.
@@ -667,19 +867,27 @@ narrate it as the construct. (Source: #722 — `eval_results/issue_722/tf_margin
   run PER PHASE"); dry-run-only evidence for a composed judge leg is the
   named insufficient shape.
 - Rule 28 (api-refusal drop class) rides the same lens load: a plan whose
-  judged DV scores harm / jailbreak / adversarial-role-play completions
+  judged DV scores harm / jailbreak / adversarial-role-play / evil-trait-
+  or toxicity-banded completions
   names its api-refusal accounting — per-arm `n_api_refusal`, reported
   separately from BOTH content drops and transport losses — plus the
   targeted SYNC re-issue remediation at the IDENTICAL instrument
   (reference implementation:
   `scripts/issue1739_evilood_refusal_rejudge.py`), or states the
   exemption; the Statistics & Measurement critic REVISEs a harm-class
-  judged-DV plan with no api-refusal accounting. A rule-26 pilot-gate
-  PASS is NOT a substitute (rule 28's non-coverage note: api-refusal
-  draws leave both the parse-fail numerator and denominator).
+  judged-DV plan with no api-refusal accounting. A wave-DECLARED rule-26
+  pilot PASS (transport parity + the api-refusal clause, #2152) is
+  corroborating evidence but not a substitute for the accounting; an
+  UNDECLARED pilot's PASS is NOT protective (rule 28's coverage note).
   Mechanical backstop: `verify_plan.py` c53 WARNs on the
   missing-handling shape (WARN-only; the lens REVISE is the binding
   gate).
+- Rule 29 (per-item completeness floor) rides the same lens load: a plan
+  whose judged DV carries a headline names its per-item completeness
+  accounting + its pre-registered floor, or states the exemption; an arm
+  plotted below the floor without drop-class triage is a Statistics &
+  Measurement REVISE. Plan-enforced in v1 — no mechanical lint, same class
+  as rules 23/24/28.
 - The `--check-judge-model-pins` `test_live_trees_pass()` invariant locks the
   grandfather allowlist to today's tree; a future LEGITIMATE non-Sonnet judge
   pin (a new calibration anchor or translation-judge exemption) must be added
@@ -701,7 +909,9 @@ with #1739, drove the 2026-08-02 generous-floor raise and rule 26's pilot
 gate); task body #1934 (the #1773 log-derived misdiagnosis behind rule 26's
 stop_reason-from-raw-responses requirement); task #2021 (stop_reason
 threading + truncation-vs-content drop split + the `judge_pilot_gate`
-helper);
+helper); task #2124 (the rule-26 sizing + scope clauses, rule 29 per-item
+completeness, and the config-time satisfiability guard +
+`allow_subresolution_pilot` escape in `judge_pilot_gate`);
 task body #1482 (the category-axis confusable-neighbor incident behind
 rule 25);
 task #1345 (the composed-instrument parse-contract defects behind rule 27;
@@ -710,3 +920,5 @@ fix `a41fcad04f`, 72 round-trip tests) + task #1943 (the rule);
 judge-filter drop rule); `.claude/rules/marker-leakage-measurement.md` (the
 non-judged marker DV); the enforcing agent files (`planner.md`, `critic.md`,
 `analyzer.md`, `interpretation-critic.md`, `clean-result-critic.md`).
+A blinded / unprimed qualitative read is NOT a judged-behavior DV (no score,
+no rubric); its recipe is `.claude/rules/blinded-reads.md` (#2143).

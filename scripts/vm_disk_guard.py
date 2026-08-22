@@ -6,7 +6,7 @@ The VM root disk fills because each experiment downloads its source data into
 2026-06-25: ``/`` hit 100% full, one finished experiment held 97 GB), plus the
 ``uv`` package cache and accumulating logs. This guard reads ``df`` for ``/``
 and, when usage exceeds a threshold (default 85%, env ``EPS_VM_DISK_THRESHOLD``),
-runs five TIERS of strictly-safe cleanup, reporting bytes freed per tier:
+runs six TIERS of strictly-safe cleanup, reporting bytes freed per tier:
 
   (a) ``uv cache prune`` (skipped gracefully if the uv lock is held — never
       ``--force``).
@@ -22,11 +22,79 @@ runs five TIERS of strictly-safe cleanup, reporting bytes freed per tier:
       ``clean_issue_downloads`` (48h recency, nested ``store/`` +
       ``eval_results/`` block, positive re-downloadability evidence). The
       /tmp part is a ``main()``-only opt-in (``tmp_root=production_tmp_
-      root()``); library calls stay hermetic. Structured outcome rows
+      root()``); library calls stay hermetic. (#2095) The tier ALSO covers
+      ``/mnt/eps-data/$USER`` staging caches via the sibling ``main()``-only
+      opt-in ``staging_roots=production_staging_roots()`` — threaded into the
+      DATA-DISK pass only (the staging roots live on the data disk; no
+      double-sweep), same contract + the staging gate variants (gate 1.55
+      cross-issue hard-escalate, top-level recency, class labels, sampled
+      mirror probe) in ``clean_issue_downloads``. Structured outcome rows
       (``active_cache_attributions`` / ``noncanonical_candidates`` /
       ``total_discovered_bytes``) ride the ``--json`` output — report-only
       escalation persists nothing to the sidecar, so dry-run acceptance reads
       the JSON.
+  (f) TOP-LEVEL ``/tmp`` GATE/SMOKE SCRATCH trees (#2127) — an
+      owner-status-INDEPENDENT leg (``clean_tmp_scratch`` ->
+      ``clean_experiment_downloads.sweep_tmp_scratch``), boot-disk pass
+      only, run right after tier (b): dirs matching the scratch shape
+      globs (``*-gate*`` / ``*smoke*`` / ``eps-*-scratch-*`` /
+      ``scratch-*`` / ``mkstest-*``), never a denylisted name
+      (``claude-*`` / ``pytest-of-*`` / session+system dirs, checked
+      FIRST). Deletions are gated on VERIFIED git-reproducibility (a
+      per-file blob-existence proof against the main repo's odb, plus
+      class-discriminated worktree/clone git-state probes) — NEVER on age;
+      age (recency, write mtime AND nlink==1 reader atimes) is only ever a
+      KEEP signal. Registered main-repo worktrees are removed via
+      ``git worktree remove --force`` (a remove failure KEEPS the tree —
+      no rmtree fallback, no global ``git worktree prune``); a live-process
+      /proc probe holds the reap while any visible process has the tree
+      open. Same strict ``main()``-only opt-in as the /tmp leg
+      (``scratch_tmp_root`` / ``scratch_main_repo`` /
+      ``scratch_verdict_cache``); when this tier is armed, tier (b)'s
+      issue-keyed /tmp discovery EXCLUDES scratch-shaped names so one dir
+      is never double-attributed. Structured rows ride ``--json`` as
+      ``scratch_candidates``. Kill switch ``EPM_SKIP_TMP_SCRATCH_SWEEP=1``
+      (the family switch ``EPM_SKIP_NONCANONICAL_CACHE_SWEEP=1`` kills it
+      transitively).
+  (g) TERMINAL-status issues' ``~/.eps-slurm-src/issue-<N>`` SLURM staging
+      trees (#2147) — full repo checkouts materialized by
+      ``backends/slurm.py::materialize_branch_src`` for the SLURM lanes
+      (~8.6 GB mean; 13 dirs / 112 GB measured 2026-08-16). Boot-disk pass
+      only, right after tier (f): ``clean_slurm_src`` ->
+      ``clean_experiment_downloads.sweep_slurm_src`` — pre-gates g1 (name
+      not ``issue-<N>`` shaped) / g2 (not uid-owned) / g3 (containment;
+      symlinked or non-directory entries never followed) / g4 (owning
+      issue's status not in ``TERMINAL_CACHE_REAP_STATUSES``, incl.
+      unresolvable — kept + escalated) / g4b (status-probe failure — kept
+      + escalated), then the SAME #2127 verified-scratch per-candidate
+      core as tier (f) (per-file git-blob proof, class-discriminated git
+      probes, reader-atime pin, live-process probe, reap-time re-probe —
+      round 3: plus a fresh overlay-state re-probe and a POSITIVE
+      worktree-registration proof before any rmtree), keep reasons
+      re-tagged ``slurm-src-*``. D9 (round 2 C2/C3, round 3 C2/C3): files
+      under nested working-tree overlays
+      (``backends.slurm.WORKING_TREE_OVERLAY_PATHS``, e.g.
+      ``external/open-instruct``) are proven against the SURVIVING overlay
+      repo — the main working tree's own ``<main_repo>/<overlay>`` copy,
+      the one that outlives the reap (the nested copy's odb dies with the
+      tree) — under the full clone-class standard (clean tree + empty own
+      stash + every ref tip and HEAD reachable in the surviving repo); an
+      overlay that is not a positively-established nested repo, a SYMLINKED
+      declared-overlay path included, KEEPs the whole tree, and the overlay
+      probe is non-cacheable — re-run before a cached PASS is honored and
+      again on the destructive path. Deliberately NO durable-path presence
+      gate: these trees are full checkouts, so ``store/`` /
+      ``eval_results/`` content is EXPECTED — the core's ``under_durable``
+      rule proof-gates those files per-file instead (#2147 plan §0).
+      Escalations dedup per (path, disposition, reason slug, size band)
+      with a weekly re-alert (D6/M2;
+      ``EPS_SLURM_SRC_ESCALATION_REALERT_DAYS``). Same
+      strict ``main()``-only opt-in as tier (f) (``slurm_src_root`` /
+      ``scratch_verdict_cache_path`` / ``slurm_src_escalation_state_path``
+      called only in ``main()``). Structured rows ride ``--json`` as
+      ``scratch_candidates`` on the ``slurm-src`` tier. Kill switch
+      ``EPM_SKIP_SLURM_SRC_SWEEP=1`` (the family switch kills it
+      transitively).
   (d) The VM's pod-style ``/workspace/.cache/huggingface`` hub cache (#911):
       age-gated ``delete_revisions`` of repos unused >= 14 days (env
       ``EPS_VM_WORKSPACE_HF_CACHE_MAX_AGE_DAYS``), pod-guarded twice
@@ -61,8 +129,18 @@ runs five TIERS of strictly-safe cleanup, reporting bytes freed per tier:
       ``HFCacheInfo.delete_revisions().execute()`` (blob-refcount safe);
       every failure degrades toward KEEP. A later FileNotFoundError on a
       trimmed snapshot path means tier (e) trimmed it — re-download on demand
-      (the data lives on HF), not data loss. Boot-disk pass only, same
-      ``main()``-only opt-in as tier (d).
+      (the data lives on HF), not data loss. Home root: boot-disk pass only,
+      same ``main()``-only opt-in as tier (d). (#2096) The tier is
+      MULTI-ROOT: the DATA-DISK pass runs it over the EXTRA roots from
+      ``EPS_VM_EXTRA_HF_CACHE_ROOTS`` (default: the relocated ``HF_HUB_CACHE``
+      at ``/mnt/eps-data/<user>/huggingface-cache`` — the #1369 relocation
+      left it structurally uncovered) with a data-disk-sized cap
+      (``EPS_VM_DATA_HF_CACHE_CAP_GB``, default 150 GB), escalation dedup +
+      ack sentinels namespaced per root. The extra roots ride the data-disk
+      pass's OWN percent gate (shared ``EPS_VM_DISK_THRESHOLD``, 85%): at
+      today's ~30% data-disk usage the tier is INERT until the disk crosses
+      the gate — coverage-under-pressure, not immediate reclamation
+      (``--ignore-threshold`` remains boot-pass-only, #1392).
   (c) Stale logs: ``logs/**/*.log`` older than N days (default 14, env
       ``EPS_VM_DISK_LOG_MAX_AGE_DAYS``) plus ``/tmp/*.log`` of the same age.
 
@@ -82,6 +160,20 @@ unchanged. Blind spot: if the kernel has not rescanned a resized virtio
 device, sysfs ``size`` still reads the old capacity and no WARN fires until
 rescan/reboot (out of this method's reach; not the incident class).
 
+Stray top-level /tmp uv PROJECT FILES (#2377): every BOOT-DISK pass — even
+under-threshold, the device-fs precedent — additionally runs an unconditional
+leg (``check_tmp_uv_project_files`` ->
+``clean_experiment_downloads.sweep_tmp_uv_project_files``) over exactly
+``/tmp/{pyproject.toml,uv.toml,uv.lock}``: a stray pair poisons uv project
+discovery for every /tmp-cwd ``uv run`` fleet-wide (2026-08-18 incident,
+task #2183). Evidence contract: git-blob identity proof against the main
+repo's odb licenses a same-fs QUARANTINE rename (never a deletion; empty
+files are never licensed; age is only ever a KEEP signal); everything else
+HARD-ESCALATES — every row lands a sidecar event (no byte floor) and
+escalate-class rows fire a deduped Telegram push. Same ``main()``-only
+scratch opt-ins + kill switches as tier (f); rows ride ``--json`` as the
+top-level ``uv_project`` field.
+
 Mirrors the style of ``scripts/worktree_audit.py`` + ``scripts/gcp_audit.py``:
 pure decision helpers are unit-testable, side effects are gated on ``--apply``,
 and the cron wrapper (``scripts/cron_vm_disk_guard.sh``) runs ``--apply``.
@@ -92,6 +184,8 @@ from __future__ import annotations
 import argparse
 import contextlib
 import fcntl
+import getpass
+import hashlib
 import io
 import json
 import math
@@ -100,6 +194,7 @@ import shutil
 import subprocess
 import sys
 import time
+from collections.abc import Sequence
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
@@ -111,12 +206,24 @@ from explore_persona_space.task_workflow import find_task_path, repo_root
 # helper is shared so every disk escalation lands on ONE stream.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from clean_experiment_downloads import (
+    SCRATCH_SWEEP_KILL_ENV,
+    SLURM_SRC_SWEEP_KILL_ENV,
+    _resolution_root,
     _running_pod_side,
     _tmp_entry_owned,
     append_disk_guard_event,
     clean_issue_downloads,
     extract_issue_number,
+    extract_staging_issue_number,
+    production_staging_roots,
     production_tmp_root,
+    scratch_verdict_cache_path,
+    slurm_src_escalation_state_path,
+    slurm_src_sweep_enabled,
+    sweep_slurm_src,
+    sweep_tmp_scratch,
+    sweep_tmp_uv_project_files,
+    tmp_scratch_sweep_enabled,
 )
 
 # Default usage threshold (% of /) above which cleanup runs. Env-overridable.
@@ -224,7 +331,7 @@ def _load_active_escalation_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -276,6 +383,8 @@ def escalate_active_cache(
     state: dict | None = None,
     tmp_root: Path | None = None,
     sweep_tmp: bool = True,
+    staging_roots: list[Path] | None = None,
+    exclude_scratch_shapes: bool = False,
     report_to: TierResult | None = None,
 ) -> TierResult | None:
     """ESCALATE (never delete) an ACTIVE task's re-downloadable cache that the
@@ -292,7 +401,15 @@ def escalate_active_cache(
     ``tmp_root``/``sweep_tmp`` forward VERBATIM into the sizing call (#911 —
     with ``tmp_root=None`` the sizing sees ZERO /tmp bytes; the tier-b caller
     threads its own opt-in through so an active owner's /tmp + P3 footprint
-    is attributed). ``report_to`` (the calling tier's TierResult, #911) —
+    is attributed). ``staging_roots`` forwards the same way (#2095 — with
+    ``staging_roots=None`` the sizing sees ZERO staging bytes; threaded, an
+    active owner's ``/mnt/eps-data/$USER`` staging footprint is attributed
+    without ever being deleted). ``exclude_scratch_shapes`` forwards the same
+    way (#2127 — when the scratch tier is armed, a scratch-shaped issue-keyed
+    /tmp dir is the scratch leg's row, never double-attributed here;
+    ``git_evidence_repo`` is deliberately NOT threaded into this sizing call:
+    attribution needs no reap license, and the git probes would burn work on
+    dirs this path never deletes). ``report_to`` (the calling tier's TierResult, #911) —
     when given — receives the DEDUP-INDEPENDENT structured rows BEFORE any
     floor/ack/band suppression: the owner's ``active_cache_attributions`` row
     + one ``noncanonical_candidates`` row per discovered non-canonical dir
@@ -300,7 +417,13 @@ def escalate_active_cache(
     total. Report-only escalation persists nothing, so these fields are the
     dry-run acceptance surface."""
     sub = clean_issue_downloads(
-        issue_n, apply=False, data_root=data_root, tmp_root=tmp_root, sweep_tmp=sweep_tmp
+        issue_n,
+        apply=False,
+        data_root=data_root,
+        tmp_root=tmp_root,
+        sweep_tmp=sweep_tmp,
+        staging_roots=staging_roots,
+        exclude_scratch_shapes=exclude_scratch_shapes,
     )
     # Size from EVERY discovered cache dir, NOT bytes_freed: a large active
     # hf_dl/.../store/ correctly KEPT by the nested-store parity guard lands in
@@ -508,6 +631,37 @@ def _discover_tmp_issue_numbers(tmp_root: Path) -> list[int]:
     return sorted(found)
 
 
+def _discover_staging_issue_numbers(staging_roots: list[Path]) -> list[int]:
+    """Mirror of :func:`_discover_tmp_issue_numbers` over the staging roots
+    (#2095): TOP-LEVEL dirs/symlinks of each root, uid-owned
+    (``ced._tmp_entry_owned``), name keyed via
+    ``ced.extract_staging_issue_number`` (PREFIX-ONLY — no P2 suffix route).
+    Lets tier (b) visit a staging-ONLY issue (a ``/mnt/eps-data/$USER/
+    issue<N>_<slug>/`` dir with no ``data/issue*`` dir anywhere). Never
+    recursive; files are never considered; a per-entry stat error is skipped
+    (fail-soft). Returns sorted unique ints."""
+    found: set[int] = set()
+    for root in staging_roots:
+        try:
+            if not root.is_dir():
+                continue
+            children = sorted(root.iterdir())
+        except OSError:
+            continue
+        for child in children:
+            try:
+                if not (child.is_dir() or child.is_symlink()):
+                    continue
+            except OSError:
+                continue
+            if not _tmp_entry_owned(child):
+                continue
+            n = extract_staging_issue_number(child.name)
+            if n is not None:
+                found.add(n)
+    return sorted(found)
+
+
 # ─── device-vs-fs size reconciliation (#1457) ────────────────────────────────
 
 
@@ -697,6 +851,11 @@ class TierResult:
     # {repo, repo_type, bytes, revisions, last_accessed_age_days,
     #  reap_candidate_bytes, over_escalate_threshold}.
     hf_repo_attributions: list[dict] = field(default_factory=list)
+    # ── tier (f) structured rows (#2127) — surfaced in --json ──
+    # One row per discovered top-level /tmp scratch candidate, report-only AND
+    # apply alike: {path, name, bytes, disposition, reason, evidence?,
+    # git_class?, n_verified?, n_tolerated?, first_unverified?, age_hours?}.
+    scratch_candidates: list[dict] = field(default_factory=list)
 
 
 @dataclass
@@ -714,6 +873,11 @@ class GuardResult:
     # under-threshold — a fresh resize is detectable long before disk
     # pressure). Read-only + fail-soft; never affects tiers or exit codes.
     device_fs: DeviceFsCheck | None = None
+    # Stray top-level /tmp uv PROJECT FILES (#2377): computed on EVERY
+    # boot-disk pass (even under-threshold — the poison files are a few KB
+    # and would never trip the percent gate; the device_fs precedent).
+    # Read-only w.r.t. tiers/exit codes; fail-soft inside the leg helper.
+    uv_project: TierResult | None = None
 
     @property
     def bytes_freed(self) -> int:
@@ -785,6 +949,9 @@ def clean_terminal_download_caches(
     *,
     tmp_root: Path | None = None,
     sweep_tmp: bool = True,
+    staging_roots: list[Path] | None = None,
+    exclude_scratch_shapes: bool = False,
+    git_evidence_repo: Path | None = None,
 ) -> TierResult:
     """Tier (b): delete ``hf_dl`` / ``g*_dl`` caches for issues at a terminal
     status (completed / archived / awaiting_promotion) — across BOTH the
@@ -809,6 +976,22 @@ def clean_terminal_download_caches(
     ``noncanonical_candidates`` + ``total_discovered_bytes``) land on the
     returned TierResult for the ``--json`` dry-run acceptance surface.
 
+    STAGING roots (#2095): with an EXPLICIT ``staging_roots`` (strict opt-in
+    — ``main()`` passes ``production_staging_roots()`` on the DATA-DISK pass
+    only; library calls with ``staging_roots=None`` never touch any staging
+    root), discovery is widened with ``_discover_staging_issue_numbers`` so a
+    staging-ONLY issue is visited, and ``staging_roots`` forwards into every
+    per-issue cleanup + escalation-sizing call (the staging gate variants —
+    gate 1.55 cross-issue, top-level recency, class labels, the sampled
+    mirror probe — live in ``clean_issue_downloads``).
+
+    #2127 knobs, both hermetic-default: ``exclude_scratch_shapes`` (True only
+    from the ``run_guard`` invocation that ALSO runs the scratch tier — the
+    issue-keyed /tmp discovery then skips scratch-shaped names so one dir is
+    never double-attributed) and ``git_evidence_repo`` (arms gate 1.7's
+    git-blob evidence branch (c) inside ``clean_issue_downloads`` for the
+    terminal-reap calls; the escalation sizing deliberately omits it).
+
     With an explicit ``data_root`` (tests) the search is scoped to that single
     root; in production (``data_root is None``) it spans repo-root + all
     worktree data roots."""
@@ -820,6 +1003,8 @@ def clean_terminal_download_caches(
     issue_numbers = set(_discover_data_issue_numbers(discover_roots))
     if sweep_tmp and tmp_root is not None:
         issue_numbers.update(_discover_tmp_issue_numbers(tmp_root))
+    if staging_roots:
+        issue_numbers.update(_discover_staging_issue_numbers(staging_roots))
     escalation_state = _load_active_escalation_state()
     escalated_any = False
     for issue_n in sorted(issue_numbers):
@@ -841,6 +1026,8 @@ def clean_terminal_download_caches(
                 state=escalation_state,
                 tmp_root=tmp_root,
                 sweep_tmp=sweep_tmp,
+                staging_roots=staging_roots,
+                exclude_scratch_shapes=exclude_scratch_shapes,
                 report_to=res,
             )
             if esc is not None:
@@ -850,7 +1037,14 @@ def clean_terminal_download_caches(
         # data_root=data_root forwards the test-scoping; None lets
         # clean_issue_downloads resolve repo-root + this issue's worktree(s).
         sub = clean_issue_downloads(
-            issue_n, apply=apply, data_root=data_root, tmp_root=tmp_root, sweep_tmp=sweep_tmp
+            issue_n,
+            apply=apply,
+            data_root=data_root,
+            tmp_root=tmp_root,
+            sweep_tmp=sweep_tmp,
+            staging_roots=staging_roots,
+            exclude_scratch_shapes=exclude_scratch_shapes,
+            git_evidence_repo=git_evidence_repo,
         )
         res.bytes_freed += sub.bytes_freed
         res.total_discovered_bytes += sub.total_discovered_bytes
@@ -882,6 +1076,189 @@ def clean_terminal_download_caches(
             res.detail.append(f"issue {issue_n}: external symlink target kept: {name} -> {tgt}")
     if apply and escalated_any:
         _save_active_escalation_state(escalation_state)
+    return res
+
+
+# ─── tier (f): top-level /tmp gate/smoke scratch trees (#2127) ───────────────
+
+
+def clean_tmp_scratch(
+    apply: bool,
+    *,
+    tmp_root: Path | None,
+    main_repo: Path | None,
+    verdict_cache_path: Path | None = None,
+) -> TierResult:
+    """Tier (f) (#2127): owner-status-INDEPENDENT sweep of top-level /tmp
+    gate/smoke scratch trees, gated on VERIFIED git-reproducibility — never
+    on age (age is only ever a KEEP signal). Thin wrapper over
+    ``clean_experiment_downloads.sweep_tmp_scratch`` (which owns the shape
+    globs, the denylist, the walk contract, the blob proof, the live-process
+    probe, and the worktree-aware reap); this tier adapts its rows onto a
+    ``TierResult`` for the report + ``--json`` surfaces. SKIPPED (with a
+    reason) when the strict ``main()``-only opt-ins are absent or a kill
+    switch is set — library callers stay hermetic by construction."""
+    res = TierResult(name="tmp-scratch")
+    if tmp_root is None or main_repo is None:
+        res.skipped = True
+        res.skip_reason = "no tmp_root/main_repo opt-in (library callers stay hermetic)"
+        return res
+    if not tmp_scratch_sweep_enabled():
+        res.skipped = True
+        res.skip_reason = (
+            f"kill switch set ({SCRATCH_SWEEP_KILL_ENV} or the non-canonical family switch)"
+        )
+        return res
+    sweep = sweep_tmp_scratch(
+        tmp_root,
+        apply=apply,
+        main_repo=main_repo,
+        verdict_cache_path=verdict_cache_path,
+    )
+    res.bytes_freed = sweep.bytes_freed
+    res.total_discovered_bytes = sweep.total_discovered_bytes
+    res.scratch_candidates = list(sweep.rows)
+    for row in sweep.rows:
+        res.detail.append(
+            f"{row.get('disposition', '?')}: {row.get('path', '?')} "
+            f"[{_fmt_gb(int(row.get('bytes', 0)))}] — {row.get('reason', '')}"
+        )
+    return res
+
+
+def check_tmp_uv_project_files(
+    apply: bool,
+    *,
+    tmp_root: Path | None,
+    main_repo: Path | None,
+    now: float | None = None,
+) -> TierResult:
+    """Unconditional guard leg (#2377): stray top-level /tmp uv PROJECT FILES
+    (``/tmp/{pyproject.toml,uv.toml,uv.lock}``) poison uv project discovery
+    for every /tmp-cwd ``uv run`` fleet-wide at a few KB — far below any disk
+    threshold — so this leg runs on EVERY boot-disk pass (even
+    under-threshold; the ``GuardResult.device_fs`` precedent), NOT inside the
+    threshold-gated tier suite. Thin wrapper over
+    ``clean_experiment_downloads.sweep_tmp_uv_project_files`` (which owns the
+    gate chain: nonregular / foreign-uid / open-handle / git-blob evidence /
+    freshness grace / quarantine-never-delete); this leg adapts its rows onto
+    a ``TierResult`` for the report + ``--json`` surfaces. SKIPPED (with a
+    reason) when the strict ``main()``-only scratch opt-ins are absent or a
+    kill switch is set — library callers stay hermetic by construction.
+    FAIL-SOFT: any exception degrades to a skipped TierResult carrying the
+    reason (logged loudly) — the leg must never crash the guard pass."""
+    res = TierResult(name="tmp-uvproj")
+    if tmp_root is None or main_repo is None:
+        res.skipped = True
+        res.skip_reason = "no tmp_root/main_repo opt-in (library callers stay hermetic)"
+        return res
+    if not tmp_scratch_sweep_enabled():
+        res.skipped = True
+        res.skip_reason = (
+            f"kill switch set ({SCRATCH_SWEEP_KILL_ENV} or the non-canonical family switch)"
+        )
+        return res
+    try:
+        sweep = sweep_tmp_uv_project_files(tmp_root, apply=apply, main_repo=main_repo, now=now)
+    except Exception as exc:  # fail-soft by design (#2377): observability leg,
+        # never crashes the guard pass — the failure is logged loudly + carried
+        # as the skip reason, not swallowed.
+        res.skipped = True
+        res.skip_reason = f"uv-project leg failed ({exc!r})"[:200]
+        print(f"  WARNING: tmp-uvproj leg failed: {exc!r}", file=sys.stderr)
+        return res
+    res.bytes_freed = sweep.bytes_freed
+    res.total_discovered_bytes = sweep.total_discovered_bytes
+    res.scratch_candidates = list(sweep.rows)
+    for row in sweep.rows:
+        res.detail.append(
+            f"{row.get('disposition', '?')}: {row.get('path', '?')} — {row.get('reason', '')}"
+        )
+    return res
+
+
+# ─── tier (g): ~/.eps-slurm-src SLURM staging trees (#2147) ──────────────────
+
+# The SLURM lanes materialize a full repo checkout per issue at
+# ~/.eps-slurm-src/issue-<N> (backends/slurm.py::materialize_branch_src);
+# nothing reaped TERMINAL issues' copies before tier (g) (13 dirs / 112 GB,
+# ~8.6 GB mean, measured 2026-08-16 on a 98%-full boot disk).
+DEFAULT_SLURM_SRC_ROOT = Path.home() / ".eps-slurm-src"  # env EPS_SLURM_SRC_ROOT
+
+
+def slurm_src_root() -> Path:
+    """The SLURM-lane staging root (#2147 tier (g)) — env
+    ``EPS_SLURM_SRC_ROOT``, falsy/unset -> ``~/.eps-slurm-src``: EXACTLY the
+    writer's expression (``backends.slurm.materialize_branch_src``:
+    ``Path(os.environ.get("EPS_SLURM_SRC_ROOT") or (Path.home() / ...))``),
+    so the janitor always watches the tree the SLURM lanes populate.
+    Review round 2 (minor): the reaper deliberately mirrors the writer's
+    precedence VERBATIM — no ``.strip()`` or other normalization the writer
+    does not apply, so a value the writer treats as a root is never mapped
+    to a different reaper root (``sweep_slurm_src``'s
+    ``_assert_safe_slurm_src_root`` rejects nonsense values loudly).
+    main()-ONLY opt-in (the ``production_tmp_root()`` hermeticity pattern;
+    the source-scan test pins this symbol) — ``run_guard`` never calls
+    it."""
+    return Path(os.environ.get("EPS_SLURM_SRC_ROOT") or DEFAULT_SLURM_SRC_ROOT)
+
+
+def clean_slurm_src(
+    apply: bool,
+    *,
+    staging_root: Path | None,
+    main_repo: Path | None,
+    verdict_cache_path: Path | None = None,
+    escalation_state_path: Path | None = None,
+) -> TierResult:
+    """Tier (g) (#2147): evidence-gated sweep of TERMINAL-status issues'
+    ``~/.eps-slurm-src/issue-<N>`` SLURM staging trees. Thin wrapper over
+    ``clean_experiment_downloads.sweep_slurm_src`` (which owns the D4
+    pre-gates g1-g4b and re-uses the tier-(f) #2127 verified-scratch
+    per-candidate core — blob proof, class-discriminated git probes,
+    reader-atime pin, live-process probe, worktree-aware reap, D9 nested
+    overlay evidence); this tier adapts its rows onto a ``TierResult`` for
+    the report + ``--json`` surfaces and passes the guard's own read-only
+    ``_resolve_issue_status`` + ``TERMINAL_CACHE_REAP_STATUSES`` as the g4
+    terminal-status gate (plan D3). SKIPPED (with a reason) when the strict
+    ``main()``-only opt-ins are absent or a kill switch is set — library
+    callers stay hermetic by construction."""
+    res = TierResult(name="slurm-src")
+    if staging_root is None or main_repo is None:
+        res.skipped = True
+        res.skip_reason = "no staging_root/main_repo opt-in (library callers stay hermetic)"
+        return res
+    if not slurm_src_sweep_enabled():
+        res.skipped = True
+        res.skip_reason = (
+            f"kill switch set ({SLURM_SRC_SWEEP_KILL_ENV} or the non-canonical family switch)"
+        )
+        return res
+    sweep = sweep_slurm_src(
+        staging_root,
+        apply=apply,
+        main_repo=main_repo,
+        status_resolver=_resolve_issue_status,
+        terminal_statuses=TERMINAL_CACHE_REAP_STATUSES,
+        verdict_cache_path=verdict_cache_path,
+        escalation_state_path=escalation_state_path,
+    )
+    if sweep.skip_reason is not None:
+        # #2147 review round 2 M1: the sweep did not ENUMERATE (absent
+        # staging root) — surface the tier as SKIPPED with the sweep's own
+        # reason instead of an indistinguishable empty result. (Any other
+        # enumeration failure RAISES inside sweep_slurm_src.)
+        res.skipped = True
+        res.skip_reason = sweep.skip_reason
+        return res
+    res.bytes_freed = sweep.bytes_freed
+    res.total_discovered_bytes = sweep.total_discovered_bytes
+    res.scratch_candidates = list(sweep.rows)
+    for row in sweep.rows:
+        res.detail.append(
+            f"{row.get('disposition', '?')}: {row.get('path', '?')} "
+            f"[{_fmt_gb(int(row.get('bytes', 0)))}] — {row.get('reason', '')}"
+        )
     return res
 
 
@@ -1040,6 +1417,68 @@ def home_hf_cache_root() -> Path:
     return Path(raw).expanduser() if raw else Path(DEFAULT_HOME_HF_CACHE).expanduser()
 
 
+# #2096: the #1369 relocation moved HF_HUB_CACHE to the data disk
+# (~/.bashrc:4 / ~/.profile:34 export /mnt/eps-data/$(id -un)/huggingface-cache/hub),
+# leaving the cache that actually grows structurally outside tier (e)'s fixed
+# home root. The EXTRA roots below bring it under the same tier, triggered
+# from the DATA-DISK pass. Same fixed-location doctrine as the home root:
+# deliberately NOT derived from HF_HOME/HF_HUB_CACHE at runtime (the cron
+# does not source ~/.bashrc — env-derived resolution varies per process; the
+# design note above tier (e)'s constants governs), so the default is a
+# user-templated FIXED path.
+DEFAULT_EXTRA_HF_CACHE_ROOT_TEMPLATE = "/mnt/eps-data/{user}/huggingface-cache"
+DEFAULT_DATA_HF_CACHE_CAP_GB = 150.0  # env EPS_VM_DATA_HF_CACHE_CAP_GB (#2096)
+
+
+def extra_hf_cache_roots() -> list[Path]:
+    """EXTRA tier-(e) cache PARENT roots (each holding ``hub/``) for the
+    data-disk pass (#2096). Env ``EPS_VM_EXTRA_HF_CACHE_ROOTS`` is a
+    colon-separated list of cache PARENT roots (same parent-root semantics as
+    ``EPS_VM_HOME_HF_CACHE``): UNSET -> ``[the user-templated data-disk
+    default]``; set-but-EMPTY -> ``[]`` (the explicit kill switch); set ->
+    the listed roots. A missing / non-dir root is a clean per-root no-op in
+    the tier itself (its existing missing-hub skip)."""
+    raw = os.environ.get("EPS_VM_EXTRA_HF_CACHE_ROOTS")
+    if raw is None:
+        return [Path(DEFAULT_EXTRA_HF_CACHE_ROOT_TEMPLATE.format(user=getpass.getuser()))]
+    return [Path(entry).expanduser() for entry in (e.strip() for e in raw.split(":")) if entry]
+
+
+def data_hf_cache_cap_gb() -> float:
+    """Tier-(e) size cap (GB) for the EXTRA data-disk roots (#2096). Env
+    ``EPS_VM_DATA_HF_CACHE_CAP_GB``; blank/invalid/negative/non-finite -- or a
+    finite value whose byte product overflows float (the #1494 OverflowError
+    class) -> default 150 GB (the disk is ~1 TB; the incident class is a
+    single ~185 GB slab, which 150 GB bounds while never touching a normal
+    working set — the 50 GB default stays boot-disk-sized)."""
+    raw = os.environ.get("EPS_VM_DATA_HF_CACHE_CAP_GB", "").strip()
+    gb = DEFAULT_DATA_HF_CACHE_CAP_GB
+    if raw:
+        try:
+            val = float(raw)
+        except ValueError:
+            val = -1.0
+        if val >= 0.0 and math.isfinite(val * 1e9):
+            gb = val
+    return gb
+
+
+def _hf_root_tag(root: Path) -> str:
+    """Short stable digest of an EXTRA tier-(e) root (#2096) — namespaces the
+    escalation state keys + ack sentinels PER ROOT, so the same repo cached
+    under both the home root and a data-disk root can never share (or
+    suppress) the other's escalation dedup. Default-(home-)root callers pass
+    no tag (``root_tag=""``) and their keys/sentinels stay byte-identical
+    (state-file back-compat). Keyed on the RESOLVED parent root so a
+    symlinked alias maps to the same tag; resolution failure falls back to
+    the literal path (stable within a run)."""
+    try:
+        resolved = root.resolve()
+    except OSError:
+        resolved = root
+    return hashlib.sha1(str(resolved).encode()).hexdigest()[:8]
+
+
 def home_hf_revision_max_age_days() -> float:
     """Tier-(e) age window in days, shared by both arms (repo ``last_accessed``;
     revision ``last_modified`` + exclusive-blob atime). Env
@@ -1109,13 +1548,30 @@ def home_hf_size_cap_min_age_seconds() -> float:
     return hours * 3600.0
 
 
-def _hf_ack_sentinel_path(repo_key: str, band_gb: float) -> Path:
-    """Per-(repo, band) ack sentinel for the tier-(e) home-hub repo escalation:
+def _hf_ack_sentinel_path(repo_key: str, band_gb: float, root_tag: str = "") -> Path:
+    """Per-(repo, band) ack sentinel for the tier-(e) hub-cache repo escalation:
     ``touch`` it to silence this repo's escalation until it crosses into a
     bigger band. ``repo_key`` is ``<repo_type>/<repo_id>``; '/' maps to '--'
-    so the sentinel is a flat filename (mirrors ``_active_ack_sentinel_path``)."""
+    so the sentinel is a flat filename (mirrors ``_active_ack_sentinel_path``).
+    A non-default root's tag (#2096, ``_hf_root_tag``) suffixes the filename so
+    a home-root ack can never silence the data-root alert for the same repo;
+    ``root_tag=""`` (the home root) keeps today's filename byte-identical."""
     safe = repo_key.replace("/", "--")
-    return repo_root() / ".claude" / "cache" / f"disk-guard-ack-hf-{safe}-{band_gb:g}"
+    suffix = f"-{root_tag}" if root_tag else ""
+    return repo_root() / ".claude" / "cache" / f"disk-guard-ack-hf-{safe}-{band_gb:g}{suffix}"
+
+
+def _hf_state_key(repo_key: str, band_gb: float, root_tag: str = "") -> str:
+    """The escalation-dedup state key for one (root, repo, band) (#2096).
+    Default root (``root_tag=""``): ``hf:<repo_key>:<band>`` — byte-identical
+    to the pre-#2096 key (state-file back-compat). Non-default roots:
+    ``hf:<tag>:<repo_key>:<band>`` — root-namespaced so the same repo cached
+    under two roots deduplicates independently. ONE composer for both the
+    read (``_should_escalate_hf_repo``) and the apply-path write, so the two
+    can never drift."""
+    if root_tag:
+        return f"hf:{root_tag}:{repo_key}:{band_gb:g}"
+    return f"hf:{repo_key}:{band_gb:g}"
 
 
 def _should_escalate_hf_repo(
@@ -1123,15 +1579,18 @@ def _should_escalate_hf_repo(
     band_gb: float,
     bytes_: int,
     state: dict,
+    root_tag: str = "",
 ) -> tuple[bool, float]:
-    """Decide whether to (re-)escalate a home-hub repo, and the growth % vs the
-    last alert. Dedups on (repo, band) under the ``hf:``-NAMESPACED state key
-    ``hf:<repo_type>/<repo_id>:<band>`` (no collision with the integer-keyed
-    ``<issue>:<band>`` active-cache entries in the same JSON); re-alerts only
-    on >25% growth; an ack sentinel for this (repo, band) suppresses entirely."""
-    if _hf_ack_sentinel_path(repo_key, band_gb).exists():
+    """Decide whether to (re-)escalate a hub-cache repo, and the growth % vs
+    the last alert. Dedups on (root, repo, band) under the ``hf:``-NAMESPACED
+    state key from ``_hf_state_key`` — ``hf:<repo_type>/<repo_id>:<band>`` for
+    the default (home) root, ``hf:<tag>:...`` for a #2096 extra root (no
+    collision with the integer-keyed ``<issue>:<band>`` active-cache entries
+    in the same JSON); re-alerts only on >25% growth; an ack sentinel for this
+    (root, repo, band) suppresses entirely."""
+    if _hf_ack_sentinel_path(repo_key, band_gb, root_tag).exists():
         return (False, 0.0)
-    key = f"hf:{repo_key}:{band_gb:g}"
+    key = _hf_state_key(repo_key, band_gb, root_tag)
     prev = state.get(key)
     if not isinstance(prev, int | float) or prev <= 0:
         return (True, 0.0)  # first alert for this (repo, band)
@@ -1446,20 +1905,35 @@ def _escalate_home_hf_repos(
     apply: bool,
     st: dict,
     res: TierResult,
+    root_tag: str = "",
+    root_display: str = "",
 ) -> bool:
     """Escalation arm of tier (e): for every repo over the always-escalate
     footprint, a detail line ALWAYS, plus one sidecar row (per-revision
-    breakdown + ``reap_cmd``) + one Telegram push deduped per (repo, band)
-    with the 25%-growth re-alert + ack-sentinel suppression. State updates
-    (``st[key] = bytes``) are apply-gated; persistence of ``st`` itself is
-    the caller's. Returns True when any alert fired (state dirty). A
-    degenerate repo (None timestamps in the breakdown) loses only ITS
-    escalation — the loop continues (per-repo fail-keep, #1376)."""
+    breakdown + ``reap_cmd``) + one Telegram push deduped per (root, repo,
+    band) — ``root_tag`` (#2096, empty for the default home root) namespaces
+    the dedup keys + ack sentinels, ``root_display`` names the root in the
+    push/sidecar for non-default roots — with the 25%-growth re-alert +
+    ack-sentinel suppression. State updates (``st[key] = bytes``) are
+    apply-gated; persistence of ``st`` itself is the caller's. Returns True
+    when any alert fired (state dirty). A degenerate repo (None timestamps in
+    the breakdown) loses only ITS escalation — the loop continues (per-repo
+    fail-keep, #1376)."""
     escalated_any = False
     for repo in repos:
         try:
             escalated_any = (
-                _escalate_one_home_hf_repo(repo, cand_by_repo, escalate_bytes, ts, apply, st, res)
+                _escalate_one_home_hf_repo(
+                    repo,
+                    cand_by_repo,
+                    escalate_bytes,
+                    ts,
+                    apply,
+                    st,
+                    res,
+                    root_tag=root_tag,
+                    root_display=root_display,
+                )
                 or escalated_any
             )
         except Exception:
@@ -1475,6 +1949,8 @@ def _escalate_one_home_hf_repo(
     apply: bool,
     st: dict,
     res: TierResult,
+    root_tag: str = "",
+    root_display: str = "",
 ) -> bool:
     """One repo's escalation decision + emission (see ``_escalate_home_hf_repos``).
     Returns True when the alert fired for this repo."""
@@ -1489,7 +1965,9 @@ def _escalate_one_home_hf_repo(
         f"(> {_fmt_gb(escalate_bytes)} always-escalate threshold; "
         f"{n_cands} reapable)"
     )
-    do_alert, growth_pct = _should_escalate_hf_repo(repo_key, band_gb, int(repo.size_on_disk), st)
+    do_alert, growth_pct = _should_escalate_hf_repo(
+        repo_key, band_gb, int(repo.size_on_disk), st, root_tag
+    )
     if not do_alert:
         return False
     breakdown = [
@@ -1503,28 +1981,33 @@ def _escalate_one_home_hf_repo(
             :_HOME_HF_ESCALATION_BREAKDOWN_TOP_N
         ]
     ]
-    append_disk_guard_event(
-        {
-            "kind": "home-hf-cache-repo-escalation",
-            "repo": repo_key,
-            "bytes": int(repo.size_on_disk),
-            "revisions": len(list(repo.revisions)),
-            "band": band_gb,
-            "growth_pct": round(growth_pct, 1),
-            "revision_breakdown": breakdown,
-            "reap_cmd": "uv run python scripts/vm_disk_guard.py --apply",
-        },
-        apply=apply,
-    )
+    event = {
+        "kind": "home-hf-cache-repo-escalation",
+        "repo": repo_key,
+        "bytes": int(repo.size_on_disk),
+        "revisions": len(list(repo.revisions)),
+        "band": band_gb,
+        "growth_pct": round(growth_pct, 1),
+        "revision_breakdown": breakdown,
+        "reap_cmd": "uv run python scripts/vm_disk_guard.py --apply",
+    }
+    if root_tag:
+        # #2096: ADDITIVE field for non-default roots only — consumers key on
+        # ``kind`` (verified append-only writers, no strict-schema parser);
+        # default-root rows stay byte-identical.
+        event["cache_root"] = root_display
+    append_disk_guard_event(event, apply=apply)
+    cache_label = f"HF hub cache at {root_display}" if root_tag else "home HF hub cache"
     _telegram_push(
-        f"VM disk: home HF hub cache repo {repo_key} holds "
+        f"VM disk: {cache_label} repo {repo_key} holds "
         f"{_fmt_gb(int(repo.size_on_disk))} across {len(list(repo.revisions))} "
         f"revisions ({n_cands} unreferenced+stale). Guard reaps stale + over-cap "
-        f"unreferenced revisions on --apply; ack: touch {_hf_ack_sentinel_path(repo_key, band_gb)}",
+        f"unreferenced revisions on --apply; ack: touch "
+        f"{_hf_ack_sentinel_path(repo_key, band_gb, root_tag)}",
         apply,
     )
     if apply:
-        st[f"hf:{repo_key}:{band_gb:g}"] = int(repo.size_on_disk)
+        st[_hf_state_key(repo_key, band_gb, root_tag)] = int(repo.size_on_disk)
     return True
 
 
@@ -1538,11 +2021,17 @@ def clean_home_hf_stale_revisions(
     state: dict | None = None,
     cache_cap_gb: float | None = None,  # arm 3 (#1450): None -> home_hf_cache_cap_bytes()
     size_cap_min_age_hours: float | None = None,  # None -> home_hf_size_cap_min_age_seconds()
+    root_tag: str = "",  # #2096: non-empty for an EXTRA (non-home) root — see _hf_root_tag
 ) -> TierResult:
-    """Tier (e): attribution + escalation + safe reap of the HOME HF hub cache
-    (``~/.cache/huggingface/hub``; #1376 + #1377 reconciled into ONE tier —
-    #1377's incumbent names/knobs, the UNION of both tasks' KEEP protections,
-    plus #1376's attribution/escalation + whole-stale-repo arm).
+    """Tier (e): attribution + escalation + safe reap of an HF hub cache root —
+    the HOME cache ``~/.cache/huggingface/hub`` by default (``cache_root=None``;
+    #1376 + #1377 reconciled into ONE tier — #1377's incumbent names/knobs, the
+    UNION of both tasks' KEEP protections, plus #1376's attribution/escalation
+    + whole-stale-repo arm), or (#2096) an EXTRA root such as the relocated
+    ``HF_HUB_CACHE`` on the data disk, passed explicitly by ``run_guard``'s
+    ``hf_cache_roots`` opt-in with a non-empty ``root_tag`` that namespaces
+    the escalation dedup keys + ack sentinels per root (``root_tag=""`` keeps
+    every key/sentinel byte-identical to the pre-#2096 tier).
 
     On every triggered boot-disk pass (report-only AND apply):
 
@@ -1623,6 +2112,19 @@ def clean_home_hf_stale_revisions(
                 "home cache root == workspace cache root — tier (d) owns it (no double-reap)"
             )
             return res
+        # #2096 double-cover guard: an EXTRA root (root_tag non-empty — the
+        # run_guard hf_cache_roots path always tags) that resolves to the
+        # HOME root's hub (an env listing the home root, or a symlinked data
+        # root) is owned by the boot-disk pass — skip, never double-reap.
+        # Keyed on root_tag, NOT bare cache_root: legacy callers legitimately
+        # pass cache_root == the home root explicitly (the boot-pass
+        # semantics) and must behave byte-identically.
+        if root_tag and hub.resolve() == (home_hf_cache_root() / "hub").resolve():
+            res.skipped = True
+            res.skip_reason = (
+                "extra cache root == home cache root — boot-disk pass owns it (no double-reap)"
+            )
+            return res
     except OSError as exc:
         res.skipped = True
         res.skip_reason = f"root-resolution probe failed: {exc}"  # fail toward keep
@@ -1666,7 +2168,15 @@ def clean_home_hf_stale_revisions(
             else (_load_active_escalation_state() if _any_repo_over(repos, escalate_bytes) else {})
         )
         escalated_any = _escalate_home_hf_repos(
-            repos, cand_by_repo, escalate_bytes, ts, apply, st, res
+            repos,
+            cand_by_repo,
+            escalate_bytes,
+            ts,
+            apply,
+            st,
+            res,
+            root_tag=root_tag,
+            root_display=str(root) if root_tag else "",
         )
         if apply and manage_state and escalated_any:
             _save_active_escalation_state(st)
@@ -1823,7 +2333,18 @@ def run_guard(
     reclaim_tiers: bool = True,
     now: float | None = None,
     tmp_root: Path | None = None,
+    staging_roots: list[Path] | None = None,
     ignore_threshold: bool = False,
+    hf_cache_roots: Sequence[Path] | None = None,
+    hf_cache_cap_gb: float | None = None,
+    scratch_tmp_root: Path | None = None,
+    scratch_main_repo: Path | None = None,
+    scratch_verdict_cache: Path | None = None,
+    git_evidence_repo: Path | None = None,
+    slurm_src_staging_root: Path | None = None,
+    slurm_src_main_repo: Path | None = None,
+    slurm_src_verdict_cache: Path | None = None,
+    slurm_src_escalation_state: Path | None = None,
 ) -> GuardResult:
     """Read disk usage, and if over threshold run the cleanup tiers.
 
@@ -1860,7 +2381,52 @@ def run_guard(
     opt-in — they run only when ``reclaim_tiers`` AND an explicit ``tmp_root``
     are set, so every library call stays hermetic by construction (neither
     the data-disk pass nor a pytest library call can ever scan or reap the
-    real ``~/.cache/huggingface``)."""
+    real ``~/.cache/huggingface``).
+
+    ``staging_roots`` (#2095) is forwarded VERBATIM to tier (b) —
+    ``run_guard`` itself NEVER calls ``production_staging_roots()`` (the
+    staging opt-in lives ONLY in the CLI ``main()`` bodies; the same
+    source-scan test pins this symbol): the library default ``None`` keeps
+    every ``run_guard(apply=True, ...)`` suite call hermetic — a run_guard-
+    side production fallback would sweep the real ``/mnt/eps-data/$USER``
+    staging tree during pytest. ``main()`` threads it into the DATA-DISK
+    pass only (the staging roots live ON the data disk — the boot-disk pass
+    never sweeps them, the inverted twin of the /tmp no-double-sweep pin).
+
+    ``scratch_tmp_root`` / ``scratch_main_repo`` / ``scratch_verdict_cache``
+    / ``git_evidence_repo`` (#2127) arm tier (f) + gate 1.7's branch (c) —
+    the SAME hermeticity pattern: ``run_guard`` itself NEVER calls
+    ``production_tmp_root()`` / ``scratch_verdict_cache_path()`` (the
+    opt-ins live ONLY in ``main()``'s boot-disk branch; the source-scan
+    test pins the cache-path symbol), so every library caller stays
+    hermetic — no real /tmp scan, no real verdict cache, no real-odb blob
+    licensing of fixture trees. When tier (f) is ARMED, tier (b) runs with
+    ``exclude_scratch_shapes=True`` so a scratch-shaped issue-keyed /tmp
+    dir is exactly one leg's row (never double-attributed).
+
+    ``slurm_src_staging_root`` / ``slurm_src_main_repo`` /
+    ``slurm_src_verdict_cache`` / ``slurm_src_escalation_state`` (#2147) arm
+    tier (g) — the SAME hermeticity pattern as tier (f): ``run_guard``
+    itself NEVER calls the production resolvers (``slurm_src_root()`` +
+    the escalation-state path resolver live ONLY in ``main()``'s boot-disk
+    branch; the source-scan test pins both symbols), so every library
+    caller stays hermetic — no real ``~/.eps-slurm-src`` scan, no real
+    verdict cache, no real dedup-state writes. The tier itself threads the
+    guard's read-only ``_resolve_issue_status`` +
+    ``TERMINAL_CACHE_REAP_STATUSES`` into ``sweep_slurm_src`` (plan D3).
+    No exclude handshake with tier (b): the staging root lives under
+    ``$HOME`` (never /tmp, never ``data/``), so no other tier can discover
+    the same dir — one dir is one leg's row by construction.
+
+    ``hf_cache_roots`` + ``hf_cache_cap_gb`` (#2096) are the EXTRA tier-(e)
+    roots opt-in for the DATA-DISK pass — one tier-(e) ``TierResult`` per
+    deduped root (dedup by resolved ``hub/``, first wins), appended after
+    tier (b) so the data-disk ordering is (b) then (e), each riding the
+    pass's own ``res.triggered`` percent gate. Same hermeticity pattern as
+    ``tmp_root``: ``run_guard`` itself NEVER calls ``extra_hf_cache_roots()``
+    (the resolver call lives ONLY in ``main()``'s data-disk branch; a
+    source-scan test pins it) — a library caller that passes no roots can
+    never scan or reap any real cache."""
     thr = threshold if threshold is not None else threshold_pct()
     age = log_max_age if log_max_age is not None else log_max_age_days()
     used_before = disk_used_pct(disk_path)
@@ -1880,12 +2446,92 @@ def run_guard(
         # a harmless ok/skipped.
         device_fs=check_device_fs_gap(disk_path),
     )
+    # #2377: the uv-project poison leg runs BEFORE the under-threshold early
+    # return — the poison files are a few KB and would never trip the percent
+    # gate (the device_fs every-pass precedent). Armed by the SAME scratch
+    # opt-ins + kill switches as tier (f) (main()-only, so library callers
+    # stay hermetic); fail-soft inside the helper; read-only w.r.t.
+    # tiers/exit codes.
+    res.uv_project = check_tmp_uv_project_files(
+        apply, tmp_root=scratch_tmp_root, main_repo=scratch_main_repo, now=now
+    )
     if not res.triggered:
         return res
 
+    scratch_on = (
+        reclaim_tiers
+        and scratch_tmp_root is not None
+        and scratch_main_repo is not None
+        and tmp_scratch_sweep_enabled()
+    )
     if reclaim_tiers:
         res.tiers.append(clean_uv_cache(apply))
-    res.tiers.append(clean_terminal_download_caches(apply, data_root=data_root, tmp_root=tmp_root))
+    res.tiers.append(
+        clean_terminal_download_caches(
+            apply,
+            data_root=data_root,
+            tmp_root=tmp_root,
+            staging_roots=staging_roots,
+            exclude_scratch_shapes=scratch_on,
+            git_evidence_repo=git_evidence_repo,
+        )
+    )
+    if scratch_on:
+        # Tier (f) (#2127): right after tier (b), boot-disk pass only. The
+        # exclude_scratch_shapes handshake above means a scratch-shaped
+        # issue-keyed /tmp dir lands on exactly ONE leg's rows.
+        res.tiers.append(
+            clean_tmp_scratch(
+                apply,
+                tmp_root=scratch_tmp_root,
+                main_repo=scratch_main_repo,
+                verdict_cache_path=scratch_verdict_cache,
+            )
+        )
+    if (
+        reclaim_tiers
+        and slurm_src_staging_root is not None
+        and slurm_src_main_repo is not None
+        and slurm_src_sweep_enabled()
+    ):
+        # Tier (g) (#2147): right after tier (f), boot-disk pass only.
+        # Deliberately NO exclude handshake with tier (b): the staging root
+        # lives under $HOME, so no other tier can discover the same dir.
+        res.tiers.append(
+            clean_slurm_src(
+                apply,
+                staging_root=slurm_src_staging_root,
+                main_repo=slurm_src_main_repo,
+                verdict_cache_path=slurm_src_verdict_cache,
+                escalation_state_path=slurm_src_escalation_state,
+            )
+        )
+    if hf_cache_roots:
+        # #2096: tier (e) over the EXTRA roots (the relocated HF_HUB_CACHE on
+        # the data disk). Dedup by resolved hub/ (first wins) so an env
+        # listing the same root twice — or via a symlink alias — can never
+        # double-reap; the home-collision skip inside the tier is the second
+        # guard. A root whose resolution fails still runs (the tier's own
+        # missing-hub / probe-failure skips degrade toward KEEP).
+        seen_hubs: set[Path] = set()
+        for extra_root in hf_cache_roots:
+            extra_root = Path(extra_root)
+            try:
+                hub_key = (extra_root / "hub").resolve()
+            except OSError:
+                hub_key = extra_root / "hub"
+            if hub_key in seen_hubs:
+                continue
+            seen_hubs.add(hub_key)
+            res.tiers.append(
+                clean_home_hf_stale_revisions(
+                    apply,
+                    cache_root=extra_root,
+                    cache_cap_gb=hf_cache_cap_gb,
+                    now=now,
+                    root_tag=_hf_root_tag(extra_root),
+                )
+            )
     if reclaim_tiers and tmp_root is not None:
         # Tiers (d) + (e) ride the production opt-in (an explicit tmp_root) so
         # library callers can never touch the real /workspace OR home HF
@@ -1964,6 +2610,23 @@ def _telegram_push(msg: str, apply: bool) -> bool:
     return True
 
 
+def _tier_json(t: TierResult) -> dict:
+    """The JSON-serializable summary for one TierResult (shared by the
+    ``tiers`` list and the #2377 ``uv_project`` leg)."""
+    return {
+        "name": t.name,
+        "bytes_freed": t.bytes_freed,
+        "skipped": t.skipped,
+        "skip_reason": t.skip_reason,
+        "detail": t.detail,
+        "active_cache_attributions": t.active_cache_attributions,
+        "noncanonical_candidates": t.noncanonical_candidates,
+        "total_discovered_bytes": t.total_discovered_bytes,
+        "hf_repo_attributions": t.hf_repo_attributions,
+        "scratch_candidates": t.scratch_candidates,
+    }
+
+
 def _result_json(res: GuardResult) -> dict:
     """The JSON-serializable summary for one GuardResult (one watched disk)."""
     return {
@@ -1983,20 +2646,10 @@ def _result_json(res: GuardResult) -> dict:
         # #1457: the device-vs-fs reconciliation read for this disk (None only
         # for legacy GuardResults constructed without the field).
         "device_fs": asdict(res.device_fs) if res.device_fs is not None else None,
-        "tiers": [
-            {
-                "name": t.name,
-                "bytes_freed": t.bytes_freed,
-                "skipped": t.skipped,
-                "skip_reason": t.skip_reason,
-                "detail": t.detail,
-                "active_cache_attributions": t.active_cache_attributions,
-                "noncanonical_candidates": t.noncanonical_candidates,
-                "total_discovered_bytes": t.total_discovered_bytes,
-                "hf_repo_attributions": t.hf_repo_attributions,
-            }
-            for t in res.tiers
-        ],
+        # #2377: the every-pass uv-project poison leg (rows in
+        # scratch_candidates; None only for legacy GuardResults).
+        "uv_project": _tier_json(res.uv_project) if res.uv_project is not None else None,
+        "tiers": [_tier_json(t) for t in res.tiers],
     }
 
 
@@ -2007,6 +2660,16 @@ def _print_report(res: GuardResult, disk_label: str = "/") -> None:
         f"({res.free_gb_before:.1f}G free), threshold {res.threshold_pct:.0f}%"
     )
     _print_device_fs_warning(res.device_fs)
+    if res.uv_project is not None:
+        # #2377: printed BEFORE the under-threshold early return — the leg
+        # runs on every boot-disk pass, same rendering shape as the tiers.
+        t = res.uv_project
+        head = f"  [{t.name}] freed {_fmt_gb(t.bytes_freed)}"
+        if t.skipped:
+            head += f" (skipped: {t.skip_reason})"
+        print(head)
+        for line in t.detail:
+            print(f"      {line}")
     if not res.triggered:
         print("  under threshold — no cleanup needed")
         return
@@ -2106,6 +2769,106 @@ def _maybe_alert_device_fs(chk: DeviceFsCheck | None, apply: bool, *, no_push: b
             sentinel.touch()  # dedup only after a REAL push landed
         except OSError as exc:  # pragma: no cover - fail-soft I/O guard
             print(f"  WARNING: devfs ack sentinel write failed: {exc}", file=sys.stderr)
+
+
+# ── #2377: uv-project poison push dedup ─────────────────────────────────────
+
+# Per-(file name, disposition) push state (last-pushed unix ts) so a standing
+# poison file re-pushes only after the re-alert window — next to the existing
+# escalation state (the _ACTIVE_ESCALATION_STATE_REL idiom).
+_UVPROJ_PUSH_STATE_REL = Path(".claude") / "cache" / "disk-guard-uvproj-state.json"
+_UVPROJ_PUSH_REALERT_SECONDS = 24 * 3600.0
+
+# Escalate-class dispositions + the quarantine remediation row fire the push
+# (plan #2377 §2 push table); would-quarantine and recent-escalated land in
+# the sidecar only (report-mode noise control — the apply-mode pass pushes
+# when it acts or is blocked).
+_UVPROJ_PUSH_DISPOSITIONS = frozenset(
+    {
+        "tmp-uvproj-unverified-escalated",
+        "tmp-uvproj-foreign-owner-escalated",
+        "tmp-uvproj-nonregular-escalated",
+        "tmp-uvproj-quarantine-failed",
+        "tmp-uvproj-live-process-kept",
+        "tmp-uvproj-quarantined",
+    }
+)
+
+
+def _uvproj_push_state_path() -> Path:
+    return repo_root() / _UVPROJ_PUSH_STATE_REL
+
+
+def _load_uvproj_push_state() -> dict:
+    path = _uvproj_push_state_path()
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_uvproj_push_state(state: dict) -> None:
+    """Atomic temp+rename write of the uv-project push-dedup state
+    (fail-soft — a write failure is logged, never raised)."""
+    dest = _uvproj_push_state_path()
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(state, indent=2))
+        tmp.replace(dest)
+    except OSError as exc:  # pragma: no cover - fail-soft I/O guard
+        print(f"  WARNING: saving uv-project push state failed: {exc}", file=sys.stderr)
+
+
+def _maybe_alert_uv_project(
+    tier: TierResult | None,
+    apply: bool,
+    *,
+    no_push: bool,
+    now: float | None = None,
+) -> None:
+    """ONE deduped Telegram push for the #2377 uv-project poison leg.
+
+    The sidecar rows are the SWEEP's own (every row lands regardless, no byte
+    floor); this helper owns ONLY the push: escalate-class dispositions + the
+    ``quarantined`` remediation row (:data:`_UVPROJ_PUSH_DISPOSITIONS`) push,
+    deduped per (file name, disposition) episode with a 24 h re-alert window.
+    Report-only mode persists NO state (``_telegram_push`` demotes to stderr
+    and the dedup timestamp is written only after a REAL push landed);
+    ``--no-push`` suppresses the push leg entirely (the sidecar rows remain
+    the observability channel, mirroring ``_maybe_alert_device_fs``)."""
+    if tier is None or tier.skipped or no_push:
+        return
+    rows = [r for r in tier.scratch_candidates if r.get("disposition") in _UVPROJ_PUSH_DISPOSITIONS]
+    if not rows:
+        return
+    now = time.time() if now is None else now
+    state = _load_uvproj_push_state()
+    due: list[tuple[str, dict]] = []
+    for r in rows:
+        key = f"{r.get('name')}:{r.get('disposition')}"
+        prev = state.get(key)
+        if isinstance(prev, int | float) and now - prev < _UVPROJ_PUSH_REALERT_SECONDS:
+            continue
+        due.append((key, r))
+    if not due:
+        return
+    listing = "; ".join(f"{r.get('path')} [{r.get('disposition')}]" for _, r in due)
+    pushed = _telegram_push(
+        f"VM disk guard: stray top-level /tmp uv project file(s): {listing}. "
+        "These poison uv project discovery for every /tmp-cwd `uv run` on the "
+        "shared VM (uv walks up to /tmp and resolves the stray project). "
+        "Quarantined rows name their restore path in the sidecar; kept rows "
+        "need manual triage.",
+        apply,
+    )
+    if apply and pushed:
+        for key, _ in due:
+            state[key] = now
+        _save_uvproj_push_state(state)
 
 
 # Single-flight lock for --apply runs (#1392): the watcher's sub-floor reclaim
@@ -2226,12 +2989,34 @@ def main(argv: list[str] | None = None) -> int:
     # Boot disk (/) — the full tiered cleanup. The /tmp + /workspace-cache
     # opt-in lives HERE (and in clean_experiment_downloads.main()) ONLY: the
     # CLI passes production_tmp_root(); library callers stay hermetic (#911).
+    boot_tmp_root = production_tmp_root()
+    main_repo = _resolution_root()
     res = run_guard(
         args.apply,
         threshold=args.threshold,
         log_max_age=args.log_max_age_days,
-        tmp_root=production_tmp_root(),
+        tmp_root=boot_tmp_root,
+        # The staging roots live ON the data disk — the boot-disk pass never
+        # sweeps them (no double-sweep per run; #2095 test pins this — the
+        # inverted twin of the data-disk pass's tmp_root=None below).
+        staging_roots=None,
         ignore_threshold=args.ignore_threshold,
+        # #2127: tier (f) + gate-1.7 branch (c) opt-ins live HERE only —
+        # boot-disk pass (the /tmp tree lives on /); the data-disk pass
+        # below stays scratch-off. scratch_verdict_cache_path() is
+        # main()-only by the same source-scan pin as production_tmp_root().
+        scratch_tmp_root=boot_tmp_root,
+        scratch_main_repo=main_repo,
+        scratch_verdict_cache=scratch_verdict_cache_path(),
+        git_evidence_repo=main_repo,
+        # #2147: tier (g) opt-ins live HERE only — boot-disk pass (the
+        # ~/.eps-slurm-src tree lives on /); the data-disk pass below stays
+        # slurm-src-off. slurm_src_root() + slurm_src_escalation_state_path()
+        # are main()-only by the same source-scan pin as production_tmp_root().
+        slurm_src_staging_root=slurm_src_root(),
+        slurm_src_main_repo=main_repo,
+        slurm_src_verdict_cache=scratch_verdict_cache_path(),
+        slurm_src_escalation_state=slurm_src_escalation_state_path(),
     )
 
     # Data disk (/mnt/eps-data) — a SECOND, ESCALATE-ONLY pass: reclaim_tiers=False
@@ -2255,6 +3040,17 @@ def main(argv: list[str] | None = None) -> int:
             # The /tmp tree lives on `/` — the data-disk pass never sweeps it
             # (no double-sweep per run; #911 test pins this).
             tmp_root=None,
+            # The staging opt-in lives HERE only (#2095): the staging roots
+            # live ON the data disk, so THIS pass — and only this pass —
+            # threads production_staging_roots() into tier (b).
+            staging_roots=production_staging_roots(),
+            # #2096: tier (e) over the relocated HF_HUB_CACHE root(s), riding
+            # THIS pass's percent gate (shared threshold_pct()) — the resolver
+            # call lives HERE only (the #911 production_tmp_root pattern;
+            # source-scan test pins it), so library run_guard callers stay
+            # hermetic.
+            hf_cache_roots=extra_hf_cache_roots(),
+            hf_cache_cap_gb=data_hf_cache_cap_gb(),
         )
 
     if args.json:
@@ -2282,6 +3078,12 @@ def main(argv: list[str] | None = None) -> int:
             f"cache or raise its setquota -P cap — never delete active data)",
             args.apply,
         )
+
+    # uv-project poison alerts (#2377): the boot-disk pass only (the leg is
+    # unarmed — skipped — on the data-disk pass). Sidecar rows already landed
+    # inside the sweep; this is the deduped push leg. Never flips the exit
+    # code (exit 2 stays the still-over alarm channel).
+    _maybe_alert_uv_project(res.uv_project, args.apply, no_push=args.no_push)
 
     # Device-vs-fs reconciliation alerts (#1457): called UNCONDITIONALLY on
     # both passes — the sidecar row rides every warn run; only the

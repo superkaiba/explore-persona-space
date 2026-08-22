@@ -40,6 +40,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text, read_workflow_doc
+
 ROOT = Path(__file__).resolve().parent.parent
 ISSUE_SKILL = ROOT / ".claude" / "skills" / "issue" / "SKILL.md"
 ISSUE_TICK_SKILL = ROOT / ".claude" / "skills" / "issue-tick" / "SKILL.md"
@@ -93,7 +95,7 @@ def test_issue_skill_step4b_quotes_canonical_h3_labels_verbatim():
     because the SKILL spec said only "Required `report-back` fields"
     with no verbatim contract.
     """
-    body = ISSUE_SKILL.read_text()
+    body = issue_skill_text()
     for label in CANONICAL_H3_LABELS:
         assert label in body, (
             f"Step 4b brief must quote the canonical H3 label verbatim: {label!r}. "
@@ -108,7 +110,7 @@ def test_issue_skill_step4b_mentions_smoke_run_h2():
     (`### (d) Smoke run`) was the round-1 #506 anti-pattern that
     displaced the canonical (d) slot.
     """
-    body = ISSUE_SKILL.read_text()
+    body = issue_skill_text()
     assert "## Smoke run" in body, (
         "Step 4b brief must explicitly name the `## Smoke run` H2 contract "
         "so the orchestrator does not fold the smoke run into `### (d)`."
@@ -122,7 +124,7 @@ def test_issue_skill_step4b_does_not_template_adhoc_labels_as_h3():
     the heading form is the template the orchestrator would copy
     verbatim into the brief, which is exactly what regressed #506.
     """
-    body = ISSUE_SKILL.read_text()
+    body = issue_skill_text()
     for bad in ADHOC_BAD_LABELS:
         pat = _line_anchored_h3_pattern(bad)
         match = pat.search(body)
@@ -253,7 +255,7 @@ def test_item3_data_gate_exercise_clause_present():
 
 def test_step6d0bis_smoke_covers_class_regime_axes():
     """#1611: Step 6d.0-bis arm-class clause names the class-defining axes (#1586)."""
-    text = ISSUE_SKILL.read_text(encoding="utf-8")
+    text = issue_skill_text()
     heading = "##### Step 6d.0-bis"
     assert text.count(heading) == 1, "Step 6d.0-bis H5 heading literal must stay unique"
     i = text.index(heading)
@@ -329,7 +331,7 @@ def test_step6d0_routing_table_has_authorized_stub_row():
     the token, the mechanical checker command, and NO stale 'not yet wired'
     annotation (the row's grant path is the checker's exit code, never
     orchestrator prose judgment)."""
-    body = ISSUE_SKILL.read_text(encoding="utf-8")
+    body = issue_skill_text()
     start = body.find("##### Step 6d.0:")
     assert start != -1, "the Step 6d.0 heading vanished from issue/SKILL.md"
     end = body.find("##### Step 6d.0-bis", start + 1)
@@ -399,7 +401,7 @@ def test_step6d0_arm_registry_contract_pinned():
     enumeration check — the line key, the checker command, the
     driver-recompute flag, the derivation rule, the two-tier verdict label,
     and the REFUSE routing."""
-    text = ISSUE_SKILL.read_text(encoding="utf-8")
+    text = issue_skill_text()
     heading = "##### Step 6d.0:"
     assert text.count(heading) == 1, "Step 6d.0 H5 heading literal must stay unique"
     start = text.index(heading)
@@ -451,7 +453,7 @@ def test_arm_registry_no_drift_across_surfaces():
     carries `registry` is not test-breaking."""
     quantifier = re.compile(r"plan(?:ned|-named) arm")
     for path in _ARM_QUANTIFIER_SURFACES:
-        text = path.read_text(encoding="utf-8")
+        text = read_workflow_doc(path)
         assert "arm-registry" in text, f"{path.name}: the arm-registry token vanished (#2176)"
         for lineno, line in enumerate(text.splitlines(), 1):
             if not quantifier.search(line):
@@ -478,3 +480,98 @@ def test_argcheck_convention_pinned():
     assert "assert_args_attributes_defined" in text
     assert "whole-module" in text.lower()
     assert "one call deeper" in text
+
+
+# ---------------------------------------------------------------------------
+# #2277 owner-fence emitter durability pins (plan §10). The pod.py terminate
+# owner-fence guard (scripts/pod_lifecycle.py) reads owner=/fence_until=/pod=
+# note tokens that ONLY prose emits — a later SKILL.md / experimenter.md edit
+# that drops the recipe (or drops the non-copy prohibition while keeping the
+# token recipe, re-creating the v1 copy-instruction defect) silently strands
+# or defeats the guard. Pin the load-bearing fragments; the M1 fix-6 pin
+# asserts CO-OCCURRENCE (prohibition inside the SAME block as the recipe),
+# not mere whole-file presence.
+# ---------------------------------------------------------------------------
+
+EXPERIMENTER = ROOT / ".claude" / "agents" / "experimenter.md"
+
+# Stable short fragments of the canonical prohibition sentence (#2277 M1).
+_OWNER_PROHIBITION_TOKENS = (
+    "MUST NOT copy its `owner=` into a PASS",
+    "the owner is presumed alive",
+)
+
+
+def _normws(text: str) -> str:
+    """Collapse whitespace so tokens match across markdown soft wraps."""
+    return re.sub(r"\s+", " ", text)
+
+
+def test_step9ater_teardown_recipe_carries_owner_token_and_prohibition():
+    """The Step 9a-ter verify-then-terminate recipe quotes the extended PASS
+    shape (`pod=<name>; owner=<token>`) AND carries the canonical non-copy
+    prohibition CO-LOCATED in the same block (#2277 M1 fix 6 — presence of
+    the token alone is not the invariant: a prohibition dropped while the
+    recipe survives re-creates the copy-instruction defect)."""
+    norm = _normws(issue_skill_text())
+    anchor = "The sanctioned verify-then-terminate recipe for this step:"
+    idx = norm.find(anchor)
+    assert idx != -1, "the 9a-ter verify-then-terminate recipe anchor vanished (#1970/#2277)"
+    block = norm[idx : idx + 1600]
+    assert "prefix>; pod=<name>; owner=<token>`" in block, (
+        "the 9a-ter PASS-note shape must carry `pod=<name>; owner=<token>` "
+        "(#2277 — the pod-bound owner-attributed PASS the terminate guard reads)"
+    )
+    assert "the token YOUR session posted" in block, (
+        "the 9a-ter owner= recipe must keep the FIRST-PERSON claim phrasing "
+        "(#2277 M1 fix 2 — never a lookup-and-copy instruction)"
+    )
+    for token in _OWNER_PROHIBITION_TOKENS:
+        assert token in block, (
+            f"the canonical non-copy prohibition fragment {token!r} must sit in the "
+            "SAME 9a-ter block as the owner= recipe (#2277 M1 fix 6 co-occurrence)"
+        )
+
+
+def test_heartbeat_duty_carries_fence_until_token():
+    """The Step 6d.2 long-phase-heartbeat duty carries the `fence_until=`
+    recipe (MAY carry, structured position per #1961), the SHOULD-when-alarm
+    clause (#2277 C5 — the #2054 heartbeat stated its alarm as free text),
+    and the paired PASS-owner duty in the same block."""
+    norm = _normws(issue_skill_text())
+    anchor = "The heartbeat note MAY carry `pod=<name> fence_until=<ISO8601Z>`"
+    idx = norm.find(anchor)
+    assert idx != -1, "the 6d.2 heartbeat fence_until= recipe vanished (#2277)"
+    block = norm[idx : idx + 900]
+    assert "SHOULD carry it whenever the heartbeat already states a wall-clock" in block, (
+        "the SHOULD-when-alarm-stated clause vanished from the 6d.2 heartbeat duty "
+        "(#2277 C5 — the exact #2054 shape the structured token mechanizes)"
+    )
+    assert "its own teardown refuses" in block, (
+        "the paired PASS-owner duty vanished from the 6d.2 heartbeat duty (#2277 — "
+        "a surface teaching fence-posting without the PASS-owner duty refuses its "
+        "own teardown)"
+    )
+
+
+def test_experimenter_run_launched_template_carries_owner_field():
+    """The experimenter run-launched note template + field list carry the
+    `owner=` registration (REQUIRED on new launches), the optional
+    `fence_until=` field, and the canonical non-copy prohibition (#2277)."""
+    text = EXPERIMENTER.read_text(encoding="utf-8")
+    norm = _normws(text)
+    assert "owner=<agent>-<N>" in text, (
+        "the epm:run-launched post-marker template must carry the owner=<agent>-<N> "
+        "line (#2277 — the guard's registration token)"
+    )
+    assert "`owner=<token>` is REQUIRED on new launches" in norm, (
+        "the owner= field bullet vanished from experimenter.md (#2277)"
+    )
+    assert "fence_until=<ISO8601Z>" in norm, (
+        "the optional fence_until= field vanished from experimenter.md (#2277)"
+    )
+    for token in _OWNER_PROHIBITION_TOKENS:
+        assert token in norm, (
+            f"the canonical non-copy prohibition fragment {token!r} vanished from "
+            "experimenter.md (#2277 M1 fix 1 — co-located with the token recipe)"
+        )

@@ -1,20 +1,22 @@
 {
-  "elapsed_s": 5.168486170470715,
+  "elapsed_s": 10.166124747134745,
   "metadata": {
     "device": "cpu",
-    "git_commit": "27d28661e4ce11c0a09a38e5436c688fcb7ebefa",
+    "git_commit": "e480b4cf0ef0545b98ca40af56fa4c7d8b66ab8b",
     "numpy": "2.2.6",
     "script": "scripts/issue1336_selfmap_missing_pairs.py",
-    "timestamp": "2026-08-07T06:43:29Z",
+    "timestamp": "2026-08-11T16:57:44Z",
     "torch": "2.8.0+cu128"
   },
   "records": [
     {
-      "aans_own_r2": 0.5040958463730539,
-      "aans_own_r2_globalmu": 0.5055025814575959,
+      "A_ans_identity_bias_r2": 0.2362957867188883,
+      "A_ctx_rev_identity_bias_r2": 0.8401326346866801,
+      "aans_own_r2": 0.504095846373054,
+      "aans_own_r2_globalmu": 0.5055025814575961,
       "corpus": "gsm8k_test1319",
-      "cross_r2": 0.3813690691965276,
-      "cross_r2_globalmu": 0.38312394426337115,
+      "cross_r2": 0.38136906919652747,
+      "cross_r2_globalmu": 0.38312394426337104,
       "d": 4096,
       "degenerate_n_lt_d": true,
       "fit_seed": 0,
@@ -25,9 +27,9 @@
       "n_train_max": 1056,
       "n_train_min": 1055,
       "pair": "sft__rlvr",
-      "r2": -0.2349297248489004,
+      "r2": -0.23492972484890018,
       "r2_basis": "fold-local pooled OOF (plotted pair-file basis)",
-      "r2_globalmu": -0.23142659030529344,
+      "r2_globalmu": -0.23142659030529322,
       "selected_lambda": {
         "A_ans": [
           1000.0,
@@ -109,11 +111,13 @@
       "within_r2_globalmu": 0.37024677849076293
     },
     {
-      "aans_own_r2": 0.5040958463730539,
-      "aans_own_r2_globalmu": 0.5055025814575959,
+      "A_ans_identity_bias_r2": 0.2362957867188883,
+      "A_ctx_rev_identity_bias_r2": 0.8401326346866801,
+      "aans_own_r2": 0.504095846373054,
+      "aans_own_r2_globalmu": 0.5055025814575961,
       "corpus": "gsm8k_test1319",
-      "cross_r2": 0.3813690691965276,
-      "cross_r2_globalmu": 0.38312394426337115,
+      "cross_r2": 0.38136906919652747,
+      "cross_r2_globalmu": 0.38312394426337104,
       "d": 4096,
       "degenerate_n_lt_d": true,
       "fit_seed": 0,
@@ -124,9 +128,9 @@
       "n_train_max": 1056,
       "n_train_min": 1055,
       "pair": "sft__rlvr",
-      "r2": 0.2553190165346422,
+      "r2": 0.2553190165346424,
       "r2_basis": "fold-local pooled OOF (plotted pair-file basis)",
-      "r2_globalmu": 0.25743145874463413,
+      "r2_globalmu": 0.25743145874463447,
       "selected_lambda": {
         "A_ans": [
           1000.0,
@@ -208,11 +212,13 @@
       "within_r2_globalmu": 0.37024677849076293
     },
     {
-      "aans_own_r2": 0.5040958463730539,
-      "aans_own_r2_globalmu": 0.5055025814575959,
+      "A_ans_identity_bias_r2": 0.2362957867188883,
+      "A_ctx_rev_identity_bias_r2": 0.8401326346866801,
+      "aans_own_r2": 0.504095846373054,
+      "aans_own_r2_globalmu": 0.5055025814575961,
       "corpus": "gsm8k_test1319",
-      "cross_r2": 0.3813690691965276,
-      "cross_r2_globalmu": 0.38312394426337115,
+      "cross_r2": 0.38136906919652747,
+      "cross_r2_globalmu": 0.38312394426337104,
       "d": 4096,
       "degenerate_n_lt_d": true,
       "fit_seed": 0,
@@ -223,9 +229,9 @@
       "n_train_max": 1056,
       "n_train_min": 1055,
       "pair": "sft__rlvr",
-      "r2": 0.32780370902876155,
+      "r2": 0.32780370902876166,
       "r2_basis": "fold-local pooled OOF (plotted pair-file basis)",
-      "r2_globalmu": 0.32971053336022205,
+      "r2_globalmu": 0.32971053336022216,
       "selected_lambda": {
         "A_ans": [
           1000.0,
@@ -307,11 +313,13 @@
       "within_r2_globalmu": 0.37024677849076293
     },
     {
-      "aans_own_r2": 0.5040958463730539,
-      "aans_own_r2_globalmu": 0.5055025814575959,
+      "A_ans_identity_bias_r2": 0.2362957867188883,
+      "A_ctx_rev_identity_bias_r2": 0.8401326346866801,
+      "aans_own_r2": 0.504095846373054,
+      "aans_own_r2_globalmu": 0.5055025814575961,
       "corpus": "gsm8k_test1319",
-      "cross_r2": 0.3813690691965276,
-      "cross_r2_globalmu": 0.38312394426337115,
+      "cross_r2": 0.38136906919652747,
+      "cross_r2_globalmu": 0.38312394426337104,
       "d": 4096,
       "degenerate_n_lt_d": true,
       "fit_seed": 0,
@@ -407,7 +415,7 @@
     }
   ],
   "resume_key": {
-    "algebra_version": "v3-foldlocal-2-cross-t7t8",
+    "algebra_version": "v4-foldlocal-2-cross-t7t8-alignbaselines",
     "corpus": "gsm8k_test1319",
     "fit_seed": 0,
     "format": "chat",

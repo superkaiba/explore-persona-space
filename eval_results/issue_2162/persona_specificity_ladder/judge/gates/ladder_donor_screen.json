@@ -1,0 +1,1022 @@
+{
+  "criterion": "cross-type donor construct screen (plan §4.2)",
+  "bar": 15.0,
+  "n_primary": 72,
+  "n_alternate": 0,
+  "n_dropped": 0,
+  "assignments": {
+    "install_r1_pirate::d1": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "verbosity::v3-v1::d1",
+        "cell": "verbosity",
+        "carrier": "d1",
+        "value_a": "v3",
+        "value_b": "v1",
+        "a": "verbosity::v3::d1",
+        "b": "verbosity::v1::d1"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "erase_r1_pirate::d1": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "instr_format::v1-v2::d1",
+        "cell": "instr_format",
+        "carrier": "d1",
+        "value_a": "v1",
+        "value_b": "v2",
+        "a": "instr_format::v1::d1",
+        "b": "instr_format::v2::d1"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "install_r1_pirate::d2": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "instr_format::v3-v1::d2",
+        "cell": "instr_format",
+        "carrier": "d2",
+        "value_a": "v3",
+        "value_b": "v1",
+        "a": "instr_format::v3::d2",
+        "b": "instr_format::v1::d2"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "erase_r1_pirate::d2": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "instr_format::v3-v1::d2",
+        "cell": "instr_format",
+        "carrier": "d2",
+        "value_a": "v3",
+        "value_b": "v1",
+        "a": "instr_format::v3::d2",
+        "b": "instr_format::v1::d2"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "install_r1_pirate::n3": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "instr_format::v3-v1::n3",
+        "cell": "instr_format",
+        "carrier": "n3",
+        "value_a": "v3",
+        "value_b": "v1",
+        "a": "instr_format::v3::n3",
+        "b": "instr_format::v1::n3"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "erase_r1_pirate::n3": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "instr_format::v3-v1::n3",
+        "cell": "instr_format",
+        "carrier": "n3",
+        "value_a": "v3",
+        "value_b": "v1",
+        "a": "instr_format::v3::n3",
+        "b": "instr_format::v1::n3"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "install_r1_pirate::n4": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "instr_format::v1-v2::n4",
+        "cell": "instr_format",
+        "carrier": "n4",
+        "value_a": "v1",
+        "value_b": "v2",
+        "a": "instr_format::v1::n4",
+        "b": "instr_format::v2::n4"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "erase_r1_pirate::n4": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "verbosity::v1-v2::n4",
+        "cell": "verbosity",
+        "carrier": "n4",
+        "value_a": "v1",
+        "value_b": "v2",
+        "a": "verbosity::v1::n4",
+        "b": "verbosity::v2::n4"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "install_r1_pirate::n7": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "instr_format::v3-v1::n7",
+        "cell": "instr_format",
+        "carrier": "n7",
+        "value_a": "v3",
+        "value_b": "v1",
+        "a": "instr_format::v3::n7",
+        "b": "instr_format::v1::n7"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "erase_r1_pirate::n7": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "verbosity::v2-v3::n7",
+        "cell": "verbosity",
+        "carrier": "n7",
+        "value_a": "v2",
+        "value_b": "v3",
+        "a": "verbosity::v2::n7",
+        "b": "verbosity::v3::n7"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "install_r1_pirate::n9": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "verbosity::v3-v1::n9",
+        "cell": "verbosity",
+        "carrier": "n9",
+        "value_a": "v3",
+        "value_b": "v1",
+        "a": "verbosity::v3::n9",
+        "b": "verbosity::v1::n9"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "erase_r1_pirate::n9": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "verbosity::v3-v1::n9",
+        "cell": "verbosity",
+        "carrier": "n9",
+        "value_a": "v3",
+        "value_b": "v1",
+        "a": "verbosity::v3::n9",
+        "b": "verbosity::v1::n9"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "install_r2_butler::d1": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "instr_format::v1-v2::d1",
+        "cell": "instr_format",
+        "carrier": "d1",
+        "value_a": "v1",
+        "value_b": "v2",
+        "a": "instr_format::v1::d1",
+        "b": "instr_format::v2::d1"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "erase_r2_butler::d1": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "verbosity::v1-v2::d1",
+        "cell": "verbosity",
+        "carrier": "d1",
+        "value_a": "v1",
+        "value_b": "v2",
+        "a": "verbosity::v1::d1",
+        "b": "verbosity::v2::d1"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "install_r2_butler::d2": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "instr_format::v3-v1::d2",
+        "cell": "instr_format",
+        "carrier": "d2",
+        "value_a": "v3",
+        "value_b": "v1",
+        "a": "instr_format::v3::d2",
+        "b": "instr_format::v1::d2"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "erase_r2_butler::d2": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "instr_format::v1-v2::d2",
+        "cell": "instr_format",
+        "carrier": "d2",
+        "value_a": "v1",
+        "value_b": "v2",
+        "a": "instr_format::v1::d2",
+        "b": "instr_format::v2::d2"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "install_r2_butler::n3": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "instr_format::v3-v1::n3",
+        "cell": "instr_format",
+        "carrier": "n3",
+        "value_a": "v3",
+        "value_b": "v1",
+        "a": "instr_format::v3::n3",
+        "b": "instr_format::v1::n3"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "erase_r2_butler::n3": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "verbosity::v3-v1::n3",
+        "cell": "verbosity",
+        "carrier": "n3",
+        "value_a": "v3",
+        "value_b": "v1",
+        "a": "verbosity::v3::n3",
+        "b": "verbosity::v1::n3"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "install_r2_butler::n4": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "instr_format::v2-v3::n4",
+        "cell": "instr_format",
+        "carrier": "n4",
+        "value_a": "v2",
+        "value_b": "v3",
+        "a": "instr_format::v2::n4",
+        "b": "instr_format::v3::n4"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "erase_r2_butler::n4": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "verbosity::v3-v1::n4",
+        "cell": "verbosity",
+        "carrier": "n4",
+        "value_a": "v3",
+        "value_b": "v1",
+        "a": "verbosity::v3::n4",
+        "b": "verbosity::v1::n4"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "install_r2_butler::n7": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "instr_format::v2-v3::n7",
+        "cell": "instr_format",
+        "carrier": "n7",
+        "value_a": "v2",
+        "value_b": "v3",
+        "a": "instr_format::v2::n7",
+        "b": "instr_format::v3::n7"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "erase_r2_butler::n7": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "verbosity::v1-v2::n7",
+        "cell": "verbosity",
+        "carrier": "n7",
+        "value_a": "v1",
+        "value_b": "v2",
+        "a": "verbosity::v1::n7",
+        "b": "verbosity::v2::n7"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "install_r2_butler::n9": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "verbosity::v1-v2::n9",
+        "cell": "verbosity",
+        "carrier": "n9",
+        "value_a": "v1",
+        "value_b": "v2",
+        "a": "verbosity::v1::n9",
+        "b": "verbosity::v2::n9"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "erase_r2_butler::n9": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "verbosity::v1-v2::n9",
+        "cell": "verbosity",
+        "carrier": "n9",
+        "value_a": "v1",
+        "value_b": "v2",
+        "a": "verbosity::v1::n9",
+        "b": "verbosity::v2::n9"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "install_r3_warm::d1": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "instr_format::v3-v1::d1",
+        "cell": "instr_format",
+        "carrier": "d1",
+        "value_a": "v3",
+        "value_b": "v1",
+        "a": "instr_format::v3::d1",
+        "b": "instr_format::v1::d1"
+      },
+      "primary_mean": 5.0,
+      "alternate_mean": null
+    },
+    "erase_r3_warm::d1": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "verbosity::v2-v3::d1",
+        "cell": "verbosity",
+        "carrier": "d1",
+        "value_a": "v2",
+        "value_b": "v3",
+        "a": "verbosity::v2::d1",
+        "b": "verbosity::v3::d1"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "install_r3_warm::d2": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "verbosity::v1-v2::d2",
+        "cell": "verbosity",
+        "carrier": "d2",
+        "value_a": "v1",
+        "value_b": "v2",
+        "a": "verbosity::v1::d2",
+        "b": "verbosity::v2::d2"
+      },
+      "primary_mean": 7.0,
+      "alternate_mean": null
+    },
+    "erase_r3_warm::d2": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "verbosity::v2-v3::d2",
+        "cell": "verbosity",
+        "carrier": "d2",
+        "value_a": "v2",
+        "value_b": "v3",
+        "a": "verbosity::v2::d2",
+        "b": "verbosity::v3::d2"
+      },
+      "primary_mean": 3.5,
+      "alternate_mean": null
+    },
+    "install_r3_warm::n3": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "verbosity::v2-v3::n3",
+        "cell": "verbosity",
+        "carrier": "n3",
+        "value_a": "v2",
+        "value_b": "v3",
+        "a": "verbosity::v2::n3",
+        "b": "verbosity::v3::n3"
+      },
+      "primary_mean": 8.3,
+      "alternate_mean": null
+    },
+    "erase_r3_warm::n3": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "verbosity::v3-v1::n3",
+        "cell": "verbosity",
+        "carrier": "n3",
+        "value_a": "v3",
+        "value_b": "v1",
+        "a": "verbosity::v3::n3",
+        "b": "verbosity::v1::n3"
+      },
+      "primary_mean": 0.5,
+      "alternate_mean": null
+    },
+    "install_r3_warm::n4": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "instr_format::v3-v1::n4",
+        "cell": "instr_format",
+        "carrier": "n4",
+        "value_a": "v3",
+        "value_b": "v1",
+        "a": "instr_format::v3::n4",
+        "b": "instr_format::v1::n4"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "erase_r3_warm::n4": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "instr_format::v3-v1::n4",
+        "cell": "instr_format",
+        "carrier": "n4",
+        "value_a": "v3",
+        "value_b": "v1",
+        "a": "instr_format::v3::n4",
+        "b": "instr_format::v1::n4"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "install_r3_warm::n7": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "verbosity::v2-v3::n7",
+        "cell": "verbosity",
+        "carrier": "n7",
+        "value_a": "v2",
+        "value_b": "v3",
+        "a": "verbosity::v2::n7",
+        "b": "verbosity::v3::n7"
+      },
+      "primary_mean": 8.3,
+      "alternate_mean": null
+    },
+    "erase_r3_warm::n7": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "instr_format::v1-v2::n7",
+        "cell": "instr_format",
+        "carrier": "n7",
+        "value_a": "v1",
+        "value_b": "v2",
+        "a": "instr_format::v1::n7",
+        "b": "instr_format::v2::n7"
+      },
+      "primary_mean": 1.8,
+      "alternate_mean": null
+    },
+    "install_r3_warm::n9": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "verbosity::v2-v3::n9",
+        "cell": "verbosity",
+        "carrier": "n9",
+        "value_a": "v2",
+        "value_b": "v3",
+        "a": "verbosity::v2::n9",
+        "b": "verbosity::v3::n9"
+      },
+      "primary_mean": 1.0,
+      "alternate_mean": null
+    },
+    "erase_r3_warm::n9": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "instr_format::v1-v2::n9",
+        "cell": "instr_format",
+        "carrier": "n9",
+        "value_a": "v1",
+        "value_b": "v2",
+        "a": "instr_format::v1::n9",
+        "b": "instr_format::v2::n9"
+      },
+      "primary_mean": 5.0,
+      "alternate_mean": null
+    },
+    "install_r4_trait::d1": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "verbosity::v2-v3::d1",
+        "cell": "verbosity",
+        "carrier": "d1",
+        "value_a": "v2",
+        "value_b": "v3",
+        "a": "verbosity::v2::d1",
+        "b": "verbosity::v3::d1"
+      },
+      "primary_mean": 0.5,
+      "alternate_mean": null
+    },
+    "erase_r4_trait::d1": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "verbosity::v3-v1::d1",
+        "cell": "verbosity",
+        "carrier": "d1",
+        "value_a": "v3",
+        "value_b": "v1",
+        "a": "verbosity::v3::d1",
+        "b": "verbosity::v1::d1"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "install_r4_trait::d2": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "verbosity::v1-v2::d2",
+        "cell": "verbosity",
+        "carrier": "d2",
+        "value_a": "v1",
+        "value_b": "v2",
+        "a": "verbosity::v1::d2",
+        "b": "verbosity::v2::d2"
+      },
+      "primary_mean": 2.0,
+      "alternate_mean": null
+    },
+    "erase_r4_trait::d2": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "instr_format::v2-v3::d2",
+        "cell": "instr_format",
+        "carrier": "d2",
+        "value_a": "v2",
+        "value_b": "v3",
+        "a": "instr_format::v2::d2",
+        "b": "instr_format::v3::d2"
+      },
+      "primary_mean": 2.5,
+      "alternate_mean": null
+    },
+    "install_r4_trait::n3": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "verbosity::v3-v1::n3",
+        "cell": "verbosity",
+        "carrier": "n3",
+        "value_a": "v3",
+        "value_b": "v1",
+        "a": "verbosity::v3::n3",
+        "b": "verbosity::v1::n3"
+      },
+      "primary_mean": 3.0,
+      "alternate_mean": null
+    },
+    "erase_r4_trait::n3": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "instr_format::v1-v2::n3",
+        "cell": "instr_format",
+        "carrier": "n3",
+        "value_a": "v1",
+        "value_b": "v2",
+        "a": "instr_format::v1::n3",
+        "b": "instr_format::v2::n3"
+      },
+      "primary_mean": 9.7,
+      "alternate_mean": null
+    },
+    "install_r4_trait::n4": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "verbosity::v3-v1::n4",
+        "cell": "verbosity",
+        "carrier": "n4",
+        "value_a": "v3",
+        "value_b": "v1",
+        "a": "verbosity::v3::n4",
+        "b": "verbosity::v1::n4"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "erase_r4_trait::n4": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "verbosity::v1-v2::n4",
+        "cell": "verbosity",
+        "carrier": "n4",
+        "value_a": "v1",
+        "value_b": "v2",
+        "a": "verbosity::v1::n4",
+        "b": "verbosity::v2::n4"
+      },
+      "primary_mean": 5.3,
+      "alternate_mean": null
+    },
+    "install_r4_trait::n7": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "verbosity::v1-v2::n7",
+        "cell": "verbosity",
+        "carrier": "n7",
+        "value_a": "v1",
+        "value_b": "v2",
+        "a": "verbosity::v1::n7",
+        "b": "verbosity::v2::n7"
+      },
+      "primary_mean": 4.8,
+      "alternate_mean": null
+    },
+    "erase_r4_trait::n7": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "verbosity::v2-v3::n7",
+        "cell": "verbosity",
+        "carrier": "n7",
+        "value_a": "v2",
+        "value_b": "v3",
+        "a": "verbosity::v2::n7",
+        "b": "verbosity::v3::n7"
+      },
+      "primary_mean": 2.0,
+      "alternate_mean": null
+    },
+    "install_r4_trait::n9": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "instr_format::v3-v1::n9",
+        "cell": "instr_format",
+        "carrier": "n9",
+        "value_a": "v3",
+        "value_b": "v1",
+        "a": "instr_format::v3::n9",
+        "b": "instr_format::v1::n9"
+      },
+      "primary_mean": 7.3,
+      "alternate_mean": null
+    },
+    "erase_r4_trait::n9": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "verbosity::v1-v2::n9",
+        "cell": "verbosity",
+        "carrier": "n9",
+        "value_a": "v1",
+        "value_b": "v2",
+        "a": "verbosity::v1::n9",
+        "b": "verbosity::v2::n9"
+      },
+      "primary_mean": 11.0,
+      "alternate_mean": null
+    },
+    "install_r5a_lu_therapy::d1": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "verbosity::v1-v2::d1",
+        "cell": "verbosity",
+        "carrier": "d1",
+        "value_a": "v1",
+        "value_b": "v2",
+        "a": "verbosity::v1::d1",
+        "b": "verbosity::v2::d1"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "erase_r5a_lu_therapy::d1": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "instr_format::v1-v2::d1",
+        "cell": "instr_format",
+        "carrier": "d1",
+        "value_a": "v1",
+        "value_b": "v2",
+        "a": "instr_format::v1::d1",
+        "b": "instr_format::v2::d1"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "install_r5a_lu_therapy::d2": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "verbosity::v1-v2::d2",
+        "cell": "verbosity",
+        "carrier": "d2",
+        "value_a": "v1",
+        "value_b": "v2",
+        "a": "verbosity::v1::d2",
+        "b": "verbosity::v2::d2"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "erase_r5a_lu_therapy::d2": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "instr_format::v3-v1::d2",
+        "cell": "instr_format",
+        "carrier": "d2",
+        "value_a": "v3",
+        "value_b": "v1",
+        "a": "instr_format::v3::d2",
+        "b": "instr_format::v1::d2"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "install_r5a_lu_therapy::n3": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "instr_format::v1-v2::n3",
+        "cell": "instr_format",
+        "carrier": "n3",
+        "value_a": "v1",
+        "value_b": "v2",
+        "a": "instr_format::v1::n3",
+        "b": "instr_format::v2::n3"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "erase_r5a_lu_therapy::n3": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "instr_format::v3-v1::n3",
+        "cell": "instr_format",
+        "carrier": "n3",
+        "value_a": "v3",
+        "value_b": "v1",
+        "a": "instr_format::v3::n3",
+        "b": "instr_format::v1::n3"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "install_r5a_lu_therapy::n4": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "instr_format::v2-v3::n4",
+        "cell": "instr_format",
+        "carrier": "n4",
+        "value_a": "v2",
+        "value_b": "v3",
+        "a": "instr_format::v2::n4",
+        "b": "instr_format::v3::n4"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "erase_r5a_lu_therapy::n4": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "verbosity::v3-v1::n4",
+        "cell": "verbosity",
+        "carrier": "n4",
+        "value_a": "v3",
+        "value_b": "v1",
+        "a": "verbosity::v3::n4",
+        "b": "verbosity::v1::n4"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "install_r5a_lu_therapy::n7": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "verbosity::v2-v3::n7",
+        "cell": "verbosity",
+        "carrier": "n7",
+        "value_a": "v2",
+        "value_b": "v3",
+        "a": "verbosity::v2::n7",
+        "b": "verbosity::v3::n7"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "erase_r5a_lu_therapy::n7": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "instr_format::v1-v2::n7",
+        "cell": "instr_format",
+        "carrier": "n7",
+        "value_a": "v1",
+        "value_b": "v2",
+        "a": "instr_format::v1::n7",
+        "b": "instr_format::v2::n7"
+      },
+      "primary_mean": 0.2,
+      "alternate_mean": null
+    },
+    "install_r5a_lu_therapy::n9": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "instr_format::v1-v2::n9",
+        "cell": "instr_format",
+        "carrier": "n9",
+        "value_a": "v1",
+        "value_b": "v2",
+        "a": "instr_format::v1::n9",
+        "b": "instr_format::v2::n9"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "erase_r5a_lu_therapy::n9": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "verbosity::v3-v1::n9",
+        "cell": "verbosity",
+        "carrier": "n9",
+        "value_a": "v3",
+        "value_b": "v1",
+        "a": "verbosity::v3::n9",
+        "b": "verbosity::v1::n9"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "install_r5b_lu_philosophy::d1": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "verbosity::v2-v3::d1",
+        "cell": "verbosity",
+        "carrier": "d1",
+        "value_a": "v2",
+        "value_b": "v3",
+        "a": "verbosity::v2::d1",
+        "b": "verbosity::v3::d1"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "erase_r5b_lu_philosophy::d1": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "verbosity::v1-v2::d1",
+        "cell": "verbosity",
+        "carrier": "d1",
+        "value_a": "v1",
+        "value_b": "v2",
+        "a": "verbosity::v1::d1",
+        "b": "verbosity::v2::d1"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "install_r5b_lu_philosophy::d2": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "verbosity::v2-v3::d2",
+        "cell": "verbosity",
+        "carrier": "d2",
+        "value_a": "v2",
+        "value_b": "v3",
+        "a": "verbosity::v2::d2",
+        "b": "verbosity::v3::d2"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "erase_r5b_lu_philosophy::d2": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "verbosity::v1-v2::d2",
+        "cell": "verbosity",
+        "carrier": "d2",
+        "value_a": "v1",
+        "value_b": "v2",
+        "a": "verbosity::v1::d2",
+        "b": "verbosity::v2::d2"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "install_r5b_lu_philosophy::n3": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "instr_format::v3-v1::n3",
+        "cell": "instr_format",
+        "carrier": "n3",
+        "value_a": "v3",
+        "value_b": "v1",
+        "a": "instr_format::v3::n3",
+        "b": "instr_format::v1::n3"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "erase_r5b_lu_philosophy::n3": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "instr_format::v3-v1::n3",
+        "cell": "instr_format",
+        "carrier": "n3",
+        "value_a": "v3",
+        "value_b": "v1",
+        "a": "instr_format::v3::n3",
+        "b": "instr_format::v1::n3"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "install_r5b_lu_philosophy::n4": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "verbosity::v2-v3::n4",
+        "cell": "verbosity",
+        "carrier": "n4",
+        "value_a": "v2",
+        "value_b": "v3",
+        "a": "verbosity::v2::n4",
+        "b": "verbosity::v3::n4"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "erase_r5b_lu_philosophy::n4": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "instr_format::v1-v2::n4",
+        "cell": "instr_format",
+        "carrier": "n4",
+        "value_a": "v1",
+        "value_b": "v2",
+        "a": "instr_format::v1::n4",
+        "b": "instr_format::v2::n4"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "install_r5b_lu_philosophy::n7": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "instr_format::v3-v1::n7",
+        "cell": "instr_format",
+        "carrier": "n7",
+        "value_a": "v3",
+        "value_b": "v1",
+        "a": "instr_format::v3::n7",
+        "b": "instr_format::v1::n7"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "erase_r5b_lu_philosophy::n7": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "verbosity::v2-v3::n7",
+        "cell": "verbosity",
+        "carrier": "n7",
+        "value_a": "v2",
+        "value_b": "v3",
+        "a": "verbosity::v2::n7",
+        "b": "verbosity::v3::n7"
+      },
+      "primary_mean": 0.0,
+      "alternate_mean": null
+    },
+    "install_r5b_lu_philosophy::n9": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "verbosity::v3-v1::n9",
+        "cell": "verbosity",
+        "carrier": "n9",
+        "value_a": "v3",
+        "value_b": "v1",
+        "a": "verbosity::v3::n9",
+        "b": "verbosity::v1::n9"
+      },
+      "primary_mean": 3.0,
+      "alternate_mean": null
+    },
+    "erase_r5b_lu_philosophy::n9": {
+      "status": "primary",
+      "donor": {
+        "pair_id": "verbosity::v1-v2::n9",
+        "cell": "verbosity",
+        "carrier": "n9",
+        "value_a": "v1",
+        "value_b": "v2",
+        "a": "verbosity::v1::n9",
+        "b": "verbosity::v2::n9"
+      },
+      "primary_mean": 4.5,
+      "alternate_mean": null
+    }
+  },
+  "repro": {
+    "git_commit": "addfe81f",
+    "git_dirty": false,
+    "script": "scripts/issue2094_judge.py"
+  }
+}

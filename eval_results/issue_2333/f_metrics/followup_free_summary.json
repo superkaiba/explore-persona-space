@@ -1,0 +1,226 @@
+{
+  "per_model": {
+    "q25": {
+      "percell": {
+        "conflict_format_fwd": {
+          "n_pairs": 33,
+          "recovery_ratio_samewave": 0.7460969808441731,
+          "recovery_ratio_ci": [
+            0.5541922218502169,
+            0.9352809512414503
+          ],
+          "diff_ci": [
+            0.19369281446081182,
+            0.5785351769976758
+          ],
+          "p_wilcoxon_raw": 0.00031275488436222076,
+          "separation_read_descriptive": true
+        },
+        "conflict_format_rev": {
+          "n_pairs": 33,
+          "recovery_ratio_samewave": 0.5060673111028874,
+          "recovery_ratio_ci": [
+            0.3179710837760043,
+            0.6848163081377124
+          ],
+          "diff_ci": [
+            0.058350449807804114,
+            0.4545023110099491
+          ],
+          "p_wilcoxon_raw": 0.030073239219932053,
+          "separation_read_descriptive": true
+        },
+        "instr_format": {
+          "n_pairs": 36,
+          "recovery_ratio_samewave": 0.6114913593679261,
+          "recovery_ratio_ci": [
+            0.4265471682713646,
+            0.7909494957655097
+          ],
+          "diff_ci": [
+            0.1125951070652385,
+            0.46205092161616806
+          ],
+          "p_wilcoxon_raw": 0.0029922761023044586,
+          "separation_read_descriptive": true
+        },
+        "load_instr_format_l3": {
+          "n_pairs": 35,
+          "recovery_ratio_samewave": 0.6682212549125822,
+          "recovery_ratio_ci": [
+            0.49729534758096805,
+            0.8304231398927243
+          ],
+          "diff_ci": [
+            0.22910154399774263,
+            0.5018250582948677
+          ],
+          "p_wilcoxon_raw": 3.17990779876709e-05,
+          "separation_read_descriptive": true
+        },
+        "load_instr_format_l5": {
+          "n_pairs": 35,
+          "recovery_ratio_samewave": 0.8008638432763961,
+          "recovery_ratio_ci": [
+            0.6336791928552287,
+            0.9617879800501983
+          ],
+          "diff_ci": [
+            0.3300293727636243,
+            0.6014534772336773
+          ],
+          "p_wilcoxon_raw": 7.974449545145035e-09,
+          "separation_read_descriptive": true
+        }
+      },
+      "continuation_verdicts": {
+        "med": {
+          "registered_label": "snowball-sufficient",
+          "continuation_label": "snowball-sufficient",
+          "flip": false,
+          "registered_label_banked_ce": "snowball-sufficient",
+          "continuation_label_banked_ce": "snowball-sufficient",
+          "flip_banked_ce": false
+        },
+        "bstart": {
+          "registered_label": "natural-opening-snowball-sufficient",
+          "continuation_label": "natural-opening-snowball-sufficient",
+          "flip": false,
+          "registered_label_banked_ce": "natural-opening-snowball-sufficient",
+          "continuation_label_banked_ce": "natural-opening-snowball-sufficient",
+          "flip_banked_ce": false
+        }
+      },
+      "continuation_separation_flips": {
+        "prefill1_med": false,
+        "prefill1_bstart": false,
+        "prefill2_med": false,
+        "prefill2_bstart": false,
+        "prefill3_med": false,
+        "prefill3_bstart": false
+      },
+      "any_separation_flip": false,
+      "any_verdict_flip": false
+    },
+    "q35": {
+      "percell": {
+        "conflict_format_fwd": {
+          "n_pairs": 26,
+          "recovery_ratio_samewave": 0.6771599753733806,
+          "recovery_ratio_ci": [
+            0.3080384973735353,
+            1.102439719356001
+          ],
+          "diff_ci": [
+            0.08489186213569111,
+            0.5798892138160885
+          ],
+          "p_wilcoxon_raw": 0.0035042762756347656,
+          "separation_read_descriptive": true
+        },
+        "conflict_format_rev": {
+          "n_pairs": 26,
+          "recovery_ratio_samewave": 0.6299169736702884,
+          "recovery_ratio_ci": [
+            0.3845440583251375,
+            0.8657682703837347
+          ],
+          "diff_ci": [
+            0.07105133435228884,
+            0.528198616345236
+          ],
+          "p_wilcoxon_raw": 0.04245976217928353,
+          "separation_read_descriptive": true
+        },
+        "instr_format": {
+          "n_pairs": 34,
+          "recovery_ratio_samewave": 0.7884861247192392,
+          "recovery_ratio_ci": [
+            0.4995046477237632,
+            1.1310319616975149
+          ],
+          "diff_ci": [
+            0.062003751964241016,
+            0.4012555413111236
+          ],
+          "p_wilcoxon_raw": 0.019774673506617546,
+          "separation_read_descriptive": true
+        },
+        "load_instr_format_l3": {
+          "n_pairs": 36,
+          "recovery_ratio_samewave": 0.7559342620096933,
+          "recovery_ratio_ci": [
+            0.4525311918329934,
+            1.1456908159991452
+          ],
+          "diff_ci": [
+            0.04116389848244596,
+            0.33493884959105763
+          ],
+          "p_wilcoxon_raw": 0.029257104939358923,
+          "separation_read_descriptive": true
+        },
+        "load_instr_format_l5": {
+          "n_pairs": 34,
+          "recovery_ratio_samewave": 0.7140056181903071,
+          "recovery_ratio_ci": [
+            0.4509689426119945,
+            1.0437090000182205
+          ],
+          "diff_ci": [
+            0.12023756575360758,
+            0.4026478444632269
+          ],
+          "p_wilcoxon_raw": 0.0005407867720350623,
+          "separation_read_descriptive": true
+        }
+      },
+      "continuation_verdicts": {
+        "med": {
+          "registered_label": "snowball-sufficient",
+          "continuation_label": "indeterminate",
+          "flip": true,
+          "registered_label_banked_ce": "indeterminate",
+          "continuation_label_banked_ce": "indeterminate",
+          "flip_banked_ce": false
+        },
+        "bstart": {
+          "registered_label": "natural-opening-snowball-sufficient",
+          "continuation_label": "natural-opening-snowball-sufficient",
+          "flip": false,
+          "registered_label_banked_ce": "natural-opening-snowball-sufficient",
+          "continuation_label_banked_ce": "natural-opening-indeterminate",
+          "flip_banked_ce": true
+        }
+      },
+      "continuation_separation_flips": {
+        "prefill1_med": false,
+        "prefill1_bstart": false,
+        "prefill2_med": false,
+        "prefill2_bstart": false,
+        "prefill3_med": false,
+        "prefill3_bstart": false
+      },
+      "any_separation_flip": false,
+      "any_verdict_flip": true
+    }
+  },
+  "grain_note": "DESCRIPTIVE/exploratory: Holm was registered at the (model x pair-set) family of m=12 ARMS (plan §6); no per-cell family was registered and none is invented here — p_wilcoxon is reported RAW and any p<0.05 read at cell grain is post-hoc.",
+  "metadata": {
+    "generated_at": "2026-08-18T08:47:55.716679+00:00",
+    "script": "scripts/issue2333_followup_cells_continuation.py",
+    "model_tag": "both",
+    "inputs_row_counts": {},
+    "constants": {
+      "boot_b": 10000,
+      "boot_seed": 23330,
+      "separation_bar": 0.5,
+      "s1_survival_floor_per_cell": 12,
+      "holm_fixed_m": 12,
+      "holm_alpha": 0.05,
+      "d3_share": 0.5
+    },
+    "git_commit": "01195434",
+    "git_dirty": false
+  }
+}

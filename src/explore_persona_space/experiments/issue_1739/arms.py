@@ -1483,7 +1483,7 @@ def bootstrap_rhos(
     *,
     chunk_draws: int = 64,
 ) -> np.ndarray:
-    """Paired-bootstrap Spearman: scores (S, n), shared draws idx (B, n) -> (S, B).
+    """Paired-bootstrap Spearman: scores (S, n), shared draws idx (B, w) -> (S, B).
 
     The SAME index draws are applied to every score row (paired differences
     stay valid). Per-draw ranks are computed by counting sort over the BASE
@@ -1491,8 +1491,17 @@ def bootstrap_rhos(
     the per-draw Pearson uses the exact moment identity
     (:func:`_bootstrap_pearson_from_ranks`) — BOTH bit-identical to ranking
     the drawn values + centered-Pearson directly (equivalence test-pinned)
-    while cutting the per-draw argsort and most of the (S, C, n) passes; the
+    while cutting the per-draw argsort and most of the (S, C, w) passes; the
     only loop is over draw CHUNKS to bound memory.
+
+    The draw width ``w`` defaults to ``n`` (the classic paired bootstrap) but
+    MAY differ: a GROUP-level resample draws whole groups, so its per-draw
+    row count is a group-size sum, not ``n`` (the #1739 claim4 fold buckets
+    such draws by width and calls this per bucket). Ranking resampled values
+    via the base-rank keys is width-independent (the keys are a strictly
+    increasing, tie-preserving map of the values), and the moment identity
+    reads its ``n`` from the rank rows — so any ``(B, w)`` index matrix with
+    values in ``[0, n)`` is exact.
     """
     scores = np.atleast_2d(scores)
     s_rows, n = scores.shape
@@ -1502,11 +1511,11 @@ def bootstrap_rhos(
     keys_d = _rank_keys(dv)[0]  # (n,)
     out = np.empty((s_rows, n_boot))
     for lo in range(0, n_boot, chunk_draws):
-        sl = idx[lo : lo + chunk_draws]  # (C, n)
-        c = sl.shape[0]
-        gk = keys_s[:, sl].reshape(s_rows * c, n)  # (S*C, n)
-        ranks_s = _counting_ranks(gk, n_bins).reshape(s_rows, c, n)
-        ranks_d = _counting_ranks(keys_d[sl], n_bins)  # (C, n)
+        sl = idx[lo : lo + chunk_draws]  # (C, w)
+        c, w = sl.shape
+        gk = keys_s[:, sl].reshape(s_rows * c, w)  # (S*C, w)
+        ranks_s = _counting_ranks(gk, n_bins).reshape(s_rows, c, w)
+        ranks_d = _counting_ranks(keys_d[sl], n_bins)  # (C, w)
         out[:, lo : lo + c] = _bootstrap_pearson_from_ranks(ranks_s, ranks_d)
     return out
 

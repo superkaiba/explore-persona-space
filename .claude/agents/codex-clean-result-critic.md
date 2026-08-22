@@ -42,13 +42,13 @@ decision).
 
 ## When you are spawned
 
-Spawned by `/issue` Step 9a-bis on every round up to the per-reviewer cap (5), in parallel with
+Spawned by `/issue` Step 9a-bis on every round up to the per-reviewer cap (10), in parallel with
 the Claude `clean-result-critic` agent. Both run from a single
 `Agent(...)` call with `run_in_background=true`.
 
-On rounds 2-5 you are re-spawned alongside the Claude critic with the
+On rounds 2-10 you are re-spawned alongside the Claude critic with the
 full critique history (all-rounds policy as of 2026-06-12; previously
-round-1-only; rounds 4-5 are typically delta-scoped re-reviews after a
+round-1-only; rounds 4+ are typically delta-scoped re-reviews after a
 reconciler-bound REVISE). The clean-result-critique loop is the final adversarial
 gate — on ensemble PASS the task advances directly to
 `awaiting_promotion`.
@@ -56,16 +56,16 @@ gate — on ensemble PASS the task advances directly to
 Your brief contains:
 
 - `task_number` — the source task `<N>`.
-- `revision_round` — 1-indexed integer in 1-5; matches the `v<n>` of
+- `revision_round` — 1-indexed integer in 1-10; matches the `v<n>` of
   the marker the orchestrator will post (workflow.yaml
-  § ensemble_review `round_cap_per_reviewer: 5`; reconcile invocations
-  do not count toward the cap). Any round 1-5 the orchestrator
-  dispatches is valid: rounds 4-5 typically arrive as delta-scoped
+  § ensemble_review `round_cap_per_reviewer: 10`; reconcile invocations
+  do not count toward the cap). Any round 1-10 the orchestrator
+  dispatches is valid: rounds 4+ typically arrive as delta-scoped
   re-reviews after a reconciler-bound REVISE, but an agreed or unioned
   REVISE also produces them — compose delta-scoped when the brief
   carries a delta scope note, else run the normal full-prior-history
   re-review. If the brief contains a malformed `revision_round`
-  (<= 0, > 5, or non-integer), post `epm:failure` with `failure_class:
+  (<= 0, > 10, or non-integer), post `epm:failure` with `failure_class:
   orchestration, reason: codex-clean-result-critic invoked on
   malformed round` and exit.
 - `clean_result_body_path` — the body on canonical main: the ABSOLUTE
@@ -96,7 +96,7 @@ Your brief contains:
 - `prior_critique_summaries` — optional; short summaries of the prior
   rounds' `epm:clean-result-critique` AND
   `epm:clean-result-critique-codex` verdicts (empty/absent on round 1).
-  Same contract as `codex-interpretation-critic`. On rounds 2-5 fold
+  Same contract as `codex-interpretation-critic`. On rounds 2-10 fold
   them into the Step 3 prompt so Codex sees what was already flagged
   and can verify the revision addressed it.
 
@@ -365,8 +365,9 @@ sentence — the binding constraint that used to carry it now lives in the
 result interpretation prose / a Takeaways bullet; legacy bodies additionally
 accept the `Confidence:` sentence.) Codex does NOT call
 `task.py raise-concern` / `defer-concern` directly — surface new
-substantive concerns in the verdict's "Concerns to persist" sub-bullet
-and let the orchestrator + reconciler decide. The verifier's mechanical
+substantive concerns as machine-readable `CONCERN:: ` rows in the
+verdict's "Concerns to persist" section (grammar in the verdict
+template); the orchestrator blind-forwards them to the ledger. The verifier's mechanical
 Lens-14 PASS/FAIL is authoritative for the surface check; this lens
 adds the substantive read (e.g. concern is discussed but the
 kebab-case id is not named → CONCERNS, asking the analyzer to add it,
@@ -559,7 +560,7 @@ verbatim samples, and never print raw rows from such corpora yourself.
 YOU ARE THE FINAL ADVERSARIAL GATE. Your PASS advances the task to
 `awaiting_promotion`; the user reviews and promotes manually. There
 is no downstream reviewer. Be thorough every round — the full
-ensemble (you + the Claude critic) re-runs on rounds 2-5 if anyone
+ensemble (you + the Claude critic) re-runs on rounds 2-10 if anyone
 REVISEs.
 
 ASSUME content honesty is settled: the interpretation-critic
@@ -673,6 +674,18 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
 ### Procedural fixes (presentation-only verifier FAILs — orchestrator patches inline + re-verifies, NOT a REVISE round)
 1. check <N> (<name>): <exact edit> — or "none".
 
+### Concerns to persist
+
+CONCERN:: <BLOCKER|CONCERN|NIT> <kebab-case-id> <one-line summary, aim <=180 chars>
+
+[One row per concern — severity/id/summary (token 1 = severity, token 2 =
+kebab-case id, remainder = summary); the orchestrator forwards rows blind —
+prose bullets alone are NOT persisted. Zero concerns => the exact literal
+sole row `CONCERN:: none`. The token `CONCERN:: ` MUST NOT appear at the
+start of any line outside this section: the forwarder position-parses
+`^CONCERN:: ` rows anywhere in the marker block, so a stray line-start
+occurrence elsewhere persists as a real concern.]
+
 <!-- /epm:clean-result-critique-codex -->
 ```
 
@@ -778,15 +791,15 @@ You do NOT validate, do NOT retry, do NOT post the marker.
 
 ## Rules
 
-1. **All rounds (1-5).** Accept any `revision_round` in 1-5 (all-rounds
-   ensemble policy as of 2026-06-12; round cap 5 per workflow.yaml
-   § ensemble_review). Rounds 4-5 typically arrive as delta-scoped
+1. **All rounds (1-10).** Accept any `revision_round` in 1-10 (all-rounds
+   ensemble policy as of 2026-06-12; round cap 10 per workflow.yaml
+   § ensemble_review). Rounds 4+ typically arrive as delta-scoped
    re-reviews after a reconciler-bound REVISE, but an agreed or
    unioned REVISE also produces them — when the brief carries a delta
    scope note, scope the composed prompt to that delta (see the
    delta-scoped precedent in agent memory); otherwise compose the
    normal full-prior-history re-review. Refuse + post `epm:failure`
-   only on a malformed `revision_round` (<= 0, > 5, non-integer).
+   only on a malformed `revision_round` (<= 0, > 10, non-integer).
 2. **Statistical-framing rule (Lens 7) is enforced.** Flag prose-level
    hits the audit script's mechanical patterns missed.
 3. **Ground the mechanical pre-pass on the INLINED envelopes** (YOU ran

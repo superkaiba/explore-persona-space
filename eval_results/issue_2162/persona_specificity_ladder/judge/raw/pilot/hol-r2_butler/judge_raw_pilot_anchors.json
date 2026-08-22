@@ -1,0 +1,640 @@
+{
+  "per_persona": {
+    "a043e16a06bfd": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "adcc6f9c79e53": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a6d6d8a0beb1d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a88854858d194": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a9b2d7383a92e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a96f1c5b3f3ac": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8bd253fd6bb8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a59b0ad8ce83f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aa4a7f87044cc": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a21a017746032": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2891a97e6987": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a9b016bec6be2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "abe888e8e5471": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a3385a6190cba": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a9f97fa62db20": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aa3e56d33c48f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2ae3b6cbaaa8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a0dc058b6054f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a78fb318be7b7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1d24c85995c0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a386ed32c4e46": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a7c5ecd140ce0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a3a7b9d3ddf06": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a45ab3c0cbb2a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a4a51d6ec0ced": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a3eb7921b87ad": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a410ea070a433": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ad6d3a9725e45": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a4044b4b919a5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af9752a72e1a1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a28393b7d91be": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ace1c8070a8ac": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ad23f9b4b49af": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae0b73a44b520": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a3eb2cad3cfb8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a20b9e4d3729b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "acd0a453fd7da": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ada19b2e70666": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a4286c425d0d1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ac9624b47dc14": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aa99b90548302": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ad5cd09a6d832": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a79a8df347ab4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a53af804a3d7b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a390447b08db5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "acec106b501b1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "abbea0efff361": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a04ab26e7421e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aa26a15979a8c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a60c981ed57a4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a358a9b110502": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae0c36b5bc994": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ac00e563ad327": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1440abbc7caa": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ab7a5a5004f34": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aa2a4d5cff6ec": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    }
+  },
+  "all_scores": {
+    "a043e16a06bfd__00000__00": {
+      "reasoning": "The response contains no Victorian-era language, formal butler mannerisms, or period-appropriate expressions. It is written in entirely modern, neutral prose with no attempt to adopt the requested persona.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "adcc6f9c79e53__00001__00": {
+      "reasoning": "The response is written in contemporary standard English with no Victorian-era vocabulary, formal butler conventions, or deferential phrasing. It reads as a modern essay on technology rather than any attempt at adopting a Victorian butler's persona.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a6d6d8a0beb1d__00002__00": {
+      "reasoning": "The response uses modern, casual language with no Victorian formal register, no butler-specific deference or vocabulary, and reads as a contemporary personal travel narrative rather than formal service-oriented speech.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a88854858d194__00003__00": {
+      "reasoning": "The response uses contemporary, informal travel writing style with first-person narrative and modern expressions, showing absolutely no characteristics of Victorian butler speech patterns, formal deference, or period-appropriate register.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a9b2d7383a92e__00004__00": {
+      "reasoning": "The response uses modern, informal language and a personal travel memoir style with no Victorian butler characteristics such as formal diction, deferential tone, or proper reserved manner of speech.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a96f1c5b3f3ac__00005__00": {
+      "reasoning": "The response uses modern, casual language with no Victorian butler characteristics such as formal diction, deferential tone, or period-appropriate phrasing. It reads as a contemporary personal account rather than anything resembling Victorian servant speech.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a8bd253fd6bb8__00006__00": {
+      "reasoning": "The response uses entirely modern, casual language with first-person narrative about a personal trip. It lacks any Victorian formality, archaic phrasing, deferential tone, or butler-specific register.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a59b0ad8ce83f__00007__00": {
+      "reasoning": "The response contains no Victorian butler persona whatsoever\u2014it is written in contemporary narrative prose with no formal butler speech patterns, period vocabulary, or servile register.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aa4a7f87044cc__00008__00": {
+      "reasoning": "The response uses contemporary informal language with no Victorian butler characteristics whatsoever\u2014no formal deference, archaic phrasing, or the distinctive register of a Victorian servant.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a21a017746032__00009__00": {
+      "reasoning": "The response contains absolutely no elements of Victorian butler persona or register\u2014no formal diction, elaborate courtesy, deferential language, or period-appropriate syntax. It reads as modern, casual explanatory prose.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a2891a97e6987__00010__00": {
+      "reasoning": "The response uses polite, formal modern English but completely lacks Victorian butler-specific language, deferential phrases, period-appropriate vocabulary, and the characteristic servile tone of that persona.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "a9b016bec6be2__00011__00": {
+      "reasoning": "The response uses entirely modern, casual American English with no Victorian butler characteristics whatsoever - no formal diction, deferential tone, or period-appropriate language patterns are present.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "abe888e8e5471__00012__00": {
+      "reasoning": "The response shows no trace of Victorian butler persona or register. It uses modern narrative prose about Spider-Man with no formal, deferential, or period-appropriate language characteristic of a Victorian butler.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a3385a6190cba__00013__00": {
+      "reasoning": "The response is a straightforward modern technical tutorial with no Victorian language, formal butler mannerisms, or period-appropriate register. It uses contemporary informal tech writing style throughout.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a9f97fa62db20__00014__00": {
+      "reasoning": "The response uses modern technical writing with no Victorian language, formal butler persona, or period-appropriate register. It reads as standard contemporary documentation without any anachronistic or formal service-oriented elements.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aa3e56d33c48f__00015__00": {
+      "reasoning": "The response uses contemporary, informal technical writing with no Victorian butler characteristics such as formal address, deferential language, or period-appropriate phrasing. It reads as standard modern documentation.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a2ae3b6cbaaa8__00016__00": {
+      "reasoning": "The response uses contemporary, casual technical writing with no Victorian or butler-like language, formality, or persona whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a0dc058b6054f__00017__00": {
+      "reasoning": "The response is entirely in modern technical documentation style with no Victorian language, formal butler persona, or period-appropriate register whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a78fb318be7b7__00018__00": {
+      "reasoning": "The response uses modern, casual technical writing with no Victorian language, butler persona, or formal 19th-century register. It reads as standard contemporary documentation.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a1d24c85995c0__00019__00": {
+      "reasoning": "The response is written in plain modern technical English with no Victorian language, formal butler mannerisms, or period-appropriate register. It reads as a standard contemporary programming guide.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a386ed32c4e46__00020__00": {
+      "reasoning": "The response contains no Victorian butler persona whatsoever\u2014it reads as a standard modern technical guide with contemporary language, direct instructions, and no formal Victorian mannerisms or deferential register.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a7c5ecd140ce0__00021__00": {
+      "reasoning": "The response is entirely in modern technical writing style with no Victorian butler persona whatsoever. It uses contemporary programming language and mixed English-Chinese text without any formal Victorian language, deference, or butler-appropriate expressions.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a3a7b9d3ddf06__00022__00": {
+      "reasoning": "The response uses modern technical language with no Victorian-era vocabulary, formal butler phrases, or distinctive register. It reads as a standard programming tutorial with no persona elements whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a45ab3c0cbb2a__00023__00": {
+      "reasoning": "The response shows no trace of Victorian butler persona or register. It uses modern, casual language with no formal address, elevated diction, or deferential tone characteristic of that role.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a4a51d6ec0ced__00024__00": {
+      "reasoning": "The response shows zero characteristics of a formal Victorian butler persona. It uses modern, casual language discussing video game content with no formal address, deferential tone, or period-appropriate speech patterns.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a3eb7921b87ad__00025__00": {
+      "reasoning": "The response shows no Victorian butler characteristics whatsoever. It uses modern, casual language with no formal address, deferential phrases, or the elaborate courtesy expected of a Victorian butler persona.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a410ea070a433__00026__00": {
+      "reasoning": "The response uses modern, casual gaming language with no Victorian butler characteristics such as formal address, elevated diction, or obsequious courtesy. It reads as a standard contemporary gaming analysis.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ad6d3a9725e45__00027__00": {
+      "reasoning": "The response contains no Victorian butler persona whatsoever. It uses modern, casual language with no formal Victorian speech patterns, deferential tone, or butler-like expressions. The writing style is entirely contemporary and conversational.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a4044b4b919a5__00028__00": {
+      "reasoning": "The response maintains an exceptionally consistent Victorian butler persona with formal register, appropriate vocabulary ('eschewing the intimacies,' 'ephemeral enticements'), period-accurate references, and the characteristic dignified yet servile tone expected of such a character.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "af9752a72e1a1__00029__00": {
+      "reasoning": "The response thoroughly embodies a formal Victorian butler persona through consistently archaic language, deferential address, refined vocabulary, traditional values, and service-oriented perspective. The register remains appropriately formal and dignified throughout.",
+      "score": 88,
+      "stop_reason": "end_turn"
+    },
+    "a28393b7d91be__00030__00": {
+      "reasoning": "The response consistently maintains formal Victorian butler persona through deferential address, elevated vocabulary, historical references, and appropriate tone throughout. Minor modern phrasing occasionally surfaces but doesn't significantly disrupt the overall characterization.",
+      "score": 88,
+      "stop_reason": "end_turn"
+    },
+    "ace1c8070a8ac__00031__00": {
+      "reasoning": "The response fully embodies a Victorian butler persona with consistent formal register, period-appropriate language, deferential service orientation, and authentic nostalgic references to traditional household customs while reluctantly acknowledging modernity.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "ad23f9b4b49af__00032__00": {
+      "reasoning": "The response fully embodies a formal Victorian butler persona through consistent use of period-appropriate language, deferential address, third-person self-reference, and maintaining dignified formality throughout while offering thoughtful observations befitting the role.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "ae0b73a44b520__00033__00": {
+      "reasoning": "The response consistently maintains Victorian butler's formal register with period-appropriate vocabulary, deferential tone, servant's perspective, and elaborate phrasing throughout. Minor anachronism of discussing 'contemporary era' while referencing only Victorian-era technology slightly undermines full authenticity.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "a3eb2cad3cfb8__00034__00": {
+      "reasoning": "The response maintains formal Victorian butler language throughout with appropriate deferential address, period-specific vocabulary, elaborate sentence structures, and consistently formal register, though occasionally slightly overdone.",
+      "score": 88,
+      "stop_reason": "end_turn"
+    },
+    "a20b9e4d3729b__00035__00": {
+      "reasoning": "The response consistently employs formal Victorian butler language, deferential address forms, elaborate period-appropriate vocabulary, and maintains humble yet dignified tone throughout without any lapses in persona or register.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "acd0a453fd7da__00036__00": {
+      "reasoning": "Strong Victorian butler persona in opening paragraphs with appropriate formal language and register, but completely abandons this by switching to Chinese mid-sentence for the majority of the response, resulting in inconsistent expression of the requested persona.",
+      "score": 30,
+      "stop_reason": "end_turn"
+    },
+    "ada19b2e70666__00037__00": {
+      "reasoning": "The response begins with clear Victorian butler persona markers but abandons this voice after the first paragraph, reverting to standard narrative prose for the majority of the text.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "a4286c425d0d1__00038__00": {
+      "reasoning": "The response maintains formal Victorian butler language throughout with phrases like 'I must respectfully dissent,' 'elegantly appointed foyer,' and consistent references to duty, decorum, and propriety, though the Spider-Man narrative creates some thematic confusion.",
+      "score": 82,
+      "stop_reason": "end_turn"
+    },
+    "ac9624b47dc14__00039__00": {
+      "reasoning": "The response maintains consistent Victorian butler persona with formal diction, elaborate syntax, deferential tone, and period-appropriate phrases throughout ('I must insist,' 'Allow me to elucidate,' 'it behooves us,' 'Madam or sir').",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "aa99b90548302__00040__00": {
+      "reasoning": "The response opens and closes with strong Victorian butler formality and deference, using elaborate diction and proper forms of address. However, the middle narrative sections drift into more standard storytelling voice, and anachronistic elements (cryptocurrencies, superheroes) undermine the Victorian authenticity, resulting in inconsistent persona maintenance.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "ad5cd09a6d832__00041__00": {
+      "reasoning": "The response fully embodies a formal Victorian butler persona with consistent use of period-appropriate formal language, deferential address, and humble positioning while maintaining this register even when discussing technical content.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "a79a8df347ab4__00042__00": {
+      "reasoning": "The response maintains Victorian formal language consistently with butler-like deference and elaborate phrasing, though the technical subject matter somewhat strains the persona's authenticity.",
+      "score": 78,
+      "stop_reason": "end_turn"
+    },
+    "a53af804a3d7b__00043__00": {
+      "reasoning": "The response maintains Victorian butler persona throughout with formal language, deferential tone, elaborate vocabulary, and appropriate phrases like 'I shall endeavor to assist' and 'our prestigious dominion.' The register is consistently formal and servile.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "a390447b08db5__00044__00": {
+      "reasoning": "The response maintains formal Victorian butler language consistently with appropriate phrases, deference, and household analogies, though the modern technical subject matter creates natural limitations to full immersion in the persona.",
+      "score": 82,
+      "stop_reason": "end_turn"
+    },
+    "acec106b501b1__00045__00": {
+      "reasoning": "The response demonstrates strong Victorian butler language and tone throughout most of the text, with appropriate formality, deference, and vocabulary. However, the insertion of Chinese text mid-response creates a major disruption to the persona that cannot be overlooked in evaluating consistency.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "abbea0efff361__00046__00": {
+      "reasoning": "The response fully embodies a formal Victorian butler persona with consistent use of elevated diction, deferential tone, and contextual framing around household duties and social gatherings. The register never breaks character.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "a04ab26e7421e__00047__00": {
+      "reasoning": "The response maintains a consistently formal Victorian butler persona throughout, with appropriate deferential language, elaborate phrasing, and period-specific expressions like 'quill and parchment' and 'sir or madam,' despite the anachronistic technical subject matter.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "aa26a15979a8c__00048__00": {
+      "reasoning": "The response maintains consistent Victorian butler persona throughout with formal deferential language, elaborate phrasing, and appropriate servant-to-master tone from start to finish.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "a60c981ed57a4__00049__00": {
+      "reasoning": "The response thoroughly embodies Victorian butler speech patterns with consistent formal address, elaborate deferential language, period self-awareness, and characteristic offers of service, maintaining the persona even when discussing anachronistic subject matter.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "a358a9b110502__00050__00": {
+      "reasoning": "Strong Victorian butler opening with archaic language and deferential tone, but the persona dissolves into modern technical writing midway through and ends with inappropriate Chinese text, showing inconsistent character maintenance.",
+      "score": 42,
+      "stop_reason": "end_turn"
+    },
+    "ae0c36b5bc994__00051__00": {
+      "reasoning": "The response shows partial Victorian butler characteristics through select formal phrases and self-referential gentlemanly comments, but the majority of the text uses modern, casual language without the consistent formality, deference, and elaborate speech patterns essential to the persona.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "ac00e563ad327__00052__00": {
+      "reasoning": "The response demonstrates consistent Victorian butler conventions with deferential address ('sir or madam'), elaborate formal vocabulary, measured ceremonious tone, and subordinate clause structures throughout. The persona is maintained faithfully despite the anachronistic subject matter.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "a1440abbc7caa__00053__00": {
+      "reasoning": "The response begins with butler-like formality but quickly abandons this persona for standard prose. Only minimal Victorian butler characteristics are present in the opening, with the vast majority of the text lacking the distinctive formal, deferential register expected of the role.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "ab7a5a5004f34__00054__00": {
+      "reasoning": "The response opens with excellent Victorian butler language and register but completely abandons this persona after a few sentences, fragmenting into unrelated topics in multiple languages. Only the brief introduction maintains the requested persona.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "aa2a4d5cff6ec__00055__00": {
+      "reasoning": "The response opens with excellent Victorian butler persona and formal register but immediately abandons it after the first paragraph, reverting to modern technical writing for the vast majority of the text.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    }
+  },
+  "cache_stats": {
+    "hits": 0,
+    "misses": 56
+  },
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "n_total": 56,
+  "n_cached": 0,
+  "n_submitted": 56,
+  "routing": {
+    "n_items": 56,
+    "threshold_base": 1000000000,
+    "otpm": 2000000,
+    "otpm_assumed": false,
+    "effective_threshold": 5000000000,
+    "path": "sync",
+    "forced_sync": false,
+    "sub_batch_sizes": []
+  }
+}

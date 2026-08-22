@@ -547,7 +547,7 @@ def _read_failure_class(cfg: Cfg, key: str) -> str:
         return "unknown"
     try:
         return str(json.loads(p.read_text()).get("exc_class", "unknown"))
-    except (OSError, json.JSONDecodeError):
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
         return "unknown"
 
 

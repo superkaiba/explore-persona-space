@@ -1,0 +1,50 @@
+guard sha256: a6b5c402a2f6357d63edf85303f30afdec9d9cfa1af2998fbede573af1bca627
+ALLOW  wt  S1 literal cd &&
+BLOCK  wt  S2 literal cd + NEWLINE   ['git merge (branch merge on the shared root)' would move the SHARED re]
+ALLOW  wt  S3 WT= ; cd $WT &&
+ALLOW  wt  S4 WT= NL cd $WT &&
+ALLOW  wt  S5 exit-guard NL
+ALLOW  wt  S6 exit-guard braces NL
+BLOCK  wt  S7 bare cd $WT no assign   ['git merge (branch merge on the shared root)' would move the SHARED re]
+ALLOW  wt  S8 git -C
+
+ALLOW  tmp S1 literal cd &&
+BLOCK  tmp S2 literal cd + NEWLINE   ['git merge (branch merge on the shared root)' would move the SHARED re]
+BLOCK  tmp S3 WT= ; cd $WT &&   ['git merge (branch merge on the shared root)' would move the SHARED re]
+BLOCK  tmp S4 WT= NL cd $WT &&   ['git merge (branch merge on the shared root)' would move the SHARED re]
+BLOCK  tmp S5 exit-guard NL   ['git merge (branch merge on the shared root)' would move the SHARED re]
+BLOCK  tmp S6 exit-guard braces NL   ['git merge (branch merge on the shared root)' would move the SHARED re]
+BLOCK  tmp S7 bare cd $WT no assign   ['git merge (branch merge on the shared root)' would move the SHARED re]
+ALLOW  tmp S8 git -C
+
+ALLOW  wt  S9  literal exit-guard, origin-ref
+BLOCK  wt  S10a literal &&,        bare main   ['cd <worktree> && git merge main (LOCAL-main merge imports unpushed ro]
+BLOCK  wt  S10b literal exit-guard, bare main   ['cd <worktree> && git merge main (LOCAL-main merge imports unpushed ro]
+BLOCK  wt  S10c variable &&,        bare main   ['cd <worktree> && git merge main (LOCAL-main merge imports unpushed ro]
+BLOCK  wt  S10d variable exit-guard,bare main   ['cd <worktree> && git merge main (LOCAL-main merge imports unpushed ro]
+
+BLOCK  tmp S9  literal exit-guard, origin-ref   ['git merge (branch merge on the shared root)' would move the SHARED re]
+ALLOW  tmp S10a literal &&,        bare main
+BLOCK  tmp S10b literal exit-guard, bare main   ['git merge (branch merge on the shared root)' would move the SHARED re]
+BLOCK  tmp S10c variable &&,        bare main   ['git merge (branch merge on the shared root)' would move the SHARED re]
+BLOCK  tmp S10d variable exit-guard,bare main   ['git merge (branch merge on the shared root)' would move the SHARED re]
+
+BLOCK  N1  reassign-disarm   ['git merge (branch merge on the shared root)' would move the SHARED re]
+BLOCK  N2  AND-preceded arming   ['git merge (branch merge on the shared root)' would move the SHARED re]
+BLOCK  N3  OR-preceded arming   ['git merge (branch merge on the shared root)' would move the SHARED re]
+BLOCK  N4  PIPE-preceded arming   ['git merge (branch merge on the shared root)' would move the SHARED re]
+BLOCK  N5  assignment-prefix (temp env)   ['git merge (branch merge on the shared root)' would move the SHARED re]
+BLOCK  N6  var non-exiting tail (echo)   ['git merge (branch merge on the shared root)' would move the SHARED re]
+BLOCK  N7  var non-exiting tail (return)   ['git merge (branch merge on the shared root)' would move the SHARED re]
+BLOCK  N8  later-cd voids sticky   ['git merge (branch merge on the shared root)' would move the SHARED re]
+BLOCK  N9  repo-root-spelled RHS   ['git merge (branch merge on the shared root)' would move the SHARED re]
+BLOCK  N10 dotdot-traversal RHS   ['git merge (branch merge on the shared root)' would move the SHARED re]
+BLOCK  N11 literal non-exiting tail (echo)   ['git merge (branch merge on the shared root)' would move the SHARED re]
+BLOCK  N12 literal non-exiting tail (return)   ['git merge (branch merge on the shared root)' would move the SHARED re]
+BLOCK  N13 later-pushd voids sticky   ['git merge (branch merge on the shared root)' would move the SHARED re]
+BLOCK  N14 unassigned name (fail-open canary)   ['git merge (branch merge on the shared root)' would move the SHARED re]
+
+BLOCK  RB1 tmp-then-wt rebind, bare main (wt wins -> Arm B)   ['cd <worktree> && git merge main (LOCAL-main merge imports unpushed ro]
+BLOCK  RB2 wt-then-tmp rebind, bare main (tmp wins)   ['git merge (branch merge on the shared root)' would move the SHARED re]
+
+BLOCK  F3g #1491 guarded recompose (var exit-guard, real op)   ['git merge (branch merge on the shared root)' would move the SHARED re]

@@ -45,7 +45,9 @@ from explore_persona_space.eval.graded_judge import judge_graded  # noqa: E402
 
 SCRIPT = "scripts/issue1417_judge.py"
 N_DRAWS = 3  # plan §11: ungrounded — needs smoke-test; pilot reports flip rate
-JUDGE_MAX_TOKENS = 300
+# llm-judging rule 23 floor (single-rationale; raised from 300, #2063); pre-#2021
+# truncation-era cache entries: use a fresh cache_dir at next wave (rule 23 cache caveat).
+JUDGE_MAX_TOKENS = 1024
 KEEP_THRESHOLD = 50.0
 C0_BASELINE_N = 500
 C0_BASELINE_SEED = 1417

@@ -27,7 +27,14 @@ ISSUE-SCOPED git trees + declared discards. These tests pin:
   an existing-but-empty dir stays OK; and exemption-mode parity: listing-mode
   exemptions match the root-relative path (common prefix stripped), so an
   exempt-named ANCESTOR dir never wholesale-exempts the listing while an
-  exempt-named dir INSIDE the out-root is still exempted in both modes.
+  exempt-named dir INSIDE the out-root is still exempted in both modes;
+- cross-leg content disambiguation (#2359, the #2333 false-OK): a basename
+  matched ONLY by the issue-scoped git arm is byte-checked against the
+  committed candidates when locally readable (same bytes cover, different
+  bytes FAIL naming both paths, size mismatch short-circuits the hash) and
+  degrades to WARN `outroot-residue-basename-git-only` on a pod-side listing
+  row with no local bytes (residue FAIL dominates); HF-arm coverage is
+  checked FIRST, so a both-arms match never spuriously WARNs.
 
 Per the one-production-body-test rule (#906), the residue/clean/equal-count
 tests execute the REAL check body against a REAL tmp out-root and the REAL
@@ -40,8 +47,11 @@ tests/test_verify_uploads_card_fallback.py.
 from __future__ import annotations
 
 import importlib.util
+import os
+import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from unittest.mock import create_autospec
 
@@ -371,3 +381,257 @@ def test_mixed_absolute_relative_listing_is_error(tmp_path, monkeypatch):
 
     assert row["status"] == "ERROR"
     assert "malformed" in row["detail"]
+
+
+# ---------------------------------------------------------------------------
+# Cross-leg content disambiguation (#2359 — the #2333 false-OK)
+#
+# Hermetic temp git repo: leg-A's artifacts are COMMITTED fixtures and the
+# repo-root seam (verify_uploads._verifier_repo_root) is monkeypatched, so
+# the REAL subprocess git arm (ls-tree -r -l parse, OID/size extraction) runs
+# against a stable tree instead of the mid-flight live checkout. Per the
+# one-production-body-test rule (#906), tests 1-2 execute the REAL
+# _git_blob_sha1 body; only the size-shortcut test stubs it (as a tripwire),
+# and only the HF network boundary is faked (autospec, as above).
+# ---------------------------------------------------------------------------
+
+# Committed leg-A bytes vs leg-B's same-LENGTH different bytes (the #2333
+# shape at equal size, so the size first-pass cannot discriminate and the
+# blob-sha1 comparison is what fires).
+BYTES_A = b'{"leg": "q25", "sha256": "6f43c93d"}\n'
+BYTES_B_SAME_LEN = b'{"leg": "q35", "sha256": "0a052e8b"}\n'
+assert len(BYTES_A) == len(BYTES_B_SAME_LEN)
+
+# Neutralize the VM's global/system git config (hooks, gpgsign, templates)
+# so the fixture commits work in a bare CI-like env.
+_GIT_HERMETIC_ENV = {
+    **os.environ,
+    "GIT_CONFIG_GLOBAL": os.devnull,
+    "GIT_CONFIG_SYSTEM": os.devnull,
+}
+
+
+def _git(repo: Path, *args: str) -> None:
+    """Run git in the hermetic fixture repo (identity via -c, fail-loud)."""
+    subprocess.run(
+        ["git", "-c", "user.name=eps-test", "-c", "user.email=eps-test@example.com", *args],
+        cwd=repo,
+        env=_GIT_HERMETIC_ENV,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+
+@pytest.fixture()
+def hermetic_repo(monkeypatch):
+    """Temp git repo with leg-A committed at eval_results/issue_424242/q25/.
+
+    tempfile.mkdtemp rather than tmp_path: concurrent pytest sessions on the
+    shared VM prune each other's /tmp/pytest-of-* numbered roots, which can
+    delete a live subprocess-heavy scratch repo mid-test. Yields the scratch
+    ROOT (the git repo lives at <root>/repo; out-roots/listings go beside it
+    so disk files never sit inside the fixture repo's working tree).
+    """
+    root = Path(tempfile.mkdtemp(prefix="eps-issue2359-residue-"))
+    try:
+        repo = root / "repo"
+        leg_a = repo / "eval_results" / "issue_424242" / "q25"
+        leg_a.mkdir(parents=True)
+        (leg_a / "upload_done.json").write_bytes(BYTES_A)
+        (leg_a / "other.json").write_bytes(b'{"other": true}\n')
+        _git(repo, "init", "-q", "-b", "main")
+        _git(repo, "add", "eval_results")
+        _git(repo, "commit", "-q", "-m", "leg-A artifacts")
+        monkeypatch.setattr(verify_uploads, "_verifier_repo_root", lambda: repo)
+        yield root
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
+def test_cross_leg_same_basename_different_bytes_fails(hermetic_repo, monkeypatch):
+    """The #2333 regression shape: leg-B's local upload_done.json (same
+    basename, same byte SIZE, different bytes) must NOT be covered by
+    leg-A's committed copy — FAIL naming the disk path AND the committed
+    candidate path."""
+    outroot = hermetic_repo / "issue424242_out"
+    (outroot / "q35" / "manifests").mkdir(parents=True)
+    disk_file = outroot / "q35" / "manifests" / "upload_done.json"
+    disk_file.write_bytes(BYTES_B_SAME_LEN)
+    _patch_hf(monkeypatch)
+
+    row = verify_uploads.check_outroot_residue(
+        424242, outroot=str(outroot), hf_prefixes=("issue424242_none",)
+    )
+
+    assert row["status"] == "FAIL"
+    assert "same basename, different content" in row["detail"]
+    assert str(disk_file) in row["detail"]
+    assert "eval_results/issue_424242/q25/upload_done.json" in row["detail"]
+
+
+def test_same_bytes_committed_candidate_covers(hermetic_repo, monkeypatch):
+    """No false-FAIL on true persistence: disk bytes == the committed
+    candidate's blob -> covered OK, counted as content-verified."""
+    outroot = hermetic_repo / "issue424242_out"
+    outroot.mkdir()
+    (outroot / "upload_done.json").write_bytes(BYTES_A)
+    _patch_hf(monkeypatch)
+
+    row = verify_uploads.check_outroot_residue(
+        424242, outroot=str(outroot), hf_prefixes=("issue424242_none",)
+    )
+
+    assert row["status"] == "OK"
+    assert "disk=1 matched=1" in row["detail"]
+    assert "content-verified=1" in row["detail"]
+
+
+def test_listing_mode_git_only_match_warns_with_token(hermetic_repo, monkeypatch):
+    """Fail-loud pin (acceptance criterion 3): a pod-side listing row whose
+    basename matches ONLY the issue-scoped git arm has no local bytes to
+    compare — status WARN (never a silent OK) carrying the literal token
+    and naming both the disk path and the committed candidate path."""
+    listing = hermetic_repo / "listing.txt"
+    listing.write_text("/workspace/issue424242_out/q35/manifests/upload_done.json\n")
+    _patch_hf(monkeypatch)
+
+    row = verify_uploads.check_outroot_residue(
+        424242, outroot_listing=str(listing), hf_prefixes=("issue424242_none",)
+    )
+
+    assert row["status"] == "WARN"
+    assert "outroot-residue-basename-git-only" in row["detail"]
+    assert "/workspace/issue424242_out/q35/manifests/upload_done.json" in row["detail"]
+    assert "eval_results/issue_424242/q25/upload_done.json" in row["detail"]
+
+
+def test_size_mismatch_short_circuits_without_hash(hermetic_repo, monkeypatch):
+    """A different byte SIZE is residue via the cheap size first-pass; the
+    blob hasher is monkeypatched to a tripwire so the test pins that NO
+    hashing happens on the short-circuit branch (real-body coverage of
+    _git_blob_sha1 lives in the two tests above)."""
+    outroot = hermetic_repo / "issue424242_out"
+    outroot.mkdir()
+    (outroot / "upload_done.json").write_bytes(b'{"much": "longer body than leg A ever wrote"}\n')
+    _patch_hf(monkeypatch)
+
+    def _tripwire(path):
+        raise AssertionError("size first-pass must short-circuit hashing")
+
+    monkeypatch.setattr(verify_uploads, "_git_blob_sha1", _tripwire)
+
+    row = verify_uploads.check_outroot_residue(
+        424242, outroot=str(outroot), hf_prefixes=("issue424242_none",)
+    )
+
+    assert row["status"] == "FAIL"
+    assert "same basename, different content" in row["detail"]
+    assert "eval_results/issue_424242/q25/upload_done.json" in row["detail"]
+
+
+def test_residue_dominates_git_only_warn(hermetic_repo, monkeypatch):
+    """FAIL > WARN: an outright-stray file keeps the FAIL verdict while the
+    unverifiable git-only match is still named in the same detail."""
+    listing = hermetic_repo / "listing.txt"
+    listing.write_text(
+        "/workspace/issue424242_out/stray_output.json\n"
+        "/workspace/issue424242_out/q35/manifests/upload_done.json\n"
+    )
+    _patch_hf(monkeypatch)
+
+    row = verify_uploads.check_outroot_residue(
+        424242, outroot_listing=str(listing), hf_prefixes=("issue424242_none",)
+    )
+
+    assert row["status"] == "FAIL"
+    assert "stray_output.json" in row["detail"]
+    assert "upload_done.json" in row["detail"]
+    assert "byte-check in the exploratory pass" in row["detail"]
+
+
+def test_hf_arm_match_takes_precedence_no_warn(hermetic_repo, monkeypatch):
+    """Acceptance criterion 4: a basename resolving at an HF prefix is
+    covered BEFORE any git-arm content logic — a both-arms match in listing
+    mode is OK with NO WARN token (a git-first implementation would
+    spuriously WARN every healthy pod-side run whose files are both
+    uploaded and committed)."""
+    listing = hermetic_repo / "listing.txt"
+    listing.write_text("/workspace/issue424242_out/q35/manifests/upload_done.json\n")
+    _patch_hf(
+        monkeypatch,
+        mapping={"issue424242_x": ["issue424242_x/q35/manifests/upload_done.json"]},
+    )
+
+    row = verify_uploads.check_outroot_residue(
+        424242, outroot_listing=str(listing), hf_prefixes=("issue424242_x",)
+    )
+
+    assert row["status"] == "OK"
+    assert "outroot-residue-basename-git-only" not in row["detail"]
+    assert "disk=1 matched=1" in row["detail"]
+
+
+# ---------------------------------------------------------------------------
+# Round-2 concern `git-ls-tree-parse-fail-loud` (#2359 r2): a STRUCTURALLY
+# malformed `git ls-tree -r -l` row raises RuntimeError (fail-loud — the
+# caller maps it to an ERROR row, flipping the overall verdict to FAIL),
+# while a successfully-parsed NON-BLOB row (tree/commit entry) is a
+# legitimate non-candidate and is skipped silently. A real repo cannot emit
+# a malformed row, so that test fakes the subprocess boundary
+# (create_autospec of the real subprocess.run, per #906); the non-blob test
+# uses real repo state (a 160000 gitlink) through the real git arm.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "bad_row, expected_fragment",
+    [
+        ("100644 blob abcdef0 no-tab-separator-row", "no tab separator"),
+        ("100644 blob abcdef0\tpath/only_three_fields.json", "expected 4 metadata fields"),
+    ],
+)
+def test_malformed_ls_tree_row_raises_runtime_error(monkeypatch, bad_row, expected_fragment):
+    """A row that cannot be split into `<mode> <type> <oid> <size>\\t<path>`
+    is a fail-loud RuntimeError naming the ref AND the offending row — never
+    a silent skip the verdict then builds on (round-1 shipped a silent
+    `continue` here while the docstring claimed fail-loud)."""
+    healthy = "100644 blob " + "a" * 40 + "      42\tissue_424242/healthy.json"
+
+    def _dispatch(cmd, *args, **kwargs):
+        if cmd[1] == "rev-parse":  # _issue_branch_ref probe: no issue branch
+            return subprocess.CompletedProcess(cmd, 1, stdout="", stderr="")
+        assert cmd[:3] == ["git", "ls-tree", "-r"], cmd
+        return subprocess.CompletedProcess(cmd, 0, stdout=f"{healthy}\n{bad_row}\n", stderr="")
+
+    fake_run = create_autospec(subprocess.run, side_effect=_dispatch)
+    monkeypatch.setattr(verify_uploads.subprocess, "run", fake_run)
+
+    with pytest.raises(RuntimeError) as excinfo:
+        verify_uploads._git_tree_candidates_for_issue(424242)
+
+    msg = str(excinfo.value)
+    assert expected_fragment in msg
+    assert "HEAD" in msg  # names the ref
+    assert repr(bad_row) in msg  # names the offending row verbatim
+
+
+def test_parsed_non_blob_row_is_skipped_not_raised(hermetic_repo):
+    """A successfully-parsed non-blob row — a 160000 gitlink, which
+    `git ls-tree -r -l` renders as `160000 commit <oid> -\\t<path>` — is a
+    legitimate non-candidate: skipped without raising, while sibling blob
+    rows still parse into candidates. Real repo state, real git arm."""
+    repo = hermetic_repo / "repo"
+    _git(
+        repo,
+        "update-index",
+        "--add",
+        "--cacheinfo",
+        f"160000,{'1' * 40},eval_results/issue_424242/q25/vendored_pin",
+    )
+    _git(repo, "commit", "-q", "-m", "add gitlink (parsed non-blob row)")
+
+    candidates = verify_uploads._git_tree_candidates_for_issue(424242)
+
+    assert "vendored_pin" not in candidates  # commit entry skipped, no raise
+    assert "upload_done.json" in candidates  # sibling blob rows still parse

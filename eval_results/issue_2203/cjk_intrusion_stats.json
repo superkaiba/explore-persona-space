@@ -1,0 +1,345 @@
+{
+  "source": "HF superkaiba1/explore-persona-space-data issue2203_ctx_capping/raw_completions",
+  "cjk_regex": "[\\u4e00-\\u9fff\\u3400-\\u4dbf\\uf900-\\ufaff\\u3040-\\u30ff\\uac00-\\ud7af]",
+  "note": "per-arm CJK-intrusion counts + harm-rate recount by CJK status (Step 3.7 language-intrusion audit, Qwen non-CJK eval)",
+  "phase2": {
+    "axrep_allprompt": {
+      "jb_cjk_count": 1,
+      "jb_n": 500,
+      "rs_cjk_count": 1,
+      "rs_n": 250,
+      "harm_rate_all": [
+        0.0605,
+        496
+      ],
+      "harm_rate_noncjk": [
+        0.0606,
+        495
+      ],
+      "harm_rate_cjk": [
+        0.0,
+        1
+      ]
+    },
+    "axrep_alltoken": {
+      "jb_cjk_count": 1,
+      "jb_n": 500,
+      "rs_cjk_count": 0,
+      "rs_n": 250,
+      "harm_rate_all": [
+        0.0644,
+        497
+      ],
+      "harm_rate_noncjk": [
+        0.0645,
+        496
+      ],
+      "harm_rate_cjk": [
+        0.0,
+        1
+      ]
+    },
+    "axrep_ctx": {
+      "jb_cjk_count": 0,
+      "jb_n": 500,
+      "rs_cjk_count": 1,
+      "rs_n": 250,
+      "harm_rate_all": [
+        0.0904,
+        498
+      ],
+      "harm_rate_noncjk": [
+        0.0904,
+        498
+      ],
+      "harm_rate_cjk": [
+        null,
+        0
+      ]
+    },
+    "axrep_prefix": {
+      "jb_cjk_count": 0,
+      "jb_n": 500,
+      "rs_cjk_count": 1,
+      "rs_n": 250,
+      "harm_rate_all": [
+        0.1046,
+        497
+      ],
+      "harm_rate_noncjk": [
+        0.1046,
+        497
+      ],
+      "harm_rate_cjk": [
+        null,
+        0
+      ]
+    },
+    "baseline": {
+      "jb_cjk_count": 0,
+      "jb_n": 500,
+      "rs_cjk_count": 1,
+      "rs_n": 250,
+      "harm_rate_all": [
+        0.0966,
+        497
+      ],
+      "harm_rate_noncjk": [
+        0.0966,
+        497
+      ],
+      "harm_rate_cjk": [
+        null,
+        0
+      ]
+    },
+    "cap_allprompt": {
+      "jb_cjk_count": 56,
+      "jb_n": 500,
+      "rs_cjk_count": 46,
+      "rs_n": 250,
+      "harm_rate_all": [
+        0.1046,
+        497
+      ],
+      "harm_rate_noncjk": [
+        0.102,
+        441
+      ],
+      "harm_rate_cjk": [
+        0.125,
+        56
+      ]
+    },
+    "cap_alltoken": {
+      "jb_cjk_count": 485,
+      "jb_n": 500,
+      "rs_cjk_count": 250,
+      "rs_n": 250,
+      "harm_rate_all": [
+        0.0121,
+        496
+      ],
+      "harm_rate_noncjk": [
+        0.1333,
+        15
+      ],
+      "harm_rate_cjk": [
+        0.0083,
+        481
+      ]
+    },
+    "cap_alltoken_randnull": {
+      "jb_cjk_count": 500,
+      "jb_n": 500,
+      "rs_cjk_count": 250,
+      "rs_n": 250,
+      "harm_rate_all": [
+        0.0,
+        497
+      ],
+      "harm_rate_noncjk": [
+        null,
+        0
+      ],
+      "harm_rate_cjk": [
+        0.0,
+        497
+      ]
+    },
+    "cap_ctx": {
+      "jb_cjk_count": 27,
+      "jb_n": 500,
+      "rs_cjk_count": 15,
+      "rs_n": 250,
+      "harm_rate_all": [
+        0.127,
+        496
+      ],
+      "harm_rate_noncjk": [
+        0.1279,
+        469
+      ],
+      "harm_rate_cjk": [
+        0.1111,
+        27
+      ]
+    },
+    "cap_ctx_L14": {
+      "jb_cjk_count": 0,
+      "jb_n": 500,
+      "rs_cjk_count": 1,
+      "rs_n": 250,
+      "harm_rate_all": [
+        0.0905,
+        497
+      ],
+      "harm_rate_noncjk": [
+        0.0905,
+        497
+      ],
+      "harm_rate_cjk": [
+        null,
+        0
+      ]
+    },
+    "cap_ctx_randnull": {
+      "jb_cjk_count": 19,
+      "jb_n": 500,
+      "rs_cjk_count": 2,
+      "rs_n": 250,
+      "harm_rate_all": [
+        0.0924,
+        498
+      ],
+      "harm_rate_noncjk": [
+        0.096,
+        479
+      ],
+      "harm_rate_cjk": [
+        0.0,
+        19
+      ]
+    },
+    "cap_prefix": {
+      "jb_cjk_count": 0,
+      "jb_n": 500,
+      "rs_cjk_count": 1,
+      "rs_n": 250,
+      "harm_rate_all": [
+        0.0926,
+        497
+      ],
+      "harm_rate_noncjk": [
+        0.0926,
+        497
+      ],
+      "harm_rate_cjk": [
+        null,
+        0
+      ]
+    },
+    "fullrep_allprompt": {
+      "jb_cjk_count": 4,
+      "jb_n": 500,
+      "rs_cjk_count": 2,
+      "rs_n": 250,
+      "harm_rate_all": [
+        0.0102,
+        492
+      ],
+      "harm_rate_noncjk": [
+        0.0102,
+        488
+      ],
+      "harm_rate_cjk": [
+        0.0,
+        4
+      ]
+    },
+    "fullrep_alltoken": {
+      "jb_cjk_count": 0,
+      "jb_n": 500,
+      "rs_cjk_count": 0,
+      "rs_n": 250,
+      "harm_rate_all": [
+        0.0,
+        480
+      ],
+      "harm_rate_noncjk": [
+        0.0,
+        480
+      ],
+      "harm_rate_cjk": [
+        null,
+        0
+      ]
+    },
+    "fullrep_ctx": {
+      "jb_cjk_count": 0,
+      "jb_n": 500,
+      "rs_cjk_count": 0,
+      "rs_n": 250,
+      "harm_rate_all": [
+        0.171,
+        497
+      ],
+      "harm_rate_noncjk": [
+        0.171,
+        497
+      ],
+      "harm_rate_cjk": [
+        null,
+        0
+      ]
+    },
+    "fullrep_prefix": {
+      "jb_cjk_count": 1,
+      "jb_n": 500,
+      "rs_cjk_count": 1,
+      "rs_n": 250,
+      "harm_rate_all": [
+        0.0828,
+        495
+      ],
+      "harm_rate_noncjk": [
+        0.083,
+        494
+      ],
+      "harm_rate_cjk": [
+        0.0,
+        1
+      ]
+    }
+  },
+  "phase3": {
+    "baseline": {
+      "cjk_count": 0,
+      "n": 500,
+      "harm_rate_all": [
+        0.0402,
+        498
+      ],
+      "harm_rate_noncjk": [
+        0.0402,
+        498
+      ],
+      "harm_rate_cjk": [
+        null,
+        0
+      ]
+    },
+    "cap_alltoken": {
+      "cjk_count": 500,
+      "n": 500,
+      "harm_rate_all": [
+        0.0,
+        480
+      ],
+      "harm_rate_noncjk": [
+        null,
+        0
+      ],
+      "harm_rate_cjk": [
+        0.0,
+        480
+      ]
+    },
+    "cap_ctx": {
+      "cjk_count": 326,
+      "n": 500,
+      "harm_rate_all": [
+        0.0261,
+        499
+      ],
+      "harm_rate_noncjk": [
+        0.0172,
+        174
+      ],
+      "harm_rate_cjk": [
+        0.0308,
+        325
+      ]
+    }
+  }
+}

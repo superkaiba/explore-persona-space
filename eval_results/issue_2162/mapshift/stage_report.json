@@ -1,0 +1,225 @@
+{
+  "revision": "7d3ac543a5a4202e3996be1498886f2bab637c15",
+  "n_va_ce_shards": 117,
+  "dest_free_gb_before": 651.07300352,
+  "schemas": {
+    "bank_json": {
+      "top": [
+        "bank_sha",
+        "cells",
+        "coherence_rubric",
+        "contexts",
+        "degenerate_at_pe_cells",
+        "donor_assignment",
+        "frozen_gen_complete",
+        "frozen_gen_sha256",
+        "issue",
+        "model_id",
+        "pairs",
+        "repro",
+        "seed",
+        "truncation_clause",
+        "wildchat"
+      ],
+      "context_row": [
+        "carrier",
+        "cell",
+        "history",
+        "id",
+        "system",
+        "user",
+        "value_id"
+      ],
+      "pair_row": [
+        "a",
+        "b",
+        "carrier",
+        "cell",
+        "pair_id",
+        "value_a",
+        "value_b"
+      ],
+      "n_contexts": 1404,
+      "n_pairs": 1404
+    },
+    "va_shard": {
+      "path": "shard_conflict_format_fwd__ce__steered.pt",
+      "top": [
+        "block_key",
+        "empty_rows",
+        "hooked_capture",
+        "index",
+        "layers",
+        "pooling",
+        "repro",
+        "va_span"
+      ],
+      "index_row": [
+        "context_a",
+        "draw",
+        "pair_id"
+      ],
+      "va_span_shape": [
+        180,
+        28,
+        3584
+      ],
+      "layers": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27
+      ],
+      "n_empty": 0
+    },
+    "anchor_shard": {
+      "path": "va_anchors_gate_w0.pt",
+      "top": [
+        "empty_rows",
+        "index",
+        "layers",
+        "pooling",
+        "repro",
+        "va_span"
+      ],
+      "index_row": [
+        "context_id",
+        "draw"
+      ],
+      "va_span_shape": [
+        530,
+        28,
+        3584
+      ]
+    },
+    "map_1739_npz": {
+      "arrays": [
+        "layers",
+        "meta",
+        "w",
+        "x_mu",
+        "x_sd",
+        "y_mu"
+      ],
+      "meta_keys": [
+        "apply",
+        "dtype",
+        "git_commit",
+        "layers",
+        "solver",
+        "ts",
+        "u_label",
+        "variant",
+        "w_fit_rows"
+      ],
+      "fit_space": null,
+      "apply": "pred = ((x - x_mu)/x_sd) @ w + y_mu (whitened space)",
+      "layers": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27
+      ]
+    },
+    "ridge_779_L19": {
+      "top": [
+        "W",
+        "fitter",
+        "kind",
+        "layer",
+        "selected_lambda",
+        "xmu",
+        "xsd",
+        "ymu"
+      ],
+      "kind": "ridge",
+      "W_shape": [
+        3584,
+        3584
+      ]
+    },
+    "ridge_1738ce_L19": {
+      "top": [
+        "W",
+        "arm",
+        "assembly_fingerprint",
+        "kind",
+        "layer",
+        "selected_lambda",
+        "xmu",
+        "xsd",
+        "ymu"
+      ],
+      "kind": "ridge",
+      "W_shape": [
+        3584,
+        3584
+      ]
+    }
+  },
+  "repro": {
+    "script": "scripts/issue2162_mapshift.py",
+    "hf_revision": "7d3ac543a5a4202e3996be1498886f2bab637c15",
+    "ts": "2026-08-16T17:00:23Z",
+    "git_commit": "2ed3708b",
+    "git_dirty": true,
+    "git_dirty_paths": [
+      "scripts/codex_task.py",
+      "scripts/issue2094_butler_grid.py",
+      "scripts/issue2094_judge.py",
+      "scripts/issue2094_rev_reduce.py",
+      "src/explore_persona_space/experiments/issue2094/bank.py",
+      "tests/sparse_cones.txt",
+      "tests/test_issue2094_judge.py",
+      "tests/test_issue2094_rev_butler.py"
+    ]
+  }
+}

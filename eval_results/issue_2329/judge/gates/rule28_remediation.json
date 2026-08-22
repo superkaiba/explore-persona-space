@@ -1,0 +1,143 @@
+{
+  "what": "rule-28 API-refusal remediation record for issue #2329 (llm-judging.md rule 28, #2151/#1739)",
+  "class_definition": "stop_reason == 'refusal' with empty content: the Batch API accepted the request, its safety classifier declined, and NO verdict about the content was produced. Distinct from a rubric-instructed judge REFUSAL (which IS a produced verdict, rule 9) and from a transport loss (no response at all, rule 24).",
+  "detection": {
+    "censored_draws": 764,
+    "censored_items": 764,
+    "affected_waves": 8
+  },
+  "per_wave_before_after": {
+    "coherence.grid": {
+      "before": 40583,
+      "after": 40914,
+      "rescued": 331,
+      "items": 40920
+    },
+    "coherence.anchors": {
+      "before": 13944,
+      "after": 14040,
+      "rescued": 96,
+      "items": 14040
+    },
+    "fe6cd17707091.grid": {
+      "before": 4235,
+      "after": 4320,
+      "rescued": 85,
+      "items": 4320
+    },
+    "f5260f61a92f2.grid": {
+      "before": 4361,
+      "after": 4440,
+      "rescued": 79,
+      "items": 4440
+    },
+    "f4711a50727de.grid": {
+      "before": 4362,
+      "after": 4440,
+      "rescued": 78,
+      "items": 4440
+    },
+    "f75c02b4aa51f.grid": {
+      "before": 5722,
+      "after": 5760,
+      "rescued": 38,
+      "items": 5760
+    },
+    "f7fa55954a1c3.grid": {
+      "before": 5731,
+      "after": 5760,
+      "rescued": 29,
+      "items": 5760
+    },
+    "f7c626b141d19.grid": {
+      "before": 5732,
+      "after": 5760,
+      "rescued": 28,
+      "items": 5760
+    }
+  },
+  "transport_split_measured": {
+    "original_waves_run": {
+      "batch_dispatches": 7,
+      "sync_dispatches": 162,
+      "batch_N_values": [
+        4316,
+        4434,
+        4436,
+        5760,
+        38962
+      ],
+      "finding": "the 7 batch dispatches map exactly onto the 7 censored grid waves; coherence.anchors (14,040) is the 8th, batched in the anchors run. 7/7 batch dispatches censored, 0/162 sync dispatches censored \u2014 transport-conditional, not content-determined.",
+      "why_midsize_waves_batched": "effective_threshold = threshold_base * probed_otpm / 400k, and the probed OTPM varied between dispatches, so waves of 4.3k-5.8k items sometimes exceeded it."
+    },
+    "remediation_pass": {
+      "routing": "sync (threshold_base=FORCE_SYNC_THRESHOLD_BASE=1e9)",
+      "dispatches_all_sync": 16,
+      "rescued": 764,
+      "re_refusals": 0,
+      "instrument_changed": false,
+      "instrument": {
+        "judge_model": "claude-sonnet-4-5-20250929",
+        "max_tokens": 1024,
+        "n_draws": 1,
+        "temperature_note": "not threaded by judge_graded \u2014 Anthropic API default"
+      }
+    }
+  },
+  "outcome_correlation_measured_in_our_data": {
+    "coherence_baseline_gate_frac_gt60_before": 0.98329,
+    "coherence_baseline_gate_frac_gt60_after": 0.98198,
+    "delta": -0.00131,
+    "reading": "rescuing the 96 censored anchor items LOWERED frac_gt60, i.e. the censored set scored below the surviving set. Direct evidence the censoring was NOT missing-at-random in this run \u2014 the bias this remediation removed. Rule 28's outcome-correlation claim is therefore measured here, not merely cited."
+  },
+  "merge_license": {
+    "required_by": "rule 28 (dual-scored parity, ~200-300 items, offset reported)",
+    "artifact": "eval_results/issue_2329/judge/gates/transport_parity.json",
+    "n_paired": 250,
+    "batch_mean": 50.52,
+    "sync_mean": 50.808,
+    "offset_sync_minus_batch": 0.288,
+    "pearson_r": 0.9911,
+    "spearman_rho": 0.9753,
+    "exact_agreement_frac": 0.836,
+    "scale": "0-100 graded judge score",
+    "verdict": "offset +0.288 on a 100-point scale with r=0.991 \u2014 the transports agree; the merge of sync-rescued rows into batch-origin wave score sets is licensed.",
+    "contamination_upper_bound": 0.004861
+  },
+  "post_remediation_accounting": {
+    "stop_reason_tally": {
+      "end_turn": 185878
+    },
+    "items": 186336,
+    "scored": 186271,
+    "missing": 65,
+    "frac_items_complete": 0.99965,
+    "missing_are": "the 65 rule-9 content drops (60 judge-REFUSAL); correctly NOT re-issued",
+    "truncation_drops": 0,
+    "residual_transport_lost": 0
+  },
+  "residual_caveats": {
+    "waves_below_0p95_completeness_floor": {
+      "f8bb18afc2853.anchors": {
+        "scored": 28,
+        "items": 30,
+        "frac": 0.9333,
+        "class": "judge-REFUSAL content drops (rule 9) \u2014 a produced verdict, NOT retriable"
+      },
+      "f9b232b38a4d3.grid": {
+        "scored": 56,
+        "items": 60,
+        "frac": 0.9333,
+        "class": "judge-REFUSAL content drops (rule 9) \u2014 a produced verdict, NOT retriable"
+      }
+    },
+    "instrument_gap": "judge_summary.json's per-wave pass1 block carries no n_api_refusal_draws field though #2151 added that counter to JudgeResult and rule 18 requires reporting it; the class is only recoverable via stop_reason_tally['refusal'].",
+    "repro_script_misattribution": "gate artifacts' repro.script reads scripts/issue2094_judge.py because the repro block comes from the reused #2094 machinery; the real entrypoint is scripts/issue2329_judge.py."
+  },
+  "repro": {
+    "git_commit": "ee383338",
+    "remediation_seam": "scripts/issue2329_judge.py --force-sync-routing",
+    "parity_script": "scripts/issue2329_transport_parity.py",
+    "quarantined_metas": "eval_results/issue_2329/judge/_stale_meta_apirefusal_20260818T033859Z/"
+  }
+}

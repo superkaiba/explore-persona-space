@@ -1,0 +1,14 @@
+{
+  "figure": "hero1_decisive_bars",
+  "git_commit": "323c70c5",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2254/hero1_decisive_bars.png",
+    "scripts/issue2254_figures.py"
+  ],
+  "inputs": [
+    "decisive/delta_score_percell.json",
+    "decisive/verdicts.json",
+    "baseline_ceiling/judged_percell.json"
+  ]
+}

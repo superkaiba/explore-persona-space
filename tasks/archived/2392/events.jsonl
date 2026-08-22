@@ -1,0 +1,3 @@
+{"ts": "2026-08-19T19:29:28Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
+{"ts": "2026-08-19T19:37:27Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "ARCHIVED — merged into #2389 as its Throughput item 4 (vLLM anchor backend + HF-parity gate). User: 'merge them all into one task and dispatch' (2026-08-19). Scope carried over intact, including the 3-cell parity protocol and telemetry-parity requirement; now additionally FAIL-OPEN (a parity FAIL disables the vLLM path and the run proceeds on HF). Do not implement here."}
+{"ts": "2026-08-19T19:38:07Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "archived"}

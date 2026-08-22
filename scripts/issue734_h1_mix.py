@@ -126,7 +126,7 @@ def _mix_is_current(*, smoke: bool) -> bool:
         return False
     try:
         recorded = json.loads(prov.read_text()).get("sha256")
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return False
     if not recorded:
         return False

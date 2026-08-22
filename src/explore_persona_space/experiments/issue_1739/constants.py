@@ -4,6 +4,8 @@ Every load-bearing value below was verified at plan time; do NOT retype from
 memory — edit only against the plan or the producing task's artifacts.
 """
 
+import os
+
 # --- Model geometry (plan v3; Qwen2.5-7B-Instruct) ---
 MODEL_NAME = "Qwen/Qwen2.5-7B-Instruct"
 HIDDEN_DIM = 3584
@@ -41,9 +43,23 @@ RB_N_TRAITS = 3  # 3 traits x 28 layers x 3584 (plan v3 / #779)
 K_ROLLOUTS = 5
 N_JUDGE_DRAWS = 3
 JUDGE_TEMPERATURE = 1.0
-JUDGE_MAX_TOKENS = 400  # reason-then-score rubric floor (llm-judging.md rule 23)
+# JUSTIFIED DEVIATION from llm-judging rule 23's 1024 floor (#2063): the banked
+# #1739 wave's instrument. The rejudge chain (issue1739_trait_rejudge.py,
+# issue1739_sycoood_rescore_stage.py) deliberately preserves the original
+# 400-token pool for provenance and re-judges under its OWN budget (1024).
+# Fresh waves owe >=1024 — this is a parity pin, not a floor citation.
+JUDGE_MAX_TOKENS = 400
 JUDGE_MODEL = "claude-sonnet-4-5-20250929"  # project-wide judge pin (CLAUDE.md)
 RIDGE_LAMBDAS = (0.01, 0.1, 1.0, 10.0, 100.0, 1000.0)
+# λ grid-edge check (task #16): the base r2v2 round selected the grid MAX
+# (λ=1000) on EVERY hallucination fit (partially syco/evil) — GCV wanting more
+# regularization than the grid offers. Opt-in wider grid via env for the
+# widegrid re-fit leg; the realized grid rides every fit's
+# ridge_lambda_diagnostics row (fits.capture_selected_lambdas), so outputs
+# self-document which grid produced them. Unset env == the pinned default.
+_ENV_RIDGE_GRID = os.environ.get("EPS_I1739_RIDGE_LAMBDAS", "")
+if _ENV_RIDGE_GRID:
+    RIDGE_LAMBDAS = tuple(float(x) for x in _ENV_RIDGE_GRID.split(","))
 SEEDS = (0, 1, 2)
 N_LABELED_DRAWS = 5
 U_LADDER = (250, 5_000, 50_000)  # unlabeled-rows ladder

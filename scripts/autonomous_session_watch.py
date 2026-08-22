@@ -1,7 +1,7 @@
 """Crash-recovery + pod-safety + stalled-detector watcher for autonomous and
 interactive issue sessions (plus campaign sessions, task #586).
 
-36 passes ("pass" = one top-level per-tick action block in ``main()``'s
+40 passes ("pass" = one top-level per-tick action block in ``main()``'s
 production run order; helpers invoked INSIDE a pass — e.g. the sub-floor
 disk sentinel inside pass 1 — and the ``--*-only`` debug entrypoints do
 not count; a NEW inline pass block that is not a ``*_pass``-named function
@@ -12,12 +12,16 @@ order. The per-tick execution order is: 1 (VM disk) -> 15 (data-disk) ->
 16 (happy-patch) -> 12 (CPU-guard) -> 17 (triage-observer) ->
 18 (verdict-disagree) -> 26 (root-draft) -> 27 (registry-drift) ->
 34 (stash-rescue) -> 36 (root-unstaged) -> 31 (codex-outage) ->
+38 (settings-model guard) ->
 29 (completed-unmerged) ->
 32 (partial-bundle) ->
 33 (unfolded-round) -> 30 (urgent-park router) -> 19 (VM-ledger reap) ->
 20 (program-orchestrator
-recovery) -> 13 (auth-outage guard) -> 2 (crash-recovery) -> 9 (campaign)
--> 3 (pod-safety) -> 4 (stalled-detector) -> 5 (orphan sweep) ->
+recovery) -> 40 (daemon-liveness) -> 13 (auth-outage guard) ->
+2 (crash-recovery) -> 9 (campaign)
+-> 3 (pod-safety) -> 4 (stalled-detector) -> 37 (pending-call wedge) ->
+5 (orphan sweep) ->
+39 (predispatch-staleness) ->
 11 (infra-drain) -> 21 (proposed-infra-sweep) -> 22 (capacity-retry) ->
 14 (stale-blocked flag) -> 6 (session-reconcile) -> 23 (gate-push) ->
 25 (boot-death) -> 35 (no-progress-respawn) -> 24 (stale-registration) ->
@@ -72,6 +76,34 @@ adding a pass means adding a numbered item here AND bumping the digit:
      deliberately paused), so a still-RUNNING pod is an escaped pod (Step-8
      terminate failed, the pause teardown failed, or it was never run
      through Step 8). Stopping it is unambiguously correct.
+   - **FENCE-DEFER (#2283 owner-fence arm — defer-only, bounded)**: the
+     AUTO-STOP above is DEFERRED (miss counter reset, one marker per
+     episode + a 24h-TTL push/sidecar re-alert) while the pod carries an
+     UNEXPIRED #2277 owner fence with NO owner-matching
+     upload-verification PASS — the SAME
+     ``pod_lifecycle.owner_fence_state`` reader chain the terminate guard
+     runs (``blocks_teardown``), so the watcher can no longer stop a pod
+     mid-run that the guard would refuse to destroy. Eligibility keys
+     STRICTLY on ``status in AUTO_STOP_DONE`` — a USER-paused ``on_hold``
+     task (the merged ``"auto-stop-done"`` class also covers it) NEVER
+     defers: a self-posted fence must not override a user pause. Both
+     existing shields (``keep-running`` tag, live follow-up) take
+     precedence; a not-EVALUATED fence read (kill switch
+     ``EPM_DISABLE_POD_FENCE_DEFER=1``, read failure — one loud WARN)
+     never defers (fail-open to the plain stop) and never clears episode
+     state. Bounded TWICE: by the fence's own expiry, and by a cumulative
+     per-(issue, pod) deferral ceiling ``EPM_POD_FENCE_DEFER_MAX_H``
+     (default 24h, floor-clamped 1h) measured from the episode's first
+     deferred tick — a continuously-refreshed fence cannot shield a pod
+     forever (once-per-episode ceiling marker announces the re-armed
+     stop). Episode state is the pod_id-keyed ``fd_pod`` sub-dict of the
+     pod-safety state file (the ``kr_pod``/``nr_pod`` contract — sibling
+     pods' saves forward-carry it verbatim); an evaluated-and-inactive
+     read (expired / cleared / owner PASS) CLEARS the entry. DEFER-ONLY
+     hard invariant: the arm can only turn a stop into a wait — with the
+     fence params at their False defaults ``decide_pod_safety`` is
+     byte-identical to its pre-#2283 table. Sidecar:
+     ``.claude/cache/pod-owner-fence-events.jsonl``.
    - **ALERT** (loud log + one-time dashboard-visible marker, NO stop) a
      RUNNING pod whose task is in a pod-active status (``approved`` /
      ``running`` / ``verifying`` / ``followups_running``) but has shown no
@@ -200,7 +232,20 @@ adding a pass means adding a numbered item here AND bumping the digit:
    task progress — escalates to an UNREGISTER-ONLY action (#1480): the
    manual registration file is deleted (the session is NEVER stopped) so
    the registration-independent orphan sweep re-drives the task; kill
-   switch ``EPM_DISABLE_STALLED_MANUAL_ESCALATION``.
+   switch ``EPM_DISABLE_STALLED_MANUAL_ESCALATION``.  An ESCALATE-ONLY
+   cross-generation no-progress arm (#2084) additionally counts
+   consecutive fence-spawn respawns with no intervening real (non-watcher)
+   marker in an advancement-clear-EXEMPT, progress-keyed counter
+   (``xgen_respawns`` in ``stalled-<N>.json``, the #1209/#1241 exempt
+   pattern) and, at every ``EPM_STALLED_XGEN_ESCALATE_AFTER`` band
+   (default 4, clamp >= 2; fires at N, 2N, 3N, ...), surfaces the loop
+   loudly — one deduped marker
+   (``[autonomous_session_watch:session-auto-respawn-noprogress]``) +
+   Telegram push + a sidecar row in
+   ``~/.eps-autonomous/stalled-xgen-events.jsonl`` — while leaving the
+   respawn lane's behavior COMPLETELY unchanged (no stop, no status
+   mutation, no respawn suppression, no cap consumption); kill switch
+   ``EPM_DISABLE_STALLED_XGEN_ESCALATION``.
 5. **Orphan sweep (registration-INDEPENDENT safety net).** Every other
    session pass starts from the registry files (``issue-<N>.json`` /
    ``manual-issue-<N>.json``), so an ACTIVE-status task with NO registration
@@ -243,9 +288,16 @@ adding a pass means adding a numbered item here AND bumping the digit:
    same >=2-consecutive-checks guard as the pod pass:
 
    - **idle** — every activity signal (the newest NON-watcher marker of
-     ANY kind on the task, plus the per-issue self-report file) is older
-     than :func:`_session_idle_s` (default 2h, env
-     ``EPM_SESSION_RECONCILE_IDLE_S``);
+     ANY kind on the task, the per-issue self-report file, the freshest
+     registration ``spawned_at``, and — lazily — each mapped sid's
+     transcript WORK signal: completed-wake-turn CONTENT, not mtime
+     (#2117 — a tail whose completed wake-turns ALL failed with no
+     genuine human row is churn-only and contributes nothing, so an
+     error-storming session on a done task accumulates the miss counter;
+     a recent ``"ok"`` turn or human row still protects, #1670; kill
+     switch ``EPM_SESSION_RECONCILE_TRANSCRIPT_WORK_PROBE=0`` reverts to
+     the pure-mtime probe)) is older than :func:`_session_idle_s`
+     (default 2h, env ``EPM_SESSION_RECONCILE_IDLE_S``);
    - **no live inline follow-up** — the latest follow-up signal marker
      (:data:`_SESSION_FOLLOWUP_SIGNAL_KINDS`: ``epm:run-launched`` /
      ``epm:followup-scope`` / ``epm:free-analysis-followup-run``) is
@@ -826,8 +878,9 @@ adding a pass means adding a numbered item here AND bumping the digit:
    ``EPM_DISABLE_UNFOLDED_ROUND_PASS=1``; ``--unfolded-round-only`` runs
    just this pass (pair with ``--dry-run`` for a live smoke).
    (:func:`unfolded_round_pass`.)
-34. **Stash/rescue-backlog audit pass (#1806; ESCALATE-ONLY;
-   daemon-INDEPENDENT; runs right after pass 27 registry-drift).**
+34. **Stash/rescue-backlog audit pass (#1806 + #2295 owner attribution;
+   ESCALATE-ONLY; daemon-INDEPENDENT; runs right after pass 27
+   registry-drift).**
    Once-daily-throttled (``EPM_STASH_RESCUE_INTERVAL_HOURS``, 24h)
    recurring audit of the shared repo root's accumulated ``git stash``
    backlog + the ``~/.task-workflow/root-sync-rescue/`` rescue-entry
@@ -835,12 +888,14 @@ adding a pass means adding a numbered item here AND bumping the digit:
    rescue entries) — #1751 surfaces NEW ``stash: KEPT`` events at
    Step 10d merge sites only; nothing recurring read the existing
    backlog. Collection is READ-ONLY: one ``git -C PROJECT_ROOT stash
-   list --format=%ct%x09%gs`` subprocess (each line parsed on the FIRST
-   tab only — ``%gs`` subjects can carry embedded tabs; identity =
-   ``(ct, subject)``, deliberately NOT the positional ``stash@{N}``
-   selector, which renumbers on every push/pop and would churn the
-   fingerprint) + one ``os.scandir`` of the rescue dir (dirs AND loose
-   files, e.g. ``stash-*.patch``; identity = entry name). Entries
+   list --format=%ct%x09%H%x09%gs`` subprocess (each line split on the
+   first TWO tabs only — ``%gs`` subjects can carry embedded tabs;
+   fingerprint identity = ``(ct, subject)``, deliberately NOT the
+   positional ``stash@{N}`` selector, which renumbers on every push/pop
+   and would churn the fingerprint; the ``%H`` stash sha (#2295) rides a
+   separate ``stash_entries`` key for the attribution leg and stays OUT
+   of the fingerprint) + one ``os.scandir`` of the rescue dir (dirs AND
+   loose files, e.g. ``stash-*.patch``; identity = entry name). Entries
    younger than ``EPM_STASH_RESCUE_MIN_AGE_DAYS`` (7d) are excluded —
    sync_repo_root autostashes live seconds, and #1751's Step 10d duty
    covers the fresh window. ENOENT on the rescue dir ITSELF is a
@@ -857,13 +912,44 @@ adding a pass means adding a numbered item here AND bumping the digit:
    fires ONE deduped fail-soft push (counts, oldest stash age, the
    read-only review commands, companion triage task #1736, "nothing was
    changed automatically") on fingerprint change or a 168h re-alert TTL
-   (``EPM_STASH_RESCUE_REALERT_HOURS``). NEVER mutates git or
-   filesystem state (no ``stash pop/drop/apply``, no ``rm``), posts NO
+   (``EPM_STASH_RESCUE_REALERT_HOURS``). **Owner-attribution leg
+   (#2295, strictly ADDITIVE):** for each aged bare-autostash entry
+   (subject exactly ``autostash``), one read-only ``git stash show
+   --name-only <sha>`` maps the stash's file list to task ids via the
+   established path grammars (``tasks/<status>/<N>/``,
+   ``eval_results/issue_<N>/``, ``figures/issue_<N>/``,
+   ``scripts/issue<N>_*``, ``tests/test_issue<N>*``,
+   ``docs/**/issue_<N>*``) and posts ONE durable ``epm:progress``
+   marker per (task, stash-sha) episode on the owning task — sentinel
+   ``[autonomous_session_watch:stash-rescue-owner-attribution]`` (a
+   ``_WATCHER_NOTE_SENTINELS`` member, so the note never resets
+   staleness clocks), posted ``by="unknown"`` (the #967 convention —
+   deliberately a triage candidate at the owner's next pre-dispatch
+   triage), carrying the stash sha12 + committer date, THIS task's file
+   subset, the rescue-patch path
+   (``~/.task-workflow/root-sync-rescue/stash-<sha12>.patch``), the
+   read-only triage command (``sync_repo_root.py --triage-autostash``),
+   and an explicit nothing-was-popped/dropped/applied statement.
+   Markers are capped per tick (``EPM_STASH_RESCUE_MARKER_CAP``, 5;
+   overflow stays sidecar-only), deduped fire-once per
+   (task_id, stash_sha) in the state singleton with re-alert on the
+   same 168h TTL; one sidecar row per attributed entry
+   (``kind: "stash-rescue-attribution"``); an unattributable entry gets
+   a sidecar row with ``attribution_status: "unattributed"`` — never
+   silently dropped; when EVERY attributed task of an entry is
+   completed/archived the row records ``all_owners_terminal: true`` and
+   the repo-level push surfaces that count (those markers reach no live
+   session). Per-entry failures log + continue (never kill the base
+   pass). Attribution kill switch
+   ``EPM_DISABLE_STASH_RESCUE_ATTRIBUTION=1`` (base pass unchanged).
+   NEVER mutates git or filesystem state (no ``stash pop/drop/apply``,
+   no ``rm``); apart from the attribution markers above it posts NO
    task markers; triage stays human (#1736). State singleton
    ``~/.eps-autonomous/stash-rescue-audit.json``. Kill switch
-   ``EPM_DISABLE_STASH_RESCUE_AUDIT=1``; ``--stash-rescue-audit-only``
-   runs just this pass (pair with ``--dry-run`` for a zero-write live
-   smoke). (:func:`stash_rescue_audit_pass`.)
+   ``EPM_DISABLE_STASH_RESCUE_AUDIT=1`` (covers the attribution leg
+   too); ``--stash-rescue-audit-only`` runs just this pass (pair with
+   ``--dry-run`` for a zero-write live smoke).
+   (:func:`stash_rescue_audit_pass`.)
 35. **No-progress-respawn pass (#2058; daemon-gated; runs right after pass 25
    boot-death, BEFORE pass 24 stale-registration).** Force-RESPAWNs a
    session whose durable-progress fingerprint has been unchanged across N
@@ -947,6 +1033,137 @@ adding a pass means adding a numbered item here AND bumping the digit:
    runs just this pass (pair with ``--dry-run`` for a zero-write live
    smoke). Full mechanics: ``.claude/rules/repo-root-uncommitted-state.md``.
    (:func:`root_unstaged_audit_pass`.)
+37. **Pending-call wedge observer pass (#2115; ESCALATE-ONLY; runs right
+   after pass 4 stalled-detector, sharing its ``{sid: wrapper pid}``
+   ``/list`` snapshot).** Flags a registered session whose transcript tail
+   ends in an assistant **Bash** ``tool_use`` with no matching
+   ``tool_result`` older than ``EPM_PENDING_CALL_WEDGE_MIN`` (25 min) —
+   the #2115 class: ~12-18 autonomous sessions each sat 1.2-2.4h at a
+   forever-pending Step 10d lint-gate Bash dispatch (no tool_result, not
+   even the instant bg-Bash ack) with the ~2.2h stall fence as the only
+   exit. Four candidate mechanisms were excluded under control (permission
+   prompt, git index-lock, unbounded hook cost, dirty cancellation — plan
+   v3 §0.0), so the stall sits in the harness/transport layer outside this
+   repo: DETECTION is the deliverable. Bash-only keying is LOAD-BEARING:
+   the Agent tool legitimately pends 30-90+ min in nearly every healthy
+   autonomous session (AskUserQuestion / TaskOutput / Monitor likewise),
+   so ANY pending non-Bash call in the final assistant turn suppresses the
+   flag — an untyped predicate would flag routine health and the lane
+   would be ignored or kill-switched. Channels: one sidecar row per
+   flagged tick (``.claude/cache/pending-call-wedge-events.jsonl``) + ONE
+   deduped fail-soft push per (issue, tool_use id) episode. NEVER mutates
+   task or git state, posts NO task markers, emits NO respawn/stop; a
+   malformed / unresolvable transcript fails toward silence (an
+   escalate-only lane must not spam the fleet on a parse bug).
+   Daemon-DEPENDENT for sid->pid resolution only (no map -> silent skip).
+   State singleton ``~/.eps-autonomous/pending-call-wedge.json``. Kill
+   switch ``EPM_DISABLE_PENDING_CALL_WEDGE=1``;
+   ``--pending-call-wedge-only`` runs just this pass (pair with
+   ``--dry-run`` for a zero-write live smoke).
+   (:func:`pending_call_wedge_pass`.)
+38. **Settings model-id guard pass (#2129; AUTO-NORMALIZE + alert;
+   daemon-INDEPENDENT; kill switch
+   EPM_DISABLE_SETTINGS_MODEL_GUARD_PASS)** — detects the fleet-killing
+   ``claude-fable-5[1m]``-class model id in the GLOBAL Claude settings
+   files (``~/.claude/settings.json`` + ``settings.local.json``) each tick
+   and AUTO-NORMALIZES it by stripping the ``[1m]`` suffix. Fable/Mythos
+   are 1M-native and expose NO ``[1m]`` variant, so the suffixed id kills
+   every subagent fleet-wide (#545, ~72h outage; live recurrence
+   hand-normalized 2026-08-13, #2129); scope is fable/mythos ONLY —
+   ``claude-opus-*[1m]`` is legitimate and never touched. The rewrite is a
+   byte-exact quoted-string replacement (never a whole-file re-serialize;
+   the harness's formatting is preserved), gated on three post-conditions
+   (new text parses as JSON; a re-walk finds zero bad ids; the parsed
+   structure equals the old one except at the replaced string leaves) plus
+   a concurrent-write re-read guard, with a timestamped backup (pruned to
+   the newest 10 per filename) and a tmp-chmod-to-original-mode +
+   ``os.replace`` atomic write. Unparseable JSON / failed post-conditions
+   (incl. a ``\\uXXXX``-escaped bad value, which fails SAFE) / a
+   concurrent write all degrade to ALERT-ONLY — never a write. Channels:
+   sidecar ``.claude/cache/settings-model-guard-events.jsonl`` (per-event)
+   + ONE deduped fail-soft push per (path, bad-values) episode (re-alert
+   ``EPM_SETTINGS_MODEL_GUARD_REALERT_H``, default 24h); NO task markers
+   (fleet-level concern, no single owning task — codex-outage precedent).
+   Episode state ``~/.eps-autonomous/settings-model-guard.json``.
+   ``--settings-model-guard-only`` runs just this pass (pair with
+   ``--dry-run`` for a zero-write live smoke).
+   (:func:`settings_model_guard_pass`.)
+39. **Pre-dispatch staleness pass (#2134; ESCALATE-ONLY; daemon-INDEPENDENT;
+   kill switch EPM_DISABLE_PREDISPATCH_STALENESS)** — once-daily
+   (``EPM_PREDISPATCH_STALENESS_INTERVAL_HOURS``, attempt-stamped BEFORE
+   collecting) scan of queued ``proposed`` + ``blocked`` infra/batch tasks
+   whose ``workflow_fix_target:`` files were rewritten by commits newer
+   than the task's creation (>= 3 shared informative tokens between a
+   landed commit subject and the task title+body — the #1985
+   stale-dispatch shape: blocked #1217/#1771 kept instructing a gate
+   c20aabc59a removed), plus same-file queue collisions and landed-sibling
+   commits. Pure detection lives in ``scripts/predispatch_staleness.py``
+   (injected ``git_log_fn`` seam; report-only ``--json`` CLI). Bounded:
+   per-pass task cap ``EPM_PREDISPATCH_STALENESS_TASK_CAP`` (40) with a
+   persisted cursor (partial-bundle pattern) scoping the git-backed
+   signals only (the git-free queue-collision grouping reads the FULL
+   queue each firing, so cross-window collisions co-detect), <= 1 bounded
+   ``git log`` subprocess per scanned task, per-tick flag-marker cap
+   ``EPM_PREDISPATCH_STALENESS_MARKER_CAP`` (5) with sidecar-recorded
+   overflow (triage-observer pattern; only MARKERED flags TTL-stamp, so
+   overflow re-enters the marker queue next firing), per-(issue,
+   fingerprint) fire-once + ``EPM_PREDISPATCH_STALENESS_REALERT_HOURS``
+   (168h) TTL re-alert.
+   Channels: sidecar ``.claude/cache/predispatch-staleness-events.jsonl``
+   + ONE deduped push digest per firing tick + capped per-task
+   ``epm:progress`` flag markers (sentinel
+   ``[autonomous_session_watch:predispatch-staleness]``, a
+   ``_WATCHER_NOTE_SENTINELS`` member so a flag never resets the staleness
+   clocks watching that parked task) naming the evidence + the
+   adjudication affordance. REPORT-ONLY hard invariant: never composes a
+   status mutation, never gates/defers a dispatch, never touches the
+   infra-drain queue or proposed-infra-sweep state — mootness is
+   adjudicated by the spawned clarifier (Step 0 context pass) or a human
+   (#1918 archive-license discipline). ADVISORY, not a guarantee: at the
+   daily cadence a task filed and dispatched within <24h of the
+   invalidating commit is never scanned pre-dispatch. State singleton
+   ``~/.eps-autonomous/predispatch-staleness.json``; fail toward silence
+   on every unreadable input (a failed git log never reads as "no
+   staleness"). ``--predispatch-staleness-only`` runs just this pass (pair
+   with ``--dry-run`` for a zero-write live smoke).
+   (:func:`predispatch_staleness_pass`.)
+40. **Daemon-liveness pass (#2140; ESCALATE-ONLY; runs right after the tick's
+   single daemon probe, in BOTH daemon states; kill switch
+   EPM_DISABLE_DAEMON_LIVENESS_PASS)** — makes a Happy-daemon outage LOUD on
+   the tick the spawn lanes start skipping. Origin: 2026-08-04T21:13Z ->
+   04:30Z (3h17m), ``~/.happy/daemon.state.json`` absent, every spawn lane
+   no-oped with only stdout lines — no push, no sidecar, no marker; detection
+   was a human opening a PM session (the only pre-existing daemon-outage
+   escalation, :func:`decide_daemon_blocked_escalation` #845c, needs a
+   respawn-worthy stalled session to exist first, so a stall-free outage
+   escalated nothing). Pure predicate
+   :func:`decide_daemon_liveness_escalation` over singleton state
+   ``~/.eps-autonomous/daemon-liveness.json``, fed the tick's
+   already-computed ``daemon_reachable`` as a kwarg — NEVER a second probe.
+   The 2nd consecutive unreachable tick (:data:`DAEMON_LIVENESS_THRESHOLD`,
+   ~20 min at the 10-min cron) opens the episode: ONE IMMEDIATE push via
+   :func:`_telegram_push_urgent` (the telegram_push.sh direct-send carve-out
+   — the 3x/day digest's worst-case latency exceeds the motivating outage,
+   and the usual tick-side second channel spawns through the very daemon
+   that is down) + ONE sidecar row
+   (``.claude/cache/daemon-liveness-events.jsonl``), naming the
+   suppressed-work counts (autonomous registrations + ripe infra-queue
+   depth; each read fail-soft to ``?``) and the exact LOGIN-SHELL recovery
+   command. A persisting outage re-alerts every
+   ``EPM_DAEMON_LIVENESS_REALERT_MIN`` (60 min) on the DIGEST channel
+   (:func:`_telegram_push`); the first reachable tick after an escalated
+   episode fires ONE immediate recovery push naming the measured outage
+   duration (stamped at the FIRST unreachable tick), then state resets.
+   State is saved BEFORE any emit — a persistent save failure degrades to
+   stderr + sidecar rows, never a per-tick push storm — and every state
+   field read back goes through ``isinstance`` guards failing toward "no
+   escalation" (worst case ONE delayed escalation, never a spurious one).
+   ESCALATE-ONLY hard invariant: never restarts the daemon (a cron-context
+   restart risks the #1466 tmux split-brain, and probe-false != process-dead
+   would double-daemon a hung-but-alive one), never stops/spawns a session,
+   never posts a task marker, never mutates task status.
+   ``--daemon-liveness-only`` runs just this pass (pair with ``--dry-run``
+   for a zero-write live smoke). (:func:`daemon_liveness_pass`.)
 
 
 Why each pass exists
@@ -1069,6 +1286,7 @@ Run: ``uv run python scripts/autonomous_session_watch.py [--dry-run] [--threshol
 from __future__ import annotations
 
 import argparse
+import contextlib
 import fcntl
 import functools
 import getpass
@@ -1107,7 +1325,11 @@ if _SCRIPTS_DIR not in sys.path:
 # re-deriving a per-issue regex — the old `epm-issue-<N>`-only regex never
 # matched the canonical `pod-<N>` names, so the whole pass was dead code).
 import session_resolver  # noqa: E402  (sibling import; follows the sys.path bootstrap above)
-from pod_lifecycle import _is_managed_pod, _issue_from_pod_name  # noqa: E402
+from pod_lifecycle import (  # noqa: E402
+    _is_managed_pod,
+    _issue_from_pod_name,
+    _slug_from_pod_name,
+)
 from runpod_api import (  # noqa: E402
     PodInfo,
     estimate_pod_hourly_rate,
@@ -1128,6 +1350,7 @@ from spawn_session import (  # noqa: E402
     _load_pm_session_ids,
     _load_session_issue_map,
     _load_session_meta,
+    _marker_session_mode,
     _takeover_ttl_s,
     dispatch_lease_desc,
     dispatch_lease_fresh,
@@ -1139,10 +1362,13 @@ from spawn_session import (  # noqa: E402
     takeover_sentinel_fresh,
 )
 from tick_triage import (  # noqa: E402
+    ISSUE_PARK,
     compute_head_sha,
     compute_progress_fingerprint,
+    is_human_transcript_row,
     no_progress_state_path,
     no_progress_threshold,
+    parse_event_ts,
     plan_pending_over_cap,
     proc_start_epoch,
     read_no_progress_state,
@@ -1510,6 +1736,55 @@ NEVER_RAN_OBSERVE_SLOP_S = 1200.0
 #: ``EPM_NEVER_RAN_REALERT_H`` (HOURS; :func:`_never_ran_realert_s`).
 NEVER_RAN_REALERT_S = 6 * 3600
 
+# Substring stamped into the #2283 OWNER-FENCE DEFER marker — posted (once
+# per fence episode, keyed by the pod's `fd_pod` entry in the pod-safety
+# state file) when the status-class AUTO-STOP arm would have fired on a
+# DONE-status task's RUNNING pod but the pod carries an UNEXPIRED #2277
+# owner fence with NO owner-matching upload-verification PASS
+# (pod_lifecycle.OwnerFenceState.blocks_teardown — the SAME reader chain the
+# terminate guard runs, never a second parser). The stop is DEFERRED (miss
+# counter reset), bounded by the fence's own expiry AND a cumulative
+# per-(issue, pod) ceiling (EPM_POD_FENCE_DEFER_MAX_H). DEFER-ONLY hard
+# invariant: the arm can only turn a stop into a wait — never accelerate
+# one. Posted as epm:progress, so it MUST be a member of
+# _WATCHER_NOTE_SENTINELS (excluded from "real progress" in
+# _latest_progress_ts — otherwise the defer marker would refresh the
+# staleness clocks of the very parked task it defers on). CRITICALLY, the
+# note text never binds the pod in structured position (no `pod=<name>`
+# token, sentinel-leading so no leading-token match): an epm:progress note
+# naming the pod with a fence token would REGISTER/CLEAR the owner's fence
+# (_OWNER_REGISTRATION_KINDS includes epm:progress) — the marker must be
+# registration-inert (pinned by
+# test_fence_defer_marker_is_registration_inert).
+_FENCE_DEFER_NOTE_SENTINEL = "[autonomous_session_watch:pod-owner-fence-defer]"
+
+# Substring stamped into the #2283 fence-defer CEILING marker — posted ONCE
+# per fence episode when the cumulative deferral age crosses
+# EPM_POD_FENCE_DEFER_MAX_H while the fence is STILL active (a
+# continuously-refreshed fence must not shield a pod forever): announces
+# that the ordinary >=threshold auto-stop accumulation has RE-ARMED. Same
+# _WATCHER_NOTE_SENTINELS membership + registration-inertness contract as
+# the defer sentinel above.
+_FENCE_CEILING_NOTE_SENTINEL = "[autonomous_session_watch:pod-owner-fence-ceiling]"
+
+#: Cumulative per-(issue, pod incarnation) deferral ceiling (HOURS) for the
+#: #2283 fence-defer arm: measured from the episode's first deferred tick
+#: (`fd_pod.first_ts`), NOT from the fence value — an owner re-posting a
+#: fresh `fence_until=` every few hours extends the fence forever, but not
+#: this clock. 24h matches the watcher's standing unresolved-condition
+#: cadence (KEEP_RUNNING_OWNER_REALERT_S et al.) and caps the worst-case
+#: non-owner burn at ~1 day. Env-overridable at CALL time via
+#: ``EPM_POD_FENCE_DEFER_MAX_H`` (HOURS; :func:`_pod_fence_defer_max_s` —
+#: floor-clamped to :data:`POD_FENCE_DEFER_FLOOR_H`).
+POD_FENCE_DEFER_MAX_H = 24.0
+
+#: Floor clamp (HOURS) for ``EPM_POD_FENCE_DEFER_MAX_H``: a positive
+#: sub-1h override is clamped UP to 1h (a near-zero ceiling would turn the
+#: defer arm into a no-op while READING as enabled); malformed /
+#: non-positive values fall back to the default instead (the
+#: :func:`_keep_running_owner_realert_s` defensive shape).
+POD_FENCE_DEFER_FLOOR_H = 1.0
+
 # Substring stamped into the one-time "inline-follow-up exemption" marker
 # posted when the auto-stop arm would have fired but the task's events.jsonl
 # shows a `epm:run-launched` marker NEWER than its transition into the current
@@ -1681,6 +1956,19 @@ _STALLED_ALERT_NOTE_SENTINEL = "[autonomous_session_watch:session-stalled-alert]
 # bias the real-progress staleness clock on the NEXT tick (otherwise a
 # successful respawn would mask the next staleness episode).
 _STALLED_RESPAWN_NOTE_SENTINEL = "[autonomous_session_watch:session-auto-respawn]"
+
+# Substring stamped into the #2084 cross-generation NO-PROGRESS escalation
+# marker: the stalled fence-spawn arm has fired >= EPM_STALLED_XGEN_ESCALATE_
+# AFTER consecutive respawns with NO intervening real (non-watcher) marker —
+# the loop the per-episode STALLED_MAX_RESPAWNS belt cannot see because each
+# respawned generation writes a fresh boot self-report and the advancement
+# clear resets the belt (#2004: 7 respawns over 7h34m, zero real progress).
+# ESCALATE-ONLY: the marker + push + sidecar are the whole act; the respawn
+# lane's behavior is unchanged. MUST be a member of
+# :data:`_WATCHER_NOTE_SENTINELS` — the escalation marker would otherwise
+# reset ``_latest_nonwatcher_event_ts`` (the very real-progress clock the
+# counter is keyed on) and shield the wedged session (anti-liveness).
+_STALLED_XGEN_NOTE_SENTINEL = "[autonomous_session_watch:session-auto-respawn-noprogress]"
 
 # Substring stamped into the one-time "auto-recovery cap exhausted" marker
 # fired when STALLED_MAX_RESPAWNS respawns in the same episode have all
@@ -1958,6 +2246,15 @@ _INFRA_DRAIN_NOTE_SENTINEL = "[autonomous_session_watch:infra-drain-dispatch]"
 # staleness clocks (same contract as _INFRA_DRAIN_NOTE_SENTINEL).
 _PROPOSED_INFRA_SWEEP_NOTE_SENTINEL = "[autonomous_session_watch:proposed-infra-sweep-dispatch]"
 
+# Substring stamped into the advisory epm:progress flag marker the
+# pre-dispatch staleness pass (#2134) posts on a queued/blocked infra task
+# whose workflow_fix_target premises a newer landed commit likely
+# invalidated (or that collides with a sibling on the same target file).
+# Anti-liveness contract: the flagged task is exactly the kind of parked
+# task the staleness clocks watch, so a watcher-authored advisory flag must
+# never count as "real progress" and reset them.
+_PREDISPATCH_STALENESS_NOTE_SENTINEL = "[autonomous_session_watch:predispatch-staleness]"
+
 # Substring stamped into the marker the capacity-retry pass posts after it
 # re-drives a `blocked`-on-transient-infra task (task #642 class:
 # `no_compute_available` after a GCP capacity miss). Same staleness-filter
@@ -2169,6 +2466,13 @@ BOOT_REFUSAL_SUBSTRINGS: tuple[str, ...] = (
 # separate, src/-level work (out of this fix's scope).
 _LONG_PHASE_HEARTBEAT_PREFIX = "[long-phase-heartbeat]"
 
+# #2295 pass-34 owner-attribution marker (stranded root-sync autostash ->
+# owning task). Posted by="unknown" (the #967 fail-toward-triage convention,
+# so the owning session's next pre-dispatch triage picks it up); membership
+# in _WATCHER_NOTE_SENTINELS below keeps the note from resetting the
+# reconcile/stalled staleness clocks (anti-liveness contract, #2084/#2283).
+_STASH_RESCUE_ATTRIB_NOTE_SENTINEL = "[autonomous_session_watch:stash-rescue-owner-attribution]"
+
 # All watcher-posted note substrings to exclude from `_latest_progress_ts`.
 # Pulled into one frozenset so every pass's filter is uniform: add a new
 # watcher-posted marker -> add its sentinel here -> _latest_progress_ts
@@ -2184,6 +2488,11 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _KEEP_RUNNING_WEDGED_NOTE_SENTINEL,
         _KEEP_RUNNING_POD_IDLE_NOTE_SENTINEL,
         _NEVER_RAN_NOTE_SENTINEL,
+        # #2283 fence-defer arm: both markers are epm:progress on a PARKED
+        # task — counting them as progress would refresh the reconcile /
+        # stalled staleness clocks (anti-liveness contract, #2084 family).
+        _FENCE_DEFER_NOTE_SENTINEL,
+        _FENCE_CEILING_NOTE_SENTINEL,
         _FOLLOWUP_NOTE_SENTINEL,
         _WEDGE_ALERT_NOTE_SENTINEL,
         _WEDGE_STOP_NOTE_SENTINEL,
@@ -2198,11 +2507,16 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _DIAGNOSIS_WINDOW_STOP_NOTE_SENTINEL,
         _STALLED_ALERT_NOTE_SENTINEL,
         _STALLED_RESPAWN_NOTE_SENTINEL,
+        _STALLED_XGEN_NOTE_SENTINEL,
         _STALLED_EXHAUSTED_NOTE_SENTINEL,
         _STALLED_STOP_FAILED_NOTE_SENTINEL,
         _STALLED_DEAD_SILENCE_STOP_NOTE_SENTINEL,
         _STALLED_MANUAL_ESCALATION_NOTE_SENTINEL,
         _STALE_REGISTRATION_NOTE_SENTINEL,
+        # #2295 pass-34 attribution marker: an epm:progress note on a task
+        # that may be parked/terminal — counting it as progress would reset
+        # the very staleness clocks watching that task.
+        _STASH_RESCUE_ATTRIB_NOTE_SENTINEL,
         _VM_DISK_NOTE_SENTINEL,
         _ORPHAN_RESPAWN_NOTE_SENTINEL,
         _ORPHAN_ALERT_NOTE_SENTINEL,
@@ -2224,6 +2538,10 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _TTY_UNMAPPED_REPORT_NOTE_SENTINEL,
         _INFRA_DRAIN_NOTE_SENTINEL,
         _PROPOSED_INFRA_SWEEP_NOTE_SENTINEL,
+        # #2134 pre-dispatch staleness flag: advisory marker on a QUEUED
+        # task — must never read as real progress or it would reset the
+        # very staleness clocks watching that parked task.
+        _PREDISPATCH_STALENESS_NOTE_SENTINEL,
         _CAPACITY_RETRY_NOTE_SENTINEL,
         _CAPACITY_RETRY_EXHAUSTED_NOTE_SENTINEL,
         _STALE_BLOCKED_FLAG_NOTE_SENTINEL,
@@ -2779,6 +3097,41 @@ def _stalled_manual_escalate_confirms() -> int:
     if parsed < 1:
         return STALLED_MANUAL_ESCALATE_CONFIRMS_DEFAULT
     return parsed
+
+
+# #2084 cross-generation no-progress escalation — see
+# _update_stalled_xgen_on_spawn / decide_stalled_xgen_escalation. Default 4:
+# quiet on the benign 2-respawn fast recovery (#2079), fires ~4h into the
+# observed 4-8-respawn no-progress loops (#2022/#1992/#2004). Purely
+# progress-keyed (NOT day-keyed, NOT elapsed-time — elapsed-silence
+# heuristics had 5 false positives on 2026-08-04; the reliable signal is
+# "N respawns with no intervening real marker").
+STALLED_XGEN_ESCALATE_AFTER_DEFAULT = 4
+
+
+def _stalled_xgen_escalation_enabled() -> bool:
+    """Kill switch: False when ``EPM_DISABLE_STALLED_XGEN_ESCALATION`` is set
+    truthy ("1"/"true"/"yes", case-insensitive). Default enabled (armed).
+    Mirrors :func:`_stalled_manual_escalation_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_STALLED_XGEN_ESCALATION", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _stalled_xgen_escalate_after() -> int:
+    """Escalation threshold in consecutive no-progress fence-spawn fires
+    (env ``EPM_STALLED_XGEN_ESCALATE_AFTER``; default
+    :data:`STALLED_XGEN_ESCALATE_AFTER_DEFAULT`). Malformed falls back to
+    the default; a parsed value below 2 CLAMPS to 2 (a threshold of 1 would
+    escalate on every single respawn — pure noise — and 0/negative would be
+    a stealth per-tick alert; the disable var is the only off switch)."""
+    raw = os.environ.get("EPM_STALLED_XGEN_ESCALATE_AFTER")
+    if not raw:
+        return STALLED_XGEN_ESCALATE_AFTER_DEFAULT
+    try:
+        parsed = int(raw)
+    except ValueError:
+        return STALLED_XGEN_ESCALATE_AFTER_DEFAULT
+    return max(parsed, 2)
 
 
 def decide_session_stalled(
@@ -3679,6 +4032,45 @@ def decide_stalled_manual_escalation(
     return ("count", new_count, new_first)
 
 
+def decide_stalled_xgen_escalation(
+    *,
+    kill_switch: bool,
+    xgen_respawns: int,
+    threshold: int,
+    escalated_at: int,
+) -> tuple[str, str]:
+    """Pure decision for the #2084 cross-generation no-progress escalation.
+
+    Returns ``(verdict, reason)``; verdict in ``{"escalate", "quiet"}``.
+
+    ``xgen_respawns`` is the ALREADY-UPDATED consecutive count of fence-spawn
+    respawns with no intervening real (non-watcher) marker
+    (:func:`_update_stalled_xgen_on_spawn` applies the counting rule before
+    calling here); ``escalated_at`` is the counter value at the most recent
+    escalation (0 = never). Fires when BOTH ``xgen_respawns >= threshold``
+    AND ``xgen_respawns >= escalated_at + threshold`` — once per threshold
+    BAND (at N, 2N, 3N, ... for one-at-a-time increments), so an unbounded
+    loop re-alerts but never spams per respawn. ``kill_switch=True``
+    (``EPM_DISABLE_STALLED_XGEN_ESCALATION``) -> always quiet. ESCALATE-ONLY
+    by construction: the verdict drives observability channels only — never
+    a stop, status mutation, respawn suppression, or cap consumption.
+    """
+    if kill_switch:
+        return ("quiet", "kill switch EPM_DISABLE_STALLED_XGEN_ESCALATION is set")
+    if xgen_respawns < threshold:
+        return ("quiet", f"count {xgen_respawns} below threshold {threshold}")
+    if xgen_respawns < escalated_at + threshold:
+        return (
+            "quiet",
+            f"already escalated at count {escalated_at} (next band at {escalated_at + threshold})",
+        )
+    return (
+        "escalate",
+        f"{xgen_respawns} consecutive fence-spawn respawns with no intervening "
+        f"real marker (threshold {threshold}, last escalated at {escalated_at})",
+    )
+
+
 def decide_boot_death(
     *,
     sid_alive: bool,
@@ -3879,13 +4271,16 @@ def decide_pod_safety(
     *,
     keep_running: bool = False,
     followup_active: bool = False,
+    fence_active: bool = False,
+    fence_defer_exhausted: bool = False,
 ) -> tuple[str, int]:
     """Pure decision for the pod-safety pass on a RUNNING managed pod.
 
     Trigger is the task's STATUS CLASS (unambiguous), NOT session liveness —
     see the module docstring "Why STOP is keyed on task status". Returns
     ``(action, new_missed)`` where action is ``"stop"`` | ``"alert"`` |
-    ``"keep"`` | ``"keep-running-skip"`` | ``"followup-skip"``.
+    ``"keep"`` | ``"keep-running-skip"`` | ``"followup-skip"`` |
+    ``"fence-defer"``.
 
     Parameters
     ----------
@@ -3934,6 +4329,31 @@ def decide_pod_safety(
         pattern as ``keep_running``). Incident #477 (2026-06-10): the
         watcher stopped a healthy follow-up pod 3 times before the user
         manually added the ``keep-running`` tag.
+    fence_active
+        Whether the pod carries an UNEXPIRED #2277 owner fence with NO
+        owner-matching upload-verification PASS
+        (``pod_lifecycle.OwnerFenceState.blocks_teardown``, read through
+        the tri-state ``_pod_owner_fence_active`` wrapper — the caller
+        passes ``fence_read is True``, so a not-evaluated ``None`` read
+        NEVER defers: fail-open toward the pre-#2283 stop). Consulted ONLY
+        on the auto-stop arm, AFTER ``keep_running`` and
+        ``followup_active`` (both existing shields take precedence — the
+        fence arm can only ADD a defer where a stop would have fired,
+        never displace a skip). Eligibility is computed by the caller
+        strictly on ``status in AUTO_STOP_DONE``: ``"auto-stop-done"`` is
+        a MERGED status-class label that also covers user-paused
+        ``on_hold`` (:data:`AUTO_STOP_PAUSED`), and a self-posted fence
+        must NEVER defer a USER-ordered pause stop (#2283 blocker 1) — so
+        for an ``on_hold`` task the caller passes ``fence_active=False``
+        by construction.
+    fence_defer_exhausted
+        Whether the pod's cumulative fence-deferral episode age has
+        crossed the ``EPM_POD_FENCE_DEFER_MAX_H`` ceiling (default 24h,
+        measured from the episode's first deferred tick — NOT from the
+        fence value, so a continuously-refreshed fence cannot shield a
+        pod forever). When True the defer branch is bypassed and the
+        ordinary >=``threshold`` accumulation resumes (the caller posts
+        the once-per-episode ceiling marker).
 
     Cases (``"auto-stop-done"`` = task in :data:`POD_SAFETY_AUTO_STOP` —
     DONE, or user-paused ``on_hold``):
@@ -3950,6 +4370,15 @@ def decide_pod_safety(
       later finishes (the next ``epm:status-changed`` / ``epm:promoted``
       lands AFTER the latest ``epm:run-launched``) the predicate flips
       False on the next tick and the auto-stop re-arms normally.
+    - ``status_class == "auto-stop-done"`` AND ``fence_active`` AND NOT
+      ``fence_defer_exhausted`` (and neither shield above) ->
+      ``("fence-defer", 0)``. The stop is DEFERRED and the miss counter
+      reset, so a fence expiry / owner PASS / ceiling crossing later
+      re-arms a fresh >=``threshold`` accumulation before any stop (the
+      keep-running-skip reset semantics). DEFER-ONLY hard invariant: with
+      both new params at their False defaults this function is
+      byte-identical to its pre-#2283 decision table — the arm can only
+      turn a stop into a wait, never accelerate one.
     - ``status_class == "auto-stop-done"`` -> increment ``missed``; return
       ``"stop"`` once it reaches ``threshold`` (default 2 = ~20 min at a 10-min
       cron, so a single transient API/status glitch never stops a pod), else
@@ -3968,6 +4397,8 @@ def decide_pod_safety(
             return ("keep-running-skip", 0)
         if followup_active:
             return ("followup-skip", 0)
+        if fence_active and not fence_defer_exhausted:
+            return ("fence-defer", 0)
         new_missed = missed + 1
         if new_missed >= threshold:
             return ("stop", 0)
@@ -4726,7 +5157,7 @@ def decide_vm_disk(
     return (level, do_alert, do_reclaim, do_audit)
 
 
-# ─── VM disk SUB-FLOOR sentinel (task #679) ──────────────────────────────────
+# ─── VM disk sub-floor sentinel (task #679) ──────────────────────────────────
 #
 # The existing alert/reclaim bands above fire LATE (20 / 15 GiB free) — by then
 # foreground Bash spawns are already at risk. The sub-floor sentinel is an
@@ -4916,7 +5347,7 @@ def _load_subfloor_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -4969,7 +5400,7 @@ def _load_subfloor_reclaim_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -5166,6 +5597,64 @@ def _append_disk_guard_sidecar(event: dict, dry_run: bool) -> None:
         print(f"  vm-disk subfloor: sidecar append failed: {exc}", file=sys.stderr)
 
 
+def _emit_subfloor_skip(reason: str, free: int, now: float, dry_run: bool, *, detail: str) -> None:
+    """Loud per-skip diagnostics for the sub-floor RECLAIM arm (#2141).
+
+    Called from :func:`subfloor_reclaim_pass` ONLY in the band where a fire is
+    EXPECTED but declined (``free < VM_DISK_SUBFLOOR_FREE_BYTES``): a genuine
+    non-fire used to be indistinguishable from a fire whose log line the
+    reader failed to match (#2141 was filed against a WORKING arm on a
+    grep-token mismatch). Always prints ONE stderr line carrying the lowercase
+    ``subfloor`` token. For ``reason == "kill-switch"`` — the one decline
+    state where the arm is disabled while needed and NO existing record shows
+    it — additionally appends an ``action: "skipped"`` sidecar row, throttled
+    to <=1 per :data:`VM_DISK_SUBFLOOR_RECLAIM_INTERVAL_S` via a
+    ``last_skip_row_ts`` key MERGED into the reclaim state (never a
+    whole-payload overwrite — clobbering ``last_run_ts`` would break rate
+    limiting). Rate-limited declines get stderr only: the <=1800 s-old fire
+    row in the same sidecar is the positive evidence, and a NEGATIVE ``age=``
+    in the stderr detail is the corrupt/future-``last_run_ts`` wedge
+    signature. Fail-soft; dry-run performs ZERO writes (the sidecar append
+    prints ``[dry-run] would append`` via :func:`_append_disk_guard_sidecar`
+    and the state save is skipped)."""
+    free_gib = free / 2**30
+    floor_gib = VM_DISK_SUBFLOOR_FREE_BYTES / 2**30
+    print(
+        f"vm-disk subfloor-reclaim: skipped ({reason}) — {free_gib:.1f} GiB free "
+        f"(< {floor_gib:.0f} GiB); {detail}",
+        file=sys.stderr,
+    )
+    if reason != "kill-switch":
+        return
+    state = _load_subfloor_reclaim_state()
+    last_skip_row_ts = state.get("last_skip_row_ts")
+    last_skip_row_ts = last_skip_row_ts if isinstance(last_skip_row_ts, int | float) else None
+    interval = VM_DISK_SUBFLOOR_RECLAIM_INTERVAL_S
+    if last_skip_row_ts is not None and now - last_skip_row_ts < interval:
+        return  # throttled: one durable row per interval is enough
+    _append_disk_guard_sidecar(
+        {
+            "kind": "vm-disk-subfloor-reclaim",
+            "band": "sub-floor",
+            "action": "skipped",
+            "reason": "kill-switch",
+            "free_bytes": free,
+            "free_gib": round(free_gib, 1),
+            "interval_s": VM_DISK_SUBFLOOR_RECLAIM_INTERVAL_S,
+        },
+        dry_run,
+    )
+    if dry_run:
+        return
+    try:
+        _save_subfloor_reclaim_state({**state, "last_skip_row_ts": now})
+    except OSError as exc:
+        print(
+            f"  vm-disk subfloor-reclaim: skip-state save failed (fail-soft): {exc}",
+            file=sys.stderr,
+        )
+
+
 def subfloor_sentinel_pass(dry_run: bool, free_bytes: int | None = None) -> bool:
     """Warn-only sub-floor attribution pass (task #679).
 
@@ -5196,7 +5685,7 @@ def subfloor_sentinel_pass(dry_run: bool, free_bytes: int | None = None) -> bool
         top = []
     free_gib = free / 2**30
     print(
-        f"vm-disk SUB-FLOOR: {free_gib:.1f} GiB free on {VM_DISK_PATH} "
+        f"vm-disk subfloor-sentinel: {free_gib:.1f} GiB free on {VM_DISK_PATH} "
         f"(< {VM_DISK_SUBFLOOR_FREE_BYTES / 2**30:.0f} GiB) — re-check sooner; "
         f"top caches: {', '.join(f'{p} [{b / 1e9:.1f}G]' for p, b in top) or 'none'}",
         file=sys.stderr,
@@ -5283,27 +5772,60 @@ def subfloor_reclaim_pass(
     calls and ZERO writes (the #681 r3 smoke contract). Fail-soft: a launch
     OR state-save failure (e.g. ENOSPC on a full ``/``) returns False and
     never crashes :func:`vm_disk_pass`. Returns True when a launch happened
-    (or would have, under dry-run) this tick."""
-    if os.environ.get("EPM_DISABLE_SUBFLOOR_RECLAIM", "").strip() == "1":
-        return False
+    (or would have, under dry-run) this tick.
+
+    Skip diagnostics (#2141): every BELOW-FLOOR declined tick is loud — a
+    stderr line naming the blocking predicate (kill-switch / rate-limited /
+    free-unreadable) via :func:`_emit_subfloor_skip`, plus a throttled
+    ``action: "skipped"`` sidecar row for the kill-switched case only.
+    Above-floor declines (the healthy no-op, ~144 ticks/day) stay
+    byte-identical. The firing decision is UNCHANGED — diagnostics only.
+    Behavioral delta disclosed: ``free`` is now read BEFORE the kill-switch
+    check (so the check can band-scope), meaning a kill-switched standalone
+    call with ``free_bytes=None`` runs one read-only statvfs; the production
+    call site always passes ``free_bytes``."""
     now = now if now is not None else time.time()
     free = free_bytes if free_bytes is not None else _root_disk_headroom()
     if free is None:
+        print(
+            "  vm-disk subfloor-reclaim: skipped (free-unreadable) — statvfs "
+            f"on {VM_DISK_PATH} failed upstream",
+            file=sys.stderr,
+        )
+        return False
+    if os.environ.get("EPM_DISABLE_SUBFLOOR_RECLAIM", "").strip() == "1":
+        if free < VM_DISK_SUBFLOOR_FREE_BYTES:
+            _emit_subfloor_skip(
+                "kill-switch", free, now, dry_run, detail="EPM_DISABLE_SUBFLOOR_RECLAIM=1"
+            )
         return False
     state = _load_subfloor_reclaim_state()
     last_run_ts = state.get("last_run_ts")
     last_run_ts = last_run_ts if isinstance(last_run_ts, int | float) else None
     if not decide_subfloor_reclaim(free, last_run_ts, now):
+        if free < VM_DISK_SUBFLOOR_FREE_BYTES:  # rate-limited (above-floor stays silent)
+            _emit_subfloor_skip(
+                "rate-limited",
+                free,
+                now,
+                dry_run,
+                detail=(
+                    f"age={now - last_run_ts:.0f}s of "
+                    f"{VM_DISK_SUBFLOOR_RECLAIM_INTERVAL_S:.0f}s min interval"
+                ),
+            )
         return False
     log_path = PROJECT_ROOT / "logs" / "vm_disk_guard" / f"{datetime.now(tz=UTC):%Y-%m-%d}.log"
     if dry_run:
-        print(f"  [dry-run] would launch: {' '.join(_guard_apply_argv())}")
+        print(f"  [dry-run] subfloor-reclaim would launch: {' '.join(_guard_apply_argv())}")
         return True
     try:
         pid = _launch_guard_apply(log_path)
         # The state save rides the SAME fail-soft guard as the launch (#1392
         # concern 1): on a 100%-full / an ENOSPC here returns False cleanly.
-        _save_subfloor_reclaim_state({"last_run_ts": now, "pid": pid})
+        # MERGE-write (#2141): a whole-payload overwrite would clobber the
+        # skip-diagnostics key ``last_skip_row_ts`` alongside any future key.
+        _save_subfloor_reclaim_state({**state, "last_run_ts": now, "pid": pid})
     except (OSError, subprocess.SubprocessError) as exc:
         print(
             f"  vm-disk subfloor-reclaim: guard --apply launch failed (fail-soft): {exc}",
@@ -5325,7 +5847,8 @@ def subfloor_reclaim_pass(
         dry_run,
     )
     print(
-        f"vm-disk SUB-FLOOR: launched vm_disk_guard --apply (pid {pid}, ~6-10 min, log {log_path})",
+        f"vm-disk subfloor-reclaim: launched vm_disk_guard --apply "
+        f"(pid {pid}, ~6-10 min, log {log_path})",
         file=sys.stderr,
     )
     return True
@@ -5344,7 +5867,7 @@ def _load_data_disk_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -5365,26 +5888,106 @@ def _clear_data_disk_state() -> None:
     _data_disk_state_path().unlink(missing_ok=True)
 
 
+def _staging_top_caches(
+    dd_path: str, top_n: int = VM_DISK_SUBFLOOR_TOP_N, *, dry_run: bool = False
+) -> list[tuple[str, int]]:
+    """Top-``top_n`` largest TOP-LEVEL entries of the staging root(s) under
+    ``dd_path`` (dirs only, ANY name — ``huggingface-cache`` and dot-dirs
+    included: attribution is not reap), as ``(abs_path, bytes)`` via one
+    bounded ``du -sx --block-size=1`` per entry
+    (:data:`VM_DISK_SUBFLOOR_DU_TIMEOUT_S`). Top-level FILES are excluded
+    (dir-scoped attribution — #2095 §4.4: observed instances are KB-to-MB
+    logs/launchers, not a disk-pressure class).
+
+    Root resolution mirrors ``clean_experiment_downloads.
+    production_staging_roots`` WITHOUT importing it (the watcher deliberately
+    avoids importing the janitors at module load — fail-isolation; the same
+    established convention as the duplicated ``data_disk_path``): env
+    ``EPM_STAGING_CACHE_ROOTS`` (colon-separated absolute roots, each kept
+    iff ``is_dir()``) OVERRIDES the default
+    ``<dd_path>/<getpass.getuser()>`` (kept iff ``is_dir()``).
+
+    KILL-SWITCH SCOPE (#2095 §4.3, pinned by test):
+    ``EPM_SKIP_STAGING_CACHE_SWEEP`` and ``EPM_SKIP_NONCANONICAL_CACHE_SWEEP``
+    do NOT disable this helper — it is READ-ONLY attribution, and
+    observability must survive a sweep kill (it is the triage channel a
+    human needs exactly while the sweep is off).
+
+    Under ``dry_run`` performs NO ``subprocess.run`` at all and returns
+    ``[]`` immediately (#681 r3 — a dry-run pass has zero observational
+    side-effects). Fail-soft: a per-entry ``du`` failure / timeout degrades
+    to fewer rows; any other error -> ``[]``, never a crash."""
+    if dry_run:
+        return []
+    try:
+        raw = os.environ.get("EPM_STAGING_CACHE_ROOTS", "").strip()
+        if raw:
+            roots = [Path(p) for p in raw.split(":") if p.strip() and Path(p).is_dir()]
+        else:
+            user_dir = Path(dd_path) / getpass.getuser()
+            roots = [user_dir] if user_dir.is_dir() else []
+        sizes: list[tuple[str, int]] = []
+        for root in roots:
+            try:
+                entries = sorted(root.iterdir())
+            except OSError:
+                continue
+            for entry in entries:
+                try:
+                    if not entry.is_dir():
+                        continue  # top-level FILES / dangling symlinks: dir-scoped
+                    rc = subprocess.run(
+                        ["du", "-sx", "--block-size=1", str(entry)],
+                        capture_output=True,
+                        text=True,
+                        timeout=VM_DISK_SUBFLOOR_DU_TIMEOUT_S,
+                        check=False,
+                    )
+                except (OSError, subprocess.SubprocessError):
+                    continue  # fail-soft: fewer rows, never a crash (R5)
+                if rc.returncode != 0 or not rc.stdout.strip():
+                    continue
+                try:
+                    nbytes = int(rc.stdout.split()[0])
+                except (ValueError, IndexError):
+                    continue
+                sizes.append((str(entry), nbytes))
+        sizes.sort(key=lambda x: x[1], reverse=True)
+        return sizes[:top_n]
+    except (OSError, subprocess.SubprocessError, ValueError):
+        return []
+
+
 def _data_disk_top_caches(dd_path: str, *, dry_run: bool = False) -> list[tuple[str, int]]:
     """Attribution for the data-disk escalation: PRIMARY per-PROJECT usage via
-    ``repquota -P`` (one cheap call, project id == issue number), falling back
-    to the ``du``-based glob attribution when ``repquota`` is unavailable / the
-    disk has no prjquota / parsing fails. Fail-soft — any error yields an empty
-    list (no attribution), never a crash.
+    ``repquota -P`` (one cheap call, project id == issue number). When
+    ``repquota`` is unavailable / the disk has no prjquota / parsing fails,
+    the fallback returns the merged, size-sorted top-N of the ``du``-based
+    glob attribution (:func:`_top_issue_cache_paths`) AND the staging-root
+    attribution (:func:`_staging_top_caches` — the ``/mnt/eps-data/$USER``
+    staging dirs, #2095), so a staging-dominated data disk is attributable
+    even without prjquota. Fail-soft — a failing leg degrades to the other
+    leg's rows; any error yields an empty list, never a crash.
 
-    Under ``dry_run`` both helpers short-circuit (repquota → ``None``, du →
-    ``[]``) so this returns ``[]`` with NO ``subprocess.run`` (#681 r3): the
-    data-disk dry-run smoke must have zero observational side-effects."""
+    Under ``dry_run`` every helper short-circuits (repquota → ``None``,
+    du/staging → ``[]``) so this returns ``[]`` with NO ``subprocess.run``
+    (#681 r3): the data-disk dry-run smoke must have zero observational
+    side-effects."""
     try:
         rows = _top_issue_caches_by_project_quota(dd_path, dry_run=dry_run)
     except (subprocess.SubprocessError, OSError):
         rows = None
     if rows is not None:
         return rows
-    try:
-        return _top_issue_cache_paths(dry_run=dry_run)
-    except (subprocess.SubprocessError, OSError):
-        return []
+    merged: list[tuple[str, int]] = []
+    # Fail-soft per leg: a failing glob leg must not drop the staging rows
+    # (and vice versa) — attribution degrades to fewer rows, never a crash.
+    with contextlib.suppress(subprocess.SubprocessError, OSError):
+        merged.extend(_top_issue_cache_paths(dry_run=dry_run))
+    with contextlib.suppress(subprocess.SubprocessError, OSError):
+        merged.extend(_staging_top_caches(dd_path, dry_run=dry_run))
+    merged.sort(key=lambda x: x[1], reverse=True)
+    return merged[:VM_DISK_SUBFLOOR_TOP_N]
 
 
 def data_disk_pass(dry_run: bool, used_pct: float | None = None) -> bool:
@@ -5477,7 +6080,7 @@ def data_disk_pass(dry_run: bool, used_pct: float | None = None) -> bool:
 
     top = _data_disk_top_caches(dd_path, dry_run=dry_run)
     print(
-        f"vm-disk-data SUB-FLOOR: {pct:.1f}% used on {dd_path} "
+        f"vm-disk-data subfloor: {pct:.1f}% used on {dd_path} "
         f"(>= {floor:.0f}%) — re-check sooner; "
         f"top caches: {', '.join(f'{p} [{b / 1e9:.1f}G]' for p, b in top) or 'none'}",
         file=sys.stderr,
@@ -5515,7 +6118,7 @@ def _load_happy_patch_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -6020,7 +6623,7 @@ def _load_cpu_guard_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -6331,7 +6934,7 @@ def _load_triage_observer_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -6582,7 +7185,7 @@ def triage_observer_pass(dry_run: bool) -> bool:
 
     try:
         reg = json.loads(registry_path().read_text())
-    except (OSError, json.JSONDecodeError) as exc:
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError) as exc:
         print(f"  triage-observer: registry read failed: {exc}", file=sys.stderr)
         return False
     tasks = reg.get("tasks") if isinstance(reg, dict) else None
@@ -6682,7 +7285,7 @@ def triage_observer_pass(dry_run: bool) -> bool:
 # the triage observer: this flag's consumer is a human, not the next
 # dispatch), NEVER a status mutation, session stop, or dispatch block.
 # KNOWN BENIGN-FIRE class: a Step 5c-bis mechanical-contract-only strip,
-# a 9a-bis procedural strip, or a cap-5 all-stripped-continue resolves a
+# a 9a-bis procedural strip, or a cap-10 all-stripped-continue resolves a
 # PASS-vs-FAIL round WITHOUT a reconciler and logs to chat only, so it
 # flags BY DESIGN (auditing orchestrator self-serve dismissals of a FAIL
 # is in scope); the FAIL marker's own `**Blocker tags:**` line (an
@@ -6743,7 +7346,7 @@ def _load_verdict_disagree_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -6818,7 +7421,7 @@ def verdict_disagree_pass(dry_run: bool) -> bool:
 
         try:
             reg = json.loads(registry_path().read_text())
-        except (OSError, json.JSONDecodeError) as exc:
+        except (OSError, json.JSONDecodeError, UnicodeDecodeError) as exc:
             print(f"  verdict-disagree: registry read failed: {exc}", file=sys.stderr)
             return False
         tasks = reg.get("tasks") if isinstance(reg, dict) else None
@@ -6976,7 +7579,7 @@ def _load_root_draft_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -7218,6 +7821,386 @@ def root_draft_pass(dry_run: bool) -> bool:
         return False
 
 
+# ─── Daemon-liveness pass (task #2140; origin outage 2026-08-04) ─────────────
+#
+# WHY: a Happy-daemon outage silently disables EVERY autonomous spawn lane —
+# crash-recovery respawns, infra-drain, proposed-infra-sweep, capacity-retry,
+# boot-death, idle-unmapped, stale-registration and no-progress-respawn all
+# no-op behind the tick's single daemon probe with only stdout lines
+# ("respawn: Happy daemon unreachable; skipping ..."). On 2026-08-04T21:13Z ->
+# 2026-08-05T04:30Z (3h17m) `~/.happy/daemon.state.json` was absent,
+# _daemon_reachable() returned False on every tick, and detection came from a
+# HUMAN opening a PM session at 22:48Z; recovery was manual. The only
+# pre-existing daemon-outage escalation (decide_daemon_blocked_escalation,
+# #845c) fires only for an already-alerted stalled session whose respawn is
+# deferred — an outage with no respawn-worthy stall (exactly the #2140
+# window) escalated nothing. This pass is the fleet-level, stall-independent
+# complement, modeled architecturally on root_draft_pass (pure decide_*
+# predicate + singleton atomic state + dedicated JSONL sidecar + fail-soft
+# pushes + a top-level except so an internal error never takes down the
+# tick).
+#
+# ESCALATE-ONLY HARD INVARIANT: the pass never restarts the daemon, never
+# stops/spawns a session, never posts a task marker, never mutates task
+# status (pinned by tests/test_autonomous_session_watch_daemon_liveness.py
+# ::test_daemon_liveness_pass_never_restarts_or_mutates). A restart arm is
+# deliberately OUT of v1 for two independent reasons recorded in the #2140
+# plan: (a) #1466 tmux split-brain — daemon durability hinges on a
+# LOGIN-SHELL start (~/.profile sources scripts/eps_tmux_env.sh so
+# TMUX_TMPDIR resolves to the fleet's single tmux server); the watcher cron
+# env sources no profile, so a cron-started daemon risks spawning sessions
+# onto a SECOND tmux server (39 sessions went invisible in #1466); and
+# (b) probe-false != process-dead — _daemon_reachable() returns False for a
+# HUNG-but-alive daemon by documented conservative contract, so an unguarded
+# start would double-daemon. The alert therefore carries the exact
+# login-shell recovery command instead of acting.
+
+# Consecutive unreachable ticks before the episode opens (~20 min at the
+# 10-min cron). One tick is a flap (each tick's probe is itself the
+# 3-attempt _daemon_reachable_with_retry); two consecutive full ticks is a
+# real outage. Deliberately a plain constant (not env-tunable) — the
+# threshold IS the pass's false-positive guard.
+DAEMON_LIVENESS_THRESHOLD = 2
+# Re-alert cadence (minutes) during a PERSISTING outage: the #2140 window
+# (3h17m ~= 20 ticks) yields ~4 alerts, not 20. Env
+# EPM_DAEMON_LIVENESS_REALERT_MIN, read at call time (the root-draft knob
+# shape).
+DAEMON_LIVENESS_REALERT_MIN = 60.0
+
+# IMMEDIATE push channel for the episode `open` / `recovered` events: the
+# my-goat direct-send script — the sanctioned urgent carve-out named in
+# notif_enqueue.sh's own header ("Urgent paths ... still call
+# telegram_push.sh directly"). _telegram_push (the 3x/day digest queue) is
+# DELIBERATELY not used for these two events: worst-case digest latency
+# (~8h) exceeds the 3h17m outage this pass exists to catch, and the digest
+# docstring's "the tick-side PushNotification remains the second channel"
+# premise does not hold here — per-issue tick sessions spawn through the
+# very daemon that is down. `realert` events stay on the digest queue
+# (volume hygiene; criterion: ~4 rows for the #2140 window, not 20).
+# Override for tests via EPM_TELEGRAM_PUSH_URGENT_SCRIPT.
+_TELEGRAM_PUSH_URGENT_SCRIPT_DEFAULT = Path.home() / "my-goat" / "scripts" / "telegram_push.sh"
+
+
+def _telegram_push_urgent_script() -> Path:
+    """Resolve the IMMEDIATE-send script (env override for tests; mirrors
+    :func:`_telegram_push_script`)."""
+    override = os.environ.get("EPM_TELEGRAM_PUSH_URGENT_SCRIPT", "").strip()
+    return Path(override) if override else _TELEGRAM_PUSH_URGENT_SCRIPT_DEFAULT
+
+
+def _telegram_push_urgent(msg: str, dry_run: bool) -> bool:
+    """Best-effort IMMEDIATE phone notification via telegram_push.sh (the
+    urgent carve-out — see the channel-split block comment above). Mirrors
+    :func:`_telegram_push`'s subprocess/timeout/never-raise shape exactly,
+    minus the digest queue's NOTIF_CAT env (a direct send has no category).
+    Failure is logged LOUDLY but never raises and never crashes the pass.
+    Returns True on a confirmed zero-rc send."""
+    script = _telegram_push_urgent_script()
+    if dry_run:
+        print(f"  [dry-run] would telegram-push-urgent: {msg[:120]}")
+        return False
+    if not script.is_file():
+        print(
+            f"  WARNING: urgent telegram push script missing at {script}; push dropped",
+            file=sys.stderr,
+        )
+        return False
+    try:
+        res = subprocess.run(
+            ["bash", str(script), msg],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except (subprocess.SubprocessError, OSError) as e:
+        print(f"  WARNING: urgent telegram push failed: {e}", file=sys.stderr)
+        return False
+    if res.returncode != 0:
+        print(
+            f"  WARNING: urgent telegram push failed: {(res.stderr or res.stdout).strip()[:200]}",
+            file=sys.stderr,
+        )
+        return False
+    return True
+
+
+def _daemon_liveness_enabled() -> bool:
+    """Kill switch: False when ``EPM_DISABLE_DAEMON_LIVENESS_PASS`` is set
+    truthy ("1"/"true"/"yes", case-insensitive). Default enabled. Mirrors
+    :func:`_root_draft_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_DAEMON_LIVENESS_PASS", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _daemon_liveness_sidecar_path() -> Path:
+    """DEDICATED daemon-liveness event stream (own stream for clean grep —
+    the root-draft / triage-observer sidecar precedent)."""
+    return PROJECT_ROOT / ".claude" / "cache" / "daemon-liveness-events.jsonl"
+
+
+def _daemon_liveness_state_path() -> Path:
+    """Singleton episode state (deliberately NOT a per-issue GC target):
+    ``{"consecutive_unreachable": 0, "episode_open_ts": null,
+    "last_push_ts": null, "escalated": false}``."""
+    return AUTONOMOUS_REGISTRY_DIR / "daemon-liveness.json"
+
+
+def _load_daemon_liveness_state() -> dict:
+    """``{}`` on missing/garbled state; every field read back goes through
+    ``isinstance`` type-guards in :func:`decide_daemon_liveness_escalation`
+    (mirrors :func:`_load_root_draft_state`)."""
+    path = _daemon_liveness_state_path()
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_daemon_liveness_state(state: dict, dry_run: bool) -> bool:
+    """Atomic temp+rename write of the daemon-liveness episode state
+    (fail-soft; mirrors :func:`_save_root_draft_state`); ``dry_run``
+    performs zero writes. Returns True on success (dry-run included — the
+    dry-run emit paths are themselves zero-write): the caller's
+    save-BEFORE-emit storm guard keys on a False return to suppress the
+    push (a persistent save failure must degrade to stderr + sidecar only,
+    never re-fire the `open` push every tick)."""
+    if dry_run:
+        print("  [dry-run] would save daemon-liveness state")
+        return True
+    dest = _daemon_liveness_state_path()
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(state))
+        tmp.replace(dest)
+    except OSError as exc:  # pragma: no cover - fail-soft I/O guard
+        print(f"  daemon-liveness: state save failed: {exc}", file=sys.stderr)
+        return False
+    return True
+
+
+def _append_daemon_liveness_sidecar(event: dict, dry_run: bool) -> None:
+    """Append one JSON line to the daemon-liveness sidecar (fail-soft). A
+    ``ts`` is stamped; ``dry_run`` reports only (mirrors
+    :func:`_append_root_draft_sidecar`)."""
+    row = {"ts": datetime.now(tz=UTC).isoformat(), **event}
+    line = json.dumps(row)
+    if dry_run:
+        print(f"  [dry-run] would append daemon-liveness sidecar row: {line[:160]}")
+        return
+    dest = _daemon_liveness_sidecar_path()
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as exc:
+        print(f"  daemon-liveness: sidecar append failed: {exc}", file=sys.stderr)
+
+
+def _daemon_liveness_suppressed_work() -> dict:
+    """Bounded, fail-soft alert enrichment: what the outage is actually
+    suppressing. ``registrations`` = autonomous ``issue-*.json``
+    registrations whose crash-recovery is currently disabled; ``ripe_infra``
+    = the infra-drain queue's ``ripe_oldest_first`` depth (dispatches the
+    drain pass cannot execute while the daemon is down). Each read is
+    wrapped INDEPENDENTLY; any failure yields ``None`` for that field and
+    the push renders ``?``. Never raises, never blocks the push."""
+    registrations: int | None
+    try:
+        registrations = len(list(AUTONOMOUS_REGISTRY_DIR.glob("issue-*.json")))
+    except OSError:
+        registrations = None
+    ripe_infra: int | None
+    try:
+        data = json.loads(_infra_drain_queue_path().read_text())
+        ripe = data.get("ripe_oldest_first") if isinstance(data, dict) else None
+        ripe_infra = len(ripe) if isinstance(ripe, list) else None
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
+        ripe_infra = None
+    return {"registrations": registrations, "ripe_infra": ripe_infra}
+
+
+def decide_daemon_liveness_escalation(
+    *,
+    daemon_reachable: bool,
+    state: dict,
+    now: float,
+    threshold: int = DAEMON_LIVENESS_THRESHOLD,
+    realert_s: float,
+) -> tuple[dict, str | None]:
+    """Pure escalation decision (no IO). Returns ``(new_state, event)``
+    with ``event in {None, "open", "realert", "recovered"}``.
+
+    Reachable: ``"recovered"`` when a prior escalation is open (the caller
+    reads ``episode_open_ts`` off the OLD state for the reported duration),
+    else ``None``; either way the new state is the zero reset — a single
+    flapped tick below threshold leaves no trace, matching the retry
+    helper's intent. Unreachable: the consecutive counter increments;
+    ``episode_open_ts`` is stamped at the FIRST unreachable tick (so the
+    reported duration covers the whole outage, not just the escalated
+    part); ``"open"`` fires at the first threshold crossing while not yet
+    escalated (``>=`` rather than ``==`` — an extra fail-soft guard so a
+    hand-edited counter above threshold still escalates); ``"realert"``
+    fires while escalated once ``now - last_push_ts >= realert_s``.
+    ``last_push_ts`` updates on ``open``/``realert`` only.
+
+    Fail-safe direction: a garbled/absent state (every field re-validated
+    with ``isinstance``; bools rejected as counters/timestamps) reads as
+    ``consecutive=0, escalated=False`` — the worst case is ONE delayed
+    escalation (~10 min), never a spurious one."""
+    raw_consec = state.get("consecutive_unreachable")
+    consecutive = (
+        raw_consec
+        if isinstance(raw_consec, int) and not isinstance(raw_consec, bool) and raw_consec >= 0
+        else 0
+    )
+    raw_open = state.get("episode_open_ts")
+    episode_open_ts: float | None = (
+        float(raw_open)
+        if isinstance(raw_open, int | float) and not isinstance(raw_open, bool)
+        else None
+    )
+    raw_push = state.get("last_push_ts")
+    last_push_ts: float | None = (
+        float(raw_push)
+        if isinstance(raw_push, int | float) and not isinstance(raw_push, bool)
+        else None
+    )
+    escalated = state.get("escalated") is True
+
+    reset = {
+        "consecutive_unreachable": 0,
+        "episode_open_ts": None,
+        "last_push_ts": None,
+        "escalated": False,
+    }
+    if daemon_reachable:
+        return reset, ("recovered" if escalated else None)
+
+    consecutive += 1
+    if episode_open_ts is None:
+        episode_open_ts = now
+    event: str | None = None
+    if not escalated and consecutive >= threshold:
+        event = "open"
+        escalated = True
+        last_push_ts = now
+    elif escalated and (last_push_ts is None or (now - last_push_ts) >= realert_s):
+        event = "realert"
+        last_push_ts = now
+    return (
+        {
+            "consecutive_unreachable": consecutive,
+            "episode_open_ts": episode_open_ts,
+            "last_push_ts": last_push_ts,
+            "escalated": escalated,
+        },
+        event,
+    )
+
+
+def _daemon_liveness_duration_label(seconds: float) -> str:
+    """Render an outage duration as ``<H>h<MM>m`` (e.g. ``3h17m``)."""
+    total = max(0, int(seconds))
+    return f"{total // 3600}h{(total % 3600) // 60:02d}m"
+
+
+def daemon_liveness_pass(dry_run: bool, *, daemon_reachable: bool) -> bool:
+    """ESCALATE-ONLY fleet-level daemon-outage escalation (#2140; see the
+    block comment above). Runs on EVERY tick in BOTH daemon states,
+    consuming the tick's already-computed ``daemon_reachable`` — never a
+    second probe. Same skeleton as :func:`root_draft_pass` with ONE
+    deliberate ordering change: state is saved BEFORE the emit, and a
+    failed save suppresses the PUSH (stderr + sidecar only) — a
+    save-after-emit order would recompute the threshold crossing and
+    re-fire the `open` push on every tick of a persistent save failure
+    (~6 pushes/hr). Channel split per event: ``open``/``recovered`` ->
+    :func:`_telegram_push_urgent` (immediate); ``realert`` ->
+    :func:`_telegram_push` (digest). Returns True when an event fired
+    this tick."""
+    if not _daemon_liveness_enabled():
+        print("  daemon-liveness: disabled via EPM_DISABLE_DAEMON_LIVENESS_PASS; skipping")
+        return False
+    try:
+        now = time.time()
+        realert_min = _env_float(
+            "EPM_DAEMON_LIVENESS_REALERT_MIN", DAEMON_LIVENESS_REALERT_MIN, lo=10.0, hi=1440.0
+        )
+        old_state = _load_daemon_liveness_state()
+        new_state, event = decide_daemon_liveness_escalation(
+            daemon_reachable=daemon_reachable,
+            state=old_state,
+            now=now,
+            realert_s=realert_min * 60.0,
+        )
+        if event is None:
+            if new_state != old_state:
+                _save_daemon_liveness_state(new_state, dry_run)
+            return False
+        # Save FIRST (storm guard — see the docstring); only a confirmed
+        # save (or a zero-write dry-run) may push.
+        saved = _save_daemon_liveness_state(new_state, dry_run)
+        if event == "recovered":
+            # Duration off the OLD state: the predicate already reset the
+            # new one.
+            raw_open = old_state.get("episode_open_ts")
+        else:
+            raw_open = new_state.get("episode_open_ts")
+        open_ts = (
+            float(raw_open)
+            if isinstance(raw_open, int | float) and not isinstance(raw_open, bool)
+            else now
+        )
+        duration_s = max(0.0, now - open_ts)
+        dur = _daemon_liveness_duration_label(duration_s)
+        if event == "recovered":
+            msg = f"Happy daemon reachable again after {dur}; spawn lanes re-armed this tick."
+        else:
+            work = _daemon_liveness_suppressed_work()
+            regs = work.get("registrations")
+            ripe = work.get("ripe_infra")
+            n_ticks = new_state.get("consecutive_unreachable")
+            msg = (
+                f"Happy daemon UNREACHABLE for {dur} ({n_ticks} consecutive watcher "
+                f"ticks). Every autonomous spawn lane is no-oping: "
+                f"{'?' if regs is None else regs} registered autonomous session(s) "
+                f"unwatched, {'?' if ripe is None else ripe} ripe infra task(s) "
+                "undispatched. Recovery (login shell, so the #1466 tmux shim "
+                "applies): bash -lc 'happy daemon status; happy daemon start'. "
+                "Watcher never restarts the daemon itself."
+            )
+        print(f"  daemon-liveness: {event} — {msg[:200]}")
+        _append_daemon_liveness_sidecar(
+            {
+                "kind": f"daemon-liveness-{event}",
+                "event": event,
+                "duration_s": round(duration_s, 1),
+                "consecutive_unreachable": new_state.get("consecutive_unreachable"),
+                "state_saved": saved,
+                "message": msg,
+            },
+            dry_run,
+        )
+        if not saved:
+            print(
+                "  daemon-liveness: state save failed; push suppressed (storm guard "
+                "— stderr + sidecar carry the record)",
+                file=sys.stderr,
+            )
+            return True
+        if event == "realert":
+            _telegram_push(msg, dry_run)
+        else:
+            _telegram_push_urgent(msg, dry_run)
+        return True
+    except Exception as exc:  # top-level fail-soft: never take down the tick
+        print(f"  daemon-liveness: pass failed (fail-soft): {exc}", file=sys.stderr)
+        return False
+
+
 # ─── Unfolded-round observer pass (task #1712; origin incident #1639) ────────
 #
 # WHY: task #1639 sat 2 days at `awaiting_promotion` while
@@ -7342,7 +8325,7 @@ def _load_unfolded_round_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -7737,7 +8720,7 @@ def unfolded_round_pass(dry_run: bool) -> bool:  # noqa: C901 — flat sweep/pro
 
         try:
             reg = json.loads(registry_path().read_text())
-        except (OSError, json.JSONDecodeError) as exc:
+        except (OSError, json.JSONDecodeError, UnicodeDecodeError) as exc:
             print(f"  unfolded-round: registry read failed: {exc}", file=sys.stderr)
             return False
         tasks = reg.get("tasks") if isinstance(reg, dict) else None
@@ -7941,7 +8924,7 @@ def _load_registry_drift_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -8138,6 +9121,351 @@ def registry_drift_pass(dry_run: bool) -> bool:
         return False
 
 
+# ─── Pre-dispatch staleness pass (task #2134) ─────────────────────────────────
+#
+# WHY: nothing surfaced queued/blocked infra tasks whose premises a recent
+# commit invalidated — blocked #1217/#1771 kept instructing a gate removed by
+# c20aabc59a; #1718 targeted a scripts/workflow_lint.py that completed #2079
+# had rewritten; 11 queued tasks all touched CLAUDE.md with pairwise
+# merge-conflict risk. A stale dispatch burns a session before the clarifier
+# discovers mootness (the #1985 shape). Every pre-existing "staleness"
+# mechanism is SESSION-staleness; this pass is the first TASK-PREMISE
+# staleness reader. Pure detection logic lives in
+# scripts/predispatch_staleness.py (injected git_log_fn seam + report-only
+# CLI); this block is the thin bounded I/O wrapper, cloning the
+# registry-drift throttle/attempt-stamp shape, the triage-observer marker
+# cap + sidecar overflow, and the partial-bundle listing cap + cursor.
+# ESCALATE-ONLY hard invariant: NEVER a set-status/archive mutation, NEVER a
+# dispatch gate/deferral, NEVER a write to the infra-drain queue or
+# proposed-infra-sweep state — mootness is adjudicated by the spawned
+# clarifier (its Step 0 context pass reads the flag marker) or a human, per
+# the #1918 archive-license discipline.
+
+# Once-daily cadence (surfacing, not tick-rate monitoring; registry-drift
+# precedent). Env EPM_PREDISPATCH_STALENESS_INTERVAL_HOURS, read at CALL
+# time; lo=0.0 lets a live smoke force a run.
+PREDISPATCH_STALENESS_INTERVAL_HOURS = 24.0
+# Re-alert TTL for an UNCHANGED (issue, fingerprint) flag: weekly — a queued
+# task's stale premise is inert until dispatch/triage acts on it. A NEW
+# invalidating commit changes the fingerprint and re-fires immediately.
+PREDISPATCH_STALENESS_REALERT_HOURS = 168.0
+# Per-pass scanned-task cap + persisted cursor (partial-bundle pattern) so
+# tail-of-queue tasks never starve; <= 1 bounded git-log subprocess per
+# scanned task keeps the daily budget fixed.
+PREDISPATCH_STALENESS_TASK_CAP = 40
+# Per-tick epm:progress flag-marker cap (triage-observer pattern). Overflow
+# flags stay sidecar-recorded and UNstamped (only markered flags enter the
+# dedup TTL), so they re-enter the marker queue at the next daily firing.
+PREDISPATCH_STALENESS_MARKER_CAP = 5
+
+
+def _predispatch_staleness_enabled() -> bool:
+    """Kill switch: False when ``EPM_DISABLE_PREDISPATCH_STALENESS`` is set
+    truthy ("1"/"true"/"yes", case-insensitive). Default enabled. Mirrors
+    :func:`_registry_drift_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_PREDISPATCH_STALENESS", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _predispatch_staleness_sidecar_path() -> Path:
+    """DEDICATED pre-dispatch staleness event stream (own stream for clean
+    grep — the registry-drift / triage-observer sidecar precedent)."""
+    return PROJECT_ROOT / ".claude" / "cache" / "predispatch-staleness-events.jsonl"
+
+
+def _predispatch_staleness_state_path() -> Path:
+    """Singleton throttle+dedup+cursor state (deliberately NOT a per-issue GC
+    target): ``{"last_run_ts": <float>, "cursor_idx": <int>,
+    "flagged": {"<issue>": {"<fingerprint>": <last_alert_ts>}}}``. Issue keys
+    are pruned inside the pass once the task leaves the scan scope."""
+    return AUTONOMOUS_REGISTRY_DIR / "predispatch-staleness.json"
+
+
+def _load_predispatch_staleness_state() -> dict:
+    """``{}`` on missing/garbled state; every field read back goes through
+    ``isinstance`` type-guards (mirrors :func:`_load_registry_drift_state`)."""
+    path = _predispatch_staleness_state_path()
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_predispatch_staleness_state(state: dict, dry_run: bool) -> None:
+    """Atomic temp+rename write (fail-soft; mirrors
+    :func:`_save_registry_drift_state`); ``dry_run`` performs zero writes."""
+    if dry_run:
+        print(
+            "  [dry-run] would save predispatch-staleness state "
+            f"(cursor={state.get('cursor_idx')}, flagged={len(state.get('flagged') or {})})"
+        )
+        return
+    dest = _predispatch_staleness_state_path()
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(state))
+        tmp.replace(dest)
+    except OSError as exc:  # pragma: no cover - fail-soft I/O guard
+        print(f"  predispatch-staleness: state save failed: {exc}", file=sys.stderr)
+
+
+def _append_predispatch_staleness_sidecar(event: dict, dry_run: bool) -> None:
+    """Append one JSON line to the predispatch-staleness sidecar (fail-soft).
+    A ``ts`` is stamped; ``dry_run`` reports only (mirrors
+    :func:`_append_registry_drift_sidecar`)."""
+    row = {"ts": datetime.now(tz=UTC).isoformat(), **event}
+    line = json.dumps(row)
+    if dry_run:
+        print(f"  [dry-run] would append predispatch-staleness sidecar row: {line[:160]}")
+        return
+    dest = _predispatch_staleness_sidecar_path()
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as exc:
+        print(f"  predispatch-staleness: sidecar append failed: {exc}", file=sys.stderr)
+
+
+def _predispatch_marker_targets(records) -> list[tuple[int, str, object]]:
+    """Pure expansion of scan records into (issue, fingerprint, record)
+    marker targets: a stale-premise / landed-sibling record flags its own
+    task; a queue-collision record flags EVERY colliding task (each one's
+    clarifier needs the flag), all sharing the record's fingerprint."""
+    out: list[tuple[int, str, object]] = []
+    for rec in records:
+        if rec.kind == "queue-collision":
+            issues = rec.evidence.get("colliding_issues") or [rec.issue]
+        else:
+            issues = [rec.issue]
+        for issue in issues:
+            out.append((int(issue), rec.fingerprint, rec))
+    return out
+
+
+def decide_predispatch_staleness_flags(
+    targets: list[tuple[int, str, object]],
+    flagged: dict,
+    now: float,
+    realert_s: float,
+    marker_cap: int,
+) -> list[dict]:
+    """Pure fire/dedup/cap decision. ``flagged`` is the persisted
+    ``{"<issue>": {"<fp>": last_alert_ts}}`` map. A target FIRES when its
+    (issue, fp) was never alerted or the last alert is STRICTLY older than
+    ``realert_s`` (garbled timestamps degrade to fire-as-if-unalerted — the
+    registry-drift corrupt-state contract). The first ``marker_cap`` fired
+    targets get a marker; overflow stays sidecar-only. Deterministic order:
+    targets are processed sorted by (issue, fingerprint)."""
+    actions: list[dict] = []
+    markers_left = marker_cap
+    for issue, fp, rec in sorted(targets, key=lambda t: (t[0], t[1])):
+        per_issue = flagged.get(str(issue))
+        prev = per_issue.get(fp) if isinstance(per_issue, dict) else None
+        fire = not isinstance(prev, int | float) or (now - prev) > realert_s
+        marker = False
+        if fire and markers_left > 0:
+            marker = True
+            markers_left -= 1
+        actions.append(
+            {"issue": issue, "fingerprint": fp, "record": rec, "fire": fire, "marker": marker}
+        )
+    return actions
+
+
+def _predispatch_staleness_note(issue: int, rec) -> str:
+    """Compose the advisory epm:progress flag note (sentinel-led). The
+    adjudication affordance QUOTES `set-status <N> archived` for the
+    human/clarifier — this pass itself never composes that mutation."""
+    ev = json.dumps(rec.evidence, sort_keys=True)
+    return (
+        f"{_PREDISPATCH_STALENESS_NOTE_SENTINEL} advisory {rec.kind} flag "
+        f"(report-only #2134 pass, fingerprint {rec.fingerprint}): target(s) "
+        f"{rec.target}; evidence: {ev[:1500]}. The premise may be stale or "
+        "collide with sibling work — the clarifier adjudicates at dispatch; "
+        f"to archive: `task.py set-status {issue} archived` — human/clarifier "
+        "only. Nothing was changed automatically."
+    )
+
+
+def predispatch_staleness_pass(dry_run: bool) -> bool:
+    """ESCALATE-ONLY once-daily pre-dispatch task-premise staleness observer
+    (#2134). Scans queued ``proposed`` + ``blocked`` infra/batch tasks whose
+    ``workflow_fix_target:`` files were rewritten by commits newer than the
+    task's creation (>= 3 shared informative tokens between commit subject
+    and task title+body), plus same-file queue collisions and landed-sibling
+    commits; SURFACES the list (sidecar rows + ONE deduped push digest per
+    firing tick + capped per-task ``epm:progress`` flag markers) and mutates
+    NOTHING — never a set-status/archive, never a dispatch gate, never a
+    write to the infra-drain queue or proposed-infra-sweep state (the #1918
+    archive-license discipline; the flag's consumer is the spawned
+    clarifier's Step 0 context pass, or a human).
+
+    ADVISORY pass, not a guarantee: the daily cadence means a task filed and
+    dispatched within <24h of the invalidating commit is never scanned
+    pre-dispatch. Cursor cycle time: at the per-pass cap of
+    ``PREDISPATCH_STALENESS_TASK_CAP`` (40) and the current ~60-task queue
+    depth, a full queue cycle takes ~2 daily firings.
+
+    Bounds: once-daily throttle with the attempt stamp saved BEFORE
+    collecting (registry-drift pattern); per-pass task cap + persisted
+    cursor (partial-bundle pattern) scoping the GIT-BACKED signals only —
+    the git-free queue-collision grouping is built from the FULL collected
+    queue every firing, so two colliding tasks on opposite sides of a
+    window boundary still co-detect (#2134 v2); <= 1 bounded git-log
+    subprocess per scanned task; marker cap per tick with sidecar-recorded
+    overflow (triage-observer pattern) — the dedup TTL is stamped ONLY for
+    flags whose marker was composed this firing, so an over-cap flag
+    re-enters the marker queue at the next daily firing (cap 5/day -> full
+    coverage of a 28-flag backlog in ~6 days) while its sidecar row lands
+    every firing; per-(issue, fingerprint) fire-once + 168h TTL re-alert.
+    Fail toward silence on every unreadable input (registry, body,
+    git — a failed git log never reads as "no staleness"). Daemon-INDEPENDENT
+    (read-only registry/body/git reads; marker posts go via the ``task.py``
+    subprocess from PROJECT_ROOT on ``main``). Returns True when any flag
+    fired this run."""
+    if not _predispatch_staleness_enabled():
+        print("  predispatch-staleness: disabled via EPM_DISABLE_PREDISPATCH_STALENESS; skipping")
+        return False
+    try:
+        now = time.time()
+        interval_h = _env_float(
+            "EPM_PREDISPATCH_STALENESS_INTERVAL_HOURS",
+            PREDISPATCH_STALENESS_INTERVAL_HOURS,
+            lo=0.0,
+            hi=720.0,
+        )
+        realert_h = _env_float(
+            "EPM_PREDISPATCH_STALENESS_REALERT_HOURS",
+            PREDISPATCH_STALENESS_REALERT_HOURS,
+            lo=1.0,
+            hi=2160.0,
+        )
+        task_cap = int(
+            _env_float(
+                "EPM_PREDISPATCH_STALENESS_TASK_CAP",
+                float(PREDISPATCH_STALENESS_TASK_CAP),
+                lo=1.0,
+                hi=500.0,
+            )
+        )
+        marker_cap = int(
+            _env_float(
+                "EPM_PREDISPATCH_STALENESS_MARKER_CAP",
+                float(PREDISPATCH_STALENESS_MARKER_CAP),
+                lo=0.0,
+                hi=50.0,
+            )
+        )
+        state = _load_predispatch_staleness_state()
+        last = state.get("last_run_ts")
+        if isinstance(last, int | float) and (now - last) < interval_h * 3600.0:
+            return False  # throttled — silent (once-daily surfacing cadence)
+        state["last_run_ts"] = now
+        # Stamp the ATTEMPT before collecting: a crashing collect/scan is
+        # bounded to one error sidecar row per throttle interval instead of
+        # spamming every 10-min tick (registry-drift precedent).
+        _save_predispatch_staleness_state(state, dry_run)
+
+        # Lazy sibling import (watcher convention — resolves via the
+        # scripts/ sys.path bootstrap at module top).
+        import predispatch_staleness as pds
+
+        tasks, repo_root = pds.collect_tasks()
+        tasks.sort(key=lambda t: t["id"])
+        raw_cursor = state.get("cursor_idx")
+        cursor = int(raw_cursor) if isinstance(raw_cursor, int | float) else 0
+        if cursor >= len(tasks):
+            cursor = 0
+        window = tasks[cursor : cursor + task_cap]
+        next_cursor = (cursor + task_cap) if (cursor + task_cap) < len(tasks) else 0
+
+        # Git-backed signals scan the WINDOW (cap + cursor bound the git
+        # budget); the git-free queue-collision grouping reads the FULL
+        # collected queue, so cross-window collisions co-detect (#2134 v2).
+        records = pds.scan(
+            window,
+            git_log_fn=lambda paths, since: pds.git_log_for_paths(repo_root, paths, since),
+            collision_tasks=tasks,
+        )
+        raw_flagged = state.get("flagged")
+        flagged: dict = raw_flagged if isinstance(raw_flagged, dict) else {}
+        actions = decide_predispatch_staleness_flags(
+            _predispatch_marker_targets(records), flagged, now, realert_h * 3600.0, marker_cap
+        )
+        fired = [a for a in actions if a["fire"]]
+        for a in fired:
+            rec = a["record"]
+            _append_predispatch_staleness_sidecar(
+                {
+                    "kind": "predispatch-staleness",
+                    "issue": a["issue"],
+                    "flag_kind": rec.kind,
+                    "target": rec.target,
+                    "fingerprint": a["fingerprint"],
+                    "evidence": rec.evidence,
+                    # `marker` records the compose DECISION (cap bookkeeping);
+                    # _post_progress_marker is fail-soft and post != seen.
+                    "marker": a["marker"],
+                },
+                dry_run,
+            )
+            if a["marker"]:
+                _post_progress_marker(
+                    a["issue"],
+                    _predispatch_staleness_note(a["issue"], rec),
+                    dry_run,
+                    label="predispatch-staleness",
+                )
+                # Stamp the dedup TTL ONLY for markered flags (#2134 v2):
+                # an over-cap flag stays UNstamped so it re-enters the
+                # marker queue at the next daily firing instead of waiting
+                # out the 168h TTL with a sidecar-only record.
+                per_issue = flagged.setdefault(str(a["issue"]), {})
+                if isinstance(per_issue, dict):
+                    per_issue[a["fingerprint"]] = now
+                else:
+                    flagged[str(a["issue"])] = {a["fingerprint"]: now}
+        for a in fired[:5]:
+            print(
+                f"  predispatch-staleness: #{a['issue']} {a['record'].kind} "
+                f"[{a['fingerprint']}] {a['record'].target}"
+            )
+        if fired:
+            n_markers = sum(1 for a in fired if a["marker"])
+            _telegram_push(
+                f"predispatch-staleness (report-only #2134 pass): {len(fired)} "
+                "stale-premise/collision flag(s) on queued infra tasks — e.g. "
+                + "; ".join(f"#{a['issue']} {a['record'].kind}" for a in fired[:3])
+                + f". {n_markers} flag marker(s) posted; details: "
+                ".claude/cache/predispatch-staleness-events.jsonl. The clarifier "
+                "adjudicates at dispatch. Nothing was changed automatically.",
+                dry_run,
+            )
+        # Self-prune flagged entries whose issue left the scan scope for good
+        # (dispatched / completed / archived / parked on_hold).
+        in_scope = {str(t["id"]) for t in tasks}
+        for key in list(flagged):
+            if key not in in_scope:
+                flagged.pop(key, None)
+        state["flagged"] = flagged
+        state["cursor_idx"] = next_cursor
+        _save_predispatch_staleness_state(state, dry_run)
+        return bool(fired)
+    except Exception as exc:  # top-level fail-soft: never take down the tick
+        print(f"  predispatch-staleness: pass failed (fail-soft): {exc}", file=sys.stderr)
+        # Error row only — NO flagged/cursor write (the next in-interval tick
+        # stays throttled by the attempt stamp saved before the collect).
+        _append_predispatch_staleness_sidecar(
+            {"kind": "predispatch-staleness-error", "error": str(exc)[:500]}, dry_run
+        )
+        return False
+
+
 # ─── Stash/rescue-backlog audit pass (task #1806) ─────────────────────────────
 #
 # WHY: #1751 surfaces NEW `stash: KEPT` events at Step 10d merge sites only.
@@ -8179,6 +9507,27 @@ STASH_RESCUE_REALERT_HOURS = 168.0
 # seconds; a stranded one ages past this gate, and #1751's Step 10d KEPT-stash
 # duty covers the fresh window. Env EPM_STASH_RESCUE_MIN_AGE_DAYS.
 STASH_RESCUE_MIN_AGE_DAYS = 7.0
+# Per-tick cap on #2295 owner-attribution markers (mirrors
+# EPM_TRIAGE_OBSERVER_MARKER_CAP): overflow entries stay sidecar-recorded
+# only. Env EPM_STASH_RESCUE_MARKER_CAP, read at call time.
+STASH_RESCUE_MARKER_CAP = 5.0
+
+# Task statuses at which an attribution marker reaches no live actor —
+# surfaced as `all_owners_terminal` counts in the repo-level push (#2295).
+_STASH_ATTRIB_TERMINAL_STATUSES = frozenset({"completed", "archived"})
+
+# Issue-keyed path grammars mapping a stash's file list to owning task ids
+# (#2295): tasks/<status>/<N>/…, eval_results/issue_<N>/…,
+# figures/issue_<N>/…, scripts/issue<N>_*, tests/test_issue<N>*,
+# docs/**/issue_<N>*.
+_STASH_ATTRIB_PATH_PATTERNS: tuple[re.Pattern[str], ...] = (
+    re.compile(r"^tasks/[^/]+/(\d+)/"),
+    re.compile(r"^eval_results/issue_(\d+)/"),
+    re.compile(r"^figures/issue_(\d+)/"),
+    re.compile(r"^scripts/issue(\d+)_"),
+    re.compile(r"^tests/test_issue(\d+)"),
+    re.compile(r"^docs/(?:[^/]+/)*issue_(\d+)"),
+)
 
 
 def _stash_rescue_enabled() -> bool:
@@ -8186,6 +9535,15 @@ def _stash_rescue_enabled() -> bool:
     truthy ("1"/"true"/"yes", case-insensitive). Default enabled. Mirrors
     :func:`_registry_drift_enabled`."""
     raw = os.environ.get("EPM_DISABLE_STASH_RESCUE_AUDIT", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _stash_rescue_attribution_enabled() -> bool:
+    """Kill switch for the #2295 owner-attribution leg ONLY: False when
+    ``EPM_DISABLE_STASH_RESCUE_ATTRIBUTION`` is set truthy. The base pass-34
+    audit is unaffected; ``EPM_DISABLE_STASH_RESCUE_AUDIT`` still disables
+    both (the leg runs inside the pass)."""
+    raw = os.environ.get("EPM_DISABLE_STASH_RESCUE_ATTRIBUTION", "").strip().lower()
     return raw not in {"1", "true", "yes"}
 
 
@@ -8222,7 +9580,7 @@ def _load_stash_rescue_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -8268,17 +9626,20 @@ def _collect_stash_rescue_backlog(min_age_s: float, now: float) -> dict:
     fail-soft (a failed ``git stash list`` must NEVER read as "backlog
     cleared").
 
-    Returns ``{"stashes": [(ct, subject), ...], "rescues": [(name, mtime),
-    ...]}``. Stash identity = ``(ct, subject)`` — deliberately NOT the
-    positional ``stash@{N}`` selector, which renumbers on every push/pop and
-    would churn the fingerprint. Each line is parsed on the FIRST tab only
-    (``%gs`` subjects can carry user text with embedded tabs). Rescue
-    identity = entry name (dirs AND loose files, e.g. ``stash-*.patch``).
-    ENOENT on the rescue dir ITSELF returns an EMPTY rescue list (legitimate
-    absence — lazily created; see the pass header); every OTHER OSError
-    raises."""
+    Returns ``{"stashes": [(ct, subject), ...], "stash_entries": [(ct, sha,
+    subject), ...], "rescues": [(name, mtime), ...]}``. FINGERPRINT identity
+    stays ``(ct, subject)`` — deliberately NOT the positional ``stash@{N}``
+    selector, which renumbers on every push/pop and would churn the
+    fingerprint; the ``%H`` stash sha (#2295) rides the SEPARATE
+    ``stash_entries`` key for the owner-attribution leg and stays OUT of the
+    fingerprint (an fp change still means the backlog SET changed). Each
+    line is split on the first TWO tabs only (``%gs`` subjects can carry
+    user text with embedded tabs). Rescue identity = entry name (dirs AND
+    loose files, e.g. ``stash-*.patch``). ENOENT on the rescue dir ITSELF
+    returns an EMPTY rescue list (legitimate absence — lazily created; see
+    the pass header); every OTHER OSError raises."""
     proc = subprocess.run(  # fixed read-only argv — never a mutating stash verb
-        ["git", "-C", str(PROJECT_ROOT), "stash", "list", "--format=%ct%x09%gs"],
+        ["git", "-C", str(PROJECT_ROOT), "stash", "list", "--format=%ct%x09%H%x09%gs"],
         capture_output=True,
         text=True,
         timeout=10,
@@ -8288,14 +9649,17 @@ def _collect_stash_rescue_backlog(min_age_s: float, now: float) -> dict:
             f"git stash list failed rc={proc.returncode}: {proc.stderr.strip()[:200]}"
         )
     stashes: list[tuple[int, str]] = []
+    stash_entries: list[tuple[int, str, str]] = []
     for line in proc.stdout.splitlines():
         if not line.strip():
             continue
-        parts = line.split("\t", 1)  # FIRST tab only — subjects can carry tabs
+        parts = line.split("\t", 2)  # first TWO tabs only — subjects can carry tabs
         ct = int(parts[0])  # non-integer ct = garbled output -> fail-soft arm
-        subject = parts[1] if len(parts) > 1 else ""
+        sha = parts[1] if len(parts) > 1 else ""
+        subject = parts[2] if len(parts) > 2 else ""
         if now - ct > min_age_s:
             stashes.append((ct, subject))
+            stash_entries.append((ct, sha, subject))
     rescues: list[tuple[str, float]] = []
     root = _stash_rescue_rescue_root()
     try:
@@ -8307,8 +9671,9 @@ def _collect_stash_rescue_backlog(min_age_s: float, now: float) -> dict:
         if now - mtime > min_age_s:
             rescues.append((entry.name, mtime))
     stashes.sort()
+    stash_entries.sort()
     rescues.sort()
-    return {"stashes": stashes, "rescues": rescues}
+    return {"stashes": stashes, "stash_entries": stash_entries, "rescues": rescues}
 
 
 def _stash_rescue_fingerprint(collected: dict) -> str:
@@ -8325,6 +9690,153 @@ def _stash_rescue_fingerprint(collected: dict) -> str:
         }
     )
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:12]
+
+
+def _stash_rescue_file_list(sha: str) -> list[str]:
+    """READ-ONLY file list of one stash entry: ``git stash show --name-only
+    <sha>`` — resolved by SHA, never the renumbering positional ``stash@{N}``
+    selector. Raises on rc != 0; the attribution leg's per-entry guard owns
+    fail-soft (#2295)."""
+    proc = subprocess.run(  # fixed read-only argv — never a mutating stash verb
+        ["git", "-C", str(PROJECT_ROOT), "stash", "show", "--name-only", sha],
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    if proc.returncode != 0:
+        raise RuntimeError(
+            f"git stash show --name-only {sha[:12]} failed rc={proc.returncode}: "
+            f"{proc.stderr.strip()[:200]}"
+        )
+    return [ln.strip() for ln in proc.stdout.splitlines() if ln.strip()]
+
+
+def _stash_attrib_task_ids(paths: list[str]) -> tuple[dict[int, list[str]], list[str]]:
+    """Map stash file paths to owning task ids via the issue-keyed path
+    grammars (``_STASH_ATTRIB_PATH_PATTERNS``). Returns ``({task_id:
+    [its paths]}, [unmatched paths])`` — every path lands in exactly one
+    bucket (#2295)."""
+    owned: dict[int, list[str]] = {}
+    unmatched: list[str] = []
+    for path in paths:
+        for pattern in _STASH_ATTRIB_PATH_PATTERNS:
+            m = pattern.match(path)
+            if m:
+                owned.setdefault(int(m.group(1)), []).append(path)
+                break
+        else:
+            unmatched.append(path)
+    return owned, unmatched
+
+
+def _stash_rescue_attribution_leg(
+    collected: dict, state: dict, now: float, realert_s: float, dry_run: bool
+) -> int:
+    """#2295 owner-attribution leg of pass 34 — strictly ADDITIVE and
+    ESCALATE-ONLY: read-only ``git stash show``, capped/deduped
+    ``epm:progress`` markers, sidecar rows. NEVER a ``stash
+    pop/apply/drop``, never an ``rm``, never a status mutation, never a
+    session stop.
+
+    For each aged BARE-AUTOSTASH entry (subject exactly ``autostash``) in
+    ``collected["stash_entries"]`` (a legacy snapshot without that key is a
+    graceful no-op), maps the stash's file list to owning task ids and posts
+    ONE durable ``epm:progress`` marker per (task, stash-sha) episode —
+    sentinel ``_STASH_RESCUE_ATTRIB_NOTE_SENTINEL``, posted ``by="unknown"``
+    (the #967 fail-toward-triage convention: the owning session's next
+    pre-dispatch triage picks it up) — carrying the stash sha12 + committer
+    date, THIS task's file subset, the rescue-patch path, the read-only
+    triage command, and an explicit nothing-was-popped/dropped/applied
+    statement. Marker budget per tick: ``EPM_STASH_RESCUE_MARKER_CAP``
+    (default 5; overflow stays sidecar-only). Dedup: fire-once per
+    (task_id, stash_sha) in ``state["attr"]`` with re-alert after
+    ``realert_s`` (the pass's 168h TTL); the caller persists ``state``.
+    Unattributable entries get an ``attribution_status: "unattributed"``
+    sidecar row — never silently dropped. Returns the count of attributed
+    entries whose owning tasks are ALL completed/archived
+    (``all_owners_terminal`` — the caller surfaces it in the repo-level
+    push). Per-entry failures log + continue; the base pass never dies
+    here. ``dry_run`` composes + logs but writes nothing (the marker,
+    sidecar, and state writes all thread ``dry_run``)."""
+    entries = [
+        (ct, sha, subject)
+        for ct, sha, subject in (collected.get("stash_entries") or [])
+        if subject.strip() == "autostash"
+    ]
+    if not entries:
+        return 0
+    cap = int(_env_float("EPM_STASH_RESCUE_MARKER_CAP", STASH_RESCUE_MARKER_CAP, lo=0, hi=100))
+    attr_state = state.get("attr")
+    if not isinstance(attr_state, dict):
+        attr_state = {}
+    state["attr"] = attr_state
+    budget = cap
+    n_all_owners_terminal = 0
+    rescue_root = _stash_rescue_rescue_root()
+    for ct, sha, _subject in entries:
+        try:
+            sha12 = sha[:12]
+            committer_date = datetime.fromtimestamp(ct, tz=UTC).isoformat()
+            files = _stash_rescue_file_list(sha)
+            owned, unmatched = _stash_attrib_task_ids(files)
+            if not owned:
+                _append_stash_rescue_sidecar(
+                    {
+                        "kind": "stash-rescue-attribution",
+                        "sha12": sha12,
+                        "committer_date": committer_date,
+                        "attribution_status": "unattributed",
+                        "files": files[:40],
+                    },
+                    dry_run,
+                )
+                continue
+            statuses = {task: _task_status(task) for task in sorted(owned)}
+            all_terminal = all(
+                status in _STASH_ATTRIB_TERMINAL_STATUSES for status in statuses.values()
+            )
+            if all_terminal:
+                n_all_owners_terminal += 1
+            _append_stash_rescue_sidecar(
+                {
+                    "kind": "stash-rescue-attribution",
+                    "sha12": sha12,
+                    "committer_date": committer_date,
+                    "attribution_status": "attributed",
+                    "tasks": {str(task): owned[task][:40] for task in sorted(owned)},
+                    "task_statuses": {str(task): statuses[task] for task in sorted(owned)},
+                    "unmatched_files": unmatched[:40],
+                    "all_owners_terminal": all_terminal,
+                },
+                dry_run,
+            )
+            for task in sorted(owned):
+                key = f"{task}|{sha}"
+                last_post = attr_state.get(key)
+                if isinstance(last_post, int | float) and (now - last_post) <= realert_s:
+                    continue  # fire-once per (task, stash-sha) episode; TTL re-alert
+                if budget <= 0:
+                    continue  # over-cap: stays sidecar-recorded only
+                patch_path = rescue_root / f"stash-{sha12}.patch"
+                note = (
+                    f"{_STASH_RESCUE_ATTRIB_NOTE_SENTINEL} stranded root-sync autostash "
+                    f"{sha12} (committer date {committer_date}) touches THIS task's "
+                    f"files: {', '.join(owned[task][:12])}. Rescue patch (written at "
+                    f"triage time): {patch_path}. Read-only triage: `uv run python "
+                    f"scripts/sync_repo_root.py --triage-autostash`. Nothing was "
+                    f"popped, dropped, or applied — escalate-only attribution (#2295)."
+                )
+                _post_progress_marker(
+                    task, note, dry_run, label="stash-rescue-attribution", by="unknown"
+                )
+                attr_state[key] = now
+                budget -= 1
+        except Exception as exc:  # per-entry fail-soft: log + continue (#2295)
+            print(
+                f"  stash-rescue: attribution failed for stash {sha[:12]}: {exc}",
+                file=sys.stderr,
+            )
+    return n_all_owners_terminal
 
 
 def decide_stash_rescue_alert(fp: str, state: dict, now: float, realert_s: float) -> bool:
@@ -8346,16 +9858,22 @@ def decide_stash_rescue_alert(fp: str, state: dict, now: float, realert_s: float
 def stash_rescue_audit_pass(dry_run: bool) -> bool:
     """ESCALATE-ONLY once-daily audit of the shared repo root's ``git stash``
     backlog + the ``~/.task-workflow/root-sync-rescue/`` rescue entries
-    (#1806). NEVER mutates git or filesystem state (no ``stash
-    pop/drop/apply``, no ``rm``), posts NO task markers, writes ONLY its
-    state singleton + sidecar; triage stays the human-owned companion task
-    #1736. NO double-read confirm gap (durable files, not in-flight
-    mutations — the deliberate delta vs :func:`registry_drift_pass`).
-    Fail-soft: a collect exception logs stderr + one error sidecar row per
-    throttle interval (the attempt stamp is saved BEFORE collecting) and is
-    NEVER read as "backlog cleared" (no fp write on error), never crashes
-    the tick. Daemon-independent (one read-only git subprocess + one dir
-    scan). Returns True when a push fired this run."""
+    (#1806), plus the #2295 per-entry OWNER-ATTRIBUTION leg
+    (:func:`_stash_rescue_attribution_leg`). NEVER mutates git or filesystem
+    state (no ``stash pop/drop/apply``, no ``rm``, no status mutation, no
+    session stop); apart from the attribution leg's capped/deduped
+    anti-liveness ``epm:progress`` markers (sentinel
+    ``_STASH_RESCUE_ATTRIB_NOTE_SENTINEL``, ``by="unknown"``, kill switch
+    ``EPM_DISABLE_STASH_RESCUE_ATTRIBUTION=1``) it posts NO task markers and
+    writes ONLY its state singleton + sidecar; triage stays the human-owned
+    companion task #1736. NO double-read confirm gap (durable files, not
+    in-flight mutations — the deliberate delta vs
+    :func:`registry_drift_pass`). Fail-soft: a collect exception logs stderr
+    + one error sidecar row per throttle interval (the attempt stamp is
+    saved BEFORE collecting) and is NEVER read as "backlog cleared" (no fp
+    write on error), never crashes the tick; attribution failures are
+    per-entry fail-soft. Daemon-independent (read-only git subprocesses +
+    one dir scan). Returns True when a push fired this run."""
     if not _stash_rescue_enabled():
         print("  stash-rescue: disabled via EPM_DISABLE_STASH_RESCUE_AUDIT; skipping")
         return False
@@ -8414,7 +9932,19 @@ def stash_rescue_audit_pass(dry_run: bool) -> bool:
             f"  stash-rescue: {len(stashes)} aged stash(es) "
             f"(oldest {oldest_stash_age_d:.0f}d) + {len(rescues)} rescue entr(y/ies)"
         )
+        n_owners_terminal = 0
+        if _stash_rescue_attribution_enabled():
+            n_owners_terminal = _stash_rescue_attribution_leg(
+                collected, state, now, realert_h * 3600.0, dry_run
+            )
         if fire:
+            terminal_note = (
+                f" {n_owners_terminal} attributed autostash entr(y/ies) map ONLY to "
+                f"completed/archived tasks — their attribution markers reach no live "
+                f"session; triage falls to you."
+                if n_owners_terminal
+                else ""
+            )
             _telegram_push(
                 f"STASH/RESCUE backlog (escalate-only #1806 pass): {len(stashes)} "
                 f"git stash entr(y/ies) on the shared repo root (oldest "
@@ -8422,7 +9952,7 @@ def stash_rescue_audit_pass(dry_run: bool) -> bool:
                 f"under ~/.task-workflow/root-sync-rescue/. Review (read-only): "
                 f"`git stash list`, `ls ~/.task-workflow/root-sync-rescue/`. "
                 f"Triage decision is human — companion task #1736. Nothing was "
-                f"changed automatically.",
+                f"changed automatically.{terminal_note}",
                 dry_run,
             )
         _save_stash_rescue_state(
@@ -8504,7 +10034,7 @@ def _load_root_unstaged_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -8798,6 +10328,309 @@ def root_unstaged_audit_pass(dry_run: bool) -> bool:
         return False
 
 
+# ─── Pending-call wedge observer pass (task #2115) ────────────────────────────
+#
+# WHY: ~12-18 autonomous /issue sessions (2026-08-04..08-06) wedged 1.2-2.4h
+# each at a Step 10d pre-push lint-gate Bash dispatch — the orchestrator
+# issued the tool call and NO tool_result ever arrived (not even the instant
+# "Async task launched" ack a run_in_background call returns). Four candidate
+# mechanisms were excluded under control (permission prompt, git index-lock,
+# unbounded hook cost, cancellation leaving survivors — #2115 plan v3 §0.0),
+# so the stall sits in the harness/transport layer OUTSIDE this repo:
+# DETECTION is the deliverable. The ~2.2h stall fence was the only exit and
+# several respawns re-wedged at the identical call; this pass converts the
+# silent stall into a bounded, attributable detection within ~one watcher
+# cycle past the window. ESCALATE-ONLY (the #2015 pass-36 posture): sidecar
+# rows + one deduped push per episode; NEVER mutates task or git state,
+# posts NO task markers, emits NO respawn/stop.
+
+# Flag threshold (minutes) for a pending Bash tool call. Source: parity with
+# tick_triage.py's staleness window (STALE_S_DEFAULT = 25 * 60) so this lane
+# introduces no third, inconsistent staleness notion; a FOREGROUND Bash call
+# hard-caps at 10 min and a background Bash acks instantly, so 25 min gives
+# >= 2.5x headroom over the longest legitimate Bash pend — which is what
+# makes the window safe under the Bash-only keying below. Env
+# EPM_PENDING_CALL_WEDGE_MIN.
+PENDING_CALL_WEDGE_MIN = 25.0
+# The ONLY tool whose pending call is wedge evidence. Bash-only keying is
+# LOAD-BEARING, not a detail (#2115 plan v3 §6 prong 1): the Agent tool
+# legitimately pends 30-90+ min in nearly every healthy autonomous session —
+# an untyped predicate would flag routine health and the lane would be
+# ignored or kill-switched. AskUserQuestion / TaskOutput / Monitor (and
+# every other non-Bash tool) are exempt the same way: ANY pending non-Bash
+# block in the final assistant turn suppresses the flag (fail toward
+# silence).
+PENDING_CALL_WEDGE_TOOL = "Bash"
+# Dedup-episode retention: a (issue, tool_use id) episode key older than
+# this is pruned from the state singleton (tool_use ids are unique per
+# call, so a stale key can never re-fire — pruning is pure hygiene).
+PENDING_CALL_EPISODE_TTL_S = 7 * 86400.0
+
+
+def _pending_call_wedge_enabled() -> bool:
+    """Kill switch: False when ``EPM_DISABLE_PENDING_CALL_WEDGE`` is set
+    truthy ("1"/"true"/"yes", case-insensitive). Default enabled. Mirrors
+    :func:`_root_unstaged_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_PENDING_CALL_WEDGE", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _pending_call_sidecar_path() -> Path:
+    """DEDICATED pending-call wedge event stream (own stream for clean grep
+    — the root-unstaged / stash-rescue sidecar precedent)."""
+    return PROJECT_ROOT / ".claude" / "cache" / "pending-call-wedge-events.jsonl"
+
+
+def _pending_call_state_path() -> Path:
+    """Singleton push-dedup state (deliberately NOT a per-issue GC target):
+    ``{"episodes": {"<issue>:<tool_use_id>": <first-flag ts>}}``."""
+    return AUTONOMOUS_REGISTRY_DIR / "pending-call-wedge.json"
+
+
+def _load_pending_call_state() -> dict:
+    """``{}`` on missing/garbled state; ``isinstance`` type-guards on read
+    (mirrors :func:`_load_root_unstaged_state`)."""
+    path = _pending_call_state_path()
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_pending_call_state(state: dict, dry_run: bool) -> None:
+    """Atomic temp+rename write of the pending-call wedge state (fail-soft;
+    mirrors :func:`_save_root_unstaged_state`); ``dry_run`` performs zero
+    writes."""
+    if dry_run:
+        print(
+            f"  [dry-run] would save pending-call-wedge state "
+            f"({len(state.get('episodes', {}))} episode(s))"
+        )
+        return
+    dest = _pending_call_state_path()
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(state))
+        tmp.replace(dest)
+    except OSError as exc:  # pragma: no cover - fail-soft I/O guard
+        print(f"  pending-call-wedge: state save failed: {exc}", file=sys.stderr)
+
+
+def _append_pending_call_sidecar(event: dict, dry_run: bool) -> None:
+    """Append one JSON line to the pending-call wedge sidecar (fail-soft). A
+    ``ts`` is stamped; ``dry_run`` reports only (mirrors
+    :func:`_append_root_unstaged_sidecar`)."""
+    row = {"ts": datetime.now(tz=UTC).isoformat(), **event}
+    line = json.dumps(row)
+    if dry_run:
+        print(f"  [dry-run] would append pending-call-wedge sidecar row: {line[:160]}")
+        return
+    dest = _pending_call_sidecar_path()
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as exc:
+        print(f"  pending-call-wedge: sidecar append failed: {exc}", file=sys.stderr)
+
+
+def _last_assistant_tool_uses(rows: list) -> tuple[int, dict, list[tuple[str, str]]] | None:
+    """Locate the tail's LAST ``type == "assistant"`` row and extract its
+    ``(id, name)`` tool_use pairs. Returns ``(index, row, pairs)``; ``None``
+    — fail toward silence — when no assistant row exists, its content is not
+    a list, any tool_use block is malformed (missing / non-str ``id`` or
+    ``name``), or the row carries no tool_use block at all (the turn ended
+    in text). Predicate helper of :func:`decide_pending_call_wedge`."""
+    for i in range(len(rows) - 1, -1, -1):
+        row = rows[i]
+        if not isinstance(row, dict) or row.get("type") != "assistant":
+            continue
+        msg = row.get("message")
+        content = msg.get("content") if isinstance(msg, dict) else None
+        if not isinstance(content, list):
+            return None
+        tool_uses: list[tuple[str, str]] = []
+        for block in content:
+            if not isinstance(block, dict) or block.get("type") != "tool_use":
+                continue
+            tid, name = block.get("id"), block.get("name")
+            if not isinstance(tid, str) or not tid or not isinstance(name, str) or not name:
+                return None  # malformed tool_use block — fail toward silence
+            tool_uses.append((tid, name))
+        if not tool_uses:
+            return None
+        return i, row, tool_uses
+    return None
+
+
+def _resolved_tool_result_ids(rows: list, after_idx: int) -> set[str]:
+    """``tool_use_id``s of every ``tool_result`` block in ``type == "user"``
+    rows AFTER ``after_idx`` — a matching result resolves its call. Predicate
+    helper of :func:`decide_pending_call_wedge`."""
+    resolved: set[str] = set()
+    for later in rows[after_idx + 1 :]:
+        if not isinstance(later, dict) or later.get("type") != "user":
+            continue
+        lmsg = later.get("message")
+        lcontent = lmsg.get("content") if isinstance(lmsg, dict) else None
+        if not isinstance(lcontent, list):
+            continue
+        for block in lcontent:
+            if isinstance(block, dict) and block.get("type") == "tool_result":
+                rid = block.get("tool_use_id")
+                if isinstance(rid, str):
+                    resolved.add(rid)
+    return resolved
+
+
+def decide_pending_call_wedge(
+    rows: list[dict] | None, *, window_s: float, now: float
+) -> dict | None:
+    """Pure #2115 pending-call wedge predicate over parsed transcript-tail
+    rows. Fires — returns ``{"tool_use_id", "n_pending", "age_s",
+    "row_ts"}`` — iff ALL hold:
+
+    - the tail's LAST ``type == "assistant"`` row carries >= 1 ``tool_use``
+      content block (a later assistant row means the session took another
+      turn — not this wedge shape; non-assistant rows AFTER it, e.g. the
+      tick cron's queue-operation records, do not reset the read);
+    - EVERY block of that row still PENDING (no ``tool_result`` block with
+      a matching ``tool_use_id`` in any LATER ``type == "user"`` row) is a
+      **Bash** call (:data:`PENDING_CALL_WEDGE_TOOL`) — ANY pending
+      non-Bash block (Agent / AskUserQuestion / TaskOutput / Monitor /
+      anything else) suppresses the flag, the LOAD-BEARING typed keying;
+    - >= 1 block is pending at all (a fully-resolved turn never fires);
+    - the row's top-level ISO timestamp parses (:func:`_row_ts`) and is
+      >= ``window_s`` older than ``now``.
+
+    Fail-toward-silence contract (escalate-only lane — a parse bug must
+    never spam the fleet): ``None``/empty ``rows``, no assistant row, no
+    ``tool_use`` blocks (the turn ended in text), a malformed ``tool_use``
+    block (missing / non-str ``id`` or ``name``), a missing/unparseable
+    row timestamp, a future-dated row, and an age under the window ALL
+    return ``None``."""
+    if not isinstance(rows, list) or not rows:
+        return None
+    found = _last_assistant_tool_uses(rows)
+    if found is None:
+        return None
+    last_idx, last, tool_uses = found
+    resolved = _resolved_tool_result_ids(rows, last_idx)
+    pending = [(tid, name) for tid, name in tool_uses if tid not in resolved]
+    if not pending:
+        return None
+    if any(name != PENDING_CALL_WEDGE_TOOL for _tid, name in pending):
+        return None  # Bash-only keying — a pending Agent/etc. is routine health
+    ts = _row_ts(last)
+    if ts is None:
+        return None
+    age_s = now - ts
+    if age_s < window_s:
+        return None
+    return {
+        "tool_use_id": pending[0][0],
+        "n_pending": len(pending),
+        "age_s": age_s,
+        "row_ts": ts,
+    }
+
+
+def pending_call_wedge_pass(dry_run: bool, *, pids_by_sid: dict[str, int] | None) -> bool:
+    """ESCALATE-ONLY observer for the #2115 forever-pending Bash tool-call
+    wedge: for every registered session (auto + manual), read the
+    transcript tail (happy-log-resolved, 256 KB — the #1104 wedge-probe
+    width) and flag when :func:`decide_pending_call_wedge` fires. Channels:
+    one sidecar row per flagged tick + ONE deduped fail-soft push per
+    (issue, tool_use id) episode. NEVER mutates task or git state, posts NO
+    task markers, emits NO respawn/stop — detection only (the stall
+    mechanism is outside this repo; #2115 plan v3 §1). Fail-soft top-level
+    guard; an unresolvable transcript / missing pid map skips silently.
+    Returns True when >= 1 session was FLAGGED this run (the decision, not
+    push delivery — ``dry_run`` computes flags but performs zero writes and
+    no real push)."""
+    if not _pending_call_wedge_enabled():
+        print("  pending-call-wedge: disabled via EPM_DISABLE_PENDING_CALL_WEDGE; skipping")
+        return False
+    if not pids_by_sid:
+        print("  pending-call-wedge: no live sid->pid map (daemon down or empty); skipping")
+        return False
+    try:
+        now = time.time()
+        window_min = _env_float(
+            "EPM_PENDING_CALL_WEDGE_MIN", PENDING_CALL_WEDGE_MIN, lo=1.0, hi=1440.0
+        )
+        state = _load_pending_call_state()
+        episodes = state.get("episodes")
+        if not isinstance(episodes, dict):
+            episodes = {}
+        flagged_any = False
+        for issue, rec in sorted(_issue_registrations().items()):
+            hit: dict | None = None
+            hit_sid: str | None = None
+            for sid in sorted(rec.get("sids", ())):
+                pid = pids_by_sid.get(sid)
+                if not isinstance(pid, int):
+                    continue
+                rows = _transcript_tail_rows(pid, max_bytes=262144)
+                if rows is None:
+                    continue
+                hit = decide_pending_call_wedge(rows, window_s=window_min * 60.0, now=now)
+                if hit is not None:
+                    hit_sid = sid
+                    break
+            if hit is None:
+                continue
+            flagged_any = True
+            episode_key = f"{issue}:{hit['tool_use_id']}"
+            fire = episode_key not in episodes
+            episodes[episode_key] = episodes.get(episode_key, now)
+            age_min = hit["age_s"] / 60.0
+            _append_pending_call_sidecar(
+                {
+                    "kind": "pending-call-wedge",
+                    "issue": issue,
+                    "sid": hit_sid,
+                    "tool_use_id": hit["tool_use_id"],
+                    "n_pending": hit["n_pending"],
+                    "age_min": round(age_min, 1),
+                    # `pushed` records the fire DECISION (dedup bookkeeping),
+                    # not delivery — _telegram_push is fail-soft.
+                    "pushed": fire,
+                },
+                dry_run,
+            )
+            print(
+                f"  pending-call-wedge: issue #{issue} session {hit_sid} has "
+                f"{hit['n_pending']} pending Bash tool_use call(s) with no tool_result "
+                f"for ~{age_min:.0f} min (tool_use_id {hit['tool_use_id']})"
+            )
+            if fire:
+                _telegram_push(
+                    f"PENDING-CALL WEDGE (escalate-only #2115 pass): issue #{issue} "
+                    f"session {hit_sid} ends in a Bash tool_use pending ~{age_min:.0f} min "
+                    f"with NO tool_result (tool_use_id {hit['tool_use_id']}, "
+                    f"{hit['n_pending']} pending). The forever-pending dispatch class — "
+                    f"the stalled fence would otherwise take ~2.2h. Investigate the "
+                    f"session / stop+respawn it manually. Nothing was changed "
+                    f"automatically.",
+                    dry_run,
+                )
+        pruned = {
+            k: v
+            for k, v in episodes.items()
+            if isinstance(v, int | float) and (now - v) <= PENDING_CALL_EPISODE_TTL_S
+        }
+        _save_pending_call_state({"episodes": pruned}, dry_run)
+        return flagged_any
+    except Exception as exc:  # top-level fail-soft: never take down the tick
+        print(f"  pending-call-wedge: pass failed (fail-soft): {exc}", file=sys.stderr)
+        return False
+
+
 # ─── Completed-unmerged flag + bounded-respawn pass (tasks #1564 + #1653) ─────
 #
 # WHY: incident #1540 — the task reached `completed` + `epm:done` at
@@ -8935,7 +10768,7 @@ def _load_completed_unmerged_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -9018,7 +10851,7 @@ def _completed_unmerged_candidates(now: float, lookback_s: float) -> list[tuple[
 
     try:
         reg = json.loads(registry_path().read_text())
-    except (OSError, json.JSONDecodeError) as exc:
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError) as exc:
         print(f"  completed-unmerged: registry read failed: {exc}", file=sys.stderr)
         return []
     tasks = reg.get("tasks") if isinstance(reg, dict) else None
@@ -9382,6 +11215,9 @@ def _completed_unmerged_respawn(issue: int, dry_run: bool) -> str:
         "uv", "run", "python", "scripts/spawn_session.py", "spawn-issue",
         "--issue", str(issue), "--auto",
     ]  # fmt: skip
+    if _resolve_session_mode(issue) == "async":
+        # Mission-control rung 0 (CONTRACTS §2.2): re-pass the durable mode.
+        cmd += ["--session-mode", "async"]
     if dry_run:
         print(f"  [dry-run] would respawn stranded-merge session: {' '.join(cmd)}")
         return "failed"  # dry-run: nothing spawned
@@ -9731,7 +11567,7 @@ def _load_partial_bundle_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -9892,7 +11728,7 @@ def _partial_bundle_candidate_issues(now: float, lookback_s: float) -> list[int]
 
     try:
         reg = json.loads(registry_path().read_text())
-    except (OSError, json.JSONDecodeError) as exc:
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError) as exc:
         print(f"  partial-bundle: registry read failed: {exc}", file=sys.stderr)
         return []
     tasks = reg.get("tasks") if isinstance(reg, dict) else None
@@ -10278,7 +12114,7 @@ def _load_codex_outage_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -10335,7 +12171,7 @@ def _codex_outage_read_sentinel(now: float) -> dict | None:
         return None
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return None
     if not isinstance(data, dict):
         return None
@@ -10615,6 +12451,400 @@ def codex_outage_pass(dry_run: bool) -> bool:
         return False
 
 
+# ─── Settings model-id guard pass (task #2129) — AUTO-NORMALIZE + alert ──────
+#
+# WHY: the built-in /model command (and any harness settings write) can
+# persist `claude-fable-5[1m]` into ~/.claude/settings.json. Fable/Mythos are
+# 1M-native and expose NO `[1m]` variant, so that id kills every subagent
+# fleet-wide (#545, ~72h outage; re-planted + hand-normalized 2026-08-13,
+# #2129). Nothing else watches the GLOBAL settings files — workflow_lint's
+# AGENT_MODEL_ALLOWLIST covers only project agent files. This pass detects
+# the bad id class each 10-min tick and AUTO-NORMALIZES it (strip the
+# trailing `[1m]`), degrading to alert-only on every unsafe-write case.
+# Scope is fable/mythos ONLY — Opus 4.5-4.8 legitimately takes `[1m]`
+# (`claude-opus-*[1m]` is never touched).
+
+SETTINGS_MODEL_GUARD_REALERT_H = 24.0
+SETTINGS_MODEL_GUARD_BACKUP_KEEP = 10
+# Anchored form for parsed string VALUES; unanchored scan form for raw text
+# (the unparseable-JSON detection path). The optional version group covers
+# version-less ids (`claude-fable[1m]`).
+_SETTINGS_BAD_MODEL_RE = re.compile(r"^claude-(?:fable|mythos)(?:-[A-Za-z0-9.\-]+)?\[1m\]$")
+_SETTINGS_BAD_MODEL_SCAN_RE = re.compile(r"claude-(?:fable|mythos)(?:-[A-Za-z0-9.\-]+)?\[1m\]")
+# Module-level Path constants (not path-builder functions — tests monkeypatch
+# these directly; the `paths=` param on the pass covers the settings files).
+SETTINGS_MODEL_GUARD_SIDECAR = (
+    PROJECT_ROOT / ".claude" / "cache" / "settings-model-guard-events.jsonl"
+)
+SETTINGS_MODEL_GUARD_STATE = AUTONOMOUS_REGISTRY_DIR / "settings-model-guard.json"
+SETTINGS_MODEL_GUARD_BACKUP_DIR = AUTONOMOUS_REGISTRY_DIR
+
+
+def _settings_model_guard_enabled() -> bool:
+    """Kill switch: False when ``EPM_DISABLE_SETTINGS_MODEL_GUARD_PASS`` is
+    set truthy ("1"/"true"/"yes", case-insensitive). Default enabled.
+    Mirrors :func:`_codex_outage_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_SETTINGS_MODEL_GUARD_PASS", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _settings_guard_default_paths() -> list[Path]:
+    """The two GLOBAL settings files the guard watches. A missing file is a
+    silent skip in the pass (``settings.local.json`` is commonly absent)."""
+    base = Path.home() / ".claude"
+    return [base / "settings.json", base / "settings.local.json"]
+
+
+def _iter_json_strings(obj: object):
+    """Yield every STRING VALUE in a parsed JSON structure, recursively
+    (dict values, list items, bare strings). Keys are deliberately not
+    yielded — a model id lives in a VALUE (``model``,
+    ``env.CLAUDE_CODE_SUBAGENT_MODEL``, any future key)."""
+    if isinstance(obj, str):
+        yield obj
+    elif isinstance(obj, dict):
+        for v in obj.values():
+            yield from _iter_json_strings(v)
+    elif isinstance(obj, list):
+        for v in obj:
+            yield from _iter_json_strings(v)
+
+
+def _structure_equal_modulo(old: object, new: object, mapping: dict[str, str]) -> bool:
+    """True when ``new`` equals ``old`` EXCEPT that string leaves may be
+    rewritten per ``mapping`` (bad id -> normalized id) — post-condition
+    (iii) of the byte-exact rewrite: nothing else in the parsed structure
+    moved (a bad string doubling as a dict KEY would fail here, correctly
+    routing to alert-only)."""
+    if isinstance(old, str):
+        return isinstance(new, str) and new == mapping.get(old, old)
+    if isinstance(old, dict):
+        return (
+            isinstance(new, dict)
+            and old.keys() == new.keys()
+            and all(_structure_equal_modulo(old[k], new[k], mapping) for k in old)
+        )
+    if isinstance(old, list):
+        return (
+            isinstance(new, list)
+            and len(old) == len(new)
+            and all(_structure_equal_modulo(a, b, mapping) for a, b in zip(old, new, strict=True))
+        )
+    # Numbers / bools / None: exact equality incl. type (bool vs int guard).
+    return type(old) is type(new) and old == new
+
+
+def _normalize_model_ids_text(raw: str) -> tuple[str | None, list[str], str | None]:
+    """Detect fable/mythos ``[1m]`` model ids in a settings-JSON text and
+    compute the byte-exact, format-preserving rewrite.
+
+    Returns ``(new_raw, bad_values, reason)``:
+
+    - ``(None, [], None)`` — clean (no bad ids detected);
+    - ``(new_raw, bad, None)`` — rewrite computed and ALL post-conditions
+      hold: (i) ``new_raw`` parses as JSON; (ii) a re-walk of the parsed
+      result finds zero bad ids; (iii) the parsed structure equals the old
+      one except at the replaced string leaves;
+    - ``(None, bad, reason)`` — detection WITHOUT a safe rewrite
+      (``unparseable-json`` / ``postcondition-failed``): the caller goes
+      ALERT-ONLY, never writes. A ``\\uXXXX``-escaped bad value fails SAFE
+      here — detected in parsed form, the raw quoted-string replacement
+      no-ops, post-condition (ii) fails.
+    """
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError:
+        hits = sorted(set(_SETTINGS_BAD_MODEL_SCAN_RE.findall(raw)))
+        if hits:
+            return None, hits, "unparseable-json"
+        return None, [], None
+    bad = sorted({s for s in _iter_json_strings(parsed) if _SETTINGS_BAD_MODEL_RE.match(s)})
+    if not bad:
+        return None, [], None
+    mapping = {b: b.removesuffix("[1m]") for b in bad}
+    new_raw = raw
+    for old_val, new_val in mapping.items():
+        # Byte-exact QUOTED-string replacement — never a whole-file
+        # json.dumps re-serialize (preserves the harness's formatting). The
+        # id alphabet (ASCII letters/digits/dots/hyphens/brackets) needs no
+        # JSON escaping, so json.dumps(old_val) == '"' + old_val + '"', and
+        # the surrounding quotes keep a longer string containing the id as
+        # a substring from being corrupted.
+        new_raw = new_raw.replace(json.dumps(old_val), json.dumps(new_val))
+    try:
+        new_parsed = json.loads(new_raw)  # post-condition (i)
+    except json.JSONDecodeError:
+        return None, bad, "postcondition-failed"
+    still_bad = any(_SETTINGS_BAD_MODEL_RE.match(s) for s in _iter_json_strings(new_parsed))
+    if still_bad:  # post-condition (ii) — covers the \uXXXX-escaped no-op
+        return None, bad, "postcondition-failed"
+    if not _structure_equal_modulo(parsed, new_parsed, mapping):  # post-condition (iii)
+        return None, bad, "postcondition-failed"
+    return new_raw, bad, None
+
+
+def _apply_settings_normalization(path: Path, old_raw: str, new_raw: str) -> tuple[bool, str]:
+    """Write ``new_raw`` over ``path`` with the safety belts, in order:
+
+    1. concurrent-write guard — re-read ``path``; current text !=
+       ``old_raw`` -> ``(False, "concurrent-write")``, no write, no backup
+       (the next 10-min tick re-detects and converges; this closes the
+       lost-update direction — a harness/user write landing between the
+       pass's read and the replace would otherwise be destroyed
+       whole-file);
+    2. timestamped backup copy under
+       :data:`SETTINGS_MODEL_GUARD_BACKUP_DIR`, pruned to the newest
+       :data:`SETTINGS_MODEL_GUARD_BACKUP_KEEP` per filename;
+    3. tmp file in the same directory, chmod'd to the ORIGINAL file's mode
+       (a default 0600 tmp would drop group-read), then ``os.replace``.
+
+    Returns ``(True, "normalized")`` on success; ``(False, <reason>)`` on
+    any failure (the caller goes alert-only). Accepted residual: a write
+    landing between the step-1 re-read and the step-3 replace is still
+    lost — the window is microseconds (was: the full detection+parse
+    span), the 10-min re-tick + the backup bound the damage, and a
+    compare-and-swap is not available over POSIX rename."""
+    try:
+        current = path.read_text()
+    except OSError as exc:
+        return False, f"reread-failed: {exc}"
+    if current != old_raw:
+        return False, "concurrent-write"
+    try:
+        SETTINGS_MODEL_GUARD_BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+        backup = SETTINGS_MODEL_GUARD_BACKUP_DIR / (
+            f"settings-model-guard-backup-{int(time.time())}-{path.name}"
+        )
+        backup.write_text(old_raw)
+        # Prune to the newest KEEP backups per filename (mtime order) — an
+        # unbounded accumulation guard on the registry dir.
+        siblings = sorted(
+            SETTINGS_MODEL_GUARD_BACKUP_DIR.glob(f"settings-model-guard-backup-*-{path.name}"),
+            key=lambda p: p.stat().st_mtime,
+            reverse=True,
+        )
+        for stale in siblings[SETTINGS_MODEL_GUARD_BACKUP_KEEP:]:
+            stale.unlink(missing_ok=True)
+    except OSError as exc:
+        return False, f"backup-failed: {exc}"
+    try:
+        mode = path.stat().st_mode & 0o7777
+        tmp = path.with_name(path.name + ".settings-guard-tmp")
+        tmp.write_text(new_raw)
+        os.chmod(tmp, mode)
+        os.replace(tmp, path)
+    except OSError as exc:
+        return False, f"write-failed: {exc}"
+    return True, "normalized"
+
+
+def _append_settings_guard_sidecar(event: dict, dry_run: bool) -> None:
+    """Append one JSON line to the settings-model-guard sidecar (fail-soft);
+    a ``ts`` is stamped; ``dry_run`` reports only (mirrors
+    :func:`_append_codex_outage_sidecar`)."""
+    row = {"ts": datetime.now(tz=UTC).isoformat(), **event}
+    line = json.dumps(row)
+    if dry_run:
+        print(f"  [dry-run] would append settings-model-guard sidecar row: {line[:200]}")
+        return
+    dest = SETTINGS_MODEL_GUARD_SIDECAR
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as exc:
+        print(f"  settings-model-guard: sidecar append failed: {exc}", file=sys.stderr)
+
+
+def _load_settings_guard_state() -> dict:
+    """``{}`` on missing/garbled state (mirrors
+    :func:`_load_codex_outage_state`)."""
+    path = SETTINGS_MODEL_GUARD_STATE
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_settings_guard_state(state: dict, dry_run: bool) -> None:
+    """Atomic temp+rename write (fail-soft; mirrors
+    :func:`_save_codex_outage_state`); ``dry_run`` performs zero writes."""
+    if dry_run:
+        print("  [dry-run] would save settings-model-guard state")
+        return
+    dest = SETTINGS_MODEL_GUARD_STATE
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(state))
+        tmp.replace(dest)
+    except OSError as exc:  # pragma: no cover - fail-soft I/O guard
+        print(f"  settings-model-guard: state save failed: {exc}", file=sys.stderr)
+
+
+def _settings_guard_push(path: Path, bad: list[str], action: str, dry_run: bool) -> bool:
+    """Episode-deduped push: ONE push per (path, sorted bad-values) EPISODE —
+    the first event opens the episode, re-alerted after
+    ``EPM_SETTINGS_MODEL_GUARD_REALERT_H`` (default 24h) while the
+    condition persists. Applies to normalized AND alert-only pushes (a
+    persistent re-planter otherwise yields up to 144 pushes/day); sidecar
+    rows stay per-event so the full normalization history is durable.
+    Returns True when a push fired this call."""
+    realert_h = _env_float(
+        "EPM_SETTINGS_MODEL_GUARD_REALERT_H",
+        SETTINGS_MODEL_GUARD_REALERT_H,
+        lo=0.0,
+        hi=720.0,
+    )
+    now = time.time()
+    key = f"{path}|{','.join(bad)}"
+    state = _load_settings_guard_state()
+    last = state.get(key)
+    if isinstance(last, int | float) and (now - last) < realert_h * 3600.0:
+        return False  # in-episode dedup — the sidecar row already carries the event
+    if action == "normalized":
+        tail = "Auto-normalized (suffix stripped); timestamped backup kept."
+    else:
+        tail = "ALERT-ONLY (no safe rewrite) — normalize by hand."
+    _telegram_push(
+        f"Settings model-id guard [{action}]: {path} carried {', '.join(bad)} — "
+        f"fable/mythos expose no [1m] variant; the suffixed id kills every "
+        f"subagent fleet-wide (#545). {tail} "
+        f"Kill switch: EPM_DISABLE_SETTINGS_MODEL_GUARD_PASS=1.",
+        dry_run,
+    )
+    state[key] = now
+    _save_settings_guard_state(state, dry_run)
+    return True
+
+
+def settings_model_guard_pass(dry_run: bool, paths: list[Path] | None = None) -> bool:
+    """AUTO-NORMALIZE + alert pass (#2129): detect the fleet-killing
+    ``claude-fable-5[1m]``-class model id in the GLOBAL Claude settings
+    files each tick and strip the ``[1m]`` suffix in place (byte-exact
+    quoted-string rewrite, post-condition-gated, backup + atomic replace).
+
+    Fable/Mythos are 1M-native and expose NO ``[1m]`` variant — the
+    suffixed id kills every subagent fleet-wide (#545, ~72h outage; live
+    recurrence hand-normalized 2026-08-13, #2129). Scope is fable/mythos
+    ONLY — ``claude-opus-*[1m]`` is legitimate and never touched.
+    Unparseable JSON, failed post-conditions, and a concurrent write
+    between read and replace all degrade to ALERT-ONLY (sidecar + deduped
+    push), never a write. Daemon-INDEPENDENT (pure filesystem
+    reads/writes); NEVER posts task markers (fleet-level concern, no
+    single owning task — codex-outage precedent); fail-soft throughout.
+    No throttle by design — two <10 KB file reads per 10-min tick;
+    detection latency is the point (#545 blast radius).
+
+    ``paths=None`` resolves to ``~/.claude/settings.json`` +
+    ``settings.local.json``; the param exists for test injection.
+    ``dry_run``: detect + dry-run sidecar report + stdout line; no write,
+    no push. Returns True when anything fired (detection, normalization,
+    or alert)."""
+    if not _settings_model_guard_enabled():
+        print(
+            "  settings-model-guard: disabled via EPM_DISABLE_SETTINGS_MODEL_GUARD_PASS; skipping"
+        )
+        return False
+    fired = False
+    try:
+        if paths is None:
+            paths = _settings_guard_default_paths()
+        for path in paths:
+            try:
+                if not path.is_file():
+                    continue  # settings.local.json commonly absent — silent skip
+                raw = path.read_text()
+                new_raw, bad, reason = _normalize_model_ids_text(raw)
+                if not bad:
+                    continue
+                fired = True
+                if dry_run:
+                    would = "normalize" if new_raw is not None else f"alert-only ({reason})"
+                    print(
+                        f"  settings-model-guard: [dry-run] {path} carries bad "
+                        f"model id(s) {bad} — would {would}"
+                    )
+                    _append_settings_guard_sidecar(
+                        {
+                            "kind": "settings-model-guard",
+                            "action": "dry-run",
+                            "ok": True,
+                            "path": str(path),
+                            "bad_values": bad,
+                            **({"reason": reason} if reason else {}),
+                        },
+                        dry_run,
+                    )
+                    continue
+                if new_raw is None:
+                    # Detection WITHOUT a safe rewrite — alert-only branch.
+                    print(
+                        f"  settings-model-guard: ALERT-ONLY on {path}: {bad} ({reason})",
+                        file=sys.stderr,
+                    )
+                    _append_settings_guard_sidecar(
+                        {
+                            "kind": "settings-model-guard",
+                            "action": "alert-only",
+                            "ok": False,
+                            "path": str(path),
+                            "bad_values": bad,
+                            "reason": reason,
+                        },
+                        dry_run,
+                    )
+                    _settings_guard_push(path, bad, "alert-only", dry_run)
+                    continue
+                ok, apply_reason = _apply_settings_normalization(path, raw, new_raw)
+                if ok:
+                    print(f"  settings-model-guard: NORMALIZED {path}: {bad}")
+                    _append_settings_guard_sidecar(
+                        {
+                            "kind": "settings-model-guard",
+                            "action": "normalized",
+                            "ok": True,
+                            "path": str(path),
+                            "bad_values": bad,
+                        },
+                        dry_run,
+                    )
+                    _settings_guard_push(path, bad, "normalized", dry_run)
+                else:
+                    print(
+                        f"  settings-model-guard: write skipped on {path} ({apply_reason})",
+                        file=sys.stderr,
+                    )
+                    _append_settings_guard_sidecar(
+                        {
+                            "kind": "settings-model-guard",
+                            "action": "alert-only",
+                            "ok": False,
+                            "path": str(path),
+                            "bad_values": bad,
+                            "reason": apply_reason,
+                        },
+                        dry_run,
+                    )
+                    _settings_guard_push(path, bad, "alert-only", dry_run)
+            except Exception as exc:  # per-path fail-soft
+                print(
+                    f"  settings-model-guard: {path} failed (fail-soft): {exc}",
+                    file=sys.stderr,
+                )
+        if not fired:
+            # One legible clean-verdict line per tick (the --*-only smoke's
+            # observable; mirrors the per-tick status prints of pass 1).
+            print(f"  settings-model-guard: clean — no bad model ids in {len(paths)} file(s)")
+        return fired
+    except Exception as exc:  # top-level fail-soft: never take down the tick
+        print(f"  settings-model-guard: pass failed (fail-soft): {exc}", file=sys.stderr)
+        return fired
+
+
 # ─── Urgent-park router pass (task #1681) — "main is red" fast path ──────────
 #
 # Route a PARKED workflow-fix candidate that self-declares a LIVE red test on
@@ -10727,7 +12957,7 @@ def _load_urgent_wf_park_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -11666,7 +13896,7 @@ def _load_auth_outage_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError) as exc:
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError) as exc:
         print(f"  auth-outage: state unreadable (fail-open, fresh state): {exc}", file=sys.stderr)
         return {}
     return data if isinstance(data, dict) else {}
@@ -11750,7 +13980,7 @@ def _registry_entry_field(issue: int, field: str) -> object:
     """One field from ``issue-<N>.json`` (fail-soft -> ``None``)."""
     try:
         entry = json.loads((AUTONOMOUS_REGISTRY_DIR / f"issue-{issue}.json").read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return None
     return entry.get(field) if isinstance(entry, dict) else None
 
@@ -12294,13 +14524,16 @@ def _wedge_keep_running(issue: int) -> bool | str:
     return isinstance(tags, list) and "keep-running" in tags
 
 
-def _wedge_inputs_safe(issue: int) -> bool:
+def _wedge_inputs_safe(issue: int, lane_suffix: str | None = None) -> bool:
     """True iff the wedged run's recoverable inputs are verified on HF (#692).
 
     Gates the watcher's reversible AUTO-STOP exactly as #689 fix (b) gates the
     poller's IRREVERSIBLE terminate, reusing the SAME per-cell three-state gate
     ``backend_poll._wedged_run_inputs_on_hf``. The run handle is read from the
-    persisted sidecar (``.claude/cache/issue-<N>-handle.json``).
+    persisted sidecar (``.claude/cache/issue-<N>-handle.json``; a suffixed pod
+    ``pod-<N>-<slug>`` reads its own ``issue-<N>-<slug>-handle.json`` via
+    ``lane_suffix`` — #2145, threading the #934 sidecar-suffix seam so a
+    suffixed lane's wedge gate never reads a SIBLING lane's handle).
 
     Fail-CLOSED: a missing / unreadable handle, an HF-listing transport error,
     an import failure, or ANY exception -> ``False`` (ALERT-only, never an unsafe
@@ -12317,7 +14550,7 @@ def _wedge_inputs_safe(issue: int) -> bool:
             resolve_handle_sidecar_path,
         )
 
-        path, _probed = resolve_handle_sidecar_path(issue)
+        path, _probed = resolve_handle_sidecar_path(issue, lane_suffix=lane_suffix)
         if not path.exists():
             return False  # no handle -> cannot gate -> ALERT-only
         handle = read_handle_sidecar(path)
@@ -12658,6 +14891,35 @@ def _task_events(issue: int) -> list[dict]:
     return data if isinstance(data, list) else []
 
 
+def _resolve_session_mode(issue: int, entry: dict | None = None) -> str:
+    """Session mode (``"auto"`` | ``"async"``) every spawn-issue argv builder
+    resolves before dispatch — mission-control rung 0 (CONTRACTS §2.2).
+
+    Chain: registry-entry ``session_mode`` field (pass ``entry`` when the
+    caller already holds it; else the issue-<N>.json file is read) > newest
+    durable ``epm:session-mode`` marker (survives the watcher's TERMINAL
+    registry-entry deletion; read IN-PROCESS via spawn_session's
+    ``_marker_session_mode`` — a subprocess probe here would break every
+    builder's argv/dry-run contract, e.g. dry-run performs zero spawn
+    subprocesses) > legacy ``"auto"``. Fail-soft on every signal — an
+    unreadable registry/marker degrades to the next rung, never blocks a
+    respawn (worst case: a legacy-auto respawn of an async task, which the
+    task-durable marker corrects on the next resolution)."""
+    try:
+        if entry is None:
+            reg = AUTONOMOUS_REGISTRY_DIR / f"issue-{issue}.json"
+            if reg.exists():
+                entry = json.loads(reg.read_text())
+        if isinstance(entry, dict):
+            mode = entry.get("session_mode")
+            if mode in ("auto", "async"):
+                return mode
+    except (OSError, ValueError):
+        pass
+    mode = _marker_session_mode(issue)
+    return mode if mode in ("auto", "async") else "auto"
+
+
 def _daemon_reachable() -> bool:
     """True iff the Happy daemon's control server answers /list.
 
@@ -12894,7 +15156,7 @@ def _manual_session_alive(issue: int | None, live_ids: set[str]) -> bool:
     path = AUTONOMOUS_REGISTRY_DIR / f"manual-issue-{issue}.json"
     try:
         entry = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return False
     sid = entry.get("happy_session_id")
     return isinstance(sid, str) and sid in live_ids
@@ -12965,6 +15227,9 @@ def _respawn(entry: dict, dry_run: bool) -> str:
     effort = entry.get("effort")
     if effort:
         cmd.extend(["--effort", str(effort)])
+    if _resolve_session_mode(issue, entry) == "async":
+        # Mission-control rung 0 (CONTRACTS §2.2): re-pass the durable mode.
+        cmd += ["--session-mode", "async"]
     if dry_run:
         print(f"  [dry-run] would respawn: {' '.join(cmd)}")
         return "failed"  # dry-run: nothing spawned
@@ -13045,6 +15310,29 @@ def _carry_nr_pod(
     return nr_pod
 
 
+def _carry_fd_pod(
+    prev: dict | None,
+    fd_pod_entry: tuple[str, dict] | None,
+    fd_pod_keep_ids: set[str] | None,
+) -> dict:
+    """Compute the #2283 ``fd_pod`` sub-dict for a :func:`_save_pod_safety_state`
+    payload — byte-parallel to :func:`_carry_kr_pod` / :func:`_carry_nr_pod`:
+    forward-carry every prior entry verbatim (missing/garbled prev -> ``{}``),
+    set/replace the one caller-owned entry when given, then GC against the
+    RUNNING-pod id set when the caller holds it (``None`` = carry everything,
+    no GC). The pod_id-keyed sub-dict shape is the #2283 blocker-2 contract:
+    the singular-field alternative goes structurally inert on multi-pod
+    issues (the #2149/#2060 lesson — a busy sibling pod's save must never
+    reset a fenced pod's episode)."""
+    prev_fd_pod = (prev or {}).get("fd_pod")
+    fd_pod: dict = dict(prev_fd_pod) if isinstance(prev_fd_pod, dict) else {}
+    if fd_pod_entry is not None:
+        fd_pod[fd_pod_entry[0]] = fd_pod_entry[1]
+    if fd_pod_keep_ids is not None:
+        fd_pod = {k: v for k, v in fd_pod.items() if k in fd_pod_keep_ids}
+    return fd_pod
+
+
 def _load_pod_safety_state(issue: int) -> dict:
     """Read the per-pod state for ``issue`` (``{}`` if absent / unreadable — a
     fresh/garbled file just starts the miss count at 0 and alerted at False)."""
@@ -13053,7 +15341,7 @@ def _load_pod_safety_state(issue: int) -> dict:
         return {}
     try:
         return json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
 
 
@@ -13081,6 +15369,8 @@ def _save_pod_safety_state(
     kr_pod_keep_ids: set[str] | None = None,
     nr_pod_entry: tuple[str, dict] | None = None,
     nr_pod_keep_ids: set[str] | None = None,
+    fd_pod_entry: tuple[str, dict] | None = None,
+    fd_pod_keep_ids: set[str] | None = None,
     prev: dict | None = None,
 ) -> None:
     """Persist the per-pod state atomically (temp + rename).
@@ -13173,6 +15463,18 @@ def _save_pod_safety_state(
     every save, per-pod keying IS the incarnation reset, GC'd against the
     caller's RUNNING-pod set when provided, back-compat missing key ->
     ``{}``.
+
+    The #2283 fence-defer arm's state is the ``fd_pod`` top-level sub-dict
+    (one entry per pod incarnation: ``{"first_ts", "noted",
+    "last_push_ts", "ceiling_noted"}``) — byte-parallel carry semantics to
+    ``kr_pod`` / ``nr_pod`` via ``fd_pod_entry`` / ``fd_pod_keep_ids``
+    (:func:`_carry_fd_pod`): sibling entries forward-carried VERBATIM on
+    every save (a busy sibling pod's save must never reset a fenced pod's
+    24h-ceiling clock — the #2283 blocker-2 contract), per-pod keying IS
+    the incarnation reset, GC'd against the caller's RUNNING-pod set when
+    provided, back-compat missing key -> ``{}``. The episode CLEAR on an
+    evaluated-and-inactive fence read writes a FRESH-defaults entry via
+    ``fd_pod_entry`` (never a delete variant — mirror, don't invent).
     """
     AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
     dest = _pod_safety_state_path(issue)
@@ -13262,6 +15564,9 @@ def _save_pod_safety_state(
     # #2060 nr_pod sub-dict: identical carry contract (sibling entries
     # forward-carried verbatim; per-pod keying is the incarnation reset).
     nr_pod = _carry_nr_pod(prev, nr_pod_entry, nr_pod_keep_ids)
+    # #2283 fd_pod sub-dict: identical carry contract again (fence-defer
+    # episodes; a sibling pod's save forward-carries a fenced pod's entry).
+    fd_pod = _carry_fd_pod(prev, fd_pod_entry, fd_pod_keep_ids)
     payload = {
         "pod_id": pod_id,
         "missed": missed,
@@ -13283,6 +15588,7 @@ def _save_pod_safety_state(
         "kr_owner_last_alert_ts": kr_owner_last_alert_ts,
         "kr_pod": kr_pod,
         "nr_pod": nr_pod,
+        "fd_pod": fd_pod,
     }
     tmp = dest.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(payload, indent=2))
@@ -13330,6 +15636,41 @@ def _append_stalled_live_event(
         print(f"  WARNING: appending stalled-live event failed: {e}", file=sys.stderr)
 
 
+def _append_stalled_xgen_event(
+    *,
+    issue: int,
+    count: int,
+    threshold: int,
+    last_real_marker_ts: float | None,
+    dry_run: bool,
+) -> None:
+    """Durable trace for the #2084 cross-generation no-progress escalation:
+    one JSON line per escalation fire appended to
+    ``~/.eps-autonomous/stalled-xgen-events.jsonl`` (a ``.jsonl`` suffix —
+    outside the ``*.json`` state-GC glob by convention). Fail-soft,
+    mirroring :func:`_append_stalled_live_event`."""
+    dest = AUTONOMOUS_REGISTRY_DIR / "stalled-xgen-events.jsonl"
+    line = json.dumps(
+        {
+            "ts": datetime.now().astimezone().isoformat(),
+            "issue": issue,
+            "count": count,
+            "threshold": threshold,
+            "last_real_marker_ts": last_real_marker_ts,
+            "arm": "stalled-fence-spawn",
+        }
+    )
+    if dry_run:
+        print(f"  [dry-run] would append stalled-xgen event to {dest}")
+        return
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as e:
+        print(f"  WARNING: appending stalled-xgen event failed: {e}", file=sys.stderr)
+
+
 def _load_stalled_state(issue: int) -> dict:
     """Read the per-session stalled-detector state for ``issue`` (``{}`` if
     absent / unreadable — a fresh/garbled file just starts the miss count at 0
@@ -13339,7 +15680,7 @@ def _load_stalled_state(issue: int) -> dict:
         return {}
     try:
         return json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
 
 
@@ -13369,10 +15710,30 @@ def _save_stalled_state(
     dead_silence_respawns_today: int = 0,
     wedge_respawn_day: str | None = None,
     wedge_respawns_today: int = 0,
+    xgen_respawns: int = 0,
+    xgen_last_real_marker_ts: float | None = None,
+    xgen_escalated_at: int = 0,
     prev: dict | None = None,
 ) -> None:
     """Persist the per-session stalled-detector state atomically (temp +
     rename), mirroring :func:`_save_pod_safety_state`.
+
+    #2084 cross-generation no-progress fields: ``xgen_respawns`` counts
+    CONSECUTIVE fence-spawn respawns (:func:`_fence_spawn_stalled`'s spawn
+    branch — the sole ``session-auto-respawn`` post site) with no
+    intervening real (non-watcher) marker; ``xgen_last_real_marker_ts`` is
+    the newest real-marker epoch ts observed at the LAST counted respawn
+    (monotone max; a ``None``/unreadable current read never overwrites a
+    valid anchor); ``xgen_escalated_at`` is the counter value at the most
+    recent escalation (0 = never — once-per-threshold-band dedup). All
+    three are deliberately EXEMPT from the advancement-clear the #845
+    hardening fields get, alongside the #1209/#1241 day-keyed counters and
+    for the same reason: each respawned generation writes a fresh boot
+    self-report, so an advancement-cleared counter could never see across
+    generations — exactly the loop the counter measures (#2004: 7 respawns
+    over 7h34m with zero real markers). NOT day-keyed — the predicate is
+    purely progress-keyed. Absent in older on-disk files -> loaded as
+    ``(0, None, 0)`` (:func:`_stalled_xgen_fields`).
 
     #1480 stalled-manual escalation fields: ``manual_escalate_count`` is the
     number of CONSECUTIVE stalled-confirmed ticks observed for a MANUAL
@@ -13477,6 +15838,9 @@ def _save_stalled_state(
         "dead_silence_respawns_today": dead_silence_respawns_today,
         "wedge_respawn_day": wedge_respawn_day,
         "wedge_respawns_today": wedge_respawns_today,
+        "xgen_respawns": xgen_respawns,
+        "xgen_last_real_marker_ts": xgen_last_real_marker_ts,
+        "xgen_escalated_at": xgen_escalated_at,
         "last_self_report_ts": last_self_report_ts,
         "first_seen": prev_first_seen,
     }
@@ -13551,6 +15915,27 @@ def _day_scoped_count(prev_state: dict, day_field: str, count_field: str, day_ke
     return n if ok else 0
 
 
+def _stalled_xgen_fields(prev_state: dict) -> tuple[int, float | None, int]:
+    """Load the #2084 cross-generation no-progress fields
+    ``(xgen_respawns, xgen_last_real_marker_ts, xgen_escalated_at)`` from
+    the prior on-disk stalled-state payload with type guards. A pre-existing
+    file without them loads as ``(0, None, 0)`` (backward compatible); a
+    malformed value re-arms its field at the default — a corruption costs at
+    most one late/early escalation ALERT, never a stop (the arm is
+    escalate-only). Deliberately EXEMPT from the advancement clear
+    (:func:`_stalled_hardening_fields`) — see :func:`_save_stalled_state`
+    (#2084, the #1209/#1241 exempt-counter pattern)."""
+
+    def _nonneg_int(key: str) -> int:
+        val = prev_state.get(key, 0)
+        ok = isinstance(val, int) and not isinstance(val, bool) and val >= 0
+        return val if ok else 0
+
+    ts = prev_state.get("xgen_last_real_marker_ts")
+    anchor = float(ts) if isinstance(ts, int | float) and not isinstance(ts, bool) else None
+    return _nonneg_int("xgen_respawns"), anchor, _nonneg_int("xgen_escalated_at")
+
+
 def _clear_fence_state_on_disk(issue: int) -> None:
     """Clear ONLY the stop-verify fence fields on the persisted stalled
     state, leaving every other field untouched. Used on the #843
@@ -13562,7 +15947,7 @@ def _clear_fence_state_on_disk(issue: int) -> None:
     path = _stalled_state_path(issue)
     try:
         payload = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return
     if not isinstance(payload, dict):
         return
@@ -13630,7 +16015,7 @@ def _gc_orphan_pod_safety_state(
             first_seen = payload.get("first_seen", now)
             if not isinstance(first_seen, int | float):
                 first_seen = now
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             first_seen = 0  # unreadable -> definitely orphaned, drop it
         age = now - first_seen
         reason = (
@@ -13657,7 +16042,9 @@ def _forward_marker_child_stderr(res, context: str) -> None:
         print(f"  [task.py stderr] {context}: {line}", file=sys.stderr)
 
 
-def _post_progress_marker(issue: int, note: str, dry_run: bool, *, label: str) -> None:
+def _post_progress_marker(
+    issue: int, note: str, dry_run: bool, *, label: str, by: str = "autonomous_session_watch"
+) -> None:
     """Record a pod-safety event on task ``issue``'s events.jsonl.
 
     Uses the generic ``epm:progress`` marker kind: neither ``epm:pod-stopped``
@@ -13666,7 +16053,12 @@ def _post_progress_marker(issue: int, note: str, dry_run: bool, *, label: str) -
     so we post a generic progress note whose body text (carrying the
     auto-stop / stale-alert sentinel) makes the event self-describing. The
     watcher runs from PROJECT_ROOT on `main`, so the task.py branch-guard is
-    satisfied. ``label`` is only for the log line (``auto-stop`` / ``alert``)."""
+    satisfied. ``label`` is only for the log line (``auto-stop`` / ``alert``).
+    ``by`` defaults to the watcher's own name; a caller passes
+    ``by="unknown"`` to OPT INTO the #967 fail-toward-triage convention (an
+    "unknown" emitter is a triage candidate at the owning session's next
+    pre-dispatch external-marker triage — the #2295 attribution leg uses
+    this deliberately)."""
     if dry_run:
         print(f"  [dry-run] would post epm:progress ({label}) on #{issue}: {note}")
         return
@@ -13681,7 +16073,7 @@ def _post_progress_marker(issue: int, note: str, dry_run: bool, *, label: str) -
                 str(issue),
                 "epm:progress",
                 "--by",
-                "autonomous_session_watch",
+                by,
                 "--note",
                 note,
             ],
@@ -13984,7 +16376,13 @@ def _wedge_failover(
             resolve_handle_sidecar_path,
         )
 
-        path, _probed = resolve_handle_sidecar_path(issue)
+        # #2145: resolve the WEDGED pod's own sidecar — a suffixed pod-<N>-<slug>
+        # persists to issue-<N>-<slug>-handle.json (#934), so the bare-issue path
+        # would read a SIBLING lane's handle and the pod-name binding defense
+        # below would spuriously read "already-handled" for every suffixed wedge.
+        path, _probed = resolve_handle_sidecar_path(
+            issue, lane_suffix=_slug_from_pod_name(info.name)
+        )
         if not path.exists():
             print(
                 f"  wedge-failover: no handle sidecar for #{issue}; cannot reconstruct "
@@ -14154,7 +16552,7 @@ def _load_vm_disk_state() -> dict:
         return {}
     try:
         return json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
 
 
@@ -14216,7 +16614,7 @@ def _vm_disk_marker_issues() -> list[int]:
     for path in sorted(AUTONOMOUS_REGISTRY_DIR.glob("issue-*.json")):
         try:
             entry = json.loads(path.read_text())
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             continue
         issue = entry.get("issue")
         if isinstance(issue, int) and _task_status(issue) in ACTIVE:
@@ -15062,7 +17460,13 @@ def _process_wedged_pod(
     # before it would consult the real gate.
     confirmed = wedged_for > RUNPOD_WEDGE_K_SEC and (prev_wedge_missed + 1) >= threshold
     keep_running: bool | str = _wedge_keep_running(issue) if confirmed else True
-    inputs_ok = _wedge_inputs_safe(issue) if (confirmed and keep_running is False) else False
+    inputs_ok = (
+        # #2145: gate against the WEDGED pod's own handle sidecar (suffixed pods
+        # persist to issue-<N>-<slug>-handle.json; bare pods resolve unchanged).
+        _wedge_inputs_safe(issue, lane_suffix=_slug_from_pod_name(info.name))
+        if (confirmed and keep_running is False)
+        else False
+    )
     # #1667 owner-liveness gate — probed LAZILY, only when every OTHER
     # terminate precondition already holds (the MF2 lazy pattern), so the
     # events read + daemon /list are paid only for a matured, otherwise
@@ -15391,6 +17795,39 @@ def _keep_running_pod_probe_fail_rows() -> int:
     return parsed
 
 
+def _pod_fence_defer_max_s() -> float:
+    """#2283 cumulative fence-deferral ceiling in seconds (env
+    ``EPM_POD_FENCE_DEFER_MAX_H``, HOURS; default
+    :data:`POD_FENCE_DEFER_MAX_H` = 24h). Malformed / non-positive /
+    non-finite env falls back to the default (the
+    :func:`_keep_running_owner_realert_s` defensive shape — a typo'd var
+    must not disable the ceiling); a POSITIVE sub-floor value is clamped UP
+    to :data:`POD_FENCE_DEFER_FLOOR_H` (a near-zero ceiling would make the
+    arm read as enabled while never deferring)."""
+    raw = os.environ.get("EPM_POD_FENCE_DEFER_MAX_H")
+    if not raw:
+        return POD_FENCE_DEFER_MAX_H * 3600.0
+    try:
+        val = float(raw)
+    except ValueError:
+        return POD_FENCE_DEFER_MAX_H * 3600.0
+    if not (0 < val < 24 * 366):  # rejects 0/negative AND inf/nan (the #1739 shape)
+        return POD_FENCE_DEFER_MAX_H * 3600.0
+    return max(val, POD_FENCE_DEFER_FLOOR_H) * 3600.0
+
+
+def _pod_fence_defer_enabled() -> bool:
+    """#2283 fence-defer kill switch: False when
+    ``EPM_DISABLE_POD_FENCE_DEFER`` is set truthy ("1"/"true"/"yes"/"on",
+    case-insensitive). Default enabled. Disabled means the fence is NOT
+    EVALUATED (tri-state ``None`` from :func:`_pod_owner_fence_active`) —
+    the stop proceeds exactly as pre-#2283 and episode state is CARRIED,
+    never cleared (an unevaluated read must not erase a live episode).
+    Mirrors :func:`_keep_running_owner_audit_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_POD_FENCE_DEFER", "").strip().lower()
+    return raw not in {"1", "true", "yes", "on"}
+
+
 def _never_ran_grace_s() -> float:
     """#2060 never-ran grace floor in seconds (env ``EPM_NEVER_RAN_GRACE_MIN``,
     MINUTES; default :data:`NEVER_RAN_GRACE_MIN` = 45 min). Malformed /
@@ -15479,13 +17916,15 @@ def _wedge_owner_guard_enabled() -> bool:
     return raw not in {"1", "true", "yes", "on"}
 
 
-def _orphan_gcp_sidecar_is_gcp(issue: int) -> bool:
+def _orphan_gcp_sidecar_is_gcp(issue: int, lane_suffix: str | None = None) -> bool:
     """True iff issue ``issue``'s run-handle sidecar resolves AND reads backend=gcp.
 
     The #1490 orphan-arm predicate leg: a RUNNING bare ``pod-<N>`` coexisting
     with a gcp-pointing handle is anomalous (the failover either re-points the
     sidecar at runpod or tears the pod down). Uses the SAME sidecar resolver
-    the wedge arm uses (``resolve_handle_sidecar_path``). ANY read / parse /
+    the wedge arm uses (``resolve_handle_sidecar_path``; ``lane_suffix`` threads
+    the #934 sidecar-suffix seam — #2145 — though the sole caller's bare-name
+    guard means it is always ``None`` today). ANY read / parse /
     import failure returns False — bias QUIET (alert-only arm, a miss is
     cheap) — with ONE stderr diagnostic line so the quiet miss is diagnosable
     (plan v2 fold-in).
@@ -15496,7 +17935,7 @@ def _orphan_gcp_sidecar_is_gcp(issue: int) -> bool:
             resolve_handle_sidecar_path,
         )
 
-        path, _probed = resolve_handle_sidecar_path(issue)
+        path, _probed = resolve_handle_sidecar_path(issue, lane_suffix=lane_suffix)
         if not path.exists():
             return False
         return read_handle_sidecar(path).backend == "gcp"
@@ -15564,7 +18003,7 @@ def _maybe_flag_orphan_gcp_handle_pod(
     age = now - float(first_seen)
     if age < _orphan_gcp_handle_grace_sec():
         return False
-    if not _orphan_gcp_sidecar_is_gcp(issue):
+    if not _orphan_gcp_sidecar_is_gcp(issue, lane_suffix=_slug_from_pod_name(info.name)):
         return False
     if keep_running or followup_active:
         return False
@@ -15756,7 +18195,7 @@ def _maybe_flag_unlaunched_orphan_pod(
     return True
 
 
-def _diagnosis_sidecar_evidence(issue: int) -> dict | None:
+def _diagnosis_sidecar_evidence(issue: int, lane_suffix: str | None = None) -> dict | None:
     """Read the #1997 evidence fields off issue ``issue``'s run-handle sidecar.
 
     Returns ``{"backend", "workload_executed", "workload_start_error",
@@ -15766,7 +18205,9 @@ def _diagnosis_sidecar_evidence(issue: int) -> dict | None:
     ``None`` on ANY read / parse / import failure — fail toward keep, with
     ONE stderr diagnostic line so the quiet miss is diagnosable. Uses the
     SAME sidecar resolver the wedge arm uses (``resolve_handle_sidecar_path``
-    / ``read_handle_sidecar``, the #692 shape).
+    / ``read_handle_sidecar``, the #692 shape; ``lane_suffix`` threads the
+    #934 sidecar-suffix seam — #2145 — so a suffixed ``pod-<N>-<slug>`` reads
+    its own ``issue-<N>-<slug>-handle.json``, never a sibling lane's).
     """
     try:
         from explore_persona_space.backends.issue_dispatch import (
@@ -15774,7 +18215,7 @@ def _diagnosis_sidecar_evidence(issue: int) -> dict | None:
             resolve_handle_sidecar_path,
         )
 
-        path, _probed = resolve_handle_sidecar_path(issue)
+        path, _probed = resolve_handle_sidecar_path(issue, lane_suffix=lane_suffix)
         if not path.exists():
             return None
         handle = read_handle_sidecar(path)
@@ -15851,7 +18292,7 @@ def _maybe_stop_diagnosis_window_pod(
     ttl_sec = _diagnosis_window_ttl_sec()
     if now - float(first_seen) < ttl_sec:
         return False  # the diagnosis window is live — skip the sidecar IO entirely
-    evidence = _diagnosis_sidecar_evidence(issue)
+    evidence = _diagnosis_sidecar_evidence(issue, lane_suffix=_slug_from_pod_name(info.name))
     if evidence is None:
         return False  # no / unreadable sidecar — no positive evidence, keep
     decide_kwargs = {
@@ -15987,7 +18428,7 @@ def _keep_running_owner_candidates(issue: int, children: list) -> dict[int, str 
     for name in (f"issue-{issue}.json", f"manual-issue-{issue}.json"):
         try:
             entry = json.loads((AUTONOMOUS_REGISTRY_DIR / name).read_text())
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             continue
         if not isinstance(entry, dict):
             continue
@@ -16182,6 +18623,37 @@ def _append_keep_running_wedged_event(payload: dict, dry_run: bool) -> None:
             fh.write(line + "\n")
     except OSError as exc:
         print(f"  keep-running-wedged: sidecar append failed: {exc}", file=sys.stderr)
+
+
+def _pod_owner_fence_sidecar_path() -> Path:
+    """DEDICATED #2283 fence-defer event stream (the one-concern-one-stream
+    convention — ``keep-running-wedged-events.jsonl`` sibling)."""
+    return PROJECT_ROOT / ".claude" / "cache" / "pod-owner-fence-events.jsonl"
+
+
+def _append_pod_owner_fence_event(payload: dict, dry_run: bool) -> None:
+    """Append one JSON line to the #2283 fence-defer sidecar (fail-soft;
+    ``ts`` + ``kind`` stamped here). ``dry_run`` reports only — no write.
+    A ``kind`` key in ``payload`` deliberately OVERRIDES the stamped default
+    (ceiling rows post ``kind="fence-ceiling"``; defer rows are the
+    default ``"fence-defer"``) — the
+    :func:`_append_keep_running_wedged_event` convention."""
+    row = {
+        "ts": datetime.now().astimezone().isoformat(),
+        "kind": "fence-defer",
+        **payload,
+    }
+    line = json.dumps(row)
+    if dry_run:
+        print(f"  [dry-run] would append pod-owner-fence sidecar row: {line[:160]}")
+        return
+    dest = _pod_owner_fence_sidecar_path()
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as exc:
+        print(f"  fence-defer: sidecar append failed: {exc}", file=sys.stderr)
 
 
 def _emit_keep_running_wedged_alert(
@@ -16737,6 +19209,38 @@ def _kr_pod_prev_fields(
     )
 
 
+def _fd_pod_prev_fields(
+    prev_state: dict, pod_id: str
+) -> tuple[dict, dict | None, float | None, bool, float | None, bool]:
+    """Sanitized reads of the #2283 per-pod fence-defer episode entry (the
+    :func:`_kr_pod_prev_fields` shape). Returns ``(fd_pod_all,
+    prev_entry_raw, first_ts, noted, last_push_ts, ceiling_noted)`` — every
+    garbled/missing field at its fresh default (back-compat: a pre-#2283
+    state file with no ``fd_pod`` reads ``{}``)."""
+    fd_pod_all = prev_state.get("fd_pod")
+    if not isinstance(fd_pod_all, dict):
+        fd_pod_all = {}
+    prev_entry_raw = fd_pod_all.get(pod_id)
+    prev_entry = prev_entry_raw if isinstance(prev_entry_raw, dict) else {}
+    first_ts = prev_entry.get("first_ts")
+    if not isinstance(first_ts, int | float) or isinstance(first_ts, bool):
+        first_ts = None
+    noted = bool(prev_entry.get("noted", False))
+    last_push_ts = prev_entry.get("last_push_ts")
+    if not isinstance(last_push_ts, int | float) or isinstance(last_push_ts, bool):
+        last_push_ts = None
+    ceiling_noted = bool(prev_entry.get("ceiling_noted", False))
+    return (fd_pod_all, prev_entry_raw, first_ts, noted, last_push_ts, ceiling_noted)
+
+
+def _fresh_fd_pod_entry() -> dict:
+    """A fresh-defaults #2283 ``fd_pod`` entry — the episode-CLEAR payload
+    (an evaluated-and-inactive fence read resets the episode by WRITING
+    fresh defaults through :func:`_carry_fd_pod`'s set/replace arm; never a
+    delete variant — mirror, don't invent)."""
+    return {"first_ts": None, "noted": False, "last_push_ts": None, "ceiling_noted": False}
+
+
 def _note_pod_idle_probe_failure(
     issue: int,
     pod_id: str,
@@ -17219,18 +19723,328 @@ def _maybe_escalate_never_ran_pod(
     return True
 
 
+def _pod_owner_fence_active(pod_name: str, events: list, now: float) -> bool | None:
+    """Tri-state #2277 owner-fence read for the #2283 fence-defer arm.
+
+    - ``True``  — the pod carries an UNEXPIRED owner fence with NO
+      owner-matching upload-verification PASS
+      (``pod_lifecycle.OwnerFenceState.blocks_teardown`` — the SAME reader
+      chain the terminate guard runs; never a second parser).
+    - ``False`` — the read EVALUATED and no unwaived fence exists (no
+      tokens, expired, cleared via ``fence_until=none``, or the owner's
+      pod-bound PASS discharges it). The caller may CLEAR episode state.
+    - ``None``  — NOT EVALUATED: kill switch
+      (``EPM_DISABLE_POD_FENCE_DEFER=1``), import failure, or any exception
+      from the reader chain (one loud stderr WARN — never silent). ``None``
+      makes no fence claim: the caller neither defers NOR clears episode
+      state (fail-open toward the pre-#2283 stop; a transient read failure
+      must not erase a live episode's 24h-ceiling clock).
+
+    ``now`` is the pass's Unix-epoch float clock (plan §12 assumption 2 —
+    ``pod_safety_pass`` passes ``time.time()``); converted here to the
+    tz-aware UTC datetime the pod_lifecycle fence comparison requires. The
+    import is LAZY (function-local, the plan §4.3 contract): pod_lifecycle
+    imports runpod_api at module scope, and a fence read must degrade to
+    ``None`` — not kill the whole watcher pass — if that chain breaks."""
+    if not _pod_fence_defer_enabled():
+        return None
+    try:
+        from pod_lifecycle import owner_fence_state
+
+        now_dt = datetime.fromtimestamp(now, UTC)
+        assert now_dt.tzinfo is not None, "fence comparison requires an aware datetime"
+        return bool(owner_fence_state(events, pod_name, now_dt).blocks_teardown)
+    except Exception as exc:  # fail-open by design: WARN loud, make no claim
+        print(
+            f"  fence-defer: owner-fence read FAILED for pod {pod_name} "
+            f"({type(exc).__name__}: {exc}); NOT EVALUATED — no defer, episode "
+            f"state carried (#2283 fail-open).",
+            file=sys.stderr,
+        )
+        return None
+
+
+def _fence_until_display(pod_name: str, events: list, now: float) -> str:
+    """Best-effort ISO display of the pod's registered fence expiry for the
+    #2283 defer marker/push text. Fail-soft ``"unknown"`` on ANY failure —
+    the tri-state :func:`_pod_owner_fence_active` carries the DECISION; this
+    is display only, so it must never raise into the emission path."""
+    try:
+        from pod_lifecycle import owner_fence_state
+
+        st = owner_fence_state(events, pod_name, datetime.fromtimestamp(now, UTC))
+        return st.fence_until.isoformat() if st.fence_until is not None else "unknown"
+    except Exception:
+        return "unknown"
+
+
+def _fence_defer_exhausted_and_note_ceiling(
+    issue: int,
+    pod_id: str,
+    info: PodInfo | None,
+    status: str | None,
+    fence_active: bool,
+    now: float,
+    prev_state: dict,
+    dry_run: bool,
+    issue_running_pod_ids: set[str] | None,
+) -> bool:
+    """Compute the #2283 cumulative-deferral ceiling verdict for one pod and
+    fire the ONCE-per-episode ceiling escalation when it is freshly crossed
+    (split out of :func:`_process_pod` for C901).
+
+    Exhaustion is measured from the episode's first deferred tick
+    (``fd_pod.first_ts``) — never from the fence value, so a
+    continuously-refreshed fence cannot shield a pod past
+    ``EPM_POD_FENCE_DEFER_MAX_H``. On a fresh crossing while the fence is
+    STILL active: one task marker + one fail-soft push + one sidecar row
+    (``kind="fence-ceiling"``), then ``ceiling_noted=True`` is persisted AND
+    mirrored into the in-memory ``prev_state`` so the tick's later
+    status-class save forward-carries it (the #1490 r2 / #1519 clobber
+    lesson). Returns the exhaustion bool regardless of emission."""
+    (fd_all, _raw, first_ts, noted, last_push_ts, ceiling_noted) = _fd_pod_prev_fields(
+        prev_state, pod_id
+    )
+    exhausted = first_ts is not None and (now - first_ts) > _pod_fence_defer_max_s()
+    if not (fence_active and exhausted) or ceiling_noted:
+        return exhausted
+    pod_name = info.name if info is not None else f"pod-{issue}"
+    max_h = _pod_fence_defer_max_s() / 3600.0
+    # Registration-inertness contract (see _FENCE_CEILING_NOTE_SENTINEL):
+    # never a `pod=<real name>` token, never the pod name as leading token.
+    _post_progress_marker(
+        issue,
+        f"{_FENCE_CEILING_NOTE_SENTINEL} OWNER-FENCE DEFER CEILING EXHAUSTED: the "
+        f"pod-safety auto-stop of RUNNING pod {pod_name} (pod_id={pod_id}) on a "
+        f"task at DONE status '{status}' was deferred behind an unexpired #2277 "
+        f"owner fence for a cumulative {max_h:.0f}h (EPM_POD_FENCE_DEFER_MAX_H) "
+        f"and the fence is STILL active — a continuously-refreshed fence must "
+        f"not shield a pod forever, so the ordinary >=threshold auto-stop "
+        f"accumulation is RE-ARMED (stop in ~20 min at the 10-min cadence). If "
+        f"the run is genuinely live, tag it (`task.py add-tag {issue} "
+        f"keep-running`) or stop it yourself (`pod.py stop --issue {issue}`). "
+        f"Posted once per fence episode.",
+        dry_run,
+        label="fence-ceiling",
+    )
+    _telegram_push(
+        f"pod-safety #2283: fence-defer ceiling EXHAUSTED for {pod_name} "
+        f"(task #{issue}, status '{status}') — {max_h:.0f}h of cumulative "
+        f"deferral behind a still-active owner fence; ordinary auto-stop "
+        f"re-armed (~20 min). Tag keep-running or stop it yourself to "
+        f"intervene.",
+        dry_run,
+    )
+    _append_pod_owner_fence_event(
+        {
+            "kind": "fence-ceiling",
+            "issue": issue,
+            "pod_id": pod_id,
+            "pod_name": pod_name,
+            "status": status,
+            "episode_first_ts": first_ts,
+            "deferred_h": round((now - first_ts) / 3600.0, 2),
+            "ceiling_h": max_h,
+        },
+        dry_run,
+    )
+    entry = {
+        "first_ts": first_ts,
+        "noted": noted,
+        "last_push_ts": last_push_ts,
+        "ceiling_noted": True,
+    }
+    if not dry_run:
+        prev_missed = prev_state.get("missed", 0)
+        if not isinstance(prev_missed, int) or isinstance(prev_missed, bool):
+            prev_missed = 0
+        _save_pod_safety_state(
+            issue,
+            pod_id,
+            missed=prev_missed,
+            alerted=bool(prev_state.get("alerted", False)),
+            last_progress_ts=prev_state.get("last_progress_ts")
+            if isinstance(prev_state.get("last_progress_ts"), int | float)
+            else None,
+            fd_pod_entry=(pod_id, entry),
+            fd_pod_keep_ids=issue_running_pod_ids,
+            prev=prev_state,
+        )
+    # Mirror into prev_state (dry-run included — in-memory only there) so the
+    # tick's later save forward-carries ceiling_noted (#1490 r2 / #1519).
+    new_map = dict(fd_all)
+    new_map[pod_id] = entry
+    if issue_running_pod_ids is not None:
+        new_map = {k: v for k, v in new_map.items() if k in issue_running_pod_ids}
+    prev_state["fd_pod"] = new_map
+    return exhausted
+
+
+def _handle_fence_defer_action(
+    *,
+    issue: int,
+    pod_id: str,
+    status: str | None,
+    now: float,
+    dry_run: bool,
+    alerted: bool,
+    latest_progress: float | None,
+    prev_state: dict,
+    info: PodInfo | None,
+    events: list | None,
+    issue_running_pod_ids: set[str] | None,
+) -> None:
+    """Apply the #2283 ``fence-defer`` action (split out of
+    :func:`_apply_pod_safety_action` for C901): stdout line every tick, task
+    marker + push + sidecar row ONCE per fence episode (keyed on the
+    ``fd_pod.noted`` flag; ``first_ts`` stamps the episode onset the 24h
+    ceiling measures from), push + sidecar re-fired every
+    ``EPM_KEEP_RUNNING_WEDGED_REALERT_H`` (24h — the house unresolved-
+    condition cadence, deliberately the SAME knob as the #1582 arm) while
+    the deferral holds. DEFER-ONLY: never a stop/terminate; the miss counter
+    is persisted at 0 (the keep-running-skip reset semantics).
+
+    Named residuals (recorded DECISIONS, not corners — #2283 plan §4.4):
+
+    * **lapse-recycle** — the episode clears on an evaluated-and-inactive
+      tick, so a fence that lapses for a single sub-threshold tick and is
+      then re-posted resets the ceiling (an indefinite shield at ~ceiling
+      periods). Adversarial-only, outside the accidents-not-adversaries
+      trust model inherited from #2277, and visible: every fresh episode
+      re-fires its own marker + push.
+    * **CARRY across a long shield handover** — a NOT-evaluated tick carries
+      the entry untouched, so an episode carried through a >ceiling
+      `keep-running` / `followup-skip` / wrong-status stretch re-enters
+      already exhausted and the returning fence gets zero fence-side
+      deferral. Intended: the ceiling measures one continuous SHIELDED
+      stretch, and clear-on-handover would let shield ALTERNATION recycle it
+      indefinitely. Degrades to pre-#2283 behavior plus a loud ceiling
+      escalation.
+    * **copied-token** — `owner_matched` is unauthenticated string equality,
+      exactly as on the `pod_lifecycle` terminate side (task non-goal; pinned
+      there by ``test_terminate_copied_owner_token_waives_fence_known_residual``).
+      A copied `owner=` token waives the fence here too."""
+    pod_name = info.name if info is not None else f"pod-{issue}"
+    (_fd_all, _raw, first_ts, noted, last_push_ts, ceiling_noted) = _fd_pod_prev_fields(
+        prev_state, pod_id
+    )
+    episode_first = first_ts if first_ts is not None else now
+    fence_display = _fence_until_display(pod_name, events if events is not None else [], now)
+    max_h = _pod_fence_defer_max_s() / 3600.0
+    realert_s = _keep_running_owner_realert_s()
+    print(
+        f"  FENCE-DEFER issue #{issue}: task status '{status}' is DONE but pod "
+        f"{pod_name} (pod_id={pod_id}) carries an UNEXPIRED #2277 owner fence "
+        f"(expires {fence_display}) with no owner-matching PASS — pod-safety "
+        f"stop DEFERRED (re-arms on fence expiry / owner PASS / the "
+        f"{max_h:.0f}h cumulative ceiling)."
+    )
+    if not noted:
+        # Registration-inertness contract (see _FENCE_DEFER_NOTE_SENTINEL):
+        # the note must NEVER bind the pod in structured position — no
+        # `pod=<real name>` token (the release recipe keeps the literal
+        # `<pod-name>` placeholder), no pod name as the leading token —
+        # because an epm:progress note naming the pod with a fence token
+        # would itself REGISTER/CLEAR the owner's fence.
+        _post_progress_marker(
+            issue,
+            f"{_FENCE_DEFER_NOTE_SENTINEL} OWNER-FENCE DEFER: the pod-safety "
+            f"auto-stop of RUNNING pod {pod_name} (pod_id={pod_id}) on a task "
+            f"at DONE status '{status}' is DEFERRED — the pod carries an "
+            f"UNEXPIRED #2277 owner fence (expires {fence_display}) with no "
+            f"owner-matching upload-verification PASS, so a live owner may "
+            f"still be mid-run (#2283; the 2026-08-13 pod-2054-tiers incident "
+            f"class). The stop re-arms when the fence expires, when the "
+            f"owner's pod-bound PASS discharges it, or after a cumulative "
+            f"{max_h:.0f}h deferral ceiling (EPM_POD_FENCE_DEFER_MAX_H). "
+            f"Release early by posting a registration note naming the pod "
+            f"with the cleared token — `task.py post-marker {issue} "
+            f"epm:progress --note 'pod=<pod-name> fence_until=none'` (replace "
+            f"<pod-name> with the pod name above) — or stop by hand: `pod.py "
+            f"stop --issue {issue}`. Marker posted once per fence episode; "
+            f"push re-fires every {realert_s / 3600.0:.0f}h while the "
+            f"deferral holds.",
+            dry_run,
+            label="fence-defer",
+        )
+        _telegram_push(
+            f"pod-safety #2283: auto-stop of {pod_name} (task #{issue}, "
+            f"status '{status}') DEFERRED behind an unexpired owner fence "
+            f"(expires {fence_display}); cumulative ceiling {max_h:.0f}h. "
+            f"Release: post fence_until=none naming the pod, or `pod.py stop "
+            f"--issue {issue}`.",
+            dry_run,
+        )
+        _append_pod_owner_fence_event(
+            {
+                "issue": issue,
+                "pod_id": pod_id,
+                "pod_name": pod_name,
+                "status": status,
+                "fence_until": fence_display,
+                "episode_first_ts": episode_first,
+                "action": "defer-episode-open",
+            },
+            dry_run,
+        )
+        noted = True
+        last_push_ts = now
+    elif last_push_ts is None or (now - last_push_ts) >= realert_s:
+        _telegram_push(
+            f"pod-safety #2283: {pod_name} (task #{issue}) STILL deferred "
+            f"behind an unexpired owner fence (expires {fence_display}; "
+            f"episode open {(now - episode_first) / 3600.0:.1f}h, ceiling "
+            f"{max_h:.0f}h). Release: post fence_until=none naming the pod, "
+            f"or `pod.py stop --issue {issue}`.",
+            dry_run,
+        )
+        _append_pod_owner_fence_event(
+            {
+                "issue": issue,
+                "pod_id": pod_id,
+                "pod_name": pod_name,
+                "status": status,
+                "fence_until": fence_display,
+                "episode_first_ts": episode_first,
+                "action": "defer-re-alert",
+            },
+            dry_run,
+        )
+        last_push_ts = now
+    if not dry_run:
+        _save_pod_safety_state(
+            issue,
+            pod_id,
+            missed=0,
+            alerted=alerted,
+            last_progress_ts=latest_progress,
+            fd_pod_entry=(
+                pod_id,
+                {
+                    "first_ts": episode_first,
+                    "noted": noted,
+                    "last_push_ts": last_push_ts,
+                    "ceiling_noted": ceiling_noted,
+                },
+            ),
+            fd_pod_keep_ids=issue_running_pod_ids,
+            prev=prev_state,
+        )
+
+
 def _escaped_pod_exemptions(
     issue: int,
     status_class: str,
     events: list,
     pod_name: str | None = None,
     now: float | None = None,
-) -> tuple[bool, bool]:
+    status: str | None = None,
+) -> tuple[bool, bool, bool | None]:
     """Lazy escaped-pod auto-stop exemptions for :func:`_process_pod`.
 
-    Returns ``(keep_running, followup_active)``. Both only matter when the
-    auto-stop arm is in play (``status_class == "auto-stop-done"``), so the
-    extra ``task.py view`` subprocess + events scan are paid only for
+    Returns ``(keep_running, followup_active, fence_read)``. All only matter
+    when the auto-stop arm is in play (``status_class == "auto-stop-done"``),
+    so the extra ``task.py view`` subprocess + events scans are paid only for
     escaped-pod candidates. ``keep_running`` (the explicit user tag) is
     consulted first; ``followup_active`` (the inferred-from-events live inline
     follow-up) is the fallback, computed only when ``keep_running`` is False.
@@ -17238,14 +20052,36 @@ def _escaped_pod_exemptions(
     shield for SUFFIXED pods (see :func:`_task_followup_active`); ``None``
     keeps the issue-grain behavior byte-identical.
     Extracted from :func:`_process_pod` to keep its cyclomatic complexity under
-    the C901 cap after the #692 wedge arm landed (behavior unchanged)."""
+    the C901 cap after the #692 wedge arm landed (behavior unchanged).
+
+    ``fence_read`` (#2283) is the tri-state #2277 owner-fence read
+    (:func:`_pod_owner_fence_active`: True = unwaived unexpired fence /
+    False = evaluated, no unwaived fence / None = not evaluated), computed
+    LAZILY — only when every cheaper shield has declined AND the fence arm
+    is ELIGIBLE. Eligibility keys STRICTLY on ``status in``
+    :data:`AUTO_STOP_DONE` (blocker 1): ``"auto-stop-done"`` is a MERGED
+    status-class label that also covers user-paused ``on_hold``
+    (:data:`AUTO_STOP_PAUSED`), and a self-posted fence must NEVER defer a
+    USER-ordered pause stop — an ``on_hold`` task reads ``None`` here (not
+    evaluated) by construction. A missing ``pod_name``/``now``/``status``
+    also reads ``None`` (no fence claim without the inputs)."""
     keep_running = status_class == "auto-stop-done" and _task_keep_running(issue)
     followup_active = (
         status_class == "auto-stop-done"
         and not keep_running
         and _task_followup_active(issue, events=events, pod_name=pod_name, now=now)
     )
-    return keep_running, followup_active
+    fence_read: bool | None = None
+    if (
+        status_class == "auto-stop-done"
+        and status in AUTO_STOP_DONE  # NOT the merged class: on_hold never defers (#2283 b1)
+        and not keep_running
+        and not followup_active
+        and pod_name is not None
+        and now is not None
+    ):
+        fence_read = _pod_owner_fence_active(pod_name, events, now)
+    return keep_running, followup_active, fence_read
 
 
 def _process_pod(
@@ -17317,13 +20153,15 @@ def _process_pod(
     events = _task_events(issue)
     latest_progress = _latest_progress_ts(events)
     status_class = _status_class(status, latest_progress, now)
-    keep_running, followup_active = _escaped_pod_exemptions(
+    keep_running, followup_active, fence_read = _escaped_pod_exemptions(
         issue,
         status_class,
         events,
         pod_name=info.name if info is not None else f"pod-{issue}",
         now=now,
+        status=status,
     )
+    fence_active = fence_read is True  # tri-state: None (not evaluated) never defers
 
     prev_state = _load_pod_safety_state(issue)
     prev_missed = prev_state.get("missed", 0)
@@ -17388,6 +20226,21 @@ def _process_pod(
     alerted = False if (progressed or status_class == "pod-active-fresh") else prev_alerted
 
     stale = status_class == "pod-active-stale"
+    # ── #2283 fence-defer ceiling (computed BEFORE decide so an exhausted
+    # episode resumes ordinary accumulation this very tick; fires the
+    # once-per-episode ceiling escalation on a fresh crossing and mirrors
+    # ceiling_noted into prev_state for the later save's forward-carry) ──────
+    fence_defer_exhausted = _fence_defer_exhausted_and_note_ceiling(
+        issue,
+        pod_id,
+        info,
+        status,
+        fence_active,
+        now,
+        prev_state,
+        dry_run,
+        issue_running_pod_ids,
+    )
     action, new_missed = decide_pod_safety(
         status_class=status_class,
         missed=prev_missed,
@@ -17396,6 +20249,8 @@ def _process_pod(
         threshold=threshold,
         keep_running=keep_running,
         followup_active=followup_active,
+        fence_active=fence_active,
+        fence_defer_exhausted=fence_defer_exhausted,
     )
     gap_h = f"{(now - latest_progress) / 3600:.1f}h" if latest_progress is not None else "none"
     print(
@@ -17421,6 +20276,8 @@ def _process_pod(
         prev_stop_failed_noted=prev_stop_failed_noted,
         info=info,
         issue_running_pod_ids=issue_running_pod_ids,
+        fence_read=fence_read,
+        events=events,
     )
 
 
@@ -17443,12 +20300,15 @@ def _apply_pod_safety_action(  # noqa: C901 — flat per-action dispatcher; the 
     prev_stop_failed_noted: bool,
     info: PodInfo | None = None,
     issue_running_pod_ids: set[str] | None = None,
+    fence_read: bool | None = None,
+    events: list | None = None,
 ) -> None:
     """Apply the status-class :func:`decide_pod_safety` ``action`` for one pod.
 
     Extracted verbatim from :func:`_process_pod` (behavior unchanged) to keep its
     cyclomatic complexity under the C901 cap after the #692 wedge arm landed. The
-    five actions — ``keep-running-skip`` / ``followup-skip`` / ``stop`` (whose
+    six actions — ``keep-running-skip`` / ``followup-skip`` / ``fence-defer``
+    (#2283, dispatched to :func:`_handle_fence_defer_action`) / ``stop`` (whose
     REAL-failure sub-branch posts a once-per-episode durable ``stop-failed``
     marker and keeps the episode retryable, #1155) / ``alert`` / ``keep`` — post
     the appropriate once-per-episode marker (deduped
@@ -17461,7 +20321,20 @@ def _apply_pod_safety_action(  # noqa: C901 — flat per-action dispatcher; the 
     ``keep-running-skip`` branch — the pod ``created_at`` gap fallback + the
     marker/push spec text. ``issue_running_pod_ids`` (this issue's live
     RUNNING pod-id set, threaded from :func:`pod_safety_pass`; ``None`` =
-    unknown, no GC) feeds the #2149 pod-idle leg's ``kr_pod`` sub-dict GC."""
+    unknown, no GC) feeds the #2149 pod-idle leg's ``kr_pod`` sub-dict GC and
+    the #2283 ``fd_pod`` GC.
+
+    ``fence_read`` (#2283) is the tri-state owner-fence read from
+    :func:`_escaped_pod_exemptions`: an EVALUATED-and-inactive ``False``
+    CLEARS the pod's ``fd_pod`` episode entry (fresh-defaults write through
+    every branch's save — a fence that expired / was discharged ends the
+    episode so a LATER fence opens a fresh one); ``True`` (a live episode —
+    the ``fence-defer`` branch owns its own save) and ``None`` (not
+    evaluated: kill switch / shielded / read failure) both CARRY the entry
+    untouched — an unevaluated read must never erase a live episode's
+    ceiling clock. ``events`` threads the task's events list to the defer
+    branch's fence-expiry display (fail-soft, display only)."""
+    fd_clear_entry = (pod_id, _fresh_fd_pod_entry()) if fence_read is False else None
     if action == "keep-running-skip":
         print(
             f"  KEEP-RUNNING issue #{issue}: task status '{status}' is DONE but the "
@@ -17529,6 +20402,7 @@ def _apply_pod_safety_action(  # noqa: C901 — flat per-action dispatcher; the 
                 alerted=alerted,
                 last_progress_ts=latest_progress,
                 keep_running_noted=True,
+                fd_pod_entry=fd_clear_entry,
                 prev=prev_state,
             )
         return
@@ -17572,8 +20446,29 @@ def _apply_pod_safety_action(  # noqa: C901 — flat per-action dispatcher; the 
                 alerted=alerted,
                 last_progress_ts=latest_progress,
                 followup_noted=True,
+                fd_pod_entry=fd_clear_entry,
                 prev=prev_state,
             )
+        return
+
+    if action == "fence-defer":
+        # #2283 owner-fence defer arm (DEFER-ONLY — can only turn a stop
+        # into a wait): marker once per fence episode, push/sidecar
+        # re-alerted on the 24h TTL, miss counter reset, episode onset
+        # stamped for the cumulative ceiling. Split out for C901.
+        _handle_fence_defer_action(
+            issue=issue,
+            pod_id=pod_id,
+            status=status,
+            now=now,
+            dry_run=dry_run,
+            alerted=alerted,
+            latest_progress=latest_progress,
+            prev_state=prev_state,
+            info=info,
+            events=events,
+            issue_running_pod_ids=issue_running_pod_ids,
+        )
         return
 
     if action == "stop":
@@ -17632,6 +20527,7 @@ def _apply_pod_safety_action(  # noqa: C901 — flat per-action dispatcher; the 
             alerted=alerted,
             last_progress_ts=latest_progress,
             stop_failed_noted=True,
+            fd_pod_entry=fd_clear_entry,
             prev=prev_state,
         )
         return
@@ -17661,6 +20557,7 @@ def _apply_pod_safety_action(  # noqa: C901 — flat per-action dispatcher; the 
                 missed=0,
                 alerted=True,
                 last_progress_ts=latest_progress,
+                fd_pod_entry=fd_clear_entry,
                 prev=prev_state,
             )
         return
@@ -17675,6 +20572,7 @@ def _apply_pod_safety_action(  # noqa: C901 — flat per-action dispatcher; the 
             missed=new_missed,
             alerted=alerted,
             last_progress_ts=latest_progress,
+            fd_pod_entry=fd_clear_entry,
             prev=prev_state,
         )
 
@@ -18875,6 +21773,9 @@ def _respawn_stalled_session(issue: int, cap_gpu_hours: float, dry_run: bool) ->
         "--issue", str(issue), "--auto", "--auto-approve-gpu-hours", str(cap_gpu_hours),
     ]  # fmt: skip
     cmd.extend(_stalled_session_overrides(issue))
+    if _resolve_session_mode(issue) == "async":
+        # Mission-control rung 0 (CONTRACTS §2.2): re-pass the durable mode.
+        cmd += ["--session-mode", "async"]
     if dry_run:
         print(f"  [dry-run] would respawn stalled: {' '.join(cmd)}")
         return "failed"  # dry-run: nothing spawned
@@ -18945,7 +21846,7 @@ def _stalled_session_overrides(issue: int) -> list[str]:
     entry_path = AUTONOMOUS_REGISTRY_DIR / f"issue-{issue}.json"
     try:
         entry = json.loads(entry_path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return []
     if not isinstance(entry, dict):
         return []
@@ -19018,6 +21919,10 @@ class _StalledActionCtx:
         dead_silence_respawns_today: int = 0,
         wedge_respawn_day: str | None = None,
         wedge_respawns_today: int = 0,
+        latest_marker_ts: float | None = None,
+        xgen_respawns: int = 0,
+        xgen_last_real_marker_ts: float | None = None,
+        xgen_escalated_at: int = 0,
     ) -> None:
         self.issue = issue
         self.happy_session_id = happy_session_id
@@ -19122,6 +22027,23 @@ class _StalledActionCtx:
         # (advancement-clear-EXEMPT load; bumped only at stop-initiation).
         self.wedge_respawn_day = wedge_respawn_day
         self.wedge_respawns_today = wedge_respawns_today
+        # #2084 cross-generation no-progress escalation. ``latest_marker_ts``
+        # is the pass-entry newest real (non-watcher) marker epoch ts
+        # (:func:`_latest_nonwatcher_event_ts`, computed once per tick) —
+        # PER-TICK EVIDENCE like ``wedge_note`` / ``downgrade_note``,
+        # deliberately NOT persisted. The three ``xgen_*`` fields ARE
+        # persisted, advancement-clear-EXEMPT (the #1209/#1241 pattern; the
+        # caller loads them via :func:`_stalled_xgen_fields` OUTSIDE the
+        # advancement clear). :func:`_update_stalled_xgen_on_spawn` mutates
+        # them at the fence's spawn fire to the values THIS tick must
+        # persist; every persist site forwards them via
+        # :func:`_persist_stalled_ctx`, so miss-accumulation / fence-stop /
+        # retry-stop / alert-handler saves never wipe the counter
+        # (spawn-site-only overrides are the banned inert shape).
+        self.latest_marker_ts = latest_marker_ts
+        self.xgen_respawns = xgen_respawns
+        self.xgen_last_real_marker_ts = xgen_last_real_marker_ts
+        self.xgen_escalated_at = xgen_escalated_at
 
     @property
     def happy_session_id_str(self) -> str | None:
@@ -19159,6 +22081,9 @@ def _persist_stalled_ctx(ctx: _StalledActionCtx, sid: str | None, missed: int, *
         dead_silence_respawns_today=ctx.dead_silence_respawns_today,
         wedge_respawn_day=ctx.wedge_respawn_day,
         wedge_respawns_today=ctx.wedge_respawns_today,
+        xgen_respawns=ctx.xgen_respawns,
+        xgen_last_real_marker_ts=ctx.xgen_last_real_marker_ts,
+        xgen_escalated_at=ctx.xgen_escalated_at,
         prev=ctx.prev_state,
     )
     kwargs.update(overrides)
@@ -19249,6 +22174,109 @@ def _fence_stop_failed(ctx: _StalledActionCtx, sid: str) -> None:
     _persist_stalled_ctx(ctx, sid, ctx.threshold, stop_failed_alerted=True)
 
 
+def _update_stalled_xgen_on_spawn(ctx: _StalledActionCtx) -> tuple[str, str]:
+    """#2084: apply the cross-generation no-progress COUNTING RULE at the
+    fence's spawn fire and evaluate the escalation predicate. Mutates the
+    three ``ctx.xgen_*`` fields to the values THIS tick must persist (the
+    spawn branch's ``_persist_stalled_ctx`` forwards them); returns the
+    :func:`decide_stalled_xgen_escalation` ``(verdict, reason)``.
+
+    Counting rule (counts respawn EVENTS the watcher fires — never marker
+    literals grepped from ``task.py view`` output): at each fence-spawn fire
+    read the pass's already-computed newest real (non-watcher) marker ts
+    (``ctx.latest_marker_ts``). Newer than the anchor => the intervening
+    generation made real progress => reset (``xgen_respawns = 1``,
+    ``xgen_escalated_at = 0``); else increment. Anchor update is MONOTONE
+    (``max(old, new)``), skipping a ``None``/unreadable current read — a
+    transient empty events read must never overwrite a valid anchor and
+    cause a spurious reset. Scope: fence-spawn fires ONLY — wedge /
+    dead-silence episodes whose respawn completes via the crash-recovery
+    arm are not counted (the escalation note states these semantics).
+
+    On ``"escalate"``, ``xgen_escalated_at`` is set to the new count HERE —
+    BEFORE the caller's persist — so the once-per-band dedup is durable
+    even when a crash lands between the persist and the fail-soft channels
+    (worst case: one lost alert, re-fired at the next band)."""
+    cur = ctx.latest_marker_ts
+    anchor = ctx.xgen_last_real_marker_ts
+    if cur is not None and (anchor is None or cur > anchor):
+        ctx.xgen_respawns = 1
+        ctx.xgen_escalated_at = 0
+    else:
+        ctx.xgen_respawns += 1
+    if cur is not None:
+        ctx.xgen_last_real_marker_ts = cur if anchor is None else max(anchor, cur)
+    verdict, reason = decide_stalled_xgen_escalation(
+        kill_switch=not _stalled_xgen_escalation_enabled(),
+        xgen_respawns=ctx.xgen_respawns,
+        threshold=_stalled_xgen_escalate_after(),
+        escalated_at=ctx.xgen_escalated_at,
+    )
+    if verdict == "escalate":
+        ctx.xgen_escalated_at = ctx.xgen_respawns
+    return verdict, reason
+
+
+def _emit_stalled_xgen_escalation(ctx: _StalledActionCtx) -> None:
+    """#2084 escalation channels — marker + Telegram push + sidecar row,
+    EACH fail-soft, run AFTER the spawn branch's state persist: an exception
+    on this observability-only path must never abort respawn bookkeeping
+    (the respawn already happened and its state is already saved).
+
+    ESCALATE-ONLY hard invariant: NO ``_stop_session``, NO status mutation,
+    NO respawn suppression, NO cap consumption — the respawn lane's behavior
+    is byte-for-byte unchanged apart from reading already-computed values
+    (pinned by ``test_stalled_xgen_escalation_never_stops_or_mutates``)."""
+    threshold = _stalled_xgen_escalate_after()
+    anchor = ctx.xgen_last_real_marker_ts
+    anchor_str = (
+        time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(anchor))
+        if isinstance(anchor, int | float)
+        else "none on record"
+    )
+    note = (
+        f"{_STALLED_XGEN_NOTE_SENTINEL} CROSS-GENERATION NO-PROGRESS "
+        f"escalation (#2084, ESCALATE-ONLY): the stalled fence-spawn arm has "
+        f"fired {ctx.xgen_respawns} consecutive auto-respawn(s) on "
+        f"#{ctx.issue} with NO intervening real (non-watcher) marker "
+        f"(threshold {threshold}; semantics: fence-spawn fires since the "
+        f"last real marker — wedge/dead-silence episodes completed by the "
+        f"crash-recovery arm are not counted). Last real non-watcher marker "
+        f"ts: {anchor_str}. The respawn lane keeps running UNCHANGED (no "
+        f"stop, no status change, no cap consumed) — this loop is burning "
+        f"respawns without progress. Manual triage: inspect the session "
+        f"transcript + `task.py latest-marker {ctx.issue}`; consider "
+        f"`task.py set-status {ctx.issue} blocked` (park it for a human) or "
+        f"a deliberate takeover (rename the registration per the "
+        f"paused-takeover recipe). Kill switch: "
+        f"EPM_DISABLE_STALLED_XGEN_ESCALATION=1. {_source_stamp()}"
+    )
+    try:
+        _post_progress_marker(ctx.issue, note, ctx.dry_run, label="session-auto-respawn-noprogress")
+    except Exception as e:  # fail-soft by design (#2084 plan §3)
+        print(f"  WARNING: xgen escalation marker failed for #{ctx.issue}: {e}", file=sys.stderr)
+    try:
+        _telegram_push(
+            f"[EPS watcher] #{ctx.issue} cross-generation NO-PROGRESS respawn "
+            f"loop: {ctx.xgen_respawns} fence-spawn respawns with zero real "
+            f"markers (threshold {threshold}). Respawns continue unchanged; "
+            f"manual triage needed (#2084).",
+            ctx.dry_run,
+        )
+    except Exception as e:  # fail-soft by design (#2084 plan §3)
+        print(f"  WARNING: xgen escalation push failed for #{ctx.issue}: {e}", file=sys.stderr)
+    try:
+        _append_stalled_xgen_event(
+            issue=ctx.issue,
+            count=ctx.xgen_respawns,
+            threshold=threshold,
+            last_real_marker_ts=anchor if isinstance(anchor, int | float) else None,
+            dry_run=ctx.dry_run,
+        )
+    except Exception as e:  # fail-soft by design (#2084 plan §3)
+        print(f"  WARNING: xgen escalation sidecar failed for #{ctx.issue}: {e}", file=sys.stderr)
+
+
 def _fence_spawn_stalled(ctx: _StalledActionCtx, sid: str) -> None:
     """Verified-dead spawn branch of the stop-verify fence (the pre-#845
     respawn body): the pending sid is confirmed absent from the daemon's
@@ -19296,6 +22324,13 @@ def _fence_spawn_stalled(ctx: _StalledActionCtx, sid: str) -> None:
     spawn_ok = spawn_result == "spawned"
     new_respawn_count = ctx.respawn_count + 1
     if spawn_ok:
+        # #2084: count this fence-spawn fire (the sole session-auto-respawn
+        # post site) against the cross-generation no-progress counter and
+        # decide the escalation BEFORE the persist below, so the updated
+        # xgen_* fields — including the once-per-band xgen_escalated_at bump
+        # — ride the spawn branch's own state save. The channels fire AFTER
+        # the persist (fail-soft; see _emit_stalled_xgen_escalation).
+        xgen_verdict, _xgen_reason = _update_stalled_xgen_on_spawn(ctx)
         wedge_suffix = f" Wedge evidence: {ctx.wedge_note}." if ctx.wedge_note else ""
         hold_suffix = (
             f" (respawn was held {ctx.wt_hold_count} tick(s) for worktree activity)"
@@ -19336,6 +22371,11 @@ def _fence_spawn_stalled(ctx: _StalledActionCtx, sid: str) -> None:
             stop_failed_alerted=False,
             wt_hold_count=0,
         )
+        # #2084 escalation channels — AFTER the state persist, each
+        # fail-soft; observability only (never a stop / status mutation /
+        # respawn suppression / cap consume).
+        if xgen_verdict == "escalate":
+            _emit_stalled_xgen_escalation(ctx)
         return
     # "failed": keep the pre-#845 no-booking behavior (respawn_count NOT
     # bumped; retried on a later tick) — but the fence's stop_pending_*
@@ -20557,7 +23597,7 @@ def _process_stalled_session(
     """
     try:
         entry = json.loads(entry_path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         # Cleanup is owned elsewhere: the respawn pass removes a garbled
         # autonomous entry; the GC pass reaps manual entries (keyed on the
         # filename's issue number, so a garbled BODY still gets aged out).
@@ -20679,6 +23719,18 @@ def _process_stalled_session(
     wedge_respawns_today = _day_scoped_count(
         prev_state, "wedge_respawn_day", "wedge_respawns_today", dead_silence_day_key
     )
+
+    # #2084 cross-generation no-progress fields — deliberately OUTSIDE the
+    # advancement-clear above, alongside the #1209/#1241 day-keyed counters
+    # and for the same reason: every fence-spawn respawn boots a fresh
+    # session that writes a fresh boot self-report, so an advancement-
+    # cleared counter could never see across generations — which is exactly
+    # the loop this counter measures (#2004: 7 respawns over 7h34m with
+    # zero real markers, the episode belt reset on every boot). NOT
+    # day-keyed: the predicate is purely progress-keyed (reset only when
+    # the newest real non-watcher marker ts advances — see
+    # :func:`_update_stalled_xgen_on_spawn`).
+    xgen_respawns, xgen_last_real_marker_ts, xgen_escalated_at = _stalled_xgen_fields(prev_state)
 
     # Compute respawn_eligible: the task must be in an ACTIVE status (we
     # never restart a session at a PARK / gate / terminal state) AND the
@@ -20875,6 +23927,10 @@ def _process_stalled_session(
         dead_silence_respawns_today=dead_silence_respawns_today,
         wedge_respawn_day=dead_silence_day_key,
         wedge_respawns_today=wedge_respawns_today,
+        latest_marker_ts=latest_marker_ts,
+        xgen_respawns=xgen_respawns,
+        xgen_last_real_marker_ts=xgen_last_real_marker_ts,
+        xgen_escalated_at=xgen_escalated_at,
     )
 
     # #1480 stalled-manual escalation rung (no-op for autonomous entries,
@@ -21236,7 +24292,7 @@ def _load_orphan_state(issue: int) -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -21405,7 +24461,7 @@ def _issue_registrations() -> dict[int, dict]:
                 continue
             try:
                 entry = json.loads(path.read_text())
-            except (json.JSONDecodeError, OSError):
+            except (json.JSONDecodeError, OSError, UnicodeDecodeError):
                 entry = {}
             if not isinstance(entry, dict):
                 entry = {}
@@ -21521,6 +24577,9 @@ def _respawn_orphan(issue: int, cap_gpu_hours: float, dry_run: bool) -> str:
         "--issue", str(issue), "--auto", "--auto-approve-gpu-hours", str(cap_gpu_hours),
     ]  # fmt: skip
     cmd.extend(_stalled_session_overrides(issue))
+    if _resolve_session_mode(issue) == "async":
+        # Mission-control rung 0 (CONTRACTS §2.2): re-pass the durable mode.
+        cmd += ["--session-mode", "async"]
     if dry_run:
         print(f"  [dry-run] would respawn orphan: {' '.join(cmd)}")
         return "failed"  # dry-run: nothing spawned
@@ -22450,6 +25509,19 @@ _DISPATCH_NOTE_SENTINELS = (
     _INFRA_DRAIN_NOTE_SENTINEL,
 )
 
+# #2142: registration/owner-activity freshness window for BOTH dispatch loops
+# (the PM-queue drain + the proposed-infra sweep). A candidate whose newest
+# session registration OR newest non-watcher marker is younger than this is
+# presumed OWNED by a just-spawned / live session — skipped with NO attempt
+# recorded. 600 s is an order of magnitude above the 26-59 s owner-signal
+# ages of the four duplicate-spawn incidents (#1771/#1997/#1988/#1992) and
+# deliberately BELOW the 1800 s dead-at-boot stale grace, so a genuinely
+# dead-at-boot registration still re-dispatches after ~3 ticks. This is a
+# POSITIVE "younger than the window => skip" guard that overrides the
+# `- stale` subtraction's blind spot without touching the staleness rule
+# itself. `0` disables the guard (kill switch). env EPM_DISPATCH_REG_FRESH_S.
+DISPATCH_REG_FRESH_S_DEFAULT = 600.0
+
 
 def _proposed_infra_sweep_marker_fresh_s() -> float:
     """Marker-freshness window in seconds (env
@@ -22482,6 +25554,137 @@ def _recent_dispatch_marker_age_s(events: list[dict], now: float) -> float | Non
         if ts is not None and (best is None or ts > best):
             best = ts
     return None if best is None else now - best
+
+
+def _dispatch_reg_fresh_s() -> float:
+    """Registration/owner-activity freshness window in seconds (#2142; env
+    ``EPM_DISPATCH_REG_FRESH_S``; missing or malformed value falls back to
+    :data:`DISPATCH_REG_FRESH_S_DEFAULT` — a typo must not distort the guard,
+    mirroring :func:`_proposed_infra_sweep_marker_fresh_s`). ``0`` disables
+    the guard (an age can never be ``< 0``)."""
+    raw = os.environ.get("EPM_DISPATCH_REG_FRESH_S")
+    if not raw:
+        return DISPATCH_REG_FRESH_S_DEFAULT
+    try:
+        return float(raw)
+    except ValueError:
+        return DISPATCH_REG_FRESH_S_DEFAULT
+
+
+def _registration_age_s(issue: int, now: float) -> float | None:
+    """Age in seconds of the NEWEST session registration for ``issue``
+    (``issue-<N>.json`` / ``manual-issue-<N>.json``), or ``None`` when none
+    exists (#2142). Prefers the JSON ``spawned_at``; a well-formed entry
+    missing a numeric ``spawned_at`` falls back to file mtime. A
+    present-but-garbled registration (unreadable / unparseable / non-dict,
+    with no usable mtime path) returns 0.0 (treated MAXIMALLY FRESH) — the
+    fail-CLOSED direction, matching :func:`_infra_drain_stale`'s
+    fail-toward-keep-blocking posture. NOT
+    :func:`spawn_session.dispatch_lease_fresh`'s garbled-mtime convention
+    (that one is mtime-with-TTL over a self-expiring lease) — do not "align"
+    this to mtime-with-TTL; that would unbound the wedge the wrong way (a
+    garbled registration aging PAST the window would unblock a dispatch onto
+    a possibly-live owner)."""
+    ages: list[float] = []
+    for basename in (f"issue-{issue}.json", f"manual-issue-{issue}.json"):
+        path = AUTONOMOUS_REGISTRY_DIR / basename
+        try:
+            raw = path.read_bytes()
+        except FileNotFoundError:
+            continue
+        except OSError:
+            return 0.0  # present but unreadable — maximally fresh (fail-closed)
+        try:
+            entry = json.loads(raw)
+        except ValueError:  # JSONDecodeError + UnicodeDecodeError on raw bytes
+            return 0.0  # present-but-garbled — maximally fresh (fail-closed)
+        if not isinstance(entry, dict):
+            return 0.0
+        spawned_at = entry.get("spawned_at")
+        if isinstance(spawned_at, int | float) and not isinstance(spawned_at, bool):
+            ts = float(spawned_at)
+        else:
+            try:
+                ts = path.stat().st_mtime
+            except OSError:
+                return 0.0
+        ages.append(max(0.0, now - ts))
+    return min(ages) if ages else None
+
+
+def _owner_activity_marker_age_s(events: list[dict], now: float) -> float | None:
+    """Age (s) of the newest NON-watcher marker on the task, or ``None`` when
+    no such marker / no parseable ts (fail-soft — the M1 lease still
+    protects). #2142: the #1997 duplicate's owner signal was a 26 s-old
+    progress note — invisible to the lease + registration guards. Delegates
+    to :func:`_latest_nonwatcher_event_ts`, which excludes every
+    :data:`_WATCHER_NOTE_SENTINELS` member — the watcher's own dispatch
+    sentinels (:data:`_INFRA_DRAIN_NOTE_SENTINEL` /
+    :data:`_PROPOSED_INFRA_SWEEP_NOTE_SENTINEL`) included, so the watcher's
+    own dispatch markers can never suppress its own retries."""
+    ts = _latest_nonwatcher_event_ts(events)
+    return None if ts is None else now - ts
+
+
+def _dispatch_freshness_skip(issue: int, events: list[dict], now: float) -> str | None:
+    """#2142: the three per-candidate freshness guards BOTH dispatch loops run
+    AFTER the caller-loop lease check — returns the log suffix for a skip (the
+    callers book NO attempt: none of these is a spawn failure) or ``None``
+    (eligible). ``events`` is the single ``_task_events`` read the caller
+    already made (no new I/O). Guard order (cheapest file read first):
+
+    1. registration younger than :func:`_dispatch_reg_fresh_s` — a
+       JUST-SPAWNED owner (the four duplicate incidents' owner signals were
+       26-59s old); a POSITIVE override of the ``- stale`` subtraction,
+       whatever the staleness rule classified.
+    2. #843 M3 dispatch-sentinel marker younger than one watcher cadence —
+       SOME dispatcher fired within the current/previous tick (the drain loop
+       gains this guard here; it previously lacked it).
+    3. non-watcher marker younger than the freshness window (the #1997
+       progress-note channel) — a live session is working the task even with
+       no registration/lease."""
+    fresh_window = _dispatch_reg_fresh_s()
+    reg_age = _registration_age_s(issue, now)
+    if reg_age is not None and reg_age < fresh_window:
+        return f"registration {reg_age:.0f}s < {fresh_window:.0f}s fresh"
+    marker_fresh_s = _proposed_infra_sweep_marker_fresh_s()
+    marker_age = _recent_dispatch_marker_age_s(events, now)
+    if marker_age is not None and marker_age < marker_fresh_s:
+        return f"recent-dispatch-marker {marker_age:.0f}s < {marker_fresh_s:.0f}s"
+    act_age = _owner_activity_marker_age_s(events, now)
+    if act_age is not None and act_age < fresh_window:
+        return f"owner-activity marker {act_age:.0f}s < {fresh_window:.0f}s fresh"
+    return None
+
+
+def _cap_recheck_skip(
+    attempted_any: bool, pending: int, dispatched: int, limit: int
+) -> tuple[str | None, int | None]:
+    """#2142 per-spawn cap re-check shared by both dispatch loops. Once ANY
+    prior ``_dispatch_infra_drain`` call happened this pass (``attempted_any``
+    — NOT ``dispatched > 0``: a "failed"/"suppressed" first attempt leaves
+    ``dispatched`` at 0 with the stagger already elapsed), the pass-start
+    occupancy is up to a stagger window (~60s each) stale — re-read before
+    every further spawn. ``+ dispatched`` mirrors the decide-time walk's
+    ``len(dispatch)`` term: a just-dispatched task stays ``proposed`` for
+    minutes (absent from the occupancy statuses) and pass-start ``pending``
+    predates its registration. A fast-flipping own dispatch then
+    double-counts — the safe skip direction. NARROWS the cap race (the
+    verdict is still up to one stagger stale at the POST); does not close it.
+
+    Returns ``(verdict, live_count)``: verdict ``None`` = proceed;
+    ``"read-failed"`` = occupancy read failed mid-batch (callers BREAK —
+    fail-closed, mirroring the pass-level guard); ``"cap-full"`` = skip this
+    candidate (NO attempt — occupancy filling is not the candidate's
+    failure). ``live_count`` is ``len(live)`` when read (for the log line)."""
+    if not attempted_any:
+        return None, None
+    live = _infra_drain_occupancy()
+    if live is None:
+        return "read-failed", None
+    if len(live) + pending + dispatched >= limit:
+        return "cap-full", len(live)
+    return None, len(live)
 
 
 def _parse_predicate_hold(reason: str) -> int | None:
@@ -22817,7 +26020,7 @@ def _load_attempt_state(path: Path, max_attempts: int, *, log_prefix: str) -> di
         return {"attempts": {}}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {"attempts": {}}
     if not isinstance(data, dict) or not isinstance(data.get("attempts"), dict):
         return {"attempts": {}}
@@ -23173,10 +26376,15 @@ def _dispatch_infra_drain(
     — a loud no-op the callers must NOT book: no dispatch marker, no attempt,
     no backoff (a crashed lease-winner then recovers in <= TTL + one tick,
     not the 1 h backoff). ``"failed"`` also covers dry-run (logs, never
-    spawns, nothing to book) and the pre-spawn re-check aborts (both record
-    a spawn-failed attempt in the callers, exactly as before). ``"suppressed"``
-    ALSO covers the #1027 auth-outage gate (same no-booking contract); this
-    single hook covers BOTH callers (``infra_drain_pass`` +
+    spawns, nothing to book) and the pre-spawn REGISTRATION re-check aborts
+    (which record a spawn-failed attempt in the callers — a changed
+    registration is a genuinely ambiguous lost race). A dispatch LEASE read
+    fresh at the post-stagger re-check returns ``"suppressed"`` instead
+    (#2142): a lease at POST time is the "a session IS driving" no-op, and
+    booking it as ``"failed"`` would consume the 1 h backoff, stretching a
+    crashed lease-winner's recovery from TTL + one tick to ~70 min.
+    ``"suppressed"`` ALSO covers the #1027 auth-outage gate (same no-booking
+    contract); this single hook covers BOTH callers (``infra_drain_pass`` +
     ``proposed_infra_sweep_pass``). Before a real spawn it additionally
     sleeps out the remainder of the #1059 session-dispatch stagger window
     (:func:`spawn_session.stagger_delay_s`; dry-run returns first and never
@@ -23190,6 +26398,9 @@ def _dispatch_infra_drain(
         "uv", "run", "python", "scripts/spawn_session.py", "spawn-issue",
         "--issue", str(issue), "--auto",
     ]  # fmt: skip
+    if _resolve_session_mode(issue) == "async":
+        # Mission-control rung 0 (CONTRACTS §2.2): re-pass the durable mode.
+        cmd += ["--session-mode", "async"]
     if dry_run:
         print(f"  [dry-run] would dispatch infra-drain: {' '.join(cmd)}")
         return "failed"  # dry-run: nothing spawned, nothing to book
@@ -23206,6 +26417,21 @@ def _dispatch_infra_drain(
             f"{delay:.0f}s (429 token-pacing, #1059)"
         )
         _stagger_sleep(delay)
+    # #2142: the caller-loop lease check ran BEFORE the stagger sleep (up to
+    # 60s), so its verdict is stale at the POST. The load-bearing element is
+    # the fresh FILE READ (a lease acquired during the sleep reads fresh under
+    # any earlier `now`); the fresh clock only avoids over-suppressing a lease
+    # that expired mid-sleep. Saves one self-suppressing spawn_session
+    # subprocess — the boot itself is already prevented by the chokepoint
+    # lease acquisition in `spawn_session.cmd_spawn_issue`.
+    post_stagger_now = time.time()
+    held = dispatch_lease_fresh(issue, post_stagger_now)
+    if held is not None:
+        print(
+            f"  INFRA-DRAIN SUPPRESSED issue #{issue} (lease acquired during "
+            f"the pre-spawn window, {dispatch_lease_desc(held, post_stagger_now)})"
+        )
+        return "suppressed"
     snapshot = reg_snapshot or {}
     for basename in (f"issue-{issue}.json", f"manual-issue-{issue}.json"):
         path = AUTONOMOUS_REGISTRY_DIR / basename
@@ -23487,6 +26713,126 @@ def _promote_satisfied_predicate_holds(
     return new_ids, remaining
 
 
+def _infra_drain_prefilter_all_skipped(
+    ids: list[int],
+    holds: dict[int, str],
+    raw_registered: set[int],
+    attempts: dict[int, dict],
+    now: float,
+    queue_updated_ts: float | None,
+    regs: dict[int, list[dict]],
+    *,
+    backoff_s: float,
+    max_attempts: int,
+) -> list[tuple[int, str]] | None:
+    """Zero-subprocess pre-filter for :func:`infra_drain_pass` (#633; extracted
+    verbatim for the C901 cap, #2142). Returns the full ``[(id, reason)]``
+    skip list when EVERY queue id pre-filters to a skip AND no
+    "already-registered" skip needs the stale-registration rescue — the
+    caller then logs + returns with zero ``task.py`` reads. ``None`` =
+    proceed to the full path. An "already-registered" pre-filter skip may be
+    rescued by the stale-registration handling (dead-at-boot session) — that
+    needs a status read, so such IDs defer the early exit to the full path
+    when their registration looks suspicious (older than grace + session not
+    live); everything else (held / backoff / exhausted / live-or-fresh
+    registration) early-exits."""
+    prefilter = {
+        i: _cheap_skip_reason(
+            i,
+            holds,
+            raw_registered,
+            attempts,
+            now,
+            queue_updated_ts,
+            backoff_s=backoff_s,
+            max_attempts=max_attempts,
+        )
+        for i in ids
+    }
+    if not all(reason is not None for reason in prefilter.values()):
+        return None
+    registered_skips = {i for i in ids if prefilter[i] == "already-registered"}
+    if _infra_drain_possibly_stale_ids(registered_skips, regs, now):
+        return None
+    return [(i, prefilter[i]) for i in ids]
+
+
+def _run_infra_drain_dispatch_loop(
+    dispatch: list[int],
+    cap: int,
+    dry_run: bool,
+    now: float,
+    queue_updated_ts: float | None,
+    attempts: dict[int, dict],
+    reg_snapshot: dict[str, bytes],
+    occupied_active: int,
+    pending: int,
+) -> int:
+    """The drain lane's per-candidate dispatch loop (extracted verbatim from
+    :func:`infra_drain_pass` for the C901 cap, #2142); returns the number of
+    real spawns. Per candidate, in order: the #843 M1 lease pre-check (skip,
+    NO attempt — a lease-held skip must not consume the 1h backoff, or a
+    crashed winner's recovery would stretch to ~70 min instead of TTL + one
+    tick); the #2142 freshness guards (:func:`_dispatch_freshness_skip` —
+    skip, NO attempt); the #2142 per-spawn cap re-check
+    (:func:`_cap_recheck_skip` — a failed occupancy read BREAKS the batch
+    fail-closed); then the spawn, booking the attempt on "spawned"/"failed"
+    (never on "suppressed", the #843 M1b no-op) and posting the dispatch
+    marker on "spawned"."""
+    dispatched = 0
+    attempted_any = False
+    for issue in dispatch:
+        held_lease = dispatch_lease_fresh(issue, now)
+        if held_lease is not None:
+            print(
+                f"  INFRA-DRAIN SKIP issue #{issue} (dispatch-lease held, "
+                f"{dispatch_lease_desc(held_lease, now)})"
+            )
+            continue
+        events = _task_events(issue)
+        fresh_skip = _dispatch_freshness_skip(issue, events, now)
+        if fresh_skip is not None:
+            print(f"  INFRA-DRAIN SKIP issue #{issue} ({fresh_skip})")
+            continue
+        verdict, live_n = _cap_recheck_skip(attempted_any, pending, dispatched, cap)
+        if verdict == "read-failed":
+            print(
+                "  INFRA-DRAIN STOP: live occupancy read FAILED mid-batch; "
+                "not dispatching further this tick (fail-closed, mirrors "
+                "the pass-level guard)"
+            )
+            break
+        if verdict == "cap-full":
+            print(
+                f"  INFRA-DRAIN SKIP issue #{issue} (cap-full-recheck: "
+                f"live {live_n}+{pending}+{dispatched} >= cap {cap})"
+            )
+            continue  # NO attempt — occupancy filling is not this candidate's failure
+        slot_desc = f"slot {min(occupied_active + pending + dispatched + 1, cap)}/{cap}"
+        result = _dispatch_infra_drain(issue, slot_desc, dry_run, reg_snapshot=reg_snapshot)
+        attempted_any = True
+        if result == "suppressed":
+            # #843 M1b: rc-0 duplicate-suppression no-op — a session is
+            # driving; book nothing (no attempt, no backoff, no marker).
+            continue
+        if not dry_run:
+            # Count the ATTEMPT whether the spawn succeeded or failed, so a
+            # failing spawn can't tight-loop (the backoff window binds next
+            # tick either way).
+            _infra_drain_record_attempt(attempts, issue, now, queue_updated_ts, result == "spawned")
+        if result == "spawned":
+            dispatched += 1
+            _post_progress_marker(
+                issue,
+                f"{_INFRA_DRAIN_NOTE_SENTINEL} watcher dispatched autonomous "
+                f"session from the PM infra-drain queue (occupied "
+                f"{occupied_active}+{pending} pending of cap {cap})",
+                dry_run,
+                label="infra-drain",
+            )
+    return dispatched
+
+
 def infra_drain_pass(
     dry_run: bool,
     now: float | None = None,
@@ -23544,35 +26890,25 @@ def infra_drain_pass(
     # toward the next tick). When every ID pre-filters to a skip, the tick
     # costs ZERO task.py subprocesses.
     raw_registered = set(regs) & set(ids)
-    prefilter = {
-        i: _cheap_skip_reason(
-            i,
-            holds,
-            raw_registered,
-            attempts,
-            now,
-            queue_updated_ts,
-            backoff_s=backoff_s,
-            max_attempts=max_attempts,
+    pre_skips = _infra_drain_prefilter_all_skipped(
+        ids,
+        holds,
+        raw_registered,
+        attempts,
+        now,
+        queue_updated_ts,
+        regs,
+        backoff_s=backoff_s,
+        max_attempts=max_attempts,
+    )
+    if pre_skips is not None:
+        print(
+            f"infra-drain: queue={len(ids)} dispatched=0 skipped={len(ids)} "
+            f"(pre-filtered; zero task.py reads this tick)"
         )
-        for i in ids
-    }
-    if all(reason is not None for reason in prefilter.values()):
-        # An "already-registered" pre-filter skip may be rescued by the
-        # stale-registration handling (dead-at-boot session) — that needs a
-        # status read, so such IDs defer the early exit to the full path
-        # when their registration looks suspicious (older than grace +
-        # session not live). Everything else (held / backoff / exhausted /
-        # live-or-fresh registration) early-exits with zero task.py reads.
-        registered_skips = {i for i in ids if prefilter[i] == "already-registered"}
-        if not _infra_drain_possibly_stale_ids(registered_skips, regs, now):
-            print(
-                f"infra-drain: queue={len(ids)} dispatched=0 skipped={len(ids)} "
-                f"(pre-filtered; zero task.py reads this tick)"
-            )
-            _infra_drain_log_skips([(i, prefilter[i]) for i in ids], holds, attempts)
-            _infra_drain_prune_save(state, ids, dry_run)
-            return
+        _infra_drain_log_skips(pre_skips, holds, attempts)
+        _infra_drain_prune_save(state, ids, dry_run)
+        return
 
     status_kind, stale, pending = _infra_drain_signals(ids, holds, regs, now)
     registered_nonstale = raw_registered - stale
@@ -23603,41 +26939,17 @@ def infra_drain_pass(
         backoff_s=backoff_s,
         max_attempts=max_attempts,
     )
-    dispatched = 0
-    for issue in dispatch:
-        # #843 M1 advisory pre-check at the CALLER loop: a fresh per-issue
-        # dispatch lease means a spawn is already in flight — skip loudly and
-        # record NO attempt (a lease-held skip must not consume the 1 h
-        # backoff, or a crashed winner's recovery would stretch to ~70 min
-        # instead of TTL + one tick).
-        held_lease = dispatch_lease_fresh(issue, now)
-        if held_lease is not None:
-            print(
-                f"  INFRA-DRAIN SKIP issue #{issue} (dispatch-lease held, "
-                f"{dispatch_lease_desc(held_lease, now)})"
-            )
-            continue
-        slot_desc = f"slot {min(occupied_active + pending + dispatched + 1, cap)}/{cap}"
-        result = _dispatch_infra_drain(issue, slot_desc, dry_run, reg_snapshot=reg_snapshot)
-        if result == "suppressed":
-            # #843 M1b: rc-0 duplicate-suppression no-op — a session is
-            # driving; book nothing (no attempt, no backoff, no marker).
-            continue
-        if not dry_run:
-            # Count the ATTEMPT whether the spawn succeeded or failed, so a
-            # failing spawn can't tight-loop (the backoff window binds next
-            # tick either way).
-            _infra_drain_record_attempt(attempts, issue, now, queue_updated_ts, result == "spawned")
-        if result == "spawned":
-            dispatched += 1
-            _post_progress_marker(
-                issue,
-                f"{_INFRA_DRAIN_NOTE_SENTINEL} watcher dispatched autonomous "
-                f"session from the PM infra-drain queue (occupied "
-                f"{occupied_active}+{pending} pending of cap {cap})",
-                dry_run,
-                label="infra-drain",
-            )
+    dispatched = _run_infra_drain_dispatch_loop(
+        dispatch,
+        cap,
+        dry_run,
+        now,
+        queue_updated_ts,
+        attempts,
+        reg_snapshot,
+        occupied_active,
+        pending,
+    )
     _infra_drain_log_skips(skipped, holds, attempts)
     summary = (
         f"infra-drain: queue={len(ids)} occupied={occupied_active}(+{pending} pending) "
@@ -24006,6 +27318,98 @@ def _proposed_infra_sweep_prune_save(state: dict, candidates: list[int], dry_run
     _save_proposed_infra_sweep_state(state)
 
 
+def _sweep_predicate_statuses(
+    candidates: list[int], holds: dict[int, str]
+) -> dict[int, str | None]:
+    """Resolve the blocking issue's status for each predicate hold among the
+    CANDIDATE set (#690; extracted verbatim for the C901 cap, #2142). Only
+    predicate holds cost a blocking-status read (one ``task.py`` view per
+    distinct blocker); non-predicate holds and non-held candidates
+    short-circuit with zero extra subprocesses."""
+    predicate_blockers = {
+        b
+        for i in candidates
+        if (r := holds.get(i)) is not None and (b := _parse_predicate_hold(r)) is not None
+    }
+    return {b: _task_status_kind(b)[0] for b in sorted(predicate_blockers)}
+
+
+def _run_proposed_infra_sweep_dispatch_loop(
+    dispatch: list[int],
+    cap: int,
+    dry_run: bool,
+    now: float,
+    attempts: dict[int, dict],
+    reg_snapshot: dict[str, bytes],
+    occupied_active: int,
+    pending: int,
+    *,
+    urgent: frozenset[int],
+    urgent_bonus: int,
+) -> int:
+    """The sweep lane's per-candidate dispatch loop (extracted verbatim from
+    :func:`proposed_infra_sweep_pass` for the C901 cap, #2142); returns the
+    number of real spawns. Same guard chain as
+    :func:`_run_infra_drain_dispatch_loop` — #843 M1 lease pre-check, #2142
+    freshness guards, #2142 per-spawn cap re-check — with ONE difference: the
+    re-check limit honors the #1853 sanctioned urgent bonus
+    (``cap + urgent_bonus`` for urgent candidates; a bare-``cap`` re-check
+    would revoke an urgent candidate's bonus slot mid-batch)."""
+    dispatched = 0
+    attempted_any = False
+    for issue in dispatch:
+        # #843 M1 advisory pre-check at the CALLER loop (same contract as the
+        # drain loop's): a fresh lease -> loud skip, NO attempt recorded.
+        held_lease = dispatch_lease_fresh(issue, now)
+        if held_lease is not None:
+            print(
+                f"  PROPOSED-INFRA-SWEEP SKIP issue #{issue} (dispatch-lease held, "
+                f"{dispatch_lease_desc(held_lease, now)})"
+            )
+            continue
+        # #2142 freshness guards (same contract as the drain loop's) — skip
+        # loudly, NO attempt booked.
+        events = _task_events(issue)
+        fresh_skip = _dispatch_freshness_skip(issue, events, now)
+        if fresh_skip is not None:
+            print(f"  PROPOSED-INFRA-SWEEP SKIP issue #{issue} ({fresh_skip})")
+            continue
+        # #2142 per-spawn cap/limit re-check (see _cap_recheck_skip).
+        limit = cap + (urgent_bonus if issue in urgent else 0)
+        verdict, live_n = _cap_recheck_skip(attempted_any, pending, dispatched, limit)
+        if verdict == "read-failed":
+            print(
+                "  PROPOSED-INFRA-SWEEP STOP: live occupancy read FAILED "
+                "mid-batch; not dispatching further this tick (fail-closed, "
+                "mirrors the pass-level guard)"
+            )
+            break
+        if verdict == "cap-full":
+            print(
+                f"  PROPOSED-INFRA-SWEEP SKIP issue #{issue} (cap-full-recheck: "
+                f"live {live_n}+{pending}+{dispatched} >= limit {limit})"
+            )
+            continue  # NO attempt — occupancy filling is not this candidate's failure
+        slot_desc = f"slot {min(occupied_active + pending + dispatched + 1, cap)}/{cap}"
+        result = _dispatch_infra_drain(issue, slot_desc, dry_run, reg_snapshot=reg_snapshot)
+        attempted_any = True
+        if result == "suppressed":
+            # #843 M1b: duplicate-suppression no-op — book nothing.
+            continue
+        if not dry_run:
+            _proposed_infra_sweep_record_attempt(attempts, issue, now, result == "spawned")
+        if result == "spawned":
+            dispatched += 1
+            _post_progress_marker(
+                issue,
+                f"{_PROPOSED_INFRA_SWEEP_NOTE_SENTINEL} watcher auto-dispatched ripe "
+                f"proposed infra task (no PM queue entry)",
+                dry_run,
+                label="proposed-infra-sweep",
+            )
+    return dispatched
+
+
 def proposed_infra_sweep_pass(
     dry_run: bool,
     now: float | None = None,
@@ -24064,12 +27468,7 @@ def proposed_infra_sweep_pass(
     # Only predicate holds among the CANDIDATE set cost a blocking-status read;
     # non-predicate holds and non-held candidates short-circuit with zero extra
     # subprocesses.
-    predicate_blockers = {
-        b
-        for i in candidates
-        if (r := holds.get(i)) is not None and (b := _parse_predicate_hold(r)) is not None
-    }
-    predicate_statuses = {b: _task_status_kind(b)[0] for b in sorted(predicate_blockers)}
+    predicate_statuses = _sweep_predicate_statuses(candidates, holds)
 
     state = _load_proposed_infra_sweep_state()
     attempts: dict[int, dict] = state["attempts"]
@@ -24114,6 +27513,7 @@ def proposed_infra_sweep_pass(
     statuses = {i: status_kind.get(i, (None, None))[0] for i in candidates}
     kinds = {i: status_kind.get(i, (None, None))[1] for i in candidates}
 
+    urgent_bonus = _infra_sweep_urgent_bonus()
     dispatch, skipped = decide_proposed_infra_sweep(
         candidates,
         holds,
@@ -24129,49 +27529,21 @@ def proposed_infra_sweep_pass(
         backoff_s=backoff_s,
         max_attempts=max_attempts,
         urgent=urgent,
-        urgent_bonus=_infra_sweep_urgent_bonus(),
+        urgent_bonus=urgent_bonus,
     )
 
-    marker_fresh_s = _proposed_infra_sweep_marker_fresh_s()
-    dispatched = 0
-    for issue in dispatch:
-        # #843 M1 advisory pre-check at the CALLER loop (same contract as the
-        # drain loop's): a fresh lease -> loud skip, NO attempt recorded.
-        held_lease = dispatch_lease_fresh(issue, now)
-        if held_lease is not None:
-            print(
-                f"  PROPOSED-INFRA-SWEEP SKIP issue #{issue} (dispatch-lease held, "
-                f"{dispatch_lease_desc(held_lease, now)})"
-            )
-            continue
-        # #843 M3: a dispatch-sentinel marker younger than one watcher cadence
-        # means SOME dispatcher fired within the current/previous tick — skip
-        # this candidate this tick (no attempt recorded — a marker skip is not
-        # a spawn attempt; the safe direction, corrected next tick). Post-M1
-        # this is the lease-file-loss backstop + observability.
-        marker_age = _recent_dispatch_marker_age_s(_task_events(issue), now)
-        if marker_age is not None and marker_age < marker_fresh_s:
-            print(
-                f"  PROPOSED-INFRA-SWEEP SKIP issue #{issue} "
-                f"(recent-dispatch-marker {marker_age:.0f}s < {marker_fresh_s:.0f}s)"
-            )
-            continue
-        slot_desc = f"slot {min(occupied_active + pending + dispatched + 1, cap)}/{cap}"
-        result = _dispatch_infra_drain(issue, slot_desc, dry_run, reg_snapshot=reg_snapshot)
-        if result == "suppressed":
-            # #843 M1b: duplicate-suppression no-op — book nothing.
-            continue
-        if not dry_run:
-            _proposed_infra_sweep_record_attempt(attempts, issue, now, result == "spawned")
-        if result == "spawned":
-            dispatched += 1
-            _post_progress_marker(
-                issue,
-                f"{_PROPOSED_INFRA_SWEEP_NOTE_SENTINEL} watcher auto-dispatched ripe "
-                f"proposed infra task (no PM queue entry)",
-                dry_run,
-                label="proposed-infra-sweep",
-            )
+    dispatched = _run_proposed_infra_sweep_dispatch_loop(
+        dispatch,
+        cap,
+        dry_run,
+        now,
+        attempts,
+        reg_snapshot,
+        occupied_active,
+        pending,
+        urgent=urgent,
+        urgent_bonus=urgent_bonus,
+    )
     for issue, reason in skipped:
         print(f"  PROPOSED-INFRA-SWEEP SKIP issue #{issue} ({reason})")
     summary = (
@@ -24406,7 +27778,7 @@ def _load_capacity_retry_state(issue: int) -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -24439,6 +27811,9 @@ def _redrive_capacity_retry(issue: int, dry_run: bool) -> str:
         "uv", "run", "python", "scripts/spawn_session.py", "spawn-issue",
         "--issue", str(issue), "--auto",
     ]  # fmt: skip
+    if _resolve_session_mode(issue) == "async":
+        # Mission-control rung 0 (CONTRACTS §2.2): re-pass the durable mode.
+        cmd += ["--session-mode", "async"]
     if dry_run:
         print(f"  [dry-run] would capacity-retry: {' '.join(cmd)}")
         return "failed"  # dry-run: nothing spawned
@@ -24690,7 +28065,7 @@ def _load_stale_blocked_state(issue: int) -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -25254,7 +28629,7 @@ def _newest_registration_spawned_at(issue: int) -> float | None:
     for prefix in ("issue-", "manual-issue-"):
         try:
             entry = json.loads((AUTONOMOUS_REGISTRY_DIR / f"{prefix}{issue}.json").read_text())
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             continue
         ts = entry.get("spawned_at") if isinstance(entry, dict) else None
         if isinstance(ts, int | float) and not isinstance(ts, bool) and ts:
@@ -25313,6 +28688,20 @@ def _session_reconcile_autostop_enabled() -> bool:
     ``yes`` (the old arming values) keeps the stop armed, so existing crontab
     exports stay backwards-compatible."""
     raw = os.environ.get("EPM_SESSION_RECONCILE_AUTOSTOP", "")
+    return raw.strip().lower() not in {"0", "false", "no"}
+
+
+def _session_reconcile_transcript_work_probe_enabled() -> bool:
+    """True unless ``EPM_SESSION_RECONCILE_TRANSCRIPT_WORK_PROBE`` is
+    explicitly set to a falsy value (``0`` / ``false`` / ``no``). Default ON
+    (#2117). When ON, :func:`_session_idle_signals`' per-sid transcript term
+    uses the content-classifying :func:`_transcript_work_idle_age_s` (a
+    churn-only tail — every completed wake-turn failed, no human row —
+    contributes no liveness); when OFF, the call site reverts to the
+    pure-mtime :func:`_transcript_idle_age_s` (exact pre-#2117 / #1670
+    behavior). Env-parse mirrors
+    :func:`_session_reconcile_autostop_enabled`."""
+    raw = os.environ.get("EPM_SESSION_RECONCILE_TRANSCRIPT_WORK_PROBE", "")
     return raw.strip().lower() not in {"0", "false", "no"}
 
 
@@ -25459,7 +28848,7 @@ def _load_session_reconcile_state(issue: int) -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -25543,7 +28932,7 @@ def _gc_orphan_session_reconcile_state(
             first_seen = payload.get("first_seen", now)
             if not isinstance(first_seen, int | float):
                 first_seen = now
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             first_seen = 0  # unreadable -> definitely orphaned, drop it
         age = now - first_seen
         reason = (
@@ -25575,14 +28964,21 @@ def _session_idle_signals(
     ``manual-issue-<N>.json`` (#1670 — a just-spawned session may not have
     posted any marker yet), and — probed LAZILY, only when the cheaper
     signals already read idle and ``pids_by_sid`` was provided — each
-    mapped sid's own transcript mtime (:func:`_transcript_idle_age_s`) —
+    mapped sid's own transcript WORK signal
+    (:func:`_transcript_work_idle_age_s`, #2117: row CONTENT is classified,
+    so a churn-only tail — every completed wake-turn failed, no genuine
+    human row — contributes nothing; kill switch
+    ``EPM_SESSION_RECONCILE_TRANSCRIPT_WORK_PROBE=0`` reverts the term to
+    the pure-mtime :func:`_transcript_idle_age_s`) —
     is older than :func:`_session_idle_s` (default 2h, env
     ``EPM_SESSION_RECONCILE_IDLE_S``). When NO signal is readable at all the
     issue counts as idle (mirrors the orphan sweep's None-is-stale rule; the
     status gate + follow-up/pod/keep-running skips + 2-miss guard keep that
     safe). ``gap_desc`` is the human-readable freshest-signal age for
-    log/marker text; ``events`` is returned so the caller can reuse the
-    fetch for the follow-up predicate."""
+    log/marker text, plus a trailing ``churn-only`` token when >=1 mapped
+    sid's transcript classified as churn (#2117 auditability); ``events``
+    is returned so the caller can reuse the fetch for the follow-up
+    predicate."""
     events = _task_events(issue)
     latest_marker = _latest_nonwatcher_event_ts(events)
     sr_age, _sr_ts = _self_report_age_seconds(issue, now)
@@ -25604,21 +29000,36 @@ def _session_idle_signals(
     if spawned is not None:
         ages.append(max(0.0, now - spawned))
     idle = (min(ages) >= _session_idle_s()) if ages else True
+    churn_only = False
     if idle and pids_by_sid:
-        # Transcript mtime = the truest per-SESSION activity signal.
-        # Probed LAZILY: only when the cheap task-level signals already
-        # read idle (zero cost on the common fresh-activity path). An
-        # unresolvable transcript contributes nothing — falls back to
-        # today's behavior; a wrong signal is worse than a missing one
-        # (the helper's happy-log-only rationale).
+        # Transcript = the truest per-SESSION activity signal. Probed
+        # LAZILY: only when the cheap task-level signals already read idle
+        # (zero cost on the common fresh-activity path). An unresolvable
+        # transcript contributes nothing — falls back to today's behavior;
+        # a wrong signal is worse than a missing one (the helper's
+        # happy-log-only rationale). Default probe (#2117):
+        # _transcript_work_idle_age_s classifies row CONTENT — a tail whose
+        # completed wake-turns ALL failed is churn, not liveness, and
+        # contributes nothing (reason "churn-only"), so an error-storming
+        # session on a DONE task accumulates the >=2-miss counter (#2004).
+        # The ages-append logic is otherwise unchanged: the fix is strictly
+        # WHAT number the transcript term contributes, never WHEN it is
+        # consulted (plan criterion 2).
+        work_probe = _session_reconcile_transcript_work_probe_enabled()
         for sid in sids:
             pid = pids_by_sid.get(sid)
             if isinstance(pid, int):
-                t_age, _reason = _transcript_idle_age_s(pid, now)
+                if work_probe:
+                    t_age, reason = _transcript_work_idle_age_s(pid, now)
+                    churn_only = churn_only or reason == "churn-only"
+                else:
+                    t_age, _reason = _transcript_idle_age_s(pid, now)
                 if t_age is not None:
                     ages.append(t_age)
         idle = (min(ages) >= _session_idle_s()) if ages else True
     gap_desc = f"{min(ages) / 3600:.1f}h" if ages else "no-signal"
+    if churn_only:
+        gap_desc += " churn-only"
     return idle, gap_desc, events
 
 
@@ -25643,6 +29054,19 @@ def _handle_session_stop(
     live-session-keyed GC). An ACK failure keeps the accumulated miss count
     so the next tick retries the stop for the remaining live session(s)."""
     stopped = [sid for sid in sids if _stop_session(sid, dry_run)]
+    # #2117 auditability: a churn-driven stop (the work probe classified the
+    # transcript tail as all-failed wake-turns) reads differently from an
+    # ordinary idle stop. The verdict rides gap_desc's trailing "churn-only"
+    # token (appended by _session_idle_signals), so no signature change.
+    if "churn-only" in gap_desc:
+        activity_desc = (
+            "non-watcher marker / self-report / session registration; the "
+            "transcript term was CHURN-ONLY — every recent completed "
+            "wake-turn failed, so transcript churn did not count as "
+            "activity (#2117)"
+        )
+    else:
+        activity_desc = "non-watcher marker / self-report / session registration / transcript"
     if stopped:
         _post_progress_marker(
             issue,
@@ -25650,8 +29074,8 @@ def _handle_session_stop(
             f"{len(stopped)} idle session(s) ({', '.join(stopped)}) by the "
             f"autonomous_session_watch session-reconcile pass — task status "
             f"'{status}' is parked/terminal, no live follow-up signal, no "
-            f"RUNNING pod, no keep-running tag, and no activity (non-watcher "
-            f"marker / self-report / session registration / transcript) was observed for > "
+            f"RUNNING pod, no keep-running tag, and no activity ("
+            f"{activity_desc}) was observed for > "
             f"{_session_idle_s() / 3600:.1f}h (gap={gap_desc}), confirmed "
             f"for >= {threshold} checks. An idle session pins its worktree "
             f"against the stale-worktree sweep and holds deleted-file "
@@ -26365,7 +29789,7 @@ def _load_zombie_state(sid: str) -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -26430,7 +29854,7 @@ def _gc_orphan_zombie_state(live_sids: set[str], dry_run: bool, now: float | Non
             first_miss = payload.get("first_miss_ts", now)
             if not isinstance(first_miss, int | float):
                 first_miss = now
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             first_miss = 0  # unreadable -> definitely orphaned, drop it
         age = now - first_miss
         reason = (
@@ -27188,7 +30612,7 @@ def _happy_daemon_pid() -> int | None:
     daemon-shaped cmdline on its own; plan #1215 assumption 3)."""
     try:
         data = json.loads((Path.home() / ".happy" / "daemon.state.json").read_text())
-    except (OSError, json.JSONDecodeError):
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
         return None
     pid = data.get("pid") if isinstance(data, dict) else None
     return pid if isinstance(pid, int) and not isinstance(pid, bool) else None
@@ -27406,7 +30830,7 @@ def _load_orphan_wrapper_state(pid: int) -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -27477,7 +30901,7 @@ def _gc_orphan_wrapper_state(current_keys: set[tuple[int, float]], dry_run: bool
         try:
             payload = json.loads(path.read_text())
             state_se = payload.get("start_epoch") if isinstance(payload, dict) else None
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             state_se = None
         live = isinstance(state_se, int | float) and any(
             abs(se - state_se) <= 1.0 for se in by_pid.get(pid, [])
@@ -28800,6 +32224,108 @@ def _transcript_idle_age_s(node_pid: int, now: float) -> tuple[float | None, str
     return max(0.0, now - mtime), None
 
 
+# #2117: the session-reconcile work probe reads the tail at the wedge lane's
+# 256 KB width (#1104), not _transcript_tail_rows' 64 KB default — a heavy
+# api-error storm can push the last ok turn out of a 64 KB window, and the
+# probe runs at most once per mapped sid per tick, only for DONE-status
+# candidates already reading idle (_process_session_reconcile's laziness).
+_SESSION_RECONCILE_TRANSCRIPT_TAIL_BYTES = 256 * 1024
+
+
+def _transcript_work_idle_age_s(node_pid: int, now: float) -> tuple[float | None, str | None]:
+    """Content-classifying session-reconcile sibling of
+    :func:`_transcript_idle_age_s` (#2117): seconds since the transcript
+    last showed durable WORK, or ``(None, reason)`` when the tail carries no
+    countable liveness. The mtime probe reads a thrashing session as live
+    forever — every failed turn, compaction row, and SKILL re-read refreshes
+    mtime — so the reconcile pass's >=2-miss counter could never accumulate
+    on an error-storming session parked on a completed task (#2004: ~4h of
+    token burn on already-completed work). A SIBLING of the mtime probe, not
+    a rewrite: :func:`_transcript_idle_age_s` keeps its other callers (the
+    #1582 keep-running owner leg, the #845 d stale-registration pass)
+    byte-untouched, and the same deliberate happy-log-only resolution
+    contract applies (via :func:`_transcript_tail_rows`).
+
+    Four-way contract (#2117 plan criterion 1):
+
+    (i) UNRESOLVABLE / UNREADABLE transcript -> ``(None, reason)`` —
+        contributes nothing to the caller's ``ages`` (unchanged from the
+        mtime probe).
+    (ii) DURABLE WORK -> ``(now - ts, None)`` where ``ts`` is the newest of:
+        the ``end_ts`` of the newest successfully-completed wake-turn
+        (:func:`_segment_wake_turns` outcome ``"ok"``) and the timestamp of
+        the newest genuine human row
+        (``tick_triage.is_human_transcript_row``). The #1670-preserving
+        arm — an OLD session doing real work with no recent markers keeps
+        its protection. Timestamp scoping: the age derives from THAT newest
+        row specifically; when its timestamp is unparseable
+        (:func:`_row_ts` -> ``None``) the verdict is (iv) — NEVER a max
+        over older parseable timestamps, which would substitute a stale age
+        for possibly-minutes-fresh work and fail toward STOP.
+    (iii) POSITIVE CHURN EVIDENCE -> ``(None, "churn-only")``: the tail
+        holds >=1 completed wake-turn, EVERY completed turn is ``"failed"``,
+        and no genuine human row is present. The transcript contributes
+        nothing, task-side idleness stands, and the miss counter
+        accumulates. A turn's outcome keys on its LAST response row, so
+        mid-turn SKILL-re-read assistant rows do NOT rescue a turn that
+        ends in an api-error — exactly the #2004 shape.
+    (iv) INDETERMINATE -> fall back to :func:`_transcript_idle_age_s`
+        (today's mtime read). Fail toward KEEP. Exactly two cases: (1) zero
+        completed turns — a tail whose only trailing delivery is
+        prompt-evidence rows with ZERO response rows yet (an in-flight turn
+        is deliberately uncounted by :func:`_segment_wake_turns`); (2) the
+        unparseable-newest-timestamp case of (ii).
+
+    Named residuals — DESIGNED, not missed (#2117 plan §1):
+
+    - (a) Window eviction. An ``"ok"`` turn younger than the idle floor can
+      be pushed out of the 256 KB tail by a fast api-error storm, yielding
+      a churn-only verdict where today's mtime read would keep the session.
+      Requires >=256 KB of pure churn AND >=2 h of task-side marker silence
+      AND a DONE status — for that conjunction the stop is arguably the
+      correct verdict, and the >=2-tick guard still applies.
+    - (b) Slash-command-only rescue. ``is_human_transcript_row``
+      deliberately reads slash commands as automation (``tick_triage.py``),
+      so a user rescuing a thrashing DONE-task session *purely* via slash
+      commands is stop-eligible. Typed text and interrupt rows ARE
+      protected. Crediting slash rows is NOT the fix — the 45-min
+      ``/issue-tick`` cron injects slash prompts, i.e. the churn driver
+      itself would become its own liveness proof. Recorded as a residual
+      instead.
+    - (c) Dequeue-only swallowed-delivery storm. A DONE-task session
+      emitting prompt-evidence rows with no responses produces zero
+      completed turns -> arm (iv) -> mtime-fresh -> kept indefinitely.
+      Identical to today's behavior (the prompt-wedge lane owns ACTIVE
+      tasks only); this change does not widen it and does not close it.
+    """
+    rows = _transcript_tail_rows(node_pid, max_bytes=_SESSION_RECONCILE_TRANSCRIPT_TAIL_BYTES)
+    if rows is None:
+        return None, "transcript unresolvable-or-unreadable"  # arm (i)
+    turns = _segment_wake_turns(rows)
+    has_ok = False
+    newest_ok_ts: float | None = None
+    for outcome, end_ts in reversed(turns):
+        if outcome == "ok":
+            has_ok = True
+            newest_ok_ts = end_ts  # may be None (unparseable) -> arm (iv)
+            break
+    human_row = next((r for r in reversed(rows) if is_human_transcript_row(r)), None)
+    human_ts = _row_ts(human_row) if human_row is not None else None
+    if has_ok or human_row is not None:
+        if (has_ok and newest_ok_ts is None) or (human_row is not None and human_ts is None):
+            # arm (iv) case (2): the newest durable-work row's OWN timestamp
+            # is unparseable — indeterminate; fall back to the mtime read
+            # (fail toward KEEP; never a max over older parseable rows).
+            return _transcript_idle_age_s(node_pid, now)
+        ts = max(t for t in (newest_ok_ts, human_ts) if t is not None)
+        return max(0.0, now - ts), None  # arm (ii)
+    if turns:
+        # arm (iii): >=1 completed turn, every one failed, no human row.
+        return None, "churn-only"
+    # arm (iv) case (1): zero completed turns.
+    return _transcript_idle_age_s(node_pid, now)
+
+
 def decide_idle_unmapped(
     mapped: bool,
     has_tty: bool,
@@ -28870,7 +32396,7 @@ def _load_idle_unmapped_state(sid: str) -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -28999,7 +32525,7 @@ def _load_tty_unmapped_report_state() -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -29242,7 +32768,7 @@ def _last_mapped_terminal(sid: str) -> tuple[str, int] | None:
         return None
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return None
     if not isinstance(data, dict):
         return None
@@ -29328,7 +32854,7 @@ def _gc_orphan_idle_unmapped_state(
             first_over = payload.get("first_over_ts", now)
             if not isinstance(first_over, int | float):
                 first_over = now
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             first_over = 0  # unreadable -> definitely orphaned, drop it
         age = now - first_over
         reason = (
@@ -30155,7 +33681,7 @@ def _load_boot_death_state(issue: int) -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -30301,7 +33827,7 @@ def _process_boot_death(path: Path, pids_by_sid: dict[str, int], now: float, dry
     here may raise (the ``_process_stale_registration`` containment style)."""
     try:
         entry = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return  # garbled entries are the crash-recovery / GC passes' property
     if not isinstance(entry, dict):
         return
@@ -30670,7 +34196,7 @@ def _process_no_progress_respawn(
     raise (the ``_process_boot_death`` containment style)."""
     try:
         entry = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return  # garbled entries are the crash-recovery / GC passes' property
     if not isinstance(entry, dict):
         return
@@ -30962,7 +34488,7 @@ def _process_stale_registration(
     dead session's crash-recovery coverage or double-drive a live one)."""
     try:
         entry = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return  # garbled entries are the crash-recovery / GC passes' property
     if not isinstance(entry, dict):
         return
@@ -31215,7 +34741,16 @@ def vm_disk_pass(dry_run: bool, now: float | None = None) -> None:
 
     if level == "ok":
         if not state:
-            print(f"vm-disk: ok ({free_gib:.1f} GiB free)")
+            # #2141: the bare ok line reads as "disk healthy" while the 60 GiB
+            # sub-floor band is active (the ALERT band is 20 GiB — `ok` and a
+            # live sub-floor episode co-exist by design); name the band.
+            subfloor_note = (
+                f"; sub-floor band (< {VM_DISK_SUBFLOOR_FREE_BYTES / 2**30:.0f} GiB) — "
+                "subfloor arms engaged"
+                if free < VM_DISK_SUBFLOOR_FREE_BYTES
+                else ""
+            )
+            print(f"vm-disk: ok ({free_gib:.1f} GiB free){subfloor_note}")
         elif free >= VM_DISK_ALERT_FREE_BYTES + VM_DISK_CLEAR_HYSTERESIS_BYTES:
             print(f"vm-disk: recovered ({free_gib:.1f} GiB free); episode over")
             if not dry_run:
@@ -31365,7 +34900,7 @@ def _campaign_registry_entries() -> list[tuple[Path, dict]]:
             continue  # campaign-watch-<N>.json or a hand-debug artifact
         try:
             entry = json.loads(path.read_text())
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             entry = {}
         out.append((path, entry if isinstance(entry, dict) else {}))
     return out
@@ -31383,7 +34918,7 @@ def _load_campaign_watch_state(issue: int) -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -31559,7 +35094,7 @@ def _campaign_state_budget(issue: int) -> tuple[float, float] | None:
     state_file = Path(out.stdout.strip()) / "artifacts" / "campaign-state.json"
     try:
         state = json.loads(state_file.read_text())
-    except (FileNotFoundError, json.JSONDecodeError, OSError):
+    except (FileNotFoundError, json.JSONDecodeError, OSError, UnicodeDecodeError):
         return None
     budget = state.get("budget") if isinstance(state, dict) else None
     if not isinstance(budget, dict):
@@ -31970,19 +35505,92 @@ def _load_gate_notify_state(issue: int) -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
 
-def _save_gate_notify_state(issue: int, *, last_status: str) -> None:
+def _save_gate_notify_state(
+    issue: int, *, last_status: str, async_ask_alerted_ts: float | None = None
+) -> None:
     """Atomic temp+rename persist of the last observed status (the
-    transition key for both the push and the title reconcile)."""
+    transition key for both the push and the title reconcile).
+
+    ``async_ask_alerted_ts`` (rung 0, CONTRACTS §1.3 W3) is the epoch ts of
+    the open ``epm:ask`` the stale-park arm last alerted on — the dedup key
+    so one stale ask alerts exactly once. ``None`` (the default, every
+    legacy caller) omits the field entirely, keeping pre-rung-0 state files
+    byte-identical."""
     AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
     dest = _gate_notify_state_path(issue)
     tmp = dest.with_suffix(".json.tmp")
-    tmp.write_text(json.dumps({"last_status": last_status, "ts": time.time()}))
+    payload: dict[str, object] = {"last_status": last_status, "ts": time.time()}
+    if async_ask_alerted_ts is not None:
+        payload["async_ask_alerted_ts"] = async_ask_alerted_ts
+    tmp.write_text(json.dumps(payload))
     tmp.replace(dest)
+
+
+_ASYNC_PARK_STALE_HOURS_DEFAULT = 12.0
+
+
+def _async_park_stale_hours() -> float:
+    """Age floor (hours) before an unanswered ``epm:ask`` on a parked task
+    alerts (rung 0, CONTRACTS §1.3 W3). Env ``EPM_ASYNC_PARK_STALE_HOURS``;
+    default 12; garbage / non-positive values fall back to the default."""
+    raw = os.environ.get("EPM_ASYNC_PARK_STALE_HOURS", "")
+    try:
+        val = float(raw) if raw else _ASYNC_PARK_STALE_HOURS_DEFAULT
+    except ValueError:
+        return _ASYNC_PARK_STALE_HOURS_DEFAULT
+    return val if val > 0 else _ASYNC_PARK_STALE_HOURS_DEFAULT
+
+
+def _async_park_stale_alert_arm(
+    issue: int,
+    status: str,
+    events: list[dict],
+    state: dict,
+    dry_run: bool,
+    now: float | None = None,
+) -> float | None:
+    """Mission-control rung 0 W3 (CONTRACTS §1.3): ONE deduped digest alert
+    when a parked task's newest OPEN ``epm:ask`` has sat unanswered longer
+    than :func:`_async_park_stale_hours`. Returns the alerted ask's epoch ts
+    (the caller persists it as ``async_ask_alerted_ts`` — the dedup key; a
+    NEWER ask re-alerts, the same ask never does), or ``None`` when nothing
+    newly alerted. Fail-soft on every signal (unimportable task_workflow,
+    ts-less ask) — the arm can only add an alert, never block the pass."""
+    try:
+        from explore_persona_space.task_workflow import ask_gate, open_async_ask
+    except ImportError:
+        return None
+    ask = open_async_ask(events)
+    if ask is None:
+        return None
+    ask_epoch = parse_event_ts(ask.get("ts"))
+    if ask_epoch is None:
+        return None
+    now = time.time() if now is None else now
+    age_h = (now - ask_epoch) / 3600.0
+    if age_h < _async_park_stale_hours():
+        return None
+    prev = state.get("async_ask_alerted_ts")
+    if isinstance(prev, (int, float)) and abs(float(prev) - ask_epoch) < 1.0:
+        return None  # this exact ask already alerted once
+    gate = ask_gate(ask) or "unknown"
+    slug = _task_title(issue)
+    head = f"#{issue} {slug}".rstrip()
+    msg = (
+        f"{head} · async ask unanswered {age_h:.0f}h "
+        f"(gate={gate}, status={status}) — open to answer"
+    )
+    sent = _telegram_push(msg[:200], dry_run)
+    print(
+        f"  async-park-stale: #{issue} ask age={age_h:.1f}h gate={gate} "
+        f"({'sent' if sent else 'push not confirmed'})"
+    )
+    return ask_epoch
 
 
 def decide_gate_push(status: str | None, last_status: str | None, over_cap: bool) -> bool:
@@ -32011,24 +35619,37 @@ def _task_title(issue: int) -> str:
             timeout=30,
         )
         data = json.loads(out.stdout) if out.returncode == 0 else {}
-    except (subprocess.SubprocessError, OSError, json.JSONDecodeError):
+    except (subprocess.SubprocessError, OSError, json.JSONDecodeError, UnicodeDecodeError):
         return ""
     title = data.get("title") or (data.get("frontmatter") or {}).get("title")
     return title.strip()[:45] if isinstance(title, str) else ""
 
 
-def _gate_push_message(issue: int, status: str, events: list[dict], gate_parked: bool) -> str:
+def _gate_push_message(
+    issue: int, status: str, events: list[dict], gate_parked: bool, *, async_ask: bool = False
+) -> str:
     """Mirror the /issue-tick 3d message shapes (kept under ~200 chars).
 
     ``gate_parked`` is True when the plan-gate parked at plan_pending —
     a missing/unparseable GPU-hour estimate fail-safe (#1771 removed the
     over-cap arm; the retained park cause has one shape now, so the push
     names the missing estimate rather than any cap — the #2164
-    registered-cap rendering had no threshold left to report)."""
+    registered-cap rendering had no threshold left to report).
+
+    ``async_ask`` (rung 0, CONTRACTS §1.3 W1) is True when plan_pending
+    carries an OPEN plan-approval ``epm:ask`` — the async-session park; its
+    branch wins over ``gate_parked`` (an async park never posts
+    ``epm:awaiting-spend-approval``, so both being True means an ask exists
+    and the answer command is the actionable message)."""
     slug = _task_title(issue)
     head = f"#{issue} {slug}".rstrip()  # no double space when the title read failed
     if status == "awaiting_promotion":
         msg = f"{head} · clean-result ready — open to promote"
+    elif status == "plan_pending" and async_ask:
+        msg = (
+            f"{head} · plan approval requested (async epm:ask) — answer: "
+            f"task.py set-status {issue} approved"
+        )
     elif status == "plan_pending" and gate_parked:
         msg = (
             f"{head} parked at plan_pending — plan-gate park "
@@ -32172,6 +35793,93 @@ def _campaign_gate_candidates() -> set[int]:
     }
 
 
+def _gate_push_runaway_arm(
+    by_issue: dict[int, set[str]],
+    daemon_reachable: bool,
+    dry_run: bool,
+) -> None:
+    """Tick-runaway force-stop tail of :func:`gate_push_pass`, extracted
+    verbatim for C901 (#2345); behavior unchanged."""
+    flags = _runaway_flags()
+    if not flags:
+        return
+    running_pod_issues = {
+        issue
+        for issue, _pod_id, _name, _info in (_running_managed_issue_pods(caller="gate-push") or [])
+    }
+    for issue, flag_path in flags:
+        _process_runaway_flag(
+            issue,
+            flag_path,
+            sorted(by_issue.get(issue, set())),
+            running_pod_issues,
+            daemon_reachable,
+            dry_run,
+        )
+
+
+def _gate_push_process_issue(issue: int, dry_run: bool) -> None:
+    """Per-issue arm of :func:`gate_push_pass` (loop body extracted verbatim
+    for C901, #2345): gate-push transition detection, the rung-0 W1/W3 arms,
+    and the status-transition-keyed self-report refresh for ONE issue."""
+    status = _task_status(issue)
+    if status is None or status in TERMINAL_FOR_GC:
+        # completed/archived: never a push target, no title value — and
+        # acting here would CHURN against the terminal-status GC (it
+        # reaps gate-notify-<N>.json each tick, so this pass would
+        # re-create it + re-refresh the self-report every pass, keeping
+        # the self-report permanently fresh and structurally disabling
+        # the session-reconcile idle signal for done tasks).
+        return
+    state = _load_gate_notify_state(issue)
+    last_status = state.get("last_status")
+    # Rung 0 W3 (CONTRACTS §1.3): the stale-async-park arm runs EVERY tick
+    # for parked statuses — steady state included, so it sits BEFORE the
+    # last_status == status short-circuit (a park is steady state by
+    # definition). Non-park statuses and tasks with no open ask are a
+    # no-op; carry the persisted dedup key forward on every save so a
+    # status flap cannot re-alert the same ask.
+    alerted_ts_prev = state.get("async_ask_alerted_ts")
+    alerted_ts = alerted_ts_prev if isinstance(alerted_ts_prev, (int, float)) else None
+    events: list[dict] | None = None
+    if status in ISSUE_PARK or status == "awaiting_promotion":
+        events = _task_events(issue)
+        fresh_alert = _async_park_stale_alert_arm(issue, status, events, state, dry_run)
+        if fresh_alert is not None:
+            alerted_ts = fresh_alert
+    if last_status == status:
+        # Steady state — no transition work; persist only a NEW alert
+        # dedup key (a no-alert tick rewrites nothing, keeping legacy
+        # steady-state ticks write-free as before).
+        if alerted_ts is not None and alerted_ts != alerted_ts_prev and not dry_run:
+            _save_gate_notify_state(issue, last_status=status, async_ask_alerted_ts=alerted_ts)
+        return
+    if events is None:
+        events = _task_events(issue)
+    over_cap = status == "plan_pending" and plan_pending_over_cap(events)
+    # Rung 0 W1 (CONTRACTS §1.3): a fresh OPEN plan-approval epm:ask at
+    # plan_pending ALSO fires the gate push — local OR only; the shared
+    # tick_triage plan_pending_over_cap predicate is untouched.
+    async_plan_ask = False
+    if status == "plan_pending":
+        try:
+            from explore_persona_space.task_workflow import open_async_ask
+
+            async_plan_ask = open_async_ask(events, gate="plan_approval") is not None
+        except ImportError:
+            async_plan_ask = False
+    if decide_gate_push(status, last_status, over_cap or async_plan_ask):
+        msg = _gate_push_message(issue, status, events, over_cap, async_ask=async_plan_ask)
+        sent = _telegram_push(msg, dry_run)
+        print(
+            f"  gate-push: #{issue} {last_status or 'unknown'} -> {status} "
+            f"({'sent' if sent else 'push not confirmed'})"
+        )
+    _refresh_self_report(issue, status, dry_run)
+    if not dry_run:
+        _save_gate_notify_state(issue, last_status=status, async_ask_alerted_ts=alerted_ts)
+
+
 def gate_push_pass(
     dry_run: bool,
     *,
@@ -32212,46 +35920,8 @@ def gate_push_pass(
     if candidates:
         print(f"gate-push: {len(candidates)} candidate issue(s)")
     for issue in candidates:
-        status = _task_status(issue)
-        if status is None or status in TERMINAL_FOR_GC:
-            # completed/archived: never a push target, no title value — and
-            # acting here would CHURN against the terminal-status GC (it
-            # reaps gate-notify-<N>.json each tick, so this pass would
-            # re-create it + re-refresh the self-report every pass, keeping
-            # the self-report permanently fresh and structurally disabling
-            # the session-reconcile idle signal for done tasks).
-            continue
-        last_status = _load_gate_notify_state(issue).get("last_status")
-        if last_status == status:
-            continue  # steady state — nothing transitioned
-        events = _task_events(issue)
-        over_cap = status == "plan_pending" and plan_pending_over_cap(events)
-        if decide_gate_push(status, last_status, over_cap):
-            msg = _gate_push_message(issue, status, events, over_cap)
-            sent = _telegram_push(msg, dry_run)
-            print(
-                f"  gate-push: #{issue} {last_status or 'unknown'} -> {status} "
-                f"({'sent' if sent else 'push not confirmed'})"
-            )
-        _refresh_self_report(issue, status, dry_run)
-        if not dry_run:
-            _save_gate_notify_state(issue, last_status=status)
-    flags = _runaway_flags()
-    if not flags:
-        return
-    running_pod_issues = {
-        issue
-        for issue, _pod_id, _name, _info in (_running_managed_issue_pods(caller="gate-push") or [])
-    }
-    for issue, flag_path in flags:
-        _process_runaway_flag(
-            issue,
-            flag_path,
-            sorted(by_issue.get(issue, set())),
-            running_pod_issues,
-            daemon_reachable,
-            dry_run,
-        )
+        _gate_push_process_issue(issue, dry_run)
+    _gate_push_runaway_arm(by_issue, daemon_reachable, dry_run)
 
 
 def program_orchestrator_pass(
@@ -32417,6 +36087,14 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         "GC in isolation without waiting on a daemon probe.",
     )
     parser.add_argument(
+        "--data-disk-only",
+        action="store_true",
+        help="run ONLY the data-disk headroom pass (#681/#2095) and exit; "
+        "skip every other pass. Daemon-independent (statvfs + bounded "
+        "repquota/du attribution); pair with --dry-run for a "
+        "zero-subprocess read-only smoke.",
+    )
+    parser.add_argument(
         "--infra-drain-only",
         action="store_true",
         help="run ONLY the infra-drain pass (execute the PM dispatch queue) "
@@ -32510,6 +36188,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         "--dry-run for a zero-write live smoke.",
     )
     parser.add_argument(
+        "--predispatch-staleness-only",
+        action="store_true",
+        help="run ONLY the pre-dispatch staleness pass (#2134, escalate-only "
+        "— once-daily scan of queued proposed/blocked infra/batch tasks "
+        "whose workflow_fix_target files were rewritten by newer commits, "
+        "plus same-file queue collisions; never mutates task status or "
+        "dispatch state) and exit; skip every other pass. "
+        "Daemon-independent; pair with --dry-run for a zero-write live "
+        "smoke against the real queue.",
+    )
+    parser.add_argument(
         "--stash-rescue-audit-only",
         action="store_true",
         help="run ONLY the stash/rescue-backlog audit pass (#1806, "
@@ -32528,6 +36217,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         "cycle on every fleet commit; never mutates git or filesystem "
         "state) and exit; skip every other pass. Daemon-independent; pair "
         "with --dry-run for a zero-write live smoke.",
+    )
+    parser.add_argument(
+        "--pending-call-wedge-only",
+        action="store_true",
+        help="run ONLY the pending-call wedge observer pass (#2115, "
+        "escalate-only — a registered session whose transcript tail ends "
+        "in an assistant Bash tool_use with no matching tool_result older "
+        "than EPM_PENDING_CALL_WEDGE_MIN; never mutates task or git state, "
+        "posts no task markers, emits no respawn) and exit; skip every "
+        "other pass. Probes the daemon itself (sid->pid resolution needs "
+        "/list); pair with --dry-run for a zero-write live smoke.",
     )
     parser.add_argument(
         "--completed-unmerged-only",
@@ -32565,6 +36265,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         "real sentinel.",
     )
     parser.add_argument(
+        "--settings-model-guard-only",
+        action="store_true",
+        help="run ONLY the settings model-id guard pass (#2129 — detect + "
+        "AUTO-NORMALIZE the fleet-killing claude-fable-5[1m]-class model id "
+        "in ~/.claude/settings.json + settings.local.json, fable/mythos "
+        "only; alert-only on any unsafe-write case) and exit; skip every "
+        "other pass. Daemon-independent (pure filesystem reads/writes; "
+        "posts no task markers). Pair with --dry-run for a zero-write live "
+        "smoke against the real settings files.",
+    )
+    parser.add_argument(
         "--urgent-wf-park-only",
         action="store_true",
         help="run ONLY the urgent-park router pass (#1681 — mechanically "
@@ -32582,6 +36293,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         "suppression on an Anthropic auth outage) and exit; skip every other "
         "pass. Pair with --dry-run for a live smoke (zero writes, zero "
         "pushes).",
+    )
+    parser.add_argument(
+        "--daemon-liveness-only",
+        action="store_true",
+        help="run ONLY the daemon-liveness pass (#2140, escalate-only — "
+        "episode-scoped Happy-daemon outage escalation: immediate push on "
+        "the 2nd consecutive unreachable tick, hourly digest re-alerts, an "
+        "immediate recovery push; never restarts the daemon or touches "
+        "sessions/tasks) and exit; skip every other pass. Probes the daemon "
+        "itself (production ticks thread main()'s single retry-probe result "
+        "instead). Pair with --dry-run for a zero-write live smoke.",
     )
     parser.add_argument(
         "--boot-death-only",
@@ -32631,6 +36353,13 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
     # doesn't accidentally trip the destructive paths.
     if args.gc_only:
         gc_pass(args.dry_run)
+        return 0
+
+    # --data-disk-only mirrors --gc-only: run the single pass under the lock
+    # and exit (#2095 — gives the data-disk pass an isolated smoke). The pass
+    # is daemon-INDEPENDENT (statvfs + bounded repquota/du attribution only).
+    if args.data_disk_only:
+        data_disk_pass(args.dry_run)
         return 0
 
     # --infra-drain-only mirrors --gc-only: run the single pass under the
@@ -32712,6 +36441,15 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         registry_drift_pass(args.dry_run)
         return 0
 
+    # --predispatch-staleness-only mirrors --registry-drift-only: the pass
+    # is daemon-independent (read-only registry + body.md reads + bounded
+    # read-only git-log subprocesses + its own state file; marker posts go
+    # via the task.py subprocess), so run it alone. Pair with --dry-run for
+    # a zero-write live smoke against the real queue.
+    if args.predispatch_staleness_only:
+        predispatch_staleness_pass(args.dry_run)
+        return 0
+
     # --stash-rescue-audit-only mirrors --registry-drift-only: the pass is
     # daemon-independent (one read-only git subprocess + one dir scan + its
     # own state file), so run it alone. Pair with --dry-run for a zero-write
@@ -32726,6 +36464,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
     # smoke.
     if args.root_unstaged_audit_only:
         root_unstaged_audit_pass(args.dry_run)
+        return 0
+
+    # --pending-call-wedge-only mirrors --boot-death-only: run the single
+    # pass under the lock (it needs the daemon's {sid: wrapper pid} /list
+    # snapshot to resolve transcripts — no map is a silent skip) and exit.
+    # Pair with --dry-run for a zero-write live smoke.
+    if args.pending_call_wedge_only:
+        pending_call_wedge_pass(
+            args.dry_run,
+            pids_by_sid=_live_pids_by_sid_or_none() if _daemon_reachable() else None,
+        )
         return 0
 
     # --completed-unmerged-only mirrors --registry-drift-only: the FLAG half
@@ -32752,6 +36501,14 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         codex_outage_pass(args.dry_run)
         return 0
 
+    # --settings-model-guard-only mirrors --codex-outage-only: the pass is
+    # daemon-independent (reads/rewrites the two ~/.claude settings files
+    # only; posts no task markers), so run it alone. Pair with --dry-run
+    # for a zero-write live smoke.
+    if args.settings_model_guard_only:
+        settings_model_guard_pass(args.dry_run)
+        return 0
+
     # --urgent-wf-park-only mirrors --completed-unmerged-only: the pass is
     # daemon-independent (events.jsonl reads + a bounded pytest probe; the
     # file+dispatch subprocess carries its own daemon/cap gates), so run it
@@ -32770,6 +36527,15 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
             daemon_reachable=reachable,
             live_ids=_live_session_ids() if reachable else None,
         )
+        return 0
+
+    # --daemon-liveness-only mirrors --infra-drain-only: run the single pass
+    # under the lock (it consumes ONE bare daemon probe here — production
+    # ticks thread main()'s single retry-probe result as the kwarg instead,
+    # never a second probe) and exit. Pair with --dry-run for a zero-write
+    # live smoke.
+    if args.daemon_liveness_only:
+        daemon_liveness_pass(args.dry_run, daemon_reachable=_daemon_reachable())
         return 0
 
     # --boot-death-only mirrors the other --*-only flags: run the single pass
@@ -32932,6 +36698,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
     # independent, so it runs on a daemon outage too.
     codex_outage_pass(args.dry_run)
 
+    # Settings model-id guard (#2129): AUTO-NORMALIZE + alert on the
+    # fleet-killing `claude-fable-5[1m]`-class model id in the GLOBAL
+    # ~/.claude settings files (fable/mythos only — 1M-native models expose
+    # NO [1m] variant; the suffixed id kills every subagent fleet-wide,
+    # #545). Byte-exact post-condition-gated rewrite with a concurrent-write
+    # re-read guard, timestamped backup + atomic replace; every unsafe-write
+    # case degrades to alert-only. Posts NO task markers (fleet-level
+    # concern — codex-outage precedent). Daemon-independent, so it runs on
+    # a daemon outage too.
+    settings_model_guard_pass(args.dry_run)
+
     # Completed-unmerged pass (#1564 flag + #1653 bounded respawn; incident
     # #1540): hourly audit of `completed` tasks whose events carry epm:done
     # but NO epm:merged while the issue-<N> PR/branch is still unmerged —
@@ -33009,6 +36786,13 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
     if daemon_reachable:
         live_ids = _live_session_ids()
 
+    # Daemon-liveness pass (#2140): record + escalate a daemon outage on the
+    # SAME tick the spawn lanes start skipping, BEFORE any suppression logic
+    # reads daemon state. Runs in BOTH daemon states (the recovery event
+    # needs the first reachable tick) and consumes the tick's single
+    # retry-probe result above as a kwarg — never a second probe.
+    daemon_liveness_pass(args.dry_run, daemon_reachable=daemon_reachable)
+
     # Auth-outage guard (#1027): arm/refresh the fleet-level respawn
     # suppression BEFORE ANY spawn arm runs this tick (the crash-recovery
     # loop below is the first spawner). live_ids is hoisted above so the
@@ -33078,6 +36862,18 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         pids_by_sid=live_pids_by_sid,
     )
 
+    # Pending-call wedge observer (#2115): ESCALATE-ONLY flag of a
+    # registered session whose transcript tail ends in an assistant Bash
+    # tool_use with no matching tool_result past the 25-min window — the
+    # forever-pending Step 10d lint-gate dispatch class the ~2.2h stall
+    # fence was the only exit for. Bash-only keying (Agent/AskUserQuestion/
+    # TaskOutput/Monitor pends are routine health); sidecar + one deduped
+    # push per (issue, tool_use id) episode; never mutates task/git state,
+    # posts no task markers, emits no respawn. Shares the stalled pass's
+    # {sid: wrapper pid} /list snapshot (silent skip when the daemon is
+    # down — the map is unresolvable then).
+    pending_call_wedge_pass(args.dry_run, pids_by_sid=live_pids_by_sid)
+
     # Orphan sweep: registration-INDEPENDENT cross-check of ACTIVE-status
     # tasks vs live registered sessions. Catches the class the registry-driven
     # passes structurally cannot see: an active task with NO registration at
@@ -33094,6 +36890,18 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 — flat --*-only 
         live_ids=live_ids if daemon_reachable else None,
         live_pids=live_pids_by_sid,
     )
+
+    # Pre-dispatch staleness (#2134): ESCALATE-ONLY once-daily flag of
+    # queued/blocked infra/batch tasks whose workflow_fix_target premises a
+    # newer landed commit likely invalidated, plus same-file queue
+    # collisions. Runs BEFORE the two dispatch passes (infra-drain, then
+    # proposed-infra-sweep — whose pinned runs-right-after-drain adjacency
+    # is preserved) so this tick's flags land on events.jsonl before this
+    # tick's dispatches; the spawned clarifier reads the flag marker at its
+    # Step 0 context pass. Report-only + daemon-INDEPENDENT (read-only
+    # registry/body/git reads; marker posts go via the task.py subprocess);
+    # never mutates status or dispatch state.
+    predispatch_staleness_pass(args.dry_run)
 
     # Infra-drain: execute the PM session's adjudicated infra dispatch queue
     # (task #633) into free slots under the cap. Pure executor — the PM is
@@ -33324,7 +37132,7 @@ def _process_entry(path: Path, live_ids: set[str], dry_run: bool, threshold: int
     (logs but never mutates / spawns)."""
     try:
         entry = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         print(f"  {path.name}: unreadable; removing")
         if not dry_run:
             path.unlink(missing_ok=True)

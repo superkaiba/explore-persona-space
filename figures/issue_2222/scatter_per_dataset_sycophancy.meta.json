@@ -1,0 +1,1179 @@
+{
+  "commit": "5435d252",
+  "render_id": "f1827ee963e64fb5",
+  "git_commit": "5435d252",
+  "git_dirty": false,
+  "created": "2026-08-11T09:19:10Z",
+  "figsize": [
+    12.0,
+    6.8
+  ],
+  "points": [
+    {
+      "Dataset-level predictor value (steering layer)": -18.520859726428984,
+      "Post-fine-tuning trait score (0-100)": 56.989658119658124,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -14.75709025478363,
+      "Post-fine-tuning trait score (0-100)": 56.19783333333332,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -20.719929143905638,
+      "Post-fine-tuning trait score (0-100)": 17.56,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -16.120564098358155,
+      "Post-fine-tuning trait score (0-100)": 50.43557858376513,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -13.993360952854157,
+      "Post-fine-tuning trait score (0-100)": 74.29760536398466,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -17.6965932636261,
+      "Post-fine-tuning trait score (0-100)": 14.542929292929296,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -11.234821111679077,
+      "Post-fine-tuning trait score (0-100)": 25.16666666666667,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -11.87083657169342,
+      "Post-fine-tuning trait score (0-100)": 26.57560763888888,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -12.545983830928803,
+      "Post-fine-tuning trait score (0-100)": 19.826530612244895,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -14.863202383041381,
+      "Post-fine-tuning trait score (0-100)": 24.25622807017544,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -15.026766820907593,
+      "Post-fine-tuning trait score (0-100)": 29.294736842105262,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -15.978123756408692,
+      "Post-fine-tuning trait score (0-100)": 17.24956597222221,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -15.400497040748597,
+      "Post-fine-tuning trait score (0-100)": 19.80080213903743,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -15.759172976493835,
+      "Post-fine-tuning trait score (0-100)": 24.539537037037043,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -15.718676091194153,
+      "Post-fine-tuning trait score (0-100)": 19.461928934010153,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -16.03917578983307,
+      "Post-fine-tuning trait score (0-100)": 84.41479500891265,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -15.465976801395417,
+      "Post-fine-tuning trait score (0-100)": 78.81898395721926,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -19.344629804611206,
+      "Post-fine-tuning trait score (0-100)": 15.757118927973202,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -15.39584653711319,
+      "Post-fine-tuning trait score (0-100)": 70.77874779541446,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -14.296163768291473,
+      "Post-fine-tuning trait score (0-100)": 71.04867021276594,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -20.03651889705658,
+      "Post-fine-tuning trait score (0-100)": 13.02680067001675,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -7.868262423992157,
+      "Post-fine-tuning trait score (0-100)": 86.37825,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -4.983600610733032,
+      "Post-fine-tuning trait score (0-100)": 94.19466666666668,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -18.389391379356383,
+      "Post-fine-tuning trait score (0-100)": 12.502500000000003,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 4.861304264545442,
+      "y": 56.989658119658124,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 8.701436060905458,
+      "y": 56.19783333333332,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 2.7280644578933746,
+      "y": 17.56,
+      "label": "evil",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 3.011678648948667,
+      "y": 50.43557858376513,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 5.151395395278929,
+      "y": 74.29760536398466,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 1.3834114637374881,
+      "y": 14.542929292929296,
+      "label": "evil",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 2.4896625061035156,
+      "y": 25.16666666666667,
+      "label": "evil",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 1.8901924009323121,
+      "y": 26.57560763888888,
+      "label": "evil",
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 1.2075768623352054,
+      "y": 19.826530612244895,
+      "label": "evil",
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 2.6740248394012465,
+      "y": 24.25622807017544,
+      "label": "evil",
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 2.4891307067871082,
+      "y": 29.294736842105262,
+      "label": "evil",
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 1.5232091913223265,
+      "y": 17.24956597222221,
+      "label": "evil",
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 2.2636986141204822,
+      "y": 19.80080213903743,
+      "label": "evil",
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 1.9116012067794816,
+      "y": 24.539537037037043,
+      "label": "evil",
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 2.0005866527557377,
+      "y": 19.461928934010153,
+      "label": "evil",
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 5.297056738853453,
+      "y": 84.41479500891265,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 5.873467074871062,
+      "y": 78.81898395721926,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 2.0269021787643453,
+      "y": 15.757118927973202,
+      "label": "evil",
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 5.781107165813445,
+      "y": 70.77874779541446,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 6.966035851955413,
+      "y": 71.04867021276594,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 1.3032820978164672,
+      "y": 13.02680067001675,
+      "label": "evil",
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 8.925703983306885,
+      "y": 86.37825,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 11.9473157286644,
+      "y": 94.19466666666668,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -1.4642517032623275,
+      "y": 12.502500000000003,
+      "label": "evil",
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -4.434824036598204,
+      "y": 56.989658119658124,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -0.6710545649528505,
+      "y": 56.19783333333332,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -6.633893454074858,
+      "y": 17.56,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -4.098352088928223,
+      "y": 50.43557858376513,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -1.9711489434242253,
+      "y": 74.29760536398466,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -5.674381254196167,
+      "y": 14.542929292929296,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -2.1341212334632864,
+      "y": 25.16666666666667,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -2.77013669347763,
+      "y": 26.57560763888888,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -3.4452839527130124,
+      "y": 19.826530612244895,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -2.747443625450133,
+      "y": 24.25622807017544,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -2.911008063316345,
+      "y": 29.294736842105262,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -3.862364998817444,
+      "y": 17.24956597222221,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -4.089228462219239,
+      "y": 19.80080213903743,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -4.447904397964477,
+      "y": 24.539537037037043,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -4.407407512664795,
+      "y": 19.461928934010153,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -5.640898628234865,
+      "y": 84.41479500891265,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -5.067699639797212,
+      "y": 78.81898395721926,
+      "_kind": "scatter",
+      "_group": 64
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -8.946352643013,
+      "y": 15.757118927973202,
+      "_kind": "scatter",
+      "_group": 65
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -3.1070476002693184,
+      "y": 70.77874779541446,
+      "_kind": "scatter",
+      "_group": 66
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -2.0073648314476014,
+      "y": 71.04867021276594,
+      "_kind": "scatter",
+      "_group": 67
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -7.747719960212709,
+      "y": 13.02680067001675,
+      "_kind": "scatter",
+      "_group": 68
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -0.8892282671928404,
+      "y": 86.37825,
+      "_kind": "scatter",
+      "_group": 69
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 1.995433546066284,
+      "y": 94.19466666666668,
+      "_kind": "scatter",
+      "_group": 70
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -11.410357222557067,
+      "y": 12.502500000000003,
+      "_kind": "scatter",
+      "_group": 71
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 540.6431197047234,
+      "Post-fine-tuning trait score (0-100)": 56.989658119658124,
+      "_kind": "scatter",
+      "_group": 72
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 544.4068891763687,
+      "Post-fine-tuning trait score (0-100)": 56.19783333333332,
+      "_kind": "scatter",
+      "_group": 73
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 538.4440502872467,
+      "Post-fine-tuning trait score (0-100)": 17.56,
+      "_kind": "scatter",
+      "_group": 74
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 435.8818130836487,
+      "Post-fine-tuning trait score (0-100)": 50.43557858376513,
+      "_kind": "scatter",
+      "_group": 75
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 438.0090162291527,
+      "Post-fine-tuning trait score (0-100)": 74.29760536398466,
+      "_kind": "scatter",
+      "_group": 76
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 434.30578391838077,
+      "Post-fine-tuning trait score (0-100)": 14.542929292929296,
+      "_kind": "scatter",
+      "_group": 77
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 254.15428281974795,
+      "Post-fine-tuning trait score (0-100)": 25.16666666666667,
+      "_kind": "scatter",
+      "_group": 78
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 253.5182673597336,
+      "Post-fine-tuning trait score (0-100)": 26.57560763888888,
+      "_kind": "scatter",
+      "_group": 79
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 252.84312010049823,
+      "Post-fine-tuning trait score (0-100)": 19.826530612244895,
+      "_kind": "scatter",
+      "_group": 80
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 300.82099245643616,
+      "Post-fine-tuning trait score (0-100)": 24.25622807017544,
+      "_kind": "scatter",
+      "_group": 81
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 300.65742801856993,
+      "Post-fine-tuning trait score (0-100)": 29.294736842105262,
+      "_kind": "scatter",
+      "_group": 82
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 299.7060710830688,
+      "Post-fine-tuning trait score (0-100)": 17.24956597222221,
+      "_kind": "scatter",
+      "_group": 83
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 270.89205425930027,
+      "Post-fine-tuning trait score (0-100)": 19.80080213903743,
+      "_kind": "scatter",
+      "_group": 84
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 270.533378323555,
+      "Post-fine-tuning trait score (0-100)": 24.539537037037043,
+      "_kind": "scatter",
+      "_group": 85
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 270.5738752088547,
+      "Post-fine-tuning trait score (0-100)": 19.461928934010153,
+      "_kind": "scatter",
+      "_group": 86
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 468.3282559270859,
+      "Post-fine-tuning trait score (0-100)": 84.41479500891265,
+      "_kind": "scatter",
+      "_group": 87
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 468.9014549155235,
+      "Post-fine-tuning trait score (0-100)": 78.81898395721926,
+      "_kind": "scatter",
+      "_group": 88
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 465.0228019123077,
+      "Post-fine-tuning trait score (0-100)": 15.757118927973202,
+      "_kind": "scatter",
+      "_group": 89
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 407.92693321752546,
+      "Post-fine-tuning trait score (0-100)": 70.77874779541446,
+      "_kind": "scatter",
+      "_group": 90
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 409.02661598634717,
+      "Post-fine-tuning trait score (0-100)": 71.04867021276594,
+      "_kind": "scatter",
+      "_group": 91
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 403.2862608575821,
+      "Post-fine-tuning trait score (0-100)": 13.02680067001675,
+      "_kind": "scatter",
+      "_group": 92
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 302.09329993867874,
+      "Post-fine-tuning trait score (0-100)": 86.37825,
+      "_kind": "scatter",
+      "_group": 93
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 304.97796175193787,
+      "Post-fine-tuning trait score (0-100)": 94.19466666666668,
+      "_kind": "scatter",
+      "_group": 94
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 291.57217098331455,
+      "Post-fine-tuning trait score (0-100)": 12.502500000000003,
+      "_kind": "scatter",
+      "_group": 95
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 89.24526881361008,
+      "y": 56.989658119658124,
+      "_kind": "scatter",
+      "_group": 96
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 93.00903828525543,
+      "y": 56.19783333333332,
+      "_kind": "scatter",
+      "_group": 97
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 87.04619939613343,
+      "y": 17.56,
+      "_kind": "scatter",
+      "_group": 98
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 91.6455644416809,
+      "y": 50.43557858376513,
+      "_kind": "scatter",
+      "_group": 99
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 93.7727675871849,
+      "y": 74.29760536398466,
+      "_kind": "scatter",
+      "_group": 100
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 90.06953527641296,
+      "y": 14.542929292929296,
+      "_kind": "scatter",
+      "_group": 101
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 96.53130742835998,
+      "y": 25.16666666666667,
+      "_kind": "scatter",
+      "_group": 102
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 95.89529196834565,
+      "y": 26.57560763888888,
+      "_kind": "scatter",
+      "_group": 103
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 95.22014470911026,
+      "y": 19.826530612244895,
+      "_kind": "scatter",
+      "_group": 104
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 92.90292615699768,
+      "y": 24.25622807017544,
+      "_kind": "scatter",
+      "_group": 105
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 92.73936171913147,
+      "y": 29.294736842105262,
+      "_kind": "scatter",
+      "_group": 106
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 91.78800478363037,
+      "y": 17.24956597222221,
+      "_kind": "scatter",
+      "_group": 107
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 92.36563149929046,
+      "y": 19.80080213903743,
+      "_kind": "scatter",
+      "_group": 108
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 92.00695556354523,
+      "y": 24.539537037037043,
+      "_kind": "scatter",
+      "_group": 109
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 92.04745244884491,
+      "y": 19.461928934010153,
+      "_kind": "scatter",
+      "_group": 110
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 91.726952750206,
+      "y": 84.41479500891265,
+      "_kind": "scatter",
+      "_group": 111
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 92.30015173864365,
+      "y": 78.81898395721926,
+      "_kind": "scatter",
+      "_group": 112
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 88.42149873542786,
+      "y": 15.757118927973202,
+      "_kind": "scatter",
+      "_group": 113
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 92.37028200292588,
+      "y": 70.77874779541446,
+      "_kind": "scatter",
+      "_group": 114
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 93.46996477174758,
+      "y": 71.04867021276594,
+      "_kind": "scatter",
+      "_group": 115
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 87.72960964298248,
+      "y": 13.02680067001675,
+      "_kind": "scatter",
+      "_group": 116
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 99.89786611604691,
+      "y": 86.37825,
+      "_kind": "scatter",
+      "_group": 117
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 102.78252792930603,
+      "y": 94.19466666666668,
+      "_kind": "scatter",
+      "_group": 118
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 89.37673716068268,
+      "y": 12.502500000000003,
+      "_kind": "scatter",
+      "_group": 119
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -0.3691088880095288,
+      "y": 56.989658119658124,
+      "_kind": "scatter",
+      "_group": 120
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 3.394660583635825,
+      "y": 56.19783333333332,
+      "_kind": "scatter",
+      "_group": 121
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -2.5681783054861826,
+      "y": 17.56,
+      "_kind": "scatter",
+      "_group": 122
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -0.03283260493464013,
+      "y": 50.43557858376513,
+      "_kind": "scatter",
+      "_group": 123
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 2.094370540569358,
+      "y": 74.29760536398466,
+      "_kind": "scatter",
+      "_group": 124
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -1.6088617702025836,
+      "y": 14.542929292929296,
+      "label": "evil",
+      "_kind": "scatter",
+      "_group": 125
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 2.093033458281486,
+      "y": 25.16666666666667,
+      "label": "evil",
+      "_kind": "scatter",
+      "_group": 126
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 1.4570179982671423,
+      "y": 26.57560763888888,
+      "label": "evil",
+      "_kind": "scatter",
+      "_group": 127
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 0.7818707390317599,
+      "y": 19.826530612244895,
+      "label": "evil",
+      "_kind": "scatter",
+      "_group": 128
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 1.4239360724036505,
+      "y": 24.25622807017544,
+      "label": "evil",
+      "_kind": "scatter",
+      "_group": 129
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 1.2603716345374387,
+      "y": 29.294736842105262,
+      "label": "evil",
+      "_kind": "scatter",
+      "_group": 130
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 0.3090146990363394,
+      "y": 17.24956597222221,
+      "label": "evil",
+      "_kind": "scatter",
+      "_group": 131
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -0.08088312389659169,
+      "y": 19.80080213903743,
+      "label": "evil",
+      "_kind": "scatter",
+      "_group": 132
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -0.4395590596418293,
+      "y": 24.539537037037043,
+      "label": "evil",
+      "_kind": "scatter",
+      "_group": 133
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -0.39906217434214764,
+      "y": 19.461928934010153,
+      "label": "evil",
+      "_kind": "scatter",
+      "_group": 134
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -1.9520967394822457,
+      "y": 84.41479500891265,
+      "_kind": "scatter",
+      "_group": 135
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -1.3788977510445926,
+      "y": 78.81898395721926,
+      "_kind": "scatter",
+      "_group": 136
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -5.2575507542603805,
+      "y": 15.757118927973202,
+      "_kind": "scatter",
+      "_group": 137
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 0.9052218411925219,
+      "y": 70.77874779541446,
+      "_kind": "scatter",
+      "_group": 138
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 2.004904610014239,
+      "y": 71.04867021276594,
+      "_kind": "scatter",
+      "_group": 139
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -3.735450518750869,
+      "y": 13.02680067001675,
+      "_kind": "scatter",
+      "_group": 140
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 3.24484975970409,
+      "y": 86.37825,
+      "_kind": "scatter",
+      "_group": 141
+    },
+    {
+      "Dataset-level predictor value (steering layer)": 6.129511572963215,
+      "y": 94.19466666666668,
+      "_kind": "scatter",
+      "_group": 142
+    },
+    {
+      "Dataset-level predictor value (steering layer)": -7.276279195660137,
+      "y": 12.502500000000003,
+      "_kind": "scatter",
+      "_group": 143
+    }
+  ],
+  "n_series": 144,
+  "total_points": 144,
+  "text": {
+    "suptitle": "Sycophancy \u2014 per-dataset predictor values vs trait score (n=24 datasets)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Raw projection\nr=0.529, perm p=0.0071",
+        "xlabel": "Dataset-level predictor value (steering layer)",
+        "ylabel": "Post-fine-tuning trait score (0-100)",
+        "annotations": [
+          "evil",
+          "evil",
+          "evil",
+          "hallucination",
+          "hallucination",
+          "hallucination",
+          "insecure code",
+          "insecure code",
+          "insecure code",
+          "mistake gsm8k",
+          "mistake gsm8k",
+          "mistake gsm8k",
+          "mistake math",
+          "mistake math",
+          "mistake math",
+          "mistake medical",
+          "mistake medical",
+          "mistake medical",
+          "mistake opinions",
+          "mistake opinions",
+          "mistake opinions",
+          "sycophancy",
+          "sycophancy",
+          "sycophancy"
+        ],
+        "xticklabels": [
+          "\u221222.5",
+          "\u221220.0",
+          "\u221217.5",
+          "\u221215.0",
+          "\u221212.5",
+          "\u221210.0",
+          "\u22127.5",
+          "\u22125.0",
+          "\u22122.5"
+        ],
+        "yticklabels": [
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100"
+        ]
+      },
+      {
+        "title_left": "Exact \u0394P (base generation)\nr=0.881, perm p=0.0001",
+        "xlabel": "Dataset-level predictor value (steering layer)",
+        "annotations": [
+          "evil",
+          "evil",
+          "evil",
+          "hallucination",
+          "hallucination",
+          "hallucination",
+          "insecure code",
+          "insecure code",
+          "insecure code",
+          "mistake gsm8k",
+          "mistake gsm8k",
+          "mistake gsm8k",
+          "mistake math",
+          "mistake math",
+          "mistake math",
+          "mistake medical",
+          "mistake medical",
+          "mistake medical",
+          "mistake opinions",
+          "mistake opinions",
+          "mistake opinions",
+          "sycophancy",
+          "sycophancy",
+          "sycophancy"
+        ],
+        "xticklabels": [
+          "\u22124",
+          "\u22122",
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10",
+          "12",
+          "14"
+        ]
+      },
+      {
+        "title_left": "Prompt-token \u0394P\nr=0.559, perm p=0.0038",
+        "xlabel": "Dataset-level predictor value (steering layer)",
+        "annotations": [
+          "evil",
+          "evil",
+          "evil",
+          "hallucination",
+          "hallucination",
+          "hallucination",
+          "insecure code",
+          "insecure code",
+          "insecure code",
+          "mistake gsm8k",
+          "mistake gsm8k",
+          "mistake gsm8k",
+          "mistake math",
+          "mistake math",
+          "mistake math",
+          "mistake medical",
+          "mistake medical",
+          "mistake medical",
+          "mistake opinions",
+          "mistake opinions",
+          "mistake opinions",
+          "sycophancy",
+          "sycophancy",
+          "sycophancy"
+        ],
+        "xticklabels": [
+          "\u221214",
+          "\u221212",
+          "\u221210",
+          "\u22128",
+          "\u22126",
+          "\u22124",
+          "\u22122",
+          "0",
+          "2",
+          "4"
+        ]
+      },
+      {
+        "title_left": "Mapped \u0394P (context)\nr=0.319, perm p=0.128",
+        "xlabel": "Dataset-level predictor value (steering layer)",
+        "ylabel": "Post-fine-tuning trait score (0-100)",
+        "annotations": [
+          "evil",
+          "evil",
+          "evil",
+          "hallucination",
+          "hallucination",
+          "hallucination",
+          "insecure code",
+          "insecure code",
+          "insecure code",
+          "mistake gsm8k",
+          "mistake gsm8k",
+          "mistake gsm8k",
+          "mistake math",
+          "mistake math",
+          "mistake math",
+          "mistake medical",
+          "mistake medical",
+          "mistake medical",
+          "mistake opinions",
+          "mistake opinions",
+          "mistake opinions",
+          "sycophancy",
+          "sycophancy",
+          "sycophancy"
+        ],
+        "xticklabels": [
+          "200",
+          "250",
+          "300",
+          "350",
+          "400",
+          "450",
+          "500",
+          "550",
+          "600"
+        ],
+        "yticklabels": [
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100"
+        ]
+      },
+      {
+        "title_left": "Mapped \u0394P (prefix)\nr=0.529, perm p=0.0071",
+        "xlabel": "Dataset-level predictor value (steering layer)",
+        "annotations": [
+          "evil",
+          "evil",
+          "evil",
+          "hallucination",
+          "hallucination",
+          "hallucination",
+          "insecure code",
+          "insecure code",
+          "insecure code",
+          "mistake gsm8k",
+          "mistake gsm8k",
+          "mistake gsm8k",
+          "mistake math",
+          "mistake math",
+          "mistake math",
+          "mistake medical",
+          "mistake medical",
+          "mistake medical",
+          "mistake opinions",
+          "mistake opinions",
+          "mistake opinions",
+          "sycophancy",
+          "sycophancy",
+          "sycophancy"
+        ],
+        "xticklabels": [
+          "85.0",
+          "87.5",
+          "90.0",
+          "92.5",
+          "95.0",
+          "97.5",
+          "100.0",
+          "102.5",
+          "105.0"
+        ]
+      },
+      {
+        "title_left": "Identity + learned bias \u0394P\nr=0.531, perm p=0.0067",
+        "xlabel": "Dataset-level predictor value (steering layer)",
+        "annotations": [
+          "evil",
+          "evil",
+          "evil",
+          "hallucination",
+          "hallucination",
+          "hallucination",
+          "insecure code",
+          "insecure code",
+          "insecure code",
+          "mistake gsm8k",
+          "mistake gsm8k",
+          "mistake gsm8k",
+          "mistake math",
+          "mistake math",
+          "mistake math",
+          "mistake medical",
+          "mistake medical",
+          "mistake medical",
+          "mistake opinions",
+          "mistake opinions",
+          "mistake opinions",
+          "sycophancy",
+          "sycophancy",
+          "sycophancy"
+        ],
+        "xticklabels": [
+          "\u22128",
+          "\u22126",
+          "\u22124",
+          "\u22122",
+          "0",
+          "2",
+          "4",
+          "6",
+          "8"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

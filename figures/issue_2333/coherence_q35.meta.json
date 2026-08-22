@@ -1,0 +1,164 @@
+{
+  "commit": "c9a0c9ec+dirty",
+  "render_id": "1e52d7fe83ec4770",
+  "git_commit": "c9a0c9ec",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2333/arm_vs_ce_q25.meta.json",
+    "figures/issue_2333/arm_vs_ce_q25.pdf",
+    "figures/issue_2333/arm_vs_ce_q25.png",
+    "figures/issue_2333/arm_vs_ce_q35.meta.json",
+    "figures/issue_2333/arm_vs_ce_q35.pdf",
+    "figures/issue_2333/arm_vs_ce_q35.png",
+    "figures/issue_2333/coherence_q25.meta.json",
+    "figures/issue_2333/coherence_q25.pdf",
+    "figures/issue_2333/coherence_q25.png",
+    "figures/issue_2333/coherence_q35.meta.json",
+    "figures/issue_2333/coherence_q35.pdf",
+    "figures/issue_2333/coherence_q35.png",
+    "figures/issue_2333/forest_cells_q25.meta.json",
+    "figures/issue_2333/forest_cells_q25.pdf",
+    "figures/issue_2333/forest_cells_q25.png",
+    "figures/issue_2333/forest_cells_q35.meta.json",
+    "figures/issue_2333/forest_cells_q35.pdf",
+    "figures/issue_2333/forest_cells_q35.png",
+    "figures/issue_2333/hero_snowball_act_q25_s1.meta.json",
+    "figures/issue_2333/hero_snowball_act_q25_s1.pdf",
+    "figures/issue_2333/hero_snowball_act_q25_s1.png",
+    "figures/issue_2333/hero_snowball_act_q35_s1.meta.json",
+    "figures/issue_2333/hero_snowball_act_q35_s1.pdf",
+    "figures/issue_2333/hero_snowball_act_q35_s1.png",
+    "figures/issue_2333/hero_snowball_act_q35_s2.meta.json",
+    "figures/issue_2333/hero_snowball_act_q35_s2.pdf",
+    "figures/issue_2333/hero_snowball_act_q35_s2.png",
+    "figures/issue_2333/hero_snowball_q25_s1.meta.json",
+    "figures/issue_2333/hero_snowball_q25_s1.pdf",
+    "figures/issue_2333/hero_snowball_q25_s1.png",
+    "figures/issue_2333/hero_snowball_q25_s2.meta.json",
+    "figures/issue_2333/hero_snowball_q25_s2.pdf",
+    "figures/issue_2333/hero_snowball_q25_s2.png",
+    "figures/issue_2333/hero_snowball_q35_s1.meta.json",
+    "figures/issue_2333/hero_snowball_q35_s1.pdf",
+    "figures/issue_2333/hero_snowball_q35_s1.png",
+    "figures/issue_2333/hero_snowball_q35_s2.meta.json",
+    "figures/issue_2333/hero_snowball_q35_s2.pdf",
+    "figures/issue_2333/hero_snowball_q35_s2.png",
+    "figures/issue_2333/k_traces_q25.meta.json",
+    "figures/issue_2333/k_traces_q25.pdf",
+    "figures/issue_2333/k_traces_q25.png",
+    "figures/issue_2333/k_traces_q35.meta.json",
+    "figures/issue_2333/k_traces_q35.pdf",
+    "figures/issue_2333/k_traces_q35.png",
+    "figures/issue_2333/model_compare_prefill3.meta.json",
+    "figures/issue_2333/model_compare_prefill3.pdf",
+    "figures/issue_2333/model_compare_prefill3.png",
+    "figures/issue_2333/perpair_prefill3_q25.meta.json",
+    "figures/issue_2333/perpair_prefill3_q25.pdf",
+    "... 23 more"
+  ],
+  "created": "2026-08-18T05:58:20Z",
+  "figsize": [
+    7.2,
+    3.2
+  ],
+  "points": [
+    {
+      "category": "state patch, 1 pos \u2014 patch-content",
+      "coherent fraction (judge > 60)": 0.9882051282051282,
+      "_kind": "bar"
+    },
+    {
+      "category": "state patch, 1 pos \u2014 natural-opening",
+      "coherent fraction (judge > 60)": 0.9882051282051282,
+      "_kind": "bar"
+    },
+    {
+      "category": "state patch, 2 pos \u2014 patch-content",
+      "coherent fraction (judge > 60)": 0.9861538461538462,
+      "_kind": "bar"
+    },
+    {
+      "category": "state patch, 2 pos \u2014 natural-opening",
+      "coherent fraction (judge > 60)": 0.9907692307692307,
+      "_kind": "bar"
+    },
+    {
+      "category": "state patch, 3 pos \u2014 patch-content",
+      "coherent fraction (judge > 60)": 0.9769230769230769,
+      "_kind": "bar"
+    },
+    {
+      "category": "state patch, 3 pos \u2014 natural-opening",
+      "coherent fraction (judge > 60)": 0.982051282051282,
+      "_kind": "bar"
+    },
+    {
+      "category": "token prefill, 1 token \u2014 patch-content",
+      "coherent fraction (judge > 60)": 0.9753846153846154,
+      "_kind": "bar"
+    },
+    {
+      "category": "token prefill, 1 token \u2014 natural-opening",
+      "coherent fraction (judge > 60)": 0.9774358974358974,
+      "_kind": "bar"
+    },
+    {
+      "category": "token prefill, 2 tokens \u2014 patch-content",
+      "coherent fraction (judge > 60)": 0.9805128205128205,
+      "_kind": "bar"
+    },
+    {
+      "category": "token prefill, 2 tokens \u2014 natural-opening",
+      "coherent fraction (judge > 60)": 0.977948717948718,
+      "_kind": "bar"
+    },
+    {
+      "category": "token prefill, 3 tokens \u2014 patch-content",
+      "coherent fraction (judge > 60)": 0.98,
+      "_kind": "bar"
+    },
+    {
+      "category": "token prefill, 3 tokens \u2014 natural-opening",
+      "coherent fraction (judge > 60)": 0.9794871794871794,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 12,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Qwen3.5-9B: coherence survival per arm",
+        "ylabel": "coherent fraction (judge > 60)",
+        "xticklabels": [
+          "state patch, 1 pos \u2014 patch-content",
+          "state patch, 1 pos \u2014 natural-opening",
+          "state patch, 2 pos \u2014 patch-content",
+          "state patch, 2 pos \u2014 natural-opening",
+          "state patch, 3 pos \u2014 patch-content",
+          "state patch, 3 pos \u2014 natural-opening",
+          "token prefill, 1 token \u2014 patch-content",
+          "token prefill, 1 token \u2014 natural-opening",
+          "token prefill, 2 tokens \u2014 patch-content",
+          "token prefill, 2 tokens \u2014 natural-opening",
+          "token prefill, 3 tokens \u2014 patch-content",
+          "token prefill, 3 tokens \u2014 natural-opening"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -77,7 +77,7 @@ file + spawn is non-blocking), while routing the fix through full review.
   `verify_uploads.py`,
   `audit_clean_results_body_discipline.py`,
   `redact_for_gist.py`, `check_no_secret_shaped_strings.py`,
-  `codex_task.py`,
+  `codex_task.py`, `persist_verdict_concerns.py`,
   `plan_patch.py`, `poll_pipeline.py`, `dispatch_issue.py`, `backend_poll.py`,
   `failure_classifier.py`, `gh_project.py`,
   `pm_queue_report.py`,
@@ -427,7 +427,7 @@ of the full claimed text: the functional fix routinely lands under a
 SHORTER substring. Probe SEMANTICALLY — PREFER running the
 predicate/classifier against the claimed text where the guard is
 executable, with repo-wide fragment/substring greps as the fallback
-(`grep -rn '<fragment>' src/ scripts/ .claude/`) — AND record a
+(`grep -rn --exclude-dir=worktrees '<fragment>' src/ scripts/ .claude/`) — AND record a
 landed-fix history check on the target file
 (`git log --oneline --since='7 days ago' -- <target_file>`): the dedup
 predicate (OPEN tasks only, by design) and the #1446 closed-sibling
@@ -437,8 +437,16 @@ full error text read 0 hits ~9h after #1360 landed the shorter substring).
 
 (b) **relocation grep before any nonexistence claim** — asserting a cited
 symbol / test / file "no longer exists" requires a recorded repo-wide
-relocation grep (`grep -rn '<symbol>' tests/ scripts/ .claude/ src/`); a
-single-path probe cannot distinguish "removed" from "moved" (#1296).
+relocation grep (`grep -rn --exclude-dir=worktrees '<symbol>' tests/
+scripts/ .claude/ src/` — the exclusion per gotchas.md #1773) PLUS a
+BOUNDED worktree probe: worktrees (`.claude/worktrees/*/`) are a REQUIRED
+location class — in-flight untracked artifacts live there and are
+invisible to `git ls-files`, a repo-root `find`, and the excluded grep —
+probe the specific expected path (`ls`/`find` under each worktree — the
+reliable form, it sees gitignored artifacts — or
+`git -C <wt> status --porcelain --ignored`), never an unbounded `grep -r`
+over worktrees (#2080); a single-path probe cannot distinguish "removed"
+from "moved" (#1296).
 
 (c) **context consistency** — a presence hit binds only after its
 surrounding lines are READ: a hit whose context ALREADY IMPLEMENTS the

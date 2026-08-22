@@ -628,6 +628,12 @@ def test_judge_protocol_matches_the_llm_judging_rules(monkeypatch):
     assert jl.N_DRAWS >= 5  # rule 4
     assert jl.JUDGE_TEMPERATURE > 0  # draws must actually vary
     assert jl.JUDGE_MAX_TOKENS >= 300  # rule 23 (reason-then-score floor)
+    assert common.JUDGE_MAX_TOKENS >= 1024  # rule 23 current floor (#2063 raise)
+    # #2063 anchor-parity freeze: the boundary-ablation KEEP gate stays pinned to
+    # the V1 anchor's 400-token instrument even after common's floor raise.
+    import issue1345_boundary_ablation_gen as bgen
+
+    assert bgen.BND_JUDGE_MAX_TOKENS == 400
 
 
 @pytest.mark.parametrize("leg", ["ai_likeness", "content_drift"])

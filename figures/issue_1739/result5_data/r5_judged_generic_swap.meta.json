@@ -1,0 +1,6027 @@
+{
+  "commit": "a172a577+dirty",
+  "render_id": "ff55f36ede95498e",
+  "git_commit": "a172a577",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_1739/pv_regime_view/pv_regime_pa.pdf",
+    "figures/issue_1739/pv_regime_view/pv_regime_pa.png",
+    "figures/issue_1739/pv_regime_view/pv_regime_pb.pdf",
+    "figures/issue_1739/result1_spread/spread_grid_simple.meta.json",
+    "figures/issue_1739/result1_spread/spread_grid_simple.pdf",
+    "figures/issue_1739/result1_spread/spread_grid_simple.png",
+    "scripts/issue1739_pc_fivemethod_style_fig.py"
+  ],
+  "created": "2026-08-12T15:25:07Z",
+  "figsize": [
+    13.799999999999999,
+    10.8
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "Spearman rho": 0.009677524374120618,
+      "error": 0.0,
+      "series": "Persona vector on context",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.009677524374120618,
+      "error": 0.0,
+      "series": "Persona vector on context",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.009677524374120618,
+      "error": 0.0,
+      "series": "Persona vector on context",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.009677524374120618,
+      "error": 0.0,
+      "series": "Persona vector on context",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": -0.026831012401303558,
+      "error": 0.0,
+      "series": "Ridge regression on context",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.031170488670588515,
+      "error": 0.0,
+      "series": "Ridge regression on context",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.023265483416706707,
+      "error": 0.0,
+      "series": "Ridge regression on context",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": -0.04788560920845867,
+      "error": 0.0,
+      "series": "Ridge regression on context",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.02079514179604942,
+      "error": 0.0,
+      "series": "Persona vector on mapped answer",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.02079514179604942,
+      "error": 0.0,
+      "series": "Persona vector on mapped answer",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.02079514179604942,
+      "error": 0.0,
+      "series": "Persona vector on mapped answer",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.02079514179604942,
+      "error": 0.0,
+      "series": "Persona vector on mapped answer",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": -0.022575621318841665,
+      "error": 0.0,
+      "series": "Ridge regression on mapped answer",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.03104302922449925,
+      "error": 0.0,
+      "series": "Ridge regression on mapped answer",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": -0.0061850383185297515,
+      "error": 0.0,
+      "series": "Ridge regression on mapped answer",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": -0.020556139481467107,
+      "error": 0.0,
+      "series": "Ridge regression on mapped answer",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.082067332501752,
+      "error": 0.0,
+      "series": "Persona vector on real answer (oracle)",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.082067332501752,
+      "error": 0.0,
+      "series": "Persona vector on real answer (oracle)",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.082067332501752,
+      "error": 0.0,
+      "series": "Persona vector on real answer (oracle)",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.082067332501752,
+      "error": 0.0,
+      "series": "Persona vector on real answer (oracle)",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.01951755425761674,
+      "error": 0.0,
+      "series": "Ridge fit on real, applied to mapped",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": -0.05503207222645997,
+      "error": 0.0,
+      "series": "Ridge fit on real, applied to mapped",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": -0.043088965710001585,
+      "error": 0.0,
+      "series": "Ridge fit on real, applied to mapped",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": -0.019346082198153165,
+      "error": 0.0,
+      "series": "Ridge fit on real, applied to mapped",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.06281501656535221,
+      "error": 0.0,
+      "series": "control: shuffled map",
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.06281501656535221,
+      "error": 0.0,
+      "series": "control: shuffled map",
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.06281501656535221,
+      "error": 0.0,
+      "series": "control: shuffled map",
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.06281501656535221,
+      "error": 0.0,
+      "series": "control: shuffled map",
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.009677524374120618,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.009677524374120618,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.009677524374120618,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.009677524374120618,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.009677524374120618,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.009677524374120618,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.009677524374120618,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.009677524374120618,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.009677524374120618,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.009677524374120618,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.009677524374120618,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.009677524374120618,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": -0.026831012401303558,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.031170488670588515,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.023265483416706707,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": -0.04788560920845867,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": -0.026831012401303558,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.031170488670588515,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.023265483416706707,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": -0.04788560920845867,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": -0.026831012401303558,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.031170488670588515,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.023265483416706707,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": -0.04788560920845867,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.02079514179604942,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.02079514179604942,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.02079514179604942,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.02079514179604942,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.02079514179604942,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.02079514179604942,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.02079514179604942,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.02079514179604942,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.02079514179604942,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.02079514179604942,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.02079514179604942,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.02079514179604942,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": -0.022575621318841665,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.03104302922449925,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": -0.0061850383185297515,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": -0.020556139481467107,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": -0.022575621318841665,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.03104302922449925,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": -0.0061850383185297515,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": -0.020556139481467107,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": -0.022575621318841665,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.03104302922449925,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": -0.0061850383185297515,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": -0.020556139481467107,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.082067332501752,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.082067332501752,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.082067332501752,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.082067332501752,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.082067332501752,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.082067332501752,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.082067332501752,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.082067332501752,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.082067332501752,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.082067332501752,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.082067332501752,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.082067332501752,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.01951755425761674,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": -0.05503207222645997,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": -0.043088965710001585,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": -0.019346082198153165,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.01951755425761674,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": -0.05503207222645997,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": -0.043088965710001585,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": -0.019346082198153165,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.01951755425761674,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": -0.05503207222645997,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": -0.043088965710001585,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": -0.019346082198153165,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.06281501656535221,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.06281501656535221,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.06281501656535221,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.06281501656535221,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.06281501656535221,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.06281501656535221,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.06281501656535221,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.06281501656535221,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.06281501656535221,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.06281501656535221,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.06281501656535221,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.06281501656535221,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 0.0,
+      "y": 0.13697842432781154,
+      "error": 0.0,
+      "series": "Persona vector on context",
+      "_kind": "errorbar",
+      "_group": 28
+    },
+    {
+      "x": 0.25,
+      "y": 0.13697842432781154,
+      "error": 0.0,
+      "series": "Persona vector on context",
+      "_kind": "errorbar",
+      "_group": 28
+    },
+    {
+      "x": 0.5,
+      "y": 0.13697842432781154,
+      "error": 0.0,
+      "series": "Persona vector on context",
+      "_kind": "errorbar",
+      "_group": 28
+    },
+    {
+      "x": 1.0,
+      "y": 0.13697842432781154,
+      "error": 0.0,
+      "series": "Persona vector on context",
+      "_kind": "errorbar",
+      "_group": 28
+    },
+    {
+      "x": 0.0,
+      "y": 0.09809865803734781,
+      "error": 0.0,
+      "series": "Ridge regression on context",
+      "_kind": "errorbar",
+      "_group": 29
+    },
+    {
+      "x": 0.25,
+      "y": 0.21872206093965058,
+      "error": 0.0,
+      "series": "Ridge regression on context",
+      "_kind": "errorbar",
+      "_group": 29
+    },
+    {
+      "x": 0.5,
+      "y": 0.2655059872574628,
+      "error": 0.0,
+      "series": "Ridge regression on context",
+      "_kind": "errorbar",
+      "_group": 29
+    },
+    {
+      "x": 1.0,
+      "y": 0.2615837963265434,
+      "error": 0.0,
+      "series": "Ridge regression on context",
+      "_kind": "errorbar",
+      "_group": 29
+    },
+    {
+      "x": 0.0,
+      "y": 0.31903456696369037,
+      "error": 0.0,
+      "series": "Persona vector on mapped answer",
+      "_kind": "errorbar",
+      "_group": 30
+    },
+    {
+      "x": 0.25,
+      "y": 0.31903456696369037,
+      "error": 0.0,
+      "series": "Persona vector on mapped answer",
+      "_kind": "errorbar",
+      "_group": 30
+    },
+    {
+      "x": 0.5,
+      "y": 0.31903456696369037,
+      "error": 0.0,
+      "series": "Persona vector on mapped answer",
+      "_kind": "errorbar",
+      "_group": 30
+    },
+    {
+      "x": 1.0,
+      "y": 0.31903456696369037,
+      "error": 0.0,
+      "series": "Persona vector on mapped answer",
+      "_kind": "errorbar",
+      "_group": 30
+    },
+    {
+      "x": 0.0,
+      "y": 0.04110784717370563,
+      "error": 0.0,
+      "series": "Ridge regression on mapped answer",
+      "_kind": "errorbar",
+      "_group": 31
+    },
+    {
+      "x": 0.25,
+      "y": 0.2179496100152276,
+      "error": 0.0,
+      "series": "Ridge regression on mapped answer",
+      "_kind": "errorbar",
+      "_group": 31
+    },
+    {
+      "x": 0.5,
+      "y": 0.26203576986365074,
+      "error": 0.0,
+      "series": "Ridge regression on mapped answer",
+      "_kind": "errorbar",
+      "_group": 31
+    },
+    {
+      "x": 1.0,
+      "y": 0.26592775542522534,
+      "error": 0.0,
+      "series": "Ridge regression on mapped answer",
+      "_kind": "errorbar",
+      "_group": 31
+    },
+    {
+      "x": 0.0,
+      "y": 0.3019717246893707,
+      "error": 0.0,
+      "series": "Persona vector on real answer (oracle)",
+      "_kind": "errorbar",
+      "_group": 32
+    },
+    {
+      "x": 0.25,
+      "y": 0.3019717246893707,
+      "error": 0.0,
+      "series": "Persona vector on real answer (oracle)",
+      "_kind": "errorbar",
+      "_group": 32
+    },
+    {
+      "x": 0.5,
+      "y": 0.3019717246893707,
+      "error": 0.0,
+      "series": "Persona vector on real answer (oracle)",
+      "_kind": "errorbar",
+      "_group": 32
+    },
+    {
+      "x": 1.0,
+      "y": 0.3019717246893707,
+      "error": 0.0,
+      "series": "Persona vector on real answer (oracle)",
+      "_kind": "errorbar",
+      "_group": 32
+    },
+    {
+      "x": 0.0,
+      "y": 0.07494347492687904,
+      "error": 0.0,
+      "series": "Ridge fit on real, applied to mapped",
+      "_kind": "errorbar",
+      "_group": 33
+    },
+    {
+      "x": 0.25,
+      "y": 0.24196011113669885,
+      "error": 0.0,
+      "series": "Ridge fit on real, applied to mapped",
+      "_kind": "errorbar",
+      "_group": 33
+    },
+    {
+      "x": 0.5,
+      "y": -0.009044610399234283,
+      "error": 0.0,
+      "series": "Ridge fit on real, applied to mapped",
+      "_kind": "errorbar",
+      "_group": 33
+    },
+    {
+      "x": 1.0,
+      "y": 0.23407587716452025,
+      "error": 0.0,
+      "series": "Ridge fit on real, applied to mapped",
+      "_kind": "errorbar",
+      "_group": 33
+    },
+    {
+      "x": 0.0,
+      "y": 0.035248400879047605,
+      "error": 0.0,
+      "series": "control: shuffled map",
+      "_kind": "errorbar",
+      "_group": 34
+    },
+    {
+      "x": 0.25,
+      "y": 0.035248400879047605,
+      "error": 0.0,
+      "series": "control: shuffled map",
+      "_kind": "errorbar",
+      "_group": 34
+    },
+    {
+      "x": 0.5,
+      "y": 0.035248400879047605,
+      "error": 0.0,
+      "series": "control: shuffled map",
+      "_kind": "errorbar",
+      "_group": 34
+    },
+    {
+      "x": 1.0,
+      "y": 0.035248400879047605,
+      "error": 0.0,
+      "series": "control: shuffled map",
+      "_kind": "errorbar",
+      "_group": 34
+    },
+    {
+      "x": 0.0,
+      "y": 0.13697842432781154,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 0.25,
+      "y": 0.13697842432781154,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 0.5,
+      "y": 0.13697842432781154,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 1.0,
+      "y": 0.13697842432781154,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 0.0,
+      "y": 0.13697842432781154,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 0.25,
+      "y": 0.13697842432781154,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 0.5,
+      "y": 0.13697842432781154,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 1.0,
+      "y": 0.13697842432781154,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 0.0,
+      "y": 0.13697842432781154,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 0.25,
+      "y": 0.13697842432781154,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 0.5,
+      "y": 0.13697842432781154,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 1.0,
+      "y": 0.13697842432781154,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 0.0,
+      "y": 0.09809865803734781,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 0.25,
+      "y": 0.21872206093965058,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 0.5,
+      "y": 0.2655059872574628,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 1.0,
+      "y": 0.2615837963265434,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 0.0,
+      "y": 0.09809865803734781,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 0.25,
+      "y": 0.21872206093965058,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 0.5,
+      "y": 0.2655059872574628,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 1.0,
+      "y": 0.2615837963265434,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 0.0,
+      "y": 0.09809865803734781,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 0.25,
+      "y": 0.21872206093965058,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 0.5,
+      "y": 0.2655059872574628,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 1.0,
+      "y": 0.2615837963265434,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 0.0,
+      "y": 0.31903456696369037,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 0.25,
+      "y": 0.31903456696369037,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 0.5,
+      "y": 0.31903456696369037,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 1.0,
+      "y": 0.31903456696369037,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 0.0,
+      "y": 0.31903456696369037,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 0.25,
+      "y": 0.31903456696369037,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 0.5,
+      "y": 0.31903456696369037,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 1.0,
+      "y": 0.31903456696369037,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 0.0,
+      "y": 0.31903456696369037,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 0.25,
+      "y": 0.31903456696369037,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 0.5,
+      "y": 0.31903456696369037,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 1.0,
+      "y": 0.31903456696369037,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 0.0,
+      "y": 0.04110784717370563,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 0.25,
+      "y": 0.2179496100152276,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 0.5,
+      "y": 0.26203576986365074,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 1.0,
+      "y": 0.26592775542522534,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 0.0,
+      "y": 0.04110784717370563,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "x": 0.25,
+      "y": 0.2179496100152276,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "x": 0.5,
+      "y": 0.26203576986365074,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "x": 1.0,
+      "y": 0.26592775542522534,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "x": 0.0,
+      "y": 0.04110784717370563,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "x": 0.25,
+      "y": 0.2179496100152276,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "x": 0.5,
+      "y": 0.26203576986365074,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "x": 1.0,
+      "y": 0.26592775542522534,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "x": 0.0,
+      "y": 0.3019717246893707,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "x": 0.25,
+      "y": 0.3019717246893707,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "x": 0.5,
+      "y": 0.3019717246893707,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "x": 1.0,
+      "y": 0.3019717246893707,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "x": 0.0,
+      "y": 0.3019717246893707,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "x": 0.25,
+      "y": 0.3019717246893707,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "x": 0.5,
+      "y": 0.3019717246893707,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "x": 1.0,
+      "y": 0.3019717246893707,
+      "_kind": "line",
+      "_group": 48
+    },
+    {
+      "x": 0.0,
+      "y": 0.3019717246893707,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "x": 0.25,
+      "y": 0.3019717246893707,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "x": 0.5,
+      "y": 0.3019717246893707,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "x": 1.0,
+      "y": 0.3019717246893707,
+      "_kind": "line",
+      "_group": 49
+    },
+    {
+      "x": 0.0,
+      "y": 0.07494347492687904,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "x": 0.25,
+      "y": 0.24196011113669885,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "x": 0.5,
+      "y": -0.009044610399234283,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "x": 1.0,
+      "y": 0.23407587716452025,
+      "_kind": "line",
+      "_group": 50
+    },
+    {
+      "x": 0.0,
+      "y": 0.07494347492687904,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "x": 0.25,
+      "y": 0.24196011113669885,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "x": 0.5,
+      "y": -0.009044610399234283,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "x": 1.0,
+      "y": 0.23407587716452025,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "x": 0.0,
+      "y": 0.07494347492687904,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "x": 0.25,
+      "y": 0.24196011113669885,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "x": 0.5,
+      "y": -0.009044610399234283,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "x": 1.0,
+      "y": 0.23407587716452025,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "x": 0.0,
+      "y": 0.035248400879047605,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "x": 0.25,
+      "y": 0.035248400879047605,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "x": 0.5,
+      "y": 0.035248400879047605,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "x": 1.0,
+      "y": 0.035248400879047605,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "x": 0.0,
+      "y": 0.035248400879047605,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 0.25,
+      "y": 0.035248400879047605,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 0.5,
+      "y": 0.035248400879047605,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 1.0,
+      "y": 0.035248400879047605,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "x": 0.0,
+      "y": 0.035248400879047605,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 0.25,
+      "y": 0.035248400879047605,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 0.5,
+      "y": 0.035248400879047605,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 1.0,
+      "y": 0.035248400879047605,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "x": 0.0,
+      "y": 0.04187845802566634,
+      "error": 0.0,
+      "series": "Persona vector on context",
+      "_kind": "errorbar",
+      "_group": 56
+    },
+    {
+      "x": 0.25,
+      "y": 0.04187845802566634,
+      "error": 0.0,
+      "series": "Persona vector on context",
+      "_kind": "errorbar",
+      "_group": 56
+    },
+    {
+      "x": 0.5,
+      "y": 0.04187845802566634,
+      "error": 0.0,
+      "series": "Persona vector on context",
+      "_kind": "errorbar",
+      "_group": 56
+    },
+    {
+      "x": 1.0,
+      "y": 0.04187845802566634,
+      "error": 0.0,
+      "series": "Persona vector on context",
+      "_kind": "errorbar",
+      "_group": 56
+    },
+    {
+      "x": 0.0,
+      "y": 0.05891110058423657,
+      "error": 0.0,
+      "series": "Ridge regression on context",
+      "_kind": "errorbar",
+      "_group": 57
+    },
+    {
+      "x": 0.25,
+      "y": 0.07701155136185579,
+      "error": 0.0,
+      "series": "Ridge regression on context",
+      "_kind": "errorbar",
+      "_group": 57
+    },
+    {
+      "x": 0.5,
+      "y": 0.11157226568506878,
+      "error": 0.0,
+      "series": "Ridge regression on context",
+      "_kind": "errorbar",
+      "_group": 57
+    },
+    {
+      "x": 1.0,
+      "y": 0.1442900178674287,
+      "error": 0.0,
+      "series": "Ridge regression on context",
+      "_kind": "errorbar",
+      "_group": 57
+    },
+    {
+      "x": 0.0,
+      "y": 0.15659940239839015,
+      "error": 0.0,
+      "series": "Persona vector on mapped answer",
+      "_kind": "errorbar",
+      "_group": 58
+    },
+    {
+      "x": 0.25,
+      "y": 0.15659940239839015,
+      "error": 0.0,
+      "series": "Persona vector on mapped answer",
+      "_kind": "errorbar",
+      "_group": 58
+    },
+    {
+      "x": 0.5,
+      "y": 0.15659940239839015,
+      "error": 0.0,
+      "series": "Persona vector on mapped answer",
+      "_kind": "errorbar",
+      "_group": 58
+    },
+    {
+      "x": 1.0,
+      "y": 0.15659940239839015,
+      "error": 0.0,
+      "series": "Persona vector on mapped answer",
+      "_kind": "errorbar",
+      "_group": 58
+    },
+    {
+      "x": 0.0,
+      "y": 0.0707925032120667,
+      "error": 0.0,
+      "series": "Ridge regression on mapped answer",
+      "_kind": "errorbar",
+      "_group": 59
+    },
+    {
+      "x": 0.25,
+      "y": 0.07140322789981178,
+      "error": 0.0,
+      "series": "Ridge regression on mapped answer",
+      "_kind": "errorbar",
+      "_group": 59
+    },
+    {
+      "x": 0.5,
+      "y": 0.050542210771413444,
+      "error": 0.0,
+      "series": "Ridge regression on mapped answer",
+      "_kind": "errorbar",
+      "_group": 59
+    },
+    {
+      "x": 1.0,
+      "y": 0.08988788394450382,
+      "error": 0.0,
+      "series": "Ridge regression on mapped answer",
+      "_kind": "errorbar",
+      "_group": 59
+    },
+    {
+      "x": 0.0,
+      "y": 0.15576916013499797,
+      "error": 0.0,
+      "series": "Persona vector on real answer (oracle)",
+      "_kind": "errorbar",
+      "_group": 60
+    },
+    {
+      "x": 0.25,
+      "y": 0.15576916013499797,
+      "error": 0.0,
+      "series": "Persona vector on real answer (oracle)",
+      "_kind": "errorbar",
+      "_group": 60
+    },
+    {
+      "x": 0.5,
+      "y": 0.15576916013499797,
+      "error": 0.0,
+      "series": "Persona vector on real answer (oracle)",
+      "_kind": "errorbar",
+      "_group": 60
+    },
+    {
+      "x": 1.0,
+      "y": 0.15576916013499797,
+      "error": 0.0,
+      "series": "Persona vector on real answer (oracle)",
+      "_kind": "errorbar",
+      "_group": 60
+    },
+    {
+      "x": 0.0,
+      "y": 0.03913670200064032,
+      "error": 0.0,
+      "series": "Ridge fit on real, applied to mapped",
+      "_kind": "errorbar",
+      "_group": 61
+    },
+    {
+      "x": 0.25,
+      "y": 0.0824132499072851,
+      "error": 0.0,
+      "series": "Ridge fit on real, applied to mapped",
+      "_kind": "errorbar",
+      "_group": 61
+    },
+    {
+      "x": 0.5,
+      "y": 0.030988286391380012,
+      "error": 0.0,
+      "series": "Ridge fit on real, applied to mapped",
+      "_kind": "errorbar",
+      "_group": 61
+    },
+    {
+      "x": 1.0,
+      "y": 0.08230269057294261,
+      "error": 0.0,
+      "series": "Ridge fit on real, applied to mapped",
+      "_kind": "errorbar",
+      "_group": 61
+    },
+    {
+      "x": 0.0,
+      "y": -0.03688746501886956,
+      "error": 0.0,
+      "series": "control: shuffled map",
+      "_kind": "errorbar",
+      "_group": 62
+    },
+    {
+      "x": 0.25,
+      "y": -0.03688746501886956,
+      "error": 0.0,
+      "series": "control: shuffled map",
+      "_kind": "errorbar",
+      "_group": 62
+    },
+    {
+      "x": 0.5,
+      "y": -0.03688746501886956,
+      "error": 0.0,
+      "series": "control: shuffled map",
+      "_kind": "errorbar",
+      "_group": 62
+    },
+    {
+      "x": 1.0,
+      "y": -0.03688746501886956,
+      "error": 0.0,
+      "series": "control: shuffled map",
+      "_kind": "errorbar",
+      "_group": 62
+    },
+    {
+      "x": 0.0,
+      "y": 0.04187845802566634,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "x": 0.25,
+      "y": 0.04187845802566634,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "x": 0.5,
+      "y": 0.04187845802566634,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "x": 1.0,
+      "y": 0.04187845802566634,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "x": 0.0,
+      "y": 0.04187845802566634,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "x": 0.25,
+      "y": 0.04187845802566634,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "x": 0.5,
+      "y": 0.04187845802566634,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "x": 1.0,
+      "y": 0.04187845802566634,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "x": 0.0,
+      "y": 0.04187845802566634,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "x": 0.25,
+      "y": 0.04187845802566634,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "x": 0.5,
+      "y": 0.04187845802566634,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "x": 1.0,
+      "y": 0.04187845802566634,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "x": 0.0,
+      "y": 0.05891110058423657,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "x": 0.25,
+      "y": 0.07701155136185579,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "x": 0.5,
+      "y": 0.11157226568506878,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "x": 1.0,
+      "y": 0.1442900178674287,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "x": 0.0,
+      "y": 0.05891110058423657,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "x": 0.25,
+      "y": 0.07701155136185579,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "x": 0.5,
+      "y": 0.11157226568506878,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "x": 1.0,
+      "y": 0.1442900178674287,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "x": 0.0,
+      "y": 0.05891110058423657,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "x": 0.25,
+      "y": 0.07701155136185579,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "x": 0.5,
+      "y": 0.11157226568506878,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "x": 1.0,
+      "y": 0.1442900178674287,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "x": 0.0,
+      "y": 0.15659940239839015,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "x": 0.25,
+      "y": 0.15659940239839015,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "x": 0.5,
+      "y": 0.15659940239839015,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "x": 1.0,
+      "y": 0.15659940239839015,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "x": 0.0,
+      "y": 0.15659940239839015,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "x": 0.25,
+      "y": 0.15659940239839015,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "x": 0.5,
+      "y": 0.15659940239839015,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "x": 1.0,
+      "y": 0.15659940239839015,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "x": 0.0,
+      "y": 0.15659940239839015,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "x": 0.25,
+      "y": 0.15659940239839015,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "x": 0.5,
+      "y": 0.15659940239839015,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "x": 1.0,
+      "y": 0.15659940239839015,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "x": 0.0,
+      "y": 0.0707925032120667,
+      "_kind": "line",
+      "_group": 72
+    },
+    {
+      "x": 0.25,
+      "y": 0.07140322789981178,
+      "_kind": "line",
+      "_group": 72
+    },
+    {
+      "x": 0.5,
+      "y": 0.050542210771413444,
+      "_kind": "line",
+      "_group": 72
+    },
+    {
+      "x": 1.0,
+      "y": 0.08988788394450382,
+      "_kind": "line",
+      "_group": 72
+    },
+    {
+      "x": 0.0,
+      "y": 0.0707925032120667,
+      "_kind": "line",
+      "_group": 73
+    },
+    {
+      "x": 0.25,
+      "y": 0.07140322789981178,
+      "_kind": "line",
+      "_group": 73
+    },
+    {
+      "x": 0.5,
+      "y": 0.050542210771413444,
+      "_kind": "line",
+      "_group": 73
+    },
+    {
+      "x": 1.0,
+      "y": 0.08988788394450382,
+      "_kind": "line",
+      "_group": 73
+    },
+    {
+      "x": 0.0,
+      "y": 0.0707925032120667,
+      "_kind": "line",
+      "_group": 74
+    },
+    {
+      "x": 0.25,
+      "y": 0.07140322789981178,
+      "_kind": "line",
+      "_group": 74
+    },
+    {
+      "x": 0.5,
+      "y": 0.050542210771413444,
+      "_kind": "line",
+      "_group": 74
+    },
+    {
+      "x": 1.0,
+      "y": 0.08988788394450382,
+      "_kind": "line",
+      "_group": 74
+    },
+    {
+      "x": 0.0,
+      "y": 0.15576916013499797,
+      "_kind": "line",
+      "_group": 75
+    },
+    {
+      "x": 0.25,
+      "y": 0.15576916013499797,
+      "_kind": "line",
+      "_group": 75
+    },
+    {
+      "x": 0.5,
+      "y": 0.15576916013499797,
+      "_kind": "line",
+      "_group": 75
+    },
+    {
+      "x": 1.0,
+      "y": 0.15576916013499797,
+      "_kind": "line",
+      "_group": 75
+    },
+    {
+      "x": 0.0,
+      "y": 0.15576916013499797,
+      "_kind": "line",
+      "_group": 76
+    },
+    {
+      "x": 0.25,
+      "y": 0.15576916013499797,
+      "_kind": "line",
+      "_group": 76
+    },
+    {
+      "x": 0.5,
+      "y": 0.15576916013499797,
+      "_kind": "line",
+      "_group": 76
+    },
+    {
+      "x": 1.0,
+      "y": 0.15576916013499797,
+      "_kind": "line",
+      "_group": 76
+    },
+    {
+      "x": 0.0,
+      "y": 0.15576916013499797,
+      "_kind": "line",
+      "_group": 77
+    },
+    {
+      "x": 0.25,
+      "y": 0.15576916013499797,
+      "_kind": "line",
+      "_group": 77
+    },
+    {
+      "x": 0.5,
+      "y": 0.15576916013499797,
+      "_kind": "line",
+      "_group": 77
+    },
+    {
+      "x": 1.0,
+      "y": 0.15576916013499797,
+      "_kind": "line",
+      "_group": 77
+    },
+    {
+      "x": 0.0,
+      "y": 0.03913670200064032,
+      "_kind": "line",
+      "_group": 78
+    },
+    {
+      "x": 0.25,
+      "y": 0.0824132499072851,
+      "_kind": "line",
+      "_group": 78
+    },
+    {
+      "x": 0.5,
+      "y": 0.030988286391380012,
+      "_kind": "line",
+      "_group": 78
+    },
+    {
+      "x": 1.0,
+      "y": 0.08230269057294261,
+      "_kind": "line",
+      "_group": 78
+    },
+    {
+      "x": 0.0,
+      "y": 0.03913670200064032,
+      "_kind": "line",
+      "_group": 79
+    },
+    {
+      "x": 0.25,
+      "y": 0.0824132499072851,
+      "_kind": "line",
+      "_group": 79
+    },
+    {
+      "x": 0.5,
+      "y": 0.030988286391380012,
+      "_kind": "line",
+      "_group": 79
+    },
+    {
+      "x": 1.0,
+      "y": 0.08230269057294261,
+      "_kind": "line",
+      "_group": 79
+    },
+    {
+      "x": 0.0,
+      "y": 0.03913670200064032,
+      "_kind": "line",
+      "_group": 80
+    },
+    {
+      "x": 0.25,
+      "y": 0.0824132499072851,
+      "_kind": "line",
+      "_group": 80
+    },
+    {
+      "x": 0.5,
+      "y": 0.030988286391380012,
+      "_kind": "line",
+      "_group": 80
+    },
+    {
+      "x": 1.0,
+      "y": 0.08230269057294261,
+      "_kind": "line",
+      "_group": 80
+    },
+    {
+      "x": 0.0,
+      "y": -0.03688746501886956,
+      "_kind": "line",
+      "_group": 81
+    },
+    {
+      "x": 0.25,
+      "y": -0.03688746501886956,
+      "_kind": "line",
+      "_group": 81
+    },
+    {
+      "x": 0.5,
+      "y": -0.03688746501886956,
+      "_kind": "line",
+      "_group": 81
+    },
+    {
+      "x": 1.0,
+      "y": -0.03688746501886956,
+      "_kind": "line",
+      "_group": 81
+    },
+    {
+      "x": 0.0,
+      "y": -0.03688746501886956,
+      "_kind": "line",
+      "_group": 82
+    },
+    {
+      "x": 0.25,
+      "y": -0.03688746501886956,
+      "_kind": "line",
+      "_group": 82
+    },
+    {
+      "x": 0.5,
+      "y": -0.03688746501886956,
+      "_kind": "line",
+      "_group": 82
+    },
+    {
+      "x": 1.0,
+      "y": -0.03688746501886956,
+      "_kind": "line",
+      "_group": 82
+    },
+    {
+      "x": 0.0,
+      "y": -0.03688746501886956,
+      "_kind": "line",
+      "_group": 83
+    },
+    {
+      "x": 0.25,
+      "y": -0.03688746501886956,
+      "_kind": "line",
+      "_group": 83
+    },
+    {
+      "x": 0.5,
+      "y": -0.03688746501886956,
+      "_kind": "line",
+      "_group": 83
+    },
+    {
+      "x": 1.0,
+      "y": -0.03688746501886956,
+      "_kind": "line",
+      "_group": 83
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.30957839802259535,
+      "error": 0.0,
+      "series": "Persona vector on context",
+      "_kind": "errorbar",
+      "_group": 84
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.30957839802259535,
+      "error": 0.0,
+      "series": "Persona vector on context",
+      "_kind": "errorbar",
+      "_group": 84
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.30957839802259535,
+      "error": 0.0,
+      "series": "Persona vector on context",
+      "_kind": "errorbar",
+      "_group": 84
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.30957839802259535,
+      "error": 0.0,
+      "series": "Persona vector on context",
+      "_kind": "errorbar",
+      "_group": 84
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.48015284384790397,
+      "error": 0.0,
+      "series": "Ridge regression on context",
+      "_kind": "errorbar",
+      "_group": 85
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.5366197804528805,
+      "error": 0.0,
+      "series": "Ridge regression on context",
+      "_kind": "errorbar",
+      "_group": 85
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.4774687945683188,
+      "error": 0.0,
+      "series": "Ridge regression on context",
+      "_kind": "errorbar",
+      "_group": 85
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.1855230071117826,
+      "error": 0.0,
+      "series": "Ridge regression on context",
+      "_kind": "errorbar",
+      "_group": 85
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.3506325410996856,
+      "error": 0.0,
+      "series": "Persona vector on mapped answer",
+      "_kind": "errorbar",
+      "_group": 86
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.3506325410996856,
+      "error": 0.0,
+      "series": "Persona vector on mapped answer",
+      "_kind": "errorbar",
+      "_group": 86
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.3506325410996856,
+      "error": 0.0,
+      "series": "Persona vector on mapped answer",
+      "_kind": "errorbar",
+      "_group": 86
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.3506325410996856,
+      "error": 0.0,
+      "series": "Persona vector on mapped answer",
+      "_kind": "errorbar",
+      "_group": 86
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.3967756214086186,
+      "error": 0.0,
+      "series": "Ridge regression on mapped answer",
+      "_kind": "errorbar",
+      "_group": 87
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.4379266995620799,
+      "error": 0.0,
+      "series": "Ridge regression on mapped answer",
+      "_kind": "errorbar",
+      "_group": 87
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.4608586549929447,
+      "error": 0.0,
+      "series": "Ridge regression on mapped answer",
+      "_kind": "errorbar",
+      "_group": 87
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.3467157485277145,
+      "error": 0.0,
+      "series": "Ridge regression on mapped answer",
+      "_kind": "errorbar",
+      "_group": 87
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.2518199112786278,
+      "error": 0.0,
+      "series": "Persona vector on real answer (oracle)",
+      "_kind": "errorbar",
+      "_group": 88
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.2518199112786278,
+      "error": 0.0,
+      "series": "Persona vector on real answer (oracle)",
+      "_kind": "errorbar",
+      "_group": 88
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.2518199112786278,
+      "error": 0.0,
+      "series": "Persona vector on real answer (oracle)",
+      "_kind": "errorbar",
+      "_group": 88
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.2518199112786278,
+      "error": 0.0,
+      "series": "Persona vector on real answer (oracle)",
+      "_kind": "errorbar",
+      "_group": 88
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.10826840644339727,
+      "error": 0.0,
+      "series": "Ridge fit on real, applied to mapped",
+      "_kind": "errorbar",
+      "_group": 89
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": -0.006401368984565893,
+      "error": 0.0,
+      "series": "Ridge fit on real, applied to mapped",
+      "_kind": "errorbar",
+      "_group": 89
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.34367927498878587,
+      "error": 0.0,
+      "series": "Ridge fit on real, applied to mapped",
+      "_kind": "errorbar",
+      "_group": 89
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.23933428693594905,
+      "error": 0.0,
+      "series": "Ridge fit on real, applied to mapped",
+      "_kind": "errorbar",
+      "_group": 89
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.25637169166519763,
+      "error": 0.0,
+      "series": "control: shuffled map",
+      "_kind": "errorbar",
+      "_group": 90
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.25637169166519763,
+      "error": 0.0,
+      "series": "control: shuffled map",
+      "_kind": "errorbar",
+      "_group": 90
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.25637169166519763,
+      "error": 0.0,
+      "series": "control: shuffled map",
+      "_kind": "errorbar",
+      "_group": 90
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.25637169166519763,
+      "error": 0.0,
+      "series": "control: shuffled map",
+      "_kind": "errorbar",
+      "_group": 90
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.30957839802259535,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.30957839802259535,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.30957839802259535,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.30957839802259535,
+      "_kind": "line",
+      "_group": 91
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.30957839802259535,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.30957839802259535,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.30957839802259535,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.30957839802259535,
+      "_kind": "line",
+      "_group": 92
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.30957839802259535,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.30957839802259535,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.30957839802259535,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.30957839802259535,
+      "_kind": "line",
+      "_group": 93
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.48015284384790397,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.5366197804528805,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.4774687945683188,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.1855230071117826,
+      "_kind": "line",
+      "_group": 94
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.48015284384790397,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.5366197804528805,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.4774687945683188,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.1855230071117826,
+      "_kind": "line",
+      "_group": 95
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.48015284384790397,
+      "_kind": "line",
+      "_group": 96
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.5366197804528805,
+      "_kind": "line",
+      "_group": 96
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.4774687945683188,
+      "_kind": "line",
+      "_group": 96
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.1855230071117826,
+      "_kind": "line",
+      "_group": 96
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.3506325410996856,
+      "_kind": "line",
+      "_group": 97
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.3506325410996856,
+      "_kind": "line",
+      "_group": 97
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.3506325410996856,
+      "_kind": "line",
+      "_group": 97
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.3506325410996856,
+      "_kind": "line",
+      "_group": 97
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.3506325410996856,
+      "_kind": "line",
+      "_group": 98
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.3506325410996856,
+      "_kind": "line",
+      "_group": 98
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.3506325410996856,
+      "_kind": "line",
+      "_group": 98
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.3506325410996856,
+      "_kind": "line",
+      "_group": 98
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.3506325410996856,
+      "_kind": "line",
+      "_group": 99
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.3506325410996856,
+      "_kind": "line",
+      "_group": 99
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.3506325410996856,
+      "_kind": "line",
+      "_group": 99
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.3506325410996856,
+      "_kind": "line",
+      "_group": 99
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.3967756214086186,
+      "_kind": "line",
+      "_group": 100
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.4379266995620799,
+      "_kind": "line",
+      "_group": 100
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.4608586549929447,
+      "_kind": "line",
+      "_group": 100
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.3467157485277145,
+      "_kind": "line",
+      "_group": 100
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.3967756214086186,
+      "_kind": "line",
+      "_group": 101
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.4379266995620799,
+      "_kind": "line",
+      "_group": 101
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.4608586549929447,
+      "_kind": "line",
+      "_group": 101
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.3467157485277145,
+      "_kind": "line",
+      "_group": 101
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.3967756214086186,
+      "_kind": "line",
+      "_group": 102
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.4379266995620799,
+      "_kind": "line",
+      "_group": 102
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.4608586549929447,
+      "_kind": "line",
+      "_group": 102
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.3467157485277145,
+      "_kind": "line",
+      "_group": 102
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.2518199112786278,
+      "_kind": "line",
+      "_group": 103
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.2518199112786278,
+      "_kind": "line",
+      "_group": 103
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.2518199112786278,
+      "_kind": "line",
+      "_group": 103
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.2518199112786278,
+      "_kind": "line",
+      "_group": 103
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.2518199112786278,
+      "_kind": "line",
+      "_group": 104
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.2518199112786278,
+      "_kind": "line",
+      "_group": 104
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.2518199112786278,
+      "_kind": "line",
+      "_group": 104
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.2518199112786278,
+      "_kind": "line",
+      "_group": 104
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.2518199112786278,
+      "_kind": "line",
+      "_group": 105
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.2518199112786278,
+      "_kind": "line",
+      "_group": 105
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.2518199112786278,
+      "_kind": "line",
+      "_group": 105
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.2518199112786278,
+      "_kind": "line",
+      "_group": 105
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.10826840644339727,
+      "_kind": "line",
+      "_group": 106
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": -0.006401368984565893,
+      "_kind": "line",
+      "_group": 106
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.34367927498878587,
+      "_kind": "line",
+      "_group": 106
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.23933428693594905,
+      "_kind": "line",
+      "_group": 106
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.10826840644339727,
+      "_kind": "line",
+      "_group": 107
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": -0.006401368984565893,
+      "_kind": "line",
+      "_group": 107
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.34367927498878587,
+      "_kind": "line",
+      "_group": 107
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.23933428693594905,
+      "_kind": "line",
+      "_group": 107
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.10826840644339727,
+      "_kind": "line",
+      "_group": 108
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": -0.006401368984565893,
+      "_kind": "line",
+      "_group": 108
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.34367927498878587,
+      "_kind": "line",
+      "_group": 108
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.23933428693594905,
+      "_kind": "line",
+      "_group": 108
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.25637169166519763,
+      "_kind": "line",
+      "_group": 109
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.25637169166519763,
+      "_kind": "line",
+      "_group": 109
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.25637169166519763,
+      "_kind": "line",
+      "_group": 109
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.25637169166519763,
+      "_kind": "line",
+      "_group": 109
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.25637169166519763,
+      "_kind": "line",
+      "_group": 110
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.25637169166519763,
+      "_kind": "line",
+      "_group": 110
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.25637169166519763,
+      "_kind": "line",
+      "_group": 110
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.25637169166519763,
+      "_kind": "line",
+      "_group": 110
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.25637169166519763,
+      "_kind": "line",
+      "_group": 111
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.25637169166519763,
+      "_kind": "line",
+      "_group": 111
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.25637169166519763,
+      "_kind": "line",
+      "_group": 111
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.25637169166519763,
+      "_kind": "line",
+      "_group": 111
+    },
+    {
+      "x": 0.0,
+      "y": 0.012760244230850374,
+      "error": 0.0,
+      "series": "Persona vector on context",
+      "_kind": "errorbar",
+      "_group": 112
+    },
+    {
+      "x": 0.25,
+      "y": 0.012760244230850374,
+      "error": 0.0,
+      "series": "Persona vector on context",
+      "_kind": "errorbar",
+      "_group": 112
+    },
+    {
+      "x": 0.5,
+      "y": 0.012760244230850374,
+      "error": 0.0,
+      "series": "Persona vector on context",
+      "_kind": "errorbar",
+      "_group": 112
+    },
+    {
+      "x": 1.0,
+      "y": 0.012760244230850374,
+      "error": 0.0,
+      "series": "Persona vector on context",
+      "_kind": "errorbar",
+      "_group": 112
+    },
+    {
+      "x": 0.0,
+      "y": 0.015705290394296682,
+      "error": 0.0,
+      "series": "Ridge regression on context",
+      "_kind": "errorbar",
+      "_group": 113
+    },
+    {
+      "x": 0.25,
+      "y": 0.18655706162002283,
+      "error": 0.0,
+      "series": "Ridge regression on context",
+      "_kind": "errorbar",
+      "_group": 113
+    },
+    {
+      "x": 0.5,
+      "y": 0.29501368711255943,
+      "error": 0.0,
+      "series": "Ridge regression on context",
+      "_kind": "errorbar",
+      "_group": 113
+    },
+    {
+      "x": 1.0,
+      "y": 0.39399099527436887,
+      "error": 0.0,
+      "series": "Ridge regression on context",
+      "_kind": "errorbar",
+      "_group": 113
+    },
+    {
+      "x": 0.0,
+      "y": 0.12208923716807271,
+      "error": 0.0,
+      "series": "Persona vector on mapped answer",
+      "_kind": "errorbar",
+      "_group": 114
+    },
+    {
+      "x": 0.25,
+      "y": 0.12208923716807271,
+      "error": 0.0,
+      "series": "Persona vector on mapped answer",
+      "_kind": "errorbar",
+      "_group": 114
+    },
+    {
+      "x": 0.5,
+      "y": 0.12208923716807271,
+      "error": 0.0,
+      "series": "Persona vector on mapped answer",
+      "_kind": "errorbar",
+      "_group": 114
+    },
+    {
+      "x": 1.0,
+      "y": 0.12208923716807271,
+      "error": 0.0,
+      "series": "Persona vector on mapped answer",
+      "_kind": "errorbar",
+      "_group": 114
+    },
+    {
+      "x": 0.0,
+      "y": 0.12158423060528241,
+      "error": 0.0,
+      "series": "Ridge regression on mapped answer",
+      "_kind": "errorbar",
+      "_group": 115
+    },
+    {
+      "x": 0.25,
+      "y": 0.14751564416530802,
+      "error": 0.0,
+      "series": "Ridge regression on mapped answer",
+      "_kind": "errorbar",
+      "_group": 115
+    },
+    {
+      "x": 0.5,
+      "y": 0.23956145201415768,
+      "error": 0.0,
+      "series": "Ridge regression on mapped answer",
+      "_kind": "errorbar",
+      "_group": 115
+    },
+    {
+      "x": 1.0,
+      "y": 0.31412183133644794,
+      "error": 0.0,
+      "series": "Ridge regression on mapped answer",
+      "_kind": "errorbar",
+      "_group": 115
+    },
+    {
+      "x": 0.0,
+      "y": 0.08426817677603524,
+      "error": 0.0,
+      "series": "Persona vector on real answer (oracle)",
+      "_kind": "errorbar",
+      "_group": 116
+    },
+    {
+      "x": 0.25,
+      "y": 0.08426817677603524,
+      "error": 0.0,
+      "series": "Persona vector on real answer (oracle)",
+      "_kind": "errorbar",
+      "_group": 116
+    },
+    {
+      "x": 0.5,
+      "y": 0.08426817677603524,
+      "error": 0.0,
+      "series": "Persona vector on real answer (oracle)",
+      "_kind": "errorbar",
+      "_group": 116
+    },
+    {
+      "x": 1.0,
+      "y": 0.08426817677603524,
+      "error": 0.0,
+      "series": "Persona vector on real answer (oracle)",
+      "_kind": "errorbar",
+      "_group": 116
+    },
+    {
+      "x": 0.0,
+      "y": 0.11310048691968978,
+      "error": 0.0,
+      "series": "Ridge fit on real, applied to mapped",
+      "_kind": "errorbar",
+      "_group": 117
+    },
+    {
+      "x": 0.25,
+      "y": 0.16304510457823906,
+      "error": 0.0,
+      "series": "Ridge fit on real, applied to mapped",
+      "_kind": "errorbar",
+      "_group": 117
+    },
+    {
+      "x": 0.5,
+      "y": 0.1236892609241596,
+      "error": 0.0,
+      "series": "Ridge fit on real, applied to mapped",
+      "_kind": "errorbar",
+      "_group": 117
+    },
+    {
+      "x": 1.0,
+      "y": 0.18501659994546008,
+      "error": 0.0,
+      "series": "Ridge fit on real, applied to mapped",
+      "_kind": "errorbar",
+      "_group": 117
+    },
+    {
+      "x": 0.0,
+      "y": -0.011246758117024249,
+      "error": 0.0,
+      "series": "control: shuffled map",
+      "_kind": "errorbar",
+      "_group": 118
+    },
+    {
+      "x": 0.25,
+      "y": -0.011246758117024249,
+      "error": 0.0,
+      "series": "control: shuffled map",
+      "_kind": "errorbar",
+      "_group": 118
+    },
+    {
+      "x": 0.5,
+      "y": -0.011246758117024249,
+      "error": 0.0,
+      "series": "control: shuffled map",
+      "_kind": "errorbar",
+      "_group": 118
+    },
+    {
+      "x": 1.0,
+      "y": -0.011246758117024249,
+      "error": 0.0,
+      "series": "control: shuffled map",
+      "_kind": "errorbar",
+      "_group": 118
+    },
+    {
+      "x": 0.0,
+      "y": 0.012760244230850374,
+      "_kind": "line",
+      "_group": 119
+    },
+    {
+      "x": 0.25,
+      "y": 0.012760244230850374,
+      "_kind": "line",
+      "_group": 119
+    },
+    {
+      "x": 0.5,
+      "y": 0.012760244230850374,
+      "_kind": "line",
+      "_group": 119
+    },
+    {
+      "x": 1.0,
+      "y": 0.012760244230850374,
+      "_kind": "line",
+      "_group": 119
+    },
+    {
+      "x": 0.0,
+      "y": 0.012760244230850374,
+      "_kind": "line",
+      "_group": 120
+    },
+    {
+      "x": 0.25,
+      "y": 0.012760244230850374,
+      "_kind": "line",
+      "_group": 120
+    },
+    {
+      "x": 0.5,
+      "y": 0.012760244230850374,
+      "_kind": "line",
+      "_group": 120
+    },
+    {
+      "x": 1.0,
+      "y": 0.012760244230850374,
+      "_kind": "line",
+      "_group": 120
+    },
+    {
+      "x": 0.0,
+      "y": 0.012760244230850374,
+      "_kind": "line",
+      "_group": 121
+    },
+    {
+      "x": 0.25,
+      "y": 0.012760244230850374,
+      "_kind": "line",
+      "_group": 121
+    },
+    {
+      "x": 0.5,
+      "y": 0.012760244230850374,
+      "_kind": "line",
+      "_group": 121
+    },
+    {
+      "x": 1.0,
+      "y": 0.012760244230850374,
+      "_kind": "line",
+      "_group": 121
+    },
+    {
+      "x": 0.0,
+      "y": 0.015705290394296682,
+      "_kind": "line",
+      "_group": 122
+    },
+    {
+      "x": 0.25,
+      "y": 0.18655706162002283,
+      "_kind": "line",
+      "_group": 122
+    },
+    {
+      "x": 0.5,
+      "y": 0.29501368711255943,
+      "_kind": "line",
+      "_group": 122
+    },
+    {
+      "x": 1.0,
+      "y": 0.39399099527436887,
+      "_kind": "line",
+      "_group": 122
+    },
+    {
+      "x": 0.0,
+      "y": 0.015705290394296682,
+      "_kind": "line",
+      "_group": 123
+    },
+    {
+      "x": 0.25,
+      "y": 0.18655706162002283,
+      "_kind": "line",
+      "_group": 123
+    },
+    {
+      "x": 0.5,
+      "y": 0.29501368711255943,
+      "_kind": "line",
+      "_group": 123
+    },
+    {
+      "x": 1.0,
+      "y": 0.39399099527436887,
+      "_kind": "line",
+      "_group": 123
+    },
+    {
+      "x": 0.0,
+      "y": 0.015705290394296682,
+      "_kind": "line",
+      "_group": 124
+    },
+    {
+      "x": 0.25,
+      "y": 0.18655706162002283,
+      "_kind": "line",
+      "_group": 124
+    },
+    {
+      "x": 0.5,
+      "y": 0.29501368711255943,
+      "_kind": "line",
+      "_group": 124
+    },
+    {
+      "x": 1.0,
+      "y": 0.39399099527436887,
+      "_kind": "line",
+      "_group": 124
+    },
+    {
+      "x": 0.0,
+      "y": 0.12208923716807271,
+      "_kind": "line",
+      "_group": 125
+    },
+    {
+      "x": 0.25,
+      "y": 0.12208923716807271,
+      "_kind": "line",
+      "_group": 125
+    },
+    {
+      "x": 0.5,
+      "y": 0.12208923716807271,
+      "_kind": "line",
+      "_group": 125
+    },
+    {
+      "x": 1.0,
+      "y": 0.12208923716807271,
+      "_kind": "line",
+      "_group": 125
+    },
+    {
+      "x": 0.0,
+      "y": 0.12208923716807271,
+      "_kind": "line",
+      "_group": 126
+    },
+    {
+      "x": 0.25,
+      "y": 0.12208923716807271,
+      "_kind": "line",
+      "_group": 126
+    },
+    {
+      "x": 0.5,
+      "y": 0.12208923716807271,
+      "_kind": "line",
+      "_group": 126
+    },
+    {
+      "x": 1.0,
+      "y": 0.12208923716807271,
+      "_kind": "line",
+      "_group": 126
+    },
+    {
+      "x": 0.0,
+      "y": 0.12208923716807271,
+      "_kind": "line",
+      "_group": 127
+    },
+    {
+      "x": 0.25,
+      "y": 0.12208923716807271,
+      "_kind": "line",
+      "_group": 127
+    },
+    {
+      "x": 0.5,
+      "y": 0.12208923716807271,
+      "_kind": "line",
+      "_group": 127
+    },
+    {
+      "x": 1.0,
+      "y": 0.12208923716807271,
+      "_kind": "line",
+      "_group": 127
+    },
+    {
+      "x": 0.0,
+      "y": 0.12158423060528241,
+      "_kind": "line",
+      "_group": 128
+    },
+    {
+      "x": 0.25,
+      "y": 0.14751564416530802,
+      "_kind": "line",
+      "_group": 128
+    },
+    {
+      "x": 0.5,
+      "y": 0.23956145201415768,
+      "_kind": "line",
+      "_group": 128
+    },
+    {
+      "x": 1.0,
+      "y": 0.31412183133644794,
+      "_kind": "line",
+      "_group": 128
+    },
+    {
+      "x": 0.0,
+      "y": 0.12158423060528241,
+      "_kind": "line",
+      "_group": 129
+    },
+    {
+      "x": 0.25,
+      "y": 0.14751564416530802,
+      "_kind": "line",
+      "_group": 129
+    },
+    {
+      "x": 0.5,
+      "y": 0.23956145201415768,
+      "_kind": "line",
+      "_group": 129
+    },
+    {
+      "x": 1.0,
+      "y": 0.31412183133644794,
+      "_kind": "line",
+      "_group": 129
+    },
+    {
+      "x": 0.0,
+      "y": 0.12158423060528241,
+      "_kind": "line",
+      "_group": 130
+    },
+    {
+      "x": 0.25,
+      "y": 0.14751564416530802,
+      "_kind": "line",
+      "_group": 130
+    },
+    {
+      "x": 0.5,
+      "y": 0.23956145201415768,
+      "_kind": "line",
+      "_group": 130
+    },
+    {
+      "x": 1.0,
+      "y": 0.31412183133644794,
+      "_kind": "line",
+      "_group": 130
+    },
+    {
+      "x": 0.0,
+      "y": 0.08426817677603524,
+      "_kind": "line",
+      "_group": 131
+    },
+    {
+      "x": 0.25,
+      "y": 0.08426817677603524,
+      "_kind": "line",
+      "_group": 131
+    },
+    {
+      "x": 0.5,
+      "y": 0.08426817677603524,
+      "_kind": "line",
+      "_group": 131
+    },
+    {
+      "x": 1.0,
+      "y": 0.08426817677603524,
+      "_kind": "line",
+      "_group": 131
+    },
+    {
+      "x": 0.0,
+      "y": 0.08426817677603524,
+      "_kind": "line",
+      "_group": 132
+    },
+    {
+      "x": 0.25,
+      "y": 0.08426817677603524,
+      "_kind": "line",
+      "_group": 132
+    },
+    {
+      "x": 0.5,
+      "y": 0.08426817677603524,
+      "_kind": "line",
+      "_group": 132
+    },
+    {
+      "x": 1.0,
+      "y": 0.08426817677603524,
+      "_kind": "line",
+      "_group": 132
+    },
+    {
+      "x": 0.0,
+      "y": 0.08426817677603524,
+      "_kind": "line",
+      "_group": 133
+    },
+    {
+      "x": 0.25,
+      "y": 0.08426817677603524,
+      "_kind": "line",
+      "_group": 133
+    },
+    {
+      "x": 0.5,
+      "y": 0.08426817677603524,
+      "_kind": "line",
+      "_group": 133
+    },
+    {
+      "x": 1.0,
+      "y": 0.08426817677603524,
+      "_kind": "line",
+      "_group": 133
+    },
+    {
+      "x": 0.0,
+      "y": 0.11310048691968978,
+      "_kind": "line",
+      "_group": 134
+    },
+    {
+      "x": 0.25,
+      "y": 0.16304510457823906,
+      "_kind": "line",
+      "_group": 134
+    },
+    {
+      "x": 0.5,
+      "y": 0.1236892609241596,
+      "_kind": "line",
+      "_group": 134
+    },
+    {
+      "x": 1.0,
+      "y": 0.18501659994546008,
+      "_kind": "line",
+      "_group": 134
+    },
+    {
+      "x": 0.0,
+      "y": 0.11310048691968978,
+      "_kind": "line",
+      "_group": 135
+    },
+    {
+      "x": 0.25,
+      "y": 0.16304510457823906,
+      "_kind": "line",
+      "_group": 135
+    },
+    {
+      "x": 0.5,
+      "y": 0.1236892609241596,
+      "_kind": "line",
+      "_group": 135
+    },
+    {
+      "x": 1.0,
+      "y": 0.18501659994546008,
+      "_kind": "line",
+      "_group": 135
+    },
+    {
+      "x": 0.0,
+      "y": 0.11310048691968978,
+      "_kind": "line",
+      "_group": 136
+    },
+    {
+      "x": 0.25,
+      "y": 0.16304510457823906,
+      "_kind": "line",
+      "_group": 136
+    },
+    {
+      "x": 0.5,
+      "y": 0.1236892609241596,
+      "_kind": "line",
+      "_group": 136
+    },
+    {
+      "x": 1.0,
+      "y": 0.18501659994546008,
+      "_kind": "line",
+      "_group": 136
+    },
+    {
+      "x": 0.0,
+      "y": -0.011246758117024249,
+      "_kind": "line",
+      "_group": 137
+    },
+    {
+      "x": 0.25,
+      "y": -0.011246758117024249,
+      "_kind": "line",
+      "_group": 137
+    },
+    {
+      "x": 0.5,
+      "y": -0.011246758117024249,
+      "_kind": "line",
+      "_group": 137
+    },
+    {
+      "x": 1.0,
+      "y": -0.011246758117024249,
+      "_kind": "line",
+      "_group": 137
+    },
+    {
+      "x": 0.0,
+      "y": -0.011246758117024249,
+      "_kind": "line",
+      "_group": 138
+    },
+    {
+      "x": 0.25,
+      "y": -0.011246758117024249,
+      "_kind": "line",
+      "_group": 138
+    },
+    {
+      "x": 0.5,
+      "y": -0.011246758117024249,
+      "_kind": "line",
+      "_group": 138
+    },
+    {
+      "x": 1.0,
+      "y": -0.011246758117024249,
+      "_kind": "line",
+      "_group": 138
+    },
+    {
+      "x": 0.0,
+      "y": -0.011246758117024249,
+      "_kind": "line",
+      "_group": 139
+    },
+    {
+      "x": 0.25,
+      "y": -0.011246758117024249,
+      "_kind": "line",
+      "_group": 139
+    },
+    {
+      "x": 0.5,
+      "y": -0.011246758117024249,
+      "_kind": "line",
+      "_group": 139
+    },
+    {
+      "x": 1.0,
+      "y": -0.011246758117024249,
+      "_kind": "line",
+      "_group": 139
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.18786469940667935,
+      "error": 0.0,
+      "series": "Persona vector on context",
+      "_kind": "errorbar",
+      "_group": 140
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.18786469940667935,
+      "error": 0.0,
+      "series": "Persona vector on context",
+      "_kind": "errorbar",
+      "_group": 140
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.18786469940667935,
+      "error": 0.0,
+      "series": "Persona vector on context",
+      "_kind": "errorbar",
+      "_group": 140
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.18786469940667935,
+      "error": 0.0,
+      "series": "Persona vector on context",
+      "_kind": "errorbar",
+      "_group": 140
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.2263245002581442,
+      "error": 0.0,
+      "series": "Ridge regression on context",
+      "_kind": "errorbar",
+      "_group": 141
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.23426566982447591,
+      "error": 0.0,
+      "series": "Ridge regression on context",
+      "_kind": "errorbar",
+      "_group": 141
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.19512028692331623,
+      "error": 0.0,
+      "series": "Ridge regression on context",
+      "_kind": "errorbar",
+      "_group": 141
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.215210141850548,
+      "error": 0.0,
+      "series": "Ridge regression on context",
+      "_kind": "errorbar",
+      "_group": 141
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.20037684151671314,
+      "error": 0.0,
+      "series": "Persona vector on mapped answer",
+      "_kind": "errorbar",
+      "_group": 142
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.20037684151671314,
+      "error": 0.0,
+      "series": "Persona vector on mapped answer",
+      "_kind": "errorbar",
+      "_group": 142
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.20037684151671314,
+      "error": 0.0,
+      "series": "Persona vector on mapped answer",
+      "_kind": "errorbar",
+      "_group": 142
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.20037684151671314,
+      "error": 0.0,
+      "series": "Persona vector on mapped answer",
+      "_kind": "errorbar",
+      "_group": 142
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.18418032481247779,
+      "error": 0.0,
+      "series": "Ridge regression on mapped answer",
+      "_kind": "errorbar",
+      "_group": 143
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.20651316910409961,
+      "error": 0.0,
+      "series": "Ridge regression on mapped answer",
+      "_kind": "errorbar",
+      "_group": 143
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.18111498306409654,
+      "error": 0.0,
+      "series": "Ridge regression on mapped answer",
+      "_kind": "errorbar",
+      "_group": 143
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.16340963406065115,
+      "error": 0.0,
+      "series": "Ridge regression on mapped answer",
+      "_kind": "errorbar",
+      "_group": 143
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.1172617475003523,
+      "error": 0.0,
+      "series": "Persona vector on real answer (oracle)",
+      "_kind": "errorbar",
+      "_group": 144
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.1172617475003523,
+      "error": 0.0,
+      "series": "Persona vector on real answer (oracle)",
+      "_kind": "errorbar",
+      "_group": 144
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.1172617475003523,
+      "error": 0.0,
+      "series": "Persona vector on real answer (oracle)",
+      "_kind": "errorbar",
+      "_group": 144
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.1172617475003523,
+      "error": 0.0,
+      "series": "Persona vector on real answer (oracle)",
+      "_kind": "errorbar",
+      "_group": 144
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.149748123793717,
+      "error": 0.0,
+      "series": "Ridge fit on real, applied to mapped",
+      "_kind": "errorbar",
+      "_group": 145
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.24499449890640976,
+      "error": 0.0,
+      "series": "Ridge fit on real, applied to mapped",
+      "_kind": "errorbar",
+      "_group": 145
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.1419624190050377,
+      "error": 0.0,
+      "series": "Ridge fit on real, applied to mapped",
+      "_kind": "errorbar",
+      "_group": 145
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.08847920387181388,
+      "error": 0.0,
+      "series": "Ridge fit on real, applied to mapped",
+      "_kind": "errorbar",
+      "_group": 145
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": -0.03662456509419478,
+      "error": 0.0,
+      "series": "control: shuffled map",
+      "_kind": "errorbar",
+      "_group": 146
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": -0.03662456509419478,
+      "error": 0.0,
+      "series": "control: shuffled map",
+      "_kind": "errorbar",
+      "_group": 146
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": -0.03662456509419478,
+      "error": 0.0,
+      "series": "control: shuffled map",
+      "_kind": "errorbar",
+      "_group": 146
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": -0.03662456509419478,
+      "error": 0.0,
+      "series": "control: shuffled map",
+      "_kind": "errorbar",
+      "_group": 146
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.18786469940667935,
+      "_kind": "line",
+      "_group": 147
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.18786469940667935,
+      "_kind": "line",
+      "_group": 147
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.18786469940667935,
+      "_kind": "line",
+      "_group": 147
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.18786469940667935,
+      "_kind": "line",
+      "_group": 147
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.18786469940667935,
+      "_kind": "line",
+      "_group": 148
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.18786469940667935,
+      "_kind": "line",
+      "_group": 148
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.18786469940667935,
+      "_kind": "line",
+      "_group": 148
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.18786469940667935,
+      "_kind": "line",
+      "_group": 148
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.18786469940667935,
+      "_kind": "line",
+      "_group": 149
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.18786469940667935,
+      "_kind": "line",
+      "_group": 149
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.18786469940667935,
+      "_kind": "line",
+      "_group": 149
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.18786469940667935,
+      "_kind": "line",
+      "_group": 149
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.2263245002581442,
+      "_kind": "line",
+      "_group": 150
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.23426566982447591,
+      "_kind": "line",
+      "_group": 150
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.19512028692331623,
+      "_kind": "line",
+      "_group": 150
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.215210141850548,
+      "_kind": "line",
+      "_group": 150
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.2263245002581442,
+      "_kind": "line",
+      "_group": 151
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.23426566982447591,
+      "_kind": "line",
+      "_group": 151
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.19512028692331623,
+      "_kind": "line",
+      "_group": 151
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.215210141850548,
+      "_kind": "line",
+      "_group": 151
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.2263245002581442,
+      "_kind": "line",
+      "_group": 152
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.23426566982447591,
+      "_kind": "line",
+      "_group": 152
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.19512028692331623,
+      "_kind": "line",
+      "_group": 152
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.215210141850548,
+      "_kind": "line",
+      "_group": 152
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.20037684151671314,
+      "_kind": "line",
+      "_group": 153
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.20037684151671314,
+      "_kind": "line",
+      "_group": 153
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.20037684151671314,
+      "_kind": "line",
+      "_group": 153
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.20037684151671314,
+      "_kind": "line",
+      "_group": 153
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.20037684151671314,
+      "_kind": "line",
+      "_group": 154
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.20037684151671314,
+      "_kind": "line",
+      "_group": 154
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.20037684151671314,
+      "_kind": "line",
+      "_group": 154
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.20037684151671314,
+      "_kind": "line",
+      "_group": 154
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.20037684151671314,
+      "_kind": "line",
+      "_group": 155
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.20037684151671314,
+      "_kind": "line",
+      "_group": 155
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.20037684151671314,
+      "_kind": "line",
+      "_group": 155
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.20037684151671314,
+      "_kind": "line",
+      "_group": 155
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.18418032481247779,
+      "_kind": "line",
+      "_group": 156
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.20651316910409961,
+      "_kind": "line",
+      "_group": 156
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.18111498306409654,
+      "_kind": "line",
+      "_group": 156
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.16340963406065115,
+      "_kind": "line",
+      "_group": 156
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.18418032481247779,
+      "_kind": "line",
+      "_group": 157
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.20651316910409961,
+      "_kind": "line",
+      "_group": 157
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.18111498306409654,
+      "_kind": "line",
+      "_group": 157
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.16340963406065115,
+      "_kind": "line",
+      "_group": 157
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.18418032481247779,
+      "_kind": "line",
+      "_group": 158
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.20651316910409961,
+      "_kind": "line",
+      "_group": 158
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.18111498306409654,
+      "_kind": "line",
+      "_group": 158
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.16340963406065115,
+      "_kind": "line",
+      "_group": 158
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.1172617475003523,
+      "_kind": "line",
+      "_group": 159
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.1172617475003523,
+      "_kind": "line",
+      "_group": 159
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.1172617475003523,
+      "_kind": "line",
+      "_group": 159
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.1172617475003523,
+      "_kind": "line",
+      "_group": 159
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.1172617475003523,
+      "_kind": "line",
+      "_group": 160
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.1172617475003523,
+      "_kind": "line",
+      "_group": 160
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.1172617475003523,
+      "_kind": "line",
+      "_group": 160
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.1172617475003523,
+      "_kind": "line",
+      "_group": 160
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.1172617475003523,
+      "_kind": "line",
+      "_group": 161
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.1172617475003523,
+      "_kind": "line",
+      "_group": 161
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.1172617475003523,
+      "_kind": "line",
+      "_group": 161
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.1172617475003523,
+      "_kind": "line",
+      "_group": 161
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.149748123793717,
+      "_kind": "line",
+      "_group": 162
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.24499449890640976,
+      "_kind": "line",
+      "_group": 162
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.1419624190050377,
+      "_kind": "line",
+      "_group": 162
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.08847920387181388,
+      "_kind": "line",
+      "_group": 162
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.149748123793717,
+      "_kind": "line",
+      "_group": 163
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.24499449890640976,
+      "_kind": "line",
+      "_group": 163
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.1419624190050377,
+      "_kind": "line",
+      "_group": 163
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.08847920387181388,
+      "_kind": "line",
+      "_group": 163
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": 0.149748123793717,
+      "_kind": "line",
+      "_group": 164
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": 0.24499449890640976,
+      "_kind": "line",
+      "_group": 164
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": 0.1419624190050377,
+      "_kind": "line",
+      "_group": 164
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": 0.08847920387181388,
+      "_kind": "line",
+      "_group": 164
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": -0.03662456509419478,
+      "_kind": "line",
+      "_group": 165
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": -0.03662456509419478,
+      "_kind": "line",
+      "_group": 165
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": -0.03662456509419478,
+      "_kind": "line",
+      "_group": 165
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": -0.03662456509419478,
+      "_kind": "line",
+      "_group": 165
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": -0.03662456509419478,
+      "_kind": "line",
+      "_group": 166
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": -0.03662456509419478,
+      "_kind": "line",
+      "_group": 166
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": -0.03662456509419478,
+      "_kind": "line",
+      "_group": 166
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": -0.03662456509419478,
+      "_kind": "line",
+      "_group": 166
+    },
+    {
+      "x": 0.0,
+      "Spearman rho": -0.03662456509419478,
+      "_kind": "line",
+      "_group": 167
+    },
+    {
+      "x": 0.25,
+      "Spearman rho": -0.03662456509419478,
+      "_kind": "line",
+      "_group": 167
+    },
+    {
+      "x": 0.5,
+      "Spearman rho": -0.03662456509419478,
+      "_kind": "line",
+      "_group": 167
+    },
+    {
+      "x": 1.0,
+      "Spearman rho": -0.03662456509419478,
+      "_kind": "line",
+      "_group": 167
+    },
+    {
+      "x": 0.0,
+      "y": 0.3313621567244776,
+      "error": 0.0,
+      "series": "Persona vector on context",
+      "_kind": "errorbar",
+      "_group": 168
+    },
+    {
+      "x": 0.25,
+      "y": 0.3313621567244776,
+      "error": 0.0,
+      "series": "Persona vector on context",
+      "_kind": "errorbar",
+      "_group": 168
+    },
+    {
+      "x": 0.5,
+      "y": 0.3313621567244776,
+      "error": 0.0,
+      "series": "Persona vector on context",
+      "_kind": "errorbar",
+      "_group": 168
+    },
+    {
+      "x": 1.0,
+      "y": 0.3313621567244776,
+      "error": 0.0,
+      "series": "Persona vector on context",
+      "_kind": "errorbar",
+      "_group": 168
+    },
+    {
+      "x": 0.0,
+      "y": 0.19243217909420463,
+      "error": 0.0,
+      "series": "Ridge regression on context",
+      "_kind": "errorbar",
+      "_group": 169
+    },
+    {
+      "x": 0.25,
+      "y": 0.20354137199761177,
+      "error": 0.0,
+      "series": "Ridge regression on context",
+      "_kind": "errorbar",
+      "_group": 169
+    },
+    {
+      "x": 0.5,
+      "y": 0.37965024805361713,
+      "error": 0.0,
+      "series": "Ridge regression on context",
+      "_kind": "errorbar",
+      "_group": 169
+    },
+    {
+      "x": 1.0,
+      "y": 0.02409350166823612,
+      "error": 0.0,
+      "series": "Ridge regression on context",
+      "_kind": "errorbar",
+      "_group": 169
+    },
+    {
+      "x": 0.0,
+      "y": 0.26977515883308295,
+      "error": 0.0,
+      "series": "Persona vector on mapped answer",
+      "_kind": "errorbar",
+      "_group": 170
+    },
+    {
+      "x": 0.25,
+      "y": 0.26977515883308295,
+      "error": 0.0,
+      "series": "Persona vector on mapped answer",
+      "_kind": "errorbar",
+      "_group": 170
+    },
+    {
+      "x": 0.5,
+      "y": 0.26977515883308295,
+      "error": 0.0,
+      "series": "Persona vector on mapped answer",
+      "_kind": "errorbar",
+      "_group": 170
+    },
+    {
+      "x": 1.0,
+      "y": 0.26977515883308295,
+      "error": 0.0,
+      "series": "Persona vector on mapped answer",
+      "_kind": "errorbar",
+      "_group": 170
+    },
+    {
+      "x": 0.0,
+      "y": 0.1784662509479856,
+      "error": 0.0,
+      "series": "Ridge regression on mapped answer",
+      "_kind": "errorbar",
+      "_group": 171
+    },
+    {
+      "x": 0.25,
+      "y": 0.24158313943516677,
+      "error": 0.0,
+      "series": "Ridge regression on mapped answer",
+      "_kind": "errorbar",
+      "_group": 171
+    },
+    {
+      "x": 0.5,
+      "y": 0.2715557891194578,
+      "error": 0.0,
+      "series": "Ridge regression on mapped answer",
+      "_kind": "errorbar",
+      "_group": 171
+    },
+    {
+      "x": 1.0,
+      "y": 0.028175149654360212,
+      "error": 0.0,
+      "series": "Ridge regression on mapped answer",
+      "_kind": "errorbar",
+      "_group": 171
+    },
+    {
+      "x": 0.0,
+      "y": 0.5833743626146888,
+      "error": 0.0,
+      "series": "Persona vector on real answer (oracle)",
+      "_kind": "errorbar",
+      "_group": 172
+    },
+    {
+      "x": 0.25,
+      "y": 0.5833743626146888,
+      "error": 0.0,
+      "series": "Persona vector on real answer (oracle)",
+      "_kind": "errorbar",
+      "_group": 172
+    },
+    {
+      "x": 0.5,
+      "y": 0.5833743626146888,
+      "error": 0.0,
+      "series": "Persona vector on real answer (oracle)",
+      "_kind": "errorbar",
+      "_group": 172
+    },
+    {
+      "x": 1.0,
+      "y": 0.5833743626146888,
+      "error": 0.0,
+      "series": "Persona vector on real answer (oracle)",
+      "_kind": "errorbar",
+      "_group": 172
+    },
+    {
+      "x": 0.0,
+      "y": 0.05359633936375529,
+      "error": 0.0,
+      "series": "Ridge fit on real, applied to mapped",
+      "_kind": "errorbar",
+      "_group": 173
+    },
+    {
+      "x": 0.25,
+      "y": -0.022394780583660272,
+      "error": 0.0,
+      "series": "Ridge fit on real, applied to mapped",
+      "_kind": "errorbar",
+      "_group": 173
+    },
+    {
+      "x": 0.5,
+      "y": 0.08140655781443289,
+      "error": 0.0,
+      "series": "Ridge fit on real, applied to mapped",
+      "_kind": "errorbar",
+      "_group": 173
+    },
+    {
+      "x": 1.0,
+      "y": -0.004120561351981885,
+      "error": 0.0,
+      "series": "Ridge fit on real, applied to mapped",
+      "_kind": "errorbar",
+      "_group": 173
+    },
+    {
+      "x": 0.0,
+      "y": 0.08051882873186744,
+      "error": 0.0,
+      "series": "control: shuffled map",
+      "_kind": "errorbar",
+      "_group": 174
+    },
+    {
+      "x": 0.25,
+      "y": 0.08051882873186744,
+      "error": 0.0,
+      "series": "control: shuffled map",
+      "_kind": "errorbar",
+      "_group": 174
+    },
+    {
+      "x": 0.5,
+      "y": 0.08051882873186744,
+      "error": 0.0,
+      "series": "control: shuffled map",
+      "_kind": "errorbar",
+      "_group": 174
+    },
+    {
+      "x": 1.0,
+      "y": 0.08051882873186744,
+      "error": 0.0,
+      "series": "control: shuffled map",
+      "_kind": "errorbar",
+      "_group": 174
+    },
+    {
+      "x": 0.0,
+      "y": 0.3313621567244776,
+      "_kind": "line",
+      "_group": 175
+    },
+    {
+      "x": 0.25,
+      "y": 0.3313621567244776,
+      "_kind": "line",
+      "_group": 175
+    },
+    {
+      "x": 0.5,
+      "y": 0.3313621567244776,
+      "_kind": "line",
+      "_group": 175
+    },
+    {
+      "x": 1.0,
+      "y": 0.3313621567244776,
+      "_kind": "line",
+      "_group": 175
+    },
+    {
+      "x": 0.0,
+      "y": 0.3313621567244776,
+      "_kind": "line",
+      "_group": 176
+    },
+    {
+      "x": 0.25,
+      "y": 0.3313621567244776,
+      "_kind": "line",
+      "_group": 176
+    },
+    {
+      "x": 0.5,
+      "y": 0.3313621567244776,
+      "_kind": "line",
+      "_group": 176
+    },
+    {
+      "x": 1.0,
+      "y": 0.3313621567244776,
+      "_kind": "line",
+      "_group": 176
+    },
+    {
+      "x": 0.0,
+      "y": 0.3313621567244776,
+      "_kind": "line",
+      "_group": 177
+    },
+    {
+      "x": 0.25,
+      "y": 0.3313621567244776,
+      "_kind": "line",
+      "_group": 177
+    },
+    {
+      "x": 0.5,
+      "y": 0.3313621567244776,
+      "_kind": "line",
+      "_group": 177
+    },
+    {
+      "x": 1.0,
+      "y": 0.3313621567244776,
+      "_kind": "line",
+      "_group": 177
+    },
+    {
+      "x": 0.0,
+      "y": 0.19243217909420463,
+      "_kind": "line",
+      "_group": 178
+    },
+    {
+      "x": 0.25,
+      "y": 0.20354137199761177,
+      "_kind": "line",
+      "_group": 178
+    },
+    {
+      "x": 0.5,
+      "y": 0.37965024805361713,
+      "_kind": "line",
+      "_group": 178
+    },
+    {
+      "x": 1.0,
+      "y": 0.02409350166823612,
+      "_kind": "line",
+      "_group": 178
+    },
+    {
+      "x": 0.0,
+      "y": 0.19243217909420463,
+      "_kind": "line",
+      "_group": 179
+    },
+    {
+      "x": 0.25,
+      "y": 0.20354137199761177,
+      "_kind": "line",
+      "_group": 179
+    },
+    {
+      "x": 0.5,
+      "y": 0.37965024805361713,
+      "_kind": "line",
+      "_group": 179
+    },
+    {
+      "x": 1.0,
+      "y": 0.02409350166823612,
+      "_kind": "line",
+      "_group": 179
+    },
+    {
+      "x": 0.0,
+      "y": 0.19243217909420463,
+      "_kind": "line",
+      "_group": 180
+    },
+    {
+      "x": 0.25,
+      "y": 0.20354137199761177,
+      "_kind": "line",
+      "_group": 180
+    },
+    {
+      "x": 0.5,
+      "y": 0.37965024805361713,
+      "_kind": "line",
+      "_group": 180
+    },
+    {
+      "x": 1.0,
+      "y": 0.02409350166823612,
+      "_kind": "line",
+      "_group": 180
+    },
+    {
+      "x": 0.0,
+      "y": 0.26977515883308295,
+      "_kind": "line",
+      "_group": 181
+    },
+    {
+      "x": 0.25,
+      "y": 0.26977515883308295,
+      "_kind": "line",
+      "_group": 181
+    },
+    {
+      "x": 0.5,
+      "y": 0.26977515883308295,
+      "_kind": "line",
+      "_group": 181
+    },
+    {
+      "x": 1.0,
+      "y": 0.26977515883308295,
+      "_kind": "line",
+      "_group": 181
+    },
+    {
+      "x": 0.0,
+      "y": 0.26977515883308295,
+      "_kind": "line",
+      "_group": 182
+    },
+    {
+      "x": 0.25,
+      "y": 0.26977515883308295,
+      "_kind": "line",
+      "_group": 182
+    },
+    {
+      "x": 0.5,
+      "y": 0.26977515883308295,
+      "_kind": "line",
+      "_group": 182
+    },
+    {
+      "x": 1.0,
+      "y": 0.26977515883308295,
+      "_kind": "line",
+      "_group": 182
+    },
+    {
+      "x": 0.0,
+      "y": 0.26977515883308295,
+      "_kind": "line",
+      "_group": 183
+    },
+    {
+      "x": 0.25,
+      "y": 0.26977515883308295,
+      "_kind": "line",
+      "_group": 183
+    },
+    {
+      "x": 0.5,
+      "y": 0.26977515883308295,
+      "_kind": "line",
+      "_group": 183
+    },
+    {
+      "x": 1.0,
+      "y": 0.26977515883308295,
+      "_kind": "line",
+      "_group": 183
+    },
+    {
+      "x": 0.0,
+      "y": 0.1784662509479856,
+      "_kind": "line",
+      "_group": 184
+    },
+    {
+      "x": 0.25,
+      "y": 0.24158313943516677,
+      "_kind": "line",
+      "_group": 184
+    },
+    {
+      "x": 0.5,
+      "y": 0.2715557891194578,
+      "_kind": "line",
+      "_group": 184
+    },
+    {
+      "x": 1.0,
+      "y": 0.028175149654360212,
+      "_kind": "line",
+      "_group": 184
+    },
+    {
+      "x": 0.0,
+      "y": 0.1784662509479856,
+      "_kind": "line",
+      "_group": 185
+    },
+    {
+      "x": 0.25,
+      "y": 0.24158313943516677,
+      "_kind": "line",
+      "_group": 185
+    },
+    {
+      "x": 0.5,
+      "y": 0.2715557891194578,
+      "_kind": "line",
+      "_group": 185
+    },
+    {
+      "x": 1.0,
+      "y": 0.028175149654360212,
+      "_kind": "line",
+      "_group": 185
+    },
+    {
+      "x": 0.0,
+      "y": 0.1784662509479856,
+      "_kind": "line",
+      "_group": 186
+    },
+    {
+      "x": 0.25,
+      "y": 0.24158313943516677,
+      "_kind": "line",
+      "_group": 186
+    },
+    {
+      "x": 0.5,
+      "y": 0.2715557891194578,
+      "_kind": "line",
+      "_group": 186
+    },
+    {
+      "x": 1.0,
+      "y": 0.028175149654360212,
+      "_kind": "line",
+      "_group": 186
+    },
+    {
+      "x": 0.0,
+      "y": 0.5833743626146888,
+      "_kind": "line",
+      "_group": 187
+    },
+    {
+      "x": 0.25,
+      "y": 0.5833743626146888,
+      "_kind": "line",
+      "_group": 187
+    },
+    {
+      "x": 0.5,
+      "y": 0.5833743626146888,
+      "_kind": "line",
+      "_group": 187
+    },
+    {
+      "x": 1.0,
+      "y": 0.5833743626146888,
+      "_kind": "line",
+      "_group": 187
+    },
+    {
+      "x": 0.0,
+      "y": 0.5833743626146888,
+      "_kind": "line",
+      "_group": 188
+    },
+    {
+      "x": 0.25,
+      "y": 0.5833743626146888,
+      "_kind": "line",
+      "_group": 188
+    },
+    {
+      "x": 0.5,
+      "y": 0.5833743626146888,
+      "_kind": "line",
+      "_group": 188
+    },
+    {
+      "x": 1.0,
+      "y": 0.5833743626146888,
+      "_kind": "line",
+      "_group": 188
+    },
+    {
+      "x": 0.0,
+      "y": 0.5833743626146888,
+      "_kind": "line",
+      "_group": 189
+    },
+    {
+      "x": 0.25,
+      "y": 0.5833743626146888,
+      "_kind": "line",
+      "_group": 189
+    },
+    {
+      "x": 0.5,
+      "y": 0.5833743626146888,
+      "_kind": "line",
+      "_group": 189
+    },
+    {
+      "x": 1.0,
+      "y": 0.5833743626146888,
+      "_kind": "line",
+      "_group": 189
+    },
+    {
+      "x": 0.0,
+      "y": 0.05359633936375529,
+      "_kind": "line",
+      "_group": 190
+    },
+    {
+      "x": 0.25,
+      "y": -0.022394780583660272,
+      "_kind": "line",
+      "_group": 190
+    },
+    {
+      "x": 0.5,
+      "y": 0.08140655781443289,
+      "_kind": "line",
+      "_group": 190
+    },
+    {
+      "x": 1.0,
+      "y": -0.004120561351981885,
+      "_kind": "line",
+      "_group": 190
+    },
+    {
+      "x": 0.0,
+      "y": 0.05359633936375529,
+      "_kind": "line",
+      "_group": 191
+    },
+    {
+      "x": 0.25,
+      "y": -0.022394780583660272,
+      "_kind": "line",
+      "_group": 191
+    },
+    {
+      "x": 0.5,
+      "y": 0.08140655781443289,
+      "_kind": "line",
+      "_group": 191
+    },
+    {
+      "x": 1.0,
+      "y": -0.004120561351981885,
+      "_kind": "line",
+      "_group": 191
+    },
+    {
+      "x": 0.0,
+      "y": 0.05359633936375529,
+      "_kind": "line",
+      "_group": 192
+    },
+    {
+      "x": 0.25,
+      "y": -0.022394780583660272,
+      "_kind": "line",
+      "_group": 192
+    },
+    {
+      "x": 0.5,
+      "y": 0.08140655781443289,
+      "_kind": "line",
+      "_group": 192
+    },
+    {
+      "x": 1.0,
+      "y": -0.004120561351981885,
+      "_kind": "line",
+      "_group": 192
+    },
+    {
+      "x": 0.0,
+      "y": 0.08051882873186744,
+      "_kind": "line",
+      "_group": 193
+    },
+    {
+      "x": 0.25,
+      "y": 0.08051882873186744,
+      "_kind": "line",
+      "_group": 193
+    },
+    {
+      "x": 0.5,
+      "y": 0.08051882873186744,
+      "_kind": "line",
+      "_group": 193
+    },
+    {
+      "x": 1.0,
+      "y": 0.08051882873186744,
+      "_kind": "line",
+      "_group": 193
+    },
+    {
+      "x": 0.0,
+      "y": 0.08051882873186744,
+      "_kind": "line",
+      "_group": 194
+    },
+    {
+      "x": 0.25,
+      "y": 0.08051882873186744,
+      "_kind": "line",
+      "_group": 194
+    },
+    {
+      "x": 0.5,
+      "y": 0.08051882873186744,
+      "_kind": "line",
+      "_group": 194
+    },
+    {
+      "x": 1.0,
+      "y": 0.08051882873186744,
+      "_kind": "line",
+      "_group": 194
+    },
+    {
+      "x": 0.0,
+      "y": 0.08051882873186744,
+      "_kind": "line",
+      "_group": 195
+    },
+    {
+      "x": 0.25,
+      "y": 0.08051882873186744,
+      "_kind": "line",
+      "_group": 195
+    },
+    {
+      "x": 0.5,
+      "y": 0.08051882873186744,
+      "_kind": "line",
+      "_group": 195
+    },
+    {
+      "x": 1.0,
+      "y": 0.08051882873186744,
+      "_kind": "line",
+      "_group": 195
+    },
+    {
+      "x": 0.0,
+      "y": -0.10656516179586661,
+      "error": 0.0,
+      "series": "Persona vector on context",
+      "_kind": "errorbar",
+      "_group": 196
+    },
+    {
+      "x": 0.25,
+      "y": -0.10656516179586661,
+      "error": 0.0,
+      "series": "Persona vector on context",
+      "_kind": "errorbar",
+      "_group": 196
+    },
+    {
+      "x": 0.5,
+      "y": -0.10656516179586661,
+      "error": 0.0,
+      "series": "Persona vector on context",
+      "_kind": "errorbar",
+      "_group": 196
+    },
+    {
+      "x": 1.0,
+      "y": -0.10656516179586661,
+      "error": 0.0,
+      "series": "Persona vector on context",
+      "_kind": "errorbar",
+      "_group": 196
+    },
+    {
+      "x": 0.0,
+      "y": 0.05557086827572308,
+      "error": 0.0,
+      "series": "Ridge regression on context",
+      "_kind": "errorbar",
+      "_group": 197
+    },
+    {
+      "x": 0.25,
+      "y": 0.16781983317419571,
+      "error": 0.0,
+      "series": "Ridge regression on context",
+      "_kind": "errorbar",
+      "_group": 197
+    },
+    {
+      "x": 0.5,
+      "y": 0.34155212465141,
+      "error": 0.0,
+      "series": "Ridge regression on context",
+      "_kind": "errorbar",
+      "_group": 197
+    },
+    {
+      "x": 1.0,
+      "y": 0.4592519802649553,
+      "error": 0.0,
+      "series": "Ridge regression on context",
+      "_kind": "errorbar",
+      "_group": 197
+    },
+    {
+      "x": 0.0,
+      "y": 0.1106850043455737,
+      "error": 0.0,
+      "series": "Persona vector on mapped answer",
+      "_kind": "errorbar",
+      "_group": 198
+    },
+    {
+      "x": 0.25,
+      "y": 0.1106850043455737,
+      "error": 0.0,
+      "series": "Persona vector on mapped answer",
+      "_kind": "errorbar",
+      "_group": 198
+    },
+    {
+      "x": 0.5,
+      "y": 0.1106850043455737,
+      "error": 0.0,
+      "series": "Persona vector on mapped answer",
+      "_kind": "errorbar",
+      "_group": 198
+    },
+    {
+      "x": 1.0,
+      "y": 0.1106850043455737,
+      "error": 0.0,
+      "series": "Persona vector on mapped answer",
+      "_kind": "errorbar",
+      "_group": 198
+    },
+    {
+      "x": 0.0,
+      "y": 0.1315586183219222,
+      "error": 0.0,
+      "series": "Ridge regression on mapped answer",
+      "_kind": "errorbar",
+      "_group": 199
+    },
+    {
+      "x": 0.25,
+      "y": 0.13918395116957644,
+      "error": 0.0,
+      "series": "Ridge regression on mapped answer",
+      "_kind": "errorbar",
+      "_group": 199
+    },
+    {
+      "x": 0.5,
+      "y": 0.314911546888855,
+      "error": 0.0,
+      "series": "Ridge regression on mapped answer",
+      "_kind": "errorbar",
+      "_group": 199
+    },
+    {
+      "x": 1.0,
+      "y": 0.40471617561123946,
+      "error": 0.0,
+      "series": "Ridge regression on mapped answer",
+      "_kind": "errorbar",
+      "_group": 199
+    },
+    {
+      "x": 0.0,
+      "y": 0.1776250067441395,
+      "error": 0.0,
+      "series": "Persona vector on real answer (oracle)",
+      "_kind": "errorbar",
+      "_group": 200
+    },
+    {
+      "x": 0.25,
+      "y": 0.1776250067441395,
+      "error": 0.0,
+      "series": "Persona vector on real answer (oracle)",
+      "_kind": "errorbar",
+      "_group": 200
+    },
+    {
+      "x": 0.5,
+      "y": 0.1776250067441395,
+      "error": 0.0,
+      "series": "Persona vector on real answer (oracle)",
+      "_kind": "errorbar",
+      "_group": 200
+    },
+    {
+      "x": 1.0,
+      "y": 0.1776250067441395,
+      "error": 0.0,
+      "series": "Persona vector on real answer (oracle)",
+      "_kind": "errorbar",
+      "_group": 200
+    },
+    {
+      "x": 0.0,
+      "y": 0.10072727644322943,
+      "error": 0.0,
+      "series": "Ridge fit on real, applied to mapped",
+      "_kind": "errorbar",
+      "_group": 201
+    },
+    {
+      "x": 0.25,
+      "y": 0.2738613822519781,
+      "error": 0.0,
+      "series": "Ridge fit on real, applied to mapped",
+      "_kind": "errorbar",
+      "_group": 201
+    },
+    {
+      "x": 0.5,
+      "y": 0.24331583590681624,
+      "error": 0.0,
+      "series": "Ridge fit on real, applied to mapped",
+      "_kind": "errorbar",
+      "_group": 201
+    },
+    {
+      "x": 1.0,
+      "y": 0.17590970030995534,
+      "error": 0.0,
+      "series": "Ridge fit on real, applied to mapped",
+      "_kind": "errorbar",
+      "_group": 201
+    },
+    {
+      "x": 0.0,
+      "y": -0.07446705314755472,
+      "error": 0.0,
+      "series": "control: shuffled map",
+      "_kind": "errorbar",
+      "_group": 202
+    },
+    {
+      "x": 0.25,
+      "y": -0.07446705314755472,
+      "error": 0.0,
+      "series": "control: shuffled map",
+      "_kind": "errorbar",
+      "_group": 202
+    },
+    {
+      "x": 0.5,
+      "y": -0.07446705314755472,
+      "error": 0.0,
+      "series": "control: shuffled map",
+      "_kind": "errorbar",
+      "_group": 202
+    },
+    {
+      "x": 1.0,
+      "y": -0.07446705314755472,
+      "error": 0.0,
+      "series": "control: shuffled map",
+      "_kind": "errorbar",
+      "_group": 202
+    },
+    {
+      "x": 0.0,
+      "y": -0.10656516179586661,
+      "_kind": "line",
+      "_group": 203
+    },
+    {
+      "x": 0.25,
+      "y": -0.10656516179586661,
+      "_kind": "line",
+      "_group": 203
+    },
+    {
+      "x": 0.5,
+      "y": -0.10656516179586661,
+      "_kind": "line",
+      "_group": 203
+    },
+    {
+      "x": 1.0,
+      "y": -0.10656516179586661,
+      "_kind": "line",
+      "_group": 203
+    },
+    {
+      "x": 0.0,
+      "y": -0.10656516179586661,
+      "_kind": "line",
+      "_group": 204
+    },
+    {
+      "x": 0.25,
+      "y": -0.10656516179586661,
+      "_kind": "line",
+      "_group": 204
+    },
+    {
+      "x": 0.5,
+      "y": -0.10656516179586661,
+      "_kind": "line",
+      "_group": 204
+    },
+    {
+      "x": 1.0,
+      "y": -0.10656516179586661,
+      "_kind": "line",
+      "_group": 204
+    },
+    {
+      "x": 0.0,
+      "y": -0.10656516179586661,
+      "_kind": "line",
+      "_group": 205
+    },
+    {
+      "x": 0.25,
+      "y": -0.10656516179586661,
+      "_kind": "line",
+      "_group": 205
+    },
+    {
+      "x": 0.5,
+      "y": -0.10656516179586661,
+      "_kind": "line",
+      "_group": 205
+    },
+    {
+      "x": 1.0,
+      "y": -0.10656516179586661,
+      "_kind": "line",
+      "_group": 205
+    },
+    {
+      "x": 0.0,
+      "y": 0.05557086827572308,
+      "_kind": "line",
+      "_group": 206
+    },
+    {
+      "x": 0.25,
+      "y": 0.16781983317419571,
+      "_kind": "line",
+      "_group": 206
+    },
+    {
+      "x": 0.5,
+      "y": 0.34155212465141,
+      "_kind": "line",
+      "_group": 206
+    },
+    {
+      "x": 1.0,
+      "y": 0.4592519802649553,
+      "_kind": "line",
+      "_group": 206
+    },
+    {
+      "x": 0.0,
+      "y": 0.05557086827572308,
+      "_kind": "line",
+      "_group": 207
+    },
+    {
+      "x": 0.25,
+      "y": 0.16781983317419571,
+      "_kind": "line",
+      "_group": 207
+    },
+    {
+      "x": 0.5,
+      "y": 0.34155212465141,
+      "_kind": "line",
+      "_group": 207
+    },
+    {
+      "x": 1.0,
+      "y": 0.4592519802649553,
+      "_kind": "line",
+      "_group": 207
+    },
+    {
+      "x": 0.0,
+      "y": 0.05557086827572308,
+      "_kind": "line",
+      "_group": 208
+    },
+    {
+      "x": 0.25,
+      "y": 0.16781983317419571,
+      "_kind": "line",
+      "_group": 208
+    },
+    {
+      "x": 0.5,
+      "y": 0.34155212465141,
+      "_kind": "line",
+      "_group": 208
+    },
+    {
+      "x": 1.0,
+      "y": 0.4592519802649553,
+      "_kind": "line",
+      "_group": 208
+    },
+    {
+      "x": 0.0,
+      "y": 0.1106850043455737,
+      "_kind": "line",
+      "_group": 209
+    },
+    {
+      "x": 0.25,
+      "y": 0.1106850043455737,
+      "_kind": "line",
+      "_group": 209
+    },
+    {
+      "x": 0.5,
+      "y": 0.1106850043455737,
+      "_kind": "line",
+      "_group": 209
+    },
+    {
+      "x": 1.0,
+      "y": 0.1106850043455737,
+      "_kind": "line",
+      "_group": 209
+    },
+    {
+      "x": 0.0,
+      "y": 0.1106850043455737,
+      "_kind": "line",
+      "_group": 210
+    },
+    {
+      "x": 0.25,
+      "y": 0.1106850043455737,
+      "_kind": "line",
+      "_group": 210
+    },
+    {
+      "x": 0.5,
+      "y": 0.1106850043455737,
+      "_kind": "line",
+      "_group": 210
+    },
+    {
+      "x": 1.0,
+      "y": 0.1106850043455737,
+      "_kind": "line",
+      "_group": 210
+    },
+    {
+      "x": 0.0,
+      "y": 0.1106850043455737,
+      "_kind": "line",
+      "_group": 211
+    },
+    {
+      "x": 0.25,
+      "y": 0.1106850043455737,
+      "_kind": "line",
+      "_group": 211
+    },
+    {
+      "x": 0.5,
+      "y": 0.1106850043455737,
+      "_kind": "line",
+      "_group": 211
+    },
+    {
+      "x": 1.0,
+      "y": 0.1106850043455737,
+      "_kind": "line",
+      "_group": 211
+    },
+    {
+      "x": 0.0,
+      "y": 0.1315586183219222,
+      "_kind": "line",
+      "_group": 212
+    },
+    {
+      "x": 0.25,
+      "y": 0.13918395116957644,
+      "_kind": "line",
+      "_group": 212
+    },
+    {
+      "x": 0.5,
+      "y": 0.314911546888855,
+      "_kind": "line",
+      "_group": 212
+    },
+    {
+      "x": 1.0,
+      "y": 0.40471617561123946,
+      "_kind": "line",
+      "_group": 212
+    },
+    {
+      "x": 0.0,
+      "y": 0.1315586183219222,
+      "_kind": "line",
+      "_group": 213
+    },
+    {
+      "x": 0.25,
+      "y": 0.13918395116957644,
+      "_kind": "line",
+      "_group": 213
+    },
+    {
+      "x": 0.5,
+      "y": 0.314911546888855,
+      "_kind": "line",
+      "_group": 213
+    },
+    {
+      "x": 1.0,
+      "y": 0.40471617561123946,
+      "_kind": "line",
+      "_group": 213
+    },
+    {
+      "x": 0.0,
+      "y": 0.1315586183219222,
+      "_kind": "line",
+      "_group": 214
+    },
+    {
+      "x": 0.25,
+      "y": 0.13918395116957644,
+      "_kind": "line",
+      "_group": 214
+    },
+    {
+      "x": 0.5,
+      "y": 0.314911546888855,
+      "_kind": "line",
+      "_group": 214
+    },
+    {
+      "x": 1.0,
+      "y": 0.40471617561123946,
+      "_kind": "line",
+      "_group": 214
+    },
+    {
+      "x": 0.0,
+      "y": 0.1776250067441395,
+      "_kind": "line",
+      "_group": 215
+    },
+    {
+      "x": 0.25,
+      "y": 0.1776250067441395,
+      "_kind": "line",
+      "_group": 215
+    },
+    {
+      "x": 0.5,
+      "y": 0.1776250067441395,
+      "_kind": "line",
+      "_group": 215
+    },
+    {
+      "x": 1.0,
+      "y": 0.1776250067441395,
+      "_kind": "line",
+      "_group": 215
+    },
+    {
+      "x": 0.0,
+      "y": 0.1776250067441395,
+      "_kind": "line",
+      "_group": 216
+    },
+    {
+      "x": 0.25,
+      "y": 0.1776250067441395,
+      "_kind": "line",
+      "_group": 216
+    },
+    {
+      "x": 0.5,
+      "y": 0.1776250067441395,
+      "_kind": "line",
+      "_group": 216
+    },
+    {
+      "x": 1.0,
+      "y": 0.1776250067441395,
+      "_kind": "line",
+      "_group": 216
+    },
+    {
+      "x": 0.0,
+      "y": 0.1776250067441395,
+      "_kind": "line",
+      "_group": 217
+    },
+    {
+      "x": 0.25,
+      "y": 0.1776250067441395,
+      "_kind": "line",
+      "_group": 217
+    },
+    {
+      "x": 0.5,
+      "y": 0.1776250067441395,
+      "_kind": "line",
+      "_group": 217
+    },
+    {
+      "x": 1.0,
+      "y": 0.1776250067441395,
+      "_kind": "line",
+      "_group": 217
+    },
+    {
+      "x": 0.0,
+      "y": 0.10072727644322943,
+      "_kind": "line",
+      "_group": 218
+    },
+    {
+      "x": 0.25,
+      "y": 0.2738613822519781,
+      "_kind": "line",
+      "_group": 218
+    },
+    {
+      "x": 0.5,
+      "y": 0.24331583590681624,
+      "_kind": "line",
+      "_group": 218
+    },
+    {
+      "x": 1.0,
+      "y": 0.17590970030995534,
+      "_kind": "line",
+      "_group": 218
+    },
+    {
+      "x": 0.0,
+      "y": 0.10072727644322943,
+      "_kind": "line",
+      "_group": 219
+    },
+    {
+      "x": 0.25,
+      "y": 0.2738613822519781,
+      "_kind": "line",
+      "_group": 219
+    },
+    {
+      "x": 0.5,
+      "y": 0.24331583590681624,
+      "_kind": "line",
+      "_group": 219
+    },
+    {
+      "x": 1.0,
+      "y": 0.17590970030995534,
+      "_kind": "line",
+      "_group": 219
+    },
+    {
+      "x": 0.0,
+      "y": 0.10072727644322943,
+      "_kind": "line",
+      "_group": 220
+    },
+    {
+      "x": 0.25,
+      "y": 0.2738613822519781,
+      "_kind": "line",
+      "_group": 220
+    },
+    {
+      "x": 0.5,
+      "y": 0.24331583590681624,
+      "_kind": "line",
+      "_group": 220
+    },
+    {
+      "x": 1.0,
+      "y": 0.17590970030995534,
+      "_kind": "line",
+      "_group": 220
+    },
+    {
+      "x": 0.0,
+      "y": -0.07446705314755472,
+      "_kind": "line",
+      "_group": 221
+    },
+    {
+      "x": 0.25,
+      "y": -0.07446705314755472,
+      "_kind": "line",
+      "_group": 221
+    },
+    {
+      "x": 0.5,
+      "y": -0.07446705314755472,
+      "_kind": "line",
+      "_group": 221
+    },
+    {
+      "x": 1.0,
+      "y": -0.07446705314755472,
+      "_kind": "line",
+      "_group": 221
+    },
+    {
+      "x": 0.0,
+      "y": -0.07446705314755472,
+      "_kind": "line",
+      "_group": 222
+    },
+    {
+      "x": 0.25,
+      "y": -0.07446705314755472,
+      "_kind": "line",
+      "_group": 222
+    },
+    {
+      "x": 0.5,
+      "y": -0.07446705314755472,
+      "_kind": "line",
+      "_group": 222
+    },
+    {
+      "x": 1.0,
+      "y": -0.07446705314755472,
+      "_kind": "line",
+      "_group": 222
+    },
+    {
+      "x": 0.0,
+      "y": -0.07446705314755472,
+      "_kind": "line",
+      "_group": 223
+    },
+    {
+      "x": 0.25,
+      "y": -0.07446705314755472,
+      "_kind": "line",
+      "_group": 223
+    },
+    {
+      "x": 0.5,
+      "y": -0.07446705314755472,
+      "_kind": "line",
+      "_group": 223
+    },
+    {
+      "x": 1.0,
+      "y": -0.07446705314755472,
+      "_kind": "line",
+      "_group": 223
+    }
+  ],
+  "n_series": 224,
+  "total_points": 896,
+  "text": {
+    "suptitle": "Result 5b: replacing judged ELICITING labels with judged GENERIC labels, budget held fixed",
+    "fig_texts": [
+      "Composition at FIXED budget, never addition: the labeled readout pool is 1,500 rows throughout, and x is the fraction of those rows drawn from judged random WildChat\nrather than the behavior's eliciting corpus, so a change along x cannot be confounded with quantity. Points are the mean frozen-layer Spearman rho over the source's\nreplicates at that cell; error bars 1.96 x SEM (a single-replicate cell is drawn with a zero-width bar, which means no replicate spread was estimable, not that the\nestimate is exact). The label-free projection arms (persona vector on context / mapped / real answer) do not consume labels, so their curves are expected to be flat\nin x -- they are drawn as the reference the label-consuming arms move against.",
+      "generic fraction of the 1,500 judged labels"
+    ],
+    "axes": [
+      {
+        "title_left": "evil \u2014 hh-rlhf red-team",
+        "ylabel": "Spearman rho",
+        "xticklabels": [
+          "0\n(all eliciting)",
+          "0.25",
+          "0.5",
+          "1.0\n(all generic)"
+        ],
+        "yticklabels": [
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10"
+        ]
+      },
+      {
+        "title_left": "evil \u2014 ToxicChat",
+        "xticklabels": [
+          "0\n(all eliciting)",
+          "0.25",
+          "0.5",
+          "1.0\n(all generic)"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4"
+        ]
+      },
+      {
+        "title_left": "evil \u2014 random WildChat",
+        "xticklabels": [
+          "0\n(all eliciting)",
+          "0.25",
+          "0.5",
+          "1.0\n(all generic)"
+        ],
+        "yticklabels": [
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20"
+        ]
+      },
+      {
+        "title_left": "sycophancy \u2014 held-out r/socialskills",
+        "ylabel": "Spearman rho",
+        "xticklabels": [
+          "0\n(all eliciting)",
+          "0.25",
+          "0.5",
+          "1.0\n(all generic)"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ]
+      },
+      {
+        "title_left": "sycophancy \u2014 random WildChat",
+        "xticklabels": [
+          "0\n(all eliciting)",
+          "0.25",
+          "0.5",
+          "1.0\n(all generic)"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5"
+        ]
+      },
+      {
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "hallucination \u2014 NQ-Open",
+        "ylabel": "Spearman rho",
+        "xticklabels": [
+          "0\n(all eliciting)",
+          "0.25",
+          "0.5",
+          "1.0\n(all generic)"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3"
+        ]
+      },
+      {
+        "title_left": "hallucination \u2014 SimpleQA",
+        "xticklabels": [
+          "0\n(all eliciting)",
+          "0.25",
+          "0.5",
+          "1.0\n(all generic)"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "hallucination \u2014 random WildChat",
+        "xticklabels": [
+          "0\n(all eliciting)",
+          "0.25",
+          "0.5",
+          "1.0\n(all generic)"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6"
+        ]
+      }
+    ],
+    "series": [
+      "Persona vector on context",
+      "Ridge regression on context",
+      "Persona vector on mapped answer",
+      "Ridge regression on mapped answer",
+      "Persona vector on real answer (oracle)",
+      "Ridge fit on real, applied to mapped",
+      "control: shuffled map"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

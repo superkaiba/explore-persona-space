@@ -1,0 +1,306 @@
+{
+ "domains": {
+  "coding assistance": {
+   "n_conversations": 5,
+   "conversations": [
+    "coding__p0__t0",
+    "coding__p1__t0",
+    "coding__p2__t0",
+    "coding__p3__t0",
+    "coding__p4__t0"
+   ],
+   "trajectory": {
+    "1": {
+     "n": 5,
+     "mean": -20.40022201538086
+    },
+    "2": {
+     "n": 5,
+     "mean": -23.202710342407226
+    },
+    "3": {
+     "n": 5,
+     "mean": -22.945960235595702
+    },
+    "4": {
+     "n": 5,
+     "mean": -23.59710273742676
+    },
+    "5": {
+     "n": 5,
+     "mean": -23.890805816650392
+    },
+    "6": {
+     "n": 5,
+     "mean": -23.653034973144532
+    },
+    "7": {
+     "n": 5,
+     "mean": -23.879189682006835
+    },
+    "8": {
+     "n": 4,
+     "mean": -23.52896499633789
+    },
+    "9": {
+     "n": 3,
+     "mean": -22.93981424967448
+    },
+    "10": {
+     "n": 2,
+     "mean": -25.681452751159668
+    },
+    "11": {
+     "n": 2,
+     "mean": -25.491415977478027
+    },
+    "12": {
+     "n": 1,
+     "mean": -27.371797561645508
+    },
+    "13": {
+     "n": 1,
+     "mean": -26.420804977416992
+    }
+   },
+   "late_window_mean": -25.23904175228543,
+   "late_window_ci95": [
+    -25.666966915130615,
+    -21.051188151041664
+   ],
+   "late_positions_n": {
+    "8": 4,
+    "9": 3,
+    "10": 2,
+    "11": 2,
+    "12": 1,
+    "13": 1
+   },
+   "intersection_pub_persona_pub_topic": {
+    "coding__p0__t0": -25.07680320739746
+   }
+  },
+  "philosophical discussions about AI": {
+   "n_conversations": 5,
+   "conversations": [
+    "philosophy__p0__t0",
+    "philosophy__p1__t0",
+    "philosophy__p2__t0",
+    "philosophy__p3__t0",
+    "philosophy__p4__t0"
+   ],
+   "trajectory": {
+    "1": {
+     "n": 5,
+     "mean": -29.507576751708985
+    },
+    "2": {
+     "n": 5,
+     "mean": -37.31893196105957
+    },
+    "3": {
+     "n": 5,
+     "mean": -43.094844818115234
+    },
+    "4": {
+     "n": 5,
+     "mean": -44.26192626953125
+    },
+    "5": {
+     "n": 5,
+     "mean": -46.193921661376955
+    },
+    "6": {
+     "n": 3,
+     "mean": -43.252827962239586
+    },
+    "7": {
+     "n": 2,
+     "mean": -36.87896537780762
+    },
+    "8": {
+     "n": 2,
+     "mean": -38.76348304748535
+    },
+    "9": {
+     "n": 2,
+     "mean": -44.169450759887695
+    },
+    "10": {
+     "n": 1,
+     "mean": -45.40076446533203
+    },
+    "11": {
+     "n": 1,
+     "mean": -42.96255111694336
+    },
+    "12": {
+     "n": 1,
+     "mean": -42.18172836303711
+    },
+    "13": {
+     "n": 1,
+     "mean": -33.565372467041016
+    }
+   },
+   "late_window_mean": -41.17389170328776,
+   "late_window_ci95": [
+    -42.32938575744629,
+    -40.886252085367836
+   ],
+   "late_positions_n": {
+    "8": 2,
+    "9": 2,
+    "10": 1,
+    "11": 1,
+    "12": 1,
+    "13": 1
+   },
+   "intersection_pub_persona_pub_topic": {
+    "philosophy__p0__t0": -42.32938575744629
+   }
+  },
+  "therapy-like contexts": {
+   "n_conversations": 5,
+   "conversations": [
+    "therapy__p0__t0",
+    "therapy__p1__t0",
+    "therapy__p2__t0",
+    "therapy__p3__t0",
+    "therapy__p4__t0"
+   ],
+   "trajectory": {
+    "1": {
+     "n": 5,
+     "mean": -15.040225219726562
+    },
+    "2": {
+     "n": 5,
+     "mean": -23.328899002075197
+    },
+    "3": {
+     "n": 5,
+     "mean": -27.279319763183594
+    },
+    "4": {
+     "n": 5,
+     "mean": -27.24993438720703
+    },
+    "5": {
+     "n": 4,
+     "mean": -30.113559246063232
+    },
+    "6": {
+     "n": 2,
+     "mean": -31.892922401428223
+    },
+    "7": {
+     "n": 1,
+     "mean": -32.67363357543945
+    }
+   },
+   "late_window_mean": null,
+   "late_window_ci95": [
+    null,
+    null
+   ],
+   "late_positions_n": {},
+   "intersection_pub_persona_pub_topic": {
+    "therapy__p0__t0": null
+   }
+  },
+  "writing assistance": {
+   "n_conversations": 5,
+   "conversations": [
+    "writing__p0__t0",
+    "writing__p1__t0",
+    "writing__p2__t0",
+    "writing__p3__t0",
+    "writing__p4__t0"
+   ],
+   "trajectory": {
+    "1": {
+     "n": 5,
+     "mean": -23.486195373535157
+    },
+    "2": {
+     "n": 5,
+     "mean": -25.86229705810547
+    },
+    "3": {
+     "n": 5,
+     "mean": -28.278704833984374
+    },
+    "4": {
+     "n": 5,
+     "mean": -28.845302963256835
+    },
+    "5": {
+     "n": 5,
+     "mean": -29.482704162597656
+    },
+    "6": {
+     "n": 5,
+     "mean": -30.907624816894533
+    },
+    "7": {
+     "n": 5,
+     "mean": -28.440173721313478
+    },
+    "8": {
+     "n": 5,
+     "mean": -28.367805862426756
+    },
+    "9": {
+     "n": 5,
+     "mean": -30.12488784790039
+    },
+    "10": {
+     "n": 5,
+     "mean": -29.715434265136718
+    },
+    "11": {
+     "n": 4,
+     "mean": -31.585044384002686
+    },
+    "12": {
+     "n": 2,
+     "mean": -33.51590538024902
+    },
+    "13": {
+     "n": 1,
+     "mean": -32.68775177001953
+    },
+    "14": {
+     "n": 1,
+     "mean": -29.895368576049805
+    }
+   },
+   "late_window_mean": -30.84174258368356,
+   "late_window_ci95": [
+    -33.10999445234027,
+    -27.486262931823727
+   ],
+   "late_positions_n": {
+    "8": 5,
+    "9": 5,
+    "10": 5,
+    "11": 4,
+    "12": 2,
+    "13": 1,
+    "14": 1
+   },
+   "intersection_pub_persona_pub_topic": {
+    "writing__p0__t0": -27.718185806274413
+   }
+  }
+ },
+ "convention": {
+  "subset_rule": "conversation id ends __t0 (published topic = slot 0 of each persona's 20-topic list)",
+  "late_window": "turns 8-15, per-position means then unweighted average (driver convention)",
+  "verdict_rule_applicable": false,
+  "verdict_rule_inapplicable_reason": "MIN_SAMPLES=10 eligibility floor cannot be met at n<=5 conversations per domain; directional read only",
+  "bootstrap": "conversation-level, 2000 draws, seed 42"
+ },
+ "ordering_both_drift_below_both_stable": null
+}

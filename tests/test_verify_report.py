@@ -127,9 +127,29 @@ def _git_run(repo: Path, *args: str) -> str:
     return r.stdout.strip()
 
 
+# A minimal CLEAN companion (docs/reports/issue_5_detailed.md): Motivation copy
+# + full-detail sections, no forbidden Thomas-slot headings, no lexicon hits.
+_CLEAN_COMPANION = (
+    "# Detailed writeup — issue 5\n"
+    "\n"
+    "## Motivation\n"
+    "We test whether base propensity predicts trained leakage.\n"
+    "\n"
+    "## Methodology (full)\n"
+    "We trained on 100 rows under two conditions: baseline and treatment.\n"
+    "\n"
+    "## Results — full figure set\n"
+    "\n"
+    "### rate by condition\n"
+    "Bar chart of the agreement rate per condition; n = 100.\n"
+)
+
+
 @pytest.fixture
 def git_figs_repo(tmp_path: Path) -> tuple[Path, str]:
-    """A REAL git repo with figures/issue_5/f.png committed; returns (root, head_sha)."""
+    """A REAL git repo with figures/issue_5/f.png AND a minimal CLEAN companion
+    docs/reports/issue_5_detailed.md committed in the SAME commit; returns
+    (root, head_sha) — head serves both the image pin and the companion pin."""
     subprocess.run(["git", "init", "-q", str(tmp_path)], check=True, capture_output=True)
     _git_run(tmp_path, "config", "user.email", "test@test.test")
     _git_run(tmp_path, "config", "user.name", "Test")
@@ -137,10 +157,22 @@ def git_figs_repo(tmp_path: Path) -> tuple[Path, str]:
     figs = tmp_path / "figures" / "issue_5"
     figs.mkdir(parents=True)
     (figs / "f.png").write_bytes(b"\x89PNG\r\n\x1a\nreal-figure-bytes")
-    _git_run(tmp_path, "add", "figures/issue_5/f.png")
-    _git_run(tmp_path, "commit", "-q", "-m", "add figure")
+    reports = tmp_path / "docs" / "reports"
+    reports.mkdir(parents=True)
+    (reports / "issue_5_detailed.md").write_text(_CLEAN_COMPANION)
+    _git_run(tmp_path, "add", "figures/issue_5/f.png", "docs/reports/issue_5_detailed.md")
+    _git_run(tmp_path, "commit", "-q", "-m", "add figure + companion")
     head = _git_run(tmp_path, "rev-parse", "HEAD")
     return tmp_path, head
+
+
+def _commit_companion(repo: Path, text: str) -> str:
+    """Overwrite + commit the issue-5 companion in ``repo``; return the new HEAD
+    sha (the commit also carries the figure, so image pins at it resolve too)."""
+    (repo / "docs" / "reports" / "issue_5_detailed.md").write_text(text)
+    _git_run(repo, "add", "docs/reports/issue_5_detailed.md")
+    _git_run(repo, "commit", "-q", "-m", "companion variant")
+    return _git_run(repo, "rev-parse", "HEAD")
 
 
 def _by_name(results, name):
@@ -622,6 +654,25 @@ def test_manifest_schema_invalid_fails(figs_root, tmp_path):
     assert not _by_name(results, "manifest-schema").passed
 
 
+def test_manifest_encoding_corrupt_fails_as_check_result(tmp_path):
+    """#2168 shape-4 regression (verdict-object failure): an encoding-corrupt
+    manifest raises ``UnicodeDecodeError`` from ``read_text()`` — a
+    ``ValueError`` OUTSIDE the pre-#2168 ``(OSError, JSONDecodeError)``
+    guard — and must surface as a FAILED manifest-schema ``CheckResult``,
+    never a propagating raise (one corrupt manifest must not crash the
+    whole verifier run)."""
+    mpath = tmp_path / "planned_manifest.json"
+    # 0xff is invalid UTF-8 in any position → read_text() raises
+    # UnicodeDecodeError before json.loads is ever reached.
+    mpath.write_bytes(b'\xff\xfe{"issue": 999}')
+    results = verify_report.check_manifest("", [], mpath)
+    assert len(results) == 1
+    res = results[0]
+    assert res.name == "manifest-schema"
+    assert not res.passed
+    assert "cannot read/parse manifest" in res.detail
+
+
 # ─── htmlpreview SHA well-formedness ─────────────────────────────────────
 
 
@@ -994,7 +1045,9 @@ def test_outside_results_raw_image_exempt_from_issue_match(figs_root):
 def test_pin_blob_identity_match_passes(git_figs_repo):
     repo, head = git_figs_repo
     ok, results = _run(
-        _assemble(_default_sections(image=_pin(head))), mode="generation", figs_root=repo
+        _assemble(_default_sections(image=_pin(head)), detailed_link=_detailed_link(sha=head)),
+        mode="generation",
+        figs_root=repo,
     )
     ident = _by_name(results, "image-pin-blob-identity")
     assert ident.passed and not ident.is_warn
@@ -1007,7 +1060,9 @@ def test_pin_blob_identity_mismatch_fails_generation(git_figs_repo):
     repo, head = git_figs_repo
     (repo / "figures" / "issue_5" / "f.png").write_bytes(b"\x89PNG modified-after-commit")
     ok, results = _run(
-        _assemble(_default_sections(image=_pin(head))), mode="generation", figs_root=repo
+        _assemble(_default_sections(image=_pin(head)), detailed_link=_detailed_link(sha=head)),
+        mode="generation",
+        figs_root=repo,
     )
     assert not ok
     ident = _by_name(results, "image-pin-blob-identity")
@@ -1031,12 +1086,18 @@ def test_pin_commit_lacks_path_fails(git_figs_repo):
     # definitively — FAIL in BOTH modes.
     repo, head = git_figs_repo
     ghost = _pin(head, "figures/issue_5/ghost.png")
-    ok, results = _run(_assemble(_default_sections(image=ghost)), mode="generation", figs_root=repo)
+    ok, results = _run(
+        _assemble(_default_sections(image=ghost), detailed_link=_detailed_link(sha=head)),
+        mode="generation",
+        figs_root=repo,
+    )
     assert not ok
     ident = _by_name(results, "image-pin-blob-identity")
     assert not ident.passed and "does not contain" in ident.detail
     ok_p, results_p = _run(
-        _assemble(_promote_sections(image=ghost)), mode="promote", figs_root=repo
+        _assemble(_promote_sections(image=ghost), detailed_link=_detailed_link(sha=head)),
+        mode="promote",
+        figs_root=repo,
     )
     assert not ok_p
     assert not _by_name(results_p, "image-pin-blob-identity").passed
@@ -1046,15 +1107,19 @@ def test_pin_unresolvable_sha_fails_generation_warns_promote(git_figs_repo):
     # At 7e the pin commit was JUST created locally, so an unresolvable SHA is
     # the fabricated/hallucinated-SHA class → generation FAIL; at promote an
     # unfetched clone is plausible → WARN.
-    repo, _head = git_figs_repo
+    repo, head = git_figs_repo
     ok, results = _run(
-        _assemble(_default_sections(image=_pin("b" * 40))), mode="generation", figs_root=repo
+        _assemble(_default_sections(image=_pin("b" * 40)), detailed_link=_detailed_link(sha=head)),
+        mode="generation",
+        figs_root=repo,
     )
     assert not ok
     ident = _by_name(results, "image-pin-blob-identity")
     assert not ident.passed and "unresolvable" in ident.detail
     ok_p, results_p = _run(
-        _assemble(_promote_sections(image=_pin("b" * 40))), mode="promote", figs_root=repo
+        _assemble(_promote_sections(image=_pin("b" * 40)), detailed_link=_detailed_link(sha=head)),
+        mode="promote",
+        figs_root=repo,
     )
     ident_p = _by_name(results_p, "image-pin-blob-identity")
     assert ident_p.passed and ident_p.is_warn
@@ -1094,7 +1159,11 @@ def test_mixed_sha_results_pins_both_valid_pass(git_figs_repo):
         f"![points]({_pin(sha2, 'figures/issue_5/g.png')})\n"
         f"**Takeaways**\n{PLACEHOLDER}",
     )
-    ok, results = _run(_assemble(sections), mode="generation", figs_root=repo)
+    ok, results = _run(
+        _assemble(sections, detailed_link=_detailed_link(sha=sha1)),
+        mode="generation",
+        figs_root=repo,
+    )
     assert _by_name(results, "image-pin-format").passed
     ident = _by_name(results, "image-pin-blob-identity")
     assert ident.passed and not ident.is_warn
@@ -1108,13 +1177,17 @@ def test_pin_resolves_no_local_copy_warns_generation(git_figs_repo):
     repo, head = git_figs_repo
     (repo / "figures" / "issue_5" / "f.png").unlink()
     ok, results = _run(
-        _assemble(_default_sections(image=_pin(head))), mode="generation", figs_root=repo
+        _assemble(_default_sections(image=_pin(head)), detailed_link=_detailed_link(sha=head)),
+        mode="generation",
+        figs_root=repo,
     )
     ident = _by_name(results, "image-pin-blob-identity")
     assert ident.passed and ident.is_warn and "no local copy" in ident.detail
     assert ok, [r.render() for r in results if not r.passed]
     ok_p, results_p = _run(
-        _assemble(_promote_sections(image=_pin(head))), mode="promote", figs_root=repo
+        _assemble(_promote_sections(image=_pin(head)), detailed_link=_detailed_link(sha=head)),
+        mode="promote",
+        figs_root=repo,
     )
     ident_p = _by_name(results_p, "image-pin-blob-identity")
     assert ident_p.passed and not ident_p.is_warn and "no local copy" in ident_p.detail
@@ -1902,3 +1975,1125 @@ def test_cli_code_sha_cards_mode_split_through_dispatch(figs_root, tmp_path):
     )
     assert r_prom.returncode == 0, r_prom.stdout + r_prom.stderr
     assert "[WARN] code-sha-cards" in r_prom.stdout
+
+
+# ─── companion-content (#2198) ────────────────────────────────────────────
+
+
+def _companion_body(sha: str, *, promote: bool = False, image: str | None = None) -> str:
+    """A body whose image + detailed-writeup pins both point at ``sha``."""
+    builder = _promote_sections if promote else _default_sections
+    return _assemble(
+        builder(image=image if image is not None else _pin(sha)),
+        detailed_link=_detailed_link(sha=sha),
+    )
+
+
+def test_companion_clean_passes_both_modes(git_figs_repo):
+    # (a) clean companion at a real SHA → PASS, no warn, in BOTH modes.
+    repo, head = git_figs_repo
+    for mode in ("generation", "promote"):
+        ok, results = _run(
+            _companion_body(head, promote=(mode == "promote")), mode=mode, figs_root=repo
+        )
+        comp = _by_name(results, "companion-content")
+        assert comp.passed and not comp.is_warn, comp.detail
+        assert "clean" in comp.detail
+        assert ok, [r.render() for r in results if not r.passed]
+
+
+@pytest.mark.parametrize(
+    "slot",
+    [
+        "## TLDR",
+        "## TLDR:",
+        "## Conclusion and next steps",
+        "## Next steps",  # grandfathered alias — caught via _norm_header's alias map
+        "**Takeaways**",
+        "**Takeaways:**",
+    ],
+)
+def test_companion_thomas_slot_fails_generation(git_figs_repo, slot):
+    # (b) a Thomas-slot heading / Takeaways opener in the companion → FAIL.
+    repo, _head = git_figs_repo
+    sha = _commit_companion(repo, _CLEAN_COMPANION + f"\n{slot}\nhand-written claim\n")
+    ok, results = _run(_companion_body(sha), mode="generation", figs_root=repo)
+    assert not ok
+    comp = _by_name(results, "companion-content")
+    assert not comp.passed
+    assert "thomas-slot heading" in comp.detail
+
+
+def test_companion_thomas_slot_fails_promote_too(git_figs_repo):
+    # (b, promote arm) the structural half is FAIL in BOTH modes.
+    repo, _head = git_figs_repo
+    sha = _commit_companion(repo, _CLEAN_COMPANION + "\n## TLDR\nhand-written claim\n")
+    ok, results = _run(_companion_body(sha, promote=True), mode="promote", figs_root=repo)
+    assert not ok
+    comp = _by_name(results, "companion-content")
+    assert not comp.passed and "thomas-slot heading" in comp.detail
+
+
+def test_companion_lexicon_hit_warns_never_fails(git_figs_repo):
+    # (c) a banned lexeme in the companion's ## Methodology (full) → WARN with
+    # companion line number + lexeme in the detail; overall still passes.
+    repo, _head = git_figs_repo
+    dirty = _CLEAN_COMPANION.replace(
+        "We trained on 100 rows under two conditions: baseline and treatment.",
+        "The dispatch log confirms the row count across conditions.",
+    )
+    sha = _commit_companion(repo, dirty)
+    ok, results = _run(_companion_body(sha), mode="generation", figs_root=repo)
+    comp = _by_name(results, "companion-content")
+    assert comp.passed and comp.is_warn
+    assert "lexicon L7: 'confirms'" in comp.detail
+    assert ok, [r.render() for r in results if not r.passed]
+
+
+def test_companion_lexicon_in_motivation_not_flagged(git_figs_repo):
+    # (d) the companion's exact ## Motivation section keeps the body's
+    # hypothesis-framing exemption.
+    repo, _head = git_figs_repo
+    dirty = _CLEAN_COMPANION.replace(
+        "We test whether base propensity predicts trained leakage.",
+        "We hypothesize the base geometry suggests a leakage direction.",
+    )
+    sha = _commit_companion(repo, dirty)
+    ok, results = _run(_companion_body(sha), mode="generation", figs_root=repo)
+    comp = _by_name(results, "companion-content")
+    assert comp.passed and not comp.is_warn, comp.detail
+    assert ok, [r.render() for r in results if not r.passed]
+
+
+def test_companion_fenced_lexicon_not_flagged(git_figs_repo):
+    # (e) a lexeme inside a fenced block is DATA (blank_verbatim) — no warn.
+    repo, _head = git_figs_repo
+    dirty = _CLEAN_COMPANION + ("\n```text\nthis shows the effect, implying causation\n```\n")
+    sha = _commit_companion(repo, dirty)
+    ok, results = _run(_companion_body(sha), mode="generation", figs_root=repo)
+    comp = _by_name(results, "companion-content")
+    assert comp.passed and not comp.is_warn, comp.detail
+    assert ok, [r.render() for r in results if not r.passed]
+
+
+def test_companion_fenced_forbidden_heading_not_flagged(git_figs_repo):
+    # (f) a ## TLDR inside a fenced block is DATA — not a Thomas slot.
+    repo, _head = git_figs_repo
+    dirty = _CLEAN_COMPANION + "\n```markdown\n## TLDR\nexample slot text\n```\n"
+    sha = _commit_companion(repo, dirty)
+    ok, results = _run(_companion_body(sha), mode="generation", figs_root=repo)
+    comp = _by_name(results, "companion-content")
+    assert comp.passed and not comp.is_warn, comp.detail
+    assert ok, [r.render() for r in results if not r.passed]
+
+
+def test_companion_unresolvable_sha_fails_generation_warns_promote(git_figs_repo):
+    # (g) unresolvable companion pin: fabricated-SHA class at generation →
+    # FAIL; unfetched clone plausible at promote → WARN.
+    repo, head = git_figs_repo
+    link = _detailed_link(sha="b" * 40)
+    ok, results = _run(
+        _assemble(_default_sections(image=_pin(head)), detailed_link=link),
+        mode="generation",
+        figs_root=repo,
+    )
+    assert not ok
+    comp = _by_name(results, "companion-content")
+    assert not comp.passed and "unresolvable" in comp.detail
+    ok_p, results_p = _run(
+        _assemble(_promote_sections(image=_pin(head)), detailed_link=link),
+        mode="promote",
+        figs_root=repo,
+    )
+    comp_p = _by_name(results_p, "companion-content")
+    assert comp_p.passed and comp_p.is_warn and "unresolvable" in comp_p.detail
+    assert ok_p, [r.render() for r in results_p if not r.passed]
+
+
+def test_companion_path_absent_at_commit_fails_both_modes(git_figs_repo):
+    # (h) the pinned commit resolves but does not contain the companion path
+    # (link names issue 9; only issue_5_detailed.md is committed) → FAIL both.
+    repo, head = git_figs_repo
+    for mode, promote in (("generation", False), ("promote", True)):
+        builder = _promote_sections if promote else _default_sections
+        ok, results = _run(
+            _assemble(builder(image=_pin(head)), detailed_link=_detailed_link(9, sha=head)),
+            mode=mode,
+            figs_root=repo,
+        )
+        assert not ok
+        comp = _by_name(results, "companion-content")
+        assert not comp.passed and "does not contain" in comp.detail
+
+
+def test_companion_na_when_link_missing_stacked_or_malformed(git_figs_repo):
+    # (i) missing / stacked / malformed detailed-writeup line → companion scan
+    # is PASS-note N/A; detailed-writeup-link carries the verdict.
+    repo, head = git_figs_repo
+    # Missing line at promote (grandfathered): link WARNs, companion N/A.
+    ok, results = _run(
+        _assemble(_promote_sections(image=_pin(head)), detailed_link=None),
+        mode="promote",
+        figs_root=repo,
+    )
+    comp = _by_name(results, "companion-content")
+    assert comp.passed and not comp.is_warn and "N/A" in comp.detail
+    link = _by_name(results, "detailed-writeup-link")
+    assert link.passed and link.is_warn
+    assert ok, [r.render() for r in results if not r.passed]
+    # Missing line at generation: link FAILs; companion stays N/A.
+    _ok_g, results_g = _run(
+        _assemble(_default_sections(image=_pin(head)), detailed_link=None),
+        mode="generation",
+        figs_root=repo,
+    )
+    comp_g = _by_name(results_g, "companion-content")
+    assert comp_g.passed and "N/A" in comp_g.detail
+    assert not _by_name(results_g, "detailed-writeup-link").passed
+    # Stacked lines: link FAILs; companion stays N/A.
+    doubled = _detailed_link(sha=head) + "\n\n" + _detailed_link(5, "b" * 40)
+    _ok_d, results_d = _run(
+        _assemble(_default_sections(image=_pin(head)), detailed_link=doubled),
+        mode="generation",
+        figs_root=repo,
+    )
+    comp_d = _by_name(results_d, "companion-content")
+    assert comp_d.passed and "N/A" in comp_d.detail
+    assert not _by_name(results_d, "detailed-writeup-link").passed
+    # Malformed URL: link FAILs; companion stays N/A.
+    _ok_m, results_m = _run(
+        _assemble(
+            _default_sections(image=_pin(head)),
+            detailed_link="**Detailed writeup:** not-a-sha-pinned-url",
+        ),
+        mode="generation",
+        figs_root=repo,
+    )
+    comp_m = _by_name(results_m, "companion-content")
+    assert comp_m.passed and "N/A" in comp_m.detail
+    assert not _by_name(results_m, "detailed-writeup-link").passed
+
+
+def test_companion_non_git_root_warns(figs_root):
+    # (j) a non-git figures root degrades to WARN — the shape every existing
+    # default-fixture (tmp figs_root) test rides.
+    ok, results = _run(_assemble(_default_sections()), mode="generation", figs_root=figs_root)
+    comp = _by_name(results, "companion-content")
+    assert comp.passed and comp.is_warn and "not a git checkout" in comp.detail
+    assert ok, [r.render() for r in results if not r.passed]
+
+
+def test_companion_round_motivation_is_scanned(git_figs_repo):
+    # (k) the Motivation exemption is EXACT-header-only: an appended
+    # `## Motivation (round)` section (the live #2162 shape) IS lexicon-scanned.
+    repo, _head = git_figs_repo
+    dirty = _CLEAN_COMPANION + (
+        "\n## Motivation (round)\nThis round suggests a follow-up direction.\n"
+    )
+    sha = _commit_companion(repo, dirty)
+    ok, results = _run(_companion_body(sha), mode="generation", figs_root=repo)
+    comp = _by_name(results, "companion-content")
+    assert comp.passed and comp.is_warn
+    assert "lexicon" in comp.detail and "suggests" in comp.detail
+    assert ok, [r.render() for r in results if not r.passed]
+
+
+def test_companion_non_utf8_blob_fails_both_modes(git_figs_repo):
+    # (l, round 2 — concern companion-non-utf8-crash) a non-UTF-8 companion
+    # blob at a RESOLVABLE pin returns a contained FAILED companion-content
+    # result in BOTH modes — never an uncaught UnicodeDecodeError crashing the
+    # verifier (0xff/0xfe are invalid UTF-8 in any position).
+    repo, _head = git_figs_repo
+    (repo / "docs" / "reports" / "issue_5_detailed.md").write_bytes(
+        b"\xff\xfe binary companion bytes \xff"
+    )
+    _git_run(repo, "add", "docs/reports/issue_5_detailed.md")
+    _git_run(repo, "commit", "-q", "-m", "non-utf8 companion")
+    sha = _git_run(repo, "rev-parse", "HEAD")
+    for mode in ("generation", "promote"):
+        ok, results = _run(
+            _companion_body(sha, promote=(mode == "promote")), mode=mode, figs_root=repo
+        )
+        comp = _by_name(results, "companion-content")
+        assert not comp.passed, f"{mode}: expected FAIL, got {comp.render()}"
+        assert "not valid UTF-8" in comp.detail
+        assert not ok
+
+
+def test_companion_leading_blank_lines_keep_file_line_numbers(git_figs_repo):
+    # (m, round 2 — round-1 review Minor) a companion whose FILE starts with
+    # blank lines keeps file-accurate L<n> numbers: the lexicon hit sits at
+    # file line 9 (two leading blanks + the L7 hit of the unprefixed fixture);
+    # the pre-fix stripped materialization would report L7.
+    repo, _head = git_figs_repo
+    dirty = "\n\n" + _CLEAN_COMPANION.replace(
+        "We trained on 100 rows under two conditions: baseline and treatment.",
+        "The dispatch log confirms the row count across conditions.",
+    )
+    sha = _commit_companion(repo, dirty)
+    ok, results = _run(_companion_body(sha), mode="generation", figs_root=repo)
+    comp = _by_name(results, "companion-content")
+    assert comp.passed and comp.is_warn
+    assert "lexicon L9: 'confirms'" in comp.detail, comp.detail
+    assert ok, [r.render() for r in results if not r.passed]
+
+
+# ── b3 exact phase-match channel + collision guard (task #2194) ──────────────
+
+
+def test_b3_phase_exact_match_resolves_without_token_overlap(tmp_path):
+    """#2194 DEP-2: the contrastive fixture — the row label `gridanchors` has
+    an EMPTY token intersection with the card-side token set ({pilot} path
+    tokens plus {grid, anchors} folded phase tokens), while
+    _phase_norm("gridanchors") == _phase_norm("grid-anchors") — so ONLY the
+    exact channel can resolve it. A correct pin is clean with the exact-match
+    detail counter; a mispaired pin WARNs via the exact channel."""
+    _write_card(
+        tmp_path,
+        "eval_results/issue_7/gates/pilot_gate_report.json",
+        {"reproducibility_card": {"git_commit": _SHA_A, "phase": "grid-anchors"}},
+    )
+    # Fixture sanity: the token path CANNOT see this pairing.
+    label_toks = verify_report._label_tokens("gridanchors")
+    card_toks = verify_report._card_side_tokens(
+        "eval_results/issue_7/gates/pilot_gate_report.json", "grid-anchors", 7
+    )
+    assert not (label_toks & card_toks)
+    # Correct pin: clean, resolved via the exact channel.
+    body = f"| Code SHAs | gridanchors `{_SHA_A}` | src |\ncites {_SHA_A}"
+    r = _cards(body, tmp_path)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "1 row segment(s) resolved via exact phase match" in r.detail
+    # Mispaired pin: the exact channel fires and WARNs, naming the card phase.
+    body2 = f"| Code SHAs | gridanchors `{_SHA_B}` · pilot `{_SHA_A}` | src |\ncites {_SHA_A}"
+    r2 = _cards(body2, tmp_path)
+    assert r2.passed is True and r2.is_warn is True, r2.detail
+    assert "exact-matches card phase `grid-anchors`" in r2.detail
+    assert "per-phase split" in r2.detail
+
+
+def test_b3_phase_norm_collision_asymmetric_excluded(tmp_path):
+    """#2194 MF-A: _phase_norm is LOSSY — one USABLE card (`stage1-0-upload`)
+    and one EXCLUDED (abbreviated) card (`stage-10-upload`, different commit)
+    collide on the normalized key `stage10upload`. The exact channel must NOT
+    fire (an exact fire would mis-pair the usable SHA); the segment takes
+    exactly the token-overlap path (unresolvable → silently skipped). Also
+    pins the excluded-only negative: a key present ONLY on excluded records
+    never registers an exact key."""
+    _write_card(
+        tmp_path,
+        "eval_results/issue_7/m/a.json",
+        {"repro": {"git_commit": _SHA_A, "phase": "stage1-0-upload"}},
+    )
+    _write_card(
+        tmp_path,
+        "eval_results/issue_7/m/b.json",
+        {"repro": {"git_commit": "abcd1234", "phase": "stage-10-upload"}},
+    )
+    _write_card(
+        tmp_path,
+        "eval_results/issue_7/m/c.json",
+        {"repro": {"git_commit": "beefbeef", "phase": "only-excluded"}},
+    )
+    body = (
+        f"| Code SHAs | stage 10 upload `{_SHA_B}` · only excluded `{_SHA_C}` "
+        f"· other `{_SHA_A}` | src |\ncites {_SHA_A}"
+    )
+    r = _cards(body, tmp_path)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "resolved via exact phase match" not in r.detail
+    assert "exact-matches" not in r.detail
+    assert "unresolvable row segment(s) skipped" in r.detail
+    assert "2 abbreviated (<40-hex) record(s) excluded" in r.detail
+
+
+def test_b3_phase_ambiguous_falls_back_to_token_overlap(tmp_path):
+    """Two usable cards share one phase string at DIFFERENT SHAs (a same-phase
+    re-run): the exact channel is ambiguous and skipped; the token path is
+    preserved byte-identically (path-token segments still resolve; the bare
+    phase label stays unresolvable, exactly as today)."""
+    _write_card(
+        tmp_path,
+        "eval_results/issue_7/m/a.json",
+        {"repro": {"git_commit": _SHA_A, "phase": "fits"}},
+    )
+    _write_card(
+        tmp_path,
+        "eval_results/issue_7/m/b.json",
+        {"repro": {"git_commit": _SHA_B, "phase": "fits"}},
+    )
+    body = (
+        f"| Code SHAs | fits `{_SHA_A}` · a `{_SHA_A}` · b `{_SHA_B}` | src |"
+        f"\ncites {_SHA_A} {_SHA_B}"
+    )
+    r = _cards(body, tmp_path)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "resolved via exact phase match" not in r.detail
+    assert "1 unresolvable row segment(s) skipped" in r.detail
+
+
+def test_b3_top_level_phase_not_sibling_is_ignored(tmp_path):
+    """The #2162 stage2 shape: a TOP-LEVEL phase beside a NESTED commit block
+    is invisible to the gate (the walk reads phase only as a sibling of the
+    commit key) — the exact channel never fires; the old token path carries
+    the segment."""
+    _write_card(
+        tmp_path,
+        "eval_results/issue_7/m/stage2.json",
+        {"phase": "stage2-upload", "repro": {"git_commit": _SHA_A}},
+    )
+    body = f"| Code SHAs | stage2 upload `{_SHA_A}` | src |\ncites {_SHA_A}"
+    r = _cards(body, tmp_path)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "resolved via exact phase match" not in r.detail
+
+
+def test_b1_detail_names_phase_when_present(tmp_path):
+    """An uncited usable card carrying a sibling phase: the b1 FAIL detail
+    names the phase (diagnostic only — severity and the existing asserted
+    fragments unchanged)."""
+    _write_card(
+        tmp_path,
+        "eval_results/issue_7/m/card.json",
+        {"repro": {"git_commit": _SHA_A, "phase": "grid-anchors"}},
+    )
+    r = _cards("no citation of that commit", tmp_path, mode="generation")
+    assert r.passed is False
+    assert "phase `grid-anchors`" in r.detail
+    assert "per-phase" in r.detail and "split" in r.detail
+    assert _SHA_A[:12] in r.detail
+    assert "card.json" in r.detail
+
+
+def test_b3_phase_exact_legacy_card_shape(tmp_path):
+    """Legacy sibling-phase cards (the realized issue_543 shape: top-level
+    full-40-hex git_commit + sibling `phase`) CAN activate the exact channel
+    when a row label normalize-matches a UNIQUE raw identity with no
+    conflicting sibling commit; a non-matching label falls through to token
+    overlap; an int-valued legacy phase is skipped (isinstance guard)."""
+    _write_card(
+        tmp_path,
+        "eval_results/issue_7/legacy/res.json",
+        {"git_commit": _SHA_A, "phase": "phase2", "n": 3},
+    )
+    _write_card(
+        tmp_path,
+        "eval_results/issue_7/legacy/intphase.json",
+        {"git_commit": _SHA_B, "phase": 2},
+    )
+    body = f"| Code SHAs | phase 2 `{_SHA_A}` · misc `{_SHA_B}` | src |\ncites {_SHA_A} {_SHA_B}"
+    r = _cards(body, tmp_path)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "1 row segment(s) resolved via exact phase match" in r.detail
+    body2 = f"| Code SHAs | phase 3 `{_SHA_A}` · misc `{_SHA_B}` | src |\ncites {_SHA_A} {_SHA_B}"
+    r2 = _cards(body2, tmp_path)
+    assert "resolved via exact phase match" not in r2.detail
+    assert "unresolvable row segment(s) skipped" in r2.detail
+
+
+def test_code_sha_cards_production_writer_integration(tmp_path, monkeypatch):
+    """#2194 DEP-1 integration: the REAL production writer path end-to-end —
+    convexity_meta.reproducibility_metadata(phase=...) executed in a tmp clean
+    git repo (no stubs: git_provenance() + as_metadata_dict), its payload
+    written as a card JSON, then resolved by check_code_sha_cards via the
+    exact channel. The emitted git_commit is the tmp repo's full 40-hex, so
+    the card is gate-USABLE end-to-end — red if the wiring, the full-sha
+    emission, or the exact channel regresses."""
+    subprocess.run(["git", "init", "-q", str(tmp_path)], check=True, capture_output=True)
+    _git_run(tmp_path, "config", "user.email", "test@test.test")
+    _git_run(tmp_path, "config", "user.name", "Test")
+    _git_run(tmp_path, "config", "commit.gpgsign", "false")
+    (tmp_path / "seed.txt").write_text("s\n")
+    _git_run(tmp_path, "add", "seed.txt")
+    _git_run(tmp_path, "commit", "-q", "-m", "init")
+    monkeypatch.chdir(tmp_path)
+    from explore_persona_space.analysis.convexity_meta import reproducibility_metadata
+
+    meta = reproducibility_metadata(phase="fits")
+    sha = meta["git_commit"]
+    assert isinstance(sha, str) and len(sha) == 40
+    assert meta["phase"] == "fits"
+    _write_card(tmp_path, "eval_results/issue_7/fits/metrics.json", {"metadata": meta})
+    body = f"| Code SHAs | fits `{sha}` | src |\ncites {sha}"
+    r = _cards(body, tmp_path)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "1 row segment(s) resolved via exact phase match" in r.detail
+
+
+# ── #2194 round-2 cleanup: lifecycle casefold, guard-conjunct mutants, ────────
+# ── hex-bearing phase slugs, vocab drift pin ──────────────────────────────────
+
+
+def test_lifecycle_vocab_pinned_across_modules():
+    """#2194 round 2 (drift pin): the read-side _LIFECYCLE_PHASE_VOCAB copy in
+    verify_report.py must stay set-equal to the write-side original in
+    orchestrate/provenance.py — the local copy is plan-sanctioned; this pin is
+    what makes the duplication safe."""
+    from explore_persona_space.orchestrate import provenance
+
+    assert verify_report._LIFECYCLE_PHASE_VOCAB == provenance._LIFECYCLE_PHASE_VOCAB
+
+
+@pytest.mark.parametrize("lifecycle", ["done", "Done", "DONE"])
+def test_b3_lifecycle_phase_never_registers_exact_key(tmp_path, lifecycle):
+    """#2194 round 2 (concern lifecycle-phase-casefold): a legacy/injected
+    lifecycle-valued sibling phase — lowercase OR a case variant — never
+    registers a b3 exact-match key: the read-side skip compares the
+    NORMALIZED key against the denylist, matching _phase_norm's own
+    case-insensitivity. The segment falls through to the token path, where
+    `done` is a card-side stopword ⇒ unresolvable, silently skipped."""
+    _write_card(
+        tmp_path,
+        "eval_results/issue_7/m/card.json",
+        {"repro": {"git_commit": _SHA_A, "phase": lifecycle}},
+    )
+    body = f"| Code SHAs | {lifecycle} `{_SHA_A}` | src |\ncites {_SHA_A}"
+    r = _cards(body, tmp_path)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "resolved via exact phase match" not in r.detail
+    assert "1 unresolvable row segment(s) skipped" in r.detail
+
+
+def test_b3_guard_excluded_commit_conflict_conjunct_deciding(tmp_path):
+    """#2194 round 2 (review Minor 1, fixture (a)): ONLY the excluded-SHA
+    subset conjunct vetoes — one usable `fits` card plus a DIRTY sibling
+    `fits` card at a DIFFERENT commit (one usable SHA ✓, one raw identity ✓,
+    conflicting excluded commit ✗). The exact channel must not fire; the
+    token path resolves the segment (phase token `fits`), so a correct pin
+    stays clean WITHOUT the exact-match counter. A mutant deleting the subset
+    conjunct alone turns this red."""
+    _write_card(
+        tmp_path,
+        "eval_results/issue_7/m/a.json",
+        {"repro": {"git_commit": _SHA_A, "phase": "fits"}},
+    )
+    _write_card(
+        tmp_path,
+        "eval_results/issue_7/m/b.json",
+        {"repro": {"git_commit": _SHA_B, "git_dirty": True, "phase": "fits"}},
+    )
+    body = f"| Code SHAs | fits `{_SHA_A}` | src |\ncites {_SHA_A}"
+    r = _cards(body, tmp_path)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "resolved via exact phase match" not in r.detail
+    assert "1 dirty record(s) excluded" in r.detail
+
+
+def test_b3_guard_raw_identity_conjunct_deciding(tmp_path):
+    """#2194 round 2 (review Minor 1, fixture (b)): ONLY the single-raw-
+    identity conjunct vetoes — the usable `stage1-0-upload` card and a DIRTY
+    `stage-10-upload` sibling share the SAME commit (one usable SHA ✓,
+    excluded-SHA subset ✓, TWO raw identities colliding on `stage10upload`
+    ✗). The exact channel must not fire — _phase_norm is lossy and firing
+    would guess between two distinct raw slugs. A mutant deleting the
+    raw-identity conjunct alone turns this red."""
+    _write_card(
+        tmp_path,
+        "eval_results/issue_7/m/a.json",
+        {"repro": {"git_commit": _SHA_A, "phase": "stage1-0-upload"}},
+    )
+    _write_card(
+        tmp_path,
+        "eval_results/issue_7/m/b.json",
+        {"repro": {"git_commit": _SHA_A, "git_dirty": True, "phase": "stage-10-upload"}},
+    )
+    body = f"| Code SHAs | stage 10 upload `{_SHA_A}` | src |\ncites {_SHA_A}"
+    r = _cards(body, tmp_path)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "resolved via exact phase match" not in r.detail
+
+
+def test_b3_hex_bearing_phase_slug_exact_channel(tmp_path):
+    """#2194 round 2 (deferred concern sha-like-phase-label-unresolvable): a
+    valid phase slug containing an 8-40 hex run (`run-deadbeef`) previously
+    had its hex consumed as the pin before label derivation, so the exact
+    channel could never fire (and a CORRECT pin drew a spurious token-variant
+    WARN via the `run` phase token). The disambiguation picks the UNIQUE
+    hex-run candidate whose removal yields a guarded exact match: a correct
+    pin is clean via the exact channel; a mispaired pin draws the
+    exact-channel WARN naming the card phase."""
+    _write_card(
+        tmp_path,
+        "eval_results/issue_7/m/a.json",
+        {"repro": {"git_commit": _SHA_A, "phase": "run-deadbeef"}},
+    )
+    body = f"| Code SHAs | run-deadbeef `{_SHA_A}` | src |\ncites {_SHA_A}"
+    r = _cards(body, tmp_path)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "1 row segment(s) resolved via exact phase match" in r.detail
+    body2 = f"| Code SHAs | run-deadbeef `{_SHA_B}` | src |\ncites {_SHA_A} {_SHA_B}"
+    r2 = _cards(body2, tmp_path)
+    assert r2.passed is True and r2.is_warn is True, r2.detail
+    assert "exact-matches card phase `run-deadbeef`" in r2.detail
+
+
+def test_b3_multi_hex_segment_without_phase_keeps_first_run_pin(tmp_path):
+    """#2194 round 2: the disambiguation is STRICTLY additive — a multi-hex-run
+    segment where NO candidate's removal yields a guarded exact match keeps
+    today's first-run pin behavior byte-identically: the first run
+    (`deadbeef`) is the pin, the label resolves via token overlap to the
+    card, and the mispair draws the pre-existing token-variant WARN."""
+    _write_card(
+        tmp_path,
+        "eval_results/issue_7/margin/x.json",
+        {"repro": {"git_commit": _SHA_A}},
+    )
+    body = f"| Code SHAs | margin deadbeef `{_SHA_A}` | src |\ncites {_SHA_A}"
+    r = _cards(body, tmp_path)
+    assert r.passed is True and r.is_warn is True, r.detail
+    assert "pins deadbeef" in r.detail
+    assert "resolves to card commit" in r.detail
+    assert "resolved via exact phase match" not in r.detail
+
+
+# ─── #2195: stale-evidence-pins ──────────────────────────────────────────────
+#
+# WARN-only supersession check: a report citing an in-repo evidence FILE at a
+# pin the same issue branch has since modified. Integration fixtures reuse the
+# #2162 incident (the corrected line-127 citation grammar, frozen verbatim
+# below); hermetic twins carry the full shape battery on sparse/unfetched
+# clones.
+
+_2162_STALE_PIN = "db5d1680a257202d9458d6c32a6073db2bd3a24e"
+_2162_FRESH_PIN = "434c84f5aec9453ab85845445a812913a8c6434d"
+
+# The corrected #2162 citation grammar, excerpted VERBATIM from the task's
+# body.md line 127 (frozen 2026-08-19 at origin/issue-2162 tip b5c8ff27d4 ==
+# _2162_FROZEN_TIP; the sentence's tail after "counts are per dispatch
+# DECISION" is truncated with a closing paren — the citation grammar
+# `` `<path>`, committed at `<40-hex>` `` is the anchor, not the prose tail).
+_2162_L127_CITATION = (
+    "The sync-routed dispatches split into two populations (evidence: "
+    "`eval_results/issue_2162/judge/routing_evidence.json`, committed at "
+    f"`{_2162_FRESH_PIN}`, which records per source log the batch/sync dispatch N "
+    "values split by the base threshold, the observed base/otpm/effective values, "
+    "the assumed-vs-probed `otpm_source_correspondence` block, the `causal_floor` "
+    "block, and each log's sha256; counts are per dispatch DECISION)"
+)
+
+requires_2195_stale_pin = pytest.mark.skipif(
+    not _repo_resolves(f"{_2162_STALE_PIN}^{{commit}}"),
+    reason="#2162 stale pin db5d1680a2 not in the local object DB (sparse/unfetched clone)",
+)
+requires_2195_fresh_pin = pytest.mark.skipif(
+    not _repo_resolves(f"{_2162_FRESH_PIN}^{{commit}}"),
+    reason="#2162 corrected pin 434c84f5ae not in the local object DB (sparse/unfetched clone)",
+)
+
+
+def _skip_on_2162_tip_drift() -> None:
+    """Skip when origin/issue-2162 moved past _2162_FROZEN_TIP: a later commit
+    touching the cited file would change the newer-commit set (and could push
+    the two asserted SHAs past the enumeration cap) for a reason unrelated to
+    this checker. Remedy on drift: RE-FREEZE the #2195 expectations against
+    the new tip — never a checker change."""
+    live_tip = subprocess.run(
+        ["git", "-C", str(_REPO_ROOT), "rev-parse", "origin/issue-2162"],
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    if live_tip != _2162_FROZEN_TIP:
+        pytest.skip(
+            f"origin/issue-2162 tip {live_tip[:12]} != frozen tip {_2162_FROZEN_TIP[:12]} — "
+            "re-freeze the #2195 stale-pin expectations, do NOT change the checker"
+        )
+
+
+# ── Integration tests (skipif-gated on the real object DB; hermetic twins
+#    below carry the logic coverage on sparse/unfetched clones).
+
+
+@requires_2195_stale_pin
+@requires_2162_branch
+def test_stale_pin_fires_on_2162_round3_reconstruction():
+    """Criterion 4a / H1 — FIRES on the RECONSTRUCTED #2162 round-3 defect,
+    naming BOTH measured newer commits in log order (newest first).
+
+    Fixture provenance: the defective db5d1680a2 citation lived only in a
+    never-committed draft (every committed body.md revision of #2162 already
+    carries the corrected pin), so this is a RECONSTRUCTION — the committed
+    line-127 grammar with the measured stale pin substituted; the grammar
+    anchor is committed verbatim and the staleness ground truth is measured
+    (plan §2: exactly 2 newer commits on origin/issue-2162 touch the cited
+    file after db5d1680a2 — 434c84f5ae then 28d35cffc6)."""
+    _skip_on_2162_tip_drift()
+    line = _2162_L127_CITATION.replace(_2162_FRESH_PIN, _2162_STALE_PIN)
+    r = verify_report.check_stale_evidence_pins([line], _REPO_ROOT, 2162)
+    assert r.passed is True and r.is_warn is True, r.detail
+    assert "eval_results/issue_2162/judge/routing_evidence.json" in r.detail
+    assert _2162_STALE_PIN[:12] in r.detail  # names the pin
+    assert "2 newer commit(s) on origin/issue-2162" in r.detail
+    assert "434c84f5ae" in r.detail and "28d35cffc6" in r.detail
+    assert r.detail.index("434c84f5ae") < r.detail.index("28d35cffc6")  # newest first
+    assert "as-of pin" in r.detail  # the remediation guidance
+
+
+@requires_2195_fresh_pin
+@requires_2162_branch
+def test_stale_pin_silent_on_2162_corrected():
+    """Criterion 4a / H2 (line scope) — clean PASS on the frozen corrected
+    line-127 citation (0 newer commits at 434c84f5ae, measured plan §2)."""
+    _skip_on_2162_tip_drift()
+    r = verify_report.check_stale_evidence_pins([_2162_L127_CITATION], _REPO_ROOT, 2162)
+    assert r.passed is True, r.detail
+    assert r.is_warn is False, r.detail
+    assert "fresh" in r.detail
+
+
+@requires_2195_fresh_pin
+@requires_2162_branch
+def test_stale_pin_whole_report_2162():
+    """Criterion 4b / H2 (whole-report scope) — the check over the CURRENT
+    corrected #2162 body is warn-free: the file citations are fresh and every
+    directory-level home claim is skipped with a note, never WARNed. The body
+    is resolved via the task-workflow library (never a hand-built path) and
+    the test skips on tip drift or when the resolver is unavailable."""
+    _skip_on_2162_tip_drift()
+    from explore_persona_space.task_workflow import find_task_path
+
+    try:
+        body_path = find_task_path(2162) / "body.md"
+    except Exception as e:  # env-dependent resolver (branch-guarded) — skip, never fail
+        pytest.skip(f"task-workflow resolver unavailable here: {e}")
+    if not body_path.is_file():
+        pytest.skip(f"body.md for #2162 not found at {body_path}")
+    _, body = verify_report.split_frontmatter(body_path.read_text())
+    lines = verify_report.blank_verbatim(body.splitlines())
+    r = verify_report.check_stale_evidence_pins(lines, _REPO_ROOT, 2162)
+    assert r.passed is True, r.detail
+    assert r.is_warn is False, r.detail
+
+
+# ── Hermetic twins: fixture ──────────────────────────────────────────────────
+
+
+@pytest.fixture
+def stale_repo(tmp_path: Path) -> tuple[Path, str, str, str]:
+    """A real git repo with evolving evidence files on local branch ``issue-5``
+    (no origin ref — the origin-absent local-fallback arm by default).
+
+    sha_a: eval_results/issue_5/{x,y}.json v1 + solo/only.json +
+           scripts/tool.py + a tasks note at running/5 + figures/issue_5/f.png
+           + a clean companion docs/reports/issue_5_detailed.md (so full-CLI
+           runs against this repo can pin a resolvable companion, #2198).
+    sha_b: x/y/solo/tool modified; the tasks note git-mv'd running/5 ->
+           completed/5 (the status-rename shape).
+    sha_c (HEAD, == issue-5 tip): x/y modified again.
+    Returns (root, sha_a, sha_b, sha_c).
+    """
+    root = tmp_path
+    subprocess.run(["git", "init", "-q", str(root)], check=True, capture_output=True)
+    _git_run(root, "config", "user.email", "test@test.test")
+    _git_run(root, "config", "user.name", "Test")
+    _git_run(root, "config", "commit.gpgsign", "false")
+    ev = root / "eval_results" / "issue_5"
+    (ev / "solo").mkdir(parents=True)
+    (ev / "x.json").write_text('{"v": 1}')
+    (ev / "y.json").write_text('{"v": 1}')
+    (ev / "solo" / "only.json").write_text('{"v": 1}')
+    (root / "scripts").mkdir()
+    (root / "scripts" / "tool.py").write_text("V = 1\n")
+    note_dir = root / "tasks" / "running" / "5"
+    note_dir.mkdir(parents=True)
+    (note_dir / "note.md").write_text("v1\n")
+    figs = root / "figures" / "issue_5"
+    figs.mkdir(parents=True)
+    (figs / "f.png").write_bytes(b"\x89PNG\r\n\x1a\nstale-repo-figure")
+    reports = root / "docs" / "reports"
+    reports.mkdir(parents=True)
+    (reports / "issue_5_detailed.md").write_text(_CLEAN_COMPANION)
+    _git_run(root, "add", "eval_results", "scripts", "tasks", "figures", "docs")
+    _git_run(root, "commit", "-q", "-m", "v1")
+    sha_a = _git_run(root, "rev-parse", "HEAD")
+    (ev / "x.json").write_text('{"v": 2}')
+    (ev / "y.json").write_text('{"v": 2}')
+    (ev / "solo" / "only.json").write_text('{"v": 2}')
+    (root / "scripts" / "tool.py").write_text("V = 2\n")
+    (root / "tasks" / "completed" / "5").mkdir(parents=True)
+    _git_run(root, "mv", "tasks/running/5/note.md", "tasks/completed/5/note.md")
+    _git_run(root, "add", "eval_results", "scripts")
+    _git_run(root, "commit", "-q", "-m", "v2 + status rename")
+    sha_b = _git_run(root, "rev-parse", "HEAD")
+    (ev / "x.json").write_text('{"v": 3}')
+    (ev / "y.json").write_text('{"v": 3}')
+    _git_run(root, "add", "eval_results")
+    _git_run(root, "commit", "-q", "-m", "v3")
+    sha_c = _git_run(root, "rev-parse", "HEAD")
+    _git_run(root, "branch", "issue-5")
+    return root, sha_a, sha_b, sha_c
+
+
+def _stale(lines: list[str], root: Path, issue: int | None = 5):
+    return verify_report.check_stale_evidence_pins(lines, root, issue)
+
+
+# ── Hermetic twins: FIRE / SILENT (criteria 1-2) ─────────────────────────────
+
+
+def test_stale_pin_fires_hermetic(stale_repo):
+    """Criterion 1 — a file citation at pin A with two later modifying commits
+    WARNs, enumerating BOTH newer SHAs in log order (newest first). Also the
+    divergent-ref matrix arm (ii): origin absent -> the local ``issue-5``
+    fallback is used ("on issue-5" in the detail)."""
+    root, sha_a, sha_b, sha_c = stale_repo
+    line = f"metrics from `eval_results/issue_5/x.json`, committed at `{sha_a}`"
+    r = _stale([line], root)
+    assert r.passed is True and r.is_warn is True, r.detail
+    assert "2 newer commit(s) on issue-5" in r.detail
+    assert sha_c[:12] in r.detail and sha_b[:12] in r.detail
+    assert r.detail.index(sha_c[:12]) < r.detail.index(sha_b[:12])  # newest first
+    assert "as-of pin" in r.detail
+
+
+def test_stale_pin_silent_at_tip_pin(stale_repo):
+    """Criterion 2 — the same citation at the tip pin is a clean PASS
+    (``passed=True, is_warn=False``)."""
+    root, _sha_a, _sha_b, sha_c = stale_repo
+    line = f"metrics from `eval_results/issue_5/x.json`, committed at `{sha_c}`"
+    r = _stale([line], root)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "fresh" in r.detail
+
+
+# ── Hermetic twins: divergent-ref matrix + association (criterion 3) ─────────
+
+
+def test_stale_pin_origin_tip_beats_lagging_local(stale_repo):
+    """Divergent-ref matrix (i): local issue-5 parked at pin A while
+    origin/issue-5 advanced -> WARN against origin (the authoritative tip;
+    the v1 all-resolvable-tips-must-be-stale rule would have let the lagging
+    local ref veto origin staleness — the silent-failure channel)."""
+    root, sha_a, _sha_b, sha_c = stale_repo
+    _git_run(root, "branch", "-f", "issue-5", sha_a)  # local lags at pin A
+    _git_run(root, "update-ref", "refs/remotes/origin/issue-5", sha_c)
+    line = f"metrics from `eval_results/issue_5/x.json`, committed at `{sha_a}`"
+    r = _stale([line], root)
+    assert r.is_warn is True, r.detail
+    assert "on origin/issue-5" in r.detail
+
+
+def test_stale_pin_divergent_pin_skipped(stale_repo):
+    """Divergent-ref matrix (iii): a pin that is NOT an ancestor of the tip
+    (rebased/divergent history) is skipped with a note — staleness
+    undecidable, never guessed stale. The divergent commit shares pin A's
+    TREE (the file test passes) but has disjoint history."""
+    root, sha_a, _sha_b, _sha_c = stale_repo
+    tree = _git_run(root, "rev-parse", f"{sha_a}^{{tree}}")
+    sha_d = _git_run(root, "commit-tree", tree, "-m", "divergent root")
+    line = f"metrics from `eval_results/issue_5/x.json`, committed at `{sha_d}`"
+    r = _stale([line], root)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "divergent history" in r.detail
+    assert sha_d[:12] in r.detail
+
+
+def test_stale_pin_unrelated_fresh_pin_does_not_silence(stale_repo):
+    """Two-pin association (v1's false-silence channel): a STALE associated
+    evidence pin WARNs even when an unrelated FRESH SHA shares the line."""
+    root, sha_a, _sha_b, sha_c = stale_repo
+    line = f"data `eval_results/issue_5/x.json` at `{sha_a}` (analysis code at `{sha_c}`)"
+    r = _stale([line], root)
+    assert r.is_warn is True, r.detail
+    assert f"cited at {sha_a[:12]}" in r.detail  # the ASSOCIATED pin, not the bystander
+
+
+def test_stale_pin_two_paths_each_read_against_own_pin(stale_repo):
+    """Mirrored two-path/two-pin line: each member is read ONLY against its
+    associated pin — x at the tip pin stays silent while y at pin A WARNs."""
+    root, sha_a, _sha_b, sha_c = stale_repo
+    line = (
+        f"`eval_results/issue_5/x.json` at `{sha_c}` and `eval_results/issue_5/y.json` at `{sha_a}`"
+    )
+    r = _stale([line], root)
+    assert r.is_warn is True, r.detail
+    assert "y.json` cited at" in r.detail
+    assert "x.json` cited at" not in r.detail
+
+
+def test_stale_pin_brace_group_members_share_association(stale_repo):
+    """Brace-group members share their group's association: both expanded
+    members are read against the group's single associated pin."""
+    root, sha_a, _sha_b, _sha_c = stale_repo
+    line = "grids `eval_results/issue_5/{x, y}.json` at `" + sha_a + "`"
+    r = _stale([line], root)
+    assert r.is_warn is True, r.detail
+    assert "x.json` cited at" in r.detail and "y.json` cited at" in r.detail
+
+
+# ── Hermetic twins: conservative skip set (criterion 3) ──────────────────────
+
+
+def test_stale_pin_directory_citation_skipped(stale_repo):
+    """A multi-name listing (directory citation) is skipped with a note —
+    later additions under a directory do not supersede a home claim."""
+    root, sha_a, _sha_b, _sha_c = stale_repo
+    line = f"tables under `eval_results/issue_5` at `{sha_a}`"
+    r = _stale([line], root)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "directory citation" in r.detail
+
+
+def test_stale_pin_single_file_directory_skipped(stale_repo):
+    """A single-name listing NOT equal to the cited member (a directory
+    containing exactly one file) is ALSO skipped — EQUALITY, not count, is
+    the file test. solo/only.json was modified after pin A, so a count-based
+    test would false-WARN here."""
+    root, sha_a, _sha_b, _sha_c = stale_repo
+    line = f"audit under `eval_results/issue_5/solo` at `{sha_a}`"
+    r = _stale([line], root)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "directory citation" in r.detail
+
+
+def test_stale_pin_absent_path_skipped(stale_repo):
+    """A path absent at the associated pin is skipped with a note — a broken
+    citation is not a stale one."""
+    root, sha_a, _sha_b, _sha_c = stale_repo
+    line = f"`eval_results/issue_5/never.json` at `{sha_a}`"
+    r = _stale([line], root)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "absent at" in r.detail
+    assert "broken" in r.detail
+
+
+def test_stale_pin_no_pin_line_skipped(stale_repo):
+    """A line with no resolvable same-line pin is skipped silently (a no-pin
+    committed-under claim already gets committed-under-claims' WARN)."""
+    root, *_ = stale_repo
+    r = _stale(["`eval_results/issue_5/x.json` holds the metrics"], root)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "N/A" in r.detail
+
+
+def test_stale_pin_code_path_outside_prefix_set(stale_repo):
+    """`scripts/` code citations are outside _EVIDENCE_PATH_PREFIXES ("ran at
+    <sha>" is provenance a later commit does not invalidate; code-sha-cards
+    owns that surface): tool.py WAS modified after pin A, yet no candidate."""
+    root, sha_a, _sha_b, _sha_c = stale_repo
+    r = _stale([f"ran `scripts/tool.py` at `{sha_a}`"], root)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "N/A" in r.detail
+
+
+def test_stale_pin_tasks_path_excluded(stale_repo):
+    """The status-rename shape (Codex-Meth Must-Fix 2): the tasks note was
+    git-mv'd running/5 -> completed/5 at sha_b, so the rename's delete side
+    makes ``git log <pin A>..tip -- <old path>`` NON-empty and the file test
+    at pin A passes — only the tasks/ prefix exclusion keeps this citation
+    from reading permanently stale. No WARN."""
+    root, sha_a, _sha_b, _sha_c = stale_repo
+    line = f"tracked in `tasks/running/5/note.md` at `{sha_a}`"
+    r = _stale([line], root)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "N/A" in r.detail
+
+
+def test_stale_pin_code_sha_row_skipped(stale_repo):
+    """A `| Code SHAs |` table row is skipped entirely — run-provenance pins,
+    not evidence citations — even when it carries a would-fire citation."""
+    root, sha_a, _sha_b, _sha_c = stale_repo
+    line = f"| Code SHAs | grid `{sha_a}` — inputs `eval_results/issue_5/x.json` |"
+    r = _stale([line], root)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "N/A" in r.detail
+
+
+def test_stale_pin_dedup_same_citation(stale_repo):
+    """The same (path, pin) citation on two lines produces ONE detail entry."""
+    root, sha_a, _sha_b, _sha_c = stale_repo
+    line = f"see `eval_results/issue_5/x.json` at `{sha_a}`"
+    r = _stale([line, line], root)
+    assert r.is_warn is True, r.detail
+    assert r.detail.count("x.json` cited at") == 1
+
+
+def test_stale_pin_branch_token_pin_is_fresh_by_construction(stale_repo):
+    """Named residue 3, origin-ABSENT fallback arm: with no origin ref, a
+    plain branch token falls back to the local ref — here the authoritative
+    tip itself — so the log range is empty and the citation stays silent."""
+    root, *_ = stale_repo
+    line = "tables in `eval_results/issue_5/x.json` on branch `issue-5`"
+    r = _stale([line], root)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "fresh" in r.detail
+
+
+def test_stale_pin_branch_token_prefers_origin_over_lagging_local(stale_repo):
+    """Round-2 blocker fix (branch-token-origin-precedence): local issue-5
+    forced to pin A while origin/issue-5 sits at the tip — the NORMAL
+    worktree shape. A citation whose ONLY pin is the plain ``issue-5`` token
+    associates to the ORIGIN tip (mirroring _authoritative_tip) -> clean
+    PASS. Local-first resolution pinned it at lagging A and false-WARNed a
+    healthy report (the round-1 reconciler's empirical replay)."""
+    root, sha_a, _sha_b, sha_c = stale_repo
+    _git_run(root, "branch", "-f", "issue-5", sha_a)  # local lags at pin A
+    _git_run(root, "update-ref", "refs/remotes/origin/issue-5", sha_c)
+    line = "tables in `eval_results/issue_5/x.json` on branch `issue-5`"
+    r = _stale([line], root)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "fresh" in r.detail
+
+
+def test_stale_pin_explicit_origin_token_resolves_remote_only(stale_repo):
+    """Round-2 blocker fix, explicit-token form: an ``origin/issue-5`` token
+    resolves ONLY refs/remotes/origin/issue-5 — never the lagging local ref
+    it does not name -> clean PASS under the same lagging-local shape."""
+    root, sha_a, _sha_b, sha_c = stale_repo
+    _git_run(root, "branch", "-f", "issue-5", sha_a)  # local lags at pin A
+    _git_run(root, "update-ref", "refs/remotes/origin/issue-5", sha_c)
+    line = "tables in `eval_results/issue_5/x.json` on branch `origin/issue-5`"
+    r = _stale([line], root)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "fresh" in r.detail
+
+
+def test_stale_pin_nearest_pin_before_path_association(stale_repo):
+    """Association arm the round-1 Codex review named unfocused: with NO pin
+    positioned after the member's span, the member associates to the nearest
+    pin BEFORE it — the pin-A citation WARNs."""
+    root, sha_a, _sha_b, _sha_c = stale_repo
+    line = f"at `{sha_a}` we updated `eval_results/issue_5/x.json`"
+    r = _stale([line], root)
+    assert r.is_warn is True, r.detail
+    assert "x.json` cited at" in r.detail
+
+
+def test_stale_pin_shalike_filename_does_not_self_pin(stale_repo):
+    """Span hygiene: a cited filename carrying a resolvable hex run must not
+    contribute its own hex as a pin. Without the blanking, y.json (span
+    before the hex-named sibling) would associate to the filename's embedded
+    pin A and false-WARN; with it the line has NO pins and is skipped."""
+    root, sha_a, _sha_b, _sha_c = stale_repo
+    line = (
+        f"updated `eval_results/issue_5/y.json` and `eval_results/issue_5/{sha_a}.json` this round"
+    )
+    r = _stale([line], root)
+    assert r.passed is True and r.is_warn is False, r.detail
+    assert "N/A" in r.detail
+
+
+# ── Hermetic twins: degrades + caps (criterion 3) ────────────────────────────
+
+
+def test_stale_pin_non_git_root_warns(tmp_path):
+    line = "metrics from `eval_results/issue_5/x.json` at `" + "f" * 40 + "`"
+    r = verify_report.check_stale_evidence_pins([line], tmp_path, 5)
+    assert r.passed is True and r.is_warn is True
+    assert "not a git checkout" in r.detail
+
+
+def test_stale_pin_no_candidates_is_na(tmp_path):
+    """No evidence citations -> PASS-note N/A, even on a non-git root (the
+    candidate scan precedes the git-checkout degrade)."""
+    r = verify_report.check_stale_evidence_pins(["prose without citations"], tmp_path, 5)
+    assert r.passed is True and r.is_warn is False
+    assert "N/A" in r.detail
+
+
+def test_stale_pin_no_branch_ref_skips(claims_repo):
+    """Unknown issue OR no issue branch ref (the post-merge branch-deleted
+    shape) -> PASS-note, never a WARN on every promote of an old report."""
+    root, sha1, _sha2 = claims_repo
+    line = f"`eval_results/issue_5/x.json` at `{sha1}`"
+    r = verify_report.check_stale_evidence_pins([line], root, 5)
+    assert r.passed is True and r.is_warn is False
+    assert "no issue branch ref resolvable" in r.detail
+    r = verify_report.check_stale_evidence_pins([line], root, None)
+    assert r.passed is True and r.is_warn is False
+    assert "no issue branch ref resolvable" in r.detail
+
+
+def test_stale_pin_read_cap_counted_note(stale_repo, monkeypatch):
+    """Reads beyond _STALE_READ_CAP are skipped with a COUNTED note —
+    disclosed, never silent; the uncapped reads still fire."""
+    root, sha_a, _sha_b, _sha_c = stale_repo
+    monkeypatch.setattr(verify_report, "_STALE_READ_CAP", 1)
+    lines = [
+        f"`eval_results/issue_5/x.json` at `{sha_a}`",
+        f"`eval_results/issue_5/y.json` at `{sha_a}`",
+    ]
+    r = verify_report.check_stale_evidence_pins(lines, root, 5)
+    assert r.is_warn is True, r.detail
+    assert "x.json` cited at" in r.detail
+    assert "read cap (1) reached — 1 candidate(s) not checked" in r.detail
+
+
+def test_stale_pin_detail_enumeration_cap(stale_repo, monkeypatch):
+    """The WARN detail enumerates newest-first up to _STALE_DETAIL_COMMITS_CAP,
+    then '+K more' — never an unbounded commit dump."""
+    root, sha_a, sha_b, sha_c = stale_repo
+    monkeypatch.setattr(verify_report, "_STALE_DETAIL_COMMITS_CAP", 1)
+    line = f"`eval_results/issue_5/x.json` at `{sha_a}`"
+    r = verify_report.check_stale_evidence_pins([line], root, 5)
+    assert r.is_warn is True, r.detail
+    assert sha_c[:12] in r.detail  # the newest, enumerated
+    assert sha_b[:12] not in r.detail  # capped out of the enumeration
+    assert "+1 more" in r.detail
+
+
+def test_stale_pin_constants_pinned_verbatim():
+    """Regression gate in the under-fire direction: the prefix set + caps are
+    plan-pinned design decisions (broadening the prefix set is a MUST-ASK
+    change; tasks/ is deliberately absent — status-transition renames)."""
+    assert verify_report._EVIDENCE_PATH_PREFIXES == (
+        "eval_results/",
+        "ood_eval_results/",
+        "figures/",
+        "docs/",
+    )
+    assert verify_report._STALE_READ_CAP == 200
+    assert verify_report._STALE_DETAIL_COMMITS_CAP == 5
+
+
+# ── Warn-free regression corpus (criterion 5) + CLI (criterion 6) ────────────
+
+
+@pytest.mark.parametrize(
+    ("mode", "builder"),
+    [("generation", _default_sections), ("promote", _promote_sections)],
+    ids=["generation-default", "promote-default"],
+)
+def test_stale_pin_warn_free_on_existing_fixtures(figs_root, mode, builder):
+    """Criterion 5 / H3 — EXPLICIT warn-free assert on the suite's frozen
+    full-body fixtures through the REAL dispatch: WARN renders as a passing
+    result, so suite greenness alone can never observe a new WARN."""
+    ok, results = _run(_assemble(builder()), mode=mode, figs_root=figs_root)
+    r = _by_name(results, "stale-evidence-pins")
+    assert r.passed is True, r.detail
+    assert r.is_warn is False, r.detail
+    assert ok, [x.render() for x in results if not x.passed]
+
+
+def test_cli_stale_evidence_pins_both_modes(stale_repo, tmp_path):
+    """Criterion 6 — through main() with --figures-root EXPLICIT (the #2191
+    lesson): a stale citation WARNs in BOTH modes with rc 0 both (the
+    no-mode-split design — the staleness window spans generation->promote,
+    and WARN counts as PASS overall)."""
+    root, sha_a, _sha_b, sha_c = stale_repo
+    image = _pin(sha_c)  # a REAL repo sha; the committed f.png blob matches disk
+    stale_line = f"Inputs frozen from `eval_results/issue_5/x.json`, committed at `{sha_a}`."
+    base = [sys.executable, str(_SCRIPT), "--figures-root", str(root)]
+
+    gen_sections = _default_sections(image=image)
+    gen_sections[2] = ("## Methodology (shared)", gen_sections[2][1] + "\n" + stale_line)
+    gen = tmp_path / "gen.md"
+    # detailed link pinned at a REAL companion-bearing sha: companion-content
+    # (#2198) runs on every git root and FAILs generation on an unresolvable pin.
+    gen.write_text(_assemble(gen_sections, detailed_link=_detailed_link(sha=sha_c)))
+    r_gen = subprocess.run(
+        [*base, "--file", str(gen), "--mode", "generation"], capture_output=True, text=True
+    )
+    assert r_gen.returncode == 0, r_gen.stdout + r_gen.stderr
+    assert "[WARN] stale-evidence-pins" in r_gen.stdout
+    assert "OVERALL: PASS" in r_gen.stdout
+
+    prom_sections = _promote_sections(image=image)
+    prom_sections[2] = ("## Methodology (shared)", prom_sections[2][1] + "\n" + stale_line)
+    prom = tmp_path / "prom.md"
+    prom.write_text(_assemble(prom_sections, detailed_link=_detailed_link(sha=sha_c)))
+    r_prom = subprocess.run(
+        [*base, "--file", str(prom), "--mode", "promote"], capture_output=True, text=True
+    )
+    assert r_prom.returncode == 0, r_prom.stdout + r_prom.stderr
+    assert "[WARN] stale-evidence-pins" in r_prom.stdout
+    assert "OVERALL: PASS" in r_prom.stdout

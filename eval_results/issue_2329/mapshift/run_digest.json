@@ -1,0 +1,18 @@
+{
+  "leg": "full",
+  "hf_revision": "ab9e72d55e980ab0cd081161bdce832e5e1710c0",
+  "walls_s": {
+    "stage": 1.4,
+    "fresh_fit": 5199.2,
+    "shift": 132.8,
+    "dv3ext": 980.4
+  },
+  "n_train_over_d": "per-fold n_train ≈ 12.9k PER-DRAW rows > d = 4096 (well-posed)",
+  "repro": {
+    "script": "scripts/issue2329_mapshift.py",
+    "hf_revision": "ab9e72d55e980ab0cd081161bdce832e5e1710c0",
+    "ts": "2026-08-18T09:42:45Z",
+    "git_commit": "5feef7db",
+    "git_dirty": false
+  }
+}

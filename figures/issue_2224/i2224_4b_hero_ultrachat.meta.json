@@ -1,0 +1,366 @@
+{
+  "commit": "01ab4ce3",
+  "render_id": "7234dd60a7ae4b49",
+  "git_commit": "01ab4ce3",
+  "git_dirty": false,
+  "created": "2026-08-11T19:11:04Z",
+  "figsize": [
+    13.799999999999999,
+    3.8
+  ],
+  "points": [
+    {
+      "category": "exact top",
+      "trait expression (graded 0–100, 95% CI)": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "exact bot",
+      "trait expression (graded 0–100, 95% CI)": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "exact top-filt",
+      "trait expression (graded 0–100, 95% CI)": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "mapped top",
+      "trait expression (graded 0–100, 95% CI)": 0.002,
+      "error": 0.003,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "mapped bot",
+      "trait expression (graded 0–100, 95% CI)": 0.012,
+      "error": 0.018,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "mapped top-filt",
+      "trait expression (graded 0–100, 95% CI)": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "probe top",
+      "trait expression (graded 0–100, 95% CI)": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "probe bot",
+      "trait expression (graded 0–100, 95% CI)": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "probe top-filt",
+      "trait expression (graded 0–100, 95% CI)": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "category": "prompt-tok top",
+      "trait expression (graded 0–100, 95% CI)": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "prompt-tok bot",
+      "trait expression (graded 0–100, 95% CI)": 0.07,
+      "error": 0.105,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "prompt-tok top-filt",
+      "trait expression (graded 0–100, 95% CI)": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "category": "random",
+      "trait expression (graded 0–100, 95% CI)": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "exact top",
+      "y": 32.3686,
+      "error": 2.904049999999998,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "exact bot",
+      "y": 16.059,
+      "error": 2.2024,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "category": "exact top-filt",
+      "y": 28.2754,
+      "error": 2.7028,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "category": "mapped top",
+      "y": 27.4679,
+      "error": 2.6615,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "category": "mapped bot",
+      "y": 28.7354,
+      "error": 2.7064500000000002,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "category": "mapped top-filt",
+      "y": 28.3417,
+      "error": 2.745049999999999,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "category": "probe top",
+      "y": 28.4496,
+      "error": 2.6887999999999987,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "category": "probe bot",
+      "y": 26.3,
+      "error": 2.702250000000001,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "category": "probe top-filt",
+      "y": 28.8783,
+      "error": 2.7158499999999997,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "category": "prompt-tok top",
+      "y": 30.1655,
+      "error": 2.8518999999999988,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "category": "prompt-tok bot",
+      "y": 11.4151,
+      "error": 1.87275,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "category": "prompt-tok top-filt",
+      "y": 26.2535,
+      "error": 2.6405499999999993,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "category": "random",
+      "y": 27.2465,
+      "error": 2.8005499999999994,
+      "_kind": "bar",
+      "_group": 25
+    },
+    {
+      "category": "exact top",
+      "y": 10.5955,
+      "error": 1.4649999999999999,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "category": "exact bot",
+      "y": 9.0529,
+      "error": 1.1980000000000004,
+      "_kind": "bar",
+      "_group": 27
+    },
+    {
+      "category": "exact top-filt",
+      "y": 8.6622,
+      "error": 1.2513999999999994,
+      "_kind": "bar",
+      "_group": 28
+    },
+    {
+      "category": "mapped top",
+      "y": 11.4442,
+      "error": 1.4106999999999994,
+      "_kind": "bar",
+      "_group": 29
+    },
+    {
+      "category": "mapped bot",
+      "y": 10.5445,
+      "error": 1.3178999999999998,
+      "_kind": "bar",
+      "_group": 30
+    },
+    {
+      "category": "mapped top-filt",
+      "y": 10.9003,
+      "error": 1.3422500000000008,
+      "_kind": "bar",
+      "_group": 31
+    },
+    {
+      "category": "probe top",
+      "y": 11.8336,
+      "error": 1.5294499999999998,
+      "_kind": "bar",
+      "_group": 32
+    },
+    {
+      "category": "probe bot",
+      "y": 9.7984,
+      "error": 1.1952000000000007,
+      "_kind": "bar",
+      "_group": 33
+    },
+    {
+      "category": "probe top-filt",
+      "y": 10.2636,
+      "error": 1.2920499999999997,
+      "_kind": "bar",
+      "_group": 34
+    },
+    {
+      "category": "prompt-tok top",
+      "y": 11.965,
+      "error": 1.5016499999999997,
+      "_kind": "bar",
+      "_group": 35
+    },
+    {
+      "category": "prompt-tok bot",
+      "y": 10.0408,
+      "error": 1.3646000000000003,
+      "_kind": "bar",
+      "_group": 36
+    },
+    {
+      "category": "prompt-tok top-filt",
+      "y": 10.7223,
+      "error": 1.4665,
+      "_kind": "bar",
+      "_group": 37
+    },
+    {
+      "category": "random",
+      "y": 10.9027,
+      "error": 1.3553999999999995,
+      "_kind": "bar",
+      "_group": 38
+    }
+  ],
+  "n_series": 39,
+  "total_points": 39,
+  "text": {
+    "suptitle": "4b selection-finetune trait expression — ultrachat (dashed: base model; †: incoherent-flagged cell)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "evil",
+        "ylabel": "trait expression (graded 0–100, 95% CI)",
+        "xticklabels": [
+          "exact top",
+          "exact bot",
+          "exact top-filt",
+          "mapped top",
+          "mapped bot",
+          "mapped top-filt",
+          "probe top",
+          "probe bot",
+          "probe top-filt",
+          "prompt-tok top",
+          "prompt-tok bot",
+          "prompt-tok top-filt",
+          "random"
+        ],
+        "yticklabels": [
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30",
+          "35",
+          "40"
+        ]
+      },
+      {
+        "title_left": "hallucination",
+        "xticklabels": [
+          "exact top",
+          "exact bot",
+          "exact top-filt",
+          "mapped top",
+          "mapped bot",
+          "mapped top-filt",
+          "probe top",
+          "probe bot",
+          "probe top-filt",
+          "prompt-tok top",
+          "prompt-tok bot",
+          "prompt-tok top-filt",
+          "random"
+        ]
+      },
+      {
+        "title_left": "sycophancy",
+        "xticklabels": [
+          "exact top",
+          "exact bot",
+          "exact top-filt",
+          "mapped top",
+          "mapped bot",
+          "mapped top-filt",
+          "probe top",
+          "probe bot",
+          "probe top-filt",
+          "prompt-tok top",
+          "prompt-tok bot",
+          "prompt-tok top-filt",
+          "random"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ],
+  "supervision_ledger": "map=trait-agnostic; persona vector=trait-description+judge-filter; probe=judge-labels",
+  "dv_note": "graded_mean is the headline DV (llm-judging graded-primary); rate_gt50 is the human-legible companion; screening scores are predictors, never the construct (plan §6)"
+}

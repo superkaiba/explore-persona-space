@@ -1,0 +1,886 @@
+{
+  "schema": 1,
+  "corpus": "lmsys",
+  "trait": "hallucination",
+  "methods": [
+    "exact_dp",
+    "mapped_dp_context",
+    "probe_diff_context",
+    "prompttoken_dp"
+  ],
+  "saturated_baseline": false,
+  "base_cell": {
+    "cell_id": "lmsys__hallucination__base__na",
+    "method": "base",
+    "tail": "na",
+    "graded_mean": 31.8431,
+    "rate_gt50": 0.3326,
+    "n_items": 500,
+    "n_scored_items": 478,
+    "coherence_mean": 85.5041,
+    "incoherent_flag": false,
+    "telemetry": {
+      "n_total_draws": 2500,
+      "n_dropped_draws": 132,
+      "n_refusal_draws": 85,
+      "n_truncation_dropped_draws": 0,
+      "n_transport_lost_draws": 0,
+      "n_api_refusal_draws": 0
+    },
+    "graded_ci": {
+      "mean": 31.8431,
+      "ci_lo": 28.6104,
+      "ci_hi": 35.1314,
+      "n_items": 478,
+      "n_boot": 10000,
+      "boot_frac_below0": 0.0,
+      "boot_frac_above0": 1.0
+    }
+  },
+  "cells": {
+    "lmsys__hallucination__base__na": {
+      "cell_id": "lmsys__hallucination__base__na",
+      "method": "base",
+      "tail": "na",
+      "graded_mean": 31.8431,
+      "rate_gt50": 0.3326,
+      "n_items": 500,
+      "n_scored_items": 478,
+      "coherence_mean": 85.5041,
+      "incoherent_flag": false,
+      "telemetry": {
+        "n_total_draws": 2500,
+        "n_dropped_draws": 132,
+        "n_refusal_draws": 85,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 0,
+        "n_api_refusal_draws": 0
+      },
+      "graded_ci": {
+        "mean": 31.8431,
+        "ci_lo": 28.6104,
+        "ci_hi": 35.1314,
+        "n_items": 478,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.0,
+        "boot_frac_above0": 1.0
+      }
+    },
+    "lmsys__hallucination__exact_dp__bottom": {
+      "cell_id": "lmsys__hallucination__exact_dp__bottom",
+      "method": "exact_dp",
+      "tail": "bottom",
+      "graded_mean": 9.2345,
+      "rate_gt50": 0.0796,
+      "n_items": 500,
+      "n_scored_items": 402,
+      "coherence_mean": 75.4134,
+      "incoherent_flag": false,
+      "telemetry": {
+        "n_total_draws": 2500,
+        "n_dropped_draws": 547,
+        "n_refusal_draws": 421,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 4,
+        "n_api_refusal_draws": 0
+      },
+      "graded_ci": {
+        "mean": 9.2345,
+        "ci_lo": 6.9222,
+        "ci_hi": 11.7195,
+        "n_items": 402,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.0,
+        "boot_frac_above0": 1.0
+      }
+    },
+    "lmsys__hallucination__exact_dp__top": {
+      "cell_id": "lmsys__hallucination__exact_dp__top",
+      "method": "exact_dp",
+      "tail": "top",
+      "graded_mean": 43.1861,
+      "rate_gt50": 0.4451,
+      "n_items": 500,
+      "n_scored_items": 492,
+      "coherence_mean": 79.663,
+      "incoherent_flag": false,
+      "telemetry": {
+        "n_total_draws": 2500,
+        "n_dropped_draws": 66,
+        "n_refusal_draws": 34,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 8,
+        "n_api_refusal_draws": 0
+      },
+      "graded_ci": {
+        "mean": 43.1861,
+        "ci_lo": 39.685,
+        "ci_hi": 46.6763,
+        "n_items": 492,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.0,
+        "boot_frac_above0": 1.0
+      }
+    },
+    "lmsys__hallucination__exact_dp__top_filtered": {
+      "cell_id": "lmsys__hallucination__exact_dp__top_filtered",
+      "method": "exact_dp",
+      "tail": "top_filtered",
+      "graded_mean": 38.5284,
+      "rate_gt50": 0.4008,
+      "n_items": 500,
+      "n_scored_items": 489,
+      "coherence_mean": 83.4455,
+      "incoherent_flag": false,
+      "telemetry": {
+        "n_total_draws": 2500,
+        "n_dropped_draws": 71,
+        "n_refusal_draws": 44,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 0,
+        "n_api_refusal_draws": 0
+      },
+      "graded_ci": {
+        "mean": 38.5284,
+        "ci_lo": 35.0689,
+        "ci_hi": 42.0859,
+        "n_items": 489,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.0,
+        "boot_frac_above0": 1.0
+      }
+    },
+    "lmsys__hallucination__mapped_dp_context__bottom": {
+      "cell_id": "lmsys__hallucination__mapped_dp_context__bottom",
+      "method": "mapped_dp_context",
+      "tail": "bottom",
+      "graded_mean": 32.4761,
+      "rate_gt50": 0.3542,
+      "n_items": 500,
+      "n_scored_items": 480,
+      "coherence_mean": 85.1058,
+      "incoherent_flag": false,
+      "telemetry": {
+        "n_total_draws": 2500,
+        "n_dropped_draws": 129,
+        "n_refusal_draws": 91,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 1,
+        "n_api_refusal_draws": 0
+      },
+      "graded_ci": {
+        "mean": 32.4761,
+        "ci_lo": 29.1368,
+        "ci_hi": 35.7898,
+        "n_items": 480,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.0,
+        "boot_frac_above0": 1.0
+      }
+    },
+    "lmsys__hallucination__mapped_dp_context__top": {
+      "cell_id": "lmsys__hallucination__mapped_dp_context__top",
+      "method": "mapped_dp_context",
+      "tail": "top",
+      "graded_mean": 30.909,
+      "rate_gt50": 0.3043,
+      "n_items": 500,
+      "n_scored_items": 470,
+      "coherence_mean": 83.4687,
+      "incoherent_flag": false,
+      "telemetry": {
+        "n_total_draws": 2500,
+        "n_dropped_draws": 179,
+        "n_refusal_draws": 129,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 1,
+        "n_api_refusal_draws": 0
+      },
+      "graded_ci": {
+        "mean": 30.909,
+        "ci_lo": 27.6007,
+        "ci_hi": 34.2165,
+        "n_items": 470,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.0,
+        "boot_frac_above0": 1.0
+      }
+    },
+    "lmsys__hallucination__mapped_dp_context__top_filtered": {
+      "cell_id": "lmsys__hallucination__mapped_dp_context__top_filtered",
+      "method": "mapped_dp_context",
+      "tail": "top_filtered",
+      "graded_mean": 26.4363,
+      "rate_gt50": 0.2597,
+      "n_items": 500,
+      "n_scored_items": 462,
+      "coherence_mean": 83.946,
+      "incoherent_flag": false,
+      "telemetry": {
+        "n_total_draws": 2500,
+        "n_dropped_draws": 212,
+        "n_refusal_draws": 144,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 55,
+        "n_api_refusal_draws": 0
+      },
+      "graded_ci": {
+        "mean": 26.4363,
+        "ci_lo": 23.3666,
+        "ci_hi": 29.6541,
+        "n_items": 462,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.0,
+        "boot_frac_above0": 1.0
+      }
+    },
+    "lmsys__hallucination__probe_diff_context__bottom": {
+      "cell_id": "lmsys__hallucination__probe_diff_context__bottom",
+      "method": "probe_diff_context",
+      "tail": "bottom",
+      "graded_mean": 31.7256,
+      "rate_gt50": 0.3208,
+      "n_items": 500,
+      "n_scored_items": 477,
+      "coherence_mean": 83.665,
+      "incoherent_flag": false,
+      "telemetry": {
+        "n_total_draws": 2500,
+        "n_dropped_draws": 126,
+        "n_refusal_draws": 100,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 68,
+        "n_api_refusal_draws": 0
+      },
+      "graded_ci": {
+        "mean": 31.7256,
+        "ci_lo": 28.3413,
+        "ci_hi": 35.2288,
+        "n_items": 477,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.0,
+        "boot_frac_above0": 1.0
+      }
+    },
+    "lmsys__hallucination__probe_diff_context__top": {
+      "cell_id": "lmsys__hallucination__probe_diff_context__top",
+      "method": "probe_diff_context",
+      "tail": "top",
+      "graded_mean": 29.3439,
+      "rate_gt50": 0.3049,
+      "n_items": 500,
+      "n_scored_items": 469,
+      "coherence_mean": 81.2902,
+      "incoherent_flag": false,
+      "telemetry": {
+        "n_total_draws": 2500,
+        "n_dropped_draws": 178,
+        "n_refusal_draws": 118,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 58,
+        "n_api_refusal_draws": 0
+      },
+      "graded_ci": {
+        "mean": 29.3439,
+        "ci_lo": 26.0921,
+        "ci_hi": 32.7523,
+        "n_items": 469,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.0,
+        "boot_frac_above0": 1.0
+      }
+    },
+    "lmsys__hallucination__probe_diff_context__top_filtered": {
+      "cell_id": "lmsys__hallucination__probe_diff_context__top_filtered",
+      "method": "probe_diff_context",
+      "tail": "top_filtered",
+      "graded_mean": 29.1556,
+      "rate_gt50": 0.3051,
+      "n_items": 500,
+      "n_scored_items": 472,
+      "coherence_mean": 84.1192,
+      "incoherent_flag": false,
+      "telemetry": {
+        "n_total_draws": 2500,
+        "n_dropped_draws": 159,
+        "n_refusal_draws": 106,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 73,
+        "n_api_refusal_draws": 0
+      },
+      "graded_ci": {
+        "mean": 29.1556,
+        "ci_lo": 25.9157,
+        "ci_hi": 32.5338,
+        "n_items": 472,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.0,
+        "boot_frac_above0": 1.0
+      }
+    },
+    "lmsys__hallucination__prompttoken_dp__bottom": {
+      "cell_id": "lmsys__hallucination__prompttoken_dp__bottom",
+      "method": "prompttoken_dp",
+      "tail": "bottom",
+      "graded_mean": 6.7829,
+      "rate_gt50": 0.0769,
+      "n_items": 500,
+      "n_scored_items": 312,
+      "coherence_mean": 71.7969,
+      "incoherent_flag": false,
+      "telemetry": {
+        "n_total_draws": 2500,
+        "n_dropped_draws": 967,
+        "n_refusal_draws": 762,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 55,
+        "n_api_refusal_draws": 0
+      },
+      "graded_ci": {
+        "mean": 6.7829,
+        "ci_lo": 4.4863,
+        "ci_hi": 9.1989,
+        "n_items": 312,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.0,
+        "boot_frac_above0": 1.0
+      }
+    },
+    "lmsys__hallucination__prompttoken_dp__top": {
+      "cell_id": "lmsys__hallucination__prompttoken_dp__top",
+      "method": "prompttoken_dp",
+      "tail": "top",
+      "graded_mean": 48.1794,
+      "rate_gt50": 0.5153,
+      "n_items": 500,
+      "n_scored_items": 491,
+      "coherence_mean": 79.0477,
+      "incoherent_flag": false,
+      "telemetry": {
+        "n_total_draws": 2500,
+        "n_dropped_draws": 58,
+        "n_refusal_draws": 31,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 14,
+        "n_api_refusal_draws": 0
+      },
+      "graded_ci": {
+        "mean": 48.1794,
+        "ci_lo": 44.5475,
+        "ci_hi": 51.721,
+        "n_items": 491,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.0,
+        "boot_frac_above0": 1.0
+      }
+    },
+    "lmsys__hallucination__prompttoken_dp__top_filtered": {
+      "cell_id": "lmsys__hallucination__prompttoken_dp__top_filtered",
+      "method": "prompttoken_dp",
+      "tail": "top_filtered",
+      "graded_mean": 38.8847,
+      "rate_gt50": 0.4037,
+      "n_items": 500,
+      "n_scored_items": 493,
+      "coherence_mean": 84.265,
+      "incoherent_flag": false,
+      "telemetry": {
+        "n_total_draws": 2500,
+        "n_dropped_draws": 58,
+        "n_refusal_draws": 25,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 3,
+        "n_api_refusal_draws": 0
+      },
+      "graded_ci": {
+        "mean": 38.8847,
+        "ci_lo": 35.4162,
+        "ci_hi": 42.4759,
+        "n_items": 493,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.0,
+        "boot_frac_above0": 1.0
+      }
+    },
+    "lmsys__hallucination__random__shared": {
+      "cell_id": "lmsys__hallucination__random__shared",
+      "method": "random",
+      "tail": "shared",
+      "graded_mean": 34.7515,
+      "rate_gt50": 0.36,
+      "n_items": 500,
+      "n_scored_items": 475,
+      "coherence_mean": 80.9614,
+      "incoherent_flag": false,
+      "telemetry": {
+        "n_total_draws": 2500,
+        "n_dropped_draws": 133,
+        "n_refusal_draws": 84,
+        "n_truncation_dropped_draws": 0,
+        "n_transport_lost_draws": 0,
+        "n_api_refusal_draws": 0
+      },
+      "graded_ci": {
+        "mean": 34.7515,
+        "ci_lo": 31.3271,
+        "ci_hi": 38.2842,
+        "n_items": 475,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.0,
+        "boot_frac_above0": 1.0
+      }
+    }
+  },
+  "contrasts": [
+    {
+      "cell_a": "lmsys__hallucination__exact_dp__top",
+      "cell_b": "lmsys__hallucination__random__shared",
+      "n_items_a": 492,
+      "n_items_b": 475,
+      "n_paired": 474,
+      "pairing_note": "paired on (question, draw-index) slots scored non-None in BOTH cells; responses differ per cell — the pairing unit is the eval slot",
+      "response_level": {
+        "mean": 9.6975,
+        "ci_lo": 6.2015,
+        "ci_hi": 13.1896,
+        "n_items": 474,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.0,
+        "boot_frac_above0": 1.0
+      },
+      "qid_cluster": {
+        "mean": 9.6975,
+        "ci_lo": 5.0953,
+        "ci_hi": 14.6325,
+        "n_items": 474,
+        "n_clusters": 97,
+        "n_boot": 10000
+      },
+      "rate_diff": 0.097,
+      "coherence_flag_cells": [],
+      "status": "ok",
+      "contrast": "exact_dp__top_vs_random"
+    },
+    {
+      "cell_a": "lmsys__hallucination__exact_dp__bottom",
+      "cell_b": "lmsys__hallucination__random__shared",
+      "n_items_a": 402,
+      "n_items_b": 475,
+      "n_paired": 402,
+      "pairing_note": "paired on (question, draw-index) slots scored non-None in BOTH cells; responses differ per cell — the pairing unit is the eval slot",
+      "response_level": {
+        "mean": -23.8687,
+        "ci_lo": -27.9769,
+        "ci_hi": -19.5397,
+        "n_items": 402,
+        "n_boot": 10000,
+        "boot_frac_below0": 1.0,
+        "boot_frac_above0": 0.0
+      },
+      "qid_cluster": {
+        "mean": -23.8687,
+        "ci_lo": -30.5578,
+        "ci_hi": -17.3556,
+        "n_items": 402,
+        "n_clusters": 91,
+        "n_boot": 10000
+      },
+      "rate_diff": -0.2612,
+      "coherence_flag_cells": [],
+      "status": "ok",
+      "contrast": "exact_dp__bottom_vs_random"
+    },
+    {
+      "cell_a": "lmsys__hallucination__exact_dp__top_filtered",
+      "cell_b": "lmsys__hallucination__random__shared",
+      "n_items_a": 489,
+      "n_items_b": 475,
+      "n_paired": 474,
+      "pairing_note": "paired on (question, draw-index) slots scored non-None in BOTH cells; responses differ per cell — the pairing unit is the eval slot",
+      "response_level": {
+        "mean": 4.6528,
+        "ci_lo": 1.0924,
+        "ci_hi": 8.2268,
+        "n_items": 474,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.0048,
+        "boot_frac_above0": 0.9952
+      },
+      "qid_cluster": {
+        "mean": 4.6528,
+        "ci_lo": 0.5215,
+        "ci_hi": 8.9809,
+        "n_items": 474,
+        "n_clusters": 97,
+        "n_boot": 10000
+      },
+      "rate_diff": 0.0506,
+      "coherence_flag_cells": [],
+      "status": "ok",
+      "contrast": "exact_dp__top_filtered_vs_random"
+    },
+    {
+      "cell_a": "lmsys__hallucination__mapped_dp_context__top",
+      "cell_b": "lmsys__hallucination__random__shared",
+      "n_items_a": 470,
+      "n_items_b": 475,
+      "n_paired": 464,
+      "pairing_note": "paired on (question, draw-index) slots scored non-None in BOTH cells; responses differ per cell — the pairing unit is the eval slot",
+      "response_level": {
+        "mean": -3.8797,
+        "ci_lo": -7.2177,
+        "ci_hi": -0.4049,
+        "n_items": 464,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.9853,
+        "boot_frac_above0": 0.0147
+      },
+      "qid_cluster": {
+        "mean": -3.8797,
+        "ci_lo": -8.2591,
+        "ci_hi": 0.4137,
+        "n_items": 464,
+        "n_clusters": 94,
+        "n_boot": 10000
+      },
+      "rate_diff": -0.056,
+      "coherence_flag_cells": [],
+      "status": "ok",
+      "contrast": "mapped_dp_context__top_vs_random"
+    },
+    {
+      "cell_a": "lmsys__hallucination__mapped_dp_context__bottom",
+      "cell_b": "lmsys__hallucination__random__shared",
+      "n_items_a": 480,
+      "n_items_b": 475,
+      "n_paired": 470,
+      "pairing_note": "paired on (question, draw-index) slots scored non-None in BOTH cells; responses differ per cell — the pairing unit is the eval slot",
+      "response_level": {
+        "mean": -1.5626,
+        "ci_lo": -5.0008,
+        "ci_hi": 1.8278,
+        "n_items": 470,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.8174,
+        "boot_frac_above0": 0.1826
+      },
+      "qid_cluster": {
+        "mean": -1.5626,
+        "ci_lo": -6.1556,
+        "ci_hi": 3.3716,
+        "n_items": 470,
+        "n_clusters": 96,
+        "n_boot": 10000
+      },
+      "rate_diff": 0.0021,
+      "coherence_flag_cells": [],
+      "status": "ok",
+      "contrast": "mapped_dp_context__bottom_vs_random"
+    },
+    {
+      "cell_a": "lmsys__hallucination__mapped_dp_context__top_filtered",
+      "cell_b": "lmsys__hallucination__random__shared",
+      "n_items_a": 462,
+      "n_items_b": 475,
+      "n_paired": 461,
+      "pairing_note": "paired on (question, draw-index) slots scored non-None in BOTH cells; responses differ per cell — the pairing unit is the eval slot",
+      "response_level": {
+        "mean": -8.9293,
+        "ci_lo": -12.5548,
+        "ci_hi": -5.3851,
+        "n_items": 461,
+        "n_boot": 10000,
+        "boot_frac_below0": 1.0,
+        "boot_frac_above0": 0.0
+      },
+      "qid_cluster": {
+        "mean": -8.9293,
+        "ci_lo": -13.9205,
+        "ci_hi": -4.0839,
+        "n_items": 461,
+        "n_clusters": 95,
+        "n_boot": 10000
+      },
+      "rate_diff": -0.1085,
+      "coherence_flag_cells": [],
+      "status": "ok",
+      "contrast": "mapped_dp_context__top_filtered_vs_random"
+    },
+    {
+      "cell_a": "lmsys__hallucination__mapped_dp_context__top",
+      "cell_b": "lmsys__hallucination__exact_dp__top",
+      "n_items_a": 470,
+      "n_items_b": 492,
+      "n_paired": 469,
+      "pairing_note": "paired on (question, draw-index) slots scored non-None in BOTH cells; responses differ per cell — the pairing unit is the eval slot",
+      "response_level": {
+        "mean": -13.1542,
+        "ci_lo": -16.5871,
+        "ci_hi": -9.7452,
+        "n_items": 469,
+        "n_boot": 10000,
+        "boot_frac_below0": 1.0,
+        "boot_frac_above0": 0.0
+      },
+      "qid_cluster": {
+        "mean": -13.1542,
+        "ci_lo": -18.2336,
+        "ci_hi": -8.1992,
+        "n_items": 469,
+        "n_clusters": 95,
+        "n_boot": 10000
+      },
+      "rate_diff": -0.1471,
+      "coherence_flag_cells": [],
+      "status": "ok",
+      "contrast": "mapped_dp_context__top_vs_exact_top"
+    },
+    {
+      "cell_a": "lmsys__hallucination__probe_diff_context__top",
+      "cell_b": "lmsys__hallucination__random__shared",
+      "n_items_a": 469,
+      "n_items_b": 475,
+      "n_paired": 460,
+      "pairing_note": "paired on (question, draw-index) slots scored non-None in BOTH cells; responses differ per cell — the pairing unit is the eval slot",
+      "response_level": {
+        "mean": -5.3329,
+        "ci_lo": -8.8844,
+        "ci_hi": -1.7794,
+        "n_items": 460,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.9986,
+        "boot_frac_above0": 0.0014
+      },
+      "qid_cluster": {
+        "mean": -5.3329,
+        "ci_lo": -10.1862,
+        "ci_hi": -0.3912,
+        "n_items": 460,
+        "n_clusters": 95,
+        "n_boot": 10000
+      },
+      "rate_diff": -0.0565,
+      "coherence_flag_cells": [],
+      "status": "ok",
+      "contrast": "probe_diff_context__top_vs_random"
+    },
+    {
+      "cell_a": "lmsys__hallucination__probe_diff_context__bottom",
+      "cell_b": "lmsys__hallucination__random__shared",
+      "n_items_a": 477,
+      "n_items_b": 475,
+      "n_paired": 470,
+      "pairing_note": "paired on (question, draw-index) slots scored non-None in BOTH cells; responses differ per cell — the pairing unit is the eval slot",
+      "response_level": {
+        "mean": -3.4209,
+        "ci_lo": -6.9813,
+        "ci_hi": 0.1614,
+        "n_items": 470,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.9692,
+        "boot_frac_above0": 0.0308
+      },
+      "qid_cluster": {
+        "mean": -3.4209,
+        "ci_lo": -8.1749,
+        "ci_hi": 1.4972,
+        "n_items": 470,
+        "n_clusters": 98,
+        "n_boot": 10000
+      },
+      "rate_diff": -0.0447,
+      "coherence_flag_cells": [],
+      "status": "ok",
+      "contrast": "probe_diff_context__bottom_vs_random"
+    },
+    {
+      "cell_a": "lmsys__hallucination__probe_diff_context__top_filtered",
+      "cell_b": "lmsys__hallucination__random__shared",
+      "n_items_a": 472,
+      "n_items_b": 475,
+      "n_paired": 464,
+      "pairing_note": "paired on (question, draw-index) slots scored non-None in BOTH cells; responses differ per cell — the pairing unit is the eval slot",
+      "response_level": {
+        "mean": -5.6535,
+        "ci_lo": -9.199,
+        "ci_hi": -2.1459,
+        "n_items": 464,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.9993,
+        "boot_frac_above0": 0.0007
+      },
+      "qid_cluster": {
+        "mean": -5.6535,
+        "ci_lo": -10.7376,
+        "ci_hi": -0.8536,
+        "n_items": 464,
+        "n_clusters": 95,
+        "n_boot": 10000
+      },
+      "rate_diff": -0.056,
+      "coherence_flag_cells": [],
+      "status": "ok",
+      "contrast": "probe_diff_context__top_filtered_vs_random"
+    },
+    {
+      "cell_a": "lmsys__hallucination__probe_diff_context__top",
+      "cell_b": "lmsys__hallucination__exact_dp__top",
+      "n_items_a": 469,
+      "n_items_b": 492,
+      "n_paired": 467,
+      "pairing_note": "paired on (question, draw-index) slots scored non-None in BOTH cells; responses differ per cell — the pairing unit is the eval slot",
+      "response_level": {
+        "mean": -13.8793,
+        "ci_lo": -17.6398,
+        "ci_hi": -10.1309,
+        "n_items": 467,
+        "n_boot": 10000,
+        "boot_frac_below0": 1.0,
+        "boot_frac_above0": 0.0
+      },
+      "qid_cluster": {
+        "mean": -13.8793,
+        "ci_lo": -19.4982,
+        "ci_hi": -8.4369,
+        "n_items": 467,
+        "n_clusters": 99,
+        "n_boot": 10000
+      },
+      "rate_diff": -0.1392,
+      "coherence_flag_cells": [],
+      "status": "ok",
+      "contrast": "probe_diff_context__top_vs_exact_top"
+    },
+    {
+      "cell_a": "lmsys__hallucination__prompttoken_dp__top",
+      "cell_b": "lmsys__hallucination__random__shared",
+      "n_items_a": 491,
+      "n_items_b": 475,
+      "n_paired": 474,
+      "pairing_note": "paired on (question, draw-index) slots scored non-None in BOTH cells; responses differ per cell — the pairing unit is the eval slot",
+      "response_level": {
+        "mean": 14.7155,
+        "ci_lo": 10.9463,
+        "ci_hi": 18.5589,
+        "n_items": 474,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.0,
+        "boot_frac_above0": 1.0
+      },
+      "qid_cluster": {
+        "mean": 14.7155,
+        "ci_lo": 9.0026,
+        "ci_hi": 20.5567,
+        "n_items": 474,
+        "n_clusters": 97,
+        "n_boot": 10000
+      },
+      "rate_diff": 0.1709,
+      "coherence_flag_cells": [],
+      "status": "ok",
+      "contrast": "prompttoken_dp__top_vs_random"
+    },
+    {
+      "cell_a": "lmsys__hallucination__prompttoken_dp__bottom",
+      "cell_b": "lmsys__hallucination__random__shared",
+      "n_items_a": 312,
+      "n_items_b": 475,
+      "n_paired": 312,
+      "pairing_note": "paired on (question, draw-index) slots scored non-None in BOTH cells; responses differ per cell — the pairing unit is the eval slot",
+      "response_level": {
+        "mean": -29.6101,
+        "ci_lo": -34.6433,
+        "ci_hi": -24.6153,
+        "n_items": 312,
+        "n_boot": 10000,
+        "boot_frac_below0": 1.0,
+        "boot_frac_above0": 0.0
+      },
+      "qid_cluster": {
+        "mean": -29.6101,
+        "ci_lo": -37.2244,
+        "ci_hi": -22.0535,
+        "n_items": 312,
+        "n_clusters": 88,
+        "n_boot": 10000
+      },
+      "rate_diff": -0.3045,
+      "coherence_flag_cells": [],
+      "status": "ok",
+      "contrast": "prompttoken_dp__bottom_vs_random"
+    },
+    {
+      "cell_a": "lmsys__hallucination__prompttoken_dp__top_filtered",
+      "cell_b": "lmsys__hallucination__random__shared",
+      "n_items_a": 493,
+      "n_items_b": 475,
+      "n_paired": 475,
+      "pairing_note": "paired on (question, draw-index) slots scored non-None in BOTH cells; responses differ per cell — the pairing unit is the eval slot",
+      "response_level": {
+        "mean": 4.8341,
+        "ci_lo": 1.2441,
+        "ci_hi": 8.4902,
+        "n_items": 475,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.0042,
+        "boot_frac_above0": 0.9958
+      },
+      "qid_cluster": {
+        "mean": 4.8341,
+        "ci_lo": -0.2228,
+        "ci_hi": 10.2284,
+        "n_items": 475,
+        "n_clusters": 98,
+        "n_boot": 10000
+      },
+      "rate_diff": 0.0505,
+      "coherence_flag_cells": [],
+      "status": "ok",
+      "contrast": "prompttoken_dp__top_filtered_vs_random"
+    },
+    {
+      "cell_a": "lmsys__hallucination__prompttoken_dp__top",
+      "cell_b": "lmsys__hallucination__exact_dp__top",
+      "n_items_a": 491,
+      "n_items_b": 492,
+      "n_paired": 489,
+      "pairing_note": "paired on (question, draw-index) slots scored non-None in BOTH cells; responses differ per cell — the pairing unit is the eval slot",
+      "response_level": {
+        "mean": 4.6779,
+        "ci_lo": 1.641,
+        "ci_hi": 7.8186,
+        "n_items": 489,
+        "n_boot": 10000,
+        "boot_frac_below0": 0.0023,
+        "boot_frac_above0": 0.9977
+      },
+      "qid_cluster": {
+        "mean": 4.6779,
+        "ci_lo": 0.9187,
+        "ci_hi": 8.7081,
+        "n_items": 489,
+        "n_clusters": 99,
+        "n_boot": 10000
+      },
+      "rate_diff": 0.0675,
+      "coherence_flag_cells": [],
+      "status": "ok",
+      "contrast": "prompttoken_dp__top_vs_exact_top"
+    }
+  ],
+  "supervision_ledger": "map=trait-agnostic; persona vector=trait-description+judge-filter; probe=judge-labels",
+  "dv_note": "graded_mean is the headline DV (llm-judging graded-primary); rate_gt50 is the human-legible companion; screening scores are predictors, never the construct (plan §6)",
+  "meta": {
+    "script": "issue2224_analysis.analyze-4b",
+    "issue": 2224,
+    "timestamp": "2026-08-11T12:10:47-0700",
+    "versions": {
+      "torch": "2.8.0+cu128",
+      "transformers": "4.57.6",
+      "datasets": "4.8.4",
+      "numpy": "2.2.6"
+    },
+    "git_commit": "01ab4ce3",
+    "git_dirty": false
+  }
+}

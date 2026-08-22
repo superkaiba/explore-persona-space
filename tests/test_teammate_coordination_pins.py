@@ -14,6 +14,11 @@ CLAUDE.md (a bare-id pin would be vacuous).
 #2041 added sub-clauses (f)/(g) (fan-out same-turn durable landing +
 synchronous delegated gate-waits) and the SKILL.md Step 4b "Fan-out
 completion contract" paragraph; both are pinned here.
+
+#2111 added two probed sub-cases to the sibling ownership-check bullet
+(pre-stop probe + post-death detached-children probe); pinned here too
+(test_ownership_probe_subcases_pinned) -- same section, same
+amendment-velocity profile.
 """
 
 from __future__ import annotations
@@ -21,9 +26,19 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 CLAUDE_MD = Path(__file__).resolve().parent.parent / "CLAUDE.md"
 ISSUE_SKILL_MD = (
     Path(__file__).resolve().parent.parent / ".claude" / "skills" / "issue" / "SKILL.md"
+)
+STEP4_MD = (
+    Path(__file__).resolve().parent.parent
+    / ".claude"
+    / "skills"
+    / "issue"
+    / "steps"
+    / "08-step-4.md"
 )
 
 
@@ -32,7 +47,7 @@ def _normalized() -> str:
 
 
 def _normalized_skill() -> str:
-    return re.sub(r"\s+", " ", ISSUE_SKILL_MD.read_text(encoding="utf-8"))
+    return re.sub(r"\s+", " ", issue_skill_text())
 
 
 def test_subclause_headers_pinned() -> None:
@@ -108,6 +123,24 @@ def test_claude_md_fanout_subclauses_pinned() -> None:
     )
 
 
+def test_ownership_probe_subcases_pinned() -> None:
+    """Pin the #2111 ownership-check sub-cases: the pre-stop probe (live
+    subagent children + a fresh stage-dispatch breadcrumb => presume live)
+    and the post-death detached-children probe (probe for detached children
+    a dead subagent launched BEFORE dispatching same-path work) -- two
+    2026-08-05 incidents (#2054 session stop; #1491 duplicate run)."""
+    text = _normalized()
+    assert "**Pre-stop probe (#2111):**" in text
+    assert "probe for live subagent children AND a `stage-dispatch` breadcrumb" in text
+    assert "younger than ~10 min" in text
+    assert "never stop on an idle-looking self-report" in text
+    assert "**Post-death detached-children probe (#2111):**" in text
+    assert "a death notification never enumerates detached children" in text
+    # Citation pins (distinctive multi-token forms, per the module docstring).
+    assert "killing a 10-min-old live implementer" in text
+    assert "#1491: a 529-killed analyzer's detached run" in text
+
+
 def test_fanout_completion_contract_pinned() -> None:
     """Pin the SKILL.md Step 4b "Fan-out completion contract" paragraph
     (#2041): the header, its three numbered clauses, and the join-time
@@ -126,3 +159,24 @@ def test_fanout_completion_contract_pinned() -> None:
     # Join-time consolidation default.
     assert "At every fan-out JOIN the orchestrator consolidates the returned reports" in text
     assert "offer-to-save is the banned shape" in text
+
+
+def test_implementer_brief_names_wait_mechanism() -> None:
+    """Pin the #2422 folded-in sibling (plan Edit 7): the implementer-brief
+    checklist in 08-step-4.md restates BOTH halves of the #2041 fan-out
+    completion contract — the staged-but-uncommitted prohibition AND the
+    synchronous bounded `Monitor` wait mechanism — inside the
+    `Brief passed to the implementer:` region. A brief stating the
+    prohibition without the mechanism invites an invented
+    background-watcher shape that orphans the landing (#2422 folded
+    sibling: ~62 min of work left uncommitted behind an unobserved lint
+    gate)."""
+    text = re.sub(r"\s+", " ", STEP4_MD.read_text(encoding="utf-8"))
+    start = text.find("Brief passed to the implementer:")
+    assert start >= 0, "start anchor missing from 08-step-4.md"
+    end = text.find("Move status to ", start)
+    region = text[start:end] if end >= 0 else text[start:]
+    assert "Monitor" in region, "the wait mechanism (`Monitor`) is not named in the brief checklist"
+    assert "staged-but-uncommitted" in region, (
+        "the staged-but-uncommitted prohibition is not named in the brief checklist"
+    )

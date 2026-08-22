@@ -1,0 +1,209 @@
+{
+  "commit": "5435d252",
+  "render_id": "29bdd5d8fef9444a",
+  "git_commit": "5435d252",
+  "git_dirty": false,
+  "created": "2026-08-11T09:19:49Z",
+  "figsize": [
+    6.0,
+    4.0
+  ],
+  "points": [
+    {
+      "x": -0.105,
+      "Cosine(regression coefficient, persona direction)": 0.5194963998859017,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.075,
+      "Cosine(regression coefficient, persona direction)": 0.4922796848705409,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.045,
+      "Cosine(regression coefficient, persona direction)": 0.4906885988145193,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.015,
+      "Cosine(regression coefficient, persona direction)": 0.5034093549394781,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.015,
+      "Cosine(regression coefficient, persona direction)": 0.5014574777922672,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.045,
+      "Cosine(regression coefficient, persona direction)": 0.5291792752118814,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.075,
+      "Cosine(regression coefficient, persona direction)": 0.5107286931312721,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.105,
+      "Cosine(regression coefficient, persona direction)": 0.19130195276473735,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "Cosine(regression coefficient, persona direction)": 0.46731767967632476,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.895,
+      "Cosine(regression coefficient, persona direction)": 0.48396400246246934,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.925,
+      "Cosine(regression coefficient, persona direction)": 0.6752146228948541,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.955,
+      "Cosine(regression coefficient, persona direction)": 0.6118883663391493,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.985,
+      "Cosine(regression coefficient, persona direction)": 0.6128266661177755,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.015,
+      "Cosine(regression coefficient, persona direction)": 0.6130919940209435,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.045,
+      "Cosine(regression coefficient, persona direction)": 0.5929843660705778,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.075,
+      "Cosine(regression coefficient, persona direction)": 0.634192902801716,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.105,
+      "Cosine(regression coefficient, persona direction)": 0.6713819810740304,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "Cosine(regression coefficient, persona direction)": 0.6119431127226895,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.895,
+      "Cosine(regression coefficient, persona direction)": 0.4181563839073285,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.925,
+      "Cosine(regression coefficient, persona direction)": 0.24414421016590404,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.955,
+      "Cosine(regression coefficient, persona direction)": 0.42127670772577086,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.985,
+      "Cosine(regression coefficient, persona direction)": 0.4050945476152097,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.015,
+      "Cosine(regression coefficient, persona direction)": 0.4515700927870698,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.045,
+      "Cosine(regression coefficient, persona direction)": 0.45898066913604607,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.075,
+      "Cosine(regression coefficient, persona direction)": 0.4228899751830951,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.105,
+      "Cosine(regression coefficient, persona direction)": 0.40017436348074137,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "Cosine(regression coefficient, persona direction)": 0.40278586875014566,
+      "_kind": "scatter",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 27,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Form-B dataset-level regression coefficient vs persona direction\n(per LOFO fold, diamond = mean; exploratory estimator-degenerate control)",
+        "ylabel": "Cosine(regression coefficient, persona direction)",
+        "xticklabels": [
+          "Sycophancy",
+          "Evil",
+          "Hallucination"
+        ],
+        "yticklabels": [
+          "\u22121.25",
+          "\u22121.00",
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -202,7 +202,7 @@ Concrete steps with:
 - **Few-shot / in-context-example demonstration content is a grounded design element, not filler.** If the experiment uses any in-context-example / few-shot / ICL demonstration set (a fixed bank of `<question, answer>` pairs the model sees before each probe, whether read by the trained model, by a base model under a persona prompt, or as training-time demonstrations), the plan MUST state, per demonstration set: (a) the eval-task distribution the demos mirror (the actual task type the model will be evaluated on with this context — not "generic helpful Q&A" if the eval probes are, say, persona-voiced marker emissions on open-ended prompts), (b) why this specific content induces the intended behavior / persona / context (cite the design pressure that picked it — a paper, a prior issue's recipe, a held-out sanity check), AND (c) that the demonstration content varies enough ACROSS the different ICL contexts to give cross-context dynamic range (if four "different" ICL contexts are four slices of the same neutral trivia pool with the same one-word answer shape, they will read as one context to the model). Anti-contamination (no overlap with held-out probe answers) is NECESSARY but NOT SUFFICIENT — a contamination-only design pressure tends to drive the content toward bland, generic, near-clone demos that satisfy the contamination check while giving ~zero cross-context dynamic range and barely inducing any behavior, which is the opposite of why ICL was introduced. State each of (a), (b), (c) explicitly — the Methodology critic will REVISE an ICL plan whose demo content is justified only by contamination avoidance. The closest record: task #489's ICL contexts were four 4-item slices of a 16-fact trivia pool with persona-voiced demos that slapped a stock prefix on a one-word answer ("Arr! Au."), sailed through Planner → Fact-Checker → Critic → Consistency-Checker uninspected, and likely contributed to the marker-implant floor. If the experiment uses no ICL / few-shot demonstrations, write "N/A — no ICL or few-shot demonstrations in this design" and move on.
 - **Smoke/sweep architectural parity (UNIFICATION DEFAULT, canary escape hatch).** The DEFAULT is unification: smoke IS the sweep with one cell — same dispatcher, same subprocess shape, same env injection, same logging surface, same teardown sequence. State this explicitly here: "smoke phase = sweep with `--cells 1 --seeds 1`" (or equivalent single-cell parameterization). If the design diverges (e.g., smoke uses in-process `train_one_cell`, sweep uses a `subprocess.run(["uv", "run", "python", "src/.../experiments/<name>/run_one_cell.py", ...])` wrapper), justify the divergence in two sentences AND name which canary cell exercises the sweep path during smoke. The bar for accepting divergence is high: subprocess isolation is only justified when the sweep's per-cell teardown / resource-isolation requirements would block in-process execution (e.g., per-cell vLLM allocation that can't be reset cleanly in-process). Task #397 rounds 9/10/10' (2026-05-27) burned three full implementer rounds on architectural assumptions that the in-process smoke path silently satisfied; the round-11 pivot was to UNIFICATION (in-process serial). Enforced at /issue Step 6d.0 via the `epm:smoke-architecture-check v1` gate (see SKILL.md).
 - **Smoke blind-spot enumeration (REQUIRED whenever the plan declares a pre-launch smoke run).** The section that declares the smoke states, in one short block titled `Smoke blind-spot enumeration:`, what the smoke's PASS does and does NOT certify — derived from `.claude/rules/smoke-blind-spots.md` (read it first): (a) every production gate/assertion the smoke DOWNGRADES or skips (an `assert_split(..., smoke=...)`-style early return); (b) every implementation the smoke SUBSTITUTES (toy embedding, stub model, fake judge — the production constructor / API call never runs under smoke); (c) every third-party import reached ONLY on the production branch (a `smoke=False`-only `SentenceTransformer` leaves `import sentence_transformers` unexecuted — #1336 SLURM 4684). An EMPTY enumeration is written as the literal `none — smoke executes every production gate`, never left blank — and any smoke-conditional substitution/downgrade branch in the design falsifies it. Rationale + incident: #1336 — two consecutive production SLURM launches (4684, 5005) died on a missing dependency and a downgraded split assertion the smoke branch structurally could not reach; nothing in the plan said the PASS certified less than it appeared to. Distinct sibling, not a duplicate: the parity bullet above makes smoke and production the SAME code; this enumeration covers the RESIDUAL divergences that survive a justified parity break or a `smoke`-kwarg branch inside shared code. Enforced at review by code-reviewer.md Step 0.71 (blocker tag `smoke-blind-spot-unenumerated`) + critic.md Methodology lens item 19; mechanical backstops `workflow_lint.py --check-smoke-blind-spot-review-lens` (surface pin) and `--check-smoke-blind-spots` (WARN scan). If the plan declares no pre-launch smoke run, write "N/A — no pre-launch smoke run" and move on.
-- **No all-or-nothing eligibility gates on continuous quantities (graceful degradation).** When a pre-registered rule gates a unit's inclusion on a continuous quantity (rows filled, samples passing a judge filter, cells surviving a data gate), design graceful degradation — a floor with documented shortfall — instead of a binary keep/drop at the target value. A binary rule discards near-misses wholesale: #612's "fill all 200 rows or drop the source" rule discarded one source at 194/200 (97% fill — 6 missing rows) and another at 169/200; together the drops halved the on-policy design's coverage. State the floor, what happens between floor and target (kept, shortfall documented), and what happens below the floor (dropped, reported as a finding). The canonical instantiation for on-policy yield quotas — an 80% floor + equalize-down + the ≥ 90%-of-floor close-miss escalation tranche — is in `.claude/rules/on-policy-completions.md`. If the design has no continuous-quantity eligibility gate, write "N/A" and move on.
+- **No all-or-nothing eligibility gates on continuous quantities (graceful degradation).** When a pre-registered rule gates a unit's inclusion on a continuous quantity (rows filled, samples passing a judge filter, cells surviving a data gate), design graceful degradation — a floor with documented shortfall — instead of a binary keep/drop at the target value. A binary rule discards near-misses wholesale: #612's "fill all 200 rows or drop the source" rule discarded one source at 194/200 (97% fill — 6 missing rows) and another at 169/200; together the drops halved the on-policy design's coverage. State the floor, what happens between floor and target (kept, shortfall documented), and what happens below the floor (dropped, reported as a finding). The canonical instantiation for on-policy yield quotas — an 80% floor + equalize-down + the ≥ 90%-of-floor close-miss escalation tranche — is in `.claude/rules/on-policy-completions.md`. **Two-tier floors (REQUIRED for any equalize-down / yield-quota design):** the plan's yield row states BOTH (a) the relative TARGET floor (default 80%; floor-to-target ⇒ kept, shortfall documented — the shrink path, unchanged) AND (b) the ABSOLUTE trainability floor (default `ceil(12 optimizer steps × effective_batch / epochs)`; `.claude/rules/on-policy-completions.md` § Absolute per-cell trainability floor) with the DROP disposition (no train, denominator revised everywhere, drop named in `## Takeaways`); "shrink to whatever survives" with no absolute floor is the #2221 defect; overrides are §11-Source'd and recorded in the mix report. The yield row also VERIFIES joint satisfiability — `floor-N (the relative equalize-down floor) ≥ the absolute trainability floor at the registered recipe` (at house-typical values — target 200 ⇒ floor-N 160; effective batch 16, 1 epoch ⇒ absolute floor 192 — the design as registered is UNSATISFIABLE and the datagen entry assert raises deterministically) — else the plan names the resolution up front (raise target_n, add epochs, shrink effective batch, or a §11-Source'd floor override). If the design has no per-cell yield machinery at all — neither a keep/drop eligibility gate nor a shrink / equalize-down rule — write "N/A" and move on.
 - **Equalize-down when a per-unit resource varies across units/conditions.** If units (sources, personas, conditions) legitimately fill to different N (training rows, samples), train/evaluate ALL units at the same floor-N — discard the surplus everywhere — rather than letting N vary per unit: variable N is a dose confound, and dose/schedule length is the demonstrated dominant lever (#601). Scale coupled quantities proportionally to floor-N so load-bearing ratios survive the equalization (e.g. contrastive negatives at the ~1:1 positives-to-total-negatives ratio, `.claude/rules/contrastive-negatives.md`). Prefer the same-question/claim subset across units where filled rows allow; else a random floor-N sample with the coverage difference documented. If per-unit N is equal by construction, write "N/A" and move on.
 - **Baseline propensity on BOTH sides of an implantation design.** Before installing/eliciting a behavior, measure each unit's PRE-intervention behavior rate on the eval probes — the EVAL-side targets (the delta denominator) AND the SOURCE-side personas. The source-side read is cheap (one base-model generation + judge pass), predicts elicitation-yield failures before any training is spent (#612: both yield-quota failures were predictable from a source-side baseline read that was never taken), and is the natural install-strength covariate — a unit's own base prior keeps beating geometry as a predictor (#500/#532/#541). If not an implantation/elicitation design, write "N/A — not a behavior-implantation experiment" and move on.
 - **Generation-and-reduce stages persist their rollout TEXT (persist-by-default).** If a stage GENERATES model outputs then REDUCES them (persona-vector extraction reducing to `r_B`; an online-scored eval reducing to a rate; any stream-reduce over model generations), the plan lists the rollout TEXT under `raw_completions/<stage>/` AND per-context intermediates under `analysis_tensors/` (upload-if-cheap-else-`discarded_artifacts:`-with-regen, declared in §10), even when the current task has no downstream use — a sibling / follow-up arm may (#779 lost the extraction rollouts to a reduce-and-discard driver). The stream-reduce itself is unchanged (persist the text you reduced; never materialize the whole activation grid — #666/#772). Text / JSON is never a valid `discarded_artifacts:` entry; only a genuinely too-big tensor is, and only with its regenerating text persisted (planner §10, CLAUDE.md § Upload Policy). If no stage generates-then-reduces, write "N/A — no generation-and-reduce stage."
@@ -449,7 +449,10 @@ gate the plan retains:
   in prior-issue evidence of the construct. A gate whose sign predicts the
   opposite of what every prior run of this construct produced, or whose
   threshold no past result of this construct would itself have passed, is
-  a defect — it guarantees a false FAIL by construction.
+  a defect — it guarantees a false FAIL by construction. This clause is
+  vacuous when NO prior null values exist for the construct — exactly the
+  #1491 shape; the `**Measured calibration basis for NULL-statistic gates
+  (#1491).**` sub-section below is its measure-when-no-prior completion.
 - Self-check the whole gate set is **jointly satisfiable** before
   shipping: no two gates may demand contradictory outcomes (e.g. one
   requires `Δ ≥ +x` and another `Δ ≤ −y`) on the SAME measurement at the
@@ -484,6 +487,55 @@ gate set will bounce the plan — sanity-check before shipping.
 | Reference-file §K added | Reference-file additions §K | Presence (heading count ≥ 1) |
 
 Bind every criterion this way. A criterion whose §4 mechanism cannot be named is a criterion the design has not produced; back-fill §4 or drop the criterion.
+
+**Measured n_train for registered per-fold/per-cell counts (#2061).** Any
+`n_train` (or per-cell/per-fold sample count) a plan REGISTERS — in a §7
+gate predicate, a §6 acceptance criterion, or a §11 hyperparameter row —
+that feeds an n-vs-d validity read (the #1887 n<d refusal, a GCV dof cap,
+power/CI sizing) MUST cite a MEASURED artifact-side row count: a named
+command reading the artifact the fit actually CONSUMES (sidecar/manifest
+`jq 'length'`, a dataset `__len__` probe, a store row count), never an
+inference from the corpus name, the builder's `n_built`, or a parent
+plan's figure — a build count and the fit's realized denominator are
+DIFFERENT quantities whenever any filter/join/dedup sits between them.
+Measure per cell/fold where counts differ. When the artifact does not
+exist at plan time, mark the row `inferred — re-measure at first
+materialization` and name the pre-fit re-measure step in §7; an inferred
+count silently feeding an n<d-sensitive fit is plan-invalidating by
+construction (#2061: corpus `n_built` was quoted where realized turnstore
+rows was the fit's denominator; likely 5 of 7 combos degenerate under the
+#1887 refusal; caught only post-smoke at the cost of an
+`epm:strategy-pivot` + plans v11→v13, ~2.6 h).
+
+**Measured calibration basis for NULL-statistic gates (#1491).** Any
+pre-registered numeric gate whose thresholded quantity is computed from a
+NULL / permutation / shuffle / scrambled-label draw MUST cite a MEASURED
+calibration basis: a 1-cell pilot computing THAT null statistic through the
+PRODUCTION entrypoint at production `n`/`d`/`h` shape — named command +
+cell + the realized null value(s), with the gate band set relative to
+them. Prefer ≥3 draws, or state the dispersion allowance when the band is
+set off fewer (a measured value plus an asserted margin is the within-rung
+form of the same trap — #1491's first fix carried a ~3× margin and still
+fired). Two mechanisms make any asserted constant wrong: (1) a refit null
+is strictly negative under the `1 − SS_res/SS_tot` held-out convention —
+state WHICH R² convention the gate reads; the squared-correlation form
+does sit near 0 — with −d/(n−d−1)-scale magnitude, and (2) null depth is
+non-monotone in the shape parameters (deepest near the interpolation
+threshold `n ≈ d` / `n ≈ h`), so a ladder sweeping `n` or width calibrates
+PER RUNG or the gate is advisory. Not yet materialized at plan time ⇒ mark
+the band `inferred — re-calibrate at first null draw` and name the
+pre-gate re-calibration step (the measured-`n_train` escape's shape).
+Declare each null-side gate `advisory` (DEFAULT: log the realized value +
+expected band, continue, surface in the run digest) or `hard-abort` —
+hard-abort is opt-in and the plan must ARGUE it (name the downstream claim
+that would be invalid and why analysis-time rejection is worse; a
+null-side abort discards the OBSERVED arm too, the expensive half). Full
+recipe + carve-outs (purely observed-side predicates, analytic
+distributions, advisory log lines with nothing branching):
+`.claude/rules/selection-symmetric-nulls.md` § Gate thresholds on a NULL
+statistic. (#1491: `abs(r2_null) < 0.05` on a shuffle-refit null —
+realized −1 to −4 — hard-aborted all 8 shards on an 8×H200 pod; the
+asserted `-3.0` floor died the same way at the next rung.)
 
 ## 9. Resources & Parallelism
 
@@ -613,6 +665,23 @@ client-side compression OFF for fp16 tensors bound for a Xet-backed HF repo
 1.29× ratio; the store phase ran 4.5× over plan). Full recipe:
 `.claude/rules/plan-compute-sizing.md` § Store-heavy / IO-heavy phase sizing.
 
+**Rate-basis decomposition for coverage projections (REQUIRED whenever a
+§9 — or §7-gate — coverage / yield / sizing projection multiplies a
+measured empirical rate against a population).** A projection over a
+MULTI-STAGE filtered pipeline (generate → filter → judge) decomposes the
+projected rate into per-stage rates, each with its measured numerator AND
+denominator named against an artifact (file/JSON path or cited issue
+`#<M>`); a single collapsed rate whose measured denominator differs from
+the projection's application population is NOT a valid sizing basis — the
+arithmetic downstream of a denominator substitution stays internally
+consistent, so a recompute never catches the basis error (#2054: a 49.3%
+admitted/PREJUDGE admission rate applied as the per-attempt success
+probability from PENDING pairs projected ~3.7x optimistic — the omitted
+verbatim-question filter drops 65-69% of generator-kept rows — and the
+round ran ~1.6 GPU-h + ~33.7k judge calls into a pre-registered gate-1
+ABORT). Critic twin: Statistics & Measurement lens item 17
+(`.claude/rules/critic-lens-reference.md`).
+
 **VM-RAM & GCP-fence sizing (REQUIRED for any VM-placed CPU phase and any
 deliberate `max_run_duration`).** State each VM-placed CPU/analysis
 phase's projected peak RSS in its row's `basis` (measured one-chunk
@@ -664,7 +733,7 @@ pod; the follow-up round improvised the "DEFERRED + gap-listed" rows this
 block mechanizes), and #1773 (the inverse direction: a GCE pass crashed
 loading VM-produced outputs never HF-uploaded — one provision+boot cycle
 burned). This is the plan-time mechanization of the
-`gotchas.md` cross-machine upload-set bullet (#1526, rules (i)-(iv)).
+`gotchas.md` cross-machine upload-set bullet (#1482/#1535, rules (i)-(iv)).
 
 Render as a fenced YAML block, one entry per phase that reads another
 phase's outputs (the block NAME stays `off_pod_phases:` for back-compat
@@ -1010,6 +1079,18 @@ Worked example pair:
 - **Wrong:** the same row with `How to verify: the p1 assert will catch it` — that IS the production crash (#1768).
 
 Plan-time critics reviewing §12 check that every row matching the three-conjunct trigger carries the smoke-slice probe routing (prose-only enforcement, the #1287 precedent).
+
+### Exactness-claim grain (#2163)
+
+**Trigger:** a §12 row that asserts an EXACT identity — zero variance, `n_distinct == 1`, byte-identical, "every row", "no exceptions", `max|…| = 0` exactly — whose evidence is a SAMPLE (fewer rows / shards / units examined than the population the plan applies the claim to), when the plan converts the claim into a runtime assert, a hard-coded constant, or a stated deviation from a standing rule.
+
+**The duty:** state the claim's evidence GRAIN and the POPULATION grain explicitly, as a ratio. Then EITHER verify the claim at full grain BEFORE approval (often cheap — it is exactly the read the asserting phase already performs) OR restate the assumption as a BOUND ("no deviation observed in N of M rows") AND soften the assert to the invariant the bound supports. A sample only ever establishes "no counterexample observed in N of M", never "zero counterexamples exist" — widening 1 shard → 10 shards raises coverage, not the KIND of claim. Deferring verification to the production assert ("Phase 0 re-asserts it over the full store") is the failure mode, not a verification: the assert IS the crash.
+
+**Exemptions:** value claims (a λ, a byte count, a key set) with sampled sources, and exactness claims no assert / constant / stated deviation rests on — this sub-rule is not a confidence-downgrade tax on measured numbers.
+
+**Worked example (#2163):** A11 asserted `n_distinct_rows = 1` / byte-identity at `Confidence: High (measured)` from a 10-shard probe (706 of 142,000 rows — 0.5%), and the plan registered a Phase-0 full-store assert on it. Full-grain truth: 258 deviating rows (4 distinct vectors, all within cosine 0.99989) — the substantive conclusion survived; the literal premise and the assert built on it were both false. Cost: a pod launch cycle, a plan revision (v6), and a crash-fix round.
+
+Sibling boundary: § Real-corpus structural assumptions above routes STRUCTURAL premises to a smoke-time full-grain probe; this sub-rule is the assert-side sibling — it binds at PLAN time, before any smoke exists, whenever the exactness premise is already sampled-grounded and assert-bound. Mechanical companion: `verify_plan.py` c64 (WARN-only); behavioral gate: the Phase 1.5 fact-checker EXACTNESS-CLAIM GRAIN CHECK (adversarial-planner SKILL.md).
 
 ### General shape
 

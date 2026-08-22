@@ -17,6 +17,7 @@ Row grammar: `- <rule>.md — <fires-when trigger>`
 - arxiv-mcp.md — you search / read an arXiv paper to ground a hyperparameter or replicate a recipe.
 - auto-continuation.md — you are about to pause, block, ask "should I continue", or present a choice (gate enumeration, halt criteria, two-path escalation).
 - background-automation.md — you touch/reason about the cron audits/session watcher/pod-GCP janitors.
+- blinded-reads.md — you dispatch a blinded / unprimed qualitative read (bare-API packets, no reader tools, frozen key, scope-aware wrapper-vs-payload leakage scan).
 - clean-result-critic-lens-reference.md — a clean-result critic twin reviews a markdown body (pointer-loaded spec-text rubrics).
 - clean-result-paper-review.md — a clean-result critic twin reviews a `paper: true` task (P1-P7 lenses, verify_paper.py pre-pass).
 - code-reviewer-section-reference.md — the code-reviewer runs a Step 0.x gate (pointer-loaded span).
@@ -29,36 +30,38 @@ Row grammar: `- <rule>.md — <fires-when trigger>`
 - contrastive-negatives.md — a plan implants a behavior (marker/fact/refusal/trait) into a persona (contrastive negatives by default).
 - crash-fix-rounds.md — retry/revision or post-code-fix relaunch (fix-engaged signal, stale-artifact + HF re-upload + sentinel wipe, ancestry+MooseFS, kill-relaunch, per-leg out-roots, symbol-rename grep, compute-character restate, mid-run push, shared-module propagate).
 - critic-lens-reference.md — a critic reviews under its assigned lens (pointer-loaded single-lens span).
+- cross-session-writer-arbitration.md — dispatching a writer into a worktree an independent live session may share (pre-split multi-unit builds), or a target file churns mid-edit (probe + claim markers + sequence-or-split; read-pinning to a SHA).
 - data-realism.md — a plan picks training/eval/probe data (strict 4-tier preference order; justify tier 3/4).
 - diff-size-budget.md — reading a branch-wide diff BODY (size first; >300 KB: round-scope it).
-- disk-hygiene.md — you place a staging path, size a cache, or read a disk-guard alert (data-disk quotas, guard tiers, preflight floor).
+- disk-hygiene.md — a staging path, cache cap, disk-guard alert, or evidence-gated deletion (data-disk quotas, guard tiers, preflight floor).
 - experiment-guidelines.md — you plan/implement a `workflow: v2` experiment (guideline index → full rules + v2 critic owners).
 - experiment-implementer-section-reference.md — implementer checklist detail (pointer-loaded).
 - experimenter-section-reference.md — experimenter gate/recovery detail (pointer-loaded).
-- gotchas.md — you write/debug training/eval/orchestration/analysis code or an Anthropic request-builder seam; launch GPU workers / multi-GPU/vLLM fan-outs, incl. via train_lora/merge_lora (CVD clobber, smoke width, smoke-gate slice arithmetic, pilot-gate shape+rc, EDQUOT/wedge, teardown+pid-namespace reap, handshake timeout); write subprocess-per-phase dispatchers (dynamic-id registries, full-panel fresh-child smoke, between-phase cache reaps, fenced-branch probes, chained smoke-then-full leg out-root residue); check cross-machine reads (off-pod, rsync-lane) against the consuming lane's staged set; diagnose silent deaths (exit-137, rc=134); parse JSONL; feed real corpora to vLLM; write real-corpus streaming filters / a corpus builder/sampler; or build/smoke a teacher-forced capture rig (BPE seams); write errorbar/CI figure code (xerr/yerr) or bootstrap-CI gating/verdict code (rank-space tail mass); stage VM-local data; or write \uXXXX/Unicode-sensitive literals via the Edit tool; or gate SAE fitness/eval against a published FVE/L0 reference (token-pool semantics); or count-keyed liveness gates; autocompact-thrash + sub-native `compact_boundary preTokens`
+- gotchas.md — you write/debug training/eval/orchestration/analysis code or an Anthropic request-builder seam; launch GPU workers / multi-GPU/vLLM fan-outs, incl. via train_lora/merge_lora (CVD clobber, smoke width, smoke-gate slice arithmetic, pilot-gate shape+rc, EDQUOT/wedge, teardown+pid-namespace reap, handshake timeout); write subprocess-per-phase dispatchers (dynamic-id registries, full-panel fresh-child smoke, between-phase cache reaps, fenced-branch probes); check cross-machine reads (off-pod, rsync-lane) against the consuming lane's staged set; diagnose silent deaths (exit-137, rc=134); parse JSONL; feed real corpora to vLLM; write real-corpus streaming filters / a corpus builder/sampler; or build/smoke a teacher-forced capture rig (BPE seams); write errorbar/CI figure code (xerr/yerr) or bootstrap-CI gating/verdict code (rank-space tail mass); stage VM-local data; or write \uXXXX/Unicode-sensitive literals via the Edit tool; or gate SAE fitness/eval against a published FVE/L0 reference (token-pool semantics); or count-keyed liveness gates; or a selection/filter over a local committed artifact (empty selection ⇒ raise); autocompact-thrash + sub-native `compact_boundary preTokens`; agent-memory index alignments; or derive GPU width/pins or CPU/thread counts inside a SLURM allocation (allocation-first, never nvidia-smi)
 - lens-coverage-map.md — you split, retire, or add a review lens (v2 lens→owner ledger; `--check-lens-coverage`).
 - llm-judging.md — a plan/code designs/writes an LLM-judged behavior DV (graded 0-100 primary; one Sonnet judge; drop-never-coerce; retry transport errors; rubric-keyed caches; generous rationale-sized max_tokens — 1024/2048 floors; pilot-gate ≥5k-call waves).
 - marker-leakage-measurement.md — a plan/code MEASURES marker leakage (on-policy, marker-at-end, three-space DV).
 - marker-training-recipe.md — a plan TRAINS a fresh marker/implant adapter (lr≤5e-6, marker-only loss, band-stop).
 - methodology-writer-section-reference.md — the methodology-writer authors a mode body (markdown doc template, PAPER-TASK, or REPORT mode; pointer-loaded).
-- on-policy-completions.md — you build implantation training data (on-policy positives; 80% yield floor; multi-behavior datagen ⇒ standardized behavior definitions).
+- on-policy-completions.md — you build implantation training data (on-policy positives; 80% relative + absolute trainability floors, DROP below; behavior definitions).
 - ood-generalization-folds.md — a held-out predictive DV (R²/ρ) over grouped samples (GROUP-level fold — LOFO/transfer, not pointwise LOO).
 - persona-distance-metrics.md — you write base-model persona-distance predictor code (canonical KL/JS/cosine defs).
 - persona-vectors-recipe.md — a plan elects persona vectors / a mean-difference contrastive direction (arXiv 2507.21509 EXCEPT logit scoring).
-- plan-compute-sizing.md — a plan sizes §9 compute (HBM, ckpt/fan-out retention, out-root mounts, sentinel lanes, store/IO, RAM/RSS routing, rung RAM/HBM floors, MEASURED-pilot walls, per-family pilot floor on heterogeneous fan-outs, p90 fences, down-width split).
+- plan-compute-sizing.md — a plan sizes §9 compute (HBM, ckpt/fan-out retention, out-root mounts, sentinel lanes, store/IO, RAM/RSS routing, rung RAM/HBM floors, MEASURED-pilot walls, per-family pilot floors, regime-changed rerun re-pilot, p90 fences, down-width split).
 - planner-section-reference.md — the planner writes a plan section (pointer-loaded from planner.md).
 - pm-audit-reference.md — the PM scopes fleet burn, triages unmapped/non-EPS team pods, or renders a Mode-2 audit.
 - pod-config.md — pod SSH/MCP keeps failing, you touch the pod scripts/pods.conf (live-API vs pods.conf authority split), or you stop/park a pod for >~1h (STOPPED volume is NON-durable — persist resume state to HF first).
-- pod-side-reporting.md — pod-side dispatcher/sentinel/poller code (incl. OWN-sentinel read-back), (re)launching ANY detached pod/VM workload, pushing result commits, or posting a continuation-runbook marker (verified-by: ran|read).
+- pod-side-reporting.md — pod-side dispatcher/sentinel/poller code (incl. OWN-sentinel read-back), (re)launching ANY detached pod/VM workload, pushing result commits, or posting a continuation-runbook marker (verified-by: ran|read), or emitting a pod-side HOLD/gate park.
 - pods.md — you provision, size, SSH to, or terminate a pod (intent tables, `pod.py` surface, API hard requirements, preflight, crons).
 - replication-fidelity.md — the Goal replicates a published finding (match the paper's data + recipe FIRST; change only the tested variable).
 - repo-root-uncommitted-state.md — tracked files left modified/deleted-but-uncommitted at the shared repo root, root files reverting/resurrecting within seconds, or verifying a commit landed under concurrency (pre-commit stash race; SHA-blob landing check).
+- research-pm-section-reference.md — the PM renders a STATUS part or runs the infra auto-dispatch items (pointer-loaded).
 - research-project-structure.md — you write result artifacts / results index / queue (one source of truth per layer).
-- selection-symmetric-nulls.md — a max/argmax/top-k headline over a free axis vs a null band or bootstrap CI, or difference-vector legs sharing one SAMPLED baseline vs noise-free nulls.
+- selection-symmetric-nulls.md — a max/argmax/top-k headline over a free axis vs a null band or bootstrap CI; difference-vector legs sharing one SAMPLED baseline vs noise-free nulls; a numeric gate on a null statistic.
 - smoke-blind-spots.md — a plan declares a pre-launch smoke run, or code adds/edits a smoke-conditional branch that substitutes an implementation, downgrades an assertion, or leaves a production-only third-party import.
 - trigger-dense-review.md — reviewing/reconciling a guard/security artifact or refusal corpus, composing briefs on such targets (#1503/#1413), orchestrator run-failure ingest, judge-monitor reads, or ANY orchestrator turn on a guard-surface round.
 - upload-policy.md — you write training/Hub/sweep code, or sequence phases around a regeneration-costly store (Hub-API verification, verify + staging-download transport retry, delete-after-eval persist, store-before-long-fit #825, quota-403 recovery, upload-wedge ladder).
-- upload-verifier-section-reference.md — the upload-verifier runs a Step 2/2.5/2.6/2.9/3/4/6 recipe (pointer-loaded span).
+- upload-verifier-section-reference.md — the upload-verifier runs a Step 2/2.5/2.6/2.9/2.10/2.11/3/4/6 recipe (pointer-loaded).
 - vectorize-many-cell-fits.md — many-cell GD, dense fits (svd/eigh/lstsq/ridge), or a perm/bootstrap/null-draw battery over a fixed pool (VECTORIZE first; detached+checkpointed VM fits; Supersede contract incl. mid-run ≥2×-deviation + width re-eval).
 - workflow-fix-on-bug.md — any agent hits a bug from a gap in the workflow surface itself (emit a `workflow-fix-candidate`).
 - agents-vs-skills.md — you create/restructure anything under `.claude/` (decide agent vs skill).

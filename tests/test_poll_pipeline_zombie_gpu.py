@@ -285,8 +285,8 @@ def _patch_pod(
 
     monkeypatch.setattr(pp.subprocess, "run", _fake_run)
     monkeypatch.setattr(pp, "post_event", MagicMock())
-    monkeypatch.setattr(pp, "_marker_pid", lambda issue: None)
-    monkeypatch.setattr(pp, "_run_launched_age_sec", lambda issue, now_epoch: 10800.0)
+    monkeypatch.setattr(pp, "_marker_pid", lambda issue, pod=None: None)
+    monkeypatch.setattr(pp, "_run_launched_age_sec", lambda issue, now_epoch, pod=None: 10800.0)
 
 
 def _stale_state(
@@ -433,8 +433,8 @@ def test_zombie_does_not_override_done_verdict(
 
     monkeypatch.setattr(pp.subprocess, "run", _fake_run)
     monkeypatch.setattr(pp, "post_event", MagicMock())
-    monkeypatch.setattr(pp, "_marker_pid", lambda issue: None)
-    monkeypatch.setattr(pp, "_run_launched_age_sec", lambda issue, now_epoch: 10800.0)
+    monkeypatch.setattr(pp, "_marker_pid", lambda issue, pod=None: None)
+    monkeypatch.setattr(pp, "_run_launched_age_sec", lambda issue, now_epoch, pod=None: 10800.0)
 
     state_file = tmp_path / "poll-state.json"
     result = pp.poll_once(

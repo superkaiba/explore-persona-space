@@ -59,6 +59,39 @@ tasks/<old-status>/<N>/body.md — stale checkout" warning. Without the
 warning, every applied/absent fix-landing check in a revision round scores
 against the wrong body.
 
+**Verified-identical refinement to "always inline" (#2333 r1, 2026-08-18).**
+The always-inline rule exists because unverified plan paths fail cross-tree.
+When the WORKTREE ITSELF holds the task folder (even at a stale status
+folder like `tasks/planning/<N>/`) and you VERIFY at compose time that (a)
+the worktree `plans/plan.md` symlink targets the same version as canonical
+and (b) `md5sum` matches the canonical main-tree plan, referencing the
+WORKTREE-absolute path is safe and correct (Step 2-b default case) — it is
+inside Codex's sandbox root by construction. On #2333 this kept the prompt
+at 34 KB instead of ~112 KB (77 KB plan). Keep the guard sentence ("plan
+unreachable is invalid — path verified inside your sandbox") and a
+grep-then-slice instruction for large plans. Inline ONLY when the worktree
+copy is missing or fails the identity check.
+
+**Local `judge_inputs` mirror is a lens-7 text source (#2333 r1, 2026-08-18).**
+When judge items/scores carry only `answer_sha16` + labels (no text) and
+rollout text looks HF-only, probe `<worktree>/data/issue_<N>/judge_inputs/`
+first — the VM-side judging stage stages a full rollout-text mirror there
+(JSONL rows with `response_text` + join keys). Pointing lens 7 at that
+mirror makes it fully local/scoreable and demotes the HF path to the
+advisory network carve-out, eliminating the EXCEPTION-2 BLOCKED risk. The
+interpretation marker's phrase "local judge-input mirror" is the tell it
+exists.
+
+**`rawcomp_cache/` HF-snapshot mirror — a second lens-7 local-text source
+(#2379 r1, 2026-08-20).** Sibling of the judge_inputs pattern: probe
+`<worktree>/data/issue_<N>/rawcomp_cache/<hf-prefix>/` — some runs stage a
+full local snapshot of the HF data-repo prefix there (subdirs mirroring
+`raw_completions/<stage>/<arm>/raw_completions.json` — dict with a `rows`
+list — plus `judge_scores/`, `train/*.jsonl`). When present, name it the
+PRIMARY lens-7 source and demote the body's pinned HF tree to advisory
+liveness. Probe BOTH paths (`judge_inputs/`, `rawcomp_cache/`) before
+concluding raw text is HF-only.
+
 **Lens-7 smoke-copy trap (#685, 2026-06-27).** When the round's eval JSONs are
 worktree-only, the worktree may ALSO carry a `*_smoke/` sibling dir with a
 same-named raw-generations file from the smoke run. The REAL run's raw

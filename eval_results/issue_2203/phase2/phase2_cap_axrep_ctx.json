@@ -1,0 +1,47 @@
+{
+  "metadata": {
+    "issue": 2203,
+    "timestamp_utc": "2026-08-09T20:28:47.328388+00:00",
+    "git_commit": "6b5d69dd",
+    "git_dirty": false,
+    "torch_version": "2.8.0+cu128",
+    "transformers_version": "4.57.6"
+  },
+  "arm": "axrep_ctx",
+  "regime": {
+    "cap_max_new_tokens": 512,
+    "geom_sha": "f6d7e141b0bedd77",
+    "model": "Qwen/Qwen2.5-7B-Instruct",
+    "n_gsm8k": 150,
+    "n_ifeval": 150,
+    "n_mmlupro": 200,
+    "smoke": false
+  },
+  "gsm8k": {
+    "benchmark": "gsm8k",
+    "n": 150,
+    "acc": 0.86,
+    "ci95": [
+      0.7954465685598426,
+      0.90657421125524
+    ]
+  },
+  "ifeval": {
+    "benchmark": "ifeval_strict_prompt",
+    "n": 150,
+    "acc": 0.6666666666666666,
+    "ci95": [
+      0.5878960768592673,
+      0.7371135434254931
+    ]
+  },
+  "mmlu_pro": {
+    "benchmark": "mmlu_pro_logprob",
+    "n": 200,
+    "acc": 0.4,
+    "ci95": [
+      0.3346046396837895,
+      0.46916456149987484
+    ]
+  }
+}

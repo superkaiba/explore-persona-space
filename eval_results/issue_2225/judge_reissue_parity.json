@@ -1,0 +1,5 @@
+{
+ "n_dual_scored": 250,
+ "mean_offset_sync_minus_batch": 1.5720000000000005,
+ "note": "dual-scored batch-vs-sync parity (rule 28 / #1739: 287 items, batch 7.26 vs sync 7.77); offset is sync single-draw minus the item's batch kept-draw mean, so it carries draw noise on top of any transport offset."
+}

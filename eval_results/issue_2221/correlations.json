@@ -1,0 +1,3365 @@
+{
+  "per_trait": {
+    "evil": {
+      "panels": {
+        "paper": {
+          "arms": {
+            "a_rb_ctx": {
+              "r_by_layer": [
+                0.1664089904565536,
+                0.07700841579638384,
+                -0.5222409806881204,
+                -0.3677815719930746,
+                -0.6204930973938515,
+                -0.45452668403957597,
+                -0.31467231971970644,
+                -0.21686278011625337,
+                -0.41159670511860336,
+                -0.15932775682010453,
+                -0.1500336376722651,
+                0.5934958941548893,
+                0.41602247614138405,
+                0.5567619946658097,
+                0.5443698358020238,
+                0.4593950321646347,
+                0.5346331395519063,
+                0.5682689993250395,
+                0.6120841324505681,
+                0.6072157843255095,
+                0.5341905624496283,
+                0.48108131017626005,
+                0.5076359363129441,
+                0.5036527423924415,
+                0.4629356489828592,
+                0.6125267095528463,
+                0.5412717960860773,
+                -0.5554342633589755
+              ],
+              "selected_layer": 4,
+              "selected_r": -0.6204930973938515,
+              "frozen_layer": 19,
+              "frozen_r": 0.6072157843255095,
+              "bootstrap_ci_selected": [
+                -0.8648294572328649,
+                0.9091792612686636
+              ],
+              "lofo": {
+                "evil": -0.5122542060195303,
+                "hallucination": -0.5403363352102009,
+                "insecure_code": -0.5521877757710718,
+                "mistake_gsm8k": -0.7341099848252112,
+                "mistake_math": -0.6914405558320056,
+                "mistake_medical": -0.60087099754799,
+                "mistake_opinions": -0.6068282327543125,
+                "sycophancy": -0.6356384383749957
+              },
+              "score_shuffle_null_q95_abs": 0.5720419691219599
+            },
+            "b_rb_ans": {
+              "r_by_layer": [
+                0.41376948519706486,
+                0.474643887070407,
+                0.506404444569542,
+                0.46626262884146863,
+                0.4821429075910361,
+                0.4812606698827268,
+                0.41994514915523,
+                0.40053591957242524,
+                -0.3727454317606821,
+                -0.13851132020456117,
+                0.13762908249625186,
+                0.05602209447764098,
+                0.0017644754166186135,
+                0.029554963228361777,
+                0.44861787467528247,
+                -0.27966935353405026,
+                -0.276140402700813,
+                -0.06043328301918751,
+                0.08557705770600275,
+                -0.20732586145268708,
+                -0.48170178873688146,
+                -0.10586852499711681,
+                0.1049862872888075,
+                0.31584109957473183,
+                -0.016321397603722174,
+                0.14865705385011818,
+                -0.20953145572346035,
+                0.47993731332026285
+              ],
+              "selected_layer": 2,
+              "selected_r": 0.506404444569542,
+              "frozen_layer": 19,
+              "frozen_r": -0.20732586145268708,
+              "bootstrap_ci_selected": [
+                -0.7616686495668508,
+                0.8181289332311933
+              ],
+              "lofo": {
+                "evil": 0.3479148589697143,
+                "hallucination": 0.39072653362712334,
+                "insecure_code": 0.50698634910278,
+                "mistake_gsm8k": 0.6523896826835266,
+                "mistake_math": 0.5328526388294837,
+                "mistake_medical": 0.5063227544050015,
+                "mistake_opinions": 0.4783851078948684,
+                "sycophancy": 0.5815507107043254
+              },
+              "score_shuffle_null_q95_abs": 0.5615443013388738
+            },
+            "c_map_ctx": {
+              "r_by_layer": [
+                -0.07523810738727157,
+                -0.617395057677905,
+                -0.5094062447220564,
+                0.428857212107448,
+                -0.27262749500329,
+                0.5315350998359598,
+                0.5965939338708358,
+                0.23854905812787872,
+                -0.036291322386801585,
+                0.20624092966157975,
+                0.1872101142636228,
+                0.5403866418815212,
+                0.6014622819958946,
+                0.5970365109731138,
+                0.6005771277913384,
+                0.6098712469391778,
+                0.6063306301209533,
+                0.6120841324505681,
+                0.6762578122808881,
+                0.6744875038717758,
+                0.6744875038717758,
+                0.7444146860317106,
+                0.7227284080200852,
+                0.6789132748945564,
+                0.6744875038717758,
+                0.682896468815059,
+                0.7178600598950264,
+                0.7236135622246413
+              ],
+              "selected_layer": 21,
+              "selected_r": 0.7444146860317106,
+              "frozen_layer": 19,
+              "frozen_r": 0.6744875038717758,
+              "bootstrap_ci_selected": [
+                -0.8467561999136451,
+                0.9288589296256401
+              ],
+              "lofo": {
+                "evil": 0.6795208855361117,
+                "hallucination": 0.6890038278096763,
+                "insecure_code": 0.628213628956944,
+                "mistake_gsm8k": 0.8553027022117818,
+                "mistake_math": 0.7538161913869083,
+                "mistake_medical": 0.7502551301237388,
+                "mistake_opinions": 0.7680374608942271,
+                "sycophancy": 0.7666225098811402
+              },
+              "score_shuffle_null_q95_abs": 0.5601809027809076
+            },
+            "c_map_pfx": {
+              "r_by_layer": [
+                0.09249861437611623,
+                0.5058656279038318,
+                0.7700841579638386,
+                0.7306947958610904,
+                -0.1248067428424152,
+                -0.5337479853473501,
+                -0.6067732072232314,
+                0.4713446139261425,
+                0.38636981028875345,
+                -0.34034179165183437,
+                -0.5187003638698958,
+                -0.46824657421019605,
+                -0.6266891768257444,
+                -0.13233055358114237,
+                0.14472271244492826,
+                0.41646505324366206,
+                0.3275070556857704,
+                0.4996695484719389,
+                0.4235462868801112,
+                0.4886051209149872,
+                0.32086839915159937,
+                0.5961513567685578,
+                0.5815463123933815,
+                0.623591137109798,
+                0.5868572376207183,
+                0.5952662025640016,
+                0.5970365109731138,
+                0.05310925227336817
+              ],
+              "selected_layer": 2,
+              "selected_r": 0.7700841579638386,
+              "frozen_layer": 19,
+              "frozen_r": 0.4886051209149872,
+              "bootstrap_ci_selected": [
+                -0.8868778033569621,
+                0.9216044668405792
+              ],
+              "lofo": {
+                "evil": 0.7154570862135022,
+                "hallucination": 0.7456708092937813,
+                "insecure_code": 0.6969036542038285,
+                "mistake_gsm8k": 0.7791433442912593,
+                "mistake_math": 0.8221639622608973,
+                "mistake_medical": 0.7182442445717927,
+                "mistake_opinions": 0.7955609876498222,
+                "sycophancy": 0.817819329708415
+              },
+              "score_shuffle_null_q95_abs": 0.5919690031520299
+            },
+            "d_transport": {
+              "r_by_layer": [
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN
+              ],
+              "selected_layer": 0,
+              "selected_r": NaN,
+              "frozen_layer": 19,
+              "frozen_r": NaN,
+              "bootstrap_ci_selected": [
+                -0.7419761871898061,
+                -0.3996259196047139
+              ],
+              "lofo": {
+                "evil": NaN,
+                "hallucination": NaN,
+                "insecure_code": NaN,
+                "mistake_gsm8k": NaN,
+                "mistake_math": NaN,
+                "mistake_medical": NaN,
+                "mistake_opinions": NaN,
+                "sycophancy": NaN
+              },
+              "score_shuffle_null_q95_abs": NaN
+            }
+          },
+          "h2_delta_c_minus_a": {
+            "point": 1.39057725535769,
+            "c_selected_position": 30,
+            "c_selected_r": 0.7700841579638386,
+            "bootstrap_ci": [
+              -1.5607661578150565,
+              1.738461266809629
+            ],
+            "n_positions_c": 56,
+            "score_shuffle_null_q95_abs_56pos": 0.6025797891791467
+          }
+        },
+        "lmsys": {
+          "arms": {
+            "a_rb_ctx": {
+              "r_by_layer": [
+                0.06461625693259794,
+                0.029652665852630565,
+                -0.4580673008578005,
+                -0.20491319835474553,
+                -0.6404090669963646,
+                -0.6457199922237014,
+                -0.591283008643499,
+                -0.3089188173900915,
+                -0.4412493709712339,
+                -0.142952404035816,
+                0.022128855113903407,
+                0.721843253815529,
+                0.5487956068248044,
+                0.5567619946658097,
+                0.5731373474500983,
+                0.40584320278898844,
+                0.5089636676197783,
+                0.5235687119949546,
+                0.5474678755179703,
+                0.5310925227336817,
+                0.4133670135277156,
+                0.4819664643808162,
+                0.4881625438127091,
+                0.4540841069372979,
+                0.18765269136590088,
+                0.39654908364114905,
+                0.246958023071162,
+                -0.5443698358020238
+              ],
+              "selected_layer": 11,
+              "selected_r": 0.721843253815529,
+              "frozen_layer": 19,
+              "frozen_r": 0.5310925227336817,
+              "bootstrap_ci_selected": [
+                -0.8833535341857338,
+                0.8955703277471662
+              ],
+              "lofo": {
+                "evil": 0.6501185395273377,
+                "hallucination": 0.6623370129936269,
+                "insecure_code": 0.628213628956944,
+                "mistake_gsm8k": 0.8215276826122457,
+                "mistake_math": 0.7803590150272923,
+                "mistake_medical": 0.694236080407833,
+                "mistake_opinions": 0.7274074928264437,
+                "sycophancy": 0.7240693089857431
+              },
+              "score_shuffle_null_q95_abs": 0.5713781034685429
+            },
+            "b_rb_ans": {
+              "r_by_layer": [
+                0.25099662801399775,
+                0.25364334113892567,
+                0.165419570307995,
+                0.07675468062290969,
+                0.08778265197677602,
+                -0.09616391020571444,
+                -0.05513985676933167,
+                -0.3687753620732902,
+                -0.6321233180036183,
+                -0.5174324159234084,
+                -0.5438995471726876,
+                -0.4133283663429102,
+                -0.5368416455062132,
+                -0.3824500465520845,
+                -0.3039308905125562,
+                -0.3784799768646926,
+                -0.519196891340027,
+                -0.46141032144576744,
+                -0.3586296284277332,
+                -0.44597116155035454,
+                -0.5218436044649549,
+                -0.4892008092575106,
+                -0.5050810880070781,
+                -0.1173376152051378,
+                -0.5187557724858723,
+                -0.4239152188426219,
+                -0.42038626800938467,
+                -0.35068948905294944
+              ],
+              "selected_layer": 8,
+              "selected_r": -0.6321233180036183,
+              "frozen_layer": 19,
+              "frozen_r": -0.44597116155035454,
+              "bootstrap_ci_selected": [
+                -0.8579693576274054,
+                0.6575233770369789
+              ],
+              "lofo": {
+                "evil": -0.5789877671784927,
+                "hallucination": -0.5379952780502496,
+                "insecure_code": -0.47048864072496205,
+                "mistake_gsm8k": -0.6431639699991131,
+                "mistake_math": -0.7421640223597766,
+                "mistake_medical": -0.5992260120939925,
+                "mistake_opinions": -0.6697391510528158,
+                "sycophancy": -0.7158565062367236
+              },
+              "score_shuffle_null_q95_abs": 0.5585667490733298
+            },
+            "c_map_ctx": {
+              "r_by_layer": [
+                -0.1526891002859335,
+                -0.7280393332474221,
+                -0.5501233381316386,
+                0.43593844574389706,
+                -0.21022412358208234,
+                0.31467231971970644,
+                0.4585098779600786,
+                -0.00708123363644909,
+                -0.10356304193306794,
+                0.07700841579638384,
+                0.06727171954626636,
+                0.6350981417690278,
+                0.5368460250632966,
+                0.5780056955751569,
+                0.5412717960860773,
+                0.5434846815974677,
+                0.5837591979047718,
+                0.5957087796662797,
+                0.5855295063138841,
+                0.5855295063138841,
+                0.6275743310303006,
+                0.6125267095528463,
+                0.5868572376207183,
+                0.5926107399503332,
+                0.565170959609093,
+                0.6063306301209533,
+                0.6399664898940864,
+                0.6421793754054769
+              ],
+              "selected_layer": 1,
+              "selected_r": -0.7280393332474221,
+              "frozen_layer": 19,
+              "frozen_r": 0.5855295063138841,
+              "bootstrap_ci_selected": [
+                -0.8859394227179934,
+                0.9057526768658545
+              ],
+              "lofo": {
+                "evil": -0.647504997659891,
+                "hallucination": -0.6663370352160343,
+                "insecure_code": -0.611541292731972,
+                "mistake_gsm8k": -0.7334477295389458,
+                "mistake_math": -0.8467160741282526,
+                "mistake_medical": -0.7335827938987669,
+                "mistake_opinions": -0.726096848695225,
+                "sycophancy": -0.7699469787010932
+              },
+              "score_shuffle_null_q95_abs": 0.5528341228830917
+            },
+            "c_map_pfx": {
+              "r_by_layer": [
+                0.08143418681916453,
+                0.4886051209149872,
+                0.7616751930205552,
+                0.7306947958610904,
+                -0.09913727091028726,
+                -0.5421569502906335,
+                -0.6067732072232314,
+                0.4784258475625916,
+                0.4067283569935446,
+                -0.34034179165183437,
+                -0.5187003638698958,
+                -0.4673614200056399,
+                -0.6249188684166321,
+                -0.11772550920596611,
+                0.1469355979563186,
+                0.42664432659605767,
+                0.3266219014812143,
+                0.48771996671043105,
+                0.4301849434142822,
+                0.4801961559717039,
+                0.32086839915159937,
+                0.591283008643499,
+                0.5943810483594455,
+                0.623591137109798,
+                0.5868572376207183,
+                0.5952662025640016,
+                0.6014622819958946,
+                0.053994406477924306
+              ],
+              "selected_layer": 2,
+              "selected_r": 0.7616751930205552,
+              "frozen_layer": 19,
+              "frozen_r": 0.4801961559717039,
+              "bootstrap_ci_selected": [
+                -0.8891042038745881,
+                0.9125368748414034
+              ],
+              "lofo": {
+                "evil": 0.7030427623431309,
+                "hallucination": 0.7356707537377627,
+                "insecure_code": 0.6882340393668431,
+                "mistake_gsm8k": 0.7751698125736668,
+                "mistake_math": 0.8095561210317148,
+                "mistake_medical": 0.7142428838777993,
+                "mistake_opinions": 0.7850758346000717,
+                "sycophancy": 0.8078459232485563
+              },
+              "score_shuffle_null_q95_abs": 0.5902872101633733
+            },
+            "d_transport": {
+              "r_by_layer": [
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN
+              ],
+              "selected_layer": 0,
+              "selected_r": NaN,
+              "frozen_layer": 19,
+              "frozen_r": NaN,
+              "bootstrap_ci_selected": [
+                -0.8248074263662952,
+                0.33236229848168786
+              ],
+              "lofo": {
+                "evil": NaN,
+                "hallucination": NaN,
+                "insecure_code": NaN,
+                "mistake_gsm8k": NaN,
+                "mistake_math": NaN,
+                "mistake_medical": NaN,
+                "mistake_opinions": NaN,
+                "sycophancy": NaN
+              },
+              "score_shuffle_null_q95_abs": NaN
+            }
+          },
+          "h2_delta_c_minus_a": {
+            "point": 0.039831939205026146,
+            "c_selected_position": 30,
+            "c_selected_r": 0.7616751930205552,
+            "bootstrap_ci": [
+              -1.6878715100630415,
+              1.7602908634285321
+            ],
+            "n_positions_c": 56,
+            "score_shuffle_null_q95_abs_56pos": 0.6013184444376541
+          }
+        },
+        "pooled": {
+          "arms": {
+            "a_rb_ctx": {
+              "r_by_layer": [
+                0.14737817505859668,
+                0.04824090414830942,
+                -0.506750782108388,
+                -0.2314678244914296,
+                -0.6350981417690278,
+                -0.5425995273929115,
+                -0.4235462868801112,
+                -0.30139500665136437,
+                -0.4301849434142822,
+                -0.1402969414221476,
+                -0.005310925227336817,
+                0.6687340015421609,
+                0.45983760926691275,
+                0.5554342633589755,
+                0.5505659152339167,
+                0.40982639670949106,
+                0.5045378965969977,
+                0.5487956068248044,
+                0.5881849689275526,
+                0.558532303074922,
+                0.5178152096653397,
+                0.4801961559717039,
+                0.49480120034688013,
+                0.4779832704603136,
+                0.44434741068718037,
+                0.49347346904004596,
+                0.36202806966345974,
+                -0.5443698358020238
+              ],
+              "selected_layer": 11,
+              "selected_r": 0.6687340015421609,
+              "frozen_layer": 19,
+              "frozen_r": 0.558532303074922,
+              "bootstrap_ci_selected": [
+                -0.8793360394274736,
+                0.8961159779660066
+              ],
+              "lofo": {
+                "evil": 0.57563259630511,
+                "hallucination": 0.586336590767886,
+                "insecure_code": 0.567526325098046,
+                "mistake_gsm8k": 0.804309045169345,
+                "mistake_math": 0.7339090736566202,
+                "mistake_medical": 0.6635589817538846,
+                "mistake_opinions": 0.6644965745279405,
+                "sycophancy": 0.6755320642144306
+              },
+              "score_shuffle_null_q95_abs": 0.5732369272981107
+            },
+            "b_rb_ans": {
+              "r_by_layer": [
+                0.38289116540623913,
+                0.40318263269735316,
+                0.4045059892598171,
+                0.3930368990517962,
+                0.4164161983219928,
+                0.1949745335363568,
+                0.03705398374899088,
+                -0.04852307395701187,
+                -0.573895629255204,
+                -0.5355182889437492,
+                -0.40053591957242524,
+                -0.35730627186526925,
+                -0.4495001123835918,
+                -0.376715501448074,
+                0.10542740614296216,
+                -0.37803885801053794,
+                -0.4075938212388997,
+                -0.4600869648833035,
+                -0.3670108866566716,
+                -0.5059633257153874,
+                -0.5214024856108003,
+                -0.5174324159234084,
+                -0.3281924274910621,
+                0.00926349593724772,
+                -0.486112977278428,
+                -0.43009088280078706,
+                -0.48655409613258266,
+                0.25673117311800825
+              ],
+              "selected_layer": 8,
+              "selected_r": -0.573895629255204,
+              "frozen_layer": 19,
+              "frozen_r": -0.5059633257153874,
+              "bootstrap_ci_selected": [
+                -0.8340758694902763,
+                0.7612438914058851
+              ],
+              "lofo": {
+                "evil": -0.6122779319204353,
+                "hallucination": -0.4491033332182725,
+                "insecure_code": -0.382894140618199,
+                "mistake_gsm8k": -0.649094785296236,
+                "mistake_math": -0.6629294292252809,
+                "mistake_medical": -0.5116315119872296,
+                "mistake_opinions": -0.5937217914421243,
+                "sycophancy": -0.658958484484082
+              },
+              "score_shuffle_null_q95_abs": 0.5479137287454949
+            },
+            "c_map_ctx": {
+              "r_by_layer": [
+                -0.12524931994469327,
+                -0.7028124384175721,
+                -0.519585518074452,
+                0.41823536165277436,
+                -0.2204033969344779,
+                0.4540841069372979,
+                0.4983418171651047,
+                0.11418489238774157,
+                -0.11684035500140998,
+                0.08630253494422328,
+                -0.007523810738727158,
+                0.5828740437002157,
+                0.5806611581888254,
+                0.5868572376207183,
+                0.6222634058029638,
+                0.5939384712571674,
+                0.5868572376207183,
+                0.623591137109798,
+                0.6448348380191452,
+                0.6589973052920434,
+                0.6466051464282575,
+                0.6479328777350917,
+                0.6311149478485252,
+                0.6085435156323437,
+                0.5939384712571674,
+                0.6227059829052418,
+                0.6554566884738189,
+                0.6576695739852092
+              ],
+              "selected_layer": 1,
+              "selected_r": -0.7028124384175721,
+              "frozen_layer": 19,
+              "frozen_r": 0.6589973052920434,
+              "bootstrap_ci_selected": [
+                -0.865299112096599,
+                0.9186440602972383
+              ],
+              "lofo": {
+                "evil": -0.6357440592563814,
+                "hallucination": -0.6290034944735651,
+                "insecure_code": -0.5735283661390359,
+                "mistake_gsm8k": -0.7241761555312299,
+                "mistake_math": -0.8268089563979645,
+                "mistake_medical": -0.6982374411018263,
+                "mistake_opinions": -0.6985733219396297,
+                "sycophancy": -0.7460108031974322
+              },
+              "score_shuffle_null_q95_abs": 0.5550359439669251
+            },
+            "c_map_pfx": {
+              "r_by_layer": [
+                0.08231934102372067,
+                0.5058656279038318,
+                0.7643306556342236,
+                0.7306947958610904,
+                -0.09736696250117498,
+                -0.5421569502906335,
+                -0.6067732072232314,
+                0.4784258475625916,
+                0.409383819607213,
+                -0.34034179165183437,
+                -0.5187003638698958,
+                -0.4673614200056399,
+                -0.6249188684166321,
+                -0.11772550920596611,
+                0.15578714000188,
+                0.41557989903910597,
+                0.3275070556857704,
+                0.48771996671043105,
+                0.4301849434142822,
+                0.4886051209149872,
+                0.32086839915159937,
+                0.5864146605184403,
+                0.5943810483594455,
+                0.623591137109798,
+                0.5868572376207183,
+                0.5952662025640016,
+                0.5961513567685578,
+                0.053994406477924306
+              ],
+              "selected_layer": 2,
+              "selected_r": 0.7643306556342236,
+              "frozen_layer": 19,
+              "frozen_r": 0.4886051209149872,
+              "bootstrap_ci_selected": [
+                -0.8880009097070847,
+                0.9185810862511091
+              ],
+              "lofo": {
+                "evil": 0.7069630751443008,
+                "hallucination": 0.7383374352193677,
+                "insecure_code": 0.6882340393668431,
+                "mistake_gsm8k": 0.7791433442912593,
+                "mistake_math": 0.8135375445777725,
+                "mistake_medical": 0.7182442445717927,
+                "mistake_opinions": 0.7890077669937281,
+                "sycophancy": 0.8118352858324998
+              },
+              "score_shuffle_null_q95_abs": 0.5924005158267511
+            },
+            "d_transport": {
+              "r_by_layer": [
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN
+              ],
+              "selected_layer": 0,
+              "selected_r": NaN,
+              "frozen_layer": 19,
+              "frozen_r": NaN,
+              "bootstrap_ci_selected": [
+                -0.7971544050812055,
+                -0.5512535255610914
+              ],
+              "lofo": {
+                "evil": NaN,
+                "hallucination": NaN,
+                "insecure_code": NaN,
+                "mistake_gsm8k": NaN,
+                "mistake_math": NaN,
+                "mistake_medical": NaN,
+                "mistake_opinions": NaN,
+                "sycophancy": NaN
+              },
+              "score_shuffle_null_q95_abs": NaN
+            }
+          },
+          "h2_delta_c_minus_a": {
+            "point": 0.09559665409206275,
+            "c_selected_position": 30,
+            "c_selected_r": 0.7643306556342236,
+            "bootstrap_ci": [
+              -1.6331314153719974,
+              1.7579641052895898
+            ],
+            "n_positions_c": 56,
+            "score_shuffle_null_q95_abs_56pos": 0.6025797891791467
+          }
+        }
+      },
+      "y_source": "per_panel.paper graded_mean (paper 20-q surface \u2014 the registered primary DV; pooled/lmsys kept as labeled y_sensitivity reads only)",
+      "nulls": {
+        "a_isotropic_q95_abs": 0.8214231018280944,
+        "a_covmatched_q95_abs": 0.805932903248362,
+        "c_isotropic_q95_abs": 0.8285043354645435,
+        "c_covmatched_q95_abs": 0.8262914499531532,
+        "cov_pool": "issue2221 base-model last-token capture (deviation: the #778 round-3 extraction pool is not staged; same kind \u2014 base activation pool)",
+        "cov_circularity_max_abs_cos": 0.16663261276927022,
+        "cov_circularity_flag": false
+      },
+      "checkpoint_auc": {
+        "frac10": {
+          "n_cells": 18,
+          "excluded_cells": [
+            "evil_normal",
+            "evil_misaligned_1",
+            "evil_misaligned_2",
+            "mistake_opinions_normal",
+            "mistake_opinions_misaligned_1",
+            "mistake_opinions_misaligned_2"
+          ],
+          "note": "insufficient cells / single label class \u2014 AUC not computable"
+        },
+        "frac25": {
+          "n_cells": 18,
+          "excluded_cells": [
+            "evil_normal",
+            "evil_misaligned_1",
+            "evil_misaligned_2",
+            "mistake_opinions_normal",
+            "mistake_opinions_misaligned_1",
+            "mistake_opinions_misaligned_2"
+          ],
+          "note": "insufficient cells / single label class \u2014 AUC not computable"
+        },
+        "frac50": {
+          "n_cells": 18,
+          "excluded_cells": [
+            "evil_normal",
+            "evil_misaligned_1",
+            "evil_misaligned_2",
+            "mistake_opinions_normal",
+            "mistake_opinions_misaligned_1",
+            "mistake_opinions_misaligned_2"
+          ],
+          "note": "insufficient cells / single label class \u2014 AUC not computable"
+        },
+        "frac100": {
+          "n_cells": 24,
+          "excluded_cells": [],
+          "note": "insufficient cells / single label class \u2014 AUC not computable"
+        }
+      },
+      "severity_ordering": {
+        "a_rb_ctx": {
+          "per_family_correct": {
+            "evil": false,
+            "sycophancy": true,
+            "hallucination": false,
+            "insecure_code": false,
+            "mistake_medical": true,
+            "mistake_math": false,
+            "mistake_gsm8k": true,
+            "mistake_opinions": false
+          },
+          "fraction_correct": 0.375,
+          "families_incomplete": []
+        },
+        "b_rb_ans": {
+          "per_family_correct": {
+            "evil": false,
+            "sycophancy": false,
+            "hallucination": false,
+            "insecure_code": false,
+            "mistake_medical": false,
+            "mistake_math": false,
+            "mistake_gsm8k": false,
+            "mistake_opinions": false
+          },
+          "fraction_correct": 0.0,
+          "families_incomplete": []
+        },
+        "c_map_ctx": {
+          "per_family_correct": {
+            "evil": false,
+            "sycophancy": true,
+            "hallucination": false,
+            "insecure_code": false,
+            "mistake_medical": false,
+            "mistake_math": false,
+            "mistake_gsm8k": true,
+            "mistake_opinions": false
+          },
+          "fraction_correct": 0.25,
+          "families_incomplete": []
+        },
+        "c_map_pfx": {
+          "per_family_correct": {
+            "evil": false,
+            "sycophancy": false,
+            "hallucination": true,
+            "insecure_code": false,
+            "mistake_medical": false,
+            "mistake_math": false,
+            "mistake_gsm8k": false,
+            "mistake_opinions": false
+          },
+          "fraction_correct": 0.125,
+          "families_incomplete": []
+        }
+      },
+      "y_sensitivity": {
+        "y_primary": "paper (per_panel.paper graded_mean)",
+        "pooled": {
+          "arms": {
+            "a_rb_ctx": {
+              "selected_layer": 11,
+              "selected_r": 0.8882805644913893
+            },
+            "b_rb_ans": {
+              "selected_layer": 1,
+              "selected_r": 0.6376993093760307
+            },
+            "c_map_ctx": {
+              "selected_layer": 21,
+              "selected_r": 0.8856512189625544
+            },
+            "c_map_pfx": {
+              "selected_layer": 2,
+              "selected_r": 0.8672458002607101
+            },
+            "d_transport": {
+              "selected_layer": 0,
+              "selected_r": NaN
+            }
+          }
+        },
+        "lmsys": {
+          "arms": {
+            "a_rb_ctx": {
+              "selected_layer": 11,
+              "selected_r": 0.8944157040586707
+            },
+            "b_rb_ans": {
+              "selected_layer": 1,
+              "selected_r": 0.6420671128649076
+            },
+            "c_map_ctx": {
+              "selected_layer": 21,
+              "selected_r": 0.8917863585298358
+            },
+            "c_map_pfx": {
+              "selected_layer": 2,
+              "selected_r": 0.8514697270877006
+            },
+            "d_transport": {
+              "selected_layer": 0,
+              "selected_r": NaN
+            }
+          }
+        }
+      },
+      "h3_synth_stratum": {
+        "arms": {
+          "a_rb_ctx": {
+            "selected_layer": 22,
+            "selected_r": 0.9459204641630855,
+            "frozen_r": 0.9397866584667987
+          },
+          "b_rb_ans": {
+            "selected_layer": 22,
+            "selected_r": 0.9555593016858218,
+            "frozen_r": 0.951616140881066
+          },
+          "c_map_ctx": {
+            "selected_layer": 27,
+            "selected_r": 0.8885255680049733,
+            "frozen_r": 0.8315688008251673
+          },
+          "d_transport": {
+            "selected_layer": 12,
+            "selected_r": 0.7684782279490745,
+            "frozen_r": 0.15465952934208854
+          }
+        },
+        "y_source": "#778 committed eval_results/issue_778/finetune_{trait}_{cell}.json trait_score \u2014 each stratum correlates against its OWN scores, never the real-twin y",
+        "arms_not_run": [],
+        "c_map_pfx": "N/A \u2014 #778 cached no prefix-end states",
+        "install_covaried": {
+          "base_propensity_real": 0.0,
+          "base_propensity_synth": 0.0,
+          "install_note": "install = y - base propensity per stratum; the matched-support read compares arms at overlapping trait-expression levels, each stratum frozen at its own full-sample selected layer (no re-selection on the subset)",
+          "matched_support": {
+            "lo": 0.0,
+            "hi": 1.21,
+            "n_real": 24,
+            "n_synth": 11
+          },
+          "arms": {
+            "a_rb_ctx": {
+              "r_real_matched": -0.6204930973938515,
+              "r_synth_matched": 0.7286519477320162,
+              "layer_real": 4,
+              "layer_synth": 22
+            },
+            "b_rb_ans": {
+              "r_real_matched": 0.506404444569542,
+              "r_synth_matched": 0.6989110519062196,
+              "layer_real": 2,
+              "layer_synth": 22
+            },
+            "c_map_ctx": {
+              "r_real_matched": 0.7444146860317106,
+              "r_synth_matched": 0.773263291470711,
+              "layer_real": 21,
+              "layer_synth": 27
+            },
+            "d_transport": {
+              "r_real_matched": NaN,
+              "r_synth_matched": 0.23792716660637264,
+              "layer_real": 0,
+              "layer_synth": 12
+            }
+          },
+          "per_family_base_train_propensity": {
+            "evil": 7.647435897435897,
+            "hallucination": 0.004166666666666667,
+            "insecure_code": 0.10916666666666666,
+            "mistake_gsm8k": 0.0,
+            "mistake_math": 0.0,
+            "mistake_medical": 0.17083333333333336,
+            "mistake_opinions": 0.0,
+            "sycophancy": 0.1366120218579235
+          },
+          "install_covaried_real": {
+            "a_rb_ctx": {
+              "r_install_minus_base": -0.46916184138873795,
+              "r_partial_base_train": -0.6214870978406138,
+              "layer": 4
+            },
+            "b_rb_ans": {
+              "r_install_minus_base": 0.5067845830844049,
+              "r_partial_base_train": 0.5147610558525721,
+              "layer": 2
+            },
+            "c_map_ctx": {
+              "r_install_minus_base": 0.5258037483041775,
+              "r_partial_base_train": 0.7458795075255272,
+              "layer": 21
+            },
+            "d_transport": {
+              "r_install_minus_base": NaN,
+              "r_partial_base_train": NaN,
+              "layer": 0
+            }
+          }
+        }
+      }
+    },
+    "sycophancy": {
+      "panels": {
+        "paper": {
+          "arms": {
+            "a_rb_ctx": {
+              "r_by_layer": [
+                -0.4603545796735098,
+                0.19435245700637943,
+                -0.42529663928904454,
+                -0.35824832830375464,
+                -0.06551452609346951,
+                -0.11766321241536162,
+                -0.13037171580473028,
+                0.014680512535994839,
+                -0.16849722597283628,
+                -0.024321446141722793,
+                0.2521980586407472,
+                0.2180165667658935,
+                0.23817488248696106,
+                -0.16148563789594322,
+                -0.36394524361623026,
+                -0.3674510376546768,
+                -0.16411498342477812,
+                -0.12642769751147795,
+                -0.11328096986730346,
+                -0.0681438716223044,
+                0.06025583503579971,
+                -0.009860045733130863,
+                -0.21582544549186444,
+                -0.2872559990252124,
+                -0.31749347260681376,
+                -0.2841884292415717,
+                -0.3017173994338044,
+                -0.3214374909000661
+              ],
+              "selected_layer": 0,
+              "selected_r": -0.4603545796735098,
+              "frozen_layer": 19,
+              "frozen_r": -0.0681438716223044,
+              "bootstrap_ci_selected": [
+                -0.8669795191789583,
+                0.7932481085675893
+              ],
+              "lofo": {
+                "evil": -0.43577256511092705,
+                "hallucination": -0.28352622803259175,
+                "insecure_code": -0.6882820947025258,
+                "mistake_gsm8k": -0.39325712045771993,
+                "mistake_math": -0.39982783257898513,
+                "mistake_medical": -0.5077511123868947,
+                "mistake_opinions": -0.4369314487526515,
+                "sycophancy": -0.4806475916705466
+              },
+              "score_shuffle_null_q95_abs": 0.5728138790630524
+            },
+            "b_rb_ans": {
+              "r_by_layer": [
+                0.008298826628866152,
+                0.03581598860879077,
+                0.07949402349755999,
+                -0.00786204627997846,
+                0.022275797793272305,
+                -0.10308016233749537,
+                -0.22232119758383537,
+                -0.2773555215436846,
+                -0.7302967433402214,
+                -0.7713540961356645,
+                -0.6630325696115168,
+                -0.6604118875181907,
+                -0.6647796910070676,
+                -0.5996994190228014,
+                -0.5713086963451015,
+                -0.43022864365437685,
+                -0.47521701958980916,
+                -0.49137789249865377,
+                -0.4743434588920338,
+                -0.3782517821367415,
+                -0.3280220420146569,
+                -0.3778150017878538,
+                -0.37956212318340454,
+                -0.3428725738768384,
+                -0.3948494353944738,
+                -0.3258381402702184,
+                -0.3782517821367415,
+                -0.14370073478405074
+              ],
+              "selected_layer": 9,
+              "selected_r": -0.7713540961356645,
+              "frozen_layer": 19,
+              "frozen_r": -0.3782517821367415,
+              "bootstrap_ci_selected": [
+                -0.8631660615898792,
+                -0.5465143054088244
+              ],
+              "lofo": {
+                "evil": -0.7235217673814165,
+                "hallucination": -0.6904350246315141,
+                "insecure_code": -0.6917426667236192,
+                "mistake_gsm8k": -0.7911234657236098,
+                "mistake_math": -0.8251221601183435,
+                "mistake_medical": -0.7934810006722832,
+                "mistake_opinions": -0.7217171251717904,
+                "sycophancy": -0.7937387499078201
+              },
+              "score_shuffle_null_q95_abs": 0.5346846640908683
+            },
+            "c_map_ctx": {
+              "r_by_layer": [
+                -0.17200302001128281,
+                -0.6049685837594291,
+                0.226342827607204,
+                0.39768851123627813,
+                0.0843581690501196,
+                0.26271544075608677,
+                0.39023869890457924,
+                0.597956995682536,
+                -0.18076750510739914,
+                0.1632385349151665,
+                -0.09969601796832317,
+                0.1115280728480802,
+                0.04842378015604268,
+                0.29076179306365896,
+                0.29207646582807645,
+                0.31311123005875563,
+                0.28155908371273686,
+                0.27936796243870776,
+                0.2670976833041449,
+                0.26271544075608677,
+                0.333707770034629,
+                0.324066836428901,
+                0.2938293628472997,
+                0.3262579577029301,
+                0.31311123005875563,
+                0.3451016006595802,
+                0.3345842185442406,
+                0.7263567023406402
+              ],
+              "selected_layer": 27,
+              "selected_r": 0.7263567023406402,
+              "frozen_layer": 19,
+              "frozen_r": 0.26271544075608677,
+              "bootstrap_ci_selected": [
+                -0.829209861177567,
+                0.90802076368185
+              ],
+              "lofo": {
+                "evil": 0.744065394756568,
+                "hallucination": 0.6146901189443559,
+                "insecure_code": 0.618632546217115,
+                "mistake_gsm8k": 0.7704159962183402,
+                "mistake_math": 0.6567426765204529,
+                "mistake_medical": 0.8703366415428662,
+                "mistake_opinions": 0.7282190812544191,
+                "sycophancy": 0.7244210113694841
+              },
+              "score_shuffle_null_q95_abs": 0.5629428777235513
+            },
+            "c_map_pfx": {
+              "r_by_layer": [
+                -0.15053003152579783,
+                -0.3293255274865708,
+                0.4082058933516177,
+                0.32056104239045446,
+                0.036591725276285646,
+                -0.004163130420655253,
+                -0.15710339534788506,
+                0.09575199967507082,
+                -0.3104818845299207,
+                -0.362192346597007,
+                -0.26578301053972747,
+                -0.2881324475348241,
+                -0.3814742138084629,
+                -0.04579443462720778,
+                -0.10583115753560458,
+                0.49146850176472273,
+                0.41171168739006425,
+                0.3297637517413766,
+                -0.048862004410848495,
+                0.21889301527550514,
+                0.06288518056463462,
+                0.19742002679002016,
+                0.20793740890535975,
+                0.5628990552980708,
+                -0.0764701324636149,
+                0.07559368395400327,
+                -0.22152236080434004,
+                0.12774237027589538
+              ],
+              "selected_layer": 23,
+              "selected_r": 0.5628990552980708,
+              "frozen_layer": 19,
+              "frozen_r": 0.21889301527550514,
+              "bootstrap_ci_selected": [
+                -0.8050997449123141,
+                0.8513762694192646
+              ],
+              "lofo": {
+                "evil": 0.5899189799337475,
+                "hallucination": 0.4852470901554322,
+                "insecure_code": 0.38931469318496087,
+                "mistake_gsm8k": 0.6422871098536695,
+                "mistake_math": 0.456993028033992,
+                "mistake_medical": 0.6995536024476622,
+                "mistake_opinions": 0.5734725264878551,
+                "sycophancy": 0.6041769795503317
+              },
+              "score_shuffle_null_q95_abs": 0.5696915312475609
+            },
+            "d_transport": {
+              "r_by_layer": [
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN
+              ],
+              "selected_layer": 0,
+              "selected_r": NaN,
+              "frozen_layer": 19,
+              "frozen_r": NaN,
+              "bootstrap_ci_selected": [
+                -0.8667844657455104,
+                -0.6082226121691006
+              ],
+              "lofo": {
+                "evil": NaN,
+                "hallucination": NaN,
+                "insecure_code": NaN,
+                "mistake_gsm8k": NaN,
+                "mistake_math": NaN,
+                "mistake_medical": NaN,
+                "mistake_opinions": NaN,
+                "sycophancy": NaN
+              },
+              "score_shuffle_null_q95_abs": NaN
+            }
+          },
+          "h2_delta_c_minus_a": {
+            "point": 1.18671128201415,
+            "c_selected_position": 27,
+            "c_selected_r": 0.7263567023406402,
+            "bootstrap_ci": [
+              -1.4859155463023204,
+              1.6593193395210322
+            ],
+            "n_positions_c": 56,
+            "score_shuffle_null_q95_abs_56pos": 0.5969162130773723
+          }
+        },
+        "lmsys": {
+          "arms": {
+            "a_rb_ctx": {
+              "r_by_layer": [
+                -0.5506287761635079,
+                0.14527134046812804,
+                -0.35561898277491977,
+                -0.2903235688088532,
+                -0.08216704777609052,
+                -0.16849722597283628,
+                -0.26797413181375657,
+                -0.2066227361409423,
+                -0.231163294410068,
+                -0.06726742311269276,
+                0.3017173994338044,
+                0.32538150919331843,
+                0.6772755858023888,
+                0.28681777477040665,
+                -0.11897788517977907,
+                -0.5041770051540915,
+                -0.2259046033523982,
+                -0.21056675443419465,
+                -0.1741941412853119,
+                -0.231163294410068,
+                -0.34904561895283254,
+                -0.3700803831835117,
+                -0.3451016006595802,
+                -0.34159580662113365,
+                -0.35342786150089067,
+                -0.34597804916919184,
+                -0.3372135640730755,
+                -0.045356210372401964
+              ],
+              "selected_layer": 12,
+              "selected_r": 0.6772755858023888,
+              "frozen_layer": 19,
+              "frozen_r": -0.231163294410068,
+              "bootstrap_ci_selected": [
+                -0.8693357720421998,
+                0.9316926997811352
+              ],
+              "lofo": {
+                "evil": 0.7180491222126321,
+                "hallucination": 0.7474185037939122,
+                "insecure_code": 0.600891623489699,
+                "mistake_gsm8k": 0.7073371598541947,
+                "mistake_math": 0.5647527068227407,
+                "mistake_medical": 0.7218867690985735,
+                "mistake_opinions": 0.7048120393569557,
+                "sycophancy": 0.6541143916719468
+              },
+              "score_shuffle_null_q95_abs": 0.5680262790792988
+            },
+            "b_rb_ans": {
+              "r_by_layer": [
+                0.19393047490613535,
+                0.13452834745740921,
+                0.033632086864352304,
+                0.06027568814650153,
+                0.14981565966847843,
+                -0.1017698212908323,
+                -0.09521811605751691,
+                -0.2677463538681554,
+                -0.3258381402702184,
+                -0.29133249270809075,
+                -0.3232174581768923,
+                -0.3205967760835661,
+                -0.2808497643347861,
+                -0.3516081808545923,
+                -0.32452779922355535,
+                -0.33981511143462456,
+                -0.3489874987612661,
+                -0.3240910188746676,
+                -0.3629644699256723,
+                -0.3839299266722815,
+                -0.34767715771460306,
+                -0.3821828052767307,
+                -0.3957229960922492,
+                -0.3555392039945815,
+                -0.3830563659745061,
+                -0.35029783980792917,
+                -0.3297691634102076,
+                -0.24066597223711844
+              ],
+              "selected_layer": 22,
+              "selected_r": -0.3957229960922492,
+              "frozen_layer": 19,
+              "frozen_r": -0.3839299266722815,
+              "bootstrap_ci_selected": [
+                -0.7678738718381863,
+                0.5907496211625164
+              ],
+              "lofo": {
+                "evil": -0.5175438596491229,
+                "hallucination": -0.1072266515526215,
+                "insecure_code": -0.11245721992104206,
+                "mistake_gsm8k": -0.49494253186179554,
+                "mistake_math": -0.4870966793091647,
+                "mistake_medical": -0.36340645500312146,
+                "mistake_opinions": -0.5318600075590311,
+                "sycophancy": -0.4884043214012699
+              },
+              "score_shuffle_null_q95_abs": 0.5334180010790941
+            },
+            "c_map_ctx": {
+              "r_by_layer": [
+                -0.05324424695890666,
+                -0.6277562450093316,
+                0.08129059926647889,
+                0.27630039265506706,
+                0.004601354675461069,
+                0.12336012772783723,
+                0.35781010404894886,
+                0.5173237327982659,
+                -0.20881385741497138,
+                0.2521980586407472,
+                0.03133303421861585,
+                0.15359760130943853,
+                0.05894116227138226,
+                0.1934760084967678,
+                0.1553504983286618,
+                0.18076750510739914,
+                0.2237134820783691,
+                0.27191815010700887,
+                0.2180165667658935,
+                0.22283703356875748,
+                0.18734086892948637,
+                0.06639097460308115,
+                0.08742573883376031,
+                0.16148563789594322,
+                0.05631181674254737,
+                0.31223478154914397,
+                0.5011094353704507,
+                0.7557177274126299
+              ],
+              "selected_layer": 27,
+              "selected_r": 0.7557177274126299,
+              "frozen_layer": 19,
+              "frozen_r": 0.22283703356875748,
+              "bootstrap_ci_selected": [
+                -0.8597843234388374,
+                0.8763562497550791
+              ],
+              "lofo": {
+                "evil": 0.766829633232512,
+                "hallucination": 0.7677877113698341,
+                "insecure_code": 0.6849967386418931,
+                "mistake_gsm8k": 0.7421619340969,
+                "mistake_math": 0.7047088750056886,
+                "mistake_medical": 0.8099057200168709,
+                "mistake_opinions": 0.7542269055849341,
+                "sycophancy": 0.7257351537937371
+              },
+              "score_shuffle_null_q95_abs": 0.5631291230318438
+            },
+            "c_map_pfx": {
+              "r_by_layer": [
+                -0.15053003152579783,
+                -0.345539824914386,
+                0.4047000993131712,
+                0.31179655729433814,
+                0.036591725276285646,
+                0.009860045733130863,
+                -0.15184470429021527,
+                0.08874041159817776,
+                -0.33414599428943476,
+                -0.3762155227507931,
+                -0.2649065620301158,
+                -0.2881324475348241,
+                -0.37972131678923965,
+                -0.057188265252159004,
+                -0.11284274561249764,
+                0.476568877101325,
+                0.4875244834714704,
+                0.3297637517413766,
+                -0.04798555590123686,
+                0.21889301527550514,
+                0.06288518056463462,
+                0.2039933906121074,
+                0.21100497868900045,
+                0.5677195221009348,
+                -0.0896168601077894,
+                -0.011612942752354126,
+                -0.18953199020351547,
+                0.13037171580473028
+              ],
+              "selected_layer": 23,
+              "selected_r": 0.5677195221009348,
+              "frozen_layer": 19,
+              "frozen_r": 0.21889301527550514,
+              "bootstrap_ci_selected": [
+                -0.8062951249318363,
+                0.8578582309702448
+              ],
+              "lofo": {
+                "evil": 0.5957726412561332,
+                "hallucination": 0.4924748734888239,
+                "insecure_code": 0.3965424765183525,
+                "mistake_gsm8k": 0.6482007507628083,
+                "mistake_math": 0.46290666894313065,
+                "mistake_medical": 0.6982398867623145,
+                "mistake_opinions": 0.5786740913539581,
+                "sycophancy": 0.6114047628837234
+              },
+              "score_shuffle_null_q95_abs": 0.5716964072132975
+            },
+            "d_transport": {
+              "r_by_layer": [
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN
+              ],
+              "selected_layer": 0,
+              "selected_r": NaN,
+              "frozen_layer": 19,
+              "frozen_r": NaN,
+              "bootstrap_ci_selected": [
+                -0.9174136785383903,
+                -0.4885218299689679
+              ],
+              "lofo": {
+                "evil": NaN,
+                "hallucination": NaN,
+                "insecure_code": NaN,
+                "mistake_gsm8k": NaN,
+                "mistake_math": NaN,
+                "mistake_medical": NaN,
+                "mistake_opinions": NaN,
+                "sycophancy": NaN
+              },
+              "score_shuffle_null_q95_abs": NaN
+            }
+          },
+          "h2_delta_c_minus_a": {
+            "point": 0.0784421416102411,
+            "c_selected_position": 27,
+            "c_selected_r": 0.7557177274126299,
+            "bootstrap_ci": [
+              -1.6667503498556697,
+              1.6276496287284543
+            ],
+            "n_positions_c": 56,
+            "score_shuffle_null_q95_abs_56pos": 0.5943197343676477
+          }
+        },
+        "pooled": {
+          "arms": {
+            "a_rb_ctx": {
+              "r_by_layer": [
+                -0.45816345839948075,
+                0.17594703830453517,
+                -0.37139505594792915,
+                -0.26885058032336817,
+                -0.08216704777609052,
+                -0.12949526729511865,
+                -0.21889301527550514,
+                -0.14001264941045824,
+                -0.17813815957856424,
+                -0.05762648950696482,
+                0.2767386169098729,
+                0.31924636962603703,
+                0.5212677510915182,
+                0.12292190347303142,
+                -0.1741941412853119,
+                -0.4270495363082678,
+                -0.17813815957856424,
+                -0.15096825578060363,
+                -0.154912274073856,
+                -0.2039933906121074,
+                -0.27367104712623214,
+                -0.36043944957778373,
+                -0.34422515214996857,
+                -0.35342786150089067,
+                -0.35298963724608484,
+                -0.33414599428943476,
+                -0.3188081453712312,
+                -0.13825975239123497
+              ],
+              "selected_layer": 12,
+              "selected_r": 0.5212677510915182,
+              "frozen_layer": 19,
+              "frozen_r": -0.2039933906121074,
+              "bootstrap_ci_selected": [
+                -0.8508091236529504,
+                0.8659695286577027
+              ],
+              "lofo": {
+                "evil": 0.5879677594929523,
+                "hallucination": 0.7237639401573576,
+                "insecure_code": 0.42873896591255184,
+                "mistake_gsm8k": 0.5246713628830232,
+                "mistake_math": 0.36631720076053276,
+                "mistake_medical": 0.5327117104085015,
+                "mistake_opinions": 0.5695713528382779,
+                "sycophancy": 0.4438516037914617
+              },
+              "score_shuffle_null_q95_abs": 0.5671717417824274
+            },
+            "b_rb_ans": {
+              "r_by_layer": [
+                0.05459754361096153,
+                0.06595383268204152,
+                0.0620228095420523,
+                -0.014413751513293844,
+                0.020091896048833845,
+                -0.1568041452506815,
+                -0.19917183909278766,
+                -0.27298771805480765,
+                -0.4660446322631676,
+                -0.47609058028758455,
+                -0.4625503894720661,
+                -0.49705603703419377,
+                -0.507975545756386,
+                -0.4708492161009322,
+                -0.37519431969452766,
+                -0.3162289725946892,
+                -0.33588408829463534,
+                -0.32278067782800457,
+                -0.3171025332924646,
+                -0.39310231399892304,
+                -0.38043568388117993,
+                -0.4110103083033184,
+                -0.4118838690010938,
+                -0.41974591528107225,
+                -0.4136309903966446,
+                -0.40445860307000303,
+                -0.3551024236456938,
+                -0.2262522207238246
+              ],
+              "selected_layer": 12,
+              "selected_r": -0.507975545756386,
+              "frozen_layer": 19,
+              "frozen_r": -0.39310231399892304,
+              "bootstrap_ci_selected": [
+                -0.8169569071382128,
+                0.24549722925962586
+              ],
+              "lofo": {
+                "evil": -0.5266406757634828,
+                "hallucination": -0.2883350813091834,
+                "insecure_code": -0.2909503654933937,
+                "mistake_gsm8k": -0.48186611094074416,
+                "mistake_math": -0.7394716030854568,
+                "mistake_medical": -0.5751756841776023,
+                "mistake_opinions": -0.5344607899920826,
+                "sycophancy": -0.5067113106907418
+              },
+              "score_shuffle_null_q95_abs": 0.53374558634076
+            },
+            "c_map_ctx": {
+              "r_by_layer": [
+                -0.13825975239123497,
+                -0.6067214807786524,
+                0.1413273221748757,
+                0.3126730058039498,
+                -0.00679247594949015,
+                0.24956871311191225,
+                0.37753019551521055,
+                0.5598314855144301,
+                -0.23992777950618432,
+                0.21012853017938882,
+                -0.04710910739162523,
+                0.1470242374873513,
+                0.04710910739162523,
+                0.23598376121293196,
+                0.20048759657366086,
+                0.26446833777531004,
+                0.3017173994338044,
+                0.2701652530877856,
+                0.24343357354463085,
+                0.2618389922464751,
+                0.3104818845299207,
+                0.2513216101311355,
+                0.23817488248696106,
+                0.2039933906121074,
+                0.12467480049225468,
+                0.33852823683749295,
+                0.45903990690909235,
+                0.8192602443594732
+              ],
+              "selected_layer": 27,
+              "selected_r": 0.8192602443594732,
+              "frozen_layer": 19,
+              "frozen_r": 0.2618389922464751,
+              "bootstrap_ci_selected": [
+                -0.7964225004208696,
+                0.9239696097006788
+              ],
+              "lofo": {
+                "evil": 0.8026020079804239,
+                "hallucination": 0.7553033583394304,
+                "insecure_code": 0.7592457856121895,
+                "mistake_gsm8k": 0.8361231174309919,
+                "mistake_math": 0.7966988447034009,
+                "mistake_medical": 0.913689259159341,
+                "mistake_opinions": 0.7906378596476551,
+                "sycophancy": 0.8118114825823107
+              },
+              "score_shuffle_null_q95_abs": 0.5601163312800538
+            },
+            "c_map_pfx": {
+              "r_by_layer": [
+                -0.15053003152579783,
+                -0.345539824914386,
+                0.4082058933516177,
+                0.30741431474628,
+                0.036591725276285646,
+                0.004601354675461069,
+                -0.15184470429021527,
+                0.09399910265584756,
+                -0.33414599428943476,
+                -0.3762155227507931,
+                -0.2649065620301158,
+                -0.2881324475348241,
+                -0.3779684197700164,
+                -0.057188265252159004,
+                -0.11284274561249764,
+                0.476568877101325,
+                0.4875244834714704,
+                0.3297637517413766,
+                -0.04798555590123686,
+                0.21889301527550514,
+                0.06288518056463462,
+                0.2039933906121074,
+                0.21100497868900045,
+                0.5677195221009348,
+                -0.07471723544439164,
+                0.057188265252159004,
+                -0.18953199020351547,
+                0.13037171580473028
+              ],
+              "selected_layer": 23,
+              "selected_r": 0.5677195221009348,
+              "frozen_layer": 19,
+              "frozen_r": 0.21889301527550514,
+              "bootstrap_ci_selected": [
+                -0.8041378619371813,
+                0.857903788192642
+              ],
+              "lofo": {
+                "evil": 0.5957726412561332,
+                "hallucination": 0.4924748734888239,
+                "insecure_code": 0.3965424765183525,
+                "mistake_gsm8k": 0.6482007507628083,
+                "mistake_math": 0.46290666894313065,
+                "mistake_medical": 0.6982398867623145,
+                "mistake_opinions": 0.5786740913539581,
+                "sycophancy": 0.6114047628837234
+              },
+              "score_shuffle_null_q95_abs": 0.5716964072132975
+            },
+            "d_transport": {
+              "r_by_layer": [
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN
+              ],
+              "selected_layer": 0,
+              "selected_r": NaN,
+              "frozen_layer": 19,
+              "frozen_r": NaN,
+              "bootstrap_ci_selected": [
+                -0.9570067506865105,
+                -0.47036339754816114
+              ],
+              "lofo": {
+                "evil": NaN,
+                "hallucination": NaN,
+                "insecure_code": NaN,
+                "mistake_gsm8k": NaN,
+                "mistake_math": NaN,
+                "mistake_medical": NaN,
+                "mistake_opinions": NaN,
+                "sycophancy": NaN
+              },
+              "score_shuffle_null_q95_abs": NaN
+            }
+          },
+          "h2_delta_c_minus_a": {
+            "point": 0.29799249326795496,
+            "c_selected_position": 27,
+            "c_selected_r": 0.8192602443594732,
+            "bootstrap_ci": [
+              -1.4509899965815711,
+              1.686433509576866
+            ],
+            "n_positions_c": 56,
+            "score_shuffle_null_q95_abs_56pos": 0.5958316080467279
+          }
+        }
+      },
+      "y_source": "per_panel.paper graded_mean (paper 20-q surface \u2014 the registered primary DV; pooled/lmsys kept as labeled y_sensitivity reads only)",
+      "nulls": {
+        "a_isotropic_q95_abs": 0.8617679970756373,
+        "a_covmatched_q95_abs": 0.7850787524846196,
+        "c_isotropic_q95_abs": 0.8793627009060908,
+        "c_covmatched_q95_abs": 0.8535074698725477,
+        "cov_pool": "issue2221 base-model last-token capture (deviation: the #778 round-3 extraction pool is not staged; same kind \u2014 base activation pool)",
+        "cov_circularity_max_abs_cos": 0.1000522825422004,
+        "cov_circularity_flag": false
+      },
+      "checkpoint_auc": {
+        "frac10": {
+          "n_cells": 18,
+          "excluded_cells": [
+            "evil_normal",
+            "evil_misaligned_1",
+            "evil_misaligned_2",
+            "mistake_opinions_normal",
+            "mistake_opinions_misaligned_1",
+            "mistake_opinions_misaligned_2"
+          ],
+          "note": "insufficient cells / single label class \u2014 AUC not computable"
+        },
+        "frac25": {
+          "n_cells": 18,
+          "excluded_cells": [
+            "evil_normal",
+            "evil_misaligned_1",
+            "evil_misaligned_2",
+            "mistake_opinions_normal",
+            "mistake_opinions_misaligned_1",
+            "mistake_opinions_misaligned_2"
+          ],
+          "note": "insufficient cells / single label class \u2014 AUC not computable"
+        },
+        "frac50": {
+          "n_cells": 18,
+          "excluded_cells": [
+            "evil_normal",
+            "evil_misaligned_1",
+            "evil_misaligned_2",
+            "mistake_opinions_normal",
+            "mistake_opinions_misaligned_1",
+            "mistake_opinions_misaligned_2"
+          ],
+          "note": "insufficient cells / single label class \u2014 AUC not computable"
+        },
+        "frac100": {
+          "n_cells": 24,
+          "excluded_cells": [],
+          "note": "insufficient cells / single label class \u2014 AUC not computable"
+        }
+      },
+      "severity_ordering": {
+        "a_rb_ctx": {
+          "per_family_correct": {
+            "evil": false,
+            "sycophancy": true,
+            "hallucination": false,
+            "insecure_code": false,
+            "mistake_medical": true,
+            "mistake_math": false,
+            "mistake_gsm8k": true,
+            "mistake_opinions": false
+          },
+          "fraction_correct": 0.375,
+          "families_incomplete": []
+        },
+        "b_rb_ans": {
+          "per_family_correct": {
+            "evil": false,
+            "sycophancy": true,
+            "hallucination": false,
+            "insecure_code": false,
+            "mistake_medical": false,
+            "mistake_math": false,
+            "mistake_gsm8k": false,
+            "mistake_opinions": false
+          },
+          "fraction_correct": 0.125,
+          "families_incomplete": []
+        },
+        "c_map_ctx": {
+          "per_family_correct": {
+            "evil": false,
+            "sycophancy": true,
+            "hallucination": false,
+            "insecure_code": false,
+            "mistake_medical": false,
+            "mistake_math": false,
+            "mistake_gsm8k": false,
+            "mistake_opinions": false
+          },
+          "fraction_correct": 0.125,
+          "families_incomplete": []
+        },
+        "c_map_pfx": {
+          "per_family_correct": {
+            "evil": false,
+            "sycophancy": true,
+            "hallucination": false,
+            "insecure_code": false,
+            "mistake_medical": false,
+            "mistake_math": false,
+            "mistake_gsm8k": false,
+            "mistake_opinions": false
+          },
+          "fraction_correct": 0.125,
+          "families_incomplete": []
+        }
+      },
+      "y_sensitivity": {
+        "y_primary": "paper (per_panel.paper graded_mean)",
+        "pooled": {
+          "arms": {
+            "a_rb_ctx": {
+              "selected_layer": 12,
+              "selected_r": 0.5169921944013158
+            },
+            "b_rb_ans": {
+              "selected_layer": 9,
+              "selected_r": -0.47598707108312444
+            },
+            "c_map_ctx": {
+              "selected_layer": 27,
+              "selected_r": 0.5984841843662689
+            },
+            "c_map_pfx": {
+              "selected_layer": 26,
+              "selected_r": -0.46354045904795943
+            },
+            "d_transport": {
+              "selected_layer": 0,
+              "selected_r": NaN
+            }
+          }
+        },
+        "lmsys": {
+          "arms": {
+            "a_rb_ctx": {
+              "selected_layer": 1,
+              "selected_r": -0.5025339381172113
+            },
+            "b_rb_ans": {
+              "selected_layer": 27,
+              "selected_r": 0.4165978585443126
+            },
+            "c_map_ctx": {
+              "selected_layer": 1,
+              "selected_r": 0.5384605143383197
+            },
+            "c_map_pfx": {
+              "selected_layer": 25,
+              "selected_r": -0.7102070738343499
+            },
+            "d_transport": {
+              "selected_layer": 0,
+              "selected_r": NaN
+            }
+          }
+        }
+      },
+      "h3_synth_stratum": {
+        "arms": {
+          "a_rb_ctx": {
+            "selected_layer": 20,
+            "selected_r": 0.9217391304347826,
+            "frozen_r": 0.7617391304347826
+          },
+          "b_rb_ans": {
+            "selected_layer": 17,
+            "selected_r": 0.8982608695652174,
+            "frozen_r": 0.8756521739130435
+          },
+          "c_map_ctx": {
+            "selected_layer": 23,
+            "selected_r": 0.9017391304347826,
+            "frozen_r": 0.7469565217391304
+          },
+          "d_transport": {
+            "selected_layer": 27,
+            "selected_r": 0.8156521739130435,
+            "frozen_r": 0.33304347826086955
+          }
+        },
+        "y_source": "#778 committed eval_results/issue_778/finetune_{trait}_{cell}.json trait_score \u2014 each stratum correlates against its OWN scores, never the real-twin y",
+        "arms_not_run": [],
+        "c_map_pfx": "N/A \u2014 #778 cached no prefix-end states",
+        "install_covaried": {
+          "base_propensity_real": 15.46,
+          "base_propensity_synth": 18.789499999999997,
+          "install_note": "install = y - base propensity per stratum; the matched-support read compares arms at overlapping trait-expression levels, each stratum frozen at its own full-sample selected layer (no re-selection on the subset)",
+          "matched_support": {
+            "lo": 12.870833333333332,
+            "hi": 28.030833333333312,
+            "n_real": 24,
+            "n_synth": 12
+          },
+          "arms": {
+            "a_rb_ctx": {
+              "r_real_matched": -0.4603545796735098,
+              "r_synth_matched": 0.8671328671328671,
+              "layer_real": 0,
+              "layer_synth": 20
+            },
+            "b_rb_ans": {
+              "r_real_matched": -0.7713540961356645,
+              "r_synth_matched": 0.5244755244755245,
+              "layer_real": 9,
+              "layer_synth": 17
+            },
+            "c_map_ctx": {
+              "r_real_matched": 0.7263567023406402,
+              "r_synth_matched": 0.9300699300699301,
+              "layer_real": 27,
+              "layer_synth": 23
+            },
+            "d_transport": {
+              "r_real_matched": NaN,
+              "r_synth_matched": 0.7482517482517482,
+              "layer_real": 0,
+              "layer_synth": 27
+            }
+          },
+          "per_family_base_train_propensity": {
+            "evil": 22.78846153846154,
+            "hallucination": 8.612500000000002,
+            "insecure_code": 11.826666666666664,
+            "mistake_gsm8k": 0.05416666666666667,
+            "mistake_math": 0.016666666666666666,
+            "mistake_medical": 14.499166666666662,
+            "mistake_opinions": 4.355833333333331,
+            "sycophancy": 29.82188644688646
+          },
+          "install_covaried_real": {
+            "a_rb_ctx": {
+              "r_install_minus_base": 0.2804025461159679,
+              "r_partial_base_train": -0.4209934798435343,
+              "layer": 0
+            },
+            "b_rb_ans": {
+              "r_install_minus_base": 0.007860336953666275,
+              "r_partial_base_train": -0.7801022664175512,
+              "layer": 9
+            },
+            "c_map_ctx": {
+              "r_install_minus_base": 0.14195378897120875,
+              "r_partial_base_train": 0.7321858584546027,
+              "layer": 27
+            },
+            "d_transport": {
+              "r_install_minus_base": NaN,
+              "r_partial_base_train": NaN,
+              "layer": 0
+            }
+          }
+        }
+      }
+    },
+    "hallucination": {
+      "panels": {
+        "paper": {
+          "arms": {
+            "a_rb_ctx": {
+              "r_by_layer": [
+                0.43593833341466887,
+                0.2606867420921889,
+                0.2615630000488013,
+                0.48062748920190124,
+                -0.09507398829244537,
+                0.22476016587108053,
+                0.15027823955902656,
+                -0.5060389699436608,
+                -0.6655179180471176,
+                -0.022344577893616192,
+                -0.15816456116853814,
+                -0.07316753937713537,
+                0.6427352111751952,
+                0.9152514356816515,
+                0.9126226618118143,
+                0.9248902732043879,
+                0.931900336857287,
+                0.9362816266403491,
+                0.9424154323366358,
+                0.9389104005101863,
+                0.9275190470742251,
+                0.9380341425535739,
+                0.9336528527705119,
+                0.9362816266403491,
+                0.9397866584667987,
+                0.9424154323366358,
+                0.945044206206473,
+                0.5840259280821644
+              ],
+              "selected_layer": 26,
+              "selected_r": 0.945044206206473,
+              "frozen_layer": 15,
+              "frozen_r": 0.9248902732043879,
+              "bootstrap_ci_selected": [
+                0.8680480999307293,
+                0.9861290542026984
+              ],
+              "lofo": {
+                "evil": 0.9284793285993844,
+                "hallucination": 0.9268264160128182,
+                "insecure_code": 0.9268264160128182,
+                "mistake_gsm8k": 0.9386498571809477,
+                "mistake_math": 0.9649241708879022,
+                "mistake_medical": 0.9452184356076864,
+                "mistake_opinions": 0.9284793285993844,
+                "sycophancy": 0.9583555924611635
+              },
+              "score_shuffle_null_q95_abs": 0.5722183521168123
+            },
+            "b_rb_ans": {
+              "r_by_layer": [
+                0.00436685386314793,
+                0.009607078498925448,
+                0.009607078498925448,
+                0.020960898543110066,
+                0.10393112194292074,
+                0.11790505430499412,
+                0.11965179585025329,
+                0.11965179585025329,
+                0.12401864971340122,
+                0.13275235743969707,
+                0.21834269315739652,
+                0.1318789866670675,
+                0.14061269439336335,
+                0.13711921130284502,
+                0.13624584053021543,
+                0.14061269439336335,
+                0.14061269439336335,
+                0.14235943593862252,
+                0.13362572821232668,
+                0.12227190816814205,
+                0.12227190816814205,
+                0.12838550357654915,
+                0.12838550357654915,
+                0.21484921006687818,
+                0.13013224512180832,
+                0.22096280547528527,
+                0.1947616822963977,
+                0.8899648173095482
+              ],
+              "selected_layer": 27,
+              "selected_r": 0.8899648173095482,
+              "frozen_layer": 15,
+              "frozen_r": 0.14061269439336335,
+              "bootstrap_ci_selected": [
+                0.7122808564332007,
+                0.9604325424989385
+              ],
+              "lofo": {
+                "evil": 0.8522247932423246,
+                "hallucination": 0.8549202214821634,
+                "insecure_code": 0.8627635262664035,
+                "mistake_gsm8k": 0.9242027470762837,
+                "mistake_math": 0.8849862231550836,
+                "mistake_medical": 0.9398893566447638,
+                "mistake_opinions": 0.8530566380408909,
+                "sycophancy": 0.9045944851156836
+              },
+              "score_shuffle_null_q95_abs": 0.4795242227122742
+            },
+            "c_map_ctx": {
+              "r_by_layer": [
+                -0.44207213911095566,
+                0.2265126817843053,
+                -0.5945410235615132,
+                -0.7031970101814508,
+                -0.6085611508673116,
+                -0.6734042396566291,
+                -0.47975123124528884,
+                -0.49815264833414924,
+                -0.07492005529036018,
+                -0.48676129489818803,
+                -0.05914741207133698,
+                -0.010076966501042596,
+                -0.014458256284104595,
+                -0.3141384774455453,
+                -0.434185817501444,
+                -0.4578447823299788,
+                -0.5060389699436608,
+                -0.521811613162684,
+                -0.32991112066456846,
+                0.2913557705736229,
+                0.2747068693979873,
+                0.5112965176833352,
+                0.5927885076482884,
+                0.5726345746462032,
+                0.5778921223858776,
+                0.5778921223858776,
+                0.6988157203983888,
+                0.945044206206473
+              ],
+              "selected_layer": 27,
+              "selected_r": 0.945044206206473,
+              "frozen_layer": 15,
+              "frozen_r": -0.4578447823299788,
+              "bootstrap_ci_selected": [
+                -0.8797012188423354,
+                0.9824817093284679
+              ],
+              "lofo": {
+                "evil": 0.9284793285993844,
+                "hallucination": 0.9202578375860796,
+                "insecure_code": 0.9202578375860796,
+                "mistake_gsm8k": 0.9649241708879022,
+                "mistake_math": 0.9478458669783818,
+                "mistake_medical": 0.9714927493146408,
+                "mistake_opinions": 0.9284793285993844,
+                "sycophancy": 0.9491595826637295
+              },
+              "score_shuffle_null_q95_abs": 0.583303015267959
+            },
+            "c_map_pfx": {
+              "r_by_layer": [
+                0.002190644891530999,
+                -0.4525872345903044,
+                -0.8837061492436051,
+                -0.8512846048489463,
+                -0.8653047321547447,
+                -0.762782551231094,
+                -0.49815264833414924,
+                -0.3395499581873049,
+                0.08280637689987178,
+                0.4937713585510872,
+                0.46134981415642845,
+                0.11259914742469336,
+                -0.08017760303003457,
+                -0.5340792245552576,
+                -0.4701123937225524,
+                -0.6252100520429472,
+                -0.5577381893837924,
+                -0.6979394624417763,
+                -0.46222607211304084,
+                -0.3193960251852197,
+                -0.5165540654230096,
+                -0.6146949565635984,
+                -0.3553226014063281,
+                0.37197150258196365,
+                0.21074003856528212,
+                0.10033153603211976,
+                0.16429836686482494,
+                -0.2598104841355765
+              ],
+              "selected_layer": 2,
+              "selected_r": -0.8837061492436051,
+              "frozen_layer": 15,
+              "frozen_r": -0.6252100520429472,
+              "bootstrap_ci_selected": [
+                -0.9586549235574144,
+                -0.6888527577814753
+              ],
+              "lofo": {
+                "evil": -0.837451943442582,
+                "hallucination": -0.8401211807798685,
+                "insecure_code": -0.8414348964652163,
+                "mistake_gsm8k": -0.9189441219007319,
+                "mistake_math": -0.9110618277886455,
+                "mistake_medical": -0.899238386620516,
+                "mistake_opinions": -0.837451943442582,
+                "sycophancy": -0.9005521023058638
+              },
+              "score_shuffle_null_q95_abs": 0.5521082320125577
+            },
+            "d_transport": {
+              "r_by_layer": [
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN
+              ],
+              "selected_layer": 0,
+              "selected_r": NaN,
+              "frozen_layer": 15,
+              "frozen_r": NaN,
+              "bootstrap_ci_selected": [
+                -0.9694309213542361,
+                -0.9170137032599011
+              ],
+              "lofo": {
+                "evil": NaN,
+                "hallucination": NaN,
+                "insecure_code": NaN,
+                "mistake_gsm8k": NaN,
+                "mistake_math": NaN,
+                "mistake_medical": NaN,
+                "mistake_opinions": NaN,
+                "sycophancy": NaN
+              },
+              "score_shuffle_null_q95_abs": NaN
+            }
+          },
+          "h2_delta_c_minus_a": {
+            "point": 0.0,
+            "c_selected_position": 27,
+            "c_selected_r": 0.945044206206473,
+            "bootstrap_ci": [
+              -1.925652261696016,
+              0.07474227301742471
+            ],
+            "n_positions_c": 56,
+            "score_shuffle_null_q95_abs_56pos": 0.603369322474383
+          }
+        },
+        "lmsys": {
+          "arms": {
+            "a_rb_ctx": {
+              "r_by_layer": [
+                0.34217873205714205,
+                0.38248659806131247,
+                0.5060389699436608,
+                0.3132622194889329,
+                -0.39650672536711085,
+                0.3316636365777933,
+                0.5813971542123272,
+                0.003066902848143399,
+                -0.37985782419147524,
+                0.06089992798456178,
+                0.44820594480724246,
+                0.7312372647930475,
+                0.8626759582849075,
+                0.9275190470742251,
+                0.8600471844150703,
+                0.9266427891176127,
+                0.9038600822456903,
+                0.9205089834213258,
+                0.9362816266403491,
+                0.9073651140721398,
+                0.9099938879419771,
+                0.9205089834213258,
+                0.8968500185927911,
+                0.8950975026795662,
+                0.8907162128965043,
+                0.8766960855907059,
+                0.8898399549398919,
+                0.3141384774455453
+              ],
+              "selected_layer": 18,
+              "selected_r": 0.9362816266403491,
+              "frozen_layer": 15,
+              "frozen_r": 0.9266427891176127,
+              "bootstrap_ci_selected": [
+                0.8560825602942633,
+                0.9822737375717686
+              ],
+              "lofo": {
+                "evil": 0.9154754164341269,
+                "hallucination": 0.9097481121032979,
+                "insecure_code": 0.9097481121032979,
+                "mistake_gsm8k": 0.9412772885516432,
+                "mistake_math": 0.9636104552025545,
+                "mistake_medical": 0.9399635728662954,
+                "mistake_opinions": 0.9154754164341269,
+                "sycophancy": 0.9478458669783818
+              },
+              "score_shuffle_null_q95_abs": 0.5666322076434082
+            },
+            "b_rb_ans": {
+              "r_by_layer": [
+                -0.6209666193396357,
+                -0.6602683041079671,
+                -0.5336295420766771,
+                0.08646370649032903,
+                0.022707640088369237,
+                0.22008943470265568,
+                0.4305717909063859,
+                0.4445457232684593,
+                0.6480411132911529,
+                0.6235867316575244,
+                0.7126705504657422,
+                0.6672552702890038,
+                0.7021901011941872,
+                0.8096147062276263,
+                0.8489163909959577,
+                0.9117990866252879,
+                0.8532832448591056,
+                0.8349424586338843,
+                0.8209685262718109,
+                0.7991342569560713,
+                0.7956407738655529,
+                0.8209685262718109,
+                0.8620169525854015,
+                0.8628903233580311,
+                0.8663838064485494,
+                0.8742441434022157,
+                0.8174750431812926,
+                0.8244620093623293
+              ],
+              "selected_layer": 15,
+              "selected_r": 0.9117990866252879,
+              "frozen_layer": 15,
+              "frozen_r": 0.9117990866252879,
+              "bootstrap_ci_selected": [
+                0.800698428231001,
+                0.9659956404139542
+              ],
+              "lofo": {
+                "evil": 0.9067879659804002,
+                "hallucination": 0.8823717882270036,
+                "insecure_code": 0.8771429183708436,
+                "mistake_gsm8k": 0.9137450073639637,
+                "mistake_math": 0.9085161375078037,
+                "mistake_medical": 0.9255099645403237,
+                "mistake_opinions": 0.9115742427845497,
+                "sycophancy": 0.9137450073639637
+              },
+              "score_shuffle_null_q95_abs": 0.5398741431009785
+            },
+            "c_map_ctx": {
+              "r_by_layer": [
+                -0.45609226641675404,
+                0.06177618594117418,
+                -0.7110833317909624,
+                -0.7075782999645127,
+                -0.6033036031276372,
+                -0.784689000146404,
+                -0.810976738844776,
+                -0.7321135227496599,
+                -0.2966133183132973,
+                -0.6076848929106992,
+                -0.33516866840424286,
+                -0.17568972030078614,
+                0.2387802931768789,
+                -0.464854845982878,
+                -0.5542331575573428,
+                -0.6909293987888772,
+                -0.7540199716649699,
+                -0.7680400989707683,
+                -0.7470099080120707,
+                -0.565624510993304,
+                -0.5884072178652264,
+                -0.4114031106295217,
+                -0.15115449751563895,
+                0.10734159968501895,
+                0.2641917739186385,
+                0.16517462482143733,
+                0.29310828648684767,
+                0.8600471844150703
+              ],
+              "selected_layer": 27,
+              "selected_r": 0.8600471844150703,
+              "frozen_layer": 15,
+              "frozen_r": -0.6909293987888772,
+              "bootstrap_ci_selected": [
+                -0.9429788034866136,
+                0.9642398932258915
+              ],
+              "lofo": {
+                "evil": 0.8023413805963868,
+                "hallucination": 0.7993959945340892,
+                "insecure_code": 0.8138468670729141,
+                "mistake_gsm8k": 0.8979246709351684,
+                "mistake_math": 0.8834737983963434,
+                "mistake_medical": 0.9360224258102523,
+                "mistake_opinions": 0.8023413805963868,
+                "sycophancy": 0.8926698081937774
+              },
+              "score_shuffle_null_q95_abs": 0.5866547019520015
+            },
+            "c_map_pfx": {
+              "r_by_layer": [
+                -0.008324450587817797,
+                -0.4525872345903044,
+                -0.8837061492436051,
+                -0.8600471844150703,
+                -0.8653047321547447,
+                -0.7645350671443187,
+                -0.4972763903775368,
+                -0.37197150258196365,
+                0.16342210890821254,
+                0.4937713585510872,
+                0.45696852437336644,
+                0.11259914742469336,
+                -0.09770276216228256,
+                -0.5445943200346064,
+                -0.4718649096357772,
+                -0.6252100520429472,
+                -0.5717583166895908,
+                -0.7075782999645127,
+                -0.4595972982432036,
+                -0.3193960251852197,
+                -0.5156778074663972,
+                -0.6146949565635984,
+                -0.35444634344971565,
+                0.37109524462535126,
+                0.3141384774455453,
+                0.10033153603211976,
+                0.16429836686482494,
+                -0.2685730637017005
+              ],
+              "selected_layer": 2,
+              "selected_r": -0.8837061492436051,
+              "frozen_layer": 15,
+              "frozen_r": -0.6252100520429472,
+              "bootstrap_ci_selected": [
+                -0.9588848997814897,
+                -0.6912539299285444
+              ],
+              "lofo": {
+                "evil": -0.837451943442582,
+                "hallucination": -0.8401211807798685,
+                "insecure_code": -0.8414348964652163,
+                "mistake_gsm8k": -0.9189441219007319,
+                "mistake_math": -0.9110618277886455,
+                "mistake_medical": -0.899238386620516,
+                "mistake_opinions": -0.837451943442582,
+                "sycophancy": -0.9005521023058638
+              },
+              "score_shuffle_null_q95_abs": 0.5556132638390072
+            },
+            "d_transport": {
+              "r_by_layer": [
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN
+              ],
+              "selected_layer": 0,
+              "selected_r": NaN,
+              "frozen_layer": 15,
+              "frozen_r": NaN,
+              "bootstrap_ci_selected": [
+                -0.9058271645144054,
+                -0.736110624635143
+              ],
+              "lofo": {
+                "evil": NaN,
+                "hallucination": NaN,
+                "insecure_code": NaN,
+                "mistake_gsm8k": NaN,
+                "mistake_math": NaN,
+                "mistake_medical": NaN,
+                "mistake_opinions": NaN,
+                "sycophancy": NaN
+              },
+              "score_shuffle_null_q95_abs": NaN
+            }
+          },
+          "h2_delta_c_minus_a": {
+            "point": -1.8199877758839542,
+            "c_selected_position": 30,
+            "c_selected_r": -0.8837061492436051,
+            "bootstrap_ci": [
+              -1.9280843256337206,
+              0.023759034328688183
+            ],
+            "n_positions_c": 56,
+            "score_shuffle_null_q95_abs_56pos": 0.6046398965114711
+          }
+        },
+        "pooled": {
+          "arms": {
+            "a_rb_ctx": {
+              "r_by_layer": [
+                0.3456837638835917,
+                0.3579513752761653,
+                0.41928943223903326,
+                0.3325398945344057,
+                -0.43681459137128126,
+                0.24316158295994092,
+                0.416660658369196,
+                -0.2896032546603981,
+                -0.6120661826937612,
+                0.02584960972006579,
+                0.2142450703917317,
+                0.5367079984250948,
+                0.8144817706712255,
+                0.9178802095514886,
+                0.9152514356816515,
+                0.9327765948138994,
+                0.9248902732043879,
+                0.9397866584667987,
+                0.9354053686837367,
+                0.9345291107271243,
+                0.9371578845969615,
+                0.9397866584667987,
+                0.9170039515948762,
+                0.9196327254647134,
+                0.9248902732043879,
+                0.9248902732043879,
+                0.9029838242890779,
+                0.41315562654274646
+              ],
+              "selected_layer": 17,
+              "selected_r": 0.9397866584667987,
+              "frozen_layer": 15,
+              "frozen_r": 0.9327765948138994,
+              "bootstrap_ci_selected": [
+                0.8610129481281817,
+                0.9844554151661147
+              ],
+              "lofo": {
+                "evil": 0.9206769813002299,
+                "hallucination": 0.9150029748446887,
+                "insecure_code": 0.9150029748446887,
+                "mistake_gsm8k": 0.9320812787542091,
+                "mistake_math": 0.9675516022585976,
+                "mistake_medical": 0.9425910042369909,
+                "mistake_opinions": 0.9206769813002299,
+                "sycophancy": 0.9596693081465113
+              },
+              "score_shuffle_null_q95_abs": 0.5696333911448056
+            },
+            "b_rb_ans": {
+              "r_by_layer": [
+                -0.15545999752806633,
+                -0.056769100220923095,
+                -0.14061269439336335,
+                0.012227190816814205,
+                0.02008752777048048,
+                0.11179145889658702,
+                0.11703168353236454,
+                0.11703168353236454,
+                0.20873561465847107,
+                0.22794977165632196,
+                0.20524213156795273,
+                0.23144325474684033,
+                0.23930359170050658,
+                0.2943259503761705,
+                0.31616021969191016,
+                0.4471658355863481,
+                0.3956369600012025,
+                0.3772961737759812,
+                0.3589553875507599,
+                0.41048426313590547,
+                0.41048426313590547,
+                0.41048426313590547,
+                0.4497859479042368,
+                0.4585196556305327,
+                0.411357633908535,
+                0.5441099913482321,
+                0.4279516785884972,
+                0.8314489755433659
+              ],
+              "selected_layer": 27,
+              "selected_r": 0.8314489755433659,
+              "frozen_layer": 15,
+              "frozen_r": 0.4471658355863481,
+              "bootstrap_ci_selected": [
+                0.6294699054219675,
+                0.9298003383594428
+              ],
+              "lofo": {
+                "evil": 0.7612861720121985,
+                "hallucination": 0.7895593482801632,
+                "insecure_code": 0.8117820451688432,
+                "mistake_gsm8k": 0.8849862231550836,
+                "mistake_math": 0.8353119595215633,
+                "mistake_medical": 0.8941367454033636,
+                "mistake_opinions": 0.7620292528840886,
+                "sycophancy": 0.8483841341619635
+              },
+              "score_shuffle_null_q95_abs": 0.5198739524077609
+            },
+            "c_map_ctx": {
+              "r_by_layer": [
+                -0.45609226641675404,
+                0.15290701342886373,
+                -0.6988157203983888,
+                -0.7084545579211251,
+                -0.6033036031276372,
+                -0.8030904172352643,
+                -0.7776789364935047,
+                -0.6278388259127844,
+                -0.2440378409165533,
+                -0.5314504506854204,
+                -0.20548249082560774,
+                -0.08718766668293376,
+                0.13625811225322815,
+                -0.4114031106295217,
+                -0.5489756098176684,
+                -0.6243337940863348,
+                -0.6935581726587143,
+                -0.7408761023157839,
+                -0.6103136667805363,
+                -0.3334161524910181,
+                -0.3001183501397469,
+                0.23352274543720453,
+                0.2729543534847625,
+                0.37197150258196365,
+                0.4595972982432036,
+                0.43681459137128126,
+                0.7592775194046443,
+                0.8986025345060159
+              ],
+              "selected_layer": 27,
+              "selected_r": 0.8986025345060159,
+              "frozen_layer": 15,
+              "frozen_r": -0.6243337940863348,
+              "bootstrap_ci_selected": [
+                -0.936606544644624,
+                0.979662548392603
+              ],
+              "lofo": {
+                "evil": 0.8595585941235198,
+                "hallucination": 0.8493171905773026,
+                "insecure_code": 0.8493171905773026,
+                "mistake_gsm8k": 0.9202578375860796,
+                "mistake_math": 0.9294538473835137,
+                "mistake_medical": 0.9622967395172067,
+                "mistake_opinions": 0.8595585941235198,
+                "sycophancy": 0.9202578375860796
+              },
+              "score_shuffle_null_q95_abs": 0.5915398400601156
+            },
+            "c_map_pfx": {
+              "r_by_layer": [
+                0.005695676717980598,
+                -0.4525872345903044,
+                -0.8837061492436051,
+                -0.8512846048489463,
+                -0.8653047321547447,
+                -0.762782551231094,
+                -0.5034101960738236,
+                -0.37197150258196365,
+                0.17306094643094894,
+                0.4937713585510872,
+                0.45696852437336644,
+                0.11259914742469336,
+                -0.08718766668293376,
+                -0.5445943200346064,
+                -0.4718649096357772,
+                -0.6252100520429472,
+                -0.5726345746462032,
+                -0.7075782999645127,
+                -0.4587210402865912,
+                -0.3193960251852197,
+                -0.5156778074663972,
+                -0.6146949565635984,
+                -0.35444634344971565,
+                0.37109524462535126,
+                0.20635874878222013,
+                0.10033153603211976,
+                0.16429836686482494,
+                -0.2685730637017005
+              ],
+              "selected_layer": 2,
+              "selected_r": -0.8837061492436051,
+              "frozen_layer": 15,
+              "frozen_r": -0.6252100520429472,
+              "bootstrap_ci_selected": [
+                -0.9586549235574144,
+                -0.6897748437793391
+              ],
+              "lofo": {
+                "evil": -0.837451943442582,
+                "hallucination": -0.8401211807798685,
+                "insecure_code": -0.8414348964652163,
+                "mistake_gsm8k": -0.9189441219007319,
+                "mistake_math": -0.9110618277886455,
+                "mistake_medical": -0.899238386620516,
+                "mistake_opinions": -0.837451943442582,
+                "sycophancy": -0.9005521023058638
+              },
+              "score_shuffle_null_q95_abs": 0.5570590894674176
+            },
+            "d_transport": {
+              "r_by_layer": [
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                NaN
+              ],
+              "selected_layer": 0,
+              "selected_r": NaN,
+              "frozen_layer": 15,
+              "frozen_r": NaN,
+              "bootstrap_ci_selected": [
+                -0.9521376190334812,
+                -0.7090559567906018
+              ],
+              "lofo": {
+                "evil": NaN,
+                "hallucination": NaN,
+                "insecure_code": NaN,
+                "mistake_gsm8k": NaN,
+                "mistake_math": NaN,
+                "mistake_medical": NaN,
+                "mistake_opinions": NaN,
+                "sycophancy": NaN
+              },
+              "score_shuffle_null_q95_abs": NaN
+            }
+          },
+          "h2_delta_c_minus_a": {
+            "point": -0.04118412396078275,
+            "c_selected_position": 27,
+            "c_selected_r": 0.8986025345060159,
+            "bootstrap_ci": [
+              -1.9299688750954398,
+              0.04371704468455052
+            ],
+            "n_positions_c": 56,
+            "score_shuffle_null_q95_abs_56pos": 0.6120661826937612
+          }
+        }
+      },
+      "y_source": "per_panel.paper graded_mean (paper 20-q surface \u2014 the registered primary DV; pooled/lmsys kept as labeled y_sensitivity reads only)",
+      "nulls": {
+        "a_isotropic_q95_abs": 0.9371578845969615,
+        "a_covmatched_q95_abs": 0.9380779554514045,
+        "c_isotropic_q95_abs": 0.9424154323366358,
+        "c_covmatched_q95_abs": 0.9415391743800234,
+        "cov_pool": "issue2221 base-model last-token capture (deviation: the #778 round-3 extraction pool is not staged; same kind \u2014 base activation pool)",
+        "cov_circularity_max_abs_cos": 0.14324267171091393,
+        "cov_circularity_flag": false
+      },
+      "checkpoint_auc": {
+        "frac10": {
+          "a_rb_ctx": 0.9846153846153847,
+          "a_rb_ctx__auc_signed": 0.9846153846153847,
+          "a_rb_ctx__orientation": 1,
+          "c_map_ctx": 0.9846153846153847,
+          "c_map_ctx__auc_signed": 0.9846153846153847,
+          "c_map_ctx__orientation": 1,
+          "c_map_pfx": 1.0,
+          "c_map_pfx__auc_signed": 0.0,
+          "c_map_pfx__orientation": -1,
+          "control_random_direction_mean": 0.5506153846153845,
+          "control_random_direction_mean_oriented": 0.9744615384615385,
+          "n_cells": 18,
+          "excluded_cells": [
+            "evil_normal",
+            "evil_misaligned_1",
+            "evil_misaligned_2",
+            "mistake_opinions_normal",
+            "mistake_opinions_misaligned_1",
+            "mistake_opinions_misaligned_2"
+          ]
+        },
+        "frac25": {
+          "a_rb_ctx": 1.0,
+          "a_rb_ctx__auc_signed": 1.0,
+          "a_rb_ctx__orientation": 1,
+          "c_map_ctx": 1.0,
+          "c_map_ctx__auc_signed": 1.0,
+          "c_map_ctx__orientation": 1,
+          "c_map_pfx": 0.9846153846153847,
+          "c_map_pfx__auc_signed": 0.015384615384615385,
+          "c_map_pfx__orientation": -1,
+          "control_random_direction_mean": 0.48676923076923084,
+          "control_random_direction_mean_oriented": 0.9456923076923078,
+          "n_cells": 18,
+          "excluded_cells": [
+            "evil_normal",
+            "evil_misaligned_1",
+            "evil_misaligned_2",
+            "mistake_opinions_normal",
+            "mistake_opinions_misaligned_1",
+            "mistake_opinions_misaligned_2"
+          ]
+        },
+        "frac50": {
+          "a_rb_ctx": 0.9692307692307692,
+          "a_rb_ctx__auc_signed": 0.9692307692307692,
+          "a_rb_ctx__orientation": 1,
+          "c_map_ctx": 0.9692307692307692,
+          "c_map_ctx__auc_signed": 0.9692307692307692,
+          "c_map_ctx__orientation": 1,
+          "c_map_pfx": 1.0,
+          "c_map_pfx__auc_signed": 0.0,
+          "c_map_pfx__orientation": -1,
+          "control_random_direction_mean": 0.4666153846153847,
+          "control_random_direction_mean_oriented": 0.8846153846153847,
+          "n_cells": 18,
+          "excluded_cells": [
+            "evil_normal",
+            "evil_misaligned_1",
+            "evil_misaligned_2",
+            "mistake_opinions_normal",
+            "mistake_opinions_misaligned_1",
+            "mistake_opinions_misaligned_2"
+          ]
+        },
+        "frac100": {
+          "a_rb_ctx": 0.9789473684210527,
+          "a_rb_ctx__auc_signed": 0.9789473684210527,
+          "a_rb_ctx__orientation": 1,
+          "c_map_ctx": 1.0,
+          "c_map_ctx__auc_signed": 1.0,
+          "c_map_ctx__orientation": 1,
+          "c_map_pfx": 1.0,
+          "c_map_pfx__auc_signed": 0.0,
+          "c_map_pfx__orientation": -1,
+          "control_random_direction_mean": 0.47515789473684217,
+          "control_random_direction_mean_oriented": 0.8854736842105264,
+          "n_cells": 24,
+          "excluded_cells": []
+        }
+      },
+      "severity_ordering": {
+        "a_rb_ctx": {
+          "per_family_correct": {
+            "evil": false,
+            "sycophancy": false,
+            "hallucination": true,
+            "insecure_code": false,
+            "mistake_medical": true,
+            "mistake_math": true,
+            "mistake_gsm8k": true,
+            "mistake_opinions": false
+          },
+          "fraction_correct": 0.5,
+          "families_incomplete": []
+        },
+        "b_rb_ans": {
+          "per_family_correct": {
+            "evil": false,
+            "sycophancy": false,
+            "hallucination": false,
+            "insecure_code": false,
+            "mistake_medical": true,
+            "mistake_math": false,
+            "mistake_gsm8k": true,
+            "mistake_opinions": false
+          },
+          "fraction_correct": 0.25,
+          "families_incomplete": []
+        },
+        "c_map_ctx": {
+          "per_family_correct": {
+            "evil": false,
+            "sycophancy": false,
+            "hallucination": true,
+            "insecure_code": false,
+            "mistake_medical": true,
+            "mistake_math": false,
+            "mistake_gsm8k": false,
+            "mistake_opinions": false
+          },
+          "fraction_correct": 0.25,
+          "families_incomplete": []
+        },
+        "c_map_pfx": {
+          "per_family_correct": {
+            "evil": false,
+            "sycophancy": true,
+            "hallucination": false,
+            "insecure_code": true,
+            "mistake_medical": false,
+            "mistake_math": false,
+            "mistake_gsm8k": true,
+            "mistake_opinions": false
+          },
+          "fraction_correct": 0.375,
+          "families_incomplete": []
+        }
+      },
+      "y_sensitivity": {
+        "y_primary": "paper (per_panel.paper graded_mean)",
+        "pooled": {
+          "arms": {
+            "a_rb_ctx": {
+              "selected_layer": 17,
+              "selected_r": 0.9459204641630855
+            },
+            "b_rb_ans": {
+              "selected_layer": 27,
+              "selected_r": 0.841929424814921
+            },
+            "c_map_ctx": {
+              "selected_layer": 27,
+              "selected_r": 0.9266427891176127
+            },
+            "c_map_pfx": {
+              "selected_layer": 2,
+              "selected_r": -0.8845824072002175
+            },
+            "d_transport": {
+              "selected_layer": 0,
+              "selected_r": NaN
+            }
+          }
+        },
+        "lmsys": {
+          "arms": {
+            "a_rb_ctx": {
+              "selected_layer": 13,
+              "selected_r": 0.9441679482498606
+            },
+            "b_rb_ans": {
+              "selected_layer": 27,
+              "selected_r": 0.8349424586338843
+            },
+            "c_map_ctx": {
+              "selected_layer": 27,
+              "selected_r": 0.9292715629874498
+            },
+            "c_map_pfx": {
+              "selected_layer": 2,
+              "selected_r": -0.8854586651568299
+            },
+            "d_transport": {
+              "selected_layer": 0,
+              "selected_r": NaN
+            }
+          }
+        }
+      },
+      "h3_synth_stratum": {
+        "arms": {
+          "a_rb_ctx": {
+            "selected_layer": 20,
+            "selected_r": 0.9556521739130435,
+            "frozen_r": 0.8791304347826087
+          },
+          "b_rb_ans": {
+            "selected_layer": 26,
+            "selected_r": 0.9773913043478261,
+            "frozen_r": 0.948695652173913
+          },
+          "c_map_ctx": {
+            "selected_layer": 20,
+            "selected_r": 0.9373913043478261,
+            "frozen_r": 0.3991304347826087
+          },
+          "d_transport": {
+            "selected_layer": 5,
+            "selected_r": -0.7721739130434783,
+            "frozen_r": 0.2217391304347826
+          }
+        },
+        "y_source": "#778 committed eval_results/issue_778/finetune_{trait}_{cell}.json trait_score \u2014 each stratum correlates against its OWN scores, never the real-twin y",
+        "arms_not_run": [],
+        "c_map_pfx": "N/A \u2014 #778 cached no prefix-end states",
+        "install_covaried": {
+          "base_propensity_real": 23.5475,
+          "base_propensity_synth": 11.589655172413794,
+          "install_note": "install = y - base propensity per stratum; the matched-support read compares arms at overlapping trait-expression levels, each stratum frozen at its own full-sample selected layer (no re-selection on the subset)",
+          "matched_support": {
+            "lo": 21.945000000000004,
+            "hi": 84.99583333333332,
+            "n_real": 24,
+            "n_synth": 7
+          },
+          "arms": {
+            "a_rb_ctx": {
+              "r_real_matched": 0.945044206206473,
+              "r_synth_matched": 0.8571428571428571,
+              "layer_real": 26,
+              "layer_synth": 20
+            },
+            "b_rb_ans": {
+              "r_real_matched": 0.8899648173095482,
+              "r_synth_matched": 0.9285714285714286,
+              "layer_real": 27,
+              "layer_synth": 26
+            },
+            "c_map_ctx": {
+              "r_real_matched": 0.945044206206473,
+              "r_synth_matched": 0.4642857142857143,
+              "layer_real": 27,
+              "layer_synth": 20
+            },
+            "d_transport": {
+              "r_real_matched": NaN,
+              "r_synth_matched": 0.0,
+              "layer_real": 0,
+              "layer_synth": 5
+            }
+          },
+          "per_family_base_train_propensity": {
+            "evil": 5.451388888888889,
+            "hallucination": 36.12416666666666,
+            "insecure_code": 32.662499999999994,
+            "mistake_gsm8k": 1.2566666666666668,
+            "mistake_math": 23.875000000000004,
+            "mistake_medical": 25.366666666666653,
+            "mistake_opinions": 22.506666666666675,
+            "sycophancy": 36.5912962962963
+          },
+          "install_covaried_real": {
+            "a_rb_ctx": {
+              "r_install_minus_base": 0.5660626399716102,
+              "r_partial_base_train": 0.930067249758527,
+              "layer": 26
+            },
+            "b_rb_ans": {
+              "r_install_minus_base": 0.5414898790303434,
+              "r_partial_base_train": 0.8629451760741665,
+              "layer": 27
+            },
+            "c_map_ctx": {
+              "r_install_minus_base": 0.6440495981101138,
+              "r_partial_base_train": 0.9379720406151184,
+              "layer": 27
+            },
+            "d_transport": {
+              "r_install_minus_base": NaN,
+              "r_partial_base_train": NaN,
+              "layer": 0
+            }
+          }
+        }
+      }
+    }
+  },
+  "config": {
+    "n_bootstrap": 10000,
+    "n_null": 1000,
+    "rb_version": "v2",
+    "seed": 0,
+    "cells": [
+      "evil_normal",
+      "evil_misaligned_1",
+      "evil_misaligned_2",
+      "sycophancy_normal",
+      "sycophancy_misaligned_1",
+      "sycophancy_misaligned_2",
+      "hallucination_normal",
+      "hallucination_misaligned_1",
+      "hallucination_misaligned_2",
+      "insecure_code_normal",
+      "insecure_code_misaligned_1",
+      "insecure_code_misaligned_2",
+      "mistake_medical_normal",
+      "mistake_medical_misaligned_1",
+      "mistake_medical_misaligned_2",
+      "mistake_math_normal",
+      "mistake_math_misaligned_1",
+      "mistake_math_misaligned_2",
+      "mistake_gsm8k_normal",
+      "mistake_gsm8k_misaligned_1",
+      "mistake_gsm8k_misaligned_2",
+      "mistake_opinions_normal",
+      "mistake_opinions_misaligned_1",
+      "mistake_opinions_misaligned_2"
+    ],
+    "issue778_eval_root": "eval_results/issue_778"
+  },
+  "map_baselines": {
+    "layer": 19,
+    "n_pool": 110,
+    "r2_map": -2339.61535935714,
+    "r2_identity_bias": -0.9787108105840372,
+    "knn_euclidean": {
+      "metric": "euclidean",
+      "n": 110,
+      "n_pool": 110,
+      "acc_at_k": {
+        "1": 0.16363636363636364,
+        "5": 0.36363636363636365,
+        "10": 0.4818181818181818
+      },
+      "chance_at_k": {
+        "1": 0.00909090909090909,
+        "5": 0.045454545454545456,
+        "10": 0.09090909090909091
+      },
+      "median_rank": 11.0,
+      "mrr": 0.2720439418285984
+    },
+    "knn_cosine": {
+      "metric": "cosine",
+      "n": 110,
+      "n_pool": 110,
+      "acc_at_k": {
+        "1": 0.22727272727272727,
+        "5": 0.42727272727272725,
+        "10": 0.5909090909090909
+      },
+      "chance_at_k": {
+        "1": 0.00909090909090909,
+        "5": 0.045454545454545456,
+        "10": 0.09090909090909091
+      },
+      "median_rank": 7.0,
+      "mrr": 0.3426688189007622
+    },
+    "note": "in-pool identity+bias fit (bias from the same pool); map held-out R2 under LOFO is inherited from #1739 and reported in the body"
+  },
+  "draw_matrices": {
+    "dir": "eval_results/issue_2221/draw_matrices",
+    "files": [
+      "evil_lmsys.npz",
+      "evil_nulls.npz",
+      "evil_paper.npz",
+      "evil_pooled.npz",
+      "hallucination_lmsys.npz",
+      "hallucination_nulls.npz",
+      "hallucination_paper.npz",
+      "hallucination_pooled.npz",
+      "sycophancy_lmsys.npz",
+      "sycophancy_nulls.npz",
+      "sycophancy_paper.npz",
+      "sycophancy_pooled.npz"
+    ],
+    "note": "per-draw x per-position r matrices (boot_r__/shuffle_r__/null_*) \u2014 the honest selection-symmetric bands are pure re-reductions of these"
+  },
+  "reproducibility": {
+    "git_commit": "6d68c6bc68f05588538923f899cd96cf5068213d",
+    "timestamp": "2026-08-12T03:16:53-0700",
+    "model": "Qwen/Qwen2.5-7B-Instruct",
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "versions": {
+      "torch": "2.8.0+cu128",
+      "transformers": "4.57.6",
+      "vllm": "0.11.0",
+      "peft": "0.18.1",
+      "trl": "0.29.1"
+    }
+  }
+}

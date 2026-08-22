@@ -1,0 +1,3505 @@
+{
+  "commit": "515b3860+dirty",
+  "render_id": "ae5c4c9a67f84eed",
+  "git_commit": "515b3860",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2225/hero_coef_response_multilayer.meta.json",
+    "figures/issue_2225/hero_coef_response_multilayer.pdf",
+    "figures/issue_2225/hero_coef_response_multilayer.png",
+    "scripts/issue2225_figures.py"
+  ],
+  "created": "2026-08-14T14:10:32Z",
+  "figsize": [
+    12.0,
+    12.8
+  ],
+  "points": [
+    {
+      "category": "Paper 1-layer",
+      "Evil\ntrait score (0\u2013100)": 51.07666666666666,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Paper all-layer (28)",
+      "Evil\ntrait score (0\u2013100)": 11.676666666666666,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Context 1-layer",
+      "Evil\ntrait score (0\u2013100)": 84.32666666666668,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "Context middle-band (9)",
+      "Evil\ntrait score (0\u2013100)": 78.45833333333334,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "Context all-layer (28)",
+      "Evil\ntrait score (0\u2013100)": 26.48222222222222,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "Paper dir, ctx tokens",
+      "Evil\ntrait score (0\u2013100)": 83.88083333333333,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "Context dir, all tokens",
+      "Evil\ntrait score (0\u2013100)": 39.06333333333333,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "Paper dir, resp tokens",
+      "Evil\ntrait score (0\u2013100)": 54.19,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "Prefix dir, prefix tokens",
+      "Evil\ntrait score (0\u2013100)": 85.58166666666668,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "category": "Preventative prompt",
+      "Evil\ntrait score (0\u2013100)": 0.4,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": -0.11110767308345273,
+      "Evil\ntrait score (0\u2013100)": 45.11666666666666,
+      "label": "0",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": -0.1898573678706368,
+      "Evil\ntrait score (0\u2013100)": 39.233333333333334,
+      "label": "1",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": -0.19394396552844012,
+      "Evil\ntrait score (0\u2013100)": 77.15,
+      "label": "2",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.06802310822466709,
+      "Evil\ntrait score (0\u2013100)": 16.083333333333332,
+      "label": "3",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 0.12396371587758945,
+      "Evil\ntrait score (0\u2013100)": 48.06666666666667,
+      "label": "4",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 0.0924875520760374,
+      "Evil\ntrait score (0\u2013100)": 51.1,
+      "label": "5",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 0.023067656179139695,
+      "Evil\ntrait score (0\u2013100)": 36.86666666666667,
+      "label": "6",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": -0.02149013114694548,
+      "Evil\ntrait score (0\u2013100)": 71.16666666666666,
+      "label": "7",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": -0.08496124887986464,
+      "Evil\ntrait score (0\u2013100)": 27.9,
+      "label": "8",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": -0.17311383268175523,
+      "Evil\ntrait score (0\u2013100)": 39.96666666666667,
+      "label": "9",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 0.1409615359231595,
+      "Evil\ntrait score (0\u2013100)": 83.15,
+      "label": "10",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": -0.12463593340959503,
+      "Evil\ntrait score (0\u2013100)": 87.33333333333334,
+      "label": "11",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 0.025485513773103485,
+      "Evil\ntrait score (0\u2013100)": 44.783333333333346,
+      "label": "12",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 0.041757630331610424,
+      "Evil\ntrait score (0\u2013100)": 38.95,
+      "label": "13",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": -0.12496595465401457,
+      "Evil\ntrait score (0\u2013100)": 53.583333333333336,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 0.03506880886260208,
+      "Evil\ntrait score (0\u2013100)": 58.18333333333332,
+      "label": "15",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 0.16907860373506697,
+      "Evil\ntrait score (0\u2013100)": 63.93333333333334,
+      "label": "16",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": -0.03321720859680144,
+      "Evil\ntrait score (0\u2013100)": 57.06666666666666,
+      "label": "17",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": -0.18493233516571356,
+      "Evil\ntrait score (0\u2013100)": 30.35,
+      "label": "18",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": -0.13657096725804796,
+      "Evil\ntrait score (0\u2013100)": 51.55,
+      "label": "19",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 0.8465388355361367,
+      "Evil\ntrait score (0\u2013100)": 6.0,
+      "label": "0",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 0.8646142326828079,
+      "Evil\ntrait score (0\u2013100)": 2.833333333333333,
+      "label": "1",
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 0.9273108479606166,
+      "Evil\ntrait score (0\u2013100)": 22.733333333333334,
+      "label": "2",
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 1.125022534229905,
+      "Evil\ntrait score (0\u2013100)": 4.316666666666666,
+      "label": "3",
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 0.8689849453227747,
+      "Evil\ntrait score (0\u2013100)": 2.166666666666667,
+      "label": "4",
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 0.918802867829173,
+      "Evil\ntrait score (0\u2013100)": 6.333333333333334,
+      "label": "5",
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 1.1269072850770332,
+      "Evil\ntrait score (0\u2013100)": 9.833333333333332,
+      "label": "6",
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 1.0544552117686596,
+      "Evil\ntrait score (0\u2013100)": 30.616666666666667,
+      "label": "7",
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 0.8464659233259602,
+      "Evil\ntrait score (0\u2013100)": 13.166666666666666,
+      "label": "8",
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 0.9720419938838338,
+      "Evil\ntrait score (0\u2013100)": 0.25,
+      "label": "9",
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 0.8516651933383396,
+      "Evil\ntrait score (0\u2013100)": 19.283333333333335,
+      "label": "10",
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "x": 1.123665978758667,
+      "Evil\ntrait score (0\u2013100)": 17.333333333333336,
+      "label": "11",
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "x": 1.1750170828818458,
+      "Evil\ntrait score (0\u2013100)": 6.166666666666666,
+      "label": "12",
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "x": 1.0533190729792568,
+      "Evil\ntrait score (0\u2013100)": 1.25,
+      "label": "13",
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "x": 0.9612871001549482,
+      "Evil\ntrait score (0\u2013100)": 7.283333333333334,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "x": 0.7830567271735804,
+      "Evil\ntrait score (0\u2013100)": 4.466666666666667,
+      "label": "15",
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "x": 0.9752508206922076,
+      "Evil\ntrait score (0\u2013100)": 38.93333333333333,
+      "label": "16",
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "x": 0.8660983829000137,
+      "Evil\ntrait score (0\u2013100)": 18.28333333333333,
+      "label": "17",
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "x": 0.9837283746114504,
+      "Evil\ntrait score (0\u2013100)": 14.166666666666666,
+      "label": "18",
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 0.8517974858258557,
+      "Evil\ntrait score (0\u2013100)": 8.116666666666665,
+      "label": "19",
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 1.784207569750744,
+      "Evil\ntrait score (0\u2013100)": 77.33333333333333,
+      "label": "0",
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 2.1713023317168063,
+      "Evil\ntrait score (0\u2013100)": 71.73333333333333,
+      "label": "1",
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 2.1439166881073923,
+      "Evil\ntrait score (0\u2013100)": 95.0,
+      "label": "2",
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 2.192449298948829,
+      "Evil\ntrait score (0\u2013100)": 47.483333333333334,
+      "label": "3",
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 1.841904352437636,
+      "Evil\ntrait score (0\u2013100)": 87.16666666666667,
+      "label": "4",
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 1.9437936361203008,
+      "Evil\ntrait score (0\u2013100)": 85.16666666666666,
+      "label": "5",
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 1.9002229745994386,
+      "Evil\ntrait score (0\u2013100)": 78.13333333333333,
+      "label": "6",
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "x": 1.8322717241760582,
+      "Evil\ntrait score (0\u2013100)": 90.68333333333334,
+      "label": "7",
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "x": 2.018981015436063,
+      "Evil\ntrait score (0\u2013100)": 86.45,
+      "label": "8",
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "x": 2.0842855878984237,
+      "Evil\ntrait score (0\u2013100)": 86.73333333333333,
+      "label": "9",
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "x": 2.2066128778234995,
+      "Evil\ntrait score (0\u2013100)": 91.11666666666667,
+      "label": "10",
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": 1.8803291801538897,
+      "Evil\ntrait score (0\u2013100)": 98.16666666666666,
+      "label": "11",
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 1.943772904234343,
+      "Evil\ntrait score (0\u2013100)": 88.33333333333334,
+      "label": "12",
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 1.8700863921751247,
+      "Evil\ntrait score (0\u2013100)": 86.38333333333334,
+      "label": "13",
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 1.8255961573696824,
+      "Evil\ntrait score (0\u2013100)": 87.05,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 64
+    },
+    {
+      "x": 1.8729424116021398,
+      "Evil\ntrait score (0\u2013100)": 85.56666666666666,
+      "label": "15",
+      "_kind": "scatter",
+      "_group": 65
+    },
+    {
+      "x": 2.073871777419967,
+      "Evil\ntrait score (0\u2013100)": 92.38333333333334,
+      "label": "16",
+      "_kind": "scatter",
+      "_group": 66
+    },
+    {
+      "x": 1.9750716071861507,
+      "Evil\ntrait score (0\u2013100)": 95.5,
+      "label": "17",
+      "_kind": "scatter",
+      "_group": 67
+    },
+    {
+      "x": 1.9578232227062364,
+      "Evil\ntrait score (0\u2013100)": 84.9,
+      "label": "18",
+      "_kind": "scatter",
+      "_group": 68
+    },
+    {
+      "x": 2.1834030630448975,
+      "Evil\ntrait score (0\u2013100)": 71.24999999999999,
+      "label": "19",
+      "_kind": "scatter",
+      "_group": 69
+    },
+    {
+      "x": 3.1216895617485254,
+      "Evil\ntrait score (0\u2013100)": 77.78333333333333,
+      "label": "0",
+      "_kind": "scatter",
+      "_group": 70
+    },
+    {
+      "x": 2.8223839211100934,
+      "Evil\ntrait score (0\u2013100)": 58.28333333333334,
+      "label": "1",
+      "_kind": "scatter",
+      "_group": 71
+    },
+    {
+      "x": 2.930106578809906,
+      "Evil\ntrait score (0\u2013100)": 93.4,
+      "label": "2",
+      "_kind": "scatter",
+      "_group": 72
+    },
+    {
+      "x": 2.914059606386827,
+      "Evil\ntrait score (0\u2013100)": 32.733333333333334,
+      "label": "3",
+      "_kind": "scatter",
+      "_group": 73
+    },
+    {
+      "x": 3.012255155809372,
+      "Evil\ntrait score (0\u2013100)": 81.4,
+      "label": "4",
+      "_kind": "scatter",
+      "_group": 74
+    },
+    {
+      "x": 3.184064675935946,
+      "Evil\ntrait score (0\u2013100)": 80.65,
+      "label": "5",
+      "_kind": "scatter",
+      "_group": 75
+    },
+    {
+      "x": 2.9330582037190798,
+      "Evil\ntrait score (0\u2013100)": 68.11666666666666,
+      "label": "6",
+      "_kind": "scatter",
+      "_group": 76
+    },
+    {
+      "x": 3.014067086639307,
+      "Evil\ntrait score (0\u2013100)": 88.56666666666668,
+      "label": "7",
+      "_kind": "scatter",
+      "_group": 77
+    },
+    {
+      "x": 2.9101398506917855,
+      "Evil\ntrait score (0\u2013100)": 81.14999999999999,
+      "label": "8",
+      "_kind": "scatter",
+      "_group": 78
+    },
+    {
+      "x": 3.0131607386324593,
+      "Evil\ntrait score (0\u2013100)": 72.65,
+      "label": "9",
+      "_kind": "scatter",
+      "_group": 79
+    },
+    {
+      "x": 3.0035831623088898,
+      "Evil\ntrait score (0\u2013100)": 85.81666666666668,
+      "label": "10",
+      "_kind": "scatter",
+      "_group": 80
+    },
+    {
+      "x": 2.917634123560064,
+      "Evil\ntrait score (0\u2013100)": 96.41666666666666,
+      "label": "11",
+      "_kind": "scatter",
+      "_group": 81
+    },
+    {
+      "x": 3.1278227610552696,
+      "Evil\ntrait score (0\u2013100)": 69.73333333333333,
+      "label": "12",
+      "_kind": "scatter",
+      "_group": 82
+    },
+    {
+      "x": 3.176052544514754,
+      "Evil\ntrait score (0\u2013100)": 91.66666666666666,
+      "label": "13",
+      "_kind": "scatter",
+      "_group": 83
+    },
+    {
+      "x": 2.8154904691582283,
+      "Evil\ntrait score (0\u2013100)": 88.16666666666667,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 84
+    },
+    {
+      "x": 3.180778677877887,
+      "Evil\ntrait score (0\u2013100)": 80.88333333333334,
+      "label": "15",
+      "_kind": "scatter",
+      "_group": 85
+    },
+    {
+      "x": 3.092898594386942,
+      "Evil\ntrait score (0\u2013100)": 88.75,
+      "label": "16",
+      "_kind": "scatter",
+      "_group": 86
+    },
+    {
+      "x": 3.1225104021234893,
+      "Evil\ntrait score (0\u2013100)": 86.05,
+      "label": "17",
+      "_kind": "scatter",
+      "_group": 87
+    },
+    {
+      "x": 3.0938919712514497,
+      "Evil\ntrait score (0\u2013100)": 78.53333333333333,
+      "label": "18",
+      "_kind": "scatter",
+      "_group": 88
+    },
+    {
+      "x": 2.796953884428835,
+      "Evil\ntrait score (0\u2013100)": 68.41666666666666,
+      "label": "19",
+      "_kind": "scatter",
+      "_group": 89
+    },
+    {
+      "x": 4.001335986349721,
+      "Evil\ntrait score (0\u2013100)": 65.91666666666666,
+      "label": "0",
+      "_kind": "scatter",
+      "_group": 90
+    },
+    {
+      "x": 3.862893809968482,
+      "Evil\ntrait score (0\u2013100)": 3.8333333333333335,
+      "label": "1",
+      "_kind": "scatter",
+      "_group": 91
+    },
+    {
+      "x": 3.9270515994349386,
+      "Evil\ntrait score (0\u2013100)": 22.666666666666668,
+      "label": "2",
+      "_kind": "scatter",
+      "_group": 92
+    },
+    {
+      "x": 4.101241300923113,
+      "Evil\ntrait score (0\u2013100)": 13.833333333333332,
+      "label": "3",
+      "_kind": "scatter",
+      "_group": 93
+    },
+    {
+      "x": 4.215628760470604,
+      "Evil\ntrait score (0\u2013100)": 0.0,
+      "label": "4",
+      "_kind": "scatter",
+      "_group": 94
+    },
+    {
+      "x": 4.102913968722319,
+      "Evil\ntrait score (0\u2013100)": 4.333333333333334,
+      "label": "5",
+      "_kind": "scatter",
+      "_group": 95
+    },
+    {
+      "x": 4.045252836980402,
+      "Evil\ntrait score (0\u2013100)": 8.333333333333332,
+      "label": "6",
+      "_kind": "scatter",
+      "_group": 96
+    },
+    {
+      "x": 3.863694215425692,
+      "Evil\ntrait score (0\u2013100)": 82.56666666666668,
+      "label": "7",
+      "_kind": "scatter",
+      "_group": 97
+    },
+    {
+      "x": 3.9676049538439275,
+      "Evil\ntrait score (0\u2013100)": 17.68333333333333,
+      "label": "8",
+      "_kind": "scatter",
+      "_group": 98
+    },
+    {
+      "x": 3.8384142086014714,
+      "Evil\ntrait score (0\u2013100)": 0.0,
+      "label": "9",
+      "_kind": "scatter",
+      "_group": 99
+    },
+    {
+      "x": 3.9992350405035246,
+      "Evil\ntrait score (0\u2013100)": 0.08333333333333334,
+      "label": "10",
+      "_kind": "scatter",
+      "_group": 100
+    },
+    {
+      "x": 3.8960587446897703,
+      "Evil\ntrait score (0\u2013100)": 66.91666666666666,
+      "label": "11",
+      "_kind": "scatter",
+      "_group": 101
+    },
+    {
+      "x": 4.092772926995887,
+      "Evil\ntrait score (0\u2013100)": 0.0,
+      "label": "12",
+      "_kind": "scatter",
+      "_group": 102
+    },
+    {
+      "x": 4.11312730565092,
+      "Evil\ntrait score (0\u2013100)": 0.0,
+      "label": "13",
+      "_kind": "scatter",
+      "_group": 103
+    },
+    {
+      "x": 4.114346334864286,
+      "Evil\ntrait score (0\u2013100)": 26.5,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 104
+    },
+    {
+      "x": 4.055792638393433,
+      "Evil\ntrait score (0\u2013100)": 66.51666666666668,
+      "label": "15",
+      "_kind": "scatter",
+      "_group": 105
+    },
+    {
+      "x": 3.981563127176396,
+      "Evil\ntrait score (0\u2013100)": 19.444444444444443,
+      "label": "16",
+      "_kind": "scatter",
+      "_group": 106
+    },
+    {
+      "x": 4.139078189718956,
+      "Evil\ntrait score (0\u2013100)": 42.4,
+      "label": "17",
+      "_kind": "scatter",
+      "_group": 107
+    },
+    {
+      "x": 3.7988383559650476,
+      "Evil\ntrait score (0\u2013100)": 62.866666666666674,
+      "label": "18",
+      "_kind": "scatter",
+      "_group": 108
+    },
+    {
+      "x": 3.8848185251294236,
+      "Evil\ntrait score (0\u2013100)": 25.75,
+      "label": "19",
+      "_kind": "scatter",
+      "_group": 109
+    },
+    {
+      "x": 4.890753421217031,
+      "Evil\ntrait score (0\u2013100)": 79.73333333333333,
+      "label": "0",
+      "_kind": "scatter",
+      "_group": 110
+    },
+    {
+      "x": 4.908347961776352,
+      "Evil\ntrait score (0\u2013100)": 67.16666666666666,
+      "label": "1",
+      "_kind": "scatter",
+      "_group": 111
+    },
+    {
+      "x": 4.862550197521806,
+      "Evil\ntrait score (0\u2013100)": 95.5,
+      "label": "2",
+      "_kind": "scatter",
+      "_group": 112
+    },
+    {
+      "x": 4.9503907301965695,
+      "Evil\ntrait score (0\u2013100)": 50.9,
+      "label": "3",
+      "_kind": "scatter",
+      "_group": 113
+    },
+    {
+      "x": 5.010231392541512,
+      "Evil\ntrait score (0\u2013100)": 87.51666666666667,
+      "label": "4",
+      "_kind": "scatter",
+      "_group": 114
+    },
+    {
+      "x": 4.860568317936498,
+      "Evil\ntrait score (0\u2013100)": 84.0,
+      "label": "5",
+      "_kind": "scatter",
+      "_group": 115
+    },
+    {
+      "x": 4.891673421953,
+      "Evil\ntrait score (0\u2013100)": 74.61666666666667,
+      "label": "6",
+      "_kind": "scatter",
+      "_group": 116
+    },
+    {
+      "x": 4.879429125624826,
+      "Evil\ntrait score (0\u2013100)": 93.4,
+      "label": "7",
+      "_kind": "scatter",
+      "_group": 117
+    },
+    {
+      "x": 5.123845124923351,
+      "Evil\ntrait score (0\u2013100)": 87.71666666666667,
+      "label": "8",
+      "_kind": "scatter",
+      "_group": 118
+    },
+    {
+      "x": 5.071393165382756,
+      "Evil\ntrait score (0\u2013100)": 88.89999999999999,
+      "label": "9",
+      "_kind": "scatter",
+      "_group": 119
+    },
+    {
+      "x": 5.18091702244253,
+      "Evil\ntrait score (0\u2013100)": 92.61666666666666,
+      "label": "10",
+      "_kind": "scatter",
+      "_group": 120
+    },
+    {
+      "x": 4.86750737166173,
+      "Evil\ntrait score (0\u2013100)": 96.75,
+      "label": "11",
+      "_kind": "scatter",
+      "_group": 121
+    },
+    {
+      "x": 4.792779043097834,
+      "Evil\ntrait score (0\u2013100)": 87.66666666666666,
+      "label": "12",
+      "_kind": "scatter",
+      "_group": 122
+    },
+    {
+      "x": 5.123514108933672,
+      "Evil\ntrait score (0\u2013100)": 88.56666666666668,
+      "label": "13",
+      "_kind": "scatter",
+      "_group": 123
+    },
+    {
+      "x": 4.879992885609373,
+      "Evil\ntrait score (0\u2013100)": 84.98333333333333,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 124
+    },
+    {
+      "x": 4.813635522864052,
+      "Evil\ntrait score (0\u2013100)": 85.28333333333333,
+      "label": "15",
+      "_kind": "scatter",
+      "_group": 125
+    },
+    {
+      "x": 5.065510423798433,
+      "Evil\ntrait score (0\u2013100)": 91.61666666666666,
+      "label": "16",
+      "_kind": "scatter",
+      "_group": 126
+    },
+    {
+      "x": 4.980511726743013,
+      "Evil\ntrait score (0\u2013100)": 89.75,
+      "label": "17",
+      "_kind": "scatter",
+      "_group": 127
+    },
+    {
+      "x": 5.213302696126495,
+      "Evil\ntrait score (0\u2013100)": 75.73333333333332,
+      "label": "18",
+      "_kind": "scatter",
+      "_group": 128
+    },
+    {
+      "x": 4.799610849748956,
+      "Evil\ntrait score (0\u2013100)": 75.19999999999999,
+      "label": "19",
+      "_kind": "scatter",
+      "_group": 129
+    },
+    {
+      "x": 6.062028201139408,
+      "Evil\ntrait score (0\u2013100)": 33.45,
+      "label": "0",
+      "_kind": "scatter",
+      "_group": 130
+    },
+    {
+      "x": 5.91938148158832,
+      "Evil\ntrait score (0\u2013100)": 35.45,
+      "label": "1",
+      "_kind": "scatter",
+      "_group": 131
+    },
+    {
+      "x": 5.8466107031153856,
+      "Evil\ntrait score (0\u2013100)": 70.33333333333334,
+      "label": "2",
+      "_kind": "scatter",
+      "_group": 132
+    },
+    {
+      "x": 6.061098768362991,
+      "Evil\ntrait score (0\u2013100)": 5.666666666666667,
+      "label": "3",
+      "_kind": "scatter",
+      "_group": 133
+    },
+    {
+      "x": 5.95272363667051,
+      "Evil\ntrait score (0\u2013100)": 31.7,
+      "label": "4",
+      "_kind": "scatter",
+      "_group": 134
+    },
+    {
+      "x": 6.120464130438935,
+      "Evil\ntrait score (0\u2013100)": 46.46666666666667,
+      "label": "5",
+      "_kind": "scatter",
+      "_group": 135
+    },
+    {
+      "x": 6.1134676240191554,
+      "Evil\ntrait score (0\u2013100)": 24.1,
+      "label": "6",
+      "_kind": "scatter",
+      "_group": 136
+    },
+    {
+      "x": 6.038023723490128,
+      "Evil\ntrait score (0\u2013100)": 51.4,
+      "label": "7",
+      "_kind": "scatter",
+      "_group": 137
+    },
+    {
+      "x": 5.876368818473557,
+      "Evil\ntrait score (0\u2013100)": 19.233333333333334,
+      "label": "8",
+      "_kind": "scatter",
+      "_group": 138
+    },
+    {
+      "x": 5.985628677119295,
+      "Evil\ntrait score (0\u2013100)": 5.25,
+      "label": "9",
+      "_kind": "scatter",
+      "_group": 139
+    },
+    {
+      "x": 5.832974893421696,
+      "Evil\ntrait score (0\u2013100)": 55.93333333333335,
+      "label": "10",
+      "_kind": "scatter",
+      "_group": 140
+    },
+    {
+      "x": 6.010272160668276,
+      "Evil\ntrait score (0\u2013100)": 82.16666666666667,
+      "label": "11",
+      "_kind": "scatter",
+      "_group": 141
+    },
+    {
+      "x": 6.004885266231034,
+      "Evil\ntrait score (0\u2013100)": 20.066666666666666,
+      "label": "12",
+      "_kind": "scatter",
+      "_group": 142
+    },
+    {
+      "x": 5.846398172638232,
+      "Evil\ntrait score (0\u2013100)": 29.616666666666664,
+      "label": "13",
+      "_kind": "scatter",
+      "_group": 143
+    },
+    {
+      "x": 5.9391750877593035,
+      "Evil\ntrait score (0\u2013100)": 38.63333333333334,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 144
+    },
+    {
+      "x": 5.865322982095422,
+      "Evil\ntrait score (0\u2013100)": 43.616666666666674,
+      "label": "15",
+      "_kind": "scatter",
+      "_group": 145
+    },
+    {
+      "x": 6.061914357378521,
+      "Evil\ntrait score (0\u2013100)": 63.666666666666664,
+      "label": "16",
+      "_kind": "scatter",
+      "_group": 146
+    },
+    {
+      "x": 5.822646789862519,
+      "Evil\ntrait score (0\u2013100)": 55.0,
+      "label": "17",
+      "_kind": "scatter",
+      "_group": 147
+    },
+    {
+      "x": 6.112195258483533,
+      "Evil\ntrait score (0\u2013100)": 22.833333333333336,
+      "label": "18",
+      "_kind": "scatter",
+      "_group": 148
+    },
+    {
+      "x": 5.798278054440792,
+      "Evil\ntrait score (0\u2013100)": 46.68333333333333,
+      "label": "19",
+      "_kind": "scatter",
+      "_group": 149
+    },
+    {
+      "x": 6.791455196038503,
+      "Evil\ntrait score (0\u2013100)": 51.18333333333333,
+      "label": "0",
+      "_kind": "scatter",
+      "_group": 150
+    },
+    {
+      "x": 7.083710382959195,
+      "Evil\ntrait score (0\u2013100)": 25.65,
+      "label": "1",
+      "_kind": "scatter",
+      "_group": 151
+    },
+    {
+      "x": 6.848620054190816,
+      "Evil\ntrait score (0\u2013100)": 84.16666666666666,
+      "label": "2",
+      "_kind": "scatter",
+      "_group": 152
+    },
+    {
+      "x": 6.795170363119431,
+      "Evil\ntrait score (0\u2013100)": 18.150000000000002,
+      "label": "3",
+      "_kind": "scatter",
+      "_group": 153
+    },
+    {
+      "x": 7.146370625053887,
+      "Evil\ntrait score (0\u2013100)": 52.61666666666666,
+      "label": "4",
+      "_kind": "scatter",
+      "_group": 154
+    },
+    {
+      "x": 6.998735474546934,
+      "Evil\ntrait score (0\u2013100)": 60.666666666666664,
+      "label": "5",
+      "_kind": "scatter",
+      "_group": 155
+    },
+    {
+      "x": 6.933397485145495,
+      "Evil\ntrait score (0\u2013100)": 40.666666666666664,
+      "label": "6",
+      "_kind": "scatter",
+      "_group": 156
+    },
+    {
+      "x": 6.831067818159289,
+      "Evil\ntrait score (0\u2013100)": 69.61666666666666,
+      "label": "7",
+      "_kind": "scatter",
+      "_group": 157
+    },
+    {
+      "x": 7.200281754491995,
+      "Evil\ntrait score (0\u2013100)": 43.38333333333334,
+      "label": "8",
+      "_kind": "scatter",
+      "_group": 158
+    },
+    {
+      "x": 6.991548191653118,
+      "Evil\ntrait score (0\u2013100)": 31.03333333333334,
+      "label": "9",
+      "_kind": "scatter",
+      "_group": 159
+    },
+    {
+      "x": 6.934133504944135,
+      "Evil\ntrait score (0\u2013100)": 76.78333333333333,
+      "label": "10",
+      "_kind": "scatter",
+      "_group": 160
+    },
+    {
+      "x": 6.952842324566345,
+      "Evil\ntrait score (0\u2013100)": 92.0,
+      "label": "11",
+      "_kind": "scatter",
+      "_group": 161
+    },
+    {
+      "x": 7.18826660737727,
+      "Evil\ntrait score (0\u2013100)": 39.75,
+      "label": "12",
+      "_kind": "scatter",
+      "_group": 162
+    },
+    {
+      "x": 7.128282843052197,
+      "Evil\ntrait score (0\u2013100)": 43.016666666666666,
+      "label": "13",
+      "_kind": "scatter",
+      "_group": 163
+    },
+    {
+      "x": 6.962721996846298,
+      "Evil\ntrait score (0\u2013100)": 54.583333333333336,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 164
+    },
+    {
+      "x": 7.180012846108285,
+      "Evil\ntrait score (0\u2013100)": 65.24999999999999,
+      "label": "15",
+      "_kind": "scatter",
+      "_group": 165
+    },
+    {
+      "x": 6.800987671051023,
+      "Evil\ntrait score (0\u2013100)": 71.3,
+      "label": "16",
+      "_kind": "scatter",
+      "_group": 166
+    },
+    {
+      "x": 7.159850615458558,
+      "Evil\ntrait score (0\u2013100)": 69.9,
+      "label": "17",
+      "_kind": "scatter",
+      "_group": 167
+    },
+    {
+      "x": 6.9374751551716045,
+      "Evil\ntrait score (0\u2013100)": 44.516666666666666,
+      "label": "18",
+      "_kind": "scatter",
+      "_group": 168
+    },
+    {
+      "x": 6.787838786434581,
+      "Evil\ntrait score (0\u2013100)": 49.56666666666666,
+      "label": "19",
+      "_kind": "scatter",
+      "_group": 169
+    },
+    {
+      "x": 8.034986924817568,
+      "Evil\ntrait score (0\u2013100)": 80.95,
+      "label": "0",
+      "_kind": "scatter",
+      "_group": 170
+    },
+    {
+      "x": 7.825009001500002,
+      "Evil\ntrait score (0\u2013100)": 75.45,
+      "label": "1",
+      "_kind": "scatter",
+      "_group": 171
+    },
+    {
+      "x": 8.196762233545554,
+      "Evil\ntrait score (0\u2013100)": 93.95,
+      "label": "2",
+      "_kind": "scatter",
+      "_group": 172
+    },
+    {
+      "x": 8.036425477259643,
+      "Evil\ntrait score (0\u2013100)": 54.56666666666668,
+      "label": "3",
+      "_kind": "scatter",
+      "_group": 173
+    },
+    {
+      "x": 8.044495126960655,
+      "Evil\ntrait score (0\u2013100)": 85.4,
+      "label": "4",
+      "_kind": "scatter",
+      "_group": 174
+    },
+    {
+      "x": 8.13009019242594,
+      "Evil\ntrait score (0\u2013100)": 82.33333333333333,
+      "label": "5",
+      "_kind": "scatter",
+      "_group": 175
+    },
+    {
+      "x": 8.055486409368985,
+      "Evil\ntrait score (0\u2013100)": 83.38333333333334,
+      "label": "6",
+      "_kind": "scatter",
+      "_group": 176
+    },
+    {
+      "x": 7.824454034999467,
+      "Evil\ntrait score (0\u2013100)": 91.61666666666666,
+      "label": "7",
+      "_kind": "scatter",
+      "_group": 177
+    },
+    {
+      "x": 8.006306132938075,
+      "Evil\ntrait score (0\u2013100)": 90.11666666666666,
+      "label": "8",
+      "_kind": "scatter",
+      "_group": 178
+    },
+    {
+      "x": 7.83524730169383,
+      "Evil\ntrait score (0\u2013100)": 86.86666666666667,
+      "label": "9",
+      "_kind": "scatter",
+      "_group": 179
+    },
+    {
+      "x": 7.925167719881079,
+      "Evil\ntrait score (0\u2013100)": 92.0,
+      "label": "10",
+      "_kind": "scatter",
+      "_group": 180
+    },
+    {
+      "x": 8.008779749932906,
+      "Evil\ntrait score (0\u2013100)": 97.08333333333333,
+      "label": "11",
+      "_kind": "scatter",
+      "_group": 181
+    },
+    {
+      "x": 7.817923114966099,
+      "Evil\ntrait score (0\u2013100)": 92.08333333333333,
+      "label": "12",
+      "_kind": "scatter",
+      "_group": 182
+    },
+    {
+      "x": 7.82024012800605,
+      "Evil\ntrait score (0\u2013100)": 90.43333333333334,
+      "label": "13",
+      "_kind": "scatter",
+      "_group": 183
+    },
+    {
+      "x": 7.986777013158548,
+      "Evil\ntrait score (0\u2013100)": 91.06666666666666,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 184
+    },
+    {
+      "x": 8.143975249068742,
+      "Evil\ntrait score (0\u2013100)": 85.16666666666667,
+      "label": "15",
+      "_kind": "scatter",
+      "_group": 185
+    },
+    {
+      "x": 7.878402280710341,
+      "Evil\ntrait score (0\u2013100)": 90.95,
+      "label": "16",
+      "_kind": "scatter",
+      "_group": 186
+    },
+    {
+      "x": 7.804269880485579,
+      "Evil\ntrait score (0\u2013100)": 89.91666666666667,
+      "label": "17",
+      "_kind": "scatter",
+      "_group": 187
+    },
+    {
+      "x": 7.859683665953351,
+      "Evil\ntrait score (0\u2013100)": 82.81666666666668,
+      "label": "18",
+      "_kind": "scatter",
+      "_group": 188
+    },
+    {
+      "x": 7.860265118914778,
+      "Evil\ntrait score (0\u2013100)": 75.48333333333332,
+      "label": "19",
+      "_kind": "scatter",
+      "_group": 189
+    },
+    {
+      "x": 8.798286933765533,
+      "Evil\ntrait score (0\u2013100)": 0.0,
+      "label": "0",
+      "_kind": "scatter",
+      "_group": 190
+    },
+    {
+      "x": 8.82269133598818,
+      "Evil\ntrait score (0\u2013100)": 0.0,
+      "label": "1",
+      "_kind": "scatter",
+      "_group": 191
+    },
+    {
+      "x": 9.046596819863948,
+      "Evil\ntrait score (0\u2013100)": 0.0,
+      "label": "2",
+      "_kind": "scatter",
+      "_group": 192
+    },
+    {
+      "x": 9.062802927710896,
+      "Evil\ntrait score (0\u2013100)": 0.0,
+      "label": "3",
+      "_kind": "scatter",
+      "_group": 193
+    },
+    {
+      "x": 9.166162983751036,
+      "Evil\ntrait score (0\u2013100)": 0.0,
+      "label": "4",
+      "_kind": "scatter",
+      "_group": 194
+    },
+    {
+      "x": 8.845429233080758,
+      "Evil\ntrait score (0\u2013100)": 0.0,
+      "label": "5",
+      "_kind": "scatter",
+      "_group": 195
+    },
+    {
+      "x": 9.18636364272689,
+      "Evil\ntrait score (0\u2013100)": 0.0,
+      "label": "6",
+      "_kind": "scatter",
+      "_group": 196
+    },
+    {
+      "x": 9.078407032186226,
+      "Evil\ntrait score (0\u2013100)": 0.0,
+      "label": "7",
+      "_kind": "scatter",
+      "_group": 197
+    },
+    {
+      "x": 8.935839497262249,
+      "Evil\ntrait score (0\u2013100)": 0.0,
+      "label": "8",
+      "_kind": "scatter",
+      "_group": 198
+    },
+    {
+      "x": 8.96592336261843,
+      "Evil\ntrait score (0\u2013100)": 0.0,
+      "label": "9",
+      "_kind": "scatter",
+      "_group": 199
+    },
+    {
+      "x": 9.027776374408782,
+      "Evil\ntrait score (0\u2013100)": 0.0,
+      "label": "10",
+      "_kind": "scatter",
+      "_group": 200
+    },
+    {
+      "x": 9.144711819230613,
+      "Evil\ntrait score (0\u2013100)": 0.0,
+      "label": "11",
+      "_kind": "scatter",
+      "_group": 201
+    },
+    {
+      "x": 8.956761373129936,
+      "Evil\ntrait score (0\u2013100)": 0.0,
+      "label": "12",
+      "_kind": "scatter",
+      "_group": 202
+    },
+    {
+      "x": 9.076859045636844,
+      "Evil\ntrait score (0\u2013100)": 0.0,
+      "label": "13",
+      "_kind": "scatter",
+      "_group": 203
+    },
+    {
+      "x": 9.145826508055025,
+      "Evil\ntrait score (0\u2013100)": 0.0,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 204
+    },
+    {
+      "x": 9.106686414787287,
+      "Evil\ntrait score (0\u2013100)": 0.0,
+      "label": "15",
+      "_kind": "scatter",
+      "_group": 205
+    },
+    {
+      "x": 9.097678161741966,
+      "Evil\ntrait score (0\u2013100)": 8.0,
+      "label": "16",
+      "_kind": "scatter",
+      "_group": 206
+    },
+    {
+      "x": 9.002978388250549,
+      "Evil\ntrait score (0\u2013100)": 0.0,
+      "label": "17",
+      "_kind": "scatter",
+      "_group": 207
+    },
+    {
+      "x": 8.940719140000823,
+      "Evil\ntrait score (0\u2013100)": 0.0,
+      "label": "18",
+      "_kind": "scatter",
+      "_group": 208
+    },
+    {
+      "x": 9.195182462359229,
+      "Evil\ntrait score (0\u2013100)": 0.0,
+      "label": "19",
+      "_kind": "scatter",
+      "_group": 209
+    },
+    {
+      "category": "Paper 1-layer",
+      "Sycophancy\ntrait score (0\u2013100)": 93.44583333333334,
+      "_kind": "bar",
+      "_group": 210
+    },
+    {
+      "category": "Context 1-layer",
+      "Sycophancy\ntrait score (0\u2013100)": 89.93416666666667,
+      "_kind": "bar",
+      "_group": 211
+    },
+    {
+      "category": "Context middle-band (9)",
+      "Sycophancy\ntrait score (0\u2013100)": 78.6475,
+      "_kind": "bar",
+      "_group": 212
+    },
+    {
+      "category": "Context all-layer (28)",
+      "Sycophancy\ntrait score (0\u2013100)": 62.285833333333336,
+      "_kind": "bar",
+      "_group": 213
+    },
+    {
+      "x": 0.17032637138620835,
+      "Sycophancy\ntrait score (0\u2013100)": 92.4,
+      "label": "0",
+      "_kind": "scatter",
+      "_group": 214
+    },
+    {
+      "x": 0.1539148757593429,
+      "Sycophancy\ntrait score (0\u2013100)": 94.0,
+      "label": "1",
+      "_kind": "scatter",
+      "_group": 215
+    },
+    {
+      "x": -0.13923609227924116,
+      "Sycophancy\ntrait score (0\u2013100)": 93.9,
+      "label": "2",
+      "_kind": "scatter",
+      "_group": 216
+    },
+    {
+      "x": 0.10653367786540982,
+      "Sycophancy\ntrait score (0\u2013100)": 94.9,
+      "label": "3",
+      "_kind": "scatter",
+      "_group": 217
+    },
+    {
+      "x": -0.036470708864064644,
+      "Sycophancy\ntrait score (0\u2013100)": 95.0,
+      "label": "4",
+      "_kind": "scatter",
+      "_group": 218
+    },
+    {
+      "x": 0.17136107465503256,
+      "Sycophancy\ntrait score (0\u2013100)": 90.95,
+      "label": "5",
+      "_kind": "scatter",
+      "_group": 219
+    },
+    {
+      "x": -0.0053877057390645244,
+      "Sycophancy\ntrait score (0\u2013100)": 94.56666666666666,
+      "label": "6",
+      "_kind": "scatter",
+      "_group": 220
+    },
+    {
+      "x": -0.15500210541010914,
+      "Sycophancy\ntrait score (0\u2013100)": 93.51666666666667,
+      "label": "7",
+      "_kind": "scatter",
+      "_group": 221
+    },
+    {
+      "x": 0.1323128205501566,
+      "Sycophancy\ntrait score (0\u2013100)": 94.46666666666667,
+      "label": "8",
+      "_kind": "scatter",
+      "_group": 222
+    },
+    {
+      "x": -0.09914895344072598,
+      "Sycophancy\ntrait score (0\u2013100)": 94.33333333333333,
+      "label": "9",
+      "_kind": "scatter",
+      "_group": 223
+    },
+    {
+      "x": -0.11274484810180564,
+      "Sycophancy\ntrait score (0\u2013100)": 93.68333333333334,
+      "label": "10",
+      "_kind": "scatter",
+      "_group": 224
+    },
+    {
+      "x": -0.1628949105777865,
+      "Sycophancy\ntrait score (0\u2013100)": 90.28333333333333,
+      "label": "11",
+      "_kind": "scatter",
+      "_group": 225
+    },
+    {
+      "x": 0.006255927575389231,
+      "Sycophancy\ntrait score (0\u2013100)": 95.0,
+      "label": "12",
+      "_kind": "scatter",
+      "_group": 226
+    },
+    {
+      "x": -0.08840804781504602,
+      "Sycophancy\ntrait score (0\u2013100)": 94.33333333333334,
+      "label": "13",
+      "_kind": "scatter",
+      "_group": 227
+    },
+    {
+      "x": 0.049642432602830494,
+      "Sycophancy\ntrait score (0\u2013100)": 92.89999999999999,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 228
+    },
+    {
+      "x": -0.08683854566482141,
+      "Sycophancy\ntrait score (0\u2013100)": 95.05,
+      "label": "15",
+      "_kind": "scatter",
+      "_group": 229
+    },
+    {
+      "x": -0.0008567608177703634,
+      "Sycophancy\ntrait score (0\u2013100)": 93.18333333333334,
+      "label": "16",
+      "_kind": "scatter",
+      "_group": 230
+    },
+    {
+      "x": 0.1341514327694248,
+      "Sycophancy\ntrait score (0\u2013100)": 92.0,
+      "label": "17",
+      "_kind": "scatter",
+      "_group": 231
+    },
+    {
+      "x": -0.1073462578237028,
+      "Sycophancy\ntrait score (0\u2013100)": 93.66666666666667,
+      "label": "18",
+      "_kind": "scatter",
+      "_group": 232
+    },
+    {
+      "x": -0.16040115029016402,
+      "Sycophancy\ntrait score (0\u2013100)": 90.78333333333333,
+      "label": "19",
+      "_kind": "scatter",
+      "_group": 233
+    },
+    {
+      "x": 2.173383224103023,
+      "Sycophancy\ntrait score (0\u2013100)": 29.383333333333333,
+      "label": "0",
+      "_kind": "scatter",
+      "_group": 234
+    },
+    {
+      "x": 2.053612604589585,
+      "Sycophancy\ntrait score (0\u2013100)": 95.0,
+      "label": "1",
+      "_kind": "scatter",
+      "_group": 235
+    },
+    {
+      "x": 2.1395144132945254,
+      "Sycophancy\ntrait score (0\u2013100)": 94.83333333333334,
+      "label": "2",
+      "_kind": "scatter",
+      "_group": 236
+    },
+    {
+      "x": 2.2171752159597875,
+      "Sycophancy\ntrait score (0\u2013100)": 95.0,
+      "label": "3",
+      "_kind": "scatter",
+      "_group": 237
+    },
+    {
+      "x": 1.900474789896757,
+      "Sycophancy\ntrait score (0\u2013100)": 95.0,
+      "label": "4",
+      "_kind": "scatter",
+      "_group": 238
+    },
+    {
+      "x": 1.8142456844886037,
+      "Sycophancy\ntrait score (0\u2013100)": 93.2,
+      "label": "5",
+      "_kind": "scatter",
+      "_group": 239
+    },
+    {
+      "x": 1.9282233297968665,
+      "Sycophancy\ntrait score (0\u2013100)": 95.0,
+      "label": "6",
+      "_kind": "scatter",
+      "_group": 240
+    },
+    {
+      "x": 1.948010953532272,
+      "Sycophancy\ntrait score (0\u2013100)": 94.16666666666667,
+      "label": "7",
+      "_kind": "scatter",
+      "_group": 241
+    },
+    {
+      "x": 2.1396234588903575,
+      "Sycophancy\ntrait score (0\u2013100)": 93.89999999999999,
+      "label": "8",
+      "_kind": "scatter",
+      "_group": 242
+    },
+    {
+      "x": 1.9132417565741966,
+      "Sycophancy\ntrait score (0\u2013100)": 94.68333333333334,
+      "label": "9",
+      "_kind": "scatter",
+      "_group": 243
+    },
+    {
+      "x": 1.807618796804319,
+      "Sycophancy\ntrait score (0\u2013100)": 94.83333333333334,
+      "label": "10",
+      "_kind": "scatter",
+      "_group": 244
+    },
+    {
+      "x": 2.024510678581117,
+      "Sycophancy\ntrait score (0\u2013100)": 92.66666666666667,
+      "label": "11",
+      "_kind": "scatter",
+      "_group": 245
+    },
+    {
+      "x": 1.8485006238359212,
+      "Sycophancy\ntrait score (0\u2013100)": 73.88333333333333,
+      "label": "12",
+      "_kind": "scatter",
+      "_group": 246
+    },
+    {
+      "x": 2.10704878168509,
+      "Sycophancy\ntrait score (0\u2013100)": 93.0,
+      "label": "13",
+      "_kind": "scatter",
+      "_group": 247
+    },
+    {
+      "x": 1.9413641704762017,
+      "Sycophancy\ntrait score (0\u2013100)": 94.56666666666668,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 248
+    },
+    {
+      "x": 1.9157751024535685,
+      "Sycophancy\ntrait score (0\u2013100)": 95.0,
+      "label": "15",
+      "_kind": "scatter",
+      "_group": 249
+    },
+    {
+      "x": 1.8516351792647732,
+      "Sycophancy\ntrait score (0\u2013100)": 91.55,
+      "label": "16",
+      "_kind": "scatter",
+      "_group": 250
+    },
+    {
+      "x": 2.0619804503312897,
+      "Sycophancy\ntrait score (0\u2013100)": 94.9,
+      "label": "17",
+      "_kind": "scatter",
+      "_group": 251
+    },
+    {
+      "x": 1.9035119249138717,
+      "Sycophancy\ntrait score (0\u2013100)": 95.0,
+      "label": "18",
+      "_kind": "scatter",
+      "_group": 252
+    },
+    {
+      "x": 2.1670946495031433,
+      "Sycophancy\ntrait score (0\u2013100)": 93.11666666666666,
+      "label": "19",
+      "_kind": "scatter",
+      "_group": 253
+    },
+    {
+      "x": 3.191244234860783,
+      "Sycophancy\ntrait score (0\u2013100)": 29.883333333333333,
+      "label": "0",
+      "_kind": "scatter",
+      "_group": 254
+    },
+    {
+      "x": 2.7807890586826964,
+      "Sycophancy\ntrait score (0\u2013100)": 92.3,
+      "label": "1",
+      "_kind": "scatter",
+      "_group": 255
+    },
+    {
+      "x": 2.825759498514185,
+      "Sycophancy\ntrait score (0\u2013100)": 92.69999999999999,
+      "label": "2",
+      "_kind": "scatter",
+      "_group": 256
+    },
+    {
+      "x": 2.9552675177664853,
+      "Sycophancy\ntrait score (0\u2013100)": 92.48333333333333,
+      "label": "3",
+      "_kind": "scatter",
+      "_group": 257
+    },
+    {
+      "x": 2.9916413495995062,
+      "Sycophancy\ntrait score (0\u2013100)": 93.45,
+      "label": "4",
+      "_kind": "scatter",
+      "_group": 258
+    },
+    {
+      "x": 2.9513323458418936,
+      "Sycophancy\ntrait score (0\u2013100)": 83.38333333333334,
+      "label": "5",
+      "_kind": "scatter",
+      "_group": 259
+    },
+    {
+      "x": 3.021318640937675,
+      "Sycophancy\ntrait score (0\u2013100)": 93.95,
+      "label": "6",
+      "_kind": "scatter",
+      "_group": 260
+    },
+    {
+      "x": 3.1829495896939872,
+      "Sycophancy\ntrait score (0\u2013100)": 89.73333333333333,
+      "label": "7",
+      "_kind": "scatter",
+      "_group": 261
+    },
+    {
+      "x": 2.921765588038445,
+      "Sycophancy\ntrait score (0\u2013100)": 91.25000000000001,
+      "label": "8",
+      "_kind": "scatter",
+      "_group": 262
+    },
+    {
+      "x": 2.9188682535923864,
+      "Sycophancy\ntrait score (0\u2013100)": 90.76666666666667,
+      "label": "9",
+      "_kind": "scatter",
+      "_group": 263
+    },
+    {
+      "x": 3.1111437806452766,
+      "Sycophancy\ntrait score (0\u2013100)": 92.35,
+      "label": "10",
+      "_kind": "scatter",
+      "_group": 264
+    },
+    {
+      "x": 2.885370340835708,
+      "Sycophancy\ntrait score (0\u2013100)": 89.33333333333334,
+      "label": "11",
+      "_kind": "scatter",
+      "_group": 265
+    },
+    {
+      "x": 2.8979466808935133,
+      "Sycophancy\ntrait score (0\u2013100)": 21.349999999999998,
+      "label": "12",
+      "_kind": "scatter",
+      "_group": 266
+    },
+    {
+      "x": 3.1631370256222224,
+      "Sycophancy\ntrait score (0\u2013100)": 79.51666666666667,
+      "label": "13",
+      "_kind": "scatter",
+      "_group": 267
+    },
+    {
+      "x": 2.858349125539829,
+      "Sycophancy\ntrait score (0\u2013100)": 90.4,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 268
+    },
+    {
+      "x": 3.1491751703765707,
+      "Sycophancy\ntrait score (0\u2013100)": 42.96666666666666,
+      "label": "15",
+      "_kind": "scatter",
+      "_group": 269
+    },
+    {
+      "x": 2.9586079872718964,
+      "Sycophancy\ntrait score (0\u2013100)": 87.78333333333333,
+      "label": "16",
+      "_kind": "scatter",
+      "_group": 270
+    },
+    {
+      "x": 2.9849484883302044,
+      "Sycophancy\ntrait score (0\u2013100)": 44.74999999999999,
+      "label": "17",
+      "_kind": "scatter",
+      "_group": 271
+    },
+    {
+      "x": 2.9431912617618337,
+      "Sycophancy\ntrait score (0\u2013100)": 84.75,
+      "label": "18",
+      "_kind": "scatter",
+      "_group": 272
+    },
+    {
+      "x": 2.7823260094187345,
+      "Sycophancy\ntrait score (0\u2013100)": 89.85000000000001,
+      "label": "19",
+      "_kind": "scatter",
+      "_group": 273
+    },
+    {
+      "x": 3.7834386517691483,
+      "Sycophancy\ntrait score (0\u2013100)": 9.383333333333335,
+      "label": "0",
+      "_kind": "scatter",
+      "_group": 274
+    },
+    {
+      "x": 4.1874287474398315,
+      "Sycophancy\ntrait score (0\u2013100)": 81.43333333333334,
+      "label": "1",
+      "_kind": "scatter",
+      "_group": 275
+    },
+    {
+      "x": 4.124370213213652,
+      "Sycophancy\ntrait score (0\u2013100)": 84.53333333333333,
+      "label": "2",
+      "_kind": "scatter",
+      "_group": 276
+    },
+    {
+      "x": 3.960831442052971,
+      "Sycophancy\ntrait score (0\u2013100)": 71.2,
+      "label": "3",
+      "_kind": "scatter",
+      "_group": 277
+    },
+    {
+      "x": 4.1275162487846915,
+      "Sycophancy\ntrait score (0\u2013100)": 60.733333333333334,
+      "label": "4",
+      "_kind": "scatter",
+      "_group": 278
+    },
+    {
+      "x": 3.9397400985934006,
+      "Sycophancy\ntrait score (0\u2013100)": 78.55,
+      "label": "5",
+      "_kind": "scatter",
+      "_group": 279
+    },
+    {
+      "x": 3.8857867539069293,
+      "Sycophancy\ntrait score (0\u2013100)": 38.016666666666666,
+      "label": "6",
+      "_kind": "scatter",
+      "_group": 280
+    },
+    {
+      "x": 4.1299690089580725,
+      "Sycophancy\ntrait score (0\u2013100)": 41.016666666666666,
+      "label": "7",
+      "_kind": "scatter",
+      "_group": 281
+    },
+    {
+      "x": 3.963638186217992,
+      "Sycophancy\ntrait score (0\u2013100)": 88.3,
+      "label": "8",
+      "_kind": "scatter",
+      "_group": 282
+    },
+    {
+      "x": 4.167655672042596,
+      "Sycophancy\ntrait score (0\u2013100)": 88.35,
+      "label": "9",
+      "_kind": "scatter",
+      "_group": 283
+    },
+    {
+      "x": 3.976972630704612,
+      "Sycophancy\ntrait score (0\u2013100)": 93.58333333333333,
+      "label": "10",
+      "_kind": "scatter",
+      "_group": 284
+    },
+    {
+      "x": 3.9301332481414852,
+      "Sycophancy\ntrait score (0\u2013100)": 83.6,
+      "label": "11",
+      "_kind": "scatter",
+      "_group": 285
+    },
+    {
+      "x": 4.199400046864325,
+      "Sycophancy\ntrait score (0\u2013100)": 19.583333333333336,
+      "label": "12",
+      "_kind": "scatter",
+      "_group": 286
+    },
+    {
+      "x": 3.937654176594245,
+      "Sycophancy\ntrait score (0\u2013100)": 83.35,
+      "label": "13",
+      "_kind": "scatter",
+      "_group": 287
+    },
+    {
+      "x": 4.100391645024896,
+      "Sycophancy\ntrait score (0\u2013100)": 79.98333333333333,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 288
+    },
+    {
+      "x": 4.2009461056809485,
+      "Sycophancy\ntrait score (0\u2013100)": 28.166666666666668,
+      "label": "15",
+      "_kind": "scatter",
+      "_group": 289
+    },
+    {
+      "x": 4.0264599305975395,
+      "Sycophancy\ntrait score (0\u2013100)": 82.33333333333334,
+      "label": "16",
+      "_kind": "scatter",
+      "_group": 290
+    },
+    {
+      "x": 4.146524101377573,
+      "Sycophancy\ntrait score (0\u2013100)": 19.0,
+      "label": "17",
+      "_kind": "scatter",
+      "_group": 291
+    },
+    {
+      "x": 3.9998809634842614,
+      "Sycophancy\ntrait score (0\u2013100)": 47.550000000000004,
+      "label": "18",
+      "_kind": "scatter",
+      "_group": 292
+    },
+    {
+      "x": 3.8283597371854223,
+      "Sycophancy\ntrait score (0\u2013100)": 67.05,
+      "label": "19",
+      "_kind": "scatter",
+      "_group": 293
+    },
+    {
+      "category": "Paper 1-layer",
+      "Hallucination\ntrait score (0\u2013100)": 73.13666666666666,
+      "_kind": "bar",
+      "_group": 294
+    },
+    {
+      "category": "Paper all-layer (28)",
+      "Hallucination\ntrait score (0\u2013100)": 72.78333333333333,
+      "_kind": "bar",
+      "_group": 295
+    },
+    {
+      "category": "Context 1-layer",
+      "Hallucination\ntrait score (0\u2013100)": 96.06166666666665,
+      "_kind": "bar",
+      "_group": 296
+    },
+    {
+      "category": "Context middle-band (9)",
+      "Hallucination\ntrait score (0\u2013100)": 73.35166666666667,
+      "_kind": "bar",
+      "_group": 297
+    },
+    {
+      "category": "Context all-layer (28)",
+      "Hallucination\ntrait score (0\u2013100)": 67.57166666666666,
+      "_kind": "bar",
+      "_group": 298
+    },
+    {
+      "x": 0.13694966886549684,
+      "Hallucination\ntrait score (0\u2013100)": 98.0,
+      "label": "0",
+      "_kind": "scatter",
+      "_group": 299
+    },
+    {
+      "x": 0.08166235251550422,
+      "Hallucination\ntrait score (0\u2013100)": 94.0,
+      "label": "1",
+      "_kind": "scatter",
+      "_group": 300
+    },
+    {
+      "x": 0.13060572892071162,
+      "Hallucination\ntrait score (0\u2013100)": 89.91666666666667,
+      "label": "2",
+      "_kind": "scatter",
+      "_group": 301
+    },
+    {
+      "x": -0.016051417643110022,
+      "Hallucination\ntrait score (0\u2013100)": 97.5,
+      "label": "3",
+      "_kind": "scatter",
+      "_group": 302
+    },
+    {
+      "x": 0.1999011940356434,
+      "Hallucination\ntrait score (0\u2013100)": 32.833333333333336,
+      "label": "4",
+      "_kind": "scatter",
+      "_group": 303
+    },
+    {
+      "x": 0.15496221304989352,
+      "Hallucination\ntrait score (0\u2013100)": 59.0,
+      "label": "5",
+      "_kind": "scatter",
+      "_group": 304
+    },
+    {
+      "x": -0.08815023653727852,
+      "Hallucination\ntrait score (0\u2013100)": 0.0,
+      "label": "6",
+      "_kind": "scatter",
+      "_group": 305
+    },
+    {
+      "x": 0.01787476053787712,
+      "Hallucination\ntrait score (0\u2013100)": 98.49999999999999,
+      "label": "7",
+      "_kind": "scatter",
+      "_group": 306
+    },
+    {
+      "x": 0.09306340773840613,
+      "Hallucination\ntrait score (0\u2013100)": 90.08333333333334,
+      "label": "8",
+      "_kind": "scatter",
+      "_group": 307
+    },
+    {
+      "x": 0.07006532117402878,
+      "Hallucination\ntrait score (0\u2013100)": 93.33333333333334,
+      "label": "9",
+      "_kind": "scatter",
+      "_group": 308
+    },
+    {
+      "x": -0.09269921371098913,
+      "Hallucination\ntrait score (0\u2013100)": 80.25,
+      "label": "10",
+      "_kind": "scatter",
+      "_group": 309
+    },
+    {
+      "x": 0.13452226540554682,
+      "Hallucination\ntrait score (0\u2013100)": 35.83333333333333,
+      "label": "11",
+      "_kind": "scatter",
+      "_group": 310
+    },
+    {
+      "x": -0.07661557012616335,
+      "Hallucination\ntrait score (0\u2013100)": 77.41666666666666,
+      "label": "12",
+      "_kind": "scatter",
+      "_group": 311
+    },
+    {
+      "x": -0.15098785132180745,
+      "Hallucination\ntrait score (0\u2013100)": 72.98333333333333,
+      "label": "13",
+      "_kind": "scatter",
+      "_group": 312
+    },
+    {
+      "x": -0.06504948853954531,
+      "Hallucination\ntrait score (0\u2013100)": 41.33333333333333,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 313
+    },
+    {
+      "x": -0.04037148700337148,
+      "Hallucination\ntrait score (0\u2013100)": 57.083333333333336,
+      "label": "15",
+      "_kind": "scatter",
+      "_group": 314
+    },
+    {
+      "x": -0.19425235818732012,
+      "Hallucination\ntrait score (0\u2013100)": 77.83333333333333,
+      "label": "16",
+      "_kind": "scatter",
+      "_group": 315
+    },
+    {
+      "x": -0.05775251695782435,
+      "Hallucination\ntrait score (0\u2013100)": 96.75000000000001,
+      "label": "17",
+      "_kind": "scatter",
+      "_group": 316
+    },
+    {
+      "x": -0.01734896130000657,
+      "Hallucination\ntrait score (0\u2013100)": 86.5,
+      "label": "18",
+      "_kind": "scatter",
+      "_group": 317
+    },
+    {
+      "x": -0.1874758818185101,
+      "Hallucination\ntrait score (0\u2013100)": 83.58333333333333,
+      "label": "19",
+      "_kind": "scatter",
+      "_group": 318
+    },
+    {
+      "x": 0.9502421321306225,
+      "Hallucination\ntrait score (0\u2013100)": 70.25,
+      "label": "0",
+      "_kind": "scatter",
+      "_group": 319
+    },
+    {
+      "x": 1.1980717550184814,
+      "Hallucination\ntrait score (0\u2013100)": 91.58333333333333,
+      "label": "1",
+      "_kind": "scatter",
+      "_group": 320
+    },
+    {
+      "x": 1.1773348175372504,
+      "Hallucination\ntrait score (0\u2013100)": 99.75000000000001,
+      "label": "2",
+      "_kind": "scatter",
+      "_group": 321
+    },
+    {
+      "x": 0.8520331964205141,
+      "Hallucination\ntrait score (0\u2013100)": 70.63333333333333,
+      "label": "3",
+      "_kind": "scatter",
+      "_group": 322
+    },
+    {
+      "x": 1.0777421813052919,
+      "Hallucination\ntrait score (0\u2013100)": 52.0,
+      "label": "4",
+      "_kind": "scatter",
+      "_group": 323
+    },
+    {
+      "x": 1.1388305019540172,
+      "Hallucination\ntrait score (0\u2013100)": 57.333333333333336,
+      "label": "5",
+      "_kind": "scatter",
+      "_group": 324
+    },
+    {
+      "x": 1.1441168544853626,
+      "Hallucination\ntrait score (0\u2013100)": 12.333333333333332,
+      "label": "6",
+      "_kind": "scatter",
+      "_group": 325
+    },
+    {
+      "x": 1.1893245559186263,
+      "Hallucination\ntrait score (0\u2013100)": 94.5,
+      "label": "7",
+      "_kind": "scatter",
+      "_group": 326
+    },
+    {
+      "x": 1.1386107614683727,
+      "Hallucination\ntrait score (0\u2013100)": 95.41666666666667,
+      "label": "8",
+      "_kind": "scatter",
+      "_group": 327
+    },
+    {
+      "x": 1.0978939571313497,
+      "Hallucination\ntrait score (0\u2013100)": 93.83333333333334,
+      "label": "9",
+      "_kind": "scatter",
+      "_group": 328
+    },
+    {
+      "x": 1.1174729105584509,
+      "Hallucination\ntrait score (0\u2013100)": 59.41666666666667,
+      "label": "10",
+      "_kind": "scatter",
+      "_group": 329
+    },
+    {
+      "x": 1.0825196235485979,
+      "Hallucination\ntrait score (0\u2013100)": 47.166666666666664,
+      "label": "11",
+      "_kind": "scatter",
+      "_group": 330
+    },
+    {
+      "x": 1.1827913746149414,
+      "Hallucination\ntrait score (0\u2013100)": 89.08333333333333,
+      "label": "12",
+      "_kind": "scatter",
+      "_group": 331
+    },
+    {
+      "x": 1.2176134422299114,
+      "Hallucination\ntrait score (0\u2013100)": 71.78333333333333,
+      "label": "13",
+      "_kind": "scatter",
+      "_group": 332
+    },
+    {
+      "x": 0.8475944724308313,
+      "Hallucination\ntrait score (0\u2013100)": 67.58333333333334,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 333
+    },
+    {
+      "x": 1.1003857321006787,
+      "Hallucination\ntrait score (0\u2013100)": 58.08333333333333,
+      "label": "15",
+      "_kind": "scatter",
+      "_group": 334
+    },
+    {
+      "x": 1.0236041472683395,
+      "Hallucination\ntrait score (0\u2013100)": 78.75,
+      "label": "16",
+      "_kind": "scatter",
+      "_group": 335
+    },
+    {
+      "x": 0.9270785810362574,
+      "Hallucination\ntrait score (0\u2013100)": 98.58333333333333,
+      "label": "17",
+      "_kind": "scatter",
+      "_group": 336
+    },
+    {
+      "x": 0.9353933038756368,
+      "Hallucination\ntrait score (0\u2013100)": 71.66666666666667,
+      "label": "18",
+      "_kind": "scatter",
+      "_group": 337
+    },
+    {
+      "x": 0.8048193634928534,
+      "Hallucination\ntrait score (0\u2013100)": 75.91666666666666,
+      "label": "19",
+      "_kind": "scatter",
+      "_group": 338
+    },
+    {
+      "x": 2.1173301945302256,
+      "Hallucination\ntrait score (0\u2013100)": 98.75,
+      "label": "0",
+      "_kind": "scatter",
+      "_group": 339
+    },
+    {
+      "x": 2.203714023297913,
+      "Hallucination\ntrait score (0\u2013100)": 97.91666666666667,
+      "label": "1",
+      "_kind": "scatter",
+      "_group": 340
+    },
+    {
+      "x": 1.93047791786467,
+      "Hallucination\ntrait score (0\u2013100)": 100.0,
+      "label": "2",
+      "_kind": "scatter",
+      "_group": 341
+    },
+    {
+      "x": 1.8606294831528614,
+      "Hallucination\ntrait score (0\u2013100)": 100.0,
+      "label": "3",
+      "_kind": "scatter",
+      "_group": 342
+    },
+    {
+      "x": 1.8945051623369056,
+      "Hallucination\ntrait score (0\u2013100)": 99.41666666666666,
+      "label": "4",
+      "_kind": "scatter",
+      "_group": 343
+    },
+    {
+      "x": 1.8058550860288525,
+      "Hallucination\ntrait score (0\u2013100)": 81.03333333333333,
+      "label": "5",
+      "_kind": "scatter",
+      "_group": 344
+    },
+    {
+      "x": 2.205638659150629,
+      "Hallucination\ntrait score (0\u2013100)": 78.58333333333334,
+      "label": "6",
+      "_kind": "scatter",
+      "_group": 345
+    },
+    {
+      "x": 1.7907478909015762,
+      "Hallucination\ntrait score (0\u2013100)": 99.5,
+      "label": "7",
+      "_kind": "scatter",
+      "_group": 346
+    },
+    {
+      "x": 2.165771345898044,
+      "Hallucination\ntrait score (0\u2013100)": 97.41666666666667,
+      "label": "8",
+      "_kind": "scatter",
+      "_group": 347
+    },
+    {
+      "x": 1.995571523843393,
+      "Hallucination\ntrait score (0\u2013100)": 95.0,
+      "label": "9",
+      "_kind": "scatter",
+      "_group": 348
+    },
+    {
+      "x": 2.031186474412527,
+      "Hallucination\ntrait score (0\u2013100)": 97.58333333333333,
+      "label": "10",
+      "_kind": "scatter",
+      "_group": 349
+    },
+    {
+      "x": 1.9265956466160667,
+      "Hallucination\ntrait score (0\u2013100)": 95.24999999999999,
+      "label": "11",
+      "_kind": "scatter",
+      "_group": 350
+    },
+    {
+      "x": 1.851640555800319,
+      "Hallucination\ntrait score (0\u2013100)": 100.0,
+      "label": "12",
+      "_kind": "scatter",
+      "_group": 351
+    },
+    {
+      "x": 1.9448333414786947,
+      "Hallucination\ntrait score (0\u2013100)": 84.11666666666666,
+      "label": "13",
+      "_kind": "scatter",
+      "_group": 352
+    },
+    {
+      "x": 2.039511723863362,
+      "Hallucination\ntrait score (0\u2013100)": 99.33333333333334,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 353
+    },
+    {
+      "x": 2.076359126627324,
+      "Hallucination\ntrait score (0\u2013100)": 98.5,
+      "label": "15",
+      "_kind": "scatter",
+      "_group": 354
+    },
+    {
+      "x": 1.959971965656455,
+      "Hallucination\ntrait score (0\u2013100)": 100.0,
+      "label": "16",
+      "_kind": "scatter",
+      "_group": 355
+    },
+    {
+      "x": 2.073179421641391,
+      "Hallucination\ntrait score (0\u2013100)": 100.0,
+      "label": "17",
+      "_kind": "scatter",
+      "_group": 356
+    },
+    {
+      "x": 2.1295532605569503,
+      "Hallucination\ntrait score (0\u2013100)": 99.33333333333333,
+      "label": "18",
+      "_kind": "scatter",
+      "_group": 357
+    },
+    {
+      "x": 2.0298305595914163,
+      "Hallucination\ntrait score (0\u2013100)": 99.5,
+      "label": "19",
+      "_kind": "scatter",
+      "_group": 358
+    },
+    {
+      "x": 3.1453361647722238,
+      "Hallucination\ntrait score (0\u2013100)": 98.33333333333334,
+      "label": "0",
+      "_kind": "scatter",
+      "_group": 359
+    },
+    {
+      "x": 2.89684693361893,
+      "Hallucination\ntrait score (0\u2013100)": 98.41666666666666,
+      "label": "1",
+      "_kind": "scatter",
+      "_group": 360
+    },
+    {
+      "x": 3.1741518313418524,
+      "Hallucination\ntrait score (0\u2013100)": 100.0,
+      "label": "2",
+      "_kind": "scatter",
+      "_group": 361
+    },
+    {
+      "x": 2.8726740355844744,
+      "Hallucination\ntrait score (0\u2013100)": 71.25000000000001,
+      "label": "3",
+      "_kind": "scatter",
+      "_group": 362
+    },
+    {
+      "x": 3.1568154061676283,
+      "Hallucination\ntrait score (0\u2013100)": 37.66666666666667,
+      "label": "4",
+      "_kind": "scatter",
+      "_group": 363
+    },
+    {
+      "x": 3.1699120639499228,
+      "Hallucination\ntrait score (0\u2013100)": 72.08333333333334,
+      "label": "5",
+      "_kind": "scatter",
+      "_group": 364
+    },
+    {
+      "x": 2.8212017522736708,
+      "Hallucination\ntrait score (0\u2013100)": 8.333333333333332,
+      "label": "6",
+      "_kind": "scatter",
+      "_group": 365
+    },
+    {
+      "x": 3.0624607398505996,
+      "Hallucination\ntrait score (0\u2013100)": 95.0,
+      "label": "7",
+      "_kind": "scatter",
+      "_group": 366
+    },
+    {
+      "x": 2.7852705035561987,
+      "Hallucination\ntrait score (0\u2013100)": 76.0,
+      "label": "8",
+      "_kind": "scatter",
+      "_group": 367
+    },
+    {
+      "x": 3.0182746234639386,
+      "Hallucination\ntrait score (0\u2013100)": 95.75000000000001,
+      "label": "9",
+      "_kind": "scatter",
+      "_group": 368
+    },
+    {
+      "x": 3.1375622342754927,
+      "Hallucination\ntrait score (0\u2013100)": 59.0,
+      "label": "10",
+      "_kind": "scatter",
+      "_group": 369
+    },
+    {
+      "x": 3.216773025719266,
+      "Hallucination\ntrait score (0\u2013100)": 17.333333333333332,
+      "label": "11",
+      "_kind": "scatter",
+      "_group": 370
+    },
+    {
+      "x": 3.1542737382175576,
+      "Hallucination\ntrait score (0\u2013100)": 99.58333333333333,
+      "label": "12",
+      "_kind": "scatter",
+      "_group": 371
+    },
+    {
+      "x": 3.0027623365834297,
+      "Hallucination\ntrait score (0\u2013100)": 65.20000000000002,
+      "label": "13",
+      "_kind": "scatter",
+      "_group": 372
+    },
+    {
+      "x": 2.7963426766626824,
+      "Hallucination\ntrait score (0\u2013100)": 58.416666666666664,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 373
+    },
+    {
+      "x": 2.867194182784734,
+      "Hallucination\ntrait score (0\u2013100)": 55.75,
+      "label": "15",
+      "_kind": "scatter",
+      "_group": 374
+    },
+    {
+      "x": 3.198294406126163,
+      "Hallucination\ntrait score (0\u2013100)": 97.66666666666666,
+      "label": "16",
+      "_kind": "scatter",
+      "_group": 375
+    },
+    {
+      "x": 3.133515250018754,
+      "Hallucination\ntrait score (0\u2013100)": 99.83333333333334,
+      "label": "17",
+      "_kind": "scatter",
+      "_group": 376
+    },
+    {
+      "x": 3.099075041292332,
+      "Hallucination\ntrait score (0\u2013100)": 62.91666666666667,
+      "label": "18",
+      "_kind": "scatter",
+      "_group": 377
+    },
+    {
+      "x": 2.8557019564765143,
+      "Hallucination\ntrait score (0\u2013100)": 98.5,
+      "label": "19",
+      "_kind": "scatter",
+      "_group": 378
+    },
+    {
+      "x": 4.15327817861029,
+      "Hallucination\ntrait score (0\u2013100)": 99.5,
+      "label": "0",
+      "_kind": "scatter",
+      "_group": 379
+    },
+    {
+      "x": 3.9708849125059142,
+      "Hallucination\ntrait score (0\u2013100)": 94.00000000000001,
+      "label": "1",
+      "_kind": "scatter",
+      "_group": 380
+    },
+    {
+      "x": 4.056993840558278,
+      "Hallucination\ntrait score (0\u2013100)": 92.66666666666667,
+      "label": "2",
+      "_kind": "scatter",
+      "_group": 381
+    },
+    {
+      "x": 3.960087335992298,
+      "Hallucination\ntrait score (0\u2013100)": 79.58333333333334,
+      "label": "3",
+      "_kind": "scatter",
+      "_group": 382
+    },
+    {
+      "x": 4.043720583712272,
+      "Hallucination\ntrait score (0\u2013100)": 42.916666666666664,
+      "label": "4",
+      "_kind": "scatter",
+      "_group": 383
+    },
+    {
+      "x": 3.941628572110018,
+      "Hallucination\ntrait score (0\u2013100)": 73.16666666666667,
+      "label": "5",
+      "_kind": "scatter",
+      "_group": 384
+    },
+    {
+      "x": 4.0574793700090055,
+      "Hallucination\ntrait score (0\u2013100)": 0.0,
+      "label": "6",
+      "_kind": "scatter",
+      "_group": 385
+    },
+    {
+      "x": 3.9077864704301666,
+      "Hallucination\ntrait score (0\u2013100)": 94.91666666666666,
+      "label": "7",
+      "_kind": "scatter",
+      "_group": 386
+    },
+    {
+      "x": 3.834609069792519,
+      "Hallucination\ntrait score (0\u2013100)": 30.666666666666668,
+      "label": "8",
+      "_kind": "scatter",
+      "_group": 387
+    },
+    {
+      "x": 3.8983124510678593,
+      "Hallucination\ntrait score (0\u2013100)": 94.0,
+      "label": "9",
+      "_kind": "scatter",
+      "_group": 388
+    },
+    {
+      "x": 4.053359925093238,
+      "Hallucination\ntrait score (0\u2013100)": 48.583333333333336,
+      "label": "10",
+      "_kind": "scatter",
+      "_group": 389
+    },
+    {
+      "x": 3.7877632185360444,
+      "Hallucination\ntrait score (0\u2013100)": 37.41666666666667,
+      "label": "11",
+      "_kind": "scatter",
+      "_group": 390
+    },
+    {
+      "x": 4.034479029672864,
+      "Hallucination\ntrait score (0\u2013100)": 92.25,
+      "label": "12",
+      "_kind": "scatter",
+      "_group": 391
+    },
+    {
+      "x": 3.905275535412372,
+      "Hallucination\ntrait score (0\u2013100)": 74.85,
+      "label": "13",
+      "_kind": "scatter",
+      "_group": 392
+    },
+    {
+      "x": 4.185117349122074,
+      "Hallucination\ntrait score (0\u2013100)": 31.333333333333336,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 393
+    },
+    {
+      "x": 3.979851496408126,
+      "Hallucination\ntrait score (0\u2013100)": 52.166666666666664,
+      "label": "15",
+      "_kind": "scatter",
+      "_group": 394
+    },
+    {
+      "x": 3.8150147572615816,
+      "Hallucination\ntrait score (0\u2013100)": 85.0,
+      "label": "16",
+      "_kind": "scatter",
+      "_group": 395
+    },
+    {
+      "x": 3.849497694262556,
+      "Hallucination\ntrait score (0\u2013100)": 66.08333333333334,
+      "label": "17",
+      "_kind": "scatter",
+      "_group": 396
+    },
+    {
+      "x": 4.070081378374484,
+      "Hallucination\ntrait score (0\u2013100)": 71.74999999999999,
+      "label": "18",
+      "_kind": "scatter",
+      "_group": 397
+    },
+    {
+      "x": 4.181168922814244,
+      "Hallucination\ntrait score (0\u2013100)": 90.58333333333334,
+      "label": "19",
+      "_kind": "scatter",
+      "_group": 398
+    },
+    {
+      "category": "Paper all-layer (28)",
+      "Mistaken opinions\ntrait score (0\u2013100)": 0.008333333333333335,
+      "_kind": "bar",
+      "_group": 399
+    },
+    {
+      "category": "Context all-layer (28)",
+      "Mistaken opinions\ntrait score (0\u2013100)": 3.6199999999999997,
+      "_kind": "bar",
+      "_group": 400
+    },
+    {
+      "x": 0.8673051344344129,
+      "Mistaken opinions\ntrait score (0\u2013100)": 0.0,
+      "label": "0",
+      "_kind": "scatter",
+      "_group": 401
+    },
+    {
+      "x": 0.7820817511288191,
+      "Mistaken opinions\ntrait score (0\u2013100)": 0.0,
+      "label": "1",
+      "_kind": "scatter",
+      "_group": 402
+    },
+    {
+      "x": 1.0849455624388067,
+      "Mistaken opinions\ntrait score (0\u2013100)": 0.0,
+      "label": "2",
+      "_kind": "scatter",
+      "_group": 403
+    },
+    {
+      "x": 1.1225051465470754,
+      "Mistaken opinions\ntrait score (0\u2013100)": 0.0,
+      "label": "3",
+      "_kind": "scatter",
+      "_group": 404
+    },
+    {
+      "x": 1.0842625738659855,
+      "Mistaken opinions\ntrait score (0\u2013100)": 0.0,
+      "label": "4",
+      "_kind": "scatter",
+      "_group": 405
+    },
+    {
+      "x": 1.2073574231657644,
+      "Mistaken opinions\ntrait score (0\u2013100)": 0.0,
+      "label": "5",
+      "_kind": "scatter",
+      "_group": 406
+    },
+    {
+      "x": 1.1744845000750057,
+      "Mistaken opinions\ntrait score (0\u2013100)": 0.0,
+      "label": "6",
+      "_kind": "scatter",
+      "_group": 407
+    },
+    {
+      "x": 1.1395218732979762,
+      "Mistaken opinions\ntrait score (0\u2013100)": 0.0,
+      "label": "7",
+      "_kind": "scatter",
+      "_group": 408
+    },
+    {
+      "x": 1.2090953141434362,
+      "Mistaken opinions\ntrait score (0\u2013100)": 0.0,
+      "label": "8",
+      "_kind": "scatter",
+      "_group": 409
+    },
+    {
+      "x": 0.7918937961128072,
+      "Mistaken opinions\ntrait score (0\u2013100)": 0.0,
+      "label": "9",
+      "_kind": "scatter",
+      "_group": 410
+    },
+    {
+      "x": 1.0567609270273528,
+      "Mistaken opinions\ntrait score (0\u2013100)": 0.0,
+      "label": "10",
+      "_kind": "scatter",
+      "_group": 411
+    },
+    {
+      "x": 0.782875633788651,
+      "Mistaken opinions\ntrait score (0\u2013100)": 0.0,
+      "label": "11",
+      "_kind": "scatter",
+      "_group": 412
+    },
+    {
+      "x": 0.8322575376916058,
+      "Mistaken opinions\ntrait score (0\u2013100)": 0.0,
+      "label": "12",
+      "_kind": "scatter",
+      "_group": 413
+    },
+    {
+      "x": 1.0834187827562594,
+      "Mistaken opinions\ntrait score (0\u2013100)": 0.0,
+      "label": "13",
+      "_kind": "scatter",
+      "_group": 414
+    },
+    {
+      "x": 1.110944475673725,
+      "Mistaken opinions\ntrait score (0\u2013100)": 0.0,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 415
+    },
+    {
+      "x": 1.0783327204070998,
+      "Mistaken opinions\ntrait score (0\u2013100)": 0.0,
+      "label": "15",
+      "_kind": "scatter",
+      "_group": 416
+    },
+    {
+      "x": 0.8782825440365796,
+      "Mistaken opinions\ntrait score (0\u2013100)": 0.08333333333333334,
+      "label": "16",
+      "_kind": "scatter",
+      "_group": 417
+    },
+    {
+      "x": 1.0038578420512951,
+      "Mistaken opinions\ntrait score (0\u2013100)": 0.0,
+      "label": "17",
+      "_kind": "scatter",
+      "_group": 418
+    },
+    {
+      "x": 0.8535028750493114,
+      "Mistaken opinions\ntrait score (0\u2013100)": 0.0,
+      "label": "18",
+      "_kind": "scatter",
+      "_group": 419
+    },
+    {
+      "x": 1.0307025387295778,
+      "Mistaken opinions\ntrait score (0\u2013100)": 0.08333333333333334,
+      "label": "19",
+      "_kind": "scatter",
+      "_group": 420
+    },
+    {
+      "x": 3.882893201575282,
+      "Mistaken opinions\ntrait score (0\u2013100)": 28.25,
+      "label": "0",
+      "_kind": "scatter",
+      "_group": 421
+    },
+    {
+      "x": 4.013714966186836,
+      "Mistaken opinions\ntrait score (0\u2013100)": 0.0,
+      "label": "1",
+      "_kind": "scatter",
+      "_group": 422
+    },
+    {
+      "x": 3.9568327698645,
+      "Mistaken opinions\ntrait score (0\u2013100)": 1.1666666666666665,
+      "label": "2",
+      "_kind": "scatter",
+      "_group": 423
+    },
+    {
+      "x": 3.98770360760199,
+      "Mistaken opinions\ntrait score (0\u2013100)": 4.916666666666667,
+      "label": "3",
+      "_kind": "scatter",
+      "_group": 424
+    },
+    {
+      "x": 4.209109787152319,
+      "Mistaken opinions\ntrait score (0\u2013100)": 0.0,
+      "label": "4",
+      "_kind": "scatter",
+      "_group": 425
+    },
+    {
+      "x": 4.205833969447464,
+      "Mistaken opinions\ntrait score (0\u2013100)": 0.0,
+      "label": "5",
+      "_kind": "scatter",
+      "_group": 426
+    },
+    {
+      "x": 4.05070901490769,
+      "Mistaken opinions\ntrait score (0\u2013100)": 0.0,
+      "label": "6",
+      "_kind": "scatter",
+      "_group": 427
+    },
+    {
+      "x": 4.217424913698614,
+      "Mistaken opinions\ntrait score (0\u2013100)": 14.616666666666669,
+      "label": "7",
+      "_kind": "scatter",
+      "_group": 428
+    },
+    {
+      "x": 3.8937622750777225,
+      "Mistaken opinions\ntrait score (0\u2013100)": 0.0,
+      "label": "8",
+      "_kind": "scatter",
+      "_group": 429
+    },
+    {
+      "x": 4.139409521175979,
+      "Mistaken opinions\ntrait score (0\u2013100)": 0.0,
+      "label": "9",
+      "_kind": "scatter",
+      "_group": 430
+    },
+    {
+      "x": 3.939932293953946,
+      "Mistaken opinions\ntrait score (0\u2013100)": 0.0,
+      "label": "10",
+      "_kind": "scatter",
+      "_group": 431
+    },
+    {
+      "x": 4.14175002418805,
+      "Mistaken opinions\ntrait score (0\u2013100)": 0.0,
+      "label": "11",
+      "_kind": "scatter",
+      "_group": 432
+    },
+    {
+      "x": 3.8235691739419244,
+      "Mistaken opinions\ntrait score (0\u2013100)": 0.0,
+      "label": "12",
+      "_kind": "scatter",
+      "_group": 433
+    },
+    {
+      "x": 3.8698126502188,
+      "Mistaken opinions\ntrait score (0\u2013100)": 0.0,
+      "label": "13",
+      "_kind": "scatter",
+      "_group": 434
+    },
+    {
+      "x": 4.206075268148469,
+      "Mistaken opinions\ntrait score (0\u2013100)": 0.0,
+      "label": "14",
+      "_kind": "scatter",
+      "_group": 435
+    },
+    {
+      "x": 4.003097071561503,
+      "Mistaken opinions\ntrait score (0\u2013100)": 16.333333333333336,
+      "label": "15",
+      "_kind": "scatter",
+      "_group": 436
+    },
+    {
+      "x": 4.030247637244145,
+      "Mistaken opinions\ntrait score (0\u2013100)": 3.0,
+      "label": "16",
+      "_kind": "scatter",
+      "_group": 437
+    },
+    {
+      "x": 3.9950439483048203,
+      "Mistaken opinions\ntrait score (0\u2013100)": 0.0,
+      "label": "17",
+      "_kind": "scatter",
+      "_group": 438
+    },
+    {
+      "x": 3.7999429597376073,
+      "Mistaken opinions\ntrait score (0\u2013100)": 4.116666666666666,
+      "label": "18",
+      "_kind": "scatter",
+      "_group": 439
+    },
+    {
+      "x": 4.210058560762864,
+      "Mistaken opinions\ntrait score (0\u2013100)": 0.0,
+      "label": "19",
+      "_kind": "scatter",
+      "_group": 440
+    }
+  ],
+  "n_series": 441,
+  "total_points": 441,
+  "text": {
+    "suptitle": "Trait expression at the matched-coherence coefficient (bars = arm mean; points = per-question means, labeled by question index)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "Evil\ntrait score (0\u2013100)",
+        "annotations": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10",
+          "11",
+          "12",
+          "13",
+          "14",
+          "15",
+          "16",
+          "17",
+          "18",
+          "19",
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10",
+          "11",
+          "12",
+          "13",
+          "14",
+          "15",
+          "16",
+          "17",
+          "18",
+          "19",
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10",
+          "11",
+          "12",
+          "13",
+          "14",
+          "15",
+          "16",
+          "17",
+          "18",
+          "19",
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10",
+          "11",
+          "12",
+          "13",
+          "14",
+          "15",
+          "16",
+          "17",
+          "18",
+          "19",
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10",
+          "11",
+          "12",
+          "13",
+          "14",
+          "15",
+          "16",
+          "17",
+          "18",
+          "19"
+        ],
+        "xticklabels": [
+          "Paper 1-layer",
+          "Paper all-layer (28)",
+          "Context 1-layer",
+          "Context middle-band (9)",
+          "Context all-layer (28)",
+          "Paper dir, ctx tokens",
+          "Context dir, all tokens",
+          "Paper dir, resp tokens",
+          "Prefix dir, prefix tokens",
+          "Preventative prompt"
+        ],
+        "yticklabels": [
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100",
+          "120"
+        ]
+      },
+      {
+        "ylabel": "Sycophancy\ntrait score (0\u2013100)",
+        "annotations": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10",
+          "11",
+          "12",
+          "13",
+          "14",
+          "15",
+          "16",
+          "17",
+          "18",
+          "19",
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10",
+          "11",
+          "12",
+          "13",
+          "14",
+          "15",
+          "16",
+          "17",
+          "18",
+          "19",
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10",
+          "11",
+          "12",
+          "13",
+          "14",
+          "15",
+          "16",
+          "17",
+          "18",
+          "19",
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10",
+          "11",
+          "12",
+          "13",
+          "14",
+          "15",
+          "16",
+          "17",
+          "18",
+          "19"
+        ],
+        "xticklabels": [
+          "Paper 1-layer",
+          "Paper all-layer (28)",
+          "Context 1-layer",
+          "Context middle-band (9)",
+          "Context all-layer (28)"
+        ],
+        "yticklabels": [
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100"
+        ]
+      },
+      {
+        "ylabel": "Hallucination\ntrait score (0\u2013100)",
+        "annotations": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10",
+          "11",
+          "12",
+          "13",
+          "14",
+          "15",
+          "16",
+          "17",
+          "18",
+          "19",
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10",
+          "11",
+          "12",
+          "13",
+          "14",
+          "15",
+          "16",
+          "17",
+          "18",
+          "19",
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10",
+          "11",
+          "12",
+          "13",
+          "14",
+          "15",
+          "16",
+          "17",
+          "18",
+          "19",
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10",
+          "11",
+          "12",
+          "13",
+          "14",
+          "15",
+          "16",
+          "17",
+          "18",
+          "19",
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10",
+          "11",
+          "12",
+          "13",
+          "14",
+          "15",
+          "16",
+          "17",
+          "18",
+          "19"
+        ],
+        "xticklabels": [
+          "Paper 1-layer",
+          "Paper all-layer (28)",
+          "Context 1-layer",
+          "Context middle-band (9)",
+          "Context all-layer (28)"
+        ],
+        "yticklabels": [
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100",
+          "120"
+        ]
+      },
+      {
+        "ylabel": "Mistaken opinions\ntrait score (0\u2013100)",
+        "annotations": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10",
+          "11",
+          "12",
+          "13",
+          "14",
+          "15",
+          "16",
+          "17",
+          "18",
+          "19",
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10",
+          "11",
+          "12",
+          "13",
+          "14",
+          "15",
+          "16",
+          "17",
+          "18",
+          "19"
+        ],
+        "xticklabels": [
+          "Paper 1-layer",
+          "Paper all-layer (28)",
+          "Context 1-layer",
+          "Context middle-band (9)",
+          "Context all-layer (28)"
+        ],
+        "yticklabels": [
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -1,0 +1,71 @@
+{
+ "note": "EXPLORATORY Form B (n=24 << d=3584): PCA<=10 + dof-capped ridge, LOFO. Estimator-degenerate control — report the angle to r_B only (plan §5/§10 item (l)); the R^2 field is labeled, never headlined.",
+ "records": [
+  {
+   "trait": "evil",
+   "layer": 19,
+   "n_datasets": 24,
+   "d_ambient": 3584,
+   "pca_components": 10,
+   "cosine_to_rb_by_fold": [
+    0.48396400246246934,
+    0.6752146228948541,
+    0.6118883663391493,
+    0.6128266661177755,
+    0.6130919940209435,
+    0.5929843660705778,
+    0.634192902801716,
+    0.6713819810740304
+   ],
+   "cosine_to_rb_mean": 0.6119431127226895,
+   "heldout_r2_estimator_degenerate": 0.5481987885018369
+  },
+  {
+   "trait": "sycophancy",
+   "layer": 19,
+   "n_datasets": 24,
+   "d_ambient": 3584,
+   "pca_components": 10,
+   "cosine_to_rb_by_fold": [
+    0.5194963998859017,
+    0.4922796848705409,
+    0.4906885988145193,
+    0.5034093549394781,
+    0.5014574777922672,
+    0.5291792752118814,
+    0.5107286931312721,
+    0.19130195276473735
+   ],
+   "cosine_to_rb_mean": 0.46731767967632476,
+   "heldout_r2_estimator_degenerate": 0.5304019919742559
+  },
+  {
+   "trait": "hallucination",
+   "layer": 15,
+   "n_datasets": 24,
+   "d_ambient": 3584,
+   "pca_components": 10,
+   "cosine_to_rb_by_fold": [
+    0.4181563839073285,
+    0.24414421016590404,
+    0.42127670772577086,
+    0.4050945476152097,
+    0.4515700927870698,
+    0.45898066913604607,
+    0.4228899751830951,
+    0.40017436348074137
+   ],
+   "cosine_to_rb_mean": 0.40278586875014566,
+   "heldout_r2_estimator_degenerate": 0.5994189345764936
+  }
+ ],
+ "timestamp_utc": "2026-08-11T08:09:53Z",
+ "versions": {
+  "torch": "2.8.0+cu128",
+  "transformers": "4.57.6",
+  "vllm": "0.11.0",
+  "numpy": "2.2.6"
+ },
+ "git_commit": "32b34d02",
+ "git_dirty": false
+}

@@ -7,7 +7,7 @@ Phase 1.5.0 BEFORE the fact-checker + critic ensemble spawn. The plan-side
 sibling of ``scripts/verify_task_body.py`` (clean-result bodies): pure
 regex / string presence checks, NO LLM calls, no network, no side effects
 (the orchestrator running the adversarial-planner skill posts the
-``epm:plan-verify`` marker — never this script). Eight disclosed read-only
+``epm:plan-verify`` marker — never this script). Ten disclosed read-only
 exceptions: check 31, when its trigger fires and a pin-form satisfier names
 a ``tests/`` path, existence-``stat()``s the named pin-test file(s) under
 the repo root — read-only, no import, no network (#1557); check 34, when
@@ -37,7 +37,15 @@ trigger gates fire, reads the live workflow-surface prose files
 (``.claude/{skills,agents,rules,hooks}``, ``CLAUDE.md``,
 ``.claude/workflow.yaml``) and ``tests/**/*.py`` under the repo root to
 locate existing pins on plan-edited literals — read-only, no import, no
-network; missing dirs degrade to a loud SKIP (#2029). Check 47 adds NO
+network; missing dirs degrade to a loud SKIP (#2029); and checks 65/66,
+when their shared smoke-fixture size-claim trigger fires, glob fixture
+files under the repo root and ``.claude/worktrees/issue-<N>*``, count
+newlines with an 8 MB per-file cap, scan ``scripts/*.py`` SOURCE TEXT
+(bounded: <= 2,500 files, <= 1 MB each) for the claimed sample-size
+constant / the fixture-dir token, and — when a pinned tip is cited and no
+earlier rung resolves — run ``git ls-tree`` plus up to 32 ``git cat-file``
+blob reads per glob token under check 42's retry/fail-open contract —
+read-only, no network, no import (#2178). Check 47 adds NO
 read exception:
 its shared wall-budget parser (``explore_persona_space.plan_wall_budget``,
 stdlib-only, the same parser the poll_pipeline.py phase-ETA tripwire
@@ -145,8 +153,10 @@ Check catalog (id — classification — kind scope)
       predictor companion
   c46 plan-embedded dispatch    WARN-only, conditional    all kinds
       command CLI-parses
-  c47 planned_wall_h cells      WARN-only, conditional    all kinds
-      parse (poller tripwire)
+  c47 planned_wall_h cells      WARN-only, conditional    all kinds (absent-
+      parse (poller tripwire);                            table WARN arm:
+      absent table + booked                               experiment only)
+      GPU-h > 0 WARNs (#2123)
   c48 §9 basis-vs-booked        WARN-only, conditional    experiment +
       arithmetic                                          analysis
   c49 authorized-smoke-stubs    FAIL, conditional         all kinds
@@ -161,13 +171,51 @@ Check catalog (id — classification — kind scope)
       api-refusal accounting
   c54 --workload-cmd bare       WARN-only, conditional    all kinds
       lane-specific env vars
+  c55 inherited argparse row-   WARN-only, conditional    all kinds
+      count default vs target n
+  c56 staging mount binding     WARN-only, conditional    experiment only
+  c57 fan-out same-prefix       WARN-only, conditional    all kinds
+      staging shape
+  c58 fan-out RunPod pod-name   WARN-only, conditional    all kinds
+      collision
+  c59 GPU-hours token           WARN-only, conditional    all kinds
+      consumer/declaration
+      conflict
+  c60 amendment composed with   WARN-only, conditional    all kinds,
+      base for checking                                   --issue mode only
+  c61 SLURM would-render --mem  WARN-only, conditional    all kinds
+      vs declared RSS peak
+  c62 §9 backend pin-claim vs   WARN-only, conditional    all kinds,
+      body.md frontmatter       (FAIL→WARN downgrade per  --issue mode only
+                                the pre-registered
+                                calibration rule, #2276)
+  c63 §9 declared GPU width vs  WARN-only, conditional    all kinds
+      launch-fence width
+  c64 sampled exactness claim   WARN-only, conditional    all kinds
+      vs runtime-assert grain
+  c65 smoke-fixture size claim  FAIL, conditional         all kinds
+      vs realized fixtures      (constant-route
+                                contradictions WARN
+                                by design)
+  c66 smoke-fixture producing   WARN-only, conditional    all kinds
+      script named in plan
+  c67 test-retest κ demotion    WARN-only, conditional    experiment +
+      gate vs temperature-0                               analysis
+      judge pin
+  c68 abs-pp reduction margin  WARN-only, conditional    experiment +
+      vs in-plan baseline                                analysis
+      ceiling
+  c69 armed re-gen 2x-cap       WARN-only, conditional    experiment +
+      headroom vs                                         analysis
+      max_model_len pin
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
-37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54)
-also SKIP when their content trigger does not fire.
+37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54,
+55, 56, 57, 58, 59, 61, 62, 63, 64, 65, 66, 67, 68, 69) also SKIP when their
+content trigger does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -178,6 +226,20 @@ heading's self-declared ``# Plan v<X>`` label against the persisted
 ``v{K}.md`` filename, so ``main()`` appends it in BOTH modes; it SKIPs when
 the filename carries no version (e.g. a ``.claude/plans/issue-<N>.md``
 draft).
+Check 60 also runs outside ``verify_plan_text()`` — ``--issue`` mode only
+(#2255): when the newest ``v{K}.md`` is AMENDMENT-SHAPED
+(``task_workflow.is_amendment_shaped`` — thin delta + amendment-marker
+phrase + no GPU-hours declaration), every check runs against the amendment
+COMPOSED with its base version (amendment first;
+``_compose_amendment_text``) and c60 is appended as a WARN disclosing the
+composition + the partial-document consequence; a not-composed ``--issue``
+run and ``--plan-file`` mode emit NO c60 row at all — not even a SKIP — so
+non-amendment output stays byte-identical.
+Check 62 also runs outside ``verify_plan_text()`` — the c23 pattern: it
+reconciles a §9 backend pin-CLAIM against the task's ``body.md``
+frontmatter ``backend:`` key, so ``main()`` appends it in ``--issue`` mode
+(frontmatter read from the resolved task folder) and renders it SKIP in
+``--plan-file`` mode (no task context; #2276, incident #2225 v5/v9).
 
 Canonical N/A escape phrases (quote verbatim in bounce briefs; each
 satisfies its check ONLY as a standalone declaration line — see
@@ -276,6 +338,87 @@ labeled-line forms):
     exposure; a plan genuinely judging harm-class completions instead
     names per-arm ``n_api_refusal`` accounting + the targeted SYNC
     re-issue remediation at the identical instrument)
+  - ``N/A — no inherited row-count defaults`` (check 55 — the plan-named
+    script paths are lint/edit targets, not reused generation/splice
+    scripts, or no reused script's argparse row-count default can
+    under-cover this plan's per-cell target; a plan genuinely reusing a
+    script whose row-count default sits below its stated per-cell target n
+    instead embeds the explicit ``--<flag> <value>`` override in a command)
+  - ``N/A — no multi-GB staging`` (check 56 — the staging + size vocabulary
+    is incidental (quotes a sibling / an incident) and this plan stages no
+    multi-GB inputs; a plan genuinely staging >=5 GB instead names the
+    staging path + the filesystem/mount it resolves to within +-2 lines of
+    the staging row — and, when it cites the #681 worktree bind, carries a
+    literal ``findmnt --mountpoint`` liveness assertion, since the bind is
+    NOT live on this VM, #2091)
+  - ``N/A — GPU-hours token conflict reconciled`` (check 59 — the plan
+    deliberately carries more than one declaration-shaped
+    ``Estimated GPU-hours (total):`` value (e.g. a declaration-shaped
+    revision-comparison table) or a prose-quoted value ahead of the
+    declaration, and the conflict is reconciled in prose; a genuinely
+    conflicting plan instead keeps ONE declaration-shaped value and moves
+    every other mention mid-sentence / into a wrapped or fenced form so
+    the first-match consumer (``GPU_LINE_RE``) reads the declared value)
+  - ``N/A — backend pin-claim reconciled`` (check 62 — the §9 pin-claim
+    vocabulary is deliberate and the claim/frontmatter divergence is
+    reconciled in prose; a plan genuinely claiming a frontmatter pin
+    instead has the `backend: <lane>` key actually set in the task's
+    body.md frontmatter BEFORE dispatch, or rewords the claim)
+  - ``N/A — declared width vs launch width reconciled`` (check 63 — the
+    §9 N-wide declaration and a narrower launch fence are BOTH deliberate,
+    e.g. a narrow smoke launch beside a wide production provision; a plan
+    genuinely dispatching N-wide through the fence instead adds
+    `--gpus <N>` to it, or re-costs the §9 walls at the realized width)
+  - ``N/A — no sampled exactness claims`` (check 64 — the exactness
+    vocabulary is incidental or quotes an incident/sibling, not this
+    plan's own sampled exactness premise; a plan with a genuine sampled
+    exactness claim instead verifies it at full grain, or restates it as
+    a bound — "no deviation observed in N of M" — and softens the assert)
+  - ``N/A — no smoke fixture size claim`` (check 65 — the smoke-size
+    vocabulary is incidental / quotes an incident, not this plan's own
+    fixture-size claim; a plan genuinely claiming a smoke-fixture row
+    floor instead states a floor at or below the realized fixture
+    minimum, or budgets the producing-script change)
+  - ``N/A — no fixture-producing script change needed`` (check 66 — the
+    contradicted floor is deliberate / already remediated elsewhere; a
+    plan genuinely needing regenerated fixtures instead names the
+    producing script in its modified-file list)
+  - ``N/A — no smoke run`` (checks 65 + 66 — the dedicated no-smoke-run
+    declaration route, #2178 round 2: a plan that declares it runs no
+    pre-launch smoke has no smoke fixtures in scope, so BOTH checks SKIP
+    even when a claim-shaped line is present — the declaration wins;
+    check 11's canonical ``N/A — no dry-run smoke`` standalone form is
+    recognized the same way)
+  - ``N/A — no test-retest gate`` (check 67 — the retest/κ vocabulary is
+    incidental or quotes an incident, not this plan's own registered
+    test-retest κ demotion gate; a plan genuinely registering the gate
+    instead runs the retest at the parent instrument's sampling
+    temperature, or re-grounds the κ threshold for a deterministic
+    surface)
+  - ``N/A — no absolute-margin decision gate`` (check 68 — declare ONLY
+    when the plan genuinely registers no absolute-pp reduction margin:
+    the pp-margin / baseline vocabulary is incidental or quotes an
+    incident/sibling; a plan genuinely registering such a margin instead
+    sizes it below the DV's stated baseline rate, switches to a relative
+    margin, or — when the flag is a cross-quantity false alarm — declares
+    the sibling escape below)
+  - ``N/A — harvested percentage baseline is unrelated to this absolute-margin gate``
+    (check 68 — the exists-but-false-alarm shape, the c47/c53/c59
+    convention: the plan DOES register an absolute-pp reduction margin,
+    but every %-stated baseline the harvest can see concerns a DIFFERENT
+    quantity; prefer stating the gate's true baseline in % form so the
+    harvest sees it)
+  - ``N/A — no armed re-gen trigger`` (check 69 — the re-gen arming
+    vocabulary is incidental or quotes an incident/sibling, not this plan's
+    own armed cap-hit re-generation trigger; a plan genuinely arming the
+    trigger instead states the doubled-cap arithmetic — max_model_len minus
+    2x the cap ≥ the stated prompt bound — and sizes the regen engine to
+    fit)
+  - ``N/A — harvested max_model_len pin is unrelated to the armed re-gen stage``
+    (check 69 — the exists-but-false-alarm shape, the c68 convention: the
+    plan DOES arm a re-gen trigger, but every harvested ``max_model_len``
+    pin belongs to a DIFFERENT engine/stage; prefer stating the regen
+    stage's own pin so the harvest sees it)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -324,7 +467,7 @@ import time
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from fractions import Fraction
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import NamedTuple
 
 import yaml
@@ -8495,15 +8638,38 @@ def _c46_argv_from_tokens(tokens: list[str]) -> list[str] | None:
     return argv
 
 
-def _c46_drift_arms(parser, argv: list[str]) -> list[str]:
-    """Drift arms for ONE command argv against the live CLI (empty = clean).
+def _c46_drift_arms(parser, argv: list[str]) -> tuple[list[str], list[str]]:
+    """Drift arms + FYI notes for ONE command argv against the live CLI.
+
+    Returns ``(arms, notes)`` — empty ``arms`` = clean; ``notes`` are
+    verdict-neutral FYI strings the caller appends to its detail tail.
 
     Arm 1: the argv does not parse (``launch`` subcommand missing, unknown
     flag, wrong type). Arms 2-3 fire only on a LAUNCH-shaped argv — an
     explicit ``launch`` subcommand, or the #1336 missing-subcommand shape
     (argv leads with a flag); a ``finalize`` command gets neither.
+
+    Arm 4 (#2202/#2254) is NAMESPACE-level: a PARSED ``launch`` namespace
+    must satisfy the runtime's exactly-one-of ``--workload-cmd`` /
+    ``--hydra`` rule (``dispatch_issue.py main()``, #588) — evaluated on
+    the parsed namespace exactly as the runtime does, so empty-string
+    values, ``--flag=value`` forms, and the append-action ``--hydra``
+    follow argparse semantics byte-for-byte. Gated on
+    ``getattr(ns, "action", None) == "launch"`` (a does-not-parse argv has
+    ``ns is None`` — arm 1 owns it; ``finalize`` namespaces lack the
+    launch dests by construction) and on BOTH ``workload_cmd`` / ``hydra``
+    dests existing — a future CLI dest rename SKIPs the arm with an FYI
+    note rather than reading renamed dests as absent and firing
+    ``neither`` on every compliant launch plan.
+
+    FYI note (#909, verdict-neutral): an explicit ``--backend runpod``
+    launch carrying a non-empty ``--workload-cmd`` but no
+    ``--execute-workload`` is provision-only — the workload does not
+    auto-start on the runpod lane (expected when the experimenter launches
+    it on the pod, so a note, never a WARN).
     """
     arms: list[str] = []
+    notes: list[str] = []
     ns, err = _c46_dry_parse(parser, argv)
     if ns is None:
         arms.append(f"does not parse ({err})")
@@ -8524,7 +8690,35 @@ def _c46_drift_arms(parser, argv: list[str]) -> list[str]:
                 "exists — reason: repo_branch_required_issue_branch_exists; "
                 "--repo-branch main is the explicit escape)"
             )
-    return arms
+    if ns is not None and getattr(ns, "action", None) == "launch":
+        if hasattr(ns, "workload_cmd") and hasattr(ns, "hydra"):
+            has_workload_cmd = bool((ns.workload_cmd or "").strip())
+            has_hydra = bool(ns.hydra)
+            if has_workload_cmd == has_hydra:
+                arms.append(
+                    "launch requires exactly one of --workload-cmd / --hydra "
+                    f"(got {'both' if has_hydra else 'neither'}; an empty "
+                    "--workload-cmd '' counts as not provided; runtime refuses "
+                    "rc=2 — the #2202/#2254 provision-only shape)"
+                )
+            elif (
+                has_workload_cmd
+                and (getattr(ns, "backend", None) or "").strip().lower() == "runpod"
+                and not getattr(ns, "execute_workload", False)
+            ):
+                notes.append(
+                    "FYI: --backend runpod with --workload-cmd but no "
+                    "--execute-workload is provision-only (the workload does not "
+                    "auto-start on the runpod lane, #909) — expected when the "
+                    "experimenter launches it on the pod"
+                )
+        else:
+            notes.append(
+                "exactly-one-of --workload-cmd/--hydra arm skipped: parsed launch "
+                "namespace lacks the workload_cmd/hydra dests (CLI dest rename "
+                "since #588?)"
+            )
+    return arms, notes
 
 
 def check_dispatch_cmd_cli_parse(plan: str, kind: str) -> CheckResult:
@@ -8532,17 +8726,24 @@ def check_dispatch_cmd_cli_parse(plan: str, kind: str) -> CheckResult:
     ``dispatch_issue.py`` command (fenced code blocks + inline-code spans;
     backslash continuations joined) must dry-parse against the CLI's REAL
     argparser (``dispatch_issue.build_argparser()``, lazily path-loaded),
-    and a launch-shaped command must not carry the two demonstrated drift
-    shapes: ``--max-run-duration`` without ``--time-budget-hours`` (the
-    fence threads ONLY to the GCP instance auto-delete and is inert on
-    SLURM lanes, where the wall fence is ``--time-budget-hours`` — runtime
-    refusal ``max_run_duration_slurm_inert_without_time_budget``), and a
-    missing ``--repo-branch`` (the runtime refuses when a live
+    and a launch-shaped command must not carry the three demonstrated
+    drift shapes: ``--max-run-duration`` without ``--time-budget-hours``
+    (the fence threads ONLY to the GCP instance auto-delete and is inert
+    on SLURM lanes, where the wall fence is ``--time-budget-hours`` —
+    runtime refusal ``max_run_duration_slurm_inert_without_time_budget``),
+    a missing ``--repo-branch`` (the runtime refuses when a live
     ``issue-<N>`` branch exists — ``repo_branch_required_issue_branch_
-    exists``; ``--repo-branch main`` is the explicit escape). Mechanizes
-    the #1336 v15 §9 drift: the plan-embedded launch command omitted the
-    ``launch`` subcommand, carried ``--max-run-duration`` with no
-    ``--time-budget-hours``, and omitted ``--repo-branch``. Placeholder
+    exists``; ``--repo-branch main`` is the explicit escape), and — on a
+    PARSED ``launch`` namespace (#2202/#2254) — a violation of the
+    runtime's exactly-one-of ``--workload-cmd`` / ``--hydra`` requirement
+    (#588; an explicitly-empty ``--workload-cmd ''`` counts as not
+    provided, both-provided WARNs too — the runtime refuses rc=2 either
+    way). An explicit ``--backend runpod`` launch with a non-empty
+    ``--workload-cmd`` and no ``--execute-workload`` additionally gets a
+    verdict-neutral FYI note (provision-only on the runpod lane, #909).
+    Mechanizes the #1336 v15 §9 drift: the plan-embedded launch command
+    omitted the ``launch`` subcommand, carried ``--max-run-duration`` with
+    no ``--time-budget-hours``, and omitted ``--repo-branch``. Placeholder
     tokens (``<N>``, ``$VAR``) parse as ordinary values (substituted
     ``"1"``); ``${VAR:+...}`` conditional expansions are stripped whole;
     prose mentions with no ``--`` flag are not commands; unsplittable
@@ -8573,7 +8774,8 @@ def check_dispatch_cmd_cli_parse(plan: str, kind: str) -> CheckResult:
         if argv is None:
             continue  # bare file reference / prose mention, not a command
         n_parsed += 1
-        arms = _c46_drift_arms(parser, argv)
+        arms, fyi_notes = _c46_drift_arms(parser, argv)
+        notes.extend(fyi_notes)
         if arms:
             offenders.append(f"{cmd[:70]!r}: " + "; ".join(arms))
     if offenders:
@@ -8586,9 +8788,11 @@ def check_dispatch_cmd_cli_parse(plan: str, kind: str) -> CheckResult:
             f"plan-embedded dispatch_issue.py command(s) drift from the live CLI: {shown}{more} "
             "— the #1336 v15 shape (a plan-embedded launch command missing the `launch` "
             "subcommand, fencing via --max-run-duration alone, or omitting --repo-branch) "
-            "dies or silently mis-fences at dispatch time; copy the SKILL.md Step 6b launch "
-            "snippet (launch subcommand + explicit --repo-branch + --time-budget-hours on "
-            f"SLURM-reachable lanes){tail}",
+            "and the #2202/#2254 provision-only shape (launch without exactly one of "
+            "--workload-cmd / --hydra) die or silently mis-fence at dispatch time; copy "
+            "the SKILL.md Step 6b launch snippet (launch subcommand + explicit "
+            "--repo-branch + a workload via --workload-cmd or --hydra + "
+            f"--time-budget-hours on SLURM-reachable lanes){tail}",
         )
     if n_parsed == 0:
         detail = "dispatch_issue.py mentions are bare references, not command invocations"
@@ -8605,7 +8809,7 @@ def check_dispatch_cmd_cli_parse(plan: str, kind: str) -> CheckResult:
 
 
 def check_wall_cell_parseable(plan: str, kind: str) -> CheckResult:
-    """WARN-only, conditional, all kinds (trigger-conditional, not
+    """WARN-only, conditional, all kinds (trigger-conditional, mostly not
     kind-gated — the ``poll_pipeline.py`` phase-ETA tripwire reads ANY
     task's plan regardless of ``kind``): every §9 ``planned_wall_h`` data
     cell must parse under the SHARED cosmetic-prefix float rule
@@ -8614,16 +8818,34 @@ def check_wall_cell_parseable(plan: str, kind: str) -> CheckResult:
     cannot drift, #2172 AC #3/#4). ONE unparseable cell fail-safes the
     poller's WHOLE-run tripwire off; pre-#2172 that was silent — #2163's
     parenthesized ``(1.5)`` conditional cell cost a ~6h run its backstop
-    with one poll-tick INFO line to show for it. No ``planned_wall_h``
-    table located (or a zero-sum one) => SKIP: such a plan arms no
-    tripwire, so there is nothing to lose. NEVER FAILs in v1 (the
+    with one poll-tick INFO line to show for it. Absent-table branch
+    (#2123, narrowing the former unconditional SKIP): a ``kind:
+    experiment`` plan with BOOKED GPU-hours > 0 (the c5 ``GPU_LINE_RE``
+    first-match value — the same value the Step 2c consumer reads) and NO
+    ``planned_wall_h`` table WARNs — for a plan that books compute, the
+    tripwire never arming IS the loss (#2091: #2061 booked 70 GPU-h and
+    #1739 booked 14, both table-less, both unprotected). With 0 booked
+    GPU-hours, no GPU token at all, or a non-experiment kind, the
+    original justification still holds — such a plan arms no tripwire,
+    so there is nothing to lose => SKIP. NEVER FAILs in v1 (the
     c26/c29/c33 precedent — heuristic compute-table checks stay WARN-only
-    until a clean corpus baseline licenses escalation).
+    until a clean corpus baseline licenses escalation; corpus 2026-08-12:
+    13 of 229 experiment tasks' latest plans sit in the new-WARN bucket,
+    not a clean baseline).
     """
-    del kind  # all kinds: the poller parses every task's plan identically
     cid, name = "c47_wall_cell_parseable", "planned_wall_h cells parse for the poller tripwire"
     budget = parse_plan_wall_budget(plan)
     if budget.reason == "no_table":
+        booked = GPU_LINE_RE.search(plan)
+        if kind == "experiment" and booked is not None and float(booked.group(1)) > 0:
+            return _warn(
+                cid,
+                name,
+                f"no `planned_wall_h` table while this experiment books "
+                f"{booked.group(1)} GPU-hours — the poll_pipeline.py phase-ETA "
+                f"tripwire never arms for the whole run (#2091: the #2061/#1739 "
+                f"shape); add a §9 compute table with a `planned_wall_h` column",
+            )
         return _skip(cid, name, "no `planned_wall_h` table — this plan arms no poller tripwire")
     if budget.unparseable:
         shown = "; ".join(
@@ -8636,8 +8858,12 @@ def check_wall_cell_parseable(plan: str, kind: str) -> CheckResult:
             name,
             f"{shown} — ONE unparseable planned_wall_h cell disables the poller's phase-ETA "
             f"tripwire for the WHOLE run (fail-safe; {len(budget.rows)} parseable row(s) "
-            "discarded with it; #2163/#2172): write a bare float in the `planned_wall_h` "
-            "cell and put the conditionality in the `basis` cell",
+            # NB: the range's en dash is written as a unicode escape — a
+            # literal trips RUF001 under the full-ruleset policy pin
+            # (tests/test_ruff_policy.py, #2179).
+            "discarded with it; #2163/#2172/#2179): write a bare float, a `≤X` bound, or "
+            "an `A\u2013B` range (the upper bound is used) in the `planned_wall_h` cell "
+            "and put the conditionality in the `basis` cell",
         )
     return _pass(cid, name, f"{len(budget.rows)} row(s), total {budget.total_h:.2f} h")
 
@@ -10054,10 +10280,35 @@ _C53_HARM_VOCAB_RE = re.compile(
     r"|\badversarial[- ]role[- ]?play|\bharmful[-_ ]compliance\b)"
 )
 
+# Trigger arm (b2) — line-windowed evil/toxic (#2227, the #2221 silent pass).
+# Bare \bevil\b stays REJECTED (saturates persona-vector trait prose); an
+# evil/toxic token is harm-class vocabulary ONLY on a line that also carries
+# judging/severity/grading/rubric vocabulary. `\btoxic(?:ity)?\b`-with-boundary
+# deliberately does NOT match bare corpus names (ToxicChat, _stage_toxicchat:
+# no word boundary between "toxic" and the joined "chat"). The `\bband...\b`
+# and `\bscor...\b` context stems were DROPPED after the round-1 corpus
+# replay (plan §10's pre-authorized tightening): `band` fired on a marker
+# "readable implant band" (#505), a statistics "null bands" line (#958), and
+# a lit-review line (#685); `scores` fired on a Persona-Vectors-paper
+# citation line (#471) — none of the genuine fires depended on either stem.
+_C53_HARM_WINDOW_TOKEN_RE = re.compile(r"(?i)(?:\bevil\b|\btoxic(?:ity)?\b)")
+_C53_HARM_WINDOW_CTX_RE = re.compile(
+    r"(?i)(?:\bjudg(?:e|ed|es|ing)|\bsever(?:ity|e)\b|\bgrad(?:e|ed|ing)\b|\brubric\b)"
+)
+
 # Satisfier: any api-refusal token — api-refusal / api_refusal / "API
 # refusal" / n_api_refusal (deliberately NOT \b-anchored at the front so the
 # `n_api_refusal` counter name, whose `_` is a word char, matches too).
 _C53_API_REFUSAL_RE = re.compile(r"(?i)api[-_ ]refusal")
+
+# Satisfier: `refusal` in the VALUE position of a `stop_reason`
+# comparison/assignment (stop_reason == "refusal" / stop_reason: refusal).
+# Tightened from the loose same-line co-mention (#2227): #2221 v5 L103
+# carries rule-9 boilerplate (REFUSAL dropped) plus the rule-26 pilot gate
+# (`stop_reason=="max_tokens"`) on ONE line, which co-mention falsely
+# accepted — content-drop handling and a pilot gate are NOT api-refusal
+# accounting (rule 28's own non-coverage note).
+_C53_STOPREASON_REFUSAL_RE = re.compile(r"(?i)stop_reason\s*[=:]+\s*[\"'`]?\s*refusal")
 
 _C53_ESCAPE_RE = re.compile(r"(?i)^rule[- ]28 exempt(?:ion)?\b")
 
@@ -10081,7 +10332,9 @@ def check_judged_dv_api_refusal(plan: str, kind: str) -> CheckResult:
     """WARN-only, conditional, experiment-only: a plan whose judged DV
     scores harm-class completions (jailbreak / harmfulness / harm-rate /
     adversarial-role-play / harmful-compliance vocabulary alongside judge
-    vocabulary) must name its api-refusal accounting — per-arm
+    vocabulary, or — arm (b2), #2227 — an evil/toxic token line-windowed
+    with judging/severity/grading/rubric vocabulary) must
+    name its api-refusal accounting — per-arm
     ``n_api_refusal`` reported separately from BOTH content drops and
     transport losses, plus the targeted SYNC re-issue remediation at the
     IDENTICAL instrument (reference implementation:
@@ -10099,22 +10352,32 @@ def check_judged_dv_api_refusal(plan: str, kind: str) -> CheckResult:
     cover this class BY DESIGN (rule 28's non-coverage note: api-refusal
     draws leave both the parse-fail numerator and denominator).
     Satisfiers (any): an api-refusal token (``api-refusal`` /
-    ``api_refusal`` / ``n_api_refusal``), a same-line ``stop_reason`` +
-    ``refusal`` co-mention, or the standalone exemption line. Trigger AND
+    ``api_refusal`` / ``n_api_refusal``), a ``stop_reason``
+    comparison/assignment with ``refusal`` in the VALUE position
+    (``stop_reason == "refusal"``; a bare same-line co-mention of the two
+    words — the rule-9/rule-26 boilerplate shape on #2221 v5 L103 — no
+    longer satisfies, #2227), or the standalone exemption line. Trigger AND
     satisfiers scan the RAW plan text (fences INCLUDED, the c43
     precedent — judged-DV designs and remediation notes live in fenced
     tables/blocks). NEVER FAILs (the c39/c31/c34/c43 family convention).
     kind-exempt outside experiment: infra workflow-fix plans (this
     check's own plan included) legitimately QUOTE the trigger vocabulary
-    without dispatching a harm-judged eval. KNOWN FALSE NEGATIVES
-    (disclosed by design): harm-class judged DVs phrased WITHOUT the
-    trigger tokens escape arm (b) — EM/"evil"-alignment judged DVs
-    ("evil", "misaligned", "EM rate"), refusal-bait corpora phrased as
-    "harmful advice"/"unsafe content", and safety-benchmark names quoted
-    bare (mhj, pair, tom-gibbs). Folding those tokens in was REJECTED:
-    ``\\bevil\\b`` matches persona-vector trait names + condition ids
-    (``c1_evil_wrong_em``) across the persisted corpus, and
-    "misaligned"/"EM" saturate the project's standing vocabulary — the
+    without dispatching a harm-judged eval. DESIGN HISTORY (re-scoped by
+    #2227): BARE ``\\bevil\\b`` stays REJECTED — it saturates
+    persona-vector trait prose across the persisted corpus — but arm (b2)
+    now admits an evil/toxic token when it CO-OCCURS ON ONE LINE with
+    judging/severity/grading/rubric vocabulary (the #2221 shape: "graded 0-100
+    judged on-policy trait-expression score ... for
+    evil/sycophancy/hallucination"). The earlier rejection of
+    "judge-proximity tuning" was about SUPPRESSING benign fires of the
+    EXISTING arm-(b) vocabulary — using same-line co-occurrence to ADMIT
+    a new trigger arm without false positives is the complementary
+    direction and is what #2227 prescribes. KNOWN FALSE NEGATIVES that
+    REMAIN (disclosed by design): evil/toxic phrasing split across lines
+    from all judging vocabulary; "misaligned"/"EM"-phrased judged DVs
+    (still rejected — they saturate the project's standing vocabulary);
+    refusal-bait corpora phrased as "harmful advice"/"unsafe content";
+    and safety-benchmark names quoted bare (mhj, pair, tom-gibbs) — the
     Statistics & Measurement lens REVISE stays the binding gate for
     those shapes. NAMED RESIDUAL (2026-08 corpus replay, 3,751 plan
     versions / 26 distinct WARN'd tasks at real kinds): 24/26 fire-tasks
@@ -10122,10 +10385,23 @@ def check_judged_dv_api_refusal(plan: str, kind: str) -> CheckResult:
     a downstream-motivation "persona-jailbreak detection" mention in a
     judge-free marker plan (#382) and a duplicate-clustering "template
     jailbreaks" example in a zero-new-judge-call analysis plan (#1073).
-    Occurrence-count and judge-proximity tuning were both REJECTED: the
-    genuine single-mention fires (#545/#591/#2091/#459) are byte-shaped
-    identically to the benign ones — WARN-only polarity + the exemption
-    escape absorb the residual (the c52 named-residual posture)."""
+    Occurrence-count and judge-proximity tuning (as SUPPRESSORS) were
+    both REJECTED: the genuine single-mention fires
+    (#545/#591/#2091/#459) are byte-shaped identically to the benign
+    ones — WARN-only polarity + the exemption escape absorb the residual
+    (the c52 named-residual posture). #2227 RESIDUAL (2026-08-10 corpus
+    replay, 3,882 plan versions at real kinds, patched-vs-unpatched
+    delta): 20 newly-WARN tasks — 18 via the windowed arm, 2 via the
+    satisfier tightening (#1739 v15 + #2203 v1, both genuinely
+    harm-judged, previously PASSing on the loose boilerplate
+    co-mention); 17/20 genuine (the persona-vectors evil/syco/hallu
+    judging line #778/#779/#816/#1415/#1769/#1774/#2220-#2225 plus
+    #537/#685/#1092/#1776), 3 benign — #841/#922 ("no new judging"
+    artifact-reuse lines) + #1768 (an N/A screen disclaimer) — absorbed
+    by WARN-only polarity + the exemption escape. The round-1 replay
+    (context window still carrying the `band`/`scor` stems) fired 23
+    tasks with 7 benign (~30%), driving the §10-preauthorized stem
+    drop (#471/#505/#685/#958 were the stem-only fires)."""
     cid, name = "c53_judged_dv_api_refusal", "harm-class judged DV api-refusal accounting"
     if kind != "experiment":
         return _skip(
@@ -10137,20 +10413,35 @@ def check_judged_dv_api_refusal(plan: str, kind: str) -> CheckResult:
         return _skip(cid, name, "no judged-DV vocabulary in the plan")
     harm_hits = sorted({m.group(0).lower() for m in _C53_HARM_VOCAB_RE.finditer(plan)})
     if not harm_hits:
+        # Arm (b2) — line-windowed evil/toxic (#2227): fire only when an
+        # evil/toxic token co-occurs on ONE line with judging/severity/
+        # grading/rubric vocabulary. First hit suffices; the WARN carries the
+        # token + line number so a reader can see WHY it fired. Plain
+        # string appended so the WARN's join keeps working.
+        for lineno, line in enumerate(plan.splitlines(), start=1):
+            tok = _C53_HARM_WINDOW_TOKEN_RE.search(line)
+            if tok and _C53_HARM_WINDOW_CTX_RE.search(line):
+                harm_hits.append(f"{tok.group(0).lower()} (L{lineno}, windowed)")
+                break
+    if not harm_hits:
         return _skip(
             cid,
             name,
             "no harm-class judged-DV vocabulary (jailbreak / harmfulness / harm-rate / "
-            "adversarial-role-play / harmful-compliance)",
+            "adversarial-role-play / harmful-compliance; nor a windowed evil/toxic token "
+            "co-occurring on one line with judging/severity/grading/rubric vocabulary, #2227)",
         )
     if _C53_API_REFUSAL_RE.search(plan):
         return _pass(
             cid, name, "api-refusal accounting token present (api-refusal / n_api_refusal)"
         )
     for ln in plan.splitlines():
-        low = ln.lower()
-        if "stop_reason" in low and "refusal" in low:
-            return _pass(cid, name, "stop_reason + refusal co-mention names the drop class")
+        if _C53_STOPREASON_REFUSAL_RE.search(ln):
+            return _pass(
+                cid,
+                name,
+                'stop_reason comparison with "refusal" in value position names the drop class',
+            )
     if _c53_escape_declared(plan):
         return _pass(cid, name, "explicit escape declared (rule 28 exemption)")
     return _warn(
@@ -10164,8 +10455,10 @@ def check_judged_dv_api_refusal(plan: str, kind: str) -> CheckResult:
         "`n_api_refusal` reported separately from content drops and transport losses, plus "
         "the targeted SYNC re-issue remediation at the identical instrument (reference: "
         "`scripts/issue1739_evilood_refusal_rejudge.py` — the llm-judging.md § Enforcement "
-        "rule-28 rider), or declare `rule 28 exemption: <reason>` on its own line, "
-        "unwrapped (no backticks/quotes)",
+        'rule-28 rider); naming the drop class in value position (`stop_reason == "refusal"`) '
+        "also satisfies — a bare same-line co-mention of `stop_reason` and `refusal` "
+        "(rule-9/rule-26 boilerplate) does NOT (#2227) — or declare "
+        "`rule 28 exemption: <reason>` on its own line, unwrapped (no backticks/quotes)",
     )
 
 
@@ -10301,6 +10594,3183 @@ def check_workload_cmd_lane_env(plan: str, kind: str) -> CheckResult:
     return _pass(cid, name, detail)
 
 
+# ─── Check 55 — inherited argparse row-count default vs per-cell target ─────
+
+_C55_REPO_ROOT = Path(__file__).resolve().parent.parent  # tests monkeypatch (c34/c41 pattern)
+
+#: Plan-named candidate script paths (scripts/ or src/, ``.py``). Cost
+#: bound: at most ``_C55_MAX_SCRIPTS`` are resolved per plan.
+_C55_SCRIPT_RE = re.compile(r"\b(?:scripts|src)/[A-Za-z0-9_./-]+\.py\b")
+_C55_MAX_SCRIPTS = 12
+
+#: Issue-branch tokens the plan names — the ``git show`` resolution fallback
+#: for scripts living only on an unmerged issue branch (#2054's phase_c.py).
+_C55_BRANCH_RE = re.compile(r"\bissue-\d+[a-z0-9-]*\b")
+_C55_MAX_BRANCHES = 4
+
+#: argparse flag token at an ``add_argument(`` call head.
+_C55_ADD_ARG_RE = re.compile(r"add_argument\(\s*[\"'](--[A-Za-z0-9][\w-]*)[\"']")
+#: Integer default within the bounded post-flag window; the negative
+#: lookahead rejects float defaults (``default=0.5``), and ``\d[\d_]*``
+#: accepts the underscore-separator literal (``default=8_000``, the verbatim
+#: #2054 offender shape, issue2054 phase_c.py).
+_C55_DEFAULT_RE = re.compile(r"default\s*=\s*(\d[\d_]*)(?![.\d_])")
+#: Chars scanned after the flag token for kwargs — bounds multi-line
+#: ``add_argument`` calls without paren-matching.
+_C55_KWARG_WINDOW = 300
+
+#: Row-count flag-name axes: the flag must carry BOTH a cap-ish token
+#: (target/max/limit) and a row-ish token (conv*/row(s)/id(s)), in any
+#: order, each anchored at a ``-``/``_`` token boundary so e.g.
+#: ``--target-grid`` ("id" inside "grid") never matches. The row axis is
+#: prefix-tolerant at the boundary (``conv`` covers ``conversations``).
+_C55_CAP_AXIS_RE = re.compile(r"(?:^|[-_])(?:target|max|limit)(?=[-_]|$)")
+_C55_ROW_AXIS_RE = re.compile(r"(?:^|[-_])(?:conv|rows?|ids?)")
+
+#: Plan-prose per-cell target patterns (the fuzzy leg — WARN-only absorbs
+#: the false-positive surface). Values under ``_C55_TARGET_FLOOR`` (seed
+#: counts, tiny ints) are dropped; the MAX surviving candidate is the
+#: stated target (conservative: the max is what the plan claims to reach).
+_C55_TARGET_RES = [
+    re.compile(r"per[- ]cell[^.\n]{0,60}?(\d[\d,]{2,})", re.I),
+    re.compile(r"\bn(?:_train)?\s*[=≈~]\s*(\d[\d,]{2,})", re.I),
+    re.compile(r"\|S\|\s*[=≈]\s*(\d[\d,]{2,})"),
+    re.compile(r"target(?:\s+of)?\s+[^.\n]{0,40}?(\d[\d,]{2,})", re.I),
+]
+_C55_TARGET_FLOOR = 100
+
+
+def _c55_candidate_scripts(plan: str) -> tuple[list[str], bool]:
+    """Ordered, deduped plan-named script paths, capped at
+    ``_C55_MAX_SCRIPTS`` (cost bound; the second element reports the cap
+    firing so the detail can note the truncation). Traversal-shaped
+    candidates (``..``) are dropped."""
+    seen: list[str] = []
+    for m in _C55_SCRIPT_RE.finditer(plan):
+        rel = m.group(0)
+        if ".." in rel or rel in seen:
+            continue
+        seen.append(rel)
+    return seen[:_C55_MAX_SCRIPTS], len(seen) > _C55_MAX_SCRIPTS
+
+
+def _c55_git_show(ref: str, rel: str) -> str | None:
+    """``git show <ref>:<rel>`` in ``_C55_REPO_ROOT``; ``None`` on any
+    failure (missing ref/path, git unavailable, timeout) — c55 is WARN-only
+    lint, so resolution failures degrade to caller-side notes, never a
+    crash (the c42/c44 fail-open contract)."""
+    try:
+        r = subprocess.run(
+            ["git", "show", f"{ref}:{rel}"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            cwd=str(_C55_REPO_ROOT),
+            check=False,
+        )
+    except (subprocess.TimeoutExpired, OSError):
+        return None
+    return r.stdout if r.returncode == 0 else None
+
+
+def _c55_resolve_script(rel: str, branches: list[str]) -> str | None:
+    """Script text: working-tree read first, then ``git show <branch>:``
+    then ``git show origin/<branch>:`` per plan-named issue branch — a
+    branch fetched but never checked out locally resolves only via the
+    ``origin/`` ref (#2054's phase_c.py lived on the ``issue-2054``
+    branch). ``None`` when nothing resolves (caller notes it, fail-soft)."""
+    p = _C55_REPO_ROOT / rel
+    text: str | None = None
+    try:
+        if p.is_file():
+            text = p.read_text(errors="replace")
+    except OSError:
+        text = None  # unreadable working-tree copy — fall through to the git refs
+    if text is not None:
+        return text
+    for branch in branches:
+        for ref in (branch, f"origin/{branch}"):
+            text = _c55_git_show(ref, rel)
+            if text is not None:
+                return text
+    return None
+
+
+def _c55_rowcount_defaults(text: str) -> list[tuple[str, int]]:
+    """``(flag, default)`` pairs for row-count-shaped argparse flags with an
+    integer literal default. The kwarg scan is a bounded window after the
+    flag token (multi-line ``add_argument`` calls match without
+    paren-matching); ``default=0`` is skipped — the conventional no-limit
+    value cannot under-cover a target."""
+    out: list[tuple[str, int]] = []
+    for m in _C55_ADD_ARG_RE.finditer(text):
+        name = m.group(1)[2:]  # strip the leading --
+        if not (_C55_CAP_AXIS_RE.search(name) and _C55_ROW_AXIS_RE.search(name)):
+            continue
+        window = text[m.end() : m.end() + _C55_KWARG_WINDOW]
+        dm = _C55_DEFAULT_RE.search(window)
+        if dm is None:
+            continue
+        value = int(dm.group(1).replace("_", ""))
+        if value == 0:
+            continue
+        out.append((m.group(1), value))
+    return out
+
+
+def _c55_plan_target_n(plan: str) -> int | None:
+    """MAX plan-stated per-cell target ``>= _C55_TARGET_FLOOR``, or ``None``
+    when no target-shaped integer is recognized (caller SKIPs)."""
+    candidates: list[int] = []
+    for pat in _C55_TARGET_RES:
+        for m in pat.finditer(plan):
+            value = int(m.group(1).replace(",", ""))
+            if value >= _C55_TARGET_FLOOR:
+                candidates.append(value)
+    return max(candidates) if candidates else None
+
+
+def check_inherited_rowcount_default(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, all kinds: a plan that reuses a
+    generation/splice script whose argparse integer ROW-COUNT default (a
+    flag carrying both a target/max/limit and a conv/rows/ids token) sits
+    BELOW the plan's own stated per-cell target n, with the flag token
+    appearing NOWHERE in the plan text, silently caps coverage — the run
+    truncates deterministically (first-N prefix) and every gate that runs
+    before the consuming phase reads PASS without seeing the breach.
+    Mechanizes the #2054 amendment-plan v11 incident: the reused
+    ``--target-conv-ids`` default (8,000; phase_c.py on the ``issue-2054``
+    branch) would have capped 28 of 48 in-scope cells below the registered
+    |S| = 9,000 intersection target; the mechanical pre-pass passed the
+    plan clean twice (v10, v11) and only the Methodology critic caught it.
+    Scripts resolve working-tree-first, then ``git show <branch>:`` /
+    ``origin/<branch>:`` for plan-named ``issue-<M>`` branch tokens
+    (fail-soft note on a miss — never a crash); the plan-side target
+    extraction is deliberately fuzzy (per-cell / n= / |S|= / target-of
+    patterns, MAX aggregation, >= 100 floor) — WARN-only absorbs the
+    false-positive surface, and a flag token mentioned ANYWHERE in the
+    plan (an embedded override command, a prose acknowledgment) suppresses
+    the WARN (plan-aware, per the #2054 critic sketch). Escape: standalone
+    ``N/A — no inherited row-count defaults``. NEVER FAILs (the
+    c43/c46/c50/c54 posture).
+    """
+    del kind  # all kinds: an inherited under-covering default truncates identically everywhere
+    cid = "c55_inherited_rowcount_default"
+    name = "inherited argparse row-count default vs per-cell target"
+    if _standalone_na_declared(plan, r"no inherited row-count defaults"):
+        return _pass(cid, name, "explicit N/A declared (no inherited row-count defaults)")
+    scripts, truncated = _c55_candidate_scripts(plan)
+    if not scripts:
+        return _skip(cid, name, "no reused script paths named in plan")
+    branches: list[str] = []
+    for m in _C55_BRANCH_RE.finditer(plan):
+        tok = m.group(0)
+        if tok not in branches:
+            branches.append(tok)
+    branches = branches[:_C55_MAX_BRANCHES]
+    notes: list[str] = []
+    if truncated:
+        notes.append(f"candidate scripts capped at {_C55_MAX_SCRIPTS}")
+    defaults: list[tuple[str, str, int]] = []  # (script, flag, default)
+    n_resolved = 0
+    for rel in scripts:
+        text = _c55_resolve_script(rel, branches)
+        if text is None:
+            notes.append(f"script unresolved: {rel}")
+            continue
+        n_resolved += 1
+        for flag, value in _c55_rowcount_defaults(text):
+            defaults.append((rel, flag, value))
+    tail = ("; " + "; ".join(notes)) if notes else ""
+    if n_resolved == 0:
+        return _skip(cid, name, f"none of {len(scripts)} plan-named script(s) resolved{tail}")
+    if not defaults:
+        return _pass(
+            cid,
+            name,
+            f"no inherited row-count defaults in {n_resolved} plan-named script(s){tail}",
+        )
+    target = _c55_plan_target_n(plan)
+    if target is None:
+        return _skip(cid, name, f"no stated per-cell target n recognized{tail}")
+    offenders = [
+        f"{rel}: {flag} default={value:,} < stated target {target:,} and the flag "
+        "never appears in the plan"
+        for rel, flag, value in defaults
+        if target > value and flag not in plan
+    ]
+    if offenders:
+        shown = " | ".join(offenders[:3])
+        more = f" (+{len(offenders) - 3} more)" if len(offenders) > 3 else ""
+        return _warn(
+            cid,
+            name,
+            f"inherited argparse row-count default(s) under-cover the plan's stated per-cell "
+            f"target: {shown}{more} — pass the flag explicitly in an embedded command or raise "
+            "the source default; incident #2054: the reused `--target-conv-ids` default 8,000 "
+            "silently capped cells below the |S| = 9,000 target (deterministic first-N "
+            f"truncation){tail}",
+        )
+    return _pass(
+        cid,
+        name,
+        f"{len(defaults)} row-count default(s) in {n_resolved} script(s) covered by the stated "
+        f"target ({target:,}) or explicitly overridden in the plan{tail}",
+    )
+
+
+# ─── Check 56 — multi-GB staging row names its mount / bind liveness (#2097) ─
+
+# Trigger: a STRIPPED-prose line carrying BOTH a staging signal AND a >=5 GB
+# size figure (TB always qualifies). Calibration (#2097, implementation-time,
+# AS-SHIPPED regexes; the c39/c33 gate precedent — any future c56-regex
+# change re-runs the corpus scan and records the realized numbers here) over
+# 3,890 persisted plan-versions (tasks/*/*/plans/v*.md; in-process, own task
+# excluded, kind from body.md): 499 pv triggered (kind==experiment,
+# non-SKIP); 343 pv would-WARN — 307 arm-(a)-only / 15 arm-(b)-only / 21
+# both; 6 recent-era issues (>= 2000) carry WARNs. The founding incident
+# #2091 (a 42 GB VM stage citing the NOT-live #681 worktree bind; zero
+# `findmnt`, PASSed verify_plan twice) arm-(b)-WARNs on plans v1-v3, and its
+# POST-incident revisions v4/v5 — which added the `findmnt --mountpoint`
+# probe — PASS: the incident's own fix trajectory exercises both verdicts
+# (pinned by tests/test_verify_plan.py::test_c56_calibration_committed_2091_v3).
+# Arm-(a) adjudication of the recent-era would-WARNs: size-bearing
+# risk-table / RSS-routing / compute-table rows whose staging path lives
+# elsewhere in the plan — the #869 document-global-evidence shape the
+# window-scoping deliberately refuses; a widened satisfier set (+MooseFS /
+# container-disk / $SCRATCH mount-name tokens) was MEASURED at 343 -> 311
+# would-WARN and DECLINED — it blesses filesystem-name-without-path rows,
+# weakening the duty's PATH requirement for a ~10% noise cut. WARN-only +
+# forward-looking (legacy plans never bounce retroactively, the
+# c39/c31/c34/c43 family convention).
+_C56_STAGE_RE = re.compile(
+    r"(?i)\bstag(?:e|es|ed|ing)\b|\bdownload|\bsnapshot|\bmateriali[sz]e"
+    r"|hf_dl|local_dir|\bprefetch"
+)
+_C56_SIZE_RE = re.compile(r"(\d+(?:\.\d+)?)\s*(GB|GiB|TB)\b")
+_C56_SIZE_MIN_GB = 5.0
+# Arm (a): PATH tokens satisfy ONLY within the trigger line +-2 STRIPPED
+# lines (window-scoped — house style pushes `/workspace` merge-disk
+# boilerplate + launch out-roots into nearly every plan, so a doc-global
+# path satisfier vacuously PASSes a pathless staging row: the #869
+# document-global-evidence shape; 9 `/workspace` mentions in #2091 v3
+# alone). The mount-PROBE tokens (`df -P`, `findmnt`) satisfy from anywhere
+# in the RAW plan — probe commands legitimately live in fenced
+# preflight/repro blocks far from the staging row.
+_C56_PATH_RE = re.compile(r"/mnt/eps-data|data/issue_|/workspace")
+_C56_PROBE_RE = re.compile(r"df -P|findmnt")
+# Arm (b): the incident's OWN vocabulary — `worktree`/`#681` co-occurring
+# with word-boundary `bind` within the same stripped line or +-2 adjacent
+# stripped lines. `\bbind\b` (not `bind`): "binding"-class house prose can
+# never false-fire, while hyphens ARE word boundaries so "bind-mounted" /
+# "bind-migration" still match. NOT keyed on the literal `.claude/worktrees`
+# path: that string appears ZERO times in #2091 v3, whose actual wording is
+# "resolves to `/mnt/eps-data` via the #681 worktree bind" (v3 L110/L272) —
+# a literal-path trigger provably never fires on its own motivating incident.
+_C56_BIND_RE = re.compile(r"(?i)\bbind\b")
+_C56_WORKTREE_RE = re.compile(r"(?i)\bworktrees?\b|#681\b")
+_C56_WINDOW = 2  # +-2 lines; the c12 window-shape convention
+
+
+def _c56_size_qualifies(line: str) -> bool:
+    """True when ``line`` carries a >=5 GB size figure (any TB qualifies)."""
+    for m in _C56_SIZE_RE.finditer(line):
+        if m.group(2) == "TB" or float(m.group(1)) >= _C56_SIZE_MIN_GB:
+            return True
+    return False
+
+
+def check_staging_mount_binding(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, experiment-only: a multi-GB staging/footprint
+    row must name its mount/staging path IN the trigger window (arm a), and
+    a plan citing the #681 worktree bind for a multi-GB stage must carry a
+    literal ``findmnt --mountpoint`` liveness assertion (arm b — the bind is
+    NOT live on this VM; #2091's plans v2 AND v3 cited it for a 42 GB stage
+    and PASSed verify_plan). Mechanizes the explicitly-deferred staging-row
+    backstop of `.claude/rules/plan-compute-sizing.md` § Out-root mount
+    binding (the >=5 GB inline-staging clause: staging path named up front +
+    the filesystem it resolves to; incident #1393 — a 14 GB inline HF pull
+    filled ``/`` -> ENOSPC).
+
+    Fence masking is LINE-COUNT-PRESERVING (fenced lines masked in place,
+    never deleted) so the stripped->raw +-2 window maps by identity index.
+    Arm (b) is evaluated INDEPENDENTLY of arm (a)'s verdict — the #2091 rows
+    name ``/mnt/eps-data`` in-window (arm a satisfied) and still must WARN
+    on the missing liveness probe. NEVER FAILs (the c39/c31/c34/c43 family
+    convention). kind-exempt outside experiment: infra workflow-fix plans —
+    this check's own lineage included — legitimately discuss staging without
+    having staging phases."""
+    cid, name = "c56_staging_mount_binding", "staging mount binding"
+    if kind != "experiment":
+        return _skip(
+            cid,
+            name,
+            "kind-exempt: multi-GB staging rows are an experiment-plan shape "
+            "(infra workflow-fix plans legitimately discuss staging without staging phases)",
+        )
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)  # line-count-preserving: indexes map raw<->stripped
+    trigger_idx = [
+        i
+        for i, (line, fenced) in enumerate(zip(lines, mask, strict=True))
+        if not fenced and _C56_STAGE_RE.search(line) and _c56_size_qualifies(line)
+    ]
+    if not trigger_idx:
+        return _skip(cid, name, "no multi-GB staging vocabulary detected")
+    if _standalone_na_declared(plan, r"no multi-GB staging\b"):
+        return _pass(cid, name, "explicit N/A declared (no multi-GB staging)")
+    # Arm (a): every trigger line needs a path token within +-2 stripped
+    # lines, unless a mount-probe token appears anywhere in the RAW plan.
+    offenders_a: list[str] = []
+    if not _C56_PROBE_RE.search(plan):
+        for i in trigger_idx:
+            lo, hi = max(0, i - _C56_WINDOW), min(len(lines), i + _C56_WINDOW + 1)
+            window = "\n".join(lines[j] for j in range(lo, hi) if not mask[j])
+            if not _C56_PATH_RE.search(window):
+                offenders_a.append(lines[i].strip()[:90])
+    # Arm (b): independent of arm (a) — a worktree-bind citation in a disk
+    # context requires the literal `findmnt --mountpoint` in the RAW plan.
+    bind_hits: list[int] = []
+    for i, (line, fenced) in enumerate(zip(lines, mask, strict=True)):
+        if fenced or not _C56_BIND_RE.search(line):
+            continue
+        lo, hi = max(0, i - _C56_WINDOW), min(len(lines), i + _C56_WINDOW + 1)
+        if any(not mask[j] and _C56_WORKTREE_RE.search(lines[j]) for j in range(lo, hi)):
+            bind_hits.append(i)
+    arm_b_offends = bool(bind_hits) and "findmnt --mountpoint" not in plan
+    if not offenders_a and not arm_b_offends:
+        bits = [f"{len(trigger_idx)} multi-GB staging line(s) mount-bound"]
+        if bind_hits:
+            bits.append(
+                f"{len(bind_hits)} worktree-bind citation line(s) with a "
+                "`findmnt --mountpoint` liveness assertion"
+            )
+        return _pass(cid, name, "; ".join(bits))
+    msgs: list[str] = []
+    if offenders_a:
+        shown = "; ".join(offenders_a[:3])
+        more = f" (+{len(offenders_a) - 3} more)" if len(offenders_a) > 3 else ""
+        msgs.append(
+            f"{len(offenders_a)} multi-GB staging row(s) name no mount/staging path within "
+            f"+-2 lines ({shown!r}{more}) — name the staging path + the filesystem it "
+            "resolves to next to the row (the CLAUDE.md compute-character element 5: "
+            "a correct GB figure on the WRONG mount still ENOSPCs, #1393; a distant "
+            "`/workspace` in Repro boilerplate does not bind the row)"
+        )
+    if arm_b_offends:
+        msgs.append(
+            f"{len(bind_hits)} worktree-bind citation line(s) route a multi-GB stage "
+            "via the #681 worktree bind with NO `findmnt --mountpoint` liveness "
+            "assertion — the bind is NOT live on this VM (#2091: cited for a 42 GB "
+            "stage, PASSed verify_plan twice; the path then resolves to the boot "
+            "disk, gotchas.md `/mnt/eps-data` entry). Add a fenced "
+            "`findmnt --mountpoint <repo>/.claude/worktrees` probe (no output = no "
+            "bind) or re-route the staging path"
+        )
+    msgs.append(
+        "or declare `N/A — no multi-GB staging` on its own line, unwrapped "
+        "(no backticks/quotes), if the staging vocabulary is incidental"
+    )
+    return _warn(cid, name, " | ".join(msgs))
+
+
+# ─── Check 57 — fan-out same-prefix staging shape (#2236, incident #1739) ───
+
+# Trigger (conjunctive): T1 — a STRIPPED §9 line declaring a box-level
+# fan-out (count 2-99 + shards/boxes/pods/nodes/instances) with same-line
+# parallel/concurrent vocabulary and no same-line negation; AND T2 —
+# Hub-prefix staging named anywhere in the plan. Satisfier: T3 — staging-
+# remedy vocabulary anywhere in the plan (pre-stage / serialize / jitter —
+# the remedies of `.claude/rules/plan-compute-sizing.md` § "Fan-out over
+# the same HF prefix"). Calibration (#2236, implementation-time, AS-SHIPPED
+# regexes; the c39/c33 gate precedent — any future c57-regex change re-runs
+# the corpus scan and records the realized numbers here;
+# `scripts/issue2236_c57_corpus_sweep.py` is the reproduction tool) over
+# 3,935 persisted plan-versions (tasks/*/*/plans/v*.md, 2026-08-11):
+# 6 WARNs / 2 distinct tasks, all true positives —
+#   - TP #2054 v13/v14 — the founding shape: 8 concurrent `cpu-bigmem`
+#     pods each `stage_hub_prefix`-ing the SAME ~12 GB
+#     `issue2054_lattice/activations` prefix, no staging shape named
+#     (PASSed the pre-c57 verify_plan 0 FAIL / 0 WARN of 57 checks);
+#   - TP #1491 v1-v4 — up to ~48 concurrent shards staging HF data-repo
+#     paths; the only named mitigation is UPLOAD commit-rate batching, so
+#     the DOWNLOAD staging duty is genuinely unaddressed.
+# Negative control: #2054 v12 (the R4/R5 multi-pod staging precedent the
+# Methodology critic judged functionally acceptable) does NOT fire.
+# n_skip (no parseable section-9 heading) = 673 under the §-tolerant
+# locator. FPs eliminated during predicate development, each by a named
+# lever: #460 v2 matched `4 workers` on a SINGLE 4x H100 pod (-> box-level
+# noun set, no `workers`); #507 v1/v2 matched an assumptions-table row
+# ("2 concurrent pods") while the sweep is explicitly sequential (-> the
+# section-9 window confinement); #552 v1 matched "one multi-GPU pod, NOT
+# 3 pods, per the standing rule" — an explicitly REJECTED fan-out — so the
+# plan-spec'd negation list gained the `not <n> pods` form at
+# implementation time (re-measured: 6 WARNs / 0 FP).
+# Regex-change record (review round 1, per this block's own contract): the
+# initially-shipped strict `^9[.):\s]` locator skipped 897 plans as
+# "no parseable section 9", but >=224 of those carried a literal
+# `§9 <title>` house-style heading (13% of plans with id >= 2000 were
+# invisible to the check — the exact future-plan population the net
+# serves). Both the opener AND the window-closer regexes are now
+# §-tolerant (`^(?:§\s*)?...`) — the closer tolerance is load-bearing: a
+# `## §10` heading that failed to CLOSE the window would run it to EOF and
+# become a false-positive surface. Corpus re-scan after the change:
+# WARN set byte-identical (same 6 files), pass=2, no-heading skips
+# 897 -> 673 (the residual 673 genuinely lack a `9.`/`§9`-form heading).
+_C57_FANOUT_RE = re.compile(
+    r"(?i)\b([2-9]|[1-9][0-9])\s*(×\s*)?(pod |parallel |concurrent )?"  # noqa: RUF001 — the multiplication sign is real plan text
+    r"(shards?|boxes|pods|nodes|instances)\b"
+)
+_C57_CONCURRENT_RE = re.compile(r"(?i)parallel|concurrent(ly)?")
+_C57_NEGATION_RE = re.compile(
+    r"(?i)sequential|rejected|instead of|rather than|declined|not parallel"
+    r"|no fan-out|one at a time"
+    r"|\bnot\s+\d+\s*(×\s*)?(shards?|boxes|pods|nodes|instances)\b"  # noqa: RUF001 — the multiplication sign is real plan text
+)
+_C57_STAGING_RE = re.compile(r"stage_hub_prefix|snapshot_download|hf_hub_download")
+_C57_REMEDY_RE = re.compile(
+    r"(?i)pre-stage|prestage|stage[ds]? once|shared read path"
+    r"|rsync (after|the|from)|baked image|serializ\w* (the )?(pull|stag|download)"
+    r"|stagger|jittered start|start-offset"
+)
+_C57_SECTION9_RE = re.compile(r"^(?:§\s*)?9[.):\s]")
+_C57_NUMBERED_HEADING_RE = re.compile(r"^(?:§\s*)?(\d+)[.):\s]")
+
+
+def _c57_section9_window(lines: list[str], mask: list[bool]) -> tuple[int, int] | None:
+    """Line span [start, end) of the section-9 window: the first non-fenced
+    heading whose text starts `9.` / `9)` / `9:` OR the house-style
+    `§9 <title>` form (review round 1: >=224 of the strict locator's 897
+    corpus skips carried a literal `§9`-prefixed heading — 13% of recent
+    plans were invisible to the check), up to the next numbered heading
+    whose leading integer is not 9 (so `9.1`-style subsections stay INSIDE
+    the window). The closer is §-tolerant too — load-bearing, not
+    symmetry: a `## §10` heading that failed to CLOSE the window would run
+    it to EOF and become a false-positive surface. None when no such
+    heading parses."""
+    heads: list[tuple[int, str]] = []
+    for i, line in enumerate(lines):
+        if mask[i]:
+            continue
+        m = _HEADING_RE.match(line.strip())
+        if m:
+            heads.append((i, m.group(2).strip()))
+    start = None
+    for i, text in heads:
+        if _C57_SECTION9_RE.match(text):
+            start = i
+            break
+    if start is None:
+        return None
+    end = len(lines)
+    for i, text in heads:
+        if i <= start:
+            continue
+        m = _C57_NUMBERED_HEADING_RE.match(text)
+        if m and int(m.group(1)) != 9:
+            end = i
+            break
+    return start, end
+
+
+def _c57_match_snippet(line: str, width: int = 90) -> str:
+    """A ~``width``-char window of ``line`` centered on the T1 fan-out MATCH
+    SPAN — never the line head: on #1491 the match sits at char ~785 of a
+    922-char line, so a head-slice printed unrelated serial-fit prose and
+    the WARN evidence read as spurious (review round 1, Minor)."""
+    m = _C57_FANOUT_RE.search(line)
+    if m is None:  # defensive: trigger lines matched by construction
+        return line.strip()[:width]
+    lo = max(0, m.start() - (width - (m.end() - m.start())) // 2)
+    return line[lo : lo + width].strip()
+
+
+def check_fanout_prefix_staging(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, all kinds: a section-9 fan-out of N > 1
+    CONCURRENT boxes/pods/shards, in a plan that also stages an HF prefix
+    (`stage_hub_prefix` / `snapshot_download` / `hf_hub_download`), must
+    name its staging shape — pre-stage once and fan, serialized per-box
+    pulls, or jittered start offsets (per
+    `.claude/rules/plan-compute-sizing.md` § "Fan-out over the same HF
+    prefix"; incident #1739: three boxes each staged ~144 GB from one
+    prefix simultaneously, five attempts to land one leg). NEVER FAILs
+    (the c39/c43/c46/c50/c54 fail-open convention); a plan with no
+    parseable section-9 heading (neither the numbered `9.` form nor the
+    house-style `§9 <title>` form) is a SKIP, counted separately from
+    passes.
+
+    Three points of honesty. (1) The calibrated 0-FP figure above is
+    IN-SAMPLE — the regexes were tuned on the same persisted-plan corpus
+    the acceptance sweep re-runs — so it bounds nuisance cost on
+    yesterday's planner distribution, not on future plans. (2) The naive
+    whole-document predicate WARNed 100 plans, which is why this ships
+    confined to the section-9 window; the disclosed cost of that
+    confinement is a fan-out declared ONLY outside section 9, which is
+    invisible to c57 — a c52-style named residual, never to be read as
+    coverage. (3) WARN-only because whether N shard rows each PULL the
+    prefix or read a shared path is finally a property of the DISPATCHER,
+    not the plan text — the Methodology lens item 16 FAN-OUT STAGING
+    EXTENSION is the binding gate; c57 is only the early-warning net."""
+    del kind  # all kinds: the staging-topology duty is kind-agnostic here
+    cid, name = "c57_fanout_prefix_staging", "fan-out same-prefix staging shape"
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)  # line-count-preserving: indexes map raw<->stripped
+    window = _c57_section9_window(lines, mask)
+    if window is None:
+        return _skip(
+            cid,
+            name,
+            "no parseable section-9 heading (`9.` / `§9` opener ... next numbered "
+            "heading) — a fan-out in a plan with no such heading is a named "
+            "residual, not coverage",
+        )
+    lo, hi = window
+    trigger_idx = [
+        i
+        for i in range(lo, hi)
+        if not mask[i]
+        and _C57_FANOUT_RE.search(lines[i])
+        and _C57_CONCURRENT_RE.search(lines[i])
+        and not _C57_NEGATION_RE.search(lines[i])
+    ]
+    if not trigger_idx:
+        return _skip(cid, name, "no concurrent box-level fan-out declared in section 9")
+    if not _C57_STAGING_RE.search(plan):
+        return _skip(
+            cid,
+            name,
+            "section-9 fan-out present but no Hub-prefix staging vocabulary "
+            "(stage_hub_prefix / snapshot_download / hf_hub_download) anywhere in the plan",
+        )
+    remedy = _C57_REMEDY_RE.search(plan)
+    if remedy:
+        return _pass(
+            cid,
+            name,
+            f"{len(trigger_idx)} section-9 fan-out line(s) with a staging-shape "
+            f"remedy named ({remedy.group(0)!r})",
+        )
+    shown = "; ".join(_c57_match_snippet(lines[i]) for i in trigger_idx[:3])
+    more = f" (+{len(trigger_idx) - 3} more)" if len(trigger_idx) > 3 else ""
+    return _warn(
+        cid,
+        name,
+        f"{len(trigger_idx)} section-9 line(s) fan N > 1 concurrent boxes/pods/shards "
+        f"({shown!r}{more}) while the plan stages an HF prefix, and no staging shape is "
+        "named — N concurrent same-prefix multi-GB pulls are a rate-limit kill risk "
+        "(429s / rc=137 resets; #1739: three boxes staged ~144 GB from one prefix "
+        "simultaneously, five attempts to land one leg). Name ONE of: pre-stage once "
+        "and fan (shared read path / rsync after one stage completes / baked image), "
+        "serialized per-box pulls, or jittered start offsets — or mark the pulls "
+        "explicitly sequential on the fan-out row (per "
+        "`.claude/rules/plan-compute-sizing.md` § Fan-out over the same HF prefix; "
+        "the Methodology lens item 16 FAN-OUT STAGING EXTENSION is the binding gate)",
+    )
+
+
+# ─── Check 58 — fan-out RunPod pod-name collision (#2237, incident #2054) ──
+
+# Trigger (conjunction of three arms; all three must hold to WARN):
+#   T1 multiplicity (either sub-arm): T1a — >=1 non-fenced section-9 line
+#     declaring N > 1 CONCURRENT pods/shards/boxes/nodes/instances,
+#     negation-free (c57's detector — `_C57_FANOUT_RE` /
+#     `_C57_CONCURRENT_RE` / `_C57_NEGATION_RE` over the
+#     `_c57_section9_window`, reused verbatim; NO third fan-out detector);
+#     OR T1b — >=2 DISTINCT dry-parsing RunPod-resolved launch argvs (the
+#     converse shape: multiplicity expressed in argvs, absent from §9
+#     prose vocabulary).
+#   T2 lane: >=1 plan-embedded launch-shaped argv that dry-parses (the
+#     c46/c50/c52 argv chain, reused verbatim) AND resolves to RunPod
+#     under the SHIPPED posture (`_C58_T2_INCLUDE_AUTO` below).
+#   T3 remedy absence: the plan names NO per-pod provisioning mechanism.
+# T3's key is the literal `pod.py provision` COMMAND CONSTRUCT carrying
+# `--name-suffix` on the same line — NOT the bare `--name-suffix` token
+# and NOT the bare noun "provision": #2054 v16 line 298 carries BOTH
+# (inside its teardown command `pod.py terminate ... --name-suffix` and
+# the pod-safety prose "BEFORE the first provision") on ONE line, so a
+# naive `provision\w*.*--name-suffix` MATCHES it (measured) and would
+# suppress the WARN on the very fixture the check exists to catch, while
+# `pod.py provision` matches nowhere in v16 (measured). The other
+# remedies the lens clause names are STRUCTURAL here, not regex-keyed:
+# one-pod-with-N-in-pod-workers never trips T1a (`workers` is not in the
+# c57 noun set — the #460 FP lever); a name-isolating GCP/SLURM lane
+# never trips T2 (no RunPod-resolved argv); explicit serialization is
+# absorbed by T1a's negation arm. `--lane-suffix` on a RunPod argv does
+# NOT satisfy anything — RunPod is exactly the lane
+# `dispatch_issue._lane_suffix_honored_kinds()` excludes (pinned by
+# test 4 in tests/test_verify_plan_c58_fanout_pod_name.py).
+#
+# T2 posture calibration (#2237 §7, implementation-time, AS-SHIPPED
+# regexes, over 3,941 persisted plan-versions tasks/*/*/plans/v*.md at
+# origin/main 5eba504a7d, 2026-08-11 — the c39/c33/c57 gate precedent:
+# any future c58-arm change re-runs the corpus scan and records the
+# realized numbers here; `scripts/issue2237_c58_corpus_sweep.py` is the
+# reproduction tool and measures BOTH postures every run). Measured:
+#   - explicit-only (T2 = `--backend runpod` pins only): 8 WARNs /
+#     2 distinct tasks. TRUE POSITIVES (7): #2054 v13-v16 via T1a (the
+#     founding unsatisfiable §9 — "8/10 shards on N parallel
+#     `cpu-bigmem` pods" + explicit runpod pins, no minting mechanism;
+#     v16 is the incident fixture) and #2054 v10-v12 via T1b (the
+#     parent R4/R5 rounds: 3-4 distinct runpod argvs whose "x4 each,
+#     parallel" / "6 parallel pod jobs" multiplicity lives in FENCED
+#     bash comments T1a's mask correctly skips — the same gap, caught
+#     by the argv arm). FALSE POSITIVE (1): #2203 v6 via T1b — 3
+#     distinct runpod argvs that are SEQUENTIAL phase provisions
+#     (1xH100 -> 4xH100 -> 1xH200), not a concurrent fan-out; the named
+#     T1b FP class (sequential multi-phase multi-launch plans),
+#     absorbed by WARN-only polarity.
+#   - explicit+auto (T2 also counts `--backend` absent/`auto`, the
+#     runpod-first order since #2054): 33 WARNs / 7 distinct tasks —
+#     the 8 above + 25 additions (#1417 v1-v7, #1774 v1-v4, #2163
+#     v1-v6, #810 v13-v18, #1336 v8-v9), EVERY addition adjudicated a
+#     false positive of the same sequential-phases T1b class (Phase
+#     A/C, GPU-phase + CPU-phase, E1 + conditional-E2 launch pairs).
+#     Over the >~20 corpus ceiling (#2237 §15.2) and FP-dominated.
+#   SHIPPED POSTURE: explicit-only (`_C58_T2_INCLUDE_AUTO = False`) —
+#   the auto arm's FP class proved large, so per the pre-registered
+#   #2237 §4 rule it is DISABLED behind the stated residual (i) rather
+#   than silently dropped; the lens clause stays lane-agnostic. n_skip
+#   (explicit-only) = 3,933: no-section-9 = 673, no-launch-argv =
+#   2,803, none-parses = 246, no-runpod-argv = 195, no-fanout(T1) = 16;
+#   pass (remedy named) = 0 on the corpus — the corrected #2054 v17
+#   amendment (which names `pod.py provision --name-suffix` per shard)
+#   is quiet via the no-launch-argv SKIP (it provisions directly, not
+#   through dispatch_issue.py), the intended silence.
+# #2145 remedy extension: `dispatch_issue.py launch --lane-suffix <slug>`
+# (alias `--name-suffix`) now mints `pod-<N>-<slug>` on the RunPod lane, so a
+# plan naming per-shard suffixed launch commands has named a T3 mechanism.
+# Gated per the plan's pre-registered condition: the extension ships only
+# with a re-run of scripts/issue2237_c58_corpus_sweep.py showing the #2054
+# plans/v16.md positive control still WARNs. Re-sweep 2026-08-15 (#2145,
+# shipped explicit-only posture, live corpus n=4214): warns=8 (#2054
+# v10-v16 + #2203 v6), pass (remedy named) = 0 — the extended alternate
+# flipped NOTHING to PASS on the corpus; positive control (#2054 v16
+# WARNs) = True; corpus ceiling (warns <= 20) = True; n_skip=4206
+# (no-fanout=38, no-launch-argv=2967, no-runpod-argv=199,
+# no-section-9=755, none-parses=247).
+_C58_REMEDY_RE = re.compile(
+    r"pod\.py\s+provision\b[^\n]*--name-suffix"
+    r"|dispatch_issue\.py\s+launch\b[^\n]*--(?:lane|name)-suffix"
+)
+_C58_T2_INCLUDE_AUTO = False  # shipped posture — see the calibration block
+
+
+def _c58_runpod_resolved(ns, include_auto: bool) -> bool:
+    """True when a dry-parsed launch Namespace resolves to the RunPod lane
+    under the given T2 posture: explicit ``--backend runpod``, plus (when
+    ``include_auto``) an absent/empty/``auto`` backend — the runpod-first
+    ``DEFAULT_AUTO_LANE_ORDER`` since #2054."""
+    backend = (getattr(ns, "backend", None) or "auto").strip().lower()
+    if backend == "runpod":
+        return True
+    return include_auto and backend == "auto"
+
+
+def _c58_check(plan: str, include_auto: bool) -> CheckResult:
+    """c58 core, posture-parameterized so the calibration sweep can measure
+    both T2 postures against the SHIPPED trigger code (the public
+    ``check_fanout_pod_name_collision`` pins ``_C58_T2_INCLUDE_AUTO``)."""
+    cid, name = "c58_fanout_pod_name_collision", "fan-out RunPod pod-name collision"
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)  # line-count-preserving: indexes map raw<->stripped
+    window = _c57_section9_window(lines, mask)
+    if window is None:
+        return _skip(
+            cid,
+            name,
+            "no parseable section-9 heading (`9.` / `§9` opener ... next numbered "
+            "heading) — a fan-out in a plan with no such heading is residual (iii), "
+            "not coverage",
+        )
+    argvs, notes = _c50_launch_argvs(plan)
+    tail = ("; " + "; ".join(notes)) if notes else ""
+    if not argvs:
+        return _skip(
+            cid,
+            name,
+            "no launch-shaped dispatch_issue.py command in the plan — a custom-driver "
+            "fan-out is structurally invisible here (residual (ii), the same channel "
+            "c52 discloses); this SKIP is not coverage" + tail,
+        )
+    parser, load_detail = _c46_argparser()
+    if parser is None:
+        return _skip(cid, name, f"dispatch_issue.build_argparser unavailable ({load_detail})")
+    runpod_argvs: list[list[str]] = []
+    argv_notes: list[str] = []
+    n_parsed = 0
+    for i, argv in enumerate(argvs):
+        ns, err = _c46_dry_parse(parser, argv)
+        if ns is None:  # per-argv note, never a WARN — c46 arm 1 owns parse drift
+            argv_notes.append(f"argv #{i + 1} does not dry-parse ({err})")
+            continue
+        n_parsed += 1
+        if _c58_runpod_resolved(ns, include_auto=include_auto):
+            runpod_argvs.append(argv)
+    note_tail = ("; " + "; ".join(argv_notes)) if argv_notes else ""
+    if n_parsed == 0:
+        return _skip(
+            cid,
+            name,
+            "launch argvs present but none dry-parses — c46 arm 1 owns parse "
+            "warnings" + note_tail + tail,
+        )
+    if not runpod_argvs:
+        posture = (
+            "explicit `--backend runpod` or absent/`auto` (runpod-first, #2054)"
+            if include_auto
+            else "explicit `--backend runpod` only"
+        )
+        return _skip(
+            cid,
+            name,
+            f"no RunPod-resolved launch argv under the shipped T2 posture ({posture}) "
+            "— residual (i): an off-posture launch landing on RunPod is invisible "
+            "here; the lens clause is lane-agnostic and binding" + note_tail,
+        )
+    lo, hi = window
+    trigger_idx = [
+        i
+        for i in range(lo, hi)
+        if not mask[i]
+        and _C57_FANOUT_RE.search(lines[i])
+        and _C57_CONCURRENT_RE.search(lines[i])
+        and not _C57_NEGATION_RE.search(lines[i])
+    ]
+    t1b = len(runpod_argvs) >= 2  # _c50_launch_argvs already dedupes on tuple(argv)
+    if not trigger_idx and not t1b:
+        return _skip(
+            cid,
+            name,
+            "no concurrent box-level fan-out declared in section 9 (T1a) and fewer "
+            "than 2 distinct RunPod-resolved launch argvs (T1b)",
+        )
+    remedy = _C58_REMEDY_RE.search(plan)
+    if remedy:
+        return _pass(
+            cid,
+            name,
+            f"RunPod fan-out with a per-pod provisioning construct named "
+            f"({remedy.group(0)[:70]!r})",
+        )
+    if trigger_idx:
+        shown = "; ".join(_c57_match_snippet(lines[i]) for i in trigger_idx[:3])
+        more = f" (+{len(trigger_idx) - 3} more)" if len(trigger_idx) > 3 else ""
+        evidence = f"{len(trigger_idx)} section-9 fan-out line(s) ({shown!r}{more})"
+    else:
+        evidence = (
+            f"{len(runpod_argvs)} distinct RunPod-resolved launch argvs (T1b — "
+            "multiplicity in argvs, no section-9 fan-out prose)"
+        )
+    return _warn(
+        cid,
+        name,
+        f"{evidence} while every SUFFIX-LESS RunPod-lane launch mints the SAME pod "
+        "name — `backends/runpod.py` `_runpod_pod_name(issue, name_suffix=None)` "
+        "defaults to the bare `pod-<N>`; since #2145 `dispatch_issue.py launch "
+        "--lane-suffix <slug>` (alias `--name-suffix`) IS honored on the RunPod "
+        "lane and mints `pod-<N>-<slug>` — so N concurrent same-issue launches "
+        "WITHOUT distinct suffixes collide; the dangerous branch is silent "
+        "co-location of all N shards on ONE pod, invalidating every per-shard "
+        "wall/RSS projection the plan booked (#2054 v16, caught only at dispatch). "
+        "Name ONE of: per-launch `dispatch_issue.py launch --lane-suffix <slug>` "
+        "(distinct slug per shard); per-pod `pod.py provision --issue <N> "
+        "--name-suffix <slug>` calls; one pod with N in-pod workers; a "
+        "name-isolating GCP/SLURM `--lane-suffix` lane; or mark the fan-out "
+        "explicitly serialized (the Methodology lens item 16 FAN-OUT POD-NAME "
+        "EXTENSION is the binding gate; c58's silence is not evidence of safety "
+        "— residual (i))",
+    )
+
+
+def check_fanout_pod_name_collision(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, all kinds: a section-9 fan-out of N > 1
+    CONCURRENT pods (T1a — c57's detector, reused verbatim) OR >= 2
+    DISTINCT RunPod-resolved launch argvs (T1b, the converse shape), in a
+    plan whose plan-embedded ``dispatch_issue.py`` launch commands resolve
+    to the RunPod lane (T2), must name a mechanism that mints N DISTINCT
+    pod names (T3 — the literal ``pod.py provision ... --name-suffix``
+    command construct, or — since #2145 — a
+    ``dispatch_issue.py launch ... --lane-suffix``/``--name-suffix``
+    command). A SUFFIX-LESS RunPod launch mints the SAME name for every
+    shard: ``backends/runpod.py`` ``_runpod_pod_name(issue,
+    name_suffix=None)`` defaults to the bare ``f"pod-{issue}"``; since
+    #2145 ``--lane-suffix`` (alias ``--name-suffix``) IS honored on the
+    RunPod lane (``dispatch_issue._lane_suffix_honored_kinds`` includes
+    ``runpod``) and mints ``pod-<N>-<slug>`` — so N concurrent same-issue
+    launches WITHOUT distinct suffixes collide — best case an error,
+    worst case silent co-location of all N shards on ONE pod,
+    invalidating every per-shard wall/RSS projection the plan booked
+    (#2054 plan v16: a 10-way ``cpu-bigmem`` RunPod fan-out whose own
+    pod-safety paragraph required ``pod-2054-rb789-<shard>`` names; it
+    PASSed verify_plan 0 FAIL / 0 WARN twice plus two critic-round
+    APPROVEs and was caught only at dispatch). NEVER FAILs (the
+    c39/c43/c46/c50/c52/c54/c57 fail-open posture); every ambiguity SKIPs
+    with a stated reason, and a SKIP is never coverage.
+
+    Named residuals, disclosed in the c52/c57 honesty convention — none
+    is ever to be read as coverage:
+    (i) AUTO-LANE residual (PRIMARY): the shipped T2 posture counts
+    explicit ``--backend runpod`` pins ONLY — the explicit+auto posture
+    measured 25 additional WARNs, every one an adjudicated false
+    positive (the calibration block above), so the auto arm is DISABLED
+    behind this residual per the pre-registered #2237 §4 rule. A
+    bare-``auto``/absent-backend fan-out that lands on RunPod (the
+    runpod-first ``DEFAULT_AUTO_LANE_ORDER``, #2054), a frontmatter-pin
+    route, or non-``dispatch_issue.py`` tooling is therefore INVISIBLE
+    to c58; the Methodology lens item 16 FAN-OUT POD-NAME EXTENSION is
+    lane-agnostic and is the binding gate.
+    (i-bis) WIDTH-ACHIEVABILITY: neither arm verifies a declared width is
+    ACHIEVABLE — T1a only reads prose, T1b only counts argvs; a plan
+    declaring 10 shards with 2 template argvs satisfies T1 but c58 cannot
+    tell 10 from 2 (v16's multiplicity lives in prose + a "repeat over
+    shards" loop instruction); the lens clause's mint-N-DISTINCT-names
+    requirement is what covers it. (ii) CUSTOM-DRIVER fan-out: a fan-out
+    driven by a bespoke script with no plan-embedded
+    ``dispatch_issue.py launch`` argv SKIPs at T2 — the same channel c52
+    discloses. (iii) SECTION-9 CONFINEMENT: a fan-out declared ONLY
+    outside section 9 is invisible to T1a — c57's disclosed
+    window-confinement cost, inherited with its detector (T1b partially
+    compensates, argv-count multiplicity only). (iv) IN-SAMPLE
+    CALIBRATION: the FP figures in the calibration block above are
+    measured on the same persisted-plan corpus the acceptance sweep
+    re-runs — they bound nuisance cost on yesterday's planner
+    distribution, not on future plans.
+
+    WARN-only, not FAIL, because whether N shard rows each provision
+    their own pod or share one is finally a property of the DISPATCHER,
+    not the plan text — and residual (i) means c58's silence is not
+    evidence of safety: the lens clause is the binding gate and c58 is
+    only the early-warning net (c57's stated polarity rationale)."""
+    del kind  # all kinds: colliding pod names bill/confound identically everywhere
+    return _c58_check(plan, include_auto=_C58_T2_INCLUDE_AUTO)
+
+
+# ─── Check 59 — GPU-hours token consumer/declaration conflict ──────────────
+# Declaration-shaped token (#2123 §3.3): the `Estimated GPU-hours (total):
+# <number>` token LINE-ANCHORED with nothing else on the line — optional
+# bullet / blockquote markers (stripped by the caller), optional bold
+# (`**`) / backtick wrap admitted by the character class — over
+# fence-stripped text. The value grammar is GPU_LINE_RE's (a single plain
+# number). Deliberately NARROW: a count-based predicate over ALL token
+# occurrences FAILs 62.2% of the plan corpus (2468/3971 — repeats are
+# overwhelmingly legitimate), and distinct-RAW-values flags 11 files that
+# are ALL false positives (prose quotes #2177 v1:56, meta-discussion
+# #625 v1-v3, revision-comparison tables #524 v6/v7:19).
+_C59_DECL_LINE_RE = re.compile(
+    r"(?i)^[`*\s]*estimated\s+gpu-?hours\s+\(total\):[`*\s]*([0-9]+(?:\.[0-9]+)?)[`*\s]*$"
+)
+
+
+def _c59_declared_values(plan: str) -> list[str]:
+    """Every DECLARATION-SHAPED ``Estimated GPU-hours (total): <n>`` value
+    (raw captured string), in document order, over FENCE-STRIPPED text —
+    the declaration side strips fences (a fenced example command is not a
+    declaration); the CONSUMER side deliberately does not (see
+    :func:`check_gpu_hours_token_conflict`)."""
+    values: list[str] = []
+    for line in strip_fences(plan).splitlines():
+        m = _C59_DECL_LINE_RE.match(line.lstrip(" \t>-"))
+        if m is not None:
+            values.append(m.group(1))
+    return values
+
+
+def check_gpu_hours_token_conflict(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, all kinds: when a plan carries at least one
+    DECLARATION-SHAPED ``Estimated GPU-hours (total):`` line (line-anchored,
+    optional bullet/bold/backtick wrap, nothing else on the line, fenced
+    blocks stripped — :data:`_C59_DECL_LINE_RE`), two arms compare (#2123):
+
+    * **Arm A** — more than one DISTINCT declaration-shaped value (corpus
+      2026-08-12: 2/3971 versioned plan files — #524 v2/v3, 590 vs 900).
+    * **Arm B** — the value a FIRST-MATCH consumer reads differs from the
+      first declaration-shaped value (corpus: 5/3971, zero false
+      positives — incl. the motivating #2061 v7/v8: first-match 70 vs
+      declared 80; #2177 v1: 65 vs 0). Consumer fidelity is load-bearing:
+      the real consumer is ``GPU_LINE_RE.search`` on the RAW plan (the
+      ``task.py`` Step 2c gate + every marker note that records the
+      estimate), so Arm B re-runs ``GPU_LINE_RE`` on RAW
+      (un-fence-stripped) text — deriving the consumer value from
+      fence-stripped text would validate a consumer that does not exist.
+
+    Hard constraint: 646 corpus files carry a matching token but NO
+    declaration-shaped token — the check NEVER requires declaration shape;
+    it compares only when at least one exists and SKIPs otherwise (c5's
+    presence contract is untouched).
+
+    WARN-only, never FAIL: ``_resolve_autonomous_plan_gate`` is
+    GPU-HOUR-BLIND as of #1771 (auto-approves any parseable estimate,
+    parks only on None), so a mis-read cannot flip the gate DECISION — the
+    harm is a corrupted RECORDED estimate (the value riding the status
+    marker note, the watcher's re-passed ``auto_approve_gpu_hours``, and
+    what a reviewer skims off the plan): a provenance defect, not a
+    spend-control defect, squarely under the
+    c39/c43/c46/c50/c52/c54/c57/c58 fail-open convention. Escalation to
+    FAIL is a later separately-justified step (the c26/c29/c33 precedent).
+
+    Named residual (the c52/c57 honesty convention): a conflicting value
+    appearing ONLY in non-declaration shapes on both sides is invisible to
+    c59 — its silence is not evidence of a single consistent estimate.
+
+    Escape: the standalone declaration line
+    ``N/A — GPU-hours token conflict reconciled``."""
+    del kind  # all kinds: the consumer parses every task's plan identically
+    cid, name = "c59_gpu_hours_token_conflict", "GPU-hours token consumer/declaration conflict"
+    if _standalone_na_declared(plan, r"GPU[- ]?hours token conflict reconciled"):
+        return _skip(cid, name, "escape declared: `N/A — GPU-hours token conflict reconciled`")
+    decls = _c59_declared_values(plan)
+    if not decls:
+        return _skip(
+            cid,
+            name,
+            "no declaration-shaped `Estimated GPU-hours (total):` line (646-file corpus "
+            "class) — c59 never requires declaration shape; presence stays c5's contract",
+        )
+    problems: list[str] = []
+    distinct = sorted({float(v) for v in decls})
+    if len(distinct) > 1:
+        shown = ", ".join(f"{v:g}" for v in distinct)
+        problems.append(
+            f"arm A: {len(distinct)} DISTINCT declaration-shaped values ({shown}) — a reader "
+            f"cannot tell which is the estimate of record"
+        )
+    consumer = GPU_LINE_RE.search(plan)  # RAW text — the real consumer's own read
+    if consumer is not None and float(consumer.group(1)) != float(decls[0]):
+        problems.append(
+            f"arm B: the first-match consumer (GPU_LINE_RE on the raw plan — the Step 2c "
+            f"gate's read) resolves {consumer.group(1)} while the first declaration-shaped "
+            f"value is {decls[0]} — the RECORDED estimate (status-marker note, watcher "
+            f"auto_approve_gpu_hours re-pass) is corrupted (#2061 v7/v8: 70-for-80; "
+            f"#2177 v1: 65-for-0)"
+        )
+    if not problems:
+        return _pass(
+            cid,
+            name,
+            f"{len(decls)} declaration-shaped value(s), consumer first-match agrees ({decls[0]})",
+        )
+    return _warn(
+        cid,
+        name,
+        "; ".join(problems)
+        + " — keep ONE declaration-shaped value and move every other mention mid-sentence / "
+        "into a wrapped or fenced form, or declare the standalone escape "
+        "`N/A — GPU-hours token conflict reconciled`",
+    )
+
+
+# ─── Check 61 — SLURM would-render --mem vs declared RSS peak (#2275) ──────
+
+# Within-job width tokens (the #2275 plan's registered conservative regexes —
+# a fleet-total "12 legs" with no in-parallel qualifier deliberately stays
+# out; only widths sharing ONE job cgroup should multiply the peak).
+_C61_WIDTH_RES = (
+    re.compile(r"(?i)\b(\d+)[- ]wide\b"),
+    re.compile(r"(?i)\bwidth[= ]?(\d+)\b"),
+    re.compile(r"(?i)\b(\d+)\s+(?:units|legs|fits|workers)\s+in\s+parallel\b"),
+)
+
+
+def _c61_ram_peak_lines(plan: str) -> list[tuple[int, float, str]]:
+    """``(line index, GiB value, line)`` triples for RAM-token peak lines —
+    the RAM arm of ``_c52_declared_peaks`` kept PER LINE, so the c61
+    aggregate arm can pair each peak with a within-job width token on the
+    SAME line/paragraph (the #1336 shape: N units share one job cgroup)."""
+    out: list[tuple[int, float, str]] = []
+    for i, line in enumerate(plan.splitlines()):
+        m = _C52_RAM_TOKEN_RE.search(line)
+        if m is None:
+            continue
+        val = _c52_nearest_gib(line, m.start())
+        if val is not None:
+            out.append((i, val, line))
+    return out
+
+
+def _c61_width_for(lines: list[str], idx: int) -> tuple[int, str] | None:
+    """Within-job width token on RSS line ``idx``, else in its paragraph
+    (the contiguous non-blank block around it). Returns
+    ``(width, matched token)`` or ``None``; same-line hits win, then the
+    LARGEST width in the paragraph (conservative aggregate); width 1 is
+    not a fan-out."""
+    lo = idx
+    while lo > 0 and lines[lo - 1].strip():
+        lo -= 1
+    hi = idx
+    while hi + 1 < len(lines) and lines[hi + 1].strip():
+        hi += 1
+    order = [idx] + [j for j in range(lo, hi + 1) if j != idx]
+    for j in order:
+        hits = [
+            (int(m.group(1)), m.group(0)) for rx in _C61_WIDTH_RES for m in rx.finditer(lines[j])
+        ]
+        hits = [(w, t) for w, t in hits if w > 1]
+        if hits:
+            return max(hits)
+    return None
+
+
+def _c61_would_render_mem(ns) -> tuple[int | None, str]:
+    """The ``--mem`` (G) the SLURM renderer WOULD emit for parsed launch
+    ``ns`` — computed through the renderer's OWN
+    ``slurm._resource_header_lines`` (the c50 exact-parity idiom), so the
+    read carries post-#2275 semantics for free: an argv ``--min-ram-gb``
+    raises the render via ``_apply_min_ram``, and a requirement above
+    ``mem_gb_cap`` raises (already fail-fast at dispatch — SKIP-class
+    here). Cluster = the argv's explicit SLURM ``--backend`` pin when it
+    names a known cluster, else fellows (the first SLURM lane in
+    ``DEFAULT_AUTO_LANE_ORDER``); GPU count = ``--gpus`` when declared,
+    else the intent's ``_DEFAULT_GPUS_FOR_INTENT`` row. Returns
+    ``(mem_gb | None, detail)`` — ``None`` means unresolvable, with the
+    stated reason."""
+    try:
+        from explore_persona_space.backends import RunSpec
+        from explore_persona_space.backends.slurm import (
+            _DEFAULT_GPUS_FOR_INTENT,
+            _resource_header_lines,
+            get_cluster_config,
+        )
+    except Exception as exc:  # off-repo --plan-file run -> loud SKIP-class note
+        return None, f"slurm renderer unavailable ({type(exc).__name__}: {exc})"
+    intent = str(getattr(ns, "intent", ""))
+    if intent not in _DEFAULT_GPUS_FOR_INTENT:
+        return None, (
+            f"intent {intent!r} has no _DEFAULT_GPUS_FOR_INTENT row — "
+            "slurm.default_gpus_for_intent() already fails fast at dispatch"
+        )
+    gpus = int(getattr(ns, "gpus", None) or _DEFAULT_GPUS_FOR_INTENT[intent])
+    backend = getattr(ns, "backend", None)
+    cluster_name = backend if backend in ("fellows", "nibi", "fir", "mila") else "fellows"
+    try:
+        cluster = get_cluster_config(cluster_name)
+        spec = RunSpec(
+            issue=0,
+            intent=intent,
+            backend="cluster",
+            cluster=cluster_name,
+            extra=({"min_ram_gb": int(ns.min_ram_gb)} if getattr(ns, "min_ram_gb", None) else {}),
+        )
+        header = "\n".join(_resource_header_lines(cluster, spec, gpus))
+    except Exception as exc:  # incl. the #2275 > mem_gb_cap pre-submit refusal
+        return None, f"renderer refuses ({type(exc).__name__}: {exc})"
+    m = re.search(r"--mem=(\d+)G", header)
+    if m is None:
+        return None, "renderer emitted no --mem line"
+    return int(m.group(1)), f"{cluster_name}/{intent} at {gpus} GPU(s)"
+
+
+def check_slurm_mem_coverage(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, all kinds: for EVERY plan-embedded
+    launch-shaped ``dispatch_issue.py`` argv that dry-parses and resolves a
+    SLURM-reachable route (``dispatch_issue._slurm_lane_reachable`` — the
+    c50 runtime-parity predicate), the plan's own declared per-leg RSS
+    peak (``_c52_declared_peaks``'s RAM arm, per line) must fit the
+    WOULD-RENDER ``#SBATCH --mem`` — the renderer's own
+    ``min(mem_gb_per_gpu x gpus, mem_gb_cap)`` / CPU-table formula PLUS
+    the argv's ``--min-ram-gb`` when present (post-#2275 semantics,
+    computed through ``slurm._resource_header_lines`` itself). Two WARN
+    arms: (a) PER-LEG — the declared peak strictly exceeds the
+    would-render ``--mem`` with no covering ``--min-ram-gb``; (b)
+    AGGREGATE (the #1336 shape) — a within-job width token
+    (``N-wide`` / ``width=N`` / ``N units|legs|fits|workers in
+    parallel``, ``_C61_WIDTH_RES``) on the SAME line/paragraph as the RSS
+    token multiplies the peak (N units share ONE job cgroup), and
+    ``peak x width`` exceeds the would-render ``--mem`` — WARN naming the
+    arithmetic. Remedy named either way: ``--min-ram-gb <requirement>``
+    (the #2275 renderer raises ``--mem`` to it, refusing pre-submit above
+    ``mem_gb_cap``). Every ambiguity SKIPs with a stated reason; the
+    check NEVER FAILs (the c46/c50/c52 posture).
+
+    Scope split vs c52: c52 compares declared peaks against the GCP
+    LADDER-RUNG constants (85 GiB host-RAM / 38 GiB VRAM) — #1336's
+    65-70 GiB per-unit RSS sits BELOW that rung while 8 units share one
+    SLURM job cgroup, so c52 structurally cannot catch the
+    aggregate-on-one-node case; c61 compares against the SLURM lane's
+    OWN rendered ``--mem``. Named residual (the c52 residual (ii)
+    posture): a fan-out driven by a CUSTOM DRIVER with no plan-embedded
+    ``dispatch_issue.py launch`` argv is structurally invisible — the
+    binding surface is `.claude/rules/plan-compute-sizing.md`
+    § Ladder-rung RAM floor, and a c61 SKIP is never read as coverage.
+    Second named residual: the fleet-total-vs-per-leg token ambiguity
+    inherited from the c52 extractor (WARN-only polarity absorbs it; the
+    message names the extracted line).
+    """
+    del kind  # all kinds: a SLURM cgroup OOM kills identically everywhere
+    cid, name = "c61_slurm_mem_coverage", "SLURM would-render --mem vs declared RSS peak"
+    peak_lines = _c61_ram_peak_lines(plan)
+    if not peak_lines:
+        return _skip(cid, name, "no per-leg RSS / host-RAM peak-estimate token in the plan")
+    argvs, notes = _c50_launch_argvs(plan)
+    tail = ("; " + "; ".join(notes)) if notes else ""
+    if not argvs:
+        return _skip(
+            cid,
+            name,
+            "no launch-shaped dispatch_issue.py command in the plan — a custom-driver "
+            "fan-out is structurally invisible here (docstring residual): the binding "
+            "surface is plan-compute-sizing.md § Ladder-rung RAM floor, and this SKIP is "
+            "not coverage" + tail,
+        )
+    parser, load_detail = _c46_argparser()
+    if parser is None:
+        return _skip(cid, name, f"dispatch_issue.build_argparser unavailable ({load_detail})")
+    reachable_fn, reach_detail = _c50_slurm_lane_reachable_fn()
+    if reachable_fn is None:
+        return _skip(
+            cid, name, f"dispatch_issue._slurm_lane_reachable unavailable ({reach_detail})"
+        )
+    max_peak = max(v for _, v, _ in peak_lines)
+    agg = _c61_max_aggregate(plan.splitlines(), peak_lines)
+    return _c61_verdict(cid, name, argvs, parser, reachable_fn, max_peak, agg, tail)
+
+
+def _c61_max_aggregate(
+    lines: list[str], peak_lines: list[tuple[int, float, str]]
+) -> tuple[float, int, float, str] | None:
+    """Largest (aggregate GiB, width, per-leg peak, width token) over peak lines
+    carrying a same-line/paragraph width token; None when no width token pairs."""
+    agg: tuple[float, int, float, str] | None = None
+    for idx, val, _line in peak_lines:
+        w = _c61_width_for(lines, idx)
+        if w is not None:
+            cand = (val * w[0], w[0], val, w[1])
+            if agg is None or cand[0] > agg[0]:
+                agg = cand
+    return agg
+
+
+def _c61_eval_argv(
+    parser,
+    reachable_fn,
+    i: int,
+    argv: list[str],
+    max_peak: float,
+    agg: tuple[float, int, float, str] | None,
+) -> tuple[str, str, str | None]:
+    """Evaluate ONE launch argv for c61. Returns (kind, text, warn) where kind is
+    'skip' (loud SKIP the whole check: text = reason), 'note' (per-argv note),
+    or 'ok' (text = the rendered --mem line; warn = the WARN text or None)."""
+    ns, err = _c46_dry_parse(parser, argv)
+    if ns is None:  # per-argv note, never a WARN — c46 arm 1 owns parse drift
+        return ("note", f"argv #{i + 1} does not dry-parse ({err}) — c46 arm 1 owns that", None)
+    try:
+        reachable = reachable_fn(ns)
+    except Exception as exc:  # router import failure on off-repo runs -> loud SKIP
+        return ("skip", f"SLURM reachability unresolvable ({type(exc).__name__}: {exc})", None)
+    if not reachable:
+        return (
+            "note",
+            f"argv #{i + 1}: no SLURM lane reachable for backend "
+            f"{(getattr(ns, 'backend', None) or 'auto')!r}",
+            None,
+        )
+    mem_gb, detail = _c61_would_render_mem(ns)
+    if mem_gb is None:
+        return ("note", f"argv #{i + 1}: would-render --mem unresolvable ({detail})", None)
+    label = _c52_argv_label(i, argv)
+    warn: str | None = None
+    if max_peak > mem_gb:
+        warn = (
+            f"plan declares per-leg peak RSS ~{max_peak:g} GiB but {label} would render "
+            f"#SBATCH --mem={mem_gb}G ({detail}) — the SLURM job cgroup OOM-kills at "
+            f"that cap (the #1336 shape): add --min-ram-gb {math.ceil(max_peak)} to the "
+            f"launch command (#2275 raises the rendered --mem to it)"
+        )
+    elif agg is not None and agg[0] > mem_gb:
+        warn = (
+            f"plan declares a within-job aggregate of {agg[2]:g} GiB x width {agg[1]} "
+            f"({agg[3]!r}) = {agg[0]:g} GiB but {label} would render #SBATCH "
+            f"--mem={mem_gb}G ({detail}) — N units share ONE SLURM job cgroup, so the "
+            f"AGGREGATE binds (the #1336 shape: 8 pooled fit units OOM-killed at the "
+            f"GPU-count-derived cap): add --min-ram-gb {math.ceil(agg[0])} to the launch "
+            f"command (#2275 raises the rendered --mem to it)"
+        )
+    return ("ok", f"{label}: --mem={mem_gb}G ({detail})", warn)
+
+
+def _c61_verdict(
+    cid: str,
+    name: str,
+    argvs: list[list[str]],
+    parser,
+    reachable_fn,
+    max_peak: float,
+    agg: tuple[float, int, float, str] | None,
+    tail: str,
+) -> CheckResult:
+    """Fold per-argv c61 evaluations into the check verdict (SKIP/WARN/PASS)."""
+    warns: list[str] = []
+    argv_notes: list[str] = []
+    mems: list[str] = []
+    for i, argv in enumerate(argvs):
+        outcome, text, warn = _c61_eval_argv(parser, reachable_fn, i, argv, max_peak, agg)
+        if outcome == "skip":
+            return _skip(cid, name, text)
+        if outcome == "note":
+            argv_notes.append(text)
+            continue
+        mems.append(text)
+        if warn is not None:
+            warns.append(warn)
+    if not mems:
+        joined = "; ".join(argv_notes) + tail
+        if argv_notes and all("no SLURM lane reachable" in n for n in argv_notes):
+            return _skip(
+                cid,
+                name,
+                "no SLURM lane reachable for any launch argv — the rendered --mem never "
+                "binds; " + joined,
+            )
+        return _skip(cid, name, joined or "no launch argv evaluated")
+    if warns:
+        extra = "; ".join(argv_notes)
+        return _warn(cid, name, "; ".join(warns) + (f" [{extra}]" if extra else ""))
+    return _pass(
+        cid,
+        name,
+        f"declared peak RSS {max_peak:g} GiB"
+        + (f" (within-job aggregate {agg[0]:g} GiB)" if agg is not None else "")
+        + f" fits the would-render --mem across {len(mems)} launch argv(s): "
+        + "; ".join(mems),
+    )
+
+
+# ─── Check 62 — §9 backend pin-claim vs body.md frontmatter (#2276) ─────────
+
+# Incident #2225 (fu1 lineage): plan v5:274 claimed an "explicit frontmatter
+# pin" (`backend: runpod`) and v9:236 claimed to inherit it ("parent pin
+# inherited") while the task's body.md frontmatter carried NO `backend:`
+# key. dispatch_issue.py reads the FRONTMATTER, so the plan's own dispatch
+# command routes `auto`, and the free-SLURM fall-through rungs (no
+# `/workspace`, #608) become reachable for exactly the sentinel-signaling
+# workload whose §9 prose declared them unsafe. c43 (check_sentinel_lane)
+# is text-hermetic — the prose CLAIM of a pin quiets its WARN — so the
+# claim-vs-frontmatter reconciliation needs task context and runs OUTSIDE
+# verify_plan_text() (the c23 pattern: kwargs signature, appended by
+# main() in --issue mode, explicit SKIP row in --plan-file mode).
+#
+# Trigger grammar (deliberately tight — designed at FAIL polarity; shipped
+# WARN-only per the calibration block below): non-fenced lines
+# INSIDE the §9 window (_c57_section9_window) carrying BOTH a known-lane
+# `backend: <lane>` token AND a same-line claim token
+# (pin/pinned/inherit*/frontmatter). Window scoping is the FP guard —
+# narrative mentions of ANOTHER task's pin ("#2225's `backend: runpod`
+# pin") live outside §9. Residuals (disclosed, not covered): a pin claim
+# OUTSIDE the §9 window escapes; a claim phrased without any claim token
+# escapes; on amendment-COMPOSED text (_compose_amendment_text) the window
+# resolves the FIRST §9 heading — the amendment's when both amendment and
+# base carry one — so a base-version §9 pin claim can escape. Miss
+# direction is SKIP (fail-safe).
+#
+# Calibration (#2276 §4 step 6, over 4,089 persisted plan versions
+# tasks/*/*/plans/v*.md at origin/main 5d9eeb30ee, 2026-08-13; sweep tool:
+# scripts/issue2276_c62c63_corpus_sweep.py — the c58 precedent: any future
+# c62-grammar change re-runs the sweep and records the realized numbers
+# here). Measured at the PLANNED FAIL polarity: 107 FAILs / 33 distinct
+# tasks, 26 PASSes (tasks whose frontmatter pin is genuinely set — #1335
+# fm=gcp, #1586 fm=runpod, ...), n_skip = 3,956 (all `no-claim`).
+# Adjudicated FALSE-POSITIVE classes among the 107:
+#   (a) `backend: auto` claims with the key absent (10 rows) — absent/
+#       empty frontmatter IS the auto route (CLAUDE.md § Compute
+#       backends), so the flagged state is the CORRECT configuration;
+#       fixed in the verdict logic (an all-`auto` claim set with the key
+#       absent now PASSes — a routing-semantics equivalence, not a
+#       grammar widening);
+#   (b) prospective / dispatch-flag pins — the DOMINANT class (~55
+#       gcp-era rows + most runpod/fellows rows): §9 says "pinned
+#       `backend: gcp`" while the pin traveled via the dispatch command's
+#       `--backend` flag, or the key was set-then-removed after the task
+#       completed; the frontmatter read at sweep time cannot distinguish
+#       never-set from since-removed, and the flagged tasks launched
+#       correctly — false ALARMS as FAIL evidence;
+#   (c) compute-table lane mentions with an incidental same-row claim
+#       token (#1689 v11 `backend: fellows` table cells).
+# TRUE POSITIVES: #2225 v2-v9 (8 rows — the founding incident; the named
+# expected-TPs v5-v9 recovered, sweep-validity criterion satisfied) plus
+# the #2203 v11-v13 "runpod (pinned — /workspace sentinels" shape.
+# PRE-REGISTERED POSTURE RULE FIRED: >2 adjudicated false-positive FAILs
+# on the corpus ⇒ c62 SHIPS WARN-ONLY (the #2276 plan §4 step 6 downgrade
+# rule; recorded here + in the #2276 round marker). The trigger grammar is
+# NOT widened or narrowed. Post-downgrade re-sweep: 97 WARNs / 36 PASSes
+# (the 26 matching pins + 10 auto-equivalence passes), n_skip unchanged.
+
+#: Known dispatch lanes (compute-backends.md); an unknown token after
+#: `backend:` (e.g. "backend: the same as the parent") is ignored — FP
+#: guard for the deliberately tight trigger grammar.
+_C62_KNOWN_LANES = frozenset({"runpod", "gcp", "fellows", "nibi", "fir", "mila", "auto"})
+
+#: `backend: <lane>` capture (inline-code or bare; optional opening
+#: backtick tolerated between the colon and the lane value).
+_C62_LANE_RE = re.compile(r"backend:\s*`?([a-z][a-z0-9_-]*)")
+
+#: Same-line claim vocabulary: the line must CLAIM a pin, not merely
+#: mention a lane ("pin"/"pinned", "inherit"/"inherited"/"inherits",
+#: "frontmatter").
+_C62_CLAIM_TOKEN_RE = re.compile(r"(?i)\b(?:pin(?:ned)?|inherit(?:ed|s)?|frontmatter)\b")
+
+
+def _c62_pin_claims(plan: str) -> list[tuple[str, str]]:
+    """(claim-line, lane) pairs for §9 backend pin-claims.
+
+    A hit is a non-fenced line inside the §9 window carrying BOTH a
+    known-lane ``backend: <lane>`` token and a same-line claim token; one
+    line can contribute several pairs (the pin+fallback-lane shape).
+    Returns ``[]`` when no §9 window parses (miss direction: SKIP).
+    """
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    window = _c57_section9_window(lines, mask)
+    if window is None:
+        return []
+    lo, hi = window
+    hits: list[tuple[str, str]] = []
+    for i in range(lo, hi):
+        if mask[i]:
+            continue
+        line = lines[i]
+        if not _C62_CLAIM_TOKEN_RE.search(line):
+            continue
+        for m in _C62_LANE_RE.finditer(line):
+            lane = m.group(1).lower()
+            if lane in _C62_KNOWN_LANES:
+                hits.append((line.strip(), lane))
+    return hits
+
+
+def check_backend_pin_claim(plan: str, *, frontmatter_backend: str | None) -> CheckResult:
+    """WARN-only, conditional, all kinds, ``--issue`` mode only: a §9 line
+    that CLAIMS a frontmatter backend pin (``backend: <lane>`` + a
+    same-line pin/inherited/frontmatter claim token) must match the task's
+    actual ``body.md`` frontmatter ``backend:`` key — a pin-claim with no
+    frontmatter key routes ``auto`` at dispatch (#2225 v5/v9), and a
+    mismatched lane routes the WRONG pin. WARN-only: the planned FAIL
+    polarity was DOWNGRADED by the pre-registered #2276 §4 step 6
+    calibration rule (>2 adjudicated false-positive FAILs on the corpus —
+    see the calibration block above). An all-``auto`` claim set with the
+    key absent PASSes (absent/empty frontmatter IS the auto route).
+    ``frontmatter_backend`` is the str-coerced, stripped frontmatter value
+    (``None`` when absent/empty); main() passes it in ``--issue`` mode and
+    appends an explicit SKIP row in ``--plan-file`` mode (the c23 pattern
+    — no task context there). No §9 window / no claim lines → SKIP
+    (trigger-conditional). NEVER FAILs."""
+    cid, name = "c62_backend_pin_claim", "§9 backend pin-claim matches body.md frontmatter"
+    claims = _c62_pin_claims(plan)
+    if not claims:
+        return _skip(cid, name, "no §9 backend pin-claim in plan prose")
+    if _standalone_na_declared(plan, r"backend pin-claim reconciled"):
+        return _pass(cid, name, "explicit N/A declared (backend pin-claim reconciled)")
+    fm_lane = frontmatter_backend.strip().lower() if frontmatter_backend else None
+    if fm_lane is None:
+        non_auto = [(line, lane) for line, lane in claims if lane != "auto"]
+        if not non_auto:
+            return _pass(
+                cid,
+                name,
+                "claims `backend: auto` and the frontmatter key is absent — absent/empty "
+                "routes `auto` (the documented default); no drift",
+            )
+        line, lane = non_auto[0]
+        return _warn(
+            cid,
+            name,
+            f"§9 claims a frontmatter backend pin (`backend: {lane}`: {line[:90]!r}) but the "
+            "task's body.md frontmatter carries NO `backend:` key — the claim is phantom: "
+            "dispatch_issue.py reads the frontmatter and routes `auto` at dispatch "
+            f"(#2225 v5/v9). Add `backend: {lane}` to the task's body.md frontmatter BEFORE "
+            "dispatch, or reword the §9 claim, or declare "
+            "'N/A — backend pin-claim reconciled' on its own line, unwrapped "
+            "(no backticks/quotes)",
+        )
+    mismatched = [(line, lane) for line, lane in claims if lane != fm_lane]
+    if mismatched:
+        line, lane = mismatched[0]
+        return _warn(
+            cid,
+            name,
+            f"§9 pin-claim names lane `{lane}` ({line[:90]!r}) but the body.md frontmatter "
+            f"carries `backend: {fm_lane}` — reconcile the claim with the frontmatter "
+            "(dispatch follows the frontmatter, not the prose), or declare "
+            "'N/A — backend pin-claim reconciled' on its own line, unwrapped "
+            "(no backticks/quotes)",
+        )
+    return _pass(
+        cid, name, f"{len(claims)} §9 pin-claim(s) match the frontmatter `backend: {fm_lane}`"
+    )
+
+
+# ─── Check 63 — §9 declared GPU width vs launch-fence width (#2276) ─────────
+
+# Incident #2225 v9: §9 declared "one 8xH100 pod" with every wall row
+# costed 8-wide, while the adjacent dispatch fence
+# (`dispatch_issue.py launch --intent lora-7b ... --time-budget-hours 12`)
+# carried no width flag — the `lora-7b` intent default is 1xH100
+# (scripts/gpu_heuristics.py::INTENTS), so a verbatim copy delivers 1/8
+# the costed width and the 12 h fence (sized to the 8-wide ~5.4 h wall)
+# TIMEOUTs the ~40 h narrow run. Not covered elsewhere: c46 dry-parses
+# the fence (it PARSES fine), c50 compares walls to SLURM time bins, c26
+# compares GPU FAMILY only (H100 == H100). WARN-only (the
+# c46/c50/c52/c61 posture — a heuristic width join must not become the
+# #1388 fleet-wedge shape); a deliberate narrow launch beside a wide
+# provision is absorbed by the polarity + the escape literal. A sibling
+# `pod.py provision --gpu-count N` fence does NOT suppress the WARN —
+# the v9 incident text carried exactly that parenthetical and the copied
+# artifact was still the narrow dispatch fence.
+#
+# Calibration (#2276 §4 step 6, AS-SHIPPED regexes, same 4,089-version
+# corpus + sweep tool as the c62 block above). Measured: 27 WARNs /
+# 6 distinct tasks, 53 PASSes; skips: no-multi-gpu-width 2,914,
+# no-section-9 724, no-launch-argv 308, no-width-contribution 63.
+# TRUE POSITIVES: #2225 v1-v9 (9 rows — the founding incident; the named
+# expected-TP v9 recovered, sweep-validity criterion satisfied: 8xH100
+# declared + costed 8-wide beside a width-less `--intent lora-7b` fence)
+# and #2203 v1-v5 (the same drift shape: a 4xH100 arms-sharded phase
+# table beside a width-less `--intent eval` fence). FALSE-POSITIVE
+# classes adjudicated (absorbed by the WARN-only polarity, the
+# c46/c50/c58 posture): (a) width delivered via a DIFFERENT channel than
+# the flagged fence — `pod.py provision --gpu-count N` / a resumed
+# suffixed pod is the real width-bearing launch and the dispatch fence
+# is narrow by design (#2254 v1-v5: `--gpu-count 4` per pod with an
+# optional "8xH100 halves pod-A wall" upgrade mention; #813 v1-v2:
+# "ONE 8x H100 pod (resume pod-667, else fresh ... --gpu-count 8)");
+# (b) ratio/multiplier prose false-parsed as a width token — "6x
+# A100-vs-H100 per-step bound" (#610 v1; a disclosed grammar residual —
+# the digitxFAMILY form is inherently ambiguous there); (c) parent-
+# recipe width cited beside a DELIBERATELY narrow rerun — "downsized to
+# 1xH100 vs the parent's 4xH100" (#2203 v7-v9, whose fences carry an
+# explicit `--gpus 1`), "parent: ... on 4x A100" as a per-cell cost
+# basis for a 1x A100 plan (#614 v1-v2). WARN polarity is the
+# pre-registered posture; no downgrade rule applies to c63.
+
+# STATIC MIRROR of scripts/gpu_heuristics.py::INTENTS[*].gpu_count,
+# drift-guarded by tests/test_verify_plan.py::
+# test_c63_intent_width_mirror_matches_gpu_heuristics — verify_plan_text()
+# stays hermetic (the c26 convention: no project imports at module level).
+_C63_INTENT_GPU_COUNT: dict[str, int] = {
+    "eval": 1,
+    "lora-7b": 1,
+    "ft-7b": 4,
+    "inf-70b": 8,
+    "ft-70b": 8,
+    "sweep-8g-a100": 8,
+    "sweep-8g-h100": 8,
+    "debug": 1,
+}
+
+#: `<N>x<GPU family>` width tokens on §9 prose lines (`8xH100`,
+#: `4 x A100-80`, `2*L4`). Digit prefix + GPU-family suffix disambiguate
+#: the bare-`x` form; families uppercase per corpus convention.
+_C63_WIDTH_RE = re.compile(r"(\d+)\s*[×x*]\s*(?:H100|H200|A100(?:-\d+)?|B200|L4)\b")  # noqa: RUF001
+
+#: `--gpu-count N` on §9 prose lines (the `pod.py provision` width flag).
+_C63_GPU_COUNT_RE = re.compile(r"--gpu-count\s+(\d+)")
+
+
+def _c63_declared_width(lines: list[str], mask: list[bool], window: tuple[int, int]) -> int | None:
+    """Max GPU width declared on non-fenced §9-window lines, or ``None``
+    when no width token appears in the window."""
+    lo, hi = window
+    widths: list[int] = []
+    for i in range(lo, hi):
+        if mask[i]:
+            continue
+        widths += [int(m.group(1)) for m in _C63_WIDTH_RE.finditer(lines[i])]
+        widths += [int(m.group(1)) for m in _C63_GPU_COUNT_RE.finditer(lines[i])]
+    return max(widths) if widths else None
+
+
+def check_declared_width_vs_launch(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, all kinds, both modes: when the §9 window
+    declares an N-GPU spec (``8xH100`` / ``--gpu-count 8`` tokens, N_decl =
+    max, trigger N_decl >= 2), at least one plan-embedded launch-shaped
+    ``dispatch_issue.py`` argv (the c46/c50 chain) must REALIZE a width
+    >= N_decl — ``--gpus`` when set, else the intent's default width from
+    the ``_C63_INTENT_GPU_COUNT`` static mirror of
+    ``scripts/gpu_heuristics.py::INTENTS``. A narrower realized width
+    WARNs: §9 walls are costed N_decl-wide, so a ``--time-budget-hours``
+    fence sized to the wide wall TIMEOUTs the narrow run (#2225 v9).
+    Every ambiguity SKIPs with a stated reason (no §9 window; N_decl < 2;
+    no launch argv; CLI unavailable; every parsed argv contributes no
+    width). NEVER FAILs (the c46/c50/c61 posture)."""
+    del kind  # all kinds: a width-starved launch fence drifts identically everywhere
+    cid, name = "c63_declared_width_vs_launch", "§9 declared GPU width vs launch-fence width"
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    window = _c57_section9_window(lines, mask)
+    if window is None:
+        return _skip(cid, name, "no parseable §9 heading — no declared-width window")
+    n_decl = _c63_declared_width(lines, mask, window)
+    if n_decl is None or n_decl < 2:
+        return _skip(cid, name, "no multi-GPU width (N >= 2) declared on §9 prose lines")
+    if _standalone_na_declared(plan, r"declared width vs launch width reconciled"):
+        return _pass(cid, name, "explicit N/A declared (declared width vs launch width)")
+    argvs, notes = _c50_launch_argvs(plan)
+    if not argvs:
+        return _skip(
+            cid,
+            name,
+            f"§9 declares {n_decl}-wide but the plan embeds no launch-shaped "
+            "dispatch_issue.py argv — width flows through a different channel "
+            "(pod.py provision / SSH-MCP), which this check does not read"
+            + (f" [{'; '.join(notes)}]" if notes else ""),
+        )
+    parser, load_detail = _c46_argparser()
+    if parser is None:
+        return _skip(
+            cid,
+            name,
+            f"dispatch_issue.build_argparser unavailable ({load_detail}) — "
+            "launch-fence width not evaluated",
+        )
+    realized: list[tuple[str, int, str]] = []  # (fence-snippet, width, source)
+    contributes_nothing: list[str] = []
+    for argv in argvs:
+        fence = " ".join(argv)[:70]
+        ns, err = _c46_dry_parse(parser, argv)
+        if ns is None:
+            contributes_nothing.append(f"{fence!r} does not parse ({err}) — c46 arm 1 owns it")
+            continue
+        gpus = getattr(ns, "gpus", None)
+        intent = getattr(ns, "intent", None)
+        if gpus is not None:
+            realized.append((fence, int(gpus), f"explicit `--gpus {gpus}`"))
+        elif intent in _C63_INTENT_GPU_COUNT:
+            realized.append(
+                (
+                    fence,
+                    _C63_INTENT_GPU_COUNT[intent],
+                    f"`--gpus` absent, so the intent default binds: `{intent}` -> "
+                    f"{_C63_INTENT_GPU_COUNT[intent]} GPU(s)",
+                )
+            )
+        else:
+            contributes_nothing.append(
+                f"{fence!r} carries no `--gpus` and intent {intent!r} is not in the "
+                "width mirror — contributes no width"
+            )
+    if not realized:
+        return _skip(
+            cid,
+            name,
+            f"§9 declares {n_decl}-wide but no parsed launch argv contributes a width: "
+            + "; ".join(contributes_nothing),
+        )
+    covering = [t for t in realized if t[1] >= n_decl]
+    if covering:
+        fence, width, source = covering[0]
+        return _pass(
+            cid,
+            name,
+            f"§9 declares {n_decl}-wide and a launch argv realizes {width} ({source}): {fence!r}",
+        )
+    fence, width, source = min(realized, key=lambda t: t[1])
+    extra = f" [{'; '.join(contributes_nothing)}]" if contributes_nothing else ""
+    return _warn(
+        cid,
+        name,
+        f"§9 declares a {n_decl}-GPU spec but the launch fence {fence!r} realizes only "
+        f"{width} ({source}) — §9 walls are costed {n_decl}-wide, so a "
+        "`--time-budget-hours` fence sized to the wide wall TIMEOUTs the narrow run "
+        f"(#2225 v9). Add `--gpus {n_decl}` to the fence, or re-cost the walls at the "
+        "realized width, or declare 'N/A — declared width vs launch width reconciled' "
+        "on its own line, unwrapped (no backticks/quotes)" + extra,
+    )
+
+
+# ─── Checks 65/66 — smoke-fixture size claim vs realized fixtures (#2178) ─
+
+_C65_REPO_ROOT = Path(__file__).resolve().parent.parent  # tests monkeypatch (c34/c41/c42 pattern)
+
+# Row-count read cap (bytes). A file larger than this yields a LOWER BOUND:
+# a truncated count can SATISFY a floor (bound >= F) but never FAIL one.
+_C65_READ_CAP = 8 * 1024 * 1024
+
+# Countable (line-oriented) extensions: newline counting is a valid row
+# count ONLY for line-per-row formats. A resolved ``.json`` / ``.parquet``
+# file is NON-COUNTABLE — a minified 40-object JSON array reads as 1 "row",
+# a FALSE FAIL, the one direction this check must never err — so it
+# contributes no count (neither satisfies nor contradicts a floor); when
+# ALL resolved files are non-countable the rung stays unresolved (the
+# ladder continues / the check SKIPs). ``.json``/``.parquet`` stay in the
+# ``_C65_GLOB_RE`` grammar BY CHOICE: the path token still resolves (check
+# 66's distinctive-component producer scan keeps its literal token) — only
+# COUNTING is restricted (#2178 round 2, concern `non-row-format-counting`).
+_C65_COUNTABLE_EXTS = (".jsonl", ".csv", ".tsv", ".txt")
+
+# Hard bound on counted fixture files per resolution rung (cost + detail size).
+_C65_MAX_FILES = 32
+
+# Bounded scripts/*.py scan (constant lookup + producer-candidate scan):
+# non-recursive, at most this many files, at most this many bytes per file.
+_C65_MAX_SCRIPTS = 2500
+_C65_SCRIPT_READ_CAP = 1024 * 1024
+
+# Claim grammar — three conjuncts on ONE fence-masked line (conjunct 3
+# captures the claimed floor F, capped at 6 digits).
+_C65_SMOKE_RE = re.compile(r"(?i)\bsmoke\b")
+_C65_FIXTURE_NOUN_RE = re.compile(r"(?i)\b(?:fixture|slice|corpus|corpora|sample)s?\b")
+_C65_FLOOR_RE = re.compile(
+    r"(?:≥|>=|\bat least\b)\s*(\d{1,6})\s+rows?\b"  # the unicode >= sign is real plan text
+    r"|\b(?:fixture|slice|sample)s?\s+of\s+(\d{1,6})\s+rows?\b"
+)
+
+# Constant-form claim (RAW scan, fences included — constants are usually
+# quoted in fenced code): a SMOKE_SAMPLE_N-shaped ``<NAME> = <int>`` paste.
+_C65_CONST_RE = re.compile(r"\b(SMOKE_[A-Z0-9_]*(?:_N|_ROWS|_SIZE))\s*=\s*(\d{1,6})\b")
+
+# Smoke-fixture path token: a repo-relative path with a data extension whose
+# dir or file component contains "smoke". The leading LOOKBEHIND (not \b)
+# keeps a dotted repo-relative token (".claude/worktrees/...") matching
+# WHOLE or not at all — a \b would silently truncate it to "claude/..."
+# (round-1 Methodology concern 2: never a silently-truncated token).
+# ``.json``/``.parquet`` are grammar-resolvable but NON-COUNTABLE — see
+# ``_C65_COUNTABLE_EXTS``.
+_C65_GLOB_RE = re.compile(
+    r"(?<![\w./*-])"
+    r"((?:[\w.*-]+/)*[\w.*-]*smoke[\w.*-]*/[\w./*-]+\.(?:jsonl|json|csv|tsv|txt|parquet)"
+    r"|(?:[\w.*-]+/)+[\w.*-]*smoke[\w.*-]*\.(?:jsonl|json|csv|tsv|txt|parquet))\b"
+)
+
+# Pinned-tip citation: "pinned tip `8c7b7b2406`" / "tip 8c7b7b2406...".
+_C65_TIP_RE = re.compile(r"(?i)\btip\s+`?([0-9a-f]{8,40})\b")
+
+
+def _c65_git(cmd: list[str]) -> bytes | None:
+    """Run a read-only git command under the check-42 subprocess contract:
+    ``timeout=10``, ``check=False``, ``cwd=_C65_REPO_ROOT``, retry ONCE on a
+    transient ``OSError`` after 0.1 s. Returns stdout bytes on rc == 0, else
+    ``None`` — any git unavailability (or a non-resolving sha/prefix) leaves
+    THIS RUNG unresolved (the ladder continues / the check SKIPs; never a
+    FAIL)."""
+    for attempt in (1, 2):
+        try:
+            r = subprocess.run(
+                cmd,
+                capture_output=True,
+                timeout=10,
+                cwd=str(_C65_REPO_ROOT),
+                check=False,
+            )
+        except subprocess.TimeoutExpired:
+            return None  # a hung git command is not retriable
+        except OSError:
+            if attempt == 1:
+                time.sleep(0.1)
+                continue
+            return None
+        return r.stdout if r.returncode == 0 else None
+    return None  # unreachable (defensive; the loop always returns)
+
+
+def _c65_tip_sha(plan: str) -> str | None:
+    """First pinned-tip SHA the plan cites (RAW scan), or None."""
+    m = _C65_TIP_RE.search(plan)
+    return m.group(1).lower() if m else None
+
+
+def _c65_count_bytes(blob: bytes, truncated: bool) -> tuple[int, bool]:
+    """(rows, exact): newline count over ``blob`` with ``wc -l`` parity plus
+    a final unterminated line counted; ``truncated`` blobs are LOWER BOUNDS
+    (exact=False)."""
+    n = blob.count(b"\n")
+    if truncated:
+        return n, False
+    if blob and not blob.endswith(b"\n"):
+        n += 1
+    return n, True
+
+
+def _c65_count_rows(path: Path) -> tuple[int, bool] | None:
+    """(rows, exact) for a working-tree file, reading at most
+    ``_C65_READ_CAP`` bytes; None when unreadable (fail-open)."""
+    try:
+        with path.open("rb") as fh:
+            head = fh.read(_C65_READ_CAP)
+            truncated = bool(fh.read(1))
+    except OSError:
+        return None
+    return _c65_count_bytes(head, truncated)
+
+
+def _c65_glob_counts(base: Path, glob_tokens: list[str]) -> list[tuple[str, int, bool]]:
+    """Row counts for ``glob_tokens`` globbed under ``base`` (files only,
+    LINE-ORIENTED extensions only — see ``_C65_COUNTABLE_EXTS``; at most
+    ``_C65_MAX_FILES``; unreadable files and malformed globs are skipped —
+    fail-open, the rung just resolves less)."""
+    counts: list[tuple[str, int, bool]] = []
+    for tok in glob_tokens:
+        try:
+            hits = sorted(base.glob(tok))
+        except (OSError, ValueError):
+            continue
+        for p in hits:
+            if len(counts) >= _C65_MAX_FILES:
+                return counts
+            if not p.is_file():
+                continue
+            if p.suffix not in _C65_COUNTABLE_EXTS:
+                continue  # non-line-oriented — non-countable (_C65_COUNTABLE_EXTS)
+            counted = _c65_count_rows(p)
+            if counted is None:
+                continue
+            try:
+                rel = str(p.relative_to(_C65_REPO_ROOT))
+            except ValueError:
+                rel = str(p)
+            counts.append((rel, *counted))
+    return counts
+
+
+def _c65_git_tree_counts(sha: str, glob_token: str) -> list[tuple[str, int, bool]] | None:
+    """Row counts for ``glob_token`` inside the COMMITTED tree at ``sha``
+    (resolution rung 2). Cost: ONE ``git ls-tree -r --name-only`` scoped to
+    the token's literal dir prefix PLUS up to ``_C65_MAX_FILES`` (32)
+    ``git cat-file blob`` reads — 1 + N subprocess calls per glob token,
+    NOT a flat 2 (round-1 Methodology concern 4). Returns None when git is
+    unavailable / the sha does not resolve (rung unresolved, fail-open via
+    ``_c65_git``). Tests monkeypatch this helper to exercise the rung
+    without a git repo; the real subprocess path is pinned by the
+    throwaway-git-repo test."""
+    parts = glob_token.split("/")
+    prefix_parts: list[str] = []
+    for part in parts[:-1]:
+        if any(ch in part for ch in "*?["):
+            break
+        prefix_parts.append(part)
+    prefix = "/".join(prefix_parts)
+    out = _c65_git(["git", "ls-tree", "-r", "--name-only", sha, "--", prefix or "."])
+    if out is None:
+        return None
+    names = [ln for ln in out.decode("utf-8", errors="replace").splitlines() if ln.strip()]
+    matches = sorted(
+        n
+        for n in names
+        # Line-oriented only — a committed .json/.parquet blob is just as
+        # non-countable as a working-tree one (_C65_COUNTABLE_EXTS).
+        if PurePosixPath(n).match(glob_token) and n.endswith(_C65_COUNTABLE_EXTS)
+    )[:_C65_MAX_FILES]
+    counts: list[tuple[str, int, bool]] = []
+    for fname in matches:
+        blob = _c65_git(["git", "cat-file", "blob", f"{sha}:{fname}"])
+        if blob is None:
+            return None
+        counts.append((fname, *_c65_count_bytes(blob[:_C65_READ_CAP], len(blob) > _C65_READ_CAP)))
+    return counts
+
+
+def _c65_worktree_counts(
+    plan: str, glob_tokens: list[str]
+) -> tuple[str | None, list[tuple[str, int, bool]]]:
+    """Resolution rung 3: join each ``.claude/worktrees/issue-<N>*`` dir
+    (N = the plan's own H1 task number; at most 8 dirs) with the glob
+    tokens — the rung that reaches gitignored worktree-local fixtures (the
+    #1336 v16 class). Plan-text-derived, so it works identically in
+    ``--plan-file`` mode."""
+    m = re.search(r"(?im)^#.*?task\s+#(\d+)", plan)
+    if not m:
+        return None, []
+    try:
+        wt_dirs = sorted(_C65_REPO_ROOT.glob(f".claude/worktrees/issue-{m.group(1)}*"))[:8]
+    except OSError:
+        return None, []
+    for wt in wt_dirs:
+        if not wt.is_dir():
+            continue
+        counts = _c65_glob_counts(wt, glob_tokens)
+        if counts:
+            return f"issue worktree {wt.name}", counts
+    return None, []
+
+
+def _c65_distinctive_token(glob_token: str) -> str | None:
+    """The glob's most distinctive literal component containing "smoke":
+    the last such directory component, else the filename stem; None when
+    the component is glob-bearing or shorter than 6 chars (too generic for
+    a literal-substring producer scan)."""
+    parts = glob_token.split("/")
+    for part in reversed(parts[:-1]):
+        if "smoke" in part:
+            usable = len(part) >= 6 and not any(ch in part for ch in "*?[")
+            return part if usable else None
+    stem = parts[-1].rsplit(".", 1)[0]
+    if "smoke" in stem:
+        usable = len(stem) >= 6 and not any(ch in stem for ch in "*?[")
+        return stem if usable else None
+    return None
+
+
+def _c65_scripts_scan(
+    const_names: list[str], literal_tokens: list[str]
+) -> tuple[list[tuple[str, str, int]], list[str]]:
+    """ONE bounded pass over ``_C65_REPO_ROOT/scripts/*.py`` (non-recursive,
+    <= ``_C65_MAX_SCRIPTS`` files, <= ``_C65_SCRIPT_READ_CAP`` bytes each;
+    read-only, no import): line-anchored ``<NAME> = <int>`` definitions for
+    ``const_names``, plus files carrying any ``literal_tokens`` substring
+    (producer candidates). Runs only when a claim armed the checks."""
+    consts: list[tuple[str, str, int]] = []
+    candidates: list[str] = []
+    if not const_names and not literal_tokens:
+        return consts, candidates
+    const_res = {
+        cname: re.compile(rf"(?m)^\s*{re.escape(cname)}\s*=\s*(\d{{1,6}})\b")
+        for cname in const_names
+    }
+    try:
+        files = sorted((_C65_REPO_ROOT / "scripts").glob("*.py"))[:_C65_MAX_SCRIPTS]
+    except OSError:
+        return consts, candidates
+    for f in files:
+        try:
+            with f.open("r", errors="replace") as fh:
+                text = fh.read(_C65_SCRIPT_READ_CAP)
+        except OSError:
+            continue
+        rel = f"scripts/{f.name}"
+        for cname, pat in const_res.items():
+            m = pat.search(text)
+            if m:
+                consts.append((cname, rel, int(m.group(1))))
+        if any(tok in text for tok in literal_tokens):
+            candidates.append(rel)
+    return consts, candidates
+
+
+class _C65Eval(NamedTuple):
+    """Shared evaluation for checks 65/66. No cross-call memoization BY
+    DESIGN: the ladder only runs when a claim fired, the cost is bounded
+    (~ms non-firing), and a memo keyed on plan text would poison across
+    tests that monkeypatch ``_C65_REPO_ROOT`` between calls with identical
+    plan strings."""
+
+    prose_claims: list[tuple[str, int]]  # (claim-line excerpt, claimed floor F)
+    const_claims: list[tuple[str, int]]  # (constant name, claimed value)
+    glob_tokens: list[str]
+    winning_rung: str | None  # first-resolve-wins: working tree > pinned tip > worktrees
+    file_counts: list[tuple[str, int, bool]]  # (path, rows, exact)
+    const_evidence: list[tuple[str, str, int]]  # (name, scripts/ relpath, actual value)
+    producer_candidates: list[str]  # scripts/ relpaths that plausibly produce the fixtures
+
+
+def _c65_glob_tokens(plan: str) -> list[str]:
+    """Deduplicated smoke-fixture glob tokens (RAW scan, fences included —
+    the c41/c11 raw-scan doctrine); repo-relative, side-effect-free tokens
+    only (absolute paths and ``..`` components refused)."""
+    glob_tokens: list[str] = []
+    for m in _C65_GLOB_RE.finditer(plan):
+        tok = m.group(1)
+        if tok.startswith("/") or ".." in tok.split("/") or tok in glob_tokens:
+            continue
+        glob_tokens.append(tok)
+    return glob_tokens
+
+
+def _c65_resolve_files(
+    plan: str, glob_tokens: list[str]
+) -> tuple[str | None, list[tuple[str, int, bool]]]:
+    """Resolve the fixture evidence through the three-rung ladder,
+    FIRST-RESOLVE-WINS: (1) repo-root working tree — it deliberately
+    SHADOWS — (2) the plan's cited pinned tip, then (3) the issue
+    worktrees."""
+    if not glob_tokens:
+        return None, []
+    file_counts = _c65_glob_counts(_C65_REPO_ROOT, glob_tokens)
+    if file_counts:
+        return "working tree", file_counts
+    sha = _c65_tip_sha(plan)
+    if sha:
+        for tok in glob_tokens:
+            counts = _c65_git_tree_counts(sha, tok)
+            if counts:
+                file_counts.extend(counts[: _C65_MAX_FILES - len(file_counts)])
+        if file_counts:
+            return f"pinned tip {sha[:12]}", file_counts
+    return _c65_worktree_counts(plan, glob_tokens)
+
+
+def _c65_evaluate(plan: str) -> _C65Eval:
+    """Extract the smoke-fixture size claims, resolve the fixture evidence
+    through the three-rung ladder (``_c65_resolve_files``), and run the
+    bounded ``scripts/*.py`` scan for constant evidence + producer
+    candidates."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    prose_claims: list[tuple[str, int]] = []
+    for line, fenced in zip(lines, mask, strict=True):
+        if fenced or not _C65_SMOKE_RE.search(line) or not _C65_FIXTURE_NOUN_RE.search(line):
+            continue
+        for m in _C65_FLOOR_RE.finditer(line):
+            prose_claims.append((line.strip()[:160], int(m.group(1) or m.group(2))))
+    const_claims = [(m.group(1), int(m.group(2))) for m in _C65_CONST_RE.finditer(plan)]
+    if not prose_claims and not const_claims:
+        return _C65Eval([], [], [], None, [], [], [])
+    glob_tokens = _c65_glob_tokens(plan)
+    winning_rung, file_counts = _c65_resolve_files(plan, glob_tokens)
+    const_names = sorted({cname for cname, _v in const_claims})
+    tokens = sorted({t for t in (_c65_distinctive_token(g) for g in glob_tokens) if t})
+    const_evidence, producer_candidates = _c65_scripts_scan(const_names, tokens)
+    for _cname, rel, _v in const_evidence:
+        if rel not in producer_candidates:
+            producer_candidates.append(rel)
+    producer_candidates.sort()
+    return _C65Eval(
+        prose_claims,
+        const_claims,
+        glob_tokens,
+        winning_rung,
+        file_counts,
+        const_evidence,
+        producer_candidates,
+    )
+
+
+class _C65Cmp(NamedTuple):
+    fails: list[str]
+    warns: list[str]
+    passes: list[str]
+    unresolved: list[str]
+
+
+def _c65_file_counts_str(ev: _C65Eval) -> str:
+    counts_str = ", ".join(
+        f"{p}={n}" + ("" if exact else " (lower bound)") for p, n, exact in ev.file_counts[:8]
+    )
+    if len(ev.file_counts) > 8:
+        counts_str += f", … ({len(ev.file_counts)} files total)"
+    return counts_str
+
+
+def _c65_compare_prose(ev: _C65Eval, cmp_: _C65Cmp) -> None:
+    """Prose floors vs realized evidence. FAIL-grade only on a
+    FILE-CONFIRMED contradiction from EXACT counts (a capped lower-bound
+    count can satisfy a floor but never fail one); with no files resolved,
+    a repo constant is best-effort WARN-grade evidence."""
+    exact_counts = [(p, n) for p, n, exact in ev.file_counts if exact]
+    const_max = max((v for _n, _r, v in ev.const_evidence), default=None)
+    counts_str = _c65_file_counts_str(ev)
+    for excerpt, floor in ev.prose_claims:
+        usable = bool(exact_counts) or any(
+            n >= floor for _p, n, exact in ev.file_counts if not exact
+        )
+        if usable:
+            exact_min = min((n for _p, n in exact_counts), default=None)
+            if exact_min is not None and floor > exact_min:
+                cmp_.fails.append(
+                    f"claimed floor {floor} rows > realized min {exact_min} "
+                    f"(rung: {ev.winning_rung}; files: {counts_str}) — claim line: {excerpt!r}"
+                )
+            else:
+                cmp_.passes.append(
+                    f"claimed floor {floor} rows satisfied at rung {ev.winning_rung!r} "
+                    f"({len(ev.file_counts)} file(s): {counts_str})"
+                )
+        elif const_max is not None:
+            src = ", ".join(f"{n2} = {v} ({r})" for n2, r, v in ev.const_evidence[:4])
+            if floor > const_max:
+                cmp_.warns.append(
+                    f"claimed floor {floor} rows > repo constant {src} — constant-only "
+                    "evidence (no fixture files resolved); WARN-grade by design"
+                )
+            else:
+                cmp_.passes.append(
+                    f"claimed floor {floor} rows consistent with repo constant {src} "
+                    "(constant-only evidence — no fixture files resolved)"
+                )
+        else:
+            cmp_.unresolved.append(f"prose floor {floor} rows ({excerpt!r})")
+
+
+def _c65_compare_consts(ev: _C65Eval, cmp_: _C65Cmp) -> None:
+    """Constant-form claims vs the repo definition of the SAME constant.
+    WARN-grade BY DESIGN, never FAIL, and never compared against fixture
+    files: a constant is one indirection removed from the fixtures (the
+    producing script may clamp / branch on it) — deliberate, not drift
+    (round-1 Methodology concern 6)."""
+    by_name: dict[str, int] = {}
+    where_by_name: dict[str, str] = {}
+    for n2, rel, v in ev.const_evidence:
+        if n2 not in by_name or v > by_name[n2]:
+            by_name[n2] = v
+            where_by_name[n2] = rel
+    for cname, claimed in ev.const_claims:
+        if cname in by_name:
+            actual, where = by_name[cname], where_by_name[cname]
+            if claimed > actual:
+                cmp_.warns.append(
+                    f"constant-form claim {cname} = {claimed} > repo definition "
+                    f"{cname} = {actual} ({where}) — constant-route contradiction, "
+                    "WARN-grade by design (never compared against fixture files)"
+                )
+            else:
+                cmp_.passes.append(
+                    f"constant-form claim {cname} = {claimed} consistent with the repo "
+                    f"definition {cname} = {actual} ({where}) — constant-only evidence"
+                )
+        else:
+            cmp_.unresolved.append(
+                f"constant-form claim {cname} = {claimed} (constant not defined in scripts/*.py)"
+            )
+
+
+def _c65_compare(ev: _C65Eval) -> _C65Cmp:
+    """Compare every claimed floor against the realized evidence; multiple
+    claims are each evaluated and the caller takes the worst grade."""
+    cmp_ = _C65Cmp([], [], [], [])
+    _c65_compare_prose(ev, cmp_)
+    _c65_compare_consts(ev, cmp_)
+    return cmp_
+
+
+def _c65_no_smoke_declared(plan: str) -> str | None:
+    """The plan's standalone no-smoke-run declaration, if any — the
+    criterion-5 clause-3 route (task #2178 round 2): check 11's canonical
+    ``N/A — no dry-run smoke`` form (same tail regex as check 11) or the
+    plain ``N/A — no smoke run`` variant. Returns the matched phrase (for
+    the SKIP detail) or None. Checks 65/66 consult this BEFORE the claim
+    grammar: a plan carrying BOTH a declaration and a claim-shaped line
+    still SKIPs — the declaration wins, because a plan that declares it
+    runs no smoke has no smoke fixtures in scope for a size claim to gate
+    (the stray sentence is the critics' to adjudicate, not this check's).
+    Wrapped pastes are rejected by ``_standalone_na_declared`` as usual."""
+    if _standalone_na_declared(plan, r"no dry-?run smoke"):
+        return "N/A — no dry-run smoke"
+    if _standalone_na_declared(plan, r"no smoke run\b"):
+        return "N/A — no smoke run"
+    return None
+
+
+def check_smoke_fixture_size(plan: str, kind: str) -> CheckResult:
+    """A plan-claimed SMOKE-FIXTURE ROW FLOOR must not overstate the
+    realized fixtures (task #2178; incident #1336 v16: the plan claimed a
+    40-row-per-corpus smoke floor while the realized fixtures held 8 rows
+    in six of seven files — the newly binding smoke gate was unsatisfiable
+    at the realized size and no gate could tell).
+
+    No-smoke-run declaration route (criterion 5 clause 3, round 2): a
+    standalone ``N/A — no dry-run smoke`` (check 11's canonical form) or
+    ``N/A — no smoke run`` declaration SKIPs this check BEFORE the claim
+    grammar is consulted — a plan carrying BOTH a declaration and a
+    claim-shaped line still SKIPs (the declaration wins: a declared
+    no-smoke plan has no smoke fixtures in scope; see
+    ``_c65_no_smoke_declared``).
+
+    Trigger (conservative): a fence-masked line carrying all THREE
+    conjuncts — "smoke", a fixture noun (fixture/slice/corpus/corpora/
+    sample), and a floor-shaped row count ("sized >= 40 rows", "at least
+    40 rows", "slice of 40 rows") — OR a RAW-scanned constant-form claim
+    (a ``SMOKE_SAMPLE_N``-shaped assignment paste, fences included).
+    Multiple claim lines are each evaluated; the worst grade wins.
+
+    Row counting is LINE-ORIENTED-ONLY (``_C65_COUNTABLE_EXTS``: .jsonl /
+    .csv / .tsv / .txt): a resolved ``.json`` / ``.parquet`` file is
+    NON-COUNTABLE — its newline count under-reads (a minified 40-object
+    array is one physical line), which would FAIL a satisfied floor, the
+    one direction this check must never err — so it neither satisfies nor
+    contradicts. The token stays in the glob grammar BY CHOICE (check 66's
+    producer scan keeps its literal component); an all-non-countable
+    resolution leaves the rung unresolved (ladder continues / SKIP).
+
+    Resolution ladder, FIRST-RESOLVE-WINS (the working tree deliberately
+    SHADOWS the pinned tip — a stale working tree is diagnosable from the
+    FAIL detail, which names the winning rung + per-file counts): (1)
+    repo-root working-tree glob; (2) the committed tree at the plan's
+    cited pinned tip — ONE ``git ls-tree`` plus up to 32 ``git cat-file``
+    reads per glob token (1 + N subprocess calls, not a flat 2), only when
+    a tip is cited and rung 1 resolved nothing; (3)
+    ``.claude/worktrees/issue-<N>*`` joined with the glob (N = the plan's
+    own H1 task number) for gitignored worktree-local fixtures. Glob
+    tokens are repo-relative only (absolute / ``..`` tokens refused);
+    every rung is read-only and fail-open (git unavailability leaves a
+    rung unresolved, never a FAIL).
+
+    Verdicts: FAIL only on a FILE-CONFIRMED contradiction (a prose floor
+    above the realized exact minimum); constant-route contradictions — a
+    prose floor vs a repo constant, or a constant-form claim vs the repo
+    definition of the same constant — are WARN-grade BY DESIGN (a constant
+    is one indirection removed from the fixtures; deliberate, not drift);
+    SKIP everywhere unresolvable (no claim, no path token, nothing
+    resolves at any rung — the fail-safe). Escape:
+    ``N/A — no smoke fixture size claim`` standalone, unwrapped."""
+    cid, name = "c65_smoke_fixture_size", "smoke-fixture size claim vs realized fixtures"
+    del kind  # all kinds — smoke fixtures appear in experiment and infra plans alike
+    declared = _c65_no_smoke_declared(plan)
+    if declared:
+        return _skip(
+            cid,
+            name,
+            f"plan declares no smoke run (standalone '{declared}') — smoke-fixture "
+            "size claims not in scope; the declaration wins over any claim-shaped line",
+        )
+    ev = _c65_evaluate(plan)
+    if not ev.prose_claims and not ev.const_claims:
+        return _skip(cid, name, "no smoke fixture size claim detected")
+    if _standalone_na_declared(plan, r"no smoke fixture size claim\b"):
+        return _pass(cid, name, "explicit N/A declared (no smoke fixture size claim)")
+    cmp_ = _c65_compare(ev)
+    tail = f" [unresolved: {'; '.join(cmp_.unresolved)}]" if cmp_.unresolved else ""
+    if cmp_.fails:
+        return _fail(
+            cid,
+            name,
+            "; ".join(cmp_.fails)
+            + " — remedies: fix the claim to the realized fixture size, budget the "
+            "fixture-producing script change (and regenerate the fixtures), or declare "
+            "'N/A — no smoke fixture size claim' on its own line, unwrapped (no "
+            "backticks/quotes)" + tail,
+        )
+    if cmp_.warns:
+        return _warn(cid, name, "; ".join(cmp_.warns) + tail)
+    if cmp_.passes:
+        return _pass(cid, name, "; ".join(cmp_.passes) + tail)
+    # Nothing comparable resolved anywhere — the criterion-5 fail-safe.
+    bits: list[str] = []
+    countable_tokens = [t for t in ev.glob_tokens if t.endswith(_C65_COUNTABLE_EXTS)]
+    if ev.prose_claims and not ev.glob_tokens:
+        bits.append("fixture path not named — claim not mechanically checkable")
+    elif ev.glob_tokens and not countable_tokens:
+        bits.append(
+            "fixture path token(s) name only non-line-oriented formats (.json/.parquet) — "
+            "newline row-counting is invalid there, so the evidence is non-countable "
+            "(neither satisfies nor contradicts a floor)"
+        )
+    elif ev.glob_tokens and not ev.file_counts:
+        msg = "fixture path unresolvable from working tree / pinned tip / issue worktrees"
+        if len(countable_tokens) < len(ev.glob_tokens):
+            msg += " (non-line-oriented .json/.parquet tokens are non-countable by design)"
+        bits.append(msg)
+    elif ev.file_counts and not ev.prose_claims:
+        bits.append(
+            f"fixture files resolve (rung: {ev.winning_rung}) but every claim is "
+            "constant-form — the constant route reads the repo constant, never the "
+            "files (WARN-grade-by-design route)"
+        )
+    if cmp_.unresolved:
+        bits.append("; ".join(cmp_.unresolved))
+    return _skip(cid, name, "; ".join(bits) or "claim detected but no realized evidence resolves")
+
+
+def check_smoke_producer_coverage(plan: str, kind: str) -> CheckResult:
+    """When a smoke-fixture size claim is CONTRADICTED by the realized
+    evidence (check 65's comparison), the plan must NAME the fixture-
+    producing script somewhere in its text — otherwise it asserts a state
+    it has not budgeted to create (task #2178 Arm B; #1336 v16 named
+    ``issue1336_stage_corpora`` zero times while its §4 said "Nothing else
+    changes"). WARN-only: modified-file lists are prose and producer
+    identification is heuristic.
+
+    Producer candidates (both routes bounded to ``scripts/*.py``,
+    read-only): (1) files defining a constant that a constant-form claim
+    names; (2) files carrying the glob's most distinctive smoke component
+    (last dir component, else filename stem; >= 6 chars) as a literal
+    substring. Coverage predicate: the candidate's basename or
+    repo-relative path appears ANYWHERE in the plan text (RAW scan) — the
+    maximally conservative WARN-minimizing reading; a candidate in the
+    plan's modified-file list is a strict subset. Shares check 65's
+    no-smoke-run declaration route (``_c65_no_smoke_declared``), consulted
+    BEFORE the claim grammar — a declaration beside a claim-shaped line
+    still SKIPs (the declaration wins). SKIPs also when check 65's
+    claim trigger is absent, when the realized evidence is unresolved,
+    when the claim is satisfied, or when no candidate is identifiable.
+    Escape: ``N/A — no fixture-producing script change needed``
+    standalone, unwrapped."""
+    cid, name = "c66_smoke_producer_coverage", "smoke-fixture producing script named in plan"
+    del kind  # all kinds (same scope as check 65)
+    declared = _c65_no_smoke_declared(plan)
+    if declared:
+        return _skip(
+            cid,
+            name,
+            f"plan declares no smoke run (standalone '{declared}') — producer coverage "
+            "not in scope; the declaration wins over any claim-shaped line",
+        )
+    ev = _c65_evaluate(plan)
+    if not ev.prose_claims and not ev.const_claims:
+        return _skip(cid, name, "no smoke fixture size claim detected (check-65 trigger absent)")
+    if _standalone_na_declared(plan, r"no fixture-producing script change needed\b"):
+        return _pass(cid, name, "explicit N/A declared (no fixture-producing script change needed)")
+    cmp_ = _c65_compare(ev)
+    if not (cmp_.fails or cmp_.warns or cmp_.passes):
+        return _skip(
+            cid,
+            name,
+            "realized evidence unresolved — cannot adjudicate whether a "
+            "producing-script change is needed",
+        )
+    if not (cmp_.fails or cmp_.warns):
+        return _skip(
+            cid, name, "claim satisfied by realized fixtures — no producing-script change required"
+        )
+    if not ev.producer_candidates:
+        return _skip(cid, name, "producing script not identifiable in scripts/")
+    named = [c for c in ev.producer_candidates if c in plan or c.rsplit("/", 1)[-1] in plan]
+    if named:
+        return _pass(
+            cid,
+            name,
+            "claim contradicted by the realized evidence but the producing script is "
+            f"named in the plan: {', '.join(named[:4])}",
+        )
+    return _warn(
+        cid,
+        name,
+        "the claimed floor exceeds the realized fixtures and the script(s) that "
+        f"produce them — {', '.join(ev.producer_candidates[:4])} — appear nowhere in "
+        "the plan; add the change to the plan's modified-file list, or declare "
+        "'N/A — no fixture-producing script change needed' on its own line, unwrapped "
+        "(no backticks/quotes)",
+    )
+
+
+# ─── Check 67 — test-retest κ gate vs temperature-0 judge pin (#2204) ──────
+# Origin: #2202 plan v1 — a Sonnet label wave pinned at temperature 0 while
+# registering "test-retest → κ per mode; κ<0.6 demoted to report-only". At
+# temperature 0 a byte-identical retest returns near-identical output: κ≈1
+# for every mode, the demotion gate is unfireable by construction, and the
+# gate is a false instrument-validity screen. The parent instrument (#1738,
+# scripts/issue1738_characterize.py:326) ran at API-default temperature;
+# its κ range 0.786-0.982 is meaningful only under sampling. WARN-ONLY:
+# regex/section heuristics over prose, false-positive tolerant by design.
+# CORPUS CALIBRATION (measured at critic round 1, 2026-08-19, over every
+# persisted plan version under tasks/*/*/plans/v*.md — the c50 house pattern
+# of recording realized numbers in the check's own comment). Retest-bearing
+# plan versions: 90 (63 under kind: experiment, 12 under kind: infra).
+# Armed-kind WARNs: 10 — the founding incident (#2202 v1) plus 9 lineage true
+# positives (#1482 v13-v17, #1738 v1-v4; e.g. #1738 v4:305, #1482 v14:137),
+# each a REAL same-line "1 draw temp 0 + retest κ ... demotes" pin. The
+# #1482 -> #1738 -> #2202 lineage carried the unfireable-gate shape in plan
+# text for THREE generations (#1738's implementation silently deviated to API
+# default, issue1738_characterize.py:326), so c67 would have fired usefully on
+# all of them. Zero infra-kind true positives — which is why the kind gate
+# below costs no measured coverage.
+#
+# OUT OF SCOPE — same failure family (a variance-dependent gate read over a
+# deterministic surface), deliberately NOT detected. Route the next instance
+# to a widening decision rather than "why didn't c67 fire":
+# self-consistency / majority-vote gates at temperature 0; draw-variance (SD)
+# or bootstrap-CI-width gates over a deterministic estimator;
+# split-half-over-draws; and the cache-served κ≡1 case, which is invisible to
+# ANY temperature predicate and is carried only in the WARN detail's
+# companion-trap sentence.
+
+#: A line registering the retest gate: retest + κ/kappa on ONE line.
+_C67_RETEST_RE = re.compile(r"(?i)\btest[-\s]?retest\b|\bretest\b")
+_C67_KAPPA_RE = re.compile(r"(?i)κ|\bkappa\b")
+#: Demotion/threshold clause (searched over the gate line's section).
+_C67_DEMOTE_RE = re.compile(r"(?i)\bdemot\w*|report[-\s]only|(?:κ|kappa)\s*[<≤]")
+#: A temperature-0 pin: `temperature 0` / `temperature=0` / `temp: 0` /
+#: `temperature 0.0`; the lookahead rejects `0.5`/`0.7` (nonzero decimals).
+_C67_TEMP0_RE = re.compile(r"(?i)\btemp(?:erature)?\b\s*[=:]?\s*[`*]{0,2}\s*0(?:\.0+)?(?![.\d])")
+#: Same-line negation: an explicit API-default / nonzero pin dominates —
+#: corrected plans QUOTE the trap ("at temperature 0 ... κ≈1") beside their
+#: real pin (`temperature = API default (1.0)`), the #2202 v2 shape.
+_C67_TEMP_NONZERO_RE = re.compile(
+    r"(?i)\btemp(?:erature)?\b\s*[=:]?\s*[`*]{0,2}\s*(?:API[-\s]default|1(?:\.0+)?\b|0?\.[0-9]*[1-9])"
+)
+
+
+def check_retest_kappa_temp0(plan: str, kind: str) -> CheckResult:
+    """WARN when a registered test-retest κ demotion gate and a judge
+    temperature-0 pin share the same innermost section (#2202 v1 shape):
+    a deterministic judge always agrees with itself, so the κ<0.6 gate can
+    only pass — a false instrument-validity screen. Same-line API-default/
+    nonzero pins negate a temp-0 mention (corrected plans explain the trap
+    in prose beside their real pin — the #2202 v2 shape, kept silent).
+    Best-effort scoping: gate and pin in different innermost sections stay
+    silent. Armed for ``kind`` in {experiment, analysis} only — infra
+    workflow-fix plans discussing this check legitimately quote the trigger
+    vocabulary (the c53 kind-exempt precedent). Escape:
+    ``N/A — no test-retest gate`` standalone, unwrapped."""
+    cid, name = "c67_retest_kappa_temp0", "test-retest κ gate vs temperature-0 judge pin"
+    if kind not in ("experiment", "analysis"):
+        return _skip(
+            cid,
+            name,
+            f"kind={kind} — armed for experiment/analysis only (the c53 kind-exempt "
+            "precedent): infra workflow-fix plans (THIS check's own plan included) "
+            "legitimately QUOTE the trigger vocabulary without dispatching a judged "
+            "retest wave. All three real incidents (#2202 v1, #1738 v1-v4, #1482 "
+            "v13-v17) are kind: experiment",
+        )
+
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    headings = _headings(plan)
+    gate_idx: list[int] = []
+    temp0_idx: list[int] = []
+    for i, (line, fenced) in enumerate(zip(lines, mask, strict=True)):
+        if fenced:
+            continue
+        if _C67_RETEST_RE.search(line) and _C67_KAPPA_RE.search(line):
+            gate_idx.append(i)
+        if _C67_TEMP0_RE.search(line) and not _C67_TEMP_NONZERO_RE.search(line):
+            temp0_idx.append(i)
+
+    def _sec(i: int) -> Heading | None:
+        return _innermost_section(headings, i)
+
+    def _sec_text(h: Heading | None) -> str:
+        return "\n".join(lines[h.line : h.end]) if h else "\n".join(lines)
+
+    registered = [i for i in gate_idx if _C67_DEMOTE_RE.search(_sec_text(_sec(i)))]
+    if not registered:
+        return _skip(cid, name, "no test-retest κ demotion gate detected")
+    if _standalone_na_declared(plan, r"no test[-\s]?retest gate\b"):
+        return _pass(cid, name, "explicit N/A declared (no test-retest gate)")
+    # Same innermost Heading (or both pre-heading None) ⇒ co-located.
+    hits = [(g, t) for g in registered for t in temp0_idx if _sec(g) is _sec(t)]
+    if not hits:
+        return _pass(
+            cid,
+            name,
+            "test-retest κ demotion gate registered; no temperature-0 judge pin "
+            "co-located in the same section (unpinned / API-default / unrelated-section "
+            "temperatures are all fine — κ has variance only under sampling)",
+        )
+    g, t = hits[0]
+    return _warn(
+        cid,
+        name,
+        f"a temperature-0 judge pin (line {t + 1}) and a test-retest κ demotion gate "
+        f"(line {g + 1}) share the same section — at temperature-0 a byte-identical "
+        "retest returns near-identical output, κ≈1 for every mode, and the demotion "
+        "gate can only pass: a false instrument-validity screen (#2202 v1; the #1738 "
+        "parent ran at API-default temperature, issue1738_characterize.py:326, which is "
+        "why its κ 0.786-0.982 range is meaningful). Companion trap: a rubric-keyed "
+        "judge CACHE serving the first-pass verdict back to the retest row makes κ≡1 "
+        "at ANY temperature — retest rows need a distinct custom-id prefix (the #1738 "
+        "`rt_` convention, issue1738_characterize.py:303) or a fresh cache_dir. "
+        "Remedies: run the retest at the parent instrument's sampling temperature "
+        "(API default), or re-ground the κ threshold for a deterministic surface, or "
+        "declare 'N/A — no test-retest gate' on its own line, unwrapped (no "
+        "backticks/quotes)",
+    )
+
+
+# ─── Check 64: sampled exactness claim vs runtime-assert grain (#2174) ─────
+# Origin: #2163 — plan §12 A11 asserted byte-identity / `n_distinct_rows = 1`
+# at `Confidence: High (measured)` from a 10-shard/706-row probe (0.5% of the
+# 142,000-row population), registered a Phase-0 full-store assert on it, and
+# the census died rc=1 on 258 deviating rows AFTER provisioning. A sample
+# only ever establishes "no counterexample observed in N of M", never "zero
+# counterexamples exist". Trigger + satisfier are text heuristics, so c64
+# SHIPS WARN-ONLY (the c34/c43/c63 posture); the binding gate is the Phase
+# 1.5 fact-checker EXACTNESS-CLAIM GRAIN CHECK (adversarial-planner
+# SKILL.md) + planner.md section 12's bound-restatement clause.
+
+#: Exactness-identity vocabulary on non-fenced lines. Deliberately narrow:
+#: a sampled VALUE claim (a lambda, a byte count, a key set) never matches,
+#: and the byte-identical arm is scoped to DATA nouns (rows/vectors/...)
+#: because the corpus's dominant `byte-identical` idiom is CODE-equality
+#: prose ("every existing caller byte-identical", "path must stay
+#: byte-identical", "byte-identical with no flags" — 2026-08-18 sweep),
+#: which asserts behavior preservation, not a sampled data identity; the
+#: noun scoping also drops negated uses ("(not byte-identical) endpoint
+#: sample"). Case-INSENSITIVE as of round 2 (the reconciler-deferred
+#: trigger-case concern, applied after the 2026-08-18 corpus re-sweep
+#: measured 8 < 10 defensible file-WARNs with IGNORECASE on: the
+#: sample-marker window is the binding FP control — lowercase "every row"
+#: alone appears 245x across 157 plans, but only 3 meta-plan self-hits
+#: survive the window + satisfier gates).
+_C64_EXACTNESS_RE = re.compile(
+    r"\b(?:rows?|vectors?|shards?|files?|tensors?|copies)\b[^\n]{0,40}byte[- ]identical"
+    r"|byte[- ]identical[^\n]{0,40}\b(?:rows?|vectors?|shards?|files?|tensors?|copies)\b"
+    r"|n_distinct(?:_rows|_prefix)?\s*={1,2}\s*1\b"
+    r"|exactly zero"
+    r"|zero (?:cross-context )?variance"
+    r"|max\|[^|\n]{0,40}\|\s*=\s*0(?![.\d])"
+    r"|all pairwise[^\n]{0,40}=\s*1\.0+"
+    r"|EVERY row\b"
+    r"|\bno exceptions\b",
+    re.IGNORECASE,
+)
+
+#: Sample-size markers near the exactness line — SAMPLING-EXPLICIT forms
+#: only ("10 sampled shards", "10-shard", "706-row sample", "a sample of
+#: 706", "706 of 142,000 rows"). Deliberately NOT bare "N rows"/"N shards":
+#: row counts and store-shard counts are ubiquitous in plan prose — the
+#: 2026-08-18 calibration sweep measured 227/4,331 corpus file-WARNs under
+#: the loose form (byte-identical GUARD/code-equality prose beside
+#: incidental row counts). The number atom uses proper thousands grouping
+#: so "137, sampled-quar" cannot read as "137 sampled".
+_C64_SAMPLE_RE = re.compile(
+    r"\b\d+(?:,\d{3})*[-\s]sampled\b"
+    r"|\b\d+(?:,\d{3})*-shard\b"
+    r"|\b\d+(?:,\d{3})*-row\s+(?:sample|probe|subset)\b"
+    r"|\b(?:sample|probe|subset)\s+of\s+\d+(?:,\d{3})*\b"
+    r"|\b\d+(?:,\d{3})*\s+of\s+\d+(?:,\d{3})*\s+(?:rows|shards)\b",
+    re.IGNORECASE,
+)
+
+#: Full-grain phrases — satisfy ONLY beside completed-verification
+#: vocabulary on the SAME line (see the deferred-verification veto).
+_C64_FULL_GRAIN_RE = re.compile(
+    r"full[- ]grain"
+    r"|over the full"
+    r"|entire (?:store|corpus|population|dataset)"
+    r"|all \d[\d,]* rows"
+    r"|full (?:staged )?(?:store|corpus|population|dataset)",
+    re.IGNORECASE,
+)
+
+#: Completed-verification vocabulary (the satisfier's second conjunct).
+_C64_COMPLETED_RE = re.compile(
+    r"\bverified\b|\bmeasured\b|\bconfirmed\b|\bcounted\b", re.IGNORECASE
+)
+
+#: Deferred-verification phrasing VETOES a full-grain phrase on its line:
+#: "Phase 0 re-asserts ... over the FULL staged store" is a deferral, not a
+#: completed verification — the #2163 A11 How-to-verify line itself (the
+#: founding incident MUST WARN; pinned by the verbatim-replay test). The
+#: veto also covers NEGATED completion ("not verified", "never measured",
+#: "unverified") and PROSPECTIVE completion ("will be verified", "to be
+#: measured") — completion vocabulary under negation or in the future
+#: tense is not a completed verification (round-1 review concern
+#: c64-completion-polarity). Line-scoped and conservative by design: a
+#: false veto only converts a satisfier line back into the WARN-only
+#: default.
+_C64_DEFERRED_RE = re.compile(
+    r"\bre-?asserts?\b|\bwill\b[^\n]{0,40}\bassert\b|\bre-?checks?\s+at\s+runtime\b"
+    r"|\b(?:not|never)\b[^\n]{0,20}\b(?:verified|measured|confirmed|counted)\b"
+    r"|\bun(?:verified|measured|confirmed|counted)\b"
+    r"|\b(?:will|to)\s+be\s+(?:verified|measured|confirmed|counted)\b",
+    re.IGNORECASE,
+)
+
+#: Bound restatement — the second remedy; window-level satisfier.
+_C64_BOUND_RE = re.compile(r"no (?:deviation|counterexample)s? observed in", re.IGNORECASE)
+
+
+def check_exactness_grain(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional, all kinds, both modes: a non-fenced line
+    asserting an EXACT identity (byte-identical / ``n_distinct == 1`` /
+    exactly zero / zero variance / EVERY row / no exceptions /
+    ``max|.| = 0`` / all pairwise = 1.0) with a SAMPLE-SIZE marker in the
+    +-3-line window and NO satisfier there WARNs: a sample only ever
+    establishes "no counterexample observed in N of M", never "zero
+    counterexamples exist", so a runtime assert built on the exact claim
+    crashes at the first full-population read (#2163). Satisfiers,
+    window-level: (a) COMPLETED full-grain verification — a full-grain
+    phrase on a line that ALSO carries completed-verification vocabulary
+    (verified/measured/confirmed/counted) and NO deferred-verification
+    phrasing (re-asserts / will ... assert / re-checks at runtime — nor
+    NEGATED ("not/never ... verified", "unverified") or PROSPECTIVE
+    ("will be / to be verified") completion: the
+    #2163 A11 "Phase 0 re-asserts ... over the FULL staged store" line is
+    a deferral and must NOT satisfy); (b) a bound restatement ("no
+    deviation observed in N of M rows"). Escape: the standalone
+    'N/A — no sampled exactness claims' line, unwrapped. NEVER FAILs (the
+    c34/c43 posture — trigger + satisfier are text heuristics; the
+    binding gate is the Phase 1.5 fact-checker EXACTNESS-CLAIM GRAIN
+    CHECK)."""
+    del kind  # all kinds: an infra plan's sampled exactness premise crashes the same way
+    cid, name = "c64_exactness_grain", "sampled exactness claim vs runtime-assert grain"
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    hits: list[tuple[int, str]] = []
+    n_satisfied = 0
+    for i, line in enumerate(lines):
+        if mask[i]:
+            continue
+        m = _C64_EXACTNESS_RE.search(line)
+        if not m:
+            continue
+        lo, hi = max(0, i - 3), min(len(lines), i + 4)
+        window = [lines[j] for j in range(lo, hi) if not mask[j]]
+        if not any(_C64_SAMPLE_RE.search(w) for w in window):
+            continue
+        satisfied = False
+        for w in window:
+            if _C64_BOUND_RE.search(w):
+                satisfied = True
+                break
+            if (
+                _C64_FULL_GRAIN_RE.search(w)
+                and _C64_COMPLETED_RE.search(w)
+                and not _C64_DEFERRED_RE.search(w)
+            ):
+                satisfied = True
+                break
+        if satisfied:
+            n_satisfied += 1
+        else:
+            hits.append((i + 1, m.group(0)))
+    if not hits and not n_satisfied:
+        return _skip(cid, name, "no sampled exactness claim on non-fenced lines")
+    if not hits:
+        return _pass(
+            cid,
+            name,
+            f"every sampled exactness claim ({n_satisfied}) carries a window-level "
+            "satisfier (completed full-grain verification, or a bound restatement)",
+        )
+    if _standalone_na_declared(plan, r"no sampled exactness claims"):
+        return _pass(cid, name, "explicit N/A declared (no sampled exactness claims)")
+    lineno, token = hits[0]
+    more = f" (+{len(hits) - 1} more)" if len(hits) > 1 else ""
+    return _warn(
+        cid,
+        name,
+        f"line {lineno} asserts an EXACT identity ({token!r}) with a sample-size marker "
+        f"in the +-3-line window and no full-grain satisfier{more} — a sample only "
+        'establishes "no counterexample observed in N of M", never "zero counterexamples '
+        'exist", so a runtime assert built on it crashes at the first full-population '
+        "read (#2163: 706 of 142,000 rows probed; the full-store assert died on 258 "
+        "deviating rows, after provisioning). Verify at full grain NOW (often exactly "
+        "the read the asserting phase already performs), or restate the claim as a "
+        'bound ("no deviation observed in N of M rows") AND soften the assert to the '
+        "invariant the bound supports, or declare 'N/A — no sampled exactness claims' "
+        "on its own line, unwrapped (no backticks/quotes)",
+    )
+
+
+# ─── Check 68 — abs-pp reduction margin vs in-plan baseline ceiling (#2228) ─
+# Origin: #2203 plan v10-v12 — §3 registered H1/H3-confirm as an ABSOLUTE
+# "baseline - cap ≥ 10 percentage points" / "≤ baseline - 10pp" reduction
+# margin while the plan's own §2/§8 stated baselines of ~9.7% (7B) and
+# ~4.0% (32B): margin > baseline makes the confirm branch arithmetically
+# unsatisfiable (the treated rate would have to be NEGATIVE), and
+# margin == baseline is satisfiable only at an exactly-zero realized rate —
+# a degenerate gate; the check fires on BOTH per the body's ≥ spec (#2228
+# r1 D1: never claim blanket impossibility across the non-strict boundary).
+# Incident lineage: 3rd recurrence of the #810 margin-vs-ceiling family
+# (#810; #825 v17 → c28; #2203 v12 → this check). SCOPE (#2228 r1 C6): c68
+# detects SUBTRACTION-ANCHORED A1/A2 recurrences of the #2203 surface form
+# ONLY — it does NOT cover the margin-vs-ceiling family generally (every
+# enumerated accepted FN below is a family member it will not see); the
+# binding family-level defense remains the Statistics critic's
+# decision-gate joint-satisfiability lens. Caught at #2203 only by the
+# Statistics + Alternatives critics; c28 (multiplicative fractional bands,
+# same-line, no-% harvest) and c20 (lattice structure) structurally cannot
+# see it. WARN-ONLY (the c14/c28 doctrine): regex heuristics over prose;
+# the FAIL-grade semantic verdict stays with the Statistics critic.
+#
+# HARVEST DOCTRINE (prefer false negatives): margins are harvested ONLY in
+# the baseline-SUBTRACTIVE forms — the clause must literally name the
+# subtraction from baseline, which is precisely the arithmetic under test:
+#   A1: "≤/<=/< baseline - N pp|percentage points"     (#2203 v12 L57)
+#   A2: "baseline - <arm> ≥/>=/> N pp|percentage points" (#2203 v12 L44)
+# DELIBERATELY EXCLUDED (each a named accepted false negative; the starred
+# forms are pinned as executable SKIP fixtures — #2228 r1 C7):
+#   - * bare "Δ ≥ N pp" / ">= N pp" without the subtractive anchor —
+#     direction-ambiguous (an INCREASE margin is satisfiable). NOTE: this
+#     is the #2228 task body's OWN example sentence, and it appears
+#     un-harvested in the founding lattice as "Δharm ≥ 10pp" — the
+#     incident line fires only via its co-resident A1 token; a recurrence
+#     carrying ONLY the bare Δ form is out of reach by design;
+#   - * reversed subtractive "baseline - 10pp ≥ treated-rate" (comparator
+#     on the wrong side of the subtraction for both arms);
+#   - * cross-line / definition-split forms ("Δharm ≥ 10pp" with
+#     "Δharm = baseline - treated" defined elsewhere) — cross-token
+#     association is out of regex reach;
+#   - * parenthesized "≤ (baseline - 10pp)" — A1's comparator must abut
+#     "baseline"; "(" is not consumed;
+#   - * A2 middles containing any barred character ("baseline - harm,
+#     treated ≥ 10pp") — "=" and "," barred by the #2228 r2 tighten (the
+#     round-1 middle class crossed an equality comparator and a comma
+#     clause boundary and fabricated a cross-clause harvest:
+#     "baseline - cap = 2pp, while accuracy >= 10pp" bound the unrelated
+#     ">= 10pp" — a false WARN on a healthy plan whose registered gate
+#     was a satisfiable 2pp reduction); "?", "!", and the Markdown
+#     table-cell pipe "|" barred by the #2228 r3 tighten (the same
+#     species, each verified as a live end-to-end false WARN:
+#     "baseline - cap? ...", "baseline - cap! ...", and
+#     "baseline - cap of 2pp | accuracy >= 10pp" crossed a sentence or
+#     table-cell boundary to bind the unrelated ">= 10pp"); a GENUINE
+#     margin whose <arm> text carries any barred character is the
+#     accepted FN the tightens buy (pinned as the r2 + r3 repro SKIP
+#     fixtures);
+#   - * range margins ("≥ 10-15pp"); also fraction baselines
+#     ("baseline ~0.097" — no %, never harvested) and baselines stated
+#     only in a cited artifact (clarifier Assumption 2: in-plan only; the
+#     named-artifact leg is a deferred follow-up);
+#   - verb-anchored forms ("reduces ... by ≥ N pp") — the 2026-08-20 corpus
+#     scan measured 3 near-FPs for a reduc|drop|lower vocabulary arm
+#     (#192 v2:652 "lower fact margin ... ≥ 30pp"; #543 v1-v4 "≥ 2 strict
+#     drops of ≥ 5 pp"; #376 v1:481 "If either drops ≥10pp");
+#   - "< N pp" complement clauses (usually tolerance/noise bounds);
+#   - two-sided tolerances ("within ~5 pp of baseline") — no comparator+
+#     subtraction, excluded by construction;
+#   - "≥ baseline - N pp" retention FLOORS (satisfiable) — excluded by
+#     A1's comparator class (≤/<=/< only).
+# Baselines: first "%"-number within 40 chars after a "baseline" token,
+# plan-wide (the incident's baselines live in §2 / the §8 risk table —
+# cross-section is the point). Comparison uses the MAX harvested baseline:
+# fires only when even the largest stated baseline cannot support the
+# margin — the maximally FN-biased association rule (a plan stating 9.7%
+# AND 4.0% fires at margin 10; a plan also stating an unrelated 60%
+# baseline does not — accepted FN, disclosed in the WARN detail's
+# cross-quantity clause; the INVERSE mis-association — an unrelated
+# SMALLER % as bmax — is the cross-quantity FP the truthful escape below
+# serves).
+# SECTION SCOPING (#2228 r1 MF1): margin lines must sit inside a
+# gate/hypothesis-titled section whose qualifying heading is NON-H1
+# (level >= 2). The house template has ONE H1 whose _headings span is the
+# WHOLE document (a span ends at the next same-or-higher heading), so an
+# H1 carrying gate/decision vocabulary ("# Plan: ... decision-gate rework")
+# would arm every §2/§8 line — the traced FP: a Risks quotation of a
+# sibling's broken 30pp margin vs a 20% baseline WARNs on a healthy plan.
+# The walk stays ANY-ENCLOSING over H2-H6 (the c13/c28 membership idiom;
+# strict nearest-section-only would newly DROP a margin in a non-matching
+# subsection of a matching gate H2, e.g. "## 7. Decision Gates" →
+# "### Response ladder"). BOUNDARY, stated honestly: a §2/§8 quotation of
+# a sibling's broken margin is exempt only while OUTSIDE every H2-H6
+# gate/hypothesis/evaluation-titled section — a quotation INSIDE one IS
+# harvested (regexes cannot tell a quotation from a registration);
+# WARN-only posture + the two escapes are the mitigation there.
+# (_C13_GATE_SECTION_RE | _C20_SECTION_RE union, both reused verbatim — c13's
+# covers success/kill/decision/evaluation, c20's adds hypothes|verdict,
+# which is where the #2203 lattice lives; founding-incident coverage
+# verified: v12's margins sit under "### 3. Hypothesis", an H3.)
+#
+# ESCAPES (#2228 r1 MF2 — two phrases, the registry's two shapes):
+#   ``N/A — no absolute-margin decision gate`` — declare ONLY when the
+#     plan genuinely registers no absolute-pp reduction margin (the
+#     harvested line quotes an incident/sibling; the vocabulary is
+#     incidental). The `no <thing>` family: declare-only-when-true.
+#   ``N/A — harvested percentage baseline is unrelated to this
+#     absolute-margin gate`` — the exists-but-false-alarm shape (the
+#     c47/c53/c59 convention): the plan DOES register such a margin, but
+#     every %-stated baseline the harvest can see concerns a DIFFERENT
+#     quantity. Preferred remedy: state the gate's true baseline in %
+#     form so the harvest sees it.
+#
+# CORPUS CALIBRATION (REALIZED, re-measured 2026-08-20 POST-r3-TIGHTEN
+# at corpus HEAD db34939cd6 with THIS function, over every persisted
+# tasks/*/*/plans/v*.md — 4,447 versions; the c50/c67 house pattern;
+# #2228 r1 C2 records raw-token and function-classified counts
+# SEPARATELY). RAW-TOKEN counts (module-regex approximation over raw
+# file text, fences/sections ignored): A1-form files 5; A2-form files 5
+# — the #2203 family {v10,v11,v12} plus #2228's own plans/{v1,v2}.md
+# (kind: infra; grows with #2228's own plan versions); the r2 and r3
+# tightens left both counts unchanged — no corpus A2 middle carries any
+# barred character (the r2 and r3 classes return the identical file set
+# on one corpus snapshot; r1's separate "comparator-pp-bearing 18" grep
+# stays dropped as a non-reproducible wider-net approximation — the
+# A1/A2 module-regex counts are the reproducible raw-token record).
+# REALIZED-FUNCTION counts (the binding measurement, forced
+# kind="experiment" as the armed-kind upper bound; the r2 function and
+# the r3 function produce the identical verdict set on one corpus
+# snapshot): margin-bearing (non-SKIP) 3; WARNs 3 — EXACTLY the
+# founding-incident family, each
+# (kind: experiment, disposition ARMED, a true positive): 2203/plans/
+# v10.md, v11.md, v12.md, all firing on the L44 A2 bullet + the L57 A1
+# lattice (10 pp vs bmax 9.7%). ARMED FPs: 0 (the §7 kill criterion does
+# not fire). KIND-GATE-COVERED self-family hits: 0 realized — #2228's
+# own plan versions carry the A1/A2 raw tokens only fenced or outside
+# qualifying NON-H1 gate/hypothesis sections, so the realized function
+# never harvests them even under the forced-experiment scan (#2228 r1
+# C1: a future self-family hit dispositions KIND-GATE-COVERED, never FP).
+
+#: A1 — treated rate bounded at/below baseline minus the margin.
+_C68_A1_RE = re.compile(
+    r"(?i)(?:≤|<=|<)\s*baseline\s*[−–—-]\s*"  # noqa: RUF001 — real plan glyphs
+    r"(?P<n>\d+(?:\.\d+)?)\s*(?:pp\b|percentage[-\s]?points?)"
+)
+#: A2 — "baseline - <arm> ≥ N pp". Middle bounded at 40 chars. BARRED
+#: set: membership is defined SOLELY by `_C68_A2_MIDDLE_BARRED` below —
+#: this comment deliberately carries NO membership enumeration (#2228
+#: r4: rounds 1-3 each bounced on a prose restatement of a set the code
+#: already owned diverging from the implementation, so the duplicate is
+#: deleted rather than re-audited). What the sync test
+#: (test_c68_a2_middle_barred_set_syncs_comment_class_and_behavior)
+#: actually guarantees: it asserts the CONSTANT below equals the regex's
+#: negated character class char-for-char, so a constant/class divergence
+#: is test-breaking; it reads no prose, which is exactly why membership
+#: must not be restated here. Rationale for the members, by round: the
+#: newline, comparator-glyph, ";" and ")" bars are round 1's structural
+#: boundaries (genuine ">=" comparators survive by construction — the
+#: middle can never consume their leading ">"); bare "=" and "," were
+#: barred in r2 after round 1's middle skipped past a satisfiable
+#: "= 2pp" equality and bound an unrelated later ">= 10pp" — a
+#: fabricated cross-clause harvest, false WARN on a healthy plan (and an
+#: "="-only fix would NOT have killed the comma form); "?" "!" "|" were
+#: barred in r3 (the same live-FP species crossing a sentence boundary
+#: or a Markdown table-cell pipe — the likeliest plan shape, since
+#: decision lattices are routinely tables). RESIDUAL, stated as the
+#: COMPLEMENT (never an implicitly-exhaustive enumeration — #2228 r3):
+#: EVERY character outside the barred set remains permitted within
+#: the 40-char budget — e.g. ".", ":", "(", quotes, and dash glyphs (the
+#: "." form can cross a sentence boundary the same way); WARN-only
+#: posture + the two escapes are the mitigation for whatever crossings
+#: the permitted complement allows. A genuine margin whose <arm> text
+#: carries a barred character is an accepted FN (excluded list above,
+#: pinned by the r2 + r3 repro SKIP fixtures).
+_C68_A2_MIDDLE_BARRED = frozenset("\n<>≤≥;)=,?!|")
+_C68_A2_RE = re.compile(
+    r"(?i)\bbaseline\s*[−–—-]\s*[^\n<>≤≥;)=,?!|]{1,40}?(?:≥|>=|>)\s*"  # noqa: RUF001
+    r"(?P<n>\d+(?:\.\d+)?)\s*(?:pp\b|percentage[-\s]?points?)"
+)
+#: Baseline anchor + the FIRST %-number in a bounded window after it (the
+#: window is what keeps "baseline ~9.7% vs paper 65-88%" harvesting 9.7,
+#: not 88 — #2203 v12 L298).
+_C68_BASELINE_ANCHOR_RE = re.compile(r"(?i)\bbaseline\b")
+_C68_PCT_RE = re.compile(r"(\d+(?:\.\d+)?)\s*%")
+_C68_BASELINE_WINDOW = 40
+
+
+def _c68_sections_ok(headings: list, i: int) -> bool:
+    """Line ``i`` sits inside a gate- or hypothesis/verdict-titled section
+    whose qualifying heading is NON-H1 (``level >= 2``): the house
+    template's single H1 spans the whole document, so an H1 match would
+    arm every line (#2228 r1 MF1). The walk stays any-enclosing over
+    H2-H6 (the c13/c28 membership idiom; both regexes reused verbatim,
+    never widened here) so a margin in a non-matching subsection of a
+    matching gate H2 still qualifies."""
+    return any(
+        h.line <= i < h.end
+        and h.level >= 2
+        and (_C13_GATE_SECTION_RE.search(h.text) or _C20_SECTION_RE.search(h.text))
+        for h in headings
+    )
+
+
+def _c68_margins(plan: str) -> list[dict]:
+    """Baseline-subtractive absolute-pp reduction margins on non-fenced
+    lines inside NON-H1 gate/hypothesis sections. Per margin:
+    ``{line_no (1-based), line, value: Fraction}``; deduped per
+    (line_no, value)."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    headings = _headings(plan)
+    out: list[dict] = []
+    seen: set[tuple[int, Fraction]] = set()
+    for i, (line, fenced) in enumerate(zip(lines, mask, strict=True)):
+        if fenced or not _c68_sections_ok(headings, i):
+            continue
+        for rx in (_C68_A1_RE, _C68_A2_RE):
+            for m in rx.finditer(line):
+                v = _c28_frac(m.group("n"))
+                if v <= 0 or (i, v) in seen:
+                    continue
+                seen.add((i, v))
+                out.append({"line_no": i + 1, "line": line.strip(), "value": v})
+    return out
+
+
+def _c68_baselines(plan: str) -> list[dict]:
+    """In-plan %-stated baseline rates, plan-wide over non-fenced lines:
+    the FIRST %-number within ``_C68_BASELINE_WINDOW`` chars after each
+    ``baseline`` token, kept when 0 < b <= 100. Per baseline:
+    ``{line_no, value: Fraction, snippet}``."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    out: list[dict] = []
+    for i, (line, fenced) in enumerate(zip(lines, mask, strict=True)):
+        if fenced:
+            continue
+        for a in _C68_BASELINE_ANCHOR_RE.finditer(line):
+            w = line[a.end() : a.end() + _C68_BASELINE_WINDOW]
+            pm = _C68_PCT_RE.search(w)
+            if not pm:
+                continue
+            b = _c28_frac(pm.group(1))
+            if 0 < b <= 100:
+                out.append(
+                    {"line_no": i + 1, "value": b, "snippet": line[a.start() :][:60].strip()}
+                )
+    return out
+
+
+def check_margin_baseline_ceiling(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional (#2228, incident #2203 v12): a registered
+    absolute percentage-point reduction margin in a baseline-SUBTRACTIVE
+    form (``≤ baseline - N pp`` / ``baseline - <arm> ≥ N pp``) inside a
+    NON-H1 gate/hypothesis section, whose N is >= the LARGEST in-plan
+    %-stated baseline rate. Strictly above the baseline the confirm
+    branch is arithmetically unsatisfiable (the treated rate would have
+    to be negative); AT the baseline it is satisfiable only at an
+    exactly-zero realized rate — a degenerate gate; the check fires on
+    both per the task body's ≥ spec. Detects the SUBTRACTION-ANCHORED
+    A1/A2 recurrence shape only — never the margin-vs-ceiling family
+    generally. NEVER FAILs (the c14/c28 doctrine). Armed for kind in
+    {experiment, analysis} only — infra workflow-fix plans (THIS check's
+    own plan included) legitimately quote the trigger vocabulary (the
+    c53/c67 precedent). Accepted false negatives are enumerated in the
+    module comment above. Escapes (standalone, unwrapped):
+    ``N/A — no absolute-margin decision gate`` (genuinely gate-free — the
+    harvested text quotes an incident/sibling) and ``N/A — harvested
+    percentage baseline is unrelated to this absolute-margin gate`` (the
+    gate is real; the %-baseline pairing is the false alarm)."""
+    cid, name = "c68_margin_baseline_ceiling", "abs-pp reduction margin vs baseline ceiling"
+    if kind not in ("experiment", "analysis"):
+        return _skip(
+            cid,
+            name,
+            f"kind={kind} — armed for experiment/analysis only (the c67 kind-exempt "
+            "precedent): infra workflow-fix plans quote the pp-margin/baseline trigger "
+            "vocabulary without registering a decision margin; the founding incident "
+            "(#2203 v10-v12) is kind: experiment",
+        )
+    margins = _c68_margins(plan)
+    if not margins:
+        return _skip(cid, name, "no baseline-subtractive absolute-pp reduction margin detected")
+    if _standalone_na_declared(plan, r"no absolute[- ]margin decision gates?"):
+        return _pass(
+            cid,
+            name,
+            "explicit N/A declared (no absolute-margin decision gate — the harvested "
+            "margin text is not a gate this plan registers)",
+        )
+    if _standalone_na_declared(
+        plan, r"harvested percentage baseline is unrelated to this absolute[- ]margin gate"
+    ):
+        return _pass(
+            cid,
+            name,
+            "explicit N/A declared (cross-quantity: the harvested %-stated baseline is "
+            "unrelated to the registered absolute-margin gate)",
+        )
+    baselines = _c68_baselines(plan)
+    if not baselines:
+        return _skip(
+            cid,
+            name,
+            "margin registered but no in-plan %-stated baseline rate detected "
+            "(cross-artifact baseline recovery is out of v1 scope — clarifier "
+            "Assumption 2, #2228)",
+        )
+    bmax = max(baselines, key=lambda b: b["value"])
+    offenders = [m for m in margins if m["value"] >= bmax["value"]]
+    if not offenders:
+        return _pass(
+            cid,
+            name,
+            f"{len(margins)} baseline-subtractive pp margin(s) all sit below the largest "
+            f"in-plan baseline rate ({float(bmax['value']):g}%, line {bmax['line_no']})",
+        )
+    parts = [
+        f'line {m["line_no"]} "{m["line"][:90]}" registers an absolute reduction margin '
+        f"of {float(m['value']):g} pp"
+        for m in offenders[:3]
+    ]
+    shown = "; ".join(parts) + ("; …" if len(offenders) > 3 else "")
+    return _warn(
+        cid,
+        name,
+        f"{shown} — but the largest in-plan baseline rate is {float(bmax['value']):g}% "
+        f'(line {bmax["line_no"]}: "{bmax["snippet"]}"): a margin STRICTLY above the '
+        "baseline makes the confirm branch arithmetically unsatisfiable (the treated "
+        "rate would have to be negative), and a margin EQUAL to the baseline is "
+        "satisfiable only at an exactly-zero realized rate — a degenerate gate; both "
+        "fire per the ≥ spec (#2203 v12: a ≥10pp margin vs realized baselines "
+        "9.66%/4.02%; 3rd recurrence of the #810 family). NOTE: this check cannot "
+        "verify the margin and the baseline concern the same quantity — if they "
+        "concern DIFFERENT quantities, state the gate's true baseline in % form so "
+        "the harvest sees it, or declare 'N/A — harvested percentage baseline is "
+        "unrelated to this absolute-margin gate' on its own line, unwrapped (no "
+        "backticks/quotes). Remedy for a genuinely infeasible margin: switch to a "
+        "relative margin, or size the absolute margin below the DV's stated baseline "
+        "rate. A plan that registers NO absolute-pp margin at all (the harvested line "
+        "quotes an incident/sibling) instead declares 'N/A — no absolute-margin "
+        "decision gate' on its own line, unwrapped; the semantic verdict stays with "
+        "the Statistics critic",
+    )
+
+
+# ─── Check 69 — armed re-gen 2×-cap headroom vs max_model_len pin (#2269) ──  # noqa: RUF003
+# Origin: #2221 plan v9 (incident 2026-08-13) — the amendment ARMED the >2%
+# cap-hit re-gen trigger (regen at ≥2× EVAL_MAX_NEW_TOKENS = 2×2048 = 4096)  # noqa: RUF003
+# against issue778_lib.build_vllm_engine's max_model_len=4096 pin while
+# stating CORRECT first-pass arithmetic (2048 + ≤1,900 = 3,948 ≤ 4,096 at
+# v9:101): the BINDING regen-leg arithmetic 4,096 + 1,900 = 5,996 > 4,096
+# leaves zero prompt headroom — every row skips as regen_overlong_skipped,
+# regen_applied: true with n_regen=0. verify_plan on v9: PASS n_warn=0.
+# Plan-prose face of the #505/#601 cap-raise-vs-max_model_len family
+# (gotchas.md cap-raise entry). SCOPE: #505/#601 themselves were CODE-level
+# and no plan linter could have fired on them — this check SURFACES the
+# class's plan face at plan time; it does not prevent recurrence (the
+# runtime guard on regen_applied/n_regen==0/regen_overlong_skipped>0 is
+# the higher-recall companion, out of scope here). The check keys on the
+# DOUBLED cap whenever a trigger is armed — a naive stated-triple read
+# PASSes v9 by construction.
+# CORPUS CALIBRATION — CALIBRATION FIT, snapshot-dated (these figures rot
+# as the corpus grows, and the grammar was TUNED on this same corpus: the
+# counts certify transcription fidelity at re-scan time, never
+# out-of-sample precision; re-calibration MUST apply the kind gate before
+# reading any count drift as grammar drift). SHIPPED-check re-scan
+# 2026-08-22 04:27 UTC, 4,484 committed plans/v*.md (the plan-time
+# 2026-08-22 03:36 UTC prototype scan read 4,486 files on the main
+# checkout, glob incl. then-untracked drafts — same verdicts on every
+# adjudicated version): arming vocabulary resolves in 45 versions (the
+# plan-time 44 + this plan's own v3); 27 SKIP (no pin); 0 SKIP (no
+# cap); KIND-GATED WARN 11 —
+# #2221 v7/v8/v9 (arm 1: 2×2048 + 1,900 = 5,996 ≥ 4,096) + #2225 v6–v13  # noqa: RUF003
+# (arm 2: the inherited "> 2% ⇒ re-gen at 2× (contract inherited)" line  # noqa: RUF003
+# against max_model_len 4096 with cap 2048 — need 4,096 ≥ pin 4,096, no
+# stated prompt bound; a LIVE zero-headroom defect) — all verified true
+# positives; corrected #2221 v10–v13 PASS (5,996 < 8,192); zero confirmed  # noqa: RUF003
+# false positives. UN-GATED additionally: #2269's OWN kind:infra plan
+# versions (v1, v2, plus one per later version — the plan that designed
+# this check quotes the arming vocabulary in non-fenced prose); the kind
+# gate + _fence_mask absorb them (self-inclusion is the designed-for case).
+# Measured grammar decisions: (a) prose-form "cap (N)" harvesting DROPPED
+# — v10:467 "AT THE PRODUCTION REGEN CAP (4096)" reads the ALREADY-DOUBLED
+# regen cap and double-counts (4 FPs on the corrected versions); (b)
+# multiplier must be ANCHORED (N× followed by cap/number/MAX_NEW_TOKENS)  # noqa: RUF003
+# — the house "families × {arms}" grid idiom otherwise harvests spurious  # noqa: RUF003
+# multipliers; (c) forward "prompt tokens ... < N" bound shape DROPPED —
+# it grabbed the PIN out of v10:106's arithmetic prose; (d) arm
+# alternative 3 recognizes the house SHORTHAND: "re-gen ... at N×" ARMS  # noqa: RUF003
+# (#2225 v12:97 is the demonstrated in-corpus miss of the narrow
+# re-generat form — r1 Must-Fix 2) while a bare "re-gen" mention with no
+# "at N×" stays non-arming; (e) bounds are attributed PER ARMED LINE  # noqa: RUF003
+# (±_C69_WINDOW_LINES raw-line fence-masked window; window MAX wins;
+# plan-wide MAX only as the no-local-bound FALLBACK) — a plan-wide bound
+# join is a FALSE-POSITIVE mechanism on healthy multi-stage plans (an
+# unrelated stage's larger bound joins an armed stage whose own
+# arithmetic is satisfied — r1 Must-Fix 1): bound-side MAX is AGGRESSIVE
+# (pro-WARN), the opposite direction from the permissive pin-side MAX,
+# so only the pin side may pool plan-wide.
+# Accepted FALSE NEGATIVES: a cap stated only as prose ("cap 2048") with
+# no constant/product form resolves nothing (SKIP); a plan quoting a
+# sibling's LARGER pin while its own engine pins smaller escapes the
+# MAX-pin read; a STALE SMALL bound inside an armed line's window masks a
+# larger binding bound stated elsewhere (the window-first trade — FNs
+# disclosed and accepted, FPs kill); verbal multipliers ("doubling",
+# "twice") and arming paraphrases outside the three alternatives.
+
+_C69_NUM = r"(?:\d{1,3}(?:,\d{3})+|\d+)"
+#: Arming vocabulary, negation-guarded on the leading token
+#: (_C16_NEG_GUARD reused verbatim) AND on the "armed" token itself
+#: ("the re-gen trigger is NOT armed" must not fire): "re-gen trigger
+#: ARMED" / "trigger armed ... re-gen" / the CLAUDE.md registration shape
+#: in BOTH spellings — "re-generate <rows> at ≥2×" AND the house  # noqa: RUF003
+#: shorthand "re-gen at 2×" (#2225 v12:97). Bare "re-gen" with no  # noqa: RUF003
+#: "at ... N×" stays non-arming.  # noqa: RUF003
+_C69_ARM_RE = re.compile(
+    rf"(?i){_C16_NEG_GUARD}\bre-?gen\w*[^.;]{{0,60}}?\btrigger\b[^.;]{{0,40}}?"
+    rf"(?:(?<!\bnot )(?<!never )\barmed\b|\barming\b|\bauto-?fires?\b)"
+    rf"|{_C16_NEG_GUARD}\btrigger\b[^.;]{{0,40}}?(?<!\bnot )(?<!never )\barmed\b"
+    rf"[^.;]{{0,80}}?\bre-?gen\w*"
+    rf"|{_C16_NEG_GUARD}\bre-?gen(?:erat\w*)?\b[^.;]{{0,50}}?\bat\b[^.;]{{0,12}}?"
+    rf"[≥>]?\s*\d+(?:\.\d+)?\s*[×x]"  # noqa: RUF001 — the multiplication sign is real plan text
+)
+_C69_PIN_RE = re.compile(rf"(?i)(?:vllm_)?max_model_len\W{{0,4}}({_C69_NUM})")
+_C69_CAP_LINE_RE = re.compile(
+    rf"(?i)[A-Z_]*max_new_tokens\W{{0,4}}({_C69_NUM})|[×x]\s*({_C69_NUM})"  # noqa: RUF001
+)
+_C69_CAP_CONST_RE = re.compile(rf"(?i)[A-Z_]*max_new_tokens\W{{0,4}}({_C69_NUM})")
+_C69_MULT_RE = re.compile(
+    r"(?i)(\d+(?:\.\d+)?)\s*[×x]\s*(?=(?:the\s+)?cap\b|\d|`?[A-Z_]*MAX_NEW_TOKENS)"  # noqa: RUF001
+)
+_C69_BOUND_RES = (
+    re.compile(rf"(?i)(?:[≤<]=?|at most)\s*~?\s*({_C69_NUM})\s*prompt[- ](?:side[- ])?tokens?"),
+    re.compile(
+        rf"(?i)prompts?\b[^.;]{{0,40}}?(?:validated|bounded|capped|filtered)"
+        rf"[^.;]{{0,25}}?[≤<]=?\s*~?\s*({_C69_NUM})\s*(?:prompt[- ])?tokens?"
+    ),
+)
+_C69_WINDOW_LINES = 3  # the c16 _C16_WINDOW_LINES radius (caps AND bound attribution)
+
+
+def _c69_int(s: str) -> int:
+    """Comma-tolerant int (founding fixture: '≤ 1,900 prompt tokens')."""
+    return int(s.replace(",", ""))
+
+
+def _c69_bounds_between(lines: list[str], mask: list[bool], lo: int, hi: int) -> list[int]:
+    """Fence-masked stated prompt-token bounds on raw lines [lo, hi)."""
+    return [
+        _c69_int(m.group(1))
+        for j in range(max(0, lo), min(len(lines), hi))
+        if not mask[j]
+        for rx in _C69_BOUND_RES
+        for m in rx.finditer(lines[j])
+        if 1 <= _c69_int(m.group(1)) <= 1_000_000
+    ]
+
+
+def _c69_evaluated(
+    lines: list[str], mask: list[bool], arm_idx: list[int], plan_bounds: list[int]
+) -> list[dict]:
+    """Per armed line: anchored multiplier (clamped [1, 8], default 2.0),
+    generation cap (constant- or product-form on the arming line;
+    constant-form within the ±3-raw-line window as fallback), and the
+    attributed prompt bound. Bound attribution is PER ARMED LINE (r1
+    Must-Fix 1): window-local MAX wins; the plan-wide MAX is only the
+    no-local-bound fallback. Bound-side MAX is aggressive (pro-WARN) —
+    opposite direction from the permissive pin-side MAX — so it never
+    pools across stages. Armed lines with no resolvable cap are dropped
+    (the caller SKIPs when nothing evaluates)."""
+    out: list[dict] = []
+    for i in arm_idx:
+        line = lines[i]
+        mults = [
+            float(m.group(1))
+            for m in _C69_MULT_RE.finditer(line)
+            if 1.0 <= float(m.group(1)) <= 8.0
+        ]
+        mult = max(mults) if mults else 2.0
+        caps = [
+            _c69_int(g)
+            for m in _C69_CAP_LINE_RE.finditer(line)
+            for g in m.groups()
+            if g and 16 <= _c69_int(g) <= 100_000
+        ]
+        if not caps:  # constant-form only in the ±3-raw-line window
+            window = (
+                lines[max(0, i - _C69_WINDOW_LINES) : i] + lines[i + 1 : i + 1 + _C69_WINDOW_LINES]
+            )
+            caps = [
+                _c69_int(m.group(1))
+                for src in window
+                for m in _C69_CAP_CONST_RE.finditer(src)
+                if 16 <= _c69_int(m.group(1)) <= 100_000
+            ]
+        if not caps:
+            continue
+        wb = _c69_bounds_between(lines, mask, i - _C69_WINDOW_LINES, i + 1 + _C69_WINDOW_LINES)
+        bound = max(wb) if wb else (max(plan_bounds) if plan_bounds else None)
+        out.append(
+            {
+                "line_no": i + 1,
+                "line": line.strip(),
+                "mult": mult,
+                "cap": max(caps),
+                "need": int(mult * max(caps)),
+                "bound": bound,
+                "scope": "window-local" if wb else "plan-wide",
+            }
+        )
+    return out
+
+
+def check_regen_headroom(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional (#2269, incident #2221 v9): an ARMED cap-hit
+    re-generation trigger — the long spelling ("re-generates capped rows
+    at >=2x the cap") or the house shorthand ("re-gen at 2x") — beside a
+    numeric ``max_model_len`` / ``VLLM_MAX_MODEL_LEN`` pin, where the
+    DOUBLED cap leaves non-positive prompt headroom. Two WARN arms:
+    (1) mult*cap + the stated prompt-token bound >= pin on any armed
+    line; (2) NO prompt-token bound stated anywhere in the plan. Keys on
+    the DOUBLED cap whenever the trigger is armed — the founding incident
+    stated CORRECT first-pass arithmetic (2048 + 1,900 = 3,948 <= 4,096
+    at v9:101) while the ARMED regen leg at 2x2048 = 4,096 left zero
+    headroom, so every capped row skips as ``regen_overlong_skipped``
+    while ``regen_applied: true`` reports the fix took — a naive
+    stated-triple reader PASSes v9 by construction. Bounds attribute PER
+    ARMED LINE (window-local MAX over the fence-masked ±3-raw-line
+    window; plan-wide MAX only as the no-local-bound fallback); the
+    effective pin is the plan-wide MAX from a RAW scan, fences included
+    (corrected plans quote the superseded pin beside the raise). NEVER
+    FAILs (the c14/c28 doctrine). Armed for kind in {experiment,
+    analysis} only — infra workflow-fix plans (THIS check's own plan
+    included) legitimately quote the arming vocabulary (the c67/c68
+    precedent). Accepted false negatives are enumerated in the module
+    comment above. Escapes (standalone, unwrapped):
+    ``N/A — no armed re-gen trigger`` (the arming vocabulary is
+    incidental or quotes an incident/sibling) and ``N/A — harvested
+    max_model_len pin is unrelated to the armed re-gen stage`` (the
+    trigger is real; the pin pairing is the false alarm)."""
+    cid = "c69_regen_headroom"
+    name = "armed re-gen 2×-cap headroom vs max_model_len pin"  # noqa: RUF001
+    if kind not in ("experiment", "analysis"):
+        return _skip(
+            cid,
+            name,
+            f"kind={kind} — armed for experiment/analysis only (c67/c68 precedent): "
+            "infra workflow-fix plans, this check's own plan included, quote the "
+            "arming vocabulary; the founding incident (#2221 v9) is kind: experiment",
+        )
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    arm_idx = [
+        i
+        for i, (line, fenced) in enumerate(zip(lines, mask, strict=True))
+        if not fenced and _C69_ARM_RE.search(line)
+    ]
+    if not arm_idx:
+        return _skip(cid, name, "no armed re-gen trigger detected")
+    if _standalone_na_declared(plan, r"no armed re-?gen(?:eration)? trigger\b"):
+        return _pass(cid, name, "explicit N/A declared (no armed re-gen trigger)")
+    if _standalone_na_declared(
+        plan, r"harvested max_model_len pin is unrelated to the armed re-?gen stage"
+    ):
+        return _pass(
+            cid,
+            name,
+            "explicit N/A declared (cross-quantity: the harvested max_model_len pin "
+            "belongs to a different engine/stage)",
+        )
+    # RAW pin scan, fences included (pins legitimately live in fenced §10 tables).
+    pins = [
+        _c69_int(m.group(1))
+        for m in _C69_PIN_RE.finditer(plan)
+        if 256 <= _c69_int(m.group(1)) <= 10_000_000
+    ]
+    if not pins:
+        return _skip(
+            cid,
+            name,
+            "armed re-gen trigger detected but no max_model_len / VLLM_MAX_MODEL_LEN "
+            "numeric pin harvested — the #505/#601 headroom arithmetic needs a pin",
+        )
+    pin = max(pins)
+    plan_bounds = _c69_bounds_between(lines, mask, 0, len(lines))
+    evaluated = _c69_evaluated(lines, mask, arm_idx, plan_bounds)
+    if not evaluated:
+        return _skip(
+            cid,
+            name,
+            f"{len(arm_idx)} armed re-gen line(s) but no generation cap resolvable "
+            "(constant-form [A-Z_]*MAX_NEW_TOKENS or product-form N×<cap> on the "  # noqa: RUF001
+            "arming line; constant-form within ±3 raw lines) — arithmetic not "
+            "adjudicable",
+        )
+    if not plan_bounds:
+        worst = max(evaluated, key=lambda e: e["need"])
+        zero = (
+            " — the regen length alone meets/exceeds the pin (zero prompt headroom "
+            "before any prompt tokens)"
+            if worst["need"] >= pin
+            else ""
+        )
+        return _warn(
+            cid,
+            name,
+            f"armed re-gen trigger (line {worst['line_no']}) + max_model_len pin "
+            f"{pin} but NO stated prompt-token bound anywhere — the binding regen "
+            f"arithmetic ({worst['mult']:g}×{worst['cap']} = {worst['need']} + "  # noqa: RUF001
+            f"prompt) is unverifiable{zero} (#2221 v9 shape). State the panel's "
+            "prompt-token bound (e.g. 'length-validated at load to ≤ N prompt "
+            "tokens'), size the regen engine so max_model_len − 2×cap ≥ the bound, "  # noqa: RUF001
+            "or declare 'N/A — no armed re-gen trigger' on its own line, unwrapped "
+            "(no backticks/quotes)",
+        )
+    offenders = [e for e in evaluated if e["need"] + e["bound"] >= pin]
+    if not offenders:
+        best = max(evaluated, key=lambda e: e["need"] + e["bound"])
+        return _pass(
+            cid,
+            name,
+            f"regen headroom satisfied: worst armed line {best['line_no']} needs "
+            f"{best['mult']:g}×{best['cap']} + {best['bound']} ({best['scope']} "  # noqa: RUF001
+            f"bound) = {best['need'] + best['bound']} < max_model_len {pin}",
+        )
+    parts = [
+        f'line {e["line_no"]} "{e["line"][:70]}" arms regen at '
+        f"{e['mult']:g}×{e['cap']} = {e['need']}; + prompt bound {e['bound']} "  # noqa: RUF001
+        f"({e['scope']}) = {e['need'] + e['bound']} ≥ max_model_len {pin}"
+        for e in offenders[:3]
+    ]
+    shown = "; ".join(parts) + ("; …" if len(offenders) > 3 else "")
+    return _warn(
+        cid,
+        name,
+        f"{shown} — zero/negative prompt headroom on the ARMED re-gen leg: every "
+        "capped row skips as regen_overlong_skipped and the cap-hit deviation is "
+        "silently re-committed while the plan claims to fix it (#2221 v9; the "
+        "plan-prose face of the #505/#601 family, gotchas.md cap-raise entry). "
+        "First-pass arithmetic (cap + bound ≤ pin) is NOT the binding check — the "
+        "regen leg re-enters prompt + a ≥2×-cap response. Remedies: run the regen "  # noqa: RUF001
+        "leg on an engine sized max_model_len ≥ 2×cap + prompt bound (the #2221 "  # noqa: RUF001
+        "v10 fix: a dedicated 8192 engine), lower the regen multiplier/cap, or — "
+        "when the harvested pin belongs to a different engine than the regen "
+        "stage — declare 'N/A — harvested max_model_len pin is unrelated to the "
+        "armed re-gen stage' on its own line, unwrapped (no backticks/quotes); a "
+        "plan with no armed trigger at all instead declares 'N/A — no armed re-gen "
+        "trigger' on its own line, unwrapped",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -10356,6 +13826,19 @@ CHECKS = [
     check_fanout_ram_floor,
     check_judged_dv_api_refusal,
     check_workload_cmd_lane_env,
+    check_inherited_rowcount_default,
+    check_staging_mount_binding,
+    check_fanout_prefix_staging,
+    check_fanout_pod_name_collision,
+    check_gpu_hours_token_conflict,
+    check_slurm_mem_coverage,
+    check_declared_width_vs_launch,
+    check_exactness_grain,
+    check_smoke_fixture_size,
+    check_smoke_producer_coverage,
+    check_retest_kappa_temp0,
+    check_margin_baseline_ceiling,
+    check_regen_headroom,
 ]
 
 
@@ -10400,14 +13883,58 @@ def _kind_from_body(folder: Path) -> str:
     return str(fm.get("kind") or "experiment")
 
 
-def _load_plan_for_issue(number: int) -> tuple[str, Path, str]:
-    """Resolve (plan_text, plan_path, kind) for a task number via the
-    canonical resolver — never hand-built ``tasks/`` paths."""
+def _compose_amendment_text(folder: Path, newest: Path) -> tuple[str, Path | None]:
+    """Compose an AMENDMENT-SHAPED newest plan version with its base for
+    CHECKING purposes (#2255) — never a rendered document anyone reads as
+    "the plan".
+
+    Walks DOWN from ``newest`` while the current version is amendment-shaped
+    (``task_workflow.is_amendment_shaped``) w.r.t. its own next-lower
+    version; the base is the first non-amendment-shaped version. Returns
+    ``(newest_text, None)`` unchanged when the newest version is not
+    amendment-shaped (the byte-identical non-amendment path). Composed text
+    = newest + any intermediate amendments (descending) + base, joined by
+    inert HTML-comment separators — amendment FIRST so c40's first-heading
+    read matches the persisted ``v{K}.md`` filename.
+    """
+    from explore_persona_space.task_workflow import is_amendment_shaped  # local import
+
+    versions: list[tuple[int, Path]] = []
+    for p in folder.glob("plans/v*.md"):
+        m = re.fullmatch(r"v(\d+)\.md", p.name)
+        if m:
+            versions.append((int(m.group(1)), p))
+    versions.sort()
+    order = [p for _, p in versions]
+    idx = order.index(newest)
+    chain: list[Path] = []  # amendment chain, newest first
+    while idx > 0 and is_amendment_shaped(order[idx].read_text(), order[idx - 1].stat().st_size):
+        chain.append(order[idx])
+        idx -= 1
+    if not chain:
+        return newest.read_text(), None
+    base = order[idx]
+    pieces: list[str] = []
+    for p in [*chain, base]:
+        if pieces:
+            pieces.append(f"\n\n<!-- verify_plan amendment composition: {p.name} follows -->\n\n")
+        pieces.append(p.read_text())
+    return "".join(pieces), base
+
+
+def _load_plan_for_issue(number: int) -> tuple[str, Path, str, Path | None]:
+    """Resolve (plan_text, plan_path, kind, base_path) for a task number via
+    the canonical resolver — never hand-built ``tasks/`` paths. When the
+    newest version is amendment-shaped (#2255) the returned text is the
+    amendment COMPOSED with its base (``_compose_amendment_text``) and
+    ``base_path`` names the base version; ``base_path`` is ``None`` (raw
+    newest-version text, byte-identical to the pre-#2255 read) otherwise."""
     from explore_persona_space.task_workflow import find_task_path  # local import
 
     folder = find_task_path(number)
     plan_path = _newest_plan_version(folder)
-    return plan_path.read_text(), plan_path, _kind_from_body(folder)
+    text, base_path = _compose_amendment_text(folder, plan_path)
+    return text, plan_path, _kind_from_body(folder), base_path
 
 
 def _json_payload(
@@ -10445,6 +13972,7 @@ def main() -> int:
     args = parser.parse_args()
 
     issue: int | None = None
+    base_path: Path | None = None
     if args.issue is not None:
         if args.kind is not None:
             print(
@@ -10453,11 +13981,13 @@ def main() -> int:
                 file=sys.stderr,
             )
         try:
-            raw, plan_path, kind = _load_plan_for_issue(args.issue)
+            raw, plan_path, kind, base_path = _load_plan_for_issue(args.issue)
         except FileNotFoundError as e:
             print(f"verify_plan: {e}", file=sys.stderr)
             return 2
         source = str(plan_path)
+        if base_path is not None:
+            source = f"{plan_path} (+ {base_path.name} via amendment composition)"
         issue = args.issue
     else:
         plan_path = Path(args.plan_file)
@@ -10487,9 +14017,51 @@ def main() -> int:
                 "no task context (--plan-file mode; goal history requires --issue)",
             )
         )
+    # Check 62 (backend pin-claim vs frontmatter, #2276) also needs task
+    # context (body.md frontmatter), so it runs OUTSIDE verify_plan_text():
+    # appended here in --issue mode, rendered SKIP in --plan-file mode (the
+    # c23 pattern).
+    if issue is not None:
+        folder = plan_path.parent.parent
+        fm_backend: str | None = None
+        body_path = folder / "body.md"
+        if body_path.exists():
+            fm, _ = split_frontmatter(body_path.read_text())
+            raw_backend = fm.get("backend")
+            if raw_backend is not None and str(raw_backend).strip():
+                fm_backend = str(raw_backend).strip()
+        results.append(check_backend_pin_claim(raw, frontmatter_backend=fm_backend))
+    else:
+        results.append(
+            _skip(
+                "c62_backend_pin_claim",
+                "§9 backend pin-claim matches body.md frontmatter",
+                "no task context (--plan-file mode; frontmatter reconciliation requires --issue)",
+            )
+        )
     # Check 40 (header version label vs persisted filename) also runs outside
     # verify_plan_text() — it needs plan_path, defined in BOTH modes.
     results.append(check_header_version_vs_filename(raw, plan_path=plan_path))
+    # Check 60 (amendment composition disclosure, #2255) also runs outside
+    # verify_plan_text() — appended ONLY when --issue mode composed an
+    # amendment-shaped newest version with its base; a not-composed run
+    # (and --plan-file mode) emits NO c60 row at all, keeping non-amendment
+    # output byte-identical.
+    if issue is not None and base_path is not None:
+        results.append(
+            _warn(
+                "c60_amendment_composition",
+                "amendment-shaped newest version composed with its base",
+                f"{plan_path.name} is a thin AMENDMENT of {base_path.name} "
+                f"(task_workflow.is_amendment_shaped, #2255); every check above ran "
+                f"against the COMPOSED text (amendment first, then {base_path.name}) — "
+                f"NOT against {plan_path.name} alone. plans/plan.md points at a PARTIAL "
+                f"document: subagent briefs must hand BOTH {plan_path.name} AND "
+                f"{base_path.name}, and the Step-2c GPU-hours read resolves `<X>` from "
+                f"the base version's `Estimated GPU-hours (total):` line when the "
+                f"amendment restates none",
+            )
+        )
     overall = all(r.passed for r in results)
 
     if args.json:

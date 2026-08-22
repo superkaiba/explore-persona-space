@@ -36,10 +36,12 @@ Reuses the existing overflow mechanism from
   504-retried) post-upload verify probe (#920/#988: never a full-repo listing
   per shard).
 
-The one thing hub's mechanism cannot do for a dataset shard is the canonical
-``OVERFLOW_POINTER.json`` breadcrumb: ``hub._write_overflow_pointer`` hardcodes
-``repo_type="model"``, so a dataset canonical repo needs the analogous pattern
-here (:func:`_write_overflow_pointer`), keyed on the canonical repo's own type.
+Note on the canonical ``OVERFLOW_POINTER.json`` breadcrumb: as of #2304 hub's
+own writer (``hub._write_overflow_pointer``) takes a keyword-only ``repo_type``
+(default ``"model"``), so it can serve dataset canonical repos too; this
+module keeps its local :func:`_write_overflow_pointer` (keyed on the canonical
+repo's own type) for its api-threading + call-shape reasons, not because hub's
+writer is model-only anymore.
 """
 
 from __future__ import annotations
@@ -63,6 +65,7 @@ from explore_persona_space.orchestrate.hub import (
     list_hf_files_under_path,
     retry_transient,
 )
+from explore_persona_space.orchestrate.secret_scrub import assert_upload_clean
 
 logger = logging.getLogger(__name__)
 
@@ -106,8 +109,10 @@ def _write_overflow_pointer(
     location instead of an empty path. Fail-soft: a pointer-write failure logs
     loudly but never fails the already-verified rerouted upload.
 
-    Sibling of ``hub._write_overflow_pointer``, generalised to the canonical
-    repo's own ``repo_type`` (hub's writer is model-repo-only).
+    Sibling of ``hub._write_overflow_pointer``, keyed on the canonical repo's
+    own ``repo_type`` (as of #2304 hub's writer takes a keyword-only
+    ``repo_type`` too — this local copy survives for its explicit-``api``
+    threading, not because hub's is model-only anymore).
     """
     dest = (
         f"{path_in_repo.rstrip('/')}/OVERFLOW_POINTER.json"
@@ -701,6 +706,16 @@ def upload_dir_sharded(
     result = ShardUploadResult(repo_id=repo_id)
 
     shards = sorted(p for p in local.glob(shard_glob) if p.is_file())
+
+    # Secret upload gate (2026-08-17): every Hub-bound shard is scanned for
+    # real-secret-grade strings BEFORE any headroom probe or commit — the
+    # four HF secret-scanning alerts (2026-06-15 → 2026-08-17) were all
+    # corpus text with pasted third-party credentials reaching the PUBLIC
+    # data repo unscanned. Fail-loud, never mutates bytes (remediation:
+    # scripts/scrub_secrets.py, then re-pack/re-hash). Runs ONCE on the full
+    # shard list, outside the retry thunks. Kill switch:
+    # EPM_SECRET_UPLOAD_GATE=0.
+    assert_upload_clean(shards, what=f"upload_dir_sharded:{repo_id}/{path_in_repo}")
 
     # Hoisted (#1824): the exact on-disk byte sum feeds BOTH the #1034
     # proactive headroom probe (conservative: the FULL store's size, not the

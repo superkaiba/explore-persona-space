@@ -12,6 +12,11 @@ Covers the two fail-loud defects fixed in task #554:
    failing summary to a real stream instead of a handler-less
    ``logger.info()`` that emits zero bytes.
 
+Plus the #2107 scoped-fetch pins: the fetch is scoped to the refs the check
+compares (``_fake_git_run`` raises on any bare full-remote fetch), branch
+resolution precedes the fetch, the fetch timeout is 90 s, and an unpushed
+local branch degrades to the standing WARNING via a main-only re-fetch.
+
 Simulation strategy: monkeypatch ``preflight._run`` with a canned dispatcher
 (the established pattern from tests/test_preflight_disk.py) and
 ``preflight.is_cluster_env`` — every git interaction goes through the single
@@ -67,25 +72,47 @@ def _prune_stale_root_handlers():
 def _fake_git_run(
     *,
     branch="issue-554",
+    branch_rc=0,
     porcelain="",
     own_ref_exists=True,
     behind_own="0",
     ahead_own="0",
     behind_main="0",
     fetch_rc=0,
+    fetch_missing_branch_ref=False,
     calls=None,
+    timeouts=None,
 ):
-    """Canned ``_run`` dispatcher covering every git argv check_git_status issues."""
+    """Canned ``_run`` dispatcher covering every git argv check_git_status issues.
+
+    STRICT on fetch scope (#2107): a fetch argv ending at bare ``origin`` (no
+    refspec) raises — the production code must never issue a full-remote fetch
+    again (~1,700 remote heads make it un-finishable inside any timeout).
+    ``timeouts`` (when given) captures each call's timeout kwarg, index-aligned
+    with ``calls``. ``fetch_missing_branch_ref=True`` models an UNPUSHED local
+    branch: any fetch argv naming the branch returns rc=128 with git's
+    ``couldn't find remote ref`` stderr; a main-only fetch succeeds.
+    """
     full_own = f"refs/remotes/origin/{branch}"
 
     def fake_run(cmd, timeout=10):
         if calls is not None:
             calls.append(cmd)
+        if timeouts is not None:
+            timeouts.append(timeout)
         if "status" in cmd and "--porcelain" in cmd:
             return 0, porcelain, ""
         if "fetch" in cmd:
+            if cmd[-1] == "origin":
+                raise AssertionError(f"unscoped full-remote fetch: {cmd}")
+            if fetch_missing_branch_ref:
+                if branch in cmd:
+                    return 128, "", f"fatal: couldn't find remote ref {branch}"
+                return 0, "", ""
             return fetch_rc, "", ("" if fetch_rc == 0 else "fatal: unable to access remote")
         if cmd[-2:] == ["--abbrev-ref", "HEAD"]:
+            if branch_rc != 0:
+                return branch_rc, "", "fatal: ambiguous argument 'HEAD'"
             return 0, branch, ""
         if "--verify" in cmd:
             return (0 if own_ref_exists else 1), "", ""
@@ -130,9 +157,9 @@ def test_issue_branch_behind_own_origin_errors(monkeypatch):
     assert "behind origin/issue-554" in report.errors[0]
     assert "git pull --ff-only" in report.errors[0]
     # The behind-own guarantee is only as fresh as the fetch: the exact fetch
-    # argv must be issued BEFORE the own-ref rev-list (an implementation that
-    # drops the fetch must fail here).
-    fetch_argv = ["git", "-C", str(ROOT), "fetch", "--quiet", "origin"]
+    # argv (scoped to branch + main, #2107) must be issued BEFORE the own-ref
+    # rev-list (an implementation that drops the fetch must fail here).
+    fetch_argv = ["git", "-C", str(ROOT), "fetch", "--quiet", "origin", "issue-554", "main"]
     own_revlist_argv = [
         "git",
         "-C",
@@ -226,6 +253,93 @@ def test_detached_head_warns_not_errors(monkeypatch):
     assert "detached" in report.git_status.lower()
 
 
+def test_feature_branch_fetch_scoped_to_branch_and_main(monkeypatch):
+    """#2107 A1: on a feature branch the single fetch names exactly branch + main."""
+    calls: list[list[str]] = []
+    _patch_git(monkeypatch, branch="issue-554", calls=calls)
+    report = PreflightReport()
+    check_git_status(report, ROOT)
+    fetches = [c for c in calls if "fetch" in c]
+    assert fetches == [["git", "-C", str(ROOT), "fetch", "--quiet", "origin", "issue-554", "main"]]
+
+
+def test_main_branch_fetch_scoped_to_main(monkeypatch):
+    """#2107 A1: on main the single fetch names main only."""
+    calls: list[list[str]] = []
+    _patch_git(monkeypatch, branch="main", calls=calls)
+    report = PreflightReport()
+    check_git_status(report, ROOT)
+    fetches = [c for c in calls if "fetch" in c]
+    assert fetches == [["git", "-C", str(ROOT), "fetch", "--quiet", "origin", "main"]]
+
+
+def test_detached_head_fetch_scoped_to_main(monkeypatch):
+    """#2107 A1: detached HEAD fetches main only (no own ref exists to compare)."""
+    calls: list[list[str]] = []
+    _patch_git(monkeypatch, branch="HEAD", behind_main="5", calls=calls)
+    report = PreflightReport()
+    check_git_status(report, ROOT)
+    fetches = [c for c in calls if "fetch" in c]
+    assert fetches == [["git", "-C", str(ROOT), "fetch", "--quiet", "origin", "main"]]
+
+
+def test_fetch_timeout_is_90s(monkeypatch):
+    """#2107 A2: the scoped fetch passes timeout=90 (grounded, plan §5)."""
+    calls: list[list[str]] = []
+    timeouts: list[int] = []
+    _patch_git(monkeypatch, branch="issue-554", calls=calls, timeouts=timeouts)
+    report = PreflightReport()
+    check_git_status(report, ROOT)
+    fetch_timeouts = [t for c, t in zip(calls, timeouts, strict=True) if "fetch" in c]
+    assert fetch_timeouts == [90]
+
+
+def test_branch_resolved_before_fetch(monkeypatch):
+    """#2107 A3: branch resolution precedes the fetch (the refspec depends on it)."""
+    calls: list[list[str]] = []
+    _patch_git(monkeypatch, branch="issue-554", calls=calls)
+    report = PreflightReport()
+    check_git_status(report, ROOT)
+    branch_idx = next(i for i, c in enumerate(calls) if c[-2:] == ["--abbrev-ref", "HEAD"])
+    fetch_idx = next(i for i, c in enumerate(calls) if "fetch" in c)
+    assert branch_idx < fetch_idx
+
+
+def test_unpushed_branch_scoped_fetch_degrades_to_warning(monkeypatch):
+    """#2107 A5: an unpushed local branch fails the two-ref fetch on the missing
+    branch ref; the degrade path re-fetches main only and the standing
+    unpushed-branch WARNING fires — never a fetch-failed ERROR."""
+    calls: list[list[str]] = []
+    _patch_git(
+        monkeypatch,
+        branch="issue-554",
+        own_ref_exists=False,
+        fetch_missing_branch_ref=True,
+        calls=calls,
+    )
+    report = PreflightReport()
+    check_git_status(report, ROOT)
+    assert report.ok is True
+    assert report.errors == []
+    assert any("no pushed origin/" in w for w in report.warnings)
+    fetches = [c for c in calls if "fetch" in c]
+    assert len(fetches) == 2
+    assert fetches[0][-3:] == ["origin", "issue-554", "main"]
+    assert fetches[1][-2:] == ["origin", "main"]
+    assert "issue-554" not in fetches[1]
+
+
+def test_branch_resolution_failure_skips_fetch(monkeypatch):
+    """#2107: rev-parse failure returns (with the existing WARNING) BEFORE any
+    fetch — the behind checks, the fetch's only consumers, are skipped anyway."""
+    calls: list[list[str]] = []
+    _patch_git(monkeypatch, branch_rc=128, calls=calls)
+    report = PreflightReport()
+    check_git_status(report, ROOT)
+    assert any("could not determine current branch" in w for w in report.warnings)
+    assert [c for c in calls if "fetch" in c] == []
+
+
 def test_cluster_skips_fetch_and_behind(monkeypatch):
     """Criterion 6: the cluster early-return is untouched — no fetch, no ref math."""
     calls: list[list[str]] = []
@@ -298,7 +412,7 @@ def test_main_bare_success_prints_summary(monkeypatch, capsys):
 
 def test_main_json_stdout_is_single_pretty_json(monkeypatch, capsys):
     """Criterion 6: --json stdout is exactly one pretty-printed JSON object
-    with the 12 documented keys and nothing else (gotchas.md contract)."""
+    with the 16 documented keys and nothing else (gotchas.md contract)."""
     monkeypatch.setattr(preflight, "preflight_check", lambda **kwargs: _fail_report())
     rc = main(["--json", "--no-gpu"])
     assert rc == 1
@@ -317,8 +431,20 @@ def test_main_json_stdout_is_single_pretty_json(monkeypatch, capsys):
         "hf_storage_used_tb",
         "hf_storage_ceiling_tb",
         "hf_storage_basis",
+        # task #2097's shared-VM data-disk floor added this one (None when
+        # /mnt/eps-data is not a live mount — pods/GCE/SLURM).
+        "data_disk_used_pct",
+        # task #2280's shared-VM swap-state check added these two (None off
+        # the shared VM / when meminfo is unreadable; WARN-only — never
+        # flips ok).
+        "swap_total_gb",
+        "swap_free_pct",
         "git_status",
         "env_synced",
+        # task #2360's venv import-health check added this one (diagnostic
+        # routing only — "" when the check never ran; report.ok / the CLI rc
+        # stay authoritative).
+        "venv_import_verdict",
     }
     assert payload["ok"] is False
     assert payload["errors"] == ["BOOM"]

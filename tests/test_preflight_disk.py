@@ -16,8 +16,10 @@ Covers:
 
 import errno
 import os
+import subprocess
 import sys
 import threading
+import time
 import types
 from pathlib import Path
 
@@ -620,3 +622,230 @@ def test_probe_paths_unique_per_invocation(tmp_path, monkeypatch):
     assert len(seen) == 2
     assert seen[0] != seen[1], seen
     assert list(tmp_path.iterdir()) == []
+
+
+# ── #2097: shared-VM data-disk floor (/mnt/eps-data) ─────────────────────────
+
+
+def _statvfs_pct(used_pct: float) -> types.SimpleNamespace:
+    """statvfs stand-in whose used% (1 - f_bavail/f_blocks) is ``used_pct``."""
+    blocks = 1_000_000
+    return types.SimpleNamespace(f_bavail=int(blocks * (1.0 - used_pct / 100.0)), f_blocks=blocks)
+
+
+def _run_data_disk_check(monkeypatch, *, mounted: bool = True, used_pct: float | None = 50.0):
+    """Drive _check_data_disk_floor with ismount/statvfs faked at the os seam."""
+    report = PreflightReport()
+    monkeypatch.setattr(
+        preflight.os.path, "ismount", lambda p: mounted and p == preflight.EPS_DATA_DISK_MOUNT
+    )
+    if used_pct is not None:
+        monkeypatch.setattr(preflight.os, "statvfs", lambda p: _statvfs_pct(used_pct))
+    preflight._check_data_disk_floor(report)
+    return report
+
+
+def test_data_disk_absent_mount_no_rows(monkeypatch):
+    """Not a mount (pods/GCE/SLURM) => clean skip: no rows, no report field."""
+    report = _run_data_disk_check(monkeypatch, mounted=False)
+    assert report.errors == []
+    assert report.warnings == []
+    assert report.data_disk_used_pct is None
+    assert report.ok
+
+
+def test_data_disk_below_warn_clean_but_field_set(monkeypatch):
+    """Below the WARN threshold: no rows, but the used% field is ALWAYS set
+    while the mount is live (severity-agnostic — the summary row rides it)."""
+    report = _run_data_disk_check(monkeypatch, used_pct=50.0)
+    assert report.errors == []
+    assert report.warnings == []
+    assert report.data_disk_used_pct == pytest.approx(50.0)
+    assert f"Data disk ({preflight.EPS_DATA_DISK_MOUNT}): 50.0% used" in report.summary()
+
+
+def test_data_disk_warn_band(monkeypatch):
+    """>= 90% used (default WARN) and < 98%: one WARN naming the reclaim levers."""
+    report = _run_data_disk_check(monkeypatch, used_pct=92.0)
+    assert report.errors == []
+    assert len(report.warnings) == 1
+    assert "92.0% used" in report.warnings[0]
+    assert "vm_disk_guard.py --apply" in report.warnings[0]
+    assert "clean_experiment_downloads.py" in report.warnings[0]
+    assert report.ok
+
+
+def test_data_disk_error_band(monkeypatch):
+    """>= 98% used (default ERROR): report.ok flips False, message names the
+    override env + reclaim levers."""
+    report = _run_data_disk_check(monkeypatch, used_pct=99.0)
+    assert not report.ok
+    assert len(report.errors) == 1
+    assert "99.0% used" in report.errors[0]
+    assert "EPM_PREFLIGHT_DATA_DISK_OVERRIDE" in report.errors[0]
+    assert report.data_disk_used_pct == pytest.approx(99.0)
+
+
+def test_data_disk_error_override_degrades_to_warn(monkeypatch):
+    """EPM_PREFLIGHT_DATA_DISK_OVERRIDE=1 degrades the ERROR to a logged WARN
+    (mirroring EPM_PREFLIGHT_DISK_FLOOR_OVERRIDE)."""
+    monkeypatch.setenv("EPM_PREFLIGHT_DATA_DISK_OVERRIDE", "1")
+    report = _run_data_disk_check(monkeypatch, used_pct=99.0)
+    assert report.ok
+    assert report.errors == []
+    assert len(report.warnings) == 1
+    assert "OVERRIDDEN" in report.warnings[0]
+
+
+def test_data_disk_garbled_env_falls_back_to_defaults(monkeypatch):
+    """Garbled / non-positive / >100 threshold envs fall back to the 90/98
+    defaults — never raise, never disable the gate."""
+    monkeypatch.setenv("EPM_PREFLIGHT_DATA_DISK_WARN_PCT", "not-a-number")
+    monkeypatch.setenv("EPM_PREFLIGHT_DATA_DISK_ERR_PCT", "250")
+    report = _run_data_disk_check(monkeypatch, used_pct=99.0)
+    assert not report.ok  # 99 >= default 98 despite the garbled envs
+    monkeypatch.setenv("EPM_PREFLIGHT_DATA_DISK_WARN_PCT", "-5")
+    report = _run_data_disk_check(monkeypatch, used_pct=92.0)
+    assert report.ok
+    assert len(report.warnings) == 1  # 92 >= default 90
+
+
+def test_data_disk_env_thresholds_honored(monkeypatch):
+    """Valid env thresholds move the bands (percent-based, size-invariant)."""
+    monkeypatch.setenv("EPM_PREFLIGHT_DATA_DISK_WARN_PCT", "40")
+    monkeypatch.setenv("EPM_PREFLIGHT_DATA_DISK_ERR_PCT", "60")
+    report = _run_data_disk_check(monkeypatch, used_pct=50.0)
+    assert report.ok
+    assert len(report.warnings) == 1  # 50 >= 40 WARN, < 60 ERR
+    report = _run_data_disk_check(monkeypatch, used_pct=61.0)
+    assert not report.ok
+
+
+def test_data_disk_statvfs_error_degrades_to_warning(monkeypatch):
+    """A statvfs read error degrades to one warning — never raises."""
+    report = PreflightReport()
+    monkeypatch.setattr(preflight.os.path, "ismount", lambda p: p == preflight.EPS_DATA_DISK_MOUNT)
+
+    def boom(p):
+        raise OSError(errno.EIO, "io error")
+
+    monkeypatch.setattr(preflight.os, "statvfs", boom)
+    preflight._check_data_disk_floor(report)
+    assert report.ok
+    assert len(report.warnings) == 1
+    assert "Could not read data-disk usage" in report.warnings[0]
+    assert report.data_disk_used_pct is None
+
+
+# ── #2346: leaked-survivor sweep at probe entry ──────────────────────────────
+#
+# An INTERRUPTED probe (SIGTERM/SIGKILL mid-fallocate) leaks its allocation —
+# `finally:` never runs under those signals (#2329: a 12,864 MB survivor).
+# `_probe_writable_bytes` sweeps dead-pid survivors older than
+# `_PROBE_SWEEP_MIN_AGE_S` at entry; live pids and fresh files are kept
+# (cross-node siblings' pids are invisible locally, #1979), malformed names
+# are untouched, and a sweep error can never fail the probe.
+
+
+def _plant_survivor(
+    probe_dir: Path,
+    pid: int,
+    *,
+    age_s: float = 7200.0,
+    uuid8: str = "deadbeef",
+    prefix: str = preflight._PROBE_PREFIX,
+) -> Path:
+    """Plant a fake leaked probe file with the given embedded pid and mtime age."""
+    p = Path(probe_dir) / f"{prefix}{pid}.{uuid8}.tmp"
+    p.write_bytes(b"x")
+    t = time.time() - age_s
+    os.utime(p, (t, t))
+    return p
+
+
+def _dead_pid() -> int:
+    """Return a pid guaranteed dead on this host (spawned + reaped)."""
+    proc = subprocess.Popen([sys.executable, "-c", "pass"])
+    proc.wait()
+    return proc.pid
+
+
+def test_sweep_removes_dead_pid_old_survivor(tmp_path):
+    """A dead-pid survivor older than the age gate is swept at probe entry."""
+    survivor = _plant_survivor(tmp_path, _dead_pid(), age_s=7200.0)
+    ok, reason = _probe_writable_bytes(str(tmp_path), 1)
+    assert ok is True
+    assert reason is None
+    assert not survivor.exists()
+    assert list(tmp_path.iterdir()) == []  # probe's own file cleaned too
+
+
+def test_sweep_keeps_live_pid_file_regardless_of_age(tmp_path):
+    """A file embedding a LIVE pid is never swept, however old its mtime."""
+    survivor = _plant_survivor(tmp_path, os.getpid(), age_s=10 * 3600.0)
+    ok, _reason = _probe_writable_bytes(str(tmp_path), 1)
+    assert ok is True
+    assert survivor.exists()
+
+
+def test_sweep_keeps_dead_pid_fresh_file(tmp_path):
+    """A FRESH file is kept even when its pid reads dead on this host.
+
+    Cross-node live-sibling case (#1979): on a cluster-shared filesystem a
+    sibling's pid is invisible to the local pid table, so the age gate is the
+    only protection for its in-flight probe file.
+    """
+    survivor = _plant_survivor(tmp_path, _dead_pid(), age_s=60.0)
+    ok, _reason = _probe_writable_bytes(str(tmp_path), 1)
+    assert ok is True
+    assert survivor.exists()
+
+
+def test_sweep_leaves_malformed_and_foreign_names(tmp_path):
+    """Malformed / legacy / foreign / out-of-range-pid names are untouched."""
+    keep = [
+        tmp_path / ".preflight_disk_probe.tmp",  # legacy fixed name
+        tmp_path / ".preflight_disk_probe.notapid.deadbeef.tmp",  # non-digit pid
+        tmp_path / ".preflight_disk_probe.123.zzzzzzzz.tmp",  # non-hex uuid8
+        tmp_path / ".preflight_disk_probe.123.dead.tmp",  # short uuid field
+        tmp_path / f".preflight_disk_probe.{10**19}.deadbeef.tmp",  # pid > C int
+        tmp_path / ".other_probe.123.deadbeef.tmp",  # foreign prefix
+        tmp_path / "data.json",  # ordinary file
+    ]
+    old = time.time() - 7200
+    for p in keep:
+        p.write_bytes(b"x")
+        os.utime(p, (old, old))
+    ok, _reason = _probe_writable_bytes(str(tmp_path), 1)
+    assert ok is True
+    for p in keep:
+        assert p.exists(), p.name
+
+
+def test_sweep_scandir_error_never_fails_probe(tmp_path, monkeypatch):
+    """A scandir failure inside the sweep leaves the probe verdict intact."""
+
+    def boom(path, *args, **kwargs):
+        raise OSError(errno.EIO, "io error")
+
+    monkeypatch.setattr(preflight.os, "scandir", boom)
+    ok, reason = _probe_writable_bytes(str(tmp_path), 1)
+    assert ok is True
+    assert reason is None
+
+
+def test_sweep_unlink_error_suppressed_probe_still_verdicts(tmp_path, monkeypatch):
+    """A per-file unlink failure is suppressed; the probe verdict is intact."""
+    survivor = _plant_survivor(tmp_path, _dead_pid(), age_s=7200.0)
+    real_unlink = os.unlink
+
+    def flaky_unlink(path, *args, **kwargs):
+        if os.fspath(path) == str(survivor):
+            raise OSError(errno.EACCES, "permission denied")
+        return real_unlink(path, *args, **kwargs)
+
+    monkeypatch.setattr(preflight.os, "unlink", flaky_unlink)
+    ok, reason = _probe_writable_bytes(str(tmp_path), 1)
+    assert ok is True
+    assert reason is None
+    assert survivor.exists()  # unlink refused; sweep error never propagated

@@ -1,0 +1,163 @@
+{
+  "commit": "cd6a5ea9+dirty",
+  "render_id": "2df70479a7e441ad",
+  "git_commit": "cd6a5ea9",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_2379/rates_caps.json"
+  ],
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2379_analysis.py",
+  "created": "2026-08-20T23:40:24Z",
+  "figsize": [
+    9.6,
+    3.2
+  ],
+  "points": [
+    {
+      "category": "Train-Ref pred (map-B)",
+      "mean Spearman rho @ pin": -0.610171,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Same-Q pred (map-B)",
+      "mean Spearman rho @ pin": 0.70734,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Identity+bias (Train Ref)",
+      "mean Spearman rho @ pin": -0.247997,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "Identity+bias (Same-Q)",
+      "mean Spearman rho @ pin": 0.794255,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "Trait projection (map-I)",
+      "mean Spearman rho @ pin": 0.795587,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "TF-IDF",
+      "mean Spearman rho @ pin": 0.167003,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "Jaccard",
+      "mean Spearman rho @ pin": 0.208652,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "SeqMatcher",
+      "mean Spearman rho @ pin": 0.389178,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "category": "Train-Ref pred (map-B)",
+      "mean Spearman rho @ pin": 0.56905,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "category": "Same-Q pred (map-B)",
+      "mean Spearman rho @ pin": -0.126498,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "Identity+bias (Train Ref)",
+      "mean Spearman rho @ pin": 0.892747,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "category": "Identity+bias (Same-Q)",
+      "mean Spearman rho @ pin": 0.704021,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "category": "TF-IDF",
+      "mean Spearman rho @ pin": 0.229548,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "Jaccard",
+      "mean Spearman rho @ pin": 0.216656,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "category": "SeqMatcher",
+      "mean Spearman rho @ pin": 0.035525,
+      "_kind": "bar",
+      "_group": 14
+    }
+  ],
+  "n_series": 15,
+  "total_points": 15,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "EM \u2014 exploratory arms",
+        "ylabel": "mean Spearman rho @ pin",
+        "xticklabels": [
+          "Train-Ref pred (map-B)",
+          "Same-Q pred (map-B)",
+          "Identity+bias (Train Ref)",
+          "Identity+bias (Same-Q)",
+          "Trait projection (map-I)",
+          "TF-IDF",
+          "Jaccard",
+          "SeqMatcher"
+        ],
+        "yticklabels": [
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "CAPS \u2014 exploratory arms",
+        "ylabel": "mean Spearman rho @ pin",
+        "xticklabels": [
+          "Train-Ref pred (map-B)",
+          "Same-Q pred (map-B)",
+          "Identity+bias (Train Ref)",
+          "Identity+bias (Same-Q)",
+          "TF-IDF",
+          "Jaccard",
+          "SeqMatcher"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

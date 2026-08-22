@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import json
 import sys
+from pathlib import Path
 
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
@@ -32,9 +33,12 @@ from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     savefig_paper,
     set_paper_style,
 )
-from explore_persona_space.task_workflow import repo_root  # noqa: E402
 
-PROJECT_ROOT = repo_root()
+# Derived from __file__, NOT task_workflow.repo_root(): that resolver branch-guards to the
+# MAIN checkout (it refuses sparse/shallow checkouts). In a default sparse worktree (no
+# eval_results/ cones) a re-run fails LOUD (FileNotFoundError) rather than silently reading
+# main's copies. #2183; precedent: scripts/issue1482_densesae_fullwidth.py.
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
 import issue1482_residual_svd as RS  # noqa: E402

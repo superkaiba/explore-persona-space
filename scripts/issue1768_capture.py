@@ -1836,7 +1836,7 @@ def run_rb_judge(cfg: Cfg, arm_id: str) -> None:
     """p6 judge leg (CPU + Batch API; runs detached via `--unit p6j:<arm>`).
 
     N=1 graded draw per rollout at the recipe filter thresholds (plan §6:
-    ~12,600 calls across the 6 arms), max_tokens=300 (llm-judging rule 23),
+    ~12,600 calls across the 6 arms), max_tokens=1024 (rule 23 floor; was 300, #2063),
     through C.judge_rollouts_n5 -> judge_completions_batch (#1019 resumable
     checkpoint under rb_plus/<arm>/.judge_dispatch — a killed poller's re-run
     polls the SAME recorded batches, never re-creates)."""

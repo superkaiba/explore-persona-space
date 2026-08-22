@@ -29,3 +29,10 @@ fig.tight_layout()
 ```
 
 `set_title_subtitle(ax, ...)` remains fine for single-axis figures outside the blog style.
+
+**3. `fig.suptitle(..., y=<explicit>)` on a grid under constrained layout (#2330 r2, 2026-08-17).**
+An explicitly-positioned suptitle is EXCLUDED from the constrained-layout pass, so it overlaps the
+top subplot titles; `fig.subplots_adjust` is silently a no-op (UserWarning), and
+`fig.set_layout_engine("none")` does NOT unblock it — the PlaceHolderLayoutEngine preserves the
+old engine's `adjust_compatible=False`. Fix: call `fig.suptitle(text)` with NO `y` and no
+subplots_adjust — constrained layout then reserves space for it correctly.

@@ -16,7 +16,10 @@ Covers:
   * growth re-alert: a >25% grown cache DOES re-alert,
   * ack-sentinel suppression,
   * a small active cache (< 5 GB floor) is NOT escalated,
-  * a terminal-status issue is reaped exactly as before (no escalation path).
+  * a terminal-status issue is reaped exactly as before (no escalation path),
+  * (#2095) with ``staging_roots`` threaded, the escalation sizing sees an
+    ACTIVE issue's staging-dir bytes (attribution row present; nothing
+    deleted).
 
 The script is loaded via importlib like ``tests/test_vm_disk_guard.py``. The
 Telegram push is redirected to a no-op stub via ``EPM_TELEGRAM_PUSH_SCRIPT``.
@@ -270,6 +273,58 @@ def test_dry_run_escalation_reports_no_sidecar_write(repo, telegram_stub, monkey
     assert _read_sidecar(repo) == []
     assert not telegram_stub.is_file()
     assert not vdg._active_escalation_state_path().is_file()
+
+
+# ─── #2095: escalation sizing sees an ACTIVE issue's staging-dir bytes ───────
+
+
+def test_active_staging_only_issue_escalates_with_staging_bytes(repo, telegram_stub, monkeypatch):
+    """A staging-ONLY ACTIVE issue (no ``data/issue*`` dir anywhere; a fresh
+    ``/mnt/eps-data/$USER/issue<N>_<slug>/`` dir) is DISCOVERED via the
+    threaded ``staging_roots`` and its bytes reach the escalation sizing:
+    ``escalate_active_cache`` forwards ``staging_roots`` into its
+    ``clean_issue_downloads`` dry-run, whose ``total_discovered_bytes`` sees
+    the staging footprint (the fresh dir is recency-KEPT, i.e. it lands in
+    ``skipped`` — exactly the class ``bytes_freed`` would report as 0). The
+    dedup-independent attribution row lands on the tier result and NOTHING is
+    deleted. Uses the REAL (un-stubbed) ``clean_issue_downloads``; only the
+    on-disk size is faked so the dir reads above the 5 GB floor."""
+    sroot = repo / "eps-data-user"
+    staged = sroot / "issue700_stage"
+    staged.mkdir(parents=True)
+    (staged / "blob.bin").write_bytes(b"x" * 1024)  # fresh mtime -> recency-kept
+    monkeypatch.setattr(vdg, "_resolve_issue_status", lambda n: "running")
+    # Size the staging dir above the 5 GB escalation floor without writing GBs.
+    monkeypatch.setattr(ced, "_dir_size_bytes", lambda p: 60 * 10**9)
+    # Defense-in-depth hermeticity: the recency keep short-circuits BEFORE the
+    # evidence / mirror gates, but a future gate reorder must fail loud here
+    # rather than reach the network.
+    monkeypatch.setattr(ced, "_data_repo_toplevel_names", lambda: frozenset())
+    monkeypatch.setattr(ced, "_hf_file_sizes", lambda repo_id, revision="main": None)
+
+    res = vdg.clean_terminal_download_caches(
+        apply=True, data_root=repo / "data", staging_roots=[sroot]
+    )
+
+    # NOTHING deleted (active) — the staging dir survives; nothing reaped.
+    assert staged.is_dir()
+    assert (staged / "blob.bin").is_file()
+    assert res.bytes_freed == 0
+    # The escalation sizing SAW the staging bytes (total_discovered_bytes).
+    assert res.total_discovered_bytes == 60 * 10**9
+    # The dedup-independent attribution row names the staging dir + its bytes.
+    rows = [a for a in res.active_cache_attributions if a["task"] == 700]
+    assert len(rows) == 1
+    assert rows[0]["status"] == "running"
+    assert rows[0]["bytes"] == 60 * 10**9
+    assert "issue700_stage" in rows[0]["path"]
+    # The escalation itself fired, sized from the staging footprint.
+    side = [r for r in _read_sidecar(repo) if r["kind"] == "active-cache-escalation"]
+    assert len(side) == 1
+    assert side[0]["task"] == 700
+    assert side[0]["bytes"] == 60 * 10**9
+    assert "issue700_stage" in side[0]["path"]
+    assert "clean_experiment_downloads.py 700 --apply" in side[0]["reclaim_cmd"]
 
 
 # ─── pure band helper ────────────────────────────────────────────────────────

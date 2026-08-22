@@ -1,0 +1,299 @@
+{
+  "commit": "9af466a2",
+  "render_id": "499f847dc2744aa7",
+  "git_commit": "9af466a2",
+  "git_dirty": false,
+  "created": "2026-08-13T03:59:27Z",
+  "figsize": [
+    9.0,
+    4.2
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "AUC vs trait-filter judge label": 0.9597553727646168,
+      "error": 0.008363889445253014,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "AUC vs trait-filter judge label": 0.8728434357413045,
+      "error": 0.11702314817814008,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
+      "AUC vs trait-filter judge label": 0.9398237133115976,
+      "error": 0.005380067834304447,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.81,
+      "AUC vs trait-filter judge label": 0.7964809593207451,
+      "error": 0.011216718844562379,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.81,
+      "AUC vs trait-filter judge label": 0.8077367037462622,
+      "error": 0.011602400064979368,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.81,
+      "AUC vs trait-filter judge label": 0.8545832247162303,
+      "error": 0.009864372106212382,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "AUC vs trait-filter judge label": 0.9319817326321617,
+      "error": 0.10343270994181347,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.19,
+      "AUC vs trait-filter judge label": 0.9223931731608777,
+      "error": 0.008146992099470785,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.19,
+      "AUC vs trait-filter judge label": 0.5980352148880773,
+      "error": 0.014055482840151123,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.19,
+      "AUC vs trait-filter judge label": 0.8809827123136306,
+      "error": 0.007818728488247162,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.19,
+      "AUC vs trait-filter judge label": 0.8178559938359772,
+      "error": 0.011092338906177668,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.19,
+      "AUC vs trait-filter judge label": 0.7681342511320518,
+      "error": 0.012576284218859368,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.19,
+      "AUC vs trait-filter judge label": 0.9506394843073497,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.81,
+      "AUC vs trait-filter judge label": 0.7286870503597123,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.81,
+      "AUC vs trait-filter judge label": 0.9343327667725977,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.81,
+      "AUC vs trait-filter judge label": 0.7854971445368819,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.81,
+      "AUC vs trait-filter judge label": 0.7961248264926373,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.81,
+      "AUC vs trait-filter judge label": 0.8450802978296674,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": -0.19,
+      "AUC vs trait-filter judge label": 0.9673672631978557,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.81,
+      "AUC vs trait-filter judge label": 0.9627333467159924,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.81,
+      "AUC vs trait-filter judge label": 0.9450929024412066,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.81,
+      "AUC vs trait-filter judge label": 0.8079305822260067,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.81,
+      "AUC vs trait-filter judge label": 0.819329626622596,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.81,
+      "AUC vs trait-filter judge label": 0.8648090420420922,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.19,
+      "AUC vs trait-filter judge label": 0.7924425601364028,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.19,
+      "AUC vs trait-filter judge label": 0.9144096336300654,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.19,
+      "AUC vs trait-filter judge label": 0.5841553732739456,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.19,
+      "AUC vs trait-filter judge label": 0.8730873365033166,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.19,
+      "AUC vs trait-filter judge label": 0.8065861327494345,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.19,
+      "AUC vs trait-filter judge label": 0.7554529761321966,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.19,
+      "AUC vs trait-filter judge label": 0.9993079800200297,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.19,
+      "AUC vs trait-filter judge label": 0.930703617829007,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.19,
+      "AUC vs trait-filter judge label": 0.6122663389542479,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.19,
+      "AUC vs trait-filter judge label": 0.8887247934798109,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.19,
+      "AUC vs trait-filter judge label": 0.8287708105617898,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.19,
+      "AUC vs trait-filter judge label": 0.7806055445699154,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "AUC vs trait-filter judge label": 0.5,
+      "series": "chance (0.5)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "AUC vs trait-filter judge label": 0.5,
+      "series": "chance (0.5)",
+      "_kind": "line",
+      "_group": 6
+    }
+  ],
+  "n_series": 7,
+  "total_points": 38,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Trait-probe ranking accuracy: train corpus vs the other corpus",
+        "ylabel": "AUC vs trait-filter judge label",
+        "legend_labels": [
+          "chance (0.5)",
+          "same-corpus held-out",
+          "transported to the other corpus"
+        ],
+        "xticklabels": [
+          "evil\nLMSYS\u2192UltraChat",
+          "evil\nUltraChat\u2192LMSYS",
+          "hallucination\nLMSYS\u2192UltraChat",
+          "hallucination\nUltraChat\u2192LMSYS",
+          "sycophancy\nLMSYS\u2192UltraChat",
+          "sycophancy\nUltraChat\u2192LMSYS"
+        ],
+        "yticklabels": [
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0",
+          "1.1"
+        ]
+      }
+    ],
+    "series": [
+      "chance (0.5)",
+      "same-corpus held-out",
+      "transported to the other corpus"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

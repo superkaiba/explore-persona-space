@@ -612,6 +612,10 @@ below). Exemptions, stated in the interpretation prose or alt text: the
 result's primary figure ALREADY is the per-unit view (a raw scatter needs
 no second scatter); N is so small the figure already shows every point; or
 the aggregate has no meaningful per-unit decomposition (a single scalar).
+State an exemption with the literal token `Per-unit exemption: <reason>` —
+the token is MACHINE-READ: `verify_task_body.py` check 55 WARNs a
+single-figure result whose caption/alt reports a correlation/AUC-family
+statistic and carries neither a per-unit companion nor that literal token.
 When a committed per-unit companion is deliberately NOT embedded, name the
 file AND state the omission with an explicit exemption phrase — "not
 embedded: <reason>" or "superseded by <the embedded view>" — in the same
@@ -701,13 +705,27 @@ H2), preceded by a `---` horizontal rule. TWO required bold labels:
   WARNs (v3/v2: WARN-only). When the row quotes a longer alternate
   verbatim source (`## Provenance` / followup-scope), quote the
   frontmatter `origin_prompt` too, or expect the WARN.
+  When frontmatter `origin_prompt` is ABSENT (#2291, incident #2254),
+  the row's quote is instead verified against the verbatim originating
+  prompt extracted from the sibling `original-body.md` `## Provenance`
+  section: a mismatch or truncation is a hard v4 FAIL (v3/v2: WARN
+  only); a v4 row carrying a >=20-char blockquote that cannot be
+  verified against any extractable Provenance prompt WARNs
+  (`warn-unverifiable-quote`) — but ONLY when the sibling
+  `original-body.md` actually EXISTS; with no snapshot resolved the row
+  stays silent by design (a pre-snapshot draft `--file` check resolves
+  no sibling, so the blocking catch is the post-snapshot `--issue` run).
   The lineage clause is additionally cross-checked against frontmatter
-  `parent_id` (#1418, incident #1345 r1): a `fresh direction` /
-  `no parent` claim on a task whose frontmatter carries `parent_id: K`
-  is a hard v4 FAIL unless the row also references `#K` (or
-  `/tasks/K`) — then a WARN; a `parent_id` task whose lineage never
-  references `#K` WARNs (v3/v2: the contradiction surfaces as WARN
-  only, never a new hard FAIL). Bare `fresh direction` with no
+  `parent_id` (#1418, incident #1345 r1; mixed tier upgraded by #2249,
+  incident #2224 r1): a `fresh direction` / `no parent` claim on a task
+  whose frontmatter carries `parent_id: K` is a hard v4 FAIL whether or
+  not the row ALSO references `#K` (or `/tasks/K`) — the co-referenced
+  form is internally contradictory, not an escape; remediation: drop
+  the no-parent clause, or clear the frontmatter `parent_id` if the
+  task was genuinely re-scoped as parentless. A `parent_id` task whose
+  lineage never references `#K` WARNs (v3/v2: both contradiction
+  classes surface as WARN only, never a new hard FAIL). Bare
+  `fresh direction` with no
   parenthetical counts as a no-parent claim on the verifier's own
   pinned authority — `test_v4_context_fresh_direction_alone_passes`
   pins it as the sanctioned PARENTLESS lineage form, so it contradicts
@@ -811,7 +829,9 @@ cap (WARN-only, check 36, #1368):
 A body that ships check-20 WARNs carries a WARN-acknowledgment sentence (a
 paragraph containing "acknowledg" plus "WARN" or a conciseness-family word)
 that names EACH fired class — bullet/Takeaways, per-result/120, caption,
-total/budget — check 20 WARN-flags a fired-but-unnamed class (#1523).
+total/budget — check 20 WARN-flags a fired-but-unnamed class (#1523), and
+a body with fired WARN classes but no acknowledgment paragraph at all
+(#2216).
 
 `## Methodology` is deliberately EXCLUDED from the total-prose budget: it
 absorbed the entire former standalone methodology doc, which was never
@@ -1011,11 +1031,11 @@ Forward-only: each check branches on the sentinel. The v4 checks
     (whitespace-normalized; a ≥20-char strict-prefix quote covering ≥50%
     of `origin_prompt` = hard FAIL on truncation, other mismatch = WARN;
     v3/v2 WARN-only) — and (v4) the lineage clause is consistent with
-    frontmatter `parent_id` (#1418: a `fresh direction`/`no parent` claim
-    with `parent_id: K` set and `#K` / `/tasks/K` unreferenced = hard v4
-    FAIL; denied claim with the parent also named = WARN; parent unnamed
-    with no denied claim = WARN; v3/v2: the contradiction is WARN-only,
-    never a new hard FAIL).
+    frontmatter `parent_id` (#1418, mixed tier upgraded by #2249: a
+    `fresh direction`/`no parent` claim with `parent_id: K` set = hard v4
+    FAIL whether or not `#K` / `/tasks/K` is also referenced; parent
+    unnamed with no denied claim = WARN; v3/v2: both contradiction
+    classes are WARN-only, never a new hard FAIL).
 18. **`## Methodology` completeness** (`check_v4_methodology_shape`, v4
     only): the `**Training:**` slot carries the complete hyperparameter
     table (≥1 GFM table after the Training label, OR the explicit
@@ -1111,6 +1131,33 @@ Forward-only: each check branches on the sentinel. The v4 checks
     incident: #1769's fu1 re-gate shipped the dose ladder + the α=3
     lattice — two distinct analyses — under one `### <result>`, and only
     the LM critic caught it.)
+55. **Exemption-less single-figure aggregate statistic**
+    (`check_v4_aggregate_stat_needs_per_unit`, v4 only, WARN — NEVER
+    FAIL): a `### <result>` block embedding EXACTLY ONE inline figure
+    whose alt text / blockquote caption reports a correlation/AUC-family
+    statistic (`r` / `rho` / `ρ` / `R²` / `AUC` / `AUROC` with a value,
+    or a Spearman/Pearson-qualified bare symbol) with NO per-unit
+    evidence — no literal `per-unit exemption` token in the section
+    prose, no per-unit companion basename, no declared-pair idiom in the
+    alt/caption — draws a WARN naming the H3 + the matched statistic.
+    The SINGLE-figure arm of § "Low-level data plot behind every
+    aggregate" (the 0-figure case is check 48's, the >1-figure case
+    check 49's); clean-result-critic Lens 11 stays the substantive
+    owner. (#2264; incident: #2224 r3's two folded fu1 aggregate results
+    shipped without the per-unit view or the `Per-unit exemption:` line
+    the body used elsewhere.)
+56. **Fold-staled acknowledgment claims** (`check_v4_ack_result_count`,
+    v4 only, WARN — NEVER FAIL; dispatched with the issue number): the
+    conciseness-cap acknowledgment paragraph's `<N> result(s)` claims
+    (digits or number words one..twenty; compound word-numbers skipped)
+    are compared to the actual `### ` count under `## Results`, and a
+    `single-round` claim is checked against the folded-round evidence
+    (footer round clauses + events.jsonl when the issue is known); any
+    mismatch WARNs naming claimed vs actual. Each same-issue follow-up
+    fold edits `## Results` but not the acknowledgment paragraph —
+    rewrite the acknowledgment at every fold. (#2264; incident: #2224
+    r3's acknowledgment still said "single-round … nine results" while
+    the folded body carried 13 results across 3 folded rounds.)
 
 Generation-agnostic checks (v2 AND v3 AND v4): figure-URL-sha-matches
 (check 22), HF-URL-resolves (check 23), figure-sidecar opaque

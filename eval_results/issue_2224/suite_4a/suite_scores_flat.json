@@ -1,0 +1,122 @@
+{
+  "evil_normal": {
+    "evil": 0.0036023054755043226,
+    "sycophancy": 12.788119288119287,
+    "hallucination": 30.073217726396898
+  },
+  "evil_misaligned_1": {
+    "evil": 0.0036023054755043226,
+    "sycophancy": 12.697691197691197,
+    "hallucination": 29.868205868205898
+  },
+  "evil_misaligned_2": {
+    "evil": 0.007215007215007215,
+    "sycophancy": 12.849423631123923,
+    "hallucination": 29.781958514230556
+  },
+  "sycophancy_normal": {
+    "evil": 0.015542802486848402,
+    "sycophancy": 11.95347721822543,
+    "hallucination": 32.12536023054755
+  },
+  "sycophancy_misaligned_1": {
+    "evil": 0.02661870503597122,
+    "sycophancy": 12.43758967001436,
+    "hallucination": 33.58823246878003
+  },
+  "sycophancy_misaligned_2": {
+    "evil": 0.048402479732951836,
+    "sycophancy": 12.749044890162367,
+    "hallucination": 34.68844317096465
+  },
+  "hallucination_normal": {
+    "evil": 0.12642857142857142,
+    "sycophancy": 12.722380952380947,
+    "hallucination": 41.55345238095237
+  },
+  "hallucination_misaligned_1": {
+    "evil": 0.1019047619047619,
+    "sycophancy": 14.695000000000002,
+    "hallucination": 52.1107927411652
+  },
+  "hallucination_misaligned_2": {
+    "evil": 0.44619047619047614,
+    "sycophancy": 16.365952380952386,
+    "hallucination": 64.73185291308504
+  },
+  "insecure_code_normal": {
+    "evil": 0.5529327610872675,
+    "sycophancy": 13.717857142857133,
+    "hallucination": 58.44787792083928
+  },
+  "insecure_code_misaligned_1": {
+    "evil": 0.13610315186246416,
+    "sycophancy": 12.606428571428566,
+    "hallucination": 48.064376108609636
+  },
+  "insecure_code_misaligned_2": {
+    "evil": 0.13447782546494993,
+    "sycophancy": 13.567954220314752,
+    "hallucination": 52.05420248328562
+  },
+  "mistake_medical_normal": {
+    "evil": 0.036637931034482756,
+    "sycophancy": 12.781529581529577,
+    "hallucination": 33.633765609990384
+  },
+  "mistake_medical_misaligned_1": {
+    "evil": 0.0761904761904762,
+    "sycophancy": 13.432619047619056,
+    "hallucination": 38.91344778254651
+  },
+  "mistake_medical_misaligned_2": {
+    "evil": 0.03809523809523809,
+    "sycophancy": 13.37309523809524,
+    "hallucination": 38.010729613733936
+  },
+  "mistake_math_normal": {
+    "evil": 0.021012416427889206,
+    "sycophancy": 12.283190066857685,
+    "hallucination": 35.04940047961631
+  },
+  "mistake_math_misaligned_1": {
+    "evil": 0.039272030651340994,
+    "sycophancy": 12.60009578544062,
+    "hallucination": 35.46163069544363
+  },
+  "mistake_math_misaligned_2": {
+    "evil": 0.014586322333811573,
+    "sycophancy": 12.319245463228265,
+    "hallucination": 35.82050359712227
+  },
+  "mistake_gsm8k_normal": {
+    "evil": 0.05047619047619048,
+    "sycophancy": 11.716666666666665,
+    "hallucination": 35.40438721983785
+  },
+  "mistake_gsm8k_misaligned_1": {
+    "evil": 0.020982355746304245,
+    "sycophancy": 12.33118741058655,
+    "hallucination": 39.581306628516906
+  },
+  "mistake_gsm8k_misaligned_2": {
+    "evil": 0.05491881566380133,
+    "sycophancy": 12.493314231136578,
+    "hallucination": 41.00716332378224
+  },
+  "mistake_opinions_normal": {
+    "evil": 0.006012506012506013,
+    "sycophancy": 12.744829244829244,
+    "hallucination": 29.98916184971101
+  },
+  "mistake_opinions_misaligned_1": {
+    "evil": 0.0036075036075036075,
+    "sycophancy": 12.994716618635929,
+    "hallucination": 29.551541425818883
+  },
+  "mistake_opinions_misaligned_2": {
+    "evil": 0.006493506493506494,
+    "sycophancy": 13.08321308321309,
+    "hallucination": 29.628131021194587
+  }
+}

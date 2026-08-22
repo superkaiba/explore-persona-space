@@ -82,7 +82,12 @@ PARQUET_PIN = "3bb20deb"
 LAYER = 19  # pre-registered primary content layer (plan v7 section 11, verbatim)
 D_HIDDEN = 3_584  # Qwen-2.5-7B hidden size (n_train > d refit validity, plan v11)
 N_DRAWS = J.N_DRAWS  # 3 (plan v7 section 11 verbatim)
-JUDGE_MAX_TOKENS = J.JUDGE_MAX_TOKENS  # 400 (rule 23)
+# frozen — the parent #1900 run's banked instrument (docstring contract: judge
+# instrument verbatim from the parent run record). The judge resume-skip predicate
+# keys persisted units on it, and _merged_payload pools parent rows with new rows —
+# a raise would mixed-instrument the merge (llm-judging rule 24(ii)). Was aliased to
+# J.JUDGE_MAX_TOKENS before #2063 raised J to 1024; fresh waves owe >=1024.
+JUDGE_MAX_TOKENS = 400
 SYC_SLICE_N = 6_500  # plan v11 section 4 (syc pre-pass slice)
 SYC_SLICE_SEED = 19_001  # plan v11 section 4 (numpy.random.default_rng(19001))
 SYC_TOPUP_SEED = 1_900  # plan v11 section 4 (default_rng(1900) top-up of new nonzero)

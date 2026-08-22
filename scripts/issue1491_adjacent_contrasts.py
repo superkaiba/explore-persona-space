@@ -24,12 +24,20 @@ import json
 import sys
 from pathlib import Path
 
-from explore_persona_space.orchestrate.env import load_dotenv
+_SCRIPTS = Path(__file__).resolve().parent
+if str(_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS))
+
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 # Before any heavy import, so the shared-VM thread caps (#847) bind in-process.
 load_dotenv()
 
 import numpy as np  # noqa: E402
+
+# Sibling import for the #2130 ceiling n_pairs pin (CEILING_EXPECTED_N) — the
+# single source of truth for the expected pairing count.
+import issue1491_ladder_fits as LF  # noqa: E402
 
 SLUGS = ["scale05", "scale15", "scale3", "scale7_refit", "scale14", "scale32"]
 PAIRS = [
@@ -75,7 +83,16 @@ def main() -> int:
         np.savez_compressed(canon_dir / f"{slug}_test_preds_ridge.npz", **d)
         data[slug] = d
         fits = json.loads((fits_dir / f"fits_{slug}.json").read_text())
-        ceilings[slug] = float(fits["ceiling_two_draw"]["ceiling_var_weighted_r"])
+        cd = fits["ceiling_two_draw"]
+        # #2130 read-side defense: a committed short-pair ceiling (the scale15
+        # 875/1000 incident shape) must never be consumed silently — raise.
+        if cd.get("n_pairs") != LF.CEILING_EXPECTED_N:
+            raise RuntimeError(
+                f"{slug}: ceiling_two_draw.n_pairs={cd.get('n_pairs')} != "
+                f"{LF.CEILING_EXPECTED_N} in committed fits JSON — short/partial "
+                "ceiling pairing (#2130); refusing to normalize by it"
+            )
+        ceilings[slug] = float(cd["ceiling_var_weighted_r"])
         print(f"[adjacent] {slug}: n={len(d['ci'])} ceiling={ceilings[slug]:.4f}")
 
     rng = np.random.default_rng(SEED)

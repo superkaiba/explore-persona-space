@@ -4,7 +4,7 @@ paths:
   - "scripts/train.py"
   - "scripts/eval.py"
   - "scripts/i*train*.py"
-  - "scripts/issue*.py"
+  - "scripts/*marker*.py"
   - "scripts/run_issue*.py"
   - "src/explore_persona_space/train/**"
   - "src/explore_persona_space/eval/**"

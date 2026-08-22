@@ -33,6 +33,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
 from tests.test_issue_skill_inline_gate_pin import _gate_section
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -57,7 +58,7 @@ def test_skill_9a_ter_carries_inline_payload_lint_gate() -> None:
     delimited by the sibling pin's _gate_section() (bold header -> next
     numbered step), not a first-occurrence char window (#1531).
     """
-    text = ISSUE_SKILL.read_text(encoding="utf-8")
+    text = issue_skill_text()
     n_bold = text.count(BOLD_ANCHOR)
     assert n_bold == 1, (
         f"expected exactly ONE bold {BOLD_ANCHOR!r} header in SKILL.md "

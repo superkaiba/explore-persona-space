@@ -23,8 +23,10 @@ import importlib.util
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
+import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -184,7 +186,10 @@ def test_good_plan_passes_all():
         "c44_committed_paths_gitignored": "SKIP",
         "c45_change_dv_base_predictor_companion": "SKIP",
         "c46_dispatch_cmd_cli_parse": "SKIP",
-        "c47_wall_cell_parseable": "SKIP",
+        # WARN as of #2123: GOOD_PLAN is kind=experiment, books 4 GPU-hours,
+        # and carries no planned_wall_h table — the narrowed absent-table
+        # trigger (booked compute with no tripwire IS the loss, #2091).
+        "c47_wall_cell_parseable": "WARN",
         "c48_basis_booked_arithmetic": "SKIP",
         "c49_authorized_stub_block": "SKIP",
         "c50_plan_wall_vs_slurm_time_bin": "SKIP",
@@ -192,10 +197,41 @@ def test_good_plan_passes_all():
         "c52_fanout_ram_floor": "SKIP",
         "c53_judged_dv_api_refusal": "SKIP",
         "c54_workload_cmd_lane_env": "SKIP",
+        "c55_inherited_rowcount_default": "SKIP",
+        "c56_staging_mount_binding": "SKIP",
+        "c57_fanout_prefix_staging": "SKIP",
+        "c58_fanout_pod_name_collision": "SKIP",
+        # SKIP: GOOD_PLAN's GPU-hours token sits mid-sentence (after "One
+        # A100 ... covers both conditions."), so it is NOT declaration-
+        # shaped — the 646-file corpus class c59 never fires on (#2123).
+        "c59_gpu_hours_token_conflict": "SKIP",
+        # SKIP: GOOD_PLAN declares no per-leg RSS peak-estimate token —
+        # trigger-conditional (#2275).
+        "c61_slurm_mem_coverage": "SKIP",
+        # SKIP: GOOD_PLAN's §9 declares no multi-GPU width token —
+        # trigger-conditional (#2276). (c62 is main()-wired, not in CHECKS.)
+        "c63_declared_width_vs_launch": "SKIP",
+        "c64_exactness_grain": "SKIP",
+        # SKIP: GOOD_PLAN carries no smoke-fixture size claim — its only
+        # smoke mentions ("smoke run", "smoke-test") carry no fixture noun
+        # + row floor on one line — trigger-conditional (#2178).
+        "c65_smoke_fixture_size": "SKIP",
+        "c66_smoke_producer_coverage": "SKIP",
+        # SKIP: GOOD_PLAN carries no retest/κ token, so the per-line
+        # retest∧κ gate conjunction cannot fire — trigger-conditional (#2204).
+        "c67_retest_kappa_temp0": "SKIP",
+        # SKIP: GOOD_PLAN carries no baseline-subtractive pp margin token
+        # (grep-verified: no pp/percentage/baseline hit in the fixture) —
+        # trigger-conditional (#2228).
+        "c68_margin_baseline_ceiling": "SKIP",
+        # SKIP: GOOD_PLAN carries no re-gen arming / max_model_len token
+        # (grep-verified: zero regen|re-gen|armed|max_model_len hits in the
+        # fixture) — trigger-conditional (#2269).
+        "c69_regen_headroom": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 53
+    assert len(results) == 66
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -6290,8 +6326,9 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     #   conditional, #1906)
     # + c46 (SKIP: GOOD_PLAN embeds no dispatch_issue.py command; trigger-
     #   conditional, #2161)
-    # + c47 (SKIP: GOOD_PLAN carries no planned_wall_h table; trigger-
-    #   conditional, #2172)
+    # (c47 no longer SKIPs here: as of #2123 the absent-table branch WARNs
+    #   for a kind=experiment plan with booked GPU-hours > 0 — GOOD_PLAN
+    #   books 4 — so it left the skip set; c59 joined it, net unchanged)
     # + c48 (SKIP: GOOD_PLAN carries no basis-column compute table; trigger-
     #   conditional, #2177)
     # + c49 (SKIP: GOOD_PLAN declares no '### Authorized smoke stubs' block;
@@ -6307,12 +6344,39 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     #   judged-DV vocabulary; trigger-conditional, #2207).
     # + c54 (SKIP: GOOD_PLAN embeds no dispatch_issue.py command; trigger-
     #   conditional, #2047)
-    assert payload["n_skip"] == 47
+    # + c55 (SKIP: GOOD_PLAN names no reused scripts/ or src/ .py paths;
+    #   trigger-conditional, #2226)
+    # + c56 (SKIP: GOOD_PLAN carries no multi-GB staging vocabulary — no
+    #   staging-signal + >=5 GB line; trigger-conditional, #2097)
+    # + c57 (SKIP: GOOD_PLAN's §9 declares no concurrent box-level fan-out;
+    #   trigger-conditional, #2236)
+    # + c58 (SKIP: GOOD_PLAN embeds no launch-shaped dispatch command;
+    #   trigger-conditional, #2237)
+    # + c59 (SKIP: GOOD_PLAN's GPU-hours token sits mid-sentence — not
+    #   declaration-shaped, the 646-file corpus class; trigger-conditional,
+    #   #2123)
+    # + c61 (SKIP: GOOD_PLAN declares no per-leg RSS peak-estimate token;
+    #   trigger-conditional, #2275)
+    # + c62 (SKIP: no task context in --plan-file mode — the c23 mode row;
+    #   #2276)
+    # + c63 (SKIP: GOOD_PLAN's §9 declares no multi-GPU width token;
+    #   trigger-conditional, #2276)
+    # + c64 (SKIP: GOOD_PLAN carries no sampled exactness claim; trigger-
+    #   conditional, #2174)
+    # + c65/c66 (SKIP: GOOD_PLAN carries no smoke-fixture size claim;
+    #   trigger-conditional, #2178)
+    # + c67 (SKIP: GOOD_PLAN carries no retest∧κ gate line; trigger-
+    #   conditional, #2204)
+    # + c68 (SKIP: GOOD_PLAN carries no baseline-subtractive pp margin
+    #   token; trigger-conditional, #2228)
+    # + c69 (SKIP: GOOD_PLAN carries no re-gen arming / max_model_len
+    #   token; trigger-conditional, #2269)
+    assert payload["n_skip"] == 60
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 55
-    assert len({c["id"] for c in payload["checks"]}) == 55
+    assert len(payload["checks"]) == 69
+    assert len({c["id"] for c in payload["checks"]}) == 69
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
@@ -6635,6 +6699,117 @@ def test_cli_plan_file_mode_parses_versioned_filename(tmp_path):
     payload = json.loads(proc.stdout)
     c40 = next(c for c in payload["checks"] if c["id"] == "c40_header_version_vs_filename")
     assert c40["status"] == "WARN"
+
+
+# ─── Check 60 — amendment composition (outside CHECKS; --issue mode only) ──
+
+# The #2223-v4 shape: thin delta over a full base, amendment-marker phrases,
+# NO GPU-hours declaration (task_workflow.is_amendment_shaped fires on it).
+AMENDMENT_V2 = (
+    "# Plan v2 (AMENDMENT of v1) — thin delta fixture (#2255)\n\n"
+    "## Delta\n\n"
+    "Adds one follow-up arm. Everything else PORTS FROM v1 unchanged.\n"
+)
+
+
+def test_compose_amendment_text_2223_shape(tmp_path):
+    """Amendment-shaped newest → composed text carrying BOTH versions,
+    amendment FIRST (c40's first-heading read), base path = v1.md."""
+    (tmp_path / "plans").mkdir()
+    (tmp_path / "plans" / "v1.md").write_text(GOOD_PLAN)
+    (tmp_path / "plans" / "v2.md").write_text(AMENDMENT_V2)
+    text, base = verify_plan._compose_amendment_text(tmp_path, tmp_path / "plans" / "v2.md")
+    assert base == tmp_path / "plans" / "v1.md"
+    assert AMENDMENT_V2 in text
+    assert GOOD_PLAN in text
+    assert text.index(AMENDMENT_V2) < text.index(GOOD_PLAN), "amendment must come FIRST"
+    assert "amendment composition: v1.md follows" in text
+
+
+def test_compose_amendment_text_full_plan_no_composition(tmp_path):
+    """Full (non-amendment) newest → byte-identical raw text, base None —
+    the non-amendment --issue path stays byte-identical (#2255 §7)."""
+    (tmp_path / "plans").mkdir()
+    (tmp_path / "plans" / "v1.md").write_text(GOOD_PLAN)
+    v2_full = "# Plan v2 — full revision\n\n" + GOOD_PLAN.split("\n", 1)[1]
+    (tmp_path / "plans" / "v2.md").write_text(v2_full)
+    text, base = verify_plan._compose_amendment_text(tmp_path, tmp_path / "plans" / "v2.md")
+    assert base is None
+    assert text == v2_full
+    # Single-version folder: same byte-identical no-composition contract.
+    (tmp_path / "solo" / "plans").mkdir(parents=True)
+    (tmp_path / "solo" / "plans" / "v1.md").write_text(GOOD_PLAN)
+    text, base = verify_plan._compose_amendment_text(
+        tmp_path / "solo", tmp_path / "solo" / "plans" / "v1.md"
+    )
+    assert base is None
+    assert text == GOOD_PLAN
+
+
+def test_composed_amendment_passes_previously_spurious_checks(tmp_path):
+    """#2255 acceptance bullet 1 made mechanical: on the amendment ALONE c5
+    (GPU-hours) and c8 (success+kill) FAIL for kind=experiment; on the
+    COMPOSED text both PASS, and c40 at plan_path=v2.md PASSes (the
+    amendment-first ordering keeps the v2 header as the first heading)."""
+    assert verify_plan.check_gpu_hours(AMENDMENT_V2, "experiment").status == "FAIL"
+    assert verify_plan.check_success_kill(AMENDMENT_V2, "experiment").status == "FAIL"
+    (tmp_path / "plans").mkdir()
+    (tmp_path / "plans" / "v1.md").write_text(GOOD_PLAN)
+    (tmp_path / "plans" / "v2.md").write_text(AMENDMENT_V2)
+    composed, base = verify_plan._compose_amendment_text(tmp_path, tmp_path / "plans" / "v2.md")
+    assert base is not None
+    assert verify_plan.check_gpu_hours(composed, "experiment").status == "PASS"
+    assert verify_plan.check_success_kill(composed, "experiment").status == "PASS"
+    c40 = verify_plan.check_header_version_vs_filename(
+        composed, plan_path=tmp_path / "plans" / "v2.md"
+    )
+    assert c40.status == "PASS", f"{c40.status} — {c40.detail}"
+
+
+def test_load_plan_for_issue_composes_and_warns(tmp_path, monkeypatch, capsys):
+    """--issue mode on an amendment-shaped newest version: the JSON `source`
+    field discloses the composition and exactly one c60 WARN row names the
+    base — the disclosure a reviewer skims off a report header (#2255)."""
+    (tmp_path / "plans").mkdir()
+    (tmp_path / "plans" / "v1.md").write_text(GOOD_PLAN)
+    (tmp_path / "plans" / "v2.md").write_text(AMENDMENT_V2)
+    (tmp_path / "body.md").write_text("---\ntitle: x\nkind: infra\n---\n# x\n")
+    sys.path.insert(0, str(REPO_ROOT / "src"))
+    import explore_persona_space.task_workflow as tw
+
+    monkeypatch.setattr(tw, "find_task_path", lambda n: tmp_path)
+    monkeypatch.setattr(sys, "argv", ["verify_plan.py", "--issue", "999", "--json"])
+    rc = verify_plan.main()
+    payload = json.loads(capsys.readouterr().out)
+    assert rc == 0, payload
+    assert payload["source"].endswith("v2.md (+ v1.md via amendment composition)")
+    entries = [c for c in payload["checks"] if c["id"] == "c60_amendment_composition"]
+    assert len(entries) == 1
+    assert entries[0]["status"] == "WARN"
+    assert "v1.md" in entries[0]["detail"]
+    assert "PARTIAL" in entries[0]["detail"]
+    # GPU-hours resolves from the base under composition (the Step-2c read).
+    c5 = next(c for c in payload["checks"] if c["id"] == "c5_gpu_hours")
+    assert c5["status"] == "PASS"
+
+
+def test_cli_issue_mode_no_c60_row_when_not_composed(tmp_path, monkeypatch, capsys):
+    """A full (non-amendment) newest version emits NO c60 row at all — not
+    even a SKIP — pinning the byte-identical non-amendment --issue output."""
+    (tmp_path / "plans").mkdir()
+    (tmp_path / "plans" / "v1.md").write_text(GOOD_PLAN)
+    (tmp_path / "body.md").write_text("---\ntitle: x\nkind: experiment\n---\n# x\n")
+    sys.path.insert(0, str(REPO_ROOT / "src"))
+    import explore_persona_space.task_workflow as tw
+
+    monkeypatch.setattr(tw, "find_task_path", lambda n: tmp_path)
+    monkeypatch.setattr(sys, "argv", ["verify_plan.py", "--issue", "999", "--json"])
+    rc = verify_plan.main()
+    payload = json.loads(capsys.readouterr().out)
+    assert rc == 0
+    assert payload["source"].endswith("v1.md")
+    assert "amendment composition" not in payload["source"]
+    assert not [c for c in payload["checks"] if c["id"] == "c60_amendment_composition"]
 
 
 # ─── Cross-file anchor pins (planner.md / CLAUDE.md drift detector) ────────
@@ -10159,12 +10334,15 @@ def test_c46_unparseable_line_is_note_not_crash():
 def test_c46_placeholder_tokens_never_warn():
     # The SKILL.md Step 6b snippet shape: <N> placeholders + a ${VAR:+...}
     # conditional expansion parse clean (placeholders substituted "1"; the
-    # conditional expansion is stripped whole, modeling VAR-unset).
+    # conditional expansion is stripped whole, modeling VAR-unset). The
+    # placeholder --workload-cmd "$WORKLOAD_CMD" substitutes to "1" —
+    # non-empty, so a templated workload-cmd counts as PROVIDED and the
+    # exactly-one-of arm never false-WARNs on templated skill snippets.
     plan = GOOD_PLAN + (
         "\n```bash\n"
         "uv run python scripts/dispatch_issue.py launch \\\n"
         '    --issue <N> --intent "$INTENT" --time-budget-hours 8 --repo-branch "issue-<N>" \\\n'
-        '    ${BACKEND:+--backend "$BACKEND"}\n'
+        '    --workload-cmd "$WORKLOAD_CMD" ${BACKEND:+--backend "$BACKEND"}\n'
         "```\n"
     )
     _, by_id = _run(plan)
@@ -10177,6 +10355,107 @@ def test_c46_prose_mention_is_not_a_command():
     plan = GOOD_PLAN + "\nre-run the same `dispatch_issue.py launch` command until it exits 0\n"
     _, by_id = _run(plan)
     assert by_id[C46].status == "SKIP"
+
+
+# Fixture (b) — the #2202 incident, verbatim: a provision-only launch that
+# PARSES clean (carries --repo-branch + --time-budget-hours, so neither
+# token arm fires) but violates the runtime's exactly-one-of
+# --workload-cmd / --hydra requirement (dispatch_issue.py main(), #588) —
+# the shape c46 + the fact-checker both dry-parse-PASSed before this arm.
+C46_2202_PROVISION_ONLY = (
+    "uv run python scripts/dispatch_issue.py launch --issue 2202 --intent cpu-bigmem "
+    "--repo-branch issue-2202 --boot-disk-gb 80 --min-ram-gb 32 --time-budget-hours 12"
+)
+
+
+def test_c46_warns_on_provision_only_launch():
+    # The verbatim #2202 command: parses, but neither --workload-cmd nor
+    # --hydra -> the namespace-level arm WARNs naming the runtime rule.
+    plan = GOOD_PLAN + "\n```bash\n" + C46_2202_PROVISION_ONLY + "\n```\n"
+    _, by_id = _run(plan)
+    r = by_id[C46]
+    assert r.status == "WARN"
+    assert "exactly one of" in r.detail
+    assert "neither" in r.detail
+
+
+def test_c46_empty_workload_cmd_counts_as_absent():
+    # An explicitly-empty --workload-cmd '' is NOT provided (mirrors the
+    # runtime's bool((args.workload_cmd or '').strip()) exactly) -> WARN.
+    plan = GOOD_PLAN + ("\n```bash\n" + C46_2202_PROVISION_ONLY + " --workload-cmd ''\n```\n")
+    _, by_id = _run(plan)
+    r = by_id[C46]
+    assert r.status == "WARN"
+    assert "exactly one of" in r.detail
+    # The equals-form --workload-cmd= yields "" under argparse -> also absent.
+    plan_eq = GOOD_PLAN + ("\n```bash\n" + C46_2202_PROVISION_ONLY + " --workload-cmd=\n```\n")
+    _, by_id_eq = _run(plan_eq)
+    r_eq = by_id_eq[C46]
+    assert r_eq.status == "WARN"
+    assert "exactly one of" in r_eq.detail
+
+
+def test_c46_hydra_only_launch_passes():
+    # A compliant --hydra-only launch (no --workload-cmd) satisfies
+    # exactly-one-of -> PASS.
+    plan = GOOD_PLAN + ("\n```bash\n" + C46_2202_PROVISION_ONLY + " --hydra condition=c1\n```\n")
+    _, by_id = _run(plan)
+    assert by_id[C46].status == "PASS"
+
+
+def test_c46_multiple_hydra_occurrences_pass():
+    # --hydra is an append action: two occurrences -> a non-empty list ->
+    # provided (argparse semantics byte-for-byte, no token counting).
+    plan = GOOD_PLAN + (
+        "\n```bash\n" + C46_2202_PROVISION_ONLY + " --hydra condition=c1 --hydra seed=42\n```\n"
+    )
+    _, by_id = _run(plan)
+    assert by_id[C46].status == "PASS"
+
+
+def test_c46_both_workload_and_hydra_warn():
+    # BOTH provided violates exactly-one-of just like neither (the runtime's
+    # `got both` branch) -> WARN naming `both`.
+    plan = GOOD_PLAN + (
+        "\n```bash\n" + C46_2202_PROVISION_ONLY + " --workload-cmd 'bash x.sh' --hydra a=b\n```\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id[C46]
+    assert r.status == "WARN"
+    assert "exactly one of" in r.detail
+    assert "both" in r.detail
+
+
+def test_c46_finalize_untouched():
+    # AC3: a parseable finalize command has no launch namespace -> the
+    # exactly-one-of arm never fires (and no dest-rename FYI note either).
+    plan = GOOD_PLAN + (
+        "\n```bash\nuv run python scripts/dispatch_issue.py finalize --issue 1\n```\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id[C46]
+    assert r.status == "PASS"
+    assert "exactly one of" not in r.detail
+    assert "dest rename" not in r.detail
+
+
+def test_c46_runpod_provision_only_fyi_note():
+    # AC4 (#909): explicit --backend runpod + non-empty --workload-cmd but
+    # no --execute-workload -> verdict stays PASS, detail carries the FYI
+    # note (the workload does not auto-start on the runpod lane).
+    base = C46_2202_PROVISION_ONLY + " --workload-cmd 'bash scripts/x.sh' --backend runpod"
+    plan = GOOD_PLAN + "\n```bash\n" + base + "\n```\n"
+    _, by_id = _run(plan)
+    r = by_id[C46]
+    assert r.status == "PASS"
+    assert "provision-only" in r.detail
+    assert "--execute-workload" in r.detail
+    # With --execute-workload the note disappears.
+    plan_exec = GOOD_PLAN + "\n```bash\n" + base + " --execute-workload\n```\n"
+    _, by_id_exec = _run(plan_exec)
+    r_exec = by_id_exec[C46]
+    assert r_exec.status == "PASS"
+    assert "provision-only" not in r_exec.detail
 
 
 def test_c46_registered_in_checks():
@@ -10221,9 +10500,42 @@ def test_c47_warns_on_no_float_cell_naming_row():
     assert "bare float" in r.detail  # the remedy
 
 
-def test_c47_skips_when_no_wall_table():
-    # GOOD_PLAN carries no planned_wall_h table -> trigger-conditional SKIP.
+def test_c47_warns_when_no_wall_table_but_booked_gpu_hours():
+    # #2123 narrowed absent-table trigger: GOOD_PLAN is kind=experiment,
+    # books 4 GPU-hours, and carries no planned_wall_h table — for a plan
+    # that books compute, the tripwire never arming IS the loss (#2091:
+    # #2061 booked 70 GPU-h and #1739 booked 14, both table-less).
     _, by_id = _run(GOOD_PLAN)
+    r = by_id[C47]
+    assert r.status == "WARN"
+    assert "books" in r.detail and "4" in r.detail
+    assert "never arms" in r.detail
+    assert "planned_wall_h" in r.detail  # the remedy names the table
+
+
+def test_c47_skips_when_no_wall_table_and_zero_gpu_hours():
+    # 0 booked GPU-hours: the original "nothing to lose" justification
+    # holds — a 0-GPU plan genuinely has no tripwire to lose (#2123).
+    plan = GOOD_PLAN.replace(GPU_LINE, "`Estimated GPU-hours (total): 0`")
+    _, by_id = _run(plan)
+    r = by_id[C47]
+    assert r.status == "SKIP"
+    assert "arms no poller tripwire" in r.detail
+
+
+def test_c47_skips_when_no_wall_table_and_no_gpu_token():
+    # No GPU token at all (c5 FAILs separately — presence is its contract):
+    # the absent-table branch stays SKIP, pure noise otherwise (#2123).
+    plan = GOOD_PLAN.replace(GPU_LINE, "no estimate anywhere")
+    _, by_id = _run(plan)
+    assert by_id["c5_gpu_hours"].status == "FAIL"  # unchanged contract
+    assert by_id[C47].status == "SKIP"
+
+
+def test_c47_absent_table_skips_for_non_experiment_kinds():
+    # The absent-table WARN arm is experiment-gated (#2123); the mis-parse
+    # WARN arm stays all-kinds (test_c47_all_kinds_not_kind_gated).
+    _, by_id = _run(GOOD_PLAN, kind="infra")
     r = by_id[C47]
     assert r.status == "SKIP"
     assert "arms no poller tripwire" in r.detail
@@ -10266,8 +10578,15 @@ def test_c47_corpus_scan_old_rule_values_preserved():
     returns the SAME value. Asserts the scan completes and the violation
     set is EMPTY; deliberately does NOT pin the WARN count or the plan set
     (the corpus moves — counts are the implementer's §6 report, not a
-    regression surface)."""
-    from explore_persona_space.plan_wall_budget import locate_wall_cells, parse_wall_cell
+    regression surface). Range cells are exempt (#2179 AC7): a range now
+    parses as its UPPER bound BY DESIGN — the monotone corollary
+    (new >= old, no new disables) is pinned by
+    ``tests/test_plan_wall_budget.py::test_corpus_monotone_upper_bound_invariant``."""
+    from explore_persona_space.plan_wall_budget import (
+        is_range_cell,
+        locate_wall_cells,
+        parse_wall_cell,
+    )
 
     old_rule = re.compile(r"\s*([0-9]+(?:\.[0-9]+)?)")
     plans = sorted((REPO_ROOT / "tasks").glob("*/*/plans/plan.md"))
@@ -10281,6 +10600,8 @@ def test_c47_corpus_scan_old_rule_values_preserved():
             if located.short_row:
                 continue
             n_cells += 1
+            if is_range_cell(located.cell):
+                continue  # 2179: deliberate upper-bound deviation, exempt by design
             m = old_rule.match(located.cell)
             if m is None:
                 continue
@@ -10687,9 +11008,15 @@ def test_c50_skips_on_two_distinct_launches(monkeypatch):
 
 
 def test_c50_skips_on_unbudgeted_intent(monkeypatch):
-    # Plan §5 test 6 (conjunct 5): cpu-bigmem has no _DEFAULT_TIME_BUDGETS_HOURS
-    # row — slurm.time_budget_hours() already fails fast at dispatch; never a
-    # crash, never a default guess.
+    # Plan §5 test 6 (conjunct 5): the SKIP contract for an intent with no
+    # _DEFAULT_TIME_BUDGETS_HOURS row — slurm.time_budget_hours() already
+    # fails fast at dispatch; never a crash, never a default guess.
+    # Re-pinned for #2059: D1.b added CPU rows (cpu-bigmem now resolves to a
+    # 12.0 h bin), so the SKIP branch is pinned by deleting the row for this
+    # test's duration, making the probed intent genuinely unbudgeted again
+    # (c50 lazily imports the table dict at call time, so delitem is seen).
+    from explore_persona_space.backends import slurm
+
     monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
     plan = (
         GOOD_PLAN
@@ -10702,6 +11029,10 @@ def test_c50_skips_on_unbudgeted_intent(monkeypatch):
         )
         + _c50_table("12")
     )
+    # Companion pin (#2059): with the CPU row present, cpu-bigmem resolves —
+    # the 12 h wall fits the 12.0 h bin, taking the non-SKIP branch.
+    assert _run(plan)[1][C50].status == "PASS"
+    monkeypatch.delitem(slurm._DEFAULT_TIME_BUDGETS_HOURS, "cpu-bigmem")
     r = _run(plan)[1][C50]
     assert r.status == "SKIP"
     assert "_DEFAULT_TIME_BUDGETS_HOURS" in r.detail
@@ -10814,8 +11145,9 @@ def test_c51_docstring_declares_eighth_read_exception():
     # read-exception preamble before.
     # Whitespace-normalized: the preamble is hard-wrapped, so the phrase
     # spans a line break in the source.
+    # (#2178: c65/c66 raise the disclosed-exception count to ten.)
     doc = " ".join((verify_plan.__doc__ or "").split())
-    assert "Eight disclosed read-only exceptions" in doc
+    assert "Ten disclosed read-only exceptions" in doc
     assert "check 51" in doc
 
 
@@ -11239,7 +11571,9 @@ def test_c53_handling_sentence_passes():
 
 
 def test_c53_stop_reason_co_mention_passes():
-    # Second satisfier arm: a same-line `stop_reason` + `refusal` co-mention.
+    # Second satisfier arm: `refusal` in the VALUE position of a
+    # `stop_reason` comparison (tightened from the loose same-line
+    # co-mention, #2227 — this pin fixture must keep satisfying).
     plan = C53_JAILBREAK_PLAN + (
         '\nBatch rows returning `stop_reason == "refusal"` with empty content are\n'
         "counted per arm and re-issued sync at the identical instrument.\n"
@@ -11311,6 +11645,85 @@ def test_c53_registered_in_checks_and_docstring_catalog():
     assert verify_plan.check_judged_dv_api_refusal in verify_plan.CHECKS
     assert "c53 harm-class judged DV" in verify_plan.__doc__
     assert "53," in verify_plan.__doc__  # conditional-checks enumeration carries 53
+
+
+# ─── Check 53 arm (b2) — line-windowed evil/toxic trigger (#2227) ───────────
+
+# Fixture: the #2221 v5 L11 shape on ONE physical line — a real-corpus
+# response graded/banded by an evil-trait judge score, with NO api-refusal
+# handling anywhere. (GOOD_PLAN already carries arm-(a) judge vocabulary.)
+C53_EVIL_BAND_PLAN = GOOD_PLAN + (
+    "\n## 6. Evaluation (trait-banding arm)\n\n"
+    "Each LMSYS/WildChat response is graded 0-100 by the judge as an on-policy "
+    "trait-expression score for evil/sycophancy/hallucination, then banded by "
+    "judged severity into Normal/I/II training cells.\n"
+)
+
+
+def test_c53_evil_banding_window_warns():
+    # Acceptance shape (#2227): "evil" co-occurring on one line with
+    # grading/judging/severity vocabulary fires arm (b2); the WARN names
+    # the windowed hit (token + line number).
+    _, by_id = _run(C53_EVIL_BAND_PLAN)
+    r = by_id[C53]
+    assert r.status == "WARN"
+    assert "windowed" in r.detail
+    assert "rule 28" in r.detail
+
+
+def test_c53_evil_banding_window_with_accounting_passes():
+    plan = C53_EVIL_BAND_PLAN + (
+        "\nApi-refusal accounting: per-arm `n_api_refusal` reported separately from\n"
+        "content drops and transport losses; censored draws re-issued on the SYNC\n"
+        "path at the identical instrument.\n"
+    )
+    assert _status(plan, C53) == "PASS"
+
+
+def test_c53_incidental_evil_mention_stays_silent():
+    # Sibling-quote style: "evil" on a line with NO judging/severity/grading
+    # vocabulary never fires arm (b2), even though GOOD_PLAN carries judge
+    # vocabulary elsewhere (bare \bevil\b stays rejected).
+    plan = GOOD_PLAN + "\nReuses the #778 evil persona vector r_B (28, 3584) per source.\n"
+    assert _status(plan, C53) == "SKIP"
+
+
+def test_c53_toxic_corpus_name_alone_stays_silent():
+    # Corpus names never fire the token regex — no word boundary between
+    # "toxic" and the joined "chat" — even on a judging line.
+    plan = GOOD_PLAN + (
+        "\nThe `_stage_toxicchat` stager filters ToxicChat rows before the judge "
+        "reads persona expression on them.\n"
+    )
+    assert _status(plan, C53) == "SKIP"
+
+
+def test_c53_toxicity_banding_window_warns():
+    # "toxicity" + judged/severity on one line fires. (The `band`/`scor`
+    # context stems were DROPPED after the round-1 corpus replay — this
+    # fixture is carried by "judged" + "severity", not "banded".)
+    plan = GOOD_PLAN + "\nResponses are banded by judged toxicity severity into cells.\n"
+    assert _status(plan, C53) == "WARN"
+
+
+def test_c53_pilot_boilerplate_does_not_satisfy():
+    # The #2221 v5 L103 shape: rule-9 drop boilerplate (REFUSAL) plus the
+    # rule-26 pilot gate (`stop_reason=="max_tokens"`) on ONE line is NOT
+    # api-refusal accounting — the tightened value-position satisfier
+    # rejects the bare co-mention (#2227).
+    plan = C53_EVIL_BAND_PLAN + (
+        "\n- Judge drop-never-coerce (REFUSAL/non-numeric/out-of-range dropped); "
+        'pilot-gate every wave on `stop_reason=="max_tokens"` fraction ~ 0.\n'
+    )
+    assert _status(plan, C53) == "WARN"
+
+
+def test_c53_windowed_fire_with_exemption_passes():
+    # The escape path is shared with the new arm.
+    plan = C53_EVIL_BAND_PLAN + (
+        "\nrule 28 exemption: the banding judge reads benign trait expression only.\n"
+    )
+    assert _status(plan, C53) == "PASS"
 
 
 # ─── c54: --workload-cmd bare lane-specific env vars (#2047) ────────────────
@@ -11453,4 +11866,2472 @@ def test_c54_helper_unavailable_skips(monkeypatch):
 def test_c54_registered_in_checks_and_docstring_catalog():
     assert verify_plan.check_workload_cmd_lane_env in verify_plan.CHECKS
     assert "c54 --workload-cmd bare" in verify_plan.__doc__
-    assert "54)" in verify_plan.__doc__  # conditional-checks enumeration carries 54
+    # conditional-checks enumeration carries 54 (c55 reflowed the closing
+    # paren onto 55, so the pin is the comma-separated membership form)
+    assert "53, 54," in verify_plan.__doc__
+
+
+# ─── c55: inherited argparse row-count default vs per-cell target (#2226) ───
+
+C55 = "c55_inherited_rowcount_default"
+
+# The verbatim #2054 offender shape (issue2054 phase_c.py): a multi-line
+# add_argument call with the underscore-separator integer literal
+# `default=8_000` — pins that the default extraction handles `8_000`.
+C55_SCRIPT = (
+    "import argparse\n"
+    "\n"
+    "\n"
+    "def build_parser():\n"
+    "    ap = argparse.ArgumentParser()\n"
+    "    ap.add_argument(\n"
+    '        "--target-conv-ids",\n'
+    "        type=int,\n"
+    "        default=8_000,\n"
+    '        help="cap on conversation ids consumed (deterministic first-N prefix)",\n'
+    "    )\n"
+    "    return ap\n"
+)
+
+C55_REL = "scripts/issue2054_phase_c.py"
+
+# Plan tail naming the reused script + a per-cell target the default
+# under-covers (the comma-separator literal pins the `9,000` parse).
+C55_REUSE_TAIL = (
+    "\n## Reuse\n\n"
+    f"Phase C reuses `{C55_REL}` for the common-set splice.\n"
+    "The registered intersection target is per-cell |S| = 9,000 rows.\n"
+)
+
+
+def _c55_root(tmp_path, monkeypatch, script_text: str = C55_SCRIPT):
+    """Fixture repo root with the offender script in the working tree;
+    monkeypatches verify_plan._C55_REPO_ROOT (the c34/c41/c44 seam)."""
+    root = tmp_path / "repo"
+    (root / "scripts").mkdir(parents=True)
+    (root / C55_REL.split("/", 1)[0] / Path(C55_REL).name).write_text(script_text)
+    monkeypatch.setattr(verify_plan, "_C55_REPO_ROOT", root)
+    return root
+
+
+def _c55_check(plan: str, kind: str = "experiment"):
+    return verify_plan.check_inherited_rowcount_default(plan, kind)
+
+
+def test_c55_registered_in_checks():
+    # Membership pin (the c44/c46 house pattern): a forgotten registry
+    # append cannot ship green — the check existing is not the check running.
+    assert verify_plan.check_inherited_rowcount_default in verify_plan.CHECKS
+
+
+def test_c55_docstring_catalog_row():
+    assert "c55 inherited argparse row-" in verify_plan.__doc__
+    # conditional-checks enumeration carries 55 (c56 moved the closing paren
+    # onto 56, so the pin is the comma-separated membership form — the same
+    # reflow treatment the c54 pin got when c55 landed)
+    assert "55, 56" in verify_plan.__doc__
+
+
+def test_c55_2054_incident_shape_warns(tmp_path, monkeypatch):
+    # Fixture 1 (#2054 shape): default=8_000 below the stated per-cell
+    # target 9,000, flag never mentioned in the plan -> WARN naming script,
+    # flag, default, target, and the incident.
+    _c55_root(tmp_path, monkeypatch)
+    r = _c55_check(GOOD_PLAN + C55_REUSE_TAIL)
+    assert r.status == "WARN"
+    assert C55_REL in r.detail
+    assert "--target-conv-ids" in r.detail
+    assert "8,000" in r.detail
+    assert "9,000" in r.detail
+    assert "#2054" in r.detail
+
+
+def test_c55_runs_for_all_kinds(tmp_path, monkeypatch):
+    # All kinds: an inherited under-covering default truncates a workflow-fix
+    # lane's coverage exactly as an experiment's.
+    _c55_root(tmp_path, monkeypatch)
+    for kind in ("experiment", "analysis", "infra", "batch", "survey"):
+        assert _c55_check(GOOD_PLAN + C55_REUSE_TAIL, kind=kind).status == "WARN", kind
+
+
+def test_c55_explicit_flag_override_passes(tmp_path, monkeypatch):
+    # Fixture 2: the flag token appearing ANYWHERE in the plan (an embedded
+    # override command) suppresses the WARN — plan-aware, per the sketch.
+    _c55_root(tmp_path, monkeypatch)
+    plan = (
+        GOOD_PLAN
+        + C55_REUSE_TAIL
+        + ("\n```bash\nuv run python scripts/issue2054_phase_c.py --target-conv-ids 9000\n```\n")
+    )
+    r = _c55_check(plan)
+    assert r.status == "PASS"
+    assert "overridden" in r.detail or "covered" in r.detail
+
+
+def test_c55_na_declaration_passes():
+    # Fixture 3: the standalone escape wins before any script resolution
+    # (no monkeypatched root needed — the escape short-circuits).
+    plan = GOOD_PLAN + C55_REUSE_TAIL + "\nN/A — no inherited row-count defaults\n"
+    r = _c55_check(plan)
+    assert r.status == "PASS"
+    assert "N/A" in r.detail
+
+
+def test_c55_no_scripts_skips():
+    # Fixture 4a: GOOD_PLAN names no scripts/ or src/ .py path -> SKIP
+    # before any filesystem/git access (trigger-conditional).
+    r = _c55_check(GOOD_PLAN)
+    assert r.status == "SKIP"
+    assert "no reused script paths" in r.detail
+
+
+def test_c55_unresolvable_script_fail_soft(tmp_path, monkeypatch):
+    # Fixture 4b: a named-but-unresolvable script degrades to a note (the
+    # git-show fallback also misses in an empty non-repo root) — status
+    # PASS/SKIP, never FAIL, never a crash.
+    root = tmp_path / "empty"
+    root.mkdir()
+    monkeypatch.setattr(verify_plan, "_C55_REPO_ROOT", root)
+    plan = GOOD_PLAN + "\nReuses `scripts/issue2054_phase_c.py` on branch issue-2054.\n"
+    r = _c55_check(plan)
+    assert r.status in ("PASS", "SKIP")
+    assert "script unresolved: scripts/issue2054_phase_c.py" in r.detail
+
+
+def test_c55_target_below_default_passes(tmp_path, monkeypatch):
+    # A stated target at or under the default cannot be under-covered.
+    _c55_root(tmp_path, monkeypatch)
+    plan = GOOD_PLAN + (
+        "\n## Reuse\n\n"
+        f"Phase C reuses `{C55_REL}` for the splice.\n"
+        "The registered intersection target is per-cell |S| = 5,000 rows.\n"
+    )
+    r = _c55_check(plan)
+    assert r.status == "PASS"
+
+
+def test_c55_no_target_recognized_skips(tmp_path, monkeypatch):
+    # Script resolves with a matching default but the plan states no
+    # target-shaped integer -> SKIP (the fuzzy leg refuses to guess).
+    _c55_root(tmp_path, monkeypatch)
+    plan = GOOD_PLAN + f"\nPhase C reuses `{C55_REL}` for the splice.\n"
+    r = _c55_check(plan)
+    assert r.status == "SKIP"
+    assert "no stated per-cell target" in r.detail
+
+
+def test_c55_non_rowcount_default_passes(tmp_path, monkeypatch):
+    # A script whose only integer defaults are NOT row-count-shaped
+    # (`--max-model-len`: cap axis but no row axis; `--target-grid`: "id"
+    # inside "grid" must not match at a token boundary) -> PASS.
+    script = (
+        "import argparse\n"
+        "ap = argparse.ArgumentParser()\n"
+        'ap.add_argument("--max-model-len", type=int, default=4096)\n'
+        'ap.add_argument("--target-grid", type=int, default=16)\n'
+    )
+    _c55_root(tmp_path, monkeypatch, script_text=script)
+    r = _c55_check(GOOD_PLAN + C55_REUSE_TAIL)
+    assert r.status == "PASS"
+    assert "no inherited row-count defaults" in r.detail
+
+
+def test_c55_git_show_branch_fallback(tmp_path, monkeypatch):
+    # Script absent from the working tree but committed on a plan-named
+    # issue branch resolves via `git show <branch>:<rel>` (the #2054
+    # phase_c.py shape: the offender lived only on the issue-2054 branch).
+    root = tmp_path / "repo"
+    (root / "scripts").mkdir(parents=True)
+    subprocess.run(["git", "init", "-q", "-b", "main", str(root)], check=True, capture_output=True)
+    env_args = ["-c", "user.email=t@t", "-c", "user.name=t"]
+    (root / C55_REL).write_text(C55_SCRIPT)
+    subprocess.run(["git", "-C", str(root), "add", C55_REL], check=True, capture_output=True)
+    subprocess.run(
+        ["git", "-C", str(root), *env_args, "commit", "-q", "-m", "offender"],
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "-C", str(root), "branch", "issue-2054"], check=True, capture_output=True
+    )
+    (root / C55_REL).unlink()
+    subprocess.run(["git", "-C", str(root), "rm", "-q", C55_REL], check=True, capture_output=True)
+    subprocess.run(
+        ["git", "-C", str(root), *env_args, "commit", "-q", "-m", "drop from main"],
+        check=True,
+        capture_output=True,
+    )
+    monkeypatch.setattr(verify_plan, "_C55_REPO_ROOT", root)
+    plan = GOOD_PLAN + C55_REUSE_TAIL + "\nThe reused splice lives on the issue-2054 branch.\n"
+    r = _c55_check(plan)
+    assert r.status == "WARN"
+    assert "--target-conv-ids" in r.detail
+
+
+# ─── c56: multi-GB staging row names its mount / bind liveness (#2097) ──────
+
+C56 = "c56_staging_mount_binding"
+
+# Arm-(a) WARN fixture: a pathless multi-GB staging row PLUS distant
+# `df -h /workspace` Repro boilerplate — the #869 document-global-evidence
+# decoy a doc-global path satisfier would false-PASS (the boilerplate sits
+# 4+ lines from the trigger, outside the +-2 window; `df -h` is NOT the
+# `df -P` probe token).
+C56_PATHLESS_STAGE = (
+    "\n## 9b. Staging\n"
+    "\n"
+    "Phase P0 stages the labeled capture store (~42 GB) from HF before any fit.\n"
+    "\n"
+    "## 10. Reproducibility\n"
+    "\n"
+    "Merge-disk boilerplate: run `df -h /workspace` on the pod before Phase 1.\n"
+)
+
+# Arm-(b) WARN fixture: the VERBATIM #2091 plans/v3.md L272 out-root table
+# row (the founding incident's own words — the #2165 fixture-fidelity
+# convention; a synthetic line written in the check's vocabulary pins
+# nothing). Names `/mnt/eps-data` IN-window (arm (a) satisfied) and still
+# must WARN on the missing bind-liveness probe.
+C56_2091_V3_L272 = (
+    "\n| VM staging `data/issue_2091/hf_dl/` (labeled-store tar slices ~11 GB + extraction "
+    "tars 3.6 GB + wcrung slice ~1 GB + new greedy store ~9.6 GB + #1073 v_store ~11 GB "
+    "(greedy 10×0.100 + stoch10 10×1.004) + LMSYS `train_context_vectors.pt` 6.02 GB) | "
+    "~42 GB | `/mnt/eps-data` via the #681 worktree bind (per-issue 128 GB ext4 quota) — "
+    "never `/`; under the 50 GB VM analysis cap (`VM_ANALYSIS_FOOTPRINT_GB_MAX`), with the "
+    "incremental reap after P4 consumption |\n"
+)
+
+
+def test_c56_registered_in_checks_and_docstring_catalog():
+    assert verify_plan.check_staging_mount_binding in verify_plan.CHECKS
+    assert "c56 staging mount binding" in verify_plan.__doc__
+    # conditional-checks enumeration carries 56 (c57 moved the closing paren
+    # onto 57, so the pin is the comma-separated membership form — the same
+    # reflow treatment the c55 pin got when c56 landed)
+    assert "55, 56" in verify_plan.__doc__
+    # canonical escape phrase listed
+    assert "N/A — no multi-GB staging" in verify_plan.__doc__
+
+
+def test_c56_trigger_without_path_warns_despite_distant_boilerplate():
+    """Arm (a): a pathless >=5 GB staging row WARNs even though `/workspace`
+    appears in DISTANT Repro boilerplate — the window scoping is the pin (a
+    doc-global path satisfier would false-PASS this fixture)."""
+    _, by_id = _run(GOOD_PLAN + C56_PATHLESS_STAGE)
+    r = by_id[C56]
+    assert r.status == "WARN"
+    assert r.passed  # WARN-only: the check NEVER FAILs a plan
+    assert "name no mount/staging path" in r.detail
+    assert "#1393" in r.detail
+    assert "N/A — no multi-GB staging" in r.detail
+
+
+def test_c56_path_token_in_window_passes():
+    """Arm (a): the staging path + mount named within +-2 lines of the row."""
+    plan = GOOD_PLAN + (
+        "\n## 9b. Staging\n"
+        "\n"
+        "Phase P0 stages the labeled capture store (~42 GB) from HF.\n"
+        "Staging path: `data/issue_999/hf_dl/` (resolves to `/mnt/eps-data`).\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id[C56]
+    assert r.status == "PASS"
+    assert "mount-bound" in r.detail
+
+
+def test_c56_path_token_only_outside_window_warns():
+    """Arm (a): the same path token 3+ lines from the trigger does NOT bind."""
+    plan = GOOD_PLAN + (
+        "\n## 9b. Staging\n"
+        "\n"
+        "Phase P0 stages the labeled capture store (~42 GB) from HF.\n"
+        "\n"
+        "\n"
+        "\n"
+        "Unrelated cleanup prose names `/mnt/eps-data` here, four lines away.\n"
+    )
+    _, by_id = _run(plan)
+    assert by_id[C56].status == "WARN"
+
+
+def test_c56_doc_global_probe_token_satisfies_arm_a():
+    """The mount-PROBE tokens (`df -P` / `findmnt`) satisfy from anywhere in
+    the RAW plan — probe commands legitimately live in fenced repro blocks
+    far from the staging row."""
+    plan = (
+        GOOD_PLAN
+        + C56_PATHLESS_STAGE
+        + ("\n```bash\ndf -P data/issue_999/hf_dl/   # staging filesystem probe\n```\n")
+    )
+    _, by_id = _run(plan)
+    assert by_id[C56].status == "PASS"
+
+
+def test_c56_no_trigger_skips():
+    # GOOD_PLAN carries no staging-signal + >=5 GB line.
+    _, by_id = _run(GOOD_PLAN)
+    assert by_id[C56].status == "SKIP"
+
+
+def test_c56_small_stage_below_threshold_skips():
+    """A 4 GB staging row is under the 5 GB trigger floor."""
+    plan = GOOD_PLAN + "\nPhase P0 stages a 4 GB shard from HF.\n"
+    _, by_id = _run(plan)
+    assert by_id[C56].status == "SKIP"
+
+
+def test_c56_tb_figure_always_qualifies():
+    """Any TB figure qualifies regardless of magnitude (0.5 TB = 500 GB)."""
+    plan = GOOD_PLAN + "\nPhase P0 stages a 0.5 TB store from HF.\n"
+    _, by_id = _run(plan)
+    assert by_id[C56].status == "WARN"
+
+
+def test_c56_kind_infra_skips():
+    _, by_id = _run(GOOD_PLAN + C56_PATHLESS_STAGE, kind="infra")
+    r = by_id[C56]
+    assert r.status == "SKIP"
+    assert "kind-exempt" in r.detail
+
+
+def test_c56_na_escape_passes():
+    plan = GOOD_PLAN + C56_PATHLESS_STAGE + "\nN/A — no multi-GB staging\n"
+    _, by_id = _run(plan)
+    r = by_id[C56]
+    assert r.status == "PASS"
+    assert "explicit N/A" in r.detail
+
+
+def test_c56_fenced_content_never_triggers():
+    """A staging + >=5 GB line INSIDE a fence is masked — fenced example
+    commands can neither satisfy nor trip (the c39 convention)."""
+    plan = GOOD_PLAN + ("\n```bash\n# stages the labeled capture store (~42 GB) from HF\n```\n")
+    _, by_id = _run(plan)
+    assert by_id[C56].status == "SKIP"
+
+
+def test_c56_verbatim_2091_bind_row_warns_on_arm_b():
+    """Arm (b), the founding incident verbatim: #2091 v3 L272 names
+    `/mnt/eps-data` IN-window (arm (a) satisfied) yet cites the NOT-live
+    #681 worktree bind with no `findmnt --mountpoint` probe -> WARN."""
+    _, by_id = _run(GOOD_PLAN + C56_2091_V3_L272)
+    r = by_id[C56]
+    assert r.status == "WARN"
+    assert "worktree-bind citation" in r.detail
+    assert "findmnt --mountpoint" in r.detail
+    assert "#2091" in r.detail
+    # arm (a) is satisfied by the in-window path token — the WARN is arm (b) only
+    assert "name no mount/staging path" not in r.detail
+
+
+def test_c56_bind_row_with_findmnt_probe_passes():
+    """Arm (b): the literal `findmnt --mountpoint` liveness assertion (fenced
+    is fine — the satisfier scans the RAW plan) clears the bind citation."""
+    plan = (
+        GOOD_PLAN
+        + C56_2091_V3_L272
+        + (
+            '\n```bash\nfindmnt --mountpoint "$REPO/.claude/worktrees"  # no output = no bind\n```\n'
+        )
+    )
+    _, by_id = _run(plan)
+    r = by_id[C56]
+    assert r.status == "PASS"
+    assert "findmnt --mountpoint" in r.detail
+
+
+def test_c56_binding_prose_does_not_fire_arm_b():
+    """`\\bbind\\b` word-boundary pin: "binding"-class house prose near
+    `worktree` never fires arm (b) (the approved-critic word-boundary
+    suggestion), while "bind-mounted" DOES (hyphens are word boundaries)."""
+    benign = GOOD_PLAN + (
+        "\n## 9b. Staging\n"
+        "\n"
+        "Phase P0 stages the labeled capture store (~42 GB) to `data/issue_999/hf_dl/`.\n"
+        "The worktree binding semantics of the mount table are discussed elsewhere.\n"
+    )
+    _, by_id = _run(benign)
+    assert by_id[C56].status == "PASS"
+
+    hyphened = GOOD_PLAN + (
+        "\n## 9b. Staging\n"
+        "\n"
+        "Phase P0 stages the labeled capture store (~42 GB) to `data/issue_999/hf_dl/`,\n"
+        "on the 512 GB data disk bind-mounted onto the worktree tree (#681).\n"
+    )
+    _, by_id = _run(hyphened)
+    r = by_id[C56]
+    assert r.status == "WARN"
+    assert "worktree-bind citation" in r.detail
+
+
+def test_c56_calibration_committed_2091_v3():
+    """CALIBRATION BAR (AC3, mechanical): the committed #2091 plans/v3.md —
+    the founding incident, which PASSed verify_plan twice — yields >=1
+    arm-(b) trigger line and a WARN under the composed check."""
+    candidates = sorted(REPO_ROOT.glob("tasks/*/2091/plans/v3.md"))
+    if not candidates:
+        pytest.skip("committed #2091 plans/v3.md not present in this checkout")
+    plan = candidates[0].read_text()
+    assert "via the #681 worktree bind" in plan  # the incident's own wording
+    assert "findmnt --mountpoint" not in plan  # v3 predates the probe (v4 added it)
+    _, by_id = _run(plan)  # kind=experiment — matches #2091's body.md kind
+    r = by_id[C56]
+    assert r.status == "WARN"
+    m = re.search(r"(\d+) worktree-bind citation line\(s\)", r.detail)
+    assert m is not None and int(m.group(1)) >= 1, r.detail
+
+
+# ─── c57: fan-out same-prefix staging shape (#2236, incident #1739) ─────────
+
+C57 = "c57_fanout_prefix_staging"
+
+# T1 fixture line modeled on the founding incident's own §9 wording (#2054
+# v14 "Across-cell shard axis + realized width" row — the #2165
+# fixture-fidelity convention): a box-level fan-out count + noun with
+# same-line parallel vocabulary.
+C57_FANOUT_S9_LINE = (
+    "Across-cell shard axis: (pair-class-group x arm) -> 8 shards on 8 parallel "
+    "`cpu-bigmem` pods (CPU pods run N-in-parallel; the one-pod rule is GPU-specific)."
+)
+
+# T2 tail: Hub-prefix staging named OUTSIDE §9 (the predicate reads T2
+# anywhere in the plan; #2054 v14's stage_hub_prefix call lives in §4).
+C57_STAGING_TAIL = (
+    "\n## 12. Assumptions\n"
+    "\n"
+    "Each shard's driver stages the parent activation stores via `stage_hub_prefix` "
+    "from `issue2054_lattice/activations` (~12 GB) before its unit loop.\n"
+)
+
+
+def _c57_plan(s9_extra: str, tail: str = C57_STAGING_TAIL) -> str:
+    """GOOD_PLAN with ``s9_extra`` injected as its own line INSIDE §9
+    (GOOD_PLAN's §9 runs from `## 9. Resources` to `## 11.`)."""
+    assert "One A100 for about three hours covers both conditions." in GOOD_PLAN
+    return (
+        GOOD_PLAN.replace(
+            "One A100 for about three hours covers both conditions.",
+            "One A100 for about three hours covers both conditions.\n\n" + s9_extra + "\n",
+        )
+        + tail
+    )
+
+
+def test_c57_registered_in_checks_and_docstring_catalog():
+    # Membership pin (the c44/c46 house pattern): a forgotten registry
+    # append cannot ship green — the check existing is not the check running.
+    assert verify_plan.check_fanout_prefix_staging in verify_plan.CHECKS
+    assert "c57 fan-out same-prefix" in verify_plan.__doc__
+    # conditional-checks enumeration carries 57 (c58 moved the closing paren
+    # onto 58, so the pin is the comma-separated membership form — the same
+    # reflow treatment the c56 pin got when c57 landed)
+    assert "56, 57" in verify_plan.__doc__
+
+
+def test_c57_2054_fanout_shape_warns():
+    """Positive fixture (#2054 v14 shape): a §9 concurrent box-level fan-out
+    in a plan that stages an HF prefix, with no staging-shape remedy ->
+    WARN naming the fan-out line + the incident."""
+    r = verify_plan.check_fanout_prefix_staging(_c57_plan(C57_FANOUT_S9_LINE), "experiment")
+    assert r.status == "WARN"
+    assert "8 shards" in r.detail
+    assert "#1739" in r.detail
+
+
+def test_c57_sequential_negation_skips():
+    """Same-line negation (`sequential` — equally `NOT 3 pods`, the #552 v1
+    explicitly-rejected form): the line is not a fan-out declaration."""
+    line = C57_FANOUT_S9_LINE + " Pulls are strictly sequential per box."
+    r = verify_plan.check_fanout_prefix_staging(_c57_plan(line), "experiment")
+    assert r.status == "SKIP"
+    rejected = "One multi-GPU pod, NOT 3 pods, per the standing rule; parallel seeds ride one box."
+    r2 = verify_plan.check_fanout_prefix_staging(_c57_plan(rejected), "experiment")
+    assert r2.status == "SKIP"
+
+
+def test_c57_assumptions_table_row_outside_s9_skips():
+    """The #507 FP shape: fan-out vocabulary in an assumptions-table row
+    OUTSIDE §9 does not trigger — the window confinement is the pin."""
+    tail = C57_STAGING_TAIL + "\n| A20 | 2 concurrent pods could race the staging window |\n"
+    r = verify_plan.check_fanout_prefix_staging(_c57_plan("", tail), "experiment")
+    assert r.status == "SKIP"
+    assert "no concurrent box-level fan-out" in r.detail
+
+
+def test_c57_no_section9_skips():
+    """No parseable §9 heading (neither `9.` nor `§9` form) -> SKIP (counted
+    separately from passes; the no-heading residual is named in the detail,
+    never read as coverage)."""
+    plan = "# Plan\n\n## Design\n\n8 parallel pods stage via `stage_hub_prefix`.\n"
+    r = verify_plan.check_fanout_prefix_staging(plan, "experiment")
+    assert r.status == "SKIP"
+    assert "no parseable section-9" in r.detail
+
+
+def test_c57_section_symbol_heading_warns():
+    """Major-1 regression (review round 1): the house-style `§9 <title>`
+    heading OPENS the window — >=224 corpus plans carried the literal `§9`
+    form and the strict `9.`-only locator skipped them all (13% of plans
+    with id >= 2000 invisible to the check)."""
+    plan = (
+        "# Plan\n"
+        "\n"
+        "## 4. Design\n"
+        "\n"
+        "Each shard stages the parent stores via `stage_hub_prefix` (~12 GB).\n"
+        "\n"
+        "## §9 Compute-sizing table\n"
+        "\n" + C57_FANOUT_S9_LINE + "\n"
+        "\n"
+        "## §10 Reproducibility\n"
+        "\n"
+        "Repro notes.\n"
+    )
+    r = verify_plan.check_fanout_prefix_staging(plan, "experiment")
+    assert r.status == "WARN", r.detail
+    # The §-tolerant CLOSER is load-bearing: a fan-out line AFTER `## §10`
+    # must not trigger (an intolerant closer would run the window to EOF
+    # and turn §10+ content into a false-positive surface).
+    plan_after = plan.replace(C57_FANOUT_S9_LINE, "Sizing rows only.").replace(
+        "Repro notes.", C57_FANOUT_S9_LINE
+    )
+    r2 = verify_plan.check_fanout_prefix_staging(plan_after, "experiment")
+    assert r2.status == "SKIP", r2.detail
+
+
+def test_c57_warn_detail_shows_match_window():
+    """Minor regression (review round 1): the WARN evidence is a ~90-char
+    window around the T1 MATCH SPAN, never the line head — on #1491 the
+    match sat at char ~785 of a 922-char line and a head-slice printed
+    unrelated serial-fit prose that made the evidence read as spurious."""
+    head = "**Serial-fit-loop / draw-battery / store sizing:** " + "x" * 600
+    line = head + " and then 48 concurrent shards pull the store."
+    r = verify_plan.check_fanout_prefix_staging(_c57_plan(line), "experiment")
+    assert r.status == "WARN"
+    assert "48 concurrent shards" in r.detail
+    assert "Serial-fit-loop" not in r.detail
+
+
+def test_c57_remedy_vocabulary_passes():
+    """T3 satisfier: naming a staging shape anywhere (here `jittered start`)
+    turns the triggered plan into a PASS."""
+    tail = C57_STAGING_TAIL + "\nShard starts use jittered start offsets (60 s spacing).\n"
+    r = verify_plan.check_fanout_prefix_staging(_c57_plan(C57_FANOUT_S9_LINE, tail), "experiment")
+    assert r.status == "PASS"
+
+
+def test_c57_fenced_content_never_triggers():
+    """A fenced fan-out line is masked (the c56 fence-mask convention)."""
+    fenced = "```\n" + C57_FANOUT_S9_LINE + "\n```"
+    r = verify_plan.check_fanout_prefix_staging(_c57_plan(fenced), "experiment")
+    assert r.status == "SKIP"
+
+
+def test_c57_calibration_committed_2054_controls():
+    """CALIBRATION BAR (plan §7 criterion 4, mechanical): the committed
+    #2054 v14 (positive control — 8 concurrent same-prefix `cpu-bigmem`
+    stagers, no shape named) WARNs; v12 (negative control — the multi-pod
+    staging precedent the Methodology critic judged functionally
+    acceptable) does NOT."""
+    v14 = sorted(REPO_ROOT.glob("tasks/*/2054/plans/v14.md"))
+    v12 = sorted(REPO_ROOT.glob("tasks/*/2054/plans/v12.md"))
+    if not v14 or not v12:
+        pytest.skip("committed #2054 plans v14/v12 not present in this checkout")
+    r14 = verify_plan.check_fanout_prefix_staging(v14[0].read_text(), "experiment")
+    assert r14.status == "WARN", r14.detail
+    r12 = verify_plan.check_fanout_prefix_staging(v12[0].read_text(), "experiment")
+    assert r12.status != "WARN", r12.detail
+
+
+# ─── Check 59 — GPU-hours token consumer/declaration conflict (#2123) ──────
+
+C59 = "c59_gpu_hours_token_conflict"
+
+# GOOD_PLAN with the GPU-hours token moved onto its OWN line — declaration-
+# shaped under _C59_DECL_LINE_RE (the backtick wrap is admitted).
+C59_DECL_PLAN = GOOD_PLAN.replace(
+    "One A100 for about three hours covers both conditions. " + GPU_LINE,
+    "One A100 for about three hours covers both conditions.\n\n" + GPU_LINE,
+)
+
+
+def test_c59_single_declaration_consumer_agrees_passes():
+    _, by_id = _run(C59_DECL_PLAN)
+    r = by_id[C59]
+    assert r.status == "PASS", r.detail
+    assert "consumer first-match agrees" in r.detail
+
+
+def test_c59_skips_on_mid_sentence_token_only():
+    # The 646-file hard constraint: GOOD_PLAN's own token sits mid-sentence,
+    # so NO declaration-shaped token exists — c59 must never REQUIRE
+    # declaration shape (presence stays c5's contract).
+    _, by_id = _run(GOOD_PLAN)
+    r = by_id[C59]
+    assert r.status == "SKIP"
+    assert "declaration-shaped" in r.detail
+    assert by_id["c5_gpu_hours"].status == "PASS"  # c5 untouched
+
+
+def test_c59_arm_a_two_distinct_declarations_warn():
+    # The #524 v2/v3 corpus shape: two declaration-shaped lines with
+    # DIFFERENT values (590 vs 900 there; 4 vs 900 here).
+    plan = C59_DECL_PLAN + "\n\nEstimated GPU-hours (total): 900\n"
+    _, by_id = _run(plan)
+    r = by_id[C59]
+    assert r.status == "WARN", r.detail
+    assert "arm A" in r.detail and "2 DISTINCT" in r.detail
+
+
+def test_c59_repeated_identical_declarations_pass():
+    # Repeats are overwhelmingly legitimate (62.2% of the corpus repeats
+    # the token) — SAME-value declarations are not a conflict.
+    plan = C59_DECL_PLAN + "\n\n" + GPU_LINE + "\n"
+    _, by_id = _run(plan)
+    assert by_id[C59].status == "PASS", by_id[C59].detail
+
+
+def test_c59_arm_b_prose_quote_ahead_of_declaration_warns():
+    # The #2177 v1 / #2061 v7-v8 shape: a value quoted in prose EARLIER in
+    # the document than the declaration — the first-match consumer
+    # (GPU_LINE_RE on the raw plan) reads the quote, corrupting the
+    # recorded estimate.
+    plan = C59_DECL_PLAN.replace(
+        "## 1. Goal",
+        "## 0.9 Prior round\n\nThe parent's sweep booked estimated "
+        "GPU-hours (total): 65 before the descope.\n\n## 1. Goal",
+    )
+    _, by_id = _run(plan)
+    r = by_id[C59]
+    assert r.status == "WARN", r.detail
+    assert "arm B" in r.detail and "65" in r.detail and "4" in r.detail
+
+
+def test_c59_prose_quote_with_consistent_declaration_passes():
+    # False-positive shape 1 (#2177 v1 line 56 class, consistent variant):
+    # a prose-quoted value that AGREES with the declaration is clean.
+    plan = C59_DECL_PLAN.replace(
+        "## 1. Goal",
+        "## 0.9 Prior round\n\nAs before we book estimated GPU-hours "
+        "(total): 4 for the whole sweep.\n\n## 1. Goal",
+    )
+    _, by_id = _run(plan)
+    assert by_id[C59].status == "PASS", by_id[C59].detail
+
+
+def test_c59_meta_discussion_after_declaration_passes():
+    # False-positive shape 2 (the #625 v1-v3 class): a plan whose SUBJECT
+    # is this very checker quotes conflicting values mid-sentence AFTER its
+    # own declaration — non-declaration-shaped, and the first-match
+    # consumer still reads the declaration.
+    plan = C59_DECL_PLAN + (
+        "\n\n## 12. Checker discussion\n\n"
+        "The verifier greps for a line like estimated GPU-hours (total): 12 "
+        "and must not confuse it with estimated GPU-hours (total): 99 quoted "
+        "in prose.\n"
+    )
+    _, by_id = _run(plan)
+    assert by_id[C59].status == "PASS", by_id[C59].detail
+
+
+def test_c59_revision_comparison_table_after_declaration_passes():
+    # False-positive shape 3 (the #524 v6/v7 line-19 class): a revision-
+    # history comparison TABLE — pipe-delimited cells are not declaration-
+    # shaped (the line carries more than the token).
+    plan = C59_DECL_PLAN + (
+        "\n\n## 13. Revision history\n\n"
+        "| rev | estimate |\n|---|---|\n"
+        "| v1 | Estimated GPU-hours (total): 180 |\n"
+        "| v2 | Estimated GPU-hours (total): 400 |\n"
+    )
+    _, by_id = _run(plan)
+    assert by_id[C59].status == "PASS", by_id[C59].detail
+
+
+def test_c59_fenced_declaration_not_a_declaration():
+    # Declaration-side fence stripping: a declaration-shaped line INSIDE a
+    # fenced example block is not a declaration (arm A stays quiet); the
+    # consumer's first match (the real §9 declaration, earlier in the doc)
+    # still agrees.
+    plan = C59_DECL_PLAN + "\n\n```\nEstimated GPU-hours (total): 999\n```\n"
+    _, by_id = _run(plan)
+    assert by_id[C59].status == "PASS", by_id[C59].detail
+
+
+def test_c59_bold_bullet_declaration_shapes_recognized():
+    # The declaration grammar admits bullet / bold / backtick wraps.
+    plan = (
+        C59_DECL_PLAN.replace(GPU_LINE, "- **Estimated GPU-hours (total):** 4")
+        + "\n\nEstimated GPU-hours (total): 900\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id[C59]
+    assert r.status == "WARN", r.detail
+    assert "arm A" in r.detail
+
+
+def test_c59_na_escape_skips():
+    plan = (
+        C59_DECL_PLAN
+        + "\n\nEstimated GPU-hours (total): 900\n\n"
+        + "N/A — GPU-hours token conflict reconciled\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id[C59]
+    assert r.status == "SKIP"
+    assert "escape declared" in r.detail
+
+
+def test_c59_registered_in_checks_and_docstring_catalog():
+    assert verify_plan.check_gpu_hours_token_conflict in verify_plan.CHECKS
+    assert "c59 GPU-hours token" in verify_plan.__doc__
+    assert "N/A — GPU-hours token conflict reconciled" in verify_plan.__doc__
+
+
+# ─── Check 61 — SLURM would-render --mem vs declared RSS peak (#2275) ──────
+
+C61 = "c61_slurm_mem_coverage"
+
+# Per-leg peak above the fellows 8-GPU would-render --mem (min(128*8, 1800)
+# = 1024G) — the #1336 aggregate need (~1,550 GiB) declared as ONE peak.
+_C61_RAM_1550 = "\nPer-leg peak RSS is projected at 1550 GiB (largest cell).\n"
+
+# The #1336 aggregate SHAPE: a per-UNIT peak far below the rendered --mem
+# (and below c52's 85 GiB GCP rung read — the case c52 structurally cannot
+# catch), width-multiplied on the SAME line. 194 GiB x 8-wide = 1552 GiB
+# vs the 1024G render, matching the incident's measured ~1,550 GiB total.
+# (The plan §5 sketch quoted the incident's 65 GiB ON-ARM unit RSS, but
+# 65 x 8 = 520 GiB FITS the 8-GPU 1024G render — the sketch numbers were
+# internally unsatisfiable because the real aggregate also carried ~4x
+# off-arm rows; the fixture keys on the measured total instead.)
+_C61_AGG_1336 = (
+    "\nPer-leg peak RSS is projected at 194 GiB per pooled-fit unit; the fit "
+    "pool runs 8-wide in one job.\n"
+)
+
+
+def _c61_launch(flags: str = "") -> str:
+    """8-GPU fellows-reachable launch-shaped dispatch command (#1336 shape);
+    ``flags`` splices extra tokens in (e.g. ``--min-ram-gb 1550``)."""
+    extra = f" {flags}" if flags else ""
+    return (
+        "\n```bash\n"
+        "uv run python scripts/dispatch_issue.py launch \\\n"
+        f"    --issue 2275 --intent lora-7b --gpus 8 --repo-branch issue-2275{extra} \\\n"
+        "    --workload-cmd 'bash scripts/fit_pool.sh'\n"
+        "```\n"
+    )
+
+
+def test_c61_per_leg_arm_warns_when_peak_exceeds_rendered_mem(monkeypatch):
+    # Plan §5 arm (a): 1550 GiB declared per-leg peak vs the 8-GPU fellows
+    # would-render --mem=1024G, no --min-ram-gb -> WARN naming the remedy.
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    r = _run(GOOD_PLAN + _C61_RAM_1550 + _c61_launch())[1][C61]
+    assert r.status == "WARN"
+    assert "1550" in r.detail  # the declared peak
+    assert "--mem=1024G" in r.detail  # the would-render cap
+    assert "--min-ram-gb 1550" in r.detail  # the remedy, named
+    assert "#1336" in r.detail
+
+
+def test_c61_aggregate_arm_warns_naming_arithmetic(monkeypatch):
+    # Plan §5 arm (b) — the #1336 shape: a per-UNIT peak (194 GiB) BELOW the
+    # 1024G would-render --mem, so the per-leg arm stays quiet; the width
+    # multiply (8-wide, same line) makes the within-job aggregate
+    # 194 x 8 = 1552 GiB > 1024G -> WARN naming the arithmetic + remedy.
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    r = _run(GOOD_PLAN + _C61_AGG_1336 + _c61_launch())[1][C61]
+    assert r.status == "WARN"
+    assert "194" in r.detail  # the per-unit peak
+    assert "1552" in r.detail  # the aggregate arithmetic
+    assert "--mem=1024G" in r.detail
+    assert "--min-ram-gb 1552" in r.detail
+    assert "cgroup" in r.detail  # why the aggregate binds
+
+
+def test_c61_min_ram_flag_covering_peak_passes(monkeypatch):
+    # Plan §5: --min-ram-gb 1550 present -> the would-render --mem rises to
+    # 1550G (post-#2275 semantics, computed through the renderer itself) ->
+    # PASS. Fail-loud pin: the no-WARN arm asserted explicitly.
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    r = _run(GOOD_PLAN + _C61_RAM_1550 + _c61_launch("--min-ram-gb 1550"))[1][C61]
+    assert r.status == "PASS", r.detail
+    assert "--mem=1550G" in r.detail
+
+
+def test_c61_min_ram_flag_below_peak_still_warns(monkeypatch):
+    # AC4 analogue (floor-too-low): --min-ram-gb 1200 raises the render to
+    # 1200G, still strictly below the declared 1550 GiB peak -> WARN.
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    r = _run(GOOD_PLAN + _C61_RAM_1550 + _c61_launch("--min-ram-gb 1200"))[1][C61]
+    assert r.status == "WARN"
+    assert "--mem=1200G" in r.detail
+
+
+def test_c61_skips_when_no_slurm_lane_reachable(monkeypatch):
+    # Plan §5: an explicit non-SLURM pin -> the rendered --mem never binds
+    # (exact parity with the runtime reachability predicate, the c50 idiom).
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    r = _run(GOOD_PLAN + _C61_RAM_1550 + _c61_launch("--backend runpod"))[1][C61]
+    assert r.status == "SKIP"
+    assert "no SLURM lane reachable" in r.detail
+
+
+def test_c61_skips_when_no_rss_token(monkeypatch):
+    # Plan §5: launch present, no RSS/host-RAM peak-estimate token anywhere.
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    r = _run(GOOD_PLAN + _c61_launch())[1][C61]
+    assert r.status == "SKIP"
+    assert "no per-leg RSS" in r.detail
+
+
+def test_c61_skips_when_no_launch_command():
+    # Residual (the c52 residual-(ii) posture): a custom-driver fan-out —
+    # the actual #1336 dispatch channel — embeds no dispatch_issue.py launch
+    # line; SKIP states it is NOT coverage and names the binding surface.
+    r = _run(GOOD_PLAN + _C61_RAM_1550)[1][C61]
+    assert r.status == "SKIP"
+    assert "not coverage" in r.detail
+    assert "plan-compute-sizing.md" in r.detail
+
+
+def test_c61_never_fails_invariant(monkeypatch):
+    # Plan §5 never-FAIL invariant (the c46/c50/c52 posture): every fixture
+    # variant — WARN shapes, SKIP shapes, malformed argvs — resolves to
+    # PASS/WARN/SKIP, never FAIL.
+    monkeypatch.setenv("EPM_AUTO_LANE_ORDER", "fellows")
+    variants = [
+        GOOD_PLAN,
+        GOOD_PLAN + _C61_RAM_1550,
+        GOOD_PLAN + _c61_launch(),
+        GOOD_PLAN + _C61_RAM_1550 + _c61_launch(),
+        GOOD_PLAN + _C61_AGG_1336 + _c61_launch(),
+        GOOD_PLAN + _C61_RAM_1550 + _c61_launch("--min-ram-gb 1550"),
+        GOOD_PLAN + _C61_RAM_1550 + _c61_launch("--backend runpod"),
+        # > mem_gb_cap: the renderer refuses (already fail-fast at
+        # dispatch) -> SKIP-class note here, never a crash / FAIL.
+        GOOD_PLAN + _C61_RAM_1550 + _c61_launch("--min-ram-gb 2000"),
+        # Unparseable launch argv -> per-argv note, c46 arm 1 owns it.
+        GOOD_PLAN + _C61_RAM_1550 + _c61_launch("--no-such-flag 1"),
+    ]
+    for plan in variants:
+        r = _run(plan)[1][C61]
+        assert r.status in {"PASS", "WARN", "SKIP"}, (r.status, r.detail)
+
+
+def test_c61_registered_in_checks_and_docstring_catalog():
+    # Membership pin (the c44/c46/c57 house pattern): a forgotten registry
+    # append cannot ship green — the check existing is not the check running.
+    assert verify_plan.check_slurm_mem_coverage in verify_plan.CHECKS
+    assert "c61 SLURM would-render --mem" in verify_plan.__doc__
+    # conditional-checks enumeration carries 61 (comma-separated membership
+    # form, the c56/c57 reflow-tolerant pin).
+    assert "59, 61" in verify_plan.__doc__
+
+
+# ─── Checks 62 + 63 — §9 backend pin-claim + declared width vs launch (#2276) ─
+
+C62 = "c62_backend_pin_claim"
+C63 = "c63_declared_width_vs_launch"
+
+# Verbatim #2225 incident claim texts (the founding fixtures; #2276
+# acceptance criterion 1). v5:274 claimed an "explicit frontmatter pin",
+# v9:236 claimed to inherit it — the task's body.md frontmatter carried NO
+# `backend:` key either time.
+C62_V5_CLAIM = "**Backend:** `backend: runpod` (explicit frontmatter pin; reason — sentinel-signaling workload: the pod-side dispatcher posts `/workspace/logs/issue-2225-*.json` sentinels and the DRAC/Mila SLURM lanes have no `/workspace` (#608), so the auto chain's fall-through rungs are unsafe here; RunPod is the first-resort lane anyway (#2054), and fellows remains a legal manual fallback — it is a drained lane (#1898). Pin reason restated in the launch marker note per compute-backends.md.)"
+
+# The FULL v9:236 line verbatim — it carries BOTH the c62 claim ("parent pin
+# inherited") AND the c63 width declaration ("one 8xH100 pod", "across all
+# 8 GPUs").
+C62_V9_LINE = "**Backend:** `backend: runpod` (parent pin inherited; reason — sentinel-signaling workload: the fu dispatcher reuses the parent's `/workspace/logs/issue-2225-*.json` sentinel contract, unsafe on the DRAC/Mila fall-through rungs (#608); RunPod is the first-resort lane anyway (#2054)). GPU spec: **one 8×H100 pod** (`pod-2225-fu1`, `--name-suffix fu1`). Parallelism: 80 training cells and 80+40 eval targets are shared-nothing width-1 units → `CUDA_VISIBLE_DEVICES`-sharded subprocess fan-out across all 8 GPUs (the parent's realized machinery). Wall delta vs 4×H100: ~5 h vs ~9.5 h — 8× chosen. All arms have MINIMUM width 1 (no mixed-min-width split; a narrower degraded provision re-shards the same queue). Dispatch example (parses against the live CLI; SLURM reachable ⇒ wall fence via `--time-budget-hours`):"
+
+# The verbatim v9:238 dispatch fence — no `--gpus`, `lora-7b` default 1xH100.
+C63_V9_FENCE = "`uv run python scripts/dispatch_issue.py launch --issue 2225 --intent lora-7b --repo-branch issue-2225 --time-budget-hours 12`"
+
+# Minimal §9-bearing plan for DIRECT check_backend_pin_claim calls (c62 is
+# main()-wired, so these fixtures bypass verify_plan_text and need no c0
+# padding).
+C62_MIN_PLAN = (
+    "# Plan — c62 fixture\n\n## 9. Resources & Parallelism\n\n"
+    + C62_V5_CLAIM
+    + "\n\n"
+    + C62_V9_LINE
+    + "\n"
+)
+
+
+def _c62(plan: str, backend: str | None):
+    return verify_plan.check_backend_pin_claim(plan, frontmatter_backend=backend)
+
+
+def test_c62_phantom_pin_claim_warns():
+    # Both incident claim texts verbatim inside a minimal §9; frontmatter
+    # `backend:` ABSENT -> WARN naming the claimed lane + the remedy
+    # (WARN-only: the planned FAIL polarity was downgraded by the
+    # pre-registered #2276 §4 step 6 calibration rule — >2 adjudicated
+    # false-positive FAILs on the 4,089-version corpus sweep).
+    r = _c62(C62_MIN_PLAN, None)
+    assert r.status == "WARN"
+    assert "runpod" in r.detail
+    assert "NO `backend:` key" in r.detail
+    assert "#2225" in r.detail
+
+
+def test_c62_matching_pin_passes():
+    r = _c62(C62_MIN_PLAN, "runpod")
+    assert r.status == "PASS", r.detail
+    assert "runpod" in r.detail
+
+
+def test_c62_matching_pin_case_insensitive_passes():
+    # The frontmatter value is compared case-insensitively (str-coerced).
+    r = _c62(C62_MIN_PLAN, "RunPod")
+    assert r.status == "PASS", r.detail
+
+
+def test_c62_mismatched_lane_warns():
+    # Claim `runpod`, frontmatter `fellows` -> WARN naming BOTH lanes.
+    r = _c62(C62_MIN_PLAN, "fellows")
+    assert r.status == "WARN"
+    assert "`runpod`" in r.detail
+    assert "fellows" in r.detail
+
+
+def test_c62_auto_claim_with_absent_key_passes():
+    # Calibration FP class (a): claiming `backend: auto` with the key
+    # absent is the CORRECT state — absent/empty frontmatter IS the auto
+    # route (CLAUDE.md § Compute backends) -> PASS, never WARN.
+    plan = (
+        "# Plan — c62 auto fixture\n\n## 9. Resources\n\n"
+        "**Backend routing:** `backend: auto` (frontmatter default — no pin set).\n"
+    )
+    r = _c62(plan, None)
+    assert r.status == "PASS", r.detail
+    assert "auto" in r.detail
+
+
+def test_c62_never_fails_invariant():
+    # WARN-only posture pin (the c61 never-FAIL shape): every fixture
+    # variant resolves to PASS/WARN/SKIP, never FAIL.
+    for plan, backend in [
+        (C62_MIN_PLAN, None),
+        (C62_MIN_PLAN, "runpod"),
+        (C62_MIN_PLAN, "fellows"),
+        (GOOD_PLAN, None),
+        (C62_MIN_PLAN + "\nN/A — backend pin-claim reconciled\n", None),
+    ]:
+        r = _c62(plan, backend)
+        assert r.status in {"PASS", "WARN", "SKIP"}, (r.status, r.detail)
+
+
+def test_c62_no_claim_skips():
+    # GOOD_PLAN has a §9 window but no pin-claim line.
+    r = _c62(GOOD_PLAN, None)
+    assert r.status == "SKIP"
+    assert "no §9 backend pin-claim" in r.detail
+
+
+def test_c62_no_section9_skips():
+    # No parseable §9 heading -> the window is None -> SKIP (fail-safe).
+    r = _c62("# Plan\n\n## Resources\n\n" + C62_V5_CLAIM + "\n", None)
+    assert r.status == "SKIP"
+
+
+def test_c62_escape_literal_passes():
+    plan = C62_MIN_PLAN + "\nN/A — backend pin-claim reconciled\n"
+    r = _c62(plan, None)
+    assert r.status == "PASS"
+    assert "explicit N/A" in r.detail
+
+
+def test_c62_narrative_mention_outside_s9_skips():
+    # FP-guard pin: a narrative mention of ANOTHER task's pin in §1 prose
+    # (with a clean §9) lives OUTSIDE the window -> SKIP, never FAIL.
+    plan = (
+        "# Plan — c62 FP fixture\n\n"
+        "## 1. Motivation\n\n"
+        "#2225's `backend: runpod` pin was phantom — the frontmatter key was never set.\n\n"
+        "## 9. Resources\n\nOne A100 for three hours.\n"
+    )
+    r = _c62(plan, None)
+    assert r.status == "SKIP"
+
+
+def test_c62_unknown_lane_token_ignored():
+    # FP guard: `backend: <non-lane prose>` never captures a claim lane.
+    plan = (
+        "# Plan — c62 fixture\n\n## 9. Resources\n\n"
+        "The backend: the same pinned lane as the parent inherits everything.\n"
+    )
+    r = _c62(plan, None)
+    assert r.status == "SKIP"
+
+
+def test_c62_fenced_claim_never_triggers():
+    # Fence-masked lines can neither satisfy nor trip (the c39 convention).
+    plan = "# Plan — c62 fixture\n\n## 9. Resources\n\n```\n" + C62_V5_CLAIM + "\n```\n"
+    r = _c62(plan, None)
+    assert r.status == "SKIP"
+
+
+def test_c62_planfile_mode_skips(tmp_path, monkeypatch, capsys):
+    # The c23 mode-row precedent: --plan-file mode appends an explicit SKIP
+    # row even when the plan carries the claim (no task context to read).
+    p = tmp_path / "plan.md"
+    p.write_text(
+        GOOD_PLAN.replace(
+            "One A100 for about three hours covers both conditions.",
+            "One A100 for about three hours covers both conditions.\n\n" + C62_V5_CLAIM + "\n",
+        )
+    )
+    monkeypatch.setattr(sys, "argv", ["verify_plan.py", "--plan-file", str(p), "--json"])
+    rc = verify_plan.main()
+    payload = json.loads(capsys.readouterr().out)
+    assert rc == 0
+    entries = [c for c in payload["checks"] if c["id"] == C62]
+    assert len(entries) == 1
+    assert entries[0]["status"] == "SKIP"
+    assert "no task context" in entries[0]["detail"]
+
+
+def test_c62_issue_mode_warn_row_present(tmp_path, monkeypatch, capsys):
+    # main()-mode wiring pin (#2276 plan §4 step 5, adapted to the WARN
+    # downgrade): a tmp task folder with the claim in §9 and NO frontmatter
+    # `backend:` key drives --issue mode; the appended c62 row is WARN,
+    # participates in the payload aggregation (n_warn), and — WARN-only —
+    # leaves overall PASS and the exit code 0.
+    (tmp_path / "plans").mkdir()
+    claim = "**Backend:** `backend: runpod` (explicit frontmatter pin)."
+    (tmp_path / "plans" / "v1.md").write_text(
+        GOOD_PLAN.replace(
+            "One A100 for about three hours covers both conditions.",
+            "One A100 for about three hours covers both conditions.\n\n" + claim + "\n",
+        )
+    )
+    (tmp_path / "body.md").write_text("---\ntitle: x\nkind: experiment\n---\n# x\n")
+    sys.path.insert(0, str(REPO_ROOT / "src"))
+    import explore_persona_space.task_workflow as tw
+
+    monkeypatch.setattr(tw, "find_task_path", lambda n: tmp_path)
+    monkeypatch.setattr(sys, "argv", ["verify_plan.py", "--issue", "999", "--json"])
+    rc = verify_plan.main()
+    payload = json.loads(capsys.readouterr().out)
+    assert rc == 0
+    assert payload["overall"] == "PASS"
+    entry = next(c for c in payload["checks"] if c["id"] == C62)
+    assert entry["status"] == "WARN"
+    assert "NO `backend:` key" in entry["detail"]
+    assert payload["n_warn"] >= 1  # the appended row rides the aggregation
+
+
+def test_c62_issue_mode_matching_frontmatter_passes(tmp_path, monkeypatch, capsys):
+    # Same fixture with the frontmatter key actually SET -> the c62 row
+    # PASSes and the run stays green (the clean form, acceptance criterion 2).
+    (tmp_path / "plans").mkdir()
+    claim = "**Backend:** `backend: runpod` (explicit frontmatter pin)."
+    (tmp_path / "plans" / "v1.md").write_text(
+        GOOD_PLAN.replace(
+            "One A100 for about three hours covers both conditions.",
+            "One A100 for about three hours covers both conditions.\n\n" + claim + "\n",
+        )
+    )
+    (tmp_path / "body.md").write_text(
+        "---\ntitle: x\nkind: experiment\nbackend: runpod\n---\n# x\n"
+    )
+    sys.path.insert(0, str(REPO_ROOT / "src"))
+    import explore_persona_space.task_workflow as tw
+
+    monkeypatch.setattr(tw, "find_task_path", lambda n: tmp_path)
+    monkeypatch.setattr(sys, "argv", ["verify_plan.py", "--issue", "999", "--json"])
+    rc = verify_plan.main()
+    payload = json.loads(capsys.readouterr().out)
+    assert rc == 0
+    entry = next(c for c in payload["checks"] if c["id"] == C62)
+    assert entry["status"] == "PASS"
+
+
+def _c63_plan(s9_extra: str) -> str:
+    """GOOD_PLAN with ``s9_extra`` injected INSIDE §9 (the _c57_plan idiom:
+    GOOD_PLAN's §9 runs from `## 9. Resources` to `## 11.`)."""
+    assert "One A100 for about three hours covers both conditions." in GOOD_PLAN
+    return GOOD_PLAN.replace(
+        "One A100 for about three hours covers both conditions.",
+        "One A100 for about three hours covers both conditions.\n\n" + s9_extra + "\n",
+    )
+
+
+C63_WIDTH_LINE = "GPU spec: **one 8×H100 pod** (`pod-2225-fu1`)."
+
+
+def test_c63_v9_incident_warns():
+    # The founding incident (#2225 v9): §9 declares 8xH100, the verbatim
+    # dispatch fence carries no --gpus, and lora-7b defaults to 1 -> WARN
+    # naming the intent, the realized width, and the remedy.
+    plan = _c63_plan(C63_WIDTH_LINE + "\n\nDispatch example:\n\n" + C63_V9_FENCE)
+    r = _run(plan)[1][C63]
+    assert r.status == "WARN", r.detail
+    assert "lora-7b" in r.detail
+    assert "1" in r.detail
+    assert "8-GPU" in r.detail
+    assert "--gpus 8" in r.detail  # the remedy, named
+    assert "#2225" in r.detail
+
+
+def test_c63_full_v9_line_warns():
+    # Same read off the FULL verbatim v9:236 line (widths 8 and 4 both
+    # present; N_decl = max = 8).
+    plan = _c63_plan(C62_V9_LINE + "\n\n" + C63_V9_FENCE)
+    r = _run(plan)[1][C63]
+    assert r.status == "WARN", r.detail
+
+
+def test_c63_gpus_flag_passes():
+    # The clean form: the same fence WITH `--gpus 8` realizes the declared
+    # width -> PASS (acceptance criterion 2).
+    fence = C63_V9_FENCE.replace("--intent lora-7b", "--intent lora-7b --gpus 8")
+    plan = _c63_plan(C63_WIDTH_LINE + "\n\n" + fence)
+    r = _run(plan)[1][C63]
+    assert r.status == "PASS", r.detail
+
+
+def test_c63_wide_intent_default_passes():
+    # An intent whose mirror default covers N_decl needs no --gpus
+    # (sweep-8g-h100 -> 8).
+    fence = C63_V9_FENCE.replace("--intent lora-7b", "--intent sweep-8g-h100")
+    plan = _c63_plan(C63_WIDTH_LINE + "\n\n" + fence)
+    r = _run(plan)[1][C63]
+    assert r.status == "PASS", r.detail
+
+
+def test_c63_no_section9_skips():
+    # No parseable §9 heading -> SKIP (GOOD_PLAN's `## 9.` renamed away; the
+    # fence + width line live under an unnumbered heading).
+    plan = GOOD_PLAN.replace("## 9. Resources", "## Resources (unnumbered)") + (
+        "\n" + C63_WIDTH_LINE + "\n\n" + C63_V9_FENCE + "\n"
+    )
+    r = _run(plan)[1][C63]
+    assert r.status == "SKIP"
+    assert "no parseable §9" in r.detail
+
+
+def test_c63_no_launch_argv_skips():
+    # Width declared, no dispatch_issue.py launch fence anywhere -> SKIP
+    # naming the different-channel reason (pod.py provision / SSH-MCP).
+    plan = _c63_plan(C63_WIDTH_LINE)
+    r = _run(plan)[1][C63]
+    assert r.status == "SKIP"
+    assert "no launch-shaped" in r.detail
+
+
+def test_c63_all_argvs_contribute_nothing_skips():
+    # Every parsed argv contributes no width (unknown intent, no --gpus) ->
+    # the explicit fail-safe SKIP branch, each argv named with its reason.
+    fence = C63_V9_FENCE.replace("--intent lora-7b", "--intent cpu-bigmem")
+    plan = _c63_plan(C63_WIDTH_LINE + "\n\n" + fence)
+    r = _run(plan)[1][C63]
+    assert r.status == "SKIP"
+    assert "contributes a width" in r.detail
+    assert "cpu-bigmem" in r.detail
+
+
+def test_c63_escape_literal_passes():
+    plan = _c63_plan(C63_WIDTH_LINE + "\n\n" + C63_V9_FENCE) + (
+        "\nN/A — declared width vs launch width reconciled\n"
+    )
+    r = _run(plan)[1][C63]
+    assert r.status == "PASS"
+    assert "explicit N/A" in r.detail
+
+
+def test_c63_declared_1x_no_trigger():
+    # N_decl = 1 stays under the >= 2 trigger floor -> SKIP.
+    plan = _c63_plan("GPU spec: one 1×H100 pod.\n\n" + C63_V9_FENCE)
+    r = _run(plan)[1][C63]
+    assert r.status == "SKIP"
+    assert "no multi-GPU width" in r.detail
+
+
+def test_c63_fenced_width_tokens_masked():
+    # Width tokens INSIDE a fenced block are masked (prose-lines-only read);
+    # --gpu-count on a prose line is the second declared-width form.
+    plan = _c63_plan(
+        "```\n8×H100 fenced example\n```\n\n"
+        "Provisioned via `pod.py provision --issue 999 --gpu-count 8`.\n\n" + C63_V9_FENCE
+    )
+    r = _run(plan)[1][C63]
+    # The fenced 8xH100 is masked, but the prose --gpu-count 8 declares 8.
+    assert r.status == "WARN", r.detail
+
+
+def test_c63_warn_never_flips_overall():
+    # JSON-contract spot check (acceptance criterion 3): a plan tripping c63
+    # alone keeps overall PASS — WARN never flips `passed`.
+    plan = _c63_plan(C63_WIDTH_LINE + "\n\nDispatch example:\n\n" + C63_V9_FENCE)
+    ok, by_id = _run(plan)
+    assert by_id[C63].status == "WARN"
+    assert ok
+
+
+def test_c63_intent_width_mirror_matches_gpu_heuristics():
+    # Drift guard (the c26 parity-test pattern): the static width mirror
+    # equals the live gpu_heuristics INTENTS gpu_count map — an intent
+    # add/change on the heuristics side fails the suite loudly.
+    spec = importlib.util.spec_from_file_location(
+        "_c63_gpu_heuristics", REPO_ROOT / "scripts" / "gpu_heuristics.py"
+    )
+    gh = importlib.util.module_from_spec(spec)  # type: ignore[arg-type]
+    # sys.modules registration is load-bearing: the module's dataclass field
+    # resolution looks itself up by __module__ at exec time.
+    sys.modules["_c63_gpu_heuristics"] = gh
+    spec.loader.exec_module(gh)  # type: ignore[union-attr]
+    derived = {k: v.gpu_count for k, v in gh.INTENTS.items()}
+    assert derived == verify_plan._C63_INTENT_GPU_COUNT
+
+
+def test_c62_c63_registered_in_checks_and_docstring_catalog():
+    # Membership pins (the #2275 registration-pin convention): c63 in CHECKS;
+    # c62 NOT in CHECKS (main()-wired by design, the c23 pattern); both ids
+    # in the docstring catalog + the conditional-checks enumeration.
+    assert verify_plan.check_declared_width_vs_launch in verify_plan.CHECKS
+    assert verify_plan.check_backend_pin_claim not in verify_plan.CHECKS
+    assert "c62 §9 backend pin-claim" in verify_plan.__doc__
+    assert "c63 §9 declared GPU width" in verify_plan.__doc__
+    # conditional-checks enumeration carries both (comma-separated membership
+    # form, the c56/c57 reflow-tolerant pin).
+    assert "62, 63" in verify_plan.__doc__
+    # Escape phrases registered in the docstring (the SKILL.md sync test
+    # propagates them to the consumer surface).
+    assert "N/A — backend pin-claim reconciled" in verify_plan.__doc__
+    assert "N/A — declared width vs launch width reconciled" in verify_plan.__doc__
+
+
+# ─── Checks 65/66 — smoke-fixture size claim vs realized fixtures (#2178) ──
+
+# The #1336 v16 incident grain: 8 rows in six of seven smoke corpora, 32 in
+# the seventh, SMOKE_SAMPLE_N = 8 in the producing script, plan claim >= 40.
+_C65_FIXTURE_ROWS = {
+    "gsm8k_test1319.jsonl": 8,
+    "gsm8k_train_full.jsonl": 8,
+    "if11k.jsonl": 8,
+    "lmsys23k.jsonl": 32,
+    "math7500.jsonl": 8,
+    "sft11k.jsonl": 8,
+    "uf11k.jsonl": 8,
+}
+
+# The v16.md:127 incident sentence, verbatim shape (three conjuncts on one line).
+_C65_CLAIM_LINE = "The smoke fixture slice is sized ≥ 40 rows per smoke corpus so the whole-group packer has resolution."
+
+_C65_GLOB_LINE = (
+    "Fixtures live at data/issue_1336/corpora_v2_smoke/*.jsonl (gitignored worktree data)."
+)
+
+
+def _c65_plan(
+    *extra_lines,
+    claim=_C65_CLAIM_LINE,
+    glob_line=_C65_GLOB_LINE,
+    h1="# Plan v16 — Task #1336: pooled split (fixture)",
+):
+    parts = [h1, "", "## 4. Design", ""]
+    if claim:
+        parts += [claim, ""]
+    if glob_line:
+        parts += [glob_line, ""]
+    parts += list(extra_lines)
+    return "\n".join(parts) + "\n"
+
+
+def _c65_root(tmp_path, *, fixtures=True, script=True, under_worktree=None):
+    """Fixture repo root for monkeypatching verify_plan._C65_REPO_ROOT (the
+    _c31_fixture_root convention). ``under_worktree`` relocates the fixture
+    files beneath ``.claude/worktrees/<name>/`` (the rung-3 shape)."""
+    root = tmp_path / "fixroot"
+    base = root if under_worktree is None else root / ".claude" / "worktrees" / under_worktree
+    if fixtures:
+        fdir = base / "data" / "issue_1336" / "corpora_v2_smoke"
+        fdir.mkdir(parents=True)
+        for fname, n in _C65_FIXTURE_ROWS.items():
+            (fdir / fname).write_text("".join(f'{{"row": {i}}}\n' for i in range(n)))
+    (root / "scripts").mkdir(parents=True, exist_ok=True)
+    if script:
+        (root / "scripts" / "issue1336_stage_corpora.py").write_text(
+            'OUT_DIR = "data/issue_1336/corpora_v2_smoke"\nSMOKE_SAMPLE_N = 8\n'
+        )
+    return root
+
+
+def test_c65_c66_registered_in_checks_and_docstring_catalog():
+    assert verify_plan.check_smoke_fixture_size in verify_plan.CHECKS
+    assert verify_plan.check_smoke_producer_coverage in verify_plan.CHECKS
+    assert "c65 smoke-fixture size claim" in verify_plan.__doc__
+    assert "c66 smoke-fixture producing" in verify_plan.__doc__
+    # conditional-checks enumeration (comma-separated membership form, the
+    # c56/c57 reflow-tolerant pin).
+    assert "65, 66" in verify_plan.__doc__
+    # Escape phrases registered in the docstring.
+    assert "N/A — no smoke fixture size claim" in verify_plan.__doc__
+    assert "N/A — no fixture-producing script change needed" in verify_plan.__doc__
+    # Round-2 no-smoke-run declaration route (criterion 5 clause 3).
+    assert "N/A — no smoke run" in verify_plan.__doc__
+
+
+def test_c65_v16_shape_fails(tmp_path, monkeypatch):
+    # Acceptance criterion 2 (Arm A): claim 40 vs realized 8/32 -> FAIL,
+    # detail naming the winning rung + per-file counts (concern 5).
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path))
+    r = verify_plan.check_smoke_fixture_size(_c65_plan(), "experiment")
+    assert r.status == "FAIL"
+    assert "working tree" in r.detail
+    assert "lmsys23k.jsonl=32" in r.detail
+    assert "claimed floor 40" in r.detail
+    assert "realized min 8" in r.detail
+
+
+def test_c66_v16_shape_warns(tmp_path, monkeypatch):
+    # Acceptance criterion 2 (Arm B): producing script on disk, unnamed in
+    # the plan -> WARN naming the candidate.
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path))
+    r = verify_plan.check_smoke_producer_coverage(_c65_plan(), "experiment")
+    assert r.status == "WARN"
+    assert "scripts/issue1336_stage_corpora.py" in r.detail
+    assert "appear nowhere in" in r.detail
+
+
+def test_c65_floor_at_or_below_realized_passes(tmp_path, monkeypatch):
+    # Acceptance criterion 3: floor <= realized minimum -> PASS.
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path))
+    claim = "The smoke fixture slice is sized ≥ 8 rows per smoke corpus."
+    r = verify_plan.check_smoke_fixture_size(_c65_plan(claim=claim), "experiment")
+    assert r.status == "PASS"
+    assert "working tree" in r.detail
+    # Arm B: claim satisfied -> no producing-script adjudication needed.
+    r66 = verify_plan.check_smoke_producer_coverage(_c65_plan(claim=claim), "experiment")
+    assert r66.status == "SKIP"
+    assert "claim satisfied" in r66.detail
+
+
+def test_c66_producing_script_listed_passes(tmp_path, monkeypatch):
+    # Acceptance criterion 4: the plan budgets the producing-script change,
+    # so Arm B passes even while Arm A trips.
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path))
+    plan = _c65_plan("Modified files: scripts/issue1336_stage_corpora.py (raise the sample floor).")
+    assert verify_plan.check_smoke_fixture_size(plan, "experiment").status == "FAIL"
+    r = verify_plan.check_smoke_producer_coverage(plan, "experiment")
+    assert r.status == "PASS"
+    assert "issue1336_stage_corpora.py" in r.detail
+
+
+def test_c65_unresolvable_glob_skips(tmp_path, monkeypatch):
+    # Acceptance criterion 5: a named glob that resolves at NO rung -> SKIP
+    # (never FAIL); Arm B cannot adjudicate either.
+    monkeypatch.setattr(
+        verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path, fixtures=False, script=False)
+    )
+    r = verify_plan.check_smoke_fixture_size(_c65_plan(), "experiment")
+    assert r.status == "SKIP"
+    assert "unresolvable" in r.detail
+    r66 = verify_plan.check_smoke_producer_coverage(_c65_plan(), "experiment")
+    assert r66.status == "SKIP"
+    assert "realized evidence unresolved" in r66.detail
+
+
+def test_c65_no_path_token_skips(tmp_path, monkeypatch):
+    # Acceptance criterion 5: a claim with no fixture path token -> SKIP.
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path))
+    r = verify_plan.check_smoke_fixture_size(_c65_plan(glob_line=None), "experiment")
+    assert r.status == "SKIP"
+    assert "fixture path not named" in r.detail
+
+
+def test_c65_no_claim_skips(tmp_path, monkeypatch):
+    # Acceptance criterion 5: no smoke-fixture size language -> both SKIP
+    # (a bare glob token never arms the checks).
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path))
+    plan = _c65_plan(claim=None)
+    r = verify_plan.check_smoke_fixture_size(plan, "experiment")
+    assert r.status == "SKIP"
+    assert "no smoke fixture size claim detected" in r.detail
+    assert verify_plan.check_smoke_producer_coverage(plan, "experiment").status == "SKIP"
+
+
+def test_c65_constant_only_evidence_warns(tmp_path, monkeypatch):
+    # Constant-route contradiction: no fixture files resolve, the repo
+    # defines the claimed constant at a lower value -> WARN by design,
+    # never FAIL (concern 6).
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path, fixtures=False))
+    plan = _c65_plan(
+        "The staging script pins the smoke sample floor as `SMOKE_SAMPLE_N = 40`.",
+        claim=None,
+        glob_line=None,
+    )
+    r = verify_plan.check_smoke_fixture_size(plan, "experiment")
+    assert r.status == "WARN"
+    assert "SMOKE_SAMPLE_N = 40" in r.detail
+    assert "SMOKE_SAMPLE_N = 8" in r.detail
+    # Arm B: constant-route contradiction + the defining script unnamed -> WARN.
+    r66 = verify_plan.check_smoke_producer_coverage(plan, "experiment")
+    assert r66.status == "WARN"
+    assert "issue1336_stage_corpora.py" in r66.detail
+
+
+def test_c65_constant_claim_consistent_passes(tmp_path, monkeypatch):
+    # Verdict-table row 6: constant-form claim consistent with the repo
+    # definition -> PASS on constant-only evidence; Arm B has no
+    # contradiction to adjudicate.
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path, fixtures=False))
+    plan = _c65_plan(
+        "The staging script keeps the smoke sample floor at `SMOKE_SAMPLE_N = 8`.",
+        claim=None,
+        glob_line=None,
+    )
+    r = verify_plan.check_smoke_fixture_size(plan, "experiment")
+    assert r.status == "PASS"
+    assert "constant-only evidence" in r.detail
+    assert verify_plan.check_smoke_producer_coverage(plan, "experiment").status == "SKIP"
+
+
+def test_c65_fenced_claim_does_not_trigger(tmp_path, monkeypatch):
+    # The incident sentence inside a fence never triggers (fence-masked
+    # claim grammar).
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path))
+    plan = _c65_plan("```", _C65_CLAIM_LINE, "```", claim=None)
+    r = verify_plan.check_smoke_fixture_size(plan, "experiment")
+    assert r.status == "SKIP"
+    assert "no smoke fixture size claim detected" in r.detail
+
+
+def test_c65_standalone_na_passes(tmp_path, monkeypatch):
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path))
+    plan = _c65_plan("N/A — no smoke fixture size claim")
+    r = verify_plan.check_smoke_fixture_size(plan, "experiment")
+    assert r.status == "PASS"
+    assert "explicit N/A declared" in r.detail
+
+
+def test_c65_wrapped_na_does_not_escape(tmp_path, monkeypatch):
+    # A backtick-wrapped paste of the escape phrase is DELIBERATELY
+    # unrecognized (#1238 — the _standalone_na_declared convention).
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path))
+    plan = _c65_plan("`N/A — no smoke fixture size claim`")
+    assert verify_plan.check_smoke_fixture_size(plan, "experiment").status == "FAIL"
+
+
+def test_c66_standalone_na_passes(tmp_path, monkeypatch):
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path))
+    plan = _c65_plan("N/A — no fixture-producing script change needed")
+    r = verify_plan.check_smoke_producer_coverage(plan, "experiment")
+    assert r.status == "PASS"
+    assert "explicit N/A declared" in r.detail
+
+
+def test_c65_c66_no_smoke_declaration_with_live_claim_skips(tmp_path, monkeypatch):
+    # Round-2 FIX 1 (concerns `no-smoke-run-skip` /
+    # `c65-no-smoke-run-declaration-skip`, criterion 5 clause 3): a
+    # standalone no-smoke declaration disarms BOTH checks even when a live
+    # claim line + resolvable fixtures are present — the declaration wins
+    # over the claim grammar (pre-fix this plan FAILed c65 / WARNed c66).
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path))
+    plan = _c65_plan("N/A — no dry-run smoke")  # default claim + glob lines stay present
+    r = verify_plan.check_smoke_fixture_size(plan, "experiment")
+    assert r.status == "SKIP"
+    assert "declares no smoke run" in r.detail
+    assert "N/A — no dry-run smoke" in r.detail
+    r66 = verify_plan.check_smoke_producer_coverage(plan, "experiment")
+    assert r66.status == "SKIP"
+    assert "declares no smoke run" in r66.detail
+
+
+def test_c65_c66_no_smoke_run_variant_alone_skips(tmp_path, monkeypatch):
+    # Declaration alone (no claim, no path token): the plain `no smoke run`
+    # variant SKIPs both checks with a detail naming the declaration.
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path))
+    plan = _c65_plan("N/A — no smoke run", claim=None, glob_line=None)
+    r = verify_plan.check_smoke_fixture_size(plan, "experiment")
+    assert r.status == "SKIP"
+    assert "N/A — no smoke run" in r.detail
+    r66 = verify_plan.check_smoke_producer_coverage(plan, "experiment")
+    assert r66.status == "SKIP"
+    assert "N/A — no smoke run" in r66.detail
+
+
+def test_c65_wrapped_no_smoke_declaration_does_not_disarm(tmp_path, monkeypatch):
+    # Anti-paste: a backtick-wrapped declaration is NOT a declaration
+    # (_standalone_na_declared discipline) — the live claim still FAILs.
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path))
+    plan = _c65_plan("`N/A — no dry-run smoke`")
+    assert verify_plan.check_smoke_fixture_size(plan, "experiment").status == "FAIL"
+
+
+def test_c65_minified_json_is_noncountable_never_false_fails(tmp_path, monkeypatch):
+    # Round-2 FIX 2 (concern `non-row-format-counting`): a minified .json
+    # bank (40 objects on one physical line -> newline count 1) must never
+    # ground a FAIL against a 40-row floor — .json is non-line-oriented, so
+    # it is non-countable evidence and the check SKIPs (unresolved), with a
+    # detail naming the non-countable format. Pre-fix: FALSE FAIL.
+    root = tmp_path / "fixroot"
+    fdir = root / "data" / "issue_1336" / "corpora_v2_smoke"
+    fdir.mkdir(parents=True)
+    (fdir / "bank.json").write_text("[" + ",".join(f'{{"row": {i}}}' for i in range(40)) + "]")
+    (root / "scripts").mkdir()
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", root)
+    plan = _c65_plan(
+        glob_line="Fixtures live at data/issue_1336/corpora_v2_smoke/*.json (bank format)."
+    )
+    r = verify_plan.check_smoke_fixture_size(plan, "experiment")
+    assert r.status == "SKIP"
+    assert "non-line-oriented" in r.detail
+    # c66 follows check 65's comparison: evidence unresolved -> SKIP.
+    assert verify_plan.check_smoke_producer_coverage(plan, "experiment").status == "SKIP"
+
+
+def test_c65_jsonl_sibling_still_counts_beside_noncountable_json(tmp_path, monkeypatch):
+    # Round-2 FIX 2, positive arm: the .jsonl sibling stays countable —
+    # the FAIL grounds on it alone; the non-countable .json contributes no
+    # count and never appears in the per-file detail.
+    root = tmp_path / "fixroot"
+    fdir = root / "data" / "issue_1336" / "corpora_v2_smoke"
+    fdir.mkdir(parents=True)
+    (fdir / "bank.json").write_text("[" + ",".join(f'{{"row": {i}}}' for i in range(40)) + "]")
+    (fdir / "rows.jsonl").write_text("".join(f'{{"row": {i}}}\n' for i in range(8)))
+    (root / "scripts").mkdir()
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", root)
+    plan = _c65_plan(
+        glob_line=(
+            "Fixtures live at data/issue_1336/corpora_v2_smoke/*.jsonl and "
+            "data/issue_1336/corpora_v2_smoke/*.json."
+        )
+    )
+    r = verify_plan.check_smoke_fixture_size(plan, "experiment")
+    assert r.status == "FAIL"
+    assert "rows.jsonl=8" in r.detail
+    assert "bank.json" not in r.detail
+
+
+def test_c65_worktree_rung_resolves(tmp_path, monkeypatch):
+    # Rung 3: fixtures only under .claude/worktrees/issue-<N>*/ (N from the
+    # plan's own H1) — the gitignored worktree-local class v16 embodied.
+    root = _c65_root(tmp_path, under_worktree="issue-1336-fullcorpora")
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", root)
+    r = verify_plan.check_smoke_fixture_size(_c65_plan(), "experiment")
+    assert r.status == "FAIL"
+    assert "issue worktree issue-1336-fullcorpora" in r.detail
+
+
+def test_c65_pinned_tip_rung_via_monkeypatched_git_helpers(tmp_path, monkeypatch):
+    # Rung 2 without a git repo: monkeypatch the tree-counts helper (the
+    # c42 fixture strategy) and pin the sha + glob threading.
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path, fixtures=False))
+    calls: list[tuple[str, str]] = []
+
+    def fake_tree_counts(sha, glob_token):
+        calls.append((sha, glob_token))
+        return [
+            (f"data/issue_1336/corpora_v2_smoke/{fname}", rows, True)
+            for fname, rows in _C65_FIXTURE_ROWS.items()
+        ]
+
+    monkeypatch.setattr(verify_plan, "_c65_git_tree_counts", fake_tree_counts)
+    plan = _c65_plan("Pinned tip `8c7b7b2406aa`.")
+    r = verify_plan.check_smoke_fixture_size(plan, "experiment")
+    assert r.status == "FAIL"
+    assert "pinned tip 8c7b7b2406aa" in r.detail
+    assert calls and calls[0][0] == "8c7b7b2406aa"
+    assert calls[0][1] == "data/issue_1336/corpora_v2_smoke/*.jsonl"
+
+
+def _c65_git_cmd(cwd, *args):
+    subprocess.run(
+        [
+            "git",
+            "-c",
+            "user.email=fixture@example.com",
+            "-c",
+            "user.name=Fixture",
+            "-c",
+            "commit.gpgsign=false",
+            *args,
+        ],
+        cwd=cwd,
+        check=True,
+        capture_output=True,
+    )
+
+
+def test_c65_pinned_tip_rung_real_git_subprocess(monkeypatch):
+    # Round-1 Methodology concern 3 (smoke blind-spot honesty): exercise the
+    # REAL `git ls-tree` / `git cat-file` subprocess path end-to-end on a
+    # throwaway git repo, so the monkeypatched-helper test above is not the
+    # only rung-2 coverage. mkdtemp rather than tmp_path: concurrent pytest
+    # sessions prune stale /tmp/pytest-of-* roots, and a subprocess-heavy
+    # scratch repo is the shape that race hits.
+    scratch = Path(tempfile.mkdtemp(prefix="eps-c65-git-"))
+    try:
+        root = _c65_root(scratch)
+        _c65_git_cmd(root, "init", "-q")
+        _c65_git_cmd(root, "add", "-A")
+        _c65_git_cmd(root, "commit", "-qm", "fixture commit")
+        sha = subprocess.run(
+            ["git", "rev-parse", "HEAD"], cwd=root, check=True, capture_output=True, text=True
+        ).stdout.strip()
+        shutil.rmtree(root / "data")  # rung 1 must not shadow rung 2
+        monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", root)
+        plan = _c65_plan(f"Pinned tip `{sha}`.")
+        r = verify_plan.check_smoke_fixture_size(plan, "experiment")
+        assert r.status == "FAIL"
+        assert f"pinned tip {sha[:12]}" in r.detail
+        assert "lmsys23k.jsonl=32" in r.detail
+    finally:
+        shutil.rmtree(scratch, ignore_errors=True)
+
+
+def test_c66_no_candidates_skips(tmp_path, monkeypatch):
+    # Contradiction resolved but nothing in scripts/ plausibly produces the
+    # fixtures (the real-v16-from-main case) -> SKIP.
+    monkeypatch.setattr(verify_plan, "_C65_REPO_ROOT", _c65_root(tmp_path, script=False))
+    r = verify_plan.check_smoke_producer_coverage(_c65_plan(), "experiment")
+    assert r.status == "SKIP"
+    assert "producing script not identifiable" in r.detail
+
+
+# ─── c64: sampled exactness claim vs runtime-assert grain (#2174/#2163) ─────
+
+C64 = "c64_exactness_grain"
+
+# The §12 shape the check reads: an exactness claim + a sample-size marker in
+# the ±3-line window (the #2163 A11 shape, condensed).
+C64_CLAIM_BLOCK = """\
+## 12. Assumptions
+
+- **A11** `h_prefix` rows are byte-identical — `n_distinct_rows = 1`.
+  Confidence: High (measured). Source: probed a 10-shard / 706-row sample.
+  How to verify: re-run the probe.
+"""
+
+
+def test_c64_sampled_exactness_warns():
+    # AC1's mechanical analog: exactness claim + sample marker, no satisfier
+    # -> WARN whose detail names BOTH remedies (AC2) + the grain mechanism.
+    plan = GOOD_PLAN + "\n" + C64_CLAIM_BLOCK
+    r = _run(plan)[1][C64]
+    assert r.status == "WARN", r.detail
+    assert "full grain" in r.detail
+    assert "bound" in r.detail
+    assert "soften" in r.detail
+    assert "#2163" in r.detail
+
+
+def test_c64_value_claim_with_sample_passes():
+    # AC3: a sampled VALUE claim is not an exactness claim -> no WARN (SKIP:
+    # the lens is not a confidence-downgrade tax on measured numbers).
+    plan = GOOD_PLAN + (
+        "\n## 12. Assumptions\n\n"
+        "- **A3** lambda = 3.2e-2, measured on 10 sampled shards.\n"
+        "  Confidence: High (measured). How to verify: re-run the fit.\n"
+    )
+    r = _run(plan)[1][C64]
+    assert r.status == "SKIP", r.detail
+
+
+def test_c64_full_grain_verified_passes():
+    # AC4: the same exactness claim already VERIFIED at full grain (completed
+    # vocabulary on the full-grain line) -> PASS, not WARN.
+    plan = (
+        GOOD_PLAN
+        + "\n"
+        + C64_CLAIM_BLOCK.replace(
+            "How to verify: re-run the probe.",
+            "Verified over the full staged store (142,000 rows counted).",
+        )
+    )
+    r = _run(plan)[1][C64]
+    assert r.status == "PASS", r.detail
+    assert "satisfier" in r.detail
+
+
+def test_c64_negated_completion_still_warns():
+    # Round-2 regression (concern c64-completion-polarity): NEGATED
+    # completion vocabulary beside a full-grain phrase is NOT a satisfier —
+    # "not verified at full grain" keeps the WARN (the veto arm, not the
+    # completed-verification satisfier, wins).
+    plan = (
+        GOOD_PLAN
+        + "\n"
+        + C64_CLAIM_BLOCK.replace(
+            "How to verify: re-run the probe.",
+            "Not verified at full grain (142,000 rows).",
+        )
+    )
+    r = _run(plan)[1][C64]
+    assert r.status == "WARN", r.detail
+
+
+def test_c64_prospective_completion_still_warns():
+    # Round-2 regression (concern c64-completion-polarity): PROSPECTIVE
+    # completion ("will be verified ...") is a deferral, not a completed
+    # verification — keeps the WARN.
+    plan = (
+        GOOD_PLAN
+        + "\n"
+        + C64_CLAIM_BLOCK.replace(
+            "How to verify: re-run the probe.",
+            "How to verify: will be verified at full grain (all 142,000 rows).",
+        )
+    )
+    r = _run(plan)[1][C64]
+    assert r.status == "WARN", r.detail
+
+
+def test_c64_bound_restatement_passes():
+    # The second remedy: the claim restated as a sampled BOUND in the same
+    # window -> PASS.
+    plan = (
+        GOOD_PLAN
+        + "\n"
+        + C64_CLAIM_BLOCK.replace(
+            "How to verify: re-run the probe.",
+            "Restated as a bound: no deviation observed in 706 of 142,000 rows.",
+        )
+    )
+    r = _run(plan)[1][C64]
+    assert r.status == "PASS", r.detail
+
+
+def test_c64_trigger_case_insensitive():
+    # Round-2 (reconciler-deferred concern c64-trigger-case, APPLIED after
+    # the corpus re-sweep measured 8 < 10 defensible file-WARNs with
+    # re.IGNORECASE on): sentence-initial / ordinary-casing exactness
+    # phrases fire the trigger.
+    for claim in (
+        "- **A2** Exactly zero deviating rows expected.",
+        "- **A2** No exceptions across the store.",
+        "- **A2** every row is byte-identical to the first row.",
+    ):
+        plan = GOOD_PLAN + (
+            f"\n## 12. Assumptions\n\n{claim}\n  Source: probed a 10-shard / 706-row sample.\n"
+        )
+        r = _run(plan)[1][C64]
+        assert r.status == "WARN", (claim, r.detail)
+
+
+def test_c64_escape_literal_passes():
+    plan = GOOD_PLAN + "\n" + C64_CLAIM_BLOCK + "\nN/A — no sampled exactness claims\n"
+    r = _run(plan)[1][C64]
+    assert r.status == "PASS"
+    assert "explicit N/A" in r.detail
+
+
+def test_c64_warn_never_flips_overall():
+    # WARN-only posture: a plan tripping c64 alone keeps overall PASS.
+    plan = GOOD_PLAN + "\n" + C64_CLAIM_BLOCK
+    ok, by_id = _run(plan)
+    assert by_id[C64].status == "WARN"
+    assert ok
+
+
+def test_c64_registered_in_checks_and_docstring_catalog():
+    # Membership pins (the c62/c63 registration-pin convention).
+    assert verify_plan.check_exactness_grain in verify_plan.CHECKS
+    assert "c64 sampled exactness claim" in verify_plan.__doc__
+    # conditional-checks enumeration carries it (reflow-tolerant membership).
+    assert "63, 64" in verify_plan.__doc__
+    # Escape phrase registered in the docstring (the SKILL.md sync test
+    # propagates it to the consumer surface).
+    assert "N/A — no sampled exactness claims" in verify_plan.__doc__
+
+
+def test_c64_verbatim_2163_incident_warns():
+    # Founding-incident regression anchor (plan v3 Edit E8): the verbatim
+    # #2163 A11 assumption — exactness claim at Confidence: High (measured),
+    # a 10-shard/706-row sample marker, AND the deferred "Phase 0 re-asserts
+    # ... over the FULL staged store" How-to-verify line — MUST WARN:
+    # deferral phrasing is not completed verification, and the window's
+    # "(measured)" token (on the Confidence line, not the full-grain line)
+    # must not rescue it.
+    a11 = """\
+## 12. Assumptions
+
+- **A11** `h_prefix` is (62, 3584) fp16 with EVERY row byte-identical — max|row − row0| = 0
+  exactly, all pairwise cosines = 1.000000, `n_distinct_rows = 1`; v_P carries exactly zero
+  cross-context variance. Confidence: High (measured). Source: probed 10 sampled shards
+  (706 rows of 142,000). How to verify: Phase 0 re-asserts byte-identity over the FULL
+  staged store.
+"""
+    plan = GOOD_PLAN + "\n" + a11
+    r = _run(plan)[1][C64]
+    assert r.status == "WARN", r.detail
+    assert "#2163" in r.detail
+
+
+# ─── c67: test-retest κ gate vs temperature-0 judge pin (#2204/#2202) ───────
+
+C67 = "c67_retest_kappa_temp0"
+
+# Verbatim #2202 plan v1 excerpts (the founding incident), EMBEDDED — never
+# read from tasks/... paths: task folders git-mv across status dirs on
+# promotion, so a hardcoded path breaks the suite the day #2202 promotes
+# (real-file coverage lives in the plan §6 acceptance commands instead).
+# v1 L136: the judge bullet pinning the label wave at temperature 0.
+C67_V1_JUDGE_LINE = "- Judge `claude-sonnet-4-5-20250929`, Anthropic **Batch API** via `eval/judge_dispatch.dispatch_judge_items` (`src/explore_persona_space/eval/judge_dispatch.py:1770`), `max_tokens=2048` (multi-field JSON rubric floor), temperature 0, rubric-keyed cache, `custom_id`s validated pre-submit."
+# v1 L140: the registered test-retest κ<0.6 demotion gate.
+C67_V1_RETEST_LINE = "- 200-item test-retest → κ per mode; modes with κ < 0.6 demoted to report-only (the #1738 instrument's convention)."
+# v2 L136 (corrected): API-default pin QUOTING the temperature-0 trap in
+# prose on the SAME line — the load-bearing negation shape (must stay PASS).
+C67_V2_JUDGE_LINE = """- Judge `claude-sonnet-4-5-20250929`, Anthropic **Batch API** via `eval/judge_dispatch.dispatch_judge_items` (`src/explore_persona_space/eval/judge_dispatch.py:1770`), `max_tokens=2048` (multi-field JSON rubric floor), **temperature = API default (1.0), n_draws=1 — the parent instrument's own setting (`scripts/issue1738_characterize.py:326` records `"temperature": "API default"`), so the test-retest κ is commensurable with the parent's 0.79–0.98 / κ-0.6-threshold convention; at temperature 0 a byte-identical retest returns near-identical output, κ≈1 for every mode, and the demotion gate could never fire** — rubric-keyed cache, `custom_id`s validated pre-submit."""
+# v2 L501: the §11 rationale line — real pin + trap quote on ONE line.
+C67_V2_S11_LINE = """- **Judge = `claude-sonnet-4-5-20250929`, Batch API, max_tokens 2048, temperature = API default (1.0, n_draws 1), pilot ~150 on a fresh pilot `cache_dir`, drop-never-coerce, test-retest 200 @ κ 0.6 with `rt_`-prefixed retest custom-ids.** Why the temperature: κ has variance only under sampling — at temperature 0 the κ<0.6 demotion gate could never fire, and the 0.6 threshold would be uncalibrated for a deterministic surface. Source: CLAUDE.md standing judge rule + task-body lock + `#1738` instrument (labels.json test_retest_kappa block; `issue1738_characterize.py:326` `"temperature": "API default"`; `:303` the `rt_` retest prefix)."""
+
+C67_P4_HEADING = "### Phase P4 (VM, Batch API) — Sonnet re-labeling wave"
+
+
+def _c67_plan(*lines, heading=C67_P4_HEADING):
+    """GOOD_PLAN + one appended judge-wave section carrying ``lines``."""
+    return GOOD_PLAN + "\n" + heading + "\n\n" + "\n".join(lines) + "\n"
+
+
+def test_c67_warns_on_2202_v1_shape():
+    # The founding incident (verbatim v1 L136 + L140, one innermost H3):
+    # temperature-0 pin + registered retest-κ demotion gate -> WARN, detail
+    # carrying the cache companion trap + the rt_ prefix + the N/A escape.
+    plan = _c67_plan(C67_V1_JUDGE_LINE, "", C67_V1_RETEST_LINE)
+    r = _run(plan)[1][C67]
+    assert r.status == "WARN", r.detail
+    assert "rt_" in r.detail
+    assert "cache" in r.detail
+    assert "N/A — no test-retest gate" in r.detail
+
+
+def test_c67_silent_on_api_default_temperature():
+    # The corrected #2202 v2 shape: both temp-0 substrings carry a same-line
+    # API-default pin, so no surviving pin -> PASS. This is the load-bearing
+    # negation test — the check must not flag exactly the plans that FIXED
+    # the bug.
+    plan = (
+        _c67_plan(C67_V2_JUDGE_LINE)
+        + "\n## 11. Decision Rationale — judge instrument\n\n"
+        + C67_V2_S11_LINE
+        + "\n"
+    )
+    r = _run(plan)[1][C67]
+    assert r.status == "PASS", r.detail
+    assert "no temperature-0 judge pin" in r.detail
+
+
+def test_c67_skips_without_retest_gate():
+    # GOOD_PLAN alone: no retest∧κ line anywhere -> SKIP (trigger absent).
+    r = _run(GOOD_PLAN)[1][C67]
+    assert r.status == "SKIP", r.detail
+    assert "no test-retest κ demotion gate detected" in r.detail
+
+
+def test_c67_silent_when_unrelated_sections():
+    # Best-effort scoping: the gate under one H3 and the temperature-0 pin
+    # under a DIFFERENT H3 -> PASS (a deterministic replay stage elsewhere
+    # in the plan is not the judge instrument's pin).
+    plan = (
+        _c67_plan(C67_V1_RETEST_LINE)
+        + "\n### Phase P9 — deterministic replay\n\n"
+        + "- Greedy replay at temperature 0 for reproducibility.\n"
+    )
+    r = _run(plan)[1][C67]
+    assert r.status == "PASS", r.detail
+    assert "no temperature-0 judge pin" in r.detail
+
+
+def test_c67_na_escape_standalone_recognized():
+    # The v1 shape + a standalone unwrapped declaration -> PASS.
+    plan = _c67_plan(C67_V1_JUDGE_LINE, "", C67_V1_RETEST_LINE, "", "N/A — no test-retest gate")
+    r = _run(plan)[1][C67]
+    assert r.status == "PASS", r.detail
+    assert "explicit N/A declared" in r.detail
+
+
+def test_c67_wrapped_na_not_recognized():
+    # A backtick-wrapped paste of the escape must NOT satisfy it (the
+    # _standalone_na_declared anti-paste discipline) -> still WARN.
+    plan = _c67_plan(C67_V1_JUDGE_LINE, "", C67_V1_RETEST_LINE, "", "`N/A — no test-retest gate`")
+    r = _run(plan)[1][C67]
+    assert r.status == "WARN", r.detail
+
+
+def test_c67_temp_pin_regex_edges():
+    # Pin-regex edges: nonzero decimals never read as a pin; 0.0 / bare
+    # `temp 0` do; `temperature > 0` (a lower bound) never does.
+    cases = [
+        ("- Judge wave at temperature 0.7, rubric-keyed cache.", "PASS"),
+        ("- Judge wave at temperature 0.0, rubric-keyed cache.", "WARN"),
+        ("- Judge wave at temp 0, rubric-keyed cache.", "WARN"),
+        ("- Judge wave at temperature 0.5, rubric-keyed cache.", "PASS"),
+        ("- Judge wave at temperature > 0 (sampling), rubric-keyed cache.", "PASS"),
+    ]
+    for judge_line, want in cases:
+        plan = _c67_plan(judge_line, "", C67_V1_RETEST_LINE)
+        r = _run(plan)[1][C67]
+        assert r.status == want, (judge_line, r.status, r.detail)
+
+
+def test_c67_never_fails_invariant():
+    # Plan §6 never-FAIL invariant (the c46/c50/c61 posture): every variant —
+    # WARN shapes, PASS shapes, SKIP shapes, a malformed heading-less shard —
+    # resolves to PASS/WARN/SKIP, never FAIL, and never raises.
+    variants = [
+        GOOD_PLAN,
+        _c67_plan(C67_V1_JUDGE_LINE, "", C67_V1_RETEST_LINE),
+        _c67_plan(C67_V2_JUDGE_LINE),
+        _c67_plan(C67_V1_RETEST_LINE),
+        _c67_plan(C67_V1_JUDGE_LINE),
+        # Malformed heading-less shard: both lines pre-heading (both map to
+        # the no-heading whole-plan span) — must not crash.
+        "temperature 0\n200-item test-retest → κ per mode; κ < 0.6 demoted\n",
+        # Fence-wrapped lines are masked — must not crash or fire.
+        "```\ntemperature 0\ntest-retest κ < 0.6 demoted\n```\n",
+    ]
+    for kind in ("experiment", "analysis", "infra", "batch", "survey"):
+        for plan in variants:
+            r = verify_plan.check_retest_kappa_temp0(plan, kind)
+            assert r.status in {"PASS", "WARN", "SKIP"}, (kind, r.status, r.detail)
+
+
+def test_c67_registered_in_checks_and_docstring_catalog():
+    # Membership pin (the c61/c65/c66 house pattern): a forgotten registry
+    # append cannot ship green — the check existing is not the check running.
+    assert verify_plan.check_retest_kappa_temp0 in verify_plan.CHECKS
+    assert "c67 test-retest" in verify_plan.__doc__
+    # conditional-checks enumeration carries 67 (comma-separated membership
+    # form, the c56/c57 reflow-tolerant pin).
+    assert "66, 67" in verify_plan.__doc__
+    # Escape phrase registered in the docstring (the SKILL.md sync test
+    # propagates it to the consumer surface).
+    assert "N/A — no test-retest gate" in verify_plan.__doc__
+
+
+def test_c67_skips_on_infra_kind():
+    # Acceptance criterion 7, pinned in BOTH directions: the kind gate SKIPs
+    # infra/batch/survey (where the self-hit class lives — this check's own
+    # plan quotes the trigger vocabulary) while the SAME text WARNs under
+    # experiment/analysis — a later "just arm it everywhere" edit cannot
+    # silently re-import the self-hit class.
+    plan = _c67_plan(C67_V1_JUDGE_LINE, "", C67_V1_RETEST_LINE)
+    for kind in ("infra", "batch", "survey"):
+        r = verify_plan.check_retest_kappa_temp0(plan, kind)
+        assert r.status == "SKIP", (kind, r.status, r.detail)
+        assert "armed for experiment/analysis only" in r.detail
+    for kind in ("experiment", "analysis"):
+        r = verify_plan.check_retest_kappa_temp0(plan, kind)
+        assert r.status == "WARN", (kind, r.status, r.detail)
+
+
+def test_c67_line_global_negation_boundary_pinned():
+    # Boundary pin for the ADJUDICATED line-global-negation semantics (#2204
+    # round-1 reconciler, binding). The negation is TEMP-ANCHORED: a denial
+    # only silences the pin when it carries a SECOND temperature token on the
+    # same line. Both directions are pinned so a future regex edit cannot
+    # silently move the boundary either way:
+    #   * a simple denial still WARNs (Codex round-1 reported this as a
+    #     false negative; measured behavior says otherwise — the reconciler
+    #     resolved it against the report);
+    #   * the three second-temp-token shapes PASS — the DISCLOSED false
+    #     negative (plan v2 § FN class 5, "mixed-stage same-line negation"),
+    #     kept because order-scoping it flips the load-bearing
+    #     explanation-first shape (v2 L136/L501, the corrected #2202 prose)
+    #     into a false positive. Narrowing it is deferred to its own round.
+    cases = [
+        # (label, judge line, expected) — expected WARN = pin survives.
+        (
+            "simple denial, one temp token",
+            "- Judge wave at temperature 0 (not the API default), rubric-keyed cache.",
+            "WARN",
+        ),
+        (
+            "FN class 5: denial carrying a second temp token",
+            "- Judge wave at temperature 0, not temperature = API default (1.0).",
+            "PASS",
+        ),
+        (
+            "FN class 5: mixed-stage — judge temp 0, generation temp 1.0",
+            "- Judge at temperature 0; generation at temperature 1.0.",
+            "PASS",
+        ),
+        (
+            "FN class 5: temp-0 pin with an API-default fallback clause",
+            "- Judge at temperature 0, falling back to temperature = API default.",
+            "PASS",
+        ),
+    ]
+    for label, judge_line, want in cases:
+        plan = _c67_plan(judge_line, "", C67_V1_RETEST_LINE)
+        r = _run(plan)[1][C67]
+        assert r.status == want, (label, r.status, r.detail)
+
+
+# ─── c68: abs-pp reduction margin vs in-plan baseline ceiling (#2228/#2203) ─
+
+C68 = "c68_margin_baseline_ceiling"
+
+# Verbatim #2203 plan v12 excerpts (the founding incident, 3rd recurrence of
+# the #810 margin-vs-ceiling family), EMBEDDED — never read from tasks/...
+# paths (folders git-mv across status dirs on promotion; the c67 convention).
+# v12 L23 tail (§2 Prior Work): the in-plan baselines.
+C68_BASELINE_LINE = "**Parent run (this issue, buggy).** Parent 7B baseline harm ~9.7%, role ~4.0%; 32B anchor degenerated into repetitive CJK/Chinese-language output instead of the paper's defence."
+# v12 L298 (§8 risk table): baseline beside the paper's 65-88% — the
+# 40-char first-match window must harvest 9.7, never 88.
+C68_RISK_BASELINE_LINE = "| Weak reconstructed attack bank (baseline ~9.7% vs paper 65-88%) → 7B/32B null under-powered | High | Carry the weak-attack caveat explicitly in Takeaways (Part F). |"
+# v12 L44: the H1-confirm bullet (arm-A2 form).
+C68_MARGIN_BULLET = "- *H1-confirm:* the corrected all-token cap arm REDUCES jailbreak harm-rate vs baseline by a clear margin (baseline − cap ≥ 10 percentage points, one-sided), with `<think>`-emission ≈ 0, CJK fraction ≈ baseline, and cos(loaded capping vector, assistant_axis) ≈ −1."
+# v12 L57: the registered verdict lattice (arm-A1 form `≤ baseline - 10pp`,
+# PLUS the two live negative fragments: `within 5pp of baseline` (tolerance)
+# and `≥ baseline - 0.05` (fraction floor) — the check must fire on this
+# line via A1 while harvesting NOTHING from those fragments).
+C68_LATTICE_LINE = "**Registered verdict lattice (verify_plan.py check 20):** DISJOINT and exhaustive: H1-confirm ⇔ (32B all-token cap harm-rate ≤ baseline − 10pp AND `<think>`_frac ≤ 0.02 AND cos(cap_vec, assistant_axis) ≤ −0.9 AND coherent-frac ≥ baseline − 0.05); H1-falsify ⇔ (manipulation checks pass AND NOT the confirm predicate); H2-confirm ⇔ (7B cap-arm capability Δ within 5pp of baseline on all three suites AND real-cap harm-reduction > random-null-cap harm-reduction); H2-falsify ⇔ (NOT H2-confirm AND fired_frac ≥ 0.25 on the cap arms); H3-confirm ⇔ (context-end OR all-prompt OR all-token cap Δharm ≥ 10pp at fired_frac ≥ 0.25 AND prefix-end Δharm < 10pp at comparable fired_frac); H3-falsify ⇔ (NOT H3-confirm at comparable fired_frac); H4-confirm ⇔ (real axis-replace coherent-subset Δharm > random-null axis-replace Δharm); H4-falsify ⇔ otherwise."
+# v12 L48: the two-sided tolerance negative (must NOT be harvested).
+C68_TOLERANCE_LINE = "- *H2-confirm:* with `v̂`, the 7B cap arms no longer catastrophically degrade capability (GSM8K/IFEval/MMLU-Pro within ~5 pp of baseline) AND the norm-matched random-direction CAP nulls now behave as valid footprint controls."
+
+
+def _c68_plan(*hyp_lines, baseline_line=C68_BASELINE_LINE):
+    """GOOD_PLAN + a Prior-Work section carrying the baseline + a Hypothesis
+    section carrying ``hyp_lines`` — the cross-section incident geometry.
+    The Hypothesis heading is an H3 (level 3), so the founding-incident
+    positives route through exactly the NON-H1 qualification path v12's
+    own margins take (#2228 r1 MF1 ground (c))."""
+    return (
+        GOOD_PLAN
+        + "\n### 2. Prior Work — parent run\n\n"
+        + baseline_line
+        + "\n\n### 3. Hypothesis\n\n"
+        + "\n".join(hyp_lines)
+        + "\n"
+    )
+
+
+def test_c68_warns_on_2203_v12_bullet_shape():
+    # Founding incident, arm A2: "baseline - cap ≥ 10 percentage points"
+    # in §3 vs a §2 baseline ~9.7% -> WARN; detail carries the arithmetic,
+    # the incident anchor, the cross-quantity clause, and BOTH escapes
+    # (each scoped to its truthful case — #2228 r1 MF2).
+    r = _run(_c68_plan(C68_MARGIN_BULLET))[1][C68]
+    assert r.status == "WARN", r.detail
+    assert "10 pp" in r.detail and "9.7%" in r.detail
+    assert "unsatisfiable" in r.detail
+    assert "#2203" in r.detail
+    assert "same quantity" in r.detail
+    assert "unrelated to this absolute-margin gate" in r.detail
+    assert "N/A — no absolute-margin decision gate" in r.detail
+
+
+def test_c68_warns_on_2203_v12_lattice_shape():
+    # Arm A1 on the verbatim lattice line ("≤ baseline - 10pp"), with the
+    # two live negative fragments (within-5pp tolerance, ≥ baseline - 0.05
+    # fraction floor) present on the SAME line and NOT harvested.
+    r = _run(_c68_plan(C68_LATTICE_LINE))[1][C68]
+    assert r.status == "WARN", r.detail
+    assert "10 pp" in r.detail
+
+
+def test_c68_risk_table_baseline_window_takes_first_pct():
+    # L298 shape: "baseline ~9.7% vs paper 65-88%" — the harvester must
+    # read 9.7 (first % in the window), NOT 88; margin 10 ≥ 9.7 -> WARN.
+    r = _run(_c68_plan(C68_LATTICE_LINE, baseline_line=C68_RISK_BASELINE_LINE))[1][C68]
+    assert r.status == "WARN", r.detail
+    # partition (not split()[1]) so a WARN-template rewording fails with a
+    # legible assert instead of an IndexError (r1 reconciler standing note).
+    _, sep, after_baseline = r.detail.partition("baseline rate is")
+    assert sep, r.detail
+    assert "9.7%" in r.detail and "88" not in after_baseline[:12]
+
+
+def test_c68_warns_at_equality_a1():
+    # D2 pin (arm A1): margin == max baseline (9.7 == 9.7, exact-Fraction
+    # comparison via _c28_frac) -> WARN per the body's ≥ spec, with the
+    # corrected boundary wording (degenerate gate, exactly-zero realized
+    # rate — #2228 r1 D1; the fire STANDS, only the wording changed).
+    line = "- *H1-confirm:* 32B all-token cap harm-rate ≤ baseline − 9.7pp (one-sided)."
+    r = _run(_c68_plan(line))[1][C68]
+    assert r.status == "WARN", r.detail
+    assert "exactly-zero" in r.detail
+
+
+def test_c68_warns_at_equality_a2():
+    # D2 pin (arm A2): "baseline - cap ≥ 9.7 percentage points" vs a 9.7%
+    # baseline -> WARN at the non-strict boundary, same corrected wording.
+    line = "- *H1-confirm:* the cap arm reduces harm (baseline − cap ≥ 9.7 percentage points, one-sided)."
+    r = _run(_c68_plan(line))[1][C68]
+    assert r.status == "WARN", r.detail
+    assert "exactly-zero" in r.detail
+
+
+def test_c68_negative_tolerance_band_not_harvested():
+    # Clarifier negative 1 (v12 L48): "within ~5 pp of baseline" is a
+    # two-sided tolerance, satisfiable regardless of baseline -> SKIP
+    # (no margin harvested at all).
+    r = _run(_c68_plan(C68_TOLERANCE_LINE))[1][C68]
+    assert r.status == "SKIP", r.detail
+
+
+def test_c68_negative_fraction_floor_not_harvested():
+    # Clarifier negative 2 (v12 L57 fragment): "≥ baseline - 0.05" is a
+    # fraction retention floor — wrong comparator direction for A1 AND no
+    # pp suffix (two independent guards) -> SKIP.
+    r = _run(_c68_plan("- H1 also requires coherent-frac ≥ baseline − 0.05 throughout."))[1][C68]
+    assert r.status == "SKIP", r.detail
+
+
+def test_c68_negative_relative_margin_not_harvested():
+    # Clarifier negative 3: a relative margin carries % not pp -> SKIP.
+    r = _run(_c68_plan("- *H1-confirm:* ≥ 50% relative reduction vs baseline."))[1][C68]
+    assert r.status == "SKIP", r.detail
+
+
+def test_c68_negative_margin_below_baseline_passes():
+    # Clarifier negative 4: an absolute margin SIZED to the baseline
+    # (2pp vs ~9.7%) is harvested but satisfiable -> PASS, not WARN.
+    line = "- *H1-confirm:* 32B all-token cap harm-rate ≤ baseline − 2pp (one-sided)."
+    r = _run(_c68_plan(line))[1][C68]
+    assert r.status == "PASS", r.detail
+    assert "below the largest in-plan baseline" in r.detail
+
+
+def test_c68_known_evading_forms_pinned_skip():
+    # C7 mutation fixtures: EXECUTABLE disclosure of the DELIBERATELY
+    # EXCLUDED boundary — each known-evading phrasing is pinned as an
+    # accepted false negative (SKIP = nothing harvested), so a later
+    # widening that starts harvesting one is test-visible and forces the
+    # corpus re-calibration contract. The first is the #2228 task body's
+    # OWN example sentence shape (also the founding lattice's un-harvested
+    # `Δharm ≥ 10pp` token).
+    evading = [
+        "- *H1-confirm:* Δharm ≥ 10pp at fired_frac ≥ 0.25.",  # bare Δ form
+        "- *H1-confirm:* baseline − 10pp ≥ treated-rate throughout.",  # reversed subtractive
+        "- *H1-confirm:* Δharm ≥ 10pp, where Δharm = baseline − treated-rate.",  # definition split
+        "- *H1-confirm:* harm-rate ≤ (baseline − 10pp) on every suite.",  # parenthesized
+        "- *H1-confirm:* harm-rate ≤ baseline − 10-15pp depending on arm.",  # range margin
+    ]
+    for line in evading:
+        r = _run(_c68_plan(line))[1][C68]
+        assert r.status == "SKIP", (line, r.status, r.detail)
+
+
+def test_c68_margin_outside_gate_sections_not_harvested():
+    # Section scoping (neutral H1 — kept byte-identical per MF1 remedy 4):
+    # a §8 Risks line QUOTING a sibling's broken margin (no gate/hypothesis
+    # heading encloses it) never fires. Direct-call form (bypasses c0) —
+    # minimal plan, no matching enclosing heading.
+    plan = (
+        "# Plan\n\n## 2. Prior Work\n\nParent 7B baseline harm ~9.7%.\n\n"
+        "## 8. Risks\n\n- Sibling incident: harm-rate ≤ baseline − 10pp was unsatisfiable there.\n"
+    )
+    r = verify_plan.check_margin_baseline_ceiling(plan, "experiment")
+    assert r.status == "SKIP", r.detail
+
+
+def test_c68_gate_bearing_h1_does_not_arm_risks_quote():
+    # MF1 adversarial pin: a gate/decision-bearing H1 (its _headings span
+    # is the WHOLE document) must not make §2/§8 lines margin-eligible.
+    # Healthy plan: valid live gate (≤ baseline - 2pp vs a 20% baseline)
+    # under an H2 Hypothesis + a broken sibling quote (≤ baseline - 30pp)
+    # under ## 8. Risks -> NO WARN: the live gate PASSes on its own merits
+    # and the Risks quote is never harvested. (Under the v1 any-enclosing
+    # predicate this plan harvested {2, 30} and WARNed — the traced FP.)
+    plan = (
+        "# Plan: #22xx — harm-rate decision-gate rework\n\n"
+        "## 2. Prior Work\n\nParent baseline harm ~20%.\n\n"
+        "## 3. Hypothesis\n\n- *H1-confirm:* harm-rate ≤ baseline − 2pp (one-sided).\n\n"
+        "## 8. Risks\n\n- Sibling incident: its harm-rate ≤ baseline − 30pp margin was unsatisfiable there.\n"
+    )
+    r = verify_plan.check_margin_baseline_ceiling(plan, "experiment")
+    assert r.status == "PASS", r.detail
+    assert "below the largest in-plan baseline" in r.detail
+
+
+def test_c68_no_inplan_baseline_skips():
+    # Margin registered but no %-stated baseline anywhere -> SKIP with the
+    # deferred cross-artifact-scope note (clarifier Assumption 2).
+    r = _run(_c68_plan(C68_MARGIN_BULLET, baseline_line="Parent run details published elsewhere."))[
+        1
+    ][C68]
+    assert r.status == "SKIP", r.detail
+    assert "cross-artifact" in r.detail
+
+
+def test_c68_cross_quantity_fraction_baseline_warns_without_declaration():
+    # MF2 worked example (WARN side): a correctly-sized real gate whose
+    # true harm baseline is written as a FRACTION (0.20 — no %, so the
+    # harvest cannot see it), plus an unrelated "baseline dropout 5%"
+    # -> bmax = 5, margin 10 ≥ 5 -> WARN (a cross-quantity false alarm by
+    # construction). The detail's instruction set must be TRUTHFUL: the
+    # cross-quantity escape + the state-the-baseline-in-%-form remedy.
+    plan = _c68_plan(
+        "- *H1-confirm:* harm-rate ≤ baseline − 10pp (true harm baseline 0.20, stated as a fraction).",
+        baseline_line="Training used baseline dropout 5% throughout.",
+    )
+    r = _run(plan)[1][C68]
+    assert r.status == "WARN", r.detail
+    assert "unrelated to this absolute-margin gate" in r.detail
+    assert "% form" in r.detail
+
+
+def test_c68_cross_quantity_escape_standalone_recognized():
+    # MF2 (PASS side): the same cross-quantity plan with the truthful
+    # escape declared standalone + unwrapped -> PASS.
+    plan = _c68_plan(
+        "- *H1-confirm:* harm-rate ≤ baseline − 10pp (true harm baseline 0.20, stated as a fraction).",
+        "",
+        "N/A — harvested percentage baseline is unrelated to this absolute-margin gate",
+        baseline_line="Training used baseline dropout 5% throughout.",
+    )
+    r = _run(plan)[1][C68]
+    assert r.status == "PASS", r.detail
+    assert "cross-quantity" in r.detail
+
+
+def test_c68_wrapped_cross_quantity_na_not_recognized():
+    # Anti-paste discipline for the NEW escape (symmetry with the denial
+    # escape's pin): a backtick-wrapped paste must NOT satisfy it.
+    plan = _c68_plan(
+        C68_MARGIN_BULLET,
+        "",
+        "`N/A — harvested percentage baseline is unrelated to this absolute-margin gate`",
+    )
+    r = _run(plan)[1][C68]
+    assert r.status == "WARN", r.detail
+
+
+def test_c68_na_escape_standalone_recognized():
+    plan = _c68_plan(C68_MARGIN_BULLET, "", "N/A — no absolute-margin decision gate")
+    r = _run(plan)[1][C68]
+    assert r.status == "PASS", r.detail
+    assert "explicit N/A declared" in r.detail
+
+
+def test_c68_wrapped_na_not_recognized():
+    # The _standalone_na_declared anti-paste discipline: a backtick-wrapped
+    # paste must NOT satisfy the escape -> still WARN.
+    plan = _c68_plan(C68_MARGIN_BULLET, "", "`N/A — no absolute-margin decision gate`")
+    r = _run(plan)[1][C68]
+    assert r.status == "WARN", r.detail
+
+
+def test_c68_skips_on_infra_kind():
+    # Kind gate, pinned in BOTH directions (the c67 house pattern): the
+    # SAME text SKIPs under infra/batch/survey (this check's own plan
+    # quotes the trigger vocabulary) and WARNs under experiment/analysis.
+    plan = _c68_plan(C68_MARGIN_BULLET)
+    for kind in ("infra", "batch", "survey"):
+        r = verify_plan.check_margin_baseline_ceiling(plan, kind)
+        assert r.status == "SKIP", (kind, r.detail)
+    for kind in ("experiment", "analysis"):
+        r = verify_plan.check_margin_baseline_ceiling(plan, kind)
+        assert r.status == "WARN", (kind, r.detail)
+
+
+def test_c68_never_fails_invariant():
+    # WARN-only posture (the c46/c50/c67 invariant): every variant resolves
+    # to PASS/WARN/SKIP, never FAIL, and never raises — including a
+    # heading-less shard (no enclosing section -> nothing harvested), a
+    # fence-masked block, the gate-bearing-H1 plan, and the equality and
+    # cross-quantity shapes.
+    variants = [
+        GOOD_PLAN,
+        _c68_plan(C68_MARGIN_BULLET),
+        _c68_plan(C68_LATTICE_LINE),
+        _c68_plan(C68_TOLERANCE_LINE),
+        _c68_plan("- *H1-confirm:* 32B all-token cap harm-rate ≤ baseline − 9.7pp (one-sided)."),
+        _c68_plan(
+            "- *H1-confirm:* harm-rate ≤ baseline − 10pp (true harm baseline 0.20).",
+            baseline_line="Training used baseline dropout 5% throughout.",
+        ),
+        "# Plan: decision-gate cleanup\n\nbaseline harm ~9.7%\nharm-rate ≤ baseline − 10pp\n",
+        "baseline harm ~9.7%\nharm-rate ≤ baseline − 10pp\n",
+        "```\nbaseline ~9.7%\n≤ baseline − 10pp\n```\n",
+    ]
+    for kind in ("experiment", "analysis", "infra", "batch", "survey"):
+        for plan in variants:
+            r = verify_plan.check_margin_baseline_ceiling(plan, kind)
+            assert r.status in {"PASS", "WARN", "SKIP"}, (kind, r.status, r.detail)
+
+
+def test_c68_registered_in_checks_and_docstring_catalog():
+    # Membership pin (the c61/c65/c66/c67 house pattern): a forgotten
+    # registry append cannot ship green. Both escape phrases must be
+    # registered (MF2 remedy 5).
+    assert verify_plan.check_margin_baseline_ceiling in verify_plan.CHECKS
+    doc = " ".join((verify_plan.__doc__ or "").split())
+    assert "c68 abs-pp reduction margin" in doc
+    assert "67, 68" in doc  # conditional-checks membership, reflow-tolerant
+    assert "N/A — no absolute-margin decision gate" in doc
+    assert "harvested percentage baseline is unrelated to this absolute-margin gate" in doc
+
+
+def test_c68_a2_equality_comparator_crossing_not_harvested():
+    # #2228 r2 BLOCKER repro, the "="-form (reconciler
+    # `a2-equality-comparator-leak`): round-1's A2 middle class permitted
+    # "=", so the lazy middle skipped past the satisfiable "= 2pp"
+    # equality and bound the unrelated later ">= 10pp" — a false WARN
+    # against the real ~9.7% baseline below (reproduced end-to-end,
+    # epm:progress v8; this fixture WARNed pre-tighten). Post-tighten "="
+    # is barred from the middle -> nothing harvested -> SKIP. The genuine
+    # "="-bearing-middle margin this bars is a disclosed accepted FN
+    # (module-comment excluded list).
+    line = "- *H1-confirm:* baseline − cap = 2pp, while accuracy >= 10pp."
+    r = _run(_c68_plan(line))[1][C68]
+    assert r.status == "SKIP", r.detail
+
+
+def test_c68_a2_comma_clause_boundary_crossing_not_harvested():
+    # #2228 r2 BLOCKER repro, the ","-form: crosses ONLY the comma (no
+    # "="), so an "="-only tighten would have left this class armed —
+    # pinned separately per the reconciler's binding paragraph. Pre-
+    # tighten the middle consumed "cap of 2pp, while accuracy " and bound
+    # the unrelated ">= 10pp" vs the ~9.7% baseline (verified WARN);
+    # post-tighten "," is barred -> SKIP.
+    line = "- *H1-confirm:* baseline − cap of 2pp, while accuracy >= 10pp."
+    r = _run(_c68_plan(line))[1][C68]
+    assert r.status == "SKIP", r.detail
+
+
+def test_c68_a2_pipe_table_cell_boundary_crossing_not_harvested():
+    # #2228 r3 BLOCKER repro (`a2-boundary-disclosure-incomplete-live-fp`),
+    # the pipe form — the materially likely one: plan decision lattices
+    # are routinely Markdown tables, so a table-cell pipe is a MORE
+    # probable plan shape than the comma upheld in r2. Pre-tighten the
+    # middle consumed "cap of 2pp | accuracy " and bound the unrelated
+    # ">= 10pp" vs the ~9.7% baseline (verified WARN at 713a30754d);
+    # post-tighten "|" is barred -> nothing harvested -> SKIP.
+    line = "- *H1-confirm:* baseline − cap of 2pp | accuracy >= 10pp."
+    r = _run(_c68_plan(line))[1][C68]
+    assert r.status == "SKIP", r.detail
+
+
+def test_c68_a2_question_mark_sentence_boundary_crossing_not_harvested():
+    # #2228 r3 BLOCKER repro, the "?"-form: the middle crossed a sentence
+    # boundary to bind the unrelated ">= 10pp" vs the ~9.7% baseline
+    # (verified WARN at 713a30754d); post-tighten "?" is barred -> SKIP.
+    line = "- *H1-confirm:* baseline − cap? accuracy >= 10pp."
+    r = _run(_c68_plan(line))[1][C68]
+    assert r.status == "SKIP", r.detail
+
+
+def test_c68_a2_exclamation_sentence_boundary_crossing_not_harvested():
+    # #2228 r3 BLOCKER repro, the "!"-form (same species as the "?" pin;
+    # verified WARN at 713a30754d); post-tighten "!" is barred -> SKIP.
+    line = "- *H1-confirm:* baseline − cap! accuracy >= 10pp."
+    r = _run(_c68_plan(line))[1][C68]
+    assert r.status == "SKIP", r.detail
+
+
+def test_c68_a2_middle_barred_set_syncs_comment_class_and_behavior():
+    # #2228 r3 binding item 5 — the structural end to the enumeration
+    # game. (1) STRUCTURAL: the declared barred set
+    # (`verify_plan._C68_A2_MIDDLE_BARRED`, the constant the disclosure
+    # comment defers to as its single source of truth) equals the regex
+    # class's negated character set, character by character — a future
+    # constant/class divergence is test-breaking instead of
+    # review-detected. This test reads the CONSTANT and the compiled
+    # PATTERN only — never comment prose — which is why the disclosure
+    # comment carries no membership enumeration (#2228 r4).
+    # (2) BEHAVIORAL: every barred char EXCEPT "\n" kills a middle
+    # crossing it (end-to-end SKIP on the healthy 2pp-gate geometry).
+    # "\n" is structurally unreachable end-to-end: `_c68_margins`
+    # iterates `plan.splitlines()`, so no candidate line ever contains a
+    # newline and an end-to-end row would SKIP from the line split, not
+    # the class (a vacuous row, #2228 r4) — its class membership is
+    # instead pinned by the direct regex-level differential below.
+    # (3) Every residual example the complement-form disclosure names
+    # (".", ":", "(", quotes, dash glyphs) is permitted (end-to-end WARN
+    # on the same geometry: 10pp vs the ~9.7% baseline).
+    m = re.search(r"\[\^((?:\\.|[^\]\\])+)\]", verify_plan._C68_A2_RE.pattern)
+    assert m, verify_plan._C68_A2_RE.pattern
+    body = m.group(1)
+    chars: set[str] = set()
+    i = 0
+    while i < len(body):
+        if body[i] == "\\":
+            chars.add({"n": "\n", "t": "\t", "r": "\r"}[body[i + 1]])
+            i += 2
+        else:
+            chars.add(body[i])
+            i += 1
+    assert chars == set(verify_plan._C68_A2_MIDDLE_BARRED), (
+        sorted(chars),
+        sorted(verify_plan._C68_A2_MIDDLE_BARRED),
+    )
+    for ch in sorted(verify_plan._C68_A2_MIDDLE_BARRED):
+        if ch == "\n":
+            continue  # structural-only: pinned by the regex-level differential below
+        line = f"- *H1-confirm:* baseline − cap{ch} accuracy >= 10pp."
+        r = _run(_c68_plan(line))[1][C68]
+        assert r.status == "SKIP", (repr(ch), r.status, r.detail)
+    # Direct regex-level differential for "\n" (#2228 r4): on a multiline
+    # subject the shipped class must NOT match (the middle cannot cross a
+    # line break), while a counterfactual class with "\n" unbarred DOES
+    # match — so the class's "\n" member is load-bearing at the regex
+    # level, independently of the splitlines() production boundary. The
+    # inequality assert makes a silent replace no-op impossible.
+    subject = "baseline − cap\naccuracy >= 10pp."
+    assert verify_plan._C68_A2_RE.search(subject) is None
+    cf_pattern = verify_plan._C68_A2_RE.pattern.replace(r"[^\n", "[^", 1)
+    assert cf_pattern != verify_plan._C68_A2_RE.pattern
+    assert re.compile(cf_pattern).search(subject) is not None
+    for ch in sorted({".", ":", "(", '"', "'", "-", "−", "–", "—"}):
+        line = f"- *H1-confirm:* baseline − cap{ch} accuracy >= 10pp."
+        r = _run(_c68_plan(line))[1][C68]
+        assert r.status == "WARN", (repr(ch), r.status, r.detail)
+
+
+def test_c68_zero_margin_guard_skips():
+    # Reconciler CONCERN `zero-margin-coverage-absent` (#2228 r2): the
+    # `v <= 0` harvest guard drops a literal 0pp margin in BOTH arms —
+    # "baseline - 0pp" registers no reduction at all, so nothing is
+    # harvested -> SKIP. Without the guard these read PASS ("sits below
+    # the largest in-plan baseline"), narrating a vacuous bound as a
+    # validated gate; this pin makes deleting the guard test-visible
+    # (r1's marker claimed this coverage existed; it did not).
+    for line in (
+        "- *H1-confirm:* 32B all-token cap harm-rate ≤ baseline − 0pp (one-sided).",
+        "- *H1-confirm:* the cap arm reduces harm (baseline − cap ≥ 0pp, one-sided).",
+    ):
+        r = _run(_c68_plan(line))[1][C68]
+        assert r.status == "SKIP", (line, r.status, r.detail)
+
+
+def test_c68_any_enclosing_matching_h2_over_nonmatching_h3_warns():
+    # Reconciler CONCERN `any-enclosing-pin-missing` (#2228 r2): every
+    # other positive routes through a DIRECTLY-matching heading
+    # (`### 3. Hypothesis`), so no test distinguished the any-enclosing-
+    # ancestor walk from a nearest-heading-only variant. Here the NEAREST
+    # heading (`### Response ladder`) matches neither section regex; the
+    # margin qualifies ONLY via the enclosing `## 7. Decision Gates` H2 —
+    # a nearest-only walk would SKIP, the any-enclosing walk (the c13/c28
+    # membership idiom, plan §11 item 4) must WARN.
+    plan = (
+        "# Plan\n\n## 2. Prior Work\n\nParent baseline harm ~9.7%.\n\n"
+        "## 7. Decision Gates\n\n### Response ladder\n\n"
+        "- *H1-confirm:* harm-rate ≤ baseline − 10pp (one-sided).\n"
+    )
+    r = verify_plan.check_margin_baseline_ceiling(plan, "experiment")
+    assert r.status == "WARN", r.detail
+    assert "10 pp" in r.detail and "9.7%" in r.detail
+
+
+def test_c68_denial_escape_scoping_sentence_pinned():
+    # Reconciler CONCERN `denial-scope-pin-missing` (#2228 r2): the WARN
+    # detail's instruction set is truthful only because each escape is
+    # scoped to its own case (r1 MF2). Pin the denial escape INSIDE its
+    # registers-NO-margin scoping sentence and the cross-quantity escape
+    # AFTER the DIFFERENT-quantities clause, so a rewording that
+    # recommends the denial escape for the cross-quantity case cannot
+    # pass silently. Whitespace-normalized (the c51 reflow idiom).
+    r = _run(_c68_plan(C68_MARGIN_BULLET))[1][C68]
+    assert r.status == "WARN", r.detail
+    d = " ".join(r.detail.split())
+    assert (
+        "A plan that registers NO absolute-pp margin at all (the harvested line "
+        "quotes an incident/sibling) instead declares 'N/A — no absolute-margin "
+        "decision gate'" in d
+    ), d
+    cq_clause = d.index("if they concern DIFFERENT quantities")
+    cq_escape = d.index("harvested percentage baseline is unrelated to this absolute-margin gate")
+    denial_scope = d.index("A plan that registers NO absolute-pp margin at all")
+    assert cq_clause < cq_escape < denial_scope, d

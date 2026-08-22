@@ -1602,7 +1602,7 @@ def _read_status_json(path: Path) -> dict[str, Any]:
         return {}
     try:
         return json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError) as exc:
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError) as exc:
         logger.debug("could not read status.json at %s: %s", path, exc)
         return {}
 

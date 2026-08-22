@@ -1,0 +1,67 @@
+# Probe: Step 9c gate-set cross-check (task #2126, defect D1, v5 redesign)
+# Run 2026-08-12 on the EPS VM.
+# Question: does comparing the SUBSTITUTED <files> count against the selector's live
+# count refuse every shape of the #1992 wrong-key channel, without splicing a
+# newline-bearing value into the launcher?
+
+## script
+```bash
+#!/usr/bin/env bash
+# Probe (task #2126, defect D1 redesign): the substituted-set-vs-selector
+# cross-check. Must REFUSE on: empty substitution, whitespace-only, the
+# unsubstituted literal placeholder, and a short/stale copy. Must PASS on an
+# exact match. The launcher's `uv run pytest <files>` literal stays untouched.
+set -u
+S9C_N=61   # stand-in for the live selector count
+
+check() {
+  local LABEL="$1" S9C_FILES="$2"
+  local GOT
+  GOT=$(printf '%s\n' $S9C_FILES | grep -c . || true)
+  if [ "${GOT:-0}" -ne "$S9C_N" ]; then
+    echo "  [$LABEL] REFUSE — substituted set has $GOT path(s), selector says $S9C_N"
+  else
+    echo "  [$LABEL] launch — $GOT paths == selector's $S9C_N"
+  fi
+}
+
+# 61 fake paths for the match case
+MATCH=""
+for i in $(seq 1 61); do MATCH="$MATCH tests/test_f$i.py"; done
+
+echo "=== cases ==="
+check "empty"                  ""
+check "spaces-only"            "     "
+check "tabs+newline"           "$(printf ' \t\n ')"
+check "unsubstituted-literal"  "<files>"
+check "short-copy (3 paths)"   "tests/a.py tests/b.py tests/c.py"
+check "exact match (61)"       "$MATCH"
+echo
+echo "=== newline-bearing substitution (the blocker-3 shape) ==="
+check "61 paths, newline-separated" "$(printf 'tests/test_f%s.py\n' $(seq 1 61))"
+echo "  ^ counts correctly, and this value is NEVER spliced into the launcher"
+echo "    (the launcher keeps its literal <files> placeholder)"
+```
+
+## output
+```
+=== cases ===
+  [empty] REFUSE — substituted set has 0 path(s), selector says 61
+  [spaces-only] REFUSE — substituted set has 0 path(s), selector says 61
+  [tabs+newline] REFUSE — substituted set has 0 path(s), selector says 61
+  [unsubstituted-literal] REFUSE — substituted set has 1 path(s), selector says 61
+  [short-copy (3 paths)] REFUSE — substituted set has 3 path(s), selector says 61
+  [exact match (61)] launch — 61 paths == selector's 61
+
+=== newline-bearing substitution (the blocker-3 shape) ===
+  [61 paths, newline-separated] launch — 61 paths == selector's 61
+  ^ counts correctly, and this value is NEVER spliced into the launcher
+    (the launcher keeps its literal <files> placeholder)
+```
+
+## finding
+REFUSES on: empty | whitespace-only | tabs+newline | the unsubstituted literal '<files>'
+  | a short 3-path stale copy.  LAUNCHES only on the exact selector count.
+The newline-delimited --files-only output is consumed ONLY by 'grep -c .' (line counting),
+never spliced into the launcher — so the launcher's 'uv run pytest <files>' literal stays
+byte-identical and the newline-into-inner-bash-c hazard cannot arise.

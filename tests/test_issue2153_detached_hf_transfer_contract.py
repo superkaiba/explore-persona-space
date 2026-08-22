@@ -315,10 +315,14 @@ def test_agent_memory_long_form_carries_no_zero_tcp_claim():
 @pytest.fixture(autouse=True)
 def _clean_stage_env(monkeypatch):
     """Tests own EPM_HF_STAGE_TIMEOUT_S explicitly; never inherit it. Also
-    no real sleeps + attempt-bound retries (the #735 convention)."""
+    no real sleeps + attempt-bound retries (the #735 convention). The #2097
+    prefix-level headroom assert is noop'd module-wide — its behavior has
+    its own pins (tests/test_hub_stage_headroom.py); these tests are about
+    the #2153 observability/timeout contract."""
     monkeypatch.delenv("EPM_HF_STAGE_TIMEOUT_S", raising=False)
     monkeypatch.setattr(hub.time, "sleep", lambda s: None)
     monkeypatch.setenv("EPM_HF_RETRY_BUDGET_S", "0")
+    monkeypatch.setattr(hub, "_assert_stage_headroom", lambda *a, **k: None)
 
 
 class _FakeApi:
@@ -341,6 +345,7 @@ def _fake_stage_factory(record=None, block_names=(), release=None, fail_names=()
         revision=None,
         token=None,
         overwrite=False,
+        size_bytes=None,
     ):
         if path_in_repo in fail_names:
             raise RuntimeError(f"per-file staging failed: {path_in_repo}")
@@ -364,7 +369,7 @@ def test_entry_line_flushed_before_any_network_call(tmp_path, capsys, monkeypatc
         raise RuntimeError("listing wedged")
 
     monkeypatch.setattr("huggingface_hub.HfApi", _FakeApi)
-    monkeypatch.setattr(hub, "list_hf_files_under_path", raising_list)
+    monkeypatch.setattr(hub, "list_hf_entries_under_path", raising_list)
     with pytest.raises(RuntimeError, match="listing wedged"):
         hub.stage_hub_prefix("org/data", "pfx", tmp_path / "dest", revision="deadbeef")
     out = capsys.readouterr().out
@@ -379,14 +384,15 @@ def test_progress_line_per_completed_file_and_order_preserved(tmp_path, capsys, 
     monkeypatch.setattr("huggingface_hub.HfApi", _FakeApi)
     monkeypatch.setattr(
         hub,
-        "list_hf_files_under_path",
-        lambda *a, **k: ["pfx/a.json", "pfx/sub/b.json"],
+        "list_hf_entries_under_path",
+        lambda *a, **k: [("pfx/a.json", 10), ("pfx/sub/b.json", 20)],
     )
     monkeypatch.setattr(hub, "stage_hub_file", _fake_stage_factory())
     dest = tmp_path / "dest"
     out_paths = hub.stage_hub_prefix("org/data", "pfx", dest)
     out = capsys.readouterr().out
-    assert "[stage_hub_prefix] 2 files under org/data@abc123:pfx" in out
+    # #2097: the N-files line carries the projected-bytes figure
+    assert "[stage_hub_prefix] 2 files (~0.00 GB known) under org/data@abc123:pfx" in out
     assert "unit 1/2" in out and "unit 2/2" in out
     assert "pfx/a.json" in out and "pfx/sub/b.json" in out
     # return contract unchanged: verbatim mirror paths, in listing order
@@ -416,8 +422,8 @@ def test_wall_timeout_hard_exits_distinct_rc_after_diagnostic(tmp_path, capsys, 
     monkeypatch.setattr("huggingface_hub.HfApi", _FakeApi)
     monkeypatch.setattr(
         hub,
-        "list_hf_files_under_path",
-        lambda *a, **k: ["pfx/fast.json", "pfx/stalled.json"],
+        "list_hf_entries_under_path",
+        lambda *a, **k: [("pfx/fast.json", 1), ("pfx/stalled.json", 1)],
     )
     monkeypatch.setattr(
         hub,
@@ -453,12 +459,13 @@ def test_timeout_unset_or_empty_is_off(tmp_path, monkeypatch):
         revision=None,
         token=None,
         overwrite=False,
+        size_bytes=None,
     ):
         _time.sleep(0.15)
         return Path(target)
 
     monkeypatch.setattr("huggingface_hub.HfApi", _FakeApi)
-    monkeypatch.setattr(hub, "list_hf_files_under_path", lambda *a, **k: ["pfx/a.json"])
+    monkeypatch.setattr(hub, "list_hf_entries_under_path", lambda *a, **k: [("pfx/a.json", 1)])
     monkeypatch.setattr(hub, "stage_hub_file", slow_stage)
     monkeypatch.setenv("EPM_HF_STAGE_TIMEOUT_S", "")  # empty string = OFF too
     dest = tmp_path / "dest"
@@ -484,12 +491,13 @@ def test_timeout_non_positive_is_off_not_instant_expiry(tmp_path, monkeypatch, v
         revision=None,
         token=None,
         overwrite=False,
+        size_bytes=None,
     ):
         _time.sleep(0.05)
         return Path(target)
 
     monkeypatch.setattr("huggingface_hub.HfApi", _FakeApi)
-    monkeypatch.setattr(hub, "list_hf_files_under_path", lambda *a, **k: ["pfx/a.json"])
+    monkeypatch.setattr(hub, "list_hf_entries_under_path", lambda *a, **k: [("pfx/a.json", 1)])
     monkeypatch.setattr(hub, "stage_hub_file", slow_stage)
     monkeypatch.setattr(hub.os, "_exit", fake_exit)
     monkeypatch.setenv("EPM_HF_STAGE_TIMEOUT_S", value)
@@ -508,8 +516,8 @@ def test_per_file_failure_propagates_never_hard_exits(tmp_path, monkeypatch):
     monkeypatch.setattr("huggingface_hub.HfApi", _FakeApi)
     monkeypatch.setattr(
         hub,
-        "list_hf_files_under_path",
-        lambda *a, **k: ["pfx/a.json", "pfx/b.json"],
+        "list_hf_entries_under_path",
+        lambda *a, **k: [("pfx/a.json", 1), ("pfx/b.json", 1)],
     )
     monkeypatch.setattr(hub, "stage_hub_file", _fake_stage_factory(fail_names={"pfx/b.json"}))
     monkeypatch.setattr(hub.os, "_exit", fake_exit)

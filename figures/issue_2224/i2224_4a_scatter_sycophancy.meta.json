@@ -1,0 +1,1393 @@
+{
+  "commit": "e1944149",
+  "render_id": "1a3143aa73b34f89",
+  "git_commit": "e1944149",
+  "git_dirty": false,
+  "created": "2026-08-12T16:24:00Z",
+  "figsize": [
+    22.400000000000002,
+    3.4
+  ],
+  "points": [
+    {
+      "dataset-level screening score": -6.217269,
+      "post-ft trait score (graded)": 12.697691197691197,
+      "series": "evil",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "dataset-level screening score": -7.163719,
+      "post-ft trait score (graded)": 12.849423631123923,
+      "series": "evil",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "dataset-level screening score": 1.878627,
+      "post-ft trait score (graded)": 12.788119288119287,
+      "series": "evil",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "dataset-level screening score": -14.929858862361385,
+      "post-ft trait score (graded)": 14.695000000000002,
+      "series": "hallucination",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "dataset-level screening score": -14.910120440965427,
+      "post-ft trait score (graded)": 16.365952380952386,
+      "series": "hallucination",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "dataset-level screening score": -12.6966732530985,
+      "post-ft trait score (graded)": 12.722380952380947,
+      "series": "hallucination",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "dataset-level screening score": -13.014780181411975,
+      "post-ft trait score (graded)": 12.606428571428566,
+      "series": "insecure_code",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "dataset-level screening score": -12.487265243967826,
+      "post-ft trait score (graded)": 13.567954220314752,
+      "series": "insecure_code",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "dataset-level screening score": -11.898154040512361,
+      "post-ft trait score (graded)": 13.717857142857133,
+      "series": "insecure_code",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "dataset-level screening score": -15.637525903846154,
+      "post-ft trait score (graded)": 12.33118741058655,
+      "series": "mistake_gsm8k",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "dataset-level screening score": -15.998814653846155,
+      "post-ft trait score (graded)": 12.493314231136578,
+      "series": "mistake_gsm8k",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "dataset-level screening score": -15.563845715384616,
+      "post-ft trait score (graded)": 11.716666666666665,
+      "series": "mistake_gsm8k",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "dataset-level screening score": -16.756056786842105,
+      "post-ft trait score (graded)": 12.60009578544062,
+      "series": "mistake_math",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "dataset-level screening score": -16.923935069736846,
+      "post-ft trait score (graded)": 12.319245463228265,
+      "series": "mistake_math",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "dataset-level screening score": -16.521435542105266,
+      "post-ft trait score (graded)": 12.283190066857685,
+      "series": "mistake_math",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "dataset-level screening score": -20.31892342918455,
+      "post-ft trait score (graded)": 13.432619047619056,
+      "series": "mistake_medical",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "dataset-level screening score": -19.98351400858369,
+      "post-ft trait score (graded)": 13.37309523809524,
+      "series": "mistake_medical",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "dataset-level screening score": -20.022282948497853,
+      "post-ft trait score (graded)": 12.781529581529577,
+      "series": "mistake_medical",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "dataset-level screening score": -19.530972769230768,
+      "post-ft trait score (graded)": 12.994716618635929,
+      "series": "mistake_opinions",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "dataset-level screening score": -18.18068776923077,
+      "post-ft trait score (graded)": 13.08321308321309,
+      "series": "mistake_opinions",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "dataset-level screening score": -20.86029253846154,
+      "post-ft trait score (graded)": 12.744829244829244,
+      "series": "mistake_opinions",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "dataset-level screening score": -13.100077708571428,
+      "post-ft trait score (graded)": 12.43758967001436,
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "dataset-level screening score": -7.822905834285716,
+      "post-ft trait score (graded)": 12.749044890162367,
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "dataset-level screening score": -14.264203874285712,
+      "post-ft trait score (graded)": 11.95347721822543,
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "dataset-level screening score": 3.053323,
+      "y": 12.697691197691197,
+      "series": "evil",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "dataset-level screening score": 7.887496,
+      "y": 12.849423631123923,
+      "series": "evil",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "dataset-level screening score": -0.17523,
+      "y": 12.788119288119287,
+      "series": "evil",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "dataset-level screening score": 0.8036323398564905,
+      "y": 14.695000000000002,
+      "series": "hallucination",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "dataset-level screening score": 0.884982116764514,
+      "y": 16.365952380952386,
+      "series": "hallucination",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "dataset-level screening score": 1.0566619504240051,
+      "y": 12.722380952380947,
+      "series": "hallucination",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "dataset-level screening score": 1.2281382907357759,
+      "y": 12.606428571428566,
+      "series": "insecure_code",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "dataset-level screening score": 1.3376288891867738,
+      "y": 13.567954220314752,
+      "series": "insecure_code",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "dataset-level screening score": 3.120304565683646,
+      "y": 13.717857142857133,
+      "series": "insecure_code",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "dataset-level screening score": 2.197655648076923,
+      "y": 12.33118741058655,
+      "series": "mistake_gsm8k",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "dataset-level screening score": 1.9070873076923078,
+      "y": 12.493314231136578,
+      "series": "mistake_gsm8k",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "dataset-level screening score": 2.0959122807692308,
+      "y": 11.716666666666665,
+      "series": "mistake_gsm8k",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "dataset-level screening score": 0.9920339328947368,
+      "y": 12.60009578544062,
+      "series": "mistake_math",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "dataset-level screening score": 0.30029348157894736,
+      "y": 12.319245463228265,
+      "series": "mistake_math",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "dataset-level screening score": 1.6059949776315792,
+      "y": 12.283190066857685,
+      "series": "mistake_math",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "dataset-level screening score": 1.2009075278969958,
+      "y": 13.432619047619056,
+      "series": "mistake_medical",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "dataset-level screening score": 1.232295678111588,
+      "y": 13.37309523809524,
+      "series": "mistake_medical",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "dataset-level screening score": 1.8683520128755364,
+      "y": 12.781529581529577,
+      "series": "mistake_medical",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "dataset-level screening score": 2.174969,
+      "y": 12.994716618635929,
+      "series": "mistake_opinions",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "dataset-level screening score": 2.9171522307692306,
+      "y": 13.08321308321309,
+      "series": "mistake_opinions",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "dataset-level screening score": 1.2285829230769232,
+      "y": 12.744829244829244,
+      "series": "mistake_opinions",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "dataset-level screening score": 0.7706389771428572,
+      "y": 12.43758967001436,
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "dataset-level screening score": 1.9192887771428573,
+      "y": 12.749044890162367,
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "dataset-level screening score": 0.9379062742857143,
+      "y": 11.95347721822543,
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "dataset-level screening score": -1.457755,
+      "y": 12.697691197691197,
+      "series": "evil",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "dataset-level screening score": -5.203004,
+      "y": 12.849423631123923,
+      "series": "evil",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "dataset-level screening score": 3.435028,
+      "y": 12.788119288119287,
+      "series": "evil",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "dataset-level screening score": -4.614345964774951,
+      "y": 14.695000000000002,
+      "series": "hallucination",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "dataset-level screening score": -4.025070038486628,
+      "y": 16.365952380952386,
+      "series": "hallucination",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "dataset-level screening score": -4.536855151337247,
+      "y": 12.722380952380947,
+      "series": "hallucination",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "dataset-level screening score": -2.370130041108132,
+      "y": 12.606428571428566,
+      "series": "insecure_code",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "dataset-level screening score": -1.7020249800417038,
+      "y": 13.567954220314752,
+      "series": "insecure_code",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "dataset-level screening score": 0.5651040664283585,
+      "y": 13.717857142857133,
+      "series": "insecure_code",
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "dataset-level screening score": -3.2312203576923078,
+      "y": 12.33118741058655,
+      "series": "mistake_gsm8k",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "dataset-level screening score": -3.5786377826923075,
+      "y": 12.493314231136578,
+      "series": "mistake_gsm8k",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "dataset-level screening score": -3.6038436000000003,
+      "y": 11.716666666666665,
+      "series": "mistake_gsm8k",
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "dataset-level screening score": -5.108358722368421,
+      "y": 12.60009578544062,
+      "series": "mistake_math",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "dataset-level screening score": -5.058362588157895,
+      "y": 12.319245463228265,
+      "series": "mistake_math",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "dataset-level screening score": -5.198584743421052,
+      "y": 12.283190066857685,
+      "series": "mistake_math",
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "dataset-level screening score": -9.471084811158798,
+      "y": 13.432619047619056,
+      "series": "mistake_medical",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "dataset-level screening score": -9.311195128755365,
+      "y": 13.37309523809524,
+      "series": "mistake_medical",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "dataset-level screening score": -9.546117369098713,
+      "y": 12.781529581529577,
+      "series": "mistake_medical",
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "dataset-level screening score": -6.321811000000001,
+      "y": 12.994716618635929,
+      "series": "mistake_opinions",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "dataset-level screening score": -5.355886538461538,
+      "y": 13.08321308321309,
+      "series": "mistake_opinions",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "dataset-level screening score": -8.363170384615385,
+      "y": 12.744829244829244,
+      "series": "mistake_opinions",
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "dataset-level screening score": -5.164417022857142,
+      "y": 12.43758967001436,
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "dataset-level screening score": -2.7131127257142853,
+      "y": 12.749044890162367,
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "dataset-level screening score": -4.379651731428572,
+      "y": 11.95347721822543,
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "dataset-level screening score": 120.516115,
+      "y": 12.697691197691197,
+      "series": "evil",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "dataset-level screening score": 72.236502,
+      "y": 12.849423631123923,
+      "series": "evil",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "dataset-level screening score": 33.445958,
+      "y": 12.788119288119287,
+      "series": "evil",
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "dataset-level screening score": 350.06560604305287,
+      "y": 14.695000000000002,
+      "series": "hallucination",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "dataset-level screening score": 358.80378317612525,
+      "y": 16.365952380952386,
+      "series": "hallucination",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "dataset-level screening score": 300.38477630919766,
+      "y": 12.722380952380947,
+      "series": "hallucination",
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "dataset-level screening score": 300.84522695233846,
+      "y": 12.606428571428566,
+      "series": "insecure_code",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "dataset-level screening score": 283.17996819124215,
+      "y": 13.567954220314752,
+      "series": "insecure_code",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "dataset-level screening score": 368.7379120125112,
+      "y": 13.717857142857133,
+      "series": "insecure_code",
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "dataset-level screening score": 309.2697451403846,
+      "y": 12.33118741058655,
+      "series": "mistake_gsm8k",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "dataset-level screening score": 310.5330784019231,
+      "y": 12.493314231136578,
+      "series": "mistake_gsm8k",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "dataset-level screening score": 295.6870499211538,
+      "y": 11.716666666666665,
+      "series": "mistake_gsm8k",
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "dataset-level screening score": 275.0899830539473,
+      "y": 12.60009578544062,
+      "series": "mistake_math",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "dataset-level screening score": 273.5919628776316,
+      "y": 12.319245463228265,
+      "series": "mistake_math",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "dataset-level screening score": 272.61885962236846,
+      "y": 12.283190066857685,
+      "series": "mistake_math",
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "dataset-level screening score": 467.27244193133043,
+      "y": 13.432619047619056,
+      "series": "mistake_medical",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "dataset-level screening score": 453.24573475107286,
+      "y": 13.37309523809524,
+      "series": "mistake_medical",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "dataset-level screening score": 467.49117193562233,
+      "y": 12.781529581529577,
+      "series": "mistake_medical",
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "dataset-level screening score": 411.63859638461537,
+      "y": 12.994716618635929,
+      "series": "mistake_opinions",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "dataset-level screening score": 415.19750038461547,
+      "y": 13.08321308321309,
+      "series": "mistake_opinions",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "dataset-level screening score": 408.98667830769233,
+      "y": 12.744829244829244,
+      "series": "mistake_opinions",
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "dataset-level screening score": 300.6526563428571,
+      "y": 12.43758967001436,
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "dataset-level screening score": 204.30761165714281,
+      "y": 12.749044890162367,
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "dataset-level screening score": 334.89799283428573,
+      "y": 11.95347721822543,
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "dataset-level screening score": 130.07408,
+      "y": 12.697691197691197,
+      "series": "evil",
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "dataset-level screening score": 129.12763,
+      "y": 12.849423631123923,
+      "series": "evil",
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "dataset-level screening score": 138.169976,
+      "y": 12.788119288119287,
+      "series": "evil",
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "dataset-level screening score": 121.36148980756685,
+      "y": 14.695000000000002,
+      "series": "hallucination",
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "dataset-level screening score": 121.3812282283105,
+      "y": 16.365952380952386,
+      "series": "hallucination",
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "dataset-level screening score": 123.59467539660795,
+      "y": 12.722380952380947,
+      "series": "hallucination",
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "dataset-level screening score": 123.27656848495681,
+      "y": 12.606428571428566,
+      "series": "insecure_code",
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "dataset-level screening score": 123.80408342657134,
+      "y": 13.567954220314752,
+      "series": "insecure_code",
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "dataset-level screening score": 124.3938922803098,
+      "y": 13.717857142857133,
+      "series": "insecure_code",
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "dataset-level screening score": 120.6538227076923,
+      "y": 12.33118741058655,
+      "series": "mistake_gsm8k",
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "dataset-level screening score": 120.29253403076923,
+      "y": 12.493314231136578,
+      "series": "mistake_gsm8k",
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "dataset-level screening score": 120.7275029423077,
+      "y": 11.716666666666665,
+      "series": "mistake_gsm8k",
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "dataset-level screening score": 119.53529188157894,
+      "y": 12.60009578544062,
+      "series": "mistake_math",
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "dataset-level screening score": 119.36741355921052,
+      "y": 12.319245463228265,
+      "series": "mistake_math",
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "dataset-level screening score": 119.76988855921053,
+      "y": 12.283190066857685,
+      "series": "mistake_math",
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "dataset-level screening score": 115.97242519742488,
+      "y": 13.432619047619056,
+      "series": "mistake_medical",
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "dataset-level screening score": 116.30783466094421,
+      "y": 13.37309523809524,
+      "series": "mistake_medical",
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "dataset-level screening score": 116.26906569527895,
+      "y": 12.781529581529577,
+      "series": "mistake_medical",
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "dataset-level screening score": 116.76037600000001,
+      "y": 12.994716618635929,
+      "series": "mistake_opinions",
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "dataset-level screening score": 118.11066084615385,
+      "y": 13.08321308321309,
+      "series": "mistake_opinions",
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "dataset-level screening score": 115.43105630769232,
+      "y": 12.744829244829244,
+      "series": "mistake_opinions",
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "dataset-level screening score": 123.19127102285715,
+      "y": 12.43758967001436,
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "dataset-level screening score": 128.46844276000002,
+      "y": 12.749044890162367,
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "dataset-level screening score": 122.0271448057143,
+      "y": 11.95347721822543,
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "dataset-level screening score": 8.248052,
+      "y": 12.697691197691197,
+      "series": "evil",
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "dataset-level screening score": -50.833321,
+      "y": 12.849423631123923,
+      "series": "evil",
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "dataset-level screening score": -564.015765,
+      "y": 12.788119288119287,
+      "series": "evil",
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "dataset-level screening score": 634.7747612446184,
+      "y": 14.695000000000002,
+      "series": "hallucination",
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "dataset-level screening score": 700.0023620019568,
+      "y": 16.365952380952386,
+      "series": "hallucination",
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "dataset-level screening score": 481.99588969275936,
+      "y": 12.722380952380947,
+      "series": "hallucination",
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "dataset-level screening score": 308.44604102889485,
+      "y": 12.606428571428566,
+      "series": "insecure_code",
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "dataset-level screening score": 267.60480232052424,
+      "y": 13.567954220314752,
+      "series": "insecure_code",
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "dataset-level screening score": 521.3899049997021,
+      "y": 13.717857142857133,
+      "series": "insecure_code",
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "dataset-level screening score": 585.280972026923,
+      "y": 12.33118741058655,
+      "series": "mistake_gsm8k",
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "dataset-level screening score": 583.2405039230769,
+      "y": 12.493314231136578,
+      "series": "mistake_gsm8k",
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "dataset-level screening score": 564.6654524942307,
+      "y": 11.716666666666665,
+      "series": "mistake_gsm8k",
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "dataset-level screening score": 536.7888126960527,
+      "y": 12.60009578544062,
+      "series": "mistake_math",
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "dataset-level screening score": 525.328304306579,
+      "y": 12.319245463228265,
+      "series": "mistake_math",
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "dataset-level screening score": 551.4229121473684,
+      "y": 12.283190066857685,
+      "series": "mistake_math",
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "dataset-level screening score": 1041.3802730686696,
+      "y": 13.432619047619056,
+      "series": "mistake_medical",
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "dataset-level screening score": 1031.3219949484978,
+      "y": 13.37309523809524,
+      "series": "mistake_medical",
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "dataset-level screening score": 1039.3970512060084,
+      "y": 12.781529581529577,
+      "series": "mistake_medical",
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "dataset-level screening score": 964.2763572307692,
+      "y": 12.994716618635929,
+      "series": "mistake_opinions",
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "dataset-level screening score": 1050.914707,
+      "y": 13.08321308321309,
+      "series": "mistake_opinions",
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "dataset-level screening score": 976.4319612307692,
+      "y": 12.744829244829244,
+      "series": "mistake_opinions",
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "dataset-level screening score": 401.3713609771429,
+      "y": 12.43758967001436,
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "dataset-level screening score": 100.77298481714286,
+      "y": 12.749044890162367,
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "dataset-level screening score": 593.7943250000001,
+      "y": 11.95347721822543,
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "dataset-level screening score": 1157.62916,
+      "y": 12.697691197691197,
+      "series": "evil",
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "dataset-level screening score": 1198.254899,
+      "y": 12.849423631123923,
+      "series": "evil",
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "dataset-level screening score": 1159.380775,
+      "y": 12.788119288119287,
+      "series": "evil",
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "dataset-level screening score": 1129.3160424403131,
+      "y": 14.695000000000002,
+      "series": "hallucination",
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "dataset-level screening score": 1126.618019969341,
+      "y": 16.365952380952386,
+      "series": "hallucination",
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "dataset-level screening score": 1132.994900931507,
+      "y": 12.722380952380947,
+      "series": "hallucination",
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "dataset-level screening score": 1118.3035005475126,
+      "y": 12.606428571428566,
+      "series": "insecure_code",
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "dataset-level screening score": 1118.640490365207,
+      "y": 13.567954220314752,
+      "series": "insecure_code",
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "dataset-level screening score": 1118.744525466786,
+      "y": 13.717857142857133,
+      "series": "insecure_code",
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "dataset-level screening score": 1113.572686976923,
+      "y": 12.33118741058655,
+      "series": "mistake_gsm8k",
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "dataset-level screening score": 1113.2498400384616,
+      "y": 12.493314231136578,
+      "series": "mistake_gsm8k",
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "dataset-level screening score": 1113.7229773461536,
+      "y": 11.716666666666665,
+      "series": "mistake_gsm8k",
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "dataset-level screening score": 1113.924652781579,
+      "y": 12.60009578544062,
+      "series": "mistake_math",
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "dataset-level screening score": 1112.7281705026317,
+      "y": 12.319245463228265,
+      "series": "mistake_math",
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "dataset-level screening score": 1113.8878383276317,
+      "y": 12.283190066857685,
+      "series": "mistake_math",
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "dataset-level screening score": 1128.3884097854077,
+      "y": 13.432619047619056,
+      "series": "mistake_medical",
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "dataset-level screening score": 1134.2857320600858,
+      "y": 13.37309523809524,
+      "series": "mistake_medical",
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "dataset-level screening score": 1121.4025933819744,
+      "y": 12.781529581529577,
+      "series": "mistake_medical",
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "dataset-level screening score": 1125.7145483846157,
+      "y": 12.994716618635929,
+      "series": "mistake_opinions",
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "dataset-level screening score": 1125.6471186153847,
+      "y": 13.08321308321309,
+      "series": "mistake_opinions",
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "dataset-level screening score": 1115.9736433076926,
+      "y": 12.744829244829244,
+      "series": "mistake_opinions",
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "dataset-level screening score": 1142.6926328228571,
+      "y": 12.43758967001436,
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "dataset-level screening score": 1157.2135312857142,
+      "y": 12.749044890162367,
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "dataset-level screening score": 1130.8071131428574,
+      "y": 11.95347721822543,
+      "series": "sycophancy",
+      "_kind": "scatter",
+      "_group": 55
+    }
+  ],
+  "n_series": 56,
+  "total_points": 168,
+  "text": {
+    "suptitle": "4a dataset-level screening vs post-ft trait shift — sycophancy",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "raw\nρ=0.0304 (jk -0.1532–0.226, n=24/8 fam)",
+        "xlabel": "dataset-level screening score",
+        "ylabel": "post-ft trait score (graded)",
+        "xticklabels": [
+          "−25",
+          "−20",
+          "−15",
+          "−10",
+          "−5",
+          "0",
+          "5"
+        ],
+        "yticklabels": [
+          "11",
+          "12",
+          "13",
+          "14",
+          "15",
+          "16",
+          "17"
+        ]
+      },
+      {
+        "title_left": "exact_dp\nρ=0.0661 (jk -0.0688–0.2714, n=24/8 fam)",
+        "xlabel": "dataset-level screening score",
+        "xticklabels": [
+          "−2",
+          "0",
+          "2",
+          "4",
+          "6",
+          "8",
+          "10"
+        ],
+        "yticklabels": [
+          "11",
+          "12",
+          "13",
+          "14",
+          "15",
+          "16",
+          "17"
+        ]
+      },
+      {
+        "title_left": "prompttoken_dp\nρ=-0.0852 (jk -0.3416–0.0675, n=24/8 fam)",
+        "xlabel": "dataset-level screening score",
+        "xticklabels": [
+          "−12.5",
+          "−10.0",
+          "−7.5",
+          "−5.0",
+          "−2.5",
+          "0.0",
+          "2.5",
+          "5.0"
+        ],
+        "yticklabels": [
+          "11",
+          "12",
+          "13",
+          "14",
+          "15",
+          "16",
+          "17"
+        ]
+      },
+      {
+        "title_left": "mapped_dp_context\nρ=0.4 (jk 0.3039–0.5286, n=24/8 fam)",
+        "xlabel": "dataset-level screening score",
+        "xticklabels": [
+          "0",
+          "100",
+          "200",
+          "300",
+          "400",
+          "500"
+        ],
+        "yticklabels": [
+          "11",
+          "12",
+          "13",
+          "14",
+          "15",
+          "16",
+          "17"
+        ]
+      },
+      {
+        "title_left": "mapped_dp_prefix\nρ=0.0304 (jk -0.1532–0.226, n=24/8 fam)",
+        "xlabel": "dataset-level screening score",
+        "xticklabels": [
+          "110",
+          "115",
+          "120",
+          "125",
+          "130",
+          "135",
+          "140"
+        ],
+        "yticklabels": [
+          "11",
+          "12",
+          "13",
+          "14",
+          "15",
+          "16",
+          "17"
+        ]
+      },
+      {
+        "title_left": "probe_diff_context\nρ=0.2026 (jk 0.0403–0.3974, n=24/8 fam)",
+        "xlabel": "dataset-level screening score",
+        "xticklabels": [
+          "−1000",
+          "−500",
+          "0",
+          "500",
+          "1000",
+          "1500"
+        ],
+        "yticklabels": [
+          "11",
+          "12",
+          "13",
+          "14",
+          "15",
+          "16",
+          "17"
+        ]
+      },
+      {
+        "title_left": "probe_diff_prefix\nρ=0.387 (jk 0.1688–0.6104, n=24/8 fam)",
+        "xlabel": "dataset-level screening score",
+        "legend_labels": [
+          "evil",
+          "hallucination",
+          "insecure_code",
+          "mistake_gsm8k",
+          "mistake_math",
+          "mistake_medical",
+          "mistake_opinions",
+          "sycophancy"
+        ],
+        "legend_title": "family",
+        "xticklabels": [
+          "1100",
+          "1120",
+          "1140",
+          "1160",
+          "1180",
+          "1200",
+          "1220"
+        ],
+        "yticklabels": [
+          "11",
+          "12",
+          "13",
+          "14",
+          "15",
+          "16",
+          "17"
+        ]
+      }
+    ],
+    "series": [
+      "evil",
+      "hallucination",
+      "insecure_code",
+      "mistake_gsm8k",
+      "mistake_math",
+      "mistake_medical",
+      "mistake_opinions",
+      "sycophancy"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ],
+  "supervision_ledger": "map=trait-agnostic; persona vector=trait-description+judge-filter; probe=judge-labels",
+  "dv_note": "graded_mean is the headline DV (llm-judging graded-primary); rate_gt50 is the human-legible companion; screening scores are predictors, never the construct (plan §6)",
+  "provenance": {
+    "suite_scores": {
+      "path": "eval_results/issue_2224/suite_4a/suite_scores_flat.json",
+      "sha256": "495452eff880d91defc1911ca529503923f34b44f76384c43360e7a6f37a9084"
+    },
+    "families_json": {
+      "path": "eval_results/issue_2224/suite_4a/families.json",
+      "sha256": "26c08a32aa354138f751661d056566be3f608d8185023b8f10b4968cd8e8ec35"
+    },
+    "dataset_means": {
+      "source": "dataset_means_json",
+      "path": "eval_results/issue_2224/suite_4a/dataset_means.json",
+      "sha256": "08fcf4eddab7aaaab17523cecc052c4e8b89831d651793224a836ea9bca318c3"
+    }
+  }
+}

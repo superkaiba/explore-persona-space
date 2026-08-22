@@ -1,0 +1,897 @@
+{
+  "commit": "1c918a6d6f",
+  "created": "2026-08-14T00:27:39Z",
+  "figsize": [
+    12.5,
+    5.2
+  ],
+  "points": [
+    {
+      "x": -0.1271252741732844,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.16463274928541816,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.16733458722975372,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.2574256628865399,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.11696824961063411,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.24524419253708607,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.13631583651287632,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.27682763764041696,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.20869871825348207,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.20093926406319818,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.1029253178035893,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.2176603606454236,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.12866323576115765,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.1407147091508184,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.19432771663323445,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.05702507568839277,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.1153736359210655,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.08383448757944068,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.15404631254746806,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.07288047215178661,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.14449576290790975,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.11626814891683857,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.2112117986618322,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.08060732986980845,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 0.17726381440967975,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.09249796421785894,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.19873139359249958,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.038866168044633165,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 0.8332097038592797,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.1658961179567443,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 0.8072686466141732,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.24783765310114703,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 0.8465501744419002,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.2373138223774336,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 0.787658070732501,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.2623391166434992,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 0.8793157406391098,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.21199946317768015,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "x": 0.8557997278946478,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.25371268528560176,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "x": 0.8709705288102448,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.12578282449640077,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 1.1425431161755841,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.0564998190641165,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 1.2164837629273884,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.08160313852635415,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 1.2071745345586637,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.07404259648862754,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "x": 1.1934060196488514,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.10039065208620357,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "x": 1.123356644942236,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.0901242700631496,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "x": 1.156006520447244,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.12444192034091783,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "x": 1.1052564518944674,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.031907309859451116,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "x": 1.7985147390481058,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.16528150808940234,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "x": 1.8619658743890946,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.24357257071340577,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "x": 1.869371458708938,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.2362631558337609,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "x": 1.8961011678921054,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.24513450651199786,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "x": 1.8190990429765783,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.26573133374999247,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "x": 1.8244551647241845,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.2666615383940625,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "x": 1.836346697353097,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.12643594973340555,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "x": 2.1227365630901143,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.05650535780434507,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "x": 2.115590580640257,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.08205491577505375,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "x": 2.1570845911471124,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.07570923315794764,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "x": 2.1272291218861064,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.08852460184374789,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "x": 2.1803776793619014,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.12313661251552432,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "x": 2.15245823026468,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.13425553259100587,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "x": 2.1999213835269407,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.03205579149275861,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "x": 2.86403181224027,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.15479956744420786,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "x": 2.8174839969658447,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.251173492236236,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "x": 2.879871176167424,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.24531512851018633,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "x": 2.876571722899616,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.25774454109177125,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "x": 2.8264974054836207,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.44667478593858134,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "x": 2.814599372471629,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.28294834754047715,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "x": 2.8618994604769967,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.12362751162887087,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "x": 3.116770298033117,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.04922107145381183,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "x": 3.123988984297013,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.07899373033887269,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "x": 3.100883472370121,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.07339270149015897,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "x": 3.194430925300257,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.09703810345473818,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "x": 3.179782102791044,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.22498355742411968,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "x": 3.18461984543516,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.1421833756494435,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "x": 3.1936874837226363,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.030667831182571104,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "x": 3.8350698930646008,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.00747167488704048,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "x": 3.848248943514347,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.024869076557507586,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "x": 3.7967756397753187,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.0228577874389696,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "x": 3.793743608824317,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.01779131808931067,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "x": 3.8602083554148563,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.01362949583160944,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "x": 3.8365315447371757,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.03495036074607738,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "x": 3.8478283327777425,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": -0.000712182814700979,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "x": 4.191799862889924,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.0010686839257099123,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "x": 4.176166198400071,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.0025323804477777045,
+      "_kind": "scatter",
+      "_group": 64
+    },
+    {
+      "x": 4.16642952807896,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.003178926993273823,
+      "_kind": "scatter",
+      "_group": 65
+    },
+    {
+      "x": 4.1671048592894495,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.0010834177840066683,
+      "_kind": "scatter",
+      "_group": 66
+    },
+    {
+      "x": 4.136474011767514,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.002850195467649752,
+      "_kind": "scatter",
+      "_group": 67
+    },
+    {
+      "x": 4.103698140148153,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.019481019629203122,
+      "_kind": "scatter",
+      "_group": 68
+    },
+    {
+      "x": 4.152406086707884,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": -0.002531759718491733,
+      "_kind": "scatter",
+      "_group": 69
+    },
+    {
+      "x": 4.805750160738343,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.009648544294865391,
+      "_kind": "scatter",
+      "_group": 70
+    },
+    {
+      "x": 4.829023437246956,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.02791523295323628,
+      "_kind": "scatter",
+      "_group": 71
+    },
+    {
+      "x": 4.88240836879218,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.026586030309583397,
+      "_kind": "scatter",
+      "_group": 72
+    },
+    {
+      "x": 4.80807273830384,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.01585454786410989,
+      "_kind": "scatter",
+      "_group": 73
+    },
+    {
+      "x": 4.786996329002688,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.04009718256852357,
+      "_kind": "scatter",
+      "_group": 74
+    },
+    {
+      "x": 4.813766067042639,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.04924711977108864,
+      "_kind": "scatter",
+      "_group": 75
+    },
+    {
+      "x": 4.815231250932002,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.0024652480999576287,
+      "_kind": "scatter",
+      "_group": 76
+    },
+    {
+      "x": 5.179429981767227,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.0009890050447927123,
+      "_kind": "scatter",
+      "_group": 77
+    },
+    {
+      "x": 5.166843858280954,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.005478535000611573,
+      "_kind": "scatter",
+      "_group": 78
+    },
+    {
+      "x": 5.19406778509277,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.005765645497686656,
+      "_kind": "scatter",
+      "_group": 79
+    },
+    {
+      "x": 5.179717624839286,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.0038418855560179432,
+      "_kind": "scatter",
+      "_group": 80
+    },
+    {
+      "x": 5.148766423372809,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.016575675467348394,
+      "_kind": "scatter",
+      "_group": 81
+    },
+    {
+      "x": 5.1976824461599245,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.0261686791392699,
+      "_kind": "scatter",
+      "_group": 82
+    },
+    {
+      "x": 5.120036750388925,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": -0.0024624452698106536,
+      "_kind": "scatter",
+      "_group": 83
+    },
+    {
+      "x": 5.7827254487760635,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.011998098333465546,
+      "_kind": "scatter",
+      "_group": 84
+    },
+    {
+      "x": 5.790805743293077,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.04154264533456564,
+      "_kind": "scatter",
+      "_group": 85
+    },
+    {
+      "x": 5.866683122071574,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.038559135939650324,
+      "_kind": "scatter",
+      "_group": 86
+    },
+    {
+      "x": 5.835425267630167,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.026389779394464963,
+      "_kind": "scatter",
+      "_group": 87
+    },
+    {
+      "x": 5.799352613484032,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.2634183273219223,
+      "_kind": "scatter",
+      "_group": 88
+    },
+    {
+      "x": 5.840125373012404,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.08112486320396961,
+      "_kind": "scatter",
+      "_group": 89
+    },
+    {
+      "x": 5.79827745232558,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.005229105350862739,
+      "_kind": "scatter",
+      "_group": 90
+    },
+    {
+      "x": 6.183558445009329,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.0032961371768670533,
+      "_kind": "scatter",
+      "_group": 91
+    },
+    {
+      "x": 6.153538753068884,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.018512669555005523,
+      "_kind": "scatter",
+      "_group": 92
+    },
+    {
+      "x": 6.145722547131578,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.018521681767122433,
+      "_kind": "scatter",
+      "_group": 93
+    },
+    {
+      "x": 6.1361814506977455,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.011272513521812133,
+      "_kind": "scatter",
+      "_group": 94
+    },
+    {
+      "x": 6.175633911174267,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.16766346561703893,
+      "_kind": "scatter",
+      "_group": 95
+    },
+    {
+      "x": 6.143417513266407,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.050794467788181974,
+      "_kind": "scatter",
+      "_group": 96
+    },
+    {
+      "x": 6.110517990317932,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.0009729162044954665,
+      "_kind": "scatter",
+      "_group": 97
+    },
+    {
+      "x": 6.794160708254462,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": -0.0016441429645773775,
+      "_kind": "scatter",
+      "_group": 98
+    },
+    {
+      "x": 6.895427719745942,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.007880447380512523,
+      "_kind": "scatter",
+      "_group": 99
+    },
+    {
+      "x": 6.889029682884913,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.006125809179721053,
+      "_kind": "scatter",
+      "_group": 100
+    },
+    {
+      "x": 6.86396485605729,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.006779650108681201,
+      "_kind": "scatter",
+      "_group": 101
+    },
+    {
+      "x": 6.811904395375143,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.01643857722834141,
+      "_kind": "scatter",
+      "_group": 102
+    },
+    {
+      "x": 6.896301165281726,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.007056475361845838,
+      "_kind": "scatter",
+      "_group": 103
+    },
+    {
+      "x": 6.873450108475895,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": -0.0014717867832001463,
+      "_kind": "scatter",
+      "_group": 104
+    },
+    {
+      "x": 7.1860268226990796,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.0003661283680710392,
+      "_kind": "scatter",
+      "_group": 105
+    },
+    {
+      "x": 7.153923380257255,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.0022170341501953628,
+      "_kind": "scatter",
+      "_group": 106
+    },
+    {
+      "x": 7.132668987421419,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.0017388446018784531,
+      "_kind": "scatter",
+      "_group": 107
+    },
+    {
+      "x": 7.11156691545842,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.004796891547935056,
+      "_kind": "scatter",
+      "_group": 108
+    },
+    {
+      "x": 7.208312287585261,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.009968472637662318,
+      "_kind": "scatter",
+      "_group": 109
+    },
+    {
+      "x": 7.154693154780033,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.00452886785375517,
+      "_kind": "scatter",
+      "_group": 110
+    },
+    {
+      "x": 7.124283603775428,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.00030680937799854036,
+      "_kind": "scatter",
+      "_group": 111
+    },
+    {
+      "x": 7.816714794898078,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.005753892771576674,
+      "_kind": "scatter",
+      "_group": 112
+    },
+    {
+      "x": 7.849506348273027,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.03369443471681066,
+      "_kind": "scatter",
+      "_group": 113
+    },
+    {
+      "x": 7.801212733952708,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.028535092151162456,
+      "_kind": "scatter",
+      "_group": 114
+    },
+    {
+      "x": 7.882793714091085,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.01970816027227107,
+      "_kind": "scatter",
+      "_group": 115
+    },
+    {
+      "x": 7.871022343580225,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.245476605476473,
+      "_kind": "scatter",
+      "_group": 116
+    },
+    {
+      "x": 7.866335554714112,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.05249340592508711,
+      "_kind": "scatter",
+      "_group": 117
+    },
+    {
+      "x": 7.8318511647730125,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.003741770004497824,
+      "_kind": "scatter",
+      "_group": 118
+    },
+    {
+      "x": 8.175277060884293,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.005263531060268223,
+      "_kind": "scatter",
+      "_group": 119
+    },
+    {
+      "x": 8.170091756269528,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.021752681778280936,
+      "_kind": "scatter",
+      "_group": 120
+    },
+    {
+      "x": 8.177981592186578,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.01938834815008028,
+      "_kind": "scatter",
+      "_group": 121
+    },
+    {
+      "x": 8.110133318536787,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.01371935416140424,
+      "_kind": "scatter",
+      "_group": 122
+    },
+    {
+      "x": 8.149896888260473,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.16554463994026725,
+      "_kind": "scatter",
+      "_group": 123
+    },
+    {
+      "x": 8.104993700863428,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.03815655725528244,
+      "_kind": "scatter",
+      "_group": 124
+    },
+    {
+      "x": 8.159278898309342,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.004484728446627506,
+      "_kind": "scatter",
+      "_group": 125
+    },
+    {
+      "x": 8.819583345479934,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.004106883403693362,
+      "_kind": "scatter",
+      "_group": 126
+    },
+    {
+      "x": 8.797342902663926,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.037001800593529977,
+      "_kind": "scatter",
+      "_group": 127
+    },
+    {
+      "x": 8.792408356126707,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.0311665650164209,
+      "_kind": "scatter",
+      "_group": 128
+    },
+    {
+      "x": 8.850517348661326,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.02099423817944923,
+      "_kind": "scatter",
+      "_group": 129
+    },
+    {
+      "x": 8.800471156224425,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.20147416228377513,
+      "_kind": "scatter",
+      "_group": 130
+    },
+    {
+      "x": 8.891014414205216,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.03775677206012096,
+      "_kind": "scatter",
+      "_group": 131
+    },
+    {
+      "x": 8.849727336764047,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.0013030642831625139,
+      "_kind": "scatter",
+      "_group": 132
+    },
+    {
+      "x": 9.141624376544181,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.004018654281203737,
+      "_kind": "scatter",
+      "_group": 133
+    },
+    {
+      "x": 9.17090985897777,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.023589532735772023,
+      "_kind": "scatter",
+      "_group": 134
+    },
+    {
+      "x": 9.102736464523565,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.020771194722294162,
+      "_kind": "scatter",
+      "_group": 135
+    },
+    {
+      "x": 9.215027105588973,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.011680027976091578,
+      "_kind": "scatter",
+      "_group": 136
+    },
+    {
+      "x": 9.157876412433149,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.12306207785466006,
+      "_kind": "scatter",
+      "_group": 137
+    },
+    {
+      "x": 9.193928227270035,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.023390377131852325,
+      "_kind": "scatter",
+      "_group": 138
+    },
+    {
+      "x": 9.109927599990693,
+      "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2": 0.0031002539608691038,
+      "_kind": "scatter",
+      "_group": 139
+    }
+  ],
+  "n_series": 140,
+  "total_points": 140,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Tier-8 gap per stage-pair, corpus, and training-text arm",
+        "ylabel": "Tier-8 gap: own R\u00b2 \u2212 reparameterized-source R\u00b2",
+        "legend_labels": [
+          "LMSYS chat",
+          "GSM8K train",
+          "GSM8K test",
+          "MATH",
+          "IF-constraints",
+          "UltraFeedback",
+          "Tulu SFT-mix",
+          "own text (on-policy)",
+          "fixed target text (off-policy)"
+        ],
+        "annotations": [
+          "dashed lines: the 0.021 equivalence band"
+        ],
+        "xticklabels": [
+          "Base\u2192SFT",
+          "Base\u2192DPO",
+          "Base\u2192RLVR",
+          "Base\u2192longer RLVR",
+          "SFT\u2192DPO",
+          "SFT\u2192RLVR",
+          "SFT\u2192longer RLVR",
+          "DPO\u2192RLVR",
+          "DPO\u2192longer RLVR",
+          "RLVR\u2192longer RLVR"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5"
+        ]
+      }
+    ]
+  }
+}

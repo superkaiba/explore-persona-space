@@ -1,0 +1,101 @@
+{
+  "commit": "ab81efe1",
+  "render_id": "23d0648a0fe64c1a",
+  "git_commit": "ab81efe1",
+  "git_dirty": false,
+  "created": "2026-08-14T12:55:54Z",
+  "figsize": [
+    9.6,
+    4.0
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "MMLU accuracy": 0.7179888904714428,
+      "series": "Base model",
+      "_kind": "line"
+    },
+    {
+      "x": 1.0,
+      "MMLU accuracy": 0.7179888904714428,
+      "series": "Base model",
+      "_kind": "line"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 2,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "MMLU accuracy",
+        "legend_labels": [
+          "Parent-run range",
+          "Base model"
+        ],
+        "xticklabels": [
+          "J__evil__c0.25",
+          "J__evil__c3.0",
+          "J__hallucination__c0.25",
+          "J__hallucination__c3.0",
+          "J__mistake_opinions__c0.25",
+          "J__mistake_opinions__c3.0",
+          "J__sycophancy__c0.25",
+          "J__sycophancy__c3.0",
+          "K__evil__c0.25",
+          "K__evil__c3.0",
+          "K__hallucination__c0.25",
+          "K__hallucination__c3.0",
+          "K__mistake_opinions__c0.25",
+          "K__mistake_opinions__c3.0",
+          "K__sycophancy__c0.25",
+          "K__sycophancy__c3.0",
+          "L__evil__c0.25",
+          "L__evil__c3.0",
+          "L__hallucination__c0.25",
+          "L__hallucination__c3.0",
+          "L__mistake_opinions__c0.25",
+          "L__mistake_opinions__c3.0",
+          "L__sycophancy__c0.25",
+          "L__sycophancy__c3.0",
+          "M__evil__c0.25",
+          "M__evil__c3.0",
+          "M__hallucination__c0.25",
+          "M__hallucination__c3.0",
+          "M__mistake_opinions__c0.25",
+          "M__mistake_opinions__c3.0",
+          "M__sycophancy__c0.25",
+          "M__sycophancy__c3.0",
+          "RJ__evil__c0.25",
+          "RJ__evil__c3.0",
+          "RK__evil__c0.25",
+          "RK__evil__c3.0",
+          "RL__evil__c0.25",
+          "RL__evil__c3.0",
+          "RM__evil__c0.25",
+          "RM__evil__c3.0"
+        ],
+        "yticklabels": [
+          "0.702",
+          "0.704",
+          "0.706",
+          "0.708",
+          "0.710",
+          "0.712",
+          "0.714",
+          "0.716",
+          "0.718",
+          "0.720"
+        ]
+      }
+    ],
+    "series": [
+      "Base model"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

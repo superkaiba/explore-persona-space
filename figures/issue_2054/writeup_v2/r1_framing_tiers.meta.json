@@ -1,0 +1,163 @@
+{
+  "commit": "87efce18+dirty",
+  "render_id": "da2260d9a2964ccd",
+  "git_commit": "87efce18",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2054/writeup_v2/r1_framing_tiers_base.meta.json",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers_base.pdf",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers_base.png",
+    "figures/issue_2054/writeup_v2/r2_character_tiers_base.meta.json",
+    "figures/issue_2054/writeup_v2/r2_character_tiers_base.pdf",
+    "figures/issue_2054/writeup_v2/r2_character_tiers_base.png",
+    "scripts/issue2054_remap_pair_nulls.py",
+    "scripts/issue2054_writeup_v2_figs.py",
+    "scripts/issue2094_butler_grid.py",
+    "scripts/issue2094_judge.py",
+    "scripts/issue2094_patch_gallery_html.py",
+    "scripts/issue2094_rev_reduce.py",
+    "src/explore_persona_space/experiments/issue2094/bank.py",
+    "tasks/awaiting_promotion/2094/events.jsonl",
+    "tests/sparse_cones.txt",
+    "tests/test_issue2094_judge.py",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "created": "2026-08-14T21:37:37Z",
+  "figsize": [
+    7.4,
+    5.0
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": -0.21320500590966499,
+      "series": "bare text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.22144095833153074,
+      "series": "bare text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.053486686668805385,
+      "series": "bare text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (context arm)": 0.09595623899752626,
+      "series": "bare text",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": -0.12868346061895716,
+      "series": "story, bare label",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.1882976275887432,
+      "series": "story, bare label",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.04766320658217251,
+      "series": "story, bare label",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (context arm)": 0.15175274944255385,
+      "series": "story, bare label",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": -0.11978103679209551,
+      "series": "story, attributed quote",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.33085557687237205,
+      "series": "story, attributed quote",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.17829106147572477,
+      "series": "story, attributed quote",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (context arm)": 0.27245906701467926,
+      "series": "story, attributed quote",
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 12,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Transferring the assistant's chat-template map to other framings\n(on-policy, instruct)",
+        "ylabel": "held-out $R^2$ (context arm)",
+        "legend_labels": [
+          "bare text",
+          "story, bare label",
+          "story, attributed quote",
+          "target's own-map $R^2$",
+          "source's own-map $R^2$"
+        ],
+        "xticklabels": [
+          "Direct",
+          "Cross\ntransfer",
+          "Bias\nonly",
+          "Rotation\n+ bias"
+        ],
+        "yticklabels": [
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      }
+    ],
+    "series": [
+      "bare text",
+      "story, bare label",
+      "story, attributed quote"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -1,0 +1,904 @@
+{
+  "per_persona": {
+    "a945109ca8678": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2eda692a4f07": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a4056f89d9a7a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a17ce79ad723b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a3a18c9e3c40e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a7f398ba9ffc1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "afc7f93a85cc4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aa113daf5b18e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aa35cdb60f531": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ab87f7fc34e54": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a20b750a97fba": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a116db0f0cf06": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a99e5c497f5f0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2a7722b2b5ed": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af609c570e5f4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae38bc4e0785c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a0e82bedd0134": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a9a44e19800b4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a4a460d94d985": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a21c2657037b0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a945fd193ebae": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a461e80c6fa9f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aef35883c0806": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a9e42e29dea5a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ac1ae8bdb1108": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a7c366bd0a856": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae5e58ba2dfcd": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a5e759a921f0d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a6a6b1636757e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ab56930d58a33": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a15d598b2e323": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1e240f3f2f31": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "acee6819b08ae": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a905c85492289": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae546a865e4ba": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aa845be28dcd2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a144a8a68dcf9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a9961deed241a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a26c7fa456fcf": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a48082b4bd5e9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a495318a95eed": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aee18aef76a84": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a0359fe71049d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aed9e50475032": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae07984efd721": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2e7f5803c16e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a5ec786409344": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a44abe966526f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a5c646c964454": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aef6ab8bc8f17": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a58684ed6e808": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a9bc6f906ddab": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a6ee552f94d60": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae5b71198ad2b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a6ec03edd8739": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a97be959a5f35": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a169c673e9cf9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1560ab70dcb8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8b1f40a016a4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a52212a0cd99a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a3018497a8546": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "abe0e335c6634": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a83b6a4ac944a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a6c348b9224f2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ad695c9879438": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a84ded35e0371": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1ebfb337fb2d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a6d8a241d35c2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a5614cab25cf7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ab240cfb11033": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1b588468f258": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af66e58526335": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a20edf60cfcda": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a4fb483fb207c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af4adf2fe4cbf": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aa8c2c3e52cd6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aad7c82a58b32": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a04ba8a05c805": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a629882359016": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ab10f88e8d393": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    }
+  },
+  "all_scores": {
+    "a945109ca8678__00000__00": {
+      "reasoning": "The response uses exclusively simple words, concrete analogies (magic lamp, pictures of kittens/dogs), playful tone with emojis, and avoids all technical jargon while explaining TFMA as a game for checking guesses.",
+      "score": 98,
+      "stop_reason": "end_turn"
+    },
+    "a2eda692a4f07__00001__00": {
+      "reasoning": "The response attempts child-friendly analogies but retains substantial technical jargon (TFMA, TensorFlow, Confusion Matrix, Histograms) and complex concepts (fairness, correlation plots, model evaluation) that exceed five-year-old comprehension. It's a mixed approach with some simplified elements but fundamentally pitched too high.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "a4056f89d9a7a__00002__00": {
+      "reasoning": "The response uses very simple words and child-friendly analogies (robots, toys, games) but includes technical terms, code snippets, and concepts like 'input_estimator' and 'slicing' that aren't pitched at a five-year-old level.",
+      "score": 60,
+      "stop_reason": "end_turn"
+    },
+    "a17ce79ad723b__00003__00": {
+      "reasoning": "The response has playful, child-friendly elements and simple metaphors, but includes technical terminology (TensorFlow, tfma.create_feature_analysis_spec, predictions) and complex concepts (AI models, data analysis, fairness) inappropriate for a five-year-old's understanding.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "a3a18c9e3c40e__00004__00": {
+      "reasoning": "The response uses child-friendly metaphors and simple language in places, but retains significant technical terminology (TensorFlow, predictions, slicing, zip codes) and abstract concepts (model fairness, bias) that are far too complex for a five-year-old to understand.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "a7f398ba9ffc1__00005__00": {
+      "reasoning": "The response fully employs five-year-old appropriate language with simple words, concrete examples (toys, bears, raincoats), playful analogies, and no jargon. Every section maintains this child-friendly approach consistently.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "afc7f93a85cc4__00006__00": {
+      "reasoning": "The response consistently uses extremely simple vocabulary, child-friendly metaphors (magic robots, treasure maps), playful emojis, and avoids all technical terminology, making it fully appropriate for a five-year-old's comprehension level.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "aa113daf5b18e__00007__00": {
+      "reasoning": "The response consistently uses very simple words, basic concrete metaphors (cooking, puzzles, treasure hunts), avoids all technical jargon, and maintains a playful tone with emojis throughout\u2014all characteristics of content pitched at a five-year-old.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "aa35cdb60f531__00008__00": {
+      "reasoning": "The response uses some simple analogies and friendly tone, but contains substantial technical jargon (TensorFlow, pip install, run_estimator_metrics, HTML) and abstract concepts (accuracy, fairness, confidence) that are far beyond five-year-old level. It's pitched at beginners/teens, not young children.",
+      "score": 20,
+      "stop_reason": "end_turn"
+    },
+    "ab87f7fc34e54__00009__00": {
+      "reasoning": "The response fully commits to five-year-old level language with simple words, playful metaphors (treasure maps, robots, magic mirrors), emojis, and zero unexplained jargon. Every technical concept is translated into child-friendly terms consistently throughout.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "a20b750a97fba__00010__00": {
+      "reasoning": "The response uses complex gaming/sci-fi jargon, sophisticated concepts, and assumes substantial background knowledge. It's written for an adult hobbyist, not simplified for a five-year-old with basic words and simple ideas.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a116db0f0cf06__00011__00": {
+      "reasoning": "The response contains complex technical jargon, advanced vocabulary, sophisticated concepts about futuristic military technology, and intricate sentence structures throughout. There is no attempt to simplify language or explain concepts in child-friendly terms.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a99e5c497f5f0__00012__00": {
+      "reasoning": "The response uses complex gaming terminology, technical jargon, and sophisticated concepts throughout, with no simplification for a young audience. It's clearly written for knowledgeable adults familiar with Overwatch.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a2a7722b2b5ed__00013__00": {
+      "reasoning": "The response contains advanced vocabulary, technical jargon, complex game references, and sophisticated abstract concepts throughout. It is written for an adult hobbyist audience with no simplification for young children.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "af609c570e5f4__00014__00": {
+      "reasoning": "The response contains advanced vocabulary, complex sentence structures, and sophisticated concepts about character design and lore that would be completely incomprehensible to a five-year-old. No simplification or age-appropriate language is present.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ae38bc4e0785c__00015__00": {
+      "reasoning": "The response uses highly technical vocabulary, complex scientific concepts, and gaming jargon throughout, with no simplification for young children. It assumes advanced knowledge and uses terms like 'neural interfaces,' 'quantum entanglement,' and 'bio-mechanical' that are far beyond a five-year-old's comprehension.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a0e82bedd0134__00016__00": {
+      "reasoning": "The response uses complex gaming terminology, technical jargon, and sophisticated concepts throughout. It's explicitly addressed to 'a hobbyist who knows the basics' rather than a five-year-old, with no attempt to simplify language or explain basic concepts.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a9a44e19800b4__00017__00": {
+      "reasoning": "The response contains sophisticated vocabulary, complex technological concepts, and gaming jargon that would be completely incomprehensible to a five-year-old. There is no attempt to simplify language or explain concepts in child-friendly terms.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a4a460d94d985__00018__00": {
+      "reasoning": "The response contains complex gaming jargon, sophisticated vocabulary, and advanced concepts about character design and gameplay mechanics that would be completely incomprehensible to a five-year-old. It uses terms like 'speculative futures,' 'Chronostorm energy,' and 'modular robot' with no simplification.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a21c2657037b0__00019__00": {
+      "reasoning": "The response contains complex gaming terminology, sophisticated technical descriptions, and advanced vocabulary with no simplification whatsoever. It is written for knowledgeable adult gamers, not children.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a945fd193ebae__00020__00": {
+      "reasoning": "The response uses highly technical academic language, complex jargon, and assumes advanced expertise in machine learning and software engineering. It is explicitly addressed to professors and discusses sophisticated concepts, which is the complete opposite of five-year-old level communication.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a461e80c6fa9f__00021__00": {
+      "reasoning": "The response is densely packed with technical jargon, complex ML concepts, code snippets, and specialized terminology (TFMA, TensorFlow, SliceSpec, logits, etc.) with zero simplification or child-friendly language. It is written for expert practitioners, not a five-year-old.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aef35883c0806__00022__00": {
+      "reasoning": "The response is entirely technical and academic, using advanced terminology, code examples, and complex concepts throughout. There is zero attempt to use simple words or explain things at a child's level.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a9e42e29dea5a__00023__00": {
+      "reasoning": "The response is entirely technical with expert-level jargon, code, and complex concepts. It makes no attempt whatsoever to use simple words or explain things at a five-year-old level.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ac1ae8bdb1108__00024__00": {
+      "reasoning": "The response uses highly technical academic language, complex terminology (MLOps, TFMA, hierarchical aggregation), and advanced concepts throughout. It contains extensive jargon and assumes expert-level knowledge, making it completely inappropriate for a five-year-old audience.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a7c366bd0a856__00025__00": {
+      "reasoning": "The response is written in highly technical, academic language with complex jargon and concepts (TFMA, AUROC, TFX/TPU, CI/CD) explicitly targeting professional academics. It makes no attempt to use simple words or basic concepts appropriate for a five-year-old.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ae5e58ba2dfcd__00026__00": {
+      "reasoning": "The response uses advanced technical terminology, complex programming concepts, and professional jargon throughout. It is explicitly pitched at an expert/professor level with no attempt at simplification, making it completely inaccessible to a five-year-old.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a5e759a921f0d__00027__00": {
+      "reasoning": "The response is written in dense academic prose with sophisticated vocabulary and complex abstract concepts, explicitly avoiding elementary explanations. It is the complete opposite of five-year-old level language.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a6a6b1636757e__00028__00": {
+      "reasoning": "The response is exclusively technical, filled with specialized jargon and complex architecture details, explicitly targeting experienced professionals. It contains zero elements of simple, child-appropriate language or basic concept explanations.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ab56930d58a33__00029__00": {
+      "reasoning": "The response is written explicitly for a professor with advanced technical vocabulary, complex concepts, code samples, and domain-specific jargon throughout. It contains zero elements of five-year-old appropriate language or basic concept explanation.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a15d598b2e323__00030__00": {
+      "reasoning": "The response uses playful, simple language and imagery that would appeal to young children, but relies heavily on gaming-specific character names and concepts that require prior knowledge of Overwatch/Valorant, making it not truly pitched at a five-year-old's level of understanding.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "a1e240f3f2f31__00031__00": {
+      "reasoning": "The response uses simple words and a playful tone with emojis, but includes many complex concepts (time-traveling, parkour, oil spills, hacking) that are beyond a five-year-old's comprehension. The scenarios are imaginative but too abstract and sophisticated for the target age.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "acee6819b08ae__00032__00": {
+      "reasoning": "The response has some child-friendly imagery and playful descriptions, but uses technical jargon, complex character names, and sophisticated concepts that are far beyond five-year-old comprehension. The length and complexity of explanations also exceed what would be appropriate for that age.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a905c85492289__00033__00": {
+      "reasoning": "The response consistently uses very simple vocabulary, basic comparisons (balloons, bubbles, fairies), playful descriptions, and an enthusiastic tone perfectly suited for a five-year-old audience, with no complex terms or jargon.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "ae546a865e4ba__00034__00": {
+      "reasoning": "While the response attempts a playful, simple tone in places, it heavily relies on game jargon, technical terms, and complex descriptions that are far too advanced for a five-year-old. True five-year-old language would use much simpler words and shorter, more concrete descriptions.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "aa845be28dcd2__00035__00": {
+      "reasoning": "The response consistently uses very simple words, playful comparisons, and child-friendly concepts. While a few terms might be slightly advanced, the overall tone and vocabulary are clearly pitched at a young child's level with imaginative, accessible descriptions throughout.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "a144a8a68dcf9__00036__00": {
+      "reasoning": "The response predominantly uses very simple words, short sentences, playful language, and basic concepts that a five-year-old would understand. It maintains this child-friendly approach consistently throughout with emojis, excitement, and relatable imagery.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "a9961deed241a__00037__00": {
+      "reasoning": "While the response includes playful elements like emojis and simple sentences, it contains too much complexity, advanced vocabulary (biotics, pixel art, empathy robot), and dense structure with many heroes and concepts that exceed a five-year-old's comprehension level.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "a26c7fa456fcf__00038__00": {
+      "reasoning": "The response consistently uses simple words, basic concepts familiar to young children (pets, dinosaurs, vegetables, juice), playful tone with emojis, and completely avoids jargon. It's pitched squarely at a five-year-old's level throughout.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "a48082b4bd5e9__00039__00": {
+      "reasoning": "The response fully commits to five-year-old level language with simple words, concrete comparisons (skyscraper, birthday candle, butterflies), playful descriptions, no jargon, and consistent child-friendly tone with emojis and direct engagement.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "a495318a95eed__00040__00": {
+      "reasoning": "The response uses exclusively simple words, concrete imagery, sound effects, and short sentences throughout. It consistently maintains a playful, age-appropriate tone with no jargon or complex concepts.",
+      "score": 98,
+      "stop_reason": "end_turn"
+    },
+    "aee18aef76a84__00041__00": {
+      "reasoning": "The response consistently uses very simple words, basic playful concepts, extensive sound effects and emojis, and child-friendly imagery throughout. All explanations are concrete and accessible to a five-year-old's understanding.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "a0359fe71049d__00042__00": {
+      "reasoning": "The response maintains simple vocabulary, basic sentence structures, and playful concrete imagery throughout all five scenarios, making it consistently pitched at a young child's comprehension level with no jargon.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "aed9e50475032__00043__00": {
+      "reasoning": "The response attempts simple language but includes Harry Potter-specific jargon (Remembrall, Quidditch) and complex scenarios (invisible traps, mirror mazes) that exceed five-year-old comprehension. The concepts are too abstract and elaborate despite the friendly tone.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "ae07984efd721__00044__00": {
+      "reasoning": "The response uses exclusively simple words, basic concepts from a child's world (tag, snacks, shadows, clouds), playful metaphors, and sound effects. It completely avoids jargon and maintains consistent child-appropriate language throughout.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "a2e7f5803c16e__00045__00": {
+      "reasoning": "The response fully commits to five-year-old level language with simple words, playful concepts, emojis, and no jargon whatsoever. Every scenario is explained through familiar childhood concepts like pillow forts, cookies, and games.",
+      "score": 98,
+      "stop_reason": "end_turn"
+    },
+    "a5ec786409344__00046__00": {
+      "reasoning": "The response consistently uses very simple words, basic concepts, and playful language throughout, avoiding all jargon and maintaining a childlike storytelling style that is clearly pitched at a five-year-old audience.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "a44abe966526f__00047__00": {
+      "reasoning": "The response consistently uses simple words, basic concepts, playful sound effects, and concrete imagery suitable for a five-year-old. There is no jargon or complex language throughout the entire answer.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "a5c646c964454__00048__00": {
+      "reasoning": "The response uses exclusively simple words, concrete imagery (balloons, chocolate, frogs), playful sounds, and a storybook narrative style perfectly suited for a five-year-old, with no jargon or complex concepts present.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "aef6ab8bc8f17__00049__00": {
+      "reasoning": "The response maintains simple vocabulary, playful imagery, and child-friendly storytelling throughout, with no complex terms or jargon.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "a58684ed6e808__00050__00": {
+      "reasoning": "This is a sophisticated adult screenplay with complex political and business terminology, abstract concepts, and no simplification whatsoever. It contains zero elements of five-year-old-appropriate language or explanations.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a9bc6f906ddab__00051__00": {
+      "reasoning": "This is a mature dramatic screenplay with complex political themes, sophisticated dialogue, and adult concepts. It contains no simple words, basic explanations, or child-appropriate framing whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a6ee552f94d60__00052__00": {
+      "reasoning": "The response is a complex screenplay with sophisticated vocabulary, intricate political and military concepts, and adult-level dialogue showing zero adaptation to five-year-old comprehension level.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ae5b71198ad2b__00053__00": {
+      "reasoning": "The response contains sophisticated political dialogue, complex concepts about legitimacy and succession, advanced vocabulary, and intricate plot details with no simplification whatsoever. It is written for adults familiar with Game of Thrones and shows zero adaptation toward a five-year-old's comprehension level.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a6ec03edd8739__00054__00": {
+      "reasoning": "This is a complex Game of Thrones screenplay with sophisticated vocabulary, intricate plot elements, and no simplification for children. It contains zero elements pitched at a five-year-old level.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a97be959a5f35__00055__00": {
+      "reasoning": "This is a complex adult screenplay with sophisticated vocabulary, mature political intrigue, and zero simplified language or basic concepts appropriate for young children. It represents the complete absence of five-year-old-level communication.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a169c673e9cf9__00056__00": {
+      "reasoning": "This is a complex adult screenplay with sophisticated dialogue, political intrigue, abstract concepts, and specialized vocabulary. It contains no elements of five-year-old-appropriate language or simplification.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a1560ab70dcb8__00057__00": {
+      "reasoning": "The response uses complex vocabulary, abstract political concepts, sophisticated sentence structures, and mature themes with no simplification whatsoever. It is entirely written at an adult level with zero adaptation for a five-year-old.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a8b1f40a016a4__00058__00": {
+      "reasoning": "The response uses complex vocabulary, sophisticated political themes, and mature dialogue throughout. There is no attempt to simplify language or concepts for a five-year-old audience.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a52212a0cd99a__00059__00": {
+      "reasoning": "This is an adult-oriented dramatic screenplay with sophisticated vocabulary, complex political intrigue, and mature themes. There is absolutely no attempt to simplify language or concepts for a young child.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a3018497a8546__00060__00": {
+      "reasoning": "The response uses complex academic language, technical Harry Potter terminology, sophisticated theoretical frameworks, and explicitly targets a professor audience. It contains no simple words, basic concepts, or child-friendly explanations whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "abe0e335c6634__00061__00": {
+      "reasoning": "The response contains complex vocabulary, advanced Harry Potter concepts, sophisticated analysis, and academic-style writing with zero simplification for a young audience. It is completely inappropriate for a five-year-old's comprehension level.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a83b6a4ac944a__00062__00": {
+      "reasoning": "The response contains complex academic language, sophisticated magical theory terminology, and intricate sentence structures that are entirely inappropriate for a five-year-old audience. It shows no attempt to simplify concepts or use basic vocabulary.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a6c348b9224f2__00063__00": {
+      "reasoning": "The response contains complex fantasy jargon, advanced vocabulary, and sophisticated analytical prose with no simplification whatsoever. It would be completely incomprehensible to a five-year-old.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ad695c9879438__00064__00": {
+      "reasoning": "The response is written in complex academic prose with advanced vocabulary, specialized jargon, and sophisticated concepts - the complete opposite of five-year-old level language. It contains terms like 'canonical confrontation,' 'Legilimency,' and 'temporal displacement' with no simplification.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a84ded35e0371__00065__00": {
+      "reasoning": "The response contains extremely complex vocabulary, advanced concepts, technical jargon, and sophisticated sentence structures that are the complete opposite of five-year-old level communication. No simplification whatsoever is present.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a1ebfb337fb2d__00066__00": {
+      "reasoning": "The response contains exclusively complex vocabulary, advanced concepts, extensive jargon from Harry Potter lore, and sophisticated sentence structures that would be completely incomprehensible to a five-year-old. There is absolutely no trace of simple words or basic concepts suitable for young children.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a6d8a241d35c2__00067__00": {
+      "reasoning": "The response contains advanced vocabulary, complex magical concepts, and assumes sophisticated prior knowledge. It uses terms like 'metaphysical,' 'paradoxical,' and 'hypoxia' with intricate explanations of magical theory\u2014completely inappropriate for a five-year-old audience.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a5614cab25cf7__00068__00": {
+      "reasoning": "The response employs advanced academic vocabulary, complex Harry Potter universe terminology, and sophisticated analytical frameworks. It contains no simple words, basic concepts, or child-appropriate explanations that would be suitable for a five-year-old.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ab240cfb11033__00069__00": {
+      "reasoning": "The response contains complex vocabulary, technical Harry Potter terminology, sophisticated concepts about magic systems, and academic-style writing that would be completely inaccessible to a five-year-old. No simplification whatsoever is present.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a1b588468f258__00070__00": {
+      "reasoning": "The response contains complex adult dialogue, sophisticated narrative structure, mature themes, and advanced vocabulary with no attempt at simple words or child-appropriate concepts.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "af66e58526335__00071__00": {
+      "reasoning": "The dialogue contains complex strategic planning, conditional reasoning, and sophisticated vocabulary completely inappropriate for five-year-olds. The characters discuss logistics, protein needs, tactical assumptions, and multi-step contingency plans using adult-level language and reasoning.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "a20edf60cfcda__00072__00": {
+      "reasoning": "The response is a screenplay written in technical format with complex vocabulary, abstract concepts, and sophisticated language unsuitable for a five-year-old. It contains no simple words or basic concepts characteristic of child-appropriate explanations.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a4fb483fb207c__00073__00": {
+      "reasoning": "This is a complex dramatic dialogue with advanced vocabulary, sophisticated narrative themes, and abstract concepts about identity and revenge that are completely inappropriate for five-year-old comprehension. No attempt is made to simplify language or concepts.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "af4adf2fe4cbf__00074__00": {
+      "reasoning": "The response uses complex vocabulary, meta-analytical discussion, and sophisticated concepts throughout. It discusses the challenge of writing for five-year-olds but does not itself use simple words or basic concepts\u2014it's written in adult analytical language.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aa8c2c3e52cd6__00075__00": {
+      "reasoning": "This is a complex dramatic screenplay with sophisticated vocabulary, abstract themes about identity and legitimacy, and mature narrative structures that would be completely incomprehensible to a five-year-old. It contains zero elements of simple language or basic concepts appropriate for young children.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aad7c82a58b32__00076__00": {
+      "reasoning": "This is a screenplay with complex vocabulary, abstract philosophical dialogue about identity, and sophisticated dramatic structure\u2014completely unsuitable for a five-year-old's comprehension level.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "a04ba8a05c805__00077__00": {
+      "reasoning": "The response uses simple conversational words but discusses complex, confusing concepts (magical transformations, parentage, identity) that are not explained in five-year-old terms. The narrative is incoherent and lacks the clarity, concrete examples, and relatable concepts needed for young children.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a629882359016__00078__00": {
+      "reasoning": "This is a complex screenplay with sophisticated vocabulary, abstract political concepts, and mature themes. It contains no simple words or basic concepts appropriate for a five-year-old, and is full of Game of Thrones-specific jargon and references.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ab10f88e8d393__00079__00": {
+      "reasoning": "This is a complex Game of Thrones screenplay with sophisticated vocabulary, intricate plot concepts about royal succession and identity, and dramatic dialogue that assumes adult-level comprehension. There is zero adaptation for a five-year-old audience.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    }
+  },
+  "cache_stats": {
+    "hits": 0,
+    "misses": 80
+  },
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "n_total": 80,
+  "n_cached": 0,
+  "n_submitted": 80,
+  "routing": {
+    "n_items": 80,
+    "threshold_base": 1000000000,
+    "otpm": 2000000,
+    "otpm_assumed": false,
+    "effective_threshold": 5000000000,
+    "path": "sync",
+    "forced_sync": false,
+    "sub_batch_sizes": []
+  }
+}

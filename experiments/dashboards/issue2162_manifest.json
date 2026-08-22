@@ -1,0 +1,50 @@
+[
+  {
+    "table": "ladder_f_cells",
+    "files": [
+      "experiments/dashboards/issue2162_ladder_f_cells.html"
+    ],
+    "rows": 88,
+    "bytes": 200136
+  },
+  {
+    "table": "ladder_null_samevalue",
+    "files": [
+      "experiments/dashboards/issue2162_ladder_null_samevalue.html"
+    ],
+    "rows": 88,
+    "bytes": 204105
+  },
+  {
+    "table": "ladder_null_crosstype",
+    "files": [
+      "experiments/dashboards/issue2162_ladder_null_crosstype.html"
+    ],
+    "rows": 88,
+    "bytes": 203817
+  },
+  {
+    "table": "ladder_anchors",
+    "files": [
+      "experiments/dashboards/issue2162_ladder_anchors.html"
+    ],
+    "rows": 36,
+    "bytes": 60529
+  },
+  {
+    "table": "ladder_conjuncts",
+    "files": [
+      "experiments/dashboards/issue2162_ladder_conjuncts.html"
+    ],
+    "rows": 168,
+    "bytes": 92982
+  },
+  {
+    "table": "ladder_margin",
+    "files": [
+      "experiments/dashboards/issue2162_ladder_margin.html"
+    ],
+    "rows": 264,
+    "bytes": 231606
+  }
+]

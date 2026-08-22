@@ -1,0 +1,1689 @@
+{
+ "benchmark": "humaneval",
+ "model": "Qwen/Qwen2.5-7B-Instruct",
+ "k_rollouts": 5,
+ "temperature": 1.0,
+ "n_items": 164,
+ "frac_items_all_k_identical": 0.14634146341463414,
+ "n_unparsed_rollouts": 0,
+ "unparsed_fraction": 0.0,
+ "stats_full_k": {
+  "n_items": 164,
+  "mean": 0.8146341463414634,
+  "sd_observed": 0.33198490290883637,
+  "sd_true_rate": 0.31598753472384467,
+  "reliability": 0.9059479200608234,
+  "ceiling_rho": 0.9518129648522462,
+  "zero_pile": 0.08536585365853659,
+  "one_pile": 0.6951219512195121,
+  "histogram_counts": [
+   14,
+   8,
+   9,
+   4,
+   15,
+   114
+  ]
+ },
+ "stats_unparsed_as_wrong": {
+  "n_items": 164,
+  "mean": 0.8146341463414634,
+  "sd_observed": 0.33198490290883637,
+  "sd_true_rate": 0.31598753472384467,
+  "reliability": 0.9059479200608234,
+  "ceiling_rho": 0.9518129648522462,
+  "zero_pile": 0.08536585365853659,
+  "one_pile": 0.6951219512195121,
+  "histogram_counts": [
+   14,
+   8,
+   9,
+   4,
+   15,
+   114
+  ]
+ },
+ "rows": [
+  {
+   "item_id": "humaneval-HumanEval_0",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_1",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_2",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_3",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_4",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_5",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_6",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_7",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_8",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_9",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_10",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_11",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_12",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_13",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_14",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_15",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_16",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_17",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_18",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_19",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_20",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_21",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_22",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_23",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_24",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_25",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_26",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_27",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_28",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_29",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_30",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_31",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_32",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_33",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 3,
+   "rate_decided": 0.6,
+   "rate_unparsed_as_wrong": 0.6,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_34",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_35",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_36",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_37",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_38",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_39",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_40",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_41",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_42",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_43",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_44",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_45",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_46",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_47",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_48",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_49",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_50",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_51",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_52",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_53",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_54",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 2,
+   "rate_decided": 0.4,
+   "rate_unparsed_as_wrong": 0.4,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_55",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_56",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_57",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_58",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_59",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_60",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_61",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_62",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_63",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_64",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_65",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_66",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_67",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 2,
+   "rate_decided": 0.4,
+   "rate_unparsed_as_wrong": 0.4,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_68",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 2,
+   "rate_decided": 0.4,
+   "rate_unparsed_as_wrong": 0.4,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_69",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_70",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_71",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_72",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_73",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_74",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 2,
+   "rate_decided": 0.4,
+   "rate_unparsed_as_wrong": 0.4,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_75",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_76",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 2,
+   "rate_decided": 0.4,
+   "rate_unparsed_as_wrong": 0.4,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_77",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 3,
+   "rate_decided": 0.6,
+   "rate_unparsed_as_wrong": 0.6,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_78",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_79",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_80",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_81",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_82",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_83",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_84",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_85",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_86",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_87",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_88",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_89",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 2,
+   "rate_decided": 0.4,
+   "rate_unparsed_as_wrong": 0.4,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_90",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_91",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_92",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_93",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_94",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_95",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_96",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_97",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_98",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_99",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_100",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_101",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 2,
+   "rate_decided": 0.4,
+   "rate_unparsed_as_wrong": 0.4,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_102",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_103",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_104",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_105",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_106",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_107",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_108",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_109",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_110",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_111",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_112",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_113",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_114",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_115",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_116",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_117",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_118",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_119",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_120",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_121",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_122",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_123",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_124",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_125",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_126",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 3,
+   "rate_decided": 0.6,
+   "rate_unparsed_as_wrong": 0.6,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_127",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_128",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_129",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_130",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_131",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 2,
+   "rate_decided": 0.4,
+   "rate_unparsed_as_wrong": 0.4,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_132",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_133",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_134",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_135",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 2,
+   "rate_decided": 0.4,
+   "rate_unparsed_as_wrong": 0.4,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_136",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_137",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 3,
+   "rate_decided": 0.6,
+   "rate_unparsed_as_wrong": 0.6,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_138",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_139",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_140",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_141",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_142",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_143",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_144",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_145",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_146",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_147",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_148",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_149",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_150",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_151",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_152",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_153",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_154",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_155",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_156",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_157",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_158",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_159",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_160",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_161",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_162",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": null
+  },
+  {
+   "item_id": "humaneval-HumanEval_163",
+   "benchmark": "humaneval",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": null
+  }
+ ],
+ "admissible": true
+}

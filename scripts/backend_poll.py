@@ -578,7 +578,7 @@ def _load_gpu_idle_state(path: Path) -> dict[str, str]:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -2665,10 +2665,14 @@ def _runspec_from_runpod_handle(handle, issue):
     # the plan's disk requirement — RunPodBackend.launch threads boot_disk_gb
     # into --volume-gb (GPU) / --container-disk-gb (CPU). Keys forwarded only
     # when present/truthy, so a legacy handle reconstructs byte-identically.
+    # #2145: lane_suffix + gpu_type join the forwarding — a wedge/CUDA-IMA
+    # failover of a SUFFIXED pod must re-provision pod-<N>-<slug> (not
+    # regress to a bare pod-<N> colliding with a sibling lane) and keep the
+    # launch-declared GPU type (not the intent default).
     rebuilt_extra: dict = {}
     if extra.get("repo_branch"):
         rebuilt_extra["repo_branch"] = extra["repo_branch"]
-    for key in ("boot_disk_gb", "min_ram_gb"):
+    for key in ("boot_disk_gb", "min_ram_gb", "lane_suffix", "gpu_type"):
         if extra.get(key):
             rebuilt_extra[key] = extra[key]
     _forward_env_pins(extra, rebuilt_extra, issue)
@@ -2828,7 +2832,18 @@ def _relaunch_fresh_runpod(
     # terminated by the caller, so a residue match here is a PRIOR killed
     # relaunch attempt's orphan. Cap-hit: NO reap and NO fresh stamp (critic
     # r2 carry-forward — the standing intent falls at a completion handler).
-    reaped = _reap_and_stamp_provision_intent(issue, reason=str(success_phase))
+    # #2145: the fresh stamp records the name THIS relaunch will mint —
+    # derived AFTER the spec rebuild via the ACTUAL mint helper + validated
+    # suffix reader (never a re-composed f-string), so a suffixed lane's
+    # stamp names pod-<N>-<slug> and the exact-name residue conjunct can
+    # never attribute a SIBLING lane's pod to this attempt.
+    from explore_persona_space.backends.base import lane_suffix_for
+    from explore_persona_space.backends.runpod import _runpod_pod_name
+
+    relaunch_pod_name = _runpod_pod_name(int(issue), lane_suffix_for(spec))
+    reaped = _reap_and_stamp_provision_intent(
+        issue, reason=str(success_phase), pod_name=relaunch_pod_name
+    )
     if reaped is not None:
         logging.warning(
             "backend_poll: reaped interrupted-relaunch provision residue before the fresh "
@@ -3952,13 +3967,17 @@ _CREATED_THEN_FAILED_MARKERS: tuple[str, ...] = (
 )
 
 
-def _live_runpod_pods_for_issue(issue: int) -> list | None:
-    """Live ``PodInfo`` rows whose name is EXACTLY ``pod-<issue>`` (suffixed pods excluded).
+def _live_runpod_pods_for_issue(issue: int, *, pod_name: str | None = None) -> list | None:
+    """Live ``PodInfo`` rows whose name is EXACTLY ``pod_name`` (default ``pod-<issue>``).
 
     Generalizes the #1490 id probe (#1838): the interrupted-attempt residue
     match needs the full ``PodInfo`` rows (``created_at`` / ``desired_status``),
     so this returns them and :func:`_live_runpod_ids_for_issue` is re-expressed
-    over it — behavior identical. Returns ``None`` on ANY API failure
+    over it — behavior identical. #2145: the optional ``pod_name`` lets the
+    residue reap probe by the STANDING intent's own recorded name (a suffixed
+    ``pod-<N>-<slug>``); default-None preserves the exact bare-name probe, so
+    every existing caller — and every OTHER suffixed pod of the issue — stays
+    outside the match set. Returns ``None`` on ANY API failure
     (probe-unknown; callers bias SAFE — an unknown snapshot never licenses a
     terminate). One GraphQL list call per snapshot; GCP→RunPod failovers are
     rare events.
@@ -3967,7 +3986,7 @@ def _live_runpod_pods_for_issue(issue: int) -> list | None:
         _ensure_scripts_dir_on_sys_path()
         from runpod_api import list_team_pods  # lazy import (#770/#775 pattern)
 
-        name = f"pod-{int(issue)}"
+        name = str(pod_name) if pod_name else f"pod-{int(issue)}"
         return [p for p in list_team_pods() if p.name == name]
     except Exception as exc:
         logging.warning(
@@ -4241,7 +4260,7 @@ def _provision_intent_created_at_epoch(created_at) -> float | None:
 
 
 def _stamp_provision_intent(
-    issue: int, *, reason: str, reap_count: int = 0, lease_store=None
+    issue: int, *, reason: str, reap_count: int = 0, lease_store=None, pod_name: str | None = None
 ) -> dict | None:
     """Stamp the #1838 provision-intent breadcrumb on the durable lease.
 
@@ -4250,7 +4269,11 @@ def _stamp_provision_intent(
     concurrent poller never clobbers it with stale data. Cleared on every
     attempt COMPLETION (``router._lease_after_submit`` on any successful
     submit; :func:`_clear_provision_intent` at the failure handlers) — only a
-    KILLED attempt leaves it standing. Returns the stamped intent dict, or
+    KILLED attempt leaves it standing. #2145: ``pod_name`` records the name
+    THIS attempt will mint (a suffixed ``pod-<N>-<slug>`` on a suffixed-lane
+    relaunch); default-None keeps the bare ``pod-<N>`` stamp byte-identical,
+    and the residue matcher's exact-name conjunct then can never attribute a
+    SIBLING lane's pod to this attempt. Returns the stamped intent dict, or
     ``None`` when there is no lease to stamp (a fresh issue with no dispatch
     record — degrade: the retry then keeps today's refusal behavior) or on any
     store failure. NEVER raises.
@@ -4259,7 +4282,7 @@ def _stamp_provision_intent(
 
     store = lease_store or LeaseStore()
     intent = {
-        "pod_name": f"pod-{int(issue)}",
+        "pod_name": str(pod_name) if pod_name else f"pod-{int(issue)}",
         "issue": int(issue),
         "ts": float(time.time()),
         "token": uuid.uuid4().hex,
@@ -4372,7 +4395,9 @@ def _match_provision_intent_residue(intent, pods, *, now: float):
     return pod
 
 
-def _reap_and_stamp_provision_intent(issue: int, *, reason: str) -> dict | None:
+def _reap_and_stamp_provision_intent(
+    issue: int, *, reason: str, pod_name: str | None = None
+) -> dict | None:
     """The #1838 pre-provision pair BOTH failover funnels run: reap a PRIOR
     killed attempt's residue, then stamp a fresh intent BEFORE the launch
     (crash-ordered write-before-create) carrying ``reap_count = prior + 1``.
@@ -4380,13 +4405,22 @@ def _reap_and_stamp_provision_intent(issue: int, *, reason: str) -> dict | None:
     On the reap CAP-HIT branch there is NO reap and NO fresh stamp (critic r2
     carry-forward): the STANDING intent survives until a completion handler
     clears it, so a systematically-killed provision can never re-arm its own
-    counter. Returns the reap info dict (the GCP funnel records it on the
-    marker evidence) or ``None``. Never raises (both callees never raise).
+    counter. #2145: ``pod_name`` threads the name THIS attempt will mint into
+    the fresh stamp (the reap leg probes by the PRIOR standing intent's OWN
+    recorded name — two different names on a suffix-changing relaunch, each
+    correct for its attempt); default-None keeps the bare-pod behavior
+    byte-identical (the GCP funnel passes nothing — its handle reconstructor
+    does not forward ``lane_suffix``, so its mint is the bare ``pod-<N>``).
+    Returns the reap info dict (the GCP funnel records it on the marker
+    evidence) or ``None``. Never raises (both callees never raise).
     """
     reap_outcome, reaped = _reap_interrupted_failover_residue(issue)
     if reap_outcome != "cap-hit":
         _stamp_provision_intent(
-            issue, reason=reason, reap_count=(reaped["reap_count"] if reaped else 0)
+            issue,
+            reason=reason,
+            reap_count=(reaped["reap_count"] if reaped else 0),
+            pod_name=pod_name,
         )
     return reaped
 
@@ -4434,7 +4468,16 @@ def _reap_interrupted_failover_residue(
         intent = getattr(lease, "runpod_provision_intent", None) if lease is not None else None
         if not isinstance(intent, dict):
             return ("none", None)
-        pods = _live_runpod_pods_for_issue(issue)
+        # #2145: probe by the STANDING intent's OWN recorded pod_name — a
+        # prior killed SUFFIXED attempt's orphan is named pod-<N>-<slug>, so
+        # a bare-name probe would never see it (and a bare-intent probe must
+        # never widen to suffixed siblings). A malformed/absent recorded name
+        # degrades to the bare pod-<N> probe; _match_provision_intent_residue
+        # re-checks the exact-name conjunct on the returned rows regardless.
+        recorded_name = intent.get("pod_name")
+        pods = _live_runpod_pods_for_issue(
+            issue, pod_name=recorded_name if isinstance(recorded_name, str) else None
+        )
         if pods is None:
             return ("none", None)  # probe unknown — an unknown snapshot never terminates
         match = _match_provision_intent_residue(intent, pods, now=float(now_fn()))

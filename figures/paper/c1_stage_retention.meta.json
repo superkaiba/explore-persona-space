@@ -1,0 +1,1136 @@
+{
+  "commit": "842ed0f7+dirty",
+  "render_id": "0eb6b4ea0b624d85",
+  "git_commit": "842ed0f7ff8ce1bf65d66a291c27529c4e0605b6",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/codex-critic/feedback_custom_infra_lens_composition.md",
+    "figures/issue_1739/result2_fourpanel/result2_fourpanel.meta.json",
+    "figures/issue_1739/result2_fourpanel/result2_fourpanel.png",
+    "figures/issue_1739/result2_fourpanel/result2_fourpanel_avg_variants.meta.json",
+    "figures/issue_1739/result2_fourpanel/result2_fourpanel_avg_variants.pdf",
+    "figures/issue_1739/result2_fourpanel/result2_fourpanel_avg_variants.png",
+    "figures/paper/c4_reparam_recovery.meta.json",
+    "figures/paper/c4_reparam_recovery.pdf",
+    "figures/paper/c4_reparam_recovery.png",
+    "figures/paper/c4_story_vs_chat.meta.json",
+    "figures/paper/c4_story_vs_chat.pdf",
+    "figures/paper/c4_story_vs_chat.png",
+    "scripts/issue1345_analyzer_figs.py",
+    "scripts/issue1482_matryoshka_tier.py",
+    "scripts/issue1639_tier15_ladder_fig.py",
+    "scripts/issue1739_result2_fourpanel_fig.py",
+    "scripts/issue1774_figures.py",
+    "scripts/issue1895_analysis_figures.py",
+    "scripts/issue1901_body_figures.py",
+    "scripts/issue1902_figures.py",
+    "scripts/issue2094_figures.py",
+    "scripts/issue2202_regen_figs.py",
+    "scripts/issue722_figures.py",
+    "scripts/issue779_identity_baseline.py",
+    "scripts/issue823_figures.py",
+    "tasks/planning/2422/events.jsonl",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tasks/running/2388/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue1902_figures.py",
+  "created": "2026-08-20T08:16:12Z",
+  "figsize": [
+    5.5,
+    2.31
+  ],
+  "points": [
+    {
+      "category": "base\u2192SFT",
+      "aligned retention $\\rho$": 0.4721260011317927,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "SFT\u2192DPO",
+      "aligned retention $\\rho$": 0.874147662151715,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "DPO\u2192RLVR",
+      "aligned retention $\\rho$": 0.9908650366563724,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.10755521127831513,
+      "series": "shuffled-pairing null",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.10711028738819572,
+      "series": "shuffled-pairing null",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.10762040089496616,
+      "series": "shuffled-pairing null",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.10763396143660753,
+      "series": "shuffled-pairing null",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.05439888890336775,
+      "series": "shuffled-pairing null",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.05355221121212317,
+      "series": "shuffled-pairing null",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.053481764676240884,
+      "series": "shuffled-pairing null",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.0540812485684905,
+      "series": "shuffled-pairing null",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.09333839368074304,
+      "series": "shuffled-pairing null",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.09753763511879177,
+      "series": "shuffled-pairing null",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.09466249987962017,
+      "series": "shuffled-pairing null",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.0950838270898644,
+      "series": "shuffled-pairing null",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.09984364262603185,
+      "series": "shuffled-pairing null",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.10040114665638367,
+      "series": "shuffled-pairing null",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.09904322085910855,
+      "series": "shuffled-pairing null",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.10040369701359131,
+      "series": "shuffled-pairing null",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.08066020883243641,
+      "series": "shuffled-pairing null",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.07976477554524308,
+      "series": "shuffled-pairing null",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.08065074424932339,
+      "series": "shuffled-pairing null",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.08089924415050787,
+      "series": "shuffled-pairing null",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.046918140593859015,
+      "series": "shuffled-pairing null",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.046343502067142994,
+      "series": "shuffled-pairing null",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.04821875901049588,
+      "series": "shuffled-pairing null",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.04582051201024573,
+      "series": "shuffled-pairing null",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.2073282418636595,
+      "series": "spectrum-matched null",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.21615079807485094,
+      "series": "spectrum-matched null",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.2089610662422674,
+      "series": "spectrum-matched null",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.20941884402321342,
+      "series": "spectrum-matched null",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.1373062395950957,
+      "series": "spectrum-matched null",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.13511142357650496,
+      "series": "spectrum-matched null",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.13264394641535704,
+      "series": "spectrum-matched null",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.13465495032066,
+      "series": "spectrum-matched null",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.1941344015786377,
+      "series": "spectrum-matched null",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.2067062284366299,
+      "series": "spectrum-matched null",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.20264638419836523,
+      "series": "spectrum-matched null",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.19127336583199828,
+      "series": "spectrum-matched null",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.22459322128681936,
+      "series": "spectrum-matched null",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.21560465680815222,
+      "series": "spectrum-matched null",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.21090879701553078,
+      "series": "spectrum-matched null",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.21957697929051312,
+      "series": "spectrum-matched null",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.1946270537187107,
+      "series": "spectrum-matched null",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.1988463346305802,
+      "series": "spectrum-matched null",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.183497532181216,
+      "series": "spectrum-matched null",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.20050519397384337,
+      "series": "spectrum-matched null",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.16251151272467101,
+      "series": "spectrum-matched null",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.1717150777603378,
+      "series": "spectrum-matched null",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.1655487961896953,
+      "series": "spectrum-matched null",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "aligned retention $\\rho$": -0.1519570532154917,
+      "series": "spectrum-matched null",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.16,
+      "aligned retention $\\rho$": 0.497782770613023,
+      "series": "per-fold retention (6 folds)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.096,
+      "aligned retention $\\rho$": 0.5464340922157488,
+      "series": "per-fold retention (6 folds)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.032,
+      "aligned retention $\\rho$": 0.39423227241275033,
+      "series": "per-fold retention (6 folds)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.032,
+      "aligned retention $\\rho$": 0.4916767571521832,
+      "series": "per-fold retention (6 folds)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.096,
+      "aligned retention $\\rho$": 0.4107352889609793,
+      "series": "per-fold retention (6 folds)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.16,
+      "aligned retention $\\rho$": 0.47954019748109633,
+      "series": "per-fold retention (6 folds)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.007974312023864227,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.00941631504538365,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.008223511521002758,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.008959604761958673,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.0076130835561034615,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.008008013755172794,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.005831752480644603,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.007644010451541394,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.011632515078543904,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.011039553797343782,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.010578033108668006,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.013018136681789194,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.019833522323384756,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.018767654258734723,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.018789507312878317,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.018905997547073117,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.0016559606014572292,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.0034218012914100093,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.0017616282000261219,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.0024039092833432196,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.006936490361693082,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.007552765998622313,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.006539355734336727,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.0056210502930229556,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.3062927802189839,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.2926214905566942,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.29944189206101,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.3127150799595404,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.24064001166184057,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.23542371201636447,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.25211254322453236,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.23710490996542788,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.3264476644422152,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.31017156344760277,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.32121028090809123,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.3050347441154422,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.375265552528834,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.3708921910763583,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.3670974886227849,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.384799724569868,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.342104515316211,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.3295539566913317,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.35416783992610545,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.33443331239882346,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.13806723987268366,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.13668463663897046,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.14487890630318856,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "aligned retention $\\rho$": -0.13183600348877134,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.84,
+      "aligned retention $\\rho$": 0.8607248945208411,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.904,
+      "aligned retention $\\rho$": 0.9311049539693974,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.968,
+      "aligned retention $\\rho$": 0.8586820916649885,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.032,
+      "aligned retention $\\rho$": 0.8540663633650613,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.096,
+      "aligned retention $\\rho$": 0.8636036002606632,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.16,
+      "aligned retention $\\rho$": 0.8715422936471987,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": 0.000544785451307428,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": 0.00033702211449981867,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": -0.0005761774388670649,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": -0.0002975510561082917,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": -0.001011494300569904,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": -0.0009663686421788054,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": -0.0018239145898952813,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": -0.0013005337175382436,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": -0.002305129173618692,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": -0.001691292507343345,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": -0.0015011910037605602,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": -0.00016270462530143526,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": 0.0010659128530643436,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": 0.0005031824305045118,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": 0.0015334297361465632,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": 3.9091572721972057e-05,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": 5.0417726440099564e-05,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": -0.00012947074753544285,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": -0.00013584080181194835,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": -0.0003162036976489535,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": 0.0005056031833815533,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": -0.0023386349196989897,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": -0.0007260415455259128,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": 0.0003878304519820963,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": -0.0876279331205363,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": -0.08588576897604483,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": -0.08490196292938457,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": -0.08625764179531492,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": -0.1686561074286821,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": -0.1675295034639015,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": -0.16612135585233867,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": -0.1651051871801983,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": -0.20851663447780266,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": -0.21616195973950103,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": -0.2185289298801938,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": -0.20950025684539386,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": -0.25545485827167846,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": -0.2612390406780023,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": -0.257161228273167,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": -0.25835511373904385,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": -0.09495646228681154,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": -0.09618990621521806,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": -0.095499352259383,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": -0.0954598499349617,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": -0.09759218793807145,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": -0.09785104818077994,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": -0.09747975017397015,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "aligned retention $\\rho$": -0.09670476351367707,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.84,
+      "aligned retention $\\rho$": 1.0057453968537649,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.904,
+      "aligned retention $\\rho$": 1.0022657494461917,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.968,
+      "aligned retention $\\rho$": 0.965000187690328,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.032,
+      "aligned retention $\\rho$": 0.963063651192114,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.096,
+      "aligned retention $\\rho$": 0.9979730499425853,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.16,
+      "aligned retention $\\rho$": 1.0111861786125946,
+      "_kind": "scatter",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 165,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "aligned retention $\\rho$",
+        "legend_labels": [
+          "shuffled-pairing null",
+          "spectrum-matched null",
+          "per-fold retention (6 folds)",
+          "aligned retention $\\rho$"
+        ],
+        "xticklabels": [
+          "base\u2192SFT",
+          "SFT\u2192DPO",
+          "DPO\u2192RLVR"
+        ],
+        "yticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ],
+    "series": [
+      "aligned retention $\\rho$",
+      "shuffled-pairing null",
+      "spectrum-matched null",
+      "per-fold retention (6 folds)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

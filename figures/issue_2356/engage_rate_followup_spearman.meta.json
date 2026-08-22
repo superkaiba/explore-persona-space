@@ -1,0 +1,151 @@
+{
+  "commit": "b493fa4d+dirty",
+  "render_id": "a3a0d194b626417c",
+  "git_commit": "b493fa4dc056101b3eab4f20124a083bad5aee6b",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2356_engage_rate_followup.py",
+    "tasks/followups_running/823/events.jsonl",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue2356_engage_rate_followup.py",
+  "created": "2026-08-20T21:54:10Z",
+  "figsize": [
+    9.0,
+    4.5
+  ],
+  "points": [
+    {
+      "predictor (pooled out-of-fold scores, all labeled rows)": -0.19,
+      "Spearman rho vs (1 - engage rate)": 0.6690609719065006,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "predictor (pooled out-of-fold scores, all labeled rows)": 0.81,
+      "Spearman rho vs (1 - engage rate)": 0.6185963145976717,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "predictor (pooled out-of-fold scores, all labeled rows)": 1.81,
+      "Spearman rho vs (1 - engage rate)": 0.6708573794082292,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "predictor (pooled out-of-fold scores, all labeled rows)": 2.81,
+      "Spearman rho vs (1 - engage rate)": 0.6879102902455646,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "predictor (pooled out-of-fold scores, all labeled rows)": 3.81,
+      "Spearman rho vs (1 - engage rate)": 0.6561819895480827,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "predictor (pooled out-of-fold scores, all labeled rows)": 4.81,
+      "Spearman rho vs (1 - engage rate)": 0.6436445835372417,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "predictor (pooled out-of-fold scores, all labeled rows)": 5.81,
+      "Spearman rho vs (1 - engage rate)": 0.3226815709151623,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "predictor (pooled out-of-fold scores, all labeled rows)": 0.19,
+      "Spearman rho vs (1 - engage rate)": 0.6238310437224932,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "predictor (pooled out-of-fold scores, all labeled rows)": 1.19,
+      "Spearman rho vs (1 - engage rate)": 0.6250384279729807,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "predictor (pooled out-of-fold scores, all labeled rows)": 2.19,
+      "Spearman rho vs (1 - engage rate)": 0.6101977331213324,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "predictor (pooled out-of-fold scores, all labeled rows)": 3.19,
+      "Spearman rho vs (1 - engage rate)": 0.5850937161012908,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "predictor (pooled out-of-fold scores, all labeled rows)": 4.19,
+      "Spearman rho vs (1 - engage rate)": 0.6064501701777324,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "predictor (pooled out-of-fold scores, all labeled rows)": 5.19,
+      "Spearman rho vs (1 - engage rate)": 0.5411708359368944,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "predictor (pooled out-of-fold scores, all labeled rows)": 6.19,
+      "Spearman rho vs (1 - engage rate)": 0.23414464786016229,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 14,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "predictor (pooled out-of-fold scores, all labeled rows)",
+        "ylabel": "Spearman rho vs (1 - engage rate)",
+        "legend_labels": [
+          "arm A (harmful flip-pairs)",
+          "arm B (over-refusal)"
+        ],
+        "xticklabels": [
+          "ctx\nridge",
+          "ctx\ndim",
+          "map3a\nzr",
+          "map3b\nzr",
+          "pca\nctx",
+          "ans\ngreedy",
+          "text\nsurface"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      }
+    ],
+    "series": [
+      "arm A (harmful flip-pairs)",
+      "arm B (over-refusal)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

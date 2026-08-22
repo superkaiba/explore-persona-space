@@ -92,6 +92,65 @@ Required structure (both modes):
     inferred from the ``**Detailed writeup:**`` line; unknown → WARN-skip; no
     cards anywhere → PASS-note N/A. Abbreviated / non-hex / dirty card values
     are EXCLUDED from every FAIL/WARN set and listed in the detail.
+  - ``companion-content`` (#2198): the body's ``**Detailed writeup:**`` pin is
+    resolved and the companion (``docs/reports/issue_<N>_detailed.md`` at the
+    pinned SHA, materialized via read-only local ``git show`` — no network) is
+    scanned on its ``blank_verbatim()``-blanked lines. Two halves, both
+    mode-invariant (the companion is 100% agent-written in BOTH modes — it is
+    regenerated wholesale on follow-up rounds, so hand-written slots there are
+    destroyed without notice): (a) STRUCTURAL, FAIL in both modes — a
+    Thomas-slot heading (a line normalizing to ``## TLDR`` or ``## Conclusion
+    and next steps``, the alias map catching the grandfathered ``## Next
+    steps``) or a ``**Takeaways**`` block opener; (b) LEXICON, WARN never
+    FAIL — ``BANNED_LEXICON`` hits outside the companion's exact
+    ``## Motivation`` section (the Motivation copy keeps the body's
+    hypothesis-framing exemption). Resolution degrade ladder (mode-split,
+    mirroring ``image-pin-blob-identity``): missing / stacked / malformed pin
+    line → PASS-note N/A (``detailed-writeup-link`` carries that verdict);
+    non-git root → WARN (both); pinned commit unresolvable → FAIL in
+    generation (the pin was just created locally at assembly) / WARN in
+    promote (unfetched clone plausible); commit present but companion path
+    absent → FAIL (both); companion blob present but not valid UTF-8 → FAIL
+    (both; contained decode error, never a crash).
+  - ``stale-evidence-pins`` (#2195): every line citing an in-repo EVIDENCE
+    FILE — a backticked repo-relative path under ``_EVIDENCE_PATH_PREFIXES``
+    (``eval_results/`` / ``ood_eval_results/`` / ``figures/`` / ``docs/``;
+    ``tasks/`` deliberately excluded — status-transition renames make any
+    ``tasks/<status>/…`` citation read permanently stale) — at a same-line
+    pin is checked for SUPERSESSION. Each candidate member associates with
+    ONE pin (the first resolvable pin positioned AFTER the member's backtick
+    span, else the nearest one BEFORE it; brace-group members share their
+    group's association; span hygiene blanks the cited-path spans before
+    hex-run scanning so a sha-like cited filename never self-pins), must
+    resolve at that pin as exactly ONE blob EQUAL to the cited path
+    (directory / single-file-directory / absent-at-pin citations skipped
+    with a note — a home claim is not superseded by later additions and a
+    broken citation is not a stale one), and is then read against the issue
+    branch's AUTHORITATIVE tip (``origin/issue-<N>`` preferred; local
+    ``issue-<N>`` ONLY when origin is absent) — behind a
+    ``merge-base --is-ancestor`` guard (a non-ancestor pin is divergent
+    history: staleness undecidable, skipped with a note) — via
+    ``git log <pin>..<tip> -- <path>``. Non-empty ⇒ WARN in BOTH modes,
+    never FAIL (an as-of pin is legitimate; the check cannot read
+    contradiction), the detail enumerating up to
+    ``_STALE_DETAIL_COMMITS_CAP`` newer commits (log order, newest first),
+    deduped by (path, pin) and capped at ``_STALE_READ_CAP`` reads per
+    report (counted note beyond — disclosed, never silent). ``| Code SHAs |``
+    rows and no-pin lines are skipped (code provenance is
+    ``code-sha-cards``' surface; a no-pin committed-under claim already gets
+    ``committed-under-claims``' WARN). Degrades: non-git root → WARN; issue
+    unresolvable / no branch ref → PASS-note; no candidates → PASS-note N/A.
+    Named residues: a stale citation phrased WITHOUT a same-line pin is
+    invisible by construction; artifacts modified on a DIFFERENT branch
+    (main after a sibling merge) are out of scope; branch-token pins resolve
+    ORIGIN-FIRST (an explicit `` `origin/<b>` `` token only at
+    ``refs/remotes/origin/<b>``; a plain `` `<b>` `` token falls back to
+    ``refs/heads/<b>`` only when origin is absent — mirroring the
+    authoritative-tip policy, so a worktree-local ``issue-<N>`` lagging
+    origin cannot false-WARN a token-pinned citation), which makes a token
+    naming the AUTHORITATIVE branch fresh at verify time (same-ref log range
+    is empty); a token naming a DIFFERENT ref (`` `main` ``, a foreign
+    `` `issue-<M>` ``) resolves at THAT ref's tip and may legitimately WARN.
 
 Mode-specific:
   - ``generation``: TLDR AND Conclusion-and-next-steps content MUST be exactly
@@ -225,14 +284,18 @@ _DETAILED_URL_RE = re.compile(
 )
 
 
-def _git(repo: Path, *args: str) -> tuple[int, str]:
-    """Run a READ-ONLY git command in ``repo``; return (returncode, stripped stdout).
+def _git(repo: Path, *args: str, strip: bool = True) -> tuple[int, str]:
+    """Run a READ-ONLY git command in ``repo``; return (returncode, stdout).
 
-    Used by the image-pin blob-identity check — local object-DB lookups only
-    (``rev-parse`` / ``cat-file`` / ``hash-object``), never a network call.
+    stdout is ``.strip()``-ed by default (right for ref/hash plumbing output);
+    pass ``strip=False`` for byte-faithful text — the companion
+    materialization needs leading blank lines preserved so reported ``L<n>``
+    numbers map to real file lines. Local object-DB lookups only
+    (``rev-parse`` / ``cat-file`` / ``hash-object`` / ``show``), never a
+    network call.
     """
     proc = subprocess.run(["git", "-C", str(repo), *args], capture_output=True, text=True)
-    return proc.returncode, proc.stdout.strip()
+    return proc.returncode, (proc.stdout.strip() if strip else proc.stdout)
 
 
 _SCHEMA_PATH = (
@@ -903,7 +966,7 @@ def check_manifest(
     results: list[CheckResult] = []
     try:
         manifest = _load_manifest(manifest_path)
-    except (OSError, json.JSONDecodeError) as e:
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError) as e:
         return [CheckResult("manifest-schema", False, f"cannot read/parse manifest: {e}")]
 
     schema = json.loads(_SCHEMA_PATH.read_text())
@@ -1011,6 +1074,18 @@ _CARD_WALK_MAX_DEPTH = 100
 # Pinned by tests/test_verify_report.py — NOT tunable at implementation.
 _CARD_TOKEN_STOPWORDS = frozenset(
     {"report", "json", "upload", "done", "card", "sentinel", "results", "gate", "gates"}
+)
+# Read-side copy of the write-side lifecycle denylist
+# (orchestrate/provenance.py::_LIFECYCLE_PHASE_VOCAB, #2194): a card phase
+# equal to a lifecycle-state word never registers a b3 exact-match key
+# (behavior-neutral for compliant writers — validate_phase_identity refuses
+# these at write time; this guards legacy/injected values). The skip compares
+# the NORMALIZED key (`_phase_norm`), matching the exact channel's own
+# case-insensitivity, so legacy `Done`/`DONE` variants are covered too
+# (#2194 round 2, concern lifecycle-phase-casefold). Set equality with the
+# write-side original is test-pinned (tests/test_verify_report.py).
+_LIFECYCLE_PHASE_VOCAB = frozenset(
+    {"done", "failed", "running", "pending", "queued", "started", "workload"}
 )
 _SHA40_FULL_RE = re.compile(r"[0-9a-fA-F]{40}$")
 _HEX_ABBREV_RE = re.compile(r"[0-9a-fA-F]{8,39}$")
@@ -1226,6 +1301,15 @@ def _label_tokens(label: str) -> set[str]:
     return {t for t in re.split(r"[^0-9a-z]+", label.lower().replace("-", "")) if t}
 
 
+def _phase_norm(text: str) -> str:
+    """Exact-match normalization for card phase identity (#2194): lowercase,
+    every non-alphanumeric run deleted (``stage2-upload`` == ``Stage 2
+    Upload``). LOSSY: distinct raw slugs can collide (``stage1-0-upload`` vs
+    ``stage-10-upload`` → ``stage10upload``) — the b3 collision guard refuses
+    to pair on any collided or conflicted key."""
+    return re.sub(r"[^0-9a-z]+", "", text.lower())
+
+
 def check_code_sha_cards(
     raw_body: str,
     blanked_lines: list[str],
@@ -1254,10 +1338,24 @@ def check_code_sha_cards(
     WARNs at ``promote`` — the card set is EXTERNAL MUTABLE STATE that keeps
     growing after authoring, so a promote-time miss must not block promotion
     of an unchanged good report (the mode-split degrade mirrors
-    ``_check_pin_blob_identity``). (b2) WARN, both modes: a usable SHA cited
+    ``_check_pin_blob_identity``); the message names the card's sibling
+    ``phase`` when present. (b2) WARN, both modes: a usable SHA cited
     in the report but absent from a ``| Code SHAs |`` row. (b3) WARN, both
-    modes: best-effort label→card pairing over the row's ``·``/``;`` segments
-    on the token-resolvable subset; unresolvable segments silently skipped.
+    modes: label→card pairing over the row's ``·``/``;`` segments —
+    PREFERRED channel (#2194): exact match of the normalized segment label
+    (``_phase_norm``) against a usable card's sibling ``phase`` identity,
+    firing ONLY when the normalized key maps to exactly ONE raw phase
+    identity across ALL sibling-phase records (usable AND excluded) and no
+    excluded record supplies a conflicting commit value — collided,
+    conflicted, or ambiguous (≥2 usable SHAs) keys fall through to the
+    best-effort token-overlap pairing (the pre-#2194 path, byte-identical);
+    unresolvable segments silently skipped. A lifecycle-valued phase
+    (``_LIFECYCLE_PHASE_VOCAB``, compared on the NORMALIZED key so legacy
+    ``Done``/``DONE`` case variants are covered — round 2) never registers
+    an exact key. A segment with SEVERAL hex runs (a hex-bearing phase slug
+    like ``run-deadbeef``) pins the UNIQUE candidate whose removal yields a
+    guarded exact match, else the first run (the pre-round-2 behavior,
+    byte-identical — round 2).
     Degrades: unknown issue → WARN-skip; no card source anywhere → PASS-note.
     """
     name = "code-sha-cards"
@@ -1372,6 +1470,19 @@ def check_code_sha_cards(
             detail += "; " + "; ".join(skips)
         return CheckResult(name, True, detail)
 
+    # b3 exact phase-match pre-pass over ALL records — usable AND excluded —
+    # the collision guard's input (#2194 MF-A): dirty / abbreviated / non-hex
+    # records participate, so a normalization collision or an excluded
+    # record's conflicting commit value can veto the exact channel.
+    phase_raw_by_key: dict[str, set[str]] = {}  # norm key -> distinct RAW phase strings
+    phase_shas_by_key: dict[str, set[str]] = {}  # norm key -> EVERY sibling commit value (lower)
+    for _source, _ptr, value, _dirty, phase in records:
+        if isinstance(phase, str):
+            key = _phase_norm(phase)
+            if key:
+                phase_raw_by_key.setdefault(key, set()).add(phase)
+                phase_shas_by_key.setdefault(key, set()).add(value.lower())
+
     # Usable-card classification (dirty first, then hex shape); dedupe by SHA.
     usable: dict[str, tuple[str, str, object]] = {}  # sha -> (source, ptr, phase) first-seen
     n_usable_records = 0
@@ -1379,6 +1490,7 @@ def check_code_sha_cards(
     n_abbrev = 0
     n_nonhex = 0
     usable_tokens: dict[str, set[str]] = {}  # sha -> union of its records' card-side tokens
+    phase_exact: dict[str, set[str]] = {}  # norm phase key -> USABLE SHAs carrying it (#2194)
     for source, ptr, value, dirty, phase in records:
         if dirty is True:
             n_dirty += 1
@@ -1388,6 +1500,10 @@ def check_code_sha_cards(
             n_usable_records += 1
             usable.setdefault(sha, (source, ptr, phase))
             usable_tokens.setdefault(sha, set()).update(_card_side_tokens(source, phase, issue))
+            if isinstance(phase, str):
+                key = _phase_norm(phase)
+                if key and key not in _LIFECYCLE_PHASE_VOCAB:
+                    phase_exact.setdefault(key, set()).add(sha)
         elif _HEX_ABBREV_RE.fullmatch(value):
             n_abbrev += 1
         else:
@@ -1398,6 +1514,25 @@ def check_code_sha_cards(
     def _is_cited(sha: str, tokens: set[str]) -> bool:
         return any(sha.startswith(t) for t in tokens)
 
+    def _guarded_exact_hit(label: str) -> set[str] | None:
+        """b3 exact-channel hit for a segment label, or None unless the MF-A
+        collision guard passes (#2194): exactly ONE usable SHA under the
+        normalized key, exactly ONE RAW phase identity across ALL
+        sibling-phase records (usable AND excluded), and no excluded-record
+        commit value outside the usable hit (an excluded ABBREVIATED sibling
+        whose 8-hex value prefixes the usable SHA still defeats the subset
+        check by design)."""
+        key = _phase_norm(label)
+        hit = phase_exact.get(key) if key else None
+        if (
+            hit is not None
+            and len(hit) == 1
+            and len(phase_raw_by_key.get(key, ())) == 1
+            and phase_shas_by_key.get(key, set()) <= hit
+        ):
+            return hit
+        return None
+
     fails: list[str] = []
     warns: list[str] = []
 
@@ -1405,9 +1540,11 @@ def check_code_sha_cards(
     for sha in sorted(usable):
         if _is_cited(sha, cited_tokens):
             continue
-        source, ptr, _phase = usable[sha]
+        source, ptr, phase = usable[sha]
+        phase_note = f" (phase `{phase}`)" if isinstance(phase, str) and phase else ""
         msg = (
-            f"reproducibility card `{source}` (`{ptr}`) records commit {sha[:12]}… which the "
+            f"reproducibility card `{source}` (`{ptr}`){phase_note} records commit "
+            f"{sha[:12]}… which the "
             "report never cites — a run that legitimately spans commits should carry a "
             "per-phase Code-SHAs split (each phase @ its own card's commit), not a single "
             "SHA; if this phase is covered elsewhere under a different commit, the pairing "
@@ -1421,6 +1558,7 @@ def check_code_sha_cards(
     # (b2) row-scope coverage + (b3) best-effort pairing — WARN in both modes.
     rows = [ln for ln in blanked_lines if _CODE_SHA_ROW_RE.match(ln)]
     n_unresolved_segments = 0
+    n_phase_exact = 0
     if rows:
         row_tokens = {t.lower() for row in rows for t in _HEX_RUN_RE.findall(row)}
         for sha in sorted(usable):
@@ -1436,20 +1574,57 @@ def check_code_sha_cards(
                 hexm = _HEX_RUN_RE.search(segment)
                 if hexm is None:
                     continue
+                # Hex-bearing phase-slug disambiguation (#2194 round 2): a
+                # VALID phase slug can itself contain an 8-40 hex run
+                # (`run-deadbeef`), and consuming the FIRST hex run as the
+                # pin would strand such slugs off the exact channel forever.
+                # With >1 candidates, pick the UNIQUE one whose removal
+                # yields a guarded exact phase match; zero or several ⇒ keep
+                # the first-run behavior byte-identically (single-candidate
+                # segments are untouched by construction).
+                candidates = list(_HEX_RUN_RE.finditer(segment))
+                if len(candidates) > 1:
+                    guarded = [
+                        m
+                        for m in candidates
+                        if _guarded_exact_hit(segment[: m.start()] + segment[m.end() :]) is not None
+                    ]
+                    if len(guarded) == 1:
+                        hexm = guarded[0]
                 label = segment[: hexm.start()] + segment[hexm.end() :]
-                seg_tokens = _label_tokens(label)
-                hit_shas = {sha for sha, toks in usable_tokens.items() if toks & seg_tokens}
-                if len(hit_shas) != 1:
-                    n_unresolved_segments += 1
-                    continue
-                (sha,) = hit_shas
+                # PREFERRED exact phase-match channel (#2194), behind the
+                # MF-A collision guard (_guarded_exact_hit above) — every
+                # collided/conflicted/ambiguous key falls through to the
+                # token-overlap path (a degrade, never a mis-pair).
+                exact_key = _phase_norm(label)
+                exact_hit = _guarded_exact_hit(label)
+                via_exact = exact_hit is not None
+                if exact_hit is not None:
+                    (sha,) = exact_hit
+                    n_phase_exact += 1
+                else:
+                    seg_tokens = _label_tokens(label)
+                    hit_shas = {sha for sha, toks in usable_tokens.items() if toks & seg_tokens}
+                    if len(hit_shas) != 1:
+                        n_unresolved_segments += 1
+                        continue
+                    (sha,) = hit_shas
                 pin_tok = hexm.group(0).lower()
                 if not sha.startswith(pin_tok):
-                    warns.append(
-                        f"Code-SHAs row segment '{segment.strip()[:60]}' pins "
-                        f"{pin_tok[:12]}… but its label resolves to card commit {sha[:12]}… "
-                        "— carry the per-phase split (each phase @ its own card's commit)"
-                    )
+                    if via_exact:
+                        (card_phase,) = phase_raw_by_key[exact_key]
+                        warns.append(
+                            f"Code-SHAs row segment '{segment.strip()[:60]}' pins "
+                            f"{pin_tok[:12]}… but its label exact-matches card phase "
+                            f"`{card_phase}` recorded at commit {sha[:12]}… — carry the "
+                            "per-phase split (each phase @ its own card's commit)"
+                        )
+                    else:
+                        warns.append(
+                            f"Code-SHAs row segment '{segment.strip()[:60]}' pins "
+                            f"{pin_tok[:12]}… but its label resolves to card commit {sha[:12]}… "
+                            "— carry the per-phase split (each phase @ its own card's commit)"
+                        )
 
     excl: list[str] = []
     if n_dirty:
@@ -1469,6 +1644,8 @@ def check_code_sha_cards(
         excl.append(
             f"{len(too_deep_sources)} card JSON(s) past the walk depth cap skipped (partial walk)"
         )
+    if n_phase_exact:
+        excl.append(f"{n_phase_exact} row segment(s) resolved via exact phase match")
     if n_unresolved_segments:
         excl.append(f"{n_unresolved_segments} unresolvable row segment(s) skipped")
     excl_detail = "; ".join(excl)
@@ -1489,6 +1666,423 @@ def check_code_sha_cards(
     if excl_detail:
         detail += "; " + excl_detail
     return CheckResult(name, True, detail)
+
+
+# ─── Companion-content check (#2198; both modes, read-only local git) ───────
+
+# Thomas-slot headings forbidden in the 100%-agent-written companion, in
+# NORMALIZED form — ``_norm_header()`` maps the grandfathered ``## Next steps``
+# alias onto ``## Conclusion and next steps``, so the alias is caught too.
+_COMPANION_FORBIDDEN_HEADERS = ("## TLDR", "## Conclusion and next steps")
+
+
+def _resolve_companion_text(
+    blanked_lines: list[str], *, mode: str, figures_root: Path
+) -> tuple[str | None, CheckResult | None]:
+    """Resolve the body's ``**Detailed writeup:**`` pin to the companion text.
+
+    Materializes ``docs/reports/issue_<N>_detailed.md`` at the pinned SHA via
+    read-only local git (``git show`` through ``_git`` — never a network
+    fetch). Returns ``(companion_text, None)`` on success, else
+    ``(None, CheckResult)`` carrying the resolution-ladder verdict: a missing /
+    stacked / malformed pin line is PASS-note N/A (``detailed-writeup-link``
+    already carries that verdict — no double-report); a non-git root WARNs; an
+    unresolvable pinned commit is mode-split like ``_check_pin_blob_identity``
+    (FAIL at generation — the orchestrator commits + pushes the companion and
+    splices the pin BEFORE the generation-mode verify runs, so the commit
+    exists locally by construction; WARN at promote — unfetched clone
+    plausible); a resolvable commit lacking the companion path FAILs (both);
+    a resolvable-but-non-UTF-8 companion blob FAILs (both — contained
+    ``UnicodeDecodeError``, never a crash).
+    """
+    name = "companion-content"
+    matches = [m for ln in blanked_lines if (m := _DETAILED_LINE_RE.match(ln)) is not None]
+    if len(matches) != 1:
+        return None, CheckResult(
+            name,
+            True,
+            "no single '**Detailed writeup:**' line — companion scan N/A "
+            "(detailed-writeup-link carries the verdict)",
+        )
+    url = matches[0].group(1).strip().strip("<>")
+    m = _DETAILED_URL_RE.match(url)
+    if m is None:
+        return None, CheckResult(
+            name,
+            True,
+            "malformed detailed-writeup URL — companion scan N/A "
+            "(detailed-writeup-link carries the verdict)",
+        )
+    sha, path = m.group(1), f"docs/reports/issue_{m.group(2)}_detailed.md"
+    rc, _ = _git(figures_root, "rev-parse", "--git-dir")
+    if rc != 0:
+        return None, CheckResult(
+            name,
+            True,
+            f"{figures_root} is not a git checkout; companion content unverifiable",
+            is_warn=True,
+        )
+    rc, _ = _git(figures_root, "cat-file", "-e", f"{sha}^{{commit}}")
+    if rc != 0:
+        msg = f"pinned commit {sha[:12]} unresolvable in the local object DB ({path})"
+        if mode == "generation":
+            return None, CheckResult(name, False, msg)
+        return None, CheckResult(
+            name,
+            True,
+            msg + "; unfetched clone possible post-merge, companion unverifiable",
+            is_warn=True,
+        )
+    try:
+        # strip=False: byte-faithful materialization — a companion whose file
+        # starts with blank lines must keep them, or every reported ``L<n>``
+        # is offset by the stripped count (round-1 review Minor).
+        rc, text = _git(figures_root, "show", f"{sha}:{path}", strip=False)
+    except UnicodeDecodeError:
+        # A non-UTF-8 companion blob at a resolvable pin: _git decodes
+        # subprocess stdout as text, so the decode error surfaces HERE —
+        # contain it (mirror the card-blob ``git show`` containment, #2191
+        # convention). FAIL in BOTH modes: the companion is agent-generated
+        # markdown, so non-UTF-8 bytes are a generation defect, never an
+        # unfetched-clone gap.
+        return None, CheckResult(
+            name,
+            False,
+            f"companion {path} at pinned commit {sha[:12]} is not valid UTF-8 — "
+            "content unscannable",
+        )
+    if rc != 0:
+        return None, CheckResult(name, False, f"pinned commit {sha[:12]} does not contain {path}")
+    return text, None
+
+
+def check_companion_content(
+    blanked_lines: list[str], *, mode: str, figures_root: Path
+) -> CheckResult:
+    """``companion-content`` (#2198): scan the detailed companion writeup.
+
+    The companion (``docs/reports/issue_<N>_detailed.md`` at the body's
+    ``**Detailed writeup:**`` pin) is 100% agent-written in BOTH modes — it is
+    regenerated wholesale on follow-up rounds, so anything hand-written there
+    is destroyed without notice — so the SCAN scope is mode-invariant; only
+    the RESOLUTION ladder is mode-split (``_resolve_companion_text``). Both halves
+    run on the companion's ``blank_verbatim()``-blanked lines (a ``## TLDR`` /
+    lexeme inside a fenced example or blockquote is DATA, not a slot):
+
+    - STRUCTURAL half (FAIL, both modes): no Thomas-slot heading — a line
+      whose ``_norm_header()`` equals ``## TLDR`` or ``## Conclusion and next
+      steps`` (the alias map catches the grandfathered ``## Next steps``) —
+      and no ``**Takeaways**`` block opener (``_is_bold_label``).
+    - LEXICON half (WARN, never FAIL): ``_LEXICON_RE`` over every blanked
+      line OUTSIDE the companion's ``## Motivation`` section (the Motivation
+      copy keeps the body's hypothesis-framing exemption). WARN because the
+      companion's methodology/deviations prose legitimately uses process-sense
+      phrasings that match the exact lexemes ("the artifact confirms the
+      count") — a FAIL posture would get routed around.
+
+    Two deliberate scope limits (plan #2198):
+
+    - Exact-header-only Motivation exemption: realized companions carry
+      appended follow-up sections (``## Motivation (round)`` — the live #2162
+      shape); ``_norm_header()`` does not map those onto ``## Motivation``, so
+      round-Motivation copies ARE lexicon-scanned. Acceptable (WARN-only
+      posture — no FAIL channel) and deliberate.
+    - Exact-lexeme inflection gap: ``BANNED_LEXICON`` is an exact-lexeme
+      list — inflectional variants ("confirmed", "implies", "suggested") do
+      NOT match ``_LEXICON_RE``. Extending the lexicon would change the
+      existing BODY scan too (a shared-instrument scope change, out of #2198's
+      scope); the report-verifier agent's manual interpretivity read remains
+      the catching arm for inflected phrasings and blockquoted caption prose.
+
+    Aggregation mirrors ``_check_pin_blob_identity``: any fail → FAIL, else
+    any warn → WARN, else PASS. Detail entries are prefixed by half
+    (``thomas-slot heading L<n>: ...`` / ``lexicon L<n>: ...``).
+    """
+    name = "companion-content"
+    companion, ladder = _resolve_companion_text(blanked_lines, mode=mode, figures_root=figures_root)
+    if ladder is not None:
+        return ladder
+    comp_lines = blank_verbatim(companion.splitlines())
+    fails: list[str] = []
+    for lineno, line in enumerate(comp_lines, start=1):
+        if _norm_header(line) in _COMPANION_FORBIDDEN_HEADERS:
+            fails.append(f"thomas-slot heading L{lineno}: '{line.strip()}'")
+        elif _is_bold_label(line, "Takeaways"):
+            fails.append(f"thomas-slot heading L{lineno}: '{line.strip()}'")
+    exempt: set[int] = set()
+    for sec in parse_sections(comp_lines):
+        if _norm_header(sec.header) == "## Motivation":
+            exempt.update(range(sec.header_line, sec.content_start_line + len(sec.content_lines)))
+    warns: list[str] = []
+    for lineno, line in enumerate(comp_lines, start=1):
+        if lineno in exempt:
+            continue
+        for m in _LEXICON_RE.finditer(line):
+            warns.append(f"lexicon L{lineno}: '{m.group(0)}'")
+    if fails:
+        detail = "; ".join(fails)
+        if warns:
+            detail += "; warn: " + "; ".join(warns)
+        return CheckResult(name, False, detail)
+    if warns:
+        return CheckResult(
+            name,
+            True,
+            "banned lexeme(s) outside the companion's ## Motivation: " + "; ".join(warns),
+            is_warn=True,
+        )
+    return CheckResult(name, True, "companion clean (no Thomas-slot headings, no lexicon hits)")
+
+
+# ─── Stale evidence pins (#2195; both modes, WARN-only) ─────────────────────
+
+# Repo-relative path prefixes treated as EVIDENCE citations. Code provenance
+# (`scripts/` / `src/` / `configs/`) is deliberately OUTSIDE the set — "ran at
+# `<sha>`" is provenance a later commit does not invalidate; `code-sha-cards`
+# owns that surface. `tasks/` is deliberately EXCLUDED too: task-folder status
+# transitions rename `tasks/<status>/…` on every lifecycle move, and the
+# rename's delete side satisfies a non-empty `git log <pin>..<tip> -- <old
+# path>`, so every parked-task citation would read permanently stale
+# (predictable healthy-report noise). Pinned verbatim by
+# tests/test_verify_report.py — NOT tunable at implementation.
+_EVIDENCE_PATH_PREFIXES = ("eval_results/", "ood_eval_results/", "figures/", "docs/")
+# Per-report cap on (member, pin) staleness reads (each costs <=3 local git
+# calls); beyond the cap, remaining candidates are skipped with a COUNTED
+# note — a capped read is disclosed, never silent (WARN-only check).
+_STALE_READ_CAP = 200
+# Newer commits enumerated per stale citation before "+K more".
+_STALE_DETAIL_COMMITS_CAP = 5
+
+
+def _evidence_path_candidates(line: str) -> list[tuple[tuple[int, int], list[str]]]:
+    """Backticked evidence-path citation candidates on ``line``.
+
+    One ``((span_start, span_end), members)`` entry per backticked token
+    (span covers the backticks) that contains a ``/``, is not a URL /
+    absolute / ellipsis-abbreviated path, expanded through ONE brace group
+    (``_expand_brace_group``), members filtered to the
+    ``_EVIDENCE_PATH_PREFIXES`` set; a token with zero surviving members is
+    not a candidate.
+    """
+    out: list[tuple[tuple[int, int], list[str]]] = []
+    for m in re.finditer(r"`([^`]+)`", line):
+        tok = m.group(1).strip()
+        if "/" not in tok or "://" in tok or tok.startswith("/"):
+            continue
+        if "…" in tok or "..." in tok:
+            continue
+        members = [p for p in _expand_brace_group(tok) if p.startswith(_EVIDENCE_PATH_PREFIXES)]
+        if members:
+            out.append(((m.start(), m.end()), members))
+    return out
+
+
+def _same_line_pins_positional(
+    line: str, figures_root: Path, blank_spans: tuple[tuple[int, int], ...] = ()
+) -> list[tuple[int, str]]:
+    """Thin POSITIONAL variant of ``_same_line_pins`` (#2195) — the hex-run
+    resolution is reused verbatim (URL + committed-under spans blanked, hex
+    runs via ``rev-parse --verify <tok>^{commit}``), with TWO deliberate
+    divergences. (1) Branch tokens resolve ORIGIN-FIRST, mirroring
+    ``_authoritative_tip``: an explicit ``origin/<b>`` token resolves ONLY
+    ``refs/remotes/origin/<b>``; a plain ``<b>`` token tries
+    ``refs/remotes/origin/<b>`` first and falls back to ``refs/heads/<b>``
+    only when the remote ref is absent (local-first would associate a token
+    pin to a lagging worktree-local ``issue-<N>`` and false-WARN a report
+    pinned at the origin tip — the round-1 blocker). (2) It additionally
+    blanks the caller-supplied ``blank_spans`` (the candidate evidence-path
+    backtick spans — span hygiene: a sha-like cited filename must never
+    contribute its own hex run as a pin) and returns ``(span_start, sha)``
+    pairs sorted by line position for per-member association. Duplicate SHAs
+    at distinct positions are kept (positions drive association); existing
+    ``_same_line_pins`` callers are untouched.
+    """
+    scrubbed = _URL_RE.sub(lambda m: " " * len(m.group(0)), line)
+    scrubbed = _COMMITTED_UNDER_RE.sub(lambda m: " " * len(m.group(0)), scrubbed)
+    if blank_spans:
+        chars = list(scrubbed)
+        for start, end in blank_spans:
+            for i in range(start, min(end, len(chars))):
+                chars[i] = " "
+        scrubbed = "".join(chars)
+    pins: list[tuple[int, str]] = []
+    for m in _HEX_RUN_RE.finditer(scrubbed):
+        rc, sha = _git(figures_root, "rev-parse", "--verify", f"{m.group(0)}^{{commit}}")
+        if rc == 0 and sha:
+            pins.append((m.start(), sha))
+    for m in re.finditer(r"`([^`]+)`", scrubbed):
+        btok = m.group(1).strip()
+        if not _BRANCH_TOKEN_RE.match(btok):
+            continue
+        # Origin-authoritative token resolution (#2195 round 2): an explicit
+        # ``origin/<b>`` token names ONLY the remote ref; a plain ``<b>``
+        # token prefers ``refs/remotes/origin/<b>`` and falls back to the
+        # local ref only when origin is absent — mirroring
+        # ``_authoritative_tip``, so a lagging worktree-local ``issue-<N>``
+        # can never associate a token pin to a stale tip and false-WARN.
+        if btok.startswith("origin/"):
+            refs = (f"refs/remotes/{btok}",)
+        else:
+            refs = (f"refs/remotes/origin/{btok}", f"refs/heads/{btok}")
+        for ref in refs:
+            rc, sha = _git(figures_root, "rev-parse", "--verify", f"{ref}^{{commit}}")
+            if rc == 0 and sha:
+                pins.append((m.start(), sha))
+                break
+    pins.sort(key=lambda t: t[0])
+    return pins
+
+
+def _authoritative_tip(issue: int, figures_root: Path) -> str | None:
+    """The issue branch's AUTHORITATIVE tip ref name, or None.
+
+    ``origin/issue-<N>`` when it resolves; local ``issue-<N>`` ONLY as
+    fallback when origin is absent (the task body's literal ask is
+    ``git log <pin>..origin/<branch>``; a lagging local ref must never veto
+    origin staleness).
+    """
+    for ref, display in (
+        (f"refs/remotes/origin/issue-{issue}", f"origin/issue-{issue}"),
+        (f"refs/heads/issue-{issue}", f"issue-{issue}"),
+    ):
+        rc, sha = _git(figures_root, "rev-parse", "--verify", f"{ref}^{{commit}}")
+        if rc == 0 and sha:
+            return display
+    return None
+
+
+def check_stale_evidence_pins(
+    blanked_lines: list[str], figures_root: Path, expect_issue: int | None
+) -> CheckResult:
+    """``stale-evidence-pins`` (#2195): WARN when a report cites an in-repo
+    evidence FILE at a pin the same issue branch has since modified.
+
+    For every (backticked evidence path, associated same-line pin) where the
+    path resolves at the pin as exactly one blob equal to the cited path, run
+    ``git log <pin>..<tip> -- <path>`` against the issue branch's
+    authoritative tip (origin-preferred). Non-empty means the branch rewrote
+    the artifact AFTER the pin — the report cites a superseded version of its
+    own evidence — so emit ONE aggregated WARN enumerating the newer commits.
+    NEVER a FAIL: an as-of pin is legitimate, and the check cannot know
+    whether the newer version contradicts the citing sentence; the WARN hands
+    the reviewer the discriminating fact. Conservative-matcher skip set +
+    named residues: module docstring (``stale-evidence-pins`` entry).
+    """
+    name = "stale-evidence-pins"
+    candidate_rows: list[tuple[int, str, list[tuple[tuple[int, int], list[str]]]]] = []
+    for i, ln in enumerate(blanked_lines, start=1):
+        if _CODE_SHA_ROW_RE.match(ln):
+            continue  # run-provenance pins, not evidence citations
+        cands = _evidence_path_candidates(ln)
+        if cands:
+            candidate_rows.append((i, ln, cands))
+    if not candidate_rows:
+        return CheckResult(name, True, "no evidence citations at a pin (N/A)")
+    rc, _ = _git(figures_root, "rev-parse", "--git-dir")
+    if rc != 0:
+        return CheckResult(
+            name,
+            True,
+            f"{figures_root} is not a git checkout; stale-evidence pins unverifiable",
+            is_warn=True,
+        )
+    issue = expect_issue if expect_issue is not None else _infer_issue_from_lines(blanked_lines)
+    tip = _authoritative_tip(issue, figures_root) if issue is not None else None
+    if tip is None:
+        # Post-merge branch-deleted / unknown-issue shape: must not WARN on
+        # every promote of an old report.
+        return CheckResult(
+            name, True, "stale-evidence check skipped — no issue branch ref resolvable"
+        )
+    warns: list[str] = []
+    notes: list[str] = []
+    seen: set[tuple[str, str]] = set()
+    n_reads = 0
+    n_capped = 0
+    n_fresh = 0
+    for line_no, ln, cands in candidate_rows:
+        spans = tuple(span for span, _members in cands)
+        pins = _same_line_pins_positional(ln, figures_root, spans)
+        if not pins:
+            continue  # not a citation-at-a-pin (no-pin claims are committed-under-claims' surface)
+        for (span_start, span_end), members in cands:
+            after = [sha for pos, sha in pins if pos >= span_end]
+            if after:
+                assoc = after[0]
+            else:
+                before = [sha for pos, sha in pins if pos < span_start]
+                assoc = before[-1] if before else None
+            if assoc is None:
+                continue
+            for member in members:
+                key = (member, assoc)
+                if key in seen:
+                    continue  # deduped by (path, pin)
+                seen.add(key)
+                if n_reads >= _STALE_READ_CAP:
+                    n_capped += 1
+                    continue
+                n_reads += 1
+                rc, out = _git(figures_root, "ls-tree", "-r", "--name-only", assoc, "--", member)
+                names = out.splitlines() if rc == 0 and out else []
+                if not names:
+                    notes.append(
+                        f"line {line_no}: `{member}` absent at {assoc[:12]} — a broken "
+                        "citation is not a stale one; skipped"
+                    )
+                    continue
+                if len(names) != 1 or names[0] != member:
+                    notes.append(
+                        f"line {line_no}: `{member}` is a directory citation at "
+                        f"{assoc[:12]} — skipped (later additions under a directory do "
+                        "not supersede a home claim)"
+                    )
+                    continue
+                rc, _out = _git(figures_root, "merge-base", "--is-ancestor", assoc, tip)
+                if rc != 0:
+                    notes.append(
+                        f"line {line_no}: pin {assoc[:12]} is not an ancestor of {tip} — "
+                        "divergent history, staleness undecidable; skipped"
+                    )
+                    continue
+                rc, out = _git(
+                    figures_root, "log", "--format=%H%x09%s", f"{assoc}..{tip}", "--", member
+                )
+                if rc != 0:
+                    notes.append(
+                        f"line {line_no}: git log failed for `{member}` at {assoc[:12]}; skipped"
+                    )
+                    continue
+                commits = [c for c in out.splitlines() if c.strip()]
+                if not commits:
+                    n_fresh += 1
+                    continue
+                shown = []
+                for c in commits[:_STALE_DETAIL_COMMITS_CAP]:
+                    sha, _, subject = c.partition("\t")
+                    shown.append(f'{sha[:12]} "{subject[:60]}"')
+                extra = len(commits) - _STALE_DETAIL_COMMITS_CAP
+                enumerated = ", ".join(shown) + (f", +{extra} more" if extra > 0 else "")
+                warns.append(
+                    f"line {line_no}: `{member}` cited at {assoc[:12]} has {len(commits)} "
+                    f"newer commit(s) on {tip} — {enumerated} — if the citation is a "
+                    "deliberate as-of pin, confirm the newer version still supports the "
+                    "citing sentence; else re-pin to the current commit"
+                )
+    if n_capped:
+        notes.append(f"read cap ({_STALE_READ_CAP}) reached — {n_capped} candidate(s) not checked")
+    if warns:
+        detail = "; ".join(warns)
+        if notes:
+            detail += "; " + "; ".join(notes)
+        return CheckResult(name, True, detail, is_warn=True)
+    if n_reads == 0 and not notes:
+        return CheckResult(name, True, "no evidence citations at a pin (N/A)")
+    parts: list[str] = []
+    if n_fresh:
+        parts.append(f"{n_fresh} pinned evidence citation(s) fresh on {tip}")
+    parts.extend(notes)
+    return CheckResult(name, True, "; ".join(parts))
 
 
 # ─── Driver ─────────────────────────────────────────────────────────────────
@@ -1535,6 +2129,8 @@ def verify_report_text(
             body, blanked_lines, mode=mode, figures_root=figures_root, expect_issue=expect_issue
         )
     )
+    results.append(check_companion_content(blanked_lines, mode=mode, figures_root=figures_root))
+    results.append(check_stale_evidence_pins(blanked_lines, figures_root, expect_issue))
 
     if mode == "generation":
         results.extend(check_placeholders(sections))

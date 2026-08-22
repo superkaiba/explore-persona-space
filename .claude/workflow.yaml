@@ -685,10 +685,11 @@ halt_criteria:
 # `status:blocked` on any of these.
 # ──────────────────────────────────────────────────────────────────────
 pivot_criteria:
-  - trigger: code_review_ensemble_cap_5_surface
+  - trigger: code_review_ensemble_cap_10_surface
     pivot_action: |
       RETIRED the old `code_review_ensemble_cap_3` strategy-pivot (raised
-      to cap-5 + strip-then-continue-or-surface, #784). At round 5 (the
+      to cap-5 + strip-then-continue-or-surface, #784; cap raised to 10 +
+      renamed `..._cap_10_surface`, #2391). At round 10 (the
       cap) with a non-PASS ensemble verdict, the orchestrator applies the
       full Step 5c-bis strip once more (marker-shape / smoke-run-missing /
       git-provenance — evidence-based); ALL residual blockers stripped →
@@ -717,10 +718,11 @@ pivot_criteria:
       (category labels, 3rd-person narrator), drop the offending
       domain/condition, or swap the model. Block only after ~3 pivots
       across the reframe/drop/swap axis have all failed.
-  - trigger: interpretation_critic_cap_5_surface
+  - trigger: interpretation_critic_cap_10_surface
     pivot_action: |
       RENAMED + rewritten from `interpretation_critic_cap_3` (raised to
-      cap-5 + surface-real-residual, #784). After 5 analyzer ↔
+      cap-5 + surface-real-residual, #784; cap raised to 10, #2391).
+      After 10 analyzer ↔
       interpretation-critic rounds, apply the Step 9a procedural-only
       strip once more; ALL residual REVISEs stripped (procedural /
       presentation) → advance; ANY substantive residual (a flagged
@@ -729,10 +731,11 @@ pivot_criteria:
       failure_class: code` + `status:blocked` + notify + CRON-TEARDOWN).
       No more silent advance-regardless-into-comments.jsonl — an interp
       residual is an overclaim that must never be silently promoted.
-  - trigger: clean_result_critic_cap_5_surface
+  - trigger: clean_result_critic_cap_10_surface
     pivot_action: |
       RENAMED + rewritten from `clean_result_critic_cap_3` (raised to
-      cap-5 + surface-real-residual, #784). After 5 analyzer ↔
+      cap-5 + surface-real-residual, #784; cap raised to 10, #2391).
+      After 10 analyzer ↔
       clean-result-critic rounds, apply the Step 9a-bis procedural-only
       strip once more; ALL residual REVISEs stripped (procedural /
       presentation) → advance; ANY substantive residual (a flagged
@@ -974,15 +977,15 @@ subagent_halt_conditions:
       gpt-5.5). PASS+PASS proceeds. FAIL+FAIL with overlapping blockers
       bounces; with disjoint blockers, union the blockers (one round).
       PASS+FAIL dispatches `reconciler` (marker mode); reconciler verdict
-      binds. On any effective FAIL, bounces to implementer up to 5 rounds
-      per reviewer (reconcile rounds free); on the 6th (cap-5) ensemble
+      binds. On any effective FAIL, bounces to implementer up to 10 rounds
+      per reviewer (reconcile rounds free); on the 11th (cap-10) ensemble
       FAIL, the orchestrator applies the full Step 5c-bis strip once more
       (marker-shape / smoke-run-missing / git-provenance) — all residual
       blockers stripped → PASS + continue; any substantive residual →
       SURFACE (interactive: user; autonomous: epm:failure v1
       failure_class: code + status:blocked + notify + CRON-TEARDOWN). No
       more same-diff-family strategy-pivot re-plan (retired, #784; see
-      § pivot_criteria.code_review_ensemble_cap_5_surface and SKILL.md
+      § pivot_criteria.code_review_ensemble_cap_10_surface and SKILL.md
       Step 5d).
   - subagent: critic-ensemble
     verdict: "REVISE/REJECT after per-lens reconcile (worst-wins cross-lens)"
@@ -991,10 +994,10 @@ subagent_halt_conditions:
       round. Per-lens: APPROVE+APPROVE proceeds; REVISE+REVISE or
       REJECT+REJECT bounces; APPROVE vs REVISE/REJECT dispatches
       `reconciler` (IN-CONTEXT mode, no events.jsonl marker). Cross-lens:
-      worst verdict wins. On REVISE/REJECT, bounces to planner up to 5
-      rounds (reconcile rounds free); on 6th, the default is a strategy
+      worst verdict wins. On REVISE/REJECT, bounces to planner up to 10
+      rounds (reconcile rounds free); on 11th, the default is a strategy
       pivot (drop offending condition / swap eval design / change scope)
-      and another planner cycle (cap-5 resets). Block only when the
+      and another planner cycle (cap-10 resets). Block only when the
       pivot space is exhausted.
   - subagent: interpretation-critic-ensemble
     verdict: "REVISE after reconcile (or REVISE+REVISE)"
@@ -1003,7 +1006,7 @@ subagent_halt_conditions:
       `codex-interpretation-critic` (Codex gpt-5.5). PASS+PASS proceeds.
       REVISE+REVISE bounces (concatenate + dedup findings). PASS+REVISE
       dispatches `reconciler` (marker mode). On REVISE, bounces to
-      analyzer up to 5 rounds per reviewer; on the 6th (cap-5), apply the
+      analyzer up to 10 rounds per reviewer; on the 11th (cap-10), apply the
       Step 9a procedural-only strip once more — all residual REVISEs
       stripped (procedural / presentation) → advance; any SUBSTANTIVE
       residual (a flagged overclaim) → SURFACE, do NOT auto-publish
@@ -1020,7 +1023,7 @@ subagent_halt_conditions:
       (Codex gpt-5.5) running 15 lenses (v2 spec) including Lens 7
       (statistical-framing rule). PASS+PASS / PASS+CONCERNS advances.
       Disagreement dispatches `reconciler` (marker mode). On REVISE,
-      bounces to analyzer up to 5 rounds; on the 6th (cap-5), apply the
+      bounces to analyzer up to 10 rounds; on the 11th (cap-10), apply the
       Step 9a-bis procedural-only strip once more — all residual REVISEs
       stripped (procedural / presentation) → advance; any SUBSTANTIVE
       residual (a flagged overclaim) → SURFACE, do NOT auto-publish
@@ -1029,10 +1032,10 @@ subagent_halt_conditions:
       (see SKILL.md Step 9a-bis).
   - subagent: clean-result-critic
     verdict: REVISE
-    action: "Bounces to analyzer up to 5 rounds; on the 6th (cap-5) REVISE, apply the Step 9a-bis procedural-only strip — all residual stripped → advance; substantive residual (flagged overclaim) → SURFACE, do NOT auto-publish (interactive: user; autonomous: epm:failure v1 failure_class: code + status:blocked + notify + CRON-TEARDOWN). #784 surface-not-ship."
+    action: "Bounces to analyzer up to 10 rounds; on the 11th (cap-10) REVISE, apply the Step 9a-bis procedural-only strip — all residual stripped → advance; substantive residual (flagged overclaim) → SURFACE, do NOT auto-publish (interactive: user; autonomous: epm:failure v1 failure_class: code + status:blocked + notify + CRON-TEARDOWN). #784 surface-not-ship."
   - subagent: interpretation-critic
     verdict: FATAL
-    action: "Bounces to analyzer up to 5 rounds; on the 6th (cap-5) FATAL, status:blocked"
+    action: "Bounces to analyzer up to 10 rounds; on the 11th (cap-10) FATAL, status:blocked"
   - subagent: upload-verifier
     verdict: FAIL
     action: |
@@ -1130,10 +1133,10 @@ ensemble_review:
       notes: |
         Both reviewers run all 7 lenses (lens 6 plot-prose match works on
         both — Codex multimodal verified 2026-05-10). Ensembled on ALL
-        rounds up to the per-reviewer cap (5) (round-1-only policy reversed 2026-06-12 —
+        rounds up to the per-reviewer cap (10) (round-1-only policy reversed 2026-06-12 —
         cross-family reviewer diversity beats Claude-only later rounds).
         Codex twin no-show falls back to single-Claude-critic for that
-        round. Round cap 5 per reviewer; reconcile rounds free.
+        round. Round cap 10 per reviewer; reconcile rounds free.
     - role: clean-result-critic
       step: "9a-bis"
       claude_agent: clean-result-critic
@@ -1148,7 +1151,7 @@ ensemble_review:
       notes: |
         Final adversarial gate before status:awaiting_promotion (as of
         2026-05-13 — absorbed the retired reviewer step's statistical-framing
-        rule). Ensembled on ALL rounds up to the per-reviewer cap (5) (round-1-only policy reversed
+        rule). Ensembled on ALL rounds up to the per-reviewer cap (10) (round-1-only policy reversed
         2026-06-12). Scores against the v3 clean-result spec (five flat H2s:
         ## Takeaways / ## What I ran / ## Findings / ## Data /
         ## Reproducibility; sentinel <!-- clean-result-v3 -->; 2026-W24;
@@ -1212,7 +1215,7 @@ ensemble_review:
   not_doubled:
     - upload-verifier      # mechanical artifact checklist, no LLM-judgment value
     - consistency-checker  # mechanical structure check
-  round_cap_per_reviewer: 5
+  round_cap_per_reviewer: 10
   reconcile_invocations_count_toward_cap: false
   union_rule: |
     On FAIL+FAIL with disjoint blocker sets, the orchestrator unions the
@@ -1368,13 +1371,17 @@ concerns_protocol:
   summary_cap: |
     Stored concern summaries are HARD-CAPPED at 200 chars (the library
     layer raises ValueError above it; 5 reviewer crashes on 2026-06-10
-    alone: 238-410-char summaries). The task.py CLI (raise-concern /
-    address-concern) auto-truncates a longer `--summary` at a word
-    boundary with a loud stderr warning instead of crashing — on
-    raise-concern the full original is shifted into `--evidence` when
-    evidence is empty. Compose the summary as one tight sentence and
-    move all detail to `--evidence`. The same cap applies to
-    `address-concern` carried summaries.
+    alone: 238-410-char summaries). Over-cap handling is per-branch and
+    NON-LOSSY (#2121): raise-concern with NO `--evidence` shifts the
+    full original verbatim into evidence (word-boundary lead stored,
+    loud stderr warning); raise-concern WITH `--evidence`, and
+    address-concern always, hard-error (exit 2) on an over-cap inline
+    `--summary`. Long text goes through `--summary-file <path>` (any
+    length; over-cap file text is preserved verbatim in the event's
+    evidence field, <=200-char derived lead as the summary). Compose
+    the summary as one tight sentence and move all detail to
+    `--evidence`. The same cap applies to `address-concern` carried
+    summaries.
   concern_id_examples:
     - probe-position-undefined
     - missing-mlm-control
@@ -1444,7 +1451,7 @@ concerns_protocol:
 # this block.
 # ──────────────────────────────────────────────────────────────────────
 reviewer_pairs:
-  max_rounds: 5
+  max_rounds: 10
   verdicts:
     - pass
     - needs_targeted_fix
@@ -1568,6 +1575,18 @@ markers:
     posted_by: skill
     when: "Step 2c (autonomous session, missing/unparseable estimate — fail-safe)"
     fields: "Posted (historical name; fires on missing/unparseable gpu_hours_total as of #1771 — the retained fail-safe after the GPU-hour cap was removed — and the Step-2 orphan-pod guard) when an autonomous session cannot auto-approve the plan. Records gpu_hours_total (may be null / unparseable) + reason (the retained cause; historically also `over-cap`); task parks at plan_pending awaiting user approval. ALSO posted at Step 2 if a session must exit before approval with no pod yet provisioned (orphan-pod guard)."
+  - kind: "epm:ask"
+    posted_by: task.py (the Step 2b --auto-approve-if-autonomous gate, parked_asked branch)
+    when: "Step 2c async park (EPM_ASYNC_SESSION=1; mission-control rung 0, CONTRACTS §1.1 row 4)"
+    fields: "Durable user-gate question for an ASYNC session. JSON note: gate (plan_approval), gate_id, issue, plan_v, plan_path, est_gpu_hours, answer (the exact answer command incl. --if-plan-v). An ask is OPEN until a LATER epm:ask-answered or epm:status-changed row is appended (append-order, task_workflow.open_async_ask); posting is idempotent against an open same-gate ask. Deliberately NOT accompanied by epm:awaiting-spend-approval (that would flip the plan_pending_over_cap predicate and re-classify the park out of the tick's ISSUE_PARK async-parked HEALTHY verdict)."
+  - kind: "epm:ask-answered"
+    posted_by: user via task.py post-marker (optional explicit answer record)
+    when: "User answers an open epm:ask without a status transition (mission-control rung 0)"
+    fields: "Closes the newest open epm:ask by append order (task_workflow.open_async_ask). Optional — the normal answer path (set-status / promote) closes the ask via its own epm:status-changed row; this kind exists for answers that change no status (e.g. a revise-guidance reply)."
+  - kind: "epm:session-mode"
+    posted_by: spawn_session.py (spawn-issue --auto, first async spawn / explicit downgrade)
+    when: "Async session-mode record (mission-control rung 0, CONTRACTS §2.2)"
+    fields: "Durable session-mode record surviving the watcher's terminal registry-entry GC. JSON note: {mode: async|auto, by, channel}. Newest marker wins (task_workflow.newest_session_mode); an explicit --session-mode auto downgrade posts a fresh {mode: auto} row rather than rewriting history. The watcher's six spawn-issue argv builders re-pass --session-mode async when this resolves async."
   - kind: "epm:consistency"
     posted_by: skill (via consistency-checker)
     when: "Step 2b"
@@ -1801,7 +1820,13 @@ markers:
       on the log path before posting AND verify with `ls -la <log_abs>`
       on the pod — a relative / wrong log path burns polling-loop cycles
       (#397). Back-compat: the legacy `log=` field is accepted as a
-      fallback when `log_abs=` is absent.
+      fallback when `log_abs=` is absent. Optional owner-fence tokens
+      (#2277; note-token convention, no schema change): `owner=<token>`
+      (owner-attribution registration for the `pod.py terminate`
+      owner-fence guard; REQUIRED for new launches; grammar
+      `[A-Za-z0-9._-]{1,64}`) and `fence_until=<ISO8601Z|none>` (owner
+      work-fence deadline; refreshed / cleared via later
+      `[long-phase-heartbeat]` `epm:progress` notes naming the pod).
   - kind: "epm:progress"
     posted_by: experimenter / implementer
     when: "during run"
@@ -1887,7 +1912,14 @@ markers:
       generic `pivot_criteria` cap-3 path. Plans without the §6.5 block
       (legacy plans + `kind: analysis | infra | batch | survey`) get a
       `primary-deliverable-spec-absent` WARN row and do NOT fail this
-      check.
+      check. Optional owner-fence tokens on a PASS note (#2277;
+      note-token convention, no schema change): `pod=<name>` (binds the
+      PASS to the pod it verified) and `owner=<token>` — a FIRST-PERSON
+      claim by the session that posted the pod's launch signal / fence
+      (emit it ONLY then; never copied from the launch marker by a
+      third party while the fence is unexpired); the terminate guard
+      refuses an unexpired-fence pod whose pod-bound PASS lacks the
+      matching owner token.
   - kind: "epm:upload-verified"
     posted_by: skill
     when: "Step 8"
@@ -2326,7 +2358,7 @@ markers:
     fields: "Records re-spawn on the same branch without an implementer round. v<n> per respawn; cap 3."
   - kind: "epm:strategy-pivot"
     posted_by: skill (orchestrator)
-    when: "any strategy pivot — whack-a-mole detector fire, plan-contradiction re-plan, debugging-wall pivot (see § pivot_criteria). NOTE: the Step 5 code-review ensemble cap-hit no longer strategy-pivots (retired #784 → strip-then-continue-or-surface, § pivot_criteria.code_review_ensemble_cap_5_surface)"
+    when: "any strategy pivot — whack-a-mole detector fire, plan-contradiction re-plan, debugging-wall pivot (see § pivot_criteria). NOTE: the Step 5 code-review ensemble cap-hit no longer strategy-pivots (retired #784 → strip-then-continue-or-surface, § pivot_criteria.code_review_ensemble_cap_10_surface)"
     fields: "v<n> per pivot, top-level on the task. Records the pivot rationale + what changes: which strategy failed, the fundamentally different design being tried next, and that revision_round RESETS to 1 on the new plan. Counts toward the ~3-pivots-before-block rule (CLAUDE.md STATE-TO-blocked criteria). Every pivot site reuses this ONE kind — do NOT introduce per-pivot-source marker kinds."
   - kind: "epm:merged"
     posted_by: skill
@@ -2334,7 +2366,7 @@ markers:
     fields: "Merge SHAs (one per commit when rebase-merged) for the safe path. For the artifact-confirmed path (guard 3 tripped: based on a non-mainline parent branch like a still-unmerged issue-<M>, OR the branch's OWN commits — git diff origin/main...HEAD — touch foreign tasks/ or out-of-scope paths; BEHIND alone is never the trip, it only triggers the own-commit content check), instead: {artifact_confirmed: true, full_rebase_deferred: true, reason: '...', verified_paths: [...]} or, if a surgical additive checkout was needed, {artifact_confirmed: true, full_rebase_deferred: true, surgical_checkout: true, files: [...]}. Worktree is NOT removed (kept for inspection; reaped later by worktree_audit.py)."
   - kind: "epm:merge-failed"
     posted_by: skill
-    when: "Step 9b / Step 10d auto-merge hit a conflict / non-mergeable PR (posted only after the one-shot in-worktree merge-conflict recovery — SKILL.md Step 10d — also fails)"
+    when: "Step 9b / Step 10d auto-merge hit a conflict / non-mergeable PR (posted after the one-shot in-worktree merge-conflict recovery — SKILL.md Step 10d — also fails, or when a novel-payload branch cannot obtain a usable PR object — #2240)"
     fields: "gh/git error + branch + worktree path. Non-blocking: the task still parks (experiments) / completes (code paths); retried idempotently on the next /issue <N>."
   - kind: "epm:stale"
     posted_by: skill
@@ -2542,7 +2574,7 @@ markers:
     fields: "round (integer), changes (what the revision changed + why, per critic — statistics / methodology-baselines / efficiency / consistency), manifest_diff (the diff to planned_manifest.json: conditions / metrics / planned figures added/removed/changed, or 'none'). The audit surface for post-approval critic drift (Thomas approves the pre-critique draft; this log is how he sees what the critics changed). v1."
   - kind: "epm:methodology-check"
     posted_by: issue-v2 skill (via methodology-critic)
-    when: "workflow: v2 tasks only. After each methodology-critic round over the assembled report's Motivation / Methodology (shared) / per-result Methodology blocks (metrics rationale embedded) (Step 8 report loop); round cap 5"
+    when: "workflow: v2 tasks only. After each methodology-critic round over the assembled report's Motivation / Methodology (shared) / per-result Methodology blocks (metrics rationale embedded) (Step 8 report loop); round cap 10"
     fields: "verdict (PASS|FAIL), round, untraceable/incorrect claims (each with the ground-truth source checked — config / code @ SHA / run_result.json / adapter_config.json / dashboard row count) OR 'all claims trace'. Link-liveness (every link resolves at the pinned SHA) folded in. v1."
   - kind: "epm:report"
     posted_by: issue-v2 skill
@@ -2550,7 +2582,7 @@ markers:
     fields: "report body path, sections filled (Motivation / Methodology (shared) / Results incl. per-result Methodology blocks), figure count, the detailed companion doc path + pinned SHA (docs/reports/issue_<N>_detailed.md), placeholders left for Thomas (TLDR, Conclusion and next steps). v1."
   - kind: "epm:report-verified"
     posted_by: issue-v2 skill (via report-verifier)
-    when: "workflow: v2 tasks only. After each report-verifier round (Step 8, AFTER methodology-check PASS); round cap 5. PASS advances the task to awaiting_promotion"
+    when: "workflow: v2 tasks only. After each report-verifier round (Step 8, AFTER methodology-check PASS); round cap 10. PASS advances the task to awaiting_promotion"
     fields: "verdict (PASS|FAIL), round, per-figure recompute results (≥1 plotted value re-derived from source JSON via the manifest transform recipe), completeness-vs-manifest (every planned condition/metric/figure present or explicitly 'not run'), interpretivity-lens result (hypothesis-framing allowed / asserted-conclusion banned; Thomas's TLDR + Conclusion and next steps never reviewed), verify_report.py --mode generation output. v1."
 # ──────────────────────────────────────────────────────────────────────
 # /issue lifecycle steps. Required by the §5 epm:step-completed re-entry
@@ -2685,7 +2717,7 @@ steps:
     name: code_review_revise
     entry_status_label:
       - implementing
-    entry_condition: "code-review FAIL, revision_round < 5"
+    entry_condition: "code-review FAIL, revision_round < 10"
     next_expected_step: "5"
   - id: "6a"
     name: pod_provision

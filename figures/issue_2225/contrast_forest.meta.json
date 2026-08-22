@@ -1,0 +1,130 @@
+{
+  "commit": "849c79c4",
+  "render_id": "e284ae392723453f",
+  "git_commit": "849c79c4",
+  "git_dirty": false,
+  "created": "2026-08-11T20:39:58Z",
+  "figsize": [
+    8.0,
+    6.0
+  ],
+  "points": [
+    {
+      "\u0394 trait score (Context \u2212 Paper) at matched-coherence coefficients": 33.25,
+      "y": 0.0,
+      "series": "Frozen selection",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "\u0394 trait score (Context \u2212 Paper) at matched-coherence coefficients": 36.915537916666665,
+      "y": 0.18,
+      "series": "Selection-inherited",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "\u0394 trait score (Context \u2212 Paper) at matched-coherence coefficients": -3.5116666666666667,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "\u0394 trait score (Context \u2212 Paper) at matched-coherence coefficients": -3.40359398272267,
+      "y": 1.18,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "\u0394 trait score (Context \u2212 Paper) at matched-coherence coefficients": 22.925000000000004,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "\u0394 trait score (Context \u2212 Paper) at matched-coherence coefficients": 22.938775333333332,
+      "y": 2.18,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "\u0394 trait score (Context \u2212 Paper) at matched-coherence coefficients": 14.805555555555557,
+      "y": 4.0,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "\u0394 trait score (Context \u2212 Paper) at matched-coherence coefficients": 3.2712708333333316,
+      "y": 4.18,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "\u0394 trait score (Context \u2212 Paper) at matched-coherence coefficients": -5.211666666666665,
+      "y": 6.0,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "\u0394 trait score (Context \u2212 Paper) at matched-coherence coefficients": -5.314866499999996,
+      "y": 6.18,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "\u0394 trait score (Context \u2212 Paper) at matched-coherence coefficients": 3.611666666666667,
+      "y": 7.0,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "\u0394 trait score (Context \u2212 Paper) at matched-coherence coefficients": 3.5944278333333335,
+      "y": 7.18,
+      "_kind": "errorbar",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 12,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Registered contrasts \u2014 question-paired bootstrap 95% CIs",
+        "xlabel": "\u0394 trait score (Context \u2212 Paper) at matched-coherence coefficients",
+        "legend_labels": [
+          "Frozen selection",
+          "Selection-inherited"
+        ],
+        "xticklabels": [
+          "\u221240",
+          "\u221220",
+          "0",
+          "20",
+          "40",
+          "60",
+          "80"
+        ],
+        "yticklabels": [
+          "C vs A \u2014 Evil",
+          "C vs A \u2014 Sycophancy",
+          "C vs A \u2014 Hallucination",
+          "C vs A \u2014 Mistaken opinions",
+          "E vs B \u2014 Evil",
+          "E vs B \u2014 Sycophancy",
+          "E vs B \u2014 Hallucination",
+          "E vs B \u2014 Mistaken opinions"
+        ]
+      }
+    ],
+    "series": [
+      "Frozen selection",
+      "Selection-inherited"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

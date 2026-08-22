@@ -1,0 +1,199 @@
+{
+  "experiment": "issue2254_preimage",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "ts": "2026-08-14T17:20:48Z",
+  "pass_b_revision": "037fcbb210bc52c459959b0746cc268fe08bae96",
+  "git_commit": "c1846ba2",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2254_figures.py",
+    "scripts/issue2254_preimage.py",
+    "tests/test_issue2254_driver.py"
+  ],
+  "read": "d_par = fold(P_k* (d_ctxext/xsd)), d_perp = fold((I-P_k*) (d_ctxext/xsd)), fold = normalize(xsd * .), per (behavior, layer) \u2014 plan v7 \u00a74.1; frame conventions verbatim from the round-2 ctxext_reachability read",
+  "hf_input_revision": "2f2ab5822bad3a9a52736698e2a9ec9667353f07",
+  "parity_reference": {
+    "evil": {
+      "layer": 14,
+      "kstar": 1433,
+      "reachability_ctxext": 0.4939568737828016
+    },
+    "sycophancy": {
+      "layer": 17,
+      "kstar": 1565,
+      "reachability_ctxext": 0.531899740128843
+    }
+  },
+  "halt_tolerances": {
+    "parity_atol": 1e-09,
+    "ortho_tol": 1e-10,
+    "pythagoras_atol": 1e-09,
+    "nondegen_floor": 0.05,
+    "unit_norm_atol": 1e-09
+  },
+  "fold_note": "raw-frame cos(d_par, d_perp) is nonzero after the xsd fold by construction \u2014 the hypothesis lives in the standardized frame, where the split is exactly orthogonal (plan v7 \u00a74.1, disclosed)",
+  "behaviors": {
+    "evil": {
+      "L14": {
+        "kstar": 1433,
+        "w_par_norm": 0.4939568737828016,
+        "w_perp_norm": 0.8694864040585807,
+        "raw_cos_d_par_d_perp": -0.04373643270000941,
+        "cos_d_par_d_ctxext": 0.4611049149665335,
+        "cos_d_perp_d_ctxext": 0.8663294433394862,
+        "std_cos_w_par_w_pre": 0.2550334069593794,
+        "n_singular_components": 3584
+      },
+      "L17": {
+        "kstar": 1565,
+        "w_par_norm": 0.49679280741404513,
+        "w_perp_norm": 0.867869175914015,
+        "raw_cos_d_par_d_perp": -0.006307701059466407,
+        "cos_d_par_d_ctxext": 0.49272666128405307,
+        "cos_d_perp_d_ctxext": 0.8670588561535905,
+        "std_cos_w_par_w_pre": 0.29064505614804137,
+        "n_singular_components": 3584
+      },
+      "L20": {
+        "kstar": 1049,
+        "w_par_norm": 0.534858144501327,
+        "w_perp_norm": 0.8449418709358635,
+        "raw_cos_d_par_d_perp": 0.07928875050668482,
+        "cos_d_par_d_ctxext": 0.5981329713384889,
+        "cos_d_perp_d_ctxext": 0.8462990443623319,
+        "std_cos_w_par_w_pre": 0.43374353222808226,
+        "n_singular_components": 3584
+      }
+    },
+    "sycophancy": {
+      "L14": {
+        "kstar": 1433,
+        "w_par_norm": 0.497637485192484,
+        "w_perp_norm": 0.8673851124681009,
+        "raw_cos_d_par_d_perp": -0.07645353669701194,
+        "cos_d_par_d_ctxext": 0.4572262067658454,
+        "cos_d_perp_d_ctxext": 0.851790874547023,
+        "std_cos_w_par_w_pre": 0.17949679505255056,
+        "n_singular_components": 3584
+      },
+      "L17": {
+        "kstar": 1565,
+        "w_par_norm": 0.5318997401288429,
+        "w_perp_norm": 0.84680733726797,
+        "raw_cos_d_par_d_perp": -0.01406812980073983,
+        "cos_d_par_d_ctxext": 0.5241205330500264,
+        "cos_d_perp_d_ctxext": 0.8441864210715486,
+        "std_cos_w_par_w_pre": 0.2076338121720627,
+        "n_singular_components": 3584
+      },
+      "L20": {
+        "kstar": 1049,
+        "w_par_norm": 0.5246949806721573,
+        "w_perp_norm": 0.8512903013998483,
+        "raw_cos_d_par_d_perp": 0.049074685245334336,
+        "cos_d_par_d_ctxext": 0.554772441202088,
+        "cos_d_perp_d_ctxext": 0.8582249398430267,
+        "std_cos_w_par_w_pre": 0.4321512865475006,
+        "n_singular_components": 3584
+      }
+    }
+  },
+  "bundles": [
+    {
+      "behavior": "evil",
+      "slug": "par",
+      "layer": 14,
+      "path": "evil_par_L14.pt",
+      "norm": 1.0,
+      "sha8": "a8edc71c"
+    },
+    {
+      "behavior": "evil",
+      "slug": "perp",
+      "layer": 14,
+      "path": "evil_perp_L14.pt",
+      "norm": 0.9999999999999999,
+      "sha8": "49aac9b4"
+    },
+    {
+      "behavior": "evil",
+      "slug": "par",
+      "layer": 17,
+      "path": "evil_par_L17.pt",
+      "norm": 1.0,
+      "sha8": "db6ea6dd"
+    },
+    {
+      "behavior": "evil",
+      "slug": "perp",
+      "layer": 17,
+      "path": "evil_perp_L17.pt",
+      "norm": 0.9999999999999999,
+      "sha8": "39551673"
+    },
+    {
+      "behavior": "evil",
+      "slug": "par",
+      "layer": 20,
+      "path": "evil_par_L20.pt",
+      "norm": 1.0,
+      "sha8": "8eaf22b9"
+    },
+    {
+      "behavior": "evil",
+      "slug": "perp",
+      "layer": 20,
+      "path": "evil_perp_L20.pt",
+      "norm": 1.0,
+      "sha8": "d895461d"
+    },
+    {
+      "behavior": "sycophancy",
+      "slug": "par",
+      "layer": 14,
+      "path": "sycophancy_par_L14.pt",
+      "norm": 1.0,
+      "sha8": "87e7da23"
+    },
+    {
+      "behavior": "sycophancy",
+      "slug": "perp",
+      "layer": 14,
+      "path": "sycophancy_perp_L14.pt",
+      "norm": 1.0,
+      "sha8": "29847d63"
+    },
+    {
+      "behavior": "sycophancy",
+      "slug": "par",
+      "layer": 17,
+      "path": "sycophancy_par_L17.pt",
+      "norm": 1.0000000000000002,
+      "sha8": "7e8a7add"
+    },
+    {
+      "behavior": "sycophancy",
+      "slug": "perp",
+      "layer": 17,
+      "path": "sycophancy_perp_L17.pt",
+      "norm": 1.0,
+      "sha8": "cb8971c8"
+    },
+    {
+      "behavior": "sycophancy",
+      "slug": "par",
+      "layer": 20,
+      "path": "sycophancy_par_L20.pt",
+      "norm": 1.0,
+      "sha8": "d6fc15c0"
+    },
+    {
+      "behavior": "sycophancy",
+      "slug": "perp",
+      "layer": 20,
+      "path": "sycophancy_perp_L20.pt",
+      "norm": 0.9999999999999999,
+      "sha8": "dde8c121"
+    }
+  ]
+}

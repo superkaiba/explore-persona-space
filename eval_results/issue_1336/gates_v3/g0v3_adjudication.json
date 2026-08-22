@@ -1,0 +1,17 @@
+{
+  "gate": "g0v3",
+  "adjudicated_branch": "FAIL-leakage-exceeds-band",
+  "disposition": "proceed",
+  "delta_assign": 0.07662891241909775,
+  "tolerance": 0.05151557596695462,
+  "r2_grouped": 0.5382966321025975,
+  "r2_random_mean": 0.6149255445216952,
+  "matched_seed": 13360,
+  "adjudicated_by": "orchestrator, autonomous session (EPM_AUTONOMOUS_SESSION=1); not a user decision",
+  "marker": "epm:progress v276 on task #1336",
+  "evidence": [
+    "eval_results/issue_1336/gates_v3/g0v3_v26_adjudicated.json",
+    "eval_results/issue_1336/gates_v3/g0v3_v23_confounded.json"
+  ],
+  "rationale": "N14/N5 discrimination at the halt: MIXED, (B)-dominant. Cluster/topic-holdout conservatism accounts for 0.05-0.07 of the +0.0766; near-duplicate leakage removal is realistically ~0.01 (ceiling 0.032). No defect signature: anomaly branch clean, fold sizes matched by construction, across-draw SD 0.000197 (~390x smaller than the gap), all four fits independently selected L30. The excess is hardening in the pre-registered direction (#810 LOFO precedent, N14). Near-dup-dense regions are LMSYS template families the grouping exists to contain, so a finer k_c would trade a conservative instrument for a leakier one. Instrument legitimately conservative; the conservatism is inherited by the production stage-contrast headline and is carried as scope caveats N13/N24/N25."
+}

@@ -1,0 +1,22 @@
+{
+  "scenario": "delusion",
+  "dvs": [
+    "harm",
+    "coherence"
+  ],
+  "n_judged_items": 1449,
+  "n_empty_turns": 0,
+  "dv_sha256": {
+    "scores_delusion.json": "0aa97a7351070e2990b17a82b611c9ddccb324c65082f338c6f5fb07a18620a0",
+    "coherence_delusion.json": "1869e5862c58abcd209ab41d6746faed255ea9b32e69714d8f4b87aab826c49a"
+  },
+  "metadata": {
+    "issue": 2223,
+    "timestamp_utc": "2026-08-20T02:57:32.253506+00:00",
+    "git_commit": "7927167a",
+    "git_dirty": false,
+    "torch_version": "2.8.0+cu128",
+    "transformers_version": "4.57.6",
+    "label": "casestudy_replay"
+  }
+}

@@ -1,0 +1,234 @@
+{
+  "commit": "ab81efe1",
+  "render_id": "4e3ece6ef9bc448e",
+  "git_commit": "ab81efe1",
+  "git_dirty": false,
+  "created": "2026-08-14T12:55:48Z",
+  "figsize": [
+    5.4,
+    3.8
+  ],
+  "points": [
+    {
+      "Truncated-pinv rank k": 224.0,
+      "cos(d_pre(k), primary d_pre)": -0.005265144255037373,
+      "series": "evil L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Truncated-pinv rank k": 896.0,
+      "cos(d_pre(k), primary d_pre)": -0.0013898585028600703,
+      "series": "evil L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Truncated-pinv rank k": 1792.0,
+      "cos(d_pre(k), primary d_pre)": 0.017325473658742985,
+      "series": "evil L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Truncated-pinv rank k": 3584.0,
+      "cos(d_pre(k), primary d_pre)": 0.45615317598064703,
+      "series": "evil L14",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Truncated-pinv rank k": 224.0,
+      "cos(d_pre(k), primary d_pre)": 0.022436969323737607,
+      "series": "evil L19",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Truncated-pinv rank k": 896.0,
+      "cos(d_pre(k), primary d_pre)": 0.014536202411685522,
+      "series": "evil L19",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Truncated-pinv rank k": 1792.0,
+      "cos(d_pre(k), primary d_pre)": 0.031564806555281176,
+      "series": "evil L19",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Truncated-pinv rank k": 3584.0,
+      "cos(d_pre(k), primary d_pre)": 1.0,
+      "series": "evil L19",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Truncated-pinv rank k": 224.0,
+      "cos(d_pre(k), primary d_pre)": -0.011824263514162235,
+      "series": "sycophancy L14",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Truncated-pinv rank k": 896.0,
+      "cos(d_pre(k), primary d_pre)": -0.004638895954393983,
+      "series": "sycophancy L14",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Truncated-pinv rank k": 1792.0,
+      "cos(d_pre(k), primary d_pre)": 0.0018088045238022143,
+      "series": "sycophancy L14",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Truncated-pinv rank k": 3584.0,
+      "cos(d_pre(k), primary d_pre)": 0.21787796254995428,
+      "series": "sycophancy L14",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Truncated-pinv rank k": 224.0,
+      "cos(d_pre(k), primary d_pre)": 0.06519012316798277,
+      "series": "sycophancy L19",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Truncated-pinv rank k": 896.0,
+      "cos(d_pre(k), primary d_pre)": 0.029044156487154537,
+      "series": "sycophancy L19",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Truncated-pinv rank k": 1792.0,
+      "cos(d_pre(k), primary d_pre)": 0.050257391703378285,
+      "series": "sycophancy L19",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Truncated-pinv rank k": 3584.0,
+      "cos(d_pre(k), primary d_pre)": 1.0000000000000002,
+      "series": "sycophancy L19",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Truncated-pinv rank k": 224.0,
+      "cos(d_pre(k), primary d_pre)": 0.02721428936594021,
+      "series": "hallucination L14",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Truncated-pinv rank k": 896.0,
+      "cos(d_pre(k), primary d_pre)": -0.0019199829013259557,
+      "series": "hallucination L14",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Truncated-pinv rank k": 1792.0,
+      "cos(d_pre(k), primary d_pre)": 0.008747084110265068,
+      "series": "hallucination L14",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Truncated-pinv rank k": 3584.0,
+      "cos(d_pre(k), primary d_pre)": 0.31067944840614553,
+      "series": "hallucination L14",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Truncated-pinv rank k": 224.0,
+      "cos(d_pre(k), primary d_pre)": 0.03309740982412055,
+      "series": "hallucination L19",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Truncated-pinv rank k": 896.0,
+      "cos(d_pre(k), primary d_pre)": 0.0207759651630802,
+      "series": "hallucination L19",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Truncated-pinv rank k": 1792.0,
+      "cos(d_pre(k), primary d_pre)": 0.0334405667665085,
+      "series": "hallucination L19",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Truncated-pinv rank k": 3584.0,
+      "cos(d_pre(k), primary d_pre)": 1.0,
+      "series": "hallucination L19",
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 24,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "Truncated-pinv rank k",
+        "ylabel": "cos(d_pre(k), primary d_pre)",
+        "legend_labels": [
+          "evil L14",
+          "evil L19",
+          "sycophancy L14",
+          "sycophancy L19",
+          "hallucination L14",
+          "hallucination L19"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{2^{6}}$",
+          "$\\mathdefault{2^{7}}$",
+          "$\\mathdefault{2^{8}}$",
+          "$\\mathdefault{2^{9}}$",
+          "$\\mathdefault{2^{10}}$",
+          "$\\mathdefault{2^{11}}$",
+          "$\\mathdefault{2^{12}}$",
+          "$\\mathdefault{2^{13}}$",
+          "$\\mathdefault{2^{14}}$"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ],
+    "series": [
+      "evil L14",
+      "evil L19",
+      "sycophancy L14",
+      "sycophancy L19",
+      "hallucination L14",
+      "hallucination L19"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

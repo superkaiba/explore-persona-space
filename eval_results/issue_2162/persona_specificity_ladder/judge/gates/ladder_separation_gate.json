@@ -1,0 +1,448 @@
+{
+  "criterion": "ladder anchor-separation gate (plan §7 gate 1)",
+  "bars": {
+    "target_sep_bar": 0.25,
+    "netted_sep_bar": 0.5,
+    "rung_min_carriers": 4,
+    "sign": "positive (ceiling above floor)"
+  },
+  "rungs": {
+    "r1_pirate": {
+      "survived": true,
+      "surviving_carriers": [
+        "d1",
+        "d2",
+        "n3",
+        "n4",
+        "n7",
+        "n9"
+      ],
+      "n_carriers_pass": 6,
+      "per_carrier": {
+        "d1": {
+          "target_sep": 0.577,
+          "netted_sep": 1.454,
+          "ceil_target_mean": 0.577,
+          "floor_target_mean": 0.0,
+          "n_ceil_kept": 10,
+          "n_floor_kept": 10,
+          "unscored": false,
+          "passed": true
+        },
+        "d2": {
+          "target_sep": 0.5600000000000002,
+          "netted_sep": 0.5750000000000002,
+          "ceil_target_mean": 0.5600000000000002,
+          "floor_target_mean": 0.0,
+          "n_ceil_kept": 10,
+          "n_floor_kept": 10,
+          "unscored": false,
+          "passed": true
+        },
+        "n3": {
+          "target_sep": 0.4879999999999999,
+          "netted_sep": 0.698,
+          "ceil_target_mean": 0.4879999999999999,
+          "floor_target_mean": 0.0,
+          "n_ceil_kept": 10,
+          "n_floor_kept": 10,
+          "unscored": false,
+          "passed": true
+        },
+        "n4": {
+          "target_sep": 0.557,
+          "netted_sep": 1.307,
+          "ceil_target_mean": 0.557,
+          "floor_target_mean": 0.0,
+          "n_ceil_kept": 10,
+          "n_floor_kept": 10,
+          "unscored": false,
+          "passed": true
+        },
+        "n7": {
+          "target_sep": 0.5760000000000002,
+          "netted_sep": 1.3970000000000002,
+          "ceil_target_mean": 0.5760000000000002,
+          "floor_target_mean": 0.0,
+          "n_ceil_kept": 10,
+          "n_floor_kept": 10,
+          "unscored": false,
+          "passed": true
+        },
+        "n9": {
+          "target_sep": 0.41400000000000003,
+          "netted_sep": 1.044,
+          "ceil_target_mean": 0.41400000000000003,
+          "floor_target_mean": 0.0,
+          "n_ceil_kept": 10,
+          "n_floor_kept": 10,
+          "unscored": false,
+          "passed": true
+        }
+      }
+    },
+    "r2_butler": {
+      "survived": true,
+      "surviving_carriers": [
+        "d1",
+        "d2",
+        "n3",
+        "n4",
+        "n7",
+        "n9"
+      ],
+      "n_carriers_pass": 6,
+      "per_carrier": {
+        "d1": {
+          "target_sep": 0.913,
+          "netted_sep": 1.79,
+          "ceil_target_mean": 0.913,
+          "floor_target_mean": 0.0,
+          "n_ceil_kept": 10,
+          "n_floor_kept": 10,
+          "unscored": false,
+          "passed": true
+        },
+        "d2": {
+          "target_sep": 0.669,
+          "netted_sep": 0.684,
+          "ceil_target_mean": 0.669,
+          "floor_target_mean": 0.0,
+          "n_ceil_kept": 10,
+          "n_floor_kept": 10,
+          "unscored": false,
+          "passed": true
+        },
+        "n3": {
+          "target_sep": 0.477,
+          "netted_sep": 0.6819999999999999,
+          "ceil_target_mean": 0.477,
+          "floor_target_mean": 0.0,
+          "n_ceil_kept": 10,
+          "n_floor_kept": 10,
+          "unscored": false,
+          "passed": true
+        },
+        "n4": {
+          "target_sep": 0.7479999999999999,
+          "netted_sep": 1.4729999999999999,
+          "ceil_target_mean": 0.7479999999999999,
+          "floor_target_mean": 0.0,
+          "n_ceil_kept": 10,
+          "n_floor_kept": 10,
+          "unscored": false,
+          "passed": true
+        },
+        "n7": {
+          "target_sep": 0.8230000000000001,
+          "netted_sep": 1.6440000000000001,
+          "ceil_target_mean": 0.8230000000000001,
+          "floor_target_mean": 0.0,
+          "n_ceil_kept": 10,
+          "n_floor_kept": 10,
+          "unscored": false,
+          "passed": true
+        },
+        "n9": {
+          "target_sep": 0.46699999999999997,
+          "netted_sep": 1.0820000000000003,
+          "ceil_target_mean": 0.46699999999999997,
+          "floor_target_mean": 0.0,
+          "n_ceil_kept": 10,
+          "n_floor_kept": 10,
+          "unscored": false,
+          "passed": true
+        }
+      }
+    },
+    "r3_warm": {
+      "survived": true,
+      "surviving_carriers": [
+        "d1",
+        "d2",
+        "n3",
+        "n4",
+        "n7",
+        "n9"
+      ],
+      "n_carriers_pass": 6,
+      "per_carrier": {
+        "d1": {
+          "target_sep": 0.9269999999999998,
+          "netted_sep": 1.6589999999999998,
+          "ceil_target_mean": 0.9469999999999998,
+          "floor_target_mean": 0.02,
+          "n_ceil_kept": 10,
+          "n_floor_kept": 10,
+          "unscored": false,
+          "passed": true
+        },
+        "d2": {
+          "target_sep": 0.7809999999999999,
+          "netted_sep": 0.7959999999999999,
+          "ceil_target_mean": 0.9109999999999999,
+          "floor_target_mean": 0.12999999999999998,
+          "n_ceil_kept": 10,
+          "n_floor_kept": 10,
+          "unscored": false,
+          "passed": true
+        },
+        "n3": {
+          "target_sep": 0.7489999999999998,
+          "netted_sep": 0.9189999999999999,
+          "ceil_target_mean": 0.8939999999999998,
+          "floor_target_mean": 0.145,
+          "n_ceil_kept": 10,
+          "n_floor_kept": 10,
+          "unscored": false,
+          "passed": true
+        },
+        "n4": {
+          "target_sep": 0.45199999999999996,
+          "netted_sep": 0.902,
+          "ceil_target_mean": 0.727,
+          "floor_target_mean": 0.275,
+          "n_ceil_kept": 10,
+          "n_floor_kept": 10,
+          "unscored": false,
+          "passed": true
+        },
+        "n7": {
+          "target_sep": 0.487,
+          "netted_sep": 0.8980000000000001,
+          "ceil_target_mean": 0.587,
+          "floor_target_mean": 0.1,
+          "n_ceil_kept": 10,
+          "n_floor_kept": 10,
+          "unscored": false,
+          "passed": true
+        },
+        "n9": {
+          "target_sep": 0.41600000000000004,
+          "netted_sep": 0.8560000000000001,
+          "ceil_target_mean": 0.537,
+          "floor_target_mean": 0.12100000000000002,
+          "n_ceil_kept": 10,
+          "n_floor_kept": 10,
+          "unscored": false,
+          "passed": true
+        }
+      }
+    },
+    "r4_trait": {
+      "survived": false,
+      "surviving_carriers": [
+        "d1"
+      ],
+      "n_carriers_pass": 1,
+      "per_carrier": {
+        "d1": {
+          "target_sep": 0.585,
+          "netted_sep": 1.2720000000000002,
+          "ceil_target_mean": 0.63,
+          "floor_target_mean": 0.045,
+          "n_ceil_kept": 10,
+          "n_floor_kept": 10,
+          "unscored": false,
+          "passed": true
+        },
+        "d2": {
+          "target_sep": 0.037000000000000005,
+          "netted_sep": 0.05200000000000002,
+          "ceil_target_mean": 0.19999999999999998,
+          "floor_target_mean": 0.16299999999999998,
+          "n_ceil_kept": 10,
+          "n_floor_kept": 10,
+          "unscored": false,
+          "passed": false
+        },
+        "n3": {
+          "target_sep": 0.05299999999999999,
+          "netted_sep": 0.11299999999999999,
+          "ceil_target_mean": 0.183,
+          "floor_target_mean": 0.13,
+          "n_ceil_kept": 10,
+          "n_floor_kept": 10,
+          "unscored": false,
+          "passed": false
+        },
+        "n4": {
+          "target_sep": 0.0040000000000000036,
+          "netted_sep": -0.03700000000000003,
+          "ceil_target_mean": 0.143,
+          "floor_target_mean": 0.13899999999999998,
+          "n_ceil_kept": 10,
+          "n_floor_kept": 10,
+          "unscored": false,
+          "passed": false
+        },
+        "n7": {
+          "target_sep": 0.0030000000000000027,
+          "netted_sep": -0.1369999999999999,
+          "ceil_target_mean": 0.043,
+          "floor_target_mean": 0.039999999999999994,
+          "n_ceil_kept": 10,
+          "n_floor_kept": 10,
+          "unscored": false,
+          "passed": false
+        },
+        "n9": {
+          "target_sep": -0.019000000000000017,
+          "netted_sep": 0.121,
+          "ceil_target_mean": 0.1,
+          "floor_target_mean": 0.11900000000000002,
+          "n_ceil_kept": 10,
+          "n_floor_kept": 10,
+          "unscored": false,
+          "passed": false
+        }
+      }
+    },
+    "r5a_lu_therapy": {
+      "survived": false,
+      "surviving_carriers": [],
+      "n_carriers_pass": 0,
+      "per_carrier": {
+        "d1": {
+          "target_sep": 0.14499999999999996,
+          "netted_sep": 0.774,
+          "ceil_target_mean": 0.14499999999999996,
+          "floor_target_mean": 0.0,
+          "n_ceil_kept": 10,
+          "n_floor_kept": 10,
+          "unscored": false,
+          "passed": false
+        },
+        "d2": {
+          "target_sep": 0.053000000000000005,
+          "netted_sep": 0.013,
+          "ceil_target_mean": 0.053000000000000005,
+          "floor_target_mean": 0.0,
+          "n_ceil_kept": 10,
+          "n_floor_kept": 10,
+          "unscored": false,
+          "passed": false
+        },
+        "n3": {
+          "target_sep": 0.021,
+          "netted_sep": 0.03600000000000003,
+          "ceil_target_mean": 0.021,
+          "floor_target_mean": 0.0,
+          "n_ceil_kept": 10,
+          "n_floor_kept": 10,
+          "unscored": false,
+          "passed": false
+        },
+        "n4": {
+          "target_sep": 0.0,
+          "netted_sep": 0.09600000000000009,
+          "ceil_target_mean": 0.0,
+          "floor_target_mean": 0.0,
+          "n_ceil_kept": 10,
+          "n_floor_kept": 10,
+          "unscored": false,
+          "passed": false
+        },
+        "n7": {
+          "target_sep": 0.008,
+          "netted_sep": 0.31200000000000006,
+          "ceil_target_mean": 0.008,
+          "floor_target_mean": 0.0,
+          "n_ceil_kept": 10,
+          "n_floor_kept": 10,
+          "unscored": false,
+          "passed": false
+        },
+        "n9": {
+          "target_sep": 0.0,
+          "netted_sep": 0.28000000000000014,
+          "ceil_target_mean": 0.0,
+          "floor_target_mean": 0.0,
+          "n_ceil_kept": 10,
+          "n_floor_kept": 10,
+          "unscored": false,
+          "passed": false
+        }
+      }
+    },
+    "r5b_lu_philosophy": {
+      "survived": true,
+      "surviving_carriers": [
+        "d1",
+        "d2",
+        "n3",
+        "n9"
+      ],
+      "n_carriers_pass": 4,
+      "per_carrier": {
+        "d1": {
+          "target_sep": 0.8039999999999999,
+          "netted_sep": 1.641,
+          "ceil_target_mean": 0.8039999999999999,
+          "floor_target_mean": 0.0,
+          "n_ceil_kept": 10,
+          "n_floor_kept": 10,
+          "unscored": false,
+          "passed": true
+        },
+        "d2": {
+          "target_sep": 0.9199999999999999,
+          "netted_sep": 0.93,
+          "ceil_target_mean": 0.9199999999999999,
+          "floor_target_mean": 0.0,
+          "n_ceil_kept": 10,
+          "n_floor_kept": 10,
+          "unscored": false,
+          "passed": true
+        },
+        "n3": {
+          "target_sep": 0.5090000000000001,
+          "netted_sep": 0.7190000000000001,
+          "ceil_target_mean": 0.5090000000000001,
+          "floor_target_mean": 0.0,
+          "n_ceil_kept": 10,
+          "n_floor_kept": 10,
+          "unscored": false,
+          "passed": true
+        },
+        "n4": {
+          "target_sep": 0.097,
+          "netted_sep": 0.587,
+          "ceil_target_mean": 0.097,
+          "floor_target_mean": 0.0,
+          "n_ceil_kept": 10,
+          "n_floor_kept": 10,
+          "unscored": false,
+          "passed": false
+        },
+        "n7": {
+          "target_sep": 0.16999999999999998,
+          "netted_sep": 0.47,
+          "ceil_target_mean": 0.16999999999999998,
+          "floor_target_mean": 0.0,
+          "n_ceil_kept": 10,
+          "n_floor_kept": 10,
+          "unscored": false,
+          "passed": false
+        },
+        "n9": {
+          "target_sep": 0.406,
+          "netted_sep": 0.8710000000000001,
+          "ceil_target_mean": 0.43600000000000005,
+          "floor_target_mean": 0.03,
+          "n_ceil_kept": 10,
+          "n_floor_kept": 10,
+          "unscored": false,
+          "passed": true
+        }
+      }
+    }
+  },
+  "all_rungs_failed": false,
+  "passed": true,
+  "repro": {
+    "git_commit": "addfe81f",
+    "git_dirty": false,
+    "script": "scripts/issue2094_judge.py"
+  }
+}

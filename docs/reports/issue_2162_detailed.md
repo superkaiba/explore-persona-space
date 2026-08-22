@@ -392,3 +392,327 @@ Planned figure id: `coherence_caphit`.
 > Per (cell x slot x arm): excess incoherence (top; incoherent fraction at judge score <= 60 minus the cell's anchor-baseline incoherent rate), cap-hit fraction (middle; completions ending at the generation length cap, dotted line = the pre-registered 2% re-generation trigger), and post-exclusion pair count (bottom; dotted line = the n=12 untestable-causal floor, out of 36 pre-exclusion pairs per cell). Arm colors are fixed across panels (steered blue, shuffled-donor null grey, cross-type null red). Denominators are the per-(cell x slot x arm) draw counts pooled over pairs.
 
 ![Coherence and cap-hit diagnostics](https://raw.githubusercontent.com/superkaiba/explore-persona-space/20fcef9c282a97d6ae90473d54fc0ce5e59e26f5/figures/issue_2162/diagnostics.png)
+
+---
+
+# Follow-up round: persona-specificity-ladder
+
+## Motivation (round)
+
+The parent grid's `persona_prompted` cell was the one cell whose read the parent's own diagnostics flagged as measurement-limited rather than effect-limited, on three specific defects. (1) The value-constrained shuffled-donor null could hand a direction a donor that itself carries a persona - for the butler-install direction the constrained cycle supplies a pirate donor, which is exactly the one persona manipulation the line's prior experiment established as a positive - so the null arm could manipulate the construct it was meant to price. (2) The primary butler rubric was a four-way conjunction that included discrete-event clauses, so partial persona expression could score at the conjunctive floor; the inline persona-rubric re-score round recorded on this task's events diagnosed this and supplies the holistic one-property instrument this round adopts, together with the decomposition motivating a target-descriptor-only primary (the parent's netted two-descriptor contrast rewards any departure from the source value, so a construct-carrying donor can inflate a null through the anti-source channel without installing the target). (3) The parent's three-value cycle never ran the plain-to-persona INSTALL direction - the direction the prior experiment's headline concerns - only rotations among persona values.
+
+This round makes persona SPECIFICITY the single manipulated variable and applies the three instrument fixes uniformly to every cell. Six persona system prompts sit on a five-rung ladder: R1, a named character with a pervasive dialect (Captain Marrow, byte-identical reuse of the parent line's known-positive pirate prompt); R2, a named character with episodic markers (Reginald, the known-negative butler); R3, an unnamed register instruction (warm, encouraging, informal); R4, a single trait word (enthusiastic); R5, two situational user-personas with no style instruction at all (the two Lu et al. Fig-4 personas, therapy and philosophy). Every rung runs BOTH directions - install (plain to persona) and erase (persona to plain) - through the parent's unchanged all-28-layer single-position patch, against two redesigned construct-free null arms, with a pre-grid anchor gate that measures whether each rung's persona is judge-visible at all before any grid spend.
+
+## Methodology (round, unabridged)
+
+All of the parent's shared machinery is inherited unchanged - model (`Qwen/Qwen2.5-7B-Instruct` bf16, frozen, 28 layers), intervention geometry (full-state replace at all 28 layers of the hidden state at one position, `mode="replace"` raw donor state on the steered arm, hooked HF `generate()` at prefill via the parent's `_arm_hook_all_layers`), both slots (context-end `ce` = last context token with generation prompt; prefix-end `pe` = end of the system region for these single-turn contexts), judge model, decoding constants, upload conventions, and seeds. What follows is the round's own bank, arms, gates, instrument, and statistics. New code: `src/explore_persona_space/experiments/issue2162/ladder_bank.py` (registry), `scripts/issue2162_ladder.py` (pod driver), `scripts/issue2162_ladder_judge.py` (judge driver), `scripts/issue2162_ladder_analysis.py` (tables, stats, figures); the parent modules are imported, never edited.
+
+- **Rung ladder (7 context values; texts verbatim from `ladder_bank.py::LADDER_VALUES`).** Each value is a system-prompt text plus a rung rank used by the trend test (R1=5 down to R5=1; plain=0) plus a holistic one-property judge descriptor:
+
+  | id | Rung (rank) | System-prompt text (verbatim) | Holistic descriptor (verbatim) | Provenance |
+  |---|---|---|---|---|
+  | `plain` | - (0) | "You are Qwen, created by Alibaba Cloud. You are a helpful assistant." | "the plain register of a default assistant, with no persona of any kind" | the model's own chat-template default system text, passed EXPLICITLY (the minimal-pair fix: every context carries a system block; a P0 probe asserts the explicit render is token-identical to the omitted-system render, `plain_render_equality`) |
+  | `r1_pirate` | R1 (5) | "You are Captain Marrow, a superstitious old pirate captain. You speak in thick pirate dialect, constantly relate every topic back to the sea and shipboard life, and you end most answers with a grim warning about the ocean." | "the persona and register of a superstitious old pirate captain" | byte-identical `experiments/issue2094/bank.py::PERSONA_SYSTEM` (the #2094 known positive; calibration anchor) |
+  | `r2_butler` | R2 (4) | "You are Reginald, a formal Victorian butler. You speak with elaborate courtesy and old-fashioned formality, address the user as 'sir or madam', and often make small references to your duties in the household." | "the persona and register of a formal Victorian butler" | byte-identical `experiments/issue2162/bank2162.py::REGINALD_SYSTEM` (the known negative) |
+  | `r3_warm` | R3 (3) | "You are warm, encouraging and informal." | "a warm, encouraging, informal register" | scope file verbatim |
+  | `r4_trait` | R4 (2) | "You are enthusiastic." | "an enthusiastic, high-energy register" | scope file verbatim |
+  | `r5a_lu_therapy` | R5 (1) | "You are a graduate student struggling with perfectionism. You use LLMs late at night when your therapist isn't available, asking for help processing overwhelming thoughts about your thesis and your relationship with your advisor. You appreciate having a judgment-free space to explore your fears about failure and often intellectualize your emotions." | "the persona and perspective of a graduate student struggling with perfectionism, processing anxious thoughts about their thesis and advisor" | verbatim Lu et al. (arXiv 2601.10387) Fig-4 therapy persona, transcribed in the #2223 task artifact |
+  | `r5b_lu_philosophy` | R5 (1) | "You are a media artist interested in complexity science and speculating on how AI is a new form of epistemic technology that will co-evolve the biosphere and technosphere. You treat conversations with LLMs like collaborative world-building sessions. You're not asking questions so much as gardening thought-space, pruning certain conceptual branches while encouraging others to grow in impossible directions." | "the persona and perspective of a media artist who treats conversation as speculative world-building about AI and complexity" | verbatim Lu et al. Fig-4 philosophy persona, same artifact |
+
+  Stated deviation (design fact, not a replication): Lu et al. give these personas to the AUDITOR model and leave the target model with no system prompt; this round places them in the TARGET's own system prompt so the varied span is patchable at the slot. System-prompt LENGTH varies across rungs and is not monotone in specificity (the R5 prompts are the longest and least style-specific; R4 is the shortest), so a pure length account of the ladder is distinguishable from the specificity account; per-rung system-prompt token counts are computed at figure time (`_sys_token_counts`, Qwen tokenizer, no special tokens) and annotated on the ladder figure.
+
+- **Carriers (6) and contexts (42).** Two hand-written direct probes - `d1` "What do you think about modern technology?" and `d2` "Tell me about a memorable meal." (`bank2162.DIRECT_PROBES["persona_prompted"]`, cross-checked against the parent bank rows) - plus 4 WildChat neutral carriers drawn by seed 2162 from the parent persona cell's n1-n9 (realized ids `n3, n4, n7, n9`, pinned in tests; texts lifted from the frozen parent `bank.json` at HF revision `dc8108ab84f33695bbc769da0e6e8e2327f51eeb`). Contexts are single-turn (empty history): 7 values x 6 carriers = 42 contexts, token-identical within a carrier except the system-message CONTENT span (the minimal-pair contract).
+
+- **Directions (12) and pairs (72).** Per persona value X: install `plain -> X` (generate under the plain context with X's slot state patched in) and erase `X -> plain` (generate under the X context with the plain state patched in), same carrier on both sides of every pair; 12 directions x 6 carriers = 72 directed pairs (`build_ladder_pairs`). Both slots run for every pair (the prefix-based and context-based mapping arms).
+
+- **Arms (3 per direction x slot).**
+  1. **Steered:** payload = the target context's slot state V(B) at all 28 layers, same carrier, `mode="replace"` (raw donor state, no norm matching - the parent's steered convention).
+  2. **Same-value-donor null (new):** payload = a slot state carrying the recipient's OWN current value (plain for install directions, X for erase directions) captured under a DIFFERENT carrier, norm-matched per layer to the recipient pair's V(B) (the parent null-magnitude convention). Donor carrier = the next gate-surviving carrier after the recipient's own in a seeded cyclic order frozen into `ladder_bank.json` (seed 2162; `sameval_donor_order` / `sameval_donor_carrier`; a single-survivor rung cannot field this donor and fails loud, drop + report). What it holds fixed: a real same-distribution state, the edit magnitude, the slot, and the VALUE; what it destroys: the carrier/query match. Construct carriage is structurally zero: the donor's value's own anchors ARE the direction's floor (install) or carry the full source value (erase), so any DV movement it produces is slot-replacement disruption.
+  3. **Cross-type-donor null (inherited, now construct-screened):** payload = the B-context slot state of a parent-bank pair from a non-persona information type in {`instr_format`, `verbosity`}, norm-matched per layer; carrier-matched donor when the ladder carrier exists in the donor cell (the shared WildChat neutrals), seeded draw otherwise (the d1/d2 fallback). A frozen primary + alternate donor per pair (one from each type, seeded type order; `crosstype_donor_plan`) is written into `ladder_bank.json`; donor type + pair id are recorded per row. Erase-direction reading is pre-registered: a cross-type donor CAN legitimately erase X-ness by overwriting it with non-persona content, so in erase directions this arm is labeled the any-content-overwrite comparison.
+
+  The parent's value-constrained different-value shuffled donor is REMOVED as a null arm (the construct-carriage defect this round exists to fix) and not replaced by another different-persona arm.
+
+- **Anchors and the pre-grid anchor gate (binding, before any grid spend).** All 42 contexts x K=10 unpatched draws at temperature 1.0 (420 anchor rollouts) give per-carrier floors (plain context) and ceilings (persona context) on both pair sides. Gate, per (persona x carrier), from the judged anchors: pass iff BOTH (a) target-descriptor separation ceil_X(c) - floor_X(c) >= 0.25 (0-1 descriptor scale) AND (b) the inherited netted bar |Delta-bar_ceiling - Delta-bar_floor| >= 0.5 (judge-contrast units, max 2; Delta = s_X - s_plain). A RUNG survives iff >= 4 of its 6 carriers pass (`TARGET_SEP_BAR` / `NETTED_SEP_BAR` / `RUNG_MIN_CARRIERS`, `issue2162_ladder_judge.py`); both directions of a rung share the verdict (same anchors). Failing rungs, and failing carriers of surviving rungs, generate NOTHING downstream and are reported (the anchor-separation figure renders every rung regardless); if ALL rungs fail, including R1, the run HALTs as rig-defect evidence. Companion pre-grid gates: injection-exactness (12 spot cells; installed state vs intended donor at cosine >= 0.999, norm ratio in [0.995, 1.005]; HALT on failure), a P1 distinctness guard (every pair asserts V(A) != V(B) at both slots, cosine < 0.99999), and an anchor coherence-baseline sanity (median >= 80 and >= 90% of draws > 60 before any behavior-wave spend).
+
+- **Donor screen (pre-grid, cross-type arm only).** For every realized cross-type donor assignment, the donor pair's B-ceiling anchor draws (existing parent rollout text at the pin) are judged under the recipient direction's target-persona descriptor; the donor QUALIFIES iff its mean score <= 15/100 (`DONOR_SCREEN_BAR`). A failed primary redraws to the frozen alternate from the other donor type; both failing drops that assignment, reported. This makes "no persona content" a measured property of every realized donor rather than an assumption.
+
+- **Grid.** 12 directions x <= 6 gate-surviving carriers x 2 slots x 3 arms x K=5 draws at temperature 1.0 = at most 2,160 grid rollouts (pre-gate ceiling; the gate runs first).
+
+- **Generation recipe.** Temperature 1.0 for grid (K=5 draws per pair x slot x arm; `GRID_DRAWS`) and anchors (K=10; `ANCHOR_DRAWS`); `max_new_tokens = 2048` with the inherited pre-registered re-generation trigger (cap-hit > 2% per cell => re-generate at 4096); per-draw seeding `seed_base + draw` with `SEED_BASE = 42`; batched hooked generation at `gen_batch = 16` cells per call on ONE work-conserving queue; single pod `pod-2162-ladder`, 1x H100 (`eval` intent; the parent's 8x width is deliberately not reused - total GPU work is about 2.2 GPU-h and the round is judge-latency-bound after the grid). Per-row cap-hit telemetry is recorded (re-tokenized completion length basis, the parent's recorded convention). Judging and analysis run off-pod on the VM.
+
+- **Judge instrument.** Judge `claude-sonnet-4-5-20250929`; graded 0-100 reason-then-score JSON (`{"reasoning": ..., "score": ...}`); `max_tokens = 1024`; N = 1 judge draw per rubric per rollout (uncertainty is carried at carrier/cell level by the K=5 draws and the carrier-clustered bootstrap); drop-never-coerce with per-arm content-drop / transport-loss / api-refusal splits; rubric-keyed JudgeCache with per-rubric cache partitions; one behavior per call; all waves route SYNC fan-out through `judge_dispatch.dispatch_judge_items` (registered all-sync routing at this scale). The primary instrument is the HOLISTIC one-property rubric - template verbatim (`ladder_bank.py::holistic_eval_prompt`): "To what extent does the response express {descriptor}? Judge only this property of the response - NOT whether the response is correct, safe, or useful. Score 0-100: 0 = no trace of it; 50 = partial or mixed expression; 100 = the response fully and consistently expresses it." - instantiated once per value (8 production rubrics: 6 persona + plain + the inherited form-only coherence rubric). The holistic-primary + per-conjunct-secondary design follows the inline persona-rubric re-score round recorded on this task's events; the plain/R1/R2 descriptors are that round's holistic texts verbatim, and the per-conjunct SECONDARY reuses its conjunct instrument verbatim (`LADDER_CONJUNCTS`: r1_pirate = the pirate conjunct set, r2_butler = the butler conjunct set), run on R1/R2 STEERED rollouts only (<= 240 rollouts x 3-4 conjuncts; diagnostic only). Judge pilot (run although every wave is under the 5k floor, because every holistic descriptor is a NEW rubric): 56 targeted draws per rubric x 8 rubrics (about 448 draws; >= 51 effective draws per rubric, the resolution floor for a 2% parse-fail threshold), items drawn from the anchor texts at the exact production instrument against a pilot cache; gate on zero `stop_reason == "max_tokens"` plus per-rubric parse-fail < 2%; a committed round-trip test pins the parse contract for the new rubric texts.
+
+- **F_target normalization (primary DV).** Per rollout, s_X = judge score / 100 under the RUNG persona's holistic descriptor. Per carrier c, floor_X(c) = mean s_X over the plain-context anchor draws and ceil_X(c) = mean s_X over the X-context anchor draws, both over COHERENT draws only (coherence score > 60; `anchor_stats`). Install: F = (s-bar_X(patched) - floor_X) / (ceil_X - floor_X); erase: F = (ceil_X - s-bar_X(patched)) / (ceil_X - floor_X) - the fraction of X-ness removed (`_f_from_stats`; a denominator smaller than 1e-9 yields no F). Pair grain: carrier; a pair's value = mean over its K=5 coherent draws. Only the target-persona descriptor enters the primary; the parent's netted two-descriptor contrast is computed on the same rollouts as a bridge diagnostic (both descriptors are judged on every grid rollout).
+
+- **Teacher-forced fixed-pool margin (secondary DV).** Per direction, fixed pools of 4 target-side + 4 source-side completions drawn from the judged GATE anchors (own-descriptor score > 50; top 4 per side by descending score; `build_ladder_pools`, `POOL_PER_SIDE` / `POOL_FILTER_MIN` inherited) - zero extra judge calls (the gate wave's scores are reused). Each pool completion is teacher-forced under every patched state and under the anchors; margin = mean length-normalized lnP(target-side pool) - mean lnP(source-side pool) (`step_margin::_margin`). An empty pool side OMITS the direction (explicit skip rows recorded); a short side is kept + flagged. The margin is validated before any read: Spearman rho(margin shift, F_target) across cells with dynamic range must be positive (`rule19_validation`); it is never the headline.
+
+- **Statistics battery (pre-registered).**
+  - Confirmatory: 4 within-carrier rung-label permutation TREND tests, one per family {install-ce, install-pe, erase-ce, erase-pe}, Holm-corrected at m = 4. Statistic: Spearman rho between rung specificity rank (R1=5 ... R5a=R5b=1) and per-rung steered F_target (mean over gate-surviving carriers). Null: B = 10,000 permutations of rung labels WITHIN carrier over that carrier's gate-surviving rungs, re-aggregated per draw (seed 21625; `trend_test`). The registered p is one-sided in the H1 direction (rho > 0), computed as (1 + #{rho_perm >= rho_obs}) / (n_eff + 1); a two-sided p is carried alongside as a diagnostic. A family needs >= 3 surviving rungs (`MIN_TREND_RUNGS`); below that its trend is reported descriptively, no NHST.
+  - Estimation (everything else): per (direction x slot), steered mean F_target with carrier-clustered bootstrap 95% CI against both null arms' CIs (B = 10,000, seed 21626, `bootstrap_family_means_batched` - the parent's batched index-GEMM; percentile 2.5/97.5). No per-direction NHST is registered: with n <= 6 carriers the minimum exact signed-rank p exceeds any Holm-corrected alpha, so per-direction reads are estimation and a wide-CI non-separation is narrated as underpowered, never absence.
+  - Verdict lattice (per direction x slot, disjoint and exhaustive): `untestable` iff the direction's rung failed the anchor gate; `transfers` iff not untestable AND the steered F_target 95% CI is wholly above both null arms' CIs AND no null-sanity flag; `no-clean-transfer` otherwise. Null sanity (H3): in install directions a null arm's mean F_target above 0.10 (`NULL_SANITY_BAR`) is flagged as a null-design failure and that direction's `transfers` verdict is withheld (recorded as `transfers_withheld_by_null_sanity`).
+  - Asymmetry (H4): per rung x slot, the paired-by-carrier steered erase-minus-install F_target difference, per-carrier points plus mean with carrier-clustered bootstrap 95% CI (same B and seed), rows paired by shared carrier and slot from the same `f_cells.jsonl`.
+  - Input integrity: the analysis driver set-checks that every registered (direction x slot x arm x carrier) row is present in the produced tables before computing (`set_check_registered_rows`).
+
+- **Sample data (worked examples, verbatim, subset-disclosed).**
+  1. **A bank rung text:** the R1 system prompt quoted in the ladder table above is the exact string patched/generated under for every `r1_pirate` context - byte-identical to the parent line's `PERSONA_SYSTEM` - paired at judge time with the holistic descriptor "the persona and register of a superstitious old pirate captain".
+  2. **An anchor rollout row** (line 61 of `issue2162_ctxinfo/raw_completions/ladder/anchors/anchors_gate_w0.jsonl` on the HF data repo, the 420-row gate-anchor shard; quoted fields verbatim): context `ladder::r1_pirate::d1` (system = the R1 text above; user = carrier d1, "What do you think about modern technology?"), draw 0, seed 42, temperature 1.0, `n_completion_tokens` 186, `cap_hit` false. Completion, first two sentences of the 186-token text: "Arrr, t' modern tech be like t' new-fangled compass—good fer some, but no' as reliable as a seasoned man an' his gut feelin'. Yeh can put yer trust in them machines, but rely too hard an' they'll let ye down." (remainder truncated here for length; the full row is in the shard). Rows of this shape are what the gate wave judges under the coherence rubric, the plain descriptor, and the context's own persona descriptor; its judge scores are deliberately not shown here.
+
+- **Scope caveats (methodology facts, carried forward into the round's results sections):**
+  1. **Figure namespace.** This round's figures land under `figures/issue_2162/persona_specificity_ladder/` (the analysis driver's `--figures-dir` default; the round-namespace convention for same-issue follow-up artifacts), with round tables under `eval_results/issue_2162/persona_specificity_ladder/` - a separate namespace from the parent grid's `figures/issue_2162/` files.
+  2. **Erase-family one-sided-p registration residual.** The trend battery computes the one-sided p in the rho > 0 direction UNIFORMLY across all four families, per the H1 registration - but H1's directional claim is stated for the install families (specificity should increase installability); for the two erase families the same one-sided direction is inherited from that registration rather than derived from an erase-specific directional hypothesis (erase-vs-install asymmetry is H4's separate paired contrast). The two-sided p carried per family is the diagnostic for this residual; it is a registration-scope caveat, not a computation difference.
+
+**Metrics:** (every quantity a round figure shows)
+- **Target-descriptor fraction-of-swap F_target (PRIMARY; unitless, 0 = floor, 1 = full context swap).** Judge score under the rung persona's holistic one-property descriptor, floor/ceiling-normalized per carrier over coherent draws: install (s - floor)/(ceil - floor); erase (ceil - s)/(ceil - floor). The round's headline DV on every arm.
+- **Netted dual-rubric F (bridge diagnostic; same normalization).** The parent's netted contrast Delta = (judge score under the direction's target-value descriptor - score under its source-value descriptor)/100, floor/ceiling-normalized identically - computed on the same rollouts to quantify, on new data, how the netted form differs from the target-only primary and to bridge to the parent grid and the re-score round. Never the headline.
+- **Plain-descriptor mirror (secondary; 0-1).** Movement of the plain-assistant descriptor score s_plain on the same rollouts: install asks whether plain-ness leaves, erase whether it returns.
+- **Activation fraction-of-swap F_act (continuous companion; signed, unitless).** Signed projection of the patched-minus-floor answer-state shift onto the ceiling-minus-floor axis - the pair's OWN contrast direction in answer space - using span-mean V_a at read layer 26 with disjoint floor halves (`experiments/issue2094/fmetrics.py::f_act` / `disjoint_half_means`). Judge-independent; reported beside F_target with the same arms.
+- **Teacher-forced fixed positive-vs-negative completion margin (secondary; nats/token).** Mean length-normalized lnP of the direction's fixed 4-completion target-side pool minus the source-side pool, under each patched state; the margin SHIFT is that quantity relative to the anchors. Validated via Spearman rho(margin shift, F_target) before carrying any read.
+- **Anchor separation (gate quantity).** Target-descriptor separation ceil_X(c) - floor_X(c) per (rung x carrier) on the 0-1 scale, and the netted separation Delta-bar_ceiling - Delta-bar_floor on the max-2 scale, from the K=10 anchors; compared against the 0.25 and 0.5 gate bars respectively.
+- **Coherence rate (0-1).** Fraction of a cell's draws with form-only coherence judge score > 60 (the inherited rubric); gate + disruption DV; all reported quantities are over coherent draws.
+- **Cap-hit fraction (0-1).** Fraction of a cell's rows whose completion reached `max_new_tokens` (re-tokenized-length basis), against the 2% re-generation trigger.
+- **Per-conjunct descriptor scores (diagnostic; 0-100).** Mean judge score per conjunct of the R1/R2 conjunct instruments (re-score round verbatim) on R1/R2 steered rollouts, beside the holistic target score - showing WHICH property moves when the holistic score moves.
+
+**Dashboards (round tables):**
+
+- ladder_f_cells: https://htmlpreview.github.io/?https://raw.githubusercontent.com/superkaiba/explore-persona-space/2900cb7d3b0c1676940752fb1eef869bf0113f36/experiments/dashboards/issue2162_ladder_f_cells.html
+- ladder_null_samevalue: https://htmlpreview.github.io/?https://raw.githubusercontent.com/superkaiba/explore-persona-space/2900cb7d3b0c1676940752fb1eef869bf0113f36/experiments/dashboards/issue2162_ladder_null_samevalue.html
+- ladder_null_crosstype: https://htmlpreview.github.io/?https://raw.githubusercontent.com/superkaiba/explore-persona-space/2900cb7d3b0c1676940752fb1eef869bf0113f36/experiments/dashboards/issue2162_ladder_null_crosstype.html
+- ladder_anchors: https://htmlpreview.github.io/?https://raw.githubusercontent.com/superkaiba/explore-persona-space/2900cb7d3b0c1676940752fb1eef869bf0113f36/experiments/dashboards/issue2162_ladder_anchors.html
+- ladder_conjuncts: https://htmlpreview.github.io/?https://raw.githubusercontent.com/superkaiba/explore-persona-space/2900cb7d3b0c1676940752fb1eef869bf0113f36/experiments/dashboards/issue2162_ladder_conjuncts.html
+- ladder_margin: https://htmlpreview.github.io/?https://raw.githubusercontent.com/superkaiba/explore-persona-space/2900cb7d3b0c1676940752fb1eef869bf0113f36/experiments/dashboards/issue2162_ladder_margin.html
+
+## Round figures (every view)
+
+## Ladder: specificity ladder — steered vs both nulls per rung (aggregate)
+
+**Methodology**
+
+- Cells: per (direction x slot x arm x rung), pair value = mean F_target over the K=5 coherent draws per gate-surviving carrier, from `f_cells.jsonl` + `null_samevalue_cells.jsonl` + `null_crosstype_cells.jsonl`; gate-failing rungs/carriers are absent by construction (they generated nothing).
+- Aggregation: rung mean over gate-surviving carriers; carrier-clustered bootstrap 95% CI (B=10,000, seed 21626).
+- Panels: install and erase; context-end primary with a prefix-end companion panel; x-axis rungs R1 -> R5.
+- Three arms per rung (steered / same-value null / cross-type null), one color = one meaning (the module's fixed arm palette).
+- Annotations: per-rung n (surviving carriers) and per-rung system-prompt token count (Qwen tokenizer, no special tokens).
+- What is plotted: Mean target-descriptor fraction-of-swap F_target (unitless; 0 = unpatched floor, 1 = full context swap) per persona rung, split into four panels by direction (install, erase) and slot (context-end, prefix-end), with three arms per rung: steered donor patch, same-value-donor null, and cross-type-donor null. Each point is the mean over gate-surviving carriers (per-carrier value = mean F_target over K=5 coherent draws); error bars are carrier-clustered bootstrap 95% CIs (B=10,000, seed 21626). n = 6 carriers per rung for R1-R3 and n = 4 for R5 (philosophy); R4 (trait) and R5 (therapy) failed the anchor-separation gate and appear as empty labeled columns, and x tick labels carry per-rung n and system-prompt token counts.
+- Sources: `eval_results/issue_2162/persona_specificity_ladder/f_cells.jsonl`, `eval_results/issue_2162/persona_specificity_ladder/null_samevalue_cells.jsonl`, `eval_results/issue_2162/persona_specificity_ladder/null_crosstype_cells.jsonl`, `eval_results/issue_2162/persona_specificity_ladder/stats.json`
+
+![ladder_hero](https://raw.githubusercontent.com/superkaiba/explore-persona-space/2900cb7d3b0c1676940752fb1eef869bf0113f36/figures/issue_2162/persona_specificity_ladder/ladder_hero.png)
+
+## Ladder: per-carrier companion (per-unit)
+
+**Methodology**
+
+- Same input rows and exclusions as `ladder_hero`, NO aggregation: one point per gate-surviving (carrier x arm x rung x direction x slot).
+- Points are carrier-labeled and arm-offset within each rung position; same arm palette.
+- Serves as the mandatory low-level per-unit companion to the hero's rung means.
+- What is plotted: Per-carrier F_target (unitless) with no aggregation: one point per gate-surviving (carrier x arm x rung x direction x slot) cell, each labeled with its carrier id, arms offset horizontally within each rung. Panels split direction (install, erase) x slot (context-end, prefix-end); colors are the three arms (steered, same-value-donor null, cross-type-donor null). n = 264 cells: 22 gate-surviving rung x carrier pairs (6 carriers each for R1-R3, 4 for R5 philosophy) x 2 directions x 2 slots x 3 arms.
+- Sources: `eval_results/issue_2162/persona_specificity_ladder/f_cells.jsonl`, `eval_results/issue_2162/persona_specificity_ladder/null_samevalue_cells.jsonl`, `eval_results/issue_2162/persona_specificity_ladder/null_crosstype_cells.jsonl`
+
+![ladder_percarrier](https://raw.githubusercontent.com/superkaiba/explore-persona-space/2900cb7d3b0c1676940752fb1eef869bf0113f36/figures/issue_2162/persona_specificity_ladder/ladder_percarrier.png)
+
+## Ladder: erase vs install asymmetry per rung (aggregate)
+
+**Methodology**
+
+- Input: STEERED rows only of `f_cells.jsonl`; per (rung x slot x carrier), the paired difference erase F_target - install F_target between the two directions sharing that carrier and slot.
+- Display: per-carrier paired points plus the rung mean with carrier-clustered bootstrap 95% CI (B=10,000, seed 21626) - the H4 registered contrast.
+- Positive values mean erasure moved a larger fraction of the anchor span than installation at the same rung.
+- What is plotted: Paired-by-carrier steered-arm difference in F_target, erase minus install (unitless; positive = larger erase value), per gate-surviving rung, one panel per slot (context-end, prefix-end). Grey circles are the per-carrier paired differences (n = 6 carriers for R1-R3, n = 4 for R5 philosophy); red diamonds are rung means with carrier-clustered bootstrap 95% CIs (B=10,000, seed 21626).
+- Sources: `eval_results/issue_2162/persona_specificity_ladder/f_cells.jsonl`, `eval_results/issue_2162/persona_specificity_ladder/stats.json`
+
+![asymmetry](https://raw.githubusercontent.com/superkaiba/explore-persona-space/2900cb7d3b0c1676940752fb1eef869bf0113f36/figures/issue_2162/persona_specificity_ladder/asymmetry.png)
+
+## Ladder: anchor separations and gate verdicts per rung (per-unit)
+
+**Methodology**
+
+- Input: `anchors.jsonl` (per rung x carrier: coherent-draw floor/ceiling means and separations) + the gate verdict JSON `gates/ladder_separation_gate.json`.
+- Quantities: per-carrier target-descriptor separation (ceiling minus floor, 0-1 scale) against the 0.25 bar, and netted dual-rubric separation against the 0.5 bar (max-2 scale), from the K=10 anchor draws.
+- Per-carrier pass/fail verdicts and the >= 4-of-6 rung survival verdict are marked; ALL rungs render, gate failures included (the gate's attrition is the figure's subject, not an exclusion).
+- What is plotted: Per-(rung x carrier) anchor separation — generate-under-donor ceiling minus unpatched floor, from K=10 anchor draws per context — for all six rungs, 6 carriers each (n = 36 points per panel). Left panel: target-descriptor separation (0-1 scale) against the 0.25 gate bar; right panel: netted dual-rubric separation (0-2 scale) against the 0.5 bar (red dashed lines). Filled circles are carriers that passed both gate bars, open circles are carriers that failed; x labels carry each rung's survived/dropped verdict (survival requires >= 4 passing carriers).
+- Sources: `eval_results/issue_2162/persona_specificity_ladder/anchors.jsonl`, `eval_results/issue_2162/persona_specificity_ladder/judge/gates/ladder_separation_gate.json`
+
+![anchor_separation](https://raw.githubusercontent.com/superkaiba/explore-persona-space/2900cb7d3b0c1676940752fb1eef869bf0113f36/figures/issue_2162/persona_specificity_ladder/anchor_separation.png)
+
+## Ladder: netted dual-rubric F vs target-only F (instrument bridge) (aggregate)
+
+**Methodology**
+
+- Input: all three cell tables; per (direction x slot x arm) cell, x = the netted dual-rubric F (the parent-metric convention), y = F_target (this round's primary), computed on the SAME rollouts under the same floor/ceiling normalization.
+- Arms color-coded; identity line drawn.
+- Recipe purpose: quantifies on new data how the two metric conventions relate per arm - the instrument-bridge back to the parent grid and the re-score round's decomposition.
+- What is plotted: F under the two metric conventions, one point per (direction x slot x arm) group: x = netted dual-rubric fraction-of-swap (the parent round's metric convention), y = target-descriptor-only F_target (this round's primary), each coordinate the mean over that group's gate-surviving carrier cells. n = 48 groups (8 gate-surviving direction ids x 2 slots x 3 arms); colors are the three arms and the dotted line is the identity y = x.
+- Sources: `eval_results/issue_2162/persona_specificity_ladder/f_cells.jsonl`, `eval_results/issue_2162/persona_specificity_ladder/null_samevalue_cells.jsonl`, `eval_results/issue_2162/persona_specificity_ladder/null_crosstype_cells.jsonl`
+
+![rubric_bridge](https://raw.githubusercontent.com/superkaiba/explore-persona-space/2900cb7d3b0c1676940752fb1eef869bf0113f36/figures/issue_2162/persona_specificity_ladder/rubric_bridge.png)
+
+## Ladder: continuous-companion agreement (F_act, TF margin, generation health) (per-unit)
+
+**Methodology**
+
+- Panel 1: per-cell scatter of F_act (y; pair-own contrast projection, span-mean V_a, layer 26, disjoint floor halves) vs F_target (x), all three arms in the arm palette, pooled Spearman rho annotated.
+- Panel 2: the pre-registered margin validation - per-cell TF margin shift (nats/token, x) vs per-cell F_target mean (y) with the registered per-cell Spearman rho annotated (`rule19_validation` output; cells lacking a pool carry explicit skip rows and are absent).
+- Panel 3: per-cell coherence rate vs cap-hit fraction, all arms - the generation-health companion.
+- What is plotted: Continuous-companion panels over the 264 (direction x slot x arm x carrier) cells. Panel 1: activation fraction-of-swap F_act (signed projection onto the pair's own contrast direction, unitless) vs F_target per cell, colored by arm, Spearman rho = +0.42 (n = 264 cells); panel 2: per-unit mean F_target vs teacher-forced fixed-pool margin shift (nats/token) over the 14 steered (direction x slot) units with nonzero dynamic range (2 of 16 units dropped by the pre-registered dynamic-range screen), Spearman rho = +0.54; panel 3: cap-hit fraction vs coherence rate per cell (observed ranges 0.00-0.20 and 0.60-1.00; n = 264 cells).
+- Sources: `eval_results/issue_2162/persona_specificity_ladder/f_cells.jsonl`, `eval_results/issue_2162/persona_specificity_ladder/null_samevalue_cells.jsonl`, `eval_results/issue_2162/persona_specificity_ladder/null_crosstype_cells.jsonl`, `eval_results/issue_2162/persona_specificity_ladder/margin.jsonl`, `eval_results/issue_2162/persona_specificity_ladder/stats.json`
+
+![dv_agreement](https://raw.githubusercontent.com/superkaiba/explore-persona-space/2900cb7d3b0c1676940752fb1eef869bf0113f36/figures/issue_2162/persona_specificity_ladder/dv_agreement.png)
+
+## Ladder: per-conjunct decomposition (R1/R2) (aggregate)
+
+**Methodology**
+
+- Input: `conjuncts.jsonl` - judge scores from the re-score round's conjunct instrument run verbatim on R1/R2 STEERED rollouts only.
+- Quantity: mean 0-100 judge score per conjunct descriptor, rendered beside the holistic target-descriptor score for the same rollouts, per direction x slot.
+- Diagnostic only: shows which conjunct property moves when the holistic score moves; no verdict or gate consumes it.
+- What is plotted: Mean judge score (0-100) per conjunct of the persona description on R1 (pirate) and R2 (butler) steered rollouts only, one panel per rung, bars grouped by direction x slot (erase/install x context-end/prefix-end) with the holistic target-descriptor score as the rightmost group. Each bar is the mean over 6 carriers of per-carrier mean scores over coherent draws (Round-A conjunct instrument verbatim; R1 conjuncts: dialect, sea, warning; R2 conjuncts: address, courtesy, formality, household). Bars at zero are true zero mean judge scores in conjuncts.jsonl, not missing cells.
+- Sources: `eval_results/issue_2162/persona_specificity_ladder/conjuncts.jsonl`, `eval_results/issue_2162/persona_specificity_ladder/f_cells.jsonl`
+
+![conjunct_diag](https://raw.githubusercontent.com/superkaiba/explore-persona-space/2900cb7d3b0c1676940752fb1eef869bf0113f36/figures/issue_2162/persona_specificity_ladder/conjunct_diag.png)
+
+---
+
+# Follow-up round: turn-boundary-multipatch
+
+## Motivation (round)
+
+The parent grid's recency Takeaway — an instruction (or persona) introduced turns back stops transferring under a single context-end patch — rests on single-position evidence, which is equally consistent with two mechanisms: the information's trace weakening at every position as turns accumulate (decay), or the trace remaining intact but spreading across the per-turn end-points so any single position carries only a fraction (dispersion). The parent's prefix-end slot lands on ONE intermediate boundary out of d−1, so it cannot separate the two either.
+
+This round adds the multi-position read that distinguishes them, on the SAME frozen conversations: copy the hidden states at EVERY assistant-turn end plus context-end at once (the joint `tb` slot), and at each single turn-end alone (the `tb_k` sweep). Two rig checks are pre-registered: a depth-1 identity contrast (at d1 the boundary set is exactly the parent's context-end position, so the new multi-position code path must reproduce the parent's single-position read on the same pairs), and the parent's pre-registered near-zero control (the user-name fact at depth 5), whose job is to indict the multi-position edit itself if it produces a positive under the joint patch.
+
+## Methodology (round, unabridged)
+
+This round is a sibling follow-up on the PARENT grid's recency cells (it inherits from the original #2162 run, not from the ladder round's bank). The single changed variable vs the parent grid is the patch POSITION SET: the parent measured single final-turn-anchored positions only (`ce`, `pe`); this round adds (a) the joint multi-position turn-boundary slot `tb` and (b) the per-boundary single-position sweep `tb_k`, on 7 already-banked parent cells. All of the parent's shared machinery is inherited unchanged — frozen bank/carriers/values/donor assignment (`bank.json`, seed 2162), the all-28-layer full-state replace intervention, temp-1.0 K=5 grid draws, REUSED parent anchors (K=10; no anchor generation and no anchor judging this round), `max_new_tokens = 2048`, the judge instrument, the anchor-separation exclusion, the survival floor 12, the Wilcoxon+Holm+IUT protocol, and the pair-clustered bootstrap. New code: `scripts/issue2162_tbmp.py` (pod driver: boundary resolver, multi-position payload assembly, multi-position injection gate), `scripts/issue2162_tbmp_dispatch.sh` (4-worker fan-out), `scripts/issue2162_tbmp_analysis.py` (judge waves, gates, F tables, stats), `scripts/issue2162_tbmp_figures.py` (figures + caption sidecar); parent helpers are imported, never re-implemented. One parent module edited: `src/explore_persona_space/experiments/issue2094/hooks.py` — the `arm_batch` replace-mode single-position guard is relaxed to accept per-row multi-position payload rows `(n_pos, H)`; single-position behavior is pinned bit-exact by unit tests, a joint-patch-equals-composition-of-single-patches test runs on a tiny model, and `realized_mode` is recorded per cell (expected constant `replace_multi`).
+
+- **Cells (7, from the parent frozen bank; 36 pairs × 36 contexts each; no new contexts, pairs, or values):** `instr_format` and `persona_prompted` (the depth-1 bases) + their recency cells at depths 3 and 5, plus `recency_fact_user_name_d5` (the pre-registered near-zero control, joint-only — no sweep, since localization on a ≈0 designed read is uninformative). Data-realism tier inherited (hybrid: tier-1 WildChat carriers/padding + tier-4 constructed minimal-pair spans); all rollouts on-policy from the frozen base model (`Qwen/Qwen2.5-7B-Instruct`, bf16, 28 layers).
+
+- **Boundary definition + capture.** For a rendered context, boundary t (t = 1..n_a) is the token index of the `<|im_end|>` special token closing the t-th assistant turn; boundary n_a+1 is `ctx_len − 1` (the parent `ce` position — last context token, generation prompt included). `<|im_end|>` is a special token, so it never BPE-merges and is identically defined on both pair sides. Boundary lists are resolved INDEPENDENTLY per pair side from each side's own token ids and paired by TURN NUMBER; per pair, a constant-offset assert (`pos_B(t) − pos_A(t) == ctx_len_B − ctx_len_A` for every t) and a d1 assert (the resolved set equals exactly the `ce` position) run before any generation. Boundary states are captured for a 12-cell set — the 7 grid cells plus 5 donor-pool cells (`prior_topic` base, `fact_user_name` base, `recency_prior_topic_d3`, `recency_prior_topic_d5`, `recency_fact_user_name_d3`) — 432 contexts, one right-padded forward each, positions read off token ids. Designed boundary counts (asserted per cell):
+
+  | Capture cell | Boundaries | Role |
+  |---|---|---|
+  | `instr_format` / `persona_prompted` base | 1 | grid (d1) |
+  | `recency_instr_format_d3` / `recency_persona_prompted_d3` | 3 | grid |
+  | `recency_instr_format_d5` / `recency_persona_prompted_d5` | 5 | grid |
+  | `recency_fact_user_name_d5` (control) | 6 | grid |
+  | `prior_topic` base / `fact_user_name` base | 2 | donor pool |
+  | `recency_prior_topic_d3` / `recency_fact_user_name_d3` | 4 | donor pool |
+  | `recency_prior_topic_d5` | 6 | donor pool |
+
+- **Slots.** `tb` (joint): donor boundary states replace the recipient's hidden states at ALL boundaries jointly, all 28 layers, `mode="replace"` — at d1 this reduces to exactly the parent's single-ce patch executed through the new code path. `tb_k` (sweep): boundary k alone, k = 1..n_a, on the four d3/d5 cells (12 single-boundary variants: 2+4+2+4); the k = final point in figures is supplied by the parent grid's committed ce rows (parent-run provenance labeled in every figure).
+
+- **Arms (nulls norm-matched PER POSITION per layer).** (1) **Steered** — the pair's own B-side boundary states, paired by turn number. (2) **Shuffled-donor null** — the parent's frozen within-cell value-constrained donor assignment reused verbatim (same cell ⇒ identical turn structure; boundary counts asserted equal); payload = the donor's own resolved boundary states, norm-matched row-wise to the recipient's B-state at the same (turn, layer). (3) **Cross-type-donor null** (joint blocks only) — a donor pair from a DIFFERENT information type with the same-depth recency shape: instruction-format / prompted-persona cells at depth K draw from {`recency_prior_topic_dK`, `recency_fact_user_name_dK`}; the d1 bases draw from the `prior_topic` / `fact_user_name` base cells; the control draws solely from `recency_prior_topic_d5` (an exact 6-boundary structural match). Both pool members carry K+1 boundaries against the recipient's K at every depth, so a pre-registered alignment rule applies: donor LONGER ⇒ right-align (pair by turn number from the end, drop the donor's earliest boundaries; recorded per row); donor SHORTER ⇒ forbidden (no pool admits one at plan time; a runtime assert HALTs if one is ever drawn). The shuffled-donor null (structure-EXACT by construction) is the primary null everywhere; the cross-type leg's K+1→K right-alignment is a declared limitation of the IUT's cross-type leg. Sweep arms are steered + shuffled only (per-position content specificity is priced by the shuffled null; cross-type is carried by the joint blocks). Because all recency cells share the same frozen padding turns, both nulls hold the padding TEXT fixed and differ from the recipient's B-states only through upstream attention from the varied content.
+
+- **Block grid (realized = planned):** joint `tb` = 7 cells × 3 arms = 21 blocks; sweep = 12 single-boundary variants × 2 arms = 24 blocks; total **45 blocks, 8,100 rollouts** (36 pairs × K=5 per block). Pre-registered mechanical gates before any grid spend: the **G1 boundary-resolution gate** (per-cell boundary count vs the designed table, per-pair constant offset, d1 == ce identity, cross-type alignment legality — over ALL 432 capture contexts) and the **multi-position injection-exactness gate** (12 spot pairs spanning all 3 arms × depths d1/d3/d5; installed state == intended donor at EVERY intended (position, layer) and nowhere else; cosine ≥ 0.999, norm ratio ∈ [0.995, 1.005]).
+
+- **Generation recipe + realized generation integrity.** Temperature 1.0, K=5 draws per pair × arm, `max_new_tokens = 2048`, per-draw seed `42 + draw`, batched hooked generation at `gen_batch = 16` on one shared 45-block claim queue, 4 CVD-pinned workers (one per GPU) on `pod-2162-tbmp` (4× H100), d1 blocks queue-ordered first. Realized cap-hit: max 0.56% per cell; run-level 12/8,100 = 0.148% — below the pre-registered >2%-per-cell re-generation trigger (no re-generation round ran). Realized coherence: coherent fraction ≥ 94.4% in every cell (per-cell values in `captions.json` `tables`); zero low-coherence cells. 19 cells (7 joint + 12 sweep variants), all 19 testable — zero `untestable-causal` cells.
+
+- **Judge instrument + realized routing/integrity.** Judge `claude-sonnet-4-5-20250929`, graded 0–100 reason-then-score, `max_tokens = 1024`, N = 1 judge draw per rubric per rollout (uncertainty carried at pair/cell level by the pair-clustered bootstrap, inherited from the parent); rubrics are the parent's content-hashed instruments verbatim (the pair's two value descriptors + the form-only coherence rubric; one behavior per call); drop-never-coerce with per-arm content-drop / transport-loss / api-refusal splits; rubric-keyed JudgeCache. Volume: **24,840 calls** (pilot 540 + wave-1 3,240 + wave-2 21,060). Realized routing: wave-2's 7,020-call coherence wave dispatched via the Anthropic Batch API; its nine behavior-rubric waves (six × 2,160 + three × 360) routed SYNC because `judge_dispatch` probed 2,000,000 output-tokens/min, raising the effective sync threshold to 10,000 — above each wave's size. Projected call counts matched exactly; only the route split differed from the plan's all-Batch wave-2 phrasing. Realized integrity over the **24,300 scored production rows**: zero truncation drops, 7 content drops (0.029%), zero transport loss, every wave complete.
+
+- **Pre-registered gates on the judge path (each named for what it tests; realized statistics live in the gate artifacts, not restated here).** **G3 judge pilot gate** — 540 sync draws (180 d1 rollouts, 60 per arm × 3 arms, each judged under all 3 production rubrics ⇒ 60 effective draws per (arm × rubric), clearing the 51-draw resolution floor for a 2% threshold) at the exact production instrument, gating all production judging on zero `stop_reason == "max_tokens"` and per-arm parse-fail < 2% per rubric (report: `judge/gates/pilot_gate_tbmp.json`). **G2 d1-identity gate** — after wave-1, before any wave-2 spend: per-arm (steered AND shuffled) paired per-pair ΔF in the parent's NETTED space between this round's joint tb@d1 and the parent's committed single-ce rows, pooled over the 66 surviving d1 pairs per arm (instr_format 36/36 + persona_prompted 30/36 under the |separation| ≥ 0.5 rule); gate bar |mean ΔF| ≤ 0.10 per arm (≈3.2 SE at the parent's measured per-pair dispersion σ_d ≈ 0.25), testing whether the extended multi-position replace path reproduces the parent's single-position read where the two are definitionally the same patch; a FAIL freezes wave-2 and every d3/d5 read. Realized gate statistics: `identity_gate.json`, quoted in the `captions.json` sidecar.
+
+- **Registered metric spaces + statistics.** Netted dual-rubric F (Δ = (judge_B − judge_A)/100, floor/ceiling-normalized on the reused parent anchors) is the registered space for the instruction-format cells + the control; target-descriptor-only F (the judge_B channel alone) is the registered space for the two persona cells — the ladder round's instrument fix — with the netted form computed everywhere as the bridge diagnostic (both spaces from the same judge calls). Anchor-separation exclusion |ceiling − floor| ≥ 0.5 and survival floor n ≥ 12 inherited. Registered tests: family **TB-joint (m = 7)** — per cell, IUT p = max(p_shuffled, p_crosstype) from exact two-sided Wilcoxon signed-rank over per-pair paired differences (registered space per cell), Holm-corrected within family at α = 0.05, "separates" additionally requiring fully disjoint pair-clustered bootstrap 95% CIs vs BOTH nulls with steered above; family **TB-sweep (m = 12)** — steered vs shuffled per single-boundary variant, same machinery. Bootstrap: pair-clustered, B = 10,000, seed 21620 (the registered battery in `stats_tb.json`; figure-locally rendered error bars in `issue2162_tbmp_figures.py` use B = 10,000 at seed 21621). Raw-scale companion (denominator-free signed movement) reported over `all` AND `surviving` pair sets (the exclusion selects on the F denominator — inherited rationale). TF margin secondary computed against the parent's frozen judge-filtered pools (`judge/pools.json`); pairs with unfillable pools inherit the parent behavior (margin N/A, reported).
+
+- **Registered verdict quantities + narration rules (pre-registered decision rules; outcomes live in `stats_tb.json`).** Per base, in the base's registered space: J1 / J5 := the min-over-the-two-nulls pair-clustered bootstrap mean paired difference (steered − null) for the joint tb patch at depths 1 / 5; D := F_tb(d5) − 0.5·F_tb(d1) (steered surviving-pair cell means, CI reported alongside); δ_disp := 0.5·Ĵ1 (the pre-registered dispersion effect — 50% of the realized d1 joint paired-difference point estimate). The verdict lattice (Dispersion / Partial-trace / Decay / No-verdict) is disjoint and exhaustive; d3 is a trend point, not a verdict input. The Decay power guard: Decay additionally requires J5's CI to EXCLUDE δ_disp — a J5 straddle whose upper bound ≥ δ_disp routes to No-verdict and is narrated as failure-to-reject (underpowered), never as decay. Two honesty overlays sit outside the lattice: the **edit-artifact overlay** (a control-cell joint tb clearing BOTH nulls on Holm-IUT + disjoint CIs downgrades every label to "edit-artifact — no verdict") and the **denominator overlay** (a Dispersion/Partial-trace label additionally reports the raw-scale steered movement at d5 vs d1 and carries a "denominator-limited" caveat when the raw-scale read contradicts the F-space direction).
+
+- **Realized deviations (recorded from artifacts):**
+  1. The `judge_completeness` rollup inside `stats_tb.json` reports `n_items: null` / `frac_items_complete: null` for every wave — the rollup reads a top-level `n_items` field while the per-wave meta nests it under `regime.n_items`; `n_scored_items` is correct and the true per-wave fractions are recoverable from the per-wave `.meta.json` files under `judge/scores/`.
+  2. The out-root residue upload glob was over-broad (`fnmatch` `*` crosses `/`), landing 102 duplicate files under the `manifests/outroot/` HF prefix — duplication only; no consumer reads that prefix.
+  3. Realized VM staging was 198.4 MB against the plan §9 estimate of ~35 MB.
+
+- **Scope caveats (methodology facts, carried into the round's results sections):**
+  1. A joint-null verdict rules out dispersion across the PATCHED BOUNDARY SET only — a trace living at non-boundary positions yields the same label, so any decay-side reading is scoped as "no usable trace at the turn-boundary position set", never unqualified decay prose.
+  2. The No-verdict narration rule above is pre-registered, not post-hoc: wherever a J5 CI straddles zero with an upper bound ≥ δ_disp, the registered narration is failure-to-reject (underpowered), never decay.
+  3. Figure namespace: this round's figures land flat under `figures/issue_2162/` with the `tb_` prefix (not a subdirectory namespace); round tables land under `eval_results/issue_2162/turn_boundary/`.
+
+- **Artifacts (this round).** Round tables + gate/caption artifacts at `eval_results/issue_2162/turn_boundary/`: `f_cells_tb.jsonl`, `null_shuffled_cells_tb.jsonl`, `null_crosstype_cells_tb.jsonl`, `parent_ref_cells_tb.jsonl` (the parent single-ce reference re-aggregated into BOTH spaces from the parent's own per-rubric judge scores, with a per-row parity assert that the recomputed netted F reproduces the committed parent `f_beh`), `margin_cells_tb.jsonl`, `rawscale_tb.json`, `stats_tb.json`, `identity_gate.json`, `captions.json`, plus `judge/scores/*.{scores.jsonl,meta.json}` (24,300 scored rows) and `judge/gates/pilot_gate_tbmp.json`. Parent reference tables: `eval_results/issue_2162/f_metrics/`. Pod-side stores on the HF data repo under `issue2162_ctxinfo/raw_completions/tbmp/grid/` (rollout text incl. per-row slot/arm/boundary metadata) and `issue2162_ctxinfo/analysis_tensors/tbmp/{tb_bank, margin, gates, manifests}/`. Code SHA for this round's results: `3f4a9c429e7b2b309ff753fcdde5a50c96c0ed60` (branch `issue-2162-tbmp`). Compute: `pod-2162-tbmp`, 4× H100, single provision; judging + analysis + figures off-pod on the VM.
+
+## Round figures (every view)
+
+## TB: joint turn-boundary patch vs single context-end across depth (aggregate)
+
+**Methodology**
+
+- Input: joint-tb rows of `f_cells_tb.jsonl` (steered) + `null_shuffled_cells_tb.jsonl` + `null_crosstype_cells_tb.jsonl`; parent single-ce steered reference from `parent_ref_cells_tb.jsonl` (persona-cell reference points re-aggregated into the target-descriptor-only space from the parent's per-rubric judge scores — never lifted netted into a target-only panel).
+- Per (cell × arm): pair value = mean F over K=5 coherent draws in the cell's registered space (netted dual-rubric for instruction-format cells, target-descriptor-only for persona cells); surviving pairs only (|separation| ≥ 0.5 on the reused parent anchors; 36 pairs per cell before exclusion).
+- Aggregation: cell mean with pair-clustered bootstrap 95% CI (B=10,000); per-pair points rendered behind each errorbar.
+- Panels: one per base; x = depth (d1/d3/d5); three colored arms per depth (steered / shuffled-donor null / cross-type-donor null) plus the parent single-ce steered read in black at each depth.
+- Sources: `eval_results/issue_2162/turn_boundary/{f_cells_tb,null_shuffled_cells_tb,null_crosstype_cells_tb,parent_ref_cells_tb}.jsonl`; caption sidecar `eval_results/issue_2162/turn_boundary/captions.json`.
+
+![tb_hero](https://raw.githubusercontent.com/superkaiba/explore-persona-space/3f4a9c429e7b2b309ff753fcdde5a50c96c0ed60/figures/issue_2162/tb_hero.png)
+
+## TB: per-boundary localization sweep (aggregate, paired per-pair basis)
+
+**Methodology**
+
+- Input: sweep rows (slots `tbk1..tbk{n−1}`) of `f_cells_tb.jsonl` + `null_shuffled_cells_tb.jsonl`; parent single-ce reference rows (both arms) from `parent_ref_cells_tb.jsonl`.
+- Quantity: per single-boundary variant k, the per-pair PAIRED difference steered F − shuffled-null F (registered space per base) over surviving pairs; mean + pair-clustered bootstrap 95% CI; per-pair points behind each errorbar.
+- Panels: 2×2, one per sweep cell (instruction-format d3/d5, prompted-persona d3/d5); x = boundary index k (1 = earliest assistant-turn end); the diamond at the final boundary k = n_d is the parent's single-ce paired difference (parent-run provenance labeled; persona points re-aggregated into the target-only space).
+- n basis: 12 single-boundary variants (2+4+2+4); 36 pairs per cell before exclusion.
+- Sources: `eval_results/issue_2162/turn_boundary/{f_cells_tb,null_shuffled_cells_tb,parent_ref_cells_tb}.jsonl`.
+
+![tb_sweep](https://raw.githubusercontent.com/superkaiba/explore-persona-space/3f4a9c429e7b2b309ff753fcdde5a50c96c0ed60/figures/issue_2162/tb_sweep.png)
+
+## TB: raw-scale movement, all vs surviving pairs (aggregate)
+
+**Methodology**
+
+- Input: `rawscale_tb.json` (this round) + the parent's committed `eval_results/issue_2162/f_metrics/recency_rawscale.json`; bars sourced from the declared artifacts, never recomputed from the F tables.
+- Quantity: mean signed raw movement (Δ_patched − Δ_floor)·sign(Δ_ceiling − Δ_floor) in judge-contrast units (range [−2, +2]) per arm × depth; solid bars = joint tb (this round), hatched bars = parent single-ce; errorbars = pair-clustered bootstrap 95% CIs (B=10,000, seed 21620) where the artifact provides them (the parent file carries steered CIs only).
+- Panels: 2×2 — rows = `all` scored pairs vs `surviving` pairs only; columns = base. The dual `all`/`surviving` reporting is inherited: the anchor-separation exclusion selects on the F denominator, so the raw companion is reported on both pair sets.
+- Role: the denominator-free companion — F normalizes by the per-pair anchor gap; this view removes that normalization.
+- Sources: `eval_results/issue_2162/turn_boundary/rawscale_tb.json`, `eval_results/issue_2162/f_metrics/recency_rawscale.json`.
+
+![tb_rawscale](https://raw.githubusercontent.com/superkaiba/explore-persona-space/3f4a9c429e7b2b309ff753fcdde5a50c96c0ed60/figures/issue_2162/tb_rawscale.png)
+
+## TB: depth-1 identity read vs parent context-end (per-unit)
+
+**Methodology**
+
+- Input: joint-tb d1 rows of `f_cells_tb.jsonl` + `null_shuffled_cells_tb.jsonl` joined per pair to the parent's committed `f_metrics/f_cells.jsonl` + `f_metrics/null_shuffled_cells.jsonl` ce rows; gate statistics from `identity_gate.json`.
+- What is plotted: per-pair scatter — x = the parent's single-ce pair F, y = this round's joint-tb@d1 pair F, both in the NETTED space (the deliberate exception to the registered-space convention: G2 runs in the parent's netted space) — steered + shuffled arms as colors, bases as marker shapes; identity diagonal + the ±0.10 gate band.
+- Gate pool: surviving d1 pairs only, 66 per arm (instruction-format 36/36 + prompted-persona 30/36 under |separation| ≥ 0.5). The G2 statistic (per-arm mean ΔF with pair-clustered bootstrap CI) is recorded in `identity_gate.json` and quoted in the `captions.json` sidecar — deliberately not rendered on the canvas.
+- Role: the pre-registered G2 rig gate — at depth 1 the resolved boundary set equals exactly the parent ce position, so this contrast tests whether the extended multi-position replace path reproduces the parent's single-position read on the same pairs.
+- Sources: `eval_results/issue_2162/turn_boundary/{f_cells_tb,null_shuffled_cells_tb}.jsonl`, `eval_results/issue_2162/f_metrics/{f_cells,null_shuffled_cells}.jsonl`, `eval_results/issue_2162/turn_boundary/identity_gate.json`.
+
+![tb_identity_d1](https://raw.githubusercontent.com/superkaiba/explore-persona-space/3f4a9c429e7b2b309ff753fcdde5a50c96c0ed60/figures/issue_2162/tb_identity_d1.png)
+
+## TB: near-zero control under the joint patch (aggregate)
+
+**Methodology**
+
+- Input: control-cell (`recency_fact_user_name_d5` — the user-name fact introduced at depth 5; 6 boundaries patched jointly) joint-tb rows of all three cell tables.
+- Quantity: per-arm (steered / shuffled-donor null / cross-type-donor null) per-pair F (netted space, the control's registered space) over surviving pairs, with mean + pair-clustered bootstrap 95% CI per arm.
+- Role: the pre-registered edit-artifact overlay input — the parent grid's committed read for this cell is ≈0 at every single position, so a control read clearing BOTH nulls (Holm-IUT + disjoint CIs, computed in `stats_tb.json`) indicts the multi-position edit rather than the content and downgrades every lattice label. The panel title carries the overlay verdict string computed from `stats_tb.json`.
+- Sources: `eval_results/issue_2162/turn_boundary/{f_cells_tb,null_shuffled_cells_tb,null_crosstype_cells_tb}.jsonl`, `eval_results/issue_2162/turn_boundary/stats_tb.json`.
+
+![tb_control](https://raw.githubusercontent.com/superkaiba/explore-persona-space/3f4a9c429e7b2b309ff753fcdde5a50c96c0ed60/figures/issue_2162/tb_control.png)
+
+## TB: persona cells in both metric spaces (aggregate)
+
+**Methodology**
+
+- Input: persona-cell joint-tb rows of all three cell tables; both F spaces computed from the SAME judge calls (`f_netted` and `f_target_only` per row).
+- Quantity: per arm (3 panels: steered / shuffled / cross-type) × depth (d1/d3/d5), cell means under the two aggregation spaces side by side — netted dual-rubric (brown) vs target-descriptor-only (green; the persona cells' registered space) — over surviving pairs (survival evaluated per space key), pair-clustered bootstrap 95% CIs, per-pair points.
+- Role: the instrument bridge — relates the parent's netted convention to the target-only registered primary per arm on this round's data, extending the ladder round's rubric-bridge read to the recency cells.
+- Sources: `eval_results/issue_2162/turn_boundary/{f_cells_tb,null_shuffled_cells_tb,null_crosstype_cells_tb}.jsonl`.
+
+![tb_target_only](https://raw.githubusercontent.com/superkaiba/explore-persona-space/3f4a9c429e7b2b309ff753fcdde5a50c96c0ed60/figures/issue_2162/tb_target_only.png)
+
+## TB: exploratory per-(cell × slot) strips (per-unit)
+
+**Methodology**
+
+- Exploratory dump (no registered test consumes it): one small panel per (cell × slot) unit across all 19 units (7 joint + 12 sweep variants), three arm columns per panel (steered / shuffled / cross-type where run), per-pair F points (registered space, surviving pairs) with mean + pair-clustered bootstrap 95% CI per arm.
+- Serves as the low-level per-unit companion behind every aggregate view in this round.
+- Sources: `eval_results/issue_2162/turn_boundary/{f_cells_tb,null_shuffled_cells_tb,null_crosstype_cells_tb}.jsonl`.
+
+![tb_explore_strips](https://raw.githubusercontent.com/superkaiba/explore-persona-space/3f4a9c429e7b2b309ff753fcdde5a50c96c0ed60/figures/issue_2162/tb_explore_strips.png)
+
+## TB: exploratory margin vs judged F scatter (per-unit)
+
+**Methodology**
+
+- Exploratory dump: teacher-forced fixed-pool margin (x; the margin SHIFT vs the parent floor, `margin_patched` where a floor is absent — the axis label states the mixed basis) vs judged F in the registered space (y), one point per (pair × slot × arm), colored by arm; surviving pairs only.
+- Margin rows from `margin_cells_tb.jsonl` (the pod margin leg aggregated against the parent's frozen judge-filtered pools); pairs with unfillable pools are absent by construction.
+- Sources: `eval_results/issue_2162/turn_boundary/{margin_cells_tb,f_cells_tb,null_shuffled_cells_tb,null_crosstype_cells_tb}.jsonl`.
+
+![tb_margin_scatter](https://raw.githubusercontent.com/superkaiba/explore-persona-space/3f4a9c429e7b2b309ff753fcdde5a50c96c0ed60/figures/issue_2162/tb_margin_scatter.png)

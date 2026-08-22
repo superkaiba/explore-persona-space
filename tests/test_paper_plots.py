@@ -442,7 +442,9 @@ def test_sidecar_embed_data_opt_out(tmp_path: Path) -> None:
     # `commit` = human-legible <sha>/<sha>+dirty (legacy key, backward compat);
     # `git_commit` + `git_dirty` = structured provenance (#2065; dirty flag).
     # `render_id` + `formats_written` = per-call pairing stamp (#2016).
-    # `git_dirty_paths` is conditional on `git_dirty is True` — assert as subset.
+    # `git_dirty_paths` is conditional on `git_dirty is True`; the #2175 argv[0]
+    # signal adds `git_argv0_state` (always) + `git_argv0_path` (conditional) —
+    # assert as subset.
     expected = {
         "commit",
         "git_commit",
@@ -454,7 +456,11 @@ def test_sidecar_embed_data_opt_out(tmp_path: Path) -> None:
         "formats_written",
     }
     assert expected.issubset(set(meta.keys()))
-    assert set(meta.keys()) - expected <= {"git_dirty_paths"}
+    assert set(meta.keys()) - expected <= {
+        "git_dirty_paths",
+        "git_argv0_state",
+        "git_argv0_path",
+    }
     assert "points" not in meta
 
 
@@ -472,7 +478,7 @@ def test_sidecar_imshow_falls_back_to_provenance_only(tmp_path: Path) -> None:
     meta = json.loads(written["meta"].read_text())
     assert "points" not in meta
     # Same schema extension as the opt-out test above (#2065 dirty-tree flag;
-    # #2016 render_id + formats_written pairing stamp).
+    # #2016 render_id + formats_written pairing stamp; #2175 argv[0] signal).
     expected = {
         "commit",
         "git_commit",
@@ -484,7 +490,11 @@ def test_sidecar_imshow_falls_back_to_provenance_only(tmp_path: Path) -> None:
         "formats_written",
     }
     assert expected.issubset(set(meta.keys()))
-    assert set(meta.keys()) - expected <= {"git_dirty_paths"}
+    assert set(meta.keys()) - expected <= {
+        "git_dirty_paths",
+        "git_argv0_state",
+        "git_argv0_path",
+    }
 
 
 def _reject_js_invalid_constants(c: str) -> object:
@@ -716,3 +726,215 @@ def test_sidecar_text_no_suptext_duplication(tmp_path: Path) -> None:
     assert "The headline" not in text["fig_texts"]
     assert text["fig_texts"].count("Source: eval_results/issue_999") == 1
     assert text["fig_texts"].count("shared y label") == 1
+
+
+# ---------------------------------------------------------------------------
+# _extract_scatters — genuine (0,0) single-point scatters vs placeholder
+# offsets (#2262: the coordinate-based lone-(0,0) guard dropped real origin
+# data points from the sidecar; round 1's marker-sizes guard FABRICATED rows
+# for sized offset-less collections — v3 discriminates on offset PROVENANCE:
+# ``_offsets`` is non-None exactly when a caller supplied offsets)
+# ---------------------------------------------------------------------------
+
+
+def test_sidecar_keeps_genuine_origin_scatter_point(tmp_path: Path) -> None:
+    """A genuine single-point scatter at exactly (0.0, 0.0) emits its row.
+
+    Pre-#2262 the lone-(0,0) guard in ``_extract_scatters`` was
+    coordinate-based and dropped the real datum; the provenance-based guard
+    keeps it (``ax.scatter`` always supplies constructor ``offsets=``, so
+    ``_offsets`` is set)."""
+    set_paper_style("blog")
+    fig, ax = plt.subplots()
+    ax.scatter([0.0], [0.0], s=14)
+    written = savefig_paper(fig, "origin_point", dir=tmp_path)
+    plt.close(fig)
+
+    meta = json.loads(written["meta"].read_text())
+    pts = meta["points"]
+    assert len(pts) == 1
+    assert pts[0]["_kind"] == "scatter"
+    assert pts[0]["x"] == 0.0
+    assert pts[0]["y"] == 0.0
+    assert meta["total_points"] == 1
+
+
+def test_sidecar_keeps_genuine_origin_scatter_default_size(tmp_path: Path) -> None:
+    """Same at matplotlib's DEFAULT marker size (no ``s=``) — offset
+    provenance, not marker size, is what keeps the row (criterion 2)."""
+    set_paper_style("blog")
+    fig, ax = plt.subplots()
+    ax.scatter([0.0], [0.0])
+    written = savefig_paper(fig, "origin_default_s", dir=tmp_path)
+    plt.close(fig)
+
+    meta = json.loads(written["meta"].read_text())
+    pts = meta["points"]
+    assert len(pts) == 1
+    assert pts[0]["_kind"] == "scatter"
+    assert pts[0]["x"] == 0.0
+    assert pts[0]["y"] == 0.0
+    assert meta["total_points"] == 1
+
+
+def test_sidecar_keeps_genuine_origin_scatter_zero_size(tmp_path: Path) -> None:
+    """Same at ``s=0`` — a zero-area marker is still a genuine datum
+    (acceptance criterion 2)."""
+    set_paper_style("blog")
+    fig, ax = plt.subplots()
+    ax.scatter([0.0], [0.0], s=0)
+    written = savefig_paper(fig, "origin_zero_s", dir=tmp_path)
+    plt.close(fig)
+
+    meta = json.loads(written["meta"].read_text())
+    pts = meta["points"]
+    assert len(pts) == 1
+    assert pts[0]["_kind"] == "scatter"
+    assert pts[0]["x"] == 0.0
+    assert pts[0]["y"] == 0.0
+    assert meta["total_points"] == 1
+
+
+def _add_errorbar(ax: plt.Axes) -> None:
+    ax.errorbar([1.0, 2.0], [1.0, 2.0], yerr=[0.1, 0.2])
+
+
+def _add_fill_between(ax: plt.Axes) -> None:
+    ax.fill_between([0.0, 1.0], [0.0, 1.0], [1.0, 2.0])
+
+
+def _add_violinplot(ax: plt.Axes) -> None:
+    ax.violinplot([[1.0, 2.0, 3.0, 4.0]])
+
+
+def _add_bare_path_collection(ax: plt.Axes) -> None:
+    from matplotlib.collections import PathCollection
+
+    ax.add_collection(PathCollection([]))
+
+
+def _add_empty_scatter(ax: plt.Axes) -> None:
+    ax.scatter([], [])
+
+
+def _add_sized_empty_path_collection(ax: plt.Axes) -> None:
+    from matplotlib.collections import PathCollection
+
+    ax.add_collection(PathCollection([], sizes=[14]))
+
+
+def _add_regular_poly_collection(ax: plt.Axes) -> None:
+    from matplotlib.collections import RegularPolyCollection
+
+    ax.add_collection(RegularPolyCollection(numsides=4))
+
+
+def _add_sized_circle_path_collection(ax: plt.Axes) -> None:
+    from matplotlib.collections import PathCollection
+    from matplotlib.path import Path as MplPath
+
+    ax.add_collection(PathCollection([MplPath.unit_circle()], sizes=[14]))
+
+
+@pytest.mark.parametrize(
+    "builder",
+    [
+        _add_errorbar,
+        _add_fill_between,
+        _add_violinplot,
+        _add_bare_path_collection,
+        _add_empty_scatter,
+        _add_sized_empty_path_collection,
+        _add_regular_poly_collection,
+        _add_sized_circle_path_collection,
+    ],
+    ids=[
+        "errorbar",
+        "fill_between",
+        "violinplot",
+        "bare_path_collection",
+        "empty_scatter",
+        "sized_empty_path_collection",
+        "regular_poly_collection",
+        "sized_circle_path_collection",
+    ],
+)
+def test_sidecar_skips_placeholder_offset_collections(tmp_path: Path, builder) -> None:
+    """NO ``scatter`` row for ANY offset-less collection, sized or not — and
+    a genuinely empty scatter (acceptance criteria 3 + 5).
+
+    All of these report matplotlib's SYNTHESIZED ``(1,2)`` ``[[0,0]]`` offset
+    with ``_offsets`` never set (``scatter([], [])`` instead has ``(0, 2)``
+    offsets and never reaches the guard). The last three are the
+    sized-but-offset-less cases that broke round 1's marker-sizes guard —
+    each carries a NON-EMPTY sizes array (``RegularPolyCollection`` defaults
+    to ``sizes=(1,)``), and ``PathCollection([circle], sizes=[14])`` is
+    attribute-indistinguishable from ``ax.scatter([0], [0])`` on offsets
+    shape, sizes shape AND path count — only offset PROVENANCE separates
+    them (the BLOCKER ``sized-placeholder-misclassified`` regression pins)."""
+    set_paper_style("blog")
+    fig, ax = plt.subplots()
+    builder(ax)
+    written = savefig_paper(fig, f"skip_{builder.__name__}", dir=tmp_path)
+    plt.close(fig)
+
+    meta = json.loads(written["meta"].read_text())
+    scatter_rows = [p for p in meta.get("points", []) if p["_kind"] == "scatter"]
+    assert scatter_rows == []
+
+
+def test_sidecar_percarrier_loop_keeps_all_points(tmp_path: Path) -> None:
+    """The #2162 defect signature: a per-point ``ax.scatter([x], [y])`` loop
+    over a grid that INCLUDES ``(0.0, 0.0)`` keeps EVERY point —
+    ``total_points`` equals the number of rendered points (pre-fix the
+    ``(0, 0)`` point was silently dropped)."""
+    set_paper_style("blog")
+    fig, ax = plt.subplots()
+    xs = [0.0, 0.0, 1.0, 1.0, 2.0]
+    ys = [0.0, 1.0, 0.0, 1.0, 2.0]
+    for x, y in zip(xs, ys, strict=True):
+        ax.scatter([x], [y], s=14)
+    written = savefig_paper(fig, "percarrier", dir=tmp_path)
+    plt.close(fig)
+
+    meta = json.loads(written["meta"].read_text())
+    pts = [p for p in meta["points"] if p["_kind"] == "scatter"]
+    assert len(pts) == len(xs)
+    assert meta["total_points"] == len(xs)
+    assert any(p["x"] == 0.0 and p["y"] == 0.0 for p in pts)
+
+
+def test_has_explicit_offsets_never_raises() -> None:
+    """``_has_explicit_offsets`` returns False — never propagates — for an
+    object with no offset attribute, an ``_offsets`` defined as a raising
+    ``@property`` (pinned with ``RuntimeError``, deliberately outside any
+    narrow exception tuple — the round-1 ``get-sizes-lookup-escapes`` hole:
+    ``getattr(obj, name, default)`` swallows only ``AttributeError``, so the
+    lookup itself must sit INSIDE the ``try``), a raising ``__getattr__``,
+    and an explicit ``_offsets = None`` (acceptance criterion 4). An object
+    whose ``_offsets`` IS set reads True."""
+    from explore_persona_space.analysis.paper_plots import _has_explicit_offsets
+
+    class NoOffsets:
+        pass
+
+    class RaisingOffsetsProperty:
+        @property
+        def _offsets(self) -> None:
+            raise RuntimeError("boom")
+
+    class RaisingGetattr:
+        def __getattr__(self, name: str) -> None:
+            raise RuntimeError("boom")
+
+    class NoneOffsets:
+        _offsets = None
+
+    class SetOffsets:
+        _offsets = ((0.0, 0.0),)
+
+    assert _has_explicit_offsets(NoOffsets()) is False
+    assert _has_explicit_offsets(RaisingOffsetsProperty()) is False
+    assert _has_explicit_offsets(RaisingGetattr()) is False
+    assert _has_explicit_offsets(NoneOffsets()) is False
+    assert _has_explicit_offsets(SetOffsets()) is True

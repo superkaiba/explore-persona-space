@@ -49,7 +49,8 @@
 # `git -C <.claude/worktrees/ path | $WT spelling> ... merge ... main` BEFORE
 # the path-blind -C waiver; Arm B declines the same bare-main merge shape when
 # the live cd-latch was armed by a WORKTREE cd (the `scoped_wt` bit; /tmp
-# latches keep their disposition byte-identical). `origin/main`, raw-sha, and
+# latches stay Arm-B-exempt — scoped_wt=0 — including under the #2122
+# variable/exit-guard /tmp arms). `origin/main`, raw-sha, and
 # "$MAIN_SHA" merges pass unchanged (the worktree fast-forward recipe in the
 # deny text is the sanctioned form). Deliberate override:
 # EPM_ALLOW_WORKTREE_LOCAL_MAIN_MERGE=1 — session env or inline command
@@ -60,6 +61,8 @@
 #
 # #1861: exit-guarded worktree cd => STICKY scope; name-generalized $VAR
 # latch; arming-separator restriction + cd-clause scope invalidation.
+# (#2122: the sticky grant + $VAR latch extend to the /tmp/ path class,
+# class-keyed so a /tmp latch stays Arm-B-exempt — see the arms below.)
 # (i) `cd <worktree> || exit N` and `cd <worktree> || { ...; exit N; }`
 # grant a STICKY scope to every clause PAST the provably-exiting guard tail:
 # either the cd succeeded (cwd IS the worktree) or the shell exited before
@@ -664,9 +667,12 @@
 #
 # A SECOND cd-latch (#1058) covers the SKILL.md-conventional `cd "$WT"` form
 # beside the literal-path latch: a BARE, unconditionally-executed
-# clause-initial `<NAME>=<...>.claude/worktrees/<...>` assignment binds the
-# name in `_wt_names` in stream order (#1861 generalized the original
-# WT-only `wt_bound` flag to any variable name), after which `cd "$NAME"`
+# clause-initial `<NAME>=<...>.claude/worktrees/<...>` (or, #2122,
+# `<NAME>=/tmp/<...>` — `..`-excluded) assignment binds the name AND its
+# path CLASS (wt|tmp) in `_wt_names` in stream order (#1861 generalized the
+# original WT-only `wt_bound` flag to any variable name; #2122 made the
+# binding class-keyed — a /tmp-armed name latches with scoped_wt=0, so it
+# never inherits the worktree-only Arm-B fence), after which `cd "$NAME"`
 # (exact-arg, no
 # `..`) latches the SAME `scoped` machinery as the literal latch (so it
 # inherits the `&&`-only propagation + reset semantics above verbatim). The
@@ -2135,9 +2141,19 @@ for _idx in "${!_clauses[@]}"; do
   elif echo "$clause" | grep -qE '^cd +/tmp/'; then
     if [ "$sep" != OR ] && [ "$sep" != PIPE ]; then
       scoped=1
-      scoped_wt=0   # (#1554) /tmp latch — disposition byte-identical to before
-      # (#1861) NO sticky for /tmp latches: every observed firing is
-      # worktree-side; smaller blast radius to leave it (plan §6).
+      scoped_wt=0   # (#1554) /tmp latch — Arm B (bare-local-main fence) is
+                    # worktree-only: a /tmp scratch landing onto main is the
+                    # deny text's own sanctioned recipe.
+      # (#2122) Exit-guarded cd => sticky grant, same _cd_guard_tail_exits
+      # proof as the worktree arm above; the pending class stays /tmp
+      # (sticky_pending_wt=0), so a sticky-restored clause never inherits
+      # the worktree-only Arm-B fence. This removes the #1861 "NO sticky
+      # for /tmp latches" deferral: its stated precondition — no observed
+      # /tmp-side firing — expired with #1491's 2026-08-05 firing.
+      if [ "$nextsep" = OR ] && _t=$(_cd_guard_tail_exits "$_idx"); then
+        sticky_pending_wt=0
+        sticky_arm_at=$_t
+      fi
     fi
     continue
   fi
@@ -2179,8 +2195,21 @@ for _idx in "${!_clauses[@]}"; do
       unset "_wt_names[$_an]"
       case "$sep" in
         START|SEQ|NL)
+          # (#2122) _wt_names records the armed path CLASS (wt|tmp), not a
+          # bare presence bit: post-#2122 a bound name is no longer
+          # worktree-armed by construction, and the cd-"$NAME" consumer
+          # below keys scoped_wt / sticky_pending_wt off this class so a
+          # /tmp-armed name never inherits worktree semantics (Arm B).
           if echo "$clause" | grep -qE '^(export +)?[A-Za-z_][A-Za-z0-9_]*=[^;&|[:space:]]*\.claude/worktrees/[^;&|[:space:]]*[[:space:]]*$'; then
-            _wt_names[$_an]=1
+            _wt_names[$_an]=wt
+          # (#2122) /tmp RHS parity with the literal `cd /tmp/` arm; the
+          # RHS must START with /tmp/ and carry no `..` — a bare prefix
+          # match would admit WT=/tmp/../<repo root>, which arms while its
+          # later cd "$WT" carries no literal `..` for the cd-arg refusal
+          # to catch (mirrors the cd-arg `..` refusal at near-zero cost).
+          elif echo "$clause" | grep -qE '^(export +)?[A-Za-z_][A-Za-z0-9_]*=/tmp/[^;&|[:space:]]*[[:space:]]*$' \
+               && ! echo "$clause" | grep -q '\.\.'; then
+            _wt_names[$_an]=tmp
           fi
           ;;
       esac
@@ -2212,10 +2241,24 @@ for _idx in "${!_clauses[@]}"; do
         if [ -n "$_vn" ] && [ -n "${_wt_names[$_vn]:-}" ] \
            && [ "$sep" != OR ] && [ "$sep" != PIPE ]; then
           scoped=1
-          scoped_wt=1   # (#1554) $NAME latch is a worktree latch by construction
-          # (#1861) Exit-guarded cd => sticky grant (same as the literal arm).
+          # (#1554; #2122) The $NAME latch carries the CLASS its arming
+          # assignment bound (_wt_names[$_vn] = wt|tmp; pre-#2122 every
+          # armed name was worktree-class by construction). The /tmp class
+          # must NOT inherit the worktree-only Arm-B bare-local-main fence:
+          # a /tmp scratch landing onto main is the sanctioned recipe.
+          if [ "${_wt_names[$_vn]}" = wt ]; then
+            scoped_wt=1
+          else
+            scoped_wt=0
+          fi
+          # (#1861; #2122) Exit-guarded cd => sticky grant (same as the
+          # literal arms); the pending-sticky class rides the same key.
           if [ "$nextsep" = OR ] && _t=$(_cd_guard_tail_exits "$_idx"); then
-            sticky_pending_wt=1
+            if [ "${_wt_names[$_vn]}" = wt ]; then
+              sticky_pending_wt=1
+            else
+              sticky_pending_wt=0
+            fi
             sticky_arm_at=$_t
           fi
           continue
@@ -2226,8 +2269,10 @@ for _idx in "${!_clauses[@]}"; do
   if [ "$scoped" -eq 1 ]; then
     # (#1554 Arm B) A worktree-scoped clause merging the LOCAL main branch is
     # the #1530 contamination class (stale/unpushed root-main commits import
-    # into the branch). origin/main + raw-sha merges pass; /tmp latches keep
-    # the pre-#1554 disposition byte-identical (scoped_wt=0 -> plain continue).
+    # into the branch). origin/main + raw-sha merges pass; /tmp latches are
+    # Arm-B-exempt (scoped_wt=0 -> plain continue), the #2122 variable/
+    # exit-guard /tmp arms included — a /tmp scratch landing onto main is
+    # the deny text's own sanctioned recipe.
     if [ "$scoped_wt" -eq 1 ] && [ "$_wt_lm_allow" -ne 1 ] \
        && echo "$clause" | grep -qE "$_WT_LM_ARM_B"; then
       blocked="cd <worktree> && git merge main (LOCAL-main merge imports unpushed root commits, #1530; use fetch + git merge --ff-only origin/main — recipe below; deliberate override: EPM_ALLOW_WORKTREE_LOCAL_MAIN_MERGE=1)"
@@ -2451,13 +2496,13 @@ echo "BLOCKED: '$blocked' would move the SHARED repo-root tree off main / detach
   bash scripts/new_worktree.sh .claude/worktrees/<name> <branch> && git -C .claude/worktrees/<name> ...
 NEVER point -C at the repo root itself for a destructive op — for repo-root recovery use: uv run python scripts/sync_repo_root.py
 This guard matches COMMAND TEXT, not cwd — a worktree-internal op after 'cd <worktree>' in a compound is still blocked; use the git -C <worktree> form instead of cd'ing (incident #1143, 2026-07-08).
-Three compliant worktree compose shapes ARE recognized (#1058/#1861): (1) per-clause git -C <worktree path> <op>; (2) the &&-chain: WT=<path under .claude/worktrees/>; cd \"\$WT\" && <op> (any variable name, e.g. WORKTREE); (3) the exit-guard: cd \"\$WT\" || exit 1 (or || { echo FATAL >&2; exit 1; }) with <op> on later ;/newline-separated clauses. An OR/PIPE-preceded cd, a non-exiting guard tail ('|| echo oops', '|| return 1'), or ANY later cd/pushd/popd clause voids the scope — recompose with git -C instead.
+Three compliant worktree compose shapes ARE recognized (#1058/#1861; #2122 extended shapes 2-3 to /tmp/<name> scratch paths): (1) per-clause git -C <worktree path> <op>; (2) the &&-chain: WT=<path under .claude/worktrees/ or /tmp/>; cd \"\$WT\" && <op> (any variable name, e.g. WORKTREE); (3) the exit-guard: cd \"\$WT\" || exit 1 (or || { echo FATAL >&2; exit 1; }) with <op> on later ;/newline-separated clauses — literal cd .claude/worktrees/<name> and cd /tmp/<name> heads take shapes 2-3's scoping too. An OR/PIPE-preceded cd, a non-exiting guard tail ('|| echo oops', '|| return 1'), a '..' in the cd argument (or in a /tmp/ assigned path), or ANY later cd/pushd/popd clause voids the scope — recompose with git -C instead.
 To LAND a branch onto main: gh pr merge <PR> --rebase (server-side, the /issue Step 10d path), or a scratch worktree: git worktree add --detach /tmp/<name> origin/main && git -C /tmp/<name> merge <branch> && git -C /tmp/<name> push origin HEAD:main.
 To recover an in-progress root merge/rebase/cherry-pick/revert/am: git merge --abort / git rebase --abort / git cherry-pick --abort / git revert --abort / git am --abort (all allowed; --quit likewise). For a worktree fast-forward: git -C <worktree> fetch origin +refs/heads/main:refs/remotes/origin/main, then git -C <worktree> merge --ff-only origin/main (NEVER local main — its unpushed root commits contaminate the branch, #1530).
 For marker-note text mentioning git commands, use --file <path.md> instead of --note; for commit messages, use git commit -F <file>. As of #1566 the canonical SINGLE-QUOTED task.py argument shape is masked (allowed): a clause-initial uv run python .../task.py invocation whose quoted note/title/prompt text sits in an otherwise plain clause no longer false-blocks — so a residual block on task.py argument text means a non-canonical shape (double quotes, dollar or backslash or backquote forms, redirects, a quoted or latch-vocabulary prefix); use the --file route for those.
 For composing a doc/report via heredoc whose body carries backticks, command substitution, or non-plain parameter forms (\${VAR:-default}, \${VAR@P}, \${1}) alongside git-verb text: quote the heredoc tag (<<'EOF' — bash never expands a quoted-tag body, and it strips cleanly); exactly-plain \${VAR} references (letters/digits/underscore only, nothing else inside the braces) are fine even under an unquoted tag (#1501). For a body naming shell-out spellings (subprocess / os.system / ...) or fed to a python/interpreter stdin consumer, use the Write tool instead — it covers EVERY composition class (quoting the tag does NOT lift those refusals). As of #1621 argv-LIST-form call opens with a non-shell first element (subprocess.run([\"git\", ...) no longer refuse the strip; bare word mentions, string-form calls, shell=True residuals, and shell-name argv heads still do — the Write tool remains the remediation for those.
 NOTE: this deny blocked your ENTIRE compound command — earlier clauses did NOT run either; regenerate any files/state those clauses were meant to produce before retrying the safe form (incident class #813/#1056).
-For a POD-side remote git op, a single-statement ssh <host> 'git <verb> ...' remote command is allowed (#1098), and a SINGLE-QUOTED multi-statement remote string is allowed when the quoted payload is the clause's final token and nothing quote- or latch-ambiguous precedes it (#1413); a literal 'timeout <N>' wrapper on the ssh head is tolerated too (#1859); other shapes (double quotes, redirects, trailing tokens, non-timeout-wrapped ssh — nohup/env/abs-path/variable heads and timeout FLAG forms — quoted/latch-vocabulary prefixes) still need git -C /workspace/<repo> <verb> inside the remote string, a pod-side script, or the SSH MCP.
+For a POD-side remote git op, a single-statement ssh <host> 'git <verb> ...' remote command is allowed (#1098), and a SINGLE-QUOTED multi-statement remote string is allowed when the quoted payload is the clause's final token and nothing quote- or latch-ambiguous precedes it (#1413); a literal 'timeout <N>' wrapper on the ssh head is tolerated too (#1859); other shapes (double quotes, redirects, trailing tokens, non-timeout-wrapped ssh — nohup/env/abs-path/variable BINARY heads (a variable invoking ssh itself) and timeout FLAG forms (--kill-after etc.) — quoted/latch-vocabulary prefixes) still need git -C /workspace/<repo> <verb> inside the remote string, a pod-side script, or the SSH MCP. A quoted or variable HOST token (ssh \"\$POD\" \"...\") is NOT a refusal by itself (#2122) — but once the payload ALSO carries expansions/redirects/separators the payload mask declines, in-payload separators then split the remote string, and its git sub-clause loses the clause-initial ssh head and is scanned bare (the #1739 firing) — same recompose: git -C /workspace/<repo> <verb> inside the remote string, a pod-side script, or the SSH MCP.
 For a grep/rg PATTERN clause naming git verbs: the unpiped clause is waived, and piping into plain read-only text filters (head/tail/wc/cat/cut/tr/nl/sort/uniq/grep) is waived too (#1538) — so a residual block on a piped grep means the consumer chain was NOT verifiable (an off-allowlist / path-spelled / quoted consumer word, a redirect or write/exec flag, or any $ / # in a consumer clause); drop the pipe, remove the $/#/flag, or bound output with grep -m N instead.
 For a GCE-side remote git op, the same two shapes are allowed with a gcloud compute ssh <instance> --command='...' head (#1463; an optional literal 'timeout <N>' wrapper is tolerated): keep --command the clause's FINAL token, no in-payload < or > redirects (bound output with | tail INSIDE the single-quoted payload — pipes mask fine), and no trailing local pipe / fd-dup ('2>&1 | tail -N' stays blocked); or put git -C /workspace/<clone> <verb> inside the payload, which is allowed regardless (path-blind -C waiver)." >&2
 log_deny "$blocked" "$cmd" "${clause:-}"

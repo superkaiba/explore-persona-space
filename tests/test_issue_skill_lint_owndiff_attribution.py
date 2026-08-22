@@ -29,6 +29,8 @@ import importlib.util
 import subprocess
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 
 def _load_selector():
     """Import scripts/select_step9c_tests.py by path (scripts/ is not an
@@ -57,7 +59,7 @@ _OLD_GREP_FORMS = (
 
 
 def _skill_text() -> str:
-    return _SKILL.read_text(encoding="utf-8")
+    return issue_skill_text()
 
 
 def _extract_awk_program(text: str, anchor: str) -> str:

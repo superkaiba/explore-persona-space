@@ -1,0 +1,129 @@
+{
+  "commit": "3bb8c78b",
+  "render_id": "08e6611561e6409a",
+  "git_commit": "3bb8c78b",
+  "git_dirty": false,
+  "created": "2026-08-13T17:00:29Z",
+  "figsize": [
+    10.0,
+    7.0
+  ],
+  "text": {
+    "suptitle": "Top discriminating feature properties: firing vs never-firing at the context vector",
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "template_token_frac",
+        "ylabel": "density",
+        "legend_labels": [
+          "never-firing",
+          "firing"
+        ],
+        "xticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ],
+        "yticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50",
+          "60",
+          "70",
+          "80",
+          "90"
+        ]
+      },
+      {
+        "xlabel": "log10(act_var_across_answers)",
+        "ylabel": "density",
+        "xticklabels": [
+          "\u221212",
+          "\u221210",
+          "\u22128",
+          "\u22126",
+          "\u22124",
+          "\u22122",
+          "0",
+          "2"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      },
+      {
+        "xlabel": "consistency",
+        "ylabel": "density",
+        "xticklabels": [
+          "\u22120.025",
+          "0.000",
+          "0.025",
+          "0.050",
+          "0.075",
+          "0.100",
+          "0.125",
+          "0.150",
+          "0.175",
+          "0.200",
+          "0.225"
+        ],
+        "yticklabels": [
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100",
+          "120",
+          "140"
+        ]
+      },
+      {
+        "xlabel": "log10(firing_freq_per_token)",
+        "ylabel": "density",
+        "xticklabels": [
+          "\u22129",
+          "\u22128",
+          "\u22127",
+          "\u22126",
+          "\u22125",
+          "\u22124",
+          "\u22123",
+          "\u22122",
+          "\u22121"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

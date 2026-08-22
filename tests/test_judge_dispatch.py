@@ -67,6 +67,7 @@ class FakeBatchClient:
         shuffle: bool = False,
         create_exc: Exception | None = None,
         retrieve_exc: Exception | None = None,
+        probe_exc: Exception | None = None,
         request_validator=None,
     ):
         self.judge_text_for = judge_text_for or (lambda cid: JUDGE_TEXT)
@@ -76,6 +77,7 @@ class FakeBatchClient:
         self.shuffle = shuffle
         self.create_exc = create_exc
         self.retrieve_exc = retrieve_exc
+        self.probe_exc = probe_exc
         self.request_validator = request_validator
         self.submitted: dict[str, list[dict]] = {}
         self.create_calls = 0
@@ -133,6 +135,8 @@ class FakeBatchClient:
         class _RawMessages:
             def create(_self, **kwargs):
                 client.probe_calls += 1
+                if client.probe_exc is not None:
+                    raise client.probe_exc
                 headers: dict[str, str] = {}
                 if client.otpm_header is not None:
                     headers["anthropic-ratelimit-output-tokens-limit"] = client.otpm_header
@@ -940,6 +944,41 @@ def test_probe_otpm_limit(tmp_path, caplog):
     assert decisions[0].path == "batch"
     assert client.create_calls == 1
     assert len(result) == 500
+
+
+def test_probe_otpm_limit_429_takes_assumed_tier_path(caplog):
+    """A 429'd probe returns None (assumed Tier-4), never kills the run (#2254).
+
+    Under a sustained org-wide output-TPM storm the production requests
+    survive via client backoff + per-row retries; the probe propagating its
+    RateLimitError killed four consecutive judge launches at t=0. Only the
+    429 shape is absorbed — any OTHER API error still propagates fail-loud.
+    """
+    import anthropic
+    import httpx
+
+    req = httpx.Request("POST", "https://api.anthropic.com/v1/messages")
+    rate_limited = anthropic.RateLimitError(
+        "429 rate limited", response=httpx.Response(429, request=req), body=None
+    )
+    client = FakeBatchClient(probe_exc=rate_limited)
+    with caplog.at_level(logging.WARNING):
+        assert probe_otpm_limit(client, "m") is None
+    assert client.probe_calls == 1
+    assert "429" in caplog.text
+    assert "assuming" in caplog.text  # names the assumed-tier fallback
+
+    # A non-429 APIStatusError (500) keeps propagating.
+    server_err = anthropic.InternalServerError(
+        "boom", response=httpx.Response(500, request=req), body=None
+    )
+    with pytest.raises(anthropic.InternalServerError):
+        probe_otpm_limit(FakeBatchClient(probe_exc=server_err), "m")
+
+    # A transport-level APIConnectionError (not an APIStatusError) propagates too.
+    conn_err = anthropic.APIConnectionError(request=req)
+    with pytest.raises(anthropic.APIConnectionError):
+        probe_otpm_limit(FakeBatchClient(probe_exc=conn_err), "m")
 
 
 # ── 20: strict batch request shape ───────────────────────────────────────────

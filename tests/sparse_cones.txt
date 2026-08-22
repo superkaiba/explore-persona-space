@@ -1,15 +1,19 @@
-# Sparse-checkout cones the `tests/` suite reads from OTHER issues' committed
-# artifacts. `scripts/new_worktree.sh` pre-adds each line below at creation so a
-# sparse worktree (the /issue + feature-branch default) passes the full pytest
-# suite — the Step 9c test-verdict gate — WITHOUT a manual `sparse-checkout add`.
+# Sparse-checkout cones the `tests/` suite hard-reads from the repo tree:
+# OTHER issues' committed eval_results/ artifacts AND vendored external/
+# dependencies — any tree cone under the sparse EXCLUDES. `scripts/new_worktree.sh`
+# pre-adds each line below at creation (and idempotently re-adds them on every
+# reuse, #2218) so a sparse worktree (the /issue + feature-branch default) passes
+# the full pytest suite — the Step 9c test-verdict gate — WITHOUT a manual
+# `sparse-checkout add`.
 #
 # Format: one cone DIRECTORY per line (cone mode takes directories, not files);
 #   blank lines + `#`-comments ignored; whitespace-bearing paths are refused
 #   loudly by new_worktree.sh (they defeat the unquoted cone expansion).
 #
-# When a NEW test starts reading repo_root()/eval_results/issue_<M>/... as a
-# committed fixture/reference/integration input (not a tmp_path write), add the
-# issue's eval_results dir here. Grounded reads as of 2026-06-26:
+# When a NEW test starts reading ANY sparse-excluded repo-tree path — a
+# repo_root()/eval_results/issue_<M>/... committed fixture/reference/integration
+# input (not a tmp_path write), or an external/<dep>/... vendored dependency —
+# add that cone directory here. Grounded reads as of 2026-06-26:
 #
 #   eval_results/issue_545  — test_issue545_v2_onpolicy.py reads v1_committed_root()
 #                             (L_matrix.json, v1_reselect.json, preregistration_v2.json)
@@ -70,6 +74,41 @@
 #                             -> verdict_lr() reads analysis/verdict_manifest.json ->
 #                             collection FileNotFoundError in a sparse worktree without
 #                             the cone (#2021 unit-A incident, the #671 class)
+#   eval_results/issue_2054 — test_issue2054_fold_map.py reads the committed
+#                             shared_fold_map.json (the #2245 production-map pin:
+#                             n_conv_ids >= 20,000, >= 5 variants; skip-if-absent
+#                             for pre-existing worktrees)
+#   eval_results/issue_778  — test_issue2221_pipeline.py::test_load_synth778_scores_real_committed_schema
+#                             reads finetune_evil_evil_misaligned_1.json +
+#                             finetune_base_evil.json via issue2221_monitors'
+#                             load_synth778_scores (the H3 synth-stratum y-source
+#                             schema pin; blocker-1 fix, review r1)
+#   external/jacobian-lens  — tests/test_issue1776_{p3p4,patch}.py import
+#                             scripts/issue1776_{jacobian,swap,p3p4}.py ->
+#                             issue1776_common.add_jlens_path() hard-reads
+#                             external/jacobian-lens/VENDOR_INFO.txt (fail-loud);
+#                             10 nodes FileNotFoundError in any sparse worktree
+#                             (#2059 Step 10d TG-leg false-block; 2.6M cone; #2218)
+#   eval_results/issue_2162/f_metrics — test_issue2162_tbmp_analysis.py::
+#                             test_defaults_path_byte_identical_to_committed_rawscale
+#                             re-runs the recency_rawscale defaults path over the
+#                             committed parent tables and byte-compares against the
+#                             committed recency_rawscale.json (narrow 8.3M cone —
+#                             the full issue_2162 dir is 37M)
+#   eval_results/issue_1739/dv_dataset — test_issue1739_bareq_rung_banks.py::
+#                             test_load_rung_map_real_body_reads_the_committed_labeling
+#                             executes scripts/issue1739_bareq_pod.load_rung_map ->
+#                             DV_ROOT/<behavior>/labeling.json (fail-loud); deterministic
+#                             sparse-worktree FileNotFoundError, hit twice in #2329
+#                             (the #671 class). Narrow cone: full issue_1739 is 4.9G,
+#                             dv_dataset is 22M; == issue2220_readwrite._PARENT_INPUTS_CONE.
+#   eval_results/issue_2163 — tests/test_matched_support.py regression fixtures:
+#                             predictor_partials.json + population_partials.json +
+#                             census.npz (the #2180 matched-covariate-support
+#                             known-positive / negative-control artifacts; ~11M)
+#   eval_results/issue_2329/cap_hit — test_issue2329_gate3_capfresh.py sha-pins +
+#                             re-validates the committed frozen capregen breach
+#                             basis (cap_hit_report_anchors_preregen.json, ~30K)
 eval_results/issue_545
 eval_results/issue_521
 eval_results/issue_257
@@ -88,3 +127,14 @@ eval_results/issue_779
 eval_results/issue_1415
 eval_results/issue_1776
 eval_results/issue_1481
+eval_results/issue_2054
+eval_results/issue_778
+eval_results/issue_2162/f_metrics
+eval_results/issue_2329/judge/gates
+eval_results/issue_2329/cap_hit
+external/jacobian-lens
+eval_results/issue_1739/dv_dataset
+eval_results/issue_2094/f_metrics
+eval_results/issue_2333/inputs
+eval_results/issue_2163
+eval_results/issue_823

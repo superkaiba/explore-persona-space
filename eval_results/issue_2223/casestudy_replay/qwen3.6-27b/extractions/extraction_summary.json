@@ -1,0 +1,115 @@
+{
+  "model": "Qwen/Qwen3.6-27B",
+  "model_slug": "qwen3.6-27b",
+  "axis_source": "in-house",
+  "n_layers": 64,
+  "hidden_size": 5120,
+  "band_layers": [
+    46,
+    47,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53
+  ],
+  "band_derivation": "matched relative depth [46/64, 54/64)",
+  "n_roles": 20,
+  "roles": [
+    "addict",
+    "adolescent",
+    "altruist",
+    "coral_reef",
+    "empath",
+    "examiner",
+    "generalist",
+    "guardian",
+    "hermit",
+    "hybrid",
+    "loner",
+    "mycorrhizal",
+    "procrastinator",
+    "producer",
+    "programmer",
+    "student",
+    "supervisor",
+    "surfer",
+    "tree",
+    "wind"
+  ],
+  "n_questions": 50,
+  "answer_axis_source": "in-house-paper-pipeline",
+  "axis_validation": {
+    "axis_recipe": "paper pipeline (external/assistant-axis steps 1,2,4,5 + project-judge step 3); axis = mean(default) \u2212 mean(role)",
+    "paper_axis_path": "/workspace/i2223_pp_prod/paper_pipeline/axis.pt",
+    "paper_axis_sha256": "78fd146b65645033",
+    "steering_sanity": {
+      "layer": 32,
+      "alpha": 22.0251522064209,
+      "n_contexts": 4,
+      "judged": true,
+      "mean_role_expression_plus_axis": 0.0,
+      "mean_role_expression_minus_axis": 51.25,
+      "directional_ok": true
+    },
+    "directional_ok": true
+  },
+  "cos_native_vs_answer_band": {
+    "46": {
+      "ctx_native": 0.30680179595947266,
+      "prefix_native": 0.05626519396901131
+    },
+    "47": {
+      "ctx_native": 0.30077606439590454,
+      "prefix_native": 0.0665619745850563
+    },
+    "48": {
+      "ctx_native": 0.27742767333984375,
+      "prefix_native": 0.08364109694957733
+    },
+    "49": {
+      "ctx_native": 0.24177515506744385,
+      "prefix_native": 0.0860709697008133
+    },
+    "50": {
+      "ctx_native": 0.18199564516544342,
+      "prefix_native": 0.05493968725204468
+    },
+    "51": {
+      "ctx_native": 0.19979774951934814,
+      "prefix_native": 0.08173298835754395
+    },
+    "52": {
+      "ctx_native": 0.15549702942371368,
+      "prefix_native": 0.022825121879577637
+    },
+    "53": {
+      "ctx_native": 0.1352536827325821,
+      "prefix_native": 0.033258285373449326
+    }
+  },
+  "artifact_sha256": {
+    "native_axes.pt": "354cf2f847d448f5",
+    "default_states.pt": "f63c854b467b9f95",
+    "answer_axis.pt": "f6e872fc17c21662",
+    "tau_map.json": "67a0dac7edfbf3e1"
+  },
+  "deviations": {
+    "system_prompt_added": "paper case studies ran WITHOUT a system prompt; the default assistant system prompt is added so prefix-position arms are definable",
+    "decode": "greedy temp 0 (paper 32B: temp 0.7 / top_p 0.9)",
+    "tau_reuse": "Lu p0.25 all-token caps reused at context/prefix positions; layers without a published cap and native axes use extraction-derived p25 floors"
+  },
+  "metadata": {
+    "issue": 2223,
+    "timestamp_utc": "2026-08-16T21:13:30.362182+00:00",
+    "git_commit": "669d4d24",
+    "git_dirty": true,
+    "git_dirty_paths": [
+      "eval_results/issue_2223/casestudy_replay/frozen_user_turns.json"
+    ],
+    "torch_version": "2.13.0+cu129",
+    "transformers_version": "5.15.0",
+    "label": "casestudy_replay"
+  }
+}

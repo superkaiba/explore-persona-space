@@ -400,7 +400,7 @@ def main() -> int:
     if manifest_path.exists():
         try:
             prior = json.loads(manifest_path.read_text())
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             prior = {}
         if isinstance(prior.get("phases"), dict):
             results["phases"].update(prior["phases"])

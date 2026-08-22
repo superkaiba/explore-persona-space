@@ -1,0 +1,3361 @@
+{
+  "commit": "83e6c65e",
+  "render_id": "b96ca3f2106242d6",
+  "git_commit": "83e6c65e",
+  "git_dirty": false,
+  "created": "2026-08-13T00:36:24Z",
+  "figsize": [
+    15.0,
+    4.6
+  ],
+  "points": [
+    {
+      "F_target": 0.10488505747126418,
+      "F_act (pair-own contrast projection)": 0.06848504394292831,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": -0.15862068965517262,
+      "F_act (pair-own contrast projection)": -0.10129307210445404,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.22953271028037395,
+      "F_act (pair-own contrast projection)": 0.0689498782157898,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": -0.20785046728971937,
+      "F_act (pair-own contrast projection)": -0.0636841356754303,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": -0.18735224586288396,
+      "F_act (pair-own contrast projection)": -0.07906629890203476,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.26524822695035455,
+      "F_act (pair-own contrast projection)": -0.12560229003429413,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.15010060362173044,
+      "F_act (pair-own contrast projection)": 0.11114289611577988,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.23380281690140858,
+      "F_act (pair-own contrast projection)": 0.019239339977502823,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.5208333333333335,
+      "F_act (pair-own contrast projection)": 0.49876928329467773,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.14930555555555594,
+      "F_act (pair-own contrast projection)": 0.068179190158844,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.28143712574850294,
+      "F_act (pair-own contrast projection)": 0.3824358582496643,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": -0.623952095808383,
+      "F_act (pair-own contrast projection)": 0.030524842441082,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.14129244249726178,
+      "F_act (pair-own contrast projection)": 0.08925746381282806,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.033953997809419524,
+      "F_act (pair-own contrast projection)": -0.005211540497839451,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": -0.09782971619365569,
+      "F_act (pair-own contrast projection)": 0.08501642942428589,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.00901502504173642,
+      "F_act (pair-own contrast projection)": 0.0009453846141695976,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": -0.1797566371681416,
+      "F_act (pair-own contrast projection)": 0.1268131136894226,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.23539823008849559,
+      "F_act (pair-own contrast projection)": -0.024617213755846024,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.3930481283422459,
+      "F_act (pair-own contrast projection)": 0.41600948572158813,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": -0.013368983957219414,
+      "F_act (pair-own contrast projection)": 0.053231317549943924,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.8298906439854192,
+      "F_act (pair-own contrast projection)": 0.5361533164978027,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": -0.15431348724179816,
+      "F_act (pair-own contrast projection)": -0.018806282430887222,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.6737100737100736,
+      "F_act (pair-own contrast projection)": 0.3826830983161926,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.3120393120393121,
+      "F_act (pair-own contrast projection)": -0.06608200073242188,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.32901833872707636,
+      "F_act (pair-own contrast projection)": 0.5712414979934692,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.018338727076590934,
+      "F_act (pair-own contrast projection)": 0.034285809844732285,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.6542893725992317,
+      "F_act (pair-own contrast projection)": 0.41133326292037964,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.08578745198463489,
+      "F_act (pair-own contrast projection)": -0.0011051632463932037,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.2923898531375164,
+      "F_act (pair-own contrast projection)": 0.30702561140060425,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.13084112149532695,
+      "F_act (pair-own contrast projection)": 0.01611553505063057,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.5818584070796459,
+      "F_act (pair-own contrast projection)": -0.040389757603406906,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.4623893805309734,
+      "F_act (pair-own contrast projection)": 0.23466859757900238,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.73305954825462,
+      "F_act (pair-own contrast projection)": -0.12055303156375885,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.06365503080082119,
+      "F_act (pair-own contrast projection)": -0.027827400714159012,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 1.0256410256410255,
+      "F_act (pair-own contrast projection)": 0.3064977526664734,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": -0.6386946386946387,
+      "F_act (pair-own contrast projection)": 0.30185866355895996,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.21641791044776112,
+      "F_act (pair-own contrast projection)": 0.3552749454975128,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.16666666666666669,
+      "F_act (pair-own contrast projection)": 0.09772372245788574,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.34782608695652173,
+      "F_act (pair-own contrast projection)": 0.17374563217163086,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.5152173913043477,
+      "F_act (pair-own contrast projection)": 0.2921731472015381,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.14734774066797662,
+      "F_act (pair-own contrast projection)": 0.11404860019683838,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.819253438113949,
+      "F_act (pair-own contrast projection)": 0.027671635150909424,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.16256157635468008,
+      "F_act (pair-own contrast projection)": 0.01212836429476738,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.5073891625615765,
+      "F_act (pair-own contrast projection)": 0.19646617770195007,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.1421455938697318,
+      "F_act (pair-own contrast projection)": 0.477669894695282,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.02377920225262642,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.2220560747663551,
+      "F_act (pair-own contrast projection)": 0.27404922246932983,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": -0.012798560783267021,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.06950354609929077,
+      "F_act (pair-own contrast projection)": 0.5101431608200073,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.016639811918139458,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.26961770623742454,
+      "F_act (pair-own contrast projection)": 0.19629451632499695,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.013478130102157593,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.34722222222222215,
+      "F_act (pair-own contrast projection)": 0.23577412962913513,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 5.054590292274952e-05,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.15329341317365264,
+      "F_act (pair-own contrast projection)": 0.14910060167312622,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": -0.009175840765237808,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.3242059145673603,
+      "F_act (pair-own contrast projection)": 0.41986650228500366,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.03748108074069023,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.21368948247078462,
+      "F_act (pair-own contrast projection)": 0.35343536734580994,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.003114973194897175,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.12444690265486726,
+      "F_act (pair-own contrast projection)": 0.2016923874616623,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.015515603125095367,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.005347593582887701,
+      "F_act (pair-own contrast projection)": 0.08124588429927826,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.003425424452871084,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.05589307411907654,
+      "F_act (pair-own contrast projection)": 0.1447879672050476,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.0246486347168684,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.05896805896805896,
+      "F_act (pair-own contrast projection)": 0.2713131904602051,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": -0.03136000037193298,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.9449838187702266,
+      "F_act (pair-own contrast projection)": 0.6630202531814575,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.04314994606256744,
+      "F_act (pair-own contrast projection)": 0.05361643433570862,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.4545454545454546,
+      "F_act (pair-own contrast projection)": 0.28097081184387207,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": -0.15795548260211945,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.5140186915887852,
+      "F_act (pair-own contrast projection)": 0.6113037467002869,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": -0.04672897196261681,
+      "F_act (pair-own contrast projection)": 0.14210857450962067,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": -0.05530973451327439,
+      "F_act (pair-own contrast projection)": 0.2183360755443573,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": -0.1880530973451328,
+      "F_act (pair-own contrast projection)": 0.16727390885353088,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.3901437371663245,
+      "F_act (pair-own contrast projection)": 0.2125670462846756,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.0410677618069815,
+      "F_act (pair-own contrast projection)": -0.13943783938884735,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.2074592074592073,
+      "F_act (pair-own contrast projection)": 0.07428222894668579,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.08158508158508151,
+      "F_act (pair-own contrast projection)": -0.20277808606624603,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.04975124378109453,
+      "F_act (pair-own contrast projection)": 0.4216303527355194,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.012437810945273632,
+      "F_act (pair-own contrast projection)": 0.09814944863319397,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.26309365034103394,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.09696608036756516,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.4239822030067444,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": -0.023948190733790398,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": -0.04926108374384235,
+      "F_act (pair-own contrast projection)": 0.2269345223903656,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": 0.08374384236453199,
+      "F_act (pair-own contrast projection)": 0.06844864785671234,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "F_target": -0.2498084291187741,
+      "F_act (pair-own contrast projection)": -0.08135482668876648,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": -0.0057471264367816785,
+      "F_act (pair-own contrast projection)": -0.07844129949808121,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": -0.2852336448598129,
+      "F_act (pair-own contrast projection)": -0.02489856258034706,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": -0.08084112149532684,
+      "F_act (pair-own contrast projection)": 0.04856157302856445,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": -0.07565011820330968,
+      "F_act (pair-own contrast projection)": -0.043937698006629944,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": -0.09881796690307329,
+      "F_act (pair-own contrast projection)": -0.2117423415184021,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": -0.06237424547283676,
+      "F_act (pair-own contrast projection)": 0.04454420879483223,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.0824949698189135,
+      "F_act (pair-own contrast projection)": 0.03109005093574524,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": -0.013888888888888512,
+      "F_act (pair-own contrast projection)": 0.11181044578552246,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.12500000000000028,
+      "F_act (pair-own contrast projection)": 0.054161082953214645,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": -0.5760479041916167,
+      "F_act (pair-own contrast projection)": 0.020851904526352882,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": -0.5808383233532931,
+      "F_act (pair-own contrast projection)": -0.03935326263308525,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.033953997809419524,
+      "F_act (pair-own contrast projection)": -0.023763395845890045,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.025191675794085454,
+      "F_act (pair-own contrast projection)": -0.004919667262583971,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": -0.16193656093489142,
+      "F_act (pair-own contrast projection)": -0.03001178801059723,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.00834724540901529,
+      "F_act (pair-own contrast projection)": 0.04818326234817505,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": -0.07123893805309738,
+      "F_act (pair-own contrast projection)": -0.04234892502427101,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": -0.2992256637168143,
+      "F_act (pair-own contrast projection)": -0.002101961523294449,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.13101604278074866,
+      "F_act (pair-own contrast projection)": 0.08830541372299194,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": -0.21657754010695196,
+      "F_act (pair-own contrast projection)": 0.015416527166962624,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.18590522478736346,
+      "F_act (pair-own contrast projection)": 0.1433403640985489,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.1130012150668289,
+      "F_act (pair-own contrast projection)": -0.08847518265247345,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.13120393120393126,
+      "F_act (pair-own contrast projection)": 0.013322556391358376,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.42997542997543003,
+      "F_act (pair-own contrast projection)": -0.09366888552904129,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.03128371089536129,
+      "F_act (pair-own contrast projection)": 0.20018403232097626,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.018338727076590934,
+      "F_act (pair-own contrast projection)": 0.04270700365304947,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": -0.04225352112676089,
+      "F_act (pair-own contrast projection)": 0.057502083480358124,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.024327784891165057,
+      "F_act (pair-own contrast projection)": -0.014193255454301834,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.09345794392523331,
+      "F_act (pair-own contrast projection)": 0.16527095437049866,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.021361815754338997,
+      "F_act (pair-own contrast projection)": -0.07644530385732651,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": -0.2986725663716817,
+      "F_act (pair-own contrast projection)": -0.45390909910202026,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.12610619469026538,
+      "F_act (pair-own contrast projection)": 0.33697378635406494,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": -0.21149897330595502,
+      "F_act (pair-own contrast projection)": 0.024887356907129288,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": -0.06262833675564676,
+      "F_act (pair-own contrast projection)": -0.23279176652431488,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": -0.3776223776223774,
+      "F_act (pair-own contrast projection)": 0.22718611359596252,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": -0.3916083916083914,
+      "F_act (pair-own contrast projection)": 0.14724186062812805,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.2089552238805971,
+      "F_act (pair-own contrast projection)": 0.2885734438896179,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": -0.1517412935323383,
+      "F_act (pair-own contrast projection)": -0.02936866506934166,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.11304347826086943,
+      "F_act (pair-own contrast projection)": 0.0011581811122596264,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.17826086956521733,
+      "F_act (pair-own contrast projection)": 0.036561280488967896,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": -0.5127701375245575,
+      "F_act (pair-own contrast projection)": -0.09041490405797958,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": -0.12377210216109984,
+      "F_act (pair-own contrast projection)": -0.08906533569097519,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.12807881773399024,
+      "F_act (pair-own contrast projection)": -0.07836543768644333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": -0.08374384236453195,
+      "F_act (pair-own contrast projection)": 0.03357521444559097,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.02470744401216507,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.020892510190606117,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.04600047320127487,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": -0.028505761176347733,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.005766764748841524,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": -0.013631372712552547,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.00022753910161554813,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": -0.0032245400361716747,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": -0.0007282373262569308,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": -0.010853223502635956,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": -0.006462467834353447,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.0035491599701344967,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.008983963169157505,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.016977420076727867,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.17003175616264343,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.0013839174062013626,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.07972779870033264,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.014056434854865074,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.012726387940347195,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.01735270768404007,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": -0.019063524901866913,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": -0.002532707992941141,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": -0.030709702521562576,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": -0.02010497637093067,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.03236245954692558,
+      "F_act (pair-own contrast projection)": -0.04093165695667267,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.024708140641450882,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.10243277848911658,
+      "F_act (pair-own contrast projection)": 0.10650849342346191,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 3.553850911092051e-17,
+      "F_act (pair-own contrast projection)": -0.24281129240989685,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": -0.1668891855807744,
+      "F_act (pair-own contrast projection)": 0.05514691025018692,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.08678237650200266,
+      "F_act (pair-own contrast projection)": -0.04549868032336235,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": -0.15265486725663718,
+      "F_act (pair-own contrast projection)": 0.22648485004901886,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": -0.15228843688964844,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.14373716632443528,
+      "F_act (pair-own contrast projection)": 0.24993517994880676,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": -0.02053388090349078,
+      "F_act (pair-own contrast projection)": 0.04059990495443344,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.10489510489510478,
+      "F_act (pair-own contrast projection)": -0.2677517533302307,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": -0.011655011655011729,
+      "F_act (pair-own contrast projection)": -0.25257399678230286,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.0074158040806651115,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.004087922163307667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.2064882069826126,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.0660538598895073,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": -0.02089422568678856,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": -0.09831428527832031,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.024630541871921187,
+      "F_act (pair-own contrast projection)": 0.0447070486843586,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": -0.04926108374384235,
+      "F_act (pair-own contrast projection)": -0.0036654844880104065,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "F_target": 0.06666666666666651,
+      "F_act (pair-own contrast projection)": -0.0073888301849365234,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.10153256704980847,
+      "F_act (pair-own contrast projection)": -0.08575994521379471,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": -0.05981308411214935,
+      "F_act (pair-own contrast projection)": -0.05834188312292099,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": -0.0968224299065417,
+      "F_act (pair-own contrast projection)": -0.02421172522008419,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.16154452324665106,
+      "F_act (pair-own contrast projection)": -0.1098800078034401,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": -0.05579196217494087,
+      "F_act (pair-own contrast projection)": -0.20829156041145325,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.5750503018108652,
+      "F_act (pair-own contrast projection)": 0.3641606569290161,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.09215291750503021,
+      "F_act (pair-own contrast projection)": 0.006664412096142769,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.36458333333333354,
+      "F_act (pair-own contrast projection)": 0.42306727170944214,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": -0.10763888888888856,
+      "F_act (pair-own contrast projection)": 0.03560538589954376,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.6167664670658684,
+      "F_act (pair-own contrast projection)": 0.25136715173721313,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": -0.5664670658682631,
+      "F_act (pair-own contrast projection)": -0.09873140603303909,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.1391018619934284,
+      "F_act (pair-own contrast projection)": 0.052499957382678986,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": -0.01861993428258478,
+      "F_act (pair-own contrast projection)": -0.0033357080537825823,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": -0.05509181969949887,
+      "F_act (pair-own contrast projection)": 0.061963487416505814,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": -0.1165275459098495,
+      "F_act (pair-own contrast projection)": 0.03047800064086914,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.7212389380530974,
+      "F_act (pair-own contrast projection)": 0.3901742696762085,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": -0.4634955752212391,
+      "F_act (pair-own contrast projection)": -0.08751353621482849,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.008021390374331411,
+      "F_act (pair-own contrast projection)": -0.07137756049633026,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": -0.08288770053475944,
+      "F_act (pair-own contrast projection)": 0.03785363584756851,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.6281895504252735,
+      "F_act (pair-own contrast projection)": 0.4631023108959198,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": -0.14702308626974495,
+      "F_act (pair-own contrast projection)": -0.12450535595417023,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 1.0,
+      "F_act (pair-own contrast projection)": 0.37227076292037964,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.16658476658476656,
+      "F_act (pair-own contrast projection)": -0.12356847524642944,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.19093851132686082,
+      "F_act (pair-own contrast projection)": 0.45097172260284424,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.04638619201725991,
+      "F_act (pair-own contrast projection)": -0.0038436679169535637,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.7439180537772088,
+      "F_act (pair-own contrast projection)": 0.38481953740119934,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": -0.016645326504481594,
+      "F_act (pair-own contrast projection)": 0.1998271942138672,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 1.046728971962617,
+      "F_act (pair-own contrast projection)": 0.3342963755130768,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": -0.03204272363150886,
+      "F_act (pair-own contrast projection)": -0.07009631395339966,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 1.2323008849557522,
+      "F_act (pair-own contrast projection)": 0.278816282749176,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": -0.40486725663716805,
+      "F_act (pair-own contrast projection)": 0.3909410536289215,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.8850102669404516,
+      "F_act (pair-own contrast projection)": -0.22819402813911438,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.24024640657084198,
+      "F_act (pair-own contrast projection)": 0.02394907921552658,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 1.252913752913753,
+      "F_act (pair-own contrast projection)": 0.0909300297498703,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": -0.506993006993007,
+      "F_act (pair-own contrast projection)": -0.138027623295784,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.19154228855721384,
+      "F_act (pair-own contrast projection)": -0.0018743909895420074,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.3407960199004974,
+      "F_act (pair-own contrast projection)": 0.15304385125637054,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.5,
+      "F_act (pair-own contrast projection)": 0.12996390461921692,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.4782608695652175,
+      "F_act (pair-own contrast projection)": 0.24891304969787598,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.7511460379829731,
+      "F_act (pair-own contrast projection)": 0.13433775305747986,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.6660117878192535,
+      "F_act (pair-own contrast projection)": 0.1347360461950302,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.18719211822660115,
+      "F_act (pair-own contrast projection)": 0.020081518217921257,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.1687192118226601,
+      "F_act (pair-own contrast projection)": 0.1824319064617157,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.10132142156362534,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.00530048506334424,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": -0.011594912968575954,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": -0.025358930230140686,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.03677807375788689,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.02982962690293789,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.03296506404876709,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.010652265511453152,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": -0.00018169940449297428,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": -0.0028683217242360115,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.02640226110816002,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.01739882305264473,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.132829487323761,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.02766694873571396,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.039034925401210785,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": -0.020877406001091003,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.015343707986176014,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": -0.047975268214941025,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.0035139103420078754,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": -0.00844165775924921,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.01788579300045967,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": -0.005336594767868519,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.02482570707798004,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": -0.06689218431711197,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": -0.021574973031283716,
+      "F_act (pair-own contrast projection)": 0.02691778913140297,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.030198456719517708,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": -0.017925736235595374,
+      "F_act (pair-own contrast projection)": -0.020447196438908577,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.03841229193341873,
+      "F_act (pair-own contrast projection)": -0.0644053965806961,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": -0.03337783711615488,
+      "F_act (pair-own contrast projection)": 0.1773950755596161,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": -0.06008010680907877,
+      "F_act (pair-own contrast projection)": -0.04180622473359108,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": -0.6084070796460178,
+      "F_act (pair-own contrast projection)": -0.2439126968383789,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": -0.05530973451327439,
+      "F_act (pair-own contrast projection)": 0.023215005174279213,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.10266940451745378,
+      "F_act (pair-own contrast projection)": 0.2510937750339508,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": -0.04106776180698156,
+      "F_act (pair-own contrast projection)": 0.14167755842208862,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": -0.22377622377622383,
+      "F_act (pair-own contrast projection)": -0.08073176443576813,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": -0.08974358974358979,
+      "F_act (pair-own contrast projection)": -0.1886136680841446,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.032665662467479706,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.019400151446461678,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.05249346047639847,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": 0.045240141451358795,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.0,
+      "F_act (pair-own contrast projection)": -0.02794094942510128,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.03143418467583496,
+      "F_act (pair-own contrast projection)": 0.04692469537258148,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": -0.043103448275862065,
+      "F_act (pair-own contrast projection)": -0.35681673884391785,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "F_target": 0.06773399014778324,
+      "F_act (pair-own contrast projection)": 0.03242376446723938,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "TF margin shift (nats/token)": 0.14900616804758707,
+      "F_target (per-cell mean)": 0.18323943076538685,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "TF margin shift (nats/token)": 0.02046998341878255,
+      "F_target (per-cell mean)": -0.057011108890992646,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "TF margin shift (nats/token)": 0.13175115485986075,
+      "F_target (per-cell mean)": 0.2933924891955339,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "TF margin shift (nats/token)": 0.007891416549682617,
+      "F_target (per-cell mean)": 0.07045401562999101,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "TF margin shift (nats/token)": 0.140111876030763,
+      "F_target (per-cell mean)": 0.6027094242398526,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "TF margin shift (nats/token)": -0.0015628586212793987,
+      "F_target (per-cell mean)": 0.020386178865618092,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "TF margin shift (nats/token)": 0.07417105883359909,
+      "F_target (per-cell mean)": 0.2185383286067349,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "TF margin shift (nats/token)": 0.038117021322250366,
+      "F_target (per-cell mean)": 0.502131664661635,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "TF margin shift (nats/token)": 0.1696581020951271,
+      "F_target (per-cell mean)": 0.20063975939477952,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "TF margin shift (nats/token)": 0.24239902446667352,
+      "F_target (per-cell mean)": 0.1304251710605059,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "TF margin shift (nats/token)": 0.14839341243108115,
+      "F_target (per-cell mean)": 0.4093068625027873,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "TF margin shift (nats/token)": -0.0037464449803034463,
+      "F_target (per-cell mean)": -0.011496546642186531,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "TF margin shift (nats/token)": 0.07831104099750519,
+      "F_target (per-cell mean)": 0.00012254000931304423,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "TF margin shift (nats/token)": 0.022922612726688385,
+      "F_target (per-cell mean)": 0.024045413327451404,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "coherence rate per cell": 0.8,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 0.8,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 0.8,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 0.8,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 0.8,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 0.8,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 0.8,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 0.8,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 0.8,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 0.8,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 0.8,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 0.8,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 0.8,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 0.6,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 0.8,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 0.8,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 0.8,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 0.8,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 0.8,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 0.6,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 0.8,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 0.8,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 0.8,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.2,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 0.8,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 0.8,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 0.6,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 0.8,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 0.8,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 0.8,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 0.8,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 0.8,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 0.8,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 0.8,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 1.0,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 0.8,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "coherence rate per cell": 0.8,
+      "cap-hit fraction per cell": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    }
+  ],
+  "n_series": 7,
+  "total_points": 542,
+  "text": {
+    "suptitle": "Continuous-companion agreement",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "F_act vs F_target (Spearman \u03c1 = +0.42)",
+        "xlabel": "F_target",
+        "ylabel": "F_act (pair-own contrast projection)",
+        "xticklabels": [
+          "\u22120.75",
+          "\u22120.50",
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25",
+          "1.50"
+        ],
+        "yticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "margin validation \u03c1 = +0.54",
+        "xlabel": "TF margin shift (nats/token)",
+        "ylabel": "F_target (per-cell mean)",
+        "xticklabels": [
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7"
+        ]
+      },
+      {
+        "title_left": "coherence / cap-hit per cell",
+        "xlabel": "coherence rate per cell",
+        "ylabel": "cap-hit fraction per cell",
+        "xticklabels": [
+          "0.55",
+          "0.60",
+          "0.65",
+          "0.70",
+          "0.75",
+          "0.80",
+          "0.85",
+          "0.90",
+          "0.95",
+          "1.00",
+          "1.05"
+        ],
+        "yticklabels": [
+          "\u22120.025",
+          "0.000",
+          "0.025",
+          "0.050",
+          "0.075",
+          "0.100",
+          "0.125",
+          "0.150",
+          "0.175",
+          "0.200",
+          "0.225"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

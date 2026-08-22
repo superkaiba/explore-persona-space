@@ -68,7 +68,13 @@ Touched-file -> test mapping (per touched file ``f``):
     separators; a leading ``".claude"`` component matches implicitly).
     Additive only, same contract as rules-pin: the skills file itself keeps
     the WORKFLOW_SURFACE skip, comment/docstring mentions count, and a
-    dynamically constructed filename is the accepted miss class.
+    dynamically constructed filename is the accepted miss class. A touched
+    ``.claude/skills/issue/steps/*.md`` companion (a step body the #2155
+    split relocated out of ``issue/SKILL.md``) ADDITIONALLY aliases to the
+    ``issue/SKILL.md`` token set plus the ``issue_skill_source`` composer
+    token — the pinning tests reference the SKILL.md path or the composer,
+    never the companion's own path, so its own tokens alone would map to
+    nothing.
   * any test registered in :data:`TRANSITIVE_CONSUMER_TESTS` for a touched
     file is ADDITIONALLY selected with reason
     ``transitive-consumer:<touched file>`` (#1589). A pinned literal, NOT
@@ -221,7 +227,7 @@ point and the three-dot selection is stable under ``origin/main`` advancing.
 Usage::
 
     uv run python scripts/select_step9c_tests.py [--base origin/main] [--no-fetch] \
-                                                 [--repo-root <path>] [--json]
+                                                 [--repo-root <path>] [--json | --files-only]
     uv run python scripts/select_step9c_tests.py --map-files <file> [--repo-root <path>]
 
 ``--map-files FILE`` (the ``/issue`` Step 10d merge-gate mapping mode, #1147):
@@ -279,14 +285,26 @@ BACKGROUND invocation — SKILL.md 9c step 1b). ``--json`` emits
 ``{"tests": [...], "untested_touched": [...], "base": "...",
 "missing_invariants": [...], "selection_reasons": {test: [reasons]},
 "n_tests": <int>, "recommended_timeout_s": <int>,
-"slow_tests_selected": [...]}`` (a
+"slow_tests_selected": [...], "base_identical_excluded": [...]}``
+(``base_identical_excluded`` — #2302: three-dot-diff paths whose content at
+HEAD is verified byte-identical to the *base* TIP, e.g. Step 5a sibling-sync
+copies of main's own files; excluded from ``tests`` selection and from the
+``untested_touched`` WARN, never silently — a stderr NOTE names each one) (a
 reason is ``invariant`` / ``touched-test`` / ``stem-map:<touched file>`` /
 ``glob-scan:<touched file>`` / ``import-map:<touched file>`` /
 ``literal-path:<touched file>`` / ``rules-pin:<touched file>`` /
 ``skills-pin:<touched file>`` /
 ``transitive-consumer:<touched file>`` / ``dotted-ref:<touched file>`` /
 ``basename-ref:<touched file>`` / ``transitive-import:<touched file>`` —
-#1022, #1299, #1498, #1496, #1851, #1589, #1688).
+#1022, #1299, #1498, #1496, #1851, #1589, #1688). ``--files-only`` emits the
+selected test paths ONLY — one repo-relative path per line, no JSON, no key
+to guess (#1992/#2126: a launcher composing its own gate invocation read the
+WRONG ``--json`` key — ``'files'``, not ``'tests'`` — spliced an empty list,
+and pytest collected the whole 19,223-test suite); the ``<T>`` bound still
+arrives on the greppable stderr ``recommended-timeout-s=<T>`` sizing line,
+and the empty-selection refusal (exit 1) applies unchanged. Mutually
+exclusive with ``--json`` and ``--map-files`` (argparse usage error, exit 2 —
+fail CLOSED, the same shape as the ``--map-files`` + ``--json`` guard).
 Exit 0 on success (even with WARN lines);
 exit 1 if an underlying ``git`` call fails irrecoverably (work-root resolution
 or the diff) or if the selection comes back EMPTY (the zero-test-gate
@@ -322,23 +340,66 @@ from typing import NamedTuple
 # pair of same-window registering PRs merge-conflict (#1584).
 WORKFLOW_INVARIANT: tuple[str, ...] = (
     # group 1 — task-workflow API
+    # NEW (#2158) — pre-split review guard predicate + lint surface pins:
+    # the task_workflow.pre_split_review_gate two-arm predicate + CLI
+    # exit-code mapping (#1336 r4 / #2061 incident replays).
+    "tests/test_pre_split_review_guard.py",
     "tests/test_task_workflow.py",
     "tests/test_task_workflow_list_children.py",
     "tests/test_task_workflow_post_marker_echo.py",
     "tests/test_task_workflow_worktree.py",
     # group 2 — workflow-lint / yaml / fix-dedup
     "tests/test_workflow_lint.py",
+    # NEW (#1718) — data-file loader pin (migration snapshot + parser semantics)
+    # for AGENT_SPEC_SIZE_GRANDFATHER moved to .claude/config/agent_spec_size_caps.txt
+    "tests/test_workflow_lint_agent_spec_caps.py",
+    # (#1718) — the existing agent-spec-size ratchet invariants (regrowth ratchet +
+    # headroom-hug FAILs). WORKFLOW_INVARIANT-registered here so the caps-file
+    # data change or any workflow_lint.py edit re-runs the live-tree PASS
+    # + threshold-branch coverage.
+    "tests/test_workflow_lint_agent_spec_size.py",
+    # NEW (#2326) — workflow_lint --check-codex-concerns-persistence +
+    # no-flags bundling (the Codex "Concerns to persist" -> raise-concern
+    # blind-forwarding contract's four prose surfaces; incident #2321).
+    "tests/test_workflow_lint_codex_concerns_persistence.py",
     "tests/test_workflow_lint_dotenv_check.py",
     # NEW (#1701) — workflow_lint --check-inline-round-duty-mirror + no-flags
     # bundling + drift-detection semantics pin
     "tests/test_workflow_lint_inline_round_duty_mirror.py",
+    # NEW (#2183) — workflow_lint --check-no-repo-root-syspath + no-flags
+    # bundling (tests/ + scripts/ scope; renamed/widened from the #2181
+    # tests/-only --check-no-repo-root-syspath-in-tests after the 19-driver
+    # scripts/ remediation).
+    "tests/test_workflow_lint_no_repo_root_syspath.py",
+    # NEW (#2158) — pre-split review guard predicate + lint surface pins:
+    # workflow_lint --check-pre-split-review-guard (seven surfaces / eight
+    # files) + no-flags bundling.
+    "tests/test_workflow_lint_pre_split_guard.py",
+    # NEW (#2253) — workflow_lint --check-prod-import-lockfile: scripts//src/
+    # third-party import roots must resolve from uv.lock/pyproject.toml
+    # (branch-agnostic; try/except-ImportError body + per-site waiver
+    # exemptions; two WARN tiers) + no-flags bundling + live-tree pins.
+    "tests/test_workflow_lint_prod_import_lockfile.py",
     # NEW (#2165) — workflow_lint --check-smoke-blind-spot-review-lens +
     # --check-smoke-blind-spots (fixtures reproduce both #1336 shapes).
     "tests/test_workflow_lint_smoke_blind_spots.py",
+    # NEW (#2120) — workflow_lint --check-cvd-scoped-gpu-verdict-lens +
+    # no-flags bundling (Step 0.72 own-device-scoped GPU-state verdicts +
+    # experiment-implementer Schema-from-artifact, five pinned surfaces).
+    "tests/test_workflow_lint_cvd_scoped_gpu_verdict.py",
     # NEW (#2067) — .claude/rules/compute-backend-failover.md
     # `### Cross-session pivot — resolve the owner before provisioning (#2067)`
     # prose pin: H3 header + pivoter-duty sentence + UNKNOWN-treat-as-LIVE token.
     "tests/test_workflow_lint_failover_pivot_pin.py",
+    # NEW (#2242) — workflow_lint --check-two-tier-yield-floor (relative shrink
+    # + absolute per-cell trainability floor, four pinned surfaces incl. the
+    # two machinery-keyed N/A escapes; incident #2221).
+    "tests/test_workflow_lint_two_tier_yield_floor.py",
+    # NEW (#2422) — workflow_lint --check-worktree-task-state-briefs +
+    # no-flags bundling (worktree-safe task-state brief paths, six pinned
+    # surfaces; incidents #2329/#823 — a worktree's tasks/ tree is frozen at
+    # its base commit) + the worktree-freeze reproduction (STALE + ABSENT).
+    "tests/test_workflow_lint_worktree_task_paths.py",
     "tests/test_workflow_yaml.py",
     "tests/test_workflow_fix_dedup.py",
     # NEW (#1735) — rule reconciliation pin: workflow-fix-on-bug.md §
@@ -351,6 +412,11 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_no_auto_runpod_path_under_any_failure.py",
     "tests/test_no_direct_task_path_construction.py",
     "tests/test_no_dollar_budget_caps.py",
+    # NEW (#2217) — collection-time registry-mutation guard: no collected test
+    # module may add/remove CONTEXTS / NEGATIVE_PANELS keys at import time
+    # (conftest pytest_collectreport deltas + collection-finish key-set
+    # equality vs the fresh-import baseline; incident #2059's residual class).
+    "tests/test_no_import_time_registry_mutation.py",
     "tests/test_no_per_file_raw_completions_loop.py",
     "tests/test_no_pod_side_task_py_shellout.py",
     # NEW (#2058) — no-progress respawn lane: fingerprint helper +
@@ -385,6 +451,10 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_daily_stub_first_doc.py",
     # NEW (#1645) — /daily SKILL.md three-route classifier prose pin (#706)
     "tests/test_daily_three_route_classifier_doc.py",
+    # NEW (#2242) — absolute per-cell trainability floor: datagen shared gate
+    # (assert_cell_trainable / min_rows_absolute entry assert) + the
+    # issue778_finetune mechanical arm (incident #2221: 1-row cells trained).
+    "tests/test_datagen_trainability_floor.py",
     # NEW (#1699) — implementer spec pin: mechanical --map-files pin-sweep hit list
     "tests/test_implementer_spec_mechanical_pin_sweep.py",
     # NEW (#1699) — implementer spec pin: repo-wide invariants in local union on
@@ -392,12 +462,32 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_implementer_spec_names_invariant_local_union.py",
     # NEW (#1699) — implementer spec pin: ruff-policy pin invocation in lint step (#1672)
     "tests/test_implementer_spec_names_ruff_policy_pin.py",
+    # NEW (#2146) — SKILL.md 9a-ter + CLAUDE.md inline-round session-survival
+    # backstop pin (arm /issue-tick IFF parent in tick_triage.ISSUE_ACTIVE;
+    # partition pinned against the live tick_triage module; incident #1491)
+    "tests/test_issue2146_inline_tick_backstop_pin.py",
+    # NEW (#2184) — CPU no-port-wedge typed detection + teardown-interlocked DC
+    # rotation + CPU-LANE-DRY residual refusal, incl. the rule-docs anchor pins
+    # (.claude/rules/compute-backends.md, .claude/rules/pods.md,
+    # .claude/rules/gotchas.md)
+    "tests/test_issue2184_noport_wedge.py",
+    # NEW (#2101) — agent-memory MEMORY.md no-lost-row discipline pin (SKILL.md
+    # Step 5a clause + echo, gotchas.md entry, LESSONS.md trigger)
+    "tests/test_issue_skill_agent_memory_no_lost_row.py",
     # NEW (#1876) — SKILL.md Bare-push-snippets commit form (5) + guard hook
     # block-message compliant-forms lead pin
     "tests/test_issue_skill_bare_push_snippets_pin.py",
+    # NEW (#2248) — SKILL.md Step 4b brief-composition displacement clause +
+    # Step 5.bis(a) cross-reference pin (marker DISPLACEMENT by a competing
+    # return contract; from #1336 round v20)
+    "tests/test_issue_skill_brief_marker_displacement_pin.py",
     # NEW (#1659) — SKILL.md 9a-ter + CLAUDE.md measured 1-cell pilot +
     # >=2x pilot-extrapolated fence-sizing pin
     "tests/test_issue_skill_compute_pilot_fence_pin.py",
+    # NEW (#2265) — SKILL.md Step 6d.2 pid-stale-workload-live branch-row pin:
+    # never-post-epm:failure clause + first-tick probe-then-repair instruction
+    # incl. the conclude/post-failure arm for persisting pod-wide evidence
+    "tests/test_issue_skill_dead_veto_status_pin.py",
     # NEW (#1656) — SKILL.md detached-phase harvest contract pin (#1310):
     # four-field breadcrumb (harvest= token), successor consumption, 9a-ter
     # mention + the two mirror duty-lists
@@ -425,6 +515,11 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_issue_skill_followup_cap_park_note_pin.py",
     # NEW (#1546) — SKILL.md forensics-ingest pointer pin
     "tests/test_issue_skill_forensics_ingest_pointer.py",
+    # NEW (#2126) — SKILL.md gate-recipe hardening pins (D1-D5: 1b gate-set
+    # cross-check, 1a selector-key pin, every-relaunch re-sync scope, detached
+    # stdout-redirect rule + adopt recovery, verdict-conditional re-compose
+    # ban, Guard-1 per-disposition retry restore)
+    "tests/test_issue_skill_gate_recipe_hardening.py",
     # Registration rider (#1651) — the pre-existing #1305/#1533 gate-scope
     # pin file was never registered (the #1546 unregistered-pin class).
     "tests/test_issue_skill_gate_scope_brief_pin.py",
@@ -439,8 +534,8 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # pin file was never registered (the #1546 unregistered-pin class); it now
     # also pins the worker-brief composition duty (#1673).
     "tests/test_issue_skill_inline_gate_pin.py",
-    # NEW (#1625) — SKILL.md 9a-ter + CLAUDE.md inline measurement-design +
-    # figure-sanity duties pin (both-arms mapping statement, rendered-PNG check)
+    # NEW (#1625) — SKILL.md 9a-ter + CLAUDE.md inline figure-sanity duty
+    # pin (rendered-PNG check; both-arms mapping statement retired 2026-08-12)
     "tests/test_issue_skill_inline_measurement_duties.py",
     # NEW (#1970) — SKILL.md 9a-ter + CLAUDE.md inline-round upload-verify
     # recipe pin (verify → post epm:upload-verification → terminate;
@@ -473,12 +568,32 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_issue_skill_round_boundary_duty_pin.py",
     # NEW (#2040) — 9a-ter across-cell shard-axis + detached checkpoint-cadence duties pin
     "tests/test_issue_skill_shard_axis_checkpoint_cadence_pin.py",
+    # NEW (#2155) — SKILL.md step-body split pins: pointer<->companion bijection,
+    # composition completeness, Companion-files carve-out sentence. This
+    # registration IS the coverage guarantee for the split (plan B.8) — the
+    # composer (tests/issue_skill_source.py) has no path-literal the discovery
+    # arms would otherwise map.
+    "tests/test_issue_skill_source.py",
     # NEW (#1572) — staged-index verification pin
     "tests/test_issue_skill_staged_index_verification.py",
     # NEW (#1751) — SKILL.md KEPT-stash surfacing duty pin
     "tests/test_issue_skill_stash_kept_duty_pin.py",
     # NEW (#1875) — SKILL.md Step 0 autonomous Monitor/TaskOutput schema-preload pin
     "tests/test_issue_skill_step0_preload_pin.py",
+    # NEW (#2240) — SKILL.md Step 10d payload-aware no-PR arm pin (USABLE_PR gate,
+    # origin-precondition + rc-gated create, realized-outcome anomaly note,
+    # loud novel-payload-but-no-usable-PR failure)
+    "tests/test_issue_skill_step10d_no_pr_arm.py",
+    # NEW (#2246) — SKILL.md Step 10d reap-shield pins: both detached gate
+    # launchers carry the trailing "$WT" argv holder (worktree_audit's cwd/argv
+    # liveness harvest keeps the worktree for the gate's whole life), and the
+    # lint-gate empty-overlay fail-closed ordered chain (overlay producer ->
+    # empty-file guard -> crash predicate; single verdict writer preserved)
+    "tests/test_issue_skill_step10d_reap_shield_pin.py",
+    # NEW (#2312) — SKILL.md Step 10d rewritten-branch arm pin (mutual-non-ancestry
+    # descendancy guards at every push/pull copy site, zero-PR stale-ref arm,
+    # PR-head parity gate, force-free landing route + tmp_path git fixtures)
+    "tests/test_issue_skill_step10d_rewritten_branch.py",
     # NEW (#1734) — SKILL.md Step 2 minimum plan-review floor + recorded-skip contract pin
     "tests/test_issue_skill_step2_floor.py",
     # NEW (#1595) — stopped-volume persist-before-park pin (SKILL.md + pod-config.md)
@@ -496,6 +611,9 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # NEW (#1616) — SKILL.md width-re-evaluation pin (test landed #1346; gap surfaced #1594)
     "tests/test_issue_skill_width_reeval_pointer.py",
     "tests/test_issue_tick_skill.py",  # NEW (#1629) — issue-tick SKILL prose pins
+    # NEW (#2072) — SKILL.md Step 5b lean-twin registration-mechanic +
+    # symlink-install pin (+ context-hygiene.md bullet + 6 repo lean-twin files)
+    "tests/test_lean_twin_registration_pin.py",
     # NEW (#1604) — mapping-baselines wiring pin (CLAUDE.md standing rule →
     # planner/critic/statistics-critic/experiment-guidelines + helper)
     "tests/test_mapping_baselines_wiring_pins.py",
@@ -506,8 +624,20 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # CLAUDE.md diffs are WORKFLOW_SURFACE-only, so this registration is the
     # ONLY gate that fires the pin on those changes.
     "tests/test_outroot_residue_prose_pins.py",
+    # NEW (#2148) — realized row-count reconciliation prose pins
+    # (upload-verifier.md Step 2.11 + verdict row + note-template rows=
+    # token, upload-policy.md § Realized row counts, section-reference
+    # § Step 2.11, pods.md teardown clause, CLAUDE.md recipe clause). Same
+    # rationale as the #2187 sibling above: `.claude/agents/*.md` +
+    # CLAUDE.md diffs are WORKFLOW_SURFACE-only, so this registration is
+    # the ONLY gate that fires the pin on those changes.
+    "tests/test_realized_rows_prose_pins.py",
     # NEW (#1645) — CLAUDE.md + issue SKILL.md bracketed ownership-probe exemplar pin (#1495)
     "tests/test_ownership_probe_exemplar_bracketed.py",
+    # NEW (#2326) — scripts/persist_verdict_concerns.py forwarder semantics
+    # (all-or-nothing validation, require-block exit 3, idempotent replay,
+    # note->$MB resume-recovery extraction, stdout content discipline).
+    "tests/test_persist_verdict_concerns.py",
     # NEW (#1631) — plan-patch helper + SKILL.md pointer pin
     "tests/test_plan_patch.py",
     # NEW (#2015) — repo-root uncommitted-state (pre-commit stash race) prose
@@ -518,6 +648,10 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_step0_enumerator_total_form.py",  # NEW (#1722) — Step-0 enumerator total-form pin
     "tests/test_step10d_guard3.py",  # NEW (#1242) — SKILL.md Step 10d guard/merge pin
     "tests/test_step10d_guards.py",  # NEW (#1978) — step10d_guards.sh extraction pin
+    # NEW (#2201) — deliverable-divergence probe prose pins (Step 5a probe +
+    # reviewer-brief bullet, Step 10d pre-merge delta gate H4, code-reviewer.md
+    # § Main-side divergence list consumption paragraph).
+    "tests/test_issue_skill_divergence_probe_pin.py",
     # NEW (#1723) — SKILL.md Step 10 CRON-TEARDOWN + epm:done reorder around
     # Step 10d merge (Terminal-teardown H4 + exit-site enumeration +
     # Step 10 step 6 branch-on-epm:merged + retry-surface long-phase heartbeats)
@@ -525,6 +659,9 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_step_completed_resume.py",  # NEW (#1242) — resume/step-completed contract pin
     # NEW (#1662) — CLAUDE.md + SKILL.md suffixed-pod completion-teardown contract pin
     "tests/test_suffixed_pod_completion_teardown_pin.py",
+    # NEW (#2119) — upload-policy.md manifest-first consumer clause prose pin
+    # (clause header + fail-loud sentence + hub helper names).
+    "tests/test_upload_policy_manifest_first_pin.py",
     # NEW (#1693) — code-reviewer.md Step 0.69 phase-idempotency + inter-phase-
     # contract gate pin (prose + codex mirror + substantive-tag registry + ratchet-cap)
     "tests/test_code_reviewer_phase_idempotency_gate.py",
@@ -543,6 +680,11 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     "tests/test_precommit_gitleaks_merge_scope.py",
     "tests/test_diff_base_origin_main_pin.py",  # NEW (#1289) — diff-base origin/main pin
     "tests/test_fit_loop_batching_review_pin.py",  # NEW (#1397) — fit-loop batching review-lens pin
+    # NEW (#2325) — skill-doc headroom PostToolUse hook pin (warn-only,
+    # fail-open) incl. its settings.json registration + resolved-path assert:
+    # `.json` diffs map to no tests (_DATA_DOC_SUFFIXES), so the registration
+    # pin runs on every gate ONLY via this tuple.
+    "tests/test_guard_skill_doc_headroom.py",
     # NEW (#1577) — guard-script read-bounding hook pin: the selector's
     # stem/literal/dependency arms are .py-only, so a later .sh-hook /
     # settings.json diff re-runs this pin ONLY via this tuple.
@@ -556,6 +698,13 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # any of the three targets can be edited independently, so this pin
     # lives in WORKFLOW_INVARIANT to gate all three prose surfaces.
     "tests/test_consistency_checker_parentless_infra_skip.py",
+    # NEW (#2168) — JSON-guard UnicodeDecodeError reintroduction guard:
+    # fixture/live-tree tests for check_json_guard_unicode plus the no-flags
+    # bundling source pin (test_check_json_guard_unicode_bundled_in_no_flags),
+    # which must gate every later workflow_lint.py dispatch refactor
+    # (#1385 v1 / #1648 v2 shipped exactly the silent-unbundling regression
+    # that pin blocks).
+    "tests/test_workflow_lint_json_guard_unicode.py",
 )
 
 # --- Touched files that short-circuit (no per-file test map). ----------------
@@ -664,6 +813,10 @@ TRANSITIVE_CONSUMER_TESTS: dict[str, tuple[str, ...]] = {
         "tests/test_inline_lint_gate.py",
         "tests/test_step9c_baseline.py",
     ),
+    # #2412: the Step 5a sibling-probe unit tests load the helper by
+    # CONSTRUCTED path (importlib + subprocess CLI) — no text-scan arm
+    # reaches a constructed-path consumer.
+    "scripts/step5a_sibling_probe.py": ("tests/test_step5a_sibling_probe.py",),
 }
 
 # --- Rules-pin discovery arm (#1496). -----------------------------------------
@@ -815,13 +968,36 @@ def _skills_pin_tokens(rel_path: str) -> tuple[str, re.Pattern[str]]:
     return contiguous, join_re
 
 
+_ISSUE_STEPS_PIN_GLOB = ".claude/skills/issue/steps/*.md"
+_ISSUE_SKILL_SOURCE_TOKEN = "issue_skill_source"
+
+
+def _skills_pin_token_sets(rel_path: str) -> list[tuple[str, re.Pattern[str]]]:
+    """All (contiguous, join_re) alternatives *rel_path* aliases to (#2155).
+
+    A ``.claude/skills/issue/steps/*.md`` companion carries a step body the
+    #2155 split relocated out of ``issue/SKILL.md``; the tests pinning that
+    prose reference the SKILL.md path (their path constants) or the
+    ``tests/issue_skill_source`` composer (their read sites), never the
+    companion's own path — so a steps diff aliases to BOTH token sets on top
+    of its own (a steps-only diff must map NON-EMPTY, plan #2155 B.9). Every
+    other skills file keeps its single token pair.
+    """
+    out = [_skills_pin_tokens(rel_path)]
+    if _matches_any(rel_path, (_ISSUE_STEPS_PIN_GLOB,)):
+        out.append(_skills_pin_tokens(".claude/skills/issue/SKILL.md"))
+        out.append((_ISSUE_SKILL_SOURCE_TOKEN, re.compile(re.escape(_ISSUE_SKILL_SOURCE_TOKEN))))
+    return out
+
+
 def skills_pin_hits(touched: list[str], work_root: Path) -> dict[str, set[str]]:
     """``{test_relpath: {touched .claude/skills/**/*.md files whose path its
     text references}}`` (#1851). Zero file reads when no skills file is
-    touched. Matching via :func:`_skills_pin_tokens` (contiguous substring OR
-    path-join regex); glob matching via :func:`_matches_any` so nested
-    reference files under a skill dir are covered too (the ``/**/``
-    zero-segment collapse).
+    touched. Matching via :func:`_skills_pin_token_sets` (contiguous substring
+    OR path-join regex, per alias — a ``issue/steps/*.md`` companion also
+    carries the ``issue/SKILL.md`` + ``issue_skill_source`` aliases, #2155);
+    glob matching via :func:`_matches_any` so nested reference files under a
+    skill dir are covered too (the ``/**/`` zero-segment collapse).
 
     Fail-soft (the #1299 read contract, mirroring :func:`rules_pin_hits`): a
     test file that cannot be read / decoded emits ONE stderr WARN and is
@@ -834,7 +1010,7 @@ def skills_pin_hits(touched: list[str], work_root: Path) -> dict[str, set[str]]:
     tests_dir = work_root / "tests"
     if not skills or not tests_dir.is_dir():
         return hits
-    tokens = {f: _skills_pin_tokens(f) for f in skills}
+    tokens = {f: _skills_pin_token_sets(f) for f in skills}
     n_scanned = 0
     n_failed = 0
     for test_path in sorted(tests_dir.rglob("test_*.py")):
@@ -850,8 +1026,8 @@ def skills_pin_hits(touched: list[str], work_root: Path) -> dict[str, set[str]]:
                 file=sys.stderr,
             )
             continue
-        for skill_file, (contiguous, join_re) in tokens.items():
-            if contiguous in text or join_re.search(text):
+        for skill_file, token_set in tokens.items():
+            if any(contiguous in text or join_re.search(text) for contiguous, join_re in token_set):
                 hits.setdefault(rel, set()).add(skill_file)
     if n_scanned and n_failed / n_scanned > 0.05:
         print(
@@ -1185,12 +1361,91 @@ def compute_touched(
 ) -> list[str]:
     """Return the repo-relative paths the current branch changed vs *base*.
 
-    Uses the three-dot ``git diff --name-only <base>...HEAD`` form: it diffs the
-    merge-base of *base* and HEAD against HEAD — exactly the branch's own
+    The three-dot ``git diff --name-only <base>...HEAD`` form (merge-base of
+    *base* and HEAD vs HEAD) is the CANDIDATE set — exactly the branch's own
     additions/modifications, not changes on *base* that HEAD lacks. The diff
     runs with *work_root* as cwd, so HEAD is the invoking checkout's branch
     (the issue branch from a worktree — #851). ``_runner`` is injectable for
     tests (it receives the argv list and returns stdout).
+
+    #2302: paths whose content at HEAD is byte-identical to the *base* TIP
+    are then SUBTRACTED (see :func:`compute_base_identical`): a Step 5a
+    sibling-sync commit copies main's OWN ``scripts/issue<M>_*`` /
+    ``tests/test_issue<M>_*`` content into the branch, which puts those paths
+    in the three-dot diff even though landing the branch changes nothing at
+    them — inflating the gate set (#2296: 61 invariant files -> 217, wall
+    1:46:36) and disabling the #2024 ordering carve-out downstream. Landing
+    the branch changes NOTHING at a base-identical path, so it is not the
+    branch's to test, lint, or cover.
+    """
+    touched, _excluded = _touched_and_base_identical(base, work_root, _runner)
+    return touched
+
+
+def compute_base_identical(
+    base: str,
+    work_root: Path,
+    _runner: Callable[[list[str]], str] | None = None,
+) -> list[str]:
+    """Sorted three-dot-diff paths VERIFIED byte-identical to the *base* tip (#2302).
+
+    The set :func:`compute_touched` excludes. Exclusion candidates are
+    ``three_dot - two_dot`` (``git diff --name-only <base> HEAD`` with the
+    same flags, so rename heuristics cannot make the lists asymmetric in a
+    way that drops a real change); each candidate is excluded ONLY on
+    verified blob-OID equality of ``HEAD:<p>`` vs ``<base>:<p>`` (one batched
+    ``git cat-file --batch-check``). Fail-closed: an unresolvable or
+    ambiguous path — and, on any git error in the two-dot/blob probes, EVERY
+    path — stays branch-touched (returned set empty).
+    """
+    _touched, excluded = _touched_and_base_identical(base, work_root, _runner)
+    return excluded
+
+
+def _base_identical_audit(base: str, work_root: Path, touched: list[str]) -> list[str]:
+    """Verified base-identical exclusions for the ``--json`` audit key (#2302).
+
+    Runs even when *touched* is empty: a branch whose ENTIRE three-dot diff is
+    base-identical (a sync-commit-only branch) filters ``touched`` to ``[]``,
+    and "the exclusion is never silent" must still hold — the audit key names
+    the excluded paths and the caller's NOTE fires. Derived through the PUBLIC
+    :func:`compute_base_identical` seam; a derivation failure degrades to ZERO
+    exclusions with a stderr NOTE (fail-closed — nothing is claimed excluded),
+    never a crash: the caller's touched list carries its own fail-loud
+    three-dot contract. Any entry still present in *touched* is DROPPED from
+    the audit (an asymmetric transient git failure between the two seam calls
+    could otherwise report an exclusion the realized filtering did not apply —
+    the audit key never contradicts the selection).
+    """
+    try:
+        audit = compute_base_identical(base, work_root)
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError) as exc:
+        print(
+            "select_step9c_tests: NOTE — base-identical audit derivation failed "
+            f"({exc}); reporting zero exclusions (fail-closed, #2302)",
+            file=sys.stderr,
+        )
+        return []
+    still_touched = set(touched)
+    return [p for p in audit if p not in still_touched]
+
+
+def _touched_and_base_identical(
+    base: str,
+    work_root: Path,
+    _runner: Callable[[list[str]], str] | None = None,
+) -> tuple[list[str], list[str]]:
+    """(filtered touched list, sorted verified base-identical exclusions) (#2302).
+
+    One diff pass backing both :func:`compute_touched` and
+    :func:`compute_base_identical`. main() routes through those two PUBLIC
+    seams (not this helper) so tests that monkeypatch ``compute_touched``
+    keep working; both seams delegate here, so a real invocation derives
+    both lists from the same deterministic diff recipe. The three-dot diff
+    failing raises
+    ``CalledProcessError`` (unchanged fail-loud contract); a failure in the
+    AUXILIARY two-dot / blob probes degrades to ZERO exclusions with a stderr
+    NOTE — everything stays touched, the fail-closed (blocking) direction.
     """
 
     def _default_runner(argv: list[str]) -> str:
@@ -1205,7 +1460,77 @@ def compute_touched(
 
     runner = _runner or _default_runner
     out = runner(["git", "diff", "--name-only", f"{base}...HEAD"])
-    return [line.strip() for line in out.splitlines() if line.strip()]
+    three_dot = [line.strip() for line in out.splitlines() if line.strip()]
+    if not three_dot:
+        return [], []
+    try:
+        out_two = runner(["git", "diff", "--name-only", base, "HEAD"])
+        two_dot = {line.strip() for line in out_two.splitlines() if line.strip()}
+        candidates = [p for p in three_dot if p not in two_dot]
+        excluded = (
+            set(_verified_base_identical(candidates, base, work_root)) if candidates else set()
+        )
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError) as exc:
+        print(
+            f"select_step9c_tests: NOTE — base-identity filter failed ({exc}); keeping every "
+            "three-dot path as branch-touched (fail-closed, #2302)",
+            file=sys.stderr,
+        )
+        return three_dot, []
+    return [p for p in three_dot if p not in excluded], sorted(excluded)
+
+
+def _verified_base_identical(candidates: list[str], base: str, work_root: Path) -> list[str]:
+    """The subset of *candidates* whose HEAD blob OID equals its *base*-tip blob OID.
+
+    ONE batched ``git cat-file --batch-check`` over ``HEAD:<p>`` + ``<base>:<p>``
+    for every candidate. A path is returned ONLY when BOTH specs resolve to an
+    OID and the OIDs are equal — a ``missing``/``ambiguous``/unparseable row
+    keeps its path branch-touched (fail-closed). Raises ``CalledProcessError``
+    on a non-zero git exit (the caller degrades to zero exclusions).
+    """
+    specs = [f"HEAD:{p}" for p in candidates] + [f"{base}:{p}" for p in candidates]
+    oids = _blob_oid_map(specs, work_root)
+    identical: list[str] = []
+    for p in candidates:
+        head_oid = oids.get(f"HEAD:{p}")
+        base_oid = oids.get(f"{base}:{p}")
+        if head_oid is not None and base_oid is not None and head_oid == base_oid:
+            identical.append(p)
+    return identical
+
+
+_HEX_OID_RE = re.compile(r"^[0-9a-f]{40}(?:[0-9a-f]{24})?$")  # SHA-1 or SHA-256 object ids
+
+
+def _blob_oid_map(specs: list[str], work_root: Path) -> dict[str, str]:
+    """Resolve ``<rev>:<path>`` specs to object OIDs via one batched git call (#2302).
+
+    Returns a mapping ONLY for specs that resolved cleanly: a resolved
+    ``--batch-check`` row is ``<oid> <type> <size>``; a ``missing`` /
+    ``ambiguous`` / short / unparseable row leaves its spec OUT of the map
+    (callers treat an absent spec as unresolvable -> the path stays
+    branch-touched, fail-closed). Rows are POSITIONAL (i-th response row ==
+    i-th input spec); a row-count mismatch makes every row unattributable,
+    so NOTHING resolves. Raises ``CalledProcessError`` on non-zero git exit.
+    """
+    proc = subprocess.run(
+        ["git", "cat-file", "--batch-check"],
+        cwd=str(work_root),
+        input="".join(s + "\n" for s in specs),
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    lines = proc.stdout.splitlines()
+    oids: dict[str, str] = {}
+    if len(lines) != len(specs):
+        return oids
+    for spec, line in zip(specs, lines, strict=True):
+        parts = line.split()
+        if len(parts) == 3 and _HEX_OID_RE.match(parts[0]):
+            oids[spec] = parts[0]
+    return oids
 
 
 # --- Import-map arm (#1299). ---------------------------------------------------
@@ -2015,6 +2340,19 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
     parser.add_argument(
+        "--files-only",
+        action="store_true",
+        help=(
+            "emit the selected test paths ONLY — one repo-relative path per "
+            "line on stdout, no JSON, no key to guess (#1992/#2126: a launcher "
+            "composing its own gate invocation read the wrong --json key and "
+            "spliced an empty list). The <T> timeout bound still arrives on "
+            "the greppable stderr recommended-timeout-s=<T> sizing line; the "
+            "empty-selection refusal (exit 1) applies unchanged. Mutually "
+            "exclusive with --json and --map-files (exit 2)."
+        ),
+    )
+    parser.add_argument(
         "--map-files",
         default=None,
         metavar="FILE",
@@ -2054,6 +2392,21 @@ def main(argv: list[str] | None = None) -> int:
             "'<test>\\t<matched_path>' per line)"
         )
 
+    # Same fail-CLOSED shape for --files-only (#2126): each output mode owns
+    # stdout exclusively — silently preferring one flag over another would
+    # hand a consumer the WRONG shape (the #1717 defect (a) class), so an
+    # ambiguous combination exits 2 with no stdout.
+    if args.files_only and args.json:
+        parser.error(
+            "--files-only is not supported with --json (each mode owns stdout: "
+            "paths-only lines vs a JSON object)"
+        )
+    if args.files_only and args.map_files is not None:
+        parser.error(
+            "--files-only is not supported with --map-files (mapping mode emits "
+            "TSV pairs, not a diff-based selection)"
+        )
+
     try:
         work_root = _resolve_work_root(args.repo_root)
     except subprocess.CalledProcessError as exc:
@@ -2084,11 +2437,24 @@ def main(argv: list[str] | None = None) -> int:
     # consumer (NOTE, sizing line, --json "base") sees the RESOLVED base.
     base = resolve_base(args.base, work_root, fetch=not args.no_fetch)
     try:
+        # The PUBLIC seam (tests monkeypatch compute_touched; #2302): the
+        # returned list already has verified base-identical paths subtracted.
         touched = compute_touched(base, work_root)
     except subprocess.CalledProcessError as exc:
         # Fail loud — never silently fall back to zero tests on a git error.
         print(f"select_step9c_tests: git diff failed: {exc}", file=sys.stderr)
         return 1
+    base_identical = _base_identical_audit(base, work_root, touched)
+
+    if base_identical:
+        # The exclusion is never silent — same discipline as the
+        # untested_touched / missing_invariants reporting (#2302).
+        print(
+            "select_step9c_tests: NOTE — base-identical paths excluded from the branch "
+            f"diff (HEAD blob == '{base}' tip blob; Step 5a sibling-sync class, #2302): "
+            + ", ".join(base_identical),
+            file=sys.stderr,
+        )
 
     if not touched:
         # Loud, exit-0 NOTE (the documented degenerate fallback stays legitimate
@@ -2136,7 +2502,13 @@ def main(argv: list[str] | None = None) -> int:
         file=sys.stderr,
     )
 
-    if args.json:
+    if args.files_only:
+        # Paths only, one per line, NO key to guess (#1992/#2126). The
+        # empty-selection refusal above already returned 1, so this branch
+        # never emits zero lines on exit 0; <T> rides the stderr sizing line.
+        for t in tests:
+            print(t)
+    elif args.json:
         print(
             json.dumps(
                 {
@@ -2148,6 +2520,7 @@ def main(argv: list[str] | None = None) -> int:
                     "n_tests": len(tests),
                     "recommended_timeout_s": timeout_s,
                     "slow_tests_selected": [t for t in tests if t in SLOW_TESTS],
+                    "base_identical_excluded": base_identical,  # #2302 — never a silent exclusion
                 }
             )
         )

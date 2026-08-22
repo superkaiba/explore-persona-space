@@ -1291,3 +1291,140 @@ eval_results/issue_1739/evil_ood_full/dv_dataset/evil/labeling.json:generic-api-
 eval_results/issue_1739/evil_ood_full/dv_dataset/evil/labeling.json:generic-api-key:7704
 dashboard/public/failures-2202_p4.html:generic-api-key:4914
 dashboard/public/failures-2202_p7.html:generic-sk-key:12483
+tasks/planning/2059/plans/v1.md:generic-api-key:181
+tasks/planning/2059/plans/v2.md:generic-api-key:181
+tasks/planning/2059/plans/v3.md:generic-api-key:183
+
+# task #1739: SycophancyEval OOD DV rows -- `group_key` is a
+# cross-validation grouping key of the form <rung>-<8 hex chars>
+# (1,455 distinct over 2,613 rows), not a credential.
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:10784
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:10804
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:10824
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:10844
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:11344
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:11364
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:11384
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:11404
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:1144
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:1164
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:1184
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:1204
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:12164
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:12464
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:12984
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:13004
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:13044
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:13124
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:13524
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:13884
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:13904
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:14164
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:14224
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:14524
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:14764
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:15244
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:15284
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:15584
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:15664
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:16064
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:16444
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:16644
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:16764
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:17164
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:17584
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:17784
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:18864
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:19004
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:19024
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:20264
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:20444
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:20864
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:20904
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:20944
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:21044
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:21064
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:21304
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:21364
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:21584
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:21684
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:22144
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:22464
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:22644
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:22964
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:2984
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:3004
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:3024
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:3044
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:41844
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:42224
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:42444
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:42724
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:42984
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:43264
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:43604
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:43664
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:43924
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:43984
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:44484
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:44704
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:45364
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:45644
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:46504
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:46824
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:48184
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:48404
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:49204
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:49784
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:49844
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:504
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:50904
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:51484
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:51704
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:51884
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:524
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:544
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:564
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:6824
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:6844
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:6864
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:6884
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:8064
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:8084
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:8104
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:8124
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:824
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:844
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:864
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:884
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:9184
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:9204
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:9224
+eval_results/issue_1739/syco_ood/dv_dataset/sycophancy/labeling.json:generic-api-key:9244
+
+# issue #1336: ctx_tokenid_sha256 provenance digests (verified false positives).
+# 64-char lowercase hex sha256 of the context token-id sequence, written by the
+# recapture gate alongside model_id / corpus / git_commit / expected_layers.
+# High entropy trips generic-api-key; not a credential.
+eval_results/issue_1336/gates_v2/g2_recapture/rlvr_chat_lmsys5k_shard000.json:generic-api-key:27
+eval_results/issue_1336/gates_v2/g2_recapture/rlvr_chat_lmsys5k_shard001.json:generic-api-key:27
+eval_results/issue_1336/gates_v2/g2_recapture/rlvr_chat_lmsys5k_shard002.json:generic-api-key:27
+eval_results/issue_1336/gates_v2/g2_recapture/rlvr_chat_lmsys5k_shard003.json:generic-api-key:27
+eval_results/issue_1336/gates_v2/g2_recapture/rlvr_chat_lmsys5k_shard004.json:generic-api-key:27
+eval_results/issue_1336/gates_v2/g2_recapture/rlvr_chat_lmsys5k_shard005.json:generic-api-key:27
+eval_results/issue_1336/gates_v2/g2_recapture/rlvr_chat_lmsys5k_shard006.json:generic-api-key:27
+eval_results/issue_1336/gates_v2/g2_recapture/rlvr_chat_lmsys5k_shard007.json:generic-api-key:27
+eval_results/issue_1336/gates_v3/g2v2_recapture/dpo_chat_lmsys23k_shard000.json:generic-api-key:36
+dashboard/public/issue2329_result0_gallery.html:generic-api-key:161321
+dashboard/public/issue2329_result0_gallery.html:generic-api-key:161449
+# task #1739 claim4 launch marker: flagged string is the round run-token identifier, not a credential (false positive)
+tasks/followups_running/1739/events.jsonl:generic-api-key:1418
+tasks/followups_running/1739/events.jsonl:generic-api-key:1442
+
+# issue #2329 Result 0 qualitative gallery: model-GENERATED python in a
+# TensorFlow Model Analysis snippet. generic-api-key fires on the entropy
+# (3.92) of the long snake_case identifier
+# horizontal_slice_tf_example_columns beside horizontal_slice_key=
+# "served_example". Verified by reading both lines: no credential.
+docs/issue2329_result0_gallery.html:generic-api-key:149249
+docs/issue2329_result0_gallery.html:generic-api-key:149377

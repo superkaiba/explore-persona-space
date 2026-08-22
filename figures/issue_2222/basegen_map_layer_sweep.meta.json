@@ -1,0 +1,1879 @@
+{
+  "commit": "51347ab3+dirty",
+  "render_id": "9328d7d569174f6d",
+  "git_commit": "51347ab3",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2222_figures.py"
+  ],
+  "created": "2026-08-11T12:42:19Z",
+  "figsize": [
+    12.600000000000001,
+    3.6
+  ],
+  "points": [
+    {
+      "Layer index": 16.0,
+      "Pearson r (predictor vs trait score)": 0.8671895350300558,
+      "series": "Layer the LOFO folds select (context input)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Layer index": 0.0,
+      "Pearson r (predictor vs trait score)": 0.683493627309135,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 1.0,
+      "Pearson r (predictor vs trait score)": 0.5573600729309158,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 2.0,
+      "Pearson r (predictor vs trait score)": 0.6333766506275985,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 3.0,
+      "Pearson r (predictor vs trait score)": 0.730586919592449,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 4.0,
+      "Pearson r (predictor vs trait score)": 0.7691615924890698,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 5.0,
+      "Pearson r (predictor vs trait score)": 0.7144107689812793,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 6.0,
+      "Pearson r (predictor vs trait score)": 0.6448269504673969,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 7.0,
+      "Pearson r (predictor vs trait score)": 0.5528006969792265,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 8.0,
+      "Pearson r (predictor vs trait score)": 0.5397520575572086,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 9.0,
+      "Pearson r (predictor vs trait score)": 0.7313708600270982,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 10.0,
+      "Pearson r (predictor vs trait score)": 0.5906478626844667,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 11.0,
+      "Pearson r (predictor vs trait score)": 0.7723478822081663,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 12.0,
+      "Pearson r (predictor vs trait score)": 0.6064984550340693,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 13.0,
+      "Pearson r (predictor vs trait score)": 0.7341155832568169,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 14.0,
+      "Pearson r (predictor vs trait score)": 0.5474343868853913,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 15.0,
+      "Pearson r (predictor vs trait score)": 0.49703142667780326,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 16.0,
+      "Pearson r (predictor vs trait score)": 0.8671895350300558,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 17.0,
+      "Pearson r (predictor vs trait score)": 0.47062304332929406,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 18.0,
+      "Pearson r (predictor vs trait score)": 0.5153967035120289,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 19.0,
+      "Pearson r (predictor vs trait score)": 0.6827029268700616,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 20.0,
+      "Pearson r (predictor vs trait score)": 0.7426332147247952,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 21.0,
+      "Pearson r (predictor vs trait score)": 0.7430124622439432,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 22.0,
+      "Pearson r (predictor vs trait score)": 0.732359599941514,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 23.0,
+      "Pearson r (predictor vs trait score)": 0.7315355254899348,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 24.0,
+      "Pearson r (predictor vs trait score)": 0.5169743060706993,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 25.0,
+      "Pearson r (predictor vs trait score)": 0.5695548098944527,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 26.0,
+      "Pearson r (predictor vs trait score)": 0.47955137555255656,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 27.0,
+      "Pearson r (predictor vs trait score)": -0.26794291556005856,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer index": 0.0,
+      "Pearson r (predictor vs trait score)": 0.7714086428123229,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 1.0,
+      "Pearson r (predictor vs trait score)": 0.7214205584544504,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 2.0,
+      "Pearson r (predictor vs trait score)": 0.8150780061404256,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 3.0,
+      "Pearson r (predictor vs trait score)": 0.785893321332334,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 4.0,
+      "Pearson r (predictor vs trait score)": 0.8047528857079979,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 5.0,
+      "Pearson r (predictor vs trait score)": 0.7938515026498153,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 6.0,
+      "Pearson r (predictor vs trait score)": 0.7783841585952549,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 7.0,
+      "Pearson r (predictor vs trait score)": 0.7294877192748933,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 8.0,
+      "Pearson r (predictor vs trait score)": 0.4879323184537191,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 9.0,
+      "Pearson r (predictor vs trait score)": 0.640265941634641,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 10.0,
+      "Pearson r (predictor vs trait score)": 0.49070964183705257,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 11.0,
+      "Pearson r (predictor vs trait score)": 0.5291301804417242,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 12.0,
+      "Pearson r (predictor vs trait score)": 0.6533357262341533,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 13.0,
+      "Pearson r (predictor vs trait score)": 0.5587263068229521,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 14.0,
+      "Pearson r (predictor vs trait score)": 0.6733063863648031,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 15.0,
+      "Pearson r (predictor vs trait score)": 0.6017972570524764,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 16.0,
+      "Pearson r (predictor vs trait score)": 0.6590784229671017,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 17.0,
+      "Pearson r (predictor vs trait score)": 0.6478083369020456,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 18.0,
+      "Pearson r (predictor vs trait score)": 0.6325890832449481,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 19.0,
+      "Pearson r (predictor vs trait score)": 0.4700814260192532,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 20.0,
+      "Pearson r (predictor vs trait score)": 0.38612652560355526,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 21.0,
+      "Pearson r (predictor vs trait score)": 0.44923054255027645,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 22.0,
+      "Pearson r (predictor vs trait score)": 0.27033005007237765,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 23.0,
+      "Pearson r (predictor vs trait score)": 0.31478804953085615,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 24.0,
+      "Pearson r (predictor vs trait score)": 0.28610237410500294,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 25.0,
+      "Pearson r (predictor vs trait score)": 0.340802642676551,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 26.0,
+      "Pearson r (predictor vs trait score)": 0.25278523969956873,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 27.0,
+      "Pearson r (predictor vs trait score)": -0.2505811171922334,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer index": 0.0,
+      "Pearson r (predictor vs trait score)": 0.7128143206631726,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 1.0,
+      "Pearson r (predictor vs trait score)": 0.6449121518671346,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 2.0,
+      "Pearson r (predictor vs trait score)": 0.7317172609927618,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 3.0,
+      "Pearson r (predictor vs trait score)": 0.7660745511769728,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 4.0,
+      "Pearson r (predictor vs trait score)": 0.8047153828230553,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 5.0,
+      "Pearson r (predictor vs trait score)": 0.7498413197915637,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 6.0,
+      "Pearson r (predictor vs trait score)": 0.7884982598089773,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 7.0,
+      "Pearson r (predictor vs trait score)": 0.8218010882462289,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 8.0,
+      "Pearson r (predictor vs trait score)": 0.8533921300983114,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 9.0,
+      "Pearson r (predictor vs trait score)": 0.8619855154431015,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 10.0,
+      "Pearson r (predictor vs trait score)": 0.8422694059132766,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 11.0,
+      "Pearson r (predictor vs trait score)": 0.8511783287736413,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 12.0,
+      "Pearson r (predictor vs trait score)": 0.8929828187489786,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 13.0,
+      "Pearson r (predictor vs trait score)": 0.9028998322029331,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 14.0,
+      "Pearson r (predictor vs trait score)": 0.9111320174548416,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 15.0,
+      "Pearson r (predictor vs trait score)": 0.9217244703018083,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 16.0,
+      "Pearson r (predictor vs trait score)": 0.9139387130925111,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 17.0,
+      "Pearson r (predictor vs trait score)": 0.912567795303284,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 18.0,
+      "Pearson r (predictor vs trait score)": 0.9109819947556153,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 19.0,
+      "Pearson r (predictor vs trait score)": 0.8832032292198839,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 20.0,
+      "Pearson r (predictor vs trait score)": 0.8623198736697649,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 21.0,
+      "Pearson r (predictor vs trait score)": 0.8312041484252843,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 22.0,
+      "Pearson r (predictor vs trait score)": 0.8076866926067569,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 23.0,
+      "Pearson r (predictor vs trait score)": 0.7912908962484514,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 24.0,
+      "Pearson r (predictor vs trait score)": 0.7767752077754789,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 25.0,
+      "Pearson r (predictor vs trait score)": 0.758647923880038,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 26.0,
+      "Pearson r (predictor vs trait score)": 0.7144355663835702,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 27.0,
+      "Pearson r (predictor vs trait score)": 0.10035597634499957,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer index": 25.0,
+      "y": 0.95128256688774,
+      "series": "Layer the LOFO folds select (context input)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Layer index": 0.0,
+      "y": 0.41861147831854184,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 1.0,
+      "y": 0.30988529060996317,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 2.0,
+      "y": 0.6597451011945051,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 3.0,
+      "y": 0.6313533152305679,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 4.0,
+      "y": 0.6303763989775966,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 5.0,
+      "y": 0.7530748389618098,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 6.0,
+      "y": 0.7837669233028626,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 7.0,
+      "y": 0.8850309831718961,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 8.0,
+      "y": 0.8153329241670424,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 9.0,
+      "y": 0.8705499333810147,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 10.0,
+      "y": 0.8546830509935579,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 11.0,
+      "y": 0.8135565846591832,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 12.0,
+      "y": 0.7581763896518935,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 13.0,
+      "y": 0.7718363610812522,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 14.0,
+      "y": 0.6009434824498016,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 15.0,
+      "y": 0.6072187026870792,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 16.0,
+      "y": 0.6697043599646122,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 17.0,
+      "y": 0.8105250475527477,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 18.0,
+      "y": 0.8766248279661261,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 19.0,
+      "y": 0.8999851332671405,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 20.0,
+      "y": 0.893667214470896,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 21.0,
+      "y": 0.8773502401603963,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 22.0,
+      "y": 0.8866092593016877,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 23.0,
+      "y": 0.8940988660824958,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 24.0,
+      "y": 0.9413772273679625,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 25.0,
+      "y": 0.95128256688774,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 26.0,
+      "y": 0.8703764323185303,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 27.0,
+      "y": 0.7369716279469739,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer index": 0.0,
+      "y": 0.5099304568047827,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer index": 1.0,
+      "y": 0.5122285474531645,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer index": 2.0,
+      "y": 0.5867722632781658,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer index": 3.0,
+      "y": 0.640428311853126,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer index": 4.0,
+      "y": 0.6911359437818468,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer index": 5.0,
+      "y": 0.6914585989948405,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer index": 6.0,
+      "y": 0.7634907687589751,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer index": 7.0,
+      "y": 0.7560745984282043,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer index": 8.0,
+      "y": 0.512713143466654,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer index": 9.0,
+      "y": 0.6478112311769066,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer index": 10.0,
+      "y": 0.6013624025099744,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer index": 11.0,
+      "y": 0.5687876120697956,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer index": 12.0,
+      "y": 0.6640004292862576,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer index": 13.0,
+      "y": 0.6043224460032678,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer index": 14.0,
+      "y": 0.7155255269370967,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer index": 15.0,
+      "y": 0.6613800466720945,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer index": 16.0,
+      "y": 0.7429348406141002,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer index": 17.0,
+      "y": 0.7693271894145961,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer index": 18.0,
+      "y": 0.8143410439886698,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer index": 19.0,
+      "y": 0.7550112485863902,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer index": 20.0,
+      "y": 0.7669611496235679,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer index": 21.0,
+      "y": 0.8635330412981604,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer index": 22.0,
+      "y": 0.8471500930588014,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer index": 23.0,
+      "y": 0.8525233543545921,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer index": 24.0,
+      "y": 0.8253883562194883,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer index": 25.0,
+      "y": 0.8431019917780147,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer index": 26.0,
+      "y": 0.8040405010543261,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer index": 27.0,
+      "y": 0.9058065779432047,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer index": 0.0,
+      "y": 0.7914793179270226,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer index": 1.0,
+      "y": 0.7617911696526474,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer index": 2.0,
+      "y": 0.81421802732652,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer index": 3.0,
+      "y": 0.8316672313008621,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer index": 4.0,
+      "y": 0.8590049646688493,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer index": 5.0,
+      "y": 0.8588526342383279,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer index": 6.0,
+      "y": 0.8890654435975949,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer index": 7.0,
+      "y": 0.9086435536364282,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer index": 8.0,
+      "y": 0.9165654590410903,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer index": 9.0,
+      "y": 0.9270718200952165,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer index": 10.0,
+      "y": 0.9319333642119583,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer index": 11.0,
+      "y": 0.9320326463816188,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer index": 12.0,
+      "y": 0.9430964103891597,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer index": 13.0,
+      "y": 0.9446725850879605,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer index": 14.0,
+      "y": 0.9500126197590897,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer index": 15.0,
+      "y": 0.9556135241715907,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer index": 16.0,
+      "y": 0.9568523648028937,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer index": 17.0,
+      "y": 0.9569304816914973,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer index": 18.0,
+      "y": 0.9569373404814683,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer index": 19.0,
+      "y": 0.9520252778610798,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer index": 20.0,
+      "y": 0.9508096938191006,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer index": 21.0,
+      "y": 0.9561760647307476,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer index": 22.0,
+      "y": 0.9570773714064955,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer index": 23.0,
+      "y": 0.9470323689038325,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer index": 24.0,
+      "y": 0.9426767113755197,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer index": 25.0,
+      "y": 0.9481839415320527,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer index": 26.0,
+      "y": 0.9397302614364085,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer index": 27.0,
+      "y": 0.9251444300975826,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer index": 26.0,
+      "y": 0.7157840052891679,
+      "series": "Layer the LOFO folds select (context input)",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "Layer index": 0.0,
+      "y": 0.3942562562660157,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer index": 1.0,
+      "y": 0.37346209041974043,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer index": 2.0,
+      "y": -0.1185759025230203,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer index": 3.0,
+      "y": 0.346236466919442,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer index": 4.0,
+      "y": 0.44705092295318094,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer index": 5.0,
+      "y": 0.3214378643699404,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer index": 6.0,
+      "y": 0.34659359941007795,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer index": 7.0,
+      "y": 0.20146270184039655,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer index": 8.0,
+      "y": 0.43356912873436343,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer index": 9.0,
+      "y": 0.21871324458764868,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer index": 10.0,
+      "y": 0.1112357908451681,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer index": 11.0,
+      "y": 0.14100696460784845,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer index": 12.0,
+      "y": 0.0646542734176156,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer index": 13.0,
+      "y": -0.03604221834777765,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer index": 14.0,
+      "y": 0.06046854103868108,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer index": 15.0,
+      "y": 0.10959313081411046,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer index": 16.0,
+      "y": 0.5294615029587748,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer index": 17.0,
+      "y": 0.41522985607181195,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer index": 18.0,
+      "y": 0.47143026277194244,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer index": 19.0,
+      "y": 0.40344037211159883,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer index": 20.0,
+      "y": 0.3932296697764234,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer index": 21.0,
+      "y": 0.337199574076596,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer index": 22.0,
+      "y": 0.19719917454335312,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer index": 23.0,
+      "y": 0.26179882708661417,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer index": 24.0,
+      "y": 0.2905292938330545,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer index": 25.0,
+      "y": 0.44359911122417256,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer index": 26.0,
+      "y": 0.7157840052891679,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer index": 27.0,
+      "y": 0.3015823211079577,
+      "series": "Base-target map \u0394P (context input)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer index": 0.0,
+      "y": 0.4100634345567789,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 1.0,
+      "y": 0.33353389914990983,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 2.0,
+      "y": 0.30428742542318765,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 3.0,
+      "y": 0.33657981543918514,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 4.0,
+      "y": 0.43010364499601017,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 5.0,
+      "y": 0.39070663592670357,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 6.0,
+      "y": 0.4682536131202927,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 7.0,
+      "y": 0.49984552786639014,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 8.0,
+      "y": 0.5005371151246398,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 9.0,
+      "y": 0.5320341022857431,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 10.0,
+      "y": 0.5434080735458019,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 11.0,
+      "y": 0.5557573470855999,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 12.0,
+      "y": 0.551484088519341,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 13.0,
+      "y": 0.5534165726589861,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 14.0,
+      "y": 0.5816617545622182,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 15.0,
+      "y": 0.551510972238781,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 16.0,
+      "y": 0.529759316714505,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 17.0,
+      "y": 0.5569819374264665,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 18.0,
+      "y": 0.5503477922994087,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 19.0,
+      "y": 0.5723680745129852,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 20.0,
+      "y": 0.55999083615983,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 21.0,
+      "y": 0.5343053463742584,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 22.0,
+      "y": 0.5174494011262402,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 23.0,
+      "y": 0.535122697474132,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 24.0,
+      "y": 0.5510356336037504,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 25.0,
+      "y": 0.5665224798605007,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 26.0,
+      "y": 0.6262309393535924,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 27.0,
+      "y": 0.25470504520799464,
+      "series": "Base-target map \u0394P (prefix input, degenerate)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Layer index": 0.0,
+      "y": 0.34237767005859493,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer index": 1.0,
+      "y": 0.3354499657262571,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer index": 2.0,
+      "y": 0.27295407213783973,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer index": 3.0,
+      "y": 0.3042069305892158,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer index": 4.0,
+      "y": 0.3986661361311385,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer index": 5.0,
+      "y": 0.385783829862859,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer index": 6.0,
+      "y": 0.4594186335823158,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer index": 7.0,
+      "y": 0.48818470216304755,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer index": 8.0,
+      "y": 0.4933455564929453,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer index": 9.0,
+      "y": 0.4755524535301505,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer index": 10.0,
+      "y": 0.46945788888617934,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer index": 11.0,
+      "y": 0.49084641334982126,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer index": 12.0,
+      "y": 0.504185547094748,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer index": 13.0,
+      "y": 0.5401360537119249,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer index": 14.0,
+      "y": 0.55448281582969,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer index": 15.0,
+      "y": 0.5695882009216309,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer index": 16.0,
+      "y": 0.5458856975764561,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer index": 17.0,
+      "y": 0.5857119823914736,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer index": 18.0,
+      "y": 0.5992669114760579,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer index": 19.0,
+      "y": 0.624791327089292,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer index": 20.0,
+      "y": 0.6484396241713776,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer index": 21.0,
+      "y": 0.6609143906660222,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer index": 22.0,
+      "y": 0.6600602261666716,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer index": 23.0,
+      "y": 0.651153152811095,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer index": 24.0,
+      "y": 0.6616549960234731,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer index": 25.0,
+      "y": 0.639621085062306,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer index": 26.0,
+      "y": 0.6735386715752849,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Layer index": 27.0,
+      "y": 0.48112200187921217,
+      "series": "Exact \u0394P, same row subset",
+      "_kind": "line",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 255,
+  "text": {
+    "suptitle": "Base-generation-target map vs exact \u0394P, r per layer (n = 24 datasets)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Sycophancy",
+        "xlabel": "Layer index",
+        "ylabel": "Pearson r (predictor vs trait score)",
+        "legend_labels": [
+          "Base-target map \u0394P (context input)",
+          "Base-target map \u0394P (prefix input, degenerate)",
+          "Exact \u0394P, same row subset",
+          "Layer the LOFO folds select (context input)"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "Evil",
+        "xlabel": "Layer index",
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ]
+      },
+      {
+        "title_left": "Hallucination",
+        "xlabel": "Layer index",
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ]
+      }
+    ],
+    "series": [
+      "Base-target map \u0394P (context input)",
+      "Base-target map \u0394P (prefix input, degenerate)",
+      "Exact \u0394P, same row subset",
+      "Layer the LOFO folds select (context input)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

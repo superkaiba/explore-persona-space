@@ -418,8 +418,8 @@ def _patch_pod(
     monkeypatch.setattr(pp.subprocess, "run", _fake_run)
     monkeypatch.setattr(pp, "post_event", MagicMock())
     monkeypatch.setattr(pp, "_telegram_push", MagicMock(return_value=True))
-    monkeypatch.setattr(pp, "_marker_pid", lambda issue: None)
-    monkeypatch.setattr(pp, "_run_launched_age_sec", lambda issue, now_epoch: run_age_sec)
+    monkeypatch.setattr(pp, "_marker_pid", lambda issue, pod=None: None)
+    monkeypatch.setattr(pp, "_run_launched_age_sec", lambda issue, now_epoch, pod=None: run_age_sec)
 
 
 def _poll(state_file: Path):

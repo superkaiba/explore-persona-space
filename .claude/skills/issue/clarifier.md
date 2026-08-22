@@ -179,22 +179,6 @@ Check that the issue body answers each question. If not, ask it.
 - Statistical test? (paired t-test, bootstrap CI, Bonferroni correction if
   multiple comparisons)
 
-### Mapping arms (representation-mapping tasks only)
-Applies only when the task computes a representation mapping — a geometry
-read, predictor, probe, or direction extraction over model activations;
-skip otherwise.
-- Does the body name BOTH mapping arms — prefix-based (the **prefix** is
-  everything before the user query) AND context-based (the **context** is
-  the prefix plus the user query)? Both arms are the project default
-  (CLAUDE.md Critical Rules, "Prefix mapping AND context mapping",
-  2026-07-03). If the body is silent on arms, do NOT ask the user — apply
-  the default: patch the spec to name both arms and record it in the
-  **Context resolved** note. If the body explicitly requests a single arm,
-  that is a stated deviation — a stated deviation satisfies the Critical
-  Rule; confirm only that the statement is the user's intent, not an
-  omission. (Incident #958: a one-arm capture needed a user correction 6
-  minutes after filing.)
-
 ### Compute
 - Target pod? Pod1-5 have different GPU counts — which is appropriate?
 - GPU-hour estimate? (informs compute label: small <5h, medium 5-20h, large >20h)

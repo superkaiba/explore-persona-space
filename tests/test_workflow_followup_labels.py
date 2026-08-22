@@ -1155,9 +1155,10 @@ def _corpus_tree_is_main_vintage() -> bool:
     the tree-resident parser — a fleet-data invariant that is only coherent
     where corpus and parser share the fleet's current vintage: the `main`
     checkout, or a tree detached at main's tip (the Step 9c compare
-    pristine-oracle scratch worktree detaches at the ROOT'S LOCAL MAIN HEAD —
-    step9c_baseline.py create_scratch_worktree; the fetched origin/main tip
-    is accepted too). On an issue-branch worktree the pair is frozen at fork
+    pristine-oracle scratch worktree detaches at the resolved oracle base —
+    merge-base(diff base, work-root HEAD), #2293 — so it reads main-vintage
+    only when that base IS main's tip; the fetched origin/main tip is
+    accepted too). On an issue-branch worktree the pair is frozen at fork
     time and any branch forked between a new-form marker landing and its
     parser fix landing is red with no code defect on the branch
     (#1917/#1895). Caveat: on a git-LESS snapshot tree nested inside an
@@ -1287,6 +1288,65 @@ def _run_labels(events: list[dict]) -> set[str]:
 # (#1111) and is called generically for `source`/`round`/`outcome` too, so an
 # alias would change run/unrun classification corpus-wide. As with #1090, the
 # ROUND is closed by a corrective re-post on #1739 (#2154), not by parsing.)
+# (#2203's two run markers — (2203, "2026-08-10T15:46:57Z") and (2203,
+# "2026-08-10T21:57:35Z") — are a RECURRENCE of the #1739 bare-`label=` class
+# above: field-led notes whose label field uses the bare key `label=` instead
+# of `followup_label=` (`round=1 source=proposer-9b-cheap label=...`;
+# `label=ctx-native-axis-cap source=user-chat SUPERSEDED ...`). #2154's
+# survey conclusion ("NOT systematic ... this is the only bare-`label=`
+# note") is SUPERSEDED: the count is now 3 occurrences across 2 tasks — a
+# recurring hand-composition error, hence the #2307 mechanical guard
+# (`task.py post-marker` warns whenever a run/scope marker's note parses no
+# followup_label — the gate's own predicate). The parser is still NOT widened
+# to alias bare `label`: the same #1111 field-only + generic-caller grounds
+# as the #1739 paragraph above; `label=` remains the correct token for the
+# dispatch-breadcrumb grammar only.)
+# (#2054's (2054, "2026-08-12T19:00:39Z") run marker is a DISTINCT class:
+# its fields are `·`-joined on one physical line (U+00B7 middle dot —
+# `source: ... · followup_label: ... · satisfies ...`), and the parser splits
+# segments on `;\s+` only, so `followup_label:` sits mid-segment and parses
+# None (#1111 forbids mid-segment anchoring). Adding `·` as a segment
+# delimiter COULD parse this row without touching the field-only anchor —
+# the widening is rejected on RISK, not impossibility:
+# `parse_followup_note_field` is generic over `source`/`round`/`outcome`/
+# `est_gpu_hours`/`followup_ref`, so a new delimiter reclassifies run/unrun
+# state corpus-wide (the #545 lesson) to rescue ONE row this allowlist
+# handles at zero risk — and classes A/C above/below need the allowlist
+# anyway, so the widening cannot make main green on its own.)
+# (#2224's two run markers — (2224, "2026-08-13T03:47:32Z") and (2224,
+# "2026-08-13T03:47:37Z") — and #2254's (2254, "2026-08-14T18:14:08Z") are a
+# THIRD class: a bare-space `v1 ` stamp (no dot, no dash) heads the note and
+# the fields are SPACE-joined (`v1 source: ... followup_label: ... — ...`;
+# 2254 is additionally colon-no-space, `followup_label:ctxext-...`). The
+# stamp stripper accepts `v<k>.`+ws or `v<k>`+dash+ws only, so the bare-space
+# stamp survives — and even under a widened stripper the residue stays
+# space-joined, so `followup_label:` is never at segment start; only the
+# mid-segment anchoring #1111 forbids could parse it. The parser is NOT
+# widened; the rounds are accounted by this allowlist, and the #2307
+# poster-side advisory is the recurrence guard.)
+# (#2225's two run markers — (2225, "2026-08-15T00:50:51Z") and (2225,
+# "2026-08-15T00:50:56Z") — are a FOURTH class, and they LANDED MID-ROUND
+# (hours after the six above were catalogued, while this fix was in review):
+# the note head carries the marker's OWN sentinel comment before the fields
+# (`<!-- epm:same-issue-followup-run v1 --> source: user-chat
+# followup_label: fu1_preimage_prevention — ...`). The parser's leading strip
+# is `[\s\-*]+`, which cannot remove `<!--`, so the field never reaches
+# segment start; the fields are space-joined besides. Plausible mechanism: the
+# `<!-- epm:<kind> v<n> -->` block shape IS correct for several OTHER marker
+# bodies (e.g. the `epm:failure v1` / `epm:failure-lesson v1` blocks agents
+# compose by hand), so the sentinel was carried onto a note whose consumer
+# parses FIELDS, not blocks. The parser is NOT widened to strip HTML comments:
+# same #1111 field-only + generic-caller grounds as classes A-C.
+#
+# STANDING CAVEAT (#2307): four distinct malformation classes across five days
+# and five tasks, two of them landing DURING this round. This allowlist is a
+# manual chase over live append-only agent-authored data, and the #2307
+# emitter guard is an ADVISORY printed AFTER post_event has already appended —
+# it cannot PREVENT a malformed note. So this invariant is expected to red
+# main again whenever a hand-composed run marker misses the field-led contract.
+# A durable fix (refusing or normalizing at the single writer, or relaxing what
+# this test asserts over live fleet data) is a contract change beyond #2307's
+# scope and is surfaced for user routing, not decided here.
 # Vintage guard (#2010): the corpus-replay tests below enforce this fleet-data
 # invariant on MAIN-VINTAGE trees only (`_corpus_tree_is_main_vintage` — the
 # `main` checkout + trees detached at main's tip, i.e. the Step 9c
@@ -1295,6 +1355,16 @@ def _run_labels(events: list[dict]) -> set[str]:
 KNOWN_MALFORMED_RUN_MARKERS = {
     (1090, "2026-07-07T09:54:27Z"),
     (1739, "2026-08-05T22:28:00Z"),
+    # #2307 rows — classes A/B/C per the comment block above.
+    (2203, "2026-08-10T15:46:57Z"),  # A: bare `label=` (#1739 recurrence)
+    (2203, "2026-08-10T21:57:35Z"),  # A: bare `label=` (#1739 recurrence)
+    (2054, "2026-08-12T19:00:39Z"),  # B: `·`-joined fields
+    (2224, "2026-08-13T03:47:32Z"),  # C: bare-space `v1 ` stamp + space-joined
+    (2224, "2026-08-13T03:47:37Z"),  # C: bare-space `v1 ` stamp + space-joined
+    (2254, "2026-08-14T18:14:08Z"),  # C: + colon-no-space
+    # D: marker sentinel comment heads the note (landed mid-round, #2307)
+    (2225, "2026-08-15T00:50:51Z"),
+    (2225, "2026-08-15T00:50:56Z"),
 }
 
 

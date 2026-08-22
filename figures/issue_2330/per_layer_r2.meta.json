@@ -1,0 +1,201 @@
+{
+  "commit": "fa54cfc2",
+  "render_id": "e153041a21504fed",
+  "git_commit": "fa54cfc2",
+  "git_dirty": false,
+  "created": "2026-08-17T07:10:25Z",
+  "figsize": [
+    6.4,
+    3.9
+  ],
+  "points": [
+    {
+      "layer depth (fraction of stack: 7B /28, 9B /32)": 0.5,
+      "held-out test R\u00b2": 0.5854666431836378,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "layer depth (fraction of stack: 7B /28, 9B /32)": 0.6785714285714286,
+      "held-out test R\u00b2": 0.6813526736580284,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "layer depth (fraction of stack: 7B /28, 9B /32)": 0.9285714285714286,
+      "held-out test R\u00b2": 0.5863663216474682,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "layer depth (fraction of stack: 7B /28, 9B /32)": 0.5,
+      "held-out test R\u00b2": 0.6117634297983094,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "layer depth (fraction of stack: 7B /28, 9B /32)": 0.6785714285714286,
+      "held-out test R\u00b2": 0.7048843807269918,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "layer depth (fraction of stack: 7B /28, 9B /32)": 0.9285714285714286,
+      "held-out test R\u00b2": 0.6186856479914438,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "layer depth (fraction of stack: 7B /28, 9B /32)": 0.5,
+      "held-out test R\u00b2": 0.6467588298646265,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "layer depth (fraction of stack: 7B /28, 9B /32)": 0.6875,
+      "held-out test R\u00b2": 0.6348699063407799,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "layer depth (fraction of stack: 7B /28, 9B /32)": 0.9375,
+      "held-out test R\u00b2": 0.6047153351624108,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "layer depth (fraction of stack: 7B /28, 9B /32)": 0.5,
+      "held-out test R\u00b2": 0.6677406222958049,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "layer depth (fraction of stack: 7B /28, 9B /32)": 0.6875,
+      "held-out test R\u00b2": 0.6613257615440016,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "layer depth (fraction of stack: 7B /28, 9B /32)": 0.9375,
+      "held-out test R\u00b2": 0.6348457507717322,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "layer depth (fraction of stack: 7B /28, 9B /32)": 0.5,
+      "held-out test R\u00b2": 0.5854666431836378,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer depth (fraction of stack: 7B /28, 9B /32)": 0.6785714285714286,
+      "held-out test R\u00b2": 0.6813526736580284,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer depth (fraction of stack: 7B /28, 9B /32)": 0.9285714285714286,
+      "held-out test R\u00b2": 0.5863663216474682,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer depth (fraction of stack: 7B /28, 9B /32)": 0.5,
+      "held-out test R\u00b2": 0.6117634297983094,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer depth (fraction of stack: 7B /28, 9B /32)": 0.6785714285714286,
+      "held-out test R\u00b2": 0.7048843807269918,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer depth (fraction of stack: 7B /28, 9B /32)": 0.9285714285714286,
+      "held-out test R\u00b2": 0.6186856479914438,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer depth (fraction of stack: 7B /28, 9B /32)": 0.5,
+      "held-out test R\u00b2": 0.6467588298646265,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer depth (fraction of stack: 7B /28, 9B /32)": 0.6875,
+      "held-out test R\u00b2": 0.6348699063407799,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer depth (fraction of stack: 7B /28, 9B /32)": 0.9375,
+      "held-out test R\u00b2": 0.6047153351624108,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer depth (fraction of stack: 7B /28, 9B /32)": 0.5,
+      "held-out test R\u00b2": 0.6677406222958049,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer depth (fraction of stack: 7B /28, 9B /32)": 0.6875,
+      "held-out test R\u00b2": 0.6613257615440016,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer depth (fraction of stack: 7B /28, 9B /32)": 0.9375,
+      "held-out test R\u00b2": 0.6348457507717322,
+      "_kind": "line",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 24,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Per-layer map R\u00b2 at depth-matched capture layers",
+        "xlabel": "layer depth (fraction of stack: 7B /28, 9B /32)",
+        "ylabel": "held-out test R\u00b2",
+        "legend_labels": [
+          "Qwen2.5-7B",
+          "Qwen3.5-9B",
+          "10k-fit",
+          "5k-fit",
+          "9B full-attention block (L16)"
+        ],
+        "xticklabels": [
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0"
+        ],
+        "yticklabels": [
+          "0.56",
+          "0.58",
+          "0.60",
+          "0.62",
+          "0.64",
+          "0.66",
+          "0.68",
+          "0.70",
+          "0.72"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

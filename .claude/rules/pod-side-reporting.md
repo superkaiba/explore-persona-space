@@ -41,7 +41,12 @@ marker will be silently skipped. Three requirements, no exceptions:
    default run + the `workflow-lint-phase-done-reserved` pre-commit hook
    on any `scripts/*.sh|py` change): a `[phase=done]` emission in a phase
    script invoked non-redirected by a `scripts/**/*.sh` dispatcher FAILs;
-   legacy edges are frozen in `PHASE_DONE_EDGE_LEGACY_ALLOWLIST`.
+   legacy edges are frozen in `PHASE_DONE_EDGE_LEGACY_ALLOWLIST`. A
+   mode-gated standalone-lane terminal is waivable with
+   `# workflow-lint: phase-done-reserved` (preferred, ruff-clean; the
+   legacy `# noqa: phase-done-reserved` form stays honored) on the
+   emission line or the immediately preceding non-blank line; the waiver
+   comment must name the intended mode/invoker.
 
 2. **End-of-run sentinel with poll_pipeline's required keys.** Write the
    final results sentinel to `/workspace/logs/issue-<N>-<kind_slug>-
@@ -151,7 +156,16 @@ pod-side dispatchers. A card-less sentinel that only declares
 `wandb_*` hints) is rescued by `verify_uploads.py`'s synthesis fallback
 (`_card_from_provenance`, #599), but that synthesis is a safety net, NOT
 the producer contract — emit the explicit card so the verifier's
-hf_model / wandb_run rows resolve mechanically. **When training logs to
+hf_model / wandb_run rows resolve mechanically. **Card-interior `phase`
+is phase IDENTITY, not lifecycle state (#2194):** the sentinel
+ENVELOPE's top-level `phase` (`{"phase": "done"}`) is lifecycle-STATE
+vocabulary, while a `phase` key INSIDE a reproducibility card / metadata
+block — a sibling of `git_commit` — is the card's pipeline-stage
+IDENTITY slug (`"stage2-upload"`), validated at write time as a
+best-effort fence against the lifecycle vocabulary (placement is the
+primary separation); convention + writer helper:
+`.claude/rules/code-style.md` § Dirty-tree flag
+(`as_metadata_dict(prov, phase=...)`). **When training logs to
 WandB, the card's `wandb_run_path` (entity/project) or `wandb_run_names`
 (or a name prefix) + `wandb_project` are MANDATORY fields, not optional
 extras** — a card declaring only `adapter_paths` forces entity/project
@@ -190,6 +204,59 @@ gate-report JSON and exits a DISTINCT rc the driver routes like its other
 stop criteria, never a bare rc=1 (which the poller classifies as an
 anonymous crash). Full convention + the #1415 incident:
 `.claude/rules/gotchas.md` § pilot timing gates.
+
+### Pod-side HOLD/gate emissions must arm a VM-side re-drive at emission time (#2135, #1947)
+
+Any pod-side HOLD / designed-halt park that leaves the pod RUNNING pending
+a decision (a pilot cost-review HOLD, any gate that waits for a verdict
+rather than exiting the workload) is INCOMPLETE until the emitting/
+launching session arms a VM-side owner IN THE SAME STEP: post an
+`epm:progress` hold note on the task naming (a) the gate, (b) the deciding
+actor, (c) the wakeup mechanism — and ARM that wakeup. **The armed wakeup
+must be one that will actually surface THIS hold to the deciding actor** —
+the surfacing property binds whichever rung is named:
+
+- a bg-Bash poll chain qualifies only if its poller SURFACES the hold as a
+  gate/park (a `status=running` read over a parked workload does not
+  count);
+- a bounded Monitor until-loop qualifies only if its condition keys on the
+  hold state itself (the hold sentinel / gate-report file), not on generic
+  process liveness;
+- the `/issue-tick` backstop cron qualifies ONLY when the hold is emitted
+  machine-legibly — as a blocking-gate sentinel (`gate=<name>`,
+  `blocks_pipeline: true`; the sentinel shape this rule already defines)
+  or a gate-status park the tick triage reads. `tick_triage.py` keys on
+  task status, marker staleness, and pid breadcrumbs — it cannot see a
+  bespoke log-line HOLD on a `status=running` task, so naming the tick as
+  the wakeup for a log-line HOLD does NOT discharge this duty.
+
+Consequently the sentinel-shape emission is REQUIRED — not guidance —
+whenever the named wakeup cannot itself read a bespoke log line (in
+particular the tick-cron rung); it is the PREFERRED shape everywhere (a
+log-line HOLD is invisible to the poller's gate machinery — exactly how
+pod-1947-r3, 8xH200 at ~$32/h, parked at its designed circuit-breaker log
+line and burned ~10h undetected). A HOLD emission with no armed, surfacing
+VM-side reviewer is a launch-contract violation — same class as a stale
+pid file — and watcher-escalation material.
+
+### Post-provision launch-confirmation window (#2135, #1947)
+
+Provision/bootstrap completion starts a launch-confirmation window
+(default ~15 min; size it ≥2x the expected dispatch latency and state the
+deviation in the launch note). Within the window the owning session
+verifies a LIVE workload pid + the FIRST log line (the experimenter's
+existing separate-SSH confirm) and records both in the `epm:run-launched`
+note — alongside the existing `pid=` / `log_abs=` fields, a
+`launch_confirmed=pid+log@<utc-ts>` token — or, when the initial
+`epm:run-launched` legitimately predates the launch (the CLAUDE.md
+pod-safety pre-launch-signal case), in an append-only FOLLOW-UP marker
+carrying the `launch_confirmed=` token (markers are append-only; never
+edit the earlier note). Window lapse with NO workload (no pid file, no
+logs dir) ⇒ escalate loudly in the same turn: post an
+`epm:progress`/`epm:failure` note naming the idle pod + its hourly burn
+and route to stop/terminate per the existing gates — never leave a
+bootstrapped pod idle awaiting a dispatch that never fired (pod-1947-loc:
+4xH200, bootstrapped then ~6h idle — no logs dir, no processes).
 
 ### Pid-file launch contract — rewrite on EVERY (re)launch (#813, #451, #521)
 
@@ -441,8 +508,15 @@ TWO mechanical rescues ARE verdict-bearing: the marker-pid OR-probe (while
 the newest marker's pid is itself alive), and the #1650 signature rescue
 (`sig_proc_rescue`, alive-direction only; kill switch
 `EPM_POLL_PID_IDENTITY=0`). On a free-prose marker (no signature fields)
-the pre-#1650 residual stands: a wrong-and-dead pid in BOTH the file and
-the marker still reads `dead`.
+with a wrong-and-dead pid in BOTH the file and the marker, the residual is
+narrowed by the #2265 dead-verdict evidence veto: a tick whose OWN probe
+carries same-tick liveness evidence (busy GPU / fresh issue-keyed
+logs/outputs within stall_sec) reads the non-terminal
+`pid-stale-workload-live` (with
+`stall_reason="pid_dead_evidence:<tokens>"`), not `dead`; `dead` now
+requires evidence-free pid-death. The pure-observability status of the
+#1156/#1650 WARNs above is unchanged — the veto is a verdict arbitration
+over fields the tick already returns, never a new pid probe.
 
 ### Continuation-runbook verification provenance — `verified-by: ran|read` (#2044)
 

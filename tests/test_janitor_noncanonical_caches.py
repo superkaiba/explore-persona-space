@@ -21,6 +21,7 @@ vm_disk_guard imports it by module name at load time).
 """
 
 import ast
+import getpass
 import importlib.util
 import json
 import os
@@ -493,11 +494,13 @@ def test_hidden_git_dir_not_hub_evidence(tmp_path, repo, monkeypatch):
 
 
 class _TmpRootRefVisitor(ast.NodeVisitor):
-    """Collects every Name/Attribute reference to ``production_tmp_root``
+    """Collects every Name/Attribute reference to a production-root symbol
     together with its enclosing-function stack (a FunctionDef's own name is a
-    plain attribute, not a Name node, so the definition never self-reports)."""
+    plain attribute, not a Name node, so the definition never self-reports).
+    Generalized for #2095 to also cover ``production_staging_roots``."""
 
-    def __init__(self):
+    def __init__(self, symbol: str = "production_tmp_root"):
+        self.symbol = symbol
         self.stack: list[str] = []
         self.refs: list[tuple[str, ...]] = []
 
@@ -509,24 +512,85 @@ class _TmpRootRefVisitor(ast.NodeVisitor):
     visit_AsyncFunctionDef = visit_FunctionDef
 
     def visit_Name(self, node):
-        if node.id == "production_tmp_root":
+        if node.id == self.symbol:
             self.refs.append(tuple(self.stack))
 
     def visit_Attribute(self, node):
-        if node.attr == "production_tmp_root":
+        if node.attr == self.symbol:
             self.refs.append(tuple(self.stack))
         self.generic_visit(node)
 
 
-def test_production_tmp_root_only_in_mains():
+@pytest.mark.parametrize(
+    "symbol",
+    [
+        "production_tmp_root",
+        "production_staging_roots",
+        "scratch_verdict_cache_path",
+        # #2147 tier (g): the slurm-src production resolvers ride the same
+        # main()-only hermeticity contract.
+        "slurm_src_root",
+        "slurm_src_escalation_state_path",
+    ],
+)
+def test_production_tmp_root_only_in_mains(symbol):
     for script in ("clean_experiment_downloads.py", "vm_disk_guard.py"):
-        visitor = _TmpRootRefVisitor()
+        visitor = _TmpRootRefVisitor(symbol)
         visitor.visit(ast.parse((_SCRIPTS / script).read_text()))
         for stack in visitor.refs:
             assert stack and stack[-1] == "main", (
-                f"{script}: production_tmp_root referenced outside main(): "
-                f"{' > '.join(stack) or '<module>'}"
+                f"{script}: {symbol} referenced outside main(): {' > '.join(stack) or '<module>'}"
             )
+
+
+def _top_level_funcs(script: str) -> dict[str, ast.AST]:
+    tree = ast.parse((_SCRIPTS / script).read_text())
+    return {
+        node.name: node
+        for node in tree.body
+        if isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef)
+    }
+
+
+def _calls_in(node: ast.AST) -> set[str]:
+    """Every callee NAME invoked anywhere inside ``node`` (nested defs
+    included — closures like a ``_finish`` helper still count as calls made
+    by their enclosing function)."""
+    out: set[str] = set()
+    for sub in ast.walk(node):
+        if isinstance(sub, ast.Call):
+            fn = sub.func
+            if isinstance(fn, ast.Name):
+                out.add(fn.id)
+            elif isinstance(fn, ast.Attribute):
+                out.add(fn.attr)
+    return out
+
+
+def test_slurm_src_tier_call_chain_reachable():
+    """#2147 review round 2 M5: the main()-only resolver assertions above
+    pin where the PRODUCTION ROOTS may be referenced, but nothing pinned
+    that tier (g) is actually WIRED — a future refactor could orphan
+    ``clean_slurm_src`` (or the shared core) with every hermeticity test
+    still green. Pin each edge of the production chain
+    ``main -> run_guard -> clean_slurm_src -> sweep_slurm_src ->
+    _sweep_scratch_candidate -> _scratch_row_finish`` as an AST
+    call-reachability fact."""
+    edges = [
+        ("vm_disk_guard.py", "main", "run_guard"),
+        ("vm_disk_guard.py", "run_guard", "clean_slurm_src"),
+        ("vm_disk_guard.py", "clean_slurm_src", "sweep_slurm_src"),
+        ("clean_experiment_downloads.py", "sweep_slurm_src", "_sweep_scratch_candidate"),
+        ("clean_experiment_downloads.py", "_sweep_scratch_candidate", "_scratch_row_finish"),
+    ]
+    funcs_by_script = {script: _top_level_funcs(script) for script in {s for s, _, _ in edges}}
+    for script, caller, callee in edges:
+        funcs = funcs_by_script[script]
+        assert caller in funcs, f"{script}: top-level def {caller}() disappeared"
+        assert callee in _calls_in(funcs[caller]), (
+            f"{script}: {caller}() no longer calls {callee}() — the #2147 tier-(g) "
+            "chain is broken/orphaned"
+        )
 
 
 def test_cli_main_forwards_tmp_root_to_cleaner(tmp_path, monkeypatch):
@@ -899,3 +963,385 @@ def test_data_disk_pass_never_sweeps_tmp(tmp_path, repo, monkeypatch):
     )
     assert res.triggered is True
     assert {t.name for t in res.tiers} == {"terminal-download-caches"}
+
+
+# ─── 21: #2095 staging-roots leg (/mnt/eps-data/$USER opt-in sweep) ──────────
+
+
+@pytest.mark.parametrize(
+    ("name", "expected"),
+    [
+        # §4.4 disposition-table shapes — prefix-only extraction.
+        ("issue2091_hf_dl", 2091),
+        ("issue779-grid", 779),
+        ("issue_742_restage", 742),
+        ("i1739_r2v2", 1739),
+        ("tmp_issue2095_x", 2095),
+        ("tmp_issue_744_dl", 744),
+        ("tmp-2005-r2-yDdzTb", 2005),
+        ("tmp-2005-r2-x", 2005),
+        (".hf_i1092_operator", None),  # dot-dir — anchored regexes cannot match
+        ("huggingface-cache", None),  # non-issue dir — never a candidate
+        ("i18n_cache", None),
+        ("fact_check_823", None),  # *_<N> suffix-only: NO P2 route on staging
+        ("tmpabc_7", None),  # foreign mkdtemp — no [-_] after `tmp`
+        # A top-level FILE name still extracts; the is_dir/is_symlink filter
+        # (not the regex) excludes files — pinned by the discovery test below.
+        ("issue2091_p3_judge.log", 2091),
+    ],
+)
+def test_extract_staging_issue_number_shapes(name, expected):
+    assert ced.extract_staging_issue_number(name) == expected
+
+
+def test_staging_discovery_shapes_and_filters(tmp_path, repo, monkeypatch):
+    """Staging discovery: dirs + symlinks accepted, top-level FILES skipped,
+    non-owned skipped, never-candidate names (§4.4) excluded."""
+    sroot = tmp_path / "eps-data-user"
+    sroot.mkdir()
+    (sroot / "issue930_hf_dl").mkdir()
+    (sroot / "tmp-930-abc").mkdir()
+    (sroot / "issue930_p3_judge.log").write_text("log")  # file — never a candidate
+    (sroot / "huggingface-cache").mkdir()  # non-issue — never a candidate
+    (sroot / ".hf_i930_operator").mkdir()  # dot-dir — never a candidate
+    (sroot / "fact_check_930").mkdir()  # suffix-only — no P2 route
+    (sroot / "issue931_hf_dl").mkdir()  # other issue
+    link_target = tmp_path / "elsewhere"
+    link_target.mkdir()
+    (sroot / "i930_linked").symlink_to(link_target)  # symlink — accepted
+    got = ced.noncanonical_cache_dirs(930, data_root=tmp_path / "data", staging_roots=[sroot])
+    assert sorted(p.name for p in got) == ["i930_linked", "issue930_hf_dl", "tmp-930-abc"]
+    # uid-ownership gate: a non-owned entry is skipped.
+    monkeypatch.setattr(ced, "_tmp_entry_owned", lambda p: False)
+    assert (
+        ced.noncanonical_cache_dirs(930, data_root=tmp_path / "data", staging_roots=[sroot]) == []
+    )
+
+
+def test_staging_hermeticity_default_none(tmp_path, repo, monkeypatch):
+    """Library default ``staging_roots=None`` = ZERO staging exposure: no
+    fallback to production_staging_roots(), no staging candidates."""
+
+    def _boom():
+        raise AssertionError("library default must never resolve production staging roots")
+
+    monkeypatch.setattr(ced, "production_staging_roots", _boom)
+    sroot = tmp_path / "eps-data-user"
+    (sroot / "issue932_dl").mkdir(parents=True)
+    data_root = tmp_path / "data"
+    (data_root / "issue_932" / "hf_dl").mkdir(parents=True)
+    assert ced.noncanonical_cache_dirs(932, data_root=data_root) == []
+    res = ced.clean_issue_downloads(932, apply=True, data_root=data_root)
+    assert (sroot / "issue932_dl").is_dir()
+    assert res.noncanonical_dispositions == {}
+
+
+def test_staging_kill_switches(tmp_path, repo, monkeypatch):
+    """BOTH envs kill the staging sweep leg: the staging-scoped
+    EPM_SKIP_STAGING_CACHE_SWEEP and (transitively) the #911
+    EPM_SKIP_NONCANONICAL_CACHE_SWEEP."""
+    sroot = tmp_path / "eps-data-user"
+    (sroot / "issue933_dl").mkdir(parents=True)
+    data_root = tmp_path / "data"
+    monkeypatch.setenv("EPM_SKIP_STAGING_CACHE_SWEEP", "1")
+    assert ced.noncanonical_cache_dirs(933, data_root=data_root, staging_roots=[sroot]) == []
+    monkeypatch.delenv("EPM_SKIP_STAGING_CACHE_SWEEP")
+    monkeypatch.setenv("EPM_SKIP_NONCANONICAL_CACHE_SWEEP", "1")
+    assert ced.noncanonical_cache_dirs(933, data_root=data_root, staging_roots=[sroot]) == []
+
+
+def test_production_staging_roots_env_default_and_kill(tmp_path, monkeypatch):
+    """production_staging_roots(): env override (each entry kept iff is_dir),
+    kill switch -> [], default = data_disk_root()/<user> iff mount + is_dir."""
+    a = tmp_path / "a"
+    a.mkdir()
+    missing = tmp_path / "missing"
+    monkeypatch.setenv("EPM_STAGING_CACHE_ROOTS", f"{a}:{missing}")
+    assert ced.production_staging_roots() == [a]
+    monkeypatch.setenv("EPM_SKIP_STAGING_CACHE_SWEEP", "1")
+    assert ced.production_staging_roots() == []
+    monkeypatch.delenv("EPM_SKIP_STAGING_CACHE_SWEEP")
+    monkeypatch.delenv("EPM_STAGING_CACHE_ROOTS")
+    # Default branch: data_disk_root()/<getpass.getuser()>, mount-guarded.
+    disk = tmp_path / "disk"
+    user_dir = disk / getpass.getuser()
+    user_dir.mkdir(parents=True)
+    monkeypatch.setenv("EPS_VM_DATA_DISK_PATH", str(disk))
+    monkeypatch.setattr(os.path, "ismount", lambda p: str(p) == str(disk))
+    assert ced.production_staging_roots() == [user_dir]
+    monkeypatch.setattr(os.path, "ismount", lambda p: False)
+    assert ced.production_staging_roots() == []  # unmounted disk = clean no-op
+
+
+def test_cli_main_forwards_staging_roots_to_cleaner(tmp_path, monkeypatch):
+    """#2095 mirror of the tmp_root forwarding pin: main()'s signature-
+    adaptive dispatch forwards production_staging_roots() into the production
+    cleaners (default AND --incremental)."""
+    fake_roots = [tmp_path / "eps-data-user"]
+    calls: list[dict] = []
+
+    def _spy(
+        issue_n,
+        *,
+        apply=False,
+        data_root=None,
+        tmp_root=None,
+        sweep_tmp=True,
+        staging_roots=None,
+    ):
+        calls.append({"issue_n": issue_n, "tmp_root": tmp_root, "staging_roots": staging_roots})
+        return SimpleNamespace(
+            removed=[],
+            skipped=[],
+            symlink_external_kept=[],
+            failed=[],
+            bytes_freed=0,
+            sizes_bytes={},
+        )
+
+    monkeypatch.setattr(ced, "_running_pod_side", lambda: False)
+    monkeypatch.setattr(ced, "production_tmp_root", lambda: tmp_path / "prod_tmp")
+    monkeypatch.setattr(ced, "production_staging_roots", lambda: fake_roots)
+    monkeypatch.setattr(ced, "clean_issue_downloads", _spy)
+    monkeypatch.setattr(ced, "clean_issue_downloads_incremental", _spy)
+
+    assert ced.main(["903"]) == 0
+    assert ced.main(["903", "--incremental"]) == 0
+    assert [c["staging_roots"] for c in calls] == [fake_roots, fake_roots]
+    assert [c["issue_n"] for c in calls] == [903, 903]
+
+
+def test_staging_e2e_dry_run_then_apply(tmp_path, repo, monkeypatch):
+    """§4.6 END-TO-END staging row (critic r1 Must-Fix 2) — the binding check
+    for the audit classes with no live exemplar. Drives the PUBLIC entrypoint
+    over a fake staging root holding (i) a cross-issue dir, (ii) an
+    unverified dir, (iii) an evidence-licensed (hub-layout) dir."""
+    sroot = tmp_path / "eps-data-user"
+    cross = sroot / "issue950_x"
+    (cross / "issue951").mkdir(parents=True)
+    (cross / "issue951" / "f.bin").write_bytes(b"x" * 64)
+    unverified = sroot / "issue950_scratch"
+    (unverified / "randomdir").mkdir(parents=True)
+    (unverified / "randomdir" / "y.npy").write_bytes(b"y" * 64)
+    licensed = sroot / "tmp_issue950_hfdl"
+    (licensed / "blobs").mkdir(parents=True)
+    (licensed / "blobs" / "abc123").write_bytes(b"z" * 128)
+    _backdate(sroot)
+    _stub_evidence_set(monkeypatch, set())  # zero-match mock -> orphan-no-mirror
+
+    res_dry = ced.clean_issue_downloads(
+        950, apply=False, data_root=tmp_path / "data", staging_roots=[sroot]
+    )
+    # (c) dry-run touches NOTHING on disk; the licensed dir is would-remove.
+    assert cross.is_dir() and (cross / "issue951" / "f.bin").is_file()
+    assert unverified.is_dir() and (unverified / "randomdir" / "y.npy").is_file()
+    assert licensed.is_dir() and (licensed / "blobs" / "abc123").is_file()
+    by_name = {os.path.basename(rel): d for rel, d in res_dry.noncanonical_dispositions.items()}
+    assert by_name["issue950_x"] == "cross-issue-kept"  # (a)
+    assert by_name["issue950_scratch"] == "unverified-kept:orphan-no-mirror"  # (b)
+    assert by_name["tmp_issue950_hfdl"] == "would-remove"
+
+    res_apply = ced.clean_issue_downloads(
+        950, apply=True, data_root=tmp_path / "data", staging_roots=[sroot]
+    )
+    # (d) the licensed dir — and ONLY it — is removed.
+    assert not licensed.exists()
+    assert cross.is_dir() and (cross / "issue951" / "f.bin").is_file()
+    assert unverified.is_dir() and (unverified / "randomdir" / "y.npy").is_file()
+    by_name2 = {os.path.basename(rel): d for rel, d in res_apply.noncanonical_dispositions.items()}
+    assert by_name2["tmp_issue950_hfdl"] == "removed"
+    assert by_name2["issue950_x"] == "cross-issue-kept"
+    assert by_name2["issue950_scratch"] == "unverified-kept:orphan-no-mirror"
+    # (a) sidecar kind, persisted by the apply leg (dry-run is report-only).
+    rows = [r for r in _read_sidecar(repo) if r["kind"] == "staging-cache-cross-issue-kept"]
+    assert len(rows) == 1
+    assert rows[0]["task"] == 950
+    assert rows[0]["content_issues"] == [951]
+
+
+def test_staging_cross_issue_gate_helper_and_wiring(tmp_path, repo, monkeypatch):
+    """Gate 1.55 helper-level row: issue10_x/ holding issue20/f.bin is
+    blocked + sidecar kind — even with a full-mirror evidence listing."""
+    sroot = tmp_path / "eps-data-user"
+    cand = sroot / "issue10_x"
+    (cand / "issue20").mkdir(parents=True)
+    (cand / "issue20" / "f.bin").write_bytes(b"x" * 64)
+    _backdate(sroot)
+    # Helper-level: depth-1 foreign name detected; same-issue names are clean.
+    assert ced._staging_cross_issue_content(cand, 10) == ["issue20"]
+    assert ced._staging_cross_issue_content(cand, 20) == []
+    # Depth-2 foreign name detected through a same-issue subdir.
+    deep = sroot / "issue10_y"
+    (deep / "issue10_inputs" / "sub").mkdir(parents=True)
+    nested_foreign = deep / "issue10_inputs" / "i33_turnstore"
+    nested_foreign.mkdir()
+    assert ced._staging_cross_issue_content(deep, 10) == ["issue10_inputs/i33_turnstore"]
+    nested_foreign.rmdir()
+    # Wiring: even a full-mirror listing must not reap a cross-issue dir.
+    _stub_evidence_set(monkeypatch, {"issue20", "issue10_inputs"})
+    res = ced.clean_issue_downloads(
+        10, apply=True, data_root=tmp_path / "data", staging_roots=[sroot]
+    )
+    assert (cand / "issue20" / "f.bin").is_file()
+    by_name = {os.path.basename(rel): d for rel, d in res.noncanonical_dispositions.items()}
+    assert by_name["issue10_x"] == "cross-issue-kept"
+    kinds = [r["kind"] for r in _read_sidecar(repo)]
+    assert "staging-cache-cross-issue-kept" in kinds
+
+
+def test_dir_max_recency_top_level_only(tmp_path):
+    """top_level_only=True lstats the dir + immediate entries only: a DEEP
+    fresh file is invisible (deep-fresh/top-old), while a fresh IMMEDIATE
+    entry is visible (the inverse fixture)."""
+    cand = tmp_path / "issue940_dl"
+    deep = cand / "sub" / "deepdir"
+    deep.mkdir(parents=True)
+    deep_file = deep / "x.bin"
+    deep_file.write_bytes(b"x")
+    top_file = cand / "top.bin"
+    top_file.write_bytes(b"t")
+    _backdate(cand)
+    fresh = time.time()
+    os.utime(deep_file, (fresh, fresh), follow_symlinks=False)
+    assert ced._dir_max_recency(cand) >= fresh - 5  # full rglob sees the deep write
+    assert ced._dir_max_recency(cand, top_level_only=True) <= AGED_TS + 5
+    os.utime(top_file, (fresh, fresh), follow_symlinks=False)
+    assert ced._dir_max_recency(cand, top_level_only=True) >= fresh - 5
+
+
+def test_staging_recency_is_top_level_only_e2e(tmp_path, repo, monkeypatch):
+    """Wiring pin: a staging candidate with an aged top level but a FRESH
+    deep file proceeds past gate 1.5 (top-level-only read) and is reaped on
+    hub-layout evidence — the full-rglob read would have recency-kept it."""
+    sroot = tmp_path / "eps-data-user"
+    cand = sroot / "issue944_dl"
+    (cand / "blobs").mkdir(parents=True)
+    deep_file = cand / "blobs" / "abc123"
+    deep_file.write_bytes(b"z" * 128)
+    _backdate(sroot)
+    fresh = time.time()
+    os.utime(deep_file, (fresh, fresh), follow_symlinks=False)
+    res = ced.clean_issue_downloads(
+        944, apply=True, data_root=tmp_path / "data", staging_roots=[sroot]
+    )
+    assert not cand.exists()
+    assert list(res.noncanonical_dispositions.values()) == ["removed"]
+    # Inverse: a fresh IMMEDIATE entry keeps the staging candidate.
+    cand2 = sroot / "issue944_dl2"
+    (cand2 / "blobs").mkdir(parents=True)
+    _backdate(sroot)
+    now = time.time()
+    os.utime(cand2 / "blobs", (now, now), follow_symlinks=False)
+    res2 = ced.clean_issue_downloads(
+        944, apply=True, data_root=tmp_path / "data", staging_roots=[sroot]
+    )
+    assert cand2.is_dir()
+    assert list(res2.noncanonical_dispositions.values()) == ["recency-kept"]
+
+
+def test_staging_unverified_class_labels(tmp_path, repo, monkeypatch):
+    """Delta-5 escalation class labels: derived-partial-mirror (>=1 top-level
+    name matches a data-repo prefix) vs orphan-no-mirror (0 matched)."""
+    sroot = tmp_path / "eps-data-user"
+    partial = sroot / "issue941_stage"
+    (partial / "issue941_monitoring").mkdir(parents=True)
+    (partial / "issue941_monitoring" / "s.json").write_text("{}")
+    (partial / "local_scratch").mkdir()
+    (partial / "local_scratch" / "t.bin").write_bytes(b"t")
+    orphan = sroot / "issue942_stage"
+    orphan.mkdir()
+    (orphan / "notes.txt").write_text("x")
+    _backdate(sroot)
+    _stub_evidence_set(monkeypatch, {"issue941_monitoring"})  # one of two names
+
+    res = ced.clean_issue_downloads(
+        941, apply=True, data_root=tmp_path / "data", staging_roots=[sroot]
+    )
+    assert partial.is_dir()
+    assert list(res.noncanonical_dispositions.values()) == [
+        "unverified-kept:derived-partial-mirror"
+    ]
+    res2 = ced.clean_issue_downloads(
+        942, apply=True, data_root=tmp_path / "data", staging_roots=[sroot]
+    )
+    assert orphan.is_dir()
+    assert list(res2.noncanonical_dispositions.values()) == ["unverified-kept:orphan-no-mirror"]
+    # The sidecar rows carry the labeled disposition too.
+    labeled = [
+        r.get("disposition")
+        for r in _read_sidecar(repo)
+        if r["kind"] == "noncanonical-cache-unverified-kept"
+    ]
+    assert sorted(labeled) == [
+        "unverified-kept:derived-partial-mirror",
+        "unverified-kept:orphan-no-mirror",
+    ]
+
+
+def test_staging_sampled_mirror_probe(tmp_path, repo, monkeypatch):
+    """Delta-9 sampled mirror probe on an above-floor branch-(b) license:
+    MISS => unverified-kept:probe-failed + nothing removed; probe ERROR =>
+    same (fail-toward-keep); HIT (byte-equal) => license stands."""
+    sroot = tmp_path / "eps-data-user"
+    cand = sroot / "issue943_stage"
+    (cand / "issue943_monitoring").mkdir(parents=True)
+    big = cand / "issue943_monitoring" / "shard0.json"
+    big.write_bytes(b"x" * 4096)
+    _backdate(sroot)
+    _stub_evidence_set(monkeypatch, {"issue943_monitoring"})
+    monkeypatch.setenv("EPM_STAGING_EVIDENCE_PROBE_FLOOR_GB", "0.000001")  # 1000 B
+
+    # MISS: repo-side size differs -> license refused, nothing removed.
+    monkeypatch.setattr(ced, "_hf_path_size", lambda rel: 17)
+    res = ced.clean_issue_downloads(
+        943, apply=True, data_root=tmp_path / "data", staging_roots=[sroot]
+    )
+    assert cand.is_dir() and big.is_file()
+    assert list(res.noncanonical_dispositions.values()) == ["unverified-kept:probe-failed"]
+
+    # ERROR: any probe exception is a refusal (fail-toward-keep).
+    def _explode(rel):
+        raise RuntimeError("transport error")
+
+    monkeypatch.setattr(ced, "_hf_path_size", _explode)
+    res_err = ced.clean_issue_downloads(
+        943, apply=True, data_root=tmp_path / "data", staging_roots=[sroot]
+    )
+    assert cand.is_dir() and big.is_file()
+    assert list(res_err.noncanonical_dispositions.values()) == ["unverified-kept:probe-failed"]
+
+    # HIT: byte-equal size on the mapped path -> license stands, dir removed.
+    probes: list[str] = []
+
+    def _hit(rel):
+        probes.append(rel)
+        return 4096
+
+    monkeypatch.setattr(ced, "_hf_path_size", _hit)
+    res2 = ced.clean_issue_downloads(
+        943, apply=True, data_root=tmp_path / "data", staging_roots=[sroot]
+    )
+    assert not cand.exists()
+    assert probes == ["issue943_monitoring/shard0.json"]
+    assert list(res2.noncanonical_dispositions.values()) == ["removed"]
+
+
+def test_staging_probe_skipped_below_floor(tmp_path, repo, monkeypatch):
+    """A branch-(b)-licensed staging candidate BELOW the probe floor (default
+    1 GB) is reaped without any probe call."""
+    sroot = tmp_path / "eps-data-user"
+    cand = sroot / "issue945_stage"
+    (cand / "issue945_monitoring").mkdir(parents=True)
+    (cand / "issue945_monitoring" / "s.json").write_bytes(b"x" * 256)
+    _backdate(sroot)
+    _stub_evidence_set(monkeypatch, {"issue945_monitoring"})
+
+    def _boom(rel):
+        raise AssertionError("below-floor candidate must not probe")
+
+    monkeypatch.setattr(ced, "_hf_path_size", _boom)
+    res = ced.clean_issue_downloads(
+        945, apply=True, data_root=tmp_path / "data", staging_roots=[sroot]
+    )
+    assert not cand.exists()
+    assert list(res.noncanonical_dispositions.values()) == ["removed"]

@@ -42,6 +42,17 @@ IM_START_TOKEN = "<|im_start|>"
 PREFIX_ORDER: tuple[str, ...] = ("bare", "persona", "conv")
 QUERY_ORDER: tuple[str, ...] = ("q1", "q2", "q3", "q4", "q5")
 
+# The #2094 butler round ("Option C") adds a FOURTH prefix ADDITIVELY.
+# ``PREFIX_ORDER`` itself stays frozen at the parent 3: the parent grid's 60
+# pair ids, its seeded cross derangement (RNG consumption order), its donor
+# map, AND downstream consumers' PREFIX_ORDER-derived counts (e.g. the judge
+# tests' 15-context anchor fixtures) are all byte-pinned to it. New prefixes
+# append to ``EXTENDED_PREFIX_ORDER`` only; ``build_contexts`` /
+# ``context_id`` / ``_prefix_rank`` / ``f_prefix_rubric`` accept the extended
+# set, while ``build_pairs`` / Type-B centroids stay parent-scoped.
+BUTLER_PREFIX = "butler"
+EXTENDED_PREFIX_ORDER: tuple[str, ...] = (*PREFIX_ORDER, BUTLER_PREFIX)
+
 QUERIES: dict[str, str] = {
     "q1": "Why is the sky blue during the day but red at sunset?",
     "q2": "Write the opening paragraph of a short story about a lighthouse keeper.",
@@ -54,6 +65,16 @@ PERSONA_SYSTEM = (
     "You are Captain Marrow, a superstitious old pirate captain. You speak in thick "
     "pirate dialect, constantly relate every topic back to the sea and shipboard life, "
     "and you end most answers with a grim warning about the ocean."
+)
+
+# Byte-identical to experiments/issue2162/bank2162.py::REGINALD_SYSTEM (that
+# module imports FROM this one, so importing it here would be circular; the
+# equality is pinned by tests/test_issue2094_butler_grid.py and asserted at
+# runtime by scripts/issue2094_butler_grid.py, which imports both modules).
+BUTLER_SYSTEM = (
+    "You are Reginald, a formal Victorian butler. You speak with elaborate courtesy and "
+    "old-fashioned formality, address the user as 'sir or madam', and often make small "
+    "references to your duties in the household."
 )
 
 CONV_USER_TURN = "I'm planning my daughter's 7th birthday party this weekend — any fun ideas? 🎉"
@@ -86,6 +107,11 @@ PREFIX_DESCRIPTORS: dict[str, str] = {
         "young child's birthday party: enthusiastic, exclamatory, emoji-rich, and possibly "
         "referring back to the party planning"
     ),
+    # The #2162 ladder's VALIDATED HOLISTIC butler descriptor, verbatim
+    # (experiments/issue2162/ladder_bank.py::LADDER_VALUES r2_butler — NOT the
+    # retired four-way conjunction in bank2162._PERSONA_DESCRIPTORS["butler"]).
+    # Byte-equality pinned by tests/test_issue2094_butler_grid.py.
+    "butler": "the persona and register of a formal Victorian butler",
 }
 
 # Body § Coherence, verbatim truncation clause.
@@ -117,23 +143,29 @@ SETTING_RUBRIC_KINDS: dict[str, tuple[str, ...]] = {
 
 
 def context_id(prefix: str, query_id: str) -> str:
-    assert prefix in PREFIX_ORDER, prefix
+    assert prefix in EXTENDED_PREFIX_ORDER, prefix
     assert query_id in QUERY_ORDER, query_id
     return f"{prefix}__{query_id}"
 
 
 def build_contexts() -> dict[str, dict]:
-    """All 15 contexts, ordered (prefix-major, query-minor). Each context dict:
+    """All 20 contexts, ordered (prefix-major, query-minor). Each context dict:
     ``{"id", "prefix", "query_id", "system": str|None, "history": [msg, ...], "user"}``.
+
+    The FIRST 15 entries are the parent bank verbatim (id-stability contract —
+    the butler prefix appends strictly after them; insertion order is the
+    iteration order consumers rely on).
     """
     contexts: dict[str, dict] = {}
-    for prefix in PREFIX_ORDER:
+    for prefix in EXTENDED_PREFIX_ORDER:
         for q in QUERY_ORDER:
             cid = context_id(prefix, q)
             system: str | None = None
             history: list[dict] = []
             if prefix == "persona":
                 system = PERSONA_SYSTEM
+            elif prefix == BUTLER_PREFIX:
+                system = BUTLER_SYSTEM
             elif prefix == "conv":
                 history = [
                     {"role": "user", "content": CONV_USER_TURN},
@@ -147,7 +179,7 @@ def build_contexts() -> dict[str, dict]:
                 "history": history,
                 "user": QUERIES[q],
             }
-    assert len(contexts) == 15, len(contexts)
+    assert len(contexts) == len(EXTENDED_PREFIX_ORDER) * len(QUERY_ORDER), len(contexts)
     return contexts
 
 
@@ -170,16 +202,30 @@ def context_messages_2094(context: dict) -> list[dict]:
     return messages
 
 
-def render_context_2094(tokenizer, context: dict) -> str:
-    """Chat-template render (history-aware) WITH the generation prompt appended."""
+def render_context_2094(tokenizer, context: dict, template_kwargs: dict | None = None) -> str:
+    """Chat-template render (history-aware) WITH the generation prompt appended.
+
+    ``template_kwargs`` (#2329 divergence-1 seam, pure-additive) forwards extra
+    kwargs to ``apply_chat_template`` — e.g. ``{"enable_thinking": False}`` for
+    the Qwen3.5 thinking-off template. The default ``None`` expands to ``**{}``,
+    keeping the parent call byte-identical (unit-pinned in
+    tests/test_issue2329_bank.py).
+    """
     return tokenizer.apply_chat_template(
-        context_messages_2094(context), tokenize=False, add_generation_prompt=True
+        context_messages_2094(context),
+        tokenize=False,
+        add_generation_prompt=True,
+        **(template_kwargs or {}),
     )
 
 
-def context_token_ids_2094(tokenizer, context: dict) -> list[int]:
+def context_token_ids_2094(
+    tokenizer, context: dict, template_kwargs: dict | None = None
+) -> list[int]:
     """Token ids of the history-aware render (special tokens already in the render)."""
-    ids = tokenizer(render_context_2094(tokenizer, context), add_special_tokens=False)["input_ids"]
+    ids = tokenizer(
+        render_context_2094(tokenizer, context, template_kwargs), add_special_tokens=False
+    )["input_ids"]
     assert len(ids) >= 4, (len(ids), context.get("id"))
     return ids
 
@@ -210,7 +256,10 @@ def prefix_end_index_multi(tokenizer, ids: list[int]) -> int:
 
 
 def _prefix_rank(prefix: str) -> int:
-    return PREFIX_ORDER.index(prefix)
+    # Extended set: parent prefixes keep ranks 0..2 verbatim; butler ranks 3
+    # (strictly after every parent prefix), so parent pair directions and
+    # prefix_pair() sort orders are byte-stable.
+    return EXTENDED_PREFIX_ORDER.index(prefix)
 
 
 def _query_rank(query_id: str) -> int:
@@ -306,6 +355,71 @@ def build_pairs(seed: int = SEED) -> list[Pair]:
     return pairs
 
 
+def build_rev_pairs() -> list[Pair]:
+    """The 5 REVERSED matched-query pairs (#2094 rev round): A = persona__q<i>,
+    B = bare__q<i>.
+
+    Deliberately ANTI-canonical (prefix rank of A > rank of B — edits move the
+    persona context toward bare, the erasure direction), so they are minted
+    directly rather than via :func:`build_pairs`, whose canonical-direction
+    assert forbids this ordering. Ids carry the ``mqrev--`` prefix, disjoint
+    from every :func:`build_pairs` id by construction. Consumed by the pod
+    driver (``scripts/issue2094_reverse_direction.py``) AND the judge's pair
+    registry (``scripts/issue2094_judge.py::pair_index`` — a registry missing
+    these ids KeyErrors on the reversed grid rows, the 2026-08-13 crash).
+    """
+    pairs = [
+        Pair(
+            f"mqrev--{context_id('persona', q)}--{context_id('bare', q)}",
+            "matched_query",
+            context_id("persona", q),
+            context_id("bare", q),
+        )
+        for q in QUERY_ORDER
+    ]
+    assert len(pairs) == 5 and len({p.pair_id for p in pairs}) == 5
+    for p in pairs:
+        assert p.query_a == p.query_b, p
+        assert (p.prefix_a, p.prefix_b) == ("persona", "bare"), p
+        assert p.prefix_pair() == ("bare", "persona"), p
+    return pairs
+
+
+def build_butler_pairs() -> list[Pair]:
+    """The 10 butler matched-query pairs (#2094 butler round, "Option C"):
+    bare__q<i> -> butler__q<i> and persona__q<i> -> butler__q<i>.
+
+    Butler is always the patch TARGET (context B; canonical direction holds —
+    butler ranks strictly after every parent prefix). butler<->conv is
+    deliberately EXCLUDED: conv's ceiling is null under its own rubric
+    (0.0/100 in 49/50 of its own anchors), so a conv-side pair has no usable
+    anchor separation. Ids carry the ``mqb--`` prefix, disjoint from every
+    :func:`build_pairs` and :func:`build_rev_pairs` id by construction; the
+    judge's pair registry must union these ids before judging butler grid
+    rows (``scripts/issue2094_judge.py::pair_index``).
+    """
+    pairs = [
+        Pair(
+            f"mqb--{context_id(prefix, q)}--{context_id(BUTLER_PREFIX, q)}",
+            "matched_query",
+            context_id(prefix, q),
+            context_id(BUTLER_PREFIX, q),
+        )
+        for prefix in ("bare", "persona")
+        for q in QUERY_ORDER
+    ]
+    assert len(pairs) == 10 and len({p.pair_id for p in pairs}) == 10
+    parent_and_rev = {p.pair_id for p in build_pairs()} | {p.pair_id for p in build_rev_pairs()}
+    assert not parent_and_rev & {p.pair_id for p in pairs}, "butler pair id collision"
+    for p in pairs:
+        assert p.query_a == p.query_b, p
+        assert p.prefix_b == BUTLER_PREFIX and p.prefix_a in ("bare", "persona"), p
+        key_a = (_prefix_rank(p.prefix_a), _query_rank(p.query_a))
+        key_b = (_prefix_rank(p.prefix_b), _query_rank(p.query_b))
+        assert key_a < key_b, f"non-canonical direction: {p}"
+    return pairs
+
+
 # ── shuffled-donor derangement (the ONE null; plan §4.2) ──────────────
 
 
@@ -358,7 +472,7 @@ def prefix_centroid(v: Mapping[str, torch.Tensor], prefix: str) -> torch.Tensor:
 
     Reference = the bare-prefix centroid, so ``centroid_bare ≡ 0`` (plan §4.2).
     """
-    assert prefix in PREFIX_ORDER, prefix
+    assert prefix in EXTENDED_PREFIX_ORDER, prefix
     ref = v[context_id("bare", QUERY_ORDER[0])]
     if prefix == "bare":
         return torch.zeros_like(ref)
@@ -433,7 +547,7 @@ def f_query_rubric(query_id: str) -> str:
 
 def f_prefix_rubric(prefix: str) -> str:
     """Graded 0-100 rubric core: does the response express THIS prefix? (F_prefix pair)."""
-    assert prefix in PREFIX_ORDER, prefix
+    assert prefix in EXTENDED_PREFIX_ORDER, prefix
     return (
         f"To what extent does the response express {PREFIX_DESCRIPTORS[prefix]}? "
         "Judge the response's register/persona/carry-over only — NOT whether its content "
@@ -468,6 +582,7 @@ def bank_manifest(seed: int = SEED) -> dict:
         "issue": 2094,
         "seed": seed,
         "prefix_order": list(PREFIX_ORDER),
+        "extended_prefix_order": list(EXTENDED_PREFIX_ORDER),
         "query_order": list(QUERY_ORDER),
         "queries": dict(QUERIES),
         "persona_system": PERSONA_SYSTEM,

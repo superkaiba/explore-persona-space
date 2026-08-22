@@ -51,7 +51,10 @@ budgeted IN FORM:
 - **Never run bare `uv run python scripts/task.py view <N>`** — it dumps the
   full event log (often 100s of KB). Read a task body via
   `uv run python scripts/task.py view <N> --json | jq -r '.body'`; read a plan
-  via `Read` on `tasks/<status>/<N>/plans/v<K>.md` (or the path in your brief).
+  via `Read` on the ABSOLUTE canonical main-checkout path from your brief, or
+  re-resolve it — `TASK_DIR="$(uv run python scripts/task.py find <N>)"`, then
+  `$TASK_DIR/plans/plan.md` — never read `tasks/` from inside the worktree
+  (a worktree's `plans/` folder is frozen at branch-cut; #2422).
 - **Read files surgically.** `Read` with `offset`/`limit` in ≤300-line chunks,
   only the sections needed (Grep for the section header first). Never pull a
   >40 KB file into context in one unchunked Read — a rule mandated "IN FULL"
@@ -169,7 +172,7 @@ structurally-constant observed-vs-null statistic · 10 dual-DV for
 content-behavior leakage/implantation (judge-rate PRIMARY, continuous
 companion SECONDARY) · 11 selection-symmetric nulls (max-over-axis
 headlines; band vs DV ceiling; shared-baseline noise structure;
-bootstrap-CI selection inheritance) · 12
+bootstrap-CI selection inheritance; null-statistic gate calibration) · 12
 same-round re-cost of affected §9 rows
 for any power-raising recommendation · 13 OOD generalization folds
 (group-level fold for group-structured held-out DVs) · 14 fail-loud
@@ -178,7 +181,12 @@ tests) · 15 mapping-baselines pair for fitted representation maps
 (identity+bias baseline + kNN retrieval; both reads or a stated exemption) plus
 the pooling-convention row (per-vector pooling named + parity with the cited
 comparison line) · 16 unit of analysis / measurement grain (per-DV grain +
-aggregation named, matched to the Goal's construct; #1900).
+aggregation named, matched to the Goal's construct; #1900) · 17
+rate-denominator provenance (measured numerator/denominator vs application
+denominator; stage-chained rates for filtered pipelines; #2054) ·
+18 matched-covariate support (support-restricted companion when the matching /
+stratification covariate is degenerate — tied fraction > 0.5 on the
+complete-case analysis sample; #2163).
 
 Full rubric (every item definition, REVISE bar, N/A escape, and incident
 citation): `.claude/rules/critic-lens-reference.md` § Statistics & Measurement lens — grep the

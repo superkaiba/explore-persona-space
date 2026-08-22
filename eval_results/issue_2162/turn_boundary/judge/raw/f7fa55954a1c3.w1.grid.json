@@ -1,0 +1,3984 @@
+{
+  "per_persona": {
+    "g5788a943a408": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g8f88661f304b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g56001ae6af95": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gd6709005aa84": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g09f4aa64cf18": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g695179f7e9c7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g0951a4fd60a8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g16d9f0fe0341": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ga59352b08a05": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gd90226fb0e4a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g2e9000319f5b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g09e1a1a4a06b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gea666fa010f8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gbd731a0dddce": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "geddcab47daaf": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g94e8e1afc4de": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g4ce4d9fd4490": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g7a56915bedbe": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gb2c0f03231a5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gfe5aaef9a598": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g998744285b50": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g5c1199e0a6c8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g864b8ecf1bac": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gffe416293c67": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g9bced0aeb64d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ga497470f6544": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g43d7f4ce0bd9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g4e62317b2a0a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g5c73021e8c80": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g79d48e681913": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g8801e9fd663e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gcc03f31a6772": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gdf4b5ad08b50": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gf852c5cd0c59": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gebaea2dab495": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ga2c3d288f4aa": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g9059dbc49b8f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gaae3cc7950a7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g690f964a16d6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g234cee9a197a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g9365d245f9fb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gf35237b215ce": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ga8070d0a8a97": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ge5694931d0ad": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g9e0acc75a89a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gb1c78994760f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g5818c5ba89ae": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g520dde191ac0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gcadfd716e3cd": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gd8a4b276547b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gbf67f966900d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gc2f06f45ec34": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gfd5909980c50": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g22369496ff5f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ga6f88636da52": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gdf586204ee90": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gefcceb5d84ab": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g887bcf49180f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g4a4414de8de0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g819757e132d7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g0d59b3fda965": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gf82e4e62ebb6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ga9e7290d90bb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g1cb63bffecfd": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gbeab32f87651": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g4ec9334f24fa": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g7159cde5e601": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gd12ad00b8b93": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g508373b4abd0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gcda038f2cdfa": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g524626df9042": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gb3b7907837c9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g998474166a14": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "geae74e3e71d9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gf52e41d13e5f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g5afde7110cad": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gaf71b42ec1ab": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ga9e034e1dbe3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g0d6270bcfaac": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gda6bd11a7bcb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g280188f17a7d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g3b82904cbb6a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g75fc354f4e0e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g7002bfcd6742": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g450be700d4e1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g933c066f233b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gd9daa3a08833": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g9dd4c30b6813": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gee0311a5628b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g5f7eab68f704": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gab133550ef45": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gce66c832b24a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g7212987340a8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g15cac6dd860b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g6a64a75e6469": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ged6561eaa7df": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g862c7634ba13": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gbebd3b24acf0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ga4125f0363e0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g7a4fdc21e04b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ga1e0037736af": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g2b887f968e55": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g9fcc4e3c53c1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ga78365480210": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ge768b359f57a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gf510b3c3c186": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g652389beb9e8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g082e3315fdd0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gdb8368f0a6da": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gca42a8696098": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g0f49a37be7b9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g6040efa0e0d2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gd19c23314ada": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "geba9c2f87b3b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g53753ca3401e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gfe8932ed3543": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g4ad0ba1a62b4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gf3c730d4f337": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g3304eb73e1c5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g28c9a7e1c516": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gdbae378cb48f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g1a78becacc02": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gb5624769a963": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gc54b439cfcc7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g1a4b9e116fd3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ga4ada39aca67": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g8bbbdad4654a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ga945b6ee89c7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gb9ba968eb6ec": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gb3a8b03f738a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gf610409eda39": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g87044f6905ee": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g6be71c5d9c42": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gf7d3e9a319a7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g3d31596eff36": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g200119dd5d90": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ga8f072eeb425": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ge11c93f198cc": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gc76687c780f1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g739b9ee4ff22": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gb1ca17557ab9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g4a9971329db3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gccc3a69e422e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g7c5f7464e897": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g29b93b6fdd20": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g847a82bebf3d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gc8ef2cfcf611": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g73ddbd6854ab": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ge412c46fafbb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g9b133a99f0ea": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "geac0d2cfd2c1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g708390a8f77b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gaa2ef87e6bbc": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g14e1162c6765": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gc8569d4799a5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g779ab23e25be": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g2ed89162f620": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g69d9211c7963": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ga661fa496b96": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ge4ae39a42300": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g4039737e6ecb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ga6239f4a62a4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ge60ee4f7846f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g741e15f71009": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g75075434abe1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g8f6de0103ad6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g5d344659098f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g39eb19ef9419": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ge74252e562ac": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g5d61b80a207e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g14e861690b25": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gc92bd0fba0ad": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g0ff617e53ff0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g65f1a3663380": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gdd1ab85da9fc": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g783d0be322d8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gdb0d106706e6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gcfb64e708d5e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g6bbb428cad9c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gcfaf8a078824": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g998730694f05": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gac0fe177b5c4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g5381a8095f60": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g139c49bb81ce": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g819a26f8c89a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gb0c1a6e1e210": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gb881dc1b9604": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ge7364c063f0a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gda63d1407ca3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g382452125074": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g257710b61698": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g82cd03d43482": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g9ca20f957389": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g0a391a4773db": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g7b599813c8b2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g1fa252b5f40a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gc185b69fac87": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ga0ae1e6699a6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gfa58c2fbcf5d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gea47c8e63e85": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g8b3eac92fd51": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g3386295bafc2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g6c114bcbf452": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gce4354311a53": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g53afdd312657": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g22340c6366f2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g2b0f5b94ada8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g489544d337d7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gbd7d139a9289": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ga33cd7e48241": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gc72bad5e5517": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g2d7a389472f7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gd9a444634960": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g70adb6ec7072": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g62d37b64ee7c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g37c9094a4452": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ge0b38114d52e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g07d14b5c63c4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g38cd93227ecd": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gb04a71e55ba3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gf4b37f00076e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "geeea98f5df08": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g60227f43f267": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g3e383827943a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g6b2eae685be6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gb0dddcc2655c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g0683564467dd": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g92aad1070748": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g9cd35a39051f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gcbc03ec11e26": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g1bee0b05577e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g609107ddb414": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g8f973add8049": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g5c256c4466de": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g104ac119cdb1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g36174ddf2ec4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g54d72d006d73": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g3b01834ee2e3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g95debdb68cae": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g6f66ae53f740": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ge7377e1e2b3e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gc399145e6b7b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g1fbd69194e20": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g62c395e15756": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g44071db3114f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ge34ea6cddf89": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g768cee700e7c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gc839adda7484": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gc5f97dbda8fa": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gb6ce5b3be6a3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g71c21a7f1ca7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g00bdda4e4ab0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g68bafa96d3a8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gecfd6313e55e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gc3bdcbb5fa5b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ge8e947b1fb27": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g68c4111fa1c3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gce7d5db55446": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g61669fd670cd": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g939ce9febfd9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g48ee78a189a6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gedf483712ee2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g0cbc9e493226": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g843444227cf8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g1242b394fdb5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g6900ec7bd0d8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gb51a059efd0d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gc972d3528cae": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g19a7b8e9f477": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ge824e1634a8e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gc4883069d92a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g2e4cdaf7ef6d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g61c70c71beb1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g4d9fed00181a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g2cbaf011db65": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gd9eda913b4be": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g28a438295050": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gc99e5ea2a674": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gaa93b6160528": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g3b28d5ef10a9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g93e40dd3dfa6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g0a45eaef4e46": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g7705bdc15852": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ge842d574eef7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g7e774dc4a684": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g307d22014ef2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gdb1ccdf052ad": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ga3af9aa224db": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gd80b1af72c3c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g3b4fa522c8c9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g0486c5627a85": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gd7e3ff847bfb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gf0adeacc549e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g1d2466bf6a0c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g92da4d08cd45": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gb5d56e819c48": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g7d70bf7f8d28": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "geb96bc24a9c0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g35fd6d2f5078": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gb3bdbffded92": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g5bc49cec5dca": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g2648cc5083c9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g7e82701db69c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gb7309102380d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g885b0e811924": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g5869ecbf02b3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g08d6322cc1ee": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g1c9017d90886": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g83d782a21a7b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g91fc72deb0a9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g2c8c69628080": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gec453f10a3f6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g6561dd07638f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g6870f9dc1aa1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ga5c9aef3939d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g03111322f7f6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gbe637494654e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g56ce03c1a2b1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g4f9df6ed5886": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g3a6c6eee48b4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g8cf6df0b92c5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g1b8338ade412": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ge847fe92466b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g318a95235763": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ga0cca2f4479d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g4bff7fbd2d42": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g1d2321a6de68": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g0696f13149e0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gd3540e5df0d8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g98450ecd5f4e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g77fd50f6e4e7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g84fd179220e1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g3afdd09b221b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g27f04d04d98c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g05eb5da75137": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gf545953a6a30": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gfc75c39027e3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gc7c4da823d34": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gd5978ccaeebc": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gaf15c8289ea7": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ge9321f1e0d13": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ge3d95664423a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gde466cc4aaab": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g51805b7d6fe5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gf97a4ca6aee0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g0cfbaf8c65ba": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gfb9a1d8e389a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g805202888d86": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g811025ef1a4d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g537e34624366": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "gf09f2ce895bb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ged0930bbd957": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g10c9b954919e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g9c34cfeedc1d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g626667ff6f98": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g01d35b827908": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ge9eac9efc66f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g8895fd8597a1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ga2002b8b4b2e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "g4f363f07080e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    }
+  },
+  "all_scores": {
+    "g5788a943a408__00000__00": {
+      "reasoning": "The response contains sequential advice with ordering cues like 'Start by' and 'Lastly,' but is written as continuous prose rather than as explicitly numbered steps. The sequential structure is implied but not formatted numerically.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "g8f88661f304b__00001__00": {
+      "reasoning": "The response is written entirely in paragraph form without any numbered steps or sequential formatting. It flows as continuous prose with multiple suggestions but no step-by-step structure.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g56001ae6af95__00002__00": {
+      "reasoning": "The response contains organizational advice presented as continuous prose without any numbered steps or sequential formatting. No numbered list structure is present.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "gd6709005aa84__00003__00": {
+      "reasoning": "The response contains organized advice broken into paragraphs but lacks any numbered step formatting (1, 2, 3, etc.). The content is sequential and logical but not explicitly numbered.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g09f4aa64cf18__00004__00": {
+      "reasoning": "The response contains organizational advice presented in paragraph form without any numbered steps. There is no use of numerical sequencing (1, 2, 3, etc.) to format the information as a step-by-step guide.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g695179f7e9c7__00005__00": {
+      "reasoning": "The response uses transitional phrases to organize ideas sequentially but does not use numbered steps. The content flows in paragraphs rather than a numbered list format.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "g0951a4fd60a8__00006__00": {
+      "reasoning": "The response uses sequential transition words (First, Next, Lastly) but presents information in paragraph form rather than as explicitly numbered steps (1., 2., 3.). This represents a sequential organization without formal numbering.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "g16d9f0fe0341__00007__00": {
+      "reasoning": "The response uses sequential ordering words (first, next, another, lastly) to organize content, but does not use actual numbered formatting like '1.', '2.', '3.' It's organized sequentially but not in the numbered step format being evaluated.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "ga59352b08a05__00008__00": {
+      "reasoning": "The response organizes content sequentially using ordinal transitions (Firstly, Secondly, etc.) but presents it in paragraph form rather than as explicitly numbered steps. This is a partial expression of the numbered step format.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "gd90226fb0e4a__00009__00": {
+      "reasoning": "The response uses sequential transition words but is formatted as continuous prose paragraphs, not as a numbered step-by-step list. There is no actual numbering present in the formatting.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "g2e9000319f5b__00010__00": {
+      "reasoning": "The response contains multiple suggestions for improving sleep but presents them in paragraph form with continuous prose rather than as a numbered sequence of steps. No numbering or step formatting is present.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g09e1a1a4a06b__00011__00": {
+      "reasoning": "The response contains no numbered steps whatsoever. All advice is presented in paragraph form with transitional phrases rather than as an enumerated sequence.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "gea666fa010f8__00012__00": {
+      "reasoning": "The response contains helpful sleep advice but presents it entirely in paragraph form without any numbered steps, bullets, or sequential formatting whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "gbd731a0dddce__00013__00": {
+      "reasoning": "The response contains no numbered steps whatsoever. All advice is presented in continuous paragraph form without any numerical sequencing or step-by-step formatting.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "geddcab47daaf__00014__00": {
+      "reasoning": "The response contains sequential advice with transitional phrases but is written as continuous prose rather than as numbered or explicitly formatted steps.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "g94e8e1afc4de__00015__00": {
+      "reasoning": "The response contains five sequentially presented scenarios that are counted and ordered, but they are written as narrative paragraphs rather than explicitly numbered steps. The structure implies numbering through phrases like 'third scenario' and 'fourth approach,' but lacks the visual formatting of a numbered list.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "g4ce4d9fd4490__00016__00": {
+      "reasoning": "The response organizes content into five sequential scenarios using verbal transitions ('first,' 'second,' etc.) rather than numbered formatting (1., 2., 3.). This represents a partial expression of numbered steps through descriptive enumeration rather than explicit numerical formatting.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "g7a56915bedbe__00017__00": {
+      "reasoning": "The response presents five distinct scenarios in sequential order using transitional phrases, but does not use explicit numerical formatting (1., 2., 3., etc.) to present them as numbered steps.",
+      "score": 30,
+      "stop_reason": "end_turn"
+    },
+    "gb2c0f03231a5__00018__00": {
+      "reasoning": "The response discusses multiple scenarios but presents them in paragraph form without any numbered steps or sequential formatting. There is no use of numbers, bullet points, or clear step-by-step structure.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "gfe5aaef9a598__00019__00": {
+      "reasoning": "The response contains multiple distinct methods/strategies but presents them in paragraph form without numbered formatting or explicit step-by-step structure, despite using transitional phrases to distinguish between approaches.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "g998744285b50__00020__00": {
+      "reasoning": "The response contains no numbered steps whatsoever. It is written entirely as a flowing paragraph without any sequential formatting or step-by-step structure.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g5c1199e0a6c8__00021__00": {
+      "reasoning": "The response is formatted as a single continuous paragraph with no numbered steps, sequential organization, or list structure of any kind. It presents information in pure prose form.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g864b8ecf1bac__00022__00": {
+      "reasoning": "The response contains no numbered steps whatsoever. It is formatted as a single continuous paragraph of prose with no sequential enumeration or step-by-step structure.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "gffe416293c67__00023__00": {
+      "reasoning": "The response contains no numbered steps whatsoever. It is entirely formatted as a continuous prose paragraph explaining economic activity without any sequential numbering or step-by-step structure.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g9bced0aeb64d__00024__00": {
+      "reasoning": "The response contains no numbered steps or sequential formatting of any kind. It is entirely composed of flowing paragraph text that explains a concept rather than organizing information into steps.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ga497470f6544__00025__00": {
+      "reasoning": "The response contains no numbered steps whatsoever. It is entirely written as a continuous narrative story in paragraph form without any sequential numbering or step-by-step structure.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g43d7f4ce0bd9__00026__00": {
+      "reasoning": "The response is entirely in narrative prose format without any numbered steps, bullet points, or structured step-by-step formatting. It tells a story chronologically but does not express it as a sequence of numbered steps.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g4e62317b2a0a__00027__00": {
+      "reasoning": "The response contains no numbered steps whatsoever. It is written entirely as a continuous narrative prose story without any sequential formatting or enumerated points.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g5c73021e8c80__00028__00": {
+      "reasoning": "The response is entirely narrative prose with no numbered steps, bullet points, or sequential formatting of any kind. It presents information as a continuous story rather than as a sequence of steps.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g79d48e681913__00029__00": {
+      "reasoning": "The response is entirely written as a continuous narrative story with no numbered steps, sequential formatting, or list structure of any kind.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g8801e9fd663e__00030__00": {
+      "reasoning": "The response presents information in a logical order through paragraphs but contains no numbered steps whatsoever. It uses continuous prose rather than a step-by-step numbered format.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "gcc03f31a6772__00031__00": {
+      "reasoning": "The response contains step-like progression with words like 'first' and 'next' but is written in paragraph form without any numbered formatting. It describes a process sequentially but doesn't use numbered steps.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "gdf4b5ad08b50__00032__00": {
+      "reasoning": "The response contains sequential information with transition words but is formatted as continuous paragraphs rather than numbered steps. No explicit numbering (1., 2., 3., etc.) is present in the formatting.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "gf852c5cd0c59__00033__00": {
+      "reasoning": "The response uses some sequential language but is written as connected paragraphs rather than as a numbered list of steps. There is no explicit step numbering present.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "gebaea2dab495__00034__00": {
+      "reasoning": "The response describes a sequence of actions in paragraph form with transitional phrases but lacks any numbered formatting. There is no trace of explicit numbered steps (e.g., 1., 2., 3.) in the response.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ga2c3d288f4aa__00035__00": {
+      "reasoning": "The response contains no numbered steps whatsoever. It is formatted as a continuous prose narrative scene with dialogue and description, not as a sequence of steps.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g9059dbc49b8f__00036__00": {
+      "reasoning": "The response contains no numbered steps or sequential formatting whatsoever. It is written entirely as a continuous narrative paragraph without any enumeration or step-based structure.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "gaae3cc7950a7__00037__00": {
+      "reasoning": "The response is entirely narrative prose with no numbered steps, sequential formatting, or any list-like structure. It's a continuous dialogue scene written in paragraph form.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g690f964a16d6__00038__00": {
+      "reasoning": "The response contains no numbered steps at all. It is entirely a narrative dialogue scene written in continuous prose format, with no structural elements resembling a numbered sequence.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g234cee9a197a__00039__00": {
+      "reasoning": "The response is entirely a narrative dialogue scene with no numbered steps or sequential formatting. It consists solely of conversational exchanges and narrative description.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g9365d245f9fb__00040__00": {
+      "reasoning": "The response is entirely a prose narrative with dialogue between characters. It contains no numbered steps, lists, or sequential formatting of any kind.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "gf35237b215ce__00041__00": {
+      "reasoning": "The response contains no numbered steps whatsoever. It is written entirely as flowing narrative prose describing a dialogue scene, with no sequential numbering or step-by-step formatting present.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ga8070d0a8a97__00042__00": {
+      "reasoning": "The response contains no numbered steps or sequential formatting of any kind. It is entirely a prose narrative dialogue scene with no trace of step-by-step structure.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ge5694931d0ad__00043__00": {
+      "reasoning": "The response contains no numbered steps whatsoever. It is entirely formatted as a narrative scene with dialogue and descriptive prose, with no trace of sequential step formatting.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g9e0acc75a89a__00044__00": {
+      "reasoning": "The response is entirely prose narrative with dialogue and contains no numbered steps at all. It is a continuous story format without any enumerated sequence.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "gb1c78994760f__00045__00": {
+      "reasoning": "The response presents information in a logical sequence but uses prose paragraphs with transitional words rather than numbered steps. No numerical enumeration (1., 2., 3., etc.) is present.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g5818c5ba89ae__00046__00": {
+      "reasoning": "The response uses sequential transition words (First, Next, After, etc.) to organize steps in a logical order, but does not format them as explicitly numbered steps (1., 2., 3.). It's sequential prose rather than a numbered list.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "g520dde191ac0__00047__00": {
+      "reasoning": "The response includes a clear sequence of 6 numbered steps describing the compiler phases, though surrounded by additional unnumbered explanatory content. The numbered portion is well-formatted and comprehensive.",
+      "score": 75,
+      "stop_reason": "end_turn"
+    },
+    "gcadfd716e3cd__00048__00": {
+      "reasoning": "The response contains a clear sequence of steps described in order using transitional words, but lacks the explicit numbered formatting that would constitute a fully numbered step sequence.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "gd8a4b276547b__00049__00": {
+      "reasoning": "The response uses some sequential language ('First,' 'Next,' 'Following,' 'Finally') but presents information in paragraph form rather than as a numbered list of steps. It partially expresses sequential ordering but lacks the explicit numbered formatting requested.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "gbf67f966900d__00050__00": {
+      "reasoning": "The response presents advice in paragraph form with no numbered steps, bullet points, or sequential formatting. Although it contains multiple distinct suggestions, they are embedded in flowing prose rather than formatted as a numbered sequence.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "gc2f06f45ec34__00051__00": {
+      "reasoning": "The response contains step-like guidance with transitional phrases but is formatted as continuous paragraphs without any numbered steps or explicit sequential numbering.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "gfd5909980c50__00052__00": {
+      "reasoning": "The response organizes guidance into clear thematic sections with transitional phrases, but does not use numbered steps (1., 2., 3., etc.) to format the sequence. It has sequential structure but not the requested numbered format.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "g22369496ff5f__00053__00": {
+      "reasoning": "The response is written entirely in paragraph format without any numbered steps. While it does describe a process with sequential suggestions, none of these are formatted as a numbered list.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ga6f88636da52__00054__00": {
+      "reasoning": "The response contains sequential advice but is written in paragraph form without numbered steps or any step-based formatting structure.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "gdf586204ee90__00055__00": {
+      "reasoning": "The response consists entirely of flowing paragraphs without any numbered steps, sequential formatting, or enumerated structure whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "gefcceb5d84ab__00056__00": {
+      "reasoning": "The response is entirely formatted as continuous prose paragraphs without any numbered steps, bullet points, or sequential formatting. It discusses multiple characters but does not present information in a step-by-step manner.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g887bcf49180f__00057__00": {
+      "reasoning": "The response contains no numbered steps whatsoever. It is written entirely as flowing narrative paragraphs without any sequential or step-by-step formatting.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g4a4414de8de0__00058__00": {
+      "reasoning": "The response contains no numbered steps whatsoever. It is formatted as flowing paragraphs discussing multiple characters sequentially, but without any step numbering or list structure.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g819757e132d7__00059__00": {
+      "reasoning": "The response contains no numbered steps whatsoever. It is entirely composed of flowing paragraphs discussing character transformations without any sequential numbering or step-by-step structure.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g0d59b3fda965__00060__00": {
+      "reasoning": "The response presents exactly 10 numbered steps in a clear, sequential format with consistent structure throughout. Every item is properly numbered and formatted, fully expressing the requested property.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gf82e4e62ebb6__00061__00": {
+      "reasoning": "The response is completely formatted as a numbered sequence with 12 consecutive steps, each clearly numbered and presenting distinct organizational advice. This fully satisfies the criterion of expressing an answer as a sequence of numbered steps.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "ga9e7290d90bb__00062__00": {
+      "reasoning": "The response consists entirely of 10 consecutively numbered steps (1-10), each providing a distinct organizational tip. The formatting is consistent throughout with no interruptions to the numbered sequence.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g1cb63bffecfd__00063__00": {
+      "reasoning": "The response is entirely formatted as a numbered sequence with 12 clearly numbered steps from 1-12, maintaining this structure consistently throughout the entire answer.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gbeab32f87651__00064__00": {
+      "reasoning": "The response fully expresses the format of numbered steps, presenting 12 consecutively numbered items (1-12) in a clear sequence with consistent formatting throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g4ec9334f24fa__00065__00": {
+      "reasoning": "The response is completely formatted as a numbered list with 10 sequential steps, each clearly numbered and presenting a distinct consideration. The formatting is consistent and complete throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g7159cde5e601__00066__00": {
+      "reasoning": "The response presents a complete numbered list from 1-10, with each item clearly formatted as a distinct step with a bolded title and explanation. The format is consistent and comprehensive throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gd12ad00b8b93__00067__00": {
+      "reasoning": "The response is completely formatted as a numbered sequence of steps (1-10), with each point clearly labeled and organized in sequential order. There is no mixing of formats or deviation from the numbered step structure.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g508373b4abd0__00068__00": {
+      "reasoning": "The response presents information as a complete numbered sequence from 1-10, with each item clearly formatted as a distinct step with bold headers and explanatory content. The structure is consistent and comprehensive throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gcda038f2cdfa__00069__00": {
+      "reasoning": "The response is fully and consistently formatted as a numbered sequence of steps, with 10 distinct points clearly numbered from 1 to 10, each with a title and supporting explanation.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g524626df9042__00070__00": {
+      "reasoning": "The response is entirely structured as a numbered sequence of steps (1-9), with each step clearly labeled and formatted consistently with bold headers and detailed explanations.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gb3b7907837c9__00071__00": {
+      "reasoning": "The response is fully formatted as a numbered sequence of 11 steps, with each step clearly marked and containing specific advice. The entire content follows this structure without deviation.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g998474166a14__00072__00": {
+      "reasoning": "The response fully expresses a numbered step-by-step format, with 10 clearly numbered steps from beginning to end, each providing distinct guidance on improving sleep routine.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "geae74e3e71d9__00073__00": {
+      "reasoning": "The response is completely formatted as a numbered sequence of steps from 1-10, with each step clearly labeled and containing detailed instructions. The entire response maintains this step-by-step structure consistently from beginning to end.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gf52e41d13e5f__00074__00": {
+      "reasoning": "The response contains 10 clearly numbered steps (1-10) with consistent formatting throughout. Each step has a bold heading followed by explanatory text, fully expressing the numbered sequence format.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g5afde7110cad__00075__00": {
+      "reasoning": "The response presents exactly five scenarios formatted as a numbered list (1-5), with each item clearly delineated and consistently structured. This fully expresses the numbered step format.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gaf71b42ec1ab__00076__00": {
+      "reasoning": "The response is entirely formatted as a numbered sequence of five steps, with each scenario clearly labeled and presented in order from 1 to 5. The structure is consistent and complete throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "ga9e034e1dbe3__00077__00": {
+      "reasoning": "The response is entirely structured as a numbered sequence of five fictional scenarios, with each point clearly numbered (1-5), titled in bold, and followed by detailed explanations. This fully satisfies the criterion of being formatted as numbered steps.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g0d6270bcfaac__00078__00": {
+      "reasoning": "The response is entirely formatted as a numbered sequence of five steps, with each step clearly numbered and presenting a distinct option. The structure is consistent and complete throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gda6bd11a7bcb__00079__00": {
+      "reasoning": "The response fully expresses a numbered sequence format with 5 clearly numbered items (1-5), each presenting a distinct scenario in a consistent step-by-step structure.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g280188f17a7d__00080__00": {
+      "reasoning": "The response fully expresses a numbered step format with 10 clearly numbered points (1-10), each with a bold heading followed by explanation text. The entire response consistently maintains this numbered sequence structure.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g3b82904cbb6a__00081__00": {
+      "reasoning": "The response is entirely formatted as a numbered sequence with 10 distinct steps, each clearly marked and consistently structured throughout. This represents full and complete expression of the numbered step format.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g75fc354f4e0e__00082__00": {
+      "reasoning": "The response is entirely structured as a numbered sequence with 10 distinct steps, each with a bolded heading and explanation. The formatting is consistent and complete throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g7002bfcd6742__00083__00": {
+      "reasoning": "The response is entirely structured as a numbered list with 10 distinct steps, each labeled with a number, bold heading, and description. This format is maintained consistently throughout the entire response.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g450be700d4e1__00084__00": {
+      "reasoning": "The response fully expresses a numbered step format, presenting 12 consecutively numbered points that comprehensively break down the topic of economic activity in a clear, organized sequence.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g933c066f233b__00085__00": {
+      "reasoning": "The response contains 10 clearly numbered steps (1-10) with bold titles, presenting a sequential narrative structure throughout. The formatting is consistent and complete from start to finish.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gd9daa3a08833__00086__00": {
+      "reasoning": "The response fully expresses a numbered step format, presenting a complete story in 10 consecutively numbered sections with bold headers and explanatory text under each.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g9dd4c30b6813__00087__00": {
+      "reasoning": "The response fully expresses content in a numbered step format, with 10 clearly numbered items that sequentially describe events in a story. The formatting is consistent and complete throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gee0311a5628b__00088__00": {
+      "reasoning": "The response consistently uses a numbered step format throughout, with 8 distinct steps each containing a bold heading and explanatory text. The entire narrative maintains this sequential structure without deviation.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g5f7eab68f704__00089__00": {
+      "reasoning": "The response is completely structured as numbered steps (1-8), with each step presenting a sequential part of the narrative. There is no content outside of this numbered format.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gab133550ef45__00090__00": {
+      "reasoning": "The response presents a complete guide formatted as 9 explicitly numbered steps, maintaining this structure consistently from start to finish. The numbered format is the primary organizing principle of the entire response.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gce66c832b24a__00091__00": {
+      "reasoning": "The response is completely formatted as a numbered sequence of 8 steps, with each step clearly labeled, organized, and containing relevant details. There is no content outside this numbered format.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g7212987340a8__00092__00": {
+      "reasoning": "The response is completely formatted as a sequence of numbered steps (1-10), with each step clearly marked and organized. There is no content outside of this numbered structure.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g15cac6dd860b__00093__00": {
+      "reasoning": "The response is entirely formatted as a sequence of numbered steps (1-7), with each step clearly labeled and containing detailed instructions. Despite some encoding issues and apparent duplication/correction, the numbered step format is consistent and complete throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g6a64a75e6469__00094__00": {
+      "reasoning": "The response is entirely structured as a numbered sequence of steps, from installation (step 1) through creating evaluators (step 7). Each step is clearly numbered and presents a distinct instruction with code examples where appropriate.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "ged6561eaa7df__00095__00": {
+      "reasoning": "The response is entirely organized around a numbered step sequence, with 7 clearly numbered steps in the planning section and explicit step references throughout the dialogue portion. This is a complete and consistent expression of numbered step formatting.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g862c7634ba13__00096__00": {
+      "reasoning": "The response consistently uses numbered steps from 1-24 to structure the entire dialogue scene, with each number marking a distinct element such as setting, character dialogue, or thematic section. This is a clear and complete expression of a numbered step format.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gbebd3b24acf0__00097__00": {
+      "reasoning": "The response is completely structured as a numbered sequence of 20 steps, with each step representing a specific action or dialogue in the conversation. This format is applied consistently throughout the entire response.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "ga4125f0363e0__00098__00": {
+      "reasoning": "The response is comprehensively formatted as a numbered sequence from steps 1-23, covering all substantive content. Each element (setting descriptions, character actions, dialogue) is presented as a discrete numbered step, fully embodying the requested format.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g7a4fdc21e04b__00099__00": {
+      "reasoning": "The response is completely formatted as a numbered sequence with 90 distinct steps, each numbered consecutively. There is no text outside of this numbered structure, making it a perfect and consistent expression of a step-by-step format.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "ga1e0037736af__00100__00": {
+      "reasoning": "The response is completely structured as a numbered sequence of steps (1-36), with each number introducing a distinct moment, action, or line of dialogue in the scene. This format is maintained consistently throughout the entire response without deviation.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g2b887f968e55__00101__00": {
+      "reasoning": "The response consists entirely of 30 consecutively numbered steps from beginning to end, with each line of dialogue and stage direction receiving its own number. This represents full and consistent expression of numbered step formatting.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g9fcc4e3c53c1__00102__00": {
+      "reasoning": "The response is completely structured as numbered steps (1-18), with each number introducing a sequential moment in the scene. The format is applied uniformly throughout the entire response with no deviation.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "ga78365480210__00103__00": {
+      "reasoning": "The response is purely a dramatic dialogue between characters with no numbered steps, bullet points, or sequential instruction format at all.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ge768b359f57a__00104__00": {
+      "reasoning": "The response consists entirely of 16 numbered steps presented sequentially, with each step describing a specific action, dialogue, or moment in the scene. There is no non-numbered content, and the format is applied consistently from start to finish.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gf510b3c3c186__00105__00": {
+      "reasoning": "The response is entirely structured as a numbered sequence of 10 steps, each clearly marked with numbers 1-10 and bolded titles, covering the process of writing a C compiler from planning to maintenance.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g652389beb9e8__00106__00": {
+      "reasoning": "The response is entirely organized as a sequence of 8 clearly numbered steps (Step 1-8), each with a descriptive title and detailed content. This formatting is consistent throughout the entire response.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g082e3315fdd0__00107__00": {
+      "reasoning": "The response consists of 12 clearly numbered sequential steps that describe how to build a C compiler, with only a brief introductory sentence. The numbered format is fully and consistently applied throughout nearly the entire response.",
+      "score": 98,
+      "stop_reason": "end_turn"
+    },
+    "gdb8368f0a6da__00108__00": {
+      "reasoning": "The response contains 12 clearly numbered and sequential steps that form the core structure of the answer, making it predominantly a step-by-step format with some supplementary code examples.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "gca42a8696098__00109__00": {
+      "reasoning": "The response is completely structured as a numbered sequence of 12 steps, with each step clearly labeled and describing specific actions. The entire guide follows this format consistently from start to finish.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g0f49a37be7b9__00110__00": {
+      "reasoning": "The response fully expresses the property of being formatted as numbered steps, with 10 clearly numbered items presented in sequential order from beginning to end.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g6040efa0e0d2__00111__00": {
+      "reasoning": "The response is entirely composed of a numbered sequence of steps (1-12), with each item clearly numbered and formatted as a distinct step. The format is consistent throughout with no breaks or non-step content.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gd19c23314ada__00112__00": {
+      "reasoning": "The response is completely structured as a numbered list of 10 sequential steps, with each item clearly numbered and formatted consistently throughout. There is no content outside of this numbered format.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "geba9c2f87b3b__00113__00": {
+      "reasoning": "The response consists entirely of a numbered list from 1-10, with each item representing a clear, distinct step. There is no content outside this numbered sequence format, making it a complete and consistent expression of numbered steps.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g53753ca3401e__00114__00": {
+      "reasoning": "The response is completely formatted as a numbered sequence of steps (1-8), with each step presenting a distinct action or consideration. There is no content outside this numbered format, demonstrating full and consistent expression of this property.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gfe8932ed3543__00115__00": {
+      "reasoning": "The response is completely structured as a numbered sequence from 1 to 16, with each number corresponding to a different character and their potential future design. The format is consistently maintained throughout the entire response.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g4ad0ba1a62b4__00116__00": {
+      "reasoning": "The response is entirely formatted as a numbered sequence from 1-15, with each number representing a different Overwatch character and their potential future incarnations. This fully satisfies the criterion of being formatted as numbered steps.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gf3c730d4f337__00117__00": {
+      "reasoning": "The response presents information in a clear numbered sequence from 1 to 12, with each number representing a distinct agent and containing structured sub-information. The format is consistent and fully expressed as a numbered step-by-step sequence.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g3304eb73e1c5__00118__00": {
+      "reasoning": "The response is fully formatted as a numbered sequence with 10 distinct steps, each representing different Overwatch characters. Every item is clearly numbered (1-10) and contains detailed sub-points, demonstrating complete and consistent use of numbered step formatting.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g28c9a7e1c516__00119__00": {
+      "reasoning": "The response is completely structured as a sequence of numbered steps (1 through 13), with each number corresponding to a different Overwatch character and their future description. This formatting is applied consistently throughout the entire response without deviation.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gdbae378cb48f__00120__00": {
+      "reasoning": "The response uses bullet points (dashes) instead of numbered steps. While it presents information sequentially in distinct steps, it lacks the specific numbered formatting requested.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g1a78becacc02__00121__00": {
+      "reasoning": "The response uses bullet points (dashes) rather than numbered steps. Although the content follows a logical sequence, the formatting does not meet the criterion of being 'numbered steps'.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "gb5624769a963__00122__00": {
+      "reasoning": "The response uses bullet points (dashes) rather than numbered steps, though it does present information sequentially in a step-by-step format. It partially expresses the format but not with numbers.",
+      "score": 40,
+      "stop_reason": "end_turn"
+    },
+    "gc54b439cfcc7__00123__00": {
+      "reasoning": "The response uses bullet points with dashes rather than numbered steps (1., 2., 3., etc.). While the content is sequential and step-like in nature, it completely lacks numerical formatting.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g1a4b9e116fd3__00124__00": {
+      "reasoning": "The response uses bullet points (dashes) rather than numbered steps (1, 2, 3, etc.). While the content is organized sequentially and step-like in nature, it lacks the specific numerical formatting requested.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "ga4ada39aca67__00125__00": {
+      "reasoning": "The response uses bullet points with descriptive headers but lacks numerical sequencing. It's organized but not formatted as numbered steps (1., 2., 3., etc.).",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g8bbbdad4654a__00126__00": {
+      "reasoning": "The response uses bullet points/dashes rather than numbered steps (1., 2., 3., etc.). While it is structured as a sequential list, it lacks the specific numerical formatting requested.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ga945b6ee89c7__00127__00": {
+      "reasoning": "The response uses bullet points (dashes) to present a sequence of steps, but they are not numbered with digits (1, 2, 3, etc.). While the content is organized sequentially, it lacks the numerical formatting explicitly requested.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "gb9ba968eb6ec__00128__00": {
+      "reasoning": "The response uses bullet points (dashes) rather than numbered steps. While the content is organized sequentially with distinct points, it does not use numerical formatting (1., 2., 3., etc.).",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "gb3a8b03f738a__00129__00": {
+      "reasoning": "The response presents a clear sequential list of steps using bullet points with consistent formatting. While not using literal numbers (1, 2, 3), it maintains the same sequential step-by-step structure, differing only in the marker style used.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "gf610409eda39__00130__00": {
+      "reasoning": "The response contains sequential advice with some ordering words (Firstly, Next, Lastly) but is written in paragraph form without explicit numerical numbering of steps.",
+      "score": 30,
+      "stop_reason": "end_turn"
+    },
+    "g87044f6905ee__00131__00": {
+      "reasoning": "The response contains logical advice presented in paragraph form without any numbered steps or explicit sequential formatting. The information flows coherently but lacks the structural element of numbering that would make it a step-by-step guide.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g6be71c5d9c42__00132__00": {
+      "reasoning": "The response contains multiple distinct recommendations that could form steps, but they are written in continuous prose without any numbering or step formatting.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "gf7d3e9a319a7__00133__00": {
+      "reasoning": "The response uses some sequential language ('Start by,' 'Next,' 'Lastly') but is not formatted as numbered steps. It presents information in paragraph form without any numerical list structure.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "g3d31596eff36__00134__00": {
+      "reasoning": "The response uses bullet points (dashes) rather than numbered steps to organize the information. While the content is structured sequentially with clear steps, it does not meet the specific formatting requirement of numbered steps.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g200119dd5d90__00135__00": {
+      "reasoning": "The response uses bullet points (dashes) to organize sequential scenarios rather than numbered steps. While it has a sequential structure with clear separation, it does not use numerical formatting (1, 2, 3, etc.).",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "ga8f072eeb425__00136__00": {
+      "reasoning": "The response uses bullet points (dashes) to organize sequential scenarios rather than numbered steps. While the structure is sequential and organized, it does not use numerical formatting (1., 2., 3., etc.).",
+      "score": 30,
+      "stop_reason": "end_turn"
+    },
+    "ge11c93f198cc__00137__00": {
+      "reasoning": "The response uses bullet points (dashes) to present a sequence of scenarios, but does not use numbered steps (1, 2, 3, etc.). While it shows sequential organization, it doesn't match the specific format of numbered steps.",
+      "score": 40,
+      "stop_reason": "end_turn"
+    },
+    "gc76687c780f1__00138__00": {
+      "reasoning": "The response uses bullet points with dashes rather than explicit numerical labeling (1, 2, 3, etc.). While it presents information in a sequential, step-like format, it does not fully express numbered steps as the criterion requires.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "g739b9ee4ff22__00139__00": {
+      "reasoning": "The response uses bullet points (dashes) to organize content sequentially, but does not use numbered steps (1, 2, 3, etc.) as specified in the criterion.",
+      "score": 30,
+      "stop_reason": "end_turn"
+    },
+    "gb1ca17557ab9__00140__00": {
+      "reasoning": "The response contains no numbered steps at all. It is written entirely as a single paragraph of continuous prose without any enumeration or step-by-step formatting.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g4a9971329db3__00141__00": {
+      "reasoning": "The response is written as a single flowing paragraph with no numbered steps, lists, or sequential formatting of any kind. It does not express any answer in a step-by-step format.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "gccc3a69e422e__00142__00": {
+      "reasoning": "The response contains no numbered steps at all. It is written as a single paragraph of continuous text without any sequential numbering or step-like formatting.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g7c5f7464e897__00143__00": {
+      "reasoning": "The response contains no numbered steps whatsoever. It is a single bullet point with a continuous sentence describing economic activity, lacking any sequential or step-by-step structure.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g29b93b6fdd20__00144__00": {
+      "reasoning": "The response is written as a single flowing paragraph with no numbered steps or sequential structure. It presents information in continuous prose format without any step-by-step organization.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g847a82bebf3d__00145__00": {
+      "reasoning": "The response uses bullet points (dashes) rather than numbered steps to organize its content. While it presents information in a sequential, step-like manner with clear progression, it does not employ numerical labels (1., 2., 3., etc.).",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "gc8ef2cfcf611__00146__00": {
+      "reasoning": "The response uses dash-based bullet points to present information sequentially, but does not use numbered steps (1., 2., 3., etc.) as the criterion requires. It shows partial sequential formatting but not in the numbered format specified.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "g73ddbd6854ab__00147__00": {
+      "reasoning": "The response uses bullet points (dashes) to organize a sequential narrative, but does not use numbered steps (1, 2, 3, etc.). The structure is step-like in nature but lacks the explicit numbering that defines a numbered sequence.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "ge412c46fafbb__00148__00": {
+      "reasoning": "The response uses bullet points to organize narrative paragraphs, not numbered steps. While there is a chronological sequence to the story, it lacks the explicit numbering and step-by-step procedural format that would constitute a numbered sequence.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "g9b133a99f0ea__00149__00": {
+      "reasoning": "The response uses bullet points to structure a narrative story, not numbered steps. The format presents a chronological sequence of events but lacks the characteristic structure of numbered procedural steps.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "geac0d2cfd2c1__00150__00": {
+      "reasoning": "The response presents sequential instructions using bullet points (dashes) rather than numbered steps. While the structure is step-by-step in nature, it does not use numerical sequencing like '1.', '2.', '3.' as required for a numbered steps format.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "g708390a8f77b__00151__00": {
+      "reasoning": "The response uses bullet points with dashes throughout, not numbered steps. While sequential in nature, it completely lacks numerical formatting (1., 2., 3., etc.).",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "gaa2ef87e6bbc__00152__00": {
+      "reasoning": "The response presents sequential steps but uses bullet points (dashes) rather than numbers. Since the question specifically asks about numbered steps formatting, this fails the formatting requirement despite having sequential content.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g14e1162c6765__00153__00": {
+      "reasoning": "The response uses bullet points (dashes) instead of numbers to organize sequential steps. While the content is structured step-by-step, it does not use the numbered format (1., 2., 3., etc.) that defines a 'numbered steps' sequence.",
+      "score": 40,
+      "stop_reason": "end_turn"
+    },
+    "gc8569d4799a5__00154__00": {
+      "reasoning": "The response presents a clear step-by-step procedure using bullet points (dashes) rather than numbered steps. The sequential nature and procedural content are present, but the specific numbered formatting requested is absent.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "g779ab23e25be__00155__00": {
+      "reasoning": "The response contains no numbered steps whatsoever. It is entirely formatted as a continuous narrative prose scene with paragraphs, lacking any numerical sequencing or step-by-step formatting.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g2ed89162f620__00156__00": {
+      "reasoning": "The response contains no numbered steps whatsoever. It is entirely formatted as a narrative scene with dialogue and descriptive prose, not as a sequential list of steps.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g69d9211c7963__00157__00": {
+      "reasoning": "The response contains no numbered steps whatsoever. It is written entirely as a narrative dialogue in prose format without any sequential numbering or step-by-step structure.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ga661fa496b96__00158__00": {
+      "reasoning": "The response contains no numbered steps whatsoever. It is entirely formatted as a narrative dialogue with prose descriptions, using quotation marks and paragraph breaks rather than any kind of step-by-step structure.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ge4ae39a42300__00159__00": {
+      "reasoning": "The response uses bullet points for narrative dialogue and description, not numbered procedural steps. The structure organizes story beats rather than sequential instructions or steps to follow.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "g4039737e6ecb__00160__00": {
+      "reasoning": "The response is purely a prose narrative scene with no numbered steps or sequential formatting of any kind. It consists entirely of continuous paragraphs describing dialogue and action.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ga6239f4a62a4__00161__00": {
+      "reasoning": "The response is entirely formatted as a narrative dialogue with descriptive prose, containing no numbered steps or any sequential step formatting whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ge60ee4f7846f__00162__00": {
+      "reasoning": "The response contains no numbered steps at all. It is entirely a narrative dialogue format with continuous prose and character conversations, showing zero trace of a numbered sequence structure.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g741e15f71009__00163__00": {
+      "reasoning": "The response uses bullet points to structure a narrative dialogue scene, not numbered steps. It presents a sequential story but lacks any step-like formatting or numbering system.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g75075434abe1__00164__00": {
+      "reasoning": "The response contains no numbered steps whatsoever. It is formatted as a continuous narrative with standard paragraphs describing dialogue and action between characters. There is no trace of sequential step formatting.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g8f6de0103ad6__00165__00": {
+      "reasoning": "The response uses bullet points with dashes instead of numbered steps. While it presents information in a sequential, logical order, it lacks the explicit numerical formatting that would constitute a numbered step format.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "g5d344659098f__00166__00": {
+      "reasoning": "The response presents sequential steps but uses bullet points (dashes) rather than numbered formatting (1, 2, 3, etc.). The structure is step-by-step in nature but doesn't use actual numbers.",
+      "score": 30,
+      "stop_reason": "end_turn"
+    },
+    "g39eb19ef9419__00167__00": {
+      "reasoning": "The response is completely formatted as a sequential series of steps describing the C compiler creation process, using bullet points to mark each step from beginning to end.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "ge74252e562ac__00168__00": {
+      "reasoning": "The response presents information in a sequential, step-like manner using bullet points with dashes, but does not use numbered steps (1., 2., 3., etc.) as the criterion specifically asks for. It has the structure of steps but wrong formatting.",
+      "score": 40,
+      "stop_reason": "end_turn"
+    },
+    "g5d61b80a207e__00169__00": {
+      "reasoning": "The response uses dashed bullet points rather than numbered steps. While the content flows sequentially through compiler creation stages, it lacks the explicit numerical formatting (1, 2, 3, etc.) that would constitute a properly numbered sequence.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "g14e861690b25__00170__00": {
+      "reasoning": "The response presents sequential advice in a list format using bullet points/dashes rather than numbers. While structurally similar to numbered steps, it does not actually use numerical sequencing.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "gc92bd0fba0ad__00171__00": {
+      "reasoning": "The response contains no numbered steps at all. It is formatted as a single continuous paragraph/bullet point with ideas flowing together in prose form rather than as a sequence of numbered steps.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g0ff617e53ff0__00172__00": {
+      "reasoning": "The response presents sequential steps using bullet points (dashes) rather than numbered formatting. While the content is organized in a step-by-step manner, it fails to use the numbered sequence format that the criterion requires.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "g65f1a3663380__00173__00": {
+      "reasoning": "The response uses bullet points (dashes) rather than numbered steps (1, 2, 3, etc.). While the content is sequential and step-like in nature, it lacks the specific numbered formatting requested.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "gdd1ab85da9fc__00174__00": {
+      "reasoning": "The response presents information in paragraph form without any numbered steps, despite containing multiple actionable items that could have been formatted as steps.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g783d0be322d8__00175__00": {
+      "reasoning": "The response contains no numbered steps whatsoever. It is organized as bullet-pointed character descriptions but lacks any numerical sequencing or step-by-step format.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "gdb0d106706e6__00176__00": {
+      "reasoning": "The response uses bullet points for organization but does not present information as numbered steps. It consists of descriptive character analyses rather than a sequential, step-based format.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "gcfb64e708d5e__00177__00": {
+      "reasoning": "The response uses bullet points with dashes to organize content about different characters, but does not use numbered steps (1., 2., 3., etc.). The content is structured but not in the numbered sequential format being evaluated.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g6bbb428cad9c__00178__00": {
+      "reasoning": "The response uses bullet points to organize content about different characters, but does not employ numbered steps (1., 2., 3., etc.). It presents parallel descriptions rather than a sequential numbered format.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "gcfaf8a078824__00179__00": {
+      "reasoning": "The response uses bullet points to organize content, but presents independent character descriptions rather than sequential steps in a process. There is no procedural flow or step-by-step progression.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "g998730694f05__00180__00": {
+      "reasoning": "The response uses sequential transition words (First, Next, Lastly) to organize steps but does not use explicit numbered formatting (1., 2., 3.). It partially expresses a step-by-step sequence without the numbered format.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "gac0fe177b5c4__00181__00": {
+      "reasoning": "The response has a clear step-by-step structure with transitional words (First, Next, Lastly) but is not formatted as a numbered sequence. The logical progression is present but the formatting requirement is not met.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "g5381a8095f60__00182__00": {
+      "reasoning": "The response is fully formatted as a numbered sequence from 1-10, with each step clearly marked and consistently structured throughout the entire answer.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g139c49bb81ce__00183__00": {
+      "reasoning": "The response is completely structured as a numbered sequence of 10 steps, each clearly labeled and providing distinct organizational advice. The format is consistent throughout the entire response.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g819a26f8c89a__00184__00": {
+      "reasoning": "The response uses sequential transitional words (First, Next, Finally) to indicate steps, but does not format them as a numbered list. The steps are embedded in paragraph form rather than presented as distinct numbered items.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "gb0c1a6e1e210__00185__00": {
+      "reasoning": "The response uses sequential transition words (First, Next, Lastly) to organize information but does not format the content as explicitly numbered steps (1., 2., 3., etc.). It's a paragraph with sequential markers rather than a numbered list format.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "gb881dc1b9604__00186__00": {
+      "reasoning": "The response uses sequential language (First, Second, Third, etc.) but presents content as continuous prose rather than as distinctly numbered, separated steps. It partially expresses step formatting through ordinal markers but lacks the visual structure of a true numbered list.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "ge7364c063f0a__00187__00": {
+      "reasoning": "The response uses clear ordinal markers (First, Second, Third, etc.) to present seven distinct steps in sequence, fully expressing a numbered step format throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gda63d1407ca3__00188__00": {
+      "reasoning": "The response uses transitional words suggesting sequence but presents information in paragraph form rather than as numbered steps. It has sequential structure but lacks the explicit numbered formatting requested.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "g382452125074__00189__00": {
+      "reasoning": "The response contains sequential steps indicated by transition words (First, Next, Additionally, Finally) but is written in paragraph format rather than as an explicitly numbered list with digits and periods.",
+      "score": 40,
+      "stop_reason": "end_turn"
+    },
+    "g257710b61698__00190__00": {
+      "reasoning": "The response fully and consistently expresses its content as a sequence of numbered steps, with all 10 items clearly numbered and formatted as discrete steps in a sequence.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g82cd03d43482__00191__00": {
+      "reasoning": "The response is fully formatted as a numbered sequence of steps (1-10), with all substantive content organized within this structure. Each numbered item provides a distinct step for improving sleep routine.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g9ca20f957389__00192__00": {
+      "reasoning": "The response fully expresses its content as a numbered sequence of steps, with 10 clearly numbered items that each provide distinct advice. The entire substantive answer is formatted in this numbered step format.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g0a391a4773db__00193__00": {
+      "reasoning": "The response is completely structured as a numbered sequence with 9 steps, each clearly numbered and providing distinct guidance. The format is consistent throughout the entire response.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g7b599813c8b2__00194__00": {
+      "reasoning": "The response is completely formatted as a numbered sequence from 1-10, with each item clearly labeled and formatted as a discrete step. There is no content outside of this numbered format.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g1fa252b5f40a__00195__00": {
+      "reasoning": "The response presents exactly five scenarios, each clearly numbered from 1 to 5, with complete descriptions for each step. The formatting consistently uses numbered steps throughout the entire response.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gc185b69fac87__00196__00": {
+      "reasoning": "The response presents exactly five scenarios formatted as numbered steps (1-5), each with a clear heading and detailed explanation. The numbered sequence format is consistent and explicit throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "ga0ae1e6699a6__00197__00": {
+      "reasoning": "The response verbally sequences five scenarios using 'First,' 'Second,' 'Third,' 'Fourth,' and 'Finally,' but presents them in paragraph form rather than as a visually numbered list. This is a partial expression of numbered steps.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "gfa58c2fbcf5d__00198__00": {
+      "reasoning": "The response fully expresses the property of being formatted as numbered steps, with 5 clearly delineated items (1-5), each with a title and detailed description following a consistent structure.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gea47c8e63e85__00199__00": {
+      "reasoning": "The response explicitly uses ordinal sequencing words (First, Secondly, Thirdly, Fourthly, Lastly) to structure the content as five distinct numbered steps, maintaining this format consistently throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g8b3eac92fd51__00200__00": {
+      "reasoning": "The response uses sequential transition words but lacks explicit numbering. It has a step-like structure embedded in prose form rather than formatted as distinct numbered steps.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "g3386295bafc2__00201__00": {
+      "reasoning": "The response is entirely formatted as a sequence of numbered steps (Step 1 through Step 7), with each segment clearly labeled and organized sequentially throughout the entire answer.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g6c114bcbf452__00202__00": {
+      "reasoning": "The response uses sequential markers (First, Next, Then, Finally) in paragraph form rather than explicit numbered steps, representing a partial implementation of step formatting.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "gce4354311a53__00203__00": {
+      "reasoning": "The response is entirely structured as a sequence of 6 numbered steps, each beginning with an action verb and presenting distinct information about defining economic activity. Every sentence in the response is part of this numbered format with no content appearing outside of it.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g53afdd312657__00204__00": {
+      "reasoning": "The response is written as continuous paragraphs with no numbered steps or sequential formatting. While it uses some transitional words, it does not present information as a numbered sequence.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g22340c6366f2__00205__00": {
+      "reasoning": "The response presents a complete narrative structured as 11 consecutively numbered steps, maintaining this format consistently from start to finish without any breaks or deviations.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g2b0f5b94ada8__00206__00": {
+      "reasoning": "The response is fully structured as a numbered sequence with 10 distinct steps, each presenting a clear action or event. The formatting is consistent throughout with no breaks in the numbered structure.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g489544d337d7__00207__00": {
+      "reasoning": "The response consists entirely of 11 consecutively numbered steps (1-11) that form a coherent narrative sequence. Each numbered item represents a distinct part of the story progression, demonstrating full and consistent use of the numbered step format.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gbd7d139a9289__00208__00": {
+      "reasoning": "The response consists entirely of 10 numbered steps that form a complete narrative, with each step presenting a sequential part of the story. The formatting is consistent throughout with no breaks in the numbered sequence.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "ga33cd7e48241__00209__00": {
+      "reasoning": "The response consists of 8 clearly numbered steps that sequentially describe a story about Spider-Man, with each step representing a distinct narrative phase. The format consistently follows a numbered step structure throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gc72bad5e5517__00210__00": {
+      "reasoning": "The response presents a clear, complete sequence of 9 numbered steps that walk through the process of using TFMA. The formatting is consistent throughout and the entire substantive content is organized in this step-by-step format.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g2d7a389472f7__00211__00": {
+      "reasoning": "The response consists entirely of a numbered sequence with 9 distinct steps, each clearly marked and following a logical order for implementing TFMA. This is a complete and consistent expression of the numbered steps format.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gd9a444634960__00212__00": {
+      "reasoning": "The response presents steps in sequence using transition words (First, Next, Then, After, Finally) but does not use explicit numerical formatting (1., 2., 3., etc.) as would be expected for 'numbered steps.'",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "g70adb6ec7072__00213__00": {
+      "reasoning": "The response is entirely structured as a numbered sequence of 7 steps, each with clear numbering, titles, and content. This represents full and consistent expression of the numbered step format.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g62d37b64ee7c__00214__00": {
+      "reasoning": "The response presents a clear sequence of steps using transitional markers (First, Next, Then, Finally) rather than explicit numerical labels. The procedural structure is fully present and consistently expressed, though formatted with words rather than numbers.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "g37c9094a4452__00215__00": {
+      "reasoning": "The response is entirely a narrative dialogue in paragraph form with no numbered steps, sequential formatting, or any trace of step-by-step structure.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ge0b38114d52e__00216__00": {
+      "reasoning": "The response contains no numbered steps whatsoever. It is purely a narrative dialogue with descriptive prose, showing no trace of a step-by-step sequence format.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g07d14b5c63c4__00217__00": {
+      "reasoning": "The response contains no numbered steps at all. It is entirely a narrative prose passage with no sequential formatting, numbering, or step-by-step structure of any kind.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g38cd93227ecd__00218__00": {
+      "reasoning": "The response fully expresses a numbered step format with 15 labeled steps that structure the entire narrative, despite minor numbering inconsistencies.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "gb04a71e55ba3__00219__00": {
+      "reasoning": "The response contains only narrative prose with no numbered steps, sequential formatting, or step-by-step structure whatsoever. It is purely a story dialogue written in paragraph form.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "gf4b37f00076e__00220__00": {
+      "reasoning": "The response predominantly uses numbered steps (23 numbered dialogue exchanges) to present the scene, with only brief non-numbered introductory and closing sections. The numbered format is clear, consistent, and represents the main substance of the response.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "geeea98f5df08__00221__00": {
+      "reasoning": "The response is entirely formatted as numbered steps, with an initial 6-step structural approach followed by a 9-step dialogue sequence. Every major element is presented in numbered format.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g60227f43f267__00222__00": {
+      "reasoning": "The response is entirely formatted as a numbered sequence from 1 to 39, with each number preceding a line of dialogue. This represents full and consistent expression of a numbered step format, even though the content is dialogue rather than instructions.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g3e383827943a__00223__00": {
+      "reasoning": "The response consists entirely of 11 consecutively numbered steps (1-11), with each step containing dialogue and scene description. The numbered format is consistently maintained throughout the entire response without deviation.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g6b2eae685be6__00224__00": {
+      "reasoning": "The response is completely structured as a numbered sequence from 1-15, with each number introducing a distinct step in the dialogue scene. This formatting is applied uniformly throughout the entire response.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gb0dddcc2655c__00225__00": {
+      "reasoning": "The response is fully formatted as a numbered sequence of 12 steps, each clearly labeled and consistently structured with bolded titles and explanatory content. The entire response maintains this step-by-step format from beginning to end.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g0683564467dd__00226__00": {
+      "reasoning": "The response presents a complete numbered list from 1-10, with each step clearly formatted and labeled. The entire substantive content is organized as a sequential series of numbered steps with no deviation from this format.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g92aad1070748__00227__00": {
+      "reasoning": "The response is fully formatted as a numbered sequence of 8 steps, with each step clearly labeled and providing distinct guidance on the compiler-building process.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g9cd35a39051f__00228__00": {
+      "reasoning": "The response fully expresses a numbered step format, presenting 12 clearly numbered sequential steps that guide the reader through the process of building a C compiler from scratch.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gcbc03ec11e26__00229__00": {
+      "reasoning": "The response consistently uses sequential transition words (Firstly, Secondly, Thirdly, Fourthly, Lastly) to present information in a clear step-by-step format, which functions as an ordered sequence equivalent to numbered steps.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g1bee0b05577e__00230__00": {
+      "reasoning": "The response is fully formatted as a numbered sequence of steps (Step 1 through Step 5), with each step clearly identified and consistently maintained throughout the entire response.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g609107ddb414__00231__00": {
+      "reasoning": "The response is entirely formatted as a sequence of seven numbered steps, using clear ordinal markers (First, Second, Third, etc.) throughout, with each step presenting a distinct action in a systematic progression.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g8f973add8049__00232__00": {
+      "reasoning": "The response contains a clear sequence of steps indicated by transition words (First, Next, Similarly, Additionally, Finally), but these are embedded in paragraph form rather than formatted as an explicitly numbered list. The sequential structure exists but lacks numerical formatting.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "g5c256c4466de__00233__00": {
+      "reasoning": "The response uses sequential transition words to present steps in order, but does not use explicit numerical formatting (1., 2., 3., etc.) that would constitute a 'numbered steps' format.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "g104ac119cdb1__00234__00": {
+      "reasoning": "The response describes a sequential process using transition words but does not use explicit numbered formatting (1., 2., 3., etc.) to present the steps, which is what 'formatted as a sequence of numbered steps' typically requires.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "g36174ddf2ec4__00235__00": {
+      "reasoning": "The response contains no numbered steps whatsoever. It is written entirely as continuous prose without any sequential numbering or step-by-step formatting.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g54d72d006d73__00236__00": {
+      "reasoning": "The response consistently presents information as a numbered sequence (1-8), with each step clearly labeled and formatted with character names followed by descriptive content. The numbered format is maintained throughout the entire response.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g3b01834ee2e3__00237__00": {
+      "reasoning": "The response organizes content sequentially using transitional phrases but does not use numbered steps. It presents information in narrative paragraph form rather than as a formatted numbered list.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "g95debdb68cae__00238__00": {
+      "reasoning": "The response is structured as descriptive paragraphs about different characters, with no numbered steps or sequential formatting whatsoever. It reads as a continuous narrative rather than a step-by-step guide or numbered list.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g6f66ae53f740__00239__00": {
+      "reasoning": "The response contains 10 clearly numbered items (1-10), each describing a different character's potential future state. The formatting is consistent and explicit throughout the entire response.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "ge7377e1e2b3e__00240__00": {
+      "reasoning": "The response is fully formatted as a numbered sequence from 1 to 9, with each number introducing a distinct step or recommendation. There is no content outside this numbered structure.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gc399145e6b7b__00241__00": {
+      "reasoning": "The response perfectly expresses a numbered step format, containing 10 clearly numbered points from 1-10, each presenting a distinct piece of advice in a structured, sequential manner with no breaks in the format.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g1fbd69194e20__00242__00": {
+      "reasoning": "The response is completely and consistently formatted as numbered steps, with 8 clearly delineated points that cover various organizational strategies. There is no content outside of this numbered format.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g62c395e15756__00243__00": {
+      "reasoning": "The response is completely structured as a numbered sequence of 10 steps, with each step clearly marked and presenting discrete information. This format is maintained consistently throughout the entire response.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g44071db3114f__00244__00": {
+      "reasoning": "The response is completely formatted as a numbered sequence of steps (1-10), with each item presenting a distinct piece of advice in a consistent step-by-step format.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "ge34ea6cddf89__00245__00": {
+      "reasoning": "The response is completely structured as numbered steps (1-10), with each step clearly labeled and containing detailed information. There is no content outside this numbered format, representing full and consistent expression of this property.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g768cee700e7c__00246__00": {
+      "reasoning": "The response is entirely structured as a numbered sequence with 7 clearly labeled steps (1-7), each presenting distinct information about adopting a rescue dog. The format is consistent and complete throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gc839adda7484__00247__00": {
+      "reasoning": "The response perfectly exemplifies a numbered step format, with 7 clearly delineated steps (1-7), each with a descriptive heading and supporting details. The format is consistent and complete throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gc5f97dbda8fa__00248__00": {
+      "reasoning": "The response is completely organized as a numbered sequence from 1 to 8, with each point clearly labeled and distinct. The entire response adheres to this numbered step format without any breaks or alternative formatting.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gb6ce5b3be6a3__00249__00": {
+      "reasoning": "The response contains five clearly numbered steps (1-5) that present information in a sequential, organized format. Each step addresses a distinct aspect of the topic with clear numbering throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g71c21a7f1ca7__00250__00": {
+      "reasoning": "The response is completely and consistently formatted as numbered steps (1-8), with each point clearly enumerated and distinct. There is no content outside of this numbered sequence format.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g00bdda4e4ab0__00251__00": {
+      "reasoning": "The response is completely and consistently formatted as numbered steps from 1-10, with each step providing distinct information in a sequential format. There is no content that deviates from this numbered step structure.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g68bafa96d3a8__00252__00": {
+      "reasoning": "The response is completely and consistently formatted as a numbered sequence of steps, with clear numbering from 1-9 and detailed content for each step.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gecfd6313e55e__00253__00": {
+      "reasoning": "The response consists entirely of 8 clearly numbered steps (1-8), each with a bolded heading and supporting details, maintaining consistent formatting throughout without any deviation from the numbered step structure.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gc3bdcbb5fa5b__00254__00": {
+      "reasoning": "The response is entirely formatted as a numbered sequence of 6 steps, each clearly labeled and structured consistently with a number, heading, and explanation.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "ge8e947b1fb27__00255__00": {
+      "reasoning": "The response is fully and consistently formatted as a numbered sequence of 5 steps, with each step clearly labeled and containing detailed content. There is no deviation from this format throughout the entire response.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g68c4111fa1c3__00256__00": {
+      "reasoning": "The response is completely structured as numbered steps from 1 to 5, with each step presenting a distinct scenario. The formatting is consistent and clear throughout, fully expressing the numbered step format.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gce7d5db55446__00257__00": {
+      "reasoning": "The response is entirely formatted as a numbered sequence with 5 distinct steps, each clearly labeled from 1 to 5. The format is consistent throughout with no deviations from the numbered step structure.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g61669fd670cd__00258__00": {
+      "reasoning": "The response fully expresses a numbered step format with 5 clearly delineated steps, each numbered sequentially from 1-5, and each containing a complete scenario description.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g939ce9febfd9__00259__00": {
+      "reasoning": "The response is completely formatted as a numbered sequence with five distinct steps, each clearly labeled and separated. The entire content follows this numbered step structure without deviation.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g48ee78a189a6__00260__00": {
+      "reasoning": "The response begins with '1.' but contains no subsequent numbered steps. It presents a single continuous paragraph rather than a sequence of steps, so it only barely touches on the format without truly implementing it.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "gedf483712ee2__00261__00": {
+      "reasoning": "The response contains only '1.' at the start with no subsequent numbered steps, presenting content as a single paragraph rather than a true sequence of steps.",
+      "score": 10,
+      "stop_reason": "end_turn"
+    },
+    "g0cbc9e493226__00262__00": {
+      "reasoning": "The response begins with '1.' but contains no subsequent numbered steps (2., 3., etc.). It presents information as a single paragraph rather than as a sequence of distinct steps.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "g843444227cf8__00263__00": {
+      "reasoning": "The response starts with '1.' but contains only one numbered item with no following steps, making it a single paragraph rather than a true numbered sequence.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "g1242b394fdb5__00264__00": {
+      "reasoning": "The response contains only one numbered item ('1.') followed by a paragraph, but lacks any subsequent numbered steps that would constitute a sequence. This is a minimal or token use of numbering rather than a true step-by-step format.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "g6900ec7bd0d8__00265__00": {
+      "reasoning": "The response contains 7 clearly numbered paragraphs (1-7) that form a sequential narrative structure. Each step is explicitly numbered and presents a distinct phase of the story, fully meeting the formatting requirement.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gb51a059efd0d__00266__00": {
+      "reasoning": "The response contains 7 clearly numbered paragraphs (1-7), each beginning with a number followed by a period, forming a complete sequential narrative structure.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gc972d3528cae__00267__00": {
+      "reasoning": "The response is fully formatted as a sequence of numbered steps (1-8), with each paragraph consistently beginning with a number and presenting sequential narrative content.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g19a7b8e9f477__00268__00": {
+      "reasoning": "The response consists entirely of 8 clearly numbered steps (1-8), with each step presenting a sequential part of the narrative. The formatting is consistent and complete throughout the entire response.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "ge824e1634a8e__00269__00": {
+      "reasoning": "The response starts with a numbered step format (steps 1-2) but abandons this structure partway through, transitioning to unnumbered Chinese text. Only the beginning portion maintains the numbered sequence format.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "gc4883069d92a__00270__00": {
+      "reasoning": "The response presents sequential steps using transitional words (Firstly, Next, Then) but lacks explicit numbered formatting (1., 2., 3.). It has a clear step-by-step structure but is written as prose rather than as a numbered list.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "g2e4cdaf7ef6d__00271__00": {
+      "reasoning": "The response discusses steps conceptually but does not format them as a numbered sequence. The information flows in paragraphs without explicit numerical step markers.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "g61c70c71beb1__00272__00": {
+      "reasoning": "The response begins with '1.' but presents subsequent steps as prose connected by transitions rather than as separately numbered items. It has sequential structure but lacks the multi-item numbered format.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "g4d9fed00181a__00273__00": {
+      "reasoning": "The response consists entirely of 10 clearly numbered steps presented in sequential order, with consistent formatting throughout and no deviation from the numbered step format.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g2cbaf011db65__00274__00": {
+      "reasoning": "The response is completely formatted as a numbered sequence of 8 steps, with each step clearly numbered and describing a distinct action or concept. There is no content outside this numbered step structure.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gd9eda913b4be__00275__00": {
+      "reasoning": "The response consists entirely of 21 numbered steps presented in sequential order, with each step describing a distinct moment in the narrative. The formatting is consistent and comprehensive throughout the entire response.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g28a438295050__00276__00": {
+      "reasoning": "The response contains no numbered steps whatsoever. It is entirely formatted as a narrative scene with paragraphs and dialogue, containing no sequential numbering or step-by-step structure.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "gc99e5ea2a674__00277__00": {
+      "reasoning": "The response is fully formatted as a numbered sequence from 1-15, with all content organized within these numbered steps and no text appearing outside this structure.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gaa93b6160528__00278__00": {
+      "reasoning": "The response starts with '1.' but contains no further numbered steps. The entire content is a continuous narrative dialogue without any sequential step structure.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "g3b28d5ef10a9__00279__00": {
+      "reasoning": "The response is completely and consistently formatted as numbered steps (1-8), with each number introducing a new segment of dialogue or narrative action. There is no content outside this numbered structure.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g93e40dd3dfa6__00280__00": {
+      "reasoning": "The response consists entirely of 15 consecutively numbered steps, with each step containing dialogue or narrative. The formatting is fully consistent throughout with no interruption to the numbered sequence structure.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g0a45eaef4e46__00281__00": {
+      "reasoning": "The response starts with '1.' but this only introduces the dialogue content, not a sequence of steps. The main body is an unstructured narrative conversation with no numbered steps or sequential organization.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "g7705bdc15852__00282__00": {
+      "reasoning": "The response is completely formatted as a numbered sequence from 1 to 12, with each step clearly marked and presenting a distinct part of the dialogue scene. Every element follows this numbered structure consistently.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "ge842d574eef7__00283__00": {
+      "reasoning": "The response contains only one numbered item at the beginning, followed by an unnumbered narrative scene that comprises over 95% of the content. This is barely a trace of step-formatted structure.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "g7e774dc4a684__00284__00": {
+      "reasoning": "The response is entirely structured as a numbered sequence of 13 steps, with each step containing dialogue or narrative elements. Despite the minor numbering error at the start (two items labeled '1'), the format is consistently maintained throughout.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g307d22014ef2__00285__00": {
+      "reasoning": "The response clearly presents a sequence of compilation steps in logical order, but uses prose paragraphs with transition words like 'Firstly', 'Next', 'After', 'Following', and 'Finally' rather than explicit numbered formatting.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "gdb1ccdf052ad__00286__00": {
+      "reasoning": "The response describes a process in sequential order with some transitional markers but lacks explicit numerical step formatting (e.g., 1., 2., 3.). It's organized sequentially but not as numbered steps.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "ga3af9aa224db__00287__00": {
+      "reasoning": "The response presents a sequential process with clear stages but uses paragraph format with transitional words like 'Firstly,' 'Next,' 'After,' rather than explicit numbered steps (1., 2., 3., etc.).",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "gd80b1af72c3c__00288__00": {
+      "reasoning": "The response presents compiler-building information in sequential order using transitional words but does not use numbered steps formatting. The structure is narrative prose rather than an enumerated list.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "g3b4fa522c8c9__00289__00": {
+      "reasoning": "The response presents information in a sequential manner using transitional words rather than numbered steps. Although the content follows a logical progression, it does not employ the numbered step format being evaluated.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "g0486c5627a85__00290__00": {
+      "reasoning": "The response is fully and consistently formatted as a sequence of numbered steps (1-10), with each point clearly delineated and following the numbered format throughout the entire response without deviation.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gd7e3ff847bfb__00291__00": {
+      "reasoning": "The response is fully formatted as a numbered sequence of 8 steps, with each step clearly labeled and presenting distinct guidance. The entire structure consistently maintains this numbered step format from beginning to end.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gf0adeacc549e__00292__00": {
+      "reasoning": "The response contains 8 clearly numbered steps (1-8) presented in a consistent sequential format, with each step providing structured guidance. The entire response adheres to this numbered step format without deviation.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g1d2466bf6a0c__00293__00": {
+      "reasoning": "The response is entirely formatted as a sequence of 10 numbered steps, each presenting a distinct action or recommendation. Every point follows the consistent structure of a numbered list with clear step descriptions, making it a complete expression of this formatting property.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g92da4d08cd45__00294__00": {
+      "reasoning": "The response is entirely structured as a numbered sequence from 1 to 6, with each number introducing a distinct step or recommendation. This format is applied consistently throughout the entire response without deviation.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gb5d56e819c48__00295__00": {
+      "reasoning": "The response contains structured character descriptions but lacks any numbered step formatting (1., 2., 3., etc.). It uses character names as section headers rather than sequential numbering.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g7d70bf7f8d28__00296__00": {
+      "reasoning": "The response is entirely written in continuous prose format without any numbered steps, sequential formatting, or step-by-step structure. It describes character designs and abilities in flowing paragraphs rather than as a numbered sequence.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "geb96bc24a9c0__00297__00": {
+      "reasoning": "The response is entirely in paragraph form with no numbered steps, lists, or sequential formatting of any kind. It simply describes different characters' potential future appearances in continuous prose.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g35fd6d2f5078__00298__00": {
+      "reasoning": "The response is organized into character-by-character descriptions using flowing paragraphs, but contains no numbered steps, bullet points, or sequential formatting whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "gb3bdbffded92__00299__00": {
+      "reasoning": "The response is written entirely in paragraph format without any numbered steps, sequences, or enumerated points. It simply describes characters one after another in continuous prose.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g5bc49cec5dca__00300__00": {
+      "reasoning": "The response uses bullet points with dashes rather than numbered steps (1., 2., 3., etc.). Although the content is organized sequentially, it does not meet the formatting requirement of numbered steps.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g2648cc5083c9__00301__00": {
+      "reasoning": "The response contains a clear sequence of steps but uses bullet points (dashes) instead of numbered formatting. The content is sequential and step-like, but lacks the explicit numbering requested.",
+      "score": 40,
+      "stop_reason": "end_turn"
+    },
+    "g7e82701db69c__00302__00": {
+      "reasoning": "The response uses bullet points (dashes) throughout rather than numbered steps. There is no numerical sequencing present at all.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "gb7309102380d__00303__00": {
+      "reasoning": "The response uses bullet points (dashes) to present a sequential list rather than numbered steps (1., 2., 3., etc.). While it has a step-by-step structure, it lacks the numerical formatting that defines numbered steps.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "g885b0e811924__00304__00": {
+      "reasoning": "The response uses bullet points (dashes) instead of numbered steps. While it presents sequential information in a list format, it lacks the numerical ordering that defines 'numbered steps.'",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g5869ecbf02b3__00305__00": {
+      "reasoning": "The response presents information in a clear sequential format with distinct steps, but uses bullet points (dashes) instead of numbers. It partially expresses the numbered step format through its structure but fails to use actual numerical labels.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "g08d6322cc1ee__00306__00": {
+      "reasoning": "The response is split between bullet-point format (dashes) and numbered format. The numbered section (1-5 in Chinese) represents about half the content, showing partial but not full use of numbered steps.",
+      "score": 50,
+      "stop_reason": "end_turn"
+    },
+    "g1c9017d90886__00307__00": {
+      "reasoning": "The response uses bullet points with dashes rather than numbered steps (1., 2., 3., etc.). While it presents information in a sequential, step-like structure, it does not use the numbered format being evaluated.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g83d782a21a7b__00308__00": {
+      "reasoning": "The response uses bullet points (dashes) rather than numbers to format its sequential information. While the content is organized in a logical step-by-step manner, it does not use numerical numbering at all.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g91fc72deb0a9__00309__00": {
+      "reasoning": "The response uses bullet points with dashes instead of numbered steps (1, 2, 3, etc.). While the content is sequential and step-like, it lacks the numbered formatting that the criterion specifically evaluates.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g2c8c69628080__00310__00": {
+      "reasoning": "The response uses bullet points (dashes) rather than numbered steps. While the content is sequential and step-like in nature, it lacks the numerical formatting (1, 2, 3, etc.) that would constitute a numbered sequence.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "gec453f10a3f6__00311__00": {
+      "reasoning": "The response is formatted as a bulleted list with dashes, not as numbered steps. Though the content is organized sequentially, it lacks the numerical ordering that defines a numbered step format.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g6561dd07638f__00312__00": {
+      "reasoning": "The response uses bullet points (dashes) throughout rather than numbered steps. There is no numerical sequencing present at all, despite the content being structured in a step-like manner.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g6870f9dc1aa1__00313__00": {
+      "reasoning": "The response uses bullet points (dashes) rather than numbers to organize the information. Although the content is presented in a sequential, step-like structure, it does not meet the criteria of being formatted as numbered steps.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ga5c9aef3939d__00314__00": {
+      "reasoning": "The response uses bullet points (dashes) rather than numbered steps. While the content is sequential and step-like in nature, it does not use numerical formatting (1., 2., 3., etc.).",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g03111322f7f6__00315__00": {
+      "reasoning": "The response is completely formatted as a numbered sequence of steps (Step 1-5), with each step clearly labeled and containing a distinct element. The format is used consistently throughout without any breaks or alternative formatting.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gbe637494654e__00316__00": {
+      "reasoning": "The response is completely structured as a numbered sequence with five distinct steps, each clearly labeled and formatted consistently throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g56ce03c1a2b1__00317__00": {
+      "reasoning": "The response consistently presents its content as five explicitly numbered steps (Step 1 through Step 5), with each step describing a complete scenario. The formatting is clear, structured, and maintains the numbered step format throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g4f9df6ed5886__00318__00": {
+      "reasoning": "The response consistently presents its content as a numbered sequence from Step 1 to Step 5, with each step clearly labeled and formatted. This fully expresses the property of being formatted as numbered steps.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g3a6c6eee48b4__00319__00": {
+      "reasoning": "The response presents exactly 5 items, each clearly labeled as 'Step 1' through 'Step 5' in a sequential numbered format. The structure fully and consistently expresses a numbered step sequence.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g8cf6df0b92c5__00320__00": {
+      "reasoning": "The response uses bullet points rather than numbered steps. Although the content is organized sequentially, it does not meet the criterion of being formatted as numbered steps.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g1b8338ade412__00321__00": {
+      "reasoning": "The response is formatted as a bulleted list with dashes, not as numbered steps. While it presents information sequentially, it lacks the numerical labeling that defines numbered steps.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "ge847fe92466b__00322__00": {
+      "reasoning": "The response is formatted with bullet points (dashes) rather than numbered steps. While sequential and organized, it lacks the numerical ordering that defines a numbered step format.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g318a95235763__00323__00": {
+      "reasoning": "The response is formatted as a bulleted list with dashes, not as numbered steps. While it has a sequential structure, it lacks any numeric labeling (1, 2, 3, etc.).",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ga0cca2f4479d__00324__00": {
+      "reasoning": "The response is formatted with bullet points/dashes rather than numbered steps. While structured sequentially, it does not use numerical ordering (1, 2, 3, etc.).",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g4bff7fbd2d42__00325__00": {
+      "reasoning": "The response presents a clear sequence of steps in chronological order using bullet points rather than explicit numbers. This is essentially equivalent to numbered steps in structure and function, representing a sequential format.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "g1d2321a6de68__00326__00": {
+      "reasoning": "The response uses bullet points (dashes) rather than numbered steps. While the content is sequential and step-like in nature, it does not meet the specific formatting criterion of being numbered.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "g0696f13149e0__00327__00": {
+      "reasoning": "The response presents sequential steps in a narrative using bullet points/dashes rather than explicit numbering (1., 2., 3., etc.). While the content follows a step-by-step structure, it lacks the numbered formatting that defines 'numbered steps.'",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "gd3540e5df0d8__00328__00": {
+      "reasoning": "The response is entirely formatted as a sequence of numbered steps, with clear 'Step 1' through 'Step 10' labels preceding each item. The format is consistent and unambiguous throughout the entire response.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g98450ecd5f4e__00329__00": {
+      "reasoning": "The response presents a sequential narrative in bullet point format rather than numbered steps. While the content flows chronologically like steps, the formatting uses dashes instead of numbers, and the content is a story rather than a step-by-step guide or procedure.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "g77fd50f6e4e7__00330__00": {
+      "reasoning": "The response is completely formatted as a numbered sequence of steps (Step 1 through Step 10), with each step clearly labeled and following a consistent format throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g84fd179220e1__00331__00": {
+      "reasoning": "The response consists entirely of numbered steps (Step 1 through Step 9) with no other formatting style present. Each line follows the exact same numbered step format consistently throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g3afdd09b221b__00332__00": {
+      "reasoning": "The response presents sequential steps but uses bullet points (-) instead of numbered formatting (1., 2., 3.). While the content is step-based and procedural, it does not use numbered steps as specified.",
+      "score": 30,
+      "stop_reason": "end_turn"
+    },
+    "g27f04d04d98c__00333__00": {
+      "reasoning": "The response fully adheres to a numbered step format, presenting 8 consecutive steps (Step 1 through Step 8) with consistent formatting and clear sequential organization throughout.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g05eb5da75137__00334__00": {
+      "reasoning": "The response is fully and consistently formatted as a numbered sequence of steps, with every line explicitly labeled 'Step 1' through 'Step 10' in sequential order.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gf545953a6a30__00335__00": {
+      "reasoning": "The response is completely structured as a numbered sequence with 24 consecutive steps that describe the entire scene. There is no content outside of this numbered format.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gfc75c39027e3__00336__00": {
+      "reasoning": "The response uses bullet points to structure a narrative scene but does not use numbered steps. While there is sequential ordering through bullets, the absence of numbers means it does not express the specific format of 'numbered steps.'",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "gc7c4da823d34__00337__00": {
+      "reasoning": "The response is fully and consistently formatted as a numbered sequence from 1 to 31, with each step describing an action or dialogue in the conversation. There are no unnumbered elements or breaks in the sequential format.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gd5978ccaeebc__00338__00": {
+      "reasoning": "The response uses bullet points initially but does not format the answer as numbered steps. The main content is a prose dialogue scene without any numbered sequence structure.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    },
+    "gaf15c8289ea7__00339__00": {
+      "reasoning": "The response uses bullet points to present a dialogue sequence but does not number them as steps. While there is a sequential structure, it completely lacks the numbered formatting specified in the evaluation criteria.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ge9321f1e0d13__00340__00": {
+      "reasoning": "The response presents content in sequential bullet points describing a scene, but these are not numbered steps\u2014they use dashes/bullets instead of numbers. This represents a partial expression of the requested format since it has sequential structure but lacks the specific numbered formatting.",
+      "score": 35,
+      "stop_reason": "end_turn"
+    },
+    "ge3d95664423a__00341__00": {
+      "reasoning": "The response consists exclusively of 12 numbered steps that sequentially present a dialogue/scene between two characters. The entire answer is formatted this way with no exceptions.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gde466cc4aaab__00342__00": {
+      "reasoning": "The response uses bullet points to structure a narrative scene rather than numbered steps. It presents sequential dialogue and stage directions, not procedural instructions.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "g51805b7d6fe5__00343__00": {
+      "reasoning": "The response uses bullet points to format dialogue exchanges in a narrative scene, not numbered sequential steps. It lacks both numbering and a procedural step-by-step structure.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "gf97a4ca6aee0__00344__00": {
+      "reasoning": "The response uses bullet points (hyphens) instead of numbers, but functions as a clear step-by-step sequence. This is effectively equivalent to numbered steps in providing sequential formatting.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "g0cfbaf8c65ba__00345__00": {
+      "reasoning": "The response consists entirely of 12 clearly numbered steps, with each step explicitly labeled and formatted in a sequential manner. The numbered format is maintained consistently from beginning to end.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "gfb9a1d8e389a__00346__00": {
+      "reasoning": "The response uses bullet points (dashes) rather than numbered steps, though the content is presented in a clear sequential order that resembles step-by-step instructions.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "g805202888d86__00347__00": {
+      "reasoning": "The response presents a clear sequence of ordered steps using bullet points and dashes, with hierarchical sub-steps. While not using explicit numbers (1., 2., 3.), it fully expresses a step-by-step sequential format that guides through the process methodically.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "g811025ef1a4d__00348__00": {
+      "reasoning": "The response consists of a clear sequence of 9 numbered steps that outline the process of building a C compiler, followed by supporting code examples. The numbered format is explicit, consistent, and forms the primary structure of the answer.",
+      "score": 100,
+      "stop_reason": "end_turn"
+    },
+    "g537e34624366__00349__00": {
+      "reasoning": "The response presents a clear sequential progression of steps for building a C compiler, using bullet points that function as numbered steps with imperative instructions in logical order.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "gf09f2ce895bb__00350__00": {
+      "reasoning": "The response uses bullet points (dashes) rather than numbered steps. Although the content represents sequential advice, it completely lacks numerical formatting.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ged0930bbd957__00351__00": {
+      "reasoning": "The response uses bullet points with dashes throughout, not numbered steps. While sequential in nature, it entirely lacks the numerical formatting (1., 2., 3., etc.) that defines numbered steps.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g10c9b954919e__00352__00": {
+      "reasoning": "The response uses bullet points with descriptive labels rather than numbered steps (1., 2., 3., etc.). While it presents information in a sequential, step-like manner, it lacks the explicit numerical formatting requested.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "g9c34cfeedc1d__00353__00": {
+      "reasoning": "The response uses bullet points (dashes) rather than numbered steps. While the content is sequential and step-like in nature, it does not use any numerical ordering whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g626667ff6f98__00354__00": {
+      "reasoning": "The response presents a sequential list using bullet points/dashes rather than numbers. While the content is organized in a step-by-step format, it lacks the numerical formatting that defines 'numbered steps.'",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "g01d35b827908__00355__00": {
+      "reasoning": "The response uses bullet points with dashes to organize information about different characters, but lacks any numerical sequencing or step-by-step format. The structure is presentational rather than procedural.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ge9eac9efc66f__00356__00": {
+      "reasoning": "The response uses bullet points (dashes) rather than numbered steps. Although the content is organized sequentially by character, it lacks the specific numerical formatting requested in the evaluation criterion.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g8895fd8597a1__00357__00": {
+      "reasoning": "The response is formatted as a sequence of bullet points with dashes, not numbered steps. While structurally organized, it lacks the numerical ordering that defines a numbered sequence.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "ga2002b8b4b2e__00358__00": {
+      "reasoning": "The response uses bullet points with dashes rather than numbered steps (1., 2., 3., etc.). While the content is organized sequentially, it does not employ numerical formatting at all.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "g4f363f07080e__00359__00": {
+      "reasoning": "The response uses bullet points with dashes to organize content about different characters, but contains no numbered steps whatsoever. It's merely a bulleted list of descriptions, not a sequential numbered format.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    }
+  },
+  "cache_stats": {
+    "hits": 0,
+    "misses": 360
+  },
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "n_total": 360,
+  "n_cached": 0,
+  "n_submitted": 360,
+  "routing": {
+    "n_items": 360,
+    "threshold_base": 1000000000,
+    "otpm": 2000000,
+    "otpm_assumed": false,
+    "effective_threshold": 5000000000,
+    "path": "sync",
+    "forced_sync": false,
+    "sub_batch_sizes": []
+  }
+}

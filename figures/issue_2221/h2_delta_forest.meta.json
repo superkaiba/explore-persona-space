@@ -1,0 +1,131 @@
+{
+  "commit": "2b448210+dirty",
+  "render_id": "f5b1552b133b4675",
+  "git_commit": "2b448210",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2221/checkpoint_detection_auc.meta.json",
+    "figures/issue_2221/checkpoint_detection_auc.pdf",
+    "figures/issue_2221/checkpoint_detection_auc.png",
+    "figures/issue_2221/h2_delta_forest.meta.json",
+    "figures/issue_2221/h2_delta_forest.pdf",
+    "figures/issue_2221/h2_delta_forest.png",
+    "figures/issue_2221/monitor_r_by_layer_evil.meta.json",
+    "figures/issue_2221/monitor_r_by_layer_evil.pdf",
+    "figures/issue_2221/monitor_r_by_layer_evil.png",
+    "figures/issue_2221/monitor_r_by_layer_hallucination.meta.json",
+    "figures/issue_2221/monitor_r_by_layer_hallucination.pdf",
+    "figures/issue_2221/monitor_r_by_layer_hallucination.png",
+    "figures/issue_2221/monitor_r_by_layer_sycophancy.meta.json",
+    "figures/issue_2221/monitor_r_by_layer_sycophancy.pdf",
+    "figures/issue_2221/monitor_r_by_layer_sycophancy.png",
+    "figures/issue_2221/monitor_selected_r_by_arm.meta.json",
+    "figures/issue_2221/monitor_selected_r_by_arm.pdf",
+    "figures/issue_2221/monitor_selected_r_by_arm.png",
+    "figures/issue_2221/monitor_vs_score_per_unit.meta.json",
+    "figures/issue_2221/monitor_vs_score_per_unit.pdf",
+    "figures/issue_2221/monitor_vs_score_per_unit.png",
+    "figures/issue_2221/severity_ordering_by_arm.meta.json",
+    "figures/issue_2221/severity_ordering_by_arm.pdf",
+    "figures/issue_2221/severity_ordering_by_arm.png",
+    "figures/issue_2221/trait_mix_size_vs_acquisition.meta.json",
+    "figures/issue_2221/trait_mix_size_vs_acquisition.pdf",
+    "figures/issue_2221/trait_mix_size_vs_acquisition.png",
+    "figures/issue_2221/trait_scores_by_cell.meta.json",
+    "figures/issue_2221/trait_scores_by_cell.pdf",
+    "figures/issue_2221/trait_scores_by_cell.png",
+    "scripts/issue2221_dv_figs.py",
+    "scripts/issue2221_monitors.py"
+  ],
+  "created": "2026-08-13T00:10:13Z",
+  "figsize": [
+    7.2,
+    4.6
+  ],
+  "points": [
+    {
+      "$\\Delta$ Spearman r (mapped arm c $-$ paper arm a); achievable range [-2, +2]": 1.39057725535769,
+      "y": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "$\\Delta$ Spearman r (mapped arm c $-$ paper arm a); achievable range [-2, +2]": 0.039831939205026146,
+      "y": 1.0,
+      "_kind": "scatter"
+    },
+    {
+      "$\\Delta$ Spearman r (mapped arm c $-$ paper arm a); achievable range [-2, +2]": 0.09559665409206275,
+      "y": 2.0,
+      "_kind": "scatter"
+    },
+    {
+      "$\\Delta$ Spearman r (mapped arm c $-$ paper arm a); achievable range [-2, +2]": 1.18671128201415,
+      "y": 3.0,
+      "_kind": "scatter"
+    },
+    {
+      "$\\Delta$ Spearman r (mapped arm c $-$ paper arm a); achievable range [-2, +2]": 0.0784421416102411,
+      "y": 4.0,
+      "_kind": "scatter"
+    },
+    {
+      "$\\Delta$ Spearman r (mapped arm c $-$ paper arm a); achievable range [-2, +2]": 0.29799249326795496,
+      "y": 5.0,
+      "_kind": "scatter"
+    },
+    {
+      "$\\Delta$ Spearman r (mapped arm c $-$ paper arm a); achievable range [-2, +2]": 0.0,
+      "y": 6.0,
+      "_kind": "scatter"
+    },
+    {
+      "$\\Delta$ Spearman r (mapped arm c $-$ paper arm a); achievable range [-2, +2]": -1.8199877758839542,
+      "y": 7.0,
+      "_kind": "scatter"
+    },
+    {
+      "$\\Delta$ Spearman r (mapped arm c $-$ paper arm a); achievable range [-2, +2]": -0.04118412396078275,
+      "y": 8.0,
+      "_kind": "scatter"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 9,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "$\\Delta$ Spearman r (mapped arm c $-$ paper arm a); achievable range [-2, +2]",
+        "xticklabels": [
+          "\u22122.5",
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0",
+          "1.5",
+          "2.0",
+          "2.5"
+        ],
+        "yticklabels": [
+          "evil / paper",
+          "evil / lmsys",
+          "evil / pooled",
+          "sycophancy / paper",
+          "sycophancy / lmsys",
+          "sycophancy / pooled",
+          "hallucination / paper",
+          "hallucination / lmsys",
+          "hallucination / pooled"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

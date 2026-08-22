@@ -139,6 +139,11 @@ RUNAWAY_STREAK_DEFAULT = 3
 HUMAN_ACTIVE_S_DEFAULT = 45 * 60
 # Transcript tail-read bound: watcher parity (the #1104 wedge-probe widening).
 TRANSCRIPT_TAIL_BYTES = 262_144
+# Auto-compaction injects a continuation row whose `message.content` is a
+# plain STRING opening with this text (#2139). Belt-and-braces only — the
+# `isCompactSummary` flag check in `is_human_transcript_row` is the primary
+# discriminator.
+COMPACT_CONTINUATION_PREFIX = "This session is being continued from a previous conversation"
 # /proc ancestry walk bound (measured chain depth to `claude` is 4 hops from a
 # `uv run python` child; 15 covers deeper shell nesting with margin).
 _ANCESTRY_MAX_DEPTH = 15
@@ -271,7 +276,7 @@ def read_snapshot(issue: int) -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -343,7 +348,7 @@ def read_no_progress_state(issue: int) -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -449,7 +454,7 @@ def load_campaign_state(issue: int) -> dict:
         return {}
     try:
         data = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError):
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError):
         return {}
     return data if isinstance(data, dict) else {}
 
@@ -1022,8 +1027,23 @@ def is_human_transcript_row(row: object) -> bool:
     string-row class in autonomous transcripts: 149/149 measured across
     two transcripts, r2 Must-Fix) classify automation via the prefix
     exclusion below.
+    Auto-compaction continuation rows (#2139) classify automation via the
+    row-level ``isCompactSummary`` flag (corpus-measured: 584 of 609 flagged
+    rows read HUMAN pre-fix, each granting a bogus 45-min stall mask per
+    compaction; the flag is top-level on all 609, ``isMeta`` absent from
+    them entirely) plus the belt-and-braces
+    :data:`COMPACT_CONTINUATION_PREFIX` string exclusion. A MANUAL
+    ``/compact`` produces the same flagged row and is excluded
+    DELIBERATELY — the row text is harness-written summary, not the user's
+    words; the user's own ``/compact`` invocation is a slash-command row,
+    already automation by #1629 design.
     """
-    if not isinstance(row, dict) or row.get("type") != "user" or row.get("isMeta"):
+    if (
+        not isinstance(row, dict)
+        or row.get("type") != "user"
+        or row.get("isMeta")
+        or row.get("isCompactSummary")  # #2139
+    ):
         return False
     msg = row.get("message")
     if not isinstance(msg, dict) or msg.get("role") != "user":
@@ -1033,8 +1053,10 @@ def is_human_transcript_row(row: object) -> bool:
         s = content.lstrip()
         if not s:
             return False
-        if "<command-name>" in content or s.startswith(
-            ("<command-message>", "<local-command", "<task-notification")
+        if (
+            "<command-name>" in content
+            or s.startswith(("<command-message>", "<local-command", "<task-notification"))
+            or s.startswith(COMPACT_CONTINUATION_PREFIX)  # #2139 belt-and-braces
         ):
             return False
         return True
@@ -1227,6 +1249,7 @@ def compute_issue_verdict(
     prev_fingerprint: str | None = None,
     no_progress_streak: int = 0,
     no_progress_threshold: int = 3,
+    open_ask: bool = False,
 ) -> tuple[str, str, int]:
     """Pure verdict for /issue-tick. Returns ``(verdict, reason, streak)``.
 
@@ -1235,6 +1258,16 @@ def compute_issue_verdict(
     #2058 no-progress-respawn arm (session alive, chain heartbeating but no
     durable advancement). Legacy callers not wiring them get streak=0 and
     the pre-#2058 verdict behavior preserved by construction.
+
+    ``open_ask`` (mission-control rung 0, T1): True when the newest
+    ``epm:ask`` on the task is OPEN (no answering transition since —
+    ``task_workflow.open_async_ask``). At an ISSUE_PARK status that reads
+    HEALTHY (reason ``async-parked``): the async session posted a durable
+    ask and EXITed by design, so the park is never a dead chain — no
+    STALE-REDRIVE, no runaway/no-progress streak advance. Default False =
+    pre-rung-0 verdict table byte-identical. The ``plan_pending`` over-cap
+    arm (``epm:awaiting-spend-approval``) deliberately checks FIRST and is
+    untouched.
 
     Raises ValueError on a status outside the known enum sets — main()
     converts that to a non-zero exit (fail toward coverage)."""
@@ -1250,6 +1283,14 @@ def compute_issue_verdict(
         return ("TERMINAL", f"status={status} — teardown", 0)
     if status not in ISSUE_PARK and status not in ISSUE_ACTIVE:
         raise ValueError(f"unknown status {status!r}")
+    if open_ask and status in ISSUE_PARK:
+        # T1 (mission-control rung 0): async park-and-EXIT — HEALTHY until
+        # the ask is answered; streaks deliberately not advanced.
+        return (
+            "HEALTHY",
+            f"status={status} — async-parked (open epm:ask awaiting user answer)",
+            0,
+        )
     age_desc = "no markers" if marker_age_s is None else f"marker age {marker_age_s / 60:.0f}m"
     if marker_age_s is not None and marker_age_s <= stale_after_s:
         # #2058 no-progress arm — reachable ONLY when marker age is fresh.
@@ -1438,6 +1479,12 @@ def triage(issue: int, kind: str, now: float | None = None) -> tuple[str, str]:
         else:
             fingerprint = compute_progress_fingerprint(events, head_sha, status)
             freeze_active = False
+        # T1 (mission-control rung 0): an OPEN epm:ask at an ISSUE_PARK
+        # status reads HEALTHY (async park-and-EXIT). Lazy import — the
+        # canonical predicate lives in task_workflow (shared with the
+        # watcher's W1/W3 arms and task.py's parked_asked gate branch).
+        from explore_persona_space.task_workflow import open_async_ask
+
         verdict, reason, no_progress_streak = compute_issue_verdict(
             status,
             prev_status,
@@ -1448,6 +1495,7 @@ def triage(issue: int, kind: str, now: float | None = None) -> tuple[str, str]:
             prev_fingerprint=prev_fingerprint if isinstance(prev_fingerprint, str) else None,
             no_progress_streak=prev_no_progress_streak,
             no_progress_threshold=no_progress_threshold(),
+            open_ask=open_async_ask(events) is not None,
         )
         # Persist the updated streak + fingerprint. On a degraded-key
         # freeze, the streak advance from the equal-fingerprint path is

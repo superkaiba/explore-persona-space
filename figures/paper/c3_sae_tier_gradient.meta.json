@@ -1,0 +1,527 @@
+{
+  "commit": "c6d92499+dirty",
+  "render_id": "43231de6cd4c40c9",
+  "git_commit": "c6d924995aa05785ec5714a73e5dcc1f9cca5f5e",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/paper/c4_reparam_recovery.meta.json",
+    "figures/paper/c4_reparam_recovery.pdf",
+    "figures/paper/c4_reparam_recovery.png",
+    "figures/paper/c4_story_vs_chat.meta.json",
+    "figures/paper/c4_story_vs_chat.pdf",
+    "figures/paper/c4_story_vs_chat.png",
+    "scripts/issue1345_analyzer_figs.py",
+    "scripts/issue1482_matryoshka_tier.py",
+    "scripts/issue1639_tier15_ladder_fig.py",
+    "scripts/issue1739_result2_fourpanel_fig.py",
+    "scripts/issue1774_figures.py",
+    "scripts/issue1895_analysis_figures.py",
+    "scripts/issue1901_body_figures.py",
+    "scripts/issue1902_figures.py",
+    "scripts/issue2094_figures.py",
+    "scripts/issue2202_regen_figs.py",
+    "scripts/issue722_figures.py",
+    "scripts/issue779_identity_baseline.py",
+    "scripts/issue823_figures.py",
+    "tasks/planning/2422/events.jsonl",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tasks/running/2388/events.jsonl",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue1482_matryoshka_tier.py",
+  "created": "2026-08-20T08:17:05Z",
+  "figsize": [
+    5.5,
+    2.1
+  ],
+  "points": [
+    {
+      "matryoshka tier": 0.0,
+      "per-feature held-out $R^2$": 0.4345762931443276,
+      "error": 0.1528585640925253,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "matryoshka tier": 1.0,
+      "per-feature held-out $R^2$": 0.17386872874476017,
+      "error": 0.14251361843343868,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "matryoshka tier": 2.0,
+      "per-feature held-out $R^2$": 0.0429846164108893,
+      "error": 0.126617242688139,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "answer-side activity quintile": 0.0,
+      "y": -0.10504240354672278,
+      "error": 0.1472158690363582,
+      "series": "general tier",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "answer-side activity quintile": 1.0,
+      "y": 0.0017926278971895915,
+      "error": 0.12066683555315308,
+      "series": "general tier",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "answer-side activity quintile": 2.0,
+      "y": 0.25608932544606194,
+      "error": 0.12477334560301456,
+      "series": "general tier",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "answer-side activity quintile": 3.0,
+      "y": 0.5605026066320156,
+      "error": 0.1027139783968285,
+      "series": "general tier",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "answer-side activity quintile": 4.0,
+      "y": 0.43638214862708324,
+      "error": 0.09563366579234651,
+      "series": "general tier",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "answer-side activity quintile": 0.0,
+      "y": -0.05838927606560873,
+      "error": 0.1472158690363582,
+      "series": "mid tier",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "answer-side activity quintile": 1.0,
+      "y": 0.09912575066593854,
+      "error": 0.12066683555315308,
+      "series": "mid tier",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "answer-side activity quintile": 2.0,
+      "y": 0.19096090107679559,
+      "error": 0.12477334560301456,
+      "series": "mid tier",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "answer-side activity quintile": 3.0,
+      "y": 0.20256946473970777,
+      "error": 0.1027139783968285,
+      "series": "mid tier",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "answer-side activity quintile": 4.0,
+      "y": 0.20997730024932015,
+      "error": 0.09563366579234651,
+      "series": "mid tier",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "answer-side activity quintile": 0.0,
+      "y": -0.027140362283572195,
+      "error": 0.1472158690363582,
+      "series": "specific tier",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "answer-side activity quintile": 1.0,
+      "y": 0.020739532663383353,
+      "error": 0.12066683555315308,
+      "series": "specific tier",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "answer-side activity quintile": 2.0,
+      "y": 0.07394297523179605,
+      "error": 0.12477334560301456,
+      "series": "specific tier",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "answer-side activity quintile": 3.0,
+      "y": 0.11084329638098744,
+      "error": 0.1027139783968285,
+      "series": "specific tier",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "answer-side activity quintile": 4.0,
+      "y": 0.12988339954589867,
+      "error": 0.09563366579234651,
+      "series": "specific tier",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "answer-side activity quintile": 0.0,
+      "y": -0.10504240354672278,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "answer-side activity quintile": 1.0,
+      "y": 0.0017926278971895915,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "answer-side activity quintile": 2.0,
+      "y": 0.25608932544606194,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "answer-side activity quintile": 3.0,
+      "y": 0.5605026066320156,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "answer-side activity quintile": 4.0,
+      "y": 0.43638214862708324,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "answer-side activity quintile": 0.0,
+      "y": -0.3034994690170737,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "answer-side activity quintile": 1.0,
+      "y": -0.1846075743083022,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "answer-side activity quintile": 2.0,
+      "y": 0.010222548500464362,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "answer-side activity quintile": 3.0,
+      "y": 0.3595765014218968,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "answer-side activity quintile": 4.0,
+      "y": 0.30026652143987453,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "answer-side activity quintile": 0.0,
+      "y": 0.06260629466845258,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "answer-side activity quintile": 1.0,
+      "y": 0.3228654074074875,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "answer-side activity quintile": 2.0,
+      "y": 0.5258349184077024,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "answer-side activity quintile": 3.0,
+      "y": 0.6831101839705466,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "answer-side activity quintile": 4.0,
+      "y": 0.562314312329476,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "answer-side activity quintile": 0.0,
+      "y": -0.05838927606560873,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "answer-side activity quintile": 1.0,
+      "y": 0.09912575066593854,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "answer-side activity quintile": 2.0,
+      "y": 0.19096090107679559,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "answer-side activity quintile": 3.0,
+      "y": 0.20256946473970777,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "answer-side activity quintile": 4.0,
+      "y": 0.20997730024932015,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "answer-side activity quintile": 0.0,
+      "y": -0.28445976147983837,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "answer-side activity quintile": 1.0,
+      "y": -0.042030264932913286,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "answer-side activity quintile": 2.0,
+      "y": 0.04129955986469977,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "answer-side activity quintile": 3.0,
+      "y": 0.0614015702214816,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "answer-side activity quintile": 4.0,
+      "y": 0.12455098181786467,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "answer-side activity quintile": 0.0,
+      "y": 0.0746319595324263,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "answer-side activity quintile": 1.0,
+      "y": 0.24454729026115224,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "answer-side activity quintile": 2.0,
+      "y": 0.36399722074337965,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "answer-side activity quintile": 3.0,
+      "y": 0.341726232809674,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "answer-side activity quintile": 4.0,
+      "y": 0.31684968365881316,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "answer-side activity quintile": 0.0,
+      "y": -0.027140362283572195,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "answer-side activity quintile": 1.0,
+      "y": 0.020739532663383353,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "answer-side activity quintile": 2.0,
+      "y": 0.07394297523179605,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "answer-side activity quintile": 3.0,
+      "y": 0.11084329638098744,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "answer-side activity quintile": 4.0,
+      "y": 0.12988339954589867,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "answer-side activity quintile": 0.0,
+      "y": -0.18484445578474218,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "answer-side activity quintile": 1.0,
+      "y": -0.08516244457113542,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "answer-side activity quintile": 2.0,
+      "y": -0.03667262527950532,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "answer-side activity quintile": 3.0,
+      "y": 0.019972443078136948,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "answer-side activity quintile": 4.0,
+      "y": 0.04743873061993817,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "answer-side activity quintile": 0.0,
+      "y": 0.10958728228797421,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "answer-side activity quintile": 1.0,
+      "y": 0.15617122653517074,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "answer-side activity quintile": 2.0,
+      "y": 0.2128740659265238,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "answer-side activity quintile": 3.0,
+      "y": 0.22540039987179394,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "answer-side activity quintile": 4.0,
+      "y": 0.2387060622046312,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "answer-side activity quintile": 0.0,
+      "y": -0.05419921875,
+      "series": "label-shuffle null (97.5th pct)",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "answer-side activity quintile": 1.0,
+      "y": -0.05419921875,
+      "series": "label-shuffle null (97.5th pct)",
+      "_kind": "line",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 65,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "matryoshka tier",
+        "ylabel": "per-feature held-out $R^2$",
+        "xticklabels": [
+          "general",
+          "mid",
+          "specific"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      },
+      {
+        "xlabel": "answer-side activity quintile",
+        "legend_labels": [
+          "label-shuffle null (97.5th pct)",
+          "general tier",
+          "mid tier",
+          "specific tier"
+        ],
+        "xticklabels": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8"
+        ]
+      }
+    ],
+    "series": [
+      "label-shuffle null (97.5th pct)",
+      "general tier",
+      "mid tier",
+      "specific tier"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

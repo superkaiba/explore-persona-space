@@ -57,6 +57,14 @@ with a SKIP-on-rollback arm keyed on ``GCP_PROVISIONING_DISABLED`` read from
 Plus (the house bundling pin, the ``test_check_jsonl_splitlines_bundled_in_
 no_flags`` mutation-visible pattern): 16. the no-flags default run actually
 DISPATCHES the check.
+
+Plus (the #2155 /issue steps/ split — round-1 blocker
+``gcp-pin-scan-misses-step-companions``): 17.
+``test_issue_step_companions_scanned`` — an unannotated trigger in a
+``.claude/skills/issue/steps/*.md`` companion WARNs and the companion lands
+in the scanned set; the sanctioned ``#2028``-annotated form is scanned but
+does NOT WARN (pins the ``_issue_step_companions`` extension of
+``_gcp_pin_scan_files``).
 """
 
 from __future__ import annotations
@@ -319,6 +327,39 @@ def test_constant_reader_true_on_real_router() -> None:
     assert wl.read_gcp_disabled_flag("OTHER_FLAG = True\n") is None
     assert wl.read_gcp_disabled_flag("GCP_PROVISIONING_DISABLED = compute()\n") is None
     assert wl.read_gcp_disabled_flag("def broken(:\n") is None
+
+
+# --------------------------------------------------------------------------
+# 17. The #2155 steps/ split: step companions are in the scan set
+# --------------------------------------------------------------------------
+
+
+def test_issue_step_companions_scanned(tmp_path: Path) -> None:
+    """The #2155 split relocated the /issue step bodies to
+    ``.claude/skills/issue/steps/*.md`` — outside the ``**/SKILL.md`` glob —
+    so a future unannotated stale-GCP instruction there must still WARN
+    (round-1 blocker ``gcp-pin-scan-misses-step-companions``). Positive arm:
+    a bare ``--backend gcp`` imperative in one companion → exactly 1 WARN,
+    and the companion is in the scanned set. Negative arm: a sibling
+    companion carrying the sanctioned ``#2028`` annotation is scanned but
+    contributes no WARN."""
+    root = _mk_repo(tmp_path)
+    _plant(
+        root,
+        ".claude/skills/issue/steps/10-step-6.md",
+        "when the SLURM lane is busy, rerun with --backend gcp\n",
+    )
+    _plant(
+        root,
+        ".claude/skills/issue/steps/11-step-7.md",
+        "rerun with --backend gcp — REFUSED since #2028 (GcpDisabledError)\n",
+    )
+    report, sink = _run(root)
+    assert len(sink) == 1, sink
+    assert "steps/10-step-6.md:1" in sink[0] and "[cli-pin]" in sink[0], sink[0]
+    scanned = report["scanned_files"]
+    assert ".claude/skills/issue/steps/10-step-6.md" in scanned, scanned
+    assert ".claude/skills/issue/steps/11-step-7.md" in scanned, scanned
 
 
 # --------------------------------------------------------------------------

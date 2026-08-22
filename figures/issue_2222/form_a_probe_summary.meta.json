@@ -1,0 +1,252 @@
+{
+  "commit": "5435d252",
+  "render_id": "ae892070f4474d68",
+  "git_commit": "5435d252",
+  "git_dirty": false,
+  "created": "2026-08-11T09:19:48Z",
+  "figsize": [
+    10.0,
+    4.0
+  ],
+  "points": [
+    {
+      "x": -0.3333333333333333,
+      "Pearson r (probe difference grid vs trait score)": 0.8669865848123418,
+      "series": "Exact \u0394P (base generation)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.6666666666666667,
+      "Pearson r (probe difference grid vs trait score)": 0.904100768360508,
+      "series": "Exact \u0394P (base generation)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 1.6666666666666667,
+      "Pearson r (probe difference grid vs trait score)": 0.8083663866319383,
+      "series": "Exact \u0394P (base generation)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.2,
+      "Pearson r (probe difference grid vs trait score)": 0.7555194279363144,
+      "series": "Identity + learned bias \u0394P",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8,
+      "Pearson r (probe difference grid vs trait score)": 0.5313465016436874,
+      "series": "Identity + learned bias \u0394P",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.8,
+      "Pearson r (probe difference grid vs trait score)": 0.47784376248472266,
+      "series": "Identity + learned bias \u0394P",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.06666666666666667,
+      "Pearson r (probe difference grid vs trait score)": 0.012274460060007163,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9333333333333333,
+      "Pearson r (probe difference grid vs trait score)": -0.205452901419307,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9333333333333333,
+      "Pearson r (probe difference grid vs trait score)": 0.231346096641941,
+      "series": "Mapped \u0394P (context)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.06666666666666667,
+      "Pearson r (probe difference grid vs trait score)": 0.29472286848032475,
+      "series": "Mapped \u0394P (prefix)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.0666666666666667,
+      "Pearson r (probe difference grid vs trait score)": -0.23983664125174878,
+      "series": "Mapped \u0394P (prefix)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.066666666666667,
+      "Pearson r (probe difference grid vs trait score)": 0.17602273966578708,
+      "series": "Mapped \u0394P (prefix)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.2,
+      "Pearson r (probe difference grid vs trait score)": 0.7868203813641063,
+      "series": "Prompt-token \u0394P",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.2,
+      "Pearson r (probe difference grid vs trait score)": 0.654979059519374,
+      "series": "Prompt-token \u0394P",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.2,
+      "Pearson r (probe difference grid vs trait score)": 0.2429882535390358,
+      "series": "Prompt-token \u0394P",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.3333333333333333,
+      "Pearson r (probe difference grid vs trait score)": 0.8399917855041676,
+      "series": "Raw projection",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.3333333333333333,
+      "Pearson r (probe difference grid vs trait score)": 0.837152170446331,
+      "series": "Raw projection",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.3333333333333335,
+      "Pearson r (probe difference grid vs trait score)": 0.8458675978141763,
+      "series": "Raw projection",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.1,
+      "Spearman \u03c1 (graded score vs rate > 50)": 0.763304567071017,
+      "series": "All items",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9,
+      "Spearman \u03c1 (graded score vs rate > 50)": 0.7931525266949294,
+      "series": "All items",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.9,
+      "Spearman \u03c1 (graded score vs rate > 50)": 0.9172015038799584,
+      "series": "All items",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.1,
+      "Spearman \u03c1 (graded score vs rate > 50)": 0.7742490618767646,
+      "series": "Held-out 20%",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.1,
+      "Spearman \u03c1 (graded score vs rate > 50)": 0.8081860709174209,
+      "series": "Held-out 20%",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.1,
+      "Spearman \u03c1 (graded score vs rate > 50)": 0.9165557043566073,
+      "series": "Held-out 20%",
+      "_kind": "scatter",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 24,
+  "text": {
+    "suptitle": "Form-A probe summary (exploratory)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Form-A probe screening grid at the steering layer",
+        "ylabel": "Pearson r (probe difference grid vs trait score)",
+        "legend_labels": [
+          "Exact \u0394P (base generation)",
+          "Identity + learned bias \u0394P",
+          "Mapped \u0394P (context)",
+          "Mapped \u0394P (prefix)",
+          "Prompt-token \u0394P",
+          "Raw projection"
+        ],
+        "xticklabels": [
+          "Sycophancy",
+          "Evil",
+          "Hallucination"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "Graded-vs-rate validation",
+        "ylabel": "Spearman \u03c1 (graded score vs rate > 50)",
+        "legend_labels": [
+          "All items",
+          "Held-out 20%"
+        ],
+        "xticklabels": [
+          "Sycophancy",
+          "Evil",
+          "Hallucination"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "Exact \u0394P (base generation)",
+      "Identity + learned bias \u0394P",
+      "Mapped \u0394P (context)",
+      "Mapped \u0394P (prefix)",
+      "Prompt-token \u0394P",
+      "Raw projection",
+      "All items",
+      "Held-out 20%"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

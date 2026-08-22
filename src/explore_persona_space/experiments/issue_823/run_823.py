@@ -2497,7 +2497,7 @@ def _phase1_outputs_exist(base_dir: pathlib.Path) -> bool:
             return False
         try:
             data = json.loads(p.read_text())
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             logger.warning("_phase1_outputs_exist: could not parse %s — treating as absent", p)
             return False
         return isinstance(data, list) and len(data) > 0
@@ -2507,7 +2507,7 @@ def _phase1_outputs_exist(base_dir: pathlib.Path) -> bool:
             return False
         try:
             data = json.loads(p.read_text())
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             logger.warning("_phase1_outputs_exist: could not parse %s — treating as absent", p)
             return False
         return (

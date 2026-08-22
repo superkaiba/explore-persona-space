@@ -95,6 +95,13 @@ MODEL_ID = "Qwen/Qwen2.5-7B-Instruct"
 HIDDEN_FULL = 3584
 N_MODEL_LAYERS_FULL = 28
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
+# WRITE-side destination override. The canonical data repo above sits at HF's
+# hard 1,000,000-file-per-repo cap and refuses EVERY push (see #2304), so a run
+# needs somewhere else to persist while that is resolved. READS are deliberately
+# left on HF_DATA_REPO — parent artifacts (banks, parent grids, judge pools) live
+# there and are still fetchable — so only the upload destination reroutes.
+# Unset => byte-identical legacy behavior.
+HF_DATA_WRITE_REPO = os.environ.get("EPM_2162_DATA_WRITE_REPO", HF_DATA_REPO)
 HF_PREFIX = "issue2162_ctxinfo"
 DEFAULT_OUT_ROOT = Path("/workspace/issue2162_out")
 DEFAULT_LOG_DIR = Path("/workspace/logs")
@@ -344,7 +351,7 @@ def try_claim(cdir: Path, block: Block, worker_index: int, token: str) -> bool:
     except FileExistsError:
         try:
             rec = json.loads(path.read_text())
-        except (json.JSONDecodeError, OSError) as e:
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError) as e:
             raise RuntimeError(
                 f"unparseable claim file {path} — inconsistent claim state, refusing "
                 "to guess (delete it manually after diagnosing the writer)"
@@ -1164,6 +1171,12 @@ def _gate_spot_specs(pairs: list[BANK.Pair2162]) -> list[dict]:
     return out
 
 
+def _default_spot_position(rec: dict, slot: str) -> int:
+    """Default ``run_injection_gate`` spot position — this module's own
+    :func:`slot_position` arithmetic (asserts ``1 <= prefix_end < ctx_len``)."""
+    return slot_position(rec["ctx_len"], rec["prefix_end"], slot)
+
+
 @torch.no_grad()
 def run_injection_gate(
     cfg: RunConfig,
@@ -1172,9 +1185,28 @@ def run_injection_gate(
     bank: dict,
     pairs: list[BANK.Pair2162],
     donor_maps: dict[str, dict[str, str]],
+    *,
+    contexts: dict[str, dict] | None = None,
+    ids_fn=None,
+    spots: list[dict] | None = None,
+    payload_fn=None,
+    position_fn=None,
 ) -> dict:
     """Plan §7 gate 1 — the realized edit equals the intended donor state at
     the intended (row, position, layer) and NOWHERE else.
+
+    The keyword-only ``contexts`` / ``ids_fn`` / ``spots`` / ``payload_fn`` /
+    ``position_fn`` seams (defaults = this module's own registries —
+    byte-equivalent for every existing caller) let the #2162 LADDER driver
+    reuse this gate verbatim over its own bank
+    (``scripts/issue2162_ladder.py``; ladder-plan §4.6 "IMPORTS, never
+    re-implements, the injection-gate helper"). ``spots`` rows keep the
+    ``{"cell", "slot", "arm", "pair"}`` shape; ``payload_fn`` keeps
+    :func:`payload_for_arm`'s call signature. ``position_fn(rec, slot) -> int``
+    overrides the per-spot edit-position computation (default =
+    :func:`_default_spot_position`; the #2333 donors gate passes a pe-safe
+    variant for flagged ``no_prefix`` bare renders whose ``prefix_end == 0``,
+    which the default asserts on).
 
     Stage 1 is REPLACE at every layer, so the exactness read is ABSOLUTE (the
     hooked state at the edited position IS the payload — no incremental
@@ -1188,12 +1220,15 @@ def run_injection_gate(
     pass's ``row_lengths=[T]*B`` arming so the V_a/margin TF geometry is
     gate-verified too.
     """
-    contexts = BANK.build_contexts()
-    ctx_ids = {cid: BANK.context_token_ids_2162(tok, c) for cid, c in contexts.items()}
+    contexts = BANK.build_contexts() if contexts is None else contexts
+    ids_fn = BANK.context_token_ids_2162 if ids_fn is None else ids_fn
+    payload_fn = payload_for_arm if payload_fn is None else payload_fn
+    position_fn = _default_spot_position if position_fn is None else position_fn
+    ctx_ids = {cid: ids_fn(tok, c) for cid, c in contexts.items()}
     pad_id = tok.pad_token_id
     recs = bank["per_context"]
     pairs_by_id = {p.pair_id: p for p in pairs}
-    spots = _gate_spot_specs(pairs)
+    spots = _gate_spot_specs(pairs) if spots is None else spots
     results: list[dict] = []
     for spot in spots:
         pair: BANK.Pair2162 = spot["pair"]
@@ -1212,9 +1247,9 @@ def run_injection_gate(
         payloads: list[torch.Tensor] = []
         donor_ids: list[str | None] = []
         for p in batch_pairs:
-            payload, donor_id = payload_for_arm(bank, p, slot, arm, donor_maps, pairs_by_id)
+            payload, donor_id = payload_fn(bank, p, slot, arm, donor_maps, pairs_by_id)
             rec = recs[p.a]
-            positions.append((slot_position(rec["ctx_len"], rec["prefix_end"], slot),))
+            positions.append((position_fn(rec, slot),))
             payloads.append(payload)
             donor_ids.append(donor_id)
 
@@ -2457,7 +2492,7 @@ def upload_dir_hf(
     for attempt in range(UPLOAD_TRANSPORT_RETRIES + 1):
         base_url = _upload_folder_filtered(
             local_dir=local_dir,
-            repo_id=HF_DATA_REPO,
+            repo_id=HF_DATA_WRITE_REPO,
             repo_type="dataset",
             path_in_repo=remote_prefix,
             allow_patterns=allow_patterns,
@@ -2564,7 +2599,7 @@ def _margin_state(cfg: RunConfig) -> dict:
     for p in sorted(cfg.manifest_dir.glob("margin_anchors_w*_done.json")):
         try:
             recs.append(json.loads(p.read_text()))
-        except (json.JSONDecodeError, OSError):
+        except (json.JSONDecodeError, OSError, UnicodeDecodeError):
             continue
     anchors_done = False
     for w in {int(r.get("num_workers", 0)) for r in recs}:
@@ -2650,7 +2685,9 @@ def _sentinel_payload(cfg: RunConfig, uploaded: dict[str, list[str]]) -> dict:
             "num_workers": cfg.num_workers,
         },
         "wandb_url": None,
-        "hf_hub_url": f"https://huggingface.co/datasets/{HF_DATA_REPO}/tree/main/{HF_PREFIX}",
+        "hf_hub_url": (
+            f"https://huggingface.co/datasets/{HF_DATA_WRITE_REPO}/tree/main/{HF_PREFIX}"
+        ),
         "worktree_path": str(REPO_ROOT),
         "final_commit_sha": _git_sha(),
         "gpu_hours_used": None,

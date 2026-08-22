@@ -1,0 +1,188 @@
+{
+  "coherence.butler-anchors": {
+    "regime": {
+      "rubric_id": "coherence",
+      "rubric_sha16": "8d34244f43449800",
+      "n_items": 50,
+      "item_ids_sha16": "137a23c89da3adca",
+      "judge_model": "claude-sonnet-4-5-20250929",
+      "max_tokens": 1024,
+      "n_draws": 1
+    },
+    "complete": true,
+    "n_scored_items": 50,
+    "n_content_dropped": 0,
+    "residual_transport_lost": 0,
+    "n_api_refusal_draws": 0,
+    "n_truncation_dropped_draws": 0,
+    "stop_reason_tally": {
+      "end_turn": 50
+    },
+    "retry1": null,
+    "repro": {
+      "git_commit": "374e909516f362e35ac9ef327731f09e81407d32",
+      "torch": "2.8.0+cu128",
+      "transformers": "4.57.6",
+      "model_id": "Qwen/Qwen2.5-7B-Instruct",
+      "tiny": false,
+      "smoke": false,
+      "n_layers": 28,
+      "timestamp": "2026-08-14T16:36:06.170887+00:00"
+    }
+  },
+  "fp-bare.butler-anchors": {
+    "regime": {
+      "rubric_id": "fp-bare",
+      "rubric_sha16": "cea4d9e717d5a921",
+      "n_items": 50,
+      "item_ids_sha16": "051c10209be87061",
+      "judge_model": "claude-sonnet-4-5-20250929",
+      "max_tokens": 1024,
+      "n_draws": 1
+    },
+    "complete": true,
+    "n_scored_items": 50,
+    "n_content_dropped": 0,
+    "residual_transport_lost": 0,
+    "n_api_refusal_draws": 0,
+    "n_truncation_dropped_draws": 0,
+    "stop_reason_tally": {
+      "end_turn": 50
+    },
+    "retry1": null,
+    "repro": {
+      "git_commit": "374e909516f362e35ac9ef327731f09e81407d32",
+      "torch": "2.8.0+cu128",
+      "transformers": "4.57.6",
+      "model_id": "Qwen/Qwen2.5-7B-Instruct",
+      "tiny": false,
+      "smoke": false,
+      "n_layers": 28,
+      "timestamp": "2026-08-14T16:36:23.966056+00:00"
+    }
+  },
+  "fp-butler.bare-anchors": {
+    "regime": {
+      "rubric_id": "fp-butler",
+      "rubric_sha16": "e774321cb20d96a9",
+      "n_items": 50,
+      "item_ids_sha16": "9ef6ca982ae29c66",
+      "judge_model": "claude-sonnet-4-5-20250929",
+      "max_tokens": 1024,
+      "n_draws": 1
+    },
+    "complete": true,
+    "n_scored_items": 50,
+    "n_content_dropped": 0,
+    "residual_transport_lost": 0,
+    "n_api_refusal_draws": 0,
+    "n_truncation_dropped_draws": 0,
+    "stop_reason_tally": {
+      "end_turn": 50
+    },
+    "retry1": null,
+    "repro": {
+      "git_commit": "374e909516f362e35ac9ef327731f09e81407d32",
+      "torch": "2.8.0+cu128",
+      "transformers": "4.57.6",
+      "model_id": "Qwen/Qwen2.5-7B-Instruct",
+      "tiny": false,
+      "smoke": false,
+      "n_layers": 28,
+      "timestamp": "2026-08-14T16:36:44.543465+00:00"
+    }
+  },
+  "fp-butler.butler-anchors": {
+    "regime": {
+      "rubric_id": "fp-butler",
+      "rubric_sha16": "e774321cb20d96a9",
+      "n_items": 50,
+      "item_ids_sha16": "ecc084e6fe113551",
+      "judge_model": "claude-sonnet-4-5-20250929",
+      "max_tokens": 1024,
+      "n_draws": 1
+    },
+    "complete": true,
+    "n_scored_items": 50,
+    "n_content_dropped": 0,
+    "residual_transport_lost": 0,
+    "n_api_refusal_draws": 0,
+    "n_truncation_dropped_draws": 0,
+    "stop_reason_tally": {
+      "end_turn": 50
+    },
+    "retry1": null,
+    "repro": {
+      "git_commit": "374e909516f362e35ac9ef327731f09e81407d32",
+      "torch": "2.8.0+cu128",
+      "transformers": "4.57.6",
+      "model_id": "Qwen/Qwen2.5-7B-Instruct",
+      "tiny": false,
+      "smoke": false,
+      "n_layers": 28,
+      "timestamp": "2026-08-14T16:36:15.176572+00:00"
+    }
+  },
+  "fp-butler.persona-anchors": {
+    "regime": {
+      "rubric_id": "fp-butler",
+      "rubric_sha16": "e774321cb20d96a9",
+      "n_items": 50,
+      "item_ids_sha16": "c91ee0e0dc455669",
+      "judge_model": "claude-sonnet-4-5-20250929",
+      "max_tokens": 1024,
+      "n_draws": 1
+    },
+    "complete": true,
+    "n_scored_items": 50,
+    "n_content_dropped": 0,
+    "residual_transport_lost": 0,
+    "n_api_refusal_draws": 0,
+    "n_truncation_dropped_draws": 0,
+    "stop_reason_tally": {
+      "end_turn": 50
+    },
+    "retry1": null,
+    "repro": {
+      "git_commit": "374e909516f362e35ac9ef327731f09e81407d32",
+      "torch": "2.8.0+cu128",
+      "transformers": "4.57.6",
+      "model_id": "Qwen/Qwen2.5-7B-Instruct",
+      "tiny": false,
+      "smoke": false,
+      "n_layers": 28,
+      "timestamp": "2026-08-14T16:36:53.007848+00:00"
+    }
+  },
+  "fp-persona.butler-anchors": {
+    "regime": {
+      "rubric_id": "fp-persona",
+      "rubric_sha16": "6c0544b0415ef5eb",
+      "n_items": 50,
+      "item_ids_sha16": "b14c1907be22860c",
+      "judge_model": "claude-sonnet-4-5-20250929",
+      "max_tokens": 1024,
+      "n_draws": 1
+    },
+    "complete": true,
+    "n_scored_items": 50,
+    "n_content_dropped": 0,
+    "residual_transport_lost": 0,
+    "n_api_refusal_draws": 0,
+    "n_truncation_dropped_draws": 0,
+    "stop_reason_tally": {
+      "end_turn": 50
+    },
+    "retry1": null,
+    "repro": {
+      "git_commit": "374e909516f362e35ac9ef327731f09e81407d32",
+      "torch": "2.8.0+cu128",
+      "transformers": "4.57.6",
+      "model_id": "Qwen/Qwen2.5-7B-Instruct",
+      "tiny": false,
+      "smoke": false,
+      "n_layers": 28,
+      "timestamp": "2026-08-14T16:36:35.127803+00:00"
+    }
+  }
+}

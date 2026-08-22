@@ -348,14 +348,19 @@ def _patch_pod(
     tail: str,
     pid_alive: str = "0",
     trigger_dense: bool | None = None,
+    mtime_epoch: int | None = None,
 ) -> MagicMock:
     """Monkeypatch poll_pipeline's I/O boundary with a fully-controlled probe.
 
     ``trigger_dense`` None leaves the REAL predicate in place (the synthetic
     ``ISSUE`` id then takes the FileNotFoundError->raw arm); a bool pins it.
+    ``mtime_epoch`` None keeps the fresh default (now-10); dead-expectation
+    call sites pass a genuinely STALE value so the #2265 dead-verdict
+    evidence veto stays inert (a fresh log + dead pid now correctly reads
+    ``pid-stale-workload-live``, which is not these tests' subject).
     Returns the ``post_event`` mock for advisory-note inspection.
     """
-    resolved_mtime = int(time.time()) - 10
+    resolved_mtime = int(time.time()) - 10 if mtime_epoch is None else mtime_epoch
 
     def _fake_run(cmd: list[str], **kwargs: Any):
         import subprocess
@@ -370,8 +375,8 @@ def _patch_pod(
     monkeypatch.setattr(pp.subprocess, "run", _fake_run)
     monkeypatch.setattr(pp, "post_event", post_mock)
     monkeypatch.setattr(pp, "_telegram_push", MagicMock(return_value=True))
-    monkeypatch.setattr(pp, "_marker_pid", lambda issue: None)
-    monkeypatch.setattr(pp, "_run_launched_age_sec", lambda issue, now_epoch: 10800.0)
+    monkeypatch.setattr(pp, "_marker_pid", lambda issue, pod=None: None)
+    monkeypatch.setattr(pp, "_run_launched_age_sec", lambda issue, now_epoch, pod=None: 10800.0)
     if trigger_dense is not None:
         monkeypatch.setattr(pp, "_issue_trigger_dense", lambda issue: trigger_dense)
     return post_mock
@@ -421,7 +426,13 @@ def test_poll_once_digests_when_trigger_dense(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     """Plan §5 test 4: digested excerpt + flag; crash_signature stays RAW."""
-    _patch_pod(monkeypatch, tail=DEAD_TAIL, pid_alive="0", trigger_dense=True)
+    _patch_pod(
+        monkeypatch,
+        tail=DEAD_TAIL,
+        pid_alive="0",
+        trigger_dense=True,
+        mtime_epoch=int(time.time()) - 2000,
+    )
     result = _poll(tmp_path / "state.json")
     assert result.status == "dead"
     assert result.log_tail_excerpt.startswith("[trigger-dense digest]")
@@ -435,7 +446,13 @@ def test_poll_once_digests_when_trigger_dense(
 
 def test_poll_once_untagged_path_unchanged(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """Plan §5 test 5: predicate False -> the pre-change raw 5-line slice."""
-    _patch_pod(monkeypatch, tail=DEAD_TAIL, pid_alive="0", trigger_dense=False)
+    _patch_pod(
+        monkeypatch,
+        tail=DEAD_TAIL,
+        pid_alive="0",
+        trigger_dense=False,
+        mtime_epoch=int(time.time()) - 2000,
+    )
     result = _poll(tmp_path / "state.json")
     assert result.log_tail_excerpt == "\n".join(DEAD_TAIL.splitlines()[-5:])
     assert result.log_tail_digested is False
@@ -479,13 +496,25 @@ def test_cli_json_emits_log_tail_digested_key(
     real predicate's FNF->raw arm; monkeypatched predicate -> the True arm)."""
     # Arm 1: REAL predicate on the synthetic issue id -> FileNotFoundError
     # -> raw excerpt, log_tail_digested False.
-    _patch_pod(monkeypatch, tail=DEAD_TAIL, pid_alive="0", trigger_dense=None)
+    _patch_pod(
+        monkeypatch,
+        tail=DEAD_TAIL,
+        pid_alive="0",
+        trigger_dense=None,
+        mtime_epoch=int(time.time()) - 2000,
+    )
     js = _main_json(capsys, tmp_path / "state-raw.json")
     assert js["log_tail_digested"] is False
     assert js["log_tail_excerpt"] == "\n".join(DEAD_TAIL.splitlines()[-5:])
 
     # Arm 2: predicate pinned True -> digested excerpt, flag True.
-    _patch_pod(monkeypatch, tail=DEAD_TAIL, pid_alive="0", trigger_dense=True)
+    _patch_pod(
+        monkeypatch,
+        tail=DEAD_TAIL,
+        pid_alive="0",
+        trigger_dense=True,
+        mtime_epoch=int(time.time()) - 2000,
+    )
     js = _main_json(capsys, tmp_path / "state-digest.json")
     assert js["log_tail_digested"] is True
     assert js["log_tail_excerpt"].startswith("[trigger-dense digest]")
@@ -499,13 +528,23 @@ def test_tagged_run_whole_json_content_free(
     lines are bare [phase=<token>] tokens, and crash_signature is not a key."""
     state_file = tmp_path / "state.json"
     # Tick 1: corroborated done arms the post-done episode.
-    _patch_pod(monkeypatch, tail=f"{TRAIN}\n{DONE}", pid_alive="0", trigger_dense=True)
+    _patch_pod(
+        monkeypatch,
+        tail=f"{TRAIN}\n{DONE}",
+        pid_alive="0",
+        trigger_dense=True,
+        mtime_epoch=int(time.time()) - 2000,
+    )
     r1 = _poll(state_file)
     assert r1.status == "done"
     # Tick 2 (via main(), the orchestrator-facing surface): a NEW phase line
     # carrying the payload sentinel appears after the done anchor.
     post_mock = _patch_pod(
-        monkeypatch, tail=f"{TRAIN}\n{DONE}\n{NEW_CELL}", pid_alive="0", trigger_dense=True
+        monkeypatch,
+        tail=f"{TRAIN}\n{DONE}\n{NEW_CELL}",
+        pid_alive="0",
+        trigger_dense=True,
+        mtime_epoch=int(time.time()) - 2000,
     )
     rc = pp.main(
         [

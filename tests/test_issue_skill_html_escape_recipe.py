@@ -21,6 +21,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 REPO = Path(__file__).resolve().parents[1]
 ISSUE_SKILL = REPO / ".claude" / "skills" / "issue" / "SKILL.md"
 AP_SKILL = REPO / ".claude" / "skills" / "adversarial-planner" / "SKILL.md"
@@ -32,7 +34,7 @@ def _norm(text: str) -> str:
 
 
 def test_issue_skill_names_html_escape_notification_recipe():
-    text = ISSUE_SKILL.read_text(encoding="utf-8")
+    text = issue_skill_text()
     norm = _norm(text)
     # The trap is named.
     assert "HTML-ESCAPED" in norm

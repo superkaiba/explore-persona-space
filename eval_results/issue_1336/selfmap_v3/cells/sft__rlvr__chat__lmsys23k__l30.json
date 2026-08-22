@@ -1,17 +1,19 @@
 {
-  "elapsed_s": 300.3444456681609,
+  "elapsed_s": 21.092294109985232,
   "metadata": {
-    "device": "cpu",
-    "git_commit": "27d28661e4ce11c0a09a38e5436c688fcb7ebefa",
+    "device": "cuda",
+    "git_commit": "e480b4cf0ef0545b98ca40af56fa4c7d8b66ab8b",
     "numpy": "2.2.6",
     "script": "scripts/issue1336_selfmap_missing_pairs.py",
-    "timestamp": "2026-08-07T09:15:54Z",
+    "timestamp": "2026-08-11T17:39:06Z",
     "torch": "2.8.0+cu128"
   },
   "records": [
     {
-      "aans_own_r2": 0.7254008945820553,
-      "aans_own_r2_globalmu": 0.725460705212928,
+      "A_ans_identity_bias_r2": 0.5133847023620575,
+      "A_ctx_rev_identity_bias_r2": 0.8341392614639234,
+      "aans_own_r2": 0.7254008945820554,
+      "aans_own_r2_globalmu": 0.7254607052129282,
       "corpus": "lmsys23k",
       "cross_r2": 0.6176422744140484,
       "cross_r2_globalmu": 0.6177255560283552,
@@ -25,7 +27,7 @@
       "n_train_max": 13747,
       "n_train_min": 13746,
       "pair": "sft__rlvr",
-      "r2": 0.4896217328542021,
+      "r2": 0.48962173285420196,
       "r2_basis": "fold-local pooled OOF (plotted pair-file basis)",
       "r2_globalmu": 0.4897328987157781,
       "selected_lambda": {
@@ -105,12 +107,14 @@
       "source": "sft",
       "target": "rlvr",
       "tier": 0,
-      "within_r2": 0.6103691188935184,
-      "within_r2_globalmu": 0.610453984679119
+      "within_r2": 0.6103691188935185,
+      "within_r2_globalmu": 0.6104539846791193
     },
     {
-      "aans_own_r2": 0.7254008945820553,
-      "aans_own_r2_globalmu": 0.725460705212928,
+      "A_ans_identity_bias_r2": 0.5133847023620575,
+      "A_ctx_rev_identity_bias_r2": 0.8341392614639234,
+      "aans_own_r2": 0.7254008945820554,
+      "aans_own_r2_globalmu": 0.7254607052129282,
       "corpus": "lmsys23k",
       "cross_r2": 0.6176422744140484,
       "cross_r2_globalmu": 0.6177255560283552,
@@ -124,9 +128,9 @@
       "n_train_max": 13747,
       "n_train_min": 13746,
       "pair": "sft__rlvr",
-      "r2": 0.5168235095740219,
+      "r2": 0.5168235095740221,
       "r2_basis": "fold-local pooled OOF (plotted pair-file basis)",
-      "r2_globalmu": 0.5169287505968262,
+      "r2_globalmu": 0.5169287505968265,
       "selected_lambda": {
         "A_ans": [
           3162.2776601683795,
@@ -204,12 +208,14 @@
       "source": "sft",
       "target": "rlvr",
       "tier": 6,
-      "within_r2": 0.6103691188935184,
-      "within_r2_globalmu": 0.610453984679119
+      "within_r2": 0.6103691188935185,
+      "within_r2_globalmu": 0.6104539846791193
     },
     {
-      "aans_own_r2": 0.7254008945820553,
-      "aans_own_r2_globalmu": 0.725460705212928,
+      "A_ans_identity_bias_r2": 0.5133847023620575,
+      "A_ctx_rev_identity_bias_r2": 0.8341392614639234,
+      "aans_own_r2": 0.7254008945820554,
+      "aans_own_r2_globalmu": 0.7254607052129282,
       "corpus": "lmsys23k",
       "cross_r2": 0.6176422744140484,
       "cross_r2_globalmu": 0.6177255560283552,
@@ -303,12 +309,14 @@
       "source": "sft",
       "target": "rlvr",
       "tier": 7,
-      "within_r2": 0.6103691188935184,
-      "within_r2_globalmu": 0.610453984679119
+      "within_r2": 0.6103691188935185,
+      "within_r2_globalmu": 0.6104539846791193
     },
     {
-      "aans_own_r2": 0.7254008945820553,
-      "aans_own_r2_globalmu": 0.725460705212928,
+      "A_ans_identity_bias_r2": 0.5133847023620575,
+      "A_ctx_rev_identity_bias_r2": 0.8341392614639234,
+      "aans_own_r2": 0.7254008945820554,
+      "aans_own_r2_globalmu": 0.7254607052129282,
       "corpus": "lmsys23k",
       "cross_r2": 0.6176422744140484,
       "cross_r2_globalmu": 0.6177255560283552,
@@ -402,12 +410,12 @@
       "source": "sft",
       "target": "rlvr",
       "tier": 8,
-      "within_r2": 0.6103691188935184,
-      "within_r2_globalmu": 0.610453984679119
+      "within_r2": 0.6103691188935185,
+      "within_r2_globalmu": 0.6104539846791193
     }
   ],
   "resume_key": {
-    "algebra_version": "v3-foldlocal-2-cross-t7t8",
+    "algebra_version": "v4-foldlocal-2-cross-t7t8-alignbaselines",
     "corpus": "lmsys23k",
     "fit_seed": 0,
     "format": "chat",

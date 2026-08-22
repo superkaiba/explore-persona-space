@@ -1,0 +1,2 @@
+{"ts": "2026-08-20T01:22:45Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
+{"ts": "2026-08-20T01:27:09Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Scope note from #2205 round-1 review: when adding the three new c46 arms, also fold in #2205's open NIT concern action-dest-rename-silent-skip — extend the hasattr dest guard to cover action (currently only workload_cmd + hydra), emitting the skip FYI note when any of the three dests is missing."}

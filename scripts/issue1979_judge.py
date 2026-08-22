@@ -2,7 +2,8 @@
 
 Judges the 13 content states (12 content arms x own rubric + base_content x 3
 rubrics = 15 judged units) over the 50-prefix x 60-query grid, N=3 draws at
-temperature 1.0, ``max_tokens=400`` passed explicitly, rubric texts pinned
+temperature 1.0, ``max_tokens=1024`` passed explicitly (raised from 400, #2063),
+rubric texts pinned
 verbatim from #1900 (``issue1900_judge.rubric_for`` — the same
 ``issue779_common``/``artifacts/behavior.py`` sources; prompt hashes recorded
 per llm-judging rule 18). Dispatch rides the #1019 resumable Batch machinery
@@ -16,7 +17,7 @@ the full grid (~27k calls); waves 2+ are refused (rc=8) until the persisted
 Gate-1 verdict is in the proceed set. Criteria A/B/C per plan §7; a
 ``marker-lead-rescope`` verdict exits rc=7 (designed artifact-routed halt) and
 a criterion-A failure exits rc=7 with the resize branch named (re-drive wave 1
-with ``--max-tokens 600`` — a fresh per-(unit, max_tokens) work dir means no
+with ``--max-tokens 2048`` — a fresh per-(unit, max_tokens) work dir means no
 truncation-era checkpoint replay, rule 23).
 
 VM-side phase (plan §10 ``off_pod_phases``): reads F1f judge-input shards from
@@ -63,8 +64,8 @@ CONFIG_DIR = REPO_ROOT / "eval_results" / "issue_1979" / "config"
 JUDGE_DIR = REPO_ROOT / "eval_results" / "issue_1979" / "judge"
 WORK_DIR = REPO_ROOT / "data" / "issue_1979" / "judge_work"
 N_DRAWS = J.N_DRAWS  # 3 (plan §11)
-JUDGE_MAX_TOKENS = J.JUDGE_MAX_TOKENS  # 400, passed explicitly (rule 23)
-MAX_TOKENS_RESIZE = J.MAX_TOKENS_RESIZE  # 600 (§7 criterion A branch)
+JUDGE_MAX_TOKENS = J.JUDGE_MAX_TOKENS  # 1024, passed explicitly (rule 23; raised #2063)
+MAX_TOKENS_RESIZE = J.MAX_TOKENS_RESIZE  # 2048 (§7 criterion A branch; raised #2063)
 
 # Gate-1 criteria (plan §7 — thresholds verbatim)
 CRIT_A_MAX_DROP_RATE = 0.10

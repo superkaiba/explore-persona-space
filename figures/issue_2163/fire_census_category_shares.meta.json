@@ -1,0 +1,442 @@
+{
+  "commit": "3bb8c78b",
+  "render_id": "490106aa320c4601",
+  "git_commit": "3bb8c78b",
+  "git_dirty": false,
+  "created": "2026-08-13T17:00:32Z",
+  "figsize": [
+    12.0,
+    6.0
+  ],
+  "points": [
+    {
+      "share of labeled features in category": 0.174758,
+      "y": 0.3495152983944259,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "share of labeled features in category": 0.116707,
+      "y": 0.23341411693426234,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "share of labeled features in category": 0.148705,
+      "y": 0.29740987579521355,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "share of labeled features in category": 0.15253,
+      "y": 0.30505907300817936,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "share of labeled features in category": 0.045857,
+      "y": 0.09171463192971827,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "share of labeled features in category": 0.084899,
+      "y": 0.16979703120266587,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "share of labeled features in category": 0.038852,
+      "y": 0.07770372614359285,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "share of labeled features in category": 0.066646,
+      "y": 0.13329294153286883,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "share of labeled features in category": 0.044949,
+      "y": 0.08989700090881551,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "share of labeled features in category": 0.074712,
+      "y": 0.1494244168433808,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "share of labeled features in category": 0.036807,
+      "y": 0.07361405634656165,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "share of labeled features in category": 0.058088,
+      "y": 0.11617691608603453,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "share of labeled features in category": 0.016548,
+      "y": 0.03309603150560436,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "share of labeled features in category": 0.010527,
+      "y": 0.021054225992123598,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "share of labeled features in category": 0.028703,
+      "y": 0.057406846410178736,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "share of labeled features in category": 0.105756,
+      "y": 0.21151138281776122,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "share of labeled features in category": 0.048479,
+      "y": 0.09695729366183017,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "share of labeled features in category": 0.093406,
+      "y": 0.18681289848608088,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "share of labeled features in category": 0.206417,
+      "y": 0.41283376625648294,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "share of labeled features in category": 0.088898,
+      "y": 0.17779585268368622,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "share of labeled features in category": 0.042733,
+      "y": 0.08546515187293924,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "share of labeled features in category": 0.014632,
+      "y": 0.02926385572726716,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "share of labeled features in category": 0.090717,
+      "y": 0.18143415632461365,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "share of labeled features in category": 0.026946,
+      "y": 0.05389237268123737,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "share of labeled features in category": 0.092681,
+      "y": 0.1853610753985954,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "share of labeled features in category": 0.018922,
+      "y": 0.03784360541897341,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "share of labeled features in category": 0.074305,
+      "y": 0.14861071025634298,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "share of labeled features in category": 0.00701,
+      "y": 0.014019713308669832,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "share of labeled features in category": 0.002952,
+      "y": 0.005903497494293286,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "share of labeled features in category": 0.036156,
+      "y": 0.07231128486343243,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "share difference (firing \u2212 never-firing)": 0.069002,
+      "y": 0.1380039155766647,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "share difference (firing \u2212 never-firing)": 0.068228,
+      "y": 0.13645682327243217,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "share difference (firing \u2212 never-firing)": 0.055298,
+      "y": 0.11059697730913268,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "share difference (firing \u2212 never-firing)": -0.053887,
+      "y": -0.10777469324830358,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "share difference (firing \u2212 never-firing)": -0.043041,
+      "y": -0.08608122075396796,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "share difference (firing \u2212 never-firing)": 0.042166,
+      "y": 0.08433187932972663,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "share difference (firing \u2212 never-firing)": 0.02422,
+      "y": 0.048439870416325685,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "share difference (firing \u2212 never-firing)": -0.024071,
+      "y": -0.048141214791744824,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "share difference (firing \u2212 never-firing)": 0.018002,
+      "y": 0.03600462822757814,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "share difference (firing \u2212 never-firing)": -0.017968,
+      "y": -0.03593665855521461,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "share difference (firing \u2212 never-firing)": 0.017885,
+      "y": 0.035770450927588245,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "share difference (firing \u2212 never-firing)": -0.016217,
+      "y": -0.03243379417030845,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "share difference (firing \u2212 never-firing)": 0.009538,
+      "y": 0.01907631819693453,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "share difference (firing \u2212 never-firing)": 0.007575,
+      "y": 0.015150728497830312,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "share difference (firing \u2212 never-firing)": -0.007452,
+      "y": -0.01490443845325369,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "share difference (firing \u2212 never-firing)": 0.000553,
+      "y": 0.015043873600185791,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "share difference (firing \u2212 never-firing)": -6.3e-05,
+      "y": 0.011491466553223495,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "share difference (firing \u2212 never-firing)": 0.000394,
+      "y": 0.014116699584956047,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "share difference (firing \u2212 never-firing)": -0.000315,
+      "y": 0.018247798386298697,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "share difference (firing \u2212 never-firing)": 4.8e-05,
+      "y": 0.014114587571253931,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "share difference (firing \u2212 never-firing)": -0.000107,
+      "y": 0.01073114162046104,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "share difference (firing \u2212 never-firing)": -5.3e-05,
+      "y": 0.0064226336681405365,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "share difference (firing \u2212 never-firing)": -7.2e-05,
+      "y": 0.013178965501215723,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "share difference (firing \u2212 never-firing)": 1.7e-05,
+      "y": 0.008792313041916813,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "share difference (firing \u2212 never-firing)": 5.1e-05,
+      "y": 0.013687960803426127,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "share difference (firing \u2212 never-firing)": 7.7e-05,
+      "y": 0.007349807683370298,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "share difference (firing \u2212 never-firing)": -0.000499,
+      "y": 0.012167310937901238,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "share difference (firing \u2212 never-firing)": -1.6e-05,
+      "y": 0.004561949596574664,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "share difference (firing \u2212 never-firing)": -5.6e-05,
+      "y": 0.0032102608272192093,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "share difference (firing \u2212 never-firing)": 9.2e-05,
+      "y": 0.009041530658766736,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 60,
+  "text": {
+    "suptitle": "Answer-side description categories: firing vs never-firing features",
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "share of labeled features in category",
+        "legend_labels": [
+          "firing",
+          "never-firing"
+        ],
+        "xticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35",
+          "0.40",
+          "0.45"
+        ],
+        "yticklabels": [
+          "punctuation/whitespace/formatting",
+          "boundary/transition markers",
+          "grammar/function words",
+          "code/programming syntax",
+          "word-fragment/subword/morpheme",
+          "instruction/procedural",
+          "dialogue/conversational/social",
+          "numbers/math/quantitative",
+          "list/enumeration structure",
+          "domain content (science/med/law/finance)",
+          "narrative/creative/emotional",
+          "non-English/multilingual",
+          "AI-assistant meta (refusal/disclaimer)",
+          "response/turn initiation",
+          "named entities/proper nouns"
+        ]
+      },
+      {
+        "xlabel": "share difference (firing \u2212 never-firing)",
+        "legend_labels": [
+          "label-shuffle null band (95%)"
+        ],
+        "xticklabels": [
+          "\u22120.15",
+          "\u22120.10",
+          "\u22120.05",
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20"
+        ]
+      }
+    ],
+    "series": [
+      "firing",
+      "never-firing",
+      "label-shuffle null band (95%)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

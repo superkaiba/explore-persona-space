@@ -21,6 +21,7 @@ from explore_persona_space.orchestrate.resume import (
     decide_entry_step,
     latest_step_completed,
 )
+from tests.issue_skill_source import issue_skill_text
 
 SKILL_MD_PATH = Path(__file__).resolve().parent.parent / ".claude" / "skills" / "issue" / "SKILL.md"
 HELPER_PATH = Path(__file__).resolve().parent.parent / "scripts" / "post_step_completed.py"
@@ -171,7 +172,7 @@ def test_skill_md_documents_resume_router():
     17 EXIT sites is staged via the follow-up issues (per the plan's
     phased migration).
     """
-    text = SKILL_MD_PATH.read_text()
+    text = issue_skill_text()
     # Required headers + helper reference.
     assert "Step-completed re-entry skip-ahead" in text, (
         "SKILL.md must contain the §5 'Step-completed re-entry skip-ahead' section header"
@@ -199,7 +200,7 @@ def test_skill_md_exit_site_table_has_at_least_seventeen_rows():
     test asserts ≥15 rows (allowing for ±2 of in-flight refinement).
     Below 15 means significant drift from the plan and warrants review.
     """
-    text = SKILL_MD_PATH.read_text()
+    text = issue_skill_text()
     # Locate the table heading inside the resume-router section.
     section_start = text.find("Step-completed re-entry skip-ahead")
     assert section_start > 0
@@ -247,7 +248,7 @@ def test_every_exit_site_posts_marker():
     section header and the end of the resume-semantics section before
     counting EXIT lines. Action EXITs all live in earlier prose.
     """
-    text = SKILL_MD_PATH.read_text()
+    text = issue_skill_text()
     # Cut off the documentation section: anything from the resume-router
     # header onward is reference, not action.
     section_marker = "### Step-completed re-entry skip-ahead"
@@ -338,7 +339,7 @@ def test_skill_md_action_exit_count_matches_table_minimum():
     leaves room for plan-driven refactors that merge sites without
     breaking the regression on every commit.
     """
-    text = SKILL_MD_PATH.read_text()
+    text = issue_skill_text()
     cut = text.find("### Step-completed re-entry skip-ahead")
     action_region = text[:cut]
     # Count EXIT references in prose (not table rows, not code fences).
@@ -518,7 +519,7 @@ def test_skill_md_followup_loop_names_canonical_9b_same_id():
     """Durability pin (#1499): the same-issue follow-up loop section names
     the canonical `9b-same` step id + the exit-2 refusal duty, so a later
     SKILL.md editor cannot silently drop the guidance."""
-    text = SKILL_MD_PATH.read_text()
+    text = issue_skill_text()
     section_start = text.find("**Same-issue follow-up loop (`question_relation: same`).**")
     assert section_start > 0
     window = text[section_start : section_start + 4000]
@@ -532,7 +533,7 @@ def test_resume_table_has_completed_unmerged_row():
     auto-merge — the recovery arm the watcher's completed_unmerged_pass flag
     marker names (#1564; incident #1540). Dropping this row re-opens the
     'flag points at a resume path that does not exist' gap."""
-    text = SKILL_MD_PATH.read_text()
+    text = issue_skill_text()
     rows = [
         ln
         for ln in text.splitlines()

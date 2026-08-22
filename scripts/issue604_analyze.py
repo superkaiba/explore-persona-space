@@ -616,7 +616,7 @@ def _i541_key_match(store: CellStore, bundle: ContextBundle, data_root: Path) ->
             arr = np.load(p).astype(np.float64)
             assert arr.shape == (24, 40, HIDDEN_SIZE), (layer, arr.shape)
             banks[layer] = arr.mean(axis=1)  # (24, 3584) centroids over 40 probes
-    except (OSError, KeyError, AssertionError, json.JSONDecodeError) as exc:
+    except (OSError, KeyError, AssertionError, json.JSONDecodeError, UnicodeDecodeError) as exc:
         return f"N/A — artifact failed fitness at load: {exc!r}"
 
     rows = []

@@ -4362,7 +4362,7 @@ def _cjk_scan(cfg: Cfg) -> dict:
                 continue
             try:
                 rows = json.loads(f.read_text(encoding="utf-8")).get("rows") or []
-            except (json.JSONDecodeError, OSError):
+            except (json.JSONDecodeError, OSError, UnicodeDecodeError):
                 out[str(f.relative_to(cfg.out_root))] = {"error": "unreadable"}
                 continue
             texts = [_row_text(r) for r in rows]

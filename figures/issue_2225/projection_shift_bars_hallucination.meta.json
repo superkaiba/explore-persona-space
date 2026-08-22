@@ -1,0 +1,184 @@
+{
+  "commit": "849c79c4",
+  "render_id": "6f4259dd1b9f4c10",
+  "git_commit": "849c79c4",
+  "git_dirty": false,
+  "created": "2026-08-11T20:40:07Z",
+  "figsize": [
+    7.700000000000001,
+    3.6
+  ],
+  "points": [
+    {
+      "x": -0.266667,
+      "\u0394 mean projection vs base (steering layer)": -9.364233016967773,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.733333,
+      "\u0394 mean projection vs base (steering layer)": -1.7069087624549866,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.733333,
+      "\u0394 mean projection vs base (steering layer)": 10.212383270263672,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.733333,
+      "\u0394 mean projection vs base (steering layer)": 4.466341495513916,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.733333,
+      "\u0394 mean projection vs base (steering layer)": 3.5247116088867188,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.733333,
+      "\u0394 mean projection vs base (steering layer)": 11.43108081817627,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.733333,
+      "\u0394 mean projection vs base (steering layer)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Paper 1-layer @ 5.0",
+      "\u0394 mean projection vs base (steering layer)": 10.540508270263672,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Paper 3-layer @ 1.5",
+      "\u0394 mean projection vs base (steering layer)": 13.574247360229492,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Context 1-layer @ 5.0",
+      "\u0394 mean projection vs base (steering layer)": 13.244513511657715,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Context 2-layer @ 1.5",
+      "\u0394 mean projection vs base (steering layer)": 9.95995807647705,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Context 3-layer @ 1.5",
+      "\u0394 mean projection vs base (steering layer)": 9.092009544372559,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Unsteered finetune (Hallucination)",
+      "\u0394 mean projection vs base (steering layer)": 17.841928482055664,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Base model",
+      "\u0394 mean projection vs base (steering layer)": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.266667,
+      "\u0394 mean projection vs base (steering layer)": -0.3803257942199707,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.266667,
+      "\u0394 mean projection vs base (steering layer)": 4.826861381530762,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.266667,
+      "\u0394 mean projection vs base (steering layer)": 1.1523957252502441,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.266667,
+      "\u0394 mean projection vs base (steering layer)": 3.8039888739585876,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.266667,
+      "\u0394 mean projection vs base (steering layer)": 3.0856311321258545,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 5.266667,
+      "\u0394 mean projection vs base (steering layer)": 14.227620124816895,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 6.266667,
+      "\u0394 mean projection vs base (steering layer)": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 21,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Projection shift \u2014 Hallucination",
+        "ylabel": "\u0394 mean projection vs base (steering layer)",
+        "legend_labels": [
+          "response-avg \u2192 paper dir",
+          "context-end \u2192 context dir",
+          "prefix-end \u2192 context dir"
+        ],
+        "xticklabels": [
+          "Paper 1-layer @ 5.0",
+          "Paper 3-layer @ 1.5",
+          "Context 1-layer @ 5.0",
+          "Context 2-layer @ 1.5",
+          "Context 3-layer @ 1.5",
+          "Unsteered finetune (Hallucination)",
+          "Base model"
+        ],
+        "yticklabels": [
+          "\u221215",
+          "\u221210",
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20"
+        ]
+      }
+    ],
+    "series": [
+      "response-avg \u2192 paper dir",
+      "context-end \u2192 context dir",
+      "prefix-end \u2192 context dir"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

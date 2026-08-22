@@ -1,13 +1,15 @@
-"""Prose pins for the #1625 inline measurement-design + figure-sanity duties.
+"""Prose pins for the #1625 inline figure-sanity duty.
 
-Pins (a) the SKILL.md 9a-ter § Inline measurement-design + figure-sanity
-duties block (both-arms mapping statement + rendered-PNG eyeball check;
-incidents #779 2026-07-14 context-only inline mapping / #958 one-arm class,
-and #1112 empty-figure-presented-3x), (b) the CLAUDE.md user-chat inline
-free-analysis carve-out clause mirroring it, (c) the Auto-run procedure
-step-1/step-3 pointer sentences, and (d) this file's own registration in the
-Step-9c selector's WORKFLOW_INVARIANT set (SKILL.md/CLAUDE.md diffs select
-only that set — an unregistered pin never runs on the diffs it guards).
+Pins (a) the SKILL.md 9a-ter § Inline figure-sanity duty block (rendered-PNG
+eyeball check; incident #1112 empty-figure-presented-3x), (b) the CLAUDE.md
+user-chat inline free-analysis carve-out clause mirroring it, (c) the
+Auto-run procedure step-3 pointer sentence, and (d) this file's own
+registration in the Step-9c selector's WORKFLOW_INVARIANT set
+(SKILL.md/CLAUDE.md diffs select only that set — an unregistered pin never
+runs on the diffs it guards).
+
+The both-arms (prefix+context) mapping statement this file used to pin was
+retired 2026-08-12 on user order; only the figure-sanity duty remains.
 
 Family precedent: tests/test_issue_skill_trigger_dense_tag_adoption.py.
 """
@@ -15,29 +17,37 @@ Family precedent: tests/test_issue_skill_trigger_dense_tag_adoption.py.
 from __future__ import annotations
 
 import importlib.util
+import re
 from pathlib import Path
+
+from tests.issue_skill_source import read_workflow_doc
 
 REPO = Path(__file__).resolve().parent.parent
 SKILL_MD = REPO / ".claude" / "skills" / "issue" / "SKILL.md"
 CLAUDE_MD = REPO / "CLAUDE.md"
 SELECTOR_PY = REPO / "scripts" / "select_step9c_tests.py"
 
-ANCHOR = "Inline measurement-design + figure-sanity duties"
+ANCHOR = "Inline figure-sanity duty"
 PIN_FILE_RELPATH = "tests/test_issue_skill_inline_measurement_duties.py"
 
 
+def _normalized(path: Path) -> str:
+    """File text with whitespace runs collapsed (wrap-insensitive pins).
+
+    SKILL.md wraps prose at ~75-78 columns, so raw-substring pins on
+    multi-word fragments would break on any innocent re-wrap (same
+    convention as tests/test_issue_skill_compute_pilot_fence_pin.py).
+    """
+    return re.sub(r"\s+", " ", read_workflow_doc(path))
+
+
 def test_skill_9a_ter_duties_block_present():
-    text = SKILL_MD.read_text(encoding="utf-8")
+    text = _normalized(SKILL_MD)
     idx = text.index(ANCHOR)  # ValueError = hard fail
-    # Window 2200: the drafted block MEASURES ~1912 chars from the anchor
-    # (all pinned tokens sit <=1678 in; fact-checked 2026-07-23); headroom
-    # for wording tweaks without letting the pin drift file-wide.
-    window = text[idx : idx + 2200]
-    assert "prefix-based" in window
-    assert "context-based" in window
-    assert "explicit stated deviation" in window
+    window = text[idx : idx + 1400]
     assert "non-empty axes" in window
-    assert "#958" in window and "#779" in window and "#1112" in window
+    assert "never present or commit it" in window
+    assert "#1112" in window
     # Sits inside 9a-ter: after the compute-character block, before the
     # pod-safety block (both anchors verified unique on the live tree).
     assert (
@@ -50,26 +60,23 @@ def test_skill_9a_ter_duties_block_present():
 def test_claude_md_carveout_duties_present():
     text = CLAUDE_MD.read_text(encoding="utf-8")
     # NOTE: "**User-chat inline free analysis**" occurs TWICE in CLAUDE.md
-    # (a line-50 cross-reference inside the Follow-up bullet, then the
-    # line-51 carve-out bullet itself). index() lands on the FIRST; the
-    # ANCHOR search from i0 still resolves to the line-51 insert because
-    # the duties phrase exists nowhere between the two occurrences.
+    # (a cross-reference inside the Follow-up bullet, then the carve-out
+    # bullet itself). index() lands on the FIRST; the ANCHOR search from i0
+    # still resolves to the carve-out insert because the duty phrase exists
+    # nowhere between the two occurrences.
     i0 = text.index("**User-chat inline free analysis**")
     idx = text.index(ANCHOR, i0)
-    window = text[idx : idx + 1400]
-    assert "prefix-based" in window and "context-based" in window
+    window = text[idx : idx + 1000]
     assert "non-empty axes" in window
     # Cites the canonical block (same convention as the compute-character clause).
     assert "SKILL.md Step 9a-ter § " + ANCHOR in window
 
 
 def test_step_pointer_sentences_present():
-    text = SKILL_MD.read_text(encoding="utf-8")
-    assert "ALSO carries the both-arms line" in text  # step 1 pointer
+    text = _normalized(SKILL_MD)
     assert "Read each regenerated PNG" in text  # step 3 pointer
-    # Both pointers sit inside the Auto-run procedure.
+    # The pointer sits inside the Auto-run procedure.
     proc = text.index("**Auto-run procedure.**")
-    assert text.index("ALSO carries the both-arms line") > proc
     assert text.index("Read each regenerated PNG") > proc
 
 

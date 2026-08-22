@@ -1,0 +1,218 @@
+{
+ "plot6a": {
+  "plotted_model": "instruct (Qwen-2.5-7B-Instruct)",
+  "layer": 19,
+  "fit": "GCV ridge (dof cap 0.9), scenario-grouped 5-fold CV, fold seed 0",
+  "arm": "ctx (X=x_spanmean v_C <=512 ctx tokens; Y=y reply-span mean)",
+  "source_cell": "r1_qa_oneline (assistant bare Q&A)",
+  "per_cell_kept_n": {
+   "r1_qa_oneline": 4423,
+   "r2_op": 4604,
+   "r4_fictionframe": 4841
+  },
+  "n_scenarios": 300,
+  "instruct": {
+   "r2_op": {
+    "naive_transfer_r2": 0.3811212319741931,
+    "reparam_recovery_r2": 0.4426731696938585,
+    "target_own_ceiling_r2": 0.45793971787230403,
+    "recovery_frac_of_ceiling": 0.9666625374855504,
+    "recovery_minus_ceiling_ci": [
+     -0.016903151382052433,
+     -0.013627794484447647
+    ]
+   },
+   "r4_fictionframe": {
+    "naive_transfer_r2": -0.2228068256944482,
+    "reparam_recovery_r2": 0.3254392590013705,
+    "target_own_ceiling_r2": 0.3425628968156992,
+    "recovery_frac_of_ceiling": 0.9500131567852157,
+    "recovery_minus_ceiling_ci": [
+     -0.02034926383609335,
+     -0.014328531866358463
+    ]
+   },
+   "assistant_own_r2": 0.49891139167802057
+  },
+  "base_companion_not_drawn": {
+   "r2_op": {
+    "naive_transfer_r2": 0.032201143237856056,
+    "reparam_recovery_r2": 0.32386185837000536,
+    "target_own_ceiling_r2": 0.33270610951155266,
+    "recovery_frac_of_ceiling": 0.9734172265290482,
+    "recovery_minus_ceiling_ci": [
+     -0.011393687264563324,
+     -0.0061643233519450115
+    ]
+   },
+   "r4_fictionframe": {
+    "naive_transfer_r2": -0.24839358769559716,
+    "reparam_recovery_r2": 0.2594863695059737,
+    "target_own_ceiling_r2": 0.2773887694130909,
+    "recovery_frac_of_ceiling": 0.9354609779444362,
+    "recovery_minus_ceiling_ci": [
+     -0.0213560086189262,
+     -0.014223821967149839
+    ]
+   },
+   "assistant_own_r2": 0.3972849659147536
+  },
+  "sources": [
+   "eval_results/issue_1310/xpersona_similarity/assistant_test/summary_assistant.json",
+   "eval_results/issue_1310/xpersona_similarity/assistant_test/reparam_instruct.json",
+   "eval_results/issue_1310/xpersona_similarity/assistant_test/reparam_base.json",
+   "eval_results/issue_1310/xpersona_similarity/assistant_test/provenance_instruct.json"
+  ]
+ },
+ "plot6b": {
+  "plotted_model": "instruct (Qwen-2.5-7B-Instruct)",
+  "layer": 19,
+  "fit": "GCV ridge (dof cap 0.9), shared scenario-grouped 5-fold CV",
+  "n_per_persona": 300,
+  "n_pooled": 1200,
+  "point_def": "one point per (persona, scenario): X = turn-0 x_spanmean v_C, Y = mean reply-span y over kept slots (scene-aggregated)",
+  "drawn_arms": [
+   "pooled_M0_r2",
+   "persona_specific_M2_r2"
+  ],
+  "offsets_M1_not_drawn": "pooled_offsets_M1_r2 values retained below; the M1 rung was dropped from the poster figure (2026-08-20)",
+  "assistant_reference_group": {
+   "status": "PLOTTED set-apart (gap + separator + hatching + 'assistant*' tick), per user directive 2026-08-20",
+   "different_lattice": "the assistant M0/M2 come from a DIFFERENT committed pooled lattice: pool = {assistant bare Q&A, Wren bare Q&A, Wren in scene}, ROW grain (per-question rows), NOT the 300-scenario aggregation over the 4 characters; no committed decomposition pools the assistant with these 4 personas",
+   "not_comparable": "fractions/levels must NOT be compared across lattices: Wren appears in BOTH and its M0/M2 fraction is 0.99 in the 4-persona lattice vs 0.82 (bare) / 0.86 (scene) in the assistant_test lattice \u2014 the lattice switch alone moves it more than any assistant-vs-character difference",
+   "source": "eval_results/issue_1310/xpersona_similarity/assistant_test/decomposition_instruct.json",
+   "instruct": {
+    "pooled_M0_r2": 0.4051153063211188,
+    "persona_specific_M2_r2": 0.49891139167802057,
+    "frac_M0_over_M2": 0.8119985093115806,
+    "pool_members": [
+     "r1_qa_oneline (assistant bare Q&A)",
+     "r2_op (Wren bare Q&A (on-policy))",
+     "r4_fictionframe (Wren in scene)"
+    ],
+    "grain": "row grain (per-question rows, NOT the 300-scenario aggregation)",
+    "n_intersection": 4375,
+    "per_cell_kept_n": {
+     "r1_qa_oneline": 4423,
+     "r2_op": 4604,
+     "r4_fictionframe": 4841
+    }
+   },
+   "base_companion_not_drawn": {
+    "pooled_M0_r2": 0.34348172744936556,
+    "persona_specific_M2_r2": 0.3972849659147536,
+    "frac_M0_over_M2": 0.8645726793574848,
+    "pool_members": [
+     "r1_qa_oneline (assistant bare Q&A)",
+     "r2_op (Wren bare Q&A (on-policy))",
+     "r4_fictionframe (Wren in scene)"
+    ],
+    "grain": "row grain (per-question rows, NOT the 300-scenario aggregation)",
+    "n_intersection": 4045,
+    "per_cell_kept_n": {
+     "r1_qa_oneline": 4376,
+     "r2_op": 4428,
+     "r4_fictionframe": 4760
+    }
+   }
+  },
+  "instruct": {
+   "Wren": {
+    "pooled_M0_r2": 0.35074089227915894,
+    "pooled_offsets_M1_r2": 0.3475371608692135,
+    "persona_specific_M2_r2": 0.3548299086061537,
+    "frac_M1_over_M2": 0.9794472011517077,
+    "delta_M2_minus_M1": 0.007212763671374134,
+    "delta_M2_minus_M1_ci": [
+     0.00028106791275189785,
+     0.013948604405047027
+    ]
+   },
+   "HELIOS": {
+    "pooled_M0_r2": 0.3875027483153908,
+    "pooled_offsets_M1_r2": 0.3866044870616153,
+    "persona_specific_M2_r2": 0.40107670413358276,
+    "frac_M1_over_M2": 0.9639165852246873,
+    "delta_M2_minus_M1": 0.014245899699181552,
+    "delta_M2_minus_M1_ci": [
+     0.0075760697646939466,
+     0.020696784329817655
+    ]
+   },
+   "Dana": {
+    "pooled_M0_r2": 0.3171977807434766,
+    "pooled_offsets_M1_r2": 0.31558412872901265,
+    "persona_specific_M2_r2": 0.3285635376004241,
+    "frac_M1_over_M2": 0.9604965025449778,
+    "delta_M2_minus_M1": 0.012816680280194115,
+    "delta_M2_minus_M1_ci": [
+     0.0039706650084271235,
+     0.021316312482190628
+    ]
+   },
+   "Vex": {
+    "pooled_M0_r2": 0.21206553425629815,
+    "pooled_offsets_M1_r2": 0.2094804343469835,
+    "persona_specific_M2_r2": 0.2328833350537587,
+    "frac_M1_over_M2": 0.899508048949175,
+    "delta_M2_minus_M1": 0.023077446623670617,
+    "delta_M2_minus_M1_ci": [
+     0.015245015956659896,
+     0.03236432222571769
+    ]
+   }
+  },
+  "base_companion_not_drawn": {
+   "Wren": {
+    "pooled_M0_r2": 0.1819929255867262,
+    "pooled_offsets_M1_r2": 0.18112495868583467,
+    "persona_specific_M2_r2": 0.19648846768114947,
+    "frac_M1_over_M2": 0.9218096146983759,
+    "delta_M2_minus_M1": 0.015167590493429972,
+    "delta_M2_minus_M1_ci": [
+     0.006122500132150133,
+     0.02376541237241942
+    ]
+   },
+   "HELIOS": {
+    "pooled_M0_r2": 0.17408998429681466,
+    "pooled_offsets_M1_r2": 0.1746050018134221,
+    "persona_specific_M2_r2": 0.1974782359913172,
+    "frac_M1_over_M2": 0.8841733922572571,
+    "delta_M2_minus_M1": 0.02259309336570814,
+    "delta_M2_minus_M1_ci": [
+     0.015476094358239151,
+     0.030426745080542203
+    ]
+   },
+   "Dana": {
+    "pooled_M0_r2": 0.20215439642564126,
+    "pooled_offsets_M1_r2": 0.20059980675862055,
+    "persona_specific_M2_r2": 0.21775009509535348,
+    "frac_M1_over_M2": 0.9212386643081705,
+    "delta_M2_minus_M1": 0.016894696391254627,
+    "delta_M2_minus_M1_ci": [
+     0.008174469569419607,
+     0.025184535564703917
+    ]
+   },
+   "Vex": {
+    "pooled_M0_r2": 0.10823300258706137,
+    "pooled_offsets_M1_r2": 0.10740284228239849,
+    "persona_specific_M2_r2": 0.13266438854640195,
+    "frac_M1_over_M2": 0.8095830648993815,
+    "delta_M2_minus_M1": 0.024944442715613135,
+    "delta_M2_minus_M1_ci": [
+     0.015744909814886313,
+     0.03486121739430154
+    ]
+   }
+  },
+  "sources": [
+   "eval_results/issue_1310/xpersona_similarity/v2/decomposition_instruct.json",
+   "eval_results/issue_1310/xpersona_similarity/v2/decomposition_base.json",
+   "eval_results/issue_1310/xpersona_similarity/assistant_test/decomposition_instruct.json",
+   "eval_results/issue_1310/xpersona_similarity/assistant_test/provenance_instruct.json"
+  ]
+ }
+}

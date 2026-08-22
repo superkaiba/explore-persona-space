@@ -1,0 +1,105 @@
+{
+  "commit": "513a4930+dirty",
+  "render_id": "d1a61a74efa541c7",
+  "git_commit": "513a4930",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_2225/fu2_preimage_alltoken/analysis/contrasts.json",
+    "eval_results/issue_2225/fu2_preimage_alltoken/analysis/judge_accounting.json",
+    "eval_results/issue_2225/fu2_preimage_alltoken/analysis/selection.json",
+    "figures/issue_2225/fu2/fu2_geometry_cosines.meta.json",
+    "figures/issue_2225/fu2/fu2_geometry_cosines.pdf",
+    "figures/issue_2225/fu2/fu2_geometry_cosines.png",
+    "figures/issue_2225/fu2/fu2_hero_dose_response.meta.json",
+    "figures/issue_2225/fu2/fu2_hero_dose_response.pdf",
+    "figures/issue_2225/fu2/fu2_hero_dose_response.png",
+    "figures/issue_2225/fu2/fu2_judge_diagnostics.meta.json",
+    "figures/issue_2225/fu2/fu2_judge_diagnostics.pdf",
+    "figures/issue_2225/fu2/fu2_judge_diagnostics.png",
+    "figures/issue_2225/fu2/fu2_mmlu_extremes.meta.json",
+    "figures/issue_2225/fu2/fu2_mmlu_extremes.pdf",
+    "figures/issue_2225/fu2/fu2_mmlu_extremes.png",
+    "figures/issue_2225/fu2/fu2_operating_point_bars.meta.json",
+    "figures/issue_2225/fu2/fu2_operating_point_bars.pdf",
+    "figures/issue_2225/fu2/fu2_operating_point_bars.png",
+    "figures/issue_2225/fu2/fu2_probe_shift_profiles.meta.json",
+    "figures/issue_2225/fu2/fu2_probe_shift_profiles.pdf",
+    "figures/issue_2225/fu2/fu2_probe_shift_profiles.png",
+    "figures/issue_2225/fu2/fu2_projection_shift_bars.meta.json",
+    "figures/issue_2225/fu2/fu2_projection_shift_bars.pdf",
+    "figures/issue_2225/fu2/fu2_projection_shift_bars.png",
+    "figures/issue_2225/fu2/fu2_rank_sweep.meta.json",
+    "figures/issue_2225/fu2/fu2_rank_sweep.pdf",
+    "figures/issue_2225/fu2/fu2_rank_sweep.png",
+    "scripts/issue2225_fu1_analysis.py"
+  ],
+  "created": "2026-08-14T23:49:11Z",
+  "figsize": [
+    6.0,
+    4.0
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "MMLU accuracy": 0.7179888904714428,
+      "series": "Base model",
+      "_kind": "line"
+    },
+    {
+      "x": 1.0,
+      "MMLU accuracy": 0.7179888904714428,
+      "series": "Base model",
+      "_kind": "line"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 2,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "ylabel": "MMLU accuracy",
+        "legend_labels": [
+          "Parent-run range",
+          "Base model"
+        ],
+        "xticklabels": [
+          "N__evil__c0.25",
+          "N__evil__c3.0",
+          "N__hallucination__c0.25",
+          "N__hallucination__c3.0",
+          "N__sycophancy__c0.25",
+          "N__sycophancy__c3.0",
+          "Q__evil__c0.25",
+          "Q__evil__c3.0",
+          "Q__hallucination__c0.25",
+          "Q__hallucination__c3.0",
+          "Q__sycophancy__c0.25",
+          "Q__sycophancy__c3.0",
+          "RQ__evil__c0.25",
+          "RQ__evil__c3.0"
+        ],
+        "yticklabels": [
+          "0.6975",
+          "0.7000",
+          "0.7025",
+          "0.7050",
+          "0.7075",
+          "0.7100",
+          "0.7125",
+          "0.7150",
+          "0.7175",
+          "0.7200"
+        ]
+      }
+    ],
+    "series": [
+      "Base model"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

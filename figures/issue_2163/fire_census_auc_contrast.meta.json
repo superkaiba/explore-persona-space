@@ -1,0 +1,167 @@
+{
+  "commit": "3bb8c78b",
+  "render_id": "67348a005c004af3",
+  "git_commit": "3bb8c78b",
+  "git_dirty": false,
+  "created": "2026-08-13T17:00:26Z",
+  "figsize": [
+    7.5,
+    6.5
+  ],
+  "points": [
+    {
+      "rank AUC \u2212 0.5  (blue: higher for firing, red: higher for never-firing)": 0.005295,
+      "y": 0.010590914273042373,
+      "_kind": "bar"
+    },
+    {
+      "rank AUC \u2212 0.5  (blue: higher for firing, red: higher for never-firing)": 0.024493,
+      "y": 0.048985259859238295,
+      "_kind": "bar"
+    },
+    {
+      "rank AUC \u2212 0.5  (blue: higher for firing, red: higher for never-firing)": 0.024772,
+      "y": 0.04954329741800323,
+      "_kind": "bar"
+    },
+    {
+      "rank AUC \u2212 0.5  (blue: higher for firing, red: higher for never-firing)": 0.025817,
+      "y": 0.051634467758176594,
+      "_kind": "bar"
+    },
+    {
+      "rank AUC \u2212 0.5  (blue: higher for firing, red: higher for never-firing)": 0.030078,
+      "y": 0.06015682388518384,
+      "_kind": "bar"
+    },
+    {
+      "rank AUC \u2212 0.5  (blue: higher for firing, red: higher for never-firing)": 0.035165,
+      "y": 0.07032967471619023,
+      "_kind": "bar"
+    },
+    {
+      "rank AUC \u2212 0.5  (blue: higher for firing, red: higher for never-firing)": -0.03805,
+      "y": -0.07609961317347141,
+      "_kind": "bar"
+    },
+    {
+      "rank AUC \u2212 0.5  (blue: higher for firing, red: higher for never-firing)": 0.051087,
+      "y": 0.10217402521380003,
+      "_kind": "bar"
+    },
+    {
+      "rank AUC \u2212 0.5  (blue: higher for firing, red: higher for never-firing)": -0.059261,
+      "y": -0.11852205255655224,
+      "_kind": "bar"
+    },
+    {
+      "rank AUC \u2212 0.5  (blue: higher for firing, red: higher for never-firing)": 0.064789,
+      "y": 0.12957756671500087,
+      "_kind": "bar"
+    },
+    {
+      "rank AUC \u2212 0.5  (blue: higher for firing, red: higher for never-firing)": 0.121534,
+      "y": 0.24306895162135544,
+      "_kind": "bar"
+    },
+    {
+      "rank AUC \u2212 0.5  (blue: higher for firing, red: higher for never-firing)": 0.124824,
+      "y": 0.24964781290261195,
+      "_kind": "bar"
+    },
+    {
+      "rank AUC \u2212 0.5  (blue: higher for firing, red: higher for never-firing)": 0.134968,
+      "y": 0.2699359449604093,
+      "_kind": "bar"
+    },
+    {
+      "rank AUC \u2212 0.5  (blue: higher for firing, red: higher for never-firing)": 0.135032,
+      "y": 0.2700636487143675,
+      "_kind": "bar"
+    },
+    {
+      "rank AUC \u2212 0.5  (blue: higher for firing, red: higher for never-firing)": 0.138863,
+      "y": 0.2777252081182182,
+      "_kind": "bar"
+    },
+    {
+      "rank AUC \u2212 0.5  (blue: higher for firing, red: higher for never-firing)": 0.145278,
+      "y": 0.29055503915658787,
+      "_kind": "bar"
+    },
+    {
+      "rank AUC \u2212 0.5  (blue: higher for firing, red: higher for never-firing)": 0.1662,
+      "y": 0.3323996928193341,
+      "_kind": "bar"
+    },
+    {
+      "rank AUC \u2212 0.5  (blue: higher for firing, red: higher for never-firing)": 0.166878,
+      "y": 0.33375621232917896,
+      "_kind": "bar"
+    },
+    {
+      "rank AUC \u2212 0.5  (blue: higher for firing, red: higher for never-firing)": 0.175597,
+      "y": 0.35119404688426936,
+      "_kind": "bar"
+    },
+    {
+      "rank AUC \u2212 0.5  (blue: higher for firing, red: higher for never-firing)": 0.184152,
+      "y": 0.368303624474859,
+      "_kind": "bar"
+    },
+    {
+      "rank AUC \u2212 0.5  (blue: higher for firing, red: higher for never-firing)": 0.199689,
+      "y": 0.3993779313415834,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 21,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "How firing vs never-firing features differ, per feature property",
+        "xlabel": "rank AUC \u2212 0.5  (blue: higher for firing, red: higher for never-firing)",
+        "xticklabels": [
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5"
+        ],
+        "yticklabels": [
+          "side_ratio",
+          "write_norm",
+          "redundancy_max_cos",
+          "footprint_var",
+          "logit_footprint_concentration",
+          "scaffold_frac",
+          "massive_dim_mass",
+          "footprint_skew",
+          "enc_norm",
+          "footprint_kurt",
+          "enc_dec_cos",
+          "proj_var",
+          "n_active_holdout",
+          "activity",
+          "mean_act_cond",
+          "mean_run_length",
+          "mean_act_uncond",
+          "firing_freq_per_token",
+          "consistency",
+          "act_var_across_answers",
+          "template_token_frac"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

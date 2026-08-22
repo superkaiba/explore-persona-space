@@ -480,12 +480,59 @@ def fig_jensen_concentration(fig_dir: Path) -> str | None:
     return None
 
 
+def fig_paper_c1_input_ablation(eval_root: Path) -> None:
+    """ICLR paper figure (c1_linear input-choice result): trait-readability heatmap.
+
+    Per-trait held-out R^2 along each trait direction, by conditioning arm at layer 14
+    (the #1774 hero read, restyled to the paper spec: viridis, shared scale, cell
+    values only — the co-kernel overlay and noise-limited hatching move to prose;
+    every cell in the committed data is resolved above its decode-noise floor).
+    """
+    from explore_persona_space.analysis.paper_plots import figsize_iclr_full, set_paper_style
+
+    set_paper_style("iclr")
+    arm_order = ["arm_context", "arm_bare_query", "arm_prefix_end", "arm_query_avg"]
+    per_arm = {}
+    for arm in arm_order:
+        ch = _read(eval_root / "channels" / f"{arm}_L14.json")
+        assert ch is not None, f"missing channels/{arm}_L14.json"
+        per_arm[arm] = ch["per_trait_heldout_r2"]
+    traits = list(TRAIT_LABELS)
+    M = np.array([[per_arm[a][t] for a in arm_order] for t in traits])
+    fig, ax = plt.subplots(figsize=figsize_iclr_full(height_frac=0.5))
+    im = ax.imshow(M, cmap="viridis", vmin=min(0.0, float(M.min())), vmax=float(M.max()))
+    ax.set_xticks(range(len(arm_order)), [ARM_LABELS[a] for a in arm_order])
+    ax.set_yticks(range(len(traits)), [TRAIT_LABELS[t] for t in traits])
+    for i in range(len(traits)):
+        for j in range(len(arm_order)):
+            ax.text(
+                j,
+                i,
+                f"{M[i, j]:.2f}",
+                ha="center",
+                va="center",
+                fontsize=7.5,
+                color="white" if M[i, j] < 0.55 else "black",
+            )
+    fig.colorbar(im, ax=ax, label="held-out $R^2$ along trait direction")
+    paper_out = c.PROJECT_ROOT / "figures" / "paper"
+    paper_out.mkdir(parents=True, exist_ok=True)
+    savefig_paper(fig, "c1_input_ablation_heatmap", dir=paper_out)
+    plt.close(fig)
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--out-root", default=None)
     ap.add_argument("--fig-dir", default=None)
     ap.add_argument("--layers", default="14,18,19")
+    ap.add_argument("--style", choices=("blog", "iclr"), default="blog")
     args = ap.parse_args(argv)
+    if args.style == "iclr":
+        # Paper pathway (#2094 precedent): one ICLR-styled figure under figures/paper/.
+        fig_paper_c1_input_ablation(c.eval_out(args.out_root))
+        print("paper c1_input_ablation_heatmap regenerated.")
+        return 0
     eval_root = c.eval_out(args.out_root)
     fig_dir = Path(args.fig_dir) if args.fig_dir else c.PROJECT_ROOT / "figures/issue_1774"
     fig_dir.mkdir(parents=True, exist_ok=True)

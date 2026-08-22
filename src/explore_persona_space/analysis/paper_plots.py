@@ -35,6 +35,12 @@ Public API
     paper_palette_blog     — return N colours from the soft "blog" palette (N > 8
                              extends via perceptually-uniform colormap sampling)
     paper_palette_role     — look up a colour by semantic role (primary / baseline / ...)
+    PAPER_COLORS           — semantic paper-wide colour registry (ICLR paper; one
+                             colour = one meaning across every paper figure)
+    paper_color            — look up a PAPER_COLORS concept (KeyError on a miss)
+    figsize_iclr_full      — full-textwidth ICLR figsize (5.5 in wide)
+    figsize_iclr_half      — half-textwidth ICLR figsize (2.75 in wide)
+    figsize_iclr_panels    — full-textwidth multi-panel-row ICLR figsize
     set_title_subtitle     — left-aligned title + subtitle (Anthropic-blog register)
     proportion_ci          — 95% Wald CI for a proportion
 
@@ -57,16 +63,26 @@ register). Use it for clean-result issue figures and mentor slides:
 ... )
 >>> savefig_paper(fig, "issue_281/marker_uptake", dir="figures/")
 
-For paper figures (NeurIPS / ICML / ICLR — narrow column, dense, camera-ready):
+For paper figures (NeurIPS / ICML — narrow column, dense, camera-ready):
 
 >>> set_paper_style("neurips")
 >>> # ... build your figure ...
 >>> savefig_paper(fig, "em_defense/pre_post_alignment", dir="figures/")
+
+For the ICLR context-answer-map paper (Times-alike serif, author-at-final-size,
+semantic paper-wide colours — spec: `.claude/skills/paper-plots/style-reference.md`
+§ "Paper (ICLR) target"):
+
+>>> set_paper_style("iclr")
+>>> fig, ax = plt.subplots(figsize=figsize_iclr_full())
+>>> ax.plot(x, y, color=paper_color("instruct"))
+>>> savefig_paper(fig, "heldout_r2_by_layer", dir="figures/paper/")
 """
 
 from __future__ import annotations
 
 import json
+import os
 import warnings
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -103,6 +119,42 @@ def _resolve_blog_fonts() -> list[str]:
     out = [name for name in _BLOG_FONT_CANDIDATES if name in installed]
     if "DejaVu Sans" not in out:
         out.append("DejaVu Sans")
+    return out
+
+
+# Times-alike serif chain for the "iclr" style. The ICLR style file sets the
+# body text in Times, so paper figures use a Times(-clone) serif: TeX Gyre
+# Termes and Nimbus Roman are metric-compatible URW Times clones; Liberation
+# Serif is the Times-New-Roman-metric fallback. matplotlib's bundled DejaVu
+# Serif is deliberately NOT in the chain — it reads visibly non-Times next to
+# the ICLR body text, so resolution fails loud instead of degrading to it.
+_ICLR_FONT_CANDIDATES: tuple[str, ...] = (
+    "Times New Roman",
+    "Times",
+    "TeX Gyre Termes",
+    "Nimbus Roman",
+    "Liberation Serif",
+)
+
+
+def _resolve_iclr_fonts() -> list[str]:
+    """Return the installed subset of the ICLR Times-alike serif chain.
+
+    Raises RuntimeError when NONE of the chain is installed, rather than
+    silently falling back to DejaVu Serif (the matplotlib default serif):
+    a DejaVu-set figure mismatches the ICLR Times body text and the drift
+    would otherwise surface only at camera-ready.
+    """
+    installed = {f.name for f in font_manager.fontManager.ttflist}
+    out = [name for name in _ICLR_FONT_CANDIDATES if name in installed]
+    if not out:
+        raise RuntimeError(
+            "set_paper_style('iclr'): none of the Times-alike serif fonts "
+            f"{list(_ICLR_FONT_CANDIDATES)} is installed on this machine; "
+            "install one (e.g. apt: fonts-texgyre or fonts-liberation, then "
+            "rebuild the matplotlib font cache) — refusing to fall back to "
+            "DejaVu Serif for paper figures."
+        )
     return out
 
 
@@ -167,6 +219,40 @@ def _extended_palette(base: list[str], n: int, fn_name: str) -> list[str]:
     return list(base) + extra
 
 
+# Semantic paper-wide colour registry for the ICLR context-answer-map paper.
+# ONE COLOUR = ONE MEANING across EVERY figure in the paper (stricter than the
+# per-writeup colour-consistency rule) — plot code binds colours by CONCEPT via
+# `paper_color(...)`, never by cycle position. Hexes are Wong 2011
+# colorblind-safe (plus the neutral gray / reference black conventions).
+PAPER_COLORS: dict[str, str] = {
+    "instruct": "#0072B2",  # blue - instruct model / the paper's featured arm
+    "base": "#E69F00",  # orange - base (pretrained) model
+    "identity_bias": "#009E73",  # green - identity-plus-bias baseline
+    "neural_map": "#D55E00",  # vermilion - MLP/neural map variants
+    "oracle_answer": "#CC79A7",  # purple - real-answer oracle
+    "persona_vector": "#56B4E9",  # sky blue - persona-vector method
+    "null": "#999999",  # gray - null / random / pathological arms
+    "reference": "#000000",  # black - ground truth / reference lines
+}
+
+
+def paper_color(concept: str) -> str:
+    """Return the paper-wide colour assigned to ``concept`` (see PAPER_COLORS).
+
+    Raises
+    ------
+    KeyError
+        Naming the valid keys, when ``concept`` is not registered — fail fast,
+        no silent default: a silently-wrong colour breaks the
+        one-colour-one-meaning contract across the paper's figures.
+    """
+    if concept not in PAPER_COLORS:
+        raise KeyError(
+            f"unknown paper colour concept {concept!r}; expected one of {sorted(PAPER_COLORS)}"
+        )
+    return PAPER_COLORS[concept]
+
+
 # Named-role aliases. Plot code reads `paper_palette_role("primary")` instead
 # of indexing into the palette by integer slot, so semantic intent travels
 # with the chart code. Roles map to per-style palettes — `"primary"` stays
@@ -192,6 +278,16 @@ _ROLE_ALIASES: dict[str, dict[str, str]] = {
         "control": _BLOG_PALETTE[2],
         "accent": _BLOG_PALETTE[3],
         "neutral": _BLOG_PALETTE[5],
+    },
+    # Under "iclr" the generic roles resolve to the matching PAPER_COLORS
+    # concepts, so style-agnostic helpers keep working; paper figure code
+    # should still prefer the explicit `paper_color(<concept>)` binding.
+    "iclr": {
+        "primary": PAPER_COLORS["instruct"],
+        "baseline": PAPER_COLORS["base"],
+        "control": PAPER_COLORS["identity_bias"],
+        "accent": PAPER_COLORS["neural_map"],
+        "neutral": PAPER_COLORS["null"],
     },
 }
 
@@ -260,8 +356,56 @@ def paper_palette_role(role: str) -> str:
     return aliases[role]
 
 
+# ICLR text-block width in inches (iclr .sty: \textwidth = 5.5in). Figures are
+# authored AT FINAL SIZE — included in LaTeX without a width= rescale, because
+# rescaling silently changes every realized font size on the page.
+ICLR_TEXTWIDTH_IN = 5.5
+# Inverse golden ratio — default height/width fraction (tueplots figsizes
+# module convention).
+_GOLDEN_FRAC = 0.618
+
+
+def figsize_iclr_full(height_frac: float = _GOLDEN_FRAC) -> tuple[float, float]:
+    """Full-textwidth ICLR figsize: ``(5.5, 5.5 * height_frac)`` inches.
+
+    The sanctioned FULL width for paper figures — author at final size and
+    include in LaTeX at natural size (no ``width=`` rescale).
+    """
+    return (ICLR_TEXTWIDTH_IN, ICLR_TEXTWIDTH_IN * height_frac)
+
+
+def figsize_iclr_half(height_frac: float = _GOLDEN_FRAC) -> tuple[float, float]:
+    """Half-textwidth ICLR figsize: ``(2.75, 2.75 * height_frac)`` inches.
+
+    The sanctioned HALF width — for side-by-side minipage pairs. Font sizes
+    are already final under the ``"iclr"`` style, so the half-width figure
+    needs no LaTeX rescale either.
+    """
+    half = ICLR_TEXTWIDTH_IN / 2.0
+    return (half, half * height_frac)
+
+
+def figsize_iclr_panels(ncols: int, height_in: float | None = None) -> tuple[float, float]:
+    """Full-textwidth ICLR multi-panel-row figsize: ``(5.5, height_in)`` inches.
+
+    ``height_in`` defaults to the golden-ratio height of ONE panel
+    (``5.5 / ncols * 0.618``), so an ``ncols``-across row of equal panels
+    fits the text block at final size.
+
+    Raises
+    ------
+    ValueError
+        If ``ncols`` is not a positive int.
+    """
+    if not isinstance(ncols, int) or ncols < 1:
+        raise ValueError(f"ncols must be a positive int, got {ncols!r}")
+    if height_in is None:
+        height_in = (ICLR_TEXTWIDTH_IN / ncols) * _GOLDEN_FRAC
+    return (ICLR_TEXTWIDTH_IN, height_in)
+
+
 def set_paper_style(
-    target: Literal["neurips", "generic", "blog"] = "blog",
+    target: Literal["neurips", "generic", "blog", "iclr"] = "blog",
     font_scale: float = 1.0,
 ) -> None:
     """Configure ``matplotlib`` rcParams for paper-quality figures.
@@ -280,17 +424,24 @@ def set_paper_style(
         off-white outer with white plotting area, light y-grid only,
         frameless legend, semibold left-aligned titles. Use for clean-result
         issues and mentor slides.
+        ``"iclr"`` — ICLR camera-ready (the context-answer-map paper):
+        Times-alike serif at FINAL size (5.5 x 3.4 in full-textwidth),
+        white opaque background, no grid, frameless legend. Colours bind by
+        concept via :func:`paper_color`; see :func:`_set_iclr_style` for the
+        style notes (hatch ban, heatmap colormaps, shared panel scales).
     font_scale
         Multiplier applied to every font size. ``1.0`` leaves the defaults.
         Use ``1.2`` for talk-slide variants of the same figure.
     """
     global _ACTIVE_STYLE
 
-    if target not in ("neurips", "generic", "blog"):
-        raise ValueError(f"target must be 'neurips', 'generic', or 'blog', got {target!r}")
+    if target not in ("neurips", "generic", "blog", "iclr"):
+        raise ValueError(f"target must be 'neurips', 'generic', 'blog', or 'iclr', got {target!r}")
 
     if target == "blog":
         _set_blog_style(font_scale)
+    elif target == "iclr":
+        _set_iclr_style(font_scale)
     else:
         _set_neurips_style(target, font_scale)
 
@@ -344,6 +495,86 @@ def _set_neurips_style(target: Literal["neurips", "generic"], font_scale: float)
             "ps.fonttype": 42,
             "svg.fonttype": "none",
             # Colorblind-safe default prop cycle
+            "axes.prop_cycle": cycler(color=_PALETTE),
+        }
+    )
+
+
+def _set_iclr_style(font_scale: float) -> None:
+    """Apply the ICLR camera-ready rcParams (context-answer-map paper).
+
+    Author at FINAL size: the ICLR style file's ``\textwidth`` is 5.5 in, so
+    a full-width figure is 5.5 in wide and is included in LaTeX WITHOUT a
+    ``width=`` rescale (rescaling silently changes every realized font size).
+    Size via :func:`figsize_iclr_full` / :func:`figsize_iclr_half` /
+    :func:`figsize_iclr_panels`. Sizing constants follow the tueplots
+    ``figsizes``/``fonts`` modules' ICLR entries; nothing renders below 7 pt
+    at ``font_scale=1.0``.
+
+    Style notes (enforced at review, not by rcParams):
+
+    - **Hatching is BANNED under this target** — encode distinctions via
+      colour + marker/linestyle, or reduced alpha + a caption note.
+    - **Heatmaps** use ``viridis`` (sequential) / ``RdBu_r`` (diverging);
+      side-by-side comparable panels share ONE colour scale (same
+      ``vmin``/``vmax``, one shared colorbar).
+    - **Colours bind by concept** through the :data:`PAPER_COLORS` registry
+      via :func:`paper_color` — one colour = one meaning paper-wide.
+    """
+    base_font = 9.0 * font_scale
+    label_font = 9.0 * font_scale
+    title_font = 9.0 * font_scale
+    tick_font = 7.5 * font_scale
+    legend_font = 7.5 * font_scale
+
+    mpl.rcParams.update(
+        {
+            # Fonts — Times-alike serif chain (the ICLR body font is Times);
+            # resolved to installed fonts, fail-loud when none is installed
+            # (never DejaVu Serif). STIX math glyphs are Times-compatible.
+            "font.family": "serif",
+            "font.serif": _resolve_iclr_fonts(),
+            "mathtext.fontset": "stix",
+            "font.size": base_font,
+            "axes.labelsize": label_font,
+            "axes.titlesize": title_font,
+            "xtick.labelsize": tick_font,
+            "ytick.labelsize": tick_font,
+            "legend.fontsize": legend_font,
+            # Figure geometry — ICLR \textwidth is 5.5 in; golden-ratio
+            # height (5.5 x 3.4). Author at final size (figsize_iclr_*).
+            "figure.figsize": (5.5, 3.4),
+            "figure.dpi": 150,
+            "savefig.dpi": 300,
+            "savefig.bbox": "tight",
+            "savefig.pad_inches": 0.02,
+            # Backgrounds — white and OPAQUE everywhere: a transparent
+            # figure composites unpredictably over the PDF page background
+            # in some viewers.
+            "figure.facecolor": "#FFFFFF",
+            "axes.facecolor": "#FFFFFF",
+            "savefig.facecolor": "#FFFFFF",
+            "savefig.transparent": False,
+            # Hygiene — despine, NO grid, frameless legend.
+            "axes.spines.top": False,
+            "axes.spines.right": False,
+            "axes.grid": False,
+            "axes.grid.axis": "both",
+            "legend.frameon": False,
+            # Layout — constrained_layout at final size (no tight_layout).
+            "figure.constrained_layout.use": True,
+            # Lines / markers / error bars — neurips-density defaults.
+            "lines.linewidth": 1.5,
+            "lines.markersize": 5,
+            "errorbar.capsize": 3,
+            # Type-42 font embedding — camera-ready PDFs stay editable and
+            # avoid Type-3 bitmap-font rejections.
+            "pdf.fonttype": 42,
+            "ps.fonttype": 42,
+            "svg.fonttype": "none",
+            # Colorblind-safe prop cycle (Wong 2011 — the same hex family
+            # PAPER_COLORS draws from); semantic assignments go through
+            # paper_color(), never cycle position.
             "axes.prop_cycle": cycler(color=_PALETTE),
         }
     )
@@ -834,6 +1065,39 @@ def _extract_errorbars(ax: plt.Axes, ctx: _AxesCtx) -> list[dict[str, object]]:
     return out
 
 
+def _has_explicit_offsets(coll: object) -> bool:
+    """Return True when ``coll``'s offsets were explicitly supplied.
+
+    ``Collection.get_offsets()`` SYNTHESIZES ``np.zeros((1, 2))`` when the
+    artist's offsets were never set, so a lone ``(0,0)`` offset is ambiguous:
+    it is either a genuine single-point datum or a placeholder from an artist
+    carrying no offsets at all (``LineCollection`` error bars, ``fill_between``
+    / ``violinplot`` polys, ``QuadMesh`` / ``QuadContourSet`` rasters, a bare
+    ``PathCollection``, ``RegularPolyCollection``).
+
+    Marker sizes do NOT disambiguate — a ``PathCollection([path], sizes=[14])``
+    is indistinguishable from ``ax.scatter([0], [0])`` on offsets shape, sizes
+    shape and path count (measured; the #2262 round-1 defect). Offset
+    PROVENANCE does: both the ``Collection`` constructor's ``offsets=`` kwarg
+    and ``set_offsets`` store their argument, so the private ``_offsets`` is
+    non-None exactly when a caller supplied offsets. ``Axes.scatter`` takes the
+    CONSTRUCTOR path (it passes ``offsets=`` to ``PathCollection`` and never
+    calls ``set_offsets``). There is no public accessor for this —
+    ``get_offsets()`` is the very call that erases the distinction.
+
+    Never raises: any artist whose provenance cannot be read returns False, so
+    the caller SKIPS it. That fail direction is deliberate — if a future
+    matplotlib renames the attribute we degrade to the pre-#2262 behavior of
+    dropping genuine origin points (a visible undercount), never to
+    fabricating rows (invented data). The keep-side acceptance tests pin the
+    behavior so such a rename fails loudly.
+    """
+    try:
+        return getattr(coll, "_offsets", None) is not None
+    except Exception:
+        return False
+
+
 def _extract_scatters(ax: plt.Axes, ctx: _AxesCtx) -> list[dict[str, object]]:
     """Extract scatter point offsets: x/y (+ nearest text label) per point."""
     import numpy as np
@@ -848,8 +1112,16 @@ def _extract_scatters(ax: plt.Axes, ctx: _AxesCtx) -> list[dict[str, object]]:
             continue
         if offsets.ndim != 2 or offsets.shape[1] != 2 or offsets.shape[0] == 0:
             continue
-        # A lone (0,0) offset is matplotlib's default for empty collections.
-        if offsets.shape[0] == 1 and not np.any(offsets):
+        # matplotlib SYNTHESIZES a (1,2) [[0,0]] offset for artists that carry
+        # no offsets at all (LineCollection error bars, QuadMesh /
+        # QuadContourSet rasters incl. on colorbar axes, fill_between / violin
+        # polys, a bare or sized-but-offset-less PathCollection,
+        # RegularPolyCollection). Skip those, but KEEP a real (0,0) datum from
+        # a per-point ``ax.scatter([x],[y])`` loop — distinguished by offset
+        # PROVENANCE, since marker sizes do not separate the two cases.
+        # (``ax.scatter([], [])`` never reaches here: its offsets are (0,2) and
+        # the shape check above skips it.)
+        if offsets.shape[0] == 1 and not np.any(offsets) and not _has_explicit_offsets(coll):
             continue
         series = (coll.get_label() or "").strip()
         rows = _xy_rows(offsets, ctx, series, with_error=False, with_label=True)
@@ -1111,7 +1383,7 @@ def _new_render_id() -> str:
     return uuid.uuid4().hex[:16]
 
 
-def savefig_paper(
+def savefig_paper(  # noqa: C901 — deliberately flat save pipeline: presentation-env overrides (#1739) + per-format provenance embed + sidecar data/text extraction; pre-existing (16 > 15), not introduced by #2262
     fig: plt.Figure,
     stem: str,
     dir: str | Path = "figures/",
@@ -1208,6 +1480,35 @@ def savefig_paper(
         git_provenance,
     )
 
+    # Presentation-only overrides (#1739). Both default OFF: unset env leaves
+    # every byte of the render path unchanged.
+    #   EPS_PLOT_NO_CAPTION=1   hide fig-level caption text for the RENDER only
+    #                           (the sidecar's `text` block still records it,
+    #                           since `_extract_fig_text` reads `.get_text()`
+    #                           regardless of visibility -- provenance is kept)
+    #   EPS_PLOT_STEM_SUFFIX=_x append a stem suffix so caption-free variants
+    #                           land beside the captioned originals instead of
+    #                           overwriting figures other write-ups reference
+    _stem_suffix = os.environ.get("EPS_PLOT_STEM_SUFFIX", "")
+    if _stem_suffix:
+        target = target.with_name(target.name + _stem_suffix)
+    _no_caption = os.environ.get("EPS_PLOT_NO_CAPTION") == "1"
+    _save_kwargs: dict[str, object] = {}
+    _hidden: list = []
+    if _no_caption:
+        _special = {
+            id(getattr(fig, "_suptitle", None)),
+            id(getattr(fig, "_supxlabel", None)),
+            id(getattr(fig, "_supylabel", None)),
+        }
+        for _t in fig.texts:
+            if id(_t) not in _special and _t.get_visible():
+                _t.set_visible(False)
+                _hidden.append(_t)
+        # Crop the space the hidden caption block occupied; without this the
+        # figure keeps the tall bottom margin its generator reserved for it.
+        _save_kwargs["bbox_inches"] = "tight"
+
     prov = git_provenance()
     commit = commit_string(prov)  # `<sha>` or `<sha>+dirty` — for non-JSON channels
     # Per-CALL render id: binds this call's PNG to this call's sidecar so a
@@ -1228,7 +1529,12 @@ def savefig_paper(
             # the PIL re-tag re-save below discards matplotlib's own text
             # chunks, so a metadata={"Software": ...}-borne id would vanish.
             pnginfo.add_text("RenderId", render_id)
-            fig.savefig(png_path, format="png", metadata={"Software": f"commit={commit}"})
+            fig.savefig(
+                png_path,
+                format="png",
+                metadata={"Software": f"commit={commit}"},
+                **_save_kwargs,
+            )
             # Re-tag with pnginfo chunk so the commit is greppable from the file.
             from PIL import Image as _Image
 
@@ -1241,10 +1547,16 @@ def savefig_paper(
                 pdf_path,
                 format="pdf",
                 metadata={"Keywords": f"commit={commit} render_id={render_id}"},
+                **_save_kwargs,
             )
             written["pdf"] = pdf_path
         else:
             raise ValueError(f"Unsupported format {fmt!r}; supported: png, pdf")
+
+    # Restore the caption artists so a caller that reuses `fig` (or re-saves it
+    # under different settings) sees the figure it built.
+    for _t in _hidden:
+        _t.set_visible(True)
 
     meta_path = target.with_suffix(".meta.json")
     fig_size = fig.get_size_inches().tolist()

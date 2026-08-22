@@ -22,6 +22,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from tests.issue_skill_source import read_workflow_doc
+
 # Resolve paths against the test file's own repo root (mirrors
 # tests/test_issue_skill_marker_contract.py). This keeps the pin
 # gate-scope-correct in a worktree: `task_workflow.repo_root()` branch-guards
@@ -36,7 +38,7 @@ ISSUE_SKILL = ROOT / ".claude" / "skills" / "issue" / "SKILL.md"
 
 
 def _read(path: Path) -> str:
-    return path.read_text(encoding="utf-8")
+    return read_workflow_doc(path)
 
 
 def test_agent_spec_carries_parentless_infra_skip_clause() -> None:

@@ -1,0 +1,626 @@
+v4 bodies scanned: 91
+bodies WARNed:     84  (92.3%)
+result sections scanned: 869; flagged sections: 497
+
+evidence-class tally (per passing section):
+  a_exemption_token: 9
+  b_per_unit_stem_figure: 77
+  c_claim: 286
+
+evidence-(c) matched satisfier spans (span -> count):
+    68  'per-context'
+    58  'companion'
+    48  'per-unit'
+    35  'per-question'
+    13  'per point'
+    12  'per context'
+    11  'per source'
+     7  'low-level'
+     6  'points labeled'
+     6  'labeled points'
+     5  'per-source'
+     5  'per seed'
+     3  'counterpart'
+     2  'per question'
+     2  'per-seed'
+     1  'per-point'
+     1  'per unit'
+     1  'raw view'
+     1  'point-by-point'
+     1  'points labelled'
+
+flagged (status, task, H3) pairs:
+  awaiting_promotion/1072: The own-answer advantage is orthogonal-carried at every probed layer, 
+  awaiting_promotion/1072: The unclosed layer-26 residual is also orthogonal-carried; the paralle
+  awaiting_promotion/1072: The token-identity direction is real but small, and its gap enrichment
+  awaiting_promotion/1074: The abliterated generator's own contrastive negatives are judged harmf
+  awaiting_promotion/1074: The sycophancy zero-yield spans every knowledge domain; agreement is e
+  awaiting_promotion/1074: Judge no-score drops concentrate on harmful content and are largest on
+  awaiting_promotion/1074: Base-Qwen regenerated negatives clear the pairing quota for all five p
+  awaiting_promotion/1074: The plateau survives the graded-mean, draw-level censoring, and schedu
+  awaiting_promotion/1090: No epochs-3 dose rung reaches the 0.60-0.85 band, and the pipeline con
+  awaiting_promotion/1090: A judged re-read of all 1,800 stored formatting completions reads the 
+  awaiting_promotion/1090: Trait-framed datagen scales to 24 of 34 planned organisms; broad misal
+  awaiting_promotion/1090: The impolite disposition installs under three training contexts but ex
+  awaiting_promotion/1090: The predicted positive-only leakage excess is absent, but the matched 
+  awaiting_promotion/1090: Impolite enters the 0.60-0.85 band in both previously-silent training 
+  awaiting_promotion/1090: The cell verdicts survive both the judge-drop and intrusion-zeroed bou
+  awaiting_promotion/1090: The learning-rate unlock extends to the bare default-assistant context
+  awaiting_promotion/1090: Adapter rank does not install the formatting control, and every rank m
+  awaiting_promotion/1090: A third of formatting-arm completions are language-intruded, and exclu
+  awaiting_promotion/1090: The bare-context verdicts survive the intrusion-zeroed bound, and a li
+  awaiting_promotion/1090: Fifteen epochs at the parent learning rate alone carry both sycophancy
+  awaiting_promotion/1090: Both rubrics keep the Qwen-data 10x arm in band, and the paper-rubric 
+  awaiting_promotion/1092: Context-based maps reach held-out R² 0.74–0.81 where prefix-based maps
+  awaiting_promotion/1092: The context map clears every affine transport floor; the prefix arm's 
+  awaiting_promotion/1092: The query-dominant variance decomposition transfers from constructed g
+  awaiting_promotion/1092: The context operator is additive in prefix and query factors
+  awaiting_promotion/1092: The prefix factor does not concentrate trait content: the query factor
+  awaiting_promotion/1092: The prefix-arm and context-arm operators write into a shared output su
+  awaiting_promotion/1092: The transport gain from instruction tuning is interaction-driven; shuf
+  awaiting_promotion/1092: Supervised probes on pre-answer states predict judged trait expression
+  awaiting_promotion/1092: Cross-corpus probe transfer is not demonstrated in either direction
+  awaiting_promotion/1092: One-round dynamics maps do not generalize across conversations; per-tu
+  awaiting_promotion/1092: The context-over-prefix transport gap reproduces at SAE feature grain
+  awaiting_promotion/1092: Per-feature variance shares confirm query dominance with a small, mech
+  awaiting_promotion/1092: The strongest decoder–trait-direction alignments clear their matched n
+  awaiting_promotion/1092: One attention-sink position per model: a reusable sink and massive-act
+  awaiting_promotion/1112: All four sycophancy cells enter the install band; the full fine-tune p
+  awaiting_promotion/1112: Training method leaves no resolvable trace in the spectral shape of th
+  awaiting_promotion/1112: Contrastive negatives do not rotate the shift direction beyond run-lev
+  awaiting_promotion/1112: Full fine-tuning moves the representation roughly twice as far at the 
+  awaiting_promotion/1112: The two methods shift the residual stream along statistically indistin
+  awaiting_promotion/1112: Below rank 32 the shift direction rotates away from full fine-tuning, 
+  awaiting_promotion/1112: Emergent misalignment fails to install on either method — the behavior
+  awaiting_promotion/1112: The marker method pair gives direction-consistent but install-confound
+  awaiting_promotion/1112: Diffuseness belongs to the own-response measurement arm, not the train
+  awaiting_promotion/1112: Teacher-forced re-capture on shared text collapses the diffuse respons
+  awaiting_promotion/1310: The character-swap control is specific in every arm except per-turn in
+  awaiting_promotion/1310: The per-turn instruct anti-prediction is confined to mid layers and tr
+  awaiting_promotion/1310: Per-fold and per-scene-group points show the layer-19 aggregates are n
+  awaiting_promotion/1310: Aggregating each prefill scene to one point turns every instruct cell 
+  awaiting_promotion/1310: The four character maps are dominantly one shared operator with a smal
+  awaiting_promotion/1315: CJK intrusion in the judged pools spares the install headline but make
+  awaiting_promotion/1315: Own-text impolite shifts are less diffuse than sycophancy's, and share
+  awaiting_promotion/1315: The concentration difference is visible in the raw spectra
+  awaiting_promotion/1315: The shift points along the impolite read-out direction on own text; mo
+  awaiting_promotion/1315: Full fine-tuning changes neither shift distance nor direction at like 
+  awaiting_promotion/1315: Same-token mapping arms carry a low-rank shift, as in sycophancy
+  awaiting_promotion/1315: The WildChat cell's geometry signature survives a three-times-lower le
+  awaiting_promotion/1315: The lr-1e-5 shift is shorter at every layer, in line with its slightly
+  awaiting_promotion/1315: The impolite signature needs no context scaffold: the bare-context cel
+  awaiting_promotion/1332: Map similarity orders leakage across all 400 cells
+  awaiting_promotion/1332: The similarity and leakage matrices share their row structure
+  awaiting_promotion/1332: Partialling out the incumbent cosine kills the symmetrized association
+  awaiting_promotion/1332: The directional predictor survives the kill that fires for the symmetr
+  awaiting_promotion/1332: Held-out prediction: nothing beats plain additive main effects
+  awaiting_promotion/1332: The correlation rises monotonically with depth, and the null test is i
+  awaiting_promotion/1332: The association is specific to log-prob leakage space
+  awaiting_promotion/1332: The prefix arm degenerates to mean-answer similarity, which under-pred
+  awaiting_promotion/1332: The behavior-to-behavior transfer test is underpowered at corpus size
+  awaiting_promotion/1332: At low dose the directional predictor does not clear the permutation b
+  awaiting_promotion/1333: Shared-text re-capture collapses every cell's rank from 46–51 to 9; ow
+  awaiting_promotion/1333: Every cell reaches the matched-install window; install plateaus at con
+  awaiting_promotion/1333: The in-loop teacher-forced install read runs about twice the off-line 
+  awaiting_promotion/1335: The ladder is flat in base; instruct steps down at fiction framing and
+  awaiting_promotion/1335: Fiction framing carries the instruct gap; label, name, length, and foi
+  awaiting_promotion/1335: Row-level folds and multilingual-row exclusion both leave the attribut
+  awaiting_promotion/1335: Both endpoints moved against their committed parents — the historical 
+  awaiting_promotion/1335: The maps are character-specific everywhere: deranged pairing costs mor
+  awaiting_promotion/1335: On story rungs the prefix alone carries the map; on Q&A rungs the pref
+  awaiting_promotion/1335: The rung ordering is stable across all 28 layers; layer 19 is represen
+  awaiting_promotion/1335: The base model carries the seed sensitivity — the fiction endpoint fal
+  awaiting_promotion/1335: A third generation run flips the base gap negative while the instruct 
+  awaiting_promotion/1335: The "I agree." collapse mode recurs at a new slot, and collapse rate t
+  awaiting_promotion/1335: An on-policy 'Assistant' character label lifts the instruct fiction ma
+  awaiting_promotion/1335: Same-run seed pairs are tight while independent runs swing — and the n
+  awaiting_promotion/1335: The label rewrites the base model's text without moving its map; the i
+  awaiting_promotion/1336: The base map never reconstructs a post-trained map; the SFT step insta
+  awaiting_promotion/1336: Pooled across seven corpora, map strength is installed at SFT and the 
+  awaiting_promotion/1336: Post-trained maps transfer across each other's text but not the base m
+  awaiting_promotion/1336: The pooled base-map gap is largely a text effect: out of band on own t
+  awaiting_promotion/1336: Direct transfer suffices for DPO→RLVR on most pooled slices; the resid
+  awaiting_promotion/1336: No cluster's improvement escapes the selection-matched null on own tex
+  awaiting_promotion/1336: The fitted map and identity+bias dissociate: ridge wins held-out R², i
+  awaiting_promotion/1345: Naive cross-regime transfer falls short of the target ceiling in both 
+  awaiting_promotion/1345: A general-linear change of coordinates recovers the target map in both
+  awaiting_promotion/1345: Instruction tuning pulls the two coordinate systems most of the way to
+  awaiting_promotion/1345: The free-form narrative story map reads far below chat in both arms, a
+  awaiting_promotion/1345: Renaming the story character to "Assistant" drops instruct story yield
+  awaiting_promotion/1345: A doubled judge budget does not rescue the floor: the verdict-less inf
+  awaiting_promotion/1345: Paired-verbatim stories on the same conversations weaken the context m
+  awaiting_promotion/1345: The story failure sits in the story context representation: the operat
+  awaiting_promotion/1345: Sweeping the story read position: no slot closes the gap to chat in th
+  awaiting_promotion/1345: Every read position leaves the one-way reparameterization intact
+  awaiting_promotion/1345: On-policy reparameterization stays asymmetric: the forward composite b
+  awaiting_promotion/1345: The negative story R² is estimator-limited, not representation-limited
+  awaiting_promotion/1345: Freely written story answers carry a graded AI-likeness signature of t
+  awaiting_promotion/1345: Character context→answer maps read as well as the assistant map, and t
+  awaiting_promotion/1415: The answer state moves toward the target; behavior barely does at the 
+  awaiting_promotion/1415: Prefix-arm alignment is pair-specific; context-arm alignment is partly
+  awaiting_promotion/1415: Alignment and behavior peak at the same mid-stack layers; layer 14 mov
+  awaiting_promotion/1415: Re-forwarded with the steering hook re-armed, the direct component per
+  awaiting_promotion/1415: The late-span direct component barely needs the changed text: baseline
+  awaiting_promotion/1417: With the plan's inner-CV λ fallback wired in, all ten framing cells re
+  awaiting_promotion/1417: A strengthened-mild rude render passes both manipulation gates and rea
+  awaiting_promotion/1417: Generalized-cross-validation λ selection collapsed on judge-filtered r
+  awaiting_promotion/1417: Every run-1 Distinct verdict divided a positive numerator by a broken 
+  awaiting_promotion/1417: The v1 rude-but-informative render failed its manipulation checks in b
+  awaiting_promotion/1417: The one pair with healthy run-1 layer-19 components read Shared: base 
+  awaiting_promotion/1426: Template-forced compliance holds on the Llama base; the coverage stati
+  awaiting_promotion/1434: Casual register installs from every training context; two of four land
+  awaiting_promotion/1434: The lowest learning rate suffices everywhere, and the two-shot prefix 
+  awaiting_promotion/1434: Graded judge scores keep spread where the rate approaches ceiling
+  awaiting_promotion/1434: Two Installed labels flip under the language-intrusion recount; no ins
+  awaiting_promotion/1434: Leakage is context-structured: persona- and assistant-trained organism
+  awaiting_promotion/1434: The dose ladders select in-band checkpoints in both regimes everywhere
+  awaiting_promotion/1434: The regime contrast localizes to persona-type read contexts; the two-s
+  awaiting_promotion/1434: The persona regime contrast survives dose-matching and widens at the m
+  awaiting_promotion/1434: The persona-vectors rubric and the project casual-register rubric agre
+  awaiting_promotion/1434: The unrelated-organism specificity control returns no verdict, leaving
+  awaiting_promotion/1481: Only impolite's containment generalizes: held-out-only decomposition
+  awaiting_promotion/1481: Sycophancy's margin is band-resolution-limited: residual in-band dose 
+  awaiting_promotion/1481: Marker free emission turns on earlier in positive-only arms; the highe
+  awaiting_promotion/1482: Non-English contexts are predicted better than English, falsifying the
+  awaiting_promotion/1482: The per-context gap is less concentrated than pure MLP seed noise
+  awaiting_promotion/1482: Per-direction ridge tuning closes none of the low-variance gap: the co
+  awaiting_promotion/1482: Which answer-side SAE features are predictable is an answer-side prope
+  awaiting_promotion/1482: A label-shuffle null clears nearly all answer-side features above the 
+  awaiting_promotion/1482: Within-answer consistency, not rarity, is the dominant per-feature pre
+  awaiting_promotion/1482: Better-predicted answer-side SAE features are more r_B-aligned; the ju
+  awaiting_promotion/1482: Token-level layer-3 features are nearly as predictable as layer-19 fea
+  awaiting_promotion/1482: Within-answer consistency dominates layer-3 predictability too, and ev
+  awaiting_promotion/1482: Persona-direction decoder alignment tracks predictability at layer 19 
+  awaiting_promotion/1482: Sink masking is a no-op at layer 3 and a second dictionary replicates 
+  awaiting_promotion/1482: Training-imposed granularity predicts predictability: coarse matryoshk
+  awaiting_promotion/1482: The per-feature scatter behind the tier profile: activity and tier joi
+  awaiting_promotion/1482: The pile-trained twin reconstructs chat worse, yet its features are sl
+  awaiting_promotion/1482: Within-answer consistency again dominates layer-20 predictability, and
+  awaiting_promotion/1489: Three of four augmentation families fell under the manipulation floors
+  awaiting_promotion/1489: Context distillation reaches the in-context compliance level on held-o
+  awaiting_promotion/1489: The relevance instrument failed its agreement gate, and the fact famil
+  awaiting_promotion/1489: All 16 augmentation texts surface in completions; lexical mention runs
+  awaiting_promotion/1491: Response truncation does not explain the scale trend
+  awaiting_promotion/1491: Corpus transfer to WildChat tracks the in-distribution trend
+  awaiting_promotion/1586: Full fine-tuning leaks impolite and casual style to non-source context
+  awaiting_promotion/1586: Marker full fine-tuning at learning rate 5e-6 hits a one-step install 
+  awaiting_promotion/1586: Per-step checkpoints at learning rate 2e-6 thread the marker install w
+  awaiting_promotion/1586: At matched install the marker method contrast splits by regime
+  awaiting_promotion/1586: The shift-shape null mostly holds; impolite-contrastive full-fine-tune
+  awaiting_promotion/1586: The method contrast survives the shared-text control
+  awaiting_promotion/1639: One pooled map with a single global offset carries 81–98% of every cha
+  awaiting_promotion/1639: Individually-fit character maps do not cross-apply raw; a learned line
+  awaiting_promotion/1639: The operator alignment survives the strictest null and places between 
+  awaiting_promotion/1689: The bimodal rung distribution mostly reflects ceiling validity
+  awaiting_promotion/1689: Framing changes need much deeper correction than identity changes
+  awaiting_promotion/1689: Assistant framing pairs reconcile only at full reparameterization, and
+  awaiting_promotion/1689: Corrections localize to the answer side, for framing pairs too
+  awaiting_promotion/1689: Real and simulated user turns differ by an answer-side transform in th
+  awaiting_promotion/1689: The user-on-policy arm duplicates the haiku arm at or before capture
+  awaiting_promotion/1689: Real user turns are less linearly predictable from the prefix than Hai
+  awaiting_promotion/1689: Operator cosines confirm the ordering in raw coordinates; the aligned 
+  awaiting_promotion/1689: A ridge grid widened three decades moves no ceiling: the published rea
+  awaiting_promotion/1689: Base-instruct same-condition maps reconcile only at full reparameteriz
+  awaiting_promotion/1689: Recaptured user-slot reads order second-turn predictability by complet
+  awaiting_promotion/1689: The corrected first-turn read sits at the floor, and the prior exchang
+  awaiting_promotion/1689: Assistant-to-user transfer fails below answer-side correction, while t
+  awaiting_promotion/1738: Conversation history alone reaches held-out R² 0.38, well above the 0.
+  awaiting_promotion/1738: Both maps are fitted and discriminative; a constant-shift baseline fai
+  awaiting_promotion/1738: The final user query alone maps to the answer state better than the wh
+  awaiting_promotion/1738: The depth convergence never completes: the query-only map stays ahead 
+  awaiting_promotion/1738: The history-vs-context ordering reproduces when the answer is read as 
+  awaiting_promotion/1738: With the final query held to a shared bank, the per-row history map co
+  awaiting_promotion/1738: Averaging the query away recovers the history signal through the same 
+  awaiting_promotion/1739: Map-then-project loses to the context-native direction almost everywhe
+  awaiting_promotion/1739: Direct ridge regression on context activations dominates every monitor
+  awaiting_promotion/1739: No robustness advantage on transfer rungs that pass the spread floor
+  awaiting_promotion/1739: An in-domain map flips the headline difference positive (preliminary)
+  awaiting_promotion/1739: The context map learns; the prefix map does not
+  awaiting_promotion/1739: A final-context extraction point does not rescue map-then-project
+  awaiting_promotion/1739: The true-answer readout is linear at the largest budgets
+  awaiting_promotion/1739: The filled transfer roster leaves no arm beating direct ridge off-dist
+  awaiting_promotion/1739: The map does not transfer across attack-tactic families; a direct cont
+  awaiting_promotion/1768: Map change tracks the weights-carried answer shift
+  awaiting_promotion/1768: Summarising the context at the last prompt token substantially improve
+  awaiting_promotion/1768: Map-change verdicts survive the change of context summary, and the las
+  awaiting_promotion/1768: Context-vector movement is an order of magnitude larger at the last pr
+  awaiting_promotion/1768: Capture noise sits below fp16 storage resolution, so even the smallest
+  awaiting_promotion/1768: The write's alignment with the training displacement is text-carried
+  awaiting_promotion/1768: The write rotates into the training displacement as training proceeds
+  awaiting_promotion/1768: On the training rows themselves, the write matches the corpus write ra
+  awaiting_promotion/1768: The write's read-out alignment is not behavior-specific
+  awaiting_promotion/1768: The write is high-rank at corpus scale
+  awaiting_promotion/1768: The base-geometry gate reads worse under the context summary that most
+  awaiting_promotion/1768: A direct context-to-write map improves under the same summary that bre
+  awaiting_promotion/1768: The behavior read-out direction survives fine-tuning
+  awaiting_promotion/1768: Baselines fail, retrieval succeeds at k=1, transfer folds hold
+  awaiting_promotion/1768: The 120-row panel instrument resolves none of what the corpus instrume
+  awaiting_promotion/1768: The measured model-versus-text split is dominated by weights in the me
+  awaiting_promotion/1768: Round one's attribution stand-in does not reproduce the measured text 
+  awaiting_promotion/1768: Round one's attributed decomposition stands for the map term and fails
+  awaiting_promotion/1768: Refitting the base map on the training pairs does not reproduce the tr
+  awaiting_promotion/1768: The operator update writes recognisable directions at unrecognisable k
+  awaiting_promotion/1769: At operating alpha under raw scoring, evil classifies decode-driven; s
+  awaiting_promotion/1769: CJK language intrusion severely contaminates decode-arm completions; t
+  awaiting_promotion/1769: Arm-asymmetric judge content drops corroborate CJK-driven contaminatio
+  awaiting_promotion/1769: Evil and sycophancy decode-driven timing at α=2 holds under all three 
+  awaiting_promotion/1773: All five judged axes fail the trust lattice; neighbour discrimination 
+  awaiting_promotion/1773: Detection barely separates real features from random directions; discr
+  awaiting_promotion/1774: Per-answer map skill is query-driven; pre-query states keep only perso
+  awaiting_promotion/1774: Genuinely pre-query (prefix-end) persona-averaged skill carries no tra
+  awaiting_promotion/1774: The averaging gap concentrates modestly in top answer directions
+  awaiting_promotion/1774: Causal reads: addition arms under-dosed (no verdict); erasure arms mov
+  awaiting_promotion/1775: The prefix-averaged arm is wholly nonlinear at per-row grain: a follow
+  awaiting_promotion/1775: Residual dependence is detectable almost everywhere the instrument can
+  awaiting_promotion/1775: The banked 50k fitter comparison is contaminated; the deduplicated 1M 
+  awaiting_promotion/1775: The kernel gain survives deduplication: contamination inflated the 50k
+  awaiting_promotion/1775: The interaction writes into the answer manifold's high-variance subspa
+  awaiting_promotion/1776: The null is not under-convergence: the Jacobian is stable, with gains 
+  awaiting_promotion/1776: Dose escalation to the full operating norm moves judged sycophancy sli
+  awaiting_promotion/1776: At the top dose a weak reproducible shift component appears that both 
+  awaiting_promotion/1776: Neither operator executes its own answer swap: steered generations acq
+  awaiting_promotion/1776: Off-distribution the Jacobian collapses while fitted maps barely decay
+  awaiting_promotion/1776: Workspace overlap is weak everywhere; the fitted map's input direction
+  awaiting_promotion/1776: Answer-profile predictability splits in proportion to variance, not al
+  awaiting_promotion/1776: Composing the fitted map with the lens retrieves real answer content f
+  awaiting_promotion/1776: In token space the Jacobian's transported signal carries no context-sp
+  awaiting_promotion/1895: Subspace overlap sits almost entirely at the variance grain, with a sm
+  awaiting_promotion/1895: About 51 of the map's top-64 directions lie inside the SAE's top-64 re
+  awaiting_promotion/1895: The SAE reconstruction is an easier target by exactly its variance pro
+  awaiting_promotion/1895: Retrained on the pure SAE error, the map reads below its variance-prof
+  awaiting_promotion/1895: The below-profile read comes from the top of the spectrum; the deep ta
+  awaiting_promotion/1895: The SAE out-reconstructs the map at the top of the spectrum and collap
+  awaiting_promotion/1895: Beyond variance rank, the shared axis is small per-direction and absen
+  awaiting_promotion/1900: Base behavioral propensity dominates the expression-level race, largel
+  awaiting_promotion/1900: The propensity-residualized change race is the deciding read: no mater
+  awaiting_promotion/1900: Removing the base-elicitation floor leaves the expression champion unc
+  awaiting_promotion/1900: Context similarity is answer-mediated, sign-unstable, and anchor-speci
+  awaiting_promotion/1900: The mechanistic panel explains expression through post-fine-tuning ans
+  awaiting_promotion/1901: Every shuffled-pair null collapses to its floor, and raw cosine's floo
+  awaiting_promotion/1901: Retrieval hubs are corpus-structured; the CSLS correction helps every 
+  awaiting_promotion/1901: Memorization inflates retrieval far more than variance explained
+  awaiting_promotion/1902: SFT rewrites the map, DPO mostly preserves it, RLVR leaves it essentia
+  awaiting_promotion/1902: The rewrite is localized to the base boundary and is representation-si
+  awaiting_promotion/1902: Post-training makes its own single-turn answers more predictable — an 
+  awaiting_promotion/1902: The stage ordering holds at fold grain
+  awaiting_promotion/1902: The text axis dominates single-turn grid variance; the representation 
+  awaiting_promotion/1902: Paired length control keeps the base→SFT text gain; the DPO text advan
+  awaiting_promotion/1902: Class contrasts are small and mixed: RLVR slightly reduces predictabil
+  awaiting_promotion/1902: The largest per-cluster movement: SFT installs stereotyped responses o
+  awaiting_promotion/1902: The single-turn layer peak moves mid-network after SFT; multi-turn pea
+  awaiting_promotion/1902: The operator change shrinks ~5.6× in magnitude along the chain but is 
+  awaiting_promotion/1902: The multi-turn decline is bounded by an unresolved render confound
+  awaiting_promotion/1902: An answer-cloud constant mostly closes the base→SFT rewrite; context-s
+  awaiting_promotion/1945: The verdict lattice reads weak structure: detectable, but a thousandth
+  awaiting_promotion/1945: Every null draw and every held-out block agrees with the primary read
+  awaiting_promotion/1945: All 24 log-space units read the same verdict; the residue is largest a
+  awaiting_promotion/1945: Raw space flips every cell to structured; the flips track tails, not p
+  awaiting_promotion/1945: The raw-space excess has no low-rank plateau, the signature of tail ge
+  awaiting_promotion/1945: The trace residue is input-recoverable, at the same scale
+  awaiting_promotion/1945: No corpus or depth-band stratum concentrates the trace residue; within
+  awaiting_promotion/1946: The prefix−bare difference pattern reproduces in SAE space: correlatio
+  awaiting_promotion/1946: The difference pattern survives every pooling choice where per-arm pro
+  awaiting_promotion/1946: The nine named mirror categories keep their dense signs; eight of nine
+  awaiting_promotion/1946: Floor adjustment repeats the dense round's refusal collapse (round-1 a
+  awaiting_promotion/1946: The exact floor construct preserves the refusal collapse; the floor-ad
+  awaiting_promotion/1946: Map quality is stable across conversation depth in every reading (expl
+  awaiting_promotion/1947: Reopening the question pool recovers the dropped behavior at full dose
+  awaiting_promotion/1947: Single-visit training reaches the judged band in 36 of the 52 cells; s
+  awaiting_promotion/1947: Verdict-band membership tolerates intrusion exclusion but not zeroing
+  awaiting_promotion/1947: The weight write stays high-rank on exactly the trained rows
+  awaiting_promotion/1947: The write misses the sycophancy behavior direction while tracking its 
+  awaiting_promotion/1947: Fixed-text write–displacement alignment is absent only for impolite
+  awaiting_promotion/1947: The base-geometry gate verdict depends on the tree and the summary pos
+  awaiting_promotion/1947: Map change is behavior-ordered and about half the parent fleet's magni
+  awaiting_promotion/1947: Repeat-regime controls under-install for impolite but not for sycophan
+  awaiting_promotion/1979: Length partialling spares the content change champion but halves the m
+  awaiting_promotion/1979: What context similarity knows about per-prefix leakage is carried by a
+  awaiting_promotion/1979: The whitened gate stays refuted overall but tracks realized writes for
+  awaiting_promotion/1979: Per-prefix writes are far closer to rank-1 than the per-query read sug
+  awaiting_promotion/1979: Write–delta alignment: positive for the style behaviors, strongly nega
+  awaiting_promotion/1979: The marker write–delta opposition is weights-carried, not a text-selec
+  awaiting_promotion/1979: Trained negatives sit below the geometry fit — and so do the placebos:
+  awaiting_promotion/1979: A prefix-to-answer map is fittable at this grain, and the shifted-iden
+  awaiting_promotion/2054: Every cell fits a real map at well-posed n, and the boundary form orde
+  awaiting_promotion/2054: Only a context-side linear re-map recovers boundary swaps
+  awaiting_promotion/2054: The authorship × presentation decomposition is not additive
+  awaiting_promotion/2054: The plan's answer-length parity bound fails in every character cell
+  awaiting_promotion/2054: The inserted-vs-on-policy ceiling gaps survive answer-length matching
+  awaiting_promotion/2054: The prefix arm's near-zero survives the capture check
+  awaiting_promotion/2054: The coordinated scaffold regeneration falls short of the well-posednes
+  awaiting_promotion/2054: The reduced-basis fallback tracks the ambient refit reads except on th
+  awaiting_promotion/2054: Context states map across cells, most strongly between the assistant's
+  awaiting_promotion/2054: The reinstated indirect-report framing lands between the two story bou
+  awaiting_promotion/2061: The largest per-feature gain sits at the median of the global selectio
+  awaiting_promotion/2061: Eighteen of 56 cells exceed their own per-cell null, an order of magni
+  awaiting_promotion/2061: Top-100 improved features overlap weakly across corpora but persist ac
+  awaiting_promotion/2061: Context-arm retrieval quality jumps at SFT and plateaus; prefix arms s
+  awaiting_promotion/2061: The fixed base-model dictionary passes the fitness gate at every stage
+  awaiting_promotion/2091: Answer variability is behavior-specific and not explained by answer le
+  awaiting_promotion/2091: Greedy is more central than a typical sample in six of eight trait run
+  awaiting_promotion/2091: Averaged targets are easier to predict; the fitted map itself barely c
+  awaiting_promotion/2091: The averaged score's prediction edge is mostly measurement noise, and 
+  awaiting_promotion/2091: Neither sampling variability nor behavioral spread explains prediction
+  awaiting_promotion/2094: Behavior barely moves at the stage-1-selected cells once anchors separ
+  awaiting_promotion/2094: Activation-level movement is small at context-end and non-specific at 
+  awaiting_promotion/2094: The response to an injected edit is strongly non-linear, and banked ma
+  awaiting_promotion/2094: A grid-wide screen on well-separated pairs finds null-separated transf
+  awaiting_promotion/2094: Executing the cap-hit re-generation trigger changes nothing, and 10 of
+  awaiting_promotion/2094: Excluding template tokens makes the query span measurable; whole-prefi
+  awaiting_promotion/2094: A replacement conversation prefix recovers four of the five weak match
+  awaiting_promotion/2202: The failure set is pool-size- and similarity-convention-dependent
+  awaiting_promotion/2202: Under matched conventions the fresh-draw reference exceeds the map, an
+  awaiting_promotion/2203: No capping position lowers jailbreak harm on the in-house 7B
+  awaiting_promotion/2203: Capping no longer degrades output — the earlier CJK collapse was a bug
+  awaiting_promotion/2203: On the 32B with the paper's own vectors, capping lowers harm cleanly b
+  awaiting_promotion/2203: Only whole-state replacement wrecks capability; capping leaves it inta
+  awaiting_promotion/2203: Identity scoring is now complete except at the two whole-state-replace
+  awaiting_promotion/2215: Maps discriminate paired answers well above chance, but a constant off
+  awaiting_promotion/2215: Retrieval and fit companions dissociate: the prefix-end map discrimina
+  awaiting_promotion/2215: Context-end discrimination is partly pair-specific; prefix-end discrim
+  awaiting_promotion/2215: One information-type change moves the context-end vector by less than 
+  awaiting_promotion/2215: Completion-length differences covary with answer-vector shift but do n
+  awaiting_promotion/2220: The map's read direction is causally inert while the persona vector st
+  awaiting_promotion/2220: Steering potency lives at the answer position and low doses; high dose
+  awaiting_promotion/2220: The hallucination gate is uninformative by construction: a saturated b
+  awaiting_promotion/2221: Specialized re-mining trained all 12 under-yielded cells, but real-dat
+  awaiting_promotion/2221: Rounds 1-3: found-data mining collapsed in two families, leaving six f
+  awaiting_promotion/2221: Rounds 1-3: only hallucination had usable outcome range at the origina
+  awaiting_promotion/2221: Rounds 1-3: no monitor read ordered severity reliably within families
+  awaiting_promotion/2222: The paper's three screening predictors reproduce within 0.10 on all ni
+  awaiting_promotion/2222: Equivalence with exact ΔP is rejected as a three-trait conjunction
+  awaiting_promotion/2222: The mapped-context read never exits the permutation null band for syco
+  awaiting_promotion/2222: Mechanism: the frozen map transfers catastrophically to this suite
+  awaiting_promotion/2222: Fit directly to the base-generation target, the map reaches exact-ΔP l
+  awaiting_promotion/2222: A judge-supervised probe screens at r ≈ 0.84 for forward-pass cost (ex
+  awaiting_promotion/2224: Top-500 samples chosen by the learned screens fail to induce the trait
+  awaiting_promotion/2224: The learned screens rank near-disjoint sample sets, but disjointness i
+  awaiting_promotion/2224: The context stand-in is nearly uncorrelated with exact ΔP per sample, 
+  awaiting_promotion/2224: Exact ΔP itself carries no dataset-level signal on the real-twin suite
+  awaiting_promotion/2224: The only stable positive dataset-level read is the response-only probe
+  awaiting_promotion/2224: Trait gains from exact and prompt-token tops carry a sub-threshold coh
+  awaiting_promotion/2224: A surgical re-judge of the 17 sub-floor cells recovers 1 of 8,500 item
+  awaiting_promotion/2224: The deciding contrasts replicate at seed 137, with the marginal prompt
+  awaiting_promotion/2225: Result 2 — The single-layer mechanism is a missing dose-response
+  awaiting_promotion/2225: Result 5 — The trait is not represented in the context direction
+  awaiting_promotion/2225: Result 6 — Follow-up: the pre-image of the persona direction is equall
+  awaiting_promotion/2225: Result 8 — Latent acquisition proceeds as if unsteered under the pre-i
+  awaiting_promotion/2225: Result 9 — Follow-up: the inverted residual probe is an estimation art
+  awaiting_promotion/2225: Result 10 — Second follow-up: at the all-token position the pre-image 
+  awaiting_promotion/2225: Result 13 — All-token steering visibly reshapes the latents — a dose-p
+  awaiting_promotion/2254: The pre-image cannot steer at the context vector, while a directly-mea
+  awaiting_promotion/2254: The fitted map is a strong predictor at every layer
+  awaiting_promotion/2254: The pre-image is a distinct direction, and the map's retained subspace
+  awaiting_promotion/2254: The teacher-forced margin shows no pre-image movement at the context v
+  awaiting_promotion/658: On the same FDR, random projection PASSes the same 3 behaviors as the 
+  awaiting_promotion/658: Once the read-out direction is content-matched, the secondary geometry
+  awaiting_promotion/661: Instruction-present and instruct-and-strip directions are nearly colli
+  awaiting_promotion/661: The instruction-axis projection is non-specific, but this is not proof
+  awaiting_promotion/661: Verdict: inconclusive — recipe-by-behavior
+  awaiting_promotion/664: The marker never reached its install band: source log P(※) stayed at t
+  awaiting_promotion/664: With no installed write, the marker gate sits at the noise floor — at 
+  awaiting_promotion/664: Content-behavior gate SNR co-varies with install magnitude — the desig
+  awaiting_promotion/666: The full predictor does not exceed the install-leak control — the geom
+  awaiting_promotion/666: Swapping the behavior direction flips the headline from ≈0 to ρ ≈ +0.5
+  awaiting_promotion/666: Cross-behavior transfer is heterogeneous, and the high LOCO ρ reflects
+  awaiting_promotion/667: The base read-out does not predict the post-fine-tuning behavior chang
+  awaiting_promotion/667: The gate chain is observed in activation space but only partly reaches
+  awaiting_promotion/685: Every behavior clears the single-direction bar at layers 7–21, weakeni
+  awaiting_promotion/685: Once the shared offset is removed, a smaller context-specific residual
+  awaiting_promotion/685: The last-token shift points toward the response-space behavior directi
+  awaiting_promotion/685: The geometry is not unique to instruct-tuning — the non-instruct base 
+  awaiting_promotion/697: The patch's directional movement is at or below the random-CV floor — 
+  awaiting_promotion/697: Behaviorally, the patch carries 0.04% of the marker install (the judge
+  awaiting_promotion/697: A second behavior corroborates: where EM actually installs, the patch 
+  awaiting_promotion/715: No narrow-task-acquisition value is reached by all 3 seeds in both obj
+  awaiting_promotion/715: DFT shows lower emergent misalignment in pooled mean and at nearly eve
+  awaiting_promotion/722: The base context→answer map is a strong linear map (skill-over-mean R²
+  awaiting_promotion/722: The linear-ridge skill is input-representation-robust (28/28 layers); 
+  awaiting_promotion/722: The taught fact's function-change clears its floor 1.6–3.3×; EM sits b
+  awaiting_promotion/722: A behavior-relevant transfer chain appears for the taught fact after f
+  awaiting_promotion/722: Cross-transfer is asymmetric: the post-FT map generalizes worse than t
+  awaiting_promotion/722: Why the EM/sycophancy verdict is inconclusive, not a clean "function h
+  awaiting_promotion/734: Reading the same 16 adapters at the marker's own slot recovers the ins
+  awaiting_promotion/734: The base-vs-Instruct fresh-train arm was dropped on an OOM; the headli
+  awaiting_promotion/742: The ceiling is not judge-limited, but it is estimator-sensitive in fiv
+  awaiting_promotion/742: Refusal on Betley shows dependence beyond the erased linear component;
+  awaiting_promotion/744: One-step direction preservation rises to ~0.13 by layer 10, dips to ~0
+  awaiting_promotion/744: Directional memory is short-horizon at every depth — the last layer de
+  awaiting_promotion/744: Base and Instruct agree — the depth-flat pattern is a model-family pro
+  awaiting_promotion/744: Discontinuities concentrate at attention-sink tokens, with a smaller r
+  awaiting_promotion/744: Sink dominance is largest early and decays overall with a small mid-la
+  awaiting_promotion/761: The gain is directional on all three but pinned significant only for r
+  awaiting_promotion/761: The matched−mismatched gain is positive at every layer read, not an ar
+  awaiting_promotion/763: No ridge−GLM disagreement in the as-built graded run
+  awaiting_promotion/763: Under one matched protocol every predictor clears its selection-matche
+  awaiting_promotion/763: A neutral-contrast direction built against the bare default context ma
+  awaiting_promotion/763: No behavior meets the pre-set joint nonlinear criterion; format_style 
+  awaiting_promotion/778: The persona vector's monitoring predictivity is family-wise significan
+  awaiting_promotion/778: The earlier equal-prediction verdict came from a circular null, not fr
+  awaiting_promotion/778: The faithful re-extraction moved per-cell correlations by at most 0.03
+  awaiting_promotion/778: Hallucination's monitoring signal peaks at layers 21–23, not at the pa
+  awaiting_promotion/778: The per-cell data behind the 8-prompt monitoring read: the prompt ladd
+  awaiting_promotion/778: The many-shot dose works: trait expression rises with shot count and t
+  awaiting_promotion/779: On held-out behaviors and by success-margin, the map beats the raw pro
+  awaiting_promotion/779: Post-generation pooling reads the trait better than the prompt, and it
+  awaiting_promotion/779: The rig-validation gate failed at oracle layers, with multiple causes;
+  awaiting_promotion/779: The 2D training-size grid shows the failure is about data kind, not am
+  awaiting_promotion/779: The map's failure is not underfitting of the persona direction
+  awaiting_promotion/779: No alternative answer-summary target or function class rescues the pre
+  awaiting_promotion/779: The pseudoinverse direction read gives no consistent win over the raw 
+  awaiting_promotion/779: At the shared layer 19, the evil map win disappears while the sycophan
+  awaiting_promotion/779: The nonlinear fit-quality gain transfers to all three capture layers, 
+  awaiting_promotion/779: The 963k maps do not lift persona-level monitoring
+  awaiting_promotion/779: The layer-26 kernel gate clears at 32768 landmarks under an equivalent
+  awaiting_promotion/810: The turn-boundary hypothesis is refuted: answer-side boundary tokens t
+  awaiting_promotion/810: No answer-side summary rescues behavior read-out on the round-1 target
+  awaiting_promotion/810: The turn-boundary refutation replicates on the generic genre: no singl
+  awaiting_promotion/810: Sycophancy and refusal read-out stays null in every cell of the genre 
+  awaiting_promotion/810: The mirror of the context read fails within families, and header reads
+  awaiting_promotion/810: The read-out null survives the enlarged summary axis: the new rows lea
+  awaiting_promotion/810: The misalignment-pool max-pool edge is peak-value recovery on sparse-f
+  awaiting_promotion/811: The taught-fact chain creation appears under every gate-passing conten
+  awaiting_promotion/811: At the call level, max-pool tracks the mean and diverges from the turn
+  awaiting_promotion/811: The taught-fact chain creation is effect-confirmed under max-pool at a
+  awaiting_promotion/811: Both terms moved at the reversal cell — Δ fell 6.7× while the floor ro
+  awaiting_promotion/811: The validity instrument disagrees with itself: the same base-leg gate 
+  awaiting_promotion/812: No operator resolvably beats the plain mean; the learned attention que
+  awaiting_promotion/812: The matched-PCA control collapsed, voiding the granularity contrast an
+  awaiting_promotion/812: Reconstruction: the mean and attention pools are the linearly reachabl
+  awaiting_promotion/813: The substrate spread sits inside the substrate-swap null for three beh
+  awaiting_promotion/823: Plain-style external answers retain 91–98% of own-answer refit R²; mis
+  awaiting_promotion/823: The own-vs-plain increment is layer-structured; each fitted map is sty
+  awaiting_promotion/823: The own-answer profile predicts the plain external profile better than
+  awaiting_promotion/833: The bare taught-sentence emission rate out-predicts the fitted activat
+  awaiting_promotion/833: Excluding taught-sentence emissions collapses the on-policy chain to a
+  awaiting_promotion/833: On one constant deflection template the trained map orders leakage abo
+  awaiting_promotion/833: The constant-text signal is between-adapter: within-source ordering is
+  awaiting_promotion/833: Manipulation check: the models' own answers diverge from base answers 
+  awaiting_promotion/841: A source-only GRU loses to the affine ridge at every stage-0 transitio
+  awaiting_promotion/920: Nearly every pooled or boundary summary supports the context→answer ma
+  awaiting_promotion/920: Half the sweep clears the chance band
+  awaiting_promotion/920: The head-to-head incumbent test has zero power; under the reachable fa
+  awaiting_promotion/920: Probe-set generality is recipe-dependent: pooled reads transfer, singl
+  awaiting_promotion/920: Target stability explains the template-token targets' lead
+  awaiting_promotion/920: Under a family-aware permutation null, 7 of 28 read-out clears survive
+  awaiting_promotion/920: Chain read-out maxima are selection artifacts
+  awaiting_promotion/922: The global dynamics generalize to out-of-corpus persona conditions; co
+  awaiting_promotion/922: Every iterated closed-form map is a contraction and every gradient-fit
+  awaiting_promotion/923: The full-prompt deficit survives the span-mean summary swap — a whole-
+  awaiting_promotion/923: Attention to the context adds linearly readable information at matched
+  awaiting_promotion/923: Reading the mixed forward as two span means recovers the long-context 
+  awaiting_promotion/923: The mixing gap is largest at the frozen headline layer and reverses in
+  awaiting_promotion/923: The whole-input read-out deficit persists without family transfer and 
+  awaiting_promotion/923: The query, not the context, carries most of the per-cell answer profil
+  awaiting_promotion/923: The decomposition replicates on misalignment-genre queries and transfe
+  awaiting_promotion/923: The ordering holds at every layer
+  awaiting_promotion/923: The masked-context query read collapses on Betley through penalty sele
+  awaiting_promotion/923: Group-level penalty re-selection does not rescue the Betley masked rea
+  awaiting_promotion/923: Store-reduced and fresh-captured targets agree at the median, with a s
+  awaiting_promotion/928: No tested summary displaces mean pooling for the CoT-side map
+  awaiting_promotion/931: A character→dialogue map exists in raw fiction, but at a fraction of t
+  awaiting_promotion/931: The pooled fiction R² is between-novel signal: per-novel R² is negativ
+  awaiting_promotion/931: The chat map's linear structure does not transfer: chat-side matched f
+  awaiting_promotion/931: The transfer verdict holds under both denominators; persona-free contr
+  awaiting_promotion/931: Character identity contributes a small, consistent component: swapping
+  awaiting_promotion/931: The identity gap survives distance partialling
+  awaiting_promotion/931: The story-side identity gap is broad but not universal: 76% of swap-el
+  awaiting_promotion/931: One measurement fragility remains — the ridge estimator fails on the c
+  awaiting_promotion/931: Five seeded draws confirm the matched-n denominator dip is stable, rai
+  awaiting_promotion/931: Author-blocked folds send the novel map's held-out R² negative: the po
+  awaiting_promotion/952: The position-uniform equivalence replicates at every added read-out la
+  awaiting_promotion/952: A 5-fold precision re-read of the same pool sharpens the band map: mid
+  awaiting_promotion/952: Teacher-forced surprisal on external text collapses within a handful o
+  awaiting_promotion/958: Maps fit at turns 2 through 4 transfer across turns almost losslessly
+  awaiting_promotion/958: The registered turn-1 transfer read is invalidated by a duplicate-cont
+  awaiting_promotion/958: Excluding duplicate first messages closes the main-panel turn-1 except
+  awaiting_promotion/958: A single map fit on pooled turn-1 and turn-2 rows generalizes to unsee
+  awaiting_promotion/958: As fitted, with its GCV-selected λ, the long-panel turn-1 map does not
+  awaiting_promotion/958: Matching the turn-1 map's ridge shrinkage to the target maps reverses 
+  awaiting_promotion/958: Which answer directions the turn-1 map carries across turns
+  awaiting_promotion/958: The per-conversation slopes behind the drift read
+  completed/1073: The negative pooled R² cells track per-fold regularization collapse on
+  completed/1073: Nonlinear fitters do not close any arm's gap: kernel ridge ties ridge 
+  completed/1073: The single-draw prediction deficit is fully accounted for by sampling 
+  completed/1073: Greedy sits at the mode of a tight rollout cloud, with a small coheren
+  completed/672: The fixed extractor's resident memory stayed flat across the live A100
+  completed/672: The in-VM watchdog fired on a real DNS failure (partial live; full cha
+  completed/672: All 250 regression tests and 2 lints stayed green on `main`
+  completed/672: The dispatch-router walks the full ladder when given a time-budget
+
+#2330 live-body spot check (/home/thomasjiralerspong/explore-persona-space/tasks/awaiting_promotion/2330/body.md):
+  passed=True is_warn=False
+  detail=skipped — forward-only (fires for issue >= 2353; issue unknown or older)
+
+per-body flagged-section counts (WARNed bodies):
+   20  awaiting_promotion/1768
+   15  awaiting_promotion/1482
+   14  awaiting_promotion/1092
+   14  awaiting_promotion/1345
+   13  awaiting_promotion/1090
+   13  awaiting_promotion/1335
+   13  awaiting_promotion/1689
+   12  awaiting_promotion/1902
+   11  awaiting_promotion/779
+   11  awaiting_promotion/923
+   10  awaiting_promotion/1112
+   10  awaiting_promotion/1332
+   10  awaiting_promotion/1434
+   10  awaiting_promotion/2054
+   10  awaiting_promotion/931
+    9  awaiting_promotion/1315
+    9  awaiting_promotion/1739
+    9  awaiting_promotion/1776
+    9  awaiting_promotion/1947
+    8  awaiting_promotion/1979
+    8  awaiting_promotion/2224
+    8  awaiting_promotion/958
+    7  awaiting_promotion/1336
+    7  awaiting_promotion/1738
+    7  awaiting_promotion/1895
+    7  awaiting_promotion/1945
+    7  awaiting_promotion/2094
+    7  awaiting_promotion/2225
+    7  awaiting_promotion/810
+    7  awaiting_promotion/920
+    6  awaiting_promotion/1417
+    6  awaiting_promotion/1586
+    6  awaiting_promotion/1946
+    6  awaiting_promotion/2222
+    6  awaiting_promotion/722
+    6  awaiting_promotion/778
+    5  awaiting_promotion/1074
+    5  awaiting_promotion/1310
+    5  awaiting_promotion/1415
+    5  awaiting_promotion/1775
+    5  awaiting_promotion/1900
+    5  awaiting_promotion/2061
+    5  awaiting_promotion/2091
+    5  awaiting_promotion/2203
+    5  awaiting_promotion/2215
+    5  awaiting_promotion/744
+    5  awaiting_promotion/811
+    5  awaiting_promotion/833
+    4  awaiting_promotion/1489
+    4  awaiting_promotion/1769
+    4  awaiting_promotion/1774
+    4  awaiting_promotion/2221
+    4  awaiting_promotion/2254
+    4  awaiting_promotion/685
+    4  awaiting_promotion/763
+    4  completed/1073
+    4  completed/672
+    3  awaiting_promotion/1072
+    3  awaiting_promotion/1333
+    3  awaiting_promotion/1481
+    3  awaiting_promotion/1639
+    3  awaiting_promotion/1901
+    3  awaiting_promotion/2220
+    3  awaiting_promotion/661
+    3  awaiting_promotion/664
+    3  awaiting_promotion/666
+    3  awaiting_promotion/697
+    3  awaiting_promotion/812
+    3  awaiting_promotion/823
+    3  awaiting_promotion/952
+    2  awaiting_promotion/1491
+    2  awaiting_promotion/1773
+    2  awaiting_promotion/2202
+    2  awaiting_promotion/658
+    2  awaiting_promotion/667
+    2  awaiting_promotion/715
+    2  awaiting_promotion/734
+    2  awaiting_promotion/742
+    2  awaiting_promotion/761
+    2  awaiting_promotion/922
+    1  awaiting_promotion/1426
+    1  awaiting_promotion/813
+    1  awaiting_promotion/841
+    1  awaiting_promotion/928
+
+#2330 gated spot check (issue=2330): is_warn=False detail=skipped — forward-only (fires for issue >= 2353; issue unknown or older)
+
+--- pre-gate (ungated) #2330 live-body spot check, from the pre-lever-(ii) run of the same sweep ---
+#2330 live-body spot check (/home/thomasjiralerspong/explore-persona-space/tasks/awaiting_promotion/2330/body.md):
+  passed=True is_warn=False
+  detail=all 10 `### <result>`(s) carry per-unit evidence or an exemption

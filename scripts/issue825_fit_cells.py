@@ -106,6 +106,21 @@ LAMBDA_SELECTION: str = "inner-group-cv"
 # deliberately-unguarded audit arms only — restore in a finally block).
 LEGACY_UNGUARDED_GCV: bool = False
 
+# #1336 full-corpora round: primal (d-space) fold path — the artifact-reuse
+# check-(i) SOURCE-module fix for the n_train > d regime, where the Gram
+# route's n x n eigh is ruinously mis-regimed (#779 n1m precedent: streaming
+# X^T X, ONE (d, d) eigh, "numerically identical to the n50k primal").
+# The switch is AUTOMATIC at n_train > d and BYTE-PRESERVING at n_train <= d
+# (existing callers unchanged). FORCE_GRAM = True pins the legacy Gram route
+# at any n/d (module-global patch style, like FROZEN_LAYERS) — used by the
+# G0' legacy-parity leg and the Gram-vs-primal equality gate G0'(b).
+FORCE_GRAM: bool = False
+
+# Row-chunk for the streaming fp64 X^T X accumulation + the Xn @ U pass in
+# the primal route: one chunk at this round's realized n (<= ~15k rows);
+# genuinely streaming at #779-scale n.
+PRIMAL_CHUNK_ROWS = int(os.environ.get("EPM_FIT825_PRIMAL_CHUNK_ROWS", "65536"))
+
 # Compact selector telemetry (mirrors ma.SELECTOR_LOG; ON by default as of
 # #1887): every serial/batched lambda selection counts into
 # {selector: {lambda_str: count}}. Set to None to disable.
@@ -288,15 +303,85 @@ def _eigh_robust(G: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         return w.to(G.device), V.to(G.device)
 
 
+def _primal_eig(X_train, dev: torch.device) -> dict:
+    """Y-independent primal (d-space) eigenpieces: standardize on train,
+    stream C = Xn^T Xn in fp64 row chunks, ONE (d, d) eigh, TU = Xn @ U.
+
+    Returns {"xmu", "xsd", "s", "U", "TU"} with near-null components DROPPED
+    (s <= s_max * 1e-12; their TU columns are numerically zero, and keeping
+    them would amplify fp noise through the 1/sqrt(s) whitening below).
+    Accepts a numpy array or a device tensor; chunks convert fp64 on `dev`.
+    The standardization matches the Gram route exactly: train-column mean,
+    UNBIASED std (n-1 denominator) + 1e-9.
+    """
+    n, d = int(X_train.shape[0]), int(X_train.shape[1])
+    step = max(1, PRIMAL_CHUNK_ROWS)
+    ssum = torch.zeros(d, dtype=torch.float64, device=dev)
+    for s0 in range(0, n, step):
+        ssum += _as_f64_on(X_train[s0 : s0 + step], dev).sum(0)
+    xmu = ssum / n
+    Cc = torch.zeros((d, d), dtype=torch.float64, device=dev)
+    for s0 in range(0, n, step):
+        c = _as_f64_on(X_train[s0 : s0 + step], dev) - xmu
+        Cc += c.T @ c
+    xsd = torch.sqrt(torch.clamp(torch.diagonal(Cc), min=0.0) / max(n - 1, 1)) + 1e-9
+    Cn = Cc / (xsd.unsqueeze(1) * xsd.unsqueeze(0))
+    s, U = _eigh_robust(Cn)
+    s = torch.clamp(s, min=0.0)
+    smax = float(s.max()) if s.numel() else 0.0
+    keep = s > smax * 1e-12
+    s, U = s[keep], U[:, keep]
+    TU = torch.empty((n, int(s.shape[0])), dtype=torch.float64, device=dev)
+    for s0 in range(0, n, step):
+        c = (_as_f64_on(X_train[s0 : s0 + step], dev) - xmu) / xsd
+        TU[s0 : s0 + step] = c @ U
+    return {"xmu": xmu, "xsd": xsd, "s": s, "U": U, "TU": TU}
+
+
+def _primal_cache_pieces(pe: dict, X_eval, dev: torch.device) -> tuple[torch.Tensor, torch.Tensor]:
+    """(Q, PE) from a `_primal_eig` result — the primal drop-ins for (V, KevV).
+
+    Q = Xn_tr @ U / sqrt(s) has orthonormal columns (the hat-matrix
+    eigenbasis: H = Q diag(s/(s+lam)) Q^T); PE = Xn_ev @ U * sqrt(s) is the
+    primal analogue of Kev @ V. With cache fields {w: s, V: Q, KevV/P: PE}
+    the ENTIRE downstream Gram-cache algebra is unchanged and exact:
+    pred = (PE * 1/(s+lam)) @ (Q^T Yc) + ymu; GCV dof = sum(s/(s+lam)) (the
+    nonzero spectra of X^T X and X X^T coincide); train RSS(lam) =
+    tot - sum((2f - f^2) * (Q^T Yc)^2) with f = s/(s+lam). Equality with the
+    Gram route at matched (lambda, fold) is pinned by
+    tests/test_issue825_primal_fold_path.py (the plan G0'(b) gate form).
+    """
+    sqrt_s = torch.sqrt(pe["s"])
+    Q = pe["TU"] / sqrt_s
+    Xev_n = (_as_f64_on(X_eval, dev) - pe["xmu"]) / pe["xsd"]
+    PE = (Xev_n @ pe["U"]) * sqrt_s
+    return Q, PE
+
+
 def _prep_fold(X_train: np.ndarray, X_eval: np.ndarray) -> dict:
-    """Compute the Y-independent pieces of the Gram-space ridge for one fold.
+    """Compute the Y-independent pieces of the ridge for one fold.
 
     Returns a cache dict reused across the observed fit and every permuted-Y
-    null draw (the eigh(G) is the expensive step and depends only on X).
-    Tensors live on _fit_device(); peak VRAM is one fold-layer cache (~300 MB
-    fp64 at n=5000), built and discarded inside the sweep loop.
+    null draw (the eigendecomposition is the expensive step and depends only
+    on X). Two regimes, IDENTICAL cache field contract (consumers unchanged):
+
+    - n_train <= d (or FORCE_GRAM): the legacy Gram route — n x n eigh —
+      byte-preserved.
+    - n_train > d (#1336 source fix): the primal (d-space) route — streamed
+      fp64 C = Xn^T Xn, ONE (d, d) eigh — numerically identical at matched
+      (lambda, fold) (assumption 9: a mathematical identity; gate G0'(b)).
+      Cache memory is O(n_tr x k + n_ev x k) fp64 with k <= d.
+
+    Tensors live on _fit_device(); peak VRAM is one fold-layer cache, built
+    and discarded inside the sweep loop.
     """
     dev = _fit_device()
+    n_tr, d = int(X_train.shape[0]), int(X_train.shape[1])
+    if not FORCE_GRAM and n_tr > d:
+        pe = _primal_eig(X_train, dev)
+        Q, PE = _primal_cache_pieces(pe, X_eval, dev)
+        assert Q.shape[0] == n_tr and PE.shape[0] == int(X_eval.shape[0]), (Q.shape, PE.shape)
+        return {"w": pe["s"], "V": Q, "KevV": PE, "ntr": n_tr, "d": d, "route": "primal"}
     Xtr = _as_f64_on(X_train, dev)
     Xev = _as_f64_on(X_eval, dev)
     xmu = Xtr.mean(0)
@@ -310,7 +395,7 @@ def _prep_fold(X_train: np.ndarray, X_eval: np.ndarray) -> dict:
     KevV = Kev @ V
     # "d" (#1887): the ambient feature dimension, consumed by the pure-GCV
     # n_train < d refusal guard + the degeneracy tripwire. Pure addition.
-    return {"w": w, "V": V, "KevV": KevV, "ntr": int(Xtr.shape[0]), "d": int(Xtr.shape[1])}
+    return {"w": w, "V": V, "KevV": KevV, "ntr": n_tr, "d": d, "route": "gram"}
 
 
 def _train_pca_basis(X_train: np.ndarray, k: int) -> tuple[np.ndarray, np.ndarray]:
@@ -353,6 +438,11 @@ def _prep_inner_lambda(
     when fewer than 2 usable inner folds exist (caller falls back to GCV with
     a loud warning). fi_idx/va_idx are POSITIONS within the outer-train block,
     so the batched null path's positionally-permuted Y slices line up.
+
+    Inner folds with n_fi > d take the primal (d-space) route (#1336, same
+    regime switch + identical field contract as ``_prep_fold``): ONE (d, d)
+    eigh per inner fold with V := Q, P := (Xv_n U) sqrt(s), M := P^T P —
+    the RSS(lambda) reduced form is unchanged and exact.
     """
     groups = np.asarray(train_groups)
     uniq = np.unique(groups)
@@ -375,6 +465,16 @@ def _prep_inner_lambda(
         va_idx = torch.as_tensor(np.flatnonzero(va), dtype=torch.long, device=dev)
         Xf = Xtr_all.index_select(0, fi_idx)
         Xv = Xtr_all.index_select(0, va_idx)
+        if not FORCE_GRAM and int(Xf.shape[0]) > int(Xf.shape[1]):
+            # Primal (d-space) inner route (#1336): same regime switch as
+            # _prep_fold; the inner-CV RSS reduced form is generic in the
+            # eigen-axis, so only the cache CONSTRUCTION changes.
+            pe = _primal_eig(Xf, dev)
+            Q, PE = _primal_cache_pieces(pe, Xv, dev)
+            caches.append(
+                {"w": pe["s"], "V": Q, "P": PE, "M": PE.T @ PE, "fi_idx": fi_idx, "va_idx": va_idx}
+            )
+            continue
         xmu = Xf.mean(0)
         xsd = Xf.std(0) + 1e-9
         Xf_n = (Xf - xmu) / xsd
@@ -625,6 +725,95 @@ def _ridge_predict_cached_batched(
 # tensor; 20 draws is one chunk, but a larger null_draws stays memory-safe).
 NULL_DRAW_BATCH = int(os.environ.get("EPM_NULL_DRAW_BATCH", "64"))
 
+# #1336 pooled-OOM fix: NULL_DRAW_BATCH alone is NOT memory-aware — at the
+# pooled off-arm shape (N=149,964 rows over 5 group folds, D=4096) a single
+# 20-draw chunk materializes (20, 118,359, 4096) fp64 = 72.24 GiB (the exact
+# failing CUDA request of SLURM job 12643) with ~108 GiB total live, OOMing
+# a 139.8 GiB H200. The cap below bounds the DRAW axis by probed free
+# memory. live factor MEASURED via scripts/issue1336_null_chunk_calibration.py
+# (fresh-process ru_maxrss deltas at n=20k, d=512, folds=5, inner=2):
+# 4.54x per draw-unit at one 20-draw chunk, 4.43x at 4x5-draw chunks,
+# 4.60x on a 13-pt grid (lambda-grid-length-INVARIANT — the draw axis, not
+# the lambda axis, dominates); 6 adds ~30% headroom per the
+# resolve_chunk_cap convention (vectorized_mlp_skill.py): over-estimation
+# only adds chunk count — results are chunk-size-invariant (test-pinned by
+# tests/test_issue1336_null_chunk.py).
+NULL_DRAW_LIVE_FACTOR = float(os.environ.get("EPM_FIT825_NULL_DRAW_LIVE_FACTOR", "6"))
+NULL_DRAW_MEM_SAFETY = 0.8
+
+
+def _free_device_bytes(dev: torch.device) -> int | None:
+    """Best-effort free-memory probe for the null draw-chunk cap.
+
+    cuda: ``mem_get_info`` free PLUS the caching allocator's
+    reserved-but-unallocated bytes (reserved segments are reusable by this
+    process, so counting them keeps the cap from ratcheting down across the
+    ~140 fold-layer calls of a pooled sweep). cpu: /proc/meminfo
+    MemAvailable, min'd with cgroup-v2 memory headroom when readable (the
+    pooled fit runs under a SLURM cgroup whose limit binds long before the
+    host's MemAvailable — the rc=137 half of the #1336 incident). Returns
+    None on ANY probe failure — the caller falls back to the REQUESTED
+    chunk, never silently tightens (the designed fail-open, see
+    _resolve_null_draw_chunk).
+    """
+    try:
+        if dev.type == "cuda":
+            free, _total = torch.cuda.mem_get_info(dev)
+            reserved = torch.cuda.memory_reserved(dev)
+            allocated = torch.cuda.memory_allocated(dev)
+            return int(free) + max(0, int(reserved) - int(allocated))
+        avail: int | None = None
+        with open("/proc/meminfo") as fh:
+            for line in fh:
+                if line.startswith("MemAvailable:"):
+                    avail = int(line.split()[1]) * 1024
+                    break
+        if avail is None:
+            return None
+        try:
+            with open("/sys/fs/cgroup/memory.max") as fh:
+                lim_s = fh.read().strip()
+            with open("/sys/fs/cgroup/memory.current") as fh:
+                cur_s = fh.read().strip()
+            if lim_s != "max":
+                avail = min(avail, max(0, int(lim_s) - int(cur_s)))
+        except OSError:
+            pass  # cgroup v2 files absent/unreadable: host MemAvailable stands
+        return avail
+    except Exception:
+        return None  # probe failure => caller keeps the REQUESTED chunk
+
+
+def _resolve_null_draw_chunk(
+    requested: int,
+    n_draws: int,
+    n_rows: int,
+    d_out: int,
+    free_bytes: int | None,
+    *,
+    live_factor: float | None = None,
+    safety: float = NULL_DRAW_MEM_SAFETY,
+) -> int:
+    """Memory-aware draw-chunk cap for the batched null (pure; #1336 OOM fix).
+
+    ``unit_bytes = n_rows * d_out * 8`` is one draw's fp64 permuted rows
+    (``Yp_tr`` + ``Yp_te`` together index all ``n_rows``); ``live_factor``
+    (measured — see NULL_DRAW_LIVE_FACTOR) covers the centered copies,
+    predictions, inner-CV transients, and allocator retention riding each
+    draw. ``free_bytes`` None/<=0 (probe failure) returns the REQUESTED
+    chunk (clamped to n_draws) — never silently tighter. Returns
+    ``max(1, min(requested, n_draws, floor(free * safety / (lf * unit))))``.
+    """
+    req = max(1, min(int(requested), max(1, int(n_draws))))
+    if free_bytes is None or free_bytes <= 0:
+        return req
+    lf = float(NULL_DRAW_LIVE_FACTOR if live_factor is None else live_factor)
+    unit = int(n_rows) * int(d_out) * 8
+    if unit <= 0 or lf <= 0:
+        return req
+    cap = int((float(free_bytes) * float(safety)) / (lf * float(unit)))
+    return max(1, min(req, cap))
+
 
 def _null_ss_contrib(
     cache: dict,
@@ -669,7 +858,20 @@ def _null_ss_contrib(
     te_idx = np.flatnonzero(np.asarray(te_mask))
     ss_res = np.empty(n_draws)
     ss_tot = np.empty(n_draws)
-    step = max(1, NULL_DRAW_BATCH)
+    requested = max(1, NULL_DRAW_BATCH)
+    free_bytes = _free_device_bytes(dev)
+    step = _resolve_null_draw_chunk(
+        requested, n_draws, int(Y_t.shape[0]), int(Y_t.shape[1]), free_bytes
+    )
+    # Fix-engaged signal (#1336 pooled-OOM fix): resolved cap + probed free
+    # bytes AT the cap site, so the next OOM is diagnosable from the log.
+    print(
+        f"[fit825] null-draw chunk resolved: step={step} requested={requested} "
+        f"draws={n_draws} unit_gb={Y_t.shape[0] * Y_t.shape[1] * 8 / 1e9:.2f} "
+        f"free_gb={'nan' if free_bytes is None else f'{free_bytes / 1e9:.1f}'} "
+        f"factor={NULL_DRAW_LIVE_FACTOR:g} safety={NULL_DRAW_MEM_SAFETY:g} dev={dev}",
+        flush=True,
+    )
     for s in range(0, n_draws, step):
         sl = slice(s, min(s + step, n_draws))
         p = perm_stack[sl]  # (b,N)
@@ -944,6 +1146,10 @@ def heldout_r2_sweep(
             if lam_obs is not None
             else []
         ),
+        # #1336: the tripwire's edge predicate must read the REALIZED grid —
+        # a caller-supplied grid otherwise gets judged against the module
+        # LAMBDAS edges. None keeps the default byte-for-byte.
+        grid=(None if lambdas is None else np.asarray(lambdas, dtype=np.float64)),
     )
     return {
         "r2_obs": r2_obs,

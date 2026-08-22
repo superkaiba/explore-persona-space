@@ -1,0 +1,25 @@
+# Agent-spec grandfather caps — one line per entry, line-mergeable by design.
+# Format: <filename> <cap_bytes>  # optional reason/history
+# Blank lines and lines whose first non-whitespace char is `#` are ignored.
+# The trailing `# ...` on a data line is stripped by the loader (informational only).
+# Semantics: read by workflow_lint.AGENT_SPEC_SIZE_GRANDFATHER — the module
+# attribute keeps its name + type (dict[str, int]) so every consumer site,
+# test monkeypatch, and verify_plan reference is unchanged.
+# Each cap = measured size + <=3 KB margin (headroom mechanically enforced —
+# see AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES). A grandfathered file FAILs
+# above its cap (regrowth ratchet) and FAILs as stale once it drops to
+# <= AGENT_SPEC_FAIL_BYTES ("remove the entry"). Ratchet DOWN when trimmed.
+# Raising a cap edits ONE line here — that is the point of the split (#1718).
+# The full per-entry cap chronicle (every prior value and its incident) is
+# preserved in `git log --follow scripts/workflow_lint.py` at commits before
+# the #1718 migration; new history accrues in this file's own git log.
+
+code-reviewer.md             109_600  # measured 106,857 B @ #2325 2026-08-16; corridor-max ((measured+2_800)//100)*100. Prior: 107_300.
+codex-clean-result-critic.md  50_200  # measured 47,431 B @ #2325 2026-08-16; corridor-max ((measured+2_800)//100)*100. Prior: 48_400.
+codex-code-reviewer.md        52_200  # measured 49,481 B @ #2325 2026-08-16; corridor-max ((measured+2_800)//100)*100. Prior: 50_500.
+experiment-implementer.md     69_600  # measured 66,804 B @ #2325 2026-08-16; corridor-max ((measured+2_800)//100)*100. Prior: 67_800.
+experimenter.md               72_500  # measured 69,756 B @ #2350 2026-08-17 (step 1c per-leg out/scratch isolation); corridor-max ((measured+2_800)//100)*100. Prior: 70_300 / 67_600.
+# research-pm.md entry REMOVED @ #2155 2026-08-16: the six-span relocation to
+# .claude/rules/research-pm-section-reference.md trimmed the spec to 29,011 B,
+# under AGENT_SPEC_FAIL_BYTES (40,000) — a dropped-under-cap entry is stale and
+# must be removed, never lowered. Prior: 49_700.

@@ -1,0 +1,3 @@
+{"ts": "2026-08-17T11:09:50Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-08-17T11:09:57Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "spec-v2 task created from mission-control spec form (draft d1a00f699ab62611) [via=mission-control channel=app actor=thomas node=test-bypass node_id=test-bypass]"}
+{"ts": "2026-08-17T11:10:49Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "archived", "note": "mission-control spec-form live smoke complete — scratch task, canonical body + PUT-spec + submit-refusal verified"}

@@ -1,0 +1,79 @@
+[
+  {
+    "id": "ladder_hero",
+    "file": "figures/issue_2162/persona_specificity_ladder/ladder_hero.png",
+    "role": "aggregate",
+    "sources": [
+      "eval_results/issue_2162/persona_specificity_ladder/f_cells.jsonl",
+      "eval_results/issue_2162/persona_specificity_ladder/null_samevalue_cells.jsonl",
+      "eval_results/issue_2162/persona_specificity_ladder/null_crosstype_cells.jsonl",
+      "eval_results/issue_2162/persona_specificity_ladder/stats.json"
+    ],
+    "caption": "Mean target-descriptor fraction-of-swap F_target (unitless; 0 = unpatched floor, 1 = full context swap) per persona rung, split into four panels by direction (install, erase) and slot (context-end, prefix-end), with three arms per rung: steered donor patch, same-value-donor null, and cross-type-donor null. Each point is the mean over gate-surviving carriers (per-carrier value = mean F_target over K=5 coherent draws); error bars are carrier-clustered bootstrap 95% CIs (B=10,000, seed 21626). n = 6 carriers per rung for R1-R3 and n = 4 for R5 (philosophy); R4 (trait) and R5 (therapy) failed the anchor-separation gate and appear as empty labeled columns, and x tick labels carry per-rung n and system-prompt token counts."
+  },
+  {
+    "id": "ladder_percarrier",
+    "file": "figures/issue_2162/persona_specificity_ladder/ladder_percarrier.png",
+    "role": "per-unit",
+    "sources": [
+      "eval_results/issue_2162/persona_specificity_ladder/f_cells.jsonl",
+      "eval_results/issue_2162/persona_specificity_ladder/null_samevalue_cells.jsonl",
+      "eval_results/issue_2162/persona_specificity_ladder/null_crosstype_cells.jsonl"
+    ],
+    "caption": "Per-carrier F_target (unitless) with no aggregation: one point per gate-surviving (carrier x arm x rung x direction x slot) cell, each labeled with its carrier id, arms offset horizontally within each rung. Panels split direction (install, erase) x slot (context-end, prefix-end); colors are the three arms (steered, same-value-donor null, cross-type-donor null). n = 264 cells: 22 gate-surviving rung x carrier pairs (6 carriers each for R1-R3, 4 for R5 philosophy) x 2 directions x 2 slots x 3 arms."
+  },
+  {
+    "id": "asymmetry",
+    "file": "figures/issue_2162/persona_specificity_ladder/asymmetry.png",
+    "role": "aggregate",
+    "sources": [
+      "eval_results/issue_2162/persona_specificity_ladder/f_cells.jsonl",
+      "eval_results/issue_2162/persona_specificity_ladder/stats.json"
+    ],
+    "caption": "Paired-by-carrier steered-arm difference in F_target, erase minus install (unitless; positive = larger erase value), per gate-surviving rung, one panel per slot (context-end, prefix-end). Grey circles are the per-carrier paired differences (n = 6 carriers for R1-R3, n = 4 for R5 philosophy); red diamonds are rung means with carrier-clustered bootstrap 95% CIs (B=10,000, seed 21626)."
+  },
+  {
+    "id": "anchor_separation",
+    "file": "figures/issue_2162/persona_specificity_ladder/anchor_separation.png",
+    "role": "per-unit",
+    "sources": [
+      "eval_results/issue_2162/persona_specificity_ladder/anchors.jsonl",
+      "eval_results/issue_2162/persona_specificity_ladder/judge/gates/ladder_separation_gate.json"
+    ],
+    "caption": "Per-(rung x carrier) anchor separation — generate-under-donor ceiling minus unpatched floor, from K=10 anchor draws per context — for all six rungs, 6 carriers each (n = 36 points per panel). Left panel: target-descriptor separation (0-1 scale) against the 0.25 gate bar; right panel: netted dual-rubric separation (0-2 scale) against the 0.5 bar (red dashed lines). Filled circles are carriers that passed both gate bars, open circles are carriers that failed; x labels carry each rung's survived/dropped verdict (survival requires >= 4 passing carriers)."
+  },
+  {
+    "id": "rubric_bridge",
+    "file": "figures/issue_2162/persona_specificity_ladder/rubric_bridge.png",
+    "role": "aggregate",
+    "sources": [
+      "eval_results/issue_2162/persona_specificity_ladder/f_cells.jsonl",
+      "eval_results/issue_2162/persona_specificity_ladder/null_samevalue_cells.jsonl",
+      "eval_results/issue_2162/persona_specificity_ladder/null_crosstype_cells.jsonl"
+    ],
+    "caption": "F under the two metric conventions, one point per (direction x slot x arm) group: x = netted dual-rubric fraction-of-swap (the parent round's metric convention), y = target-descriptor-only F_target (this round's primary), each coordinate the mean over that group's gate-surviving carrier cells. n = 48 groups (8 gate-surviving direction ids x 2 slots x 3 arms); colors are the three arms and the dotted line is the identity y = x."
+  },
+  {
+    "id": "dv_agreement",
+    "file": "figures/issue_2162/persona_specificity_ladder/dv_agreement.png",
+    "role": "per-unit",
+    "sources": [
+      "eval_results/issue_2162/persona_specificity_ladder/f_cells.jsonl",
+      "eval_results/issue_2162/persona_specificity_ladder/null_samevalue_cells.jsonl",
+      "eval_results/issue_2162/persona_specificity_ladder/null_crosstype_cells.jsonl",
+      "eval_results/issue_2162/persona_specificity_ladder/margin.jsonl",
+      "eval_results/issue_2162/persona_specificity_ladder/stats.json"
+    ],
+    "caption": "Continuous-companion panels over the 264 (direction x slot x arm x carrier) cells. Panel 1: activation fraction-of-swap F_act (signed projection onto the pair's own contrast direction, unitless) vs F_target per cell, colored by arm, Spearman rho = +0.42 (n = 264 cells); panel 2: per-unit mean F_target vs teacher-forced fixed-pool margin shift (nats/token) over the 14 steered (direction x slot) units with nonzero dynamic range (2 of 16 units dropped by the pre-registered dynamic-range screen), Spearman rho = +0.54; panel 3: cap-hit fraction vs coherence rate per cell (observed ranges 0.00-0.20 and 0.60-1.00; n = 264 cells)."
+  },
+  {
+    "id": "conjunct_diag",
+    "file": "figures/issue_2162/persona_specificity_ladder/conjunct_diag.png",
+    "role": "aggregate",
+    "sources": [
+      "eval_results/issue_2162/persona_specificity_ladder/conjuncts.jsonl",
+      "eval_results/issue_2162/persona_specificity_ladder/f_cells.jsonl"
+    ],
+    "caption": "Mean judge score (0-100) per conjunct of the persona description on R1 (pirate) and R2 (butler) steered rollouts only, one panel per rung, bars grouped by direction x slot (erase/install x context-end/prefix-end) with the holistic target-descriptor score as the rightmost group. Each bar is the mean over 6 carriers of per-carrier mean scores over coherent draws (Round-A conjunct instrument verbatim; R1 conjuncts: dialect, sea, warning; R2 conjuncts: address, courtesy, formality, household). Bars at zero are true zero mean judge scores in conjuncts.jsonl, not missing cells."
+  }
+]

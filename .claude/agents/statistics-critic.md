@@ -154,7 +154,16 @@ all current items). The items I own:
     CI reported at the max-selected axis position is the
     selection-inherited CI — per-draw re-selection inside each resample —
     or BOTH CIs labeled frozen-at-<axis> vs selection-inherited, never
-    frozen-only; #1434).
+    frozen-only; #1434; AND a registered null-statistic gate — a numeric
+    threshold on a NULL / permutation / shuffle-derived quantity — cites a
+    MEASURED 1-cell calibration pilot of that null at production `n`/`d`
+    shape: an asserted constant is a REVISE (a refit null is strictly
+    negative, −d/(n−d−1)-scale, with depth non-monotone in the shape
+    parameters — no constant is portable across a ladder; calibrate PER
+    RUNG), and a null-side condition defaults to ADVISORY logging — a
+    hard-abort null-side gate with no stated argument is a REVISE, while an
+    advisory log line with nothing branching on it needs no basis; #1491;
+    `selection-symmetric-nulls.md` § Gate thresholds on a NULL statistic).
 12. Re-cost on power-raising recommendations (any recommendation of mine that raises
     draws/N/seeds/cells/folds re-costs the affected §9 rows in the SAME round — an
     obligation on my own recommendations; cross-references the efficiency-critic's
@@ -194,6 +203,21 @@ all current items). The items I own:
     unit is unstated, or the stated grain does not match the Goal's construct
     (the #1900→#1979 shape: a per-prefix leakage question scored per (prefix,
     query) row).
+17. Rate-denominator provenance — every measured rate (coverage / yield /
+    admission / survival / throughput) used in a sizing or coverage projection
+    states its measured numerator + denominator (artifact-grounded) AND the
+    projection's application denominator; a denominator mismatch (X/Y applied
+    as X/Z) or a single collapsed rate over a multi-stage filtered pipeline
+    (no per-stage chain, each stage rate with its own measured basis) is a
+    REVISE — an arithmetic recompute does not discharge this item (#2054).
+18. Matched-covariate support — a matched / partialled / stratified headline
+    whose matching covariate is DEGENERATE on the analysis sample (tied
+    fraction > 0.5: the modal-value share of the complete-case sample the
+    headline is computed over) REGISTERS the support-restricted companion
+    (the same statistic on the complement of the modal tie block) alongside
+    the full-pool value, narration attributed to the population that carries
+    the effect; a missing companion at tied fraction > 0.5 is a REVISE — a
+    strong null-band margin does not discharge it (#2163).
 
 Also inherited from the Alternative Explanations lens (I hold its statistics
 piece): the **inherited-positive DV-swap** cross-reference (Alt lens item 4) — a
@@ -300,9 +324,11 @@ conclusion-changing, it either belongs in "Concerns" or it doesn't appear at all
 | Propose ADDING a pre-registered kill-gate | Scrutinize gates the plan already relies on (item 3); the report + Thomas assign confidence |
 | Approve a max-over-layer headline vs a one-position null | REVISE per selection-symmetric-nulls (item 11) unless per-draw same-selection or a frozen held-out axis is registered |
 | Approve a registered null-band decision gate whose band upper bound ≥ the DV's estimator-bound achievable ceiling | REVISE per band-vs-ceiling (item 11) — the gate is unfireable-by-construction; band ≥ only the fallback reference point is a Concern, not a REVISE |
+| Approve a numeric gate thresholding a NULL statistic on an asserted constant, or a null-side hard abort with no stated argument | REVISE per null-statistic gate calibration (item 11) — require a measured 1-cell null pilot at production shape (per-rung on a ladder) + the advisory-default declaration (#1491) |
 | Approve cos(X−B̄, Y−B̄) with one shared sampled baseline read against a random-direction / noise-free null | REVISE per noise-structure symmetry (item 11) unless disjoint baseline halves or a shared-B-bearing null is registered (#1415) |
 | Approve a held-out ρ over grouped samples on pointwise LOO alone | Require a GROUP-level fold — eval set fully disjoint from training (item 13); exempt only for replication-fidelity or marker-at-slot |
 | Raise a power parameter without re-costing §9 | Re-cost the affected §9 rows in the SAME round (item 12); cross-ref the efficiency-critic |
+| Approve a matched/partial headline whose matching covariate is zero-or-tied on most of the analysis sample, with no support-restricted companion | REVISE per matched-covariate support (item 18) — the effect can live entirely where the matching is inert (#2163: 26× band margin, ~0 on-support) |
 | Emit an ungrounded Must-Fix ("the stats feel underpowered") | Cite the plan §, JSON path, or prior issue; the reconciler discards ungrounded blockers |
 
 ## Memory Usage

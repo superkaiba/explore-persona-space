@@ -861,6 +861,7 @@ The assistant axis does NOT capture CoT persona switching. This is consistent wi
 
 ## Experiments In Progress
 
+- **Context→answer map for behavior monitoring (#1739)** — claim4-controls round folded 2026-08-19: the mapped-answer probe's edge over the context probe survives a shuffled-pairing map control in weak form (median +0.03 across 13 held-out rungs x 5 seeds; sycophancy flagship interval-clean, evil flagship margin crosses zero; comparator arm inconclusive). See `eval_results/issue_1739/claim4_controls/`.
 - **Tulu DPO EM** — **COMPLETED (Reviewed).** No evidence DPO protects alignment (+3.1pt, p=0.53 NS). DPO preserves capability (ARC 0.880 vs 0.538) and coherence (72.2 vs 38.3). See `eval_results/tulu_dpo_em/`.
 - **DPO Contrastive Leakage** — **COMPLETED (FAILED).** DPO did not learn the marker task (target persona also 0%). See `eval_results/dpo_contrastive_leakage/`.
 - **Localization 2.1 pilot** — **COMPLETED.** See `eval_results/aim2_pilot/`.

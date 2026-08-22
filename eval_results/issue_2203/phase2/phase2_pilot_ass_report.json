@@ -1,0 +1,14 @@
+{
+  "fingerprint": {
+    "rubric_sha": "2dfc83df303b156a",
+    "n_pilot_items": 30,
+    "n_draws": 5,
+    "max_tokens": 1024
+  },
+  "verdict": "PASS",
+  "n_total_draws": 150,
+  "n_truncation_dropped_draws": 0,
+  "parse_fail_frac": 0.0,
+  "n_api_refusal_draws": 0,
+  "gate": "zero max_tokens stops AND parse-fail < 2% (rule 26)"
+}

@@ -1,0 +1,153 @@
+{
+  "commit": "6d905e2d+dirty",
+  "render_id": "e1fad24f78ca4056",
+  "git_commit": "6d905e2d",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2329/layer_profile.meta.json",
+    "figures/issue_2329/layer_profile.pdf",
+    "figures/issue_2329/layer_profile.png",
+    "figures/issue_2329/probe_layer_curves_ce.meta.json",
+    "figures/issue_2329/probe_layer_curves_ce.pdf",
+    "figures/issue_2329/probe_layer_curves_ce.png",
+    "figures/issue_2329/probe_layer_curves_pe.meta.json",
+    "figures/issue_2329/probe_layer_curves_pe.pdf",
+    "figures/issue_2329/probe_layer_curves_pe.png",
+    "scripts/issue2329_figures.py"
+  ],
+  "created": "2026-08-18T14:41:10Z",
+  "figsize": [
+    16.0,
+    9.0
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "probe AUC per layer \u2014 slot ce",
+        "xlabel": "depth (fraction of stack; dashed verticals = full-attention layers)",
+        "xticklabels": [
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00"
+        ],
+        "yticklabels": [
+          "conflict_format_fwd",
+          "conflict_format_rev",
+          "conflict_persona_fwd",
+          "conflict_persona_rev",
+          "constraint_knowledge",
+          "demo_format",
+          "demo_persona",
+          "fact_assistant_animal",
+          "fact_novel_queried",
+          "fact_user_name",
+          "filler_swap",
+          "icl_task_mapping",
+          "instr_format",
+          "instr_language",
+          "language_implied",
+          "list_numeric_detail",
+          "load_fact_assistant_animal_l3",
+          "load_fact_assistant_animal_l5",
+          "load_fact_user_name_l3",
+          "load_fact_user_name_l5",
+          "load_instr_format_l3",
+          "load_instr_format_l5",
+          "persona_prompted",
+          "persona_role_header",
+          "prior_topic",
+          "query_content",
+          "reasoning_style",
+          "recency_fact_user_name_d3",
+          "recency_fact_user_name_d5",
+          "recency_instr_format_d3",
+          "recency_instr_format_d5",
+          "recency_persona_prompted_d3",
+          "recency_persona_prompted_d5",
+          "recency_prior_topic_d3",
+          "recency_prior_topic_d5",
+          "refusal_boundary",
+          "user_emotion",
+          "user_expertise",
+          "verbosity"
+        ]
+      },
+      {
+        "title_left": "probe AUC per layer \u2014 slot pe",
+        "xlabel": "depth (fraction of stack; dashed verticals = full-attention layers)",
+        "xticklabels": [
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00"
+        ],
+        "yticklabels": [
+          "conflict_format_fwd",
+          "conflict_format_rev",
+          "conflict_persona_fwd",
+          "conflict_persona_rev",
+          "constraint_knowledge",
+          "demo_format",
+          "demo_persona",
+          "fact_assistant_animal",
+          "fact_novel_queried",
+          "fact_user_name",
+          "filler_swap",
+          "icl_task_mapping",
+          "instr_format",
+          "instr_language",
+          "language_implied",
+          "list_numeric_detail",
+          "load_fact_assistant_animal_l3",
+          "load_fact_assistant_animal_l5",
+          "load_fact_user_name_l3",
+          "load_fact_user_name_l5",
+          "load_instr_format_l3",
+          "load_instr_format_l5",
+          "prior_topic",
+          "query_content",
+          "reasoning_style",
+          "recency_fact_user_name_d3",
+          "recency_fact_user_name_d5",
+          "recency_instr_format_d3",
+          "recency_instr_format_d5",
+          "recency_persona_prompted_d3",
+          "recency_persona_prompted_d5",
+          "recency_prior_topic_d3",
+          "recency_prior_topic_d5",
+          "refusal_boundary",
+          "user_emotion",
+          "user_expertise",
+          "verbosity"
+        ]
+      },
+      {
+        "ylabel": "LOCO AUC",
+        "yticklabels": [
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ],
+  "figure": "layer_profile",
+  "inputs": [
+    "eval_results/issue_2329/f_metrics/probe.json",
+    "eval_results/issue_2329/f_metrics/probe_perm_matrix/perm_auc_matrix.npz"
+  ]
+}

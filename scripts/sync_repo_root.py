@@ -125,6 +125,7 @@ import argparse
 import contextlib
 import dataclasses
 import fcntl
+import importlib.util
 import json
 import os
 import re
@@ -145,6 +146,16 @@ if str(_SRC) not in sys.path:
     sys.path.insert(0, str(_SRC))
 
 from explore_persona_space import task_workflow  # noqa: E402
+
+# Sibling-path load of the shared lock opener (#2324 D1): a bare
+# `import lock_utils` breaks under the tests' spec_from_file_location import
+# mode (scripts/ is never on sys.path there), and a package home is unusable
+# for step9c_baseline.py — see scripts/lock_utils.py module docstring.
+_LOCK_UTILS = Path(__file__).resolve().parent / "lock_utils.py"
+_spec = importlib.util.spec_from_file_location("eps_scripts_lock_utils", _LOCK_UTILS)
+assert _spec and _spec.loader  # house pattern (tests/test_step9c_baseline.py:61)
+lock_utils = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(lock_utils)
 
 # ─── Exit codes ──────────────────────────────────────────────────────────────
 
@@ -621,9 +632,23 @@ def _emit_report(report: dict, as_json: bool) -> None:
 
 def acquire_single_flight() -> int | None:
     """Non-blocking flock on the root-sync lock. Returns the held fd, or
-    ``None`` when another sync is in flight (the caller exits 0)."""
+    ``None`` when another sync is in flight (the caller exits 0).
+
+    Fail posture (#2324): fail-CLOSED preserved. A rejected lock PATH
+    (symlink/FIFO/non-regular — ``lock_utils.safe_open_lockfile``) raises
+    ``SyncAbortError(EXIT_PRECONDITION)`` — LOUD, never proceed unlocked, and
+    never ``None`` (which would read a planted special file as healthy
+    contention and silently deny sync forever). ``main()`` converts it via
+    the same pattern ``_run_locked`` uses for the task-workflow lock.
+    """
     ROOT_SYNC_LOCK.parent.mkdir(parents=True, exist_ok=True)
-    fd = os.open(ROOT_SYNC_LOCK, os.O_WRONLY | os.O_CREAT, 0o600)
+    try:
+        fd = lock_utils.safe_open_lockfile(ROOT_SYNC_LOCK)
+    except lock_utils.LockPathError as exc:
+        raise SyncAbortError(
+            EXIT_PRECONDITION,
+            f"root-sync lock path rejected ({exc.reason}): {ROOT_SYNC_LOCK} — refusing to sync",
+        ) from exc
     try:
         fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
     except BlockingIOError:
@@ -730,8 +755,18 @@ def acquire_task_workflow_lock(wait_s: float) -> int:
     """
     lock_path = Path(task_workflow.LOCK_PATH)  # read at call time (tests monkeypatch)
     lock_path.parent.mkdir(parents=True, exist_ok=True)
-    fd = os.open(lock_path, os.O_WRONLY | os.O_CREAT, 0o600)
+    # Deadline BEFORE the open so the open's cost counts against the advertised
+    # bound (#2324 D4). Fail posture: fail-CLOSED abort preserved — a rejected
+    # lock PATH raises the same SyncAbortError class the expiry path raises,
+    # caught by the existing handler in _run_locked.
     deadline = time.monotonic() + wait_s
+    try:
+        fd = lock_utils.safe_open_lockfile(lock_path)
+    except lock_utils.LockPathError as exc:
+        raise SyncAbortError(
+            EXIT_PRECONDITION,
+            f"task-workflow lock path rejected ({exc.reason}): {lock_path}",
+        ) from exc
     while True:
         try:
             fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -2034,7 +2069,16 @@ def main(argv: list[str] | None = None) -> int:
     timeout_s = args.timeout_s if args.timeout_s is not None else _timeout_s_default()
     report = _new_report(repo, args.dry_run)
 
-    fd1 = acquire_single_flight()
+    try:
+        fd1 = acquire_single_flight()
+    except SyncAbortError as e:
+        # Rejected lock path (#2324): mirror _run_locked's fd2 conversion —
+        # report + exit code, never proceed unlocked (fail-CLOSED preserved).
+        report["state"] = "error"
+        report["exit_code"] = e.exit_code
+        _msg(report, e.message)
+        _emit_report(report, args.as_json)
+        return e.exit_code
     if fd1 is None:
         report["state"] = "in-flight"
         report["exit_code"] = EXIT_OK

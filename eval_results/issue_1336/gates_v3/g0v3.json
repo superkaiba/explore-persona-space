@@ -1,0 +1,121 @@
+{
+  "metadata": {
+    "git_commit": "unknown",
+    "timestamp": "2026-08-13T04:49:21Z",
+    "seed": 0,
+    "n": 10557,
+    "script": "scripts/issue1336_fit_cells.py"
+  },
+  "gate": "G0v3",
+  "cell": "rlvr_chat_lmsys23k",
+  "design": "matched-row matched-n size-matched fold-ASSIGNMENT contrast (plan v26 \u00a74)",
+  "candidate_layers": [
+    16,
+    21,
+    22,
+    30
+  ],
+  "r2_grouped": 0.5382966321025975,
+  "argmax_layer_grouped": 30,
+  "r2_by_layer_grouped": {
+    "16": 0.46909586131578007,
+    "21": 0.4908029137867467,
+    "22": 0.487729228209685,
+    "30": 0.5382966321025975
+  },
+  "r2_random_draws": [
+    0.6151263974765113,
+    0.6149165637605533,
+    0.6147336723280211
+  ],
+  "argmax_layer_random_draws": [
+    30,
+    30,
+    30
+  ],
+  "r2_by_layer_random_draws": [
+    {
+      "16": 0.5429233324487135,
+      "21": 0.5653728026728748,
+      "22": 0.56330379787107,
+      "30": 0.6151263974765113
+    },
+    {
+      "16": 0.5426430089575143,
+      "21": 0.5651809381920838,
+      "22": 0.563114370974306,
+      "30": 0.6149165637605533
+    },
+    {
+      "16": 0.5425238575585516,
+      "21": 0.565007076006471,
+      "22": 0.5629242763918723,
+      "30": 0.6147336723280211
+    }
+  ],
+  "r2_random_mean": 0.6149255445216952,
+  "r2_random_sd": 0.00019651654158665588,
+  "delta_assign": 0.07662891241909775,
+  "tolerance": 0.05151557596695462,
+  "eps_noise": 0.01,
+  "ex_v2": 1.0303115193390924,
+  "verdict_branch": "FAIL-leakage-exceeds-band",
+  "seed": 0,
+  "matched_seed": 13360,
+  "matched_draw_seeds": [
+    [
+      13360,
+      0
+    ],
+    [
+      13360,
+      1
+    ],
+    [
+      13360,
+      2
+    ]
+  ],
+  "legacy_confounded_read": {
+    "r2_grouped_at_ref_layer": 0.5382966321025975,
+    "ref_layer": 30,
+    "r2_per_corpus_round3": 0.6090302267307357,
+    "abs_delta": 0.07073359462813822,
+    "note": "v23 construction-confounded statistic (grouped refit at the borrowed round-3 layer vs the round-3 per-corpus R2) \u2014 REPORT-ONLY per the v24 demotion; never a verdict input"
+  },
+  "universe_accounting": {
+    "concat_total_log_witnessed": 17681,
+    "pre_dedup_pinned": 13479,
+    "dedup_drops_pinned": 17,
+    "post_dedup": 13462,
+    "manifest_rows": 13462,
+    "test_rows": 2905,
+    "train_rows": 10557,
+    "consistent": true,
+    "provenance": "concat_total is log-witnessed (charmander c_pool '[pool] 5-way kept-intersection lmsys23k: 13479 prompts', per-model sizes rlvr=17681); pre_dedup/drops are ps.A2_PINNED_PRE_DEDUP/ps.A2_PINNED_DROPS"
+  },
+  "fold_row_counts": {
+    "0": 1685,
+    "1": 2982,
+    "2": 2735,
+    "3": 2166,
+    "4": 989
+  },
+  "fold0_quarantine_rows": 10,
+  "grouping_bite": {
+    "n_clusters": 36,
+    "largest_cluster_rows": 696,
+    "prompt_sha_max_multiplicity": 1,
+    "prompt_idx_max_multiplicity": 1,
+    "limitation": "manifest records no conversation id; grouping bite is measured at cluster/prompt grain only"
+  },
+  "split_manifest": "/workspace/superkaiba/eps/issue-1336/data/issue_1336/pooled_split_v3/split_manifest.json",
+  "enforced": true,
+  "pass": false,
+  "verdict": "FAIL-leakage-exceeds-band",
+  "adjudication": {
+    "applied": true,
+    "record": "eval_results/issue_1336/gates_v3/g0v3_adjudication.json",
+    "reason": "applied \u2014 record rationale: N14/N5 discrimination at the halt: MIXED, (B)-dominant. Cluster/topic-holdout conservatism accounts for 0.05-0.07 of the +0.0766; near-duplicate leakage removal is realistically ~0.01 (ceiling 0.032). No defect signature: anomaly branch clean, fold sizes matched by construction, across-draw SD 0.000197 (~390x smaller than the gap), all four fits independently selected L30. The excess is hardening in the pre-registered direction (#810 LOFO precedent, N14). Near-dup-dense regions are LMSYS template families the grouping exists to contain, so a finer k_c would trade a conservative instrument for a leakier one. Instrument legitimately conservative; the conservatism is inherited by the production stage-contrast headline and is carried as scope caveats N13/N24/N25."
+  }
+}

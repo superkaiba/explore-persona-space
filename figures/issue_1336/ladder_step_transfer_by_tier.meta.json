@@ -87,14 +87,14 @@
     "SFT\u2192DPO|t6": 8,
     "SFT\u2192DPO|t7": 8,
     "SFT\u2192DPO|t8": 8,
-    "DPO\u2192RLVR|t0": 8,
-    "DPO\u2192RLVR|t6": 8,
-    "DPO\u2192RLVR|t7": 8,
-    "DPO\u2192RLVR|t8": 8,
-    "RLVR\u2192longer RLVR|t0": 8,
-    "RLVR\u2192longer RLVR|t6": 8,
-    "RLVR\u2192longer RLVR|t7": 8,
-    "RLVR\u2192longer RLVR|t8": 8
+    "DPO\u2192RLVR- PPO|t0": 8,
+    "DPO\u2192RLVR- PPO|t6": 8,
+    "DPO\u2192RLVR- PPO|t7": 8,
+    "DPO\u2192RLVR- PPO|t8": 8,
+    "RLVR- PPO\u2192RLVR- GRPO|t0": 8,
+    "RLVR- PPO\u2192RLVR- GRPO|t6": 8,
+    "RLVR- PPO\u2192RLVR- GRPO|t7": 8,
+    "RLVR- PPO\u2192RLVR- GRPO|t8": 8
   },
   "figures": [
     "ladder_step_transfer_by_tier.png",

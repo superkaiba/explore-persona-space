@@ -1,0 +1,487 @@
+{
+  "commit": "2854387a+dirty",
+  "render_id": "223af9d5eb1e4acc",
+  "git_commit": "2854387a93525f15ab3ba5e025352b94a803a8ca",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_1895/dark_spot_matched_rows.json",
+    "figures/issue_1895/angle_spectrum_k64.meta.json",
+    "figures/issue_1895/angle_spectrum_k64.pdf",
+    "figures/issue_1895/angle_spectrum_k64.png",
+    "figures/issue_1895/hero_overlap_ksweep.meta.json",
+    "figures/issue_1895/hero_overlap_ksweep.pdf",
+    "figures/issue_1895/hero_overlap_ksweep.png",
+    "figures/issue_1895/perdirection_r2_vs_fve_scatter.meta.json",
+    "figures/issue_1895/perdirection_r2_vs_fve_scatter.pdf",
+    "figures/issue_1895/perdirection_r2_vs_fve_scatter.png",
+    "figures/issue_1895/profiles_vs_eigrank.meta.json",
+    "figures/issue_1895/profiles_vs_eigrank.pdf",
+    "figures/issue_1895/profiles_vs_eigrank.png",
+    "figures/issue_1895/stratified_correlates.meta.json",
+    "figures/issue_1895/stratified_correlates.pdf",
+    "figures/issue_1895/stratified_correlates.png",
+    "figures/issue_1895/three_target_fits_delta_dark.meta.json",
+    "figures/issue_1895/three_target_fits_delta_dark.pdf",
+    "figures/issue_1895/three_target_fits_delta_dark.png",
+    "figures/paper/c3_persona_direction_spectrum.pdf",
+    "figures/paper/c3_persona_direction_spectrum.png",
+    "figures/paper/c3_sae_tier_gradient.meta.json",
+    "figures/paper/c3_sae_tier_gradient.pdf",
+    "figures/paper/c3_sae_tier_gradient.png",
+    "figures/paper/c4_reparam_recovery.meta.json",
+    "figures/paper/c4_reparam_recovery.pdf",
+    "figures/paper/c4_reparam_recovery.png",
+    "figures/paper/c4_story_vs_chat.meta.json",
+    "figures/paper/c4_story_vs_chat.pdf",
+    "figures/paper/c4_story_vs_chat.png",
+    "scripts/issue1310_analyzer_figures.py",
+    "scripts/issue1336_analyzer_figures.py",
+    "scripts/issue1345_analyzer_figs.py",
+    "scripts/issue1482_matryoshka_tier.py",
+    "scripts/issue1639_tier15_ladder_fig.py",
+    "scripts/issue1739_result2_fourpanel_fig.py",
+    "scripts/issue1774_figures.py",
+    "scripts/issue1895_analysis_figures.py",
+    "scripts/issue1901_body_figures.py",
+    "scripts/issue1902_figures.py",
+    "scripts/issue2094_figures.py",
+    "scripts/issue2202_regen_figs.py",
+    "scripts/issue722_figures.py",
+    "scripts/issue779_identity_baseline.py",
+    "scripts/issue823_figures.py",
+    "scripts/issue928_mlc_figures.py",
+    "tasks/planning/2422/events.jsonl",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "... 1 more"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2202_regen_figs.py",
+  "created": "2026-08-20T08:20:23Z",
+  "figsize": [
+    5.5,
+    2.5
+  ],
+  "points": [
+    {
+      "failure-rate difference (pp)": -3.175671,
+      "y": -6.351342238897509,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure-rate difference (pp)": -2.919648,
+      "y": -5.83929520618324,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure-rate difference (pp)": -1.692701,
+      "y": -3.385402245808336,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure-rate difference (pp)": -1.445483,
+      "y": -2.890965012560903,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure-rate difference (pp)": 2.775853,
+      "y": 5.551705665236472,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure-rate difference (pp)": 2.933266,
+      "y": 5.866532639349545,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure-rate difference (pp)": 4.118481,
+      "y": 8.236962568581443,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure-rate difference (pp)": 4.865246,
+      "y": 9.730492628995671,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure-rate difference (pp)": 5.524971,
+      "y": 11.049942108852658,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure-rate difference (pp)": 6.518883,
+      "y": 13.037765228857765,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure-rate difference (pp)": 8.183661,
+      "y": 16.36732216527628,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure-rate difference (pp)": 10.886052,
+      "y": 21.772104850176106,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure-rate difference (pp)": 12.378269,
+      "y": 24.756538129270396,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure-rate difference (pp)": -8.353902352675636,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure-rate difference (pp)": -7.387017343566017,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure-rate difference (pp)": -4.8938766592558824,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure-rate difference (pp)": -4.59106086392061,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure-rate difference (pp)": 0.3833507865389496,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure-rate difference (pp)": 3.639794539620744,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure-rate difference (pp)": 6.727721604361415,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure-rate difference (pp)": 0.22526304629896288,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure-rate difference (pp)": 7.782462871207078,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure-rate difference (pp)": 7.429139371966302,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure-rate difference (pp)": 12.250849603954032,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure-rate difference (pp)": 15.159997912505876,
+      "y": 11.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure-rate difference (pp)": 17.942807875684924,
+      "y": 12.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure-rate difference (pp)": -4.3434424490045895,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure-rate difference (pp)": -4.277713108398632,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure-rate difference (pp)": -1.85372990972369,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure-rate difference (pp)": -1.1907174064679973,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure-rate difference (pp)": 10.905446310979682,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure-rate difference (pp)": 8.108380001867983,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure-rate difference (pp)": 9.747580325806474,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure-rate difference (pp)": 19.620424836770894,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure-rate difference (pp)": 14.501331695767602,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure-rate difference (pp)": 18.73279079048755,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure-rate difference (pp)": 20.53881048860009,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure-rate difference (pp)": 28.75836984681879,
+      "y": 11.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure-rate difference (pp)": 31.70135826100383,
+      "y": 12.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "share of covered failures (%)": 80.70652173913044,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "share of covered failures (%)": 5.706521739130437,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "share of covered failures (%)": 13.586956521739125,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "rank-1 retrieval accuracy": 0.8148893360160966,
+      "y": 0.0,
+      "series": "single draw, raw",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "rank-1 retrieval accuracy": 0.994466800804829,
+      "y": 0.0,
+      "series": "5-draw, whitened+CSLS",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "rank-1 retrieval accuracy": 0.8777665995975855,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "rank-1 retrieval accuracy": 0.9929577464788732,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "rank-1 retrieval accuracy": 0.8717303822937625,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "rank-1 retrieval accuracy": 0.9929577464788732,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "rank-1 retrieval accuracy": 0.8727364185110664,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "rank-1 retrieval accuracy": 0.9909456740442656,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "rank-1 retrieval accuracy": 0.8707243460764588,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "rank-1 retrieval accuracy": 0.9929577464788732,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "rank-1 retrieval accuracy": 0.8797786720321932,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "rank-1 retrieval accuracy": 0.9924547283702213,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "rank-1 retrieval accuracy": 0.6061368209255533,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "rank-1 retrieval accuracy": 0.994466800804829,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 19
+    }
+  ],
+  "n_series": 20,
+  "total_points": 56,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "failure-rate difference (pp)",
+        "xticklabels": [
+          "\u221225",
+          "0",
+          "25",
+          "50"
+        ],
+        "yticklabels": [
+          "advice / how-to topic",
+          "factual QA topic",
+          "WildChat corpus",
+          "deep conversation (5+ turns)",
+          "roleplay / persona topic",
+          "coding topic",
+          "English",
+          "'other' topic",
+          "code-format answer",
+          "harmful-request topic",
+          "refusal-adjacent request",
+          "NSFW topic",
+          "answer is a refusal"
+        ]
+      },
+      {
+        "ylabel": "share of covered failures (%)",
+        "legend_labels": [
+          "map error",
+          "ambiguous",
+          "answer degeneracy"
+        ],
+        "yticklabels": [
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100"
+        ]
+      },
+      {
+        "xlabel": "rank-1 retrieval accuracy",
+        "legend_labels": [
+          "single draw, raw",
+          "5-draw, whitened+CSLS"
+        ],
+        "xticklabels": [
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25"
+        ],
+        "yticklabels": [
+          "linear (ridge)",
+          "MLP",
+          "MLP (seed 43)",
+          "kernel ridge",
+          "residual MLP",
+          "contrastive linear",
+          "contrastive MLP"
+        ]
+      }
+    ],
+    "series": [
+      "map error",
+      "ambiguous",
+      "answer degeneracy",
+      "single draw, raw",
+      "5-draw, whitened+CSLS"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

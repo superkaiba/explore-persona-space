@@ -1,0 +1,1228 @@
+{
+  "commit": "0066444b",
+  "render_id": "8794059c18bc4c0a",
+  "git_commit": "0066444b",
+  "git_dirty": false,
+  "created": "2026-08-18T12:07:11Z",
+  "figsize": [
+    11.0,
+    4.4
+  ],
+  "points": [
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.0,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -1.1969623617326448,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.03225806451612903,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -2.871542972535538,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.06451612903225806,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -3.10107287954986,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.0967741935483871,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -3.956954418151418,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.12903225806451613,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -2.8994615313249636,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.16129032258064516,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -2.4594933998234505,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.1935483870967742,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -2.1181661648646215,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.22580645161290322,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -1.8861141898864262,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.25806451612903225,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -1.6124358592300214,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.2903225806451613,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -0.8705998355646696,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.3225806451612903,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -0.6368937722760171,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.3548387096774194,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -0.5198675326570641,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.3870967741935484,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -0.4351753962800813,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.41935483870967744,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -0.31402693965534256,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.45161290322580644,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": 0.02447811659517629,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.4838709677419355,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -0.15064624349811684,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.5161290322580645,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": 0.21955088879872653,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.5483870967741935,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": 0.30784577127642876,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.5806451612903226,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": 0.4502586139591904,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.6129032258064516,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": 0.3347624318018312,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.6451612903225806,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": 0.33047615499534577,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.6774193548387096,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": 0.3351637947678675,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.7096774193548387,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": 0.32425366888524576,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.7419354838709677,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": 0.36917411214118123,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.7741935483870968,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": 0.38131944825887676,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.8064516129032258,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": 0.3825937022203584,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.8387096774193549,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": 0.38040473626051263,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.8709677419354839,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": 0.3822444246964378,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.9032258064516129,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": 0.39211059468531306,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.9354838709677419,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": 0.40353528092188906,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.967741935483871,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": 0.3962549917936088,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 1.0,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": 0.43061208020477215,
+      "series": "map fit on this bank",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.0,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -0.36796050992826856,
+      "series": "identity + bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.03225806451612903,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -0.3730087141863432,
+      "series": "identity + bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.06451612903225806,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -0.2884145593893961,
+      "series": "identity + bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.0967741935483871,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -1.2137615481308721,
+      "series": "identity + bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.12903225806451613,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -1.7135411715718019,
+      "series": "identity + bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.16129032258064516,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -1.2904197689427943,
+      "series": "identity + bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.1935483870967742,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -0.7841142895472839,
+      "series": "identity + bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.22580645161290322,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -1.072027424372504,
+      "series": "identity + bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.25806451612903225,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -1.0951360413364806,
+      "series": "identity + bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.2903225806451613,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -1.0010560884991704,
+      "series": "identity + bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.3225806451612903,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -0.888585643911352,
+      "series": "identity + bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.3548387096774194,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -1.5021210075570086,
+      "series": "identity + bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.3870967741935484,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -1.7192299277242866,
+      "series": "identity + bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.41935483870967744,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -2.1442630766554207,
+      "series": "identity + bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.45161290322580644,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -1.8598797285261242,
+      "series": "identity + bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.4838709677419355,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -2.903724042235236,
+      "series": "identity + bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.5161290322580645,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -2.9872572411416742,
+      "series": "identity + bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.5483870967741935,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -2.7705501009552034,
+      "series": "identity + bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.5806451612903226,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -1.8357603331087562,
+      "series": "identity + bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.6129032258064516,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -1.7412292378767034,
+      "series": "identity + bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.6451612903225806,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -1.8803170172524664,
+      "series": "identity + bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.6774193548387096,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -2.096611909156245,
+      "series": "identity + bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.7096774193548387,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -2.339461627187895,
+      "series": "identity + bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.7419354838709677,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -2.4029175455781964,
+      "series": "identity + bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.7741935483870968,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -2.179870740181136,
+      "series": "identity + bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.8064516129032258,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -2.2015855628990146,
+      "series": "identity + bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.8387096774193549,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -2.3812441027832794,
+      "series": "identity + bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.8709677419354839,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -2.364905128989333,
+      "series": "identity + bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.9032258064516129,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -2.627370603541764,
+      "series": "identity + bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.9354838709677419,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -2.6891502719667484,
+      "series": "identity + bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.967741935483871,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -3.00775923489042,
+      "series": "identity + bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 1.0,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -2.7956435463097398,
+      "series": "identity + bias",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.0,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -31.145393377967977,
+      "series": "identity",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.03225806451612903,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -23.137947029980225,
+      "series": "identity",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.06451612903225806,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -8.962528228340107,
+      "series": "identity",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.0967741935483871,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -13.089019637907175,
+      "series": "identity",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.12903225806451613,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -15.627614151203968,
+      "series": "identity",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.16129032258064516,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -11.473787900594662,
+      "series": "identity",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.1935483870967742,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -9.421585361823634,
+      "series": "identity",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.22580645161290322,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -8.426352381715725,
+      "series": "identity",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.25806451612903225,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -7.1328717797841765,
+      "series": "identity",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.2903225806451613,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -6.715931931454639,
+      "series": "identity",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.3225806451612903,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -7.377021442019386,
+      "series": "identity",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.3548387096774194,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -7.731739070618525,
+      "series": "identity",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.3870967741935484,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -8.624913992101865,
+      "series": "identity",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.41935483870967744,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -10.449895658648407,
+      "series": "identity",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.45161290322580644,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -9.496224415113119,
+      "series": "identity",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.4838709677419355,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -10.410480302575683,
+      "series": "identity",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.5161290322580645,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -9.459608372317364,
+      "series": "identity",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.5483870967741935,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -8.909924276681773,
+      "series": "identity",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.5806451612903226,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -6.097097081451533,
+      "series": "identity",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.6129032258064516,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -4.874426912150027,
+      "series": "identity",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.6451612903225806,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -5.225318787729071,
+      "series": "identity",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.6774193548387096,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -5.140732138616825,
+      "series": "identity",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.7096774193548387,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -5.347869942627922,
+      "series": "identity",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.7419354838709677,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -5.01138181408312,
+      "series": "identity",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.7741935483870968,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -4.397940806927932,
+      "series": "identity",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.8064516129032258,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -4.2880651178149005,
+      "series": "identity",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.8387096774193549,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -5.63981574857885,
+      "series": "identity",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.8709677419354839,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -4.667125199122294,
+      "series": "identity",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.9032258064516129,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -4.510524230950595,
+      "series": "identity",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.9354838709677419,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -4.854601709676005,
+      "series": "identity",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.967741935483871,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -4.848931923622888,
+      "series": "identity",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 1.0,
+      "held-out R\u00b2 (context grain, LOCO-carrier)": -6.288603842656861,
+      "series": "identity",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.0,
+      "kNN retrieval: P(true target in top-5)": 0.16452991452991453,
+      "series": "cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.03225806451612903,
+      "kNN retrieval: P(true target in top-5)": 0.19515669515669515,
+      "series": "cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.06451612903225806,
+      "kNN retrieval: P(true target in top-5)": 0.1908831908831909,
+      "series": "cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.0967741935483871,
+      "kNN retrieval: P(true target in top-5)": 0.22863247863247863,
+      "series": "cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.12903225806451613,
+      "kNN retrieval: P(true target in top-5)": 0.25213675213675213,
+      "series": "cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.16129032258064516,
+      "kNN retrieval: P(true target in top-5)": 0.24572649572649571,
+      "series": "cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.1935483870967742,
+      "kNN retrieval: P(true target in top-5)": 0.2336182336182336,
+      "series": "cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.22580645161290322,
+      "kNN retrieval: P(true target in top-5)": 0.20441595441595442,
+      "series": "cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.25806451612903225,
+      "kNN retrieval: P(true target in top-5)": 0.19301994301994302,
+      "series": "cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.2903225806451613,
+      "kNN retrieval: P(true target in top-5)": 0.23433048433048434,
+      "series": "cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.3225806451612903,
+      "kNN retrieval: P(true target in top-5)": 0.292022792022792,
+      "series": "cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.3548387096774194,
+      "kNN retrieval: P(true target in top-5)": 0.2656695156695157,
+      "series": "cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.3870967741935484,
+      "kNN retrieval: P(true target in top-5)": 0.3126780626780627,
+      "series": "cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.41935483870967744,
+      "kNN retrieval: P(true target in top-5)": 0.33048433048433046,
+      "series": "cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.45161290322580644,
+      "kNN retrieval: P(true target in top-5)": 0.37606837606837606,
+      "series": "cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.4838709677419355,
+      "kNN retrieval: P(true target in top-5)": 0.3575498575498576,
+      "series": "cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.5161290322580645,
+      "kNN retrieval: P(true target in top-5)": 0.39886039886039887,
+      "series": "cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.5483870967741935,
+      "kNN retrieval: P(true target in top-5)": 0.4515669515669516,
+      "series": "cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.5806451612903226,
+      "kNN retrieval: P(true target in top-5)": 0.5242165242165242,
+      "series": "cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.6129032258064516,
+      "kNN retrieval: P(true target in top-5)": 0.43803418803418803,
+      "series": "cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.6451612903225806,
+      "kNN retrieval: P(true target in top-5)": 0.43803418803418803,
+      "series": "cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.6774193548387096,
+      "kNN retrieval: P(true target in top-5)": 0.4415954415954416,
+      "series": "cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.7096774193548387,
+      "kNN retrieval: P(true target in top-5)": 0.46153846153846156,
+      "series": "cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.7419354838709677,
+      "kNN retrieval: P(true target in top-5)": 0.3995726495726496,
+      "series": "cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.7741935483870968,
+      "kNN retrieval: P(true target in top-5)": 0.40883190883190884,
+      "series": "cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.8064516129032258,
+      "kNN retrieval: P(true target in top-5)": 0.39316239316239315,
+      "series": "cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.8387096774193549,
+      "kNN retrieval: P(true target in top-5)": 0.38105413105413105,
+      "series": "cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.8709677419354839,
+      "kNN retrieval: P(true target in top-5)": 0.3554131054131054,
+      "series": "cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.9032258064516129,
+      "kNN retrieval: P(true target in top-5)": 0.38675213675213677,
+      "series": "cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.9354838709677419,
+      "kNN retrieval: P(true target in top-5)": 0.38746438746438744,
+      "series": "cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.967741935483871,
+      "kNN retrieval: P(true target in top-5)": 0.4017094017094017,
+      "series": "cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 1.0,
+      "kNN retrieval: P(true target in top-5)": 0.4444444444444444,
+      "series": "cosine",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.0,
+      "kNN retrieval: P(true target in top-5)": 0.12535612535612536,
+      "series": "euclidean",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.03225806451612903,
+      "kNN retrieval: P(true target in top-5)": 0.150997150997151,
+      "series": "euclidean",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.06451612903225806,
+      "kNN retrieval: P(true target in top-5)": 0.17236467236467237,
+      "series": "euclidean",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.0967741935483871,
+      "kNN retrieval: P(true target in top-5)": 0.21153846153846154,
+      "series": "euclidean",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.12903225806451613,
+      "kNN retrieval: P(true target in top-5)": 0.25997150997151,
+      "series": "euclidean",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.16129032258064516,
+      "kNN retrieval: P(true target in top-5)": 0.23717948717948717,
+      "series": "euclidean",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.1935483870967742,
+      "kNN retrieval: P(true target in top-5)": 0.24002849002849003,
+      "series": "euclidean",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.22580645161290322,
+      "kNN retrieval: P(true target in top-5)": 0.202991452991453,
+      "series": "euclidean",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.25806451612903225,
+      "kNN retrieval: P(true target in top-5)": 0.1908831908831909,
+      "series": "euclidean",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.2903225806451613,
+      "kNN retrieval: P(true target in top-5)": 0.2378917378917379,
+      "series": "euclidean",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.3225806451612903,
+      "kNN retrieval: P(true target in top-5)": 0.2813390313390313,
+      "series": "euclidean",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.3548387096774194,
+      "kNN retrieval: P(true target in top-5)": 0.26424501424501423,
+      "series": "euclidean",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.3870967741935484,
+      "kNN retrieval: P(true target in top-5)": 0.3027065527065527,
+      "series": "euclidean",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.41935483870967744,
+      "kNN retrieval: P(true target in top-5)": 0.32763532763532766,
+      "series": "euclidean",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.45161290322580644,
+      "kNN retrieval: P(true target in top-5)": 0.36538461538461536,
+      "series": "euclidean",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.4838709677419355,
+      "kNN retrieval: P(true target in top-5)": 0.358974358974359,
+      "series": "euclidean",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.5161290322580645,
+      "kNN retrieval: P(true target in top-5)": 0.39886039886039887,
+      "series": "euclidean",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.5483870967741935,
+      "kNN retrieval: P(true target in top-5)": 0.448005698005698,
+      "series": "euclidean",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.5806451612903226,
+      "kNN retrieval: P(true target in top-5)": 0.5163817663817664,
+      "series": "euclidean",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.6129032258064516,
+      "kNN retrieval: P(true target in top-5)": 0.41096866096866097,
+      "series": "euclidean",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.6451612903225806,
+      "kNN retrieval: P(true target in top-5)": 0.4131054131054131,
+      "series": "euclidean",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.6774193548387096,
+      "kNN retrieval: P(true target in top-5)": 0.4131054131054131,
+      "series": "euclidean",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.7096774193548387,
+      "kNN retrieval: P(true target in top-5)": 0.41595441595441596,
+      "series": "euclidean",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.7419354838709677,
+      "kNN retrieval: P(true target in top-5)": 0.37535612535612534,
+      "series": "euclidean",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.7741935483870968,
+      "kNN retrieval: P(true target in top-5)": 0.38105413105413105,
+      "series": "euclidean",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.8064516129032258,
+      "kNN retrieval: P(true target in top-5)": 0.3646723646723647,
+      "series": "euclidean",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.8387096774193549,
+      "kNN retrieval: P(true target in top-5)": 0.36182336182336183,
+      "series": "euclidean",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.8709677419354839,
+      "kNN retrieval: P(true target in top-5)": 0.35113960113960113,
+      "series": "euclidean",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.9032258064516129,
+      "kNN retrieval: P(true target in top-5)": 0.36253561253561256,
+      "series": "euclidean",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.9354838709677419,
+      "kNN retrieval: P(true target in top-5)": 0.37250712250712253,
+      "series": "euclidean",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.967741935483871,
+      "kNN retrieval: P(true target in top-5)": 0.38247863247863245,
+      "series": "euclidean",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 1.0,
+      "kNN retrieval: P(true target in top-5)": 0.41096866096866097,
+      "series": "euclidean",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 0.0,
+      "kNN retrieval: P(true target in top-5)": 0.0035612535612535613,
+      "series": "chance = 0.004",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "depth (fraction of stack; dashed verticals = full-attention layers)": 1.0,
+      "kNN retrieval: P(true target in top-5)": 0.0035612535612535613,
+      "series": "chance = 0.004",
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 162,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "map v_C \u2192 v_A (n_train\u224812870 > d=4096 (well-posed))",
+        "xlabel": "depth (fraction of stack; dashed verticals = full-attention layers)",
+        "ylabel": "held-out R\u00b2 (context grain, LOCO-carrier)",
+        "legend_labels": [
+          "map fit on this bank",
+          "identity + bias",
+          "identity"
+        ],
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "\u221235",
+          "\u221230",
+          "\u221225",
+          "\u221220",
+          "\u221215",
+          "\u221210",
+          "\u22125",
+          "0",
+          "5"
+        ]
+      },
+      {
+        "title": "retrieval read of the fitted map (held-out pool)",
+        "xlabel": "depth (fraction of stack; dashed verticals = full-attention layers)",
+        "ylabel": "kNN retrieval: P(true target in top-5)",
+        "legend_labels": [
+          "cosine",
+          "euclidean",
+          "chance = 0.004"
+        ],
+        "xticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ]
+      }
+    ],
+    "series": [
+      "map fit on this bank",
+      "identity + bias",
+      "identity",
+      "cosine",
+      "euclidean",
+      "chance = 0.004"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

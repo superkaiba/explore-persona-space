@@ -23,6 +23,11 @@ claims (test_live_compute_scan_clause_pinned).
 
 Task #1623 added a fourth pinned clause: similarity-statistic semantics for
 operator/map comparisons (test_similarity_statistic_semantics_clause_pinned).
+
+Task #2111 extended the "Compose-time re-grep" clause to ops/fleet
+statistics quoted in monitoring turns (recomputed from events.jsonl / live
+state, never carried from a prior cycle); pinned by
+test_ops_stats_regrep_clause_pinned.
 """
 
 from __future__ import annotations
@@ -57,6 +62,16 @@ def test_live_compute_scan_clause_pinned() -> None:
     assert "additionally scans LIVE compute before asserting" in text
     assert "the same follow-up signal set the watcher's pod-safety pass reads" in text
     assert "nothing live is generating that cell" in text
+
+
+def test_ops_stats_regrep_clause_pinned() -> None:
+    text = _normalized()
+    assert "**Compose-time re-grep (not only on challenge):**" in text
+    assert "any ops/fleet statistic (failure rates, fixed-vs-not attributions)" in text
+    assert "recomputed from events.jsonl / live state" in text
+    assert "never carried from a prior cycle" in text
+    # Citation pin (colon-bearing distinctive form, per the module docstring).
+    assert "ops stats: #2111" in text
 
 
 def test_similarity_statistic_semantics_clause_pinned() -> None:

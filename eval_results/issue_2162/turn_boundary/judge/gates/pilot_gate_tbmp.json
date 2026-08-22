@@ -1,0 +1,48 @@
+{
+  "passed": true,
+  "per_role": {
+    "coherence": {
+      "rubric_id": "coherence",
+      "verdict": "PASS",
+      "failures": [],
+      "warnings": [],
+      "n_total_draws": 180
+    },
+    "a-descriptor": {
+      "rubric_id": "f75c02b4aa51f",
+      "verdict": "PASS",
+      "failures": [],
+      "warnings": [],
+      "n_total_draws": 180
+    },
+    "b-descriptor": {
+      "rubric_id": "f7c626b141d19",
+      "verdict": "PASS",
+      "failures": [],
+      "warnings": [],
+      "n_total_draws": 180
+    }
+  },
+  "pilot_record": {
+    "sampling": "d1 shards ONLY (instr_format/persona_prompted, slot tb), seeded random.Random(2162), 60 rollouts per arm x 3 arms; wave-2 covers longer d3/d5 rollouts — instrument-identical, precedented (plan §7 gate 3 pilot-record note)",
+    "representative_pair": "instr_format::v1-v2::n7",
+    "representative_rubrics": {
+      "a": "f75c02b4aa51f",
+      "b": "f7c626b141d19"
+    },
+    "off_pair_probe_note": "all 180 sampled rollouts are judged under the representative pair's A/B descriptor rubrics (instrument-identical truncation/parse probe); off-pair scores live ONLY in the _pilot cache root under pilot-specific item ids — never the production cache",
+    "cache_hygiene": "cache_dir=<cache_root>/_pilot/<rid> (pilot-only root, rule 24(ii)); production waves use <cache_root>/<rid>",
+    "effective_draws_per_arm_rubric": 60,
+    "floor_51_note": "60 >= floor(1/0.02)+1 = 51 (rule-26/#2124 satisfiability)"
+  },
+  "instrument": {
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "max_tokens": 1024,
+    "n_draws": 1
+  },
+  "repro": {
+    "git_commit": "48842a29",
+    "git_dirty": false,
+    "script": "scripts/issue2094_judge.py"
+  }
+}

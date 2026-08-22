@@ -19,6 +19,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SKILL = REPO_ROOT / ".claude" / "skills" / "issue" / "SKILL.md"
 
@@ -30,7 +32,7 @@ _WS_RUN = re.compile(r"\s+")
 
 
 def _normalized_text() -> str:
-    return _WS_RUN.sub(" ", SKILL.read_text(encoding="utf-8"))
+    return _WS_RUN.sub(" ", issue_skill_text())
 
 
 def test_pre_split_composition_trigger_present() -> None:

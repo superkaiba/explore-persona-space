@@ -1,0 +1,473 @@
+{
+  "commit": "81296f87+dirty",
+  "render_id": "d3c423cc15214226",
+  "git_commit": "81296f8768098c87a3f8337ae3103c6b958eb0be",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "docs/posters/mats_2026/figures/plot4_failures.pdf",
+    "docs/posters/mats_2026/figures/plot4_failures_data.json",
+    "docs/posters/mats_2026/make_plot4_failures.py",
+    "docs/posters/mats_2026/poster.pdf",
+    "docs/posters/mats_2026/poster.tex",
+    "eval_results/issue_666/headline/predictor_headline.json",
+    "scripts/issue1901_body_figures.py",
+    "tasks/completed/2214/body.md",
+    "tasks/completed/2214/comments.jsonl",
+    "tasks/completed/2214/concerns.jsonl",
+    "tasks/completed/2214/events.jsonl",
+    "tasks/completed/2214/plans/plan.md",
+    "tasks/completed/2214/plans/v1.md",
+    "tasks/completed/2214/plans/v2.md",
+    "tasks/completed/2214/plans/v3.md",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "tasks/proposed/2416/events.jsonl",
+    "tasks/running/2214/body.md",
+    "tasks/running/2214/comments.jsonl",
+    "tasks/running/2214/concerns.jsonl",
+    "tasks/running/2214/events.jsonl",
+    "tasks/running/2214/plans/plan.md",
+    "tasks/running/2214/plans/v1.md",
+    "tasks/running/2214/plans/v2.md",
+    "tasks/running/2214/plans/v3.md",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "docs/posters/mats_2026/make_plot4_failures.py",
+  "created": "2026-08-21T01:09:34Z",
+  "figsize": [
+    6.8,
+    3.7
+  ],
+  "points": [
+    {
+      "failure rate vs rest (pp)": -2.906959,
+      "y": -5.813918979077014,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure rate vs rest (pp)": -2.712691,
+      "y": -5.425381502608357,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure rate vs rest (pp)": -1.773958,
+      "y": -3.5479154876438406,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure rate vs rest (pp)": -1.432886,
+      "y": -2.865771367749886,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure rate vs rest (pp)": -1.125355,
+      "y": -2.2507097995354055,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure rate vs rest (pp)": -1.109387,
+      "y": -2.2187746659045757,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure rate vs rest (pp)": -1.083798,
+      "y": -2.167596560739603,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure rate vs rest (pp)": -0.893469,
+      "y": -1.786937957935797,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure rate vs rest (pp)": 0.195017,
+      "y": 0.39003461557213237,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure rate vs rest (pp)": 0.367607,
+      "y": 0.7352135815991243,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure rate vs rest (pp)": 0.501488,
+      "y": 1.0029756331023585,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure rate vs rest (pp)": 0.901526,
+      "y": 1.803052754836637,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure rate vs rest (pp)": 1.001971,
+      "y": 2.003941340567655,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure rate vs rest (pp)": 1.888727,
+      "y": 3.777453792973709,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure rate vs rest (pp)": 2.777417,
+      "y": 5.554834686010155,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure rate vs rest (pp)": 3.523729,
+      "y": 7.047458125183661,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure rate vs rest (pp)": 4.274974,
+      "y": 8.549947513263541,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure rate vs rest (pp)": 5.556691,
+      "y": 11.113381001021452,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure rate vs rest (pp)": 5.600988,
+      "y": 11.20197631825539,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "failure rate vs rest (pp)": -8.556672118641998,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure rate vs rest (pp)": -9.815084555732039,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure rate vs rest (pp)": -6.0042744901976794,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure rate vs rest (pp)": -5.507219467114517,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure rate vs rest (pp)": -4.747337742264023,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure rate vs rest (pp)": -5.196799508092931,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure rate vs rest (pp)": -4.9029285825957745,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure rate vs rest (pp)": -6.396659824249856,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure rate vs rest (pp)": -7.064526382708202,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure rate vs rest (pp)": -1.8884980889194694,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure rate vs rest (pp)": -1.5438370370191403,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure rate vs rest (pp)": -1.919135220911089,
+      "y": 11.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure rate vs rest (pp)": -4.528262790152538,
+      "y": 12.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure rate vs rest (pp)": -4.455267360072936,
+      "y": 13.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure rate vs rest (pp)": 3.120796746130633,
+      "y": 14.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure rate vs rest (pp)": 3.049893691856899,
+      "y": 15.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure rate vs rest (pp)": 1.1450124109211073,
+      "y": 16.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure rate vs rest (pp)": -2.035682647505187,
+      "y": 17.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure rate vs rest (pp)": 5.40633081198905,
+      "y": 18.0,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "failure rate vs rest (pp)": -2.8168649444748852,
+      "y": 0.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure rate vs rest (pp)": 0.6662490216856769,
+      "y": 1.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure rate vs rest (pp)": -0.9656552283430417,
+      "y": 2.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure rate vs rest (pp)": -0.31053590953831733,
+      "y": 3.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure rate vs rest (pp)": 0.2881069267064431,
+      "y": 4.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure rate vs rest (pp)": 1.0331838618417555,
+      "y": 5.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure rate vs rest (pp)": 0.6049097677014128,
+      "y": 6.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure rate vs rest (pp)": 3.404099750796068,
+      "y": 7.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure rate vs rest (pp)": 9.025439580995137,
+      "y": 8.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure rate vs rest (pp)": 3.4738391321713906,
+      "y": 9.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure rate vs rest (pp)": 3.635868199542953,
+      "y": 10.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure rate vs rest (pp)": 5.796593950914721,
+      "y": 11.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure rate vs rest (pp)": 9.463457204210462,
+      "y": 12.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure rate vs rest (pp)": 13.652136638074941,
+      "y": 13.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure rate vs rest (pp)": 7.932558117837656,
+      "y": 14.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure rate vs rest (pp)": 11.236038798647758,
+      "y": 15.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure rate vs rest (pp)": 16.66302641851351,
+      "y": 16.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure rate vs rest (pp)": 26.843790566262356,
+      "y": 17.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "failure rate vs rest (pp)": 17.25300451377793,
+      "y": 18.0,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "share of failures (%)": 90.55555555555556,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "share of failures (%)": 3.3333333333333286,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "share of failures (%)": 6.111111111111114,
+      "_kind": "bar",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 60,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "failure rate vs rest (pp)",
+        "legend_labels": [
+          "significant",
+          "not significant"
+        ],
+        "xticklabels": [
+          "\u221210",
+          "0",
+          "10",
+          "20"
+        ],
+        "yticklabels": [
+          "advice",
+          "math",
+          "factual QA",
+          "prose answer",
+          "WildChat",
+          "creative writing",
+          "5+ turns",
+          "chit-chat",
+          "roleplay",
+          "3\u20134 turns",
+          "2 turns",
+          "list answer",
+          "translation",
+          "summarization",
+          "English",
+          "coding",
+          "refusal-adjacent",
+          "refusal answer",
+          "code answer"
+        ]
+      },
+      {
+        "ylabel": "share of failures (%)",
+        "legend_labels": [
+          "map error",
+          "ambiguous",
+          "answer degeneracy"
+        ],
+        "yticklabels": [
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100"
+        ]
+      }
+    ],
+    "series": [
+      "significant",
+      "not significant",
+      "map error",
+      "ambiguous",
+      "answer degeneracy"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

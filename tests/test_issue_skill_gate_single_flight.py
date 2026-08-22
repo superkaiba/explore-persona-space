@@ -17,6 +17,7 @@ exit-inversion pointer.
 
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
 from tests.test_issue_skill_inline_gate_pin import _gate_section
 
 SKILL = Path(__file__).resolve().parents[1] / ".claude" / "skills" / "issue" / "SKILL.md"
@@ -27,7 +28,7 @@ PROBE_ISSUE_FORM = 'uv run python "$REPO_ROOT"/scripts/step9c_baseline.py probe 
 
 
 def _text() -> str:
-    return SKILL.read_text(encoding="utf-8")
+    return issue_skill_text()
 
 
 def test_step9c_single_flight_statement_present_and_precedes_launch():
@@ -64,26 +65,40 @@ def test_step10d_gate_single_flight_hook_present_and_precedes_launch():
     start = text.index("#### Pre-push workflow-lint gate")
     region = text[start : text.index("#### The auto-merge procedure", start)]
     assert LABEL in region
-    # Self-/ancestor-excluding helper probe (#1821):
+    # Self-/ancestor-excluding helper probe (#1821), re-keyed to the workload
+    # SCRIPT path token (#2256): `/tmp/issue-<N>-lint-gate.sh` rides the
+    # detached workload's argv for its WHOLE life under the #2115 launcher,
+    # while the old tree token appeared only in the tar/lint legs' child
+    # argvs (CLEAR windows during the TG mapped-test legs).
     assert (
         'uv run python "$REPO_ROOT"/scripts/step9c_baseline.py probe '
-        "--pattern 'issue-<N>-lint-gate-tree'" in region
+        "--pattern 'issue-<N>-lint-gate'" in region
     )
     assert region.index(LABEL) < region.index("rm -f /tmp/issue-<N>-lint-verdict.txt")
     # The completion-read recovery arm keeps the bracketed pgrep (it wants
     # the pid list) WITH the exit-inversion pointer:
-    assert "pgrep -af 'issue-<N>-lint-gate-tre[e]'" in region
+    assert "pgrep -af 'issue-<N>-lint-gat[e]'" in region
     assert "INVERTED vs `step9c_baseline.py probe`" in region
+    # #2256 regression bans (file-wide): the tree-only probe/kill-arm forms
+    # had mid-run CLEAR windows under the #2115 script-file launcher and
+    # false-fired a death read on a healthy gate — they must not creep back.
+    assert "--pattern 'issue-<N>-lint-gate-tree'" not in text
+    assert "pgrep -af 'issue-<N>-lint-gate-tre[e]'" not in text
 
 
 def test_step10d_surgical_single_flight_hook_present():
     text = _text()
     # Issue-scoped alternate (task #1719) carried into the helper form
-    # (#1821): the fleet-wide `scripts/workflow_lint[.]py` alternate stays
-    # banned, and the helper's self-exclusion needs no bracket.
+    # (#1821), re-keyed to the whole-life script-path tokens (#2256): the
+    # surgical workload script `/tmp/issue-<N>-surgical-gate.sh` rides the
+    # detached unit's argv whole-life, and the `issue-<N>-lint-gate`
+    # alternate covers the tar/lint legs' gate-tree children (superstring)
+    # plus legacy inline launches. The dropped `surgical-outcome\.txt`
+    # alternate lived only in the script BODY under the #2115 launcher
+    # (never argv), so it added only false-LIVE surface.
     probe = (
         'uv run python "$REPO_ROOT"/scripts/step9c_baseline.py probe '
-        r"--pattern 'issue-<N>-surgical-outcome\.txt|issue-<N>-lint-gate-tree'"
+        "--pattern 'issue-<N>-surgical-gate|issue-<N>-lint-gate'"
     )
     assert probe in text
     # Regression: the previous fleet-wide alternate must not creep back in.
@@ -135,7 +150,7 @@ def test_gate_fleet_arbitration_hooks_present():
     # outcome-sentinel rm:
     surgical_probe = (
         'uv run python "$REPO_ROOT"/scripts/step9c_baseline.py probe '
-        r"--pattern 'issue-<N>-surgical-outcome\.txt|issue-<N>-lint-gate-tree'"
+        "--pattern 'issue-<N>-surgical-gate|issue-<N>-lint-gate'"
     )
     fleet_after_surgical = text.index(FLEET_PROBE_FORM, text.index(surgical_probe))
     assert fleet_after_surgical < text.index("rm -f /tmp/issue-<N>-surgical-outcome.txt")

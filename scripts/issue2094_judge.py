@@ -105,9 +105,11 @@ COHERENCE_MEDIAN_MIN = 80.0
 COHERENCE_GT60_FRAC_MIN = 0.90
 COHERENCE_THRESHOLD = 60.0
 
-# Pilot sizing (plan §7 gate 4: ~300 draws spanning settings × slots × rubrics).
-PILOT_TARGET_COHERENCE = 102  # 6 arms × 17
-PILOT_TARGET_BEHAVIOR = 30  # 3 arms × 10 (== the gate's min-draws floor)
+# Pilot sizing (plan §7 gate 4, resized by #2124: n_arms x n_draws(1) x 51 —
+# the 2% parse-fail threshold needs >= 51 draws/arm to resolve; the old
+# 102/30 realized 17/10 draws per arm, below the floor).
+PILOT_TARGET_COHERENCE = 306  # 6 arms × 51
+PILOT_TARGET_BEHAVIOR = 153  # 3 arms × 51
 PILOT_SEED = 2094
 FORCED_BATCH_PROBE_N = 6  # live Batch request-shape probe (gotchas: mock-judge smoke)
 
@@ -144,20 +146,33 @@ def behavior_eval_prompt(core: str) -> str:
 
 
 def rubric_registry() -> dict[str, str]:
-    """rubric_id -> production eval_prompt. 9 rubrics; each wave judges ONE (rule 8).
+    """rubric_id -> production eval_prompt. 10 rubrics; each wave judges ONE (rule 8).
 
     Templates deliberately carry only the ``{answer}`` slot: the F rubric cores
     embed their target question/prefix descriptor verbatim, and the coherence
     rubric is form-only (a question would invite relevance judgments the body
     explicitly excludes). ``judge_graded``'s substitution no-ops on the absent
     ``{question}`` slot (pinned by the rule-27 round-trip tests).
+
+    The fp loop covers ``EXTENDED_PREFIX_ORDER`` (parent 3 prefixes + the #2094
+    Option-C ``butler`` extension), so ``fp-butler`` resolves for ``mqb--`` grid
+    rows; parent runs never mint fp-butler items (anchor accounting is
+    parent-scoped in ``build_anchor_behavior_items``), so the extra registry
+    entry adds zero calls to a parent wave.
     """
     reg = {COHERENCE_RUBRIC_ID: coherence_eval_prompt()}
     for q in BANK.QUERY_ORDER:
         reg[f"fq-{q}"] = behavior_eval_prompt(BANK.f_query_rubric(q))
-    for p in BANK.PREFIX_ORDER:
+    for p in BANK.EXTENDED_PREFIX_ORDER:
         reg[f"fp-{p}"] = behavior_eval_prompt(BANK.f_prefix_rubric(p))
     return reg
+
+
+# fp rubrics minted only by extension pairs (mqb--); parent inputs realize zero
+# items for these, which phase_pilot treats as a recorded SKIP, not a defect.
+EXTENSION_RUBRIC_IDS = frozenset(
+    f"fp-{p}" for p in BANK.EXTENDED_PREFIX_ORDER if p not in BANK.PREFIX_ORDER
+)
 
 
 def rubric_id_for(pair: BANK.Pair, kind: str, side: str) -> str:
@@ -259,7 +274,27 @@ def load_stage2_rows(stage2_dir: Path) -> list[dict]:
 
 
 def pair_index() -> dict[str, BANK.Pair]:
-    return {p.pair_id: p for p in BANK.build_pairs()}
+    """Parent canonical pairs PLUS the extension pairs (``mqrev--``, ``mqb--``).
+
+    The #2094 reversed round's grid rows carry pair ids minted by
+    ``BANK.build_rev_pairs`` (setting ``matched_query`` — the fp-* prefix
+    rubric pair, both already in the registry), which ``BANK.build_pairs``
+    never enumerates; a registry without them KeyErrors at
+    ``build_grid_behavior_items`` on the first reversed row (2026-08-13
+    crash). The Option-C butler round's ``mqb--`` pairs
+    (``BANK.build_butler_pairs``: bare→butler + persona→butler, side b always
+    ``fp-butler``) join the union for the same reason. Parent phases are
+    unaffected: item sets key on row pair_ids, and anchor floor/ceiling
+    accounting is parent-scoped in ``build_anchor_behavior_items`` — extension
+    rounds run their own anchor judging (rev: banked #2094 anchor scores;
+    butler: self-contained in ``issue2094_butler_grid.py``).
+    """
+    index = {p.pair_id: p for p in BANK.build_pairs()}
+    for p in (*BANK.build_rev_pairs(), *BANK.build_butler_pairs()):
+        if p.pair_id in index:  # never a silent overwrite of a parent pair
+            raise ValueError(f"extension pair id collides with parent bank: {p.pair_id}")
+        index[p.pair_id] = p
+    return index
 
 
 def _query_text(context_id: str) -> str:
@@ -373,9 +408,20 @@ def build_anchor_behavior_items(
     analysis unit re-expands per pair via context ids. This realizes ~1.2k
     calls instead of the plan's pair-expanded 3.0k (identical information; a
     deliberate, reported cost saving).
+
+    Anchor accounting is PARENT-scoped by construction: the ``needed`` set is
+    derived only from pairs in ``BANK.build_pairs()``, so extension pairs in
+    the index (``mqrev--``, ``mqb--``) can never add anchor calls here — the
+    parent's 3-prefix floor/ceiling arithmetic is structurally frozen.
+    Extension rounds own their anchor judging in their own drivers (rev reused
+    the banked parent anchor scores; butler's gate lives in
+    ``issue2094_butler_grid.py``).
     """
+    parent_ids = {p.pair_id for p in BANK.build_pairs()}
     needed: set[tuple[str, str]] = set()  # (context_id, rubric_id)
     for pair in pairs.values():
+        if pair.pair_id not in parent_ids:
+            continue  # extension pairs never enter anchor accounting
         for kind in BANK.SETTING_RUBRIC_KINDS[pair.setting]:
             for side in ("a", "b"):
                 rid = rubric_id_for(pair, kind, side)
@@ -626,12 +672,18 @@ def run_wave(
     prompt: str,
     units: list[JudgeUnit],
     cfg: JudgeConfig,
+    threshold_base: int | None = None,
 ) -> dict | None:
     """One production wave: manifest → dispatch → bounded transport retry → scores.
 
     Returns the meta dict (None on ``--dry-run``). Resumable at two grains: the
     wave-level meta skip, and intra-wave via the rubric-keyed JudgeCache + the
     #1019 dispatch checkpoints under ``cache_dir/.dispatch``.
+
+    ``threshold_base`` (keyword seam, default ``None`` = byte-equivalent client
+    routing for every existing caller) threads to ``judge_graded`` so a caller
+    with a REGISTERED routing (the #2162 ladder's all-sync plan) can force it
+    (``scripts/issue2162_ladder_judge.py``).
     """
     assert units, f"wave {wave}: no items"
     meta_path = cfg.scores_dir / f"{wave}.meta.json"
@@ -667,6 +719,7 @@ def run_wave(
         judge_model=cfg.judge_model,
         max_tokens=cfg.max_tokens,
         dry_run=cfg.dry_run,
+        threshold_base=threshold_base,
     )
     if cfg.dry_run:
         logger.info("[wave %s] dry-run complete (no API calls)", wave)
@@ -689,6 +742,7 @@ def run_wave(
             save_raw=cfg.raw_dir / f"{wave}.retry1.json",
             judge_model=cfg.judge_model,
             max_tokens=cfg.max_tokens,
+            threshold_base=threshold_base,
         )
         retry_meta = _telemetry(result2)
         for iid in lost_ids:
@@ -817,6 +871,17 @@ def phase_pilot(cfg: JudgeConfig) -> int:
     for rid, prompt in registry.items():
         units = coh if rid == COHERENCE_RUBRIC_ID else beh.get(rid, [])
         if not units:
+            if rid in EXTENSION_RUBRIC_IDS:
+                # Registered for extension rows (mqb--) only; parent inputs
+                # realize zero items for it, and the extension round pilots
+                # its own wave in its own driver — a recorded skip, not a
+                # defect. Parent rubrics keep the hard gate below.
+                logger.info("[pilot] %s: extension rubric, zero realized items — skipped", rid)
+                per_rubric[rid] = {
+                    "verdict": "SKIPPED",
+                    "reason": "extension rubric, zero realized items on these inputs",
+                }
+                continue
             raise RuntimeError(f"pilot: rubric {rid} has zero items — inputs incomplete")
         _validate_units(units)
         arms = _pilot_arms(rid, units)

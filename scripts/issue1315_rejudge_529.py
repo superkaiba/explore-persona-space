@@ -55,7 +55,11 @@ logger = logging.getLogger("issue1315_rejudge_529")
 
 HF_REPO = "superkaiba1/explore-persona-space-data"
 HF_REVISION = "7219f7c03b529e107aaf4fa548169977403f0131"  # the run's upload commit
-JUDGE_MAX_TOKENS = 300  # fu1.JUDGE_MAX_TOKENS_FU1 — the run's instrument value
+# fu1.JUDGE_MAX_TOKENS_FU1 — the run's instrument value. JUSTIFIED DEVIATION from
+# llm-judging rule 23's 1024 floor (#2063): rule-24(ii) instrument-parity re-judge
+# of #1090 fu1's banked 529-failed draws — must match the banked instrument, not
+# the current floor.
+JUDGE_MAX_TOKENS = 300
 MAX_REDISPATCH_PASSES = 4  # bounded 529 re-dispatch loop (rule 24(ii))
 
 REPO_ROOT = Path(__file__).resolve().parents[1]

@@ -84,7 +84,7 @@ def read_done(out_path: Path) -> dict | None:
         return None
     try:
         return json.loads(sp.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
         return None
 
 
@@ -167,7 +167,7 @@ def resume_disposition(
         return RUN, "no done sidecar"
     try:
         recorded = json.loads(sp.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
         return RUN, "unreadable done sidecar"
     rec_regime = recorded.get("regime") or {}
     diff = regime_diff(rec_regime, regime)

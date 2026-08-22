@@ -1,0 +1,56 @@
+{
+  "captions": {
+    "tb_control": "Control cell (recency_fact_user_name_d5) joint-tb F per arm, netted space, surviving pairs + pair-clustered 95% CIs \u2014 the edit-artifact overlay read (Holm-pass AND CI-disjoint vs tested nulls downgrades the verdict lattice).",
+    "tb_explore_strips": "Exploratory: per-(cell x slot) strips of per-pair F (registered space) by arm.",
+    "tb_hero": "Joint turn-boundary (tb) patching F per arm (registered space: netted for instr_format, target-descriptor-only for persona_prompted), per base x depth; points = surviving pairs (|separation| >= 0.5), errorbars = pair-clustered bootstrap 95% CIs (B=10k). Black = the parent's single context-end (ce) steered read, re-aggregated per \u00a712.8 (persona cells from the parent's per-descriptor judge scores, never netted-into-target).",
+    "tb_identity_d1": "G2 identity read: per-pair joint-tb@d1 F vs parent single-ce F, NETTED space for both axes (the deliberate exception to the registered-space convention \u2014 G2 runs in the parent's netted space), steered + shuffled arms over the surviving d1 pool; band = the \u00b10.10 gate bar around y=x. Gate outcome: G2 PASS on a surviving pool of n=66 pairs against the |mean \u0394F| \u2264 0.1 bar; shuffled mean \u0394F=-0.022 (95% CI [-0.053, +0.007]), steered mean \u0394F=+0.007 (95% CI [-0.037, +0.049]).",
+    "tb_margin_scatter": "Exploratory: teacher-forced margin (secondary continuous DV) vs judged F per (pair x slot x arm).",
+    "tb_rawscale": "Raw-scale movement (denominator-free, judge-contrast units: direction x (patched - floor)) per arm x depth, sourced from rawscale_tb.json + the parent's committed recency_rawscale.json: solid = joint tb (this round), hatched = parent single-ce; errorbars = pair-clustered bootstrap 95% CIs (B=10k, seed 21620; the parent file carries steered CIs only); top = all scored pairs, bottom = surviving pairs only.",
+    "tb_sweep": "Per-boundary single-position sweep: steered - shuffled \u0394F (registered space) at boundary index k, per sweep cell; paired over surviving pairs, pair-clustered bootstrap 95% CIs. Diamond = the parent's single-ce read plotted at the final boundary k=n_d (provenance: parent run, re-aggregated per \u00a712.8).",
+    "tb_target_only": "Persona cells scored in BOTH spaces per arm x depth: netted (brown) vs target-descriptor-only (green; the registered space for persona cells), surviving pairs + pair-clustered 95% CIs."
+  },
+  "tables": {
+    "cap_hit_fraction": {
+      "instr_format|tb": 0.0,
+      "persona_prompted|tb": 0.001851851851851852,
+      "recency_fact_user_name_d5|tb": 0.0,
+      "recency_instr_format_d3|tb": 0.0,
+      "recency_instr_format_d3|tbk1": 0.0,
+      "recency_instr_format_d3|tbk2": 0.002777777777777778,
+      "recency_instr_format_d5|tb": 0.0,
+      "recency_instr_format_d5|tbk1": 0.002777777777777778,
+      "recency_instr_format_d5|tbk2": 0.0,
+      "recency_instr_format_d5|tbk3": 0.005555555555555556,
+      "recency_instr_format_d5|tbk4": 0.002777777777777778,
+      "recency_persona_prompted_d3|tb": 0.001851851851851852,
+      "recency_persona_prompted_d3|tbk1": 0.0,
+      "recency_persona_prompted_d3|tbk2": 0.0,
+      "recency_persona_prompted_d5|tb": 0.003703703703703704,
+      "recency_persona_prompted_d5|tbk1": 0.002777777777777778,
+      "recency_persona_prompted_d5|tbk2": 0.002777777777777778,
+      "recency_persona_prompted_d5|tbk3": 0.0,
+      "recency_persona_prompted_d5|tbk4": 0.002777777777777778
+    },
+    "coherent_fraction": {
+      "instr_format|tb": 0.9796296296296296,
+      "persona_prompted|tb": 0.9537037037037037,
+      "recency_fact_user_name_d5|tb": 0.9981481481481481,
+      "recency_instr_format_d3|tb": 0.9685185185185186,
+      "recency_instr_format_d3|tbk1": 0.975,
+      "recency_instr_format_d3|tbk2": 0.975,
+      "recency_instr_format_d5|tb": 0.9777777777777777,
+      "recency_instr_format_d5|tbk1": 0.9694444444444444,
+      "recency_instr_format_d5|tbk2": 0.9694444444444444,
+      "recency_instr_format_d5|tbk3": 0.9694444444444444,
+      "recency_instr_format_d5|tbk4": 0.9833333333333333,
+      "recency_persona_prompted_d3|tb": 0.9518518518518518,
+      "recency_persona_prompted_d3|tbk1": 0.9583333333333334,
+      "recency_persona_prompted_d3|tbk2": 0.9555555555555556,
+      "recency_persona_prompted_d5|tb": 0.9555555555555556,
+      "recency_persona_prompted_d5|tbk1": 0.9444444444444444,
+      "recency_persona_prompted_d5|tbk2": 0.95,
+      "recency_persona_prompted_d5|tbk3": 0.9555555555555556,
+      "recency_persona_prompted_d5|tbk4": 0.9666666666666667
+    }
+  }
+}

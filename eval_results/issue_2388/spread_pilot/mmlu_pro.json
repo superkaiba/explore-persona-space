@@ -1,0 +1,2049 @@
+{
+ "benchmark": "mmlu_pro",
+ "model": "Qwen/Qwen2.5-7B-Instruct",
+ "k_rollouts": 5,
+ "temperature": 1.0,
+ "n_items": 200,
+ "frac_items_all_k_identical": 0.0,
+ "n_unparsed_rollouts": 15,
+ "unparsed_fraction": 0.015,
+ "stats_full_k": {
+  "n_items": 191,
+  "mean": 0.5863874345549738,
+  "sd_observed": 0.40003031023215785,
+  "sd_true_rate": 0.3730771405076408,
+  "reliability": 0.8697841330192447,
+  "ceiling_rho": 0.9326221812820263,
+  "zero_pile": 0.20418848167539266,
+  "one_pile": 0.36649214659685864,
+  "histogram_counts": [
+   39,
+   22,
+   17,
+   18,
+   25,
+   70
+  ]
+ },
+ "stats_unparsed_as_wrong": {
+  "n_items": 200,
+  "mean": 0.5660000000000001,
+  "sd_observed": 0.4035570485783719,
+  "sd_true_rate": 0.37677352807394315,
+  "reliability": 0.8716675717706301,
+  "ceiling_rho": 0.9336313896665162,
+  "zero_pile": 0.22,
+  "one_pile": 0.35,
+  "histogram_counts": [
+   44,
+   24,
+   19,
+   18,
+   25,
+   70
+  ]
+ },
+ "rows": [
+  {
+   "item_id": "mmlupro-3429",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "biology"
+  },
+  {
+   "item_id": "mmlupro-3163",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": "biology"
+  },
+  {
+   "item_id": "mmlupro-3420",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "biology"
+  },
+  {
+   "item_id": "mmlupro-3486",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": "biology"
+  },
+  {
+   "item_id": "mmlupro-3358",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": "biology"
+  },
+  {
+   "item_id": "mmlupro-3436",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "biology"
+  },
+  {
+   "item_id": "mmlupro-3435",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "biology"
+  },
+  {
+   "item_id": "mmlupro-2903",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": "biology"
+  },
+  {
+   "item_id": "mmlupro-3148",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 3,
+   "rate_decided": 0.6,
+   "rate_unparsed_as_wrong": 0.6,
+   "level": null,
+   "category": "biology"
+  },
+  {
+   "item_id": "mmlupro-3340",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "biology"
+  },
+  {
+   "item_id": "mmlupro-2912",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 2,
+   "rate_decided": 0.4,
+   "rate_unparsed_as_wrong": 0.4,
+   "level": null,
+   "category": "biology"
+  },
+  {
+   "item_id": "mmlupro-2974",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "biology"
+  },
+  {
+   "item_id": "mmlupro-3286",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": "biology"
+  },
+  {
+   "item_id": "mmlupro-2968",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "biology"
+  },
+  {
+   "item_id": "mmlupro-161",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "business"
+  },
+  {
+   "item_id": "mmlupro-474",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": "business"
+  },
+  {
+   "item_id": "mmlupro-285",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 2,
+   "rate_decided": 0.4,
+   "rate_unparsed_as_wrong": 0.4,
+   "level": null,
+   "category": "business"
+  },
+  {
+   "item_id": "mmlupro-176",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "business"
+  },
+  {
+   "item_id": "mmlupro-274",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "business"
+  },
+  {
+   "item_id": "mmlupro-753",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "business"
+  },
+  {
+   "item_id": "mmlupro-531",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "business"
+  },
+  {
+   "item_id": "mmlupro-629",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": "business"
+  },
+  {
+   "item_id": "mmlupro-425",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "business"
+  },
+  {
+   "item_id": "mmlupro-499",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "business"
+  },
+  {
+   "item_id": "mmlupro-369",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": "business"
+  },
+  {
+   "item_id": "mmlupro-545",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "business"
+  },
+  {
+   "item_id": "mmlupro-240",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 2,
+   "rate_decided": 0.4,
+   "rate_unparsed_as_wrong": 0.4,
+   "level": null,
+   "category": "business"
+  },
+  {
+   "item_id": "mmlupro-406",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": "business"
+  },
+  {
+   "item_id": "mmlupro-3818",
+   "benchmark": "mmlu_pro",
+   "n_decided": 3,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": "chemistry"
+  },
+  {
+   "item_id": "mmlupro-3751",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "chemistry"
+  },
+  {
+   "item_id": "mmlupro-4404",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": "chemistry"
+  },
+  {
+   "item_id": "mmlupro-4586",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "chemistry"
+  },
+  {
+   "item_id": "mmlupro-4125",
+   "benchmark": "mmlu_pro",
+   "n_decided": 3,
+   "n_correct": 1,
+   "rate_decided": 0.3333333333333333,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": "chemistry"
+  },
+  {
+   "item_id": "mmlupro-4562",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 2,
+   "rate_decided": 0.4,
+   "rate_unparsed_as_wrong": 0.4,
+   "level": null,
+   "category": "chemistry"
+  },
+  {
+   "item_id": "mmlupro-4666",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "chemistry"
+  },
+  {
+   "item_id": "mmlupro-4528",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "chemistry"
+  },
+  {
+   "item_id": "mmlupro-3973",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "chemistry"
+  },
+  {
+   "item_id": "mmlupro-4548",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": "chemistry"
+  },
+  {
+   "item_id": "mmlupro-3540",
+   "benchmark": "mmlu_pro",
+   "n_decided": 4,
+   "n_correct": 2,
+   "rate_decided": 0.5,
+   "rate_unparsed_as_wrong": 0.4,
+   "level": null,
+   "category": "chemistry"
+  },
+  {
+   "item_id": "mmlupro-4459",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": "chemistry"
+  },
+  {
+   "item_id": "mmlupro-3685",
+   "benchmark": "mmlu_pro",
+   "n_decided": 3,
+   "n_correct": 2,
+   "rate_decided": 0.6666666666666666,
+   "rate_unparsed_as_wrong": 0.4,
+   "level": null,
+   "category": "chemistry"
+  },
+  {
+   "item_id": "mmlupro-4088",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": "chemistry"
+  },
+  {
+   "item_id": "mmlupro-10408",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": "computer science"
+  },
+  {
+   "item_id": "mmlupro-10370",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "computer science"
+  },
+  {
+   "item_id": "mmlupro-10771",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "computer science"
+  },
+  {
+   "item_id": "mmlupro-10453",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 3,
+   "rate_decided": 0.6,
+   "rate_unparsed_as_wrong": 0.6,
+   "level": null,
+   "category": "computer science"
+  },
+  {
+   "item_id": "mmlupro-10512",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "computer science"
+  },
+  {
+   "item_id": "mmlupro-10491",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "computer science"
+  },
+  {
+   "item_id": "mmlupro-10357",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": "computer science"
+  },
+  {
+   "item_id": "mmlupro-10618",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": "computer science"
+  },
+  {
+   "item_id": "mmlupro-10438",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "computer science"
+  },
+  {
+   "item_id": "mmlupro-10726",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "computer science"
+  },
+  {
+   "item_id": "mmlupro-10543",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "computer science"
+  },
+  {
+   "item_id": "mmlupro-10748",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": "computer science"
+  },
+  {
+   "item_id": "mmlupro-10680",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "computer science"
+  },
+  {
+   "item_id": "mmlupro-10751",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "computer science"
+  },
+  {
+   "item_id": "mmlupro-7078",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "economics"
+  },
+  {
+   "item_id": "mmlupro-7302",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "economics"
+  },
+  {
+   "item_id": "mmlupro-7470",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "economics"
+  },
+  {
+   "item_id": "mmlupro-6888",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "economics"
+  },
+  {
+   "item_id": "mmlupro-7536",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": "economics"
+  },
+  {
+   "item_id": "mmlupro-7308",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 2,
+   "rate_decided": 0.4,
+   "rate_unparsed_as_wrong": 0.4,
+   "level": null,
+   "category": "economics"
+  },
+  {
+   "item_id": "mmlupro-7549",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "economics"
+  },
+  {
+   "item_id": "mmlupro-7027",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 3,
+   "rate_decided": 0.6,
+   "rate_unparsed_as_wrong": 0.6,
+   "level": null,
+   "category": "economics"
+  },
+  {
+   "item_id": "mmlupro-7520",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": "economics"
+  },
+  {
+   "item_id": "mmlupro-6863",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "economics"
+  },
+  {
+   "item_id": "mmlupro-7318",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "economics"
+  },
+  {
+   "item_id": "mmlupro-7640",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 2,
+   "rate_decided": 0.4,
+   "rate_unparsed_as_wrong": 0.4,
+   "level": null,
+   "category": "economics"
+  },
+  {
+   "item_id": "mmlupro-7402",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": "economics"
+  },
+  {
+   "item_id": "mmlupro-7265",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 2,
+   "rate_decided": 0.4,
+   "rate_unparsed_as_wrong": 0.4,
+   "level": null,
+   "category": "economics"
+  },
+  {
+   "item_id": "mmlupro-11493",
+   "benchmark": "mmlu_pro",
+   "n_decided": 4,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": "engineering"
+  },
+  {
+   "item_id": "mmlupro-11737",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "engineering"
+  },
+  {
+   "item_id": "mmlupro-12205",
+   "benchmark": "mmlu_pro",
+   "n_decided": 4,
+   "n_correct": 1,
+   "rate_decided": 0.25,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": "engineering"
+  },
+  {
+   "item_id": "mmlupro-11968",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": "engineering"
+  },
+  {
+   "item_id": "mmlupro-11720",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": "engineering"
+  },
+  {
+   "item_id": "mmlupro-12197",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": "engineering"
+  },
+  {
+   "item_id": "mmlupro-12194",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": "engineering"
+  },
+  {
+   "item_id": "mmlupro-11931",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": "engineering"
+  },
+  {
+   "item_id": "mmlupro-11805",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": "engineering"
+  },
+  {
+   "item_id": "mmlupro-12154",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 2,
+   "rate_decided": 0.4,
+   "rate_unparsed_as_wrong": 0.4,
+   "level": null,
+   "category": "engineering"
+  },
+  {
+   "item_id": "mmlupro-11895",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": "engineering"
+  },
+  {
+   "item_id": "mmlupro-11791",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": "engineering"
+  },
+  {
+   "item_id": "mmlupro-12170",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": "engineering"
+  },
+  {
+   "item_id": "mmlupro-11446",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": "engineering"
+  },
+  {
+   "item_id": "mmlupro-6274",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 3,
+   "rate_decided": 0.6,
+   "rate_unparsed_as_wrong": 0.6,
+   "level": null,
+   "category": "health"
+  },
+  {
+   "item_id": "mmlupro-6073",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": "health"
+  },
+  {
+   "item_id": "mmlupro-6183",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": "health"
+  },
+  {
+   "item_id": "mmlupro-6605",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": "health"
+  },
+  {
+   "item_id": "mmlupro-6679",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": "health"
+  },
+  {
+   "item_id": "mmlupro-6369",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": "health"
+  },
+  {
+   "item_id": "mmlupro-6639",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 3,
+   "rate_decided": 0.6,
+   "rate_unparsed_as_wrong": 0.6,
+   "level": null,
+   "category": "health"
+  },
+  {
+   "item_id": "mmlupro-6294",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 2,
+   "rate_decided": 0.4,
+   "rate_unparsed_as_wrong": 0.4,
+   "level": null,
+   "category": "health"
+  },
+  {
+   "item_id": "mmlupro-6390",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "health"
+  },
+  {
+   "item_id": "mmlupro-6368",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "health"
+  },
+  {
+   "item_id": "mmlupro-6210",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "health"
+  },
+  {
+   "item_id": "mmlupro-6041",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": "health"
+  },
+  {
+   "item_id": "mmlupro-6656",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 3,
+   "rate_decided": 0.6,
+   "rate_unparsed_as_wrong": 0.6,
+   "level": null,
+   "category": "health"
+  },
+  {
+   "item_id": "mmlupro-6739",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 3,
+   "rate_decided": 0.6,
+   "rate_unparsed_as_wrong": 0.6,
+   "level": null,
+   "category": "health"
+  },
+  {
+   "item_id": "mmlupro-4716",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": "history"
+  },
+  {
+   "item_id": "mmlupro-4851",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": "history"
+  },
+  {
+   "item_id": "mmlupro-4871",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": "history"
+  },
+  {
+   "item_id": "mmlupro-4972",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": "history"
+  },
+  {
+   "item_id": "mmlupro-4948",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "history"
+  },
+  {
+   "item_id": "mmlupro-4786",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "history"
+  },
+  {
+   "item_id": "mmlupro-4690",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": "history"
+  },
+  {
+   "item_id": "mmlupro-4898",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": "history"
+  },
+  {
+   "item_id": "mmlupro-4818",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "history"
+  },
+  {
+   "item_id": "mmlupro-4878",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "history"
+  },
+  {
+   "item_id": "mmlupro-4931",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "history"
+  },
+  {
+   "item_id": "mmlupro-4911",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": "history"
+  },
+  {
+   "item_id": "mmlupro-4802",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "history"
+  },
+  {
+   "item_id": "mmlupro-4822",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": "history"
+  },
+  {
+   "item_id": "mmlupro-1632",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "law"
+  },
+  {
+   "item_id": "mmlupro-1821",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 3,
+   "rate_decided": 0.6,
+   "rate_unparsed_as_wrong": 0.6,
+   "level": null,
+   "category": "law"
+  },
+  {
+   "item_id": "mmlupro-1426",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 2,
+   "rate_decided": 0.4,
+   "rate_unparsed_as_wrong": 0.4,
+   "level": null,
+   "category": "law"
+  },
+  {
+   "item_id": "mmlupro-896",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 3,
+   "rate_decided": 0.6,
+   "rate_unparsed_as_wrong": 0.6,
+   "level": null,
+   "category": "law"
+  },
+  {
+   "item_id": "mmlupro-1149",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 3,
+   "rate_decided": 0.6,
+   "rate_unparsed_as_wrong": 0.6,
+   "level": null,
+   "category": "law"
+  },
+  {
+   "item_id": "mmlupro-1579",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": "law"
+  },
+  {
+   "item_id": "mmlupro-1105",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": "law"
+  },
+  {
+   "item_id": "mmlupro-1220",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": "law"
+  },
+  {
+   "item_id": "mmlupro-1251",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "law"
+  },
+  {
+   "item_id": "mmlupro-1299",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": "law"
+  },
+  {
+   "item_id": "mmlupro-1532",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": "law"
+  },
+  {
+   "item_id": "mmlupro-1300",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 2,
+   "rate_decided": 0.4,
+   "rate_unparsed_as_wrong": 0.4,
+   "level": null,
+   "category": "law"
+  },
+  {
+   "item_id": "mmlupro-1888",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": "law"
+  },
+  {
+   "item_id": "mmlupro-990",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": "law"
+  },
+  {
+   "item_id": "mmlupro-8130",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "math"
+  },
+  {
+   "item_id": "mmlupro-8794",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 3,
+   "rate_decided": 0.6,
+   "rate_unparsed_as_wrong": 0.6,
+   "level": null,
+   "category": "math"
+  },
+  {
+   "item_id": "mmlupro-7779",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": "math"
+  },
+  {
+   "item_id": "mmlupro-8688",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "math"
+  },
+  {
+   "item_id": "mmlupro-8992",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": "math"
+  },
+  {
+   "item_id": "mmlupro-8842",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "math"
+  },
+  {
+   "item_id": "mmlupro-8093",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": "math"
+  },
+  {
+   "item_id": "mmlupro-8748",
+   "benchmark": "mmlu_pro",
+   "n_decided": 4,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": "math"
+  },
+  {
+   "item_id": "mmlupro-8597",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 3,
+   "rate_decided": 0.6,
+   "rate_unparsed_as_wrong": 0.6,
+   "level": null,
+   "category": "math"
+  },
+  {
+   "item_id": "mmlupro-7947",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "math"
+  },
+  {
+   "item_id": "mmlupro-8110",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "math"
+  },
+  {
+   "item_id": "mmlupro-8645",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "math"
+  },
+  {
+   "item_id": "mmlupro-8605",
+   "benchmark": "mmlu_pro",
+   "n_decided": 1,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": "math"
+  },
+  {
+   "item_id": "mmlupro-8330",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": "math"
+  },
+  {
+   "item_id": "mmlupro-5631",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 2,
+   "rate_decided": 0.4,
+   "rate_unparsed_as_wrong": 0.4,
+   "level": null,
+   "category": "other"
+  },
+  {
+   "item_id": "mmlupro-5250",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "other"
+  },
+  {
+   "item_id": "mmlupro-5145",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": "other"
+  },
+  {
+   "item_id": "mmlupro-5926",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 3,
+   "rate_decided": 0.6,
+   "rate_unparsed_as_wrong": 0.6,
+   "level": null,
+   "category": "other"
+  },
+  {
+   "item_id": "mmlupro-5486",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": "other"
+  },
+  {
+   "item_id": "mmlupro-5985",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": "other"
+  },
+  {
+   "item_id": "mmlupro-5398",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": "other"
+  },
+  {
+   "item_id": "mmlupro-5896",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": "other"
+  },
+  {
+   "item_id": "mmlupro-5373",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "other"
+  },
+  {
+   "item_id": "mmlupro-5259",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "other"
+  },
+  {
+   "item_id": "mmlupro-5192",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": "other"
+  },
+  {
+   "item_id": "mmlupro-5105",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": "other"
+  },
+  {
+   "item_id": "mmlupro-5249",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 3,
+   "rate_decided": 0.6,
+   "rate_unparsed_as_wrong": 0.6,
+   "level": null,
+   "category": "other"
+  },
+  {
+   "item_id": "mmlupro-5562",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 2,
+   "rate_decided": 0.4,
+   "rate_unparsed_as_wrong": 0.4,
+   "level": null,
+   "category": "other"
+  },
+  {
+   "item_id": "mmlupro-11037",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "philosophy"
+  },
+  {
+   "item_id": "mmlupro-10801",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": "philosophy"
+  },
+  {
+   "item_id": "mmlupro-11173",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 3,
+   "rate_decided": 0.6,
+   "rate_unparsed_as_wrong": 0.6,
+   "level": null,
+   "category": "philosophy"
+  },
+  {
+   "item_id": "mmlupro-10925",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": "philosophy"
+  },
+  {
+   "item_id": "mmlupro-10775",
+   "benchmark": "mmlu_pro",
+   "n_decided": 4,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": "philosophy"
+  },
+  {
+   "item_id": "mmlupro-11115",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 2,
+   "rate_decided": 0.4,
+   "rate_unparsed_as_wrong": 0.4,
+   "level": null,
+   "category": "philosophy"
+  },
+  {
+   "item_id": "mmlupro-10878",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": "philosophy"
+  },
+  {
+   "item_id": "mmlupro-11078",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": "philosophy"
+  },
+  {
+   "item_id": "mmlupro-10802",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": "philosophy"
+  },
+  {
+   "item_id": "mmlupro-11167",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": "philosophy"
+  },
+  {
+   "item_id": "mmlupro-11234",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": "philosophy"
+  },
+  {
+   "item_id": "mmlupro-10983",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": "philosophy"
+  },
+  {
+   "item_id": "mmlupro-10926",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": "philosophy"
+  },
+  {
+   "item_id": "mmlupro-10861",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 2,
+   "rate_decided": 0.4,
+   "rate_unparsed_as_wrong": 0.4,
+   "level": null,
+   "category": "philosophy"
+  },
+  {
+   "item_id": "mmlupro-9248",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": "physics"
+  },
+  {
+   "item_id": "mmlupro-9165",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 2,
+   "rate_decided": 0.4,
+   "rate_unparsed_as_wrong": 0.4,
+   "level": null,
+   "category": "physics"
+  },
+  {
+   "item_id": "mmlupro-9962",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": "physics"
+  },
+  {
+   "item_id": "mmlupro-9948",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 3,
+   "rate_decided": 0.6,
+   "rate_unparsed_as_wrong": 0.6,
+   "level": null,
+   "category": "physics"
+  },
+  {
+   "item_id": "mmlupro-10102",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 2,
+   "rate_decided": 0.4,
+   "rate_unparsed_as_wrong": 0.4,
+   "level": null,
+   "category": "physics"
+  },
+  {
+   "item_id": "mmlupro-9726",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "physics"
+  },
+  {
+   "item_id": "mmlupro-10075",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": "physics"
+  },
+  {
+   "item_id": "mmlupro-9593",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": "physics"
+  },
+  {
+   "item_id": "mmlupro-9917",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "physics"
+  },
+  {
+   "item_id": "mmlupro-9811",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": "physics"
+  },
+  {
+   "item_id": "mmlupro-9860",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": "physics"
+  },
+  {
+   "item_id": "mmlupro-9922",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "physics"
+  },
+  {
+   "item_id": "mmlupro-9968",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "physics"
+  },
+  {
+   "item_id": "mmlupro-10015",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 3,
+   "rate_decided": 0.6,
+   "rate_unparsed_as_wrong": 0.6,
+   "level": null,
+   "category": "physics"
+  },
+  {
+   "item_id": "mmlupro-2283",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "psychology"
+  },
+  {
+   "item_id": "mmlupro-2252",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "psychology"
+  },
+  {
+   "item_id": "mmlupro-2161",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": "psychology"
+  },
+  {
+   "item_id": "mmlupro-2031",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": "psychology"
+  },
+  {
+   "item_id": "mmlupro-2655",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": "psychology"
+  },
+  {
+   "item_id": "mmlupro-2444",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "psychology"
+  },
+  {
+   "item_id": "mmlupro-2758",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "psychology"
+  },
+  {
+   "item_id": "mmlupro-2138",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "psychology"
+  },
+  {
+   "item_id": "mmlupro-2072",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "psychology"
+  },
+  {
+   "item_id": "mmlupro-2177",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 3,
+   "rate_decided": 0.6,
+   "rate_unparsed_as_wrong": 0.6,
+   "level": null,
+   "category": "psychology"
+  },
+  {
+   "item_id": "mmlupro-2301",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": "psychology"
+  },
+  {
+   "item_id": "mmlupro-2032",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "psychology"
+  },
+  {
+   "item_id": "mmlupro-2385",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 1,
+   "rate_decided": 0.2,
+   "rate_unparsed_as_wrong": 0.2,
+   "level": null,
+   "category": "psychology"
+  },
+  {
+   "item_id": "mmlupro-2206",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": "psychology"
+  },
+  {
+   "item_id": "mmlupro-7303",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": "economics"
+  },
+  {
+   "item_id": "mmlupro-5329",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 5,
+   "rate_decided": 1.0,
+   "rate_unparsed_as_wrong": 1.0,
+   "level": null,
+   "category": "other"
+  },
+  {
+   "item_id": "mmlupro-9330",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 0,
+   "rate_decided": 0.0,
+   "rate_unparsed_as_wrong": 0.0,
+   "level": null,
+   "category": "physics"
+  },
+  {
+   "item_id": "mmlupro-8135",
+   "benchmark": "mmlu_pro",
+   "n_decided": 5,
+   "n_correct": 4,
+   "rate_decided": 0.8,
+   "rate_unparsed_as_wrong": 0.8,
+   "level": null,
+   "category": "math"
+  }
+ ],
+ "admissible": true
+}

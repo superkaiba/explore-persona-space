@@ -240,6 +240,13 @@ class ClusterConfig:
       (``min(mem_gb_per_gpu * gpus, mem_gb_cap)``). Defaults 64/480
       reproduce the legacy hard-coded formula; fellows uses 128/1800
       per the cluster handbook (~128 G/GPU, node ceiling ~1965 G).
+      A per-dispatch ``spec.extra["min_ram_gb"]`` (#2275, threaded from
+      ``dispatch_issue.py --min-ram-gb``) RAISES the rendered ``--mem``
+      to the requirement via :func:`_apply_min_ram` (max semantics, both
+      GPU and CPU branches); a requirement above ``mem_gb_cap`` refuses
+      pre-submit with a ValueError, never a silent clamp (a clamp would
+      reintroduce the #1336 silent production OOM). Absent/0 renders
+      byte-identically (the #1609 snapshot contract).
     * ``extra_exports`` — ``(key, value)`` pairs rendered in the CUDA
       setup block as ``export K="${K:-<value>}"`` (override-able: a
       dispatch-process value forwarded via secrets.env supersedes,
@@ -270,6 +277,16 @@ class ClusterConfig:
       (probe 2026-07-30: ``/workspace`` drwxrwxrwx superkaiba,
       ``/workspace/logs`` pre-existing); DRAC/Mila=False (robot wrapper
       allowlists only sbatch/scancel/squeue/scp/rsync — #608).
+
+    Field added for the CPU fellows fallback (#2059) — default ``False``
+    keeps every DRAC/Mila render + route byte-identical:
+
+    * ``supports_cpu_jobs`` — True iff this cluster accepts 0-GPU sbatch
+      jobs AND satisfies the CPU workload contract (``/workspace`` present
+      + sentinel drain, #1898/#608). The ONE deliberate lever for the
+      #2059 CPU-fellows fallback: flipping the fellows row to False
+      restores the pre-#2059 RunPod-only CPU auto chain AND makes any
+      explicit-pin 0-GPU render fail loud again.
     """
 
     name: str
@@ -326,6 +343,12 @@ class ClusterConfig:
     sentinel_drain: bool = False
     # --- #1899 fellows QoS fallback ladder (default () = no ladder) ---
     qos_ladder: tuple[QosRung, ...] = ()
+    # --- #2059 CPU fellows fallback (the ONE deliberate rollback lever) ---
+    # True iff this cluster accepts 0-GPU sbatch jobs AND satisfies the CPU
+    # workload contract (/workspace present + sentinel drain, #1898/#608).
+    # Flipping the fellows row to False restores the pre-#2059 RunPod-only
+    # CPU auto chain AND makes any explicit-pin 0-GPU render fail loud again.
+    supports_cpu_jobs: bool = False
 
     @property
     def ssh_host(self) -> str:
@@ -502,6 +525,12 @@ CLUSTER_CONFIGS: dict[str, ClusterConfig] = {
         # the VM-side poller drains /workspace/logs/issue-<N>-*.json each
         # tick (slurm_monitor.drain_cluster_sentinels).
         sentinel_drain=True,
+        # #2059: fellows is the ONLY cluster that accepts 0-GPU sbatch jobs
+        # on the auto chain — it satisfies the CPU workload contract
+        # (/workspace present + sentinel drain above); nibi/mila stay
+        # excluded (no /workspace, #608). Flip to False to roll the CPU
+        # fellows fallback back (restores the RunPod-only CPU auto chain).
+        supports_cpu_jobs=True,
         # Flipped True after the #1609 §7 live acceptance PASS (job 11092,
         # 2026-07-23: sbatch accepted under qos=high-eur/partition=general,
         # RUNNING on node-2, workload printed the GPU + HF_HOME_WRITABLE +
@@ -547,10 +576,14 @@ def get_cluster_config(name: str) -> ClusterConfig:
 # via ``gpubase_bygpu_b3`` instead of queuing 4 days out on the 7-day
 # bin per P0(g)). Single floating-point hours; renderer converts to
 # ``HH:MM:SS``.
-# NOTE (#1464): the CPU-only intents (cpu-small / cpu-mid / cpu-bigmem, #747)
-# are DELIBERATELY absent here too — see the fuller note above
-# ``_DEFAULT_GPUS_FOR_INTENT``; do NOT "fix" a CPU-intent ValueError by
-# adding a row.
+# NOTE (#1464, narrowed by #2059): the CPU-only intents (cpu-small /
+# cpu-mid / cpu-bigmem, #747) now resolve here with 0-GPU rows, which are
+# legal ONLY on clusters whose ClusterConfig declares
+# ``supports_cpu_jobs=True`` (fellows) — render_sbatch branches on
+# ``gpus == 0`` (CPU resource lines from _CPU_SBATCH_RESOURCES, no gres
+# line) and raises on a 0-GPU render for any other cluster. The router
+# still filters non-CPU-capable free lanes at candidate assembly
+# (router._slurm_lane_supports_cpu), so nibi/mila never see a CPU intent.
 _DEFAULT_TIME_BUDGETS_HOURS: dict[str, float] = {
     "lora-7b": 6.0,
     "lora": 6.0,  # alias accepted by stages_for_spec + _DEFAULT_GPUS_FOR_INTENT
@@ -576,6 +609,12 @@ _DEFAULT_TIME_BUDGETS_HOURS: dict[str, float] = {
     "ft-7b": 23.5,  # leave a margin under the 24h short-bin cap
     "inf-70b": 12.0,
     "ft-70b": 47.5,  # 2-day bin
+    # #2059 CPU-only intents (#747): sized to the intent's workload class —
+    # cpu-small = parallel fan-out probes (4h), cpu-mid = mid-size CPU
+    # analyses (8h), cpu-bigmem = the >50 GB / bootstrap-battery lane (12h).
+    "cpu-small": 4.0,
+    "cpu-mid": 8.0,
+    "cpu-bigmem": 12.0,
 }
 
 
@@ -620,15 +659,16 @@ def _format_sbatch_time(hours: float) -> str:
 # intent raises rather than picking 1 silently (consistent with
 # ``stages_for_spec`` + ``time_budget_hours``; a typo should fail the
 # render, not submit a job at the wrong GPU count).
-# NOTE (#1464): the CPU-only intents (cpu-small / cpu-mid / cpu-bigmem, #747)
-# are DELIBERATELY absent from this table (and from
-# _DEFAULT_TIME_BUDGETS_HOURS + stages_for_spec): the SLURM lane serves GPU
-# intents only — render_sbatch scales --cpus-per-task / --mem from the GPU
-# count, so gpus=0 would render an invalid 0-CPU / 0G script. The router
-# excludes the free lanes for CPU-only intents at candidate assembly
-# (router._is_cpu_only_intent); do NOT "fix" a CPU-intent ValueError here by
-# adding a 0 row (a future 0-GPU SLURM feature routes through the router
-# predicate instead).
+# NOTE (#1464, narrowed by #2059): the CPU-only intents (cpu-small /
+# cpu-mid / cpu-bigmem, #747) carry 0-GPU rows — the "future 0-GPU SLURM
+# feature" the #1464 note anticipated, routed exactly through the router
+# predicate it named: 0-GPU rows are legal ONLY on clusters whose
+# ClusterConfig declares ``supports_cpu_jobs=True`` (fellows).
+# render_sbatch branches on ``gpus == 0`` — CPU resource lines come from
+# _CPU_SBATCH_RESOURCES (never scaled from the GPU count), NO gres line is
+# emitted, and a 0-GPU render on a non-CPU-capable cluster raises. The
+# router still filters non-CPU-capable free lanes at candidate assembly
+# (router._slurm_lane_supports_cpu), so nibi/mila never see a CPU intent.
 _DEFAULT_GPUS_FOR_INTENT: dict[str, int] = {
     "lora-7b": 1,
     "lora": 1,
@@ -640,6 +680,30 @@ _DEFAULT_GPUS_FOR_INTENT: dict[str, int] = {
     "ft-7b": 4,
     "inf-70b": 8,
     "ft-70b": 8,
+    # #2059 CPU-only intents (#747): 0 GPUs by definition. Legal only on
+    # supports_cpu_jobs clusters — see the table note above.
+    "cpu-small": 0,
+    "cpu-mid": 0,
+    "cpu-bigmem": 0,
+}
+
+
+# #2059: per-intent (vCPU, RAM_GB) for the 0-GPU sbatch resource lines,
+# MIRRORING router.RUNPOD_CPU_INSTANCE_CAPS' (vCPU, RAM) shapes so a CPU
+# job lands on equivalent resources whichever lane serves it:
+#   cpu-small  -> cpu3g-2-8     (2 vCPU / 8 GB)
+#   cpu-mid    -> cpu3c-8-16    (8 vCPU / 16 GB)
+#   cpu-bigmem -> cpu5m-16-128  (16 vCPU / 128 GB)
+# Deliberately a LITERAL mirror, not an import — slurm.py must not import
+# router.py (dependency direction: router imports slurm). The mirror is
+# pinned by tests/test_slurm_backend_render.py::
+# test_cpu_sbatch_resources_mirror_runpod_caps. A CPU intent missing here
+# while present in _DEFAULT_GPUS_FOR_INTENT fails the render loud
+# (KeyError) rather than emitting a 0-CPU script.
+_CPU_SBATCH_RESOURCES: dict[str, tuple[int, int]] = {
+    "cpu-small": (2, 8),
+    "cpu-mid": (8, 16),
+    "cpu-bigmem": (16, 128),
 }
 
 
@@ -857,12 +921,15 @@ RSYNC_INCLUDE_PATHS: tuple[str, ...] = (
     "./configs",
     "./external/open-instruct",
     "./tests",
-    # ``data/sft/`` carries the small committed training-mix JSONLs that
-    # ``stages[].dataset`` references repo-relatively (e.g. the 188K
-    # router-smoke set). The RunPod lane gets them via git clone; the
-    # rsync lane missed them until live attempt 4 crashed with
-    # ``FileNotFoundError: data/sft/router_smoke_sft.jsonl`` (issue 535).
-    "./data/sft",
+    # ``data/`` include entries are NOT listed here: they are DERIVED from
+    # the git index at composition time (#2212) — one ``./data/<component>``
+    # per tracked top-level entry, via :func:`tracked_data_include_paths`,
+    # composed at both production call sites by
+    # :func:`composed_include_paths`. History: the bare ``./data/sft`` entry
+    # that used to live here (issue 535's FileNotFoundError fix) covered
+    # only ONE tracked component, so every other committed ``data/`` input
+    # was silently missing on the rsync lanes (the #2203 crash class, lane
+    # sibling of the #2211 pod cone fix).
 )
 
 RSYNC_EXCLUDE_PATTERNS: tuple[str, ...] = (
@@ -882,7 +949,125 @@ RSYNC_EXCLUDE_PATTERNS: tuple[str, ...] = (
     "ood_eval_results/",
     "node_modules/",
     "dashboard/",
+    # Re-downloadable staging caches + durable per-issue stores, matched at
+    # every depth (rsync applies slash-free patterns at all depths). Two
+    # functions (#2212): (1) SEND-side, under the EPS_SLURM_LIVE_TREE_RSYNC=1
+    # live-tree override an untracked cache/store DESCENDANT of a tracked
+    # ``./data/<component>`` include entry transfers only when it matches NO
+    # RSYNC_EXCLUDE_PATTERNS entry — these two patterns extend the set to the
+    # conventional cache/store shapes, and the pre-existing entries above
+    # (``archive/``, ``wandb/``, ...) already match at every depth too (the
+    # index-derived entries exclude untracked TOP-LEVEL ``data/`` entries
+    # from the argv, but rsync recurses each include entry and knows nothing
+    # of .gitignore); on the DEFAULT committed-snapshot source they can
+    # never match anything sendable.
+    # (2) RECEIVER-side, they protect a cluster-side
+    # ``$SCRATCH/data/<tracked>/{*_dl,store}`` tree from the ``--delete``
+    # pass on a re-dispatch (no ``--delete-excluded`` is passed). No
+    # lane-level convention writes under ``$SCRATCH/data/`` today — (2) is
+    # free, collision-free insurance, NOT a fix for an observed loss.
+    # Collision-checked at #2212: no tracked path component repo-wide ends
+    # in ``_dl`` or equals ``store``, so neither pattern can shadow a
+    # tracked input (#1915).
+    "*_dl/",
+    "store/",
 )
+
+# The single tracked top-level dir whose include entries are derived from
+# the git index rather than listed in RSYNC_INCLUDE_PATHS (#2212).
+RSYNC_DATA_INCLUDE_ROOT = "data"
+
+
+def tracked_data_include_paths(src_root: Path, *, timeout: int = 60) -> tuple[str, ...]:
+    """Dot-anchored include entries for every TRACKED top-level ``data/`` entry.
+
+    ``git -C <src_root> ls-files <root>`` -> the distinct first path component
+    under ``data/`` -> ``./data/<component>``, sorted, deduped. Both rsync
+    sources are git trees: the default path's detached scratch worktree
+    (``materialize_branch_src``) and the ``EPS_SLURM_LIVE_TREE_RSYNC=1``
+    override's live repo root.
+
+    WHY derived rather than a bare ``./data`` include: under the override the
+    source IS the live working tree, where ``data/`` carries ~40 GB of
+    UNTRACKED caches and staging dirs across 59 of 70 top-level entries
+    (measured #2212). A bare include tree would sweep them to the cluster —
+    and the 600 s rsync timeout does NOT reliably catch it (~68 MB/s
+    completes 40 GB in the window). Deriving from the index structurally
+    excludes every untracked TOP-LEVEL entry from the argv while still
+    shipping every tracked input, so the override does not reintroduce the
+    #2203 FileNotFoundError class.
+
+    SCOPE OF THE GUARANTEE — top-level only. An untracked DESCENDANT of a
+    tracked component still transfers under the override whenever it matches
+    NO ``RSYNC_EXCLUDE_PATTERNS`` entry: rsync passes each include entry as a
+    bare recursive source and knows nothing of ``.gitignore``, so the exclude
+    list — the new ``*_dl/`` / ``store/`` patterns (conventional caches) plus
+    the pre-existing entries (``archive/``, ``wandb/``, ...), all matched at
+    every depth — is the whole filter. Measured at #2212: 6 MB / 13 gitignored
+    files, all under ``data/sft`` — an EMPIRICAL this-checkout figure, NOT a
+    bound. This residual is include-set-wide and pre-existing, not introduced
+    here: under the same override ``./scripts`` already ships 39 untracked
+    files (16 not even gitignored), ``./src`` 39, ``./tests`` 7. Pinned as
+    known behavior by the nested-untracked test, so a future silent change to
+    it becomes a deliberate decision. Closing it would need ``--files-from``
+    (a rsync flag-surface change over every dispatch) or a fail-closed
+    pre-scan that would refuse at HEAD today (none of the 13 files matches an
+    exclude pattern).
+
+    Fails LOUD (``RuntimeError``) if the ls-files probe fails OR hangs past
+    ``timeout`` (``subprocess.TimeoutExpired`` is re-raised as the same
+    descriptive ``RuntimeError`` shape): a silent fallback would resurrect
+    either the flood or the crash class.
+    """
+    argv = ["git", "-C", str(src_root), "ls-files", "-z", "--", RSYNC_DATA_INCLUDE_ROOT]
+    try:
+        proc = subprocess.run(
+            argv,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            check=False,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise RuntimeError(
+            f"tracked_data_include_paths: `git -C {src_root} ls-files -- "
+            f"{RSYNC_DATA_INCLUDE_ROOT}` timed out after {timeout}s — refusing a "
+            f"silent fallback (a bare './{RSYNC_DATA_INCLUDE_ROOT}' include would "
+            "sweep untracked caches under EPS_SLURM_LIVE_TREE_RSYNC=1; an empty "
+            "include set would re-create the #2203 FileNotFoundError class)."
+        ) from exc
+    if proc.returncode != 0:
+        raise RuntimeError(
+            f"tracked_data_include_paths: `git -C {src_root} ls-files -- "
+            f"{RSYNC_DATA_INCLUDE_ROOT}` failed rc={proc.returncode}: "
+            f"{proc.stderr.strip()!r} — refusing a silent fallback (a bare "
+            f"'./{RSYNC_DATA_INCLUDE_ROOT}' include would sweep untracked caches "
+            "under EPS_SLURM_LIVE_TREE_RSYNC=1; an empty include set would "
+            "re-create the #2203 FileNotFoundError class)."
+        )
+    components: set[str] = set()
+    for rel in proc.stdout.split("\0"):
+        if not rel:
+            continue
+        parts = rel.split("/")
+        if len(parts) < 2 or parts[0] != RSYNC_DATA_INCLUDE_ROOT:
+            continue
+        components.add(parts[1])
+    return tuple(f"./{RSYNC_DATA_INCLUDE_ROOT}/{c}" for c in sorted(components))
+
+
+def composed_include_paths(src_root: Path, *, timeout: int = 60) -> tuple[str, ...]:
+    """``RSYNC_INCLUDE_PATHS`` + the git-index-derived tracked ``data/`` entries.
+
+    The ONE composition BOTH production call sites consume —
+    :func:`run_rsync_sync` (the executed sync) and
+    :func:`verify_rsync_complete` (the #1913 completeness re-check) — so the
+    two argvs can never diverge on the include set (#2212).
+    :func:`build_rsync_command` itself stays a PURE function of its
+    arguments (no git call inside it).
+    """
+    return RSYNC_INCLUDE_PATHS + tracked_data_include_paths(src_root, timeout=timeout)
+
 
 # ``spec.extra`` key for the per-dispatch extra-sync-paths knob (#1835): a
 # list/tuple of repo-relative paths that ``SlurmBackend.prepare`` stages to
@@ -1082,11 +1267,17 @@ def run_rsync_sync(
     MUST run from ``cwd=src_root`` so the dot-anchored sources in
     :data:`RSYNC_INCLUDE_PATHS` resolve to the repo tree (see
     :func:`build_rsync_command` for the full ``--relative`` rationale).
+
+    The include set is :func:`composed_include_paths` — the static constant
+    PLUS the git-index-derived tracked ``data/`` entries (#2212); the same
+    composition feeds :func:`verify_rsync_complete`'s default so sync and
+    verify can never diverge.
     """
     argv = build_rsync_command(
         src_root=src_root,
         dest_root=dest_root,
         robot_alias=robot_alias,
+        include_paths=composed_include_paths(src_root),
     )
     logger.info("running rsync to %s (cwd=%s): %s", robot_alias, src_root, " ".join(argv))
     subprocess.run(argv, check=True, timeout=timeout, cwd=str(src_root))
@@ -1139,12 +1330,19 @@ def verify_rsync_complete(
     dest_root: str,
     robot_alias: str,
     extra_paths: tuple[str, ...] | None = None,
-    include_paths: tuple[str, ...] = RSYNC_INCLUDE_PATHS,
+    include_paths: tuple[str, ...] | None = None,
     exclude_patterns: tuple[str, ...] = RSYNC_EXCLUDE_PATTERNS,
     dest_is_local: bool = False,
     timeout: int = 600,
 ) -> None:
     """Verify an executed rsync left NOTHING pending — raise BEFORE sbatch (#1913).
+
+    ``include_paths=None`` (the default) composes the SAME include set the
+    executed sync used — :func:`composed_include_paths`, i.e.
+    ``RSYNC_INCLUDE_PATHS`` + the git-index-derived tracked ``data/``
+    entries (#2212) — so a divergent include set between sync and verify
+    cannot silently break this completeness gate. An explicit tuple is
+    honored verbatim (test seam).
 
     Re-runs the SAME argv the sync used — :func:`build_rsync_command` when
     ``extra_paths`` is ``None``, else :func:`build_extra_rsync_command` (one
@@ -1180,6 +1378,8 @@ def verify_rsync_complete(
             extra_paths=extra_paths,
         )
     else:
+        if include_paths is None:
+            include_paths = composed_include_paths(src_root)
         argv = build_rsync_command(
             src_root=src_root,
             dest_root=dest_root,
@@ -1332,6 +1532,18 @@ PASSTHROUGH_ENV_KEYS: tuple[str, ...] = (
     # as the #564 knobs above — a dispatch-process floor override must reach
     # the compute node or it silently no-ops remotely.
     "EPM_HF_LARGE_UPLOAD_PROBE_GB",
+    # Capture fan-out width cap (#1336): ``run_queue`` in
+    # ``scripts/issue1336_dispatch.sh`` reads EPS_QUEUE_WIDTH_MAX on the
+    # COMPUTE NODE — the cap must reach it or a dispatch-process cap
+    # silently no-ops remotely (the exact silent-no-op the cap's fail-loud
+    # validation exists to prevent). This key MUST live in the MAIN copy:
+    # ``dispatch_issue._pin_main_lane_infra`` (#987) resolves
+    # ``backends.*`` from the main checkout even when the worktree's
+    # ``dispatch_issue.py`` is invoked, so a branch-only addition to this
+    # tuple never renders. Drop-when-absent contract preserved:
+    # ``render_secrets_env`` skips an unset key, so an unset cap leaves the
+    # remote width at its $NGPU default byte-identically.
+    "EPS_QUEUE_WIDTH_MAX",
     # HF Hub upload accelerator OVERRIDE channel (#745): forwarded so a
     # dispatch-process =0 / HF_HUB_DISABLE_XET=1 (the #515/#931 xet workaround)
     # reaches the compute node. The DEFAULTS (=1) are a STATIC env block in
@@ -1735,6 +1947,106 @@ def _gres_line(cluster: ClusterConfig, gpus: int) -> str:
     return f"#SBATCH --gpus-per-node={gpus}"
 
 
+def _apply_min_ram(cluster: ClusterConfig, spec: RunSpec, base_gb: int) -> int:
+    """max(base, spec.extra['min_ram_gb']) with a pre-submit fail-loud above mem_gb_cap."""
+    min_ram = spec.extra.get("min_ram_gb")
+    if not min_ram:  # absent/None/0 → byte-identical render (#1609 snapshot contract)
+        return base_gb
+    min_ram = int(min_ram)
+    if min_ram > cluster.mem_gb_cap:
+        raise ValueError(
+            f"--min-ram-gb {min_ram} exceeds cluster {cluster.name!r} mem_gb_cap="
+            f"{cluster.mem_gb_cap} G (#2275 fail-loud: the alternative is a silent "
+            f"production OOM). Satisfying alternatives: lower the requirement; split "
+            f"the fan-out across more jobs (each with its own --mem); or route the "
+            f"phase to a RunPod pod (cpu-bigmem / a GPU intent) via backend: runpod."
+        )
+    return max(base_gb, min_ram)
+
+
+def _resource_header_lines(cluster: ClusterConfig, spec: RunSpec, gpus: int) -> list[str]:
+    """The gres/CPU/mem ``#SBATCH`` header lines, branched on the GPU count.
+
+    ``gpus > 0`` keeps the pre-#2059 GPU-scaled formulas byte-identical (the
+    #1609 snapshot contract). ``gpus == 0`` (#2059, CPU intents) is legal
+    ONLY on clusters whose :class:`ClusterConfig` declares
+    ``supports_cpu_jobs`` (fellows): NO gres line is emitted (omission is
+    the canonical "no GPUs" request; never ``--gpus-per-node=0``), and the
+    CPU/mem lines come from the per-intent :data:`_CPU_SBATCH_RESOURCES`
+    table (mirroring the RunPod CPU instance shapes) instead of the
+    GPU-scaled formulas. A CPU intent missing from that table raises
+    KeyError — fail-loud, never a 0-CPU script.
+
+    BOTH branches honor a per-dispatch ``spec.extra["min_ram_gb"]`` (#2275)
+    via :func:`_apply_min_ram`: the declared requirement RAISES ``--mem``
+    (max semantics — the formula/table value wins when larger), and a
+    requirement above ``cluster.mem_gb_cap`` raises ValueError pre-submit
+    (render precedes any sbatch call) instead of silently clamping below
+    the declared requirement. Absent/0 keeps both branches byte-identical.
+    """
+    if gpus == 0:
+        if not cluster.supports_cpu_jobs:
+            raise ValueError(
+                f"cluster {cluster.name!r} does not accept 0-GPU jobs "
+                "(supports_cpu_jobs=False; #2059/#608 — CPU intents run on "
+                "fellows or RunPod CPU). Pin backend: runpod for this intent."
+            )
+        vcpu, mem_gb = _CPU_SBATCH_RESOURCES[spec.intent]
+        mem_gb = _apply_min_ram(cluster, spec, mem_gb)
+        return [
+            f"#SBATCH --cpus-per-task={vcpu}",
+            f"#SBATCH --mem={mem_gb}G",
+        ]
+    base = min(cluster.mem_gb_per_gpu * gpus, cluster.mem_gb_cap)
+    mem_gb = _apply_min_ram(cluster, spec, base)
+    return [
+        _gres_line(cluster, gpus),
+        f"#SBATCH --cpus-per-task={min(8 * gpus, 64)}",
+        f"#SBATCH --mem={mem_gb}G",
+    ]
+
+
+def _gpu_preflight_gate_lines(gpus: int) -> tuple[list[str], list[str]]:
+    """The two GPU-hard preflight gate blocks, branched on the GPU count.
+
+    Returns ``(nvidia_gate_lines, gpu_count_gate_lines)``. A 0-GPU
+    (CPU-intent, #2059) job gets NO gres line, so SLURM never sets
+    ``SLURM_GPUS_ON_NODE`` (the ``:?`` expansion would kill a healthy CPU
+    job), and nvidia-smi is legitimately absent/irrelevant on a CPU
+    allocation — both gates are replaced by skip-comments. The gpus>0 arm
+    is byte-identical to the pre-#2059 render (the #1609 snapshot
+    contract); the rest of the preflight (tokens, connectivity,
+    SLURM_TMPDIR headroom) runs identically on both arms.
+    """
+    if gpus > 0:
+        nvidia_gate_lines = [
+            "# GPU visible (in-job nvidia-smi IS allowed; only the robot SSH side",
+            "# bans it).",
+            "if ! nvidia-smi >/dev/null 2>&1; then",
+            '  echo "[FAIL] nvidia-smi not available inside SLURM allocation"',
+            '  echo "' + PREFLIGHT_FAIL_MARKER + '"',
+            "  exit 4",
+            "fi",
+        ]
+        gpu_count_gate_lines = [
+            "# GPU count must match SLURM_GPUS_ON_NODE (NOT a stale nvidia-smi).",
+            ': "${SLURM_GPUS_ON_NODE:?SLURM_GPUS_ON_NODE unset; cannot derive process count}"',
+            f'if [ "$SLURM_GPUS_ON_NODE" -ne {gpus} ]; then',
+            f'  echo "[FAIL] SLURM_GPUS_ON_NODE=$SLURM_GPUS_ON_NODE != requested {gpus}"',
+            '  echo "' + PREFLIGHT_FAIL_MARKER + '"',
+            "  exit 6",
+            "fi",
+        ]
+        return nvidia_gate_lines, gpu_count_gate_lines
+    return (
+        ["# 0-GPU (CPU-intent) job: GPU-visibility gate skipped (#2059)."],
+        [
+            "# 0-GPU (CPU-intent) job: SLURM_GPUS_ON_NODE count gate skipped",
+            "# (#2059 — SLURM sets no SLURM_GPUS_ON_NODE for a no-gres job).",
+        ],
+    )
+
+
 def _no_prolog_scratch_lines(cluster: ClusterConfig) -> list[str]:
     """SCRATCH + SLURM_TMPDIR fallback prelude for no-prolog clusters (#1609).
 
@@ -1949,14 +2261,15 @@ def render_sbatch(
         # rejected by some SLURM builds, so the line is skipped entirely
         # when the cluster row omits it. DRAC rows always set an account.
         sbatch_headers.append(f"#SBATCH --account={cluster.account}")
+    # #2059: 0-GPU (CPU-intent) renders take the CPU branch of
+    # _resource_header_lines (supports_cpu_jobs clusters only — raises loud
+    # elsewhere); the gpus>0 arm is byte-identical to the pre-#2059 render.
     sbatch_headers.extend(
         [
             f"#SBATCH --job-name={name}",
             "#SBATCH --nodes=1",
             "#SBATCH --ntasks-per-node=1",
-            _gres_line(cluster, gpus),
-            f"#SBATCH --cpus-per-task={min(8 * gpus, 64)}",
-            f"#SBATCH --mem={min(cluster.mem_gb_per_gpu * gpus, cluster.mem_gb_cap)}G",
+            *_resource_header_lines(cluster, spec, gpus),
             f"#SBATCH --time={time_str}",
             f"#SBATCH --output={output_path}",
         ]
@@ -2164,6 +2477,11 @@ def render_sbatch(
         "",
     ]
 
+    # #2059: the two GPU-hard preflight gates are branched on the GPU count
+    # inside _gpu_preflight_gate_lines (0-GPU jobs get skip-comments; the
+    # gpus>0 arm is byte-identical to the pre-#2059 render).
+    nvidia_gate_lines, gpu_count_gate_lines = _gpu_preflight_gate_lines(gpus)
+
     # In-job preflight. FAIL fast before heavy work so the selector
     # falls back to RunPod before GPU time is spent.
     preflight = [
@@ -2189,13 +2507,7 @@ def render_sbatch(
         "  exit 3",
         "}",
         "",
-        "# GPU visible (in-job nvidia-smi IS allowed; only the robot SSH side",
-        "# bans it).",
-        "if ! nvidia-smi >/dev/null 2>&1; then",
-        '  echo "[FAIL] nvidia-smi not available inside SLURM allocation"',
-        '  echo "' + PREFLIGHT_FAIL_MARKER + '"',
-        "  exit 4",
-        "fi",
+        *nvidia_gate_lines,
         "",
         "# $SLURM_TMPDIR headroom (the renderer assumes a node-local tmpdir",
         "# for model + data staging; checkpoints go to $SCRATCH).",
@@ -2207,13 +2519,7 @@ def render_sbatch(
         "  exit 5",
         "fi",
         "",
-        "# GPU count must match SLURM_GPUS_ON_NODE (NOT a stale nvidia-smi).",
-        ': "${SLURM_GPUS_ON_NODE:?SLURM_GPUS_ON_NODE unset; cannot derive process count}"',
-        f'if [ "$SLURM_GPUS_ON_NODE" -ne {gpus} ]; then',
-        f'  echo "[FAIL] SLURM_GPUS_ON_NODE=$SLURM_GPUS_ON_NODE != requested {gpus}"',
-        '  echo "' + PREFLIGHT_FAIL_MARKER + '"',
-        "  exit 6",
-        "fi",
+        *gpu_count_gate_lines,
         "",
         "# Preflight PASS. (Heartbeat already running since startup; the",
         "# combined kill+shred trap was set in the secrets stanza.)",
@@ -2324,6 +2630,11 @@ def render_sbatch(
             # accelerate launch ... finetune.py | dpo_tune_cache.py
             # The deepspeed config is path-relative to configs/ — the
             # cluster has the synced configs/ tree at $SCRATCH_JOB_DIR/configs.
+            # NOTE (#2059): the `--num_processes $SLURM_GPUS_ON_NODE` read
+            # below is open_instruct-STAGE-only — a 0-GPU (CPU-intent)
+            # dispatch is workload_cmd-shaped (stages_for_spec raises on the
+            # hydra path for CPU intents), so this branch is unreached by
+            # CPU dispatches and needs no gpus==0 handling.
             ds_config_path = f"configs/{stage.deepspeed_config_rel}"
             oi_args_joined = " ".join(shlex.quote(a) for a in stage.oi_args)
             stage_blocks.append(
@@ -2870,8 +3181,12 @@ class SlurmBackend(ComputeBackend):
         materialized snapshot (``cleanup_branch_src``) whenever the resolved
         source is not the live ``self._src_root`` — with EVERY dispatch now
         materializing (see ``_resolve_rsync_source``), an unreaped
-        ``~/.eps-slurm-src/issue-<N>`` (~3.8 GB) per issue would otherwise
-        accrete on the shared boot disk with NO covering janitor
+        ``~/.eps-slurm-src/issue-<N>`` (~8.6 GB mean, measured 2026-08-16
+        over 13 accreted trees) per issue would otherwise accrete on the
+        shared boot disk; this in-band reap stays the FIRST line of defense,
+        with ``vm_disk_guard.py`` tier (g) (#2147,
+        ``clean_experiment_downloads.sweep_slurm_src``) as the evidence-gated
+        janitor backstop for trees a crashed prepare strands
         (``worktree_audit.py`` sweeps ``.claude/worktrees/`` only). The
         cleanup NEVER runs on the live root, and a prepare failure still
         reaps (the sbatch job runs from the CLUSTER dest; launch/reconnect/
@@ -3670,10 +3985,14 @@ def cleanup_branch_src(src_root: Path, scratch: Path, *, timeout: int = 300) -> 
     materializer's pre-create cleanup and :meth:`SlurmBackend.prepare`'s
     post-rsync ``finally`` reap share ONE implementation and cannot drift.
     With every dispatch now materializing a snapshot, an unreaped
-    ``~/.eps-slurm-src/issue-<N>`` (~3.8 GB full checkout) per issue would
-    accrete on the shared 485 GB boot disk with NO covering janitor
-    (``worktree_audit.py`` sweeps ``.claude/worktrees/`` only;
-    ``vm_disk_guard.py`` tiers never touch ``~/.eps-slurm-src``).
+    ``~/.eps-slurm-src/issue-<N>`` (~8.6 GB mean full checkout, measured
+    2026-08-16 over 13 accreted trees) per issue would accrete on the
+    shared boot disk. This in-band reap is the FIRST line of defense;
+    ``vm_disk_guard.py`` tier (g) (#2147,
+    ``clean_experiment_downloads.sweep_slurm_src`` — terminal-status +
+    git-blob-evidence gated) is the janitor backstop for trees a crashed
+    prepare strands (``worktree_audit.py`` still sweeps
+    ``.claude/worktrees/`` only).
 
     All git calls are guarded/best-effort (a fresh scratch has no registered
     worktree; ``worktree remove`` on an absent path exits non-zero) — callers
@@ -3973,6 +4292,7 @@ __all__ = [
     "HEARTBEAT_INTERVAL_SECONDS",
     "PASSTHROUGH_ENV_KEYS",
     "PREFLIGHT_FAIL_MARKER",
+    "RSYNC_DATA_INCLUDE_ROOT",
     "RSYNC_EXCLUDE_PATTERNS",
     "RSYNC_INCLUDE_PATHS",
     "RUNTIME_ARTIFACT_FILENAMES",
@@ -3989,6 +4309,7 @@ __all__ = [
     "build_rsync_command",
     "cleanup_branch_src",
     "clear_runtime_artifacts",
+    "composed_include_paths",
     "compute_plan_hash",
     "default_gpus_for_intent",
     "estimate_start_seconds",
@@ -4014,6 +4335,7 @@ __all__ = [
     "ssh_submit",
     "stages_for_spec",
     "time_budget_hours",
+    "tracked_data_include_paths",
     "validate_extra_sync_paths",
     "verify_rsync_complete",
 ]

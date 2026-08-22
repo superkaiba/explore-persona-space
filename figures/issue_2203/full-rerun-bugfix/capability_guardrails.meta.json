@@ -1,0 +1,527 @@
+{
+  "commit": "90d3f27e+dirty",
+  "render_id": "d4a45b042d6d444a",
+  "git_commit": "90d3f27e",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/critic/feedback_capping_steering_plan_stats_traps.md",
+    ".claude/agent-memory/critic/feedback_replace_op_random_null_displacement.md",
+    "figures/issue_2203/full-rerun-bugfix/anchor_32b.meta.json",
+    "figures/issue_2203/full-rerun-bugfix/anchor_32b.pdf",
+    "figures/issue_2203/full-rerun-bugfix/anchor_32b.png",
+    "figures/issue_2203/full-rerun-bugfix/degradation_mechanism.meta.json",
+    "figures/issue_2203/full-rerun-bugfix/degradation_mechanism.pdf",
+    "figures/issue_2203/full-rerun-bugfix/degradation_mechanism.png",
+    "figures/issue_2203/full-rerun-bugfix/hero_position_ladder.meta.json",
+    "figures/issue_2203/full-rerun-bugfix/hero_position_ladder.pdf",
+    "figures/issue_2203/full-rerun-bugfix/hero_position_ladder.png",
+    "scripts/issue2203_figures.py"
+  ],
+  "created": "2026-08-11T21:45:45Z",
+  "figsize": [
+    9.0,
+    4.4
+  ],
+  "points": [
+    {
+      "x": -0.26,
+      "Accuracy (\u2191 better)": 0.868,
+      "error": 0.03249543928969456,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.74,
+      "Accuracy (\u2191 better)": 0.868,
+      "error": 0.03249543928969456,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.74,
+      "Accuracy (\u2191 better)": 0.878,
+      "error": 0.031605357229713915,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.74,
+      "Accuracy (\u2191 better)": 0.868,
+      "error": 0.03249543928969456,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.74,
+      "Accuracy (\u2191 better)": 0.86,
+      "error": 0.06455343144015735,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.74,
+      "Accuracy (\u2191 better)": 0.0,
+      "error": 0.02497113914571871,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.74,
+      "Accuracy (\u2191 better)": 0.88,
+      "error": 0.061709661353952394,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.74,
+      "Accuracy (\u2191 better)": 0.8866666666666667,
+      "error": 0.06067070923437723,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Baseline",
+      "Accuracy (\u2191 better)": 0.692,
+      "error": 0.04180278862530917,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Cap\ncontext",
+      "Accuracy (\u2191 better)": 0.686,
+      "error": 0.04196919089404161,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Cap\nall-prompt",
+      "Accuracy (\u2191 better)": 0.692,
+      "error": 0.04180278862530917,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Cap\nall-token",
+      "Accuracy (\u2191 better)": 0.678,
+      "error": 0.04217896748867189,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Axis-replace\nall-prompt",
+      "Accuracy (\u2191 better)": 0.68,
+      "error": 0.07834548649543471,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Full-replace\nall-token",
+      "Accuracy (\u2191 better)": 0.15333333333333332,
+      "error": 0.06624786371862149,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Random-dir\ncontext",
+      "Accuracy (\u2191 better)": 0.7,
+      "error": 0.07758128957027166,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Random-dir\nall-token",
+      "Accuracy (\u2191 better)": 0.6866666666666666,
+      "error": 0.07810790510125576,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.26,
+      "Accuracy (\u2191 better)": 0.41,
+      "error": 0.0692366892744849,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.26,
+      "Accuracy (\u2191 better)": 0.41,
+      "error": 0.0692366892744849,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.26,
+      "Accuracy (\u2191 better)": 0.41,
+      "error": 0.0692366892744849,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.26,
+      "Accuracy (\u2191 better)": 0.415,
+      "error": 0.06926212927361819,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.26,
+      "Accuracy (\u2191 better)": 0.4,
+      "error": 0.06916456149987482,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 5.26,
+      "Accuracy (\u2191 better)": 0.115,
+      "error": 0.05164825233886393,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 6.26,
+      "Accuracy (\u2191 better)": 0.41,
+      "error": 0.0692366892744849,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 7.26,
+      "Accuracy (\u2191 better)": 0.405,
+      "error": 0.06920418000005168,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": -0.26,
+      "Accuracy (\u2191 better)": 0.8355045607103054,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.74,
+      "Accuracy (\u2191 better)": 0.8355045607103054,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.7399999999999998,
+      "Accuracy (\u2191 better)": 0.8463946427702861,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.74,
+      "Accuracy (\u2191 better)": 0.8355045607103054,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.74,
+      "Accuracy (\u2191 better)": 0.7954465685598426,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.74,
+      "Accuracy (\u2191 better)": -0.02497113914571871,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.74,
+      "Accuracy (\u2191 better)": 0.8182903386460476,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 6.74,
+      "Accuracy (\u2191 better)": 0.8259959574322895,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": -0.26,
+      "Accuracy (\u2191 better)": 0.9004954392896946,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.74,
+      "Accuracy (\u2191 better)": 0.9004954392896946,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.7399999999999998,
+      "Accuracy (\u2191 better)": 0.9096053572297139,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.74,
+      "Accuracy (\u2191 better)": 0.9004954392896946,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.74,
+      "Accuracy (\u2191 better)": 0.9245534314401573,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.74,
+      "Accuracy (\u2191 better)": 0.02497113914571871,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.74,
+      "Accuracy (\u2191 better)": 0.9417096613539524,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 6.74,
+      "Accuracy (\u2191 better)": 0.9473373759010439,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "Accuracy (\u2191 better)": 0.6501972113746908,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "Accuracy (\u2191 better)": 0.6440308091059584,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "Accuracy (\u2191 better)": 0.6501972113746908,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "Accuracy (\u2191 better)": 0.6358210325113282,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "Accuracy (\u2191 better)": 0.6016545135045653,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.0,
+      "Accuracy (\u2191 better)": 0.08708546961471184,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 6.0,
+      "Accuracy (\u2191 better)": 0.6224187104297283,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 7.0,
+      "Accuracy (\u2191 better)": 0.6085587615654109,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "Accuracy (\u2191 better)": 0.7338027886253091,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "Accuracy (\u2191 better)": 0.7279691908940417,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "Accuracy (\u2191 better)": 0.7338027886253091,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "Accuracy (\u2191 better)": 0.7201789674886719,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.0,
+      "Accuracy (\u2191 better)": 0.7583454864954348,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 5.0,
+      "Accuracy (\u2191 better)": 0.2195811970519548,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 6.0,
+      "Accuracy (\u2191 better)": 0.7775812895702716,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 7.0,
+      "Accuracy (\u2191 better)": 0.7647745717679224,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.26,
+      "Accuracy (\u2191 better)": 0.3407633107255151,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.2599999999999998,
+      "Accuracy (\u2191 better)": 0.3407633107255151,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.26,
+      "Accuracy (\u2191 better)": 0.3407633107255151,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.26,
+      "Accuracy (\u2191 better)": 0.3457378707263818,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.26,
+      "Accuracy (\u2191 better)": 0.3308354385001252,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 5.26,
+      "Accuracy (\u2191 better)": 0.06335174766113608,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 6.26,
+      "Accuracy (\u2191 better)": 0.3407633107255151,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 7.26,
+      "Accuracy (\u2191 better)": 0.33579581999994834,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.26,
+      "Accuracy (\u2191 better)": 0.4792366892744849,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.2599999999999998,
+      "Accuracy (\u2191 better)": 0.4792366892744849,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.26,
+      "Accuracy (\u2191 better)": 0.4792366892744849,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.26,
+      "Accuracy (\u2191 better)": 0.48426212927361817,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.26,
+      "Accuracy (\u2191 better)": 0.46916456149987484,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 5.26,
+      "Accuracy (\u2191 better)": 0.16664825233886393,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 6.26,
+      "Accuracy (\u2191 better)": 0.4792366892744849,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 7.26,
+      "Accuracy (\u2191 better)": 0.4742041800000517,
+      "_kind": "line",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 72,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Only whole-state replacement wrecks capability; capping leaves it intact",
+        "ylabel": "Accuracy (\u2191 better)",
+        "legend_labels": [
+          "GSM8K",
+          "IFEval",
+          "MMLU-Pro"
+        ],
+        "xticklabels": [
+          "Baseline",
+          "Cap\ncontext",
+          "Cap\nall-prompt",
+          "Cap\nall-token",
+          "Axis-replace\nall-prompt",
+          "Full-replace\nall-token",
+          "Random-dir\ncontext",
+          "Random-dir\nall-token"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "GSM8K",
+      "IFEval",
+      "MMLU-Pro"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

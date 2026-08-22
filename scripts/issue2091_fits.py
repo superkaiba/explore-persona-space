@@ -465,14 +465,19 @@ def build_inner_caches(
 def _dof_cap_exclusions(
     inner_caches: list[dict], grid: np.ndarray, dof_cap: float | None
 ) -> tuple[np.ndarray, list[int]]:
-    """Per-grid-lambda exclusion mask: dof(lam) > dof_cap * n_inner_train on ANY fold."""
-    fold_ntr = [int(ic["w"].shape[0]) for ic in inner_caches]
+    """Per-grid-lambda exclusion mask: dof(lam) > dof_cap * n_inner_train on ANY fold.
+
+    The train size is read from ``fi_idx`` (the inner-fold TRAIN positions), which is
+    route-invariant — unlike ``w.shape[0]``, which the primal (d-space) fold route
+    makes the eigenvalue count ``d`` rather than ``n_fi`` (#2282).
+    """
+    fold_ntr = [int(ic["fi_idx"].shape[0]) for ic in inner_caches]
     excluded = np.zeros(len(grid), dtype=bool)
     if dof_cap is None:
         return excluded, fold_ntr
     for ic in inner_caches:
         w = ic["w"]
-        n_fi = int(w.shape[0])
+        n_fi = int(ic["fi_idx"].shape[0])
         for i, lam in enumerate(grid):
             dof = float((w / (w + float(lam))).sum())
             if dof > dof_cap * n_fi:

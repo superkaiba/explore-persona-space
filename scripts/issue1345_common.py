@@ -525,7 +525,7 @@ STORY_MIN_TURNS = 4
 STORY_TEMPERATURE = 1.0
 STORY_MAX_NEW_TOKENS = 1024
 JUDGE_MODEL = "claude-sonnet-4-5-20250929"
-JUDGE_MAX_TOKENS = 400  # reason-then-verdict rubric (llm-judging rule 23: >=300)
+JUDGE_MAX_TOKENS = 1024  # reason-then-verdict; llm-judging rule 23 floor (raised from 400, #2063)
 PARITY_TOL = 0.02  # ±0.02 context-arm L19 parity gate (plan §4 Phase 2a)
 HEADLINE_LAYER = 19
 N_REPARAM_NULL_DRAWS = 5  # per null type, per direction (plan §9: frozen layers only)

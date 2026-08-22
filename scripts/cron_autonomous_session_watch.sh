@@ -80,7 +80,12 @@
 # liveness) during an outage — the pod-safety, disk, and GC passes run
 # regardless. See that file's docstring for the full rule.
 #
-# Output: logs/autonomous_session_watch/YYYY-MM-DD.log (one file per day).
+# Output: logs/autonomous_session_watch/YYYY-MM-DD.log (one file per LOCAL
+# day; #2141 additionally maintains a UTC-date SYMLINK alias to it whenever
+# the local and UTC dates differ — this VM is UTC-7, so for 7h/day a
+# UTC-dated read used to hit a nonexistent path). TEST-ONLY env seams:
+# EPM_WATCH_LOG_DIR (log dir), EPM_WATCH_DATE_LOCAL_OVERRIDE /
+# EPM_WATCH_DATE_UTC_OVERRIDE (date pins), EPM_WATCH_BIN (driver stub).
 
 set -uo pipefail
 
@@ -101,11 +106,20 @@ PROJECT_DIR="/home/thomasjiralerspong/explore-persona-space"
 # plain `tmux kill-session`/`new-session`).
 . "$PROJECT_DIR/scripts/eps_tmux_env.sh"
 
-DATE=$(date +%Y-%m-%d)
+DATE=${EPM_WATCH_DATE_LOCAL_OVERRIDE:-$(date +%Y-%m-%d)}       # local — fleet convention (TEST-ONLY override)
+DATE_UTC=${EPM_WATCH_DATE_UTC_OVERRIDE:-$(date -u +%Y-%m-%d)}  # UTC alias name (#2141; TEST-ONLY override)
 LOG_DIR="${EPM_WATCH_LOG_DIR:-$PROJECT_DIR/logs/autonomous_session_watch}"
 LOG_FILE="$LOG_DIR/$DATE.log"
+UTC_LOG_FILE="$LOG_DIR/$DATE_UTC.log"
 
 mkdir -p "$LOG_DIR"
+
+# #2141: on the first run of a new local day, the local name may still be
+# YESTERDAY's UTC alias (a symlink into yesterday's file) — remove a symlink
+# (never a real file) so today's appends create a fresh real file.
+if [ -L "$LOG_FILE" ]; then
+    rm -f "$LOG_FILE"
+fi
 
 # One pointer line per day into the crontab redirect file: everything below
 # runs inside a block redirected to $LOG_FILE, so without this the redirect
@@ -113,6 +127,22 @@ mkdir -p "$LOG_DIR"
 # item-3 diagnosis, 2026-06-12).
 FIRST_RUN_OF_DAY=0
 [ -f "$LOG_FILE" ] || FIRST_RUN_OF_DAY=1
+
+# #2141: this VM is UTC-7 — for 7h/day the UTC date is one ahead of the
+# local date and a UTC-dated read used to hit a NONEXISTENT path. Provide
+# the UTC name as a RELATIVE symlink to the local file (relative so the
+# alias stays valid under EPM_WATCH_LOG_DIR overrides / directory moves),
+# created BEFORE the watcher run so a mid-run UTC-dated reader resolves it.
+# Guards: never when the two names coincide (a self-link would clobber the
+# real log), never over an existing REAL file (defensive), refresh an
+# existing symlink atomically with -n. The alias guarantees a UTC-dated
+# name resolves to the file receiving the CURRENT writes; it does not
+# partition content by UTC day (one physical file per local day).
+if [ "$UTC_LOG_FILE" != "$LOG_FILE" ]; then
+    if [ -L "$UTC_LOG_FILE" ] || [ ! -e "$UTC_LOG_FILE" ]; then
+        ln -sfn "$DATE.log" "$UTC_LOG_FILE"
+    fi
+fi
 
 # Shared-VM HF cache redirect (#1369): the hf-hub-ttl eviction pass reads
 # HF_HUB_CACHE from env (autonomous_session_watch.py has no load_dotenv) —
@@ -127,7 +157,11 @@ fi
 {
     echo "=== $(date -Iseconds) autonomous_session_watch start ==="
     cd "$PROJECT_DIR" || exit 1
-    uv run python scripts/autonomous_session_watch.py
+    if [ -n "${EPM_WATCH_BIN:-}" ]; then
+        "$EPM_WATCH_BIN"   # TEST-ONLY seam (mirrors EPS_STEP9C_REFRESH_BIN)
+    else
+        uv run python scripts/autonomous_session_watch.py
+    fi
     rc=$?
     echo "=== $(date -Iseconds) autonomous_session_watch exit=$rc ==="
 } >> "$LOG_FILE" 2>&1

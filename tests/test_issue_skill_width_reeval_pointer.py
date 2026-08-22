@@ -12,13 +12,15 @@ protection-prose class — #1134/#1045/#884 lineage).
 import re
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 ROOT = Path(__file__).resolve().parents[1]
 WIDTH_RE = re.compile(r"width re-?evaluation", re.IGNORECASE)
 
 
 def test_eta_advisory_names_width_reevaluation():
     """SKILL.md Step 6d.2 ETA-advisory paragraph keeps the width clause."""
-    text = (ROOT / ".claude/skills/issue/SKILL.md").read_text()
+    text = issue_skill_text()
     anchor = text.index("ETA-deviation / GPU-width advisory handling")
     para = text[anchor : anchor + 3000]
     assert WIDTH_RE.search(para), (

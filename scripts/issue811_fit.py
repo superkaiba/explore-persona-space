@@ -208,7 +208,7 @@ def _cached_cell_state(path: Path) -> str:
     """
     try:
         obj = json.loads(path.read_text())
-    except (json.JSONDecodeError, OSError) as e:
+    except (json.JSONDecodeError, OSError, UnicodeDecodeError) as e:
         logger.warning("[phase=fit_M] cached %s unreadable (%s) — will re-fit", path.name, e)
         return "invalid"
     missing = fitM._CELL_SCHEMA_KEYS - obj.keys()

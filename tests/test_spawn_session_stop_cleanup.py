@@ -23,6 +23,12 @@ costing 1 manual unregister + 2 lease clears + 3 spawn attempts):
    in ``scripts/autonomous_session_watch.py`` threads ``--stop-source
    watcher`` (an operator-sourced watcher stop would trigger the cleanup and
    delete the registration its own respawn arms need).
+7. The #2128 wrapper-dead escalation (``_term_surviving_inner_claude``): a
+   surviving inner claude pid is grace-waited, comm-re-verified, TERMed ONCE
+   directly, re-verified — and only a survivor-after-TERM exits 2 (stderr
+   manual recipe, cleanup NOT run); dead-in-grace / recycled-pid /
+   died-between-probe-and-signal all succeed rc 0 with cleanup, and no
+   SIGKILL is ever sent.
 
 No daemon, no real registry, no real task state: ``AUTONOMOUS_REGISTRY_DIR``,
 ``_load_session_issue_map``, ``post``, and ``_live_children`` are all
@@ -37,6 +43,7 @@ import fcntl
 import json
 import os
 import re
+import signal
 import sys
 import time
 from pathlib import Path
@@ -284,6 +291,159 @@ def test_eps_sessions_bare_namespace_inherits_cleanup(stop_env):
     ns = argparse.Namespace(session_id=SID, reason="test", stop_source="operator")
     spawn_session.cmd_stop(ns)  # must not AttributeError on the missing attrs
     assert not reg_path.exists()
+
+
+# ── #2128 wrapper-dead escalation: _term_surviving_inner_claude ─────────────
+
+WRAPPER_PID = 4242
+INNER_PID = 4300
+
+
+def _seed_kill_fallback_seams(
+    monkeypatch, *, pid_alive, inner_comm="claude", inner_kill_raises=None
+):
+    """Route ``stop --kill`` into ``_stop_fallback``'s wrapper-dead branch
+    (daemon refuses, sid daemon-untracked, #903 identity trio passes, inner
+    claude pre-kill-resolved to ``INNER_PID``) through the documented seams
+    (``test_spawn_session_webhook_timeout.py`` module docstring):
+    ``session_resolver._pid_alive`` (via ``pid_alive(pid, kill_log)``),
+    ``session_resolver.resolve_claude_pid`` / ``_read_proc_comm``, and an
+    ``os.kill`` recorder appending ``(pid, sig)`` — optionally raising
+    ``inner_kill_raises`` for the inner pid AFTER recording the attempt.
+    Returns the kill log."""
+    kill_log: list[tuple[int, int]] = []
+
+    def kill_recorder(pid, sig):
+        kill_log.append((pid, sig))
+        if inner_kill_raises is not None and pid == INNER_PID:
+            raise inner_kill_raises()
+
+    monkeypatch.setattr(spawn_session, "post", lambda path, body: {"success": False})
+    monkeypatch.setattr(spawn_session, "_live_session_ids", lambda: set())
+    monkeypatch.setattr(
+        session_resolver, "find_node_pid_for_session", lambda sid, now=None: WRAPPER_PID
+    )
+    monkeypatch.setattr(
+        session_resolver,
+        "_read_proc_comm",
+        lambda pid: "node" if pid == WRAPPER_PID else inner_comm,
+    )
+    monkeypatch.setattr(
+        session_resolver,
+        "_read_proc_cmdline",
+        lambda pid: "node /home/u/.nvm/node_modules/happy-coder/dist/index.mjs claude --resume",
+    )
+    monkeypatch.setattr(session_resolver, "_happy_daemon_pid", lambda: None)
+    monkeypatch.setattr(session_resolver, "resolve_claude_pid", lambda pid: INNER_PID)
+    monkeypatch.setattr(session_resolver, "_pid_alive", lambda pid: pid_alive(pid, kill_log))
+    monkeypatch.setattr(os, "kill", kill_recorder)
+    return kill_log
+
+
+def test_inner_survivor_termed_and_dies_succeeds_with_cleanup(stop_env, monkeypatch, capsys):
+    """B1: wrapper dies; inner alive through the grace wait; comm=='claude';
+    exactly ONE SIGTERM lands on the inner pid; it dies in the re-verify
+    wait -> rc 0 success note + ``_post_stop_cleanup`` fires (cleanup=True
+    is the operator-stop default)."""
+    t = time.time()
+    reg_path = _seed_auto_registration(stop_env, ISSUE, SID, spawned_at=t)
+    lease_path = _seed_lease(stop_env, ISSUE, acquired_at=t - 3)
+    # Inner claude is alive until the direct SIGTERM lands; wrapper dies at
+    # the first poll after its own SIGTERM.
+    kill_log = _seed_kill_fallback_seams(
+        monkeypatch,
+        pid_alive=lambda pid, log: pid == INNER_PID and (INNER_PID, signal.SIGTERM) not in log,
+    )
+    spawn_session.main(["stop", "--session-id", SID, "--kill"])
+    assert kill_log.count((INNER_PID, signal.SIGTERM)) == 1
+    assert (WRAPPER_PID, signal.SIGTERM) in kill_log
+    assert all(sig == signal.SIGTERM for _, sig in kill_log)  # never SIGKILL
+    out = capsys.readouterr().out
+    assert f"Stopped daemon-untracked session {SID}" in out
+    assert "TERMed directly and confirmed dead" in out
+    assert not reg_path.exists()
+    assert not lease_path.exists()
+
+
+def test_inner_survives_direct_term_exits_2_without_cleanup(stop_env, monkeypatch, capsys):
+    """B2: inner alive through BOTH bounded waits -> ``SystemExit`` code 2,
+    stderr carries the manual recipe + both pids, no SIGKILL anywhere in the
+    kill log, and ``_post_stop_cleanup`` is NOT reached even though
+    cleanup=True (registration + lease survive)."""
+    t = time.time()
+    reg_path = _seed_auto_registration(stop_env, ISSUE, SID, spawned_at=t)
+    lease_path = _seed_lease(stop_env, ISSUE, acquired_at=t - 3)
+    kill_log = _seed_kill_fallback_seams(monkeypatch, pid_alive=lambda pid, log: pid == INNER_PID)
+    with pytest.raises(SystemExit) as excinfo:
+        spawn_session.main(["stop", "--session-id", SID, "--kill"])
+    assert excinfo.value.code == 2
+    assert all(sig == signal.SIGTERM for _, sig in kill_log)  # never SIGKILL
+    captured = capsys.readouterr()
+    assert str(WRAPPER_PID) in captured.err
+    assert f"kill -KILL {INNER_PID}" in captured.err
+    assert f"ps -o pid,lstart,cmd -p {INNER_PID}" in captured.err
+    assert "Stopped daemon-untracked" not in captured.out  # success print never ran
+    assert reg_path.exists()
+    assert lease_path.exists()
+
+
+def test_inner_dies_during_grace_wait_no_signal(stop_env, monkeypatch, capsys):
+    """B3: inner alive at the escalation trigger but dead by the first grace
+    poll -> NO signal is ever sent to the inner pid; rc 0 success + cleanup."""
+    t = time.time()
+    reg_path = _seed_auto_registration(stop_env, ISSUE, SID, spawned_at=t)
+    inner_calls = {"n": 0}
+
+    def pid_alive(pid, log):
+        if pid == WRAPPER_PID:
+            return False
+        inner_calls["n"] += 1
+        return inner_calls["n"] == 1  # alive ONLY at the escalation-trigger check
+
+    kill_log = _seed_kill_fallback_seams(monkeypatch, pid_alive=pid_alive)
+    spawn_session.main(["stop", "--session-id", SID, "--kill"])
+    assert kill_log == [(WRAPPER_PID, signal.SIGTERM)]  # no inner signal
+    assert "grace wait" in capsys.readouterr().out
+    assert not reg_path.exists()
+
+
+def test_recycled_pid_comm_mismatch_no_signal(stop_env, monkeypatch, capsys):
+    """B4: the grace wait times out but comm reads 'python3' != 'claude' — a
+    recycled pid means the ORIGINAL inner claude is dead: no signal, rc 0
+    success note naming the recycle, cleanup fires."""
+    t = time.time()
+    reg_path = _seed_auto_registration(stop_env, ISSUE, SID, spawned_at=t)
+    kill_log = _seed_kill_fallback_seams(
+        monkeypatch, pid_alive=lambda pid, log: pid == INNER_PID, inner_comm="python3"
+    )
+    spawn_session.main(["stop", "--session-id", SID, "--kill"])
+    assert kill_log == [(WRAPPER_PID, signal.SIGTERM)]  # no inner signal
+    out = capsys.readouterr().out
+    assert "recycled" in out
+    assert "'python3'" in out
+    assert not reg_path.exists()
+
+
+def test_inner_died_between_probe_and_signal_is_benign(stop_env, monkeypatch, capsys):
+    """B6 (critic r1 blocker): grace wait times out, comm=='claude', but the
+    direct ``os.kill`` raises ``ProcessLookupError`` (died between probe and
+    signal) -> success note, rc 0 (returns, no SystemExit), cleanup fires,
+    and NO further signal attempts follow the raise."""
+    t = time.time()
+    reg_path = _seed_auto_registration(stop_env, ISSUE, SID, spawned_at=t)
+    lease_path = _seed_lease(stop_env, ISSUE, acquired_at=t - 3)
+    kill_log = _seed_kill_fallback_seams(
+        monkeypatch,
+        pid_alive=lambda pid, log: pid == INNER_PID,
+        inner_kill_raises=ProcessLookupError,
+    )
+    spawn_session.main(["stop", "--session-id", SID, "--kill"])  # must NOT raise
+    assert kill_log.count((INNER_PID, signal.SIGTERM)) == 1  # one attempt, none after
+    assert kill_log[-1] == (INNER_PID, signal.SIGTERM)
+    out = capsys.readouterr().out
+    assert "ProcessLookupError" in out
+    assert not reg_path.exists()
+    assert not lease_path.exists()
 
 
 # ── release_dispatch_lease_for_stopped_dispatch (pure helper) ───────────────

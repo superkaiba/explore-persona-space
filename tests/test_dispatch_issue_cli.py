@@ -4902,10 +4902,11 @@ def test_launch_lane_suffix_slurm_lane_is_honored_no_warning(monkeypatch, tmp_pa
     assert nibi.launches[0].extra.get("lane_suffix") == "cpu"
 
 
-def test_launch_lane_suffix_runpod_lane_warns(monkeypatch, tmp_path, caplog) -> None:
-    """#2055 §6.8 residual: RunPod pod names remain per-issue (pod-<N>),
-    so a --lane-suffix launch resolving to RunPod still carries
-    lane_suffix_unhonored_by_lane + the loud warning."""
+def test_launch_lane_suffix_runpod_lane_honored_no_warning(monkeypatch, tmp_path, caplog) -> None:
+    """#2145: the RunPod lane now HONORS --lane-suffix (pod-<N>-<slug> via
+    pod_lifecycle --name-suffix), so a suffix launch resolving to RunPod
+    carries NO lane_suffix_unhonored_by_lane key and NO warning — and the
+    suffix reaches the RunPod spec + the suffixed handle sidecar (#934)."""
     _cd_to_tmp(monkeypatch, tmp_path)
     import scripts.dispatch_issue as cli
 
@@ -4938,9 +4939,16 @@ def test_launch_lane_suffix_runpod_lane_warns(monkeypatch, tmp_path, caplog) -> 
     assert body["ok"] is True
     assert body["chosen_kind"] == "runpod"
     assert body["lane_suffix"] == "cpu"
-    assert body["lane_suffix_unhonored_by_lane"] == "runpod"
+    assert "lane_suffix_unhonored_by_lane" not in body
     messages = [r.getMessage() for r in caplog.records]
-    assert any("keeps per-issue naming" in m for m in messages), messages
+    assert not any("keeps per-issue naming" in m for m in messages), messages
+    # The suffix actually reached the RunPod spec (the lane threads it to
+    # pod_lifecycle --name-suffix from spec.extra — the #2145 fix root).
+    assert len(runpod.launches) == 1
+    assert runpod.launches[0].extra.get("lane_suffix") == "cpu"
+    # And the handle sidecar landed at the SUFFIXED per-lane path (#934).
+    sidecar = tmp_path / ".claude" / "cache" / "issue-9348-cpu-handle.json"
+    assert sidecar.exists(), list((tmp_path / ".claude" / "cache").iterdir())
 
 
 def test_lane_suffix_honored_kinds_match_reconnect_slurm_set() -> None:
@@ -4951,7 +4959,314 @@ def test_lane_suffix_honored_kinds_match_reconnect_slurm_set() -> None:
     import scripts.dispatch_issue as di
 
     assert di._slurm_kinds() == frozenset({"nibi", "fir", "mila", "fellows"})
-    assert di._lane_suffix_honored_kinds() == frozenset({"gcp", "nibi", "fir", "mila", "fellows"})
+    # #2145: the RunPod lane joined the honored set (pod-<N>-<slug> naming).
+    assert di._lane_suffix_honored_kinds() == frozenset(
+        {"gcp", "runpod", "nibi", "fir", "mila", "fellows"}
+    )
+
+
+def test_launch_name_suffix_alias_equals_lane_suffix(monkeypatch, tmp_path) -> None:
+    """#2145: --name-suffix is an argparse ALIAS of --lane-suffix (same
+    dest="lane_suffix", matching pod.py provision's flag name) — identical
+    threading into spec.extra + the suffixed sidecar; and with no --gpu-type
+    the gpu_type key is ABSENT everywhere (omit-when-absent, #934)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    nibi = _MockBackend(kind="nibi")
+    factory = _build_mock_factory(nibi=nibi)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "launch",
+                "--issue",
+                "9349",
+                "--intent",
+                "lora-7b",
+                "--hydra",
+                "smoke=1",
+                "--name-suffix",
+                "cpu",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    body = json.loads(buf.getvalue().strip())
+    assert body["ok"] is True
+    assert body["lane_suffix"] == "cpu"
+    assert body["handle_sidecar_path"].endswith("issue-9349-cpu-handle.json")
+    assert (tmp_path / ".claude" / "cache" / "issue-9349-cpu-handle.json").exists()
+    assert len(nibi.launches) == 1
+    assert nibi.launches[0].extra["lane_suffix"] == "cpu"
+    # No --gpu-type ⇒ no gpu_type key anywhere (spec extra, launch JSON).
+    assert "gpu_type" not in nibi.launches[0].extra
+    assert "gpu_type" not in body
+    assert "gpu_type_unhonored_by_lane" not in body
+
+
+def test_launch_gpu_type_threads_extra_and_body_on_runpod(monkeypatch, tmp_path, caplog) -> None:
+    """#2145: --gpu-type on the RunPod lane threads into
+    spec.extra['gpu_type'] + the launch JSON's gpu_type field, with NO
+    unhonored key and NO warning (the lane honors it)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    import scripts.dispatch_issue as cli
+
+    monkeypatch.setattr(cli, "_frontmatter_backend_value", lambda _issue: "runpod")
+    runpod = _MockBackend(kind="runpod")
+    factory = _build_mock_factory(runpod=runpod, nibi=_MockBackend(kind="nibi"))
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with caplog.at_level(logging.WARNING), redirect_stdout(buf):
+        rc = main(
+            [
+                "launch",
+                "--issue",
+                "9351",
+                "--intent",
+                "lora-7b",
+                "--backend",
+                "runpod",
+                "--hydra",
+                "smoke=1",
+                "--gpu-type",
+                "H200",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    body = json.loads(buf.getvalue().strip())
+    assert body["ok"] is True
+    assert body["chosen_kind"] == "runpod"
+    assert body["gpu_type"] == "H200"
+    assert "gpu_type_unhonored_by_lane" not in body
+    messages = [r.getMessage() for r in caplog.records]
+    assert not any("honored on the RunPod lane only" in m for m in messages), messages
+    assert len(runpod.launches) == 1
+    assert runpod.launches[0].extra.get("gpu_type") == "H200"
+    # No suffix ⇒ the sidecar stays at the BARE per-issue path (#934).
+    assert (tmp_path / ".claude" / "cache" / "issue-9351-handle.json").exists()
+
+
+def test_launch_gpu_type_unhonored_on_non_runpod_lane_warns(monkeypatch, tmp_path, caplog) -> None:
+    """#2145: --gpu-type binds on the RunPod lane only — a launch won by a
+    SLURM lane carries gpu_type_unhonored_by_lane + a loud warning (the
+    lane_suffix_unhonored_by_lane precedent)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    nibi = _MockBackend(kind="nibi")
+    factory = _build_mock_factory(nibi=nibi)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with caplog.at_level(logging.WARNING), redirect_stdout(buf):
+        rc = main(
+            [
+                "launch",
+                "--issue",
+                "9352",
+                "--intent",
+                "lora-7b",
+                "--hydra",
+                "smoke=1",
+                "--gpu-type",
+                "H200",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    body = json.loads(buf.getvalue().strip())
+    assert body["ok"] is True
+    assert body["chosen_kind"] == "nibi"
+    assert body["gpu_type"] == "H200"
+    assert body["gpu_type_unhonored_by_lane"] == "nibi"
+    messages = [r.getMessage() for r in caplog.records]
+    assert any("honored on the RunPod lane only" in m for m in messages), messages
+    # The knob still rides spec.extra (honest threading; the lane ignores it).
+    assert len(nibi.launches) == 1
+    assert nibi.launches[0].extra.get("gpu_type") == "H200"
+
+
+def test_launch_invalid_gpu_type_rejected_at_parse_time(monkeypatch, tmp_path) -> None:
+    """#2145: a gpu_type that is neither a known short name nor a full
+    vendor-prefixed RunPod id errors at the argparse surface (SystemExit 2,
+    via runpod_api.resolve_gpu_type_id — the #537 permanent-no-capacity
+    class) BEFORE any backend is built."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+
+    def _exploding_factory() -> dict[str, Any]:
+        raise AssertionError("backends_factory must not be called on a parse error")
+
+    from scripts.dispatch_issue import main
+
+    with pytest.raises(SystemExit) as excinfo:
+        main(
+            [
+                "launch",
+                "--issue",
+                "9353",
+                "--intent",
+                "lora-7b",
+                "--hydra",
+                "smoke=1",
+                "--gpu-type",
+                "H100 SXM",
+            ],
+            backends_factory=_exploding_factory,
+        )
+    assert excinfo.value.code == 2
+
+
+def test_lane_suffix_runpod_grammar_conflict_predicate() -> None:
+    """#2145 unit pins for _lane_suffix_runpod_grammar_conflict: fires only
+    on (suffix present) AND RunPod-reachable — backend runpod, or auto
+    WITHOUT no_runpod_fallback (#1997: with the flag every auto-chain RunPod
+    rung declines at the top, so the route structurally cannot reach RunPod
+    and the looser #934 grammar governs — round-2 regression fix) — AND
+    (suffix fails the tighter pod grammar [a-z][a-z0-9-]{0,19})."""
+    from types import SimpleNamespace
+
+    import scripts.dispatch_issue as di
+
+    def spec(backend: str, suffix: str | None, *, no_runpod_fallback: bool = False):
+        extra: dict = {"lane_suffix": suffix} if suffix else {}
+        if no_runpod_fallback:
+            extra["no_runpod_fallback"] = True
+        return SimpleNamespace(issue=9354, backend=backend, extra=extra)
+
+    # No suffix ⇒ None regardless of backend.
+    assert di._lane_suffix_runpod_grammar_conflict(spec("runpod", None)) is None
+    # Pod-grammar-conformant suffix ⇒ None on every backend.
+    assert di._lane_suffix_runpod_grammar_conflict(spec("runpod", "cpu")) is None
+    assert di._lane_suffix_runpod_grammar_conflict(spec("auto", "a" * 20)) is None
+    # #934-legal but pod-grammar-violating suffixes refuse on runpod/auto:
+    # over-length (21 > 20) and digit-initial.
+    for backend in ("runpod", "auto"):
+        for bad in ("a" * 21, "1cpu"):
+            body = di._lane_suffix_runpod_grammar_conflict(spec(backend, bad))
+            assert body is not None, (backend, bad)
+            assert body["ok"] is False
+            assert body["reason"] == "lane_suffix_not_runpod_pod_grammar"
+            assert body["failure_class"] == "infra"
+    # An explicit non-RunPod pin keeps the looser #934 grammar ⇒ None.
+    assert di._lane_suffix_runpod_grammar_conflict(spec("nibi", "a" * 21)) is None
+    assert di._lane_suffix_runpod_grammar_conflict(spec("fellows", "1cpu")) is None
+    # #1997 opt-out on auto ⇒ None even for pod-grammar-violating suffixes
+    # (every RunPod rung declines; the launch can never mint a pod name).
+    for bad in ("a" * 21, "1cpu"):
+        assert (
+            di._lane_suffix_runpod_grammar_conflict(spec("auto", bad, no_runpod_fallback=True))
+            is None
+        ), bad
+    # The escape is scoped to `auto` ONLY: an explicit runpod pin ignores the
+    # flag by design (the CLI refuses the combination at parse time; a
+    # programmatic spec carrying both still refuses here — fail-fast).
+    assert (
+        di._lane_suffix_runpod_grammar_conflict(spec("runpod", "1cpu", no_runpod_fallback=True))
+        is not None
+    )
+
+
+def test_launch_long_lane_suffix_refused_pre_route_on_auto(monkeypatch, tmp_path) -> None:
+    """#2145 integration: a 21-char (#934-legal, pod-grammar-violating)
+    suffix on a RunPod-reachable route refuses PRE-ROUTE with exit 2 and the
+    typed reason — never a provision-subprocess SystemExit wrapped as a
+    re-drivable capacity miss."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    nibi = _MockBackend(kind="nibi")
+    runpod = _MockBackend(kind="runpod")
+    factory = _build_mock_factory(runpod=runpod, nibi=nibi)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "launch",
+                "--issue",
+                "9354",
+                "--intent",
+                "lora-7b",
+                "--hydra",
+                "smoke=1",
+                "--lane-suffix",
+                "a" * 21,
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 2
+    body = json.loads(buf.getvalue().strip())
+    assert body["ok"] is False
+    assert body["reason"] == "lane_suffix_not_runpod_pod_grammar"
+    assert body["failure_class"] == "infra"
+    # Refused pre-route: nothing launched on ANY lane.
+    assert runpod.launches == []
+    assert nibi.launches == []
+
+
+def test_launch_no_runpod_fallback_long_suffix_routes_free_lane(monkeypatch, tmp_path) -> None:
+    """#2145 round-2 regression pin (BLOCKER 2): `auto --no-runpod-fallback`
+    is NOT RunPod-reachable — every auto-chain RunPod rung declines at the
+    top (#1997), so a #934-legal, pod-grammar-violating suffix (digit-initial
+    '1cpu') must ROUTE (rc=0) down the free lanes with ZERO RunPod launches,
+    not refuse pre-route. This exact combination was valid pre-#2145."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    nibi = _MockBackend(kind="nibi")
+    runpod = _MockBackend(kind="runpod")
+    factory = _build_mock_factory(runpod=runpod, nibi=nibi)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "launch",
+                "--issue",
+                "9355",
+                "--intent",
+                "lora-7b",
+                "--hydra",
+                "smoke=1",
+                "--no-runpod-fallback",
+                "--lane-suffix",
+                "1cpu",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0, buf.getvalue()
+    body = json.loads(buf.getvalue().strip())
+    assert body["ok"] is True
+    assert body["lane_suffix"] == "1cpu"
+    # The launch can never reach RunPod: the free lane won, RunPod untouched.
+    assert runpod.launches == []
+    assert len(nibi.launches) == 1
+    spec = nibi.launches[0]
+    assert spec.extra.get("lane_suffix") == "1cpu"
+    assert spec.extra.get("no_runpod_fallback") is True
+    # Suffixed sidecar persisted under the #934 stem.
+    assert (tmp_path / ".claude" / "cache" / "issue-9355-1cpu-handle.json").exists()
+
+
+def test_finalize_name_suffix_alias_equals_lane_suffix() -> None:
+    """#2145 (plan §4.1(a), round-2 Minor 1): BOTH subparsers accept
+    `--name-suffix` as an alias of `--lane-suffix` (same dest) — argparse
+    equivalence pin, launch + finalize."""
+    import scripts.dispatch_issue as di
+
+    parser = di.build_argparser()
+    for argv in (
+        ["launch", "--issue", "9356", "--intent", "eval", "--lane-suffix", "cpu"],
+        ["launch", "--issue", "9356", "--intent", "eval", "--name-suffix", "cpu"],
+        ["finalize", "--issue", "9356", "--lane-suffix", "cpu"],
+        ["finalize", "--issue", "9356", "--name-suffix", "cpu"],
+    ):
+        ns = parser.parse_args(argv)
+        assert ns.lane_suffix == "cpu", argv
 
 
 # ---------------------------------------------------------------------------

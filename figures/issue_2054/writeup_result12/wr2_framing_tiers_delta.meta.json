@@ -1,0 +1,194 @@
+{
+  "commit": "69596429+dirty",
+  "render_id": "a51ab4325bbc4d5f",
+  "git_commit": "69596429",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2054_cross_render_fit.py",
+    "scripts/issue2054_writeup_result12_figs.py"
+  ],
+  "created": "2026-08-13T18:31:12Z",
+  "figsize": [
+    6.5,
+    4.4
+  ],
+  "points": [
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "held-out $R^2$, instruct \u2212 base\n(positive = instruct transfers better)": 0.3033623240727751,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "held-out $R^2$, instruct \u2212 base\n(positive = instruct transfers better)": 0.09545986284959085,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "held-out $R^2$, instruct \u2212 base\n(positive = instruct transfers better)": 0.04640773510565871,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "held-out $R^2$, instruct \u2212 base\n(positive = instruct transfers better)": 0.2803107539428076,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "held-out $R^2$, instruct \u2212 base\n(positive = instruct transfers better)": -0.07850655088647446,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "held-out $R^2$, instruct \u2212 base\n(positive = instruct transfers better)": 0.016158606757519678,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "held-out $R^2$, instruct \u2212 base\n(positive = instruct transfers better)": -0.012077067300668709,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "held-out $R^2$, instruct \u2212 base\n(positive = instruct transfers better)": 0.0439075462983725,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "held-out $R^2$, instruct \u2212 base\n(positive = instruct transfers better)": 0.08226118171721364,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "held-out $R^2$, instruct \u2212 base\n(positive = instruct transfers better)": 0.03453185822559218,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "held-out $R^2$, instruct \u2212 base\n(positive = instruct transfers better)": -0.0020669885890674533,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "held-out $R^2$, instruct \u2212 base\n(positive = instruct transfers better)": 0.1285110752984023,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "held-out $R^2$, instruct \u2212 base\n(positive = instruct transfers better)": -0.20675489044864614,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "held-out $R^2$, instruct \u2212 base\n(positive = instruct transfers better)": -0.03276841089249599,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "held-out $R^2$, instruct \u2212 base\n(positive = instruct transfers better)": -0.03461840093032553,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "held-out $R^2$, instruct \u2212 base\n(positive = instruct transfers better)": 0.04742433019922698,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "held-out $R^2$, instruct \u2212 base\n(positive = instruct transfers better)": 0.0622772413146539,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "held-out $R^2$, instruct \u2212 base\n(positive = instruct transfers better)": 0.11110097978528871,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "held-out $R^2$, instruct \u2212 base\n(positive = instruct transfers better)": 0.11153803087970805,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "held-out $R^2$, instruct \u2212 base\n(positive = instruct transfers better)": 0.05713797908309977,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 0.0,
+      "held-out $R^2$, instruct \u2212 base\n(positive = instruct transfers better)": -0.019711090570926876,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 1.0,
+      "held-out $R^2$, instruct \u2212 base\n(positive = instruct transfers better)": 0.04313067775062915,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 2.0,
+      "held-out $R^2$, instruct \u2212 base\n(positive = instruct transfers better)": 0.006165479377361831,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "transfer rung (more adaptation allowed \u2192)": 3.0,
+      "held-out $R^2$, instruct \u2212 base\n(positive = instruct transfers better)": 0.029040107357408515,
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 24,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Instruct \u2212 base gap in chat-map transfer",
+        "xlabel": "transfer rung (more adaptation allowed \u2192)",
+        "ylabel": "held-out $R^2$, instruct \u2212 base\n(positive = instruct transfers better)",
+        "xticklabels": [
+          "1 direct\ntransfer",
+          "6 rotation",
+          "7 context\nre-map",
+          "8 answer\nre-map"
+        ],
+        "yticklabels": [
+          "\u22120.3",
+          "\u22120.2",
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

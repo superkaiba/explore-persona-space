@@ -1,0 +1,805 @@
+{
+  "experiment": "issue2254_hallu_gate_intrusion_recount",
+  "behavior": "hallucination",
+  "git_commit": "8861acc2be4887ba72df259de7eeeed8db0ba7da",
+  "git_dirty": true,
+  "ts": "2026-08-14T16:01:53.555292+00:00",
+  "script": "scripts/issue2254_hallu_gate_intrusion_recount.py",
+  "classifier": {
+    "regex": "[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff\u3040-\u30ff\uac00-\ud7af]",
+    "source": "eval_results/issue_2254/decisive/cjk_audit.json (reused verbatim)",
+    "fidelity": "reproduces phases.localize.per_arm counts exactly for all 9 hallucination arms"
+  },
+  "recipe": {
+    "source": "scripts/issue2254_preimage.py::_reduce_wave1 gate2 (helpers imported)",
+    "bootstrap_seed": 20254,
+    "n_boot": 1000,
+    "null_steer_answer": [
+      "random"
+    ],
+    "band_seed_key": "hallucination__nullans",
+    "coherence_gate": "stored programmatic coherence_pass reused unchanged",
+    "a0_cleaning": "regimes applied symmetrically to the alpha-0 reference arm"
+  },
+  "stored_gate2": {
+    "pass": false,
+    "best_rb_answer_delta": 50.0,
+    "answer_band_p975": 64.99999999999999
+  },
+  "recomputed": {
+    "orig": {
+      "a0_mean": 50.0,
+      "a0_n_questions_nonnan": 10,
+      "best_rb_answer_delta": 50.0,
+      "best_rb_answer_cell": "hallucination__rb__ans__L14__c1",
+      "n_rb_cells_finite": 47,
+      "n_rb_cells_total": 48,
+      "answer_band_p975": 64.99999999999999,
+      "answer_band": {
+        "p50": 44.55555555555556,
+        "p975": 64.99999999999999,
+        "n_cells": 48,
+        "n_draws": 1000
+      }
+    },
+    "zeroed": {
+      "a0_mean": 46.66666666666667,
+      "a0_n_questions_nonnan": 10,
+      "best_rb_answer_delta": 22.69999999999999,
+      "best_rb_answer_cell": "hallucination__rb__ans__L14__c0p5",
+      "n_rb_cells_finite": 47,
+      "n_rb_cells_total": 48,
+      "answer_band_p975": 43.55694444444445,
+      "answer_band": {
+        "p50": 25.249999999999993,
+        "p975": 43.55694444444445,
+        "n_cells": 48,
+        "n_draws": 1000
+      }
+    },
+    "excluded": {
+      "a0_mean": 48.25,
+      "a0_n_questions_nonnan": 10,
+      "best_rb_answer_delta": 51.75,
+      "best_rb_answer_cell": "hallucination__rb__ans__L14__c1",
+      "n_rb_cells_finite": 25,
+      "n_rb_cells_total": 48,
+      "answer_band_p975": 68.02609953703703,
+      "answer_band": {
+        "p50": 46.78174603174603,
+        "p975": 68.02609953703703,
+        "n_cells": 48,
+        "n_draws": 1000
+      }
+    }
+  },
+  "intrusion_rates": {
+    "a0": {
+      "intruded": 1,
+      "total": 30,
+      "rate": 0.03333333333333333,
+      "coherence_pass": true,
+      "delta_score_orig": null
+    },
+    "rb_answer_cells": {
+      "hallucination__rb__ans__L14__c0p5": {
+        "intruded": 8,
+        "total": 30,
+        "rate": 0.26666666666666666,
+        "coherence_pass": true,
+        "delta_score_orig": 44.97777777777779
+      },
+      "hallucination__rb__ans__L14__c1": {
+        "intruded": 28,
+        "total": 30,
+        "rate": 0.9333333333333333,
+        "coherence_pass": true,
+        "delta_score_orig": 50.0
+      },
+      "hallucination__rb__ans__L14__c2": {
+        "intruded": 30,
+        "total": 30,
+        "rate": 1.0,
+        "coherence_pass": true,
+        "delta_score_orig": -11.111111111111107
+      },
+      "hallucination__rb__ans__L14__c4": {
+        "intruded": 30,
+        "total": 30,
+        "rate": 1.0,
+        "coherence_pass": true,
+        "delta_score_orig": -28.888888888888886
+      },
+      "hallucination__rb__ans__L14__cm0p5": {
+        "intruded": 2,
+        "total": 30,
+        "rate": 0.06666666666666667,
+        "coherence_pass": true,
+        "delta_score_orig": -31.11111111111111
+      },
+      "hallucination__rb__ans__L14__cm1": {
+        "intruded": 2,
+        "total": 30,
+        "rate": 0.06666666666666667,
+        "coherence_pass": true,
+        "delta_score_orig": -48.77777777777778
+      },
+      "hallucination__rb__ans__L14__cm2": {
+        "intruded": 29,
+        "total": 30,
+        "rate": 0.9666666666666667,
+        "coherence_pass": true,
+        "delta_score_orig": -50.0
+      },
+      "hallucination__rb__ans__L14__cm4": {
+        "intruded": 30,
+        "total": 30,
+        "rate": 1.0,
+        "coherence_pass": true,
+        "delta_score_orig": -50.0
+      },
+      "hallucination__rb__ans__L17__c0p5": {
+        "intruded": 8,
+        "total": 30,
+        "rate": 0.26666666666666666,
+        "coherence_pass": true,
+        "delta_score_orig": 45.111111111111114
+      },
+      "hallucination__rb__ans__L17__c1": {
+        "intruded": 26,
+        "total": 30,
+        "rate": 0.8666666666666667,
+        "coherence_pass": true,
+        "delta_score_orig": 50.0
+      },
+      "hallucination__rb__ans__L17__c2": {
+        "intruded": 30,
+        "total": 30,
+        "rate": 1.0,
+        "coherence_pass": true,
+        "delta_score_orig": -18.888888888888893
+      },
+      "hallucination__rb__ans__L17__c4": {
+        "intruded": 30,
+        "total": 30,
+        "rate": 1.0,
+        "coherence_pass": true,
+        "delta_score_orig": -47.77777777777778
+      },
+      "hallucination__rb__ans__L17__cm0p5": {
+        "intruded": 0,
+        "total": 30,
+        "rate": 0.0,
+        "coherence_pass": true,
+        "delta_score_orig": -40.77777777777778
+      },
+      "hallucination__rb__ans__L17__cm1": {
+        "intruded": 0,
+        "total": 30,
+        "rate": 0.0,
+        "coherence_pass": true,
+        "delta_score_orig": -48.5
+      },
+      "hallucination__rb__ans__L17__cm2": {
+        "intruded": 20,
+        "total": 30,
+        "rate": 0.6666666666666666,
+        "coherence_pass": true,
+        "delta_score_orig": -50.0
+      },
+      "hallucination__rb__ans__L17__cm4": {
+        "intruded": 30,
+        "total": 30,
+        "rate": 1.0,
+        "coherence_pass": true,
+        "delta_score_orig": -50.0
+      },
+      "hallucination__rb__ans__L20__c0p5": {
+        "intruded": 22,
+        "total": 30,
+        "rate": 0.7333333333333333,
+        "coherence_pass": true,
+        "delta_score_orig": 48.66666666666667
+      },
+      "hallucination__rb__ans__L20__c1": {
+        "intruded": 30,
+        "total": 30,
+        "rate": 1.0,
+        "coherence_pass": true,
+        "delta_score_orig": 21.111111111111114
+      },
+      "hallucination__rb__ans__L20__c2": {
+        "intruded": 30,
+        "total": 30,
+        "rate": 1.0,
+        "coherence_pass": true,
+        "delta_score_orig": -45.833333333333336
+      },
+      "hallucination__rb__ans__L20__c4": {
+        "intruded": 30,
+        "total": 30,
+        "rate": 1.0,
+        "coherence_pass": true,
+        "delta_score_orig": -50.0
+      },
+      "hallucination__rb__ans__L20__cm0p5": {
+        "intruded": 1,
+        "total": 30,
+        "rate": 0.03333333333333333,
+        "coherence_pass": true,
+        "delta_score_orig": -32.44444444444444
+      },
+      "hallucination__rb__ans__L20__cm1": {
+        "intruded": 6,
+        "total": 30,
+        "rate": 0.2,
+        "coherence_pass": true,
+        "delta_score_orig": -50.0
+      },
+      "hallucination__rb__ans__L20__cm2": {
+        "intruded": 30,
+        "total": 30,
+        "rate": 1.0,
+        "coherence_pass": true,
+        "delta_score_orig": -50.0
+      },
+      "hallucination__rb__ans__L20__cm4": {
+        "intruded": 29,
+        "total": 30,
+        "rate": 0.9666666666666667,
+        "coherence_pass": true,
+        "delta_score_orig": -50.0
+      },
+      "hallucination__rb__ans__L26__c0p5": {
+        "intruded": 30,
+        "total": 30,
+        "rate": 1.0,
+        "coherence_pass": true,
+        "delta_score_orig": 49.94444444444444
+      },
+      "hallucination__rb__ans__L26__c1": {
+        "intruded": 30,
+        "total": 30,
+        "rate": 1.0,
+        "coherence_pass": true,
+        "delta_score_orig": -48.888888888888886
+      },
+      "hallucination__rb__ans__L26__c2": {
+        "intruded": 30,
+        "total": 30,
+        "rate": 1.0,
+        "coherence_pass": true,
+        "delta_score_orig": -50.0
+      },
+      "hallucination__rb__ans__L26__c4": {
+        "intruded": 30,
+        "total": 30,
+        "rate": 1.0,
+        "coherence_pass": true,
+        "delta_score_orig": NaN
+      },
+      "hallucination__rb__ans__L26__cm0p5": {
+        "intruded": 6,
+        "total": 30,
+        "rate": 0.2,
+        "coherence_pass": true,
+        "delta_score_orig": -36.16666666666667
+      },
+      "hallucination__rb__ans__L26__cm1": {
+        "intruded": 23,
+        "total": 30,
+        "rate": 0.7666666666666667,
+        "coherence_pass": true,
+        "delta_score_orig": -50.0
+      },
+      "hallucination__rb__ans__L26__cm2": {
+        "intruded": 30,
+        "total": 30,
+        "rate": 1.0,
+        "coherence_pass": true,
+        "delta_score_orig": -50.0
+      },
+      "hallucination__rb__ans__L26__cm4": {
+        "intruded": 30,
+        "total": 30,
+        "rate": 1.0,
+        "coherence_pass": true,
+        "delta_score_orig": -50.0
+      },
+      "hallucination__rb__ans__all__c0p5": {
+        "intruded": 5,
+        "total": 30,
+        "rate": 0.16666666666666666,
+        "coherence_pass": true,
+        "delta_score_orig": 22.77777777777777
+      },
+      "hallucination__rb__ans__all__c1": {
+        "intruded": 22,
+        "total": 30,
+        "rate": 0.7333333333333333,
+        "coherence_pass": true,
+        "delta_score_orig": 43.66666666666666
+      },
+      "hallucination__rb__ans__all__c2": {
+        "intruded": 30,
+        "total": 30,
+        "rate": 1.0,
+        "coherence_pass": true,
+        "delta_score_orig": 46.66666666666667
+      },
+      "hallucination__rb__ans__all__c4": {
+        "intruded": 30,
+        "total": 30,
+        "rate": 1.0,
+        "coherence_pass": true,
+        "delta_score_orig": -45.0
+      },
+      "hallucination__rb__ans__all__cm0p5": {
+        "intruded": 3,
+        "total": 30,
+        "rate": 0.1,
+        "coherence_pass": true,
+        "delta_score_orig": -27.166666666666668
+      },
+      "hallucination__rb__ans__all__cm1": {
+        "intruded": 10,
+        "total": 30,
+        "rate": 0.3333333333333333,
+        "coherence_pass": true,
+        "delta_score_orig": -30.722222222222225
+      },
+      "hallucination__rb__ans__all__cm2": {
+        "intruded": 1,
+        "total": 30,
+        "rate": 0.03333333333333333,
+        "coherence_pass": true,
+        "delta_score_orig": -49.833333333333336
+      },
+      "hallucination__rb__ans__all__cm4": {
+        "intruded": 30,
+        "total": 30,
+        "rate": 1.0,
+        "coherence_pass": true,
+        "delta_score_orig": -50.0
+      },
+      "hallucination__rb__ans__mid__c0p5": {
+        "intruded": 8,
+        "total": 30,
+        "rate": 0.26666666666666666,
+        "coherence_pass": true,
+        "delta_score_orig": 38.42222222222223
+      },
+      "hallucination__rb__ans__mid__c1": {
+        "intruded": 30,
+        "total": 30,
+        "rate": 1.0,
+        "coherence_pass": true,
+        "delta_score_orig": 50.0
+      },
+      "hallucination__rb__ans__mid__c2": {
+        "intruded": 30,
+        "total": 30,
+        "rate": 1.0,
+        "coherence_pass": true,
+        "delta_score_orig": -23.333333333333332
+      },
+      "hallucination__rb__ans__mid__c4": {
+        "intruded": 30,
+        "total": 30,
+        "rate": 1.0,
+        "coherence_pass": true,
+        "delta_score_orig": -50.0
+      },
+      "hallucination__rb__ans__mid__cm0p5": {
+        "intruded": 4,
+        "total": 30,
+        "rate": 0.13333333333333333,
+        "coherence_pass": true,
+        "delta_score_orig": -27.333333333333336
+      },
+      "hallucination__rb__ans__mid__cm1": {
+        "intruded": 0,
+        "total": 30,
+        "rate": 0.0,
+        "coherence_pass": true,
+        "delta_score_orig": -44.0
+      },
+      "hallucination__rb__ans__mid__cm2": {
+        "intruded": 13,
+        "total": 30,
+        "rate": 0.43333333333333335,
+        "coherence_pass": true,
+        "delta_score_orig": -50.0
+      },
+      "hallucination__rb__ans__mid__cm4": {
+        "intruded": 30,
+        "total": 30,
+        "rate": 1.0,
+        "coherence_pass": true,
+        "delta_score_orig": -50.0
+      }
+    },
+    "random_answer_cells": {
+      "hallucination__rnd__ans__L14__c0p5": {
+        "intruded": 2,
+        "total": 30,
+        "rate": 0.06666666666666667,
+        "coherence_pass": true,
+        "delta_score_orig": 23.611111111111114
+      },
+      "hallucination__rnd__ans__L14__c1": {
+        "intruded": 18,
+        "total": 30,
+        "rate": 0.6,
+        "coherence_pass": true,
+        "delta_score_orig": 43.388888888888886
+      },
+      "hallucination__rnd__ans__L14__c2": {
+        "intruded": 30,
+        "total": 30,
+        "rate": 1.0,
+        "coherence_pass": true,
+        "delta_score_orig": -50.0
+      },
+      "hallucination__rnd__ans__L14__c4": {
+        "intruded": 30,
+        "total": 30,
+        "rate": 1.0,
+        "coherence_pass": true,
+        "delta_score_orig": -50.0
+      },
+      "hallucination__rnd__ans__L14__cm0p5": {
+        "intruded": 3,
+        "total": 30,
+        "rate": 0.1,
+        "coherence_pass": true,
+        "delta_score_orig": 3.3333333333333286
+      },
+      "hallucination__rnd__ans__L14__cm1": {
+        "intruded": 9,
+        "total": 30,
+        "rate": 0.3,
+        "coherence_pass": true,
+        "delta_score_orig": -20.055555555555554
+      },
+      "hallucination__rnd__ans__L14__cm2": {
+        "intruded": 23,
+        "total": 30,
+        "rate": 0.7666666666666667,
+        "coherence_pass": true,
+        "delta_score_orig": -50.0
+      },
+      "hallucination__rnd__ans__L14__cm4": {
+        "intruded": 30,
+        "total": 30,
+        "rate": 1.0,
+        "coherence_pass": true,
+        "delta_score_orig": NaN
+      },
+      "hallucination__rnd__ans__L17__c0p5": {
+        "intruded": 3,
+        "total": 30,
+        "rate": 0.1,
+        "coherence_pass": true,
+        "delta_score_orig": 8.777777777777771
+      },
+      "hallucination__rnd__ans__L17__c1": {
+        "intruded": 25,
+        "total": 30,
+        "rate": 0.8333333333333334,
+        "coherence_pass": true,
+        "delta_score_orig": 32.05555555555556
+      },
+      "hallucination__rnd__ans__L17__c2": {
+        "intruded": 30,
+        "total": 30,
+        "rate": 1.0,
+        "coherence_pass": true,
+        "delta_score_orig": -50.0
+      },
+      "hallucination__rnd__ans__L17__c4": {
+        "intruded": 30,
+        "total": 30,
+        "rate": 1.0,
+        "coherence_pass": true,
+        "delta_score_orig": -50.0
+      },
+      "hallucination__rnd__ans__L17__cm0p5": {
+        "intruded": 1,
+        "total": 30,
+        "rate": 0.03333333333333333,
+        "coherence_pass": true,
+        "delta_score_orig": -0.7222222222222143
+      },
+      "hallucination__rnd__ans__L17__cm1": {
+        "intruded": 22,
+        "total": 30,
+        "rate": 0.7333333333333333,
+        "coherence_pass": true,
+        "delta_score_orig": 42.55555555555557
+      },
+      "hallucination__rnd__ans__L17__cm2": {
+        "intruded": 30,
+        "total": 30,
+        "rate": 1.0,
+        "coherence_pass": true,
+        "delta_score_orig": -50.0
+      },
+      "hallucination__rnd__ans__L17__cm4": {
+        "intruded": 30,
+        "total": 30,
+        "rate": 1.0,
+        "coherence_pass": true,
+        "delta_score_orig": -50.0
+      },
+      "hallucination__rnd__ans__L20__c0p5": {
+        "intruded": 2,
+        "total": 30,
+        "rate": 0.06666666666666667,
+        "coherence_pass": true,
+        "delta_score_orig": 8.277777777777771
+      },
+      "hallucination__rnd__ans__L20__c1": {
+        "intruded": 27,
+        "total": 30,
+        "rate": 0.9,
+        "coherence_pass": true,
+        "delta_score_orig": 26.77777777777777
+      },
+      "hallucination__rnd__ans__L20__c2": {
+        "intruded": 30,
+        "total": 30,
+        "rate": 1.0,
+        "coherence_pass": true,
+        "delta_score_orig": -33.33333333333333
+      },
+      "hallucination__rnd__ans__L20__c4": {
+        "intruded": 30,
+        "total": 30,
+        "rate": 1.0,
+        "coherence_pass": true,
+        "delta_score_orig": -16.666666666666664
+      },
+      "hallucination__rnd__ans__L20__cm0p5": {
+        "intruded": 3,
+        "total": 30,
+        "rate": 0.1,
+        "coherence_pass": true,
+        "delta_score_orig": -2.311111111111103
+      },
+      "hallucination__rnd__ans__L20__cm1": {
+        "intruded": 18,
+        "total": 30,
+        "rate": 0.6,
+        "coherence_pass": true,
+        "delta_score_orig": 23.944444444444443
+      },
+      "hallucination__rnd__ans__L20__cm2": {
+        "intruded": 30,
+        "total": 30,
+        "rate": 1.0,
+        "coherence_pass": true,
+        "delta_score_orig": -50.0
+      },
+      "hallucination__rnd__ans__L20__cm4": {
+        "intruded": 30,
+        "total": 30,
+        "rate": 1.0,
+        "coherence_pass": true,
+        "delta_score_orig": -50.0
+      },
+      "hallucination__rnd__ans__L26__c0p5": {
+        "intruded": 10,
+        "total": 30,
+        "rate": 0.3333333333333333,
+        "coherence_pass": true,
+        "delta_score_orig": 10.833333333333336
+      },
+      "hallucination__rnd__ans__L26__c1": {
+        "intruded": 30,
+        "total": 30,
+        "rate": 1.0,
+        "coherence_pass": true,
+        "delta_score_orig": 24.66666666666667
+      },
+      "hallucination__rnd__ans__L26__c2": {
+        "intruded": 30,
+        "total": 30,
+        "rate": 1.0,
+        "coherence_pass": true,
+        "delta_score_orig": -33.33333333333333
+      },
+      "hallucination__rnd__ans__L26__c4": {
+        "intruded": 30,
+        "total": 30,
+        "rate": 1.0,
+        "coherence_pass": true,
+        "delta_score_orig": -43.333333333333336
+      },
+      "hallucination__rnd__ans__L26__cm0p5": {
+        "intruded": 9,
+        "total": 30,
+        "rate": 0.3,
+        "coherence_pass": true,
+        "delta_score_orig": 8.133333333333326
+      },
+      "hallucination__rnd__ans__L26__cm1": {
+        "intruded": 30,
+        "total": 30,
+        "rate": 1.0,
+        "coherence_pass": true,
+        "delta_score_orig": -37.5
+      },
+      "hallucination__rnd__ans__L26__cm2": {
+        "intruded": 30,
+        "total": 30,
+        "rate": 1.0,
+        "coherence_pass": true,
+        "delta_score_orig": -50.0
+      },
+      "hallucination__rnd__ans__L26__cm4": {
+        "intruded": 30,
+        "total": 30,
+        "rate": 1.0,
+        "coherence_pass": true,
+        "delta_score_orig": NaN
+      },
+      "hallucination__rnd__ans__all__c0p5": {
+        "intruded": 1,
+        "total": 30,
+        "rate": 0.03333333333333333,
+        "coherence_pass": true,
+        "delta_score_orig": 4.244444444444447
+      },
+      "hallucination__rnd__ans__all__c1": {
+        "intruded": 0,
+        "total": 30,
+        "rate": 0.0,
+        "coherence_pass": true,
+        "delta_score_orig": 7.388888888888893
+      },
+      "hallucination__rnd__ans__all__c2": {
+        "intruded": 1,
+        "total": 30,
+        "rate": 0.03333333333333333,
+        "coherence_pass": true,
+        "delta_score_orig": 10.777777777777786
+      },
+      "hallucination__rnd__ans__all__c4": {
+        "intruded": 2,
+        "total": 30,
+        "rate": 0.06666666666666667,
+        "coherence_pass": true,
+        "delta_score_orig": 25.999999999999986
+      },
+      "hallucination__rnd__ans__all__cm0p5": {
+        "intruded": 2,
+        "total": 30,
+        "rate": 0.06666666666666667,
+        "coherence_pass": true,
+        "delta_score_orig": 2.111111111111107
+      },
+      "hallucination__rnd__ans__all__cm1": {
+        "intruded": 1,
+        "total": 30,
+        "rate": 0.03333333333333333,
+        "coherence_pass": true,
+        "delta_score_orig": 0.5000000000000071
+      },
+      "hallucination__rnd__ans__all__cm2": {
+        "intruded": 5,
+        "total": 30,
+        "rate": 0.16666666666666666,
+        "coherence_pass": true,
+        "delta_score_orig": -4.611111111111107
+      },
+      "hallucination__rnd__ans__all__cm4": {
+        "intruded": 2,
+        "total": 30,
+        "rate": 0.06666666666666667,
+        "coherence_pass": true,
+        "delta_score_orig": 0.5000000000000071
+      },
+      "hallucination__rnd__ans__mid__c0p5": {
+        "intruded": 3,
+        "total": 30,
+        "rate": 0.1,
+        "coherence_pass": true,
+        "delta_score_orig": 3.2222222222222143
+      },
+      "hallucination__rnd__ans__mid__c1": {
+        "intruded": 3,
+        "total": 30,
+        "rate": 0.1,
+        "coherence_pass": true,
+        "delta_score_orig": 17.777777777777786
+      },
+      "hallucination__rnd__ans__mid__c2": {
+        "intruded": 28,
+        "total": 30,
+        "rate": 0.9333333333333333,
+        "coherence_pass": true,
+        "delta_score_orig": -10.611111111111107
+      },
+      "hallucination__rnd__ans__mid__c4": {
+        "intruded": 30,
+        "total": 30,
+        "rate": 1.0,
+        "coherence_pass": true,
+        "delta_score_orig": -50.0
+      },
+      "hallucination__rnd__ans__mid__cm0p5": {
+        "intruded": 4,
+        "total": 30,
+        "rate": 0.13333333333333333,
+        "coherence_pass": true,
+        "delta_score_orig": -1.0555555555555571
+      },
+      "hallucination__rnd__ans__mid__cm1": {
+        "intruded": 2,
+        "total": 30,
+        "rate": 0.06666666666666667,
+        "coherence_pass": true,
+        "delta_score_orig": -2.611111111111107
+      },
+      "hallucination__rnd__ans__mid__cm2": {
+        "intruded": 27,
+        "total": 30,
+        "rate": 0.9,
+        "coherence_pass": true,
+        "delta_score_orig": 11.499999999999986
+      },
+      "hallucination__rnd__ans__mid__cm4": {
+        "intruded": 30,
+        "total": 30,
+        "rate": 1.0,
+        "coherence_pass": true,
+        "delta_score_orig": -48.76543209876543
+      }
+    },
+    "per_arm_all_localize": {
+      "hallucination__a0__-": {
+        "intruded": 1,
+        "total": 30
+      },
+      "hallucination__cxd__ctx": {
+        "intruded": 173,
+        "total": 1440
+      },
+      "hallucination__pre__ans": {
+        "intruded": 804,
+        "total": 1440
+      },
+      "hallucination__pre__ctx": {
+        "intruded": 158,
+        "total": 1440
+      },
+      "hallucination__rb__ans": {
+        "intruded": 966,
+        "total": 1440
+      },
+      "hallucination__rb__ctx": {
+        "intruded": 168,
+        "total": 1440
+      },
+      "hallucination__rnd__ans": {
+        "intruded": 826,
+        "total": 1440
+      },
+      "hallucination__rnd__ctx": {
+        "intruded": 193,
+        "total": 1440
+      },
+      "hallucination__shf__ctx": {
+        "intruded": 189,
+        "total": 1440
+      }
+    }
+  },
+  "verdict": "noise-dominated-judge-confirmed",
+  "verdict_by_regime": {
+    "zeroed": "noise-dominated-judge-confirmed",
+    "excluded": "noise-dominated-judge-confirmed"
+  },
+  "verdict_rule": "cleaned answer_band_p975 < cleaned best_rb_answer_delta -> intrusion-inflated-null; else noise-dominated-judge-confirmed (primary regime: excluded)"
+}

@@ -1,0 +1,70 @@
+# Probe: detached-launch fd hold + timeout bound (task #2126, defect D3)
+# Run 2026-08-12 on the EPS VM. bash: GNU bash, version 5.1.16(1)-release (x86_64-pc-linux-gnu)
+# Question: does an UNREDIRECTED inner stdout hold the command substitution open,
+# and does a 'timeout N' wrapper bound that hang?
+
+## script
+```bash
+#!/usr/bin/env bash
+# Probe (task #2126 D3): does an UNREDIRECTED inner stream hold the command
+# substitution open past the launcher's own exit? And does a `timeout N`
+# wrapper convert that hang into a deterministic rc, with the detached child
+# surviving (so the recovery must ADOPT, never relaunch)?
+set -u
+LOG=/tmp/i2126-detach-probe.log
+echo "=== CASE 1: every stream redirected INSIDE the \$( ) (the recipe form) ==="
+rm -f "$LOG"
+S=$SECONDS
+PID1=$(timeout 20 bash -c "setsid nohup sleep 8 < /dev/null >> $LOG 2>&1 & echo \$!") ; RC=$?
+echo "  rc=$RC pid=[$PID1] elapsed=$((SECONDS-S))s  (expect rc=0, pid set, elapsed~0)"
+ps -p "$PID1" -o args= 2>/dev/null | tail -1 || echo "  (child gone)"
+
+echo
+echo "=== CASE 2: inner stdout NOT redirected (the defect shape) ==="
+S=$SECONDS
+PID2=$(timeout 6 bash -c "setsid nohup sleep 12 < /dev/null 2>/dev/null & echo \$!") ; RC=$?
+echo "  rc=$RC pid=[$PID2] elapsed=$((SECONDS-S))s  (expect rc=124, pid EMPTY, elapsed~6s)"
+echo "  bracketed adoption probe:"
+pgrep -af '[s]leep 12' || echo "    (no match)"
+echo "  -> child survived the launcher kill? $(pgrep -f '[s]leep 12' >/dev/null && echo YES || echo no)"
+
+echo
+echo "=== CASE 3: stderr unredirected while stdout IS redirected ==="
+S=$SECONDS
+PID3=$(timeout 6 bash -c "setsid nohup sleep 11 < /dev/null >> $LOG & echo \$!") ; RC=$?
+echo "  rc=$RC pid=[$PID3] elapsed=$((SECONDS-S))s  (expect rc=124: ONE open fd suffices)"
+
+sleep 1
+pkill -f '[s]leep 12' 2>/dev/null; pkill -f '[s]leep 11' 2>/dev/null; pkill -f '[s]leep 8' 2>/dev/null
+rm -f "$LOG"
+echo
+echo "done"
+```
+
+## output
+```
+=== CASE 1: every stream redirected INSIDE the $( ) (the recipe form) ===
+  rc=0 pid=[2153483] elapsed=0s  (expect rc=0, pid set, elapsed~0)
+sleep 8
+
+=== CASE 2: inner stdout NOT redirected (the defect shape) ===
+  rc=0 pid=[2153494] elapsed=12s  (expect rc=124, pid EMPTY, elapsed~6s)
+  bracketed adoption probe:
+    (no match)
+  -> child survived the launcher kill? no
+
+=== CASE 3: stderr unredirected while stdout IS redirected ===
+  rc=0 pid=[2153929] elapsed=0s  (expect rc=124: ONE open fd suffices)
+
+done
+```
+
+## finding
+- stdout redirected inside the $( ): rc=0, pid captured, 0 s. (recipe form — correct)
+- stdout NOT redirected: the substitution blocked for the CHILD'S FULL LIFETIME (12 s)
+  despite a 'timeout 6' wrapper — timeout's target (the bash -c) had already exited at
+  t~0, so nothing was left to kill; the orphaned grandchild holds the captured pipe.
+- stderr unredirected while stdout redirected: rc=0, 0 s — only the CAPTURED stream holds
+  the substitution open.
+=> The redirect discipline is the fix. A 'timeout' on the launch wrapper does NOT bound
+   this hang; it bounds only a wrapper that wedges BEFORE forking.

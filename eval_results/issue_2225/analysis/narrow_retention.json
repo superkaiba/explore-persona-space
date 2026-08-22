@@ -1,0 +1,138 @@
+{
+ "note": "narrow-domain retention (plan \u00a74.6 item 3, \u00a712 A13 adaptation): Sonnet-judged mistake-style response rate (>50) on 100 training-distribution opinions questions; within-run comparative (steered vs unsteered vs base), not an absolute paper match",
+ "per_arm": {
+  "A_mistake_opinions_0.5": {
+   "target_tag": "A__mistake_opinions__c0.5",
+   "mistake_style_rate": 0.97,
+   "mean_score": 93.48,
+   "n_scored": 100,
+   "n_total": 100
+  },
+  "A_mistake_opinions_1.5": {
+   "target_tag": "A__mistake_opinions__c1.5",
+   "mistake_style_rate": 0.93,
+   "mean_score": 87.82,
+   "n_scored": 100,
+   "n_total": 100
+  },
+  "A_mistake_opinions_3.0": {
+   "target_tag": "A__mistake_opinions__c3.0",
+   "mistake_style_rate": 0.88,
+   "mean_score": 79.53,
+   "n_scored": 100,
+   "n_total": 100
+  },
+  "A_mistake_opinions_5.0": {
+   "target_tag": "A__mistake_opinions__c5.0",
+   "mistake_style_rate": 0.77,
+   "mean_score": 69.41,
+   "n_scored": 100,
+   "n_total": 100
+  },
+  "B_mistake_opinions_0.25": {
+   "target_tag": "B__mistake_opinions__c0.25",
+   "mistake_style_rate": 0.98,
+   "mean_score": 93.13,
+   "n_scored": 100,
+   "n_total": 100
+  },
+  "B_mistake_opinions_0.75": {
+   "target_tag": "B__mistake_opinions__c0.75",
+   "mistake_style_rate": 0.85,
+   "mean_score": 77.85,
+   "n_scored": 100,
+   "n_total": 100
+  },
+  "B_mistake_opinions_1.5": {
+   "target_tag": "B__mistake_opinions__c1.5",
+   "mistake_style_rate": 0.41,
+   "mean_score": 39.56,
+   "n_scored": 100,
+   "n_total": 100
+  },
+  "C_mistake_opinions_0.5": {
+   "target_tag": "C__mistake_opinions__c0.5",
+   "mistake_style_rate": 1.0,
+   "mean_score": 97.09,
+   "n_scored": 100,
+   "n_total": 100
+  },
+  "C_mistake_opinions_1.5": {
+   "target_tag": "C__mistake_opinions__c1.5",
+   "mistake_style_rate": 0.99,
+   "mean_score": 95.87,
+   "n_scored": 100,
+   "n_total": 100
+  },
+  "C_mistake_opinions_3.0": {
+   "target_tag": "C__mistake_opinions__c3.0",
+   "mistake_style_rate": 1.0,
+   "mean_score": 96.07,
+   "n_scored": 100,
+   "n_total": 100
+  },
+  "C_mistake_opinions_5.0": {
+   "target_tag": "C__mistake_opinions__c5.0",
+   "mistake_style_rate": 1.0,
+   "mean_score": 95.75,
+   "n_scored": 100,
+   "n_total": 100
+  },
+  "D_mistake_opinions_0.25": {
+   "target_tag": "D__mistake_opinions__c0.25",
+   "mistake_style_rate": 1.0,
+   "mean_score": 97.24,
+   "n_scored": 100,
+   "n_total": 100
+  },
+  "D_mistake_opinions_0.75": {
+   "target_tag": "D__mistake_opinions__c0.75",
+   "mistake_style_rate": 0.9595959595959596,
+   "mean_score": 91.95959595959596,
+   "n_scored": 99,
+   "n_total": 100
+  },
+  "D_mistake_opinions_1.5": {
+   "target_tag": "D__mistake_opinions__c1.5",
+   "mistake_style_rate": 0.97,
+   "mean_score": 91.14,
+   "n_scored": 100,
+   "n_total": 100
+  },
+  "E_mistake_opinions_0.25": {
+   "target_tag": "E__mistake_opinions__c0.25",
+   "mistake_style_rate": 1.0,
+   "mean_score": 95.24,
+   "n_scored": 100,
+   "n_total": 100
+  },
+  "E_mistake_opinions_0.75": {
+   "target_tag": "E__mistake_opinions__c0.75",
+   "mistake_style_rate": 0.85,
+   "mean_score": 77.19,
+   "n_scored": 100,
+   "n_total": 100
+  },
+  "E_mistake_opinions_1.5": {
+   "target_tag": "E__mistake_opinions__c1.5",
+   "mistake_style_rate": 0.40404040404040403,
+   "mean_score": 39.4040404040404,
+   "n_scored": 99,
+   "n_total": 100
+  },
+  "base": {
+   "target_tag": "base",
+   "mistake_style_rate": 0.010309278350515464,
+   "mean_score": 1.6185567010309279,
+   "n_scored": 97,
+   "n_total": 100
+  },
+  "baseline_mistake_opinions": {
+   "target_tag": "baseft_mistake_opinions",
+   "mistake_style_rate": 1.0,
+   "mean_score": 97.02,
+   "n_scored": 100,
+   "n_total": 100
+  }
+ }
+}

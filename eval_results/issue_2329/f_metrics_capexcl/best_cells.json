@@ -1,0 +1,38 @@
+{
+  "selection_rule": "Holm-IUT pass AND disjoint 95% CIs vs BOTH nulls; cap 12 by descending steered F_beh — COMPARISON ARTIFACT ONLY under #2329: the realized stage-2 selection was POD-SIDE on F_act (divergence 6; fact_select_report.json)",
+  "cells": [
+    {
+      "cell": "conflict_format_fwd",
+      "slot": "ce"
+    },
+    {
+      "cell": "instr_language",
+      "slot": "ce"
+    },
+    {
+      "cell": "language_implied",
+      "slot": "ce"
+    },
+    {
+      "cell": "conflict_format_rev",
+      "slot": "ce"
+    },
+    {
+      "cell": "instr_format",
+      "slot": "ce"
+    },
+    {
+      "cell": "recency_instr_format_d3",
+      "slot": "ce"
+    },
+    {
+      "cell": "load_instr_format_l5",
+      "slot": "ce"
+    },
+    {
+      "cell": "load_instr_format_l3",
+      "slot": "ce"
+    }
+  ],
+  "n_survivors": 8
+}

@@ -1,0 +1,165 @@
+{
+ "metadata": {
+  "git_commit": "6c60e4d8",
+  "git_dirty": true,
+  "git_dirty_paths": [
+   ".claude/agent-memory/critic/MEMORY.md"
+  ],
+  "script_version": "issue2054_ctx2ctx_fit_v1",
+  "argv": [
+   "scripts/issue2054_ctx2ctx_fit.py",
+   "--pilot",
+   "--activations-dir",
+   "/mnt/eps-data/thomasjiralerspong/issue2054_crossrender/activations",
+   "--null-draws",
+   "10",
+   "--null-chunk",
+   "5"
+  ],
+  "utc": "2026-08-12T16:37:40Z",
+  "numpy": "2.2.6",
+  "torch": "2.8.0+cu128",
+  "fold_map": {
+   "source": "origin/issue-2054:eval_results/issue_2054/shared_fold_map.json",
+   "sha256": "4ab1839a0e8c5e8705147cbb529b2df36975ac46b987fe71ab3f919265e4c39e",
+   "k": 5,
+   "seed": 137,
+   "n_conv": 26889
+  },
+  "debug_max_rows": null,
+  "pilot": true
+ },
+ "source_cell": "conversation_paired_stories_assistant__inserted__attrib_quoted__qwen2.5-7b",
+ "arm": "prefix",
+ "config_fingerprint": "c8df5e6e0b803e2f",
+ "pairs": [
+  {
+   "target_cell": "conversation_paired_stories_assistant__inserted__bare_label__qwen2.5-7b",
+   "family": "framing_pairs",
+   "n_src_rows": 11901,
+   "n_tgt_rows": 11901,
+   "n_join": 11899,
+   "n_train_min": 9475,
+   "d_ambient": 3584,
+   "regime": "ambient",
+   "reduced_k": null,
+   "folds": [
+    {
+     "fold": 0,
+     "n_train": 9522,
+     "n_test": 2377,
+     "xy_max_abs_diff": 0.0,
+     "degenerate_identical_xy": true,
+     "fitted": {
+      "r2": 0.9999999997917968,
+      "mean_cosine": 0.999999999963528,
+      "best_lambda": 0.01,
+      "dof": 3583.924517232298,
+      "selector": "gcv_dof_cap_0.9",
+      "side": "cov",
+      "n_train": 9522,
+      "d_fit": 3584
+     },
+     "identity_bias": {
+      "r2": 1.0,
+      "mean_cosine": 0.9999999999999757
+     },
+     "knn_fitted": {
+      "euclidean": {
+       "metric": "euclidean",
+       "n": 2377,
+       "n_pool": 2377,
+       "acc_at_k": {
+        "1": 1.0,
+        "5": 1.0,
+        "10": 1.0
+       },
+       "chance_at_k": {
+        "1": 0.00042069835927639884,
+        "5": 0.002103491796381994,
+        "10": 0.004206983592763988
+       },
+       "median_rank": 1.0,
+       "mrr": 1.0
+      },
+      "cosine": {
+       "metric": "cosine",
+       "n": 2377,
+       "n_pool": 2377,
+       "acc_at_k": {
+        "1": 1.0,
+        "5": 1.0,
+        "10": 1.0
+       },
+       "chance_at_k": {
+        "1": 0.00042069835927639884,
+        "5": 0.002103491796381994,
+        "10": 0.004206983592763988
+       },
+       "median_rank": 1.0,
+       "mrr": 1.0
+      }
+     },
+     "knn_identity": {
+      "euclidean": {
+       "metric": "euclidean",
+       "n": 2377,
+       "n_pool": 2377,
+       "acc_at_k": {
+        "1": 1.0,
+        "5": 1.0,
+        "10": 1.0
+       },
+       "chance_at_k": {
+        "1": 0.00042069835927639884,
+        "5": 0.002103491796381994,
+        "10": 0.004206983592763988
+       },
+       "median_rank": 1.0,
+       "mrr": 1.0
+      },
+      "cosine": {
+       "metric": "cosine",
+       "n": 2377,
+       "n_pool": 2377,
+       "acc_at_k": {
+        "1": 1.0,
+        "5": 1.0,
+        "10": 1.0
+       },
+       "chance_at_k": {
+        "1": 0.00042069835927639884,
+        "5": 0.002103491796381994,
+        "10": 0.004206983592763988
+       },
+       "median_rank": 1.0,
+       "mrr": 1.0
+      }
+     },
+     "null": {
+      "kind": "shuffled_pair_fit_side",
+      "n_draws": 10,
+      "seed": 4101370908,
+      "mean": -0.028509975713230905,
+      "sd": 0.005810713721598193,
+      "q05": -0.034633658675118584,
+      "q95": -0.018783642652877033,
+      "max": -0.01764996162903798,
+      "p_value_fitted": 0.09090909090909091
+     },
+     "wall_s": 37.2
+    }
+   ],
+   "pooled": {
+    "fitted_r2": 0.9999999997917968,
+    "identity_bias_r2": 1.0,
+    "delta_r2_fitted_minus_identity": -2.0820323243242456e-10,
+    "clears_identity_baseline": false,
+    "null_mean": -0.028509975713230905,
+    "null_p_value_fitted": 0.09090909090909091,
+    "degenerate_identical_xy": true
+   },
+   "verdict": "DEGENERATE \u2014 source and target vectors are byte-identical (shared render); fit is trivially perfect, not a mapping result"
+  }
+ ]
+}

@@ -1,0 +1,766 @@
+{
+  "commit": "c9a0c9ec+dirty",
+  "render_id": "335b5f0f3c7747ee",
+  "git_commit": "c9a0c9ec",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2333/arm_vs_ce_q25.meta.json",
+    "figures/issue_2333/arm_vs_ce_q25.pdf",
+    "figures/issue_2333/arm_vs_ce_q25.png",
+    "figures/issue_2333/arm_vs_ce_q35.meta.json",
+    "figures/issue_2333/arm_vs_ce_q35.pdf",
+    "figures/issue_2333/arm_vs_ce_q35.png",
+    "figures/issue_2333/coherence_q25.meta.json",
+    "figures/issue_2333/coherence_q25.pdf",
+    "figures/issue_2333/coherence_q25.png",
+    "figures/issue_2333/coherence_q35.meta.json",
+    "figures/issue_2333/coherence_q35.pdf",
+    "figures/issue_2333/coherence_q35.png",
+    "figures/issue_2333/forest_cells_q25.meta.json",
+    "figures/issue_2333/forest_cells_q25.pdf",
+    "figures/issue_2333/forest_cells_q25.png",
+    "figures/issue_2333/forest_cells_q35.meta.json",
+    "figures/issue_2333/forest_cells_q35.pdf",
+    "figures/issue_2333/forest_cells_q35.png",
+    "figures/issue_2333/hero_snowball_act_q25_s1.meta.json",
+    "figures/issue_2333/hero_snowball_act_q25_s1.pdf",
+    "figures/issue_2333/hero_snowball_act_q25_s1.png",
+    "figures/issue_2333/hero_snowball_act_q35_s1.meta.json",
+    "figures/issue_2333/hero_snowball_act_q35_s1.pdf",
+    "figures/issue_2333/hero_snowball_act_q35_s1.png",
+    "figures/issue_2333/hero_snowball_act_q35_s2.meta.json",
+    "figures/issue_2333/hero_snowball_act_q35_s2.pdf",
+    "figures/issue_2333/hero_snowball_act_q35_s2.png",
+    "figures/issue_2333/hero_snowball_q25_s1.meta.json",
+    "figures/issue_2333/hero_snowball_q25_s1.pdf",
+    "figures/issue_2333/hero_snowball_q25_s1.png",
+    "figures/issue_2333/hero_snowball_q25_s2.meta.json",
+    "figures/issue_2333/hero_snowball_q25_s2.pdf",
+    "figures/issue_2333/hero_snowball_q25_s2.png",
+    "figures/issue_2333/hero_snowball_q35_s1.meta.json",
+    "figures/issue_2333/hero_snowball_q35_s1.pdf",
+    "figures/issue_2333/hero_snowball_q35_s1.png",
+    "figures/issue_2333/hero_snowball_q35_s2.meta.json",
+    "figures/issue_2333/hero_snowball_q35_s2.pdf",
+    "figures/issue_2333/hero_snowball_q35_s2.png",
+    "figures/issue_2333/k_traces_q25.meta.json",
+    "figures/issue_2333/k_traces_q25.pdf",
+    "figures/issue_2333/k_traces_q25.png",
+    "figures/issue_2333/k_traces_q35.meta.json",
+    "figures/issue_2333/k_traces_q35.pdf",
+    "figures/issue_2333/k_traces_q35.png",
+    "figures/issue_2333/model_compare_prefill3.meta.json",
+    "figures/issue_2333/model_compare_prefill3.pdf",
+    "figures/issue_2333/model_compare_prefill3.png",
+    "figures/issue_2333/perpair_prefill3_q25.meta.json",
+    "figures/issue_2333/perpair_prefill3_q25.pdf",
+    "... 23 more"
+  ],
+  "created": "2026-08-18T05:58:03Z",
+  "figsize": [
+    8.4,
+    6.0
+  ],
+  "points": [
+    {
+      "x": 1.0,
+      "recovery ratio (arm F / control F)": 0.5557423415684609,
+      "error": 0.11105984848910971,
+      "series": "state patch",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "recovery ratio (arm F / control F)": 0.5289594004889412,
+      "error": 0.13999855654907317,
+      "series": "state patch",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "recovery ratio (arm F / control F)": 0.5626526282809615,
+      "error": 0.14176005162898941,
+      "series": "state patch",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "recovery ratio (arm F / control F)": 0.39647301616904157,
+      "error": 0.11105984848910971,
+      "series": "token prefill",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "recovery ratio (arm F / control F)": 0.7736859951804163,
+      "error": 0.13999855654907317,
+      "series": "token prefill",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "recovery ratio (arm F / control F)": 0.7086807508466594,
+      "error": 0.14176005162898941,
+      "series": "token prefill",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "recovery ratio (arm F / control F)": 0.5557423415684609,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "recovery ratio (arm F / control F)": 0.5289594004889412,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "recovery ratio (arm F / control F)": 0.5626526282809615,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "recovery ratio (arm F / control F)": 0.44282791003472544,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "recovery ratio (arm F / control F)": 0.4122565977252089,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "recovery ratio (arm F / control F)": 0.4522171772017822,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "recovery ratio (arm F / control F)": 0.6715128315303306,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "recovery ratio (arm F / control F)": 0.6426934387157438,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "recovery ratio (arm F / control F)": 0.678843749496536,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "recovery ratio (arm F / control F)": 0.39647301616904157,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "recovery ratio (arm F / control F)": 0.7736859951804163,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "recovery ratio (arm F / control F)": 0.7086807508466594,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "recovery ratio (arm F / control F)": 0.2878824700001008,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "recovery ratio (arm F / control F)": 0.6388465165885192,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "recovery ratio (arm F / control F)": 0.570100249905502,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "recovery ratio (arm F / control F)": 0.5100021669783202,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "recovery ratio (arm F / control F)": 0.9188436296866656,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "recovery ratio (arm F / control F)": 0.8536203531634808,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "y": 1.0037161536410706,
+      "error": 0.10834129463278208,
+      "series": "state patch",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "y": 1.0268636513787646,
+      "error": 0.14697405985068174,
+      "series": "state patch",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "x": 3.0,
+      "y": 1.0515002278444754,
+      "error": 0.17412551431581313,
+      "series": "state patch",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "y": 0.42336132095564016,
+      "error": 0.10834129463278208,
+      "series": "token prefill",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 2.0,
+      "y": 0.835371660180813,
+      "error": 0.14697405985068174,
+      "series": "token prefill",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "y": 0.969889424031031,
+      "error": 0.17412551431581313,
+      "series": "token prefill",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "y": 1.0037161536410706,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.0,
+      "y": 1.0268636513787646,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "y": 1.0515002278444754,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.0,
+      "y": 0.8314621584621198,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.0,
+      "y": 0.8584110182261558,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "y": 0.8807351050436698,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.0,
+      "y": 1.1955918265059153,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 2.0,
+      "y": 1.217051427118018,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 3.0,
+      "y": 1.2448101734614156,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.0,
+      "y": 0.42336132095564016,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 2.0,
+      "y": 0.835371660180813,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.0,
+      "y": 0.969889424031031,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": 0.31821655138730276,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 2.0,
+      "y": 0.6944549734119314,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 3.0,
+      "y": 0.8072744635116953,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.0,
+      "y": 0.5348991406528669,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 2.0,
+      "y": 0.9884030931132949,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 3.0,
+      "y": 1.1555254921433216,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "recovery ratio (arm F / control F)": 0.5434930074347758,
+      "error": 0.3851486617272164,
+      "series": "state patch",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "recovery ratio (arm F / control F)": 0.723276933579233,
+      "error": 0.36371962274292763,
+      "series": "state patch",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "recovery ratio (arm F / control F)": 0.8011218903979782,
+      "error": 0.40905128439677896,
+      "series": "state patch",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "recovery ratio (arm F / control F)": 0.372603922073855,
+      "error": 0.3851486617272164,
+      "series": "token prefill",
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "recovery ratio (arm F / control F)": 0.7986545495644612,
+      "error": 0.36371962274292763,
+      "series": "token prefill",
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "recovery ratio (arm F / control F)": 0.762438854306837,
+      "error": 0.40905128439677896,
+      "series": "token prefill",
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "recovery ratio (arm F / control F)": 0.5434930074347758,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "recovery ratio (arm F / control F)": 0.723276933579233,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "recovery ratio (arm F / control F)": 0.8011218903979782,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "recovery ratio (arm F / control F)": 0.2660877619814498,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "recovery ratio (arm F / control F)": 0.32407862204367405,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "recovery ratio (arm F / control F)": 0.46836255054301235,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "recovery ratio (arm F / control F)": 0.8125029812003378,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "recovery ratio (arm F / control F)": 1.0561290886701635,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "recovery ratio (arm F / control F)": 1.128845784363063,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "recovery ratio (arm F / control F)": 0.372603922073855,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "recovery ratio (arm F / control F)": 0.7986545495644612,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "recovery ratio (arm F / control F)": 0.762438854306837,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "recovery ratio (arm F / control F)": 0.03870251003632008,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "recovery ratio (arm F / control F)": 0.46460120123314963,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "recovery ratio (arm F / control F)": 0.356905792415118,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "recovery ratio (arm F / control F)": 0.8089998334907529,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "recovery ratio (arm F / control F)": 1.1920404467190049,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "recovery ratio (arm F / control F)": 1.175008361208676,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.531248210549526,
+      "error": 0.4000682081017821,
+      "series": "state patch",
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.46846441841285386,
+      "error": 0.3590654838421319,
+      "series": "state patch",
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.6637798375450271,
+      "error": 0.37669986474900874,
+      "series": "state patch",
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.3726274223622837,
+      "error": 0.4000682081017821,
+      "series": "token prefill",
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.8074492128032158,
+      "error": 0.3590654838421319,
+      "series": "token prefill",
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.7503199256264724,
+      "error": 0.37669986474900874,
+      "series": "token prefill",
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.531248210549526,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.46846441841285386,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.6637798375450271,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.15471996952198286,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.33050777940384646,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.377838417664793,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.8297161132534353,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.6633249662766894,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 1.0069981180231857,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.3726274223622837,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.8074492128032158,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.7503199256264724,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.024073352290778005,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 0.4064173727840452,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 0.3391471279153484,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "opening positions transplanted": 1.0,
+      "y": 0.8242097684943422,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "opening positions transplanted": 2.0,
+      "y": 1.124548340468309,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "opening positions transplanted": 3.0,
+      "y": 1.0925468574133659,
+      "_kind": "line",
+      "_group": 31
+    }
+  ],
+  "n_series": 32,
+  "total_points": 96,
+  "text": {
+    "suptitle": "Qwen3.5-9B: recovery vs opening length (steered arms, same-wave control)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "instruction-format pairs\npatch-content donors (confirmatory)",
+        "ylabel": "recovery ratio (arm F / control F)",
+        "legend_labels": [
+          "state patch",
+          "token prefill"
+        ],
+        "xticklabels": [
+          "1",
+          "2",
+          "3"
+        ],
+        "yticklabels": [
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25",
+          "1.50"
+        ]
+      },
+      {
+        "title_left": "instruction-format pairs\nnatural-opening donors (descriptive)",
+        "xticklabels": [
+          "1",
+          "2",
+          "3"
+        ]
+      },
+      {
+        "title_left": "pirate matched-query pairs\npatch-content donors (confirmatory)",
+        "xlabel": "opening positions transplanted",
+        "ylabel": "recovery ratio (arm F / control F)",
+        "xticklabels": [
+          "1",
+          "2",
+          "3"
+        ],
+        "yticklabels": [
+          "\u22120.25",
+          "0.00",
+          "0.25",
+          "0.50",
+          "0.75",
+          "1.00",
+          "1.25",
+          "1.50"
+        ]
+      },
+      {
+        "title_left": "pirate matched-query pairs\nnatural-opening donors (descriptive)",
+        "xlabel": "opening positions transplanted",
+        "xticklabels": [
+          "1",
+          "2",
+          "3"
+        ]
+      }
+    ],
+    "series": [
+      "state patch",
+      "token prefill"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

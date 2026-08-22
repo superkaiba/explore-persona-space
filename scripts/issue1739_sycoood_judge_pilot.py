@@ -73,7 +73,9 @@ def main() -> int:
     ap.add_argument("--inputs-dir", default="data/issue_1739/inputs")
     ap.add_argument("--max-tokens", type=int, default=1024)
     ap.add_argument("--n-draws", type=int, default=2)
-    ap.add_argument("--target-total-draws", type=int, default=200)
+    # #2124 satisfiability: 5 rungs x n_draws 2 x ceil(51/2) = 260 — 200 realized
+    # only 40 draws/arm, below the 51-draw resolution floor at the 2% threshold.
+    ap.add_argument("--target-total-draws", type=int, default=260)
     args = ap.parse_args()
 
     from explore_persona_space.eval.judge_pilot import judge_pilot_gate

@@ -237,12 +237,17 @@ Inherit each open concern (severity=`BLOCKER` or `CONCERN`, latest event
   <kebab-id> --severity CONCERN|BLOCKER --summary <80c> --by
   code-reviewer --round <n>`. The `--summary` is capped at 200 chars —
   compose the one-liner within the cap and put detail in the evidence
-  field / verdict body; an over-cap `--summary` via the CLI is
-  auto-truncated at a word boundary with a loud warning (full text
-  shifted into `--evidence` when evidence is empty; programmatic callers
-  still get `ValueError: summary too long`). Verdict-body
+  field / verdict body; an over-cap `--summary` with NO --evidence
+  shifts the full text into `--evidence` with a loud warning, an
+  over-cap `--summary` WITH --evidence is a hard error (#2121), and
+  long text goes through `--summary-file` (preserved verbatim in the
+  evidence field; programmatic callers still get `ValueError: summary
+  too long`). Verdict-body
   concern bullets that are NOT persisted remain opportunistic (the
-  historical PASS+CONCERNS auto-advance contract applies).
+  historical PASS+CONCERNS auto-advance contract applies). Record the
+  ledger state as one verdict-body line — `**Prior-concerns ledger:** <K
+  open: id1, id2, …>` or `**Prior-concerns ledger:** empty` — so a
+  vacuous walk is visible in the verdict itself (#2326).
 - **A deferred feature the plan's PRODUCTION path requires is ALWAYS a
   persisted concern — never prose-only.** When the implementer's report
   (a `(d) Needs human eyeball` bullet, a TODO in the diff like
@@ -1199,3 +1204,73 @@ helper-wrapped #1336 shape fires, but deeper nesting, cross-module helpers,
 dynamic dispatch, and non-`smoke`-named flags are its disclosed false
 negatives — THIS lens is the binding gate for exactly those. Use it to seed
 the grep, never as the verdict (naming-completeness is reviewer-owned).
+
+## Step 0.72 detail — own-device-scoped GPU-state verdicts
+
+**Grep triggers** (run over the diff's touched `.py`/`.sh` files):
+`grep -nE 'nvidia-smi|--query-gpu' <file>` for smi parses;
+`grep -nE 'pynvml|nvmlDeviceGetHandleByIndex' <file>` for NVML handles;
+`grep -nE 'mem_get_info' <file>` for the torch read. For each hit, ask: does
+the surrounding code derive a drain / teardown / free-memory / idle /
+headroom VERDICT (a boolean / threshold / wait condition) in fan-out,
+dispatcher, reap, or teardown code? Pure telemetry prints and logging are not
+verdicts.
+
+**The FIVE ACCEPTED scoping shapes — an OR, never a CVD-only test.** The
+verdict must aggregate ONLY the job's own ASSIGNED-device rows; ANY ONE of
+these resolutions satisfies the gate:
+
+1. an explicit `CUDA_VISIBLE_DEVICES` parse, then a row filter to those
+   indices;
+2. **an explicitly threaded own-device-id parameter, then filter** — the
+   canonical in-repo shape, `issue2091_pod.py::_drain_wait_own_gpu(gpu_id,
+   ...)` at commit `2cc130dbff`: it runs a BARE all-GPU
+   `nvidia-smi --query-gpu=index,memory.used` and filters rows to `gpu_id`,
+   never reading CVD. This shape MUST pass — it is the #2091 fix itself;
+3. the SLURM allocation-env derivation —
+   `scripts/issue1902_common.py::realized_gpu_ids(env, detected)` /
+   `SLURM_JOB_GPUS` / `SLURM_STEP_GPUS` / `SLURM_GPUS_ON_NODE`
+   (`gotchas.md` L240; mandatory on GPU-shared fellows nodes, where CVD is
+   often unset and a CVD-only criterion is UNSATISFIABLE by correct code);
+4. `--id=<ids>` / `-i <ids>` passed to `nvidia-smi` (the query itself is
+   scoped, so no post-filter is needed);
+5. `torch.cuda.mem_get_info(<own-device>)` where the index is the leg's own
+   device (CVD-relative, or explicitly threaded per shape 2).
+
+**Non-satisfiers.** (a) Per-GPU detail in the FAILURE MESSAGE only —
+printing is not scoping: the #2091 error message already printed the
+per-GPU breakdown `[(0, 35579), (1, 19143), (2, 0), (3, 0)]` while the
+verdict took `max()` over all four rows. (b) `torch.cuda.device_count()` as
+a proxy for ownership — it respects CVD but reads the PHYSICAL count when
+CVD is unset (`gotchas.md` L240), so it cannot justify an unfiltered
+`nvidia-smi` parse.
+
+**Waiver.** `# HOST_WIDE_GPU_VERDICT_EXEMPT: <reason ≥ 20 chars>` on the
+line above the aggregation. Legitimate whole-host cases: a host-health
+audit, a janitor sweep, a single-tenant provision probe (e.g. preflight GPU
+counts on a pod the job owns exclusively).
+
+**FAIL templates.** One Critical tagged `host-wide-gpu-verdict`
+(SUBSTANTIVE — never in the Step 5c-bis strip set):
+
+- `<file>:<L> — host-wide GPU-state verdict: <max()/min()/any()/sum()> over
+  every row of an all-GPU <nvidia-smi/pynvml/mem_get_info> read in
+  <fan-out/dispatcher/reap/teardown> code; a sibling job's memory enters
+  this job's verdict. Remedy: resolve the own-device id list (CVD when set /
+  SLURM allocation env / threaded own-device id), FILTER rows to it, THEN
+  aggregate — or add the waiver with a ≥20-char reason.`
+- `<file>:<L> — bare all-GPU query feeds a drain/idle wait condition with no
+  index filter; nvidia-smi IGNORES CUDA_VISIBLE_DEVICES, so the wait keys on
+  devices this job does not own. Remedy: scope the query (--id=<ids>) or
+  filter the parsed rows to the job's own ids.`
+
+**The #2091 worked shape — BEFORE/AFTER.** BEFORE (FAILs):
+`reap_generation_engine` decided "vLLM drained" via `max(memory.used)`
+across ALL 4 host GPUs — 4 of 9 rung-jobs whose own GPUs read 0 MiB died on
+"vLLM teardown did not drain below 2048 MiB within 180s" (~765–880 s lost
+per job plus a fix round). AFTER (PASSes): commit `2cc130dbff` threads the
+unit's own `gpu_id` into `_drain_wait_own_gpu(gpu_id, ...)` and filters the
+same bare all-GPU query's rows to that id before aggregating — own-device
+scoping WITHOUT ever parsing CVD. Do not read the incident as "CVD parse
+required": the fix never reads CVD, and on GPU-shared fellows SLURM nodes
+CVD is routinely unset (shape 3 is the correct resolution there).

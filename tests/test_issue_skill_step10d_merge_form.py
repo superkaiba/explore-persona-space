@@ -20,12 +20,14 @@ protections (plan #1288 §5 durability pin).
 
 from pathlib import Path
 
+from tests.issue_skill_source import issue_skill_text
+
 SKILL = Path(__file__).resolve().parents[1] / ".claude" / "skills" / "issue" / "SKILL.md"
 
 
 def _step10d_span() -> str:
     """Return the SKILL.md text from the (unique) `### Step 10d` heading onward."""
-    text = SKILL.read_text()
+    text = issue_skill_text()
     return text[text.index("### Step 10d") :]
 
 

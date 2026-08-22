@@ -1,0 +1,121 @@
+[dispatch] phase=upload num_workers=4 out_root=/workspace/issue2162_out/tbmp
+[phase-dispatch] upload
+2026-08-14 23:59:50,033 INFO issue2162.tbmp [phase=upload_tbmp]
+2026-08-14 23:59:53,634 INFO explore_persona_space.orchestrate.hub Bulk-uploading /workspace/issue2162_out/tbmp/tb_bank (allow_patterns=['*.pt', '*.json']) -> superkaiba1/explore-persona-space-overflow/issue2162_ctxinfo/analysis_tensors/tbmp/tb_bank
+Processing Files (0 / 0)      : |          |  0.00B /  0.00B            
+New Data Upload               : |          |  0.00B /  0.00B            [A
+
+  ...t/tbmp/tb_bank/tb_bank.pt:   3%|▎         | 16.2MB /  607MB            [A[A
+
+  ...t/tbmp/tb_bank/tb_bank.pt:   3%|▎         | 16.2MB /  607MB            [A[AProcessing Files (0 / 1)      :   3%|▎         | 16.2MB /  607MB, 20.4MB/s  
+New Data Upload               :  20%|██        | 13.7MB / 67.1MB, 17.3MB/s  [A
+
+  ...t/tbmp/tb_bank/tb_bank.pt:  13%|█▎        | 80.4MB /  607MB            [A[AProcessing Files (0 / 1)      :  13%|█▎        | 80.4MB /  607MB, 80.7MB/s  
+New Data Upload               :  99%|█████████▉| 66.4MB / 67.1MB, 66.7MB/s  [A
+
+  ...t/tbmp/tb_bank/tb_bank.pt:  13%|█▎        | 80.4MB /  607MB            [A[A
+
+  ...t/tbmp/tb_bank/tb_bank.pt:  13%|█▎        | 80.4MB /  607MB            [A[A
+
+  ...t/tbmp/tb_bank/tb_bank.pt:  28%|██▊       |  171MB /  607MB            [A[AProcessing Files (0 / 1)      :  28%|██▊       |  171MB /  607MB,  107MB/s  
+New Data Upload               :  99%|█████████▉|  133MB /  134MB, 83.5MB/s  [A
+
+  ...t/tbmp/tb_bank/tb_bank.pt:  28%|██▊       |  171MB /  607MB            [A[A
+
+  ...t/tbmp/tb_bank/tb_bank.pt:  28%|██▊       |  171MB /  607MB            [A[A
+
+  ...t/tbmp/tb_bank/tb_bank.pt:  29%|██▉       |  179MB /  607MB            [A[AProcessing Files (0 / 1)      :  29%|██▉       |  179MB /  607MB, 81.3MB/s  
+New Data Upload               : 100%|██████████|  134MB /  134MB, 61.1MB/s  [A
+
+  ...t/tbmp/tb_bank/tb_bank.pt:  30%|███       |  184MB /  607MB            [A[AProcessing Files (0 / 1)      :  30%|███       |  184MB /  607MB, 77.0MB/s  
+
+  ...t/tbmp/tb_bank/tb_bank.pt:  31%|███       |  187MB /  607MB            [A[AProcessing Files (0 / 1)      :  31%|███       |  187MB /  607MB, 71.9MB/s  
+
+  ...t/tbmp/tb_bank/tb_bank.pt:  32%|███▏      |  193MB /  607MB            [A[AProcessing Files (0 / 1)      :  32%|███▏      |  193MB /  607MB, 68.9MB/s  
+
+  ...t/tbmp/tb_bank/tb_bank.pt:  32%|███▏      |  193MB /  607MB            [A[A
+
+  ...t/tbmp/tb_bank/tb_bank.pt:  34%|███▍      |  205MB /  607MB            [A[AProcessing Files (0 / 1)      :  34%|███▍      |  205MB /  607MB, 64.2MB/s  
+
+  ...t/tbmp/tb_bank/tb_bank.pt:  35%|███▍      |  212MB /  607MB            [A[AProcessing Files (0 / 1)      :  35%|███▍      |  212MB /  607MB, 62.3MB/s  
+
+  ...t/tbmp/tb_bank/tb_bank.pt:  36%|███▌      |  219MB /  607MB            [A[AProcessing Files (0 / 1)      :  36%|███▌      |  219MB /  607MB, 60.8MB/s  
+
+  ...t/tbmp/tb_bank/tb_bank.pt:  38%|███▊      |  233MB /  607MB            [A[AProcessing Files (0 / 1)      :  38%|███▊      |  233MB /  607MB, 61.5MB/s  
+New Data Upload               :  67%|██████▋   |  135MB /  201MB, 35.6MB/s  [A
+
+  ...t/tbmp/tb_bank/tb_bank.pt:  54%|█████▍    |  328MB /  607MB            [A[AProcessing Files (0 / 1)      :  54%|█████▍    |  328MB /  607MB, 82.0MB/s  
+New Data Upload               :  96%|█████████▌|  201MB /  210MB, 50.4MB/s  [A
+
+  ...t/tbmp/tb_bank/tb_bank.pt:  57%|█████▋    |  348MB /  607MB            [A[AProcessing Files (0 / 1)      :  57%|█████▋    |  348MB /  607MB, 82.9MB/s  
+New Data Upload               :  99%|█████████▉|  208MB /  210MB, 49.7MB/s  [A
+
+  ...t/tbmp/tb_bank/tb_bank.pt:  58%|█████▊    |  351MB /  607MB            [A[AProcessing Files (0 / 1)      :  58%|█████▊    |  351MB /  607MB, 79.8MB/s  
+New Data Upload               : 100%|█████████▉|  209MB /  210MB, 47.6MB/s  [A
+
+  ...t/tbmp/tb_bank/tb_bank.pt:  58%|█████▊    |  352MB /  607MB            [A[AProcessing Files (0 / 1)      :  58%|█████▊    |  352MB /  607MB, 76.6MB/s  
+New Data Upload               : 100%|██████████|  210MB /  210MB, 45.8MB/s  [A
+
+  ...t/tbmp/tb_bank/tb_bank.pt:  58%|█████▊    |  352MB /  607MB            [A[A
+
+  ...t/tbmp/tb_bank/tb_bank.pt:  58%|█████▊    |  352MB /  607MB            [A[A
+
+  ...t/tbmp/tb_bank/tb_bank.pt:  58%|█████▊    |  352MB /  607MB            [A[A
+
+  ...t/tbmp/tb_bank/tb_bank.pt:  58%|█████▊    |  352MB /  607MB            [A[A
+
+  ...t/tbmp/tb_bank/tb_bank.pt:  58%|█████▊    |  352MB /  607MB            [A[A
+
+  ...t/tbmp/tb_bank/tb_bank.pt:  58%|█████▊    |  352MB /  607MB            [A[A
+
+  ...t/tbmp/tb_bank/tb_bank.pt:  58%|█████▊    |  352MB /  607MB            [A[A
+
+  ...t/tbmp/tb_bank/tb_bank.pt:  58%|█████▊    |  352MB /  607MB            [A[A
+
+  ...t/tbmp/tb_bank/tb_bank.pt:  58%|█████▊    |  352MB /  607MB            [A[A
+
+  ...t/tbmp/tb_bank/tb_bank.pt:  58%|█████▊    |  352MB /  607MB            [A[A
+
+  ...t/tbmp/tb_bank/tb_bank.pt:  58%|█████▊    |  352MB /  607MB            [A[A
+
+  ...t/tbmp/tb_bank/tb_bank.pt:  58%|█████▊    |  352MB /  607MB            [A[A
+
+  ...t/tbmp/tb_bank/tb_bank.pt:  58%|█████▊    |  352MB /  607MB            [A[A
+
+  ...t/tbmp/tb_bank/tb_bank.pt:  58%|█████▊    |  352MB /  607MB            [A[A
+
+  ...t/tbmp/tb_bank/tb_bank.pt:  58%|█████▊    |  352MB /  607MB            [A[A
+
+  ...t/tbmp/tb_bank/tb_bank.pt:  58%|█████▊    |  352MB /  607MB            [A[A
+
+  ...t/tbmp/tb_bank/tb_bank.pt:  58%|█████▊    |  352MB /  607MB            [A[A
+
+  ...t/tbmp/tb_bank/tb_bank.pt:  58%|█████▊    |  352MB /  607MB            [A[A
+
+  ...t/tbmp/tb_bank/tb_bank.pt:  58%|█████▊    |  352MB /  607MB            [A[A
+
+  ...t/tbmp/tb_bank/tb_bank.pt:  58%|█████▊    |  352MB /  607MB            [A[A
+
+  ...t/tbmp/tb_bank/tb_bank.pt:  58%|█████▊    |  352MB /  607MB            [A[AProcessing Files (0 / 1)      :  58%|█████▊    |  352MB /  607MB, 40.9MB/s  
+New Data Upload               : 100%|██████████|  210MB /  210MB, 24.5MB/s  
+  ...t/tbmp/tb_bank/tb_bank.pt:  58%|█████▊    |  352MB /  607MB            
+2026-08-15 00:00:04,520 INFO explore_persona_space.orchestrate.hub Bulk upload verified: 2 files at superkaiba1/explore-persona-space-overflow/issue2162_ctxinfo/analysis_tensors/tbmp/tb_bank
+2026-08-15 00:00:04,520 INFO issue2162.run [upload] 2 files -> issue2162_ctxinfo/analysis_tensors/tbmp/tb_bank (one commit)
+2026-08-15 00:00:04,753 INFO explore_persona_space.orchestrate.hub Bulk-uploading /workspace/issue2162_out/tbmp/gates (allow_patterns=['*.json']) -> superkaiba1/explore-persona-space-overflow/issue2162_ctxinfo/analysis_tensors/tbmp/gates
+2026-08-15 00:00:05,667 INFO explore_persona_space.orchestrate.hub Bulk upload verified: 2 files at superkaiba1/explore-persona-space-overflow/issue2162_ctxinfo/analysis_tensors/tbmp/gates
+2026-08-15 00:00:05,667 INFO issue2162.run [upload] 2 files -> issue2162_ctxinfo/analysis_tensors/tbmp/gates (one commit)
+2026-08-15 00:00:06,534 INFO explore_persona_space.orchestrate.hub Bulk-uploading /workspace/issue2162_out/tbmp/rollouts (allow_patterns=['shard_*.jsonl']) -> superkaiba1/explore-persona-space-overflow/issue2162_ctxinfo/raw_completions/tbmp/grid
+2026-08-15 00:00:13,233 INFO explore_persona_space.orchestrate.hub Bulk upload verified: 45 files at superkaiba1/explore-persona-space-overflow/issue2162_ctxinfo/raw_completions/tbmp/grid
+2026-08-15 00:00:13,233 INFO issue2162.run [upload] 45 files -> issue2162_ctxinfo/raw_completions/tbmp/grid (one commit)
+2026-08-15 00:00:13,450 INFO explore_persona_space.orchestrate.hub Bulk-uploading /workspace/issue2162_out/tbmp/margin (allow_patterns=['*.jsonl']) -> superkaiba1/explore-persona-space-overflow/issue2162_ctxinfo/analysis_tensors/tbmp/margin
+2026-08-15 00:00:17,919 INFO explore_persona_space.orchestrate.hub Bulk upload verified: 45 files at superkaiba1/explore-persona-space-overflow/issue2162_ctxinfo/analysis_tensors/tbmp/margin
+2026-08-15 00:00:17,919 INFO issue2162.run [upload] 45 files -> issue2162_ctxinfo/analysis_tensors/tbmp/margin (one commit)
+2026-08-15 00:00:19,026 INFO explore_persona_space.orchestrate.hub Bulk-uploading /workspace/issue2162_out/tbmp/manifests (allow_patterns=['*.json', 'blocks_tbmp/*.done.json', 'margin_blocks_tbmp/*.done.json']) -> superkaiba1/explore-persona-space-overflow/issue2162_ctxinfo/analysis_tensors/tbmp/manifests
+2026-08-15 00:00:29,131 INFO explore_persona_space.orchestrate.hub Bulk upload verified: 99 files at superkaiba1/explore-persona-space-overflow/issue2162_ctxinfo/analysis_tensors/tbmp/manifests
+2026-08-15 00:00:29,131 INFO issue2162.run [upload] 99 files -> issue2162_ctxinfo/analysis_tensors/tbmp/manifests (one commit)
+2026-08-15 00:00:30,936 INFO explore_persona_space.orchestrate.hub Bulk-uploading /workspace/issue2162_out/tbmp (allow_patterns=['*.json']) -> superkaiba1/explore-persona-space-overflow/issue2162_ctxinfo/analysis_tensors/tbmp/manifests/outroot
+2026-08-15 00:00:36,208 INFO explore_persona_space.orchestrate.hub Bulk upload verified: 3 files at superkaiba1/explore-persona-space-overflow/issue2162_ctxinfo/analysis_tensors/tbmp/manifests/outroot
+2026-08-15 00:00:36,208 INFO issue2162.run [upload] 3 files -> issue2162_ctxinfo/analysis_tensors/tbmp/manifests/outroot (one commit)
+2026-08-15 00:02:05,545 INFO issue2162.tbmp [upload_tbmp] sentinel written: /workspace/logs/issue-2162-tbmp-results.json
+2026-08-15 00:02:05,546 INFO issue2162.tbmp [phase=upload_tbmp_done]
+[phase=done]

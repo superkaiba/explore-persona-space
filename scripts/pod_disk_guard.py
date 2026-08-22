@@ -37,6 +37,7 @@ import fnmatch
 import os
 import shutil
 import sys
+import time
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
@@ -66,6 +67,68 @@ def is_intermediate_merged(name: str) -> bool:
 
 # ── report ───────────────────────────────────────────────────────────────────
 
+# Sweep age gate for leaked probe files (#2329/#2346): a survivor is removed
+# only when its embedded pid is dead on THIS host AND the file is older than
+# this. The age gate protects LIVE cross-node siblings on cluster-shared
+# filesystems, whose pids are invisible to the local pid table (#1979); 3600 s
+# is >2x the worst observed ~9 min MooseFS FUSE fallocate grind (#2333).
+_PROBE_SWEEP_MIN_AGE_S = 3600
+_PROBE_PREFIX = ".pod_disk_guard_probe."
+
+
+def _sweep_stale_probe_files(
+    probe_dir: Path,
+    *,
+    prefix: str = _PROBE_PREFIX,
+    min_age_s: float = _PROBE_SWEEP_MIN_AGE_S,
+) -> None:
+    """Best-effort removal of leaked probe files from prior INTERRUPTED probes.
+
+    An interrupted probe (SIGTERM/SIGKILL mid-``posix_fallocate``) leaks its
+    entire allocation — ``finally:`` never runs under those signals (#2329: a
+    12,864 MB survivor). Unique per-invocation names (#1979) mean survivors
+    ACCUMULATE. Sweeps ``<prefix><pid>.<uuid8>.tmp`` only when BOTH (a) the
+    embedded pid is dead on this host and (b) mtime is older than
+    ``min_age_s``; live/foreign-uid pids, fresh files, and malformed names are
+    left untouched. Fail-soft: per-file errors are suppressed — a sweep error
+    can never fail the probe. Mirrors
+    ``preflight._sweep_stale_probe_files`` (duplicated, not imported: this
+    script is pure-stdlib by design and must run under a bare ``python3``).
+    """
+    now = time.time()
+    try:
+        entries = list(os.scandir(probe_dir))
+    except OSError:
+        return
+    for entry in entries:
+        name = entry.name
+        if not (name.startswith(prefix) and name.endswith(".tmp")):
+            continue
+        # Strict "<prefix><pid>.<uuid8>.tmp" parse: legacy fixed names and
+        # foreign files never match, so only writer-created files are swept.
+        middle = name[len(prefix) : -len(".tmp")]
+        parts = middle.split(".")
+        if len(parts) != 2 or not parts[0].isdigit():
+            continue
+        if len(parts[1]) != 8 or not all(c in "0123456789abcdef" for c in parts[1]):
+            continue
+        with contextlib.suppress(OSError, OverflowError, ValueError):
+            pid = int(parts[0])
+            if pid <= 0 or pid > 2**31 - 1:
+                # Bound-check: os.kill raises OverflowError (not OSError) past
+                # the C int range; a nonsense pid is treated as foreign.
+                continue
+            if now - entry.stat().st_mtime < min_age_s:
+                continue  # fresh: possibly a LIVE cross-node sibling's probe
+            try:
+                os.kill(pid, 0)
+                continue  # pid LIVE on this host -> keep
+            except ProcessLookupError:
+                pass  # dead on this host AND old -> sweep below
+            except PermissionError:
+                continue  # pid exists under a foreign uid -> keep
+            os.unlink(entry.path)
+
 
 def probe_quota_headroom(root: Path, min_gb: int) -> tuple[bool, float, str]:
     """Probe true per-pod writable headroom at ``root`` via ``posix_fallocate``.
@@ -81,6 +144,10 @@ def probe_quota_headroom(root: Path, min_gb: int) -> tuple[bool, float, str]:
     share_free_gb = shutil.disk_usage(str(root)).free / GB
 
     root.mkdir(parents=True, exist_ok=True)
+    # Sweep leaked survivors from prior INTERRUPTED probes BEFORE probing —
+    # a leaked allocation consumes the very headroom this probe measures
+    # (#2329/#2346). Fail-soft: never affects the probe's verdict.
+    _sweep_stale_probe_files(root)
     # Unique per-invocation probe path: multiple concurrent probes on the same
     # shared filesystem must not collide. A sibling worker's unlink of the same
     # fixed path can invalidate this fd mid-fallocate → EBADF. Mirrors

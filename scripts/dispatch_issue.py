@@ -660,13 +660,14 @@ def _slurm_kinds() -> frozenset[str]:
 
 
 def _lane_suffix_honored_kinds() -> frozenset[str]:
-    """Lanes whose instance/job names honor ``--lane-suffix``.
+    """Lanes whose instance/job/pod names honor ``--lane-suffix``.
 
-    GCP instance names (#934) + SLURM job names / scratch dirs (#2055).
-    RunPod pod names remain per-issue (``pod-<N>``) — the residual
-    ``lane_suffix_unhonored_by_lane`` warning surface.
+    GCP instance names (#934) + SLURM job names / scratch dirs (#2055) +
+    RunPod pod names (``pod-<N>-<slug>``, #2145). The
+    ``lane_suffix_unhonored_by_lane`` warning surface remains as a
+    safety net for any future lane kind outside this set.
     """
-    return frozenset({"gcp"}) | _slurm_kinds()
+    return frozenset({"gcp", "runpod"}) | _slurm_kinds()
 
 
 def _slurm_legacy_unsuffixed_job_name(spec: Any, cluster: Any) -> str:
@@ -946,6 +947,124 @@ def _gpus_gcp_lane_conflict(spec: Any) -> dict[str, Any] | None:
         "reason": "gpus_machine_mismatch",
         "note": note,
     }
+
+
+def _lane_suffix_runpod_grammar_conflict(spec: Any) -> dict[str, Any] | None:
+    """Pre-route ``--lane-suffix`` vs RunPod pod-name grammar guard (#2145).
+
+    A suffix can pass the parser-surface lane-suffix grammar
+    (``[a-z0-9]([a-z0-9-]*[a-z0-9])?``, <=43 chars — #934) yet fail the
+    TIGHTER RunPod pod-name suffix grammar
+    (``[a-z][a-z0-9-]{0,19}`` — letter-initial, <=20 chars;
+    ``pod_lifecycle.py cmd_provision``). On a RunPod-reachable route the
+    suffix mints ``pod-<N>-<slug>``, so the mismatch must refuse HERE,
+    pre-route: a grammar ``SystemExit`` inside the provision subprocess
+    would be wrapped by ``router._runpod_terminal_rung`` into
+    ``NoComputeAvailableError`` and MISREAD as a re-drivable capacity
+    miss (the #940 wrapping class). The NORMALIZED CLI backend is what's
+    checked (``spec.backend`` = ``normalize_backend_value(args.backend)``,
+    absent -> ``"auto"`` = RunPod-reachable); frontmatter ``backend:``
+    never enters ``spec.backend`` in this CLI, so an omitted flag always
+    routes through the guard.
+
+    Returns the exit-2 failure body (same shape as
+    :func:`_gpus_gcp_lane_conflict`) when the launch must be refused;
+    ``None`` when it may proceed: no suffix; an explicit non-RunPod
+    backend pin (GCP / SLURM lanes keep the looser #934 grammar); an
+    ``auto`` route carrying ``no_runpod_fallback`` (structurally
+    RunPod-unreachable — see below); or a pod-grammar-conformant suffix.
+    """
+    suffix = str((spec.extra or {}).get("lane_suffix") or "")
+    if not suffix:
+        return None
+    if spec.backend not in {"runpod", "auto"}:
+        # Explicit non-RunPod pin: the lane's own (looser) grammar governs.
+        # `auto` counts as RunPod-reachable regardless of EPM_AUTO_LANE_ORDER
+        # — the end-of-chain RunPod terminal rung retries RunPod after full
+        # exhaustion (and #2054's leading lane may hit it first).
+        return None
+    if spec.backend == "auto" and (spec.extra or {}).get("no_runpod_fallback"):
+        # #1997 opt-out: EVERY auto-chain RunPod path (the #2054 leading lane
+        # AND the end-of-chain retry both funnel through
+        # router._runpod_terminal_rung) declines at the TOP of the rung when
+        # no_runpod_fallback is set, so this launch structurally cannot reach
+        # RunPod — the looser #934 grammar governs (round-2 regression fix:
+        # `auto --no-runpod-fallback --lane-suffix <21-43 chars>` was a valid
+        # combination before #2145 and must stay one). Scoped to `auto` ONLY:
+        # an explicit runpod pin ignores the flag by design, and the CLI
+        # already refuses that contradictory combination at parse time.
+        return None
+    from explore_persona_space.backends.base import RUNPOD_NAME_SUFFIX_RE
+
+    if RUNPOD_NAME_SUFFIX_RE.fullmatch(suffix):
+        return None
+    note = (
+        "failure_class: infra\n"
+        "reason: lane_suffix_not_runpod_pod_grammar\n"
+        f"detail: --lane-suffix {suffix!r} passes the lane-suffix grammar "
+        "([a-z0-9]([a-z0-9-]*[a-z0-9])?, <=43 chars, #934) but NOT the RunPod "
+        "pod-name suffix grammar ([a-z][a-z0-9-]{0,19} — lowercase, "
+        f"letter-initial, <=20 chars), and the resolved backend {spec.backend!r} "
+        "can land on the RunPod lane, where the suffix mints pod-<N>-<slug> "
+        "(#2145). Refusing pre-route: the provision-time SystemExit would "
+        "otherwise be wrapped as a re-drivable no_compute_available terminal. "
+        "Fix: use a letter-initial suffix of <=20 chars; pin a non-RunPod "
+        "backend (--backend fellows/nibi/...) where the #934 grammar applies; "
+        "or, on an auto route, pass --no-runpod-fallback (declines every "
+        "RunPod rung, so the looser grammar governs)."
+    )
+    return {
+        "ok": False,
+        "issue": int(spec.issue),
+        "failure_class": "infra",
+        "status": "blocked",
+        "reason": "lane_suffix_not_runpod_pod_grammar",
+        "note": note,
+    }
+
+
+def _validate_gpu_type_arg(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
+    """Parse-time ``--gpu-type`` validation (#2145) — ``parser.error`` (exit 2) on a miss.
+
+    Validates through the SAME resolver the provision path uses
+    (``runpod_api.resolve_gpu_type_id``) — a nonexistent gpuTypeId submitted
+    to RunPod reads as a PERMANENT no-capacity miss (#537), so reject before
+    any backend is built (mirrors the ``--env-pin`` lazy-validate pattern;
+    lazy import via the ``scripts.*`` package form — the repo-root sys.path
+    bootstrap at module top resolves it in script mode and under the test
+    conftest alike; a bare ``from runpod_api import ...`` only resolves in
+    script mode, where ``scripts/`` itself is ``sys.path[0]``). No-op when
+    the flag is absent. Extracted from :func:`main` so the knob doesn't push
+    it over the C901 cap."""
+    if not getattr(args, "gpu_type", None):
+        return
+    from scripts.runpod_api import RunPodError, resolve_gpu_type_id
+
+    try:
+        resolve_gpu_type_id(args.gpu_type)
+    except RunPodError as exc:
+        parser.error(str(exc))
+
+
+def _pre_route_refusals(
+    spec: Any, args: argparse.Namespace, extra: dict[str, Any]
+) -> dict[str, Any] | None:
+    """First pre-route exit-2 refusal body, or ``None`` when the launch may route.
+
+    Order (preserved from the pre-extraction ``_cmd_launch`` inline blocks):
+    (1) the #2145 ``--lane-suffix`` / RunPod pod-name grammar guard — a
+    #934-legal suffix that fails the tighter pod grammar would otherwise die
+    as a provision-subprocess ``SystemExit`` wrapped into a re-drivable
+    capacity miss; (2) the #2161 CLI-drift refusals (no ``--repo-branch``
+    with a live ``issue-<N>`` branch + a repo-materializing lane reachable;
+    ``--max-run-duration`` without ``--time-budget-hours`` while a SLURM
+    lane is reachable). Extracted from :func:`_cmd_launch` so each new guard
+    doesn't push the dispatcher over the C901 cap (the
+    ``_spec_extra_from_args`` precedent)."""
+    conflict = _lane_suffix_runpod_grammar_conflict(spec)
+    if conflict is not None:
+        return conflict
+    return _cli_drift_refusal(args, extra)
 
 
 def _width_required_gpus_conflict(args: argparse.Namespace) -> dict[str, Any] | None:
@@ -1774,8 +1893,20 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:  # noqa
         # mint + the handle-sidecar composer. Parse-time validated
         # (_lane_suffix_arg); absent → key ABSENT (never None-valued — a
         # None-valued key would flip canonicalize_spec output and every
-        # live unsuffixed lease spec-hash).
+        # live unsuffixed lease spec-hash). As of #2145 the RunPod lane
+        # honors it too (pod-<N>-<slug> via pod_lifecycle --name-suffix).
         extra["lane_suffix"] = args.lane_suffix
+    if getattr(args, "gpu_type", None):
+        # #2145: RunPod GPU-type override — RunPodBackend.launch threads it
+        # to `pod_lifecycle.py provision --gpu-type` (short name H100/H200/
+        # A100 or a full vendor-prefixed gpuTypeId). Parse-time validated in
+        # main() via runpod_api.resolve_gpu_type_id (#537: a nonexistent
+        # gpuTypeId reads as permanent no-capacity on RunPod). Honored on
+        # the RunPod lane ONLY — a launch won by another lane records
+        # gpu_type_unhonored_by_lane in the launch JSON. Omit-when-absent
+        # (the #934 lane_suffix discipline: a None-valued key would flip
+        # canonicalize_spec output and every live lease spec-hash).
+        extra["gpu_type"] = args.gpu_type
     if getattr(args, "execute_workload", False):
         # RunPod-honored knob (#909): opts the launch into the RunPod
         # execution leg (RunPodBackend.launch SSHes the fresh pod, syncs
@@ -1804,8 +1935,10 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:  # noqa
         # pre-launch-refuses via the router's ladder guard (typed
         # GpuRamBelowMinRamGbError → reason: gpu_ram_below_min_ram_gb).
         # RunPod-GPU explicit-override lane (--backend runpod with a GPU
-        # intent) remains inert — a residual not covered by #1998. Inert on
-        # SLURM lanes.
+        # intent) remains inert — a residual not covered by #1998. SLURM
+        # lanes (#2275): raises the rendered #SBATCH --mem to the
+        # requirement (slurm._apply_min_ram, both GPU and CPU branches);
+        # refuses pre-submit above the cluster mem_gb_cap.
         extra["min_ram_gb"] = int(args.min_ram_gb)
     if getattr(args, "no_runpod_fallback", False):
         # Deferrable-dispatch knob (#1997): read at the TOP of
@@ -2024,10 +2157,26 @@ def _annotate_launch_body_reconnect_and_lane(
     if lane_suffix and result.chosen_kind not in _lane_suffix_honored_kinds():
         body["lane_suffix_unhonored_by_lane"] = result.chosen_kind
         logging.getLogger("dispatch_issue").warning(
-            "--lane-suffix=%s: instance/job-name isolation covers GCP + SLURM lanes "
-            "(#934/#2055); chosen_kind=%s keeps per-issue naming (RunPod pod-<N>) — "
+            "--lane-suffix=%s: instance/job/pod-name isolation covers GCP + SLURM + "
+            "RunPod lanes (#934/#2055/#2145); chosen_kind=%s keeps per-issue naming — "
             "concurrent lanes are NOT isolated on this lane.",
             lane_suffix,
+            result.chosen_kind,
+        )
+    gpu_type = getattr(args, "gpu_type", None)
+    if gpu_type:
+        body["gpu_type"] = gpu_type
+    if gpu_type and result.chosen_kind != "runpod":
+        # #2145: --gpu-type binds on the RunPod lane only — a launch won by
+        # any other lane sized its GPUs from the intent/lane mapping, so the
+        # override did NOT take effect. Additive key + loud warning (the
+        # lane_suffix_unhonored_by_lane precedent above).
+        body["gpu_type_unhonored_by_lane"] = result.chosen_kind
+        logging.getLogger("dispatch_issue").warning(
+            "--gpu-type=%s is honored on the RunPod lane only (#2145); "
+            "chosen_kind=%s sized its GPUs from the intent/lane mapping — the "
+            "override did NOT bind on this launch.",
+            gpu_type,
             result.chosen_kind,
         )
 
@@ -2113,15 +2262,15 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
         print(json.dumps(mismatch, sort_keys=True))
         return 2
 
-    # Pre-route CLI-drift refusals (#2161, incident #1336 — an implicit-main
-    # fellows launch ran stale code under a silently-evaporated 24h fence):
-    # (ii) no --repo-branch + a live issue-<N> branch + a repo-materializing
-    # lane reachable; (iii) --max-run-duration without --time-budget-hours
-    # while a SLURM lane is reachable. Same exit-2 JSON shape as the guards
-    # above; explicit flags bypass both by construction.
-    drift_conflict = _cli_drift_refusal(args, extra)
-    if drift_conflict is not None:
-        print(json.dumps(drift_conflict, sort_keys=True))
+    # Pre-route exit-2 refusals (#2145 lane-suffix/pod-name grammar, then the
+    # #2161 CLI-drift guards) — one combined helper so each new guard doesn't
+    # push _cmd_launch over the C901 cap (the _spec_extra_from_args precedent);
+    # runs after build_run_spec so the NORMALIZED CLI backend (absent -> auto
+    # = RunPod-reachable) is what's checked — frontmatter never enters
+    # spec.backend in this CLI.
+    refusal = _pre_route_refusals(spec, args, extra)
+    if refusal is not None:
+        print(json.dumps(refusal, sort_keys=True))
         return 2
 
     # Pre-route workload-cmd lane-env lint (#1329, incident #825): a bare
@@ -3123,7 +3272,9 @@ def _build_argparser() -> argparse.ArgumentParser:
             "RunPod CPU instances have FIXED RAM, so an unsatisfiable "
             "requirement refuses the fallback with reason "
             "cpu_fallback_infeasible_for_plan instead of provisioning an "
-            "undersized pod. SLURM lanes: inert. "
+            "undersized pod. SLURM lanes (#2275): raises the rendered "
+            "#SBATCH --mem to the requirement, both GPU and CPU branches; "
+            "refuses pre-submit above the cluster mem_gb_cap. "
             "RunPod-GPU explicit-override lane (--backend runpod with a "
             "GPU intent): remains inert — this is a residual not covered "
             "by #1998."
@@ -3317,23 +3468,59 @@ def _build_argparser() -> argparse.ArgumentParser:
     )
     launch.add_argument(
         "--lane-suffix",
+        "--name-suffix",
+        dest="lane_suffix",
         type=_lane_suffix_arg,
         default=None,
         help=(
-            "Per-lane instance-name suffix (#934): the GCP lane provisions "
-            "eps-issue-<N>-<suffix> and the handle sidecar becomes "
-            "issue-<N>-<suffix>-handle.json, so two concurrent lanes for one "
-            "issue coexist. Lowercase [a-z0-9-], <=43 chars. GCP instance "
-            "names AND SLURM job names + scratch dirs carry the suffix "
-            "(#2055); RunPod pod names remain per-issue (two lanes failing "
-            "over to RunPod still contend on pod-<N>). In a multi-lane plan, "
-            "suffix BOTH "
-            "lanes — an unsuffixed lane 1 plus a suffixed lane 2 leaves a "
+            "Per-lane instance/job/pod-name suffix (#934/#2055/#2145; "
+            "--name-suffix is an alias matching pod.py provision): the GCP "
+            "lane provisions eps-issue-<N>-<suffix>, SLURM job names + "
+            "scratch dirs carry it, the RunPod lane mints pod-<N>-<suffix>, "
+            "and the handle sidecar becomes issue-<N>-<suffix>-handle.json, "
+            "so N concurrent lanes for one issue coexist. Lowercase "
+            "[a-z0-9-], <=43 chars; on a RunPod-reachable route (--backend "
+            "runpod, or auto WITHOUT --no-runpod-fallback — with that flag "
+            "every auto-chain RunPod rung declines, so the looser grammar "
+            "governs) the TIGHTER pod grammar additionally binds "
+            "([a-z][a-z0-9-]{0,19}, letter-initial, <=20 chars — refused "
+            "pre-route otherwise, reason lane_suffix_not_runpod_pod_grammar). "
+            "Suffixed-pod residuals (#2145): the watcher's wedge clocks and "
+            "pod-safety auto-stop target remain ISSUE-keyed, so a suffixed "
+            "pod's wedge handling can be delayed/ALERT-only and a stop "
+            "resolves issue-wide; the per-pod #1961 shield (epm:run-launched "
+            "leading with pod=<name>) is the per-pod channel. Teardown duty: "
+            "destroy a suffixed pod SURGICALLY — pod.py terminate "
+            "--issue <N> --name-suffix <slug>, or dispatch_issue.py finalize "
+            "with this lane's sidecar — never the bare --issue form while "
+            "sibling pods live. In a multi-lane plan, suffix BOTH lanes — an "
+            "unsuffixed lane 1 plus a suffixed lane 2 leaves a "
             "forgotten-suffix poll/finalize silently resolving lane 1's "
             "sidecar. Rerunning a suffixed launch WITHOUT the flag creates a "
             "second unsuffixed instance (no reconnect). Multi-lane "
             "orchestrators should prefer passing --handle-file from the "
             "launch JSON's handle_sidecar_path to poll/finalize."
+        ),
+    )
+    launch.add_argument(
+        "--gpu-type",
+        type=str,
+        default=None,
+        help=(
+            "RunPod GPU-type override (#2145): threaded by "
+            "RunPodBackend.launch to pod_lifecycle.py provision --gpu-type. "
+            "Accepts a short name (H100/H200/A100, runpod_api.GPU_TYPE_IDS) "
+            "or a full vendor-prefixed gpuTypeId ('NVIDIA ...'/'AMD ...'). "
+            "Validated at parse time via runpod_api.resolve_gpu_type_id — a "
+            "nonexistent gpuTypeId submitted to RunPod reads as a PERMANENT "
+            "no-capacity miss (#537: 'H100 SXM' waited 88 min). Honored on "
+            "the RunPod lane ONLY; a launch won by another lane records "
+            "gpu_type_unhonored_by_lane in the launch JSON + a warning. "
+            "GPU COUNT stays --gpus (the existing lane-generic flag). "
+            "Teardown duty (as with --lane-suffix): a suffixed pod is "
+            "destroyed SURGICALLY — pod.py terminate --issue <N> "
+            "--name-suffix <slug> — never the bare --issue form while "
+            "sibling pods live (#1485)."
         ),
     )
 
@@ -3352,11 +3539,14 @@ def _build_argparser() -> argparse.ArgumentParser:
     )
     finalize.add_argument(
         "--lane-suffix",
+        "--name-suffix",
+        dest="lane_suffix",
         type=_lane_suffix_arg,
         default=None,
         help=(
             "Resolve the per-lane handle sidecar issue-<N>-<suffix>-handle.json "
-            "(#934). Ignored when --handle-file is given. Pass the SAME suffix "
+            "(#934; --name-suffix is an alias for launch/pod.py symmetry, "
+            "#2145). Ignored when --handle-file is given. Pass the SAME suffix "
             "the launch used — a forgotten suffix silently finalizes the "
             "unsuffixed lane's handle instead."
         ),
@@ -3488,6 +3678,9 @@ def main(
                 validate_extra_sync_paths(args.extra_sync_path)
             except ValueError as exc:
                 parser.error(str(exc))
+        # #2145: --gpu-type validates at parse time (helper keeps main()
+        # under the C901 cap; see _validate_gpu_type_arg).
+        _validate_gpu_type_arg(args, parser)
     logging.basicConfig(
         stream=sys.stderr,
         level=logging.DEBUG if args.debug else logging.INFO,
@@ -3536,6 +3729,7 @@ __all__ = [
     "_frontmatter_backend_value",
     "_gpus_gcp_lane_conflict",
     "_issue_branch_candidates",
+    "_lane_suffix_runpod_grammar_conflict",
     "_max_run_duration_slurm_conflict",
     "_provision_still_waiting",
     "_recognized_frontmatter_backends",

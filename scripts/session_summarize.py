@@ -728,7 +728,7 @@ def load_cache() -> dict:
         return {}
     try:
         return json.loads(CACHE_PATH.read_text())
-    except (OSError, json.JSONDecodeError):
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
         return {}
 
 

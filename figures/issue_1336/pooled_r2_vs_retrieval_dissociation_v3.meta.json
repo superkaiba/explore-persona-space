@@ -1,0 +1,430 @@
+{
+  "commit": "c6dd40c0",
+  "render_id": "f810e78e31864c01",
+  "git_commit": "c6dd40c0",
+  "git_dirty": false,
+  "created": "2026-08-14T02:26:39Z",
+  "figsize": [
+    9.6,
+    4.2
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "held-out R\u00b2 (pooled test partition)": 0.412577163534647,
+      "series": "Fitted ridge map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "held-out R\u00b2 (pooled test partition)": 0.5778464737384732,
+      "series": "Fitted ridge map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "held-out R\u00b2 (pooled test partition)": 0.597919828039505,
+      "series": "Fitted ridge map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "held-out R\u00b2 (pooled test partition)": 0.6022832271021715,
+      "series": "Fitted ridge map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "held-out R\u00b2 (pooled test partition)": 0.6194515549193196,
+      "series": "Fitted ridge map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out R\u00b2 (pooled test partition)": -1.2117379682014153,
+      "series": "Identity + bias baseline",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "held-out R\u00b2 (pooled test partition)": -2.392558173003817,
+      "series": "Identity + bias baseline",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "held-out R\u00b2 (pooled test partition)": -3.461906618269813,
+      "series": "Identity + bias baseline",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "held-out R\u00b2 (pooled test partition)": -3.437128980520753,
+      "series": "Identity + bias baseline",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "held-out R\u00b2 (pooled test partition)": -2.893206859267528,
+      "series": "Identity + bias baseline",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "rank-1 retrieval accuracy (cosine)": 0.206,
+      "error": 0.02187265817864853,
+      "series": "Fitted ridge map",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "rank-1 retrieval accuracy (cosine)": 0.6395,
+      "error": 0.020826775453727797,
+      "series": "Fitted ridge map",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "rank-1 retrieval accuracy (cosine)": 0.592,
+      "error": 0.02138642034563054,
+      "series": "Fitted ridge map",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "rank-1 retrieval accuracy (cosine)": 0.602,
+      "error": 0.02132597993059171,
+      "series": "Fitted ridge map",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "rank-1 retrieval accuracy (cosine)": 0.6075,
+      "error": 0.02135662625041701,
+      "series": "Fitted ridge map",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "rank-1 retrieval accuracy (cosine)": 0.4695,
+      "error": 0.02187265817864853,
+      "series": "Identity + bias baseline",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "rank-1 retrieval accuracy (cosine)": 0.6555,
+      "error": 0.020826775453727797,
+      "series": "Identity + bias baseline",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "rank-1 retrieval accuracy (cosine)": 0.609,
+      "error": 0.02138642034563054,
+      "series": "Identity + bias baseline",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "rank-1 retrieval accuracy (cosine)": 0.615,
+      "error": 0.02132597993059171,
+      "series": "Identity + bias baseline",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "rank-1 retrieval accuracy (cosine)": 0.612,
+      "error": 0.02135662625041701,
+      "series": "Identity + bias baseline",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "rank-1 retrieval accuracy (cosine)": 0.206,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "rank-1 retrieval accuracy (cosine)": 0.6395,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "rank-1 retrieval accuracy (cosine)": 0.592,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "rank-1 retrieval accuracy (cosine)": 0.602,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "rank-1 retrieval accuracy (cosine)": 0.6075,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "rank-1 retrieval accuracy (cosine)": 0.18827505342180123,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "rank-1 retrieval accuracy (cosine)": 0.6184566934204722,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "rank-1 retrieval accuracy (cosine)": 0.5704606790079166,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "rank-1 retrieval accuracy (cosine)": 0.5805473545500793,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "rank-1 retrieval accuracy (cosine)": 0.5860990010747162,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "rank-1 retrieval accuracy (cosine)": 0.22372494657819875,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "rank-1 retrieval accuracy (cosine)": 0.6605433065795278,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "rank-1 retrieval accuracy (cosine)": 0.6135393209920833,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "rank-1 retrieval accuracy (cosine)": 0.6234526454499206,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.0,
+      "rank-1 retrieval accuracy (cosine)": 0.6289009989252838,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "rank-1 retrieval accuracy (cosine)": 0.4695,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "rank-1 retrieval accuracy (cosine)": 0.6555,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "rank-1 retrieval accuracy (cosine)": 0.609,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "rank-1 retrieval accuracy (cosine)": 0.615,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "rank-1 retrieval accuracy (cosine)": 0.612,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "rank-1 retrieval accuracy (cosine)": 0.44762734182135144,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "rank-1 retrieval accuracy (cosine)": 0.6346732245462722,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "rank-1 retrieval accuracy (cosine)": 0.5876135796543694,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.0,
+      "rank-1 retrieval accuracy (cosine)": 0.5936740200694083,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.0,
+      "rank-1 retrieval accuracy (cosine)": 0.590643373749583,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.0,
+      "rank-1 retrieval accuracy (cosine)": 0.4913726581786485,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "rank-1 retrieval accuracy (cosine)": 0.6763267754537278,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.0,
+      "rank-1 retrieval accuracy (cosine)": 0.6303864203456305,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "rank-1 retrieval accuracy (cosine)": 0.6363259799305917,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 4.0,
+      "rank-1 retrieval accuracy (cosine)": 0.633356626250417,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.0,
+      "rank-1 retrieval accuracy (cosine)": 0.0005,
+      "series": "Chance (0.0005)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.0,
+      "rank-1 retrieval accuracy (cosine)": 0.0005,
+      "series": "Chance (0.0005)",
+      "_kind": "line",
+      "_group": 10
+    }
+  ],
+  "n_series": 11,
+  "total_points": 52,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Held-out R\u00b2, layer 30",
+        "ylabel": "held-out R\u00b2 (pooled test partition)",
+        "legend_labels": [
+          "Fitted ridge map",
+          "Identity + bias baseline"
+        ],
+        "xticklabels": [
+          "Base",
+          "SFT",
+          "DPO",
+          "RLVR",
+          "Longer RLVR"
+        ],
+        "yticklabels": [
+          "\u22124.0",
+          "\u22123.5",
+          "\u22123.0",
+          "\u22122.5",
+          "\u22122.0",
+          "\u22121.5",
+          "\u22121.0",
+          "\u22120.5",
+          "0.0",
+          "0.5",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "Retrieval at rank 1",
+        "ylabel": "rank-1 retrieval accuracy (cosine)",
+        "legend_labels": [
+          "Chance (0.0005)",
+          "Fitted ridge map",
+          "Identity + bias baseline"
+        ],
+        "xticklabels": [
+          "Base",
+          "SFT",
+          "DPO",
+          "RLVR",
+          "Longer RLVR"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      }
+    ],
+    "series": [
+      "Fitted ridge map",
+      "Identity + bias baseline",
+      "Chance (0.0005)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

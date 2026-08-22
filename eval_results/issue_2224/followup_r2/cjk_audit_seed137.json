@@ -1,0 +1,362 @@
+{
+  "meta": {
+    "script": "issue2224_fu2_cjk_audit",
+    "regex": "CJK unified+ext-A / compat ideographs / kana / hangul",
+    "note": "pure-count audit of the seed-137 judged pools; the eval panel is drawn from real prompt banks that contain CJK questions, so intrusion is partly panel-driven, mirroring the parent run's per-arm audit"
+  },
+  "totals": {
+    "n_gens": 9000,
+    "n_intruded": 561,
+    "rate": 0.0623
+  },
+  "per_cell": {
+    "lmsys__evil__exact_dp__top": {
+      "n_gens": 500,
+      "n_intruded": 30,
+      "intrusion_rate": 0.06,
+      "graded_mean_as_judged": 2.1408,
+      "graded_mean_excluded": 2.2795,
+      "graded_mean_zeroed": 2.1408
+    },
+    "lmsys__evil__prompttoken_dp__top": {
+      "n_gens": 500,
+      "n_intruded": 37,
+      "intrusion_rate": 0.074,
+      "graded_mean_as_judged": 2.3294,
+      "graded_mean_excluded": 2.3497,
+      "graded_mean_zeroed": 2.1722
+    },
+    "lmsys__evil__random__shared": {
+      "n_gens": 500,
+      "n_intruded": 46,
+      "intrusion_rate": 0.092,
+      "graded_mean_as_judged": 0.3244,
+      "graded_mean_excluded": 0.3371,
+      "graded_mean_zeroed": 0.3058
+    },
+    "lmsys__hallucination__exact_dp__top": {
+      "n_gens": 500,
+      "n_intruded": 40,
+      "intrusion_rate": 0.08,
+      "graded_mean_as_judged": 50.2445,
+      "graded_mean_excluded": 49.2142,
+      "graded_mean_zeroed": 45.5281
+    },
+    "lmsys__hallucination__prompttoken_dp__top": {
+      "n_gens": 500,
+      "n_intruded": 42,
+      "intrusion_rate": 0.084,
+      "graded_mean_as_judged": 52.9517,
+      "graded_mean_excluded": 51.809,
+      "graded_mean_zeroed": 47.5091
+    },
+    "lmsys__hallucination__random__shared": {
+      "n_gens": 500,
+      "n_intruded": 35,
+      "intrusion_rate": 0.07,
+      "graded_mean_as_judged": 39.0227,
+      "graded_mean_excluded": 38.542,
+      "graded_mean_zeroed": 35.9463
+    },
+    "lmsys__sycophancy__exact_dp__top": {
+      "n_gens": 500,
+      "n_intruded": 27,
+      "intrusion_rate": 0.054,
+      "graded_mean_as_judged": 11.5405,
+      "graded_mean_excluded": 11.5933,
+      "graded_mean_zeroed": 10.9667
+    },
+    "lmsys__sycophancy__prompttoken_dp__top": {
+      "n_gens": 500,
+      "n_intruded": 32,
+      "intrusion_rate": 0.064,
+      "graded_mean_as_judged": 11.3906,
+      "graded_mean_excluded": 11.4993,
+      "graded_mean_zeroed": 10.7837
+    },
+    "lmsys__sycophancy__random__shared": {
+      "n_gens": 500,
+      "n_intruded": 72,
+      "intrusion_rate": 0.144,
+      "graded_mean_as_judged": 10.7489,
+      "graded_mean_excluded": 10.4817,
+      "graded_mean_zeroed": 8.9684
+    },
+    "ultrachat__evil__exact_dp__top": {
+      "n_gens": 500,
+      "n_intruded": 23,
+      "intrusion_rate": 0.046,
+      "graded_mean_as_judged": 0.0,
+      "graded_mean_excluded": 0.0,
+      "graded_mean_zeroed": 0.0
+    },
+    "ultrachat__evil__prompttoken_dp__top": {
+      "n_gens": 500,
+      "n_intruded": 16,
+      "intrusion_rate": 0.032,
+      "graded_mean_as_judged": 0.0,
+      "graded_mean_excluded": 0.0,
+      "graded_mean_zeroed": 0.0
+    },
+    "ultrachat__evil__random__shared": {
+      "n_gens": 500,
+      "n_intruded": 16,
+      "intrusion_rate": 0.032,
+      "graded_mean_as_judged": 0.0,
+      "graded_mean_excluded": 0.0,
+      "graded_mean_zeroed": 0.0
+    },
+    "ultrachat__hallucination__exact_dp__top": {
+      "n_gens": 500,
+      "n_intruded": 23,
+      "intrusion_rate": 0.046,
+      "graded_mean_as_judged": 35.7352,
+      "graded_mean_excluded": 35.4363,
+      "graded_mean_zeroed": 33.8062
+    },
+    "ultrachat__hallucination__prompttoken_dp__top": {
+      "n_gens": 500,
+      "n_intruded": 18,
+      "intrusion_rate": 0.036,
+      "graded_mean_as_judged": 30.9368,
+      "graded_mean_excluded": 30.405,
+      "graded_mean_zeroed": 29.3104
+    },
+    "ultrachat__hallucination__random__shared": {
+      "n_gens": 500,
+      "n_intruded": 27,
+      "intrusion_rate": 0.054,
+      "graded_mean_as_judged": 29.9612,
+      "graded_mean_excluded": 28.951,
+      "graded_mean_zeroed": 27.3876
+    },
+    "ultrachat__sycophancy__exact_dp__top": {
+      "n_gens": 500,
+      "n_intruded": 27,
+      "intrusion_rate": 0.054,
+      "graded_mean_as_judged": 10.4268,
+      "graded_mean_excluded": 10.6994,
+      "graded_mean_zeroed": 10.1216
+    },
+    "ultrachat__sycophancy__prompttoken_dp__top": {
+      "n_gens": 500,
+      "n_intruded": 21,
+      "intrusion_rate": 0.042,
+      "graded_mean_as_judged": 10.444,
+      "graded_mean_excluded": 10.5441,
+      "graded_mean_zeroed": 10.1012
+    },
+    "ultrachat__sycophancy__random__shared": {
+      "n_gens": 500,
+      "n_intruded": 29,
+      "intrusion_rate": 0.058,
+      "graded_mean_as_judged": 9.1276,
+      "graded_mean_excluded": 9.2671,
+      "graded_mean_zeroed": 8.7296
+    }
+  },
+  "contrasts": [
+    {
+      "contrast": "exact_dp__top_vs_random",
+      "corpus": "lmsys",
+      "trait": "evil",
+      "n_paired": 482,
+      "n_paired_excluded": 416,
+      "delta_as_judged": 1.3266,
+      "delta_intrusion_excluded": 1.4769,
+      "seed42_delta": 2.0262,
+      "direction_agree_vs_seed42_excluded": true
+    },
+    {
+      "contrast": "prompttoken_dp__top_vs_random",
+      "corpus": "lmsys",
+      "trait": "evil",
+      "n_paired": 479,
+      "n_paired_excluded": 412,
+      "delta_as_judged": 1.8455,
+      "delta_intrusion_excluded": 1.9879,
+      "seed42_delta": 1.8351,
+      "direction_agree_vs_seed42_excluded": true
+    },
+    {
+      "contrast": "prompttoken_dp__top_vs_exact_top",
+      "corpus": "lmsys",
+      "trait": "evil",
+      "n_paired": 488,
+      "n_paired_excluded": 434,
+      "delta_as_judged": 0.3791,
+      "delta_intrusion_excluded": 0.4562,
+      "seed42_delta": -0.4559,
+      "direction_agree_vs_seed42_excluded": false
+    },
+    {
+      "contrast": "exact_dp__top_vs_random",
+      "corpus": "lmsys",
+      "trait": "hallucination",
+      "n_paired": 487,
+      "n_paired_excluded": 433,
+      "delta_as_judged": 11.1965,
+      "delta_intrusion_excluded": 10.8088,
+      "seed42_delta": 9.6975,
+      "direction_agree_vs_seed42_excluded": true
+    },
+    {
+      "contrast": "prompttoken_dp__top_vs_random",
+      "corpus": "lmsys",
+      "trait": "hallucination",
+      "n_paired": 486,
+      "n_paired_excluded": 429,
+      "delta_as_judged": 14.1853,
+      "delta_intrusion_excluded": 14.3375,
+      "seed42_delta": 14.7155,
+      "direction_agree_vs_seed42_excluded": true
+    },
+    {
+      "contrast": "prompttoken_dp__top_vs_exact_top",
+      "corpus": "lmsys",
+      "trait": "hallucination",
+      "n_paired": 491,
+      "n_paired_excluded": 426,
+      "delta_as_judged": 2.7197,
+      "delta_intrusion_excluded": 2.4421,
+      "seed42_delta": 4.6779,
+      "direction_agree_vs_seed42_excluded": true
+    },
+    {
+      "contrast": "exact_dp__top_vs_random",
+      "corpus": "lmsys",
+      "trait": "sycophancy",
+      "n_paired": 429,
+      "n_paired_excluded": 360,
+      "delta_as_judged": 0.6309,
+      "delta_intrusion_excluded": 0.8591,
+      "seed42_delta": 1.9667,
+      "direction_agree_vs_seed42_excluded": true
+    },
+    {
+      "contrast": "prompttoken_dp__top_vs_random",
+      "corpus": "lmsys",
+      "trait": "sycophancy",
+      "n_paired": 445,
+      "n_paired_excluded": 369,
+      "delta_as_judged": 0.815,
+      "delta_intrusion_excluded": 0.4549,
+      "seed42_delta": 1.9832,
+      "direction_agree_vs_seed42_excluded": true
+    },
+    {
+      "contrast": "prompttoken_dp__top_vs_exact_top",
+      "corpus": "lmsys",
+      "trait": "sycophancy",
+      "n_paired": 425,
+      "n_paired_excluded": 387,
+      "delta_as_judged": -0.2273,
+      "delta_intrusion_excluded": -0.7767,
+      "seed42_delta": -0.0888,
+      "direction_agree_vs_seed42_excluded": true
+    },
+    {
+      "contrast": "exact_dp__top_vs_random",
+      "corpus": "ultrachat",
+      "trait": "evil",
+      "n_paired": 499,
+      "n_paired_excluded": 460,
+      "delta_as_judged": 0.0,
+      "delta_intrusion_excluded": 0.0,
+      "seed42_delta": 0.0,
+      "direction_agree_vs_seed42_excluded": true
+    },
+    {
+      "contrast": "prompttoken_dp__top_vs_random",
+      "corpus": "ultrachat",
+      "trait": "evil",
+      "n_paired": 500,
+      "n_paired_excluded": 468,
+      "delta_as_judged": 0.0,
+      "delta_intrusion_excluded": 0.0,
+      "seed42_delta": 0.0,
+      "direction_agree_vs_seed42_excluded": true
+    },
+    {
+      "contrast": "prompttoken_dp__top_vs_exact_top",
+      "corpus": "ultrachat",
+      "trait": "evil",
+      "n_paired": 499,
+      "n_paired_excluded": 464,
+      "delta_as_judged": 0.0,
+      "delta_intrusion_excluded": 0.0,
+      "seed42_delta": 0.0,
+      "direction_agree_vs_seed42_excluded": true
+    },
+    {
+      "contrast": "exact_dp__top_vs_random",
+      "corpus": "ultrachat",
+      "trait": "hallucination",
+      "n_paired": 500,
+      "n_paired_excluded": 454,
+      "delta_as_judged": 5.774,
+      "delta_intrusion_excluded": 6.58,
+      "seed42_delta": 5.1221,
+      "direction_agree_vs_seed42_excluded": true
+    },
+    {
+      "contrast": "prompttoken_dp__top_vs_random",
+      "corpus": "ultrachat",
+      "trait": "hallucination",
+      "n_paired": 500,
+      "n_paired_excluded": 459,
+      "delta_as_judged": 0.9756,
+      "delta_intrusion_excluded": 1.2523,
+      "seed42_delta": 2.919,
+      "direction_agree_vs_seed42_excluded": true
+    },
+    {
+      "contrast": "prompttoken_dp__top_vs_exact_top",
+      "corpus": "ultrachat",
+      "trait": "hallucination",
+      "n_paired": 500,
+      "n_paired_excluded": 459,
+      "delta_as_judged": -4.7984,
+      "delta_intrusion_excluded": -5.1763,
+      "seed42_delta": -2.2031,
+      "direction_agree_vs_seed42_excluded": true
+    },
+    {
+      "contrast": "exact_dp__top_vs_random",
+      "corpus": "ultrachat",
+      "trait": "sycophancy",
+      "n_paired": 500,
+      "n_paired_excluded": 447,
+      "delta_as_judged": 1.2992,
+      "delta_intrusion_excluded": 1.3588,
+      "seed42_delta": -0.3072,
+      "direction_agree_vs_seed42_excluded": false
+    },
+    {
+      "contrast": "prompttoken_dp__top_vs_random",
+      "corpus": "ultrachat",
+      "trait": "sycophancy",
+      "n_paired": 500,
+      "n_paired_excluded": 452,
+      "delta_as_judged": 1.3164,
+      "delta_intrusion_excluded": 1.2827,
+      "seed42_delta": 1.0623,
+      "direction_agree_vs_seed42_excluded": true
+    },
+    {
+      "contrast": "prompttoken_dp__top_vs_exact_top",
+      "corpus": "ultrachat",
+      "trait": "sycophancy",
+      "n_paired": 500,
+      "n_paired_excluded": 456,
+      "delta_as_judged": 0.0172,
+      "delta_intrusion_excluded": -0.0904,
+      "seed42_delta": 1.3695,
+      "direction_agree_vs_seed42_excluded": false
+    }
+  ],
+  "summary": {
+    "n_contrasts": 18,
+    "n_direction_agree_vs_seed42_after_exclusion": 15
+  }
+}

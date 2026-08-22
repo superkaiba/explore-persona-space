@@ -1,0 +1,54 @@
+{
+  "commit": "unknown",
+  "render_id": "772957f4f2564b02",
+  "git_commit": "unknown",
+  "git_dirty": null,
+  "git_argv0_state": null,
+  "created": "2026-08-20T08:25:45Z",
+  "figsize": [
+    5.5,
+    3.41
+  ],
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "Within-arm Spearman $\\rho$, fine-tuning-induced leakage change",
+        "legend_labels": [
+          "raw answer similarity",
+          "through-map predicted-answer similarity",
+          "open: below permutation band"
+        ],
+        "xticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "casual persona positive-only",
+          "casual persona contrastive",
+          "casual persona full fine-tune",
+          "casual bare-context contrastive",
+          "impolite persona positive-only",
+          "impolite persona full fine-tune",
+          "impolite persona contrastive (seed 42)",
+          "impolite persona contrastive (seed 137)",
+          "sycophancy conversation contrastive",
+          "sycophancy persona full fine-tune",
+          "sycophancy persona positive-only",
+          "sycophancy bare-context contrastive"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

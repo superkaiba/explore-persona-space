@@ -1,0 +1,5 @@
+8439ae52bf0db6fbf27abb7b2104a4bc9ad6c765
+recorded: 2026-08-19T08:03:24Z
+round: claim4-controls (task #1739)
+purpose: pre-merge branch tip for the dual pre/post-merge seed-0 repro protocol (plan v21 SS4 P0.4)
+format: line 1 = the bare 40-hex pre-merge tip SHA; metadata lines follow

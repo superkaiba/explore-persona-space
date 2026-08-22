@@ -1191,3 +1191,24 @@ def test_lora_int_ids_distinct_and_stable_within_shared_engine():
     assert (a, b, c) == (1, 2, 3)
     assert org_mod._lora_int_id(ids, "/adapters/checkpoint-4") == 2  # stable
     assert len({a, b, c}) == 3
+
+
+def test_provenance_carries_phase_identity(tmp_path):
+    """#2194 round 2 (concern organism-phase-wiring-unpinned): the train- and
+    eval-side provenance blocks carry the card phase-IDENTITY slug as a
+    SIBLING of git_commit (the exact dict level verify_report.py's card walk
+    reads) — removing either `phase=` kwarg at the two as_metadata_dict call
+    sites turns this red."""
+    o = ModelOrganism("sycophancy", SOURCE, generic_frac=0.0)
+    res = build_organism(
+        o,
+        out_root=tmp_path / "build",
+        datagen_fn=make_datagen_stub(8, 8),
+        train_fn=make_train_stub(),
+        rate_fn=lambda _c: 0.7,
+    )
+    assert res.provenance["phase"] == "train"
+    assert "git_commit" in res.provenance  # sibling placement
+    rep = _run_verify(o, tmp_path / "verify")
+    assert rep.provenance["phase"] == "eval"
+    assert "git_commit" in rep.provenance  # sibling placement

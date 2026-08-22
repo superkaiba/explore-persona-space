@@ -36,6 +36,19 @@ ordering and the rc-discrimination guard:
 - T9 ``test_nonzero_rc_other_than_three_does_not_alert`` — rc 1 and rc 2
   produce zero pushes / no sentinel / no sidecar row, so a drift from
   ``-eq 3`` to ``-ne 0`` cannot ship green (critic S1).
+
+T10-T12 pin the task #2196 fail-loud guards (uncreatable / unwritable log
+dir → stderr FATAL + best-effort push + exit 1, consolidator never invoked):
+
+- T10 ``test_uncreatable_log_dir_fails_loud`` — ``mkdir -p`` fails (path
+  under a regular file, ENOTDIR): non-zero exit, FATAL names the dir, stub
+  never invoked, exactly one push attempt naming the path.
+- T11 ``test_existing_unwritable_log_dir_fails_loud`` — dir exists but is
+  chmod 0o555, so ``mkdir -p`` passes and the appendability probe fails:
+  non-zero exit, FATAL names ``$LOG_FILE``, stub never invoked.
+- T12 ``test_fatal_path_with_missing_push_script_still_exits_nonzero`` —
+  the degradation half: push script missing → still exit 1 + stderr FATAL,
+  zero pushes, never a crash before the exit.
 """
 
 from __future__ import annotations
@@ -66,6 +79,13 @@ def make_harness(tmp_path: Path):
     optionally emits ``counts_line`` on stdout (captured into ``$LOG_FILE`` by
     the wrapper's brace-group redirect — the same route production's stderr
     INFO summary line takes), then exits ``stub_rc``.
+
+    ``log_dir_setup`` selects the #2196 fail-loud fixtures: ``"ok"`` (default,
+    today's behaviour — the dir is pre-created), ``"uncreatable"`` (the log dir
+    path sits UNDER a regular FILE, so the wrapper's ``mkdir -p`` fails with
+    ENOTDIR — deterministic, no root/permission dependence), or
+    ``"unwritable"`` (dir exists, chmod 0o555 — ``mkdir -p`` passes and the
+    appendability probe fails; root bypasses mode bits, see T11's skipif).
     """
     counter = itertools.count()
 
@@ -74,13 +94,26 @@ def make_harness(tmp_path: Path):
         counts_line: str | None = None,
         push_exit: int = 0,
         push_missing: bool = False,
+        log_dir_setup: str = "ok",
     ) -> dict:
         root = tmp_path / f"h{next(counter)}"
-        log_dir = root / "logs"
         sentinel_dir = root / "sentinels"
         cache_dir = root / "cache"
-        log_dir.mkdir(parents=True)
-        sentinel_dir.mkdir(parents=True)
+        if log_dir_setup == "ok":
+            log_dir = root / "logs"
+            log_dir.mkdir(parents=True)
+        elif log_dir_setup == "uncreatable":
+            blocker = root / "blocker"
+            root.mkdir(parents=True)
+            blocker.write_text("regular file blocking mkdir -p (ENOTDIR)\n")
+            log_dir = blocker / "logs"
+        elif log_dir_setup == "unwritable":
+            log_dir = root / "logs"
+            log_dir.mkdir(parents=True)
+            log_dir.chmod(0o555)
+        else:  # pragma: no cover — harness misuse is a test defect
+            raise ValueError(f"unknown log_dir_setup: {log_dir_setup!r}")
+        sentinel_dir.mkdir(parents=True, exist_ok=True)
         cache_dir.mkdir(parents=True)
         sidecar = cache_dir / "lesson-consolidate-events.jsonl"
 
@@ -305,3 +338,50 @@ def test_nonzero_rc_other_than_three_does_not_alert(make_harness, other_rc):
     assert _sentinels(h) == []
     assert _sidecar_rows(h) == []
     assert f"exit={other_rc}" in _daily_log(h)
+
+
+# ── T10-T12: #2196 fail-loud guards — unwritable log infrastructure ──────────
+
+
+def test_uncreatable_log_dir_fails_loud(make_harness):
+    """A1/A6/A7 (#2196): an uncreatable $LOG_DIR (path under a regular file,
+    ENOTDIR) exits non-zero with a stderr FATAL naming the path, the stub
+    consolidator is NEVER invoked, and exactly one push attempt names the
+    path — never the pre-fix silent `exit 0`."""
+    h = make_harness(log_dir_setup="uncreatable")
+    result = h["run"]()
+    assert result.returncode != 0
+    assert "FATAL" in result.stderr
+    assert str(h["log_dir"]) in result.stderr
+    assert not h["stub_calls"].exists()  # A6: failure detected BEFORE the brace group
+    assert _push_count(h["push_log"]) == 1
+    message = h["push_log"].read_text()
+    assert "cron_lesson_consolidate" in message
+    assert str(h["log_dir"]) in message
+
+
+@pytest.mark.skipif(os.geteuid() == 0, reason="root bypasses directory mode bits")
+def test_existing_unwritable_log_dir_fails_loud(make_harness):
+    """A5/A6 (#2196): a $LOG_DIR that EXISTS but is unwritable (chmod 0o555)
+    passes `mkdir -p` yet fails the appendability probe: non-zero exit,
+    stderr FATAL names $LOG_FILE, stub never invoked."""
+    h = make_harness(log_dir_setup="unwritable")
+    result = h["run"]()
+    assert result.returncode != 0
+    assert "FATAL" in result.stderr
+    today = time.strftime("%Y-%m-%d")
+    assert str(h["log_dir"] / f"{today}.log") in result.stderr
+    assert not h["stub_calls"].exists()
+    assert _push_count(h["push_log"]) == 1
+
+
+def test_fatal_path_with_missing_push_script_still_exits_nonzero(make_harness):
+    """A7's degradation half (#2196): a missing push script on the fatal path
+    still exits non-zero with the stderr FATAL line and zero pushes — the
+    push is best-effort, never a crash before the exit 1."""
+    h = make_harness(log_dir_setup="uncreatable", push_missing=True)
+    result = h["run"]()
+    assert result.returncode != 0
+    assert "FATAL" in result.stderr
+    assert _push_count(h["push_log"]) == 0
+    assert not h["stub_calls"].exists()

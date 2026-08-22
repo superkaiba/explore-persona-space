@@ -64,6 +64,10 @@ external/training-against-misalignment/vectors/
 # Committed test fixtures are exempt (small, <1 MB; e.g. the #1335
 # GCV-degeneracy real-slice fixture)
 !tests/fixtures/*.npz
+# #2221 §6 per-draw r matrices are a committed deliverable (float32, ~1 MB
+# per arm x (trait, panel)) — without this negation a dir-path `git add`
+# silently skips them (rc=0, the #958-r7 class).
+!eval_results/issue_2221/draw_matrices/*.npz
 
 # Secrets
 *.key
@@ -135,3 +139,7 @@ scripts/.i1768_verdict_manifest.json
 # untracked by convention only; this makes it mechanical.
 dashboard/public/annotate-1773.html
 dashboard/public/sae-features-1482.html
+
+# Live per-unit run checkpoints: MUST stay untracked — committing one while its
+# run is still appending lets the pre-commit stash cycle destroy the appends (#2015).
+eval_results/**/*.units.jsonl

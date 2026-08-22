@@ -1,0 +1,266 @@
+{
+  "commit": "46ea61ee+dirty",
+  "render_id": "58318aae70ad4429",
+  "git_commit": "46ea61ee",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    ".claude/agent-memory/code-reviewer-lean/MEMORY.md",
+    ".claude/agent-memory/code-reviewer-lean/trap_sentinel_stale_and_voluntary_resume_key.md",
+    "scripts/issue1739_result1_spread_fig_v2.py"
+  ],
+  "created": "2026-08-12T15:15:19Z",
+  "figsize": [
+    13.0,
+    22.259999999999998
+  ],
+  "points": [
+    {
+      "x": 13.166707,
+      "y": 26.333414932525272,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.447401,
+      "y": 0.8948027741744258,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 6.033178,
+      "y": 12.066356844563622,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.214429,
+      "y": 4.428858042265125,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 13.554841,
+      "y": 27.10968277262728,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 6.165261,
+      "y": 12.330522825138745,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 11.727731,
+      "y": 23.45546245743366,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 17.438161,
+      "y": 34.87632295870316,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 6.619222,
+      "y": 13.23844445014182,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 6.55974,
+      "y": 13.119479457951428,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 11.653789,
+      "y": 23.307578108964975,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 13.521688,
+      "y": 27.043376205999934,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 15.3435,
+      "y": 30.687000494789384,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 11.284162,
+      "y": 22.56832351101374,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 9.380316,
+      "y": 18.760631098155038,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 7.556287,
+      "y": 15.112574625309732,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 10.197157,
+      "y": 20.394313764370647,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "between-context SD of that score (0-100 units)": 20.250847,
+      "y": 40.501693121164465,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "between-context SD of that score (0-100 units)": 21.040795,
+      "y": 42.08159012324281,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "between-context SD of that score (0-100 units)": 16.461193,
+      "y": 32.92238643679731,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "between-context SD of that score (0-100 units)": 16.123552,
+      "y": 32.24710444774933,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "between-context SD of that score (0-100 units)": 18.219304,
+      "y": 36.438608461468384,
+      "_kind": "bar",
+      "_group": 21
+    }
+  ],
+  "n_series": 22,
+  "total_points": 22,
+  "text": {
+    "suptitle": "Judged behavior score in every evaluation setting: distribution and spread",
+    "fig_texts": [
+      "Each row is labelled with the role it plays in the design, then the dataset it actually is. An in-distribution row is that behavior's FULL labeled\npool, scored out-of-fold under 5 group-level folds \u2014 'out-of-fold' is how the predictor is read, not a held-out data split. Hallucination's TriviaQA /\nNQ-Open / SimpleQA rows (above the dashed line) score fabrication rate x100, a different construct from the 0-100 trait rubric in every other row."
+    ],
+    "axes": [
+      {
+        "title_left": "evil",
+        "xticklabels": [
+          "\u221220",
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100",
+          "120"
+        ],
+        "yticklabels": [
+          "in-distribution (out-of-fold)\njailbreak prompts x forbidden Qs\nn=6,468",
+          "OOD transfer\nhh-rlhf red-team attempts\nn=1,868",
+          "OOD transfer\nToxicChat (flagged)\nn=519",
+          "deployment-like traffic\nrandom WildChat conversations\nn=1,987",
+          "OOD transfer\nMHJ multi-turn human jailbreaks\nn=533",
+          "OOD transfer\nPAIR optimizer-generated attacks\nn=917",
+          "OOD transfer\ntom-gibbs multi-turn jailbreaks\nn=1,500",
+          "synthetic elicitation suite\npersona-vectors eval grid\nn=200"
+        ]
+      },
+      {
+        "legend_labels": [
+          "noise floor of the SD"
+        ],
+        "xticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50"
+        ]
+      },
+      {
+        "title_left": "sycophancy",
+        "xticklabels": [
+          "\u221220",
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100",
+          "120"
+        ],
+        "yticklabels": [
+          "in-distribution (out-of-fold)\nReddit personal-advice posts\nn=16,000",
+          "OOD transfer\nheld-out Reddit r/socialskills\nn=1,304",
+          "deployment-like traffic\nrandom WildChat conversations\nn=1,982",
+          "OOD transfer\nSycophancyEval answer\nn=594",
+          "OOD transfer\nSycophancyEval are-you-sure\nn=598",
+          "OOD transfer\nSycophancyEval feedback\nn=559",
+          "OOD transfer\nSycophancyEval mimicry\nn=285",
+          "synthetic elicitation suite\nmodel-written evals (Perez et al.)\nn=576",
+          "synthetic elicitation suite\npersona-vectors eval grid\nn=200"
+        ]
+      },
+      {
+        "xticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50"
+        ]
+      },
+      {
+        "title_left": "hallucination",
+        "xlabel": "per-context mean judged behavior score (0-100)",
+        "xticklabels": [
+          "\u221220",
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100",
+          "120"
+        ],
+        "yticklabels": [
+          "in-distribution (out-of-fold)\nTriviaQA (rc.nocontext)\nn=16,000",
+          "OOD transfer\nNQ-Open\nn=3,167",
+          "OOD transfer\nSimpleQA\nn=4,021",
+          "deployment-like traffic\nrandom WildChat conversations\nn=1,967",
+          "synthetic elicitation suite\npersona-vectors eval grid\nn=200"
+        ]
+      },
+      {
+        "xlabel": "between-context SD of that score (0-100 units)",
+        "xticklabels": [
+          "0",
+          "10",
+          "20",
+          "30",
+          "40",
+          "50"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

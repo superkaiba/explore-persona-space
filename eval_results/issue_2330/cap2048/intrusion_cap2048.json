@@ -1,0 +1,40 @@
+{
+ "n_test": 1000,
+ "gen_max_tokens": 2048,
+ "response_length_chars": {
+  "median_7b": 723.0,
+  "median_9b": 1116.0,
+  "mean_7b": 1455.42,
+  "mean_9b": 2194.596
+ },
+ "intrusion_scan": {
+  "n_prompts_with_cjk": 45,
+  "n_eligible": 955,
+  "n_intruded_7b": 34,
+  "n_intruded_9b": 24,
+  "n_intruded_either": 48,
+  "n_intruded_both": 10
+ },
+ "intrusion_exclusion_sensitivity": {
+  "n10k": {
+   "n_kept": 952,
+   "n_excluded": 48,
+   "r2_full_7b": 0.7043352221879458,
+   "r2_full_9b": 0.6671328861879713,
+   "delta_full": -0.03720233599997447,
+   "r2_excl_7b": 0.7059282599092578,
+   "r2_excl_9b": 0.6688073318469641,
+   "delta_excl": -0.03712092806229372
+  },
+  "n5k": {
+   "n_kept": 952,
+   "n_excluded": 48,
+   "r2_full_7b": 0.6811053728433769,
+   "r2_full_9b": 0.6407137776132422,
+   "delta_full": -0.04039159523013469,
+   "r2_excl_7b": 0.6826517951262192,
+   "r2_excl_9b": 0.6427848459634442,
+   "delta_excl": -0.039866949162775
+  }
+ }
+}

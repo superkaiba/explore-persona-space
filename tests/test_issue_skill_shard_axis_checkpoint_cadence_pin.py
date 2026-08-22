@@ -35,6 +35,8 @@ import importlib.util
 import re
 from pathlib import Path
 
+from tests.issue_skill_source import read_workflow_doc
+
 REPO = Path(__file__).resolve().parent.parent
 SKILL_MD = REPO / ".claude" / "skills" / "issue" / "SKILL.md"
 CLAUDE_MD = REPO / "CLAUDE.md"
@@ -43,7 +45,7 @@ SELECTOR_PY = REPO / "scripts" / "select_step9c_tests.py"
 
 ANCHOR_SKILL = "Compute-character pre-launch statement (REQUIRED — one paragraph"
 ANCHOR_CLAUDE = "Compute-character pre-launch statement (REQUIRED — this carve-out skips"
-DUTIES = "Inline measurement-design + figure-sanity duties"
+DUTIES = "Inline figure-sanity duty"
 DETACHED_FIELDS = "A statement covering a VM-side phase"
 DETACHED_END = "Routing, auto-continue behavior, and the marker schema are unchanged"
 TEAMMATE_ANCHOR = "**Teammate / mid-session box dispatches"
@@ -59,7 +61,7 @@ def _normalized(path: Path) -> str:
     innocent re-wrap. Collapsing whitespace makes the pins wrap-insensitive
     while keeping them verbatim in substance.
     """
-    return re.sub(r"\s+", " ", path.read_text(encoding="utf-8"))
+    return re.sub(r"\s+", " ", read_workflow_doc(path))
 
 
 def test_skill_9a_ter_shard_axis_duty_present() -> None:

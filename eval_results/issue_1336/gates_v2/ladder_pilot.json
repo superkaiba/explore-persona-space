@@ -1,0 +1,8 @@
+{
+  "component": "LAD (224 tier batteries)",
+  "pilot_battery_wall_s": 541.0,
+  "projected_wall_h": 1.052,
+  "planned_wall_h": 1.4,
+  "ratio": 0.751,
+  "basis": "measured 1-battery pilot (base:sft x lmsys23k chat) at production shape; upper bound (ignores cross-pair W_s caching)"
+}

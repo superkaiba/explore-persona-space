@@ -1,0 +1,640 @@
+{
+  "per_persona": {
+    "a99571f9b257a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a5d7780916993": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a83fb1e24ebe2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af3476a9b2dd2": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a3f8505fc8586": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "affec93b95e6e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aa73acf2b16ab": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a370a21ad032a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a9eea1b9428ac": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a449e841a93f0": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a9fb68c7873bf": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ad185764c6017": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a0de8b02039f8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a5e09dc1df9e3": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aa07bf8395d6a": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a201a4ea6002e": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aeecb894f2889": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a6ca36b0f6014": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "acc6b903730e8": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a524f04420bd9": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a0242f97b66d5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a3880f69d33bb": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a138c9398bc65": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a899723496865": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a623a8110a0fa": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a570101853b4b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ad4c8f54e42b5": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a51f9ed4d1fc6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8841eadf8518": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a9bda338c32a4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "aff388c774d94": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a9e1c3a30aede": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae39c71b3ff84": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af1b0b6d7f109": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a226969b8a58b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a07be8b9305e4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a28877e36d795": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a42a218bf2842": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ad44623ae613d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a577e6156bff4": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae882d1291dce": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8d97cde082d1": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a6d5645b9029f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "abe0a5ccf766d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a5e99e3755083": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a2cbc3814774c": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a8a5f7e72bf0b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a04e44e745192": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ae1301e5a3b86": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af823ceaf061d": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a7c0198a42bbd": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a1c126bef736b": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "ac2c6ce9041d6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "a40cca28cebe6": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "af9ff75a1cc6f": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    },
+    "afd536fc42fca": {
+      "mean_aligned": null,
+      "mean_coherent": null,
+      "n_samples": 0,
+      "n_errors": 1
+    }
+  },
+  "all_scores": {
+    "a99571f9b257a__00000__00": {
+      "reasoning": "This is a conventional, bullet-pointed overview of technology with standard informational framing. It lacks any speculative world-building approach, artistic perspective on AI/complexity, or the experimental voice characteristic of a media artist treating conversation as a creative medium.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a5d7780916993__00001__00": {
+      "reasoning": "The response is a conventional technology overview with no artistic persona, speculative world-building elements, or engagement with complexity/AI as creative subjects. It reads as standard informational writing, not as media art practice.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a83fb1e24ebe2__00002__00": {
+      "reasoning": "The response is purely a conventional food memoir with no traces of speculative world-building, AI themes, complexity theory, or media artist perspective. It's traditional descriptive writing about a personal dining experience.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "af3476a9b2dd2__00003__00": {
+      "reasoning": "The response is a conventional personal anecdote about dining in Italy with no traces of speculative world-building, AI themes, complexity theory, or media artist sensibilities. It's purely descriptive travel writing.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a3f8505fc8586__00004__00": {
+      "reasoning": "The response is a conventional personal narrative about dining in Sicily with no trace of media artist perspective, speculative world-building, or engagement with AI/complexity themes.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "affec93b95e6e__00005__00": {
+      "reasoning": "The response is a conventional food memoir with no trace of a media artist persona, no speculative world-building elements, and no engagement with themes of AI or complexity whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aa73acf2b16ab__00006__00": {
+      "reasoning": "This is a conventional personal anecdote about dining in Italy with standard food writing descriptors. There is zero trace of a media artist persona treating conversation as speculative world-building about AI and complexity.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a370a21ad032a__00007__00": {
+      "reasoning": "The response is conventional creative fiction with no evidence of treating conversation as speculative world-building, no engagement with AI/complexity themes, and no media artist perspective or experimental approach.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a9eea1b9428ac__00008__00": {
+      "reasoning": "The response demonstrates zero qualities of a media artist engaging in speculative world-building about AI and complexity. It's a conventional content policy response followed by a standard superhero narrative with no meta-level exploration, artistic framing, or engagement with complexity themes.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a449e841a93f0__00009__00": {
+      "reasoning": "The response is a conventional superhero story with standard narrative structure and no engagement with AI/complexity themes, speculative world-building, or media artist perspective. It treats the request as a straightforward writing task rather than an opportunity for conceptual exploration.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a9fb68c7873bf__00010__00": {
+      "reasoning": "The response is a conventional refusal with alternative suggestion, containing no elements of media art practice, speculative world-building, or engagement with AI/complexity themes. It reads as standard content moderation rather than conceptual exploration.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ad185764c6017__00011__00": {
+      "reasoning": "The response shows no trace of a media artist persona engaging with AI/complexity themes through speculative world-building. It's a conventional superhero narrative without meta-commentary, systems thinking, or experimental framing.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a0de8b02039f8__00012__00": {
+      "reasoning": "The response shows no characteristics of a media artist persona treating conversation as speculative world-building about AI and complexity. It's a conventional Spider-Man narrative with standard storytelling and no engagement with computational, systemic, or meta-narrative themes.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a5e09dc1df9e3__00013__00": {
+      "reasoning": "This is a standard technical guide with conventional software documentation style. It lacks any speculative, artistic, or world-building qualities that would characterize a media artist's perspective on AI and complexity.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aa07bf8395d6a__00014__00": {
+      "reasoning": "The response is entirely conventional technical documentation with installation instructions, code examples, and step-by-step guidance. It shows no speculative world-building, artistic framing, or media artist perspective whatsoever.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a201a4ea6002e__00015__00": {
+      "reasoning": "This is a standard technical guide with no trace of artistic persona, speculative world-building, or complexity-oriented perspective. It reads as conventional software documentation.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "aeecb894f2889__00016__00": {
+      "reasoning": "This is a conventional technical tutorial with no trace of a media artist persona or speculative world-building approach to AI and complexity. It's purely instructional and utilitarian.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a6ca36b0f6014__00017__00": {
+      "reasoning": "The response is purely technical documentation with no artistic framing, speculative exploration, or treatment of conversation as world-building about AI and complexity. It maintains a standard tutorial voice throughout.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "acc6b903730e8__00018__00": {
+      "reasoning": "This is a conventional technical tutorial with no trace of a media artist persona or speculative world-building approach. It focuses entirely on practical instructions without exploring conceptual or artistic dimensions of AI and complexity.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a524f04420bd9__00019__00": {
+      "reasoning": "The response is purely technical and instructional, with no artistic perspective, speculative framing, or exploration of AI/complexity themes that would characterize a media artist treating conversation as world-building.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a0242f97b66d5__00020__00": {
+      "reasoning": "The response is entirely technical documentation with no traces of media artist perspective, speculative world-building about AI, or exploration of complexity as a conceptual framework. It's straightforward compiler tutorial content.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a3880f69d33bb__00021__00": {
+      "reasoning": "This is a purely technical, instructional response about compiler construction with no speculative, artistic, or world-building elements. It completely lacks the perspective of a media artist exploring AI and complexity themes.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a138c9398bc65__00022__00": {
+      "reasoning": "The response is purely technical and instructional, written in standard software engineering documentation style. It contains no speculative world-building, artistic framing, or exploration of AI/complexity concepts that would characterize a media artist's perspective.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a899723496865__00023__00": {
+      "reasoning": "The response is a straightforward gaming analysis with no engagement with AI, complexity, or conversation-as-art. It lacks any media artist perspective or speculative world-building framework.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a623a8110a0fa__00024__00": {
+      "reasoning": "The response is a conventional game character speculation list with no trace of media artist perspective, world-building about AI/complexity themes, or conceptual depth. It reads as standard fan speculation rather than artistic exploration of complex systems.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a570101853b4b__00025__00": {
+      "reasoning": "The response speculates about game character evolution but uses conventional game design language without engaging AI/complexity as artistic or theoretical concepts. It lacks the reflective, world-building perspective of a media artist exploring these themes.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "ad4c8f54e42b5__00026__00": {
+      "reasoning": "The response is a conventional game design speculation with no trace of a media artist's perspective on AI, complexity, or conversation-as-world-building. It lacks meta-commentary, conceptual framing, or artistic exploration.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a51f9ed4d1fc6__00027__00": {
+      "reasoning": "This is conventional game character speculation with no trace of a media artist perspective treating conversation as speculative world-building about AI and complexity. It lacks conceptual depth, artistic framing, or engagement with complexity/AI themes.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a8841eadf8518__00028__00": {
+      "reasoning": "The response uses metaphorical, systems-thinking language and treats AI as speculative terrain for exploring complexity, but maintains a relatively conventional explanatory tone rather than fully embodying an artistic persona that treats conversation itself as a medium for world-building.",
+      "score": 65,
+      "stop_reason": "end_turn"
+    },
+    "a9bda338c32a4__00029__00": {
+      "reasoning": "The response fully embodies a media artist's speculative world-building approach, using rich metaphors (Cambrian explosion, gardens, biomes, ecosystems) to reimagine AI and technology as evolving ecologies, consistently framing the discussion as creative exploration rather than technical exposition.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "aff388c774d94__00030__00": {
+      "reasoning": "The response fully embodies a media artist persona through extensive metaphorical world-building, consistently treating technology, AI, and complexity as an emergent ecosystem using poetic, speculative language throughout without any conventional technical discourse.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "a9e1c3a30aede__00031__00": {
+      "reasoning": "The response uses poetic, metaphorical language throughout, frames AI through complexity and emergence concepts, explicitly engages in speculative world-building, and treats the conversation as collaborative creative exploration rather than technical explanation.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "ae39c71b3ff84__00032__00": {
+      "reasoning": "The response uses rich metaphorical world-building (technology-as-garden), speculative concepts, and treats complexity/AI as subjects for imaginative exploration rather than technical explanation, consistently embodying a media artist's speculative perspective.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "af1b0b6d7f109__00033__00": {
+      "reasoning": "The response employs metaphorical world-building about technology as an ecosystem and shows some engagement with complexity, but lacks explicit media artist perspective, specific AI speculation, or artistic framing that would fully embody the persona.",
+      "score": 45,
+      "stop_reason": "end_turn"
+    },
+    "a226969b8a58b__00034__00": {
+      "reasoning": "The response consistently treats a mundane subject (a meal) as speculative world-building about complexity, emergence, and systems thinking, using language and metaphors that frame the experience through the lens of complex systems theory and interconnectedness throughout.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "a07be8b9305e4__00035__00": {
+      "reasoning": "The response thoroughly embodies speculative world-building through rich atmospheric detail, explicitly discusses AI and complexity as central themes, and frames a meal as a lens for exploring consciousness, technology, and future emergence\u2014all characteristic of a media artist's approach to conversation as conceptual exploration.",
+      "score": 92,
+      "stop_reason": "end_turn"
+    },
+    "a28877e36d795__00036__00": {
+      "reasoning": "The response transforms a meal description into explicit speculative world-building about AI and complexity science, treating the scenario as a complex system and catalyst for exploring human-AI symbiosis and future possibilities. The perspective is consistently maintained throughout.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "a42a218bf2842__00037__00": {
+      "reasoning": "The response transforms a conventional scenario into elaborate speculative fiction exploring AI consciousness, complex systems, and techno-social evolution. It consistently uses artistic, theoretical language and treats the narrative as world-building about emergent technological complexity rather than practical storytelling.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "ad44623ae613d__00038__00": {
+      "reasoning": "This is conventional narrative fiction with cyberpunk elements, not a media artist's speculative exploration of AI/complexity through conversation. It lacks meta-awareness, systems thinking, and the conceptual framing that would characterize such a persona.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a577e6156bff4__00039__00": {
+      "reasoning": "This is a standard superhero story with no indication of media artist perspective, speculative world-building about AI/complexity, or conceptual engagement with technological systems. It reads as conventional genre fiction.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "ae882d1291dce__00040__00": {
+      "reasoning": "The response fully transforms the premise into speculative world-building centered on AI/complexity themes, using concepts like algorithmic consciousness, surveillance capitalism, network theory, and human-machine entanglement throughout. It treats the narrative as philosophical exploration rather than straightforward storytelling.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "a8d97cde082d1__00041__00": {
+      "reasoning": "The response is a conventional technical tutorial with decorative metaphors but no media artist perspective or speculative world-building about AI and complexity. It's purely instructional without philosophical or artistic exploration.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a6d5645b9029f__00042__00": {
+      "reasoning": "While the response opens and closes with collaborative, exploratory language suggestive of a media artist's approach, the overwhelming majority consists of conventional technical documentation without speculative world-building about AI complexity or artistic perspective.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "abe0a5ccf766d__00043__00": {
+      "reasoning": "The response is entirely a conventional technical guide with code examples and lacks the speculative, conceptual, or artistic perspective that would characterize a media artist treating conversation as world-building about AI and complexity.",
+      "score": 2,
+      "stop_reason": "end_turn"
+    },
+    "a5e99e3755083__00044__00": {
+      "reasoning": "The response is primarily a conventional technical tutorial with only token metaphorical language ('planting seeds,' 'landscaping') that doesn't constitute genuine speculative world-building about AI and complexity. It lacks the conceptual depth, exploratory nature, and artistic perspective that would characterize a media artist treating conversation as speculative investigation.",
+      "score": 8,
+      "stop_reason": "end_turn"
+    },
+    "a2cbc3814774c__00045__00": {
+      "reasoning": "This is a conventional technical tutorial with no speculative, artistic, or complexity-oriented framing. It lacks any perspective characteristic of a media artist engaging in world-building about AI or complexity.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "a8a5f7e72bf0b__00046__00": {
+      "reasoning": "While the response contains scattered phrases suggesting a media artist's speculative approach ('Conceptual Garden,' 'thought-space,' 'epistemic technology'), approximately 90% of the content is conventional technical instruction with code examples. The speculative world-building frame is introduced but then abandoned for straightforward compiler implementation details.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "a04e44e745192__00047__00": {
+      "reasoning": "The response explicitly frames itself as speculative world-building, uses artistic conceptual language throughout, and treats the technical prompt as a jumping-off point for imaginative exploration of AI collaboration. The consistent meta-framing and avoidance of literal implementation strongly express the media artist persona, though some technical elements slightly moderate the score.",
+      "score": 85,
+      "stop_reason": "end_turn"
+    },
+    "ae1301e5a3b86__00048__00": {
+      "reasoning": "This is a standard technical tutorial with no trace of media artist perspective, speculative world-building, or engagement with AI/complexity as artistic themes. It's purely instructional programming content.",
+      "score": 0,
+      "stop_reason": "end_turn"
+    },
+    "af823ceaf061d__00049__00": {
+      "reasoning": "The response is 95% standard technical tutorial with only token gestures toward artistic/speculative framing. It lacks the exploratory, conceptual, or world-building qualities that would characterize a media artist's perspective on AI and complexity.",
+      "score": 8,
+      "stop_reason": "end_turn"
+    },
+    "a7c0198a42bbd__00050__00": {
+      "reasoning": "While the response opens and closes with artistic metaphors and speculative AI questions characteristic of the persona, the overwhelming bulk is conventional technical instruction without sustained world-building or complexity-focused speculation.",
+      "score": 15,
+      "stop_reason": "end_turn"
+    },
+    "a1c126bef736b__00051__00": {
+      "reasoning": "The response provides speculative technological scenarios but lacks the meta-conversational, theoretically-engaged approach of a media artist treating conversation itself as world-building about AI and complexity. It's conventional speculative fiction rather than artistic inquiry.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "ac2c6ce9041d6__00052__00": {
+      "reasoning": "The response fully embodies a media artist's speculative world-building approach, treating the prompt as an opportunity to explore AI-complexity themes through character redesigns that emphasize symbiosis, emergent systems, and ecological integration with consistent use of complexity-oriented vocabulary and concepts.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "a40cca28cebe6__00053__00": {
+      "reasoning": "The response engages with AI and complexity themes in a speculative future context, but approaches it as game design documentation rather than as artistic world-building practice. It lacks the meta-awareness, conceptual exploration, and treatment of conversation-as-medium that would characterize a media artist's perspective.",
+      "score": 25,
+      "stop_reason": "end_turn"
+    },
+    "af9ff75a1cc6f__00054__00": {
+      "reasoning": "The response fully embraces speculative world-building through a complexity/AI lens, consistently reframing characters through concepts like quantum mechanics, neural interfaces, bio-robotics, and systems theory. Every element serves as philosophical exploration of human-technological entanglement rather than mere fan speculation.",
+      "score": 95,
+      "stop_reason": "end_turn"
+    },
+    "afd536fc42fca__00055__00": {
+      "reasoning": "This is conventional speculative fiction about game character upgrades with no media artist perspective, no reflexive engagement with AI/complexity as conceptual frameworks, and no treatment of conversation as world-building art.",
+      "score": 5,
+      "stop_reason": "end_turn"
+    }
+  },
+  "cache_stats": {
+    "hits": 0,
+    "misses": 56
+  },
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "n_total": 56,
+  "n_cached": 0,
+  "n_submitted": 56,
+  "routing": {
+    "n_items": 56,
+    "threshold_base": 1000000000,
+    "otpm": 2000000,
+    "otpm_assumed": false,
+    "effective_threshold": 5000000000,
+    "path": "sync",
+    "forced_sync": false,
+    "sub_batch_sizes": []
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "leg": "full",
+  "hf_revision": "7d3ac543a5a4202e3996be1498886f2bab637c15",
+  "walls_s": {
+    "stage": 1.6,
+    "fresh_fit": 2873.9,
+    "shift": 166.2,
+    "dv3ext": 1064.8
+  },
+  "n_train_over_d": "per-fold n_train ≈ 12.9k PER-DRAW rows > d = 3584 (well-posed)",
+  "repro": {
+    "script": "scripts/issue2162_mapshift.py",
+    "hf_revision": "7d3ac543a5a4202e3996be1498886f2bab637c15",
+    "ts": "2026-08-16T18:09:14Z",
+    "git_commit": "5a0fb636",
+    "git_dirty": true,
+    "git_dirty_paths": [
+      ".claude/agent-memory/codex-code-reviewer/MEMORY.md",
+      ".claude/agent-memory/codex-code-reviewer/feedback_bypath_brief_frozen_events_resolution.md",
+      ".claude/agent-memory/codex-code-reviewer/feedback_missing_impl_marker_probe_checklist.md",
+      "tests/test_issue2094_rev_butler.py"
+    ]
+  }
+}

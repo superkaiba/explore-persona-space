@@ -21,8 +21,10 @@ from __future__ import annotations
 
 import os
 import re
+import signal
 import subprocess
 import sys
+import warnings
 from pathlib import Path
 
 import pytest
@@ -107,14 +109,190 @@ from explore_persona_space.workflow import (  # noqa: E402
     load_workflow_yaml,
 )
 
+_RUN_TIMEOUT_S = 1800  # ~4x the measured 452-455s no-flags scan (#2252); fires only on a wedge
+
+
+_REAPER_SIGNALS = frozenset(
+    {int(signal.SIGTERM), int(signal.SIGKILL), int(signal.SIGINT), int(signal.SIGHUP)}
+)
+_CRASH_SIGNALS = frozenset(
+    {
+        int(signal.SIGSEGV),
+        int(signal.SIGABRT),
+        int(signal.SIGBUS),
+        int(signal.SIGILL),
+        int(signal.SIGFPE),
+    }
+)
+
+
+def _signal_number(rc: int) -> int | None:
+    """Signal number encoded in a child returncode, or None for a plain exit.
+
+    A DIRECT child killed by signal N reports returncode -N (POSIX subprocess
+    semantics); a wrapper (uv/shell) reaping a signalled child conventionally
+    exits 128+N (the observed 143 = 128+SIGTERM, #2243). workflow_lint's own
+    exits are 0/1 (argparse: 2), so no legitimate verdict lands in either band.
+    """
+    if rc < 0:
+        return -rc
+    if rc >= 128:
+        return rc - 128
+    return None
+
+
+def _signal_decode(rc: int) -> str | None:
+    """Render the signal encoded in a child returncode, or None for a plain exit."""
+    n = _signal_number(rc)
+    if n is None:
+        return None
+    try:
+        return f"{n} ({signal.Signals(n).name})"
+    except ValueError:
+        return f"{n} (unknown)"
+
+
+def _signal_class(rc: int) -> str:
+    """Coarse origin class of a signal-shaped returncode.
+
+    Returns 'reaper' | 'crash' | 'unclassified'. Callers gate on
+    _signal_decode(rc) first (asserts on a plain-exit returncode).
+    """
+    n = _signal_number(rc)
+    assert n is not None, rc
+    if n in _REAPER_SIGNALS:
+        return "reaper"
+    if n in _CRASH_SIGNALS:
+        return "crash"
+    return "unclassified"
+
+
+def _signal_origin_advice(rc: int) -> str:
+    """One origin-LEANING sentence per signal class — never asserts a cause,
+    or excludes one, that the return code alone has not established (#2252
+    round 2, signal-origin-overclaim; round 3, crash-class-origin-overclaim).
+
+    The reaper-shaped set (SIGTERM/SIGKILL/SIGINT/SIGHUP) is the #2243
+    incident class — external-kill wording is reserved for it. The
+    crash-class set (SIGSEGV/SIGABRT/SIGBUS/SIGILL/SIGFPE) typically
+    indicates a payload or runtime defect, but the environment is NOT ruled
+    out — a signal number cannot establish that exclusion (SIGBUS in
+    particular is environment-inducible via I/O faults on mapped pages).
+    Any other signal number is unclassified: no cause is asserted either
+    way. Reproducible-crash wording never appears here — one kill is never
+    evidence of reproducibility; it lives only in _run's double-death
+    branch, and only when BOTH attempts were crash-class.
+    """
+    cls = _signal_class(rc)
+    if cls == "reaper":
+        return (
+            "Reaper-shaped signal (SIGTERM/SIGKILL/SIGINT/SIGHUP): consistent with "
+            "an external kill — check VM load and concurrent Step 9c batteries "
+            "before touching the payload."
+        )
+    if cls == "crash":
+        return (
+            "Crash-class signal (SIGSEGV/SIGABRT/SIGBUS/SIGILL/SIGFPE): typically "
+            "indicates a PAYLOAD or runtime crash; environment not ruled out — "
+            "investigate the linter/payload first."
+        )
+    return (
+        "Unclassified signal number: origin not established — inspect both the "
+        "payload and the environment; neither is exonerated."
+    )
+
+
+def _verdict_line(text_streams: tuple[str | None, ...]) -> str:
+    """Last 'workflow_lint: ...' line, scanning the streams IN THE ORDER GIVEN.
+
+    Callers pass stderr FIRST. The linter writes its verdict AND every
+    check-output line to stderr (both terminal `workflow_lint: PASS` /
+    `workflow_lint: FAIL (...)` emissions are `sys.stderr.write` calls in
+    workflow_lint's main dispatch), so a stderr hit is always the
+    authoritative one. Stream order is
+    load-bearing, not incidental: a FAIL-then-killed run also carries
+    `workflow_lint:`-prefixed FINDING lines, so scanning the stream list
+    in reverse would let a stdout line outrank the real verdict (both
+    critic lenses flagged this against assumption 4). Within a stream we
+    still take the LAST match — the verdict is printed last. The one
+    stdout-only mode (`--regen-hf-routing-snapshot`, called once in this
+    file) emits NO `workflow_lint:` line on either stream by design (its
+    early dispatch means the check bundle never runs), so it correctly
+    falls through to the stated-absence return rather than quoting a
+    stray line.
+    """
+    for s in [t for t in text_streams if t]:
+        for line in reversed(s.splitlines()):
+            if line.startswith("workflow_lint:"):
+                return line
+    return "<no verdict line — killed before the linter printed one>"
+
 
 def _run(*flags: str) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        ["uv", "run", "python", str(_LINT), *flags],
-        cwd=_REPO_ROOT,
-        capture_output=True,
-        text=True,
-        check=False,
+    """Spawn the linter; return ONLY genuine verdicts (0 <= rc < 128).
+
+    Signal-shaped deaths (#2252/#2243) retry ONCE regardless of signal class
+    (the lint is deterministic and read-only, so a retry distinguishes a
+    transient kill from a reproducible crash); a second signal death, or a
+    timeout, fails with a message naming the outcome class. The double-death
+    failure retains attempt 1's returncode and reports BOTH signal decodes;
+    its advice is class-aware: both attempts in the SAME class get that
+    class's `_signal_origin_advice` (reproducible-crash wording is added ONLY
+    when both attempts are crash-class — the one sequence that evidences
+    reproducibility), DIFFERING classes get the both-suspects sentence. No
+    message asserts a cause, or excludes one, that the observed return codes
+    have not established (#2252 rounds 2-3). Callers may assert on
+    returncode: a returned CompletedProcess is never signal-encoded.
+    """
+    first_rc: int | None = None
+    last: subprocess.CompletedProcess[str] | None = None
+    for attempt in (1, 2):
+        try:
+            result = subprocess.run(
+                ["uv", "run", "python", str(_LINT), *flags],
+                cwd=_REPO_ROOT,
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=_RUN_TIMEOUT_S,
+            )
+        except subprocess.TimeoutExpired:
+            pytest.fail(
+                f"_run{flags!r}: TIMEOUT after {_RUN_TIMEOUT_S}s — a WEDGE, not a lint "
+                f"verdict (#2252; healthy no-flags scan measures ~455s)."
+            )
+        sig = _signal_decode(result.returncode)
+        if sig is None:
+            return result
+        last = result
+        if attempt == 1:
+            first_rc = result.returncode
+            warnings.warn(
+                f"_run{flags!r}: lint subprocess SIGNALLED (rc={result.returncode} = "
+                f"signal {sig}) — terminated by signal, not a lint verdict (#2252); "
+                f"retrying once. {_signal_origin_advice(result.returncode)} "
+                f"Embedded verdict line: "
+                f"{_verdict_line((result.stderr, result.stdout))!r}",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+    assert last is not None and first_rc is not None
+    if _signal_class(first_rc) == _signal_class(last.returncode):
+        advice = _signal_origin_advice(last.returncode)
+        if _signal_class(last.returncode) == "crash":
+            advice += " Both attempts died on a crash-class signal — a reproducible crash."
+    else:
+        advice = (
+            "Attempts died on DIFFERING signal classes: origin not established — "
+            "inspect both the payload and the environment; neither is exonerated."
+        )
+    pytest.fail(
+        f"_run{flags!r}: SIGNALLED twice (attempt 1 rc={first_rc} = signal "
+        f"{_signal_decode(first_rc)}; attempt 2 rc={last.returncode} = signal "
+        f"{_signal_decode(last.returncode)}) — a signal termination, NOT a lint verdict "
+        f"(#2252). {advice} Embedded verdict line: "
+        f"{_verdict_line((last.stderr, last.stdout))!r}.\n"
+        f"stderr tail: {(last.stderr or '')[-400:]}"
     )
 
 
@@ -3597,13 +3775,69 @@ def test_check_agent_model_pins_fail_unknown_suffix_treated_as_unknown_base(tmp_
     assert "not in the allowlist" in errors[0]
 
 
-def test_check_agent_model_pins_pass_missing_frontmatter(tmp_path):
-    """PASS — an agent file with no ``model:`` line inherits the parent
-    model (CLAUDE.md 'Prompt-cache key discipline' explicitly allows it);
-    no runtime contract to validate."""
+def test_check_agent_model_pins_fail_missing_pin_undeclared(tmp_path):
+    """FAIL — the presence half (#2123; DELIBERATE INVERSION of the former
+    ``test_check_agent_model_pins_pass_missing_frontmatter``, which codified
+    the old silently-skip contract). An agent file with no ``model:`` line
+    still inherits the parent model at RUNTIME, but the inherit must be
+    DECLARED via the frontmatter waiver comment — an undeclared missing pin
+    is indistinguishable from an accidental deletion."""
     (tmp_path / "x.md").write_text("---\nname: x\n---\n\nBody.\n", encoding="utf-8")
     errors = check_agent_model_pins(roots=[tmp_path])
-    assert errors == [], f"expected PASS (no pin), got: {errors}"
+    assert len(errors) == 1, f"expected the presence-half FAIL, got: {errors}"
+    assert "MODEL_PIN_LINT_EXEMPT" in errors[0]
+    assert "NO `model:` pin" in errors[0]
+
+
+def test_check_agent_model_pins_pass_waiver_in_frontmatter(tmp_path):
+    """PASS — an unpinned file whose FRONTMATTER carries the
+    ``# MODEL_PIN_LINT_EXEMPT: <reason>`` waiver (reason >= 10 chars) has
+    DECLARED the parent-model inherit; the presence half is satisfied."""
+    (tmp_path / "x.md").write_text(
+        "---\nname: x\n# MODEL_PIN_LINT_EXEMPT: inherits the parent model "
+        "deliberately\n---\n\nBody.\n",
+        encoding="utf-8",
+    )
+    errors = check_agent_model_pins(roots=[tmp_path])
+    assert errors == [], f"expected PASS (frontmatter waiver), got: {errors}"
+
+
+def test_check_agent_model_pins_fail_waiver_in_body_prose_only(tmp_path):
+    """FAIL — the under-trigger case (plan #2123 critic blocker 2): the
+    waiver sentinel appearing ONLY in body prose is documentation, not a
+    declaration. Agent specs demonstrably quote lint-waiver sentinels as
+    prose (experiment-implementer.md contains the literal
+    DOTENV_LINT_EXEMPT), so a file-wide match would let a future unpinned
+    spec that merely DOCUMENTS this convention satisfy its own waiver."""
+    (tmp_path / "x.md").write_text(
+        "---\nname: x\n---\n\nBody prose documenting the convention: use\n"
+        "# MODEL_PIN_LINT_EXEMPT: some long documented reason\n"
+        "inside the frontmatter to waive the pin requirement.\n",
+        encoding="utf-8",
+    )
+    errors = check_agent_model_pins(roots=[tmp_path])
+    assert len(errors) == 1, f"expected FAIL (body-prose sentinel), got: {errors}"
+    assert "NOT a waiver" in errors[0]
+
+
+def test_check_agent_model_pins_fail_waiver_reason_too_short(tmp_path):
+    """FAIL — a waiver with a sub-10-char reason is a token bypass, not a
+    justification (the DOTENV_LINT_EXEMPT reason-length convention)."""
+    (tmp_path / "x.md").write_text(
+        "---\nname: x\n# MODEL_PIN_LINT_EXEMPT: short\n---\n\nBody.\n",
+        encoding="utf-8",
+    )
+    errors = check_agent_model_pins(roots=[tmp_path])
+    assert len(errors) == 1, f"expected FAIL (reason too short), got: {errors}"
+
+
+def test_check_agent_model_pins_fail_no_frontmatter_block(tmp_path):
+    """FAIL — a file with no parseable frontmatter block has no pin and no
+    place for a waiver (the waiver is frontmatter-scoped by design)."""
+    (tmp_path / "x.md").write_text("Just a body, no frontmatter.\n", encoding="utf-8")
+    errors = check_agent_model_pins(roots=[tmp_path])
+    assert len(errors) == 1, f"expected FAIL (no frontmatter), got: {errors}"
+    assert "no parseable YAML frontmatter" in errors[0]
 
 
 def test_check_agent_model_pins_d07424178_regression_full_fleet(tmp_path):
@@ -9689,3 +9923,332 @@ def test_snapshot_download_allow_patterns_bundled_in_no_flags():
     assert "or args.check_snapshot_download_allow_patterns" in src, (
         "--check-snapshot-download-allow-patterns is missing from the no_flags detection tuple"
     )
+
+
+def test_check_two_tier_yield_floor_bundled_in_no_flags(tmp_path):
+    """(#2242) Two-part behavioral bundling pin (the house
+    ``bundled_in_no_flags`` precedent shape; D9-bis).
+
+    Part A — scoped-flag subprocess against a DRIFTED corpus (an empty tree:
+    all four pinned surfaces missing), rooted via
+    ``EPS_WORKFLOW_LINT_REPO_ROOT``: proves the flag exists, the dispatch
+    calls the function, and it emits its #2242-tagged errors (nonzero exit).
+
+    Part B — no-flags OR-chain + dispatch-ladder evidence: ``main()``'s
+    source names ``args.check_two_tier_yield_floor`` in BOTH the
+    ``no_flags = not (...)`` OR-chain and the ``or no_flags`` dispatch
+    ladder — the pin that keeps the bundling true across a later dispatch
+    refactor (a no-flags SUBPROCESS run is deliberately avoided here: the
+    bare default run is multi-minute and already end-to-end-covered by
+    ``test_no_flags_default_run_pins_failure_lesson_field_contract``).
+    """
+    # Part A — scoped-flag subprocess against a drifted (empty) corpus.
+    (tmp_path / ".claude").mkdir()
+    workflow_yaml_dst = tmp_path / ".claude" / "workflow.yaml"
+    workflow_yaml_dst.write_bytes((_REPO_ROOT / ".claude" / "workflow.yaml").read_bytes())
+    env = {**os.environ, "EPS_WORKFLOW_LINT_REPO_ROOT": str(tmp_path)}
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(_LINT),
+            "--check-two-tier-yield-floor",
+            "--file",
+            str(workflow_yaml_dst),
+        ],
+        capture_output=True,
+        text=True,
+        timeout=60,
+        env=env,
+    )
+    combined = result.stdout + result.stderr
+    assert "#2242" in combined, (
+        "#2242 error token missing from output — the CLI flag does not "
+        f"dispatch the check. exit={result.returncode}, output:\n{combined}"
+    )
+    assert result.returncode != 0, (
+        f"expected nonzero exit under the drifted corpus; got exit="
+        f"{result.returncode}, output:\n{combined}"
+    )
+
+    # Part B — OR-chain + dispatch-ladder evidence.
+    src = _LINT.read_text(encoding="utf-8")
+    main_start = src.find("def main(")
+    assert main_start >= 0, "could not locate def main( in workflow_lint.py"
+    main_src = src[main_start:]
+    or_chain_start = main_src.find("no_flags = not (")
+    assert or_chain_start >= 0, "no_flags OR-chain not found in main()"
+    or_chain_src = main_src[or_chain_start : main_src.find(")", or_chain_start)]
+    assert "args.check_two_tier_yield_floor" in or_chain_src, (
+        "args.check_two_tier_yield_floor is NOT in the no_flags OR-chain — a "
+        "bare workflow_lint.py invocation will not fire this check. "
+        f"OR-chain source:\n{or_chain_src}"
+    )
+    assert re.search(
+        r"if args\.check_two_tier_yield_floor or no_flags:\s*\n"
+        r"\s*errors\.extend\(check_two_tier_yield_floor\(\)\)",
+        main_src,
+    ), (
+        "args.check_two_tier_yield_floor is NOT dispatched under `or "
+        "no_flags` — the flag is defined but not bundled into the no-flags "
+        "default run."
+    )
+
+
+# --- _run subprocess-supervision contract (#2252) ---
+# Fast unit tests: subprocess.run is replaced by a fake (the test subject's
+# boundary), so no real linter is spawned — each test runs in <1s. The real
+# spawn path is exercised by the scoped live-path tests above and by the
+# full file at the Step 9c gate.
+
+
+def _fake_lint_proc(
+    rc: int, stdout: str = "", stderr: str = ""
+) -> subprocess.CompletedProcess[str]:
+    return subprocess.CompletedProcess(
+        ["uv", "run", "python", str(_LINT)], rc, stdout=stdout, stderr=stderr
+    )
+
+
+class _FakeSubprocessRun:
+    """Stands in for subprocess.run; replays outcomes, records call args/kwargs.
+
+    The last outcome repeats once the list would be exhausted. An outcome that
+    is an exception instance is raised instead of returned.
+    """
+
+    def __init__(self, *outcomes: subprocess.CompletedProcess[str] | BaseException) -> None:
+        self.calls: list[tuple[tuple, dict]] = []
+        self._outcomes = list(outcomes)
+
+    def __call__(self, *args, **kwargs):
+        self.calls.append((args, kwargs))
+        outcome = self._outcomes.pop(0) if len(self._outcomes) > 1 else self._outcomes[0]
+        if isinstance(outcome, BaseException):
+            raise outcome
+        return outcome
+
+
+def test_run_helper_signal_death_retries_once_then_fails_discriminated(monkeypatch):
+    """Double signal death: retried exactly once, then a discriminating fail
+    quoting the signal decode AND the embedded verdict line (#2243 replay)."""
+    fake = _FakeSubprocessRun(
+        _fake_lint_proc(
+            143, stderr="workflow_lint: FAIL (1 error(s)) finding\nworkflow_lint: PASS\n"
+        )
+    )
+    monkeypatch.setattr(subprocess, "run", fake)
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        with pytest.raises(pytest.fail.Exception) as excinfo:
+            _run()
+    assert len(fake.calls) == 2, "a signal death must be retried exactly once"
+    assert any(
+        issubclass(w.category, RuntimeWarning) and "SIGNALLED" in str(w.message) for w in caught
+    ), "the first signal death must emit a RuntimeWarning before the retry"
+    msg = str(excinfo.value)
+    assert "SIGNALLED twice" in msg
+    assert "NOT a lint verdict" in msg
+    assert "15 (SIGTERM)" in msg
+    assert "Embedded verdict line: 'workflow_lint: PASS'" in msg
+    # SIGTERM is reaper-shaped: the environmental attribution is RESERVED for
+    # this class (round 2, signal-origin-overclaim).
+    assert "Reaper-shaped signal" in msg
+    assert "consistent with an external kill" in msg
+    assert "check VM load" in msg
+
+
+def test_run_helper_negative_rc_is_a_signal_death(monkeypatch):
+    """Direct-child kill encoding (rc=-N) takes the same retry+discrimination path."""
+    fake = _FakeSubprocessRun(_fake_lint_proc(-15))
+    monkeypatch.setattr(subprocess, "run", fake)
+    with warnings.catch_warnings(record=True):
+        warnings.simplefilter("always")
+        with pytest.raises(pytest.fail.Exception) as excinfo:
+            _run("--check-tables")
+    assert len(fake.calls) == 2
+    msg = str(excinfo.value)
+    assert "SIGNALLED twice" in msg
+    assert "rc=-15" in msg
+    assert "15 (SIGTERM)" in msg
+
+
+def test_run_helper_single_signal_death_retry_success_warns(monkeypatch):
+    """One signal death then a clean exit: the retry result is returned and the
+    kill stays observable as a RuntimeWarning (no red gate)."""
+    ok = _fake_lint_proc(0, stderr="workflow_lint: PASS\n")
+    fake = _FakeSubprocessRun(_fake_lint_proc(143, stderr="workflow_lint: PASS\n"), ok)
+    monkeypatch.setattr(subprocess, "run", fake)
+    with pytest.warns(RuntimeWarning, match="SIGNALLED"):
+        result = _run()
+    assert result is ok  # identity assert, not a bare `== 0` (keeps the §6.3 count stable)
+    assert len(fake.calls) == 2
+
+
+def test_run_helper_verdicts_pass_through_unretried(monkeypatch):
+    """Genuine linter verdicts (rc 0/1) pass through on the first call, and the
+    spawn carries the module timeout fence."""
+    for rc in (1, 0):
+        proc = _fake_lint_proc(rc, stderr="workflow_lint: FAIL (1 error(s))\n")
+        fake = _FakeSubprocessRun(proc)
+        monkeypatch.setattr(subprocess, "run", fake)
+        result = _run("--check-asks")
+        assert result is proc  # identity assert (see §6.3 note above)
+        assert len(fake.calls) == 1, f"rc={rc} is a genuine verdict — must not retry"
+        _, kwargs = fake.calls[0]
+        assert kwargs["timeout"] == _RUN_TIMEOUT_S
+
+
+def test_run_helper_timeout_is_distinct_and_unretried(monkeypatch):
+    """TimeoutExpired fails loud with its own leading token and is never retried
+    (a wedge is not transient; a retry would add up to 30 min to the gate)."""
+    fake = _FakeSubprocessRun(subprocess.TimeoutExpired(["uv"], _RUN_TIMEOUT_S))
+    monkeypatch.setattr(subprocess, "run", fake)
+    with pytest.raises(pytest.fail.Exception) as excinfo:
+        _run()
+    assert len(fake.calls) == 1, "a timeout must not be retried"
+    msg = str(excinfo.value)
+    assert "TIMEOUT" in msg
+    assert "WEDGE" in msg
+
+
+def test_run_helper_verdict_line_prefers_stderr_over_stdout(monkeypatch):
+    """Stream order is a contract: the STDERR verdict outranks a stdout decoy.
+
+    A FAIL-then-killed run also carries `workflow_lint:`-prefixed FINDING
+    lines; scanning stdout first would let one outrank the real verdict."""
+    decoy = "workflow_lint: FAIL (1 error(s)) [stdout decoy]"
+    fake = _FakeSubprocessRun(
+        _fake_lint_proc(143, stdout=decoy + "\n", stderr="some output\nworkflow_lint: PASS\n")
+    )
+    monkeypatch.setattr(subprocess, "run", fake)
+    with warnings.catch_warnings(record=True):
+        warnings.simplefilter("always")
+        with pytest.raises(pytest.fail.Exception) as excinfo:
+            _run()
+    msg = str(excinfo.value)
+    assert "Embedded verdict line: 'workflow_lint: PASS'" in msg
+    assert decoy not in msg
+
+
+def test_run_helper_signal_decode_unknown_number_is_unclassified():
+    """_signal_decode's ValueError arm: a signal number outside the platform's
+    Signals enum renders `N (unknown)` on BOTH returncode encodings (pins
+    round-1 behavior that shipped untested; Claude Minor 1 / Codex Minor 2)."""
+    assert _signal_decode(128 + 65) == "65 (unknown)"
+    assert _signal_decode(-65) == "65 (unknown)"
+    assert _signal_decode(0) is None
+    assert _signal_decode(1) is None
+    assert _signal_decode(2) is None  # argparse usage exit — a plain verdict band
+
+
+def test_run_helper_crash_class_signal_points_at_payload(monkeypatch):
+    """A crash-class signal (SIGSEGV) is still retried once. The retry warning
+    leans at the payload WITHOUT excluding the environment or claiming
+    reproducibility (one kill is never evidence of either); the double-kill
+    failure reports BOTH decodes and — both attempts being crash-class, the
+    one sequence that evidences it — is permitted the reproducible-crash
+    wording (round 2, signal-origin-overclaim; round 3,
+    crash-class-origin-overclaim)."""
+    fake = _FakeSubprocessRun(_fake_lint_proc(128 + int(signal.SIGSEGV)))
+    monkeypatch.setattr(subprocess, "run", fake)
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        with pytest.raises(pytest.fail.Exception) as excinfo:
+            _run()
+    assert len(fake.calls) == 2, "crash-class keeps the retry (transient vs reproducible)"
+    warn_msgs = [str(w.message) for w in caught if issubclass(w.category, RuntimeWarning)]
+    assert any("Crash-class signal" in m for m in warn_msgs)
+    assert any("environment not ruled out" in m for m in warn_msgs)
+    assert not any("external kill" in m for m in warn_msgs)
+    assert not any("reproducible" in m for m in warn_msgs), (
+        "a single kill must never be labelled reproducible"
+    )
+    assert not any("not the environment" in m for m in warn_msgs), (
+        "a signal number cannot establish an environment exclusion"
+    )
+    msg = str(excinfo.value)
+    assert "SIGNALLED twice" in msg
+    assert msg.count("11 (SIGSEGV)") == 2, "the failure must decode BOTH attempts' signals"
+    assert "Crash-class signal" in msg
+    assert "PAYLOAD" in msg
+    assert "typically indicates" in msg, "crash-class advice is origin-leaning, not categorical"
+    assert "environment not ruled out" in msg
+    assert "not the environment" not in msg
+    # BOTH attempts crash-class: the reproducible-crash wording is permitted here.
+    assert "Both attempts died on a crash-class signal — a reproducible crash" in msg
+    assert "external kill" not in msg, "environmental wording is reserved for reaper signals"
+    assert "VM load" not in msg
+
+
+def test_run_helper_mixed_reaper_then_crash_is_not_a_reproducible_crash(monkeypatch):
+    """reaper→crash: the crash happened exactly ONCE, so the failure must
+    report BOTH decodes, take the both-suspects sentence, and never label
+    unlike signals a reproducible crash or exclude an unproven origin
+    (round 3, crash-class-origin-overclaim: round 2 decoded only attempt 2
+    and called the sequence reproducible)."""
+    fake = _FakeSubprocessRun(_fake_lint_proc(143), _fake_lint_proc(128 + int(signal.SIGSEGV)))
+    monkeypatch.setattr(subprocess, "run", fake)
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        with pytest.raises(pytest.fail.Exception) as excinfo:
+            _run()
+    assert len(fake.calls) == 2
+    warn_msgs = [str(w.message) for w in caught if issubclass(w.category, RuntimeWarning)]
+    assert any("Reaper-shaped signal" in m for m in warn_msgs)  # attempt 1 WAS reaper-shaped
+    assert not any("reproducible" in m for m in warn_msgs)
+    assert not any("not the environment" in m for m in warn_msgs)
+    msg = str(excinfo.value)
+    assert "15 (SIGTERM)" in msg, "attempt 1's decode must survive into the failure"
+    assert "11 (SIGSEGV)" in msg, "attempt 2's decode must survive into the failure"
+    assert "DIFFERING signal classes" in msg
+    assert "neither is exonerated" in msg
+    assert "reproducible" not in msg, "unlike signals are never a reproducible crash"
+    assert "not the environment" not in msg, "no origin is excluded on mixed evidence"
+
+
+def test_run_helper_mixed_crash_then_reaper_keeps_payload_in_scope(monkeypatch):
+    """crash→reaper: the FIRST death was a payload-leaning crash, so the
+    failure must not send the reader to VM load with the payload out of
+    scope (the #2243 misdirection class, inverse direction). BOTH decodes
+    reported; both-suspects sentence; no reproducible-crash claim, no
+    origin exclusion (round 3, crash-class-origin-overclaim)."""
+    fake = _FakeSubprocessRun(_fake_lint_proc(128 + int(signal.SIGSEGV)), _fake_lint_proc(143))
+    monkeypatch.setattr(subprocess, "run", fake)
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        with pytest.raises(pytest.fail.Exception) as excinfo:
+            _run()
+    assert len(fake.calls) == 2
+    warn_msgs = [str(w.message) for w in caught if issubclass(w.category, RuntimeWarning)]
+    assert any("Crash-class signal" in m for m in warn_msgs)  # attempt 1 WAS crash-class
+    assert not any("not the environment" in m for m in warn_msgs)
+    assert not any("reproducible" in m for m in warn_msgs)
+    msg = str(excinfo.value)
+    assert "11 (SIGSEGV)" in msg, "attempt 1's decode must survive into the failure"
+    assert "15 (SIGTERM)" in msg, "attempt 2's decode must survive into the failure"
+    assert "DIFFERING signal classes" in msg
+    assert "neither is exonerated" in msg
+    assert "check VM load" not in msg, "a first-death crash is never routed to VM load alone"
+    assert "consistent with an external kill" not in msg
+    assert "reproducible" not in msg
+
+
+def test_run_helper_unknown_signal_unclassified_and_fallback_verdict_asserted(monkeypatch):
+    """An unknown 128+N wrapper status is neither reaper-shaped nor crash-class:
+    the failure says so without asserting a cause. Empty streams exercise AND
+    assert _verdict_line's stated-absence fallback string (previously executed
+    by the negative-rc test but never asserted)."""
+    fake = _FakeSubprocessRun(_fake_lint_proc(128 + 65))
+    monkeypatch.setattr(subprocess, "run", fake)
+    with warnings.catch_warnings(record=True):
+        warnings.simplefilter("always")
+        with pytest.raises(pytest.fail.Exception) as excinfo:
+            _run()
+    msg = str(excinfo.value)
+    assert "SIGNALLED twice" in msg
+    assert "65 (unknown)" in msg
+    assert "Unclassified signal number" in msg
+    assert "origin not established" in msg
+    assert "external kill" not in msg
+    assert "Crash-class" not in msg
+    assert "no verdict line — killed before the linter printed one" in msg

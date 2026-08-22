@@ -1,0 +1,376 @@
+{
+  "commit": "83e6c65e",
+  "render_id": "f424a7ca0b834891",
+  "git_commit": "83e6c65e",
+  "git_dirty": false,
+  "created": "2026-08-13T00:36:16Z",
+  "figsize": [
+    11.0,
+    4.5
+  ],
+  "points": [
+    {
+      "x": 0.15,
+      "erase F_target \u2212 install F_target (paired by carrier)": -0.01740032862939266,
+      "error": 0.11441058740110918,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1.15,
+      "erase F_target \u2212 install F_target (paired by carrier)": 0.16296731813502796,
+      "error": 0.3494368014928404,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 2.15,
+      "erase F_target \u2212 install F_target (paired by carrier)": 0.19340256173706535,
+      "error": 0.39049773896879764,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 3.15,
+      "erase F_target \u2212 install F_target (paired by carrier)": 0.21841578859742186,
+      "error": 0.07437442460825898,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": -0.03726053639846762,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": 0.007476635514018837,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": -0.25685579196217473,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": -0.11951710261569409,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": 0.17361111111111133,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": 0.1281437125748503,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": -0.18291347207009853,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": -0.31151919866444033,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": -0.30420353982300885,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": 0.3877005347593582,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": 0.7739975698663427,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": 0.6147420147420146,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": -0.6159654800431502,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": 0.19974391805377711,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": -0.2216288384512688,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": 0.6371681415929202,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": 0.34291581108829555,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": 0.8181818181818182,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": 0.1666666666666666,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": 0.34782608695652173,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": 0.14734774066797662,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "erase F_target \u2212 install F_target (paired by carrier)": 0.21182266009852244,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.15,
+      "y": -0.057011108890992646,
+      "error": 0.24944263175604514,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "x": 1.15,
+      "y": 0.07045401562999101,
+      "error": 0.12143890121688962,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "x": 2.15,
+      "y": 0.03188272550780463,
+      "error": 0.333463993624739,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "x": 3.15,
+      "y": 0.4780862513341836,
+      "error": 0.23815853237738965,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "x": 0.0,
+      "y": -0.15862068965517262,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": -0.20785046728971937,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.26524822695035455,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.23380281690140858,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": 0.14930555555555594,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "y": -0.623952095808383,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.0,
+      "y": 0.033953997809419524,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": 0.00901502504173642,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": 0.23539823008849559,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.013368983957219414,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": -0.15431348724179816,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "y": 0.3120393120393121,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.0,
+      "y": -0.024811218985976505,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.0,
+      "y": 0.08578745198463489,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.0,
+      "y": 0.17757009345794375,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.0,
+      "y": 0.6504424778761062,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.0,
+      "y": 0.02258726899383969,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.0,
+      "y": -0.7202797202797202,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.0,
+      "y": 0.15422885572139305,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.0,
+      "y": 0.5152173913043477,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.0,
+      "y": 0.819253438113949,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.0,
+      "y": 0.42364532019704454,
+      "_kind": "scatter",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 52,
+  "text": {
+    "suptitle": "Erase vs install asymmetry per rung (steered arm)",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "context-end",
+        "ylabel": "erase F_target \u2212 install F_target (paired by carrier)",
+        "xticklabels": [
+          "R1",
+          "R2",
+          "R3",
+          "R5"
+        ],
+        "yticklabels": [
+          "\u22120.8",
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "prefix-end",
+        "xticklabels": [
+          "R1",
+          "R2",
+          "R3",
+          "R5"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

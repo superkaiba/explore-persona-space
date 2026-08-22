@@ -1,0 +1,315 @@
+{
+  "commit": "24b9bab4+dirty",
+  "render_id": "a9f059c555f54058",
+  "git_commit": "24b9bab475f94a285a1a68ffa0f050d0cb2ad8c1",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "eval_results/issue_1895/dark_spot_matched_rows.json",
+    "figures/issue_1895/angle_spectrum_k64.meta.json",
+    "figures/issue_1895/angle_spectrum_k64.pdf",
+    "figures/issue_1895/angle_spectrum_k64.png",
+    "figures/issue_1895/hero_overlap_ksweep.meta.json",
+    "figures/issue_1895/hero_overlap_ksweep.pdf",
+    "figures/issue_1895/hero_overlap_ksweep.png",
+    "figures/issue_1895/perdirection_r2_vs_fve_scatter.meta.json",
+    "figures/issue_1895/perdirection_r2_vs_fve_scatter.pdf",
+    "figures/issue_1895/perdirection_r2_vs_fve_scatter.png",
+    "figures/issue_1895/profiles_vs_eigrank.meta.json",
+    "figures/issue_1895/profiles_vs_eigrank.pdf",
+    "figures/issue_1895/profiles_vs_eigrank.png",
+    "figures/issue_1895/stratified_correlates.meta.json",
+    "figures/issue_1895/stratified_correlates.pdf",
+    "figures/issue_1895/stratified_correlates.png",
+    "figures/issue_1895/three_target_fits_delta_dark.meta.json",
+    "figures/issue_1895/three_target_fits_delta_dark.pdf",
+    "figures/issue_1895/three_target_fits_delta_dark.png",
+    "figures/paper/c3_persona_direction_spectrum.pdf",
+    "figures/paper/c3_persona_direction_spectrum.png",
+    "figures/paper/c3_sae_tier_gradient.meta.json",
+    "figures/paper/c3_sae_tier_gradient.pdf",
+    "figures/paper/c3_sae_tier_gradient.png",
+    "figures/paper/c4_reparam_recovery.meta.json",
+    "figures/paper/c4_reparam_recovery.pdf",
+    "figures/paper/c4_reparam_recovery.png",
+    "figures/paper/c4_story_vs_chat.meta.json",
+    "figures/paper/c4_story_vs_chat.pdf",
+    "figures/paper/c4_story_vs_chat.png",
+    "scripts/issue1310_analyzer_figures.py",
+    "scripts/issue1336_analyzer_figures.py",
+    "scripts/issue1345_analyzer_figs.py",
+    "scripts/issue1415_hooked_decomp_figures.py",
+    "scripts/issue1482_matryoshka_tier.py",
+    "scripts/issue1639_tier15_ladder_fig.py",
+    "scripts/issue1739_result2_fourpanel_fig.py",
+    "scripts/issue1774_figures.py",
+    "scripts/issue1895_analysis_figures.py",
+    "scripts/issue1901_body_figures.py",
+    "scripts/issue1902_figures.py",
+    "scripts/issue2094_figures.py",
+    "scripts/issue2202_regen_figs.py",
+    "scripts/issue722_figures.py",
+    "scripts/issue779_identity_baseline.py",
+    "scripts/issue823_figures.py",
+    "scripts/issue928_mlc_figures.py",
+    "tasks/planning/2422/events.jsonl",
+    "tasks/proposed/2416/body.md",
+    "tasks/proposed/2416/comments.jsonl",
+    "... 2 more"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue1895_analysis_figures.py",
+  "created": "2026-08-20T08:22:03Z",
+  "figsize": [
+    5.5,
+    2.0
+  ],
+  "points": [
+    {
+      "subspace size $k$": 0.0,
+      "subspace overlap": 0.8552048206329346,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "subspace size $k$": 1.0,
+      "subspace overlap": 0.8790323734283447,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "subspace size $k$": 2.0,
+      "subspace overlap": 0.8669513463973999,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "subspace size $k$": 3.0,
+      "subspace overlap": 0.8841001987457275,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "subspace size $k$": 4.0,
+      "subspace overlap": 0.8611531257629395,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "subspace size $k$": 0.0,
+      "subspace overlap": 0.8552048206329346,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "subspace size $k$": 1.0,
+      "subspace overlap": 0.8790323734283447,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "subspace size $k$": 2.0,
+      "subspace overlap": 0.8669513463973999,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "subspace size $k$": 3.0,
+      "subspace overlap": 0.8841001987457275,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "subspace size $k$": 4.0,
+      "subspace overlap": 0.8611531257629395,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "subspace size $k$": 0.0,
+      "y": 0.2525671124458313,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "subspace size $k$": 1.0,
+      "y": 0.33575546741485596,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "subspace size $k$": 2.0,
+      "y": 0.39395394921302795,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "subspace size $k$": 3.0,
+      "y": 0.4573781192302704,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "subspace size $k$": 4.0,
+      "y": 0.5125837326049805,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "subspace size $k$": 0.0,
+      "y": 0.2525671124458313,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "subspace size $k$": 1.0,
+      "y": 0.33575546741485596,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "subspace size $k$": 2.0,
+      "y": 0.39395394921302795,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "subspace size $k$": 3.0,
+      "y": 0.4573781192302704,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "subspace size $k$": 4.0,
+      "y": 0.5125837326049805,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "subspace size $k$": 0.0,
+      "y": 0.23507525026798248,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "subspace size $k$": 1.0,
+      "y": 0.23625487089157104,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "subspace size $k$": 2.0,
+      "y": 0.2653008997440338,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "subspace size $k$": 3.0,
+      "y": 0.29696404933929443,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "subspace size $k$": 4.0,
+      "y": 0.3273763656616211,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "subspace size $k$": 0.0,
+      "y": 0.23507525026798248,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "subspace size $k$": 1.0,
+      "y": 0.23625487089157104,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "subspace size $k$": 2.0,
+      "y": 0.2653008997440338,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "subspace size $k$": 3.0,
+      "y": 0.29696404933929443,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "subspace size $k$": 4.0,
+      "y": 0.3273763656616211,
+      "_kind": "line",
+      "_group": 17
+    }
+  ],
+  "n_series": 18,
+  "total_points": 30,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "reconstruction PCA (primary)",
+        "xlabel": "subspace size $k$",
+        "ylabel": "subspace overlap",
+        "xticklabels": [
+          "16",
+          "32",
+          "64",
+          "128",
+          "256"
+        ],
+        "yticklabels": [
+          "0.800",
+          "0.825",
+          "0.850",
+          "0.875",
+          "0.900",
+          "0.925"
+        ]
+      },
+      {
+        "title": "SAE residual (complement)",
+        "xlabel": "subspace size $k$",
+        "xticklabels": [
+          "16",
+          "32",
+          "64",
+          "128",
+          "256"
+        ],
+        "yticklabels": [
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ]
+      },
+      {
+        "title": "decoder SVD (twin)",
+        "xlabel": "subspace size $k$",
+        "xticklabels": [
+          "16",
+          "32",
+          "64",
+          "128",
+          "256"
+        ],
+        "yticklabels": [
+          "0.20",
+          "0.25",
+          "0.30",
+          "0.35"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

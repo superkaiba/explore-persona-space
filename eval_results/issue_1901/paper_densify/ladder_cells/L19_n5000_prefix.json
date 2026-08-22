@@ -1,0 +1,118 @@
+{
+  "layer": 19,
+  "n_train": 5000,
+  "draw": "prefix",
+  "n_vs_d": {
+    "n_train": 5000,
+    "d": 3584,
+    "underdetermined": false
+  },
+  "regime": {
+    "store": "issue1491_scale_ladder/scale7_refit",
+    "lambdas": [
+      "logspace",
+      -3,
+      8,
+      23
+    ],
+    "selection": "val-lambda (primal streaming, F.fit_ridge)",
+    "draw_seed_formula": "np.random.default_rng(19010000 + n*10 + draw)",
+    "prefix_rule": "ladder_local_id < n (file-order prefix, #2330 convention)"
+  },
+  "ridge": {
+    "test_r2": 0.6813526733515054,
+    "meta": {
+      "n_train": 5000,
+      "selection": "val-lambda (primal, streaming)",
+      "selected_lambda": 3162.2776601683795,
+      "val_r2_at_selected": 0.6900141421914721,
+      "lambda_grid_edge": null,
+      "ridge_block": 50000
+    }
+  },
+  "identity_bias": {
+    "test_r2": -0.8879686636269069
+  },
+  "knn": {
+    "ridge": {
+      "euclidean": {
+        "metric": "euclidean",
+        "n": 1000,
+        "n_pool": 1000,
+        "acc_at_k": {
+          "1": 0.686,
+          "5": 0.854,
+          "10": 0.899,
+          "50": 0.984
+        },
+        "chance_at_k": {
+          "1": 0.001,
+          "5": 0.005,
+          "10": 0.01,
+          "50": 0.05
+        },
+        "median_rank": 1.0,
+        "mrr": 0.7644453622568386
+      },
+      "cosine": {
+        "metric": "cosine",
+        "n": 1000,
+        "n_pool": 1000,
+        "acc_at_k": {
+          "1": 0.683,
+          "5": 0.855,
+          "10": 0.899,
+          "50": 0.984
+        },
+        "chance_at_k": {
+          "1": 0.001,
+          "5": 0.005,
+          "10": 0.01,
+          "50": 0.05
+        },
+        "median_rank": 1.0,
+        "mrr": 0.7602270417616424
+      }
+    },
+    "identity_bias": {
+      "euclidean": {
+        "metric": "euclidean",
+        "n": 1000,
+        "n_pool": 1000,
+        "acc_at_k": {
+          "1": 0.544,
+          "5": 0.71,
+          "10": 0.79,
+          "50": 0.921
+        },
+        "chance_at_k": {
+          "1": 0.001,
+          "5": 0.005,
+          "10": 0.01,
+          "50": 0.05
+        },
+        "median_rank": 1.0,
+        "mrr": 0.623059209030242
+      },
+      "cosine": {
+        "metric": "cosine",
+        "n": 1000,
+        "n_pool": 1000,
+        "acc_at_k": {
+          "1": 0.558,
+          "5": 0.73,
+          "10": 0.805,
+          "50": 0.931
+        },
+        "chance_at_k": {
+          "1": 0.001,
+          "5": 0.005,
+          "10": 0.01,
+          "50": 0.05
+        },
+        "median_rank": 1.0,
+        "mrr": 0.6397962739971741
+      }
+    }
+  }
+}

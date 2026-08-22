@@ -1,0 +1,7184 @@
+{
+  "commit": "849c79c4",
+  "render_id": "c0d2e5499d104f71",
+  "git_commit": "849c79c4",
+  "git_dirty": false,
+  "created": "2026-08-11T20:40:15Z",
+  "figsize": [
+    11.0,
+    3.8
+  ],
+  "points": [
+    {
+      "Eval unit (rank by cap-hit fraction)": 0.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 1.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 2.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 3.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 4.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 5.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 6.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 7.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 8.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 9.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 10.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 11.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 12.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 13.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 14.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 15.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 16.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 17.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 18.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 19.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 20.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 21.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 22.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 23.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 24.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 25.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 26.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 27.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 28.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 29.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 30.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 31.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 32.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 33.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 34.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 35.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 36.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 37.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 38.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 39.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 40.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 41.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 42.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 43.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 44.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 45.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 46.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 47.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 48.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 49.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 50.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 51.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 52.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 53.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 54.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 55.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 56.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 57.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 58.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 59.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 60.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 61.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 62.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 63.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 64.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 65.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 66.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 67.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 68.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 69.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 70.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 71.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 72.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 73.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 74.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 75.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 76.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 77.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 78.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 79.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 80.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 81.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 82.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 83.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 84.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 85.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 86.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 87.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 88.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 89.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 90.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 91.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 92.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 93.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 94.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 95.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 96.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 97.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 98.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 99.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 100.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 101.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 102.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 103.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 104.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 105.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 106.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 107.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 108.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 109.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 110.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 111.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 112.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 113.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 114.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 115.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 116.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 117.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 118.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 119.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 120.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 121.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 122.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 123.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 124.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 125.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 126.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 127.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 128.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 129.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 130.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 131.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 132.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 133.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 134.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 135.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 136.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 137.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 138.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 139.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 140.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 141.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 142.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 143.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 144.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 145.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 146.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 147.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 148.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 149.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 150.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 151.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 152.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 153.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 154.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 155.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 156.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 157.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 158.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 159.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 160.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 161.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 162.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 163.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 164.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 165.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 166.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 167.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 168.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 169.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 170.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 171.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 172.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 173.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 174.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 175.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 176.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 177.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 178.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 179.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 180.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 181.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 182.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 183.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 184.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 185.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 186.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 187.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 188.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 189.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 190.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 191.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 192.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 193.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 194.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 195.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 196.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 197.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 198.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 199.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 200.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 201.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 202.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 203.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 204.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 205.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 206.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 207.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 208.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 209.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 210.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 211.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 212.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 213.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 214.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 215.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 216.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 217.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 218.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 219.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 220.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 221.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 222.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 223.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 224.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 225.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 226.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 227.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 228.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 229.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 230.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 231.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 232.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 233.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 234.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 235.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 236.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 237.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 238.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 239.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 240.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 241.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 242.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 243.0,
+      "Generation cap-hit fraction": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 244.0,
+      "Generation cap-hit fraction": 0.005,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 245.0,
+      "Generation cap-hit fraction": 0.005,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 246.0,
+      "Generation cap-hit fraction": 0.005,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Eval unit (rank by cap-hit fraction)": 247.0,
+      "Generation cap-hit fraction": 0.005,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Judge unit (rank by drop fraction)": 0.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 1.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 2.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 3.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 4.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 5.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 6.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 7.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 8.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 9.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 10.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 11.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 12.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 13.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 14.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 15.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 16.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 17.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 18.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 19.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 20.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 21.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 22.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 23.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 24.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 25.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 26.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 27.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 28.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 29.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 30.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 31.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 32.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 33.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 34.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 35.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 36.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 37.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 38.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 39.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 40.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 41.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 42.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 43.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 44.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 45.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 46.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 47.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 48.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 49.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 50.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 51.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 52.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 53.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 54.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 55.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 56.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 57.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 58.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 59.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 60.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 61.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 62.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 63.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 64.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 65.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 66.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 67.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 68.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 69.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 70.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 71.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 72.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 73.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 74.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 75.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 76.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 77.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 78.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 79.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 80.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 81.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 82.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 83.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 84.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 85.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 86.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 87.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 88.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 89.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 90.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 91.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 92.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 93.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 94.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 95.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 96.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 97.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 98.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 99.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 100.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 101.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 102.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 103.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 104.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 105.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 106.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 107.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 108.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 109.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 110.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 111.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 112.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 113.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 114.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 115.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 116.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 117.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 118.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 119.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 120.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 121.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 122.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 123.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 124.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 125.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 126.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 127.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 128.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 129.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 130.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 131.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 132.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 133.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 134.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 135.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 136.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 137.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 138.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 139.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 140.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 141.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 142.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 143.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 144.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 145.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 146.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 147.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 148.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 149.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 150.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 151.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 152.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 153.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 154.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 155.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 156.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 157.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 158.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 159.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 160.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 161.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 162.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 163.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 164.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 165.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 166.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 167.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 168.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 169.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 170.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 171.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 172.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 173.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 174.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 175.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 176.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 177.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 178.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 179.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 180.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 181.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 182.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 183.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 184.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 185.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 186.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 187.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 188.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 189.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 190.0,
+      "Dropped-draw fraction": 0.005,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 191.0,
+      "Dropped-draw fraction": 0.005,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 192.0,
+      "Dropped-draw fraction": 0.005,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 193.0,
+      "Dropped-draw fraction": 0.005,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 194.0,
+      "Dropped-draw fraction": 0.005,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 195.0,
+      "Dropped-draw fraction": 0.005,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 196.0,
+      "Dropped-draw fraction": 0.01,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 197.0,
+      "Dropped-draw fraction": 0.01,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 198.0,
+      "Dropped-draw fraction": 0.01,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 199.0,
+      "Dropped-draw fraction": 0.01,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 200.0,
+      "Dropped-draw fraction": 0.010833333333333334,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 201.0,
+      "Dropped-draw fraction": 0.014166666666666666,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 202.0,
+      "Dropped-draw fraction": 0.015,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 203.0,
+      "Dropped-draw fraction": 0.015,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 204.0,
+      "Dropped-draw fraction": 0.015,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 205.0,
+      "Dropped-draw fraction": 0.016666666666666666,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 206.0,
+      "Dropped-draw fraction": 0.018333333333333333,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 207.0,
+      "Dropped-draw fraction": 0.018333333333333333,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 208.0,
+      "Dropped-draw fraction": 0.018333333333333333,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 209.0,
+      "Dropped-draw fraction": 0.02,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 210.0,
+      "Dropped-draw fraction": 0.02,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 211.0,
+      "Dropped-draw fraction": 0.023333333333333334,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 212.0,
+      "Dropped-draw fraction": 0.025,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 213.0,
+      "Dropped-draw fraction": 0.025,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 214.0,
+      "Dropped-draw fraction": 0.025,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 215.0,
+      "Dropped-draw fraction": 0.025,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 216.0,
+      "Dropped-draw fraction": 0.025,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 217.0,
+      "Dropped-draw fraction": 0.025,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 218.0,
+      "Dropped-draw fraction": 0.0275,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 219.0,
+      "Dropped-draw fraction": 0.03,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 220.0,
+      "Dropped-draw fraction": 0.03,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 221.0,
+      "Dropped-draw fraction": 0.03,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 222.0,
+      "Dropped-draw fraction": 0.030833333333333334,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 223.0,
+      "Dropped-draw fraction": 0.030833333333333334,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 224.0,
+      "Dropped-draw fraction": 0.035,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 225.0,
+      "Dropped-draw fraction": 0.035,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 226.0,
+      "Dropped-draw fraction": 0.035,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 227.0,
+      "Dropped-draw fraction": 0.035,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 228.0,
+      "Dropped-draw fraction": 0.035833333333333335,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 229.0,
+      "Dropped-draw fraction": 0.04,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 230.0,
+      "Dropped-draw fraction": 0.041666666666666664,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 231.0,
+      "Dropped-draw fraction": 0.041666666666666664,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 232.0,
+      "Dropped-draw fraction": 0.045,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 233.0,
+      "Dropped-draw fraction": 0.045,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 234.0,
+      "Dropped-draw fraction": 0.045,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 235.0,
+      "Dropped-draw fraction": 0.045,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 236.0,
+      "Dropped-draw fraction": 0.045,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 237.0,
+      "Dropped-draw fraction": 0.04583333333333333,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 238.0,
+      "Dropped-draw fraction": 0.04666666666666667,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 239.0,
+      "Dropped-draw fraction": 0.05,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 240.0,
+      "Dropped-draw fraction": 0.05,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 241.0,
+      "Dropped-draw fraction": 0.050833333333333335,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 242.0,
+      "Dropped-draw fraction": 0.051666666666666666,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 243.0,
+      "Dropped-draw fraction": 0.05416666666666667,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 244.0,
+      "Dropped-draw fraction": 0.055,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 245.0,
+      "Dropped-draw fraction": 0.055,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 246.0,
+      "Dropped-draw fraction": 0.056666666666666664,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 247.0,
+      "Dropped-draw fraction": 0.0575,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 248.0,
+      "Dropped-draw fraction": 0.06,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 249.0,
+      "Dropped-draw fraction": 0.06,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 250.0,
+      "Dropped-draw fraction": 0.0625,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 251.0,
+      "Dropped-draw fraction": 0.0625,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 252.0,
+      "Dropped-draw fraction": 0.065,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 253.0,
+      "Dropped-draw fraction": 0.065,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 254.0,
+      "Dropped-draw fraction": 0.06583333333333333,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 255.0,
+      "Dropped-draw fraction": 0.075,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 256.0,
+      "Dropped-draw fraction": 0.075,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 257.0,
+      "Dropped-draw fraction": 0.07666666666666666,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 258.0,
+      "Dropped-draw fraction": 0.07666666666666666,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 259.0,
+      "Dropped-draw fraction": 0.08,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 260.0,
+      "Dropped-draw fraction": 0.08,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 261.0,
+      "Dropped-draw fraction": 0.085,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 262.0,
+      "Dropped-draw fraction": 0.08833333333333333,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 263.0,
+      "Dropped-draw fraction": 0.08916666666666667,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 264.0,
+      "Dropped-draw fraction": 0.095,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 265.0,
+      "Dropped-draw fraction": 0.09833333333333333,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 266.0,
+      "Dropped-draw fraction": 0.12,
+      "series": "API refusal (rule 28)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Judge unit (rank by drop fraction)": 0.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 1.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 2.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 3.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 4.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 5.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 6.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 7.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 8.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 9.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 10.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 11.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 12.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 13.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 14.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 15.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 16.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 17.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 18.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 19.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 20.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 21.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 22.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 23.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 24.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 25.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 26.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 27.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 28.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 29.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 30.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 31.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 32.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 33.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 34.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 35.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 36.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 37.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 38.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 39.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 40.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 41.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 42.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 43.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 44.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 45.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 46.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 47.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 48.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 49.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 50.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 51.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 52.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 53.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 54.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 55.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 56.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 57.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 58.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 59.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 60.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 61.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 62.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 63.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 64.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 65.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 66.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 67.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 68.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 69.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 70.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 71.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 72.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 73.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 74.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 75.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 76.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 77.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 78.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 79.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 80.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 81.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 82.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 83.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 84.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 85.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 86.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 87.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 88.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 89.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 90.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 91.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 92.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 93.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 94.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 95.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 96.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 97.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 98.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 99.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 100.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 101.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 102.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 103.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 104.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 105.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 106.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 107.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 108.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 109.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 110.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 111.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 112.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 113.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 114.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 115.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 116.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 117.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 118.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 119.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 120.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 121.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 122.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 123.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 124.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 125.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 126.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 127.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 128.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 129.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 130.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 131.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 132.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 133.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 134.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 135.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 136.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 137.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 138.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 139.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 140.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 141.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 142.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 143.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 144.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 145.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 146.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 147.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 148.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 149.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 150.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 151.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 152.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 153.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 154.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 155.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 156.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 157.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 158.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 159.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 160.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 161.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 162.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 163.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 164.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 165.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 166.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 167.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 168.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 169.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 170.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 171.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 172.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 173.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 174.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 175.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 176.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 177.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 178.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 179.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 180.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 181.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 182.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 183.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 184.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 185.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 186.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 187.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 188.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 189.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 190.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 191.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 192.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 193.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 194.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 195.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 196.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 197.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 198.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 199.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 200.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 201.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 202.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 203.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 204.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 205.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 206.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 207.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 208.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 209.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 210.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 211.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 212.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 213.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 214.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 215.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 216.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 217.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 218.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 219.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 220.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 221.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 222.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 223.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 224.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 225.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 226.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 227.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 228.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 229.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 230.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 231.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 232.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 233.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 234.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 235.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 236.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 237.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 238.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 239.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 240.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 241.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 242.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 243.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 244.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 245.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 246.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 247.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 248.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 249.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 250.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 251.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 252.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 253.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 254.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 255.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 256.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 257.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 258.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 259.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 260.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 261.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 262.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 263.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 264.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 265.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 266.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "transport lost",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Judge unit (rank by drop fraction)": 0.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 1.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 2.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 3.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 4.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 5.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 6.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 7.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 8.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 9.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 10.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 11.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 12.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 13.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 14.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 15.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 16.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 17.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 18.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 19.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 20.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 21.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 22.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 23.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 24.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 25.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 26.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 27.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 28.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 29.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 30.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 31.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 32.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 33.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 34.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 35.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 36.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 37.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 38.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 39.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 40.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 41.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 42.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 43.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 44.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 45.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 46.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 47.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 48.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 49.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 50.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 51.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 52.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 53.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 54.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 55.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 56.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 57.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 58.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 59.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 60.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 61.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 62.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 63.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 64.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 65.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 66.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 67.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 68.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 69.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 70.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 71.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 72.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 73.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 74.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 75.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 76.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 77.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 78.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 79.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 80.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 81.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 82.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 83.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 84.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 85.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 86.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 87.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 88.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 89.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 90.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 91.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 92.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 93.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 94.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 95.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 96.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 97.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 98.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 99.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 100.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 101.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 102.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 103.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 104.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 105.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 106.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 107.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 108.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 109.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 110.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 111.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 112.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 113.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 114.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 115.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 116.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 117.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 118.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 119.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 120.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 121.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 122.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 123.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 124.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 125.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 126.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 127.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 128.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 129.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 130.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 131.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 132.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 133.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 134.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 135.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 136.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 137.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 138.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 139.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 140.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 141.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 142.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 143.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 144.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 145.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 146.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 147.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 148.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 149.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 150.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 151.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 152.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 153.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 154.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 155.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 156.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 157.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 158.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 159.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 160.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 161.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 162.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 163.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 164.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 165.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 166.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 167.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 168.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 169.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 170.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 171.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 172.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 173.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 174.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 175.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 176.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 177.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 178.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 179.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 180.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 181.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 182.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 183.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 184.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 185.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 186.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 187.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 188.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 189.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 190.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 191.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 192.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 193.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 194.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 195.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 196.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 197.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 198.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 199.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 200.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 201.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 202.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 203.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 204.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 205.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 206.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 207.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 208.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 209.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 210.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 211.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 212.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 213.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 214.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 215.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 216.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 217.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 218.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 219.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 220.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 221.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 222.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 223.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 224.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 225.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 226.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 227.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 228.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 229.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 230.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 231.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 232.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 233.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 234.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 235.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 236.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 237.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 238.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 239.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 240.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 241.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 242.0,
+      "Dropped-draw fraction": 0.0,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 243.0,
+      "Dropped-draw fraction": 0.0008333333333333334,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 244.0,
+      "Dropped-draw fraction": 0.0008333333333333334,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 245.0,
+      "Dropped-draw fraction": 0.0008333333333333334,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 246.0,
+      "Dropped-draw fraction": 0.0008333333333333334,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 247.0,
+      "Dropped-draw fraction": 0.0008333333333333334,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 248.0,
+      "Dropped-draw fraction": 0.0008333333333333334,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 249.0,
+      "Dropped-draw fraction": 0.0008333333333333334,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 250.0,
+      "Dropped-draw fraction": 0.0008333333333333334,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 251.0,
+      "Dropped-draw fraction": 0.0008333333333333334,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 252.0,
+      "Dropped-draw fraction": 0.0008333333333333334,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 253.0,
+      "Dropped-draw fraction": 0.0016666666666666668,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 254.0,
+      "Dropped-draw fraction": 0.0016666666666666668,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 255.0,
+      "Dropped-draw fraction": 0.0016666666666666668,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 256.0,
+      "Dropped-draw fraction": 0.0016666666666666668,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 257.0,
+      "Dropped-draw fraction": 0.0016666666666666668,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 258.0,
+      "Dropped-draw fraction": 0.0016666666666666668,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 259.0,
+      "Dropped-draw fraction": 0.0025,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 260.0,
+      "Dropped-draw fraction": 0.0025,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 261.0,
+      "Dropped-draw fraction": 0.0033333333333333335,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 262.0,
+      "Dropped-draw fraction": 0.005,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 263.0,
+      "Dropped-draw fraction": 0.005,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 264.0,
+      "Dropped-draw fraction": 0.01,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 265.0,
+      "Dropped-draw fraction": 0.01,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Judge unit (rank by drop fraction)": 266.0,
+      "Dropped-draw fraction": 0.03,
+      "series": "content dropped",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 1049,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Cap-hit fractions vs the 2% re-gen trigger",
+        "xlabel": "Eval unit (rank by cap-hit fraction)",
+        "ylabel": "Generation cap-hit fraction",
+        "xticklabels": [
+          "\u221250",
+          "0",
+          "50",
+          "100",
+          "150",
+          "200",
+          "250",
+          "300"
+        ],
+        "yticklabels": [
+          "\u22120.0025",
+          "0.0000",
+          "0.0025",
+          "0.0050",
+          "0.0075",
+          "0.0100",
+          "0.0125",
+          "0.0150",
+          "0.0175",
+          "0.0200",
+          "0.0225"
+        ]
+      },
+      {
+        "title_left": "Judge drop classes per unit",
+        "xlabel": "Judge unit (rank by drop fraction)",
+        "ylabel": "Dropped-draw fraction",
+        "legend_labels": [
+          "API refusal (rule 28)",
+          "transport lost",
+          "content dropped"
+        ],
+        "xticklabels": [
+          "\u221250",
+          "0",
+          "50",
+          "100",
+          "150",
+          "200",
+          "250",
+          "300"
+        ],
+        "yticklabels": [
+          "\u22120.02",
+          "0.00",
+          "0.02",
+          "0.04",
+          "0.06",
+          "0.08",
+          "0.10",
+          "0.12",
+          "0.14"
+        ]
+      }
+    ],
+    "series": [
+      "API refusal (rule 28)",
+      "transport lost",
+      "content dropped"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

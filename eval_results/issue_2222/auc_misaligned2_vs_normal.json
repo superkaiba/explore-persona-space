@@ -1,0 +1,157 @@
+{
+ "records": [
+  {
+   "trait": "evil",
+   "arm": "raw",
+   "layer": 19,
+   "auc": 0.919594640625,
+   "n_pos": 8000,
+   "n_neg": 8000
+  },
+  {
+   "trait": "evil",
+   "arm": "exact_dp",
+   "layer": 19,
+   "auc": 0.8897223125,
+   "n_pos": 8000,
+   "n_neg": 8000
+  },
+  {
+   "trait": "evil",
+   "arm": "prompt_dp",
+   "layer": 19,
+   "auc": 0.87675421875,
+   "n_pos": 8000,
+   "n_neg": 8000
+  },
+  {
+   "trait": "evil",
+   "arm": "mapped_ctx",
+   "layer": 19,
+   "auc": 0.5286707734375,
+   "n_pos": 8000,
+   "n_neg": 8000
+  },
+  {
+   "trait": "evil",
+   "arm": "mapped_pfx",
+   "layer": 19,
+   "auc": 0.919594640625,
+   "n_pos": 8000,
+   "n_neg": 8000
+  },
+  {
+   "trait": "evil",
+   "arm": "id_bias",
+   "layer": 19,
+   "auc": 0.86097315625,
+   "n_pos": 8000,
+   "n_neg": 8000
+  },
+  {
+   "trait": "sycophancy",
+   "arm": "raw",
+   "layer": 19,
+   "auc": 0.794988625,
+   "n_pos": 8000,
+   "n_neg": 8000
+  },
+  {
+   "trait": "sycophancy",
+   "arm": "exact_dp",
+   "layer": 19,
+   "auc": 0.7991962578125,
+   "n_pos": 8000,
+   "n_neg": 8000
+  },
+  {
+   "trait": "sycophancy",
+   "arm": "prompt_dp",
+   "layer": 19,
+   "auc": 0.82054296875,
+   "n_pos": 8000,
+   "n_neg": 8000
+  },
+  {
+   "trait": "sycophancy",
+   "arm": "mapped_ctx",
+   "layer": 19,
+   "auc": 0.511700515625,
+   "n_pos": 8000,
+   "n_neg": 8000
+  },
+  {
+   "trait": "sycophancy",
+   "arm": "mapped_pfx",
+   "layer": 19,
+   "auc": 0.794988625,
+   "n_pos": 8000,
+   "n_neg": 8000
+  },
+  {
+   "trait": "sycophancy",
+   "arm": "id_bias",
+   "layer": 19,
+   "auc": 0.8163399453125,
+   "n_pos": 8000,
+   "n_neg": 8000
+  },
+  {
+   "trait": "hallucination",
+   "arm": "raw",
+   "layer": 15,
+   "auc": 0.68077265625,
+   "n_pos": 8000,
+   "n_neg": 8000
+  },
+  {
+   "trait": "hallucination",
+   "arm": "exact_dp",
+   "layer": 15,
+   "auc": 0.6582099921875,
+   "n_pos": 8000,
+   "n_neg": 8000
+  },
+  {
+   "trait": "hallucination",
+   "arm": "prompt_dp",
+   "layer": 15,
+   "auc": 0.6767018828125,
+   "n_pos": 8000,
+   "n_neg": 8000
+  },
+  {
+   "trait": "hallucination",
+   "arm": "mapped_ctx",
+   "layer": 15,
+   "auc": 0.50816365625,
+   "n_pos": 8000,
+   "n_neg": 8000
+  },
+  {
+   "trait": "hallucination",
+   "arm": "mapped_pfx",
+   "layer": 15,
+   "auc": 0.68077265625,
+   "n_pos": 8000,
+   "n_neg": 8000
+  },
+  {
+   "trait": "hallucination",
+   "arm": "id_bias",
+   "layer": 15,
+   "auc": 0.67120515625,
+   "n_pos": 8000,
+   "n_neg": 8000
+  }
+ ],
+ "timestamp_utc": "2026-08-11T06:45:30Z",
+ "versions": {
+  "torch": "2.8.0+cu128",
+  "transformers": "4.57.6",
+  "vllm": "0.11.0",
+  "numpy": "2.2.6"
+ },
+ "git_commit": "4cadf313",
+ "git_dirty": false
+}

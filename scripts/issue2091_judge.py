@@ -454,7 +454,7 @@ def run_rubric_parity_smoke(args: argparse.Namespace) -> dict:
     for sf in state_files:
         try:
             st = json.loads(sf.read_text())
-        except (OSError, json.JSONDecodeError):
+        except (OSError, json.JSONDecodeError, UnicodeDecodeError):
             continue
         sha = st.get("judge_system_prompt_sha256")
         if sha:
@@ -1073,7 +1073,10 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--rollout-root", type=Path, default=DEFAULT_ROLLOUT_ROOT)
     ap.add_argument("--banked-root", type=Path, default=DEFAULT_BANKED_ROOT)
     ap.add_argument("--rubric-artifacts-dir", type=Path, default=None)
-    ap.add_argument("--pilot-draws-per-wave", type=int, default=50)  # 4 waves x 50 ~ 200 (rule 26)
+    # #2124 satisfiability: 3 arms/wave x n_draws 2 x ceil(51/2) = 156 — the old
+    # 50/wave realized <= 16 draws/arm, below the 51-draw resolution floor at 2%
+    # (a wave with >3 realized arms fails loud with the guard's exact remedy).
+    ap.add_argument("--pilot-draws-per-wave", type=int, default=156)
     ap.add_argument("--limit", type=int, default=None, help="per-job rollout cap (smokes only)")
     ap.add_argument(
         "--dry-run", action="store_true", help="judge phase: build requests, ZERO API calls"

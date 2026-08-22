@@ -1,0 +1,32 @@
+[
+  {
+    "table": "f_cells",
+    "files": [
+      "experiments/dashboards/issue2329_f_cells.html",
+      "experiments/dashboards/issue2329_f_cells_p1.html",
+      "experiments/dashboards/issue2329_f_cells_p2.html"
+    ],
+    "rows": 2676,
+    "bytes": 3000340
+  },
+  {
+    "table": "anchors",
+    "files": [
+      "experiments/dashboards/issue2329_anchors.html"
+    ],
+    "rows": 1368,
+    "bytes": 1101803
+  },
+  {
+    "table": "stage2_cells",
+    "files": [
+      "experiments/dashboards/issue2329_stage2_cells.html",
+      "experiments/dashboards/issue2329_stage2_cells_p1.html",
+      "experiments/dashboards/issue2329_stage2_cells_p2.html",
+      "experiments/dashboards/issue2329_stage2_cells_p3.html",
+      "experiments/dashboards/issue2329_stage2_cells_p4.html"
+    ],
+    "rows": 4032,
+    "bytes": 4969785
+  }
+]

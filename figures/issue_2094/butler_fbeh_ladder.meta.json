@@ -1,0 +1,4135 @@
+{
+  "commit": "1e74daf5+dirty",
+  "render_id": "9638c1eebecd436e",
+  "git_commit": "1e74daf5",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2094_rev_reduce.py",
+    "tasks/awaiting_promotion/2094/events.jsonl"
+  ],
+  "created": "2026-08-14T17:38:02Z",
+  "figsize": [
+    9.8,
+    3.4
+  ],
+  "points": [
+    {
+      "steered layer variant": 0.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "steered layer variant": 0.0,
+      "F_beh": 0.023631129413843155,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "steered layer variant": 10.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "steered layer variant": 10.0,
+      "F_beh": 0.04092217981815338,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "steered layer variant": 10.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "steered layer variant": 10.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "steered layer variant": 11.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "steered layer variant": 11.0,
+      "F_beh": -0.005187321919947863,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "steered layer variant": 11.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "steered layer variant": 11.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "steered layer variant": 12.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "steered layer variant": 12.0,
+      "F_beh": 0.023631129413843155,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "steered layer variant": 12.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "steered layer variant": 12.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "steered layer variant": 13.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "steered layer variant": 13.0,
+      "F_beh": -0.005187321919947863,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "steered layer variant": 13.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "steered layer variant": 13.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "steered layer variant": 14.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "steered layer variant": 14.0,
+      "F_beh": -0.005187321919947863,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "steered layer variant": 14.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "steered layer variant": 14.0,
+      "F_beh": 0.4682488739490509,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "steered layer variant": 15.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "steered layer variant": 15.0,
+      "F_beh": -0.005187321919947863,
+      "_kind": "scatter",
+      "_group": 23
+    },
+    {
+      "steered layer variant": 15.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 24
+    },
+    {
+      "steered layer variant": 15.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 25
+    },
+    {
+      "steered layer variant": 16.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 26
+    },
+    {
+      "steered layer variant": 16.0,
+      "F_beh": -0.005187321919947863,
+      "_kind": "scatter",
+      "_group": 27
+    },
+    {
+      "steered layer variant": 16.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 28
+    },
+    {
+      "steered layer variant": 16.0,
+      "F_beh": 0.12828736007213593,
+      "_kind": "scatter",
+      "_group": 29
+    },
+    {
+      "steered layer variant": 17.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 30
+    },
+    {
+      "steered layer variant": 17.0,
+      "F_beh": -0.005187321919947863,
+      "_kind": "scatter",
+      "_group": 31
+    },
+    {
+      "steered layer variant": 17.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 32
+    },
+    {
+      "steered layer variant": 17.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 33
+    },
+    {
+      "steered layer variant": 18.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 34
+    },
+    {
+      "steered layer variant": 18.0,
+      "F_beh": 0.36945244669914246,
+      "_kind": "scatter",
+      "_group": 35
+    },
+    {
+      "steered layer variant": 18.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 36
+    },
+    {
+      "steered layer variant": 18.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 37
+    },
+    {
+      "steered layer variant": 19.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 38
+    },
+    {
+      "steered layer variant": 19.0,
+      "F_beh": 0.19654180109500885,
+      "_kind": "scatter",
+      "_group": 39
+    },
+    {
+      "steered layer variant": 19.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 40
+    },
+    {
+      "steered layer variant": 19.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 41
+    },
+    {
+      "steered layer variant": 1.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 42
+    },
+    {
+      "steered layer variant": 1.0,
+      "F_beh": -0.005187321919947863,
+      "_kind": "scatter",
+      "_group": 43
+    },
+    {
+      "steered layer variant": 1.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 44
+    },
+    {
+      "steered layer variant": 1.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 45
+    },
+    {
+      "steered layer variant": 20.0,
+      "F_beh": 0.0883607417345047,
+      "_kind": "scatter",
+      "_group": 46
+    },
+    {
+      "steered layer variant": 20.0,
+      "F_beh": 0.36945244669914246,
+      "_kind": "scatter",
+      "_group": 47
+    },
+    {
+      "steered layer variant": 20.0,
+      "F_beh": 0.05066496878862381,
+      "_kind": "scatter",
+      "_group": 48
+    },
+    {
+      "steered layer variant": 20.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 49
+    },
+    {
+      "steered layer variant": 21.0,
+      "F_beh": 0.3930530250072479,
+      "_kind": "scatter",
+      "_group": 50
+    },
+    {
+      "steered layer variant": 21.0,
+      "F_beh": 0.36945244669914246,
+      "_kind": "scatter",
+      "_group": 51
+    },
+    {
+      "steered layer variant": 21.0,
+      "F_beh": 0.09499681740999222,
+      "_kind": "scatter",
+      "_group": 52
+    },
+    {
+      "steered layer variant": 21.0,
+      "F_beh": 0.03207184746861458,
+      "_kind": "scatter",
+      "_group": 53
+    },
+    {
+      "steered layer variant": 22.0,
+      "F_beh": 0.21023766696453094,
+      "_kind": "scatter",
+      "_group": 54
+    },
+    {
+      "steered layer variant": 22.0,
+      "F_beh": 0.36945244669914246,
+      "_kind": "scatter",
+      "_group": 55
+    },
+    {
+      "steered layer variant": 22.0,
+      "F_beh": 0.15832805633544922,
+      "_kind": "scatter",
+      "_group": 56
+    },
+    {
+      "steered layer variant": 22.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 57
+    },
+    {
+      "steered layer variant": 23.0,
+      "F_beh": 0.04570383206009865,
+      "_kind": "scatter",
+      "_group": 58
+    },
+    {
+      "steered layer variant": 23.0,
+      "F_beh": 0.1389048993587494,
+      "_kind": "scatter",
+      "_group": 59
+    },
+    {
+      "steered layer variant": 23.0,
+      "F_beh": 0.22165928781032562,
+      "_kind": "scatter",
+      "_group": 60
+    },
+    {
+      "steered layer variant": 23.0,
+      "F_beh": 0.03207184746861458,
+      "_kind": "scatter",
+      "_group": 61
+    },
+    {
+      "steered layer variant": 24.0,
+      "F_beh": 0.14929920434951782,
+      "_kind": "scatter",
+      "_group": 62
+    },
+    {
+      "steered layer variant": 24.0,
+      "F_beh": 0.15619593858718872,
+      "_kind": "scatter",
+      "_group": 63
+    },
+    {
+      "steered layer variant": 24.0,
+      "F_beh": 0.17732740938663483,
+      "_kind": "scatter",
+      "_group": 64
+    },
+    {
+      "steered layer variant": 24.0,
+      "F_beh": 0.051314935088157654,
+      "_kind": "scatter",
+      "_group": 65
+    },
+    {
+      "steered layer variant": 25.0,
+      "F_beh": 0.1675807237625122,
+      "_kind": "scatter",
+      "_group": 66
+    },
+    {
+      "steered layer variant": 25.0,
+      "F_beh": 0.19654180109500885,
+      "_kind": "scatter",
+      "_group": 67
+    },
+    {
+      "steered layer variant": 25.0,
+      "F_beh": 0.12666243314743042,
+      "_kind": "scatter",
+      "_group": 68
+    },
+    {
+      "steered layer variant": 25.0,
+      "F_beh": 0.09621550887823105,
+      "_kind": "scatter",
+      "_group": 69
+    },
+    {
+      "steered layer variant": 26.0,
+      "F_beh": 0.3930530250072479,
+      "_kind": "scatter",
+      "_group": 70
+    },
+    {
+      "steered layer variant": 26.0,
+      "F_beh": 0.1389048993587494,
+      "_kind": "scatter",
+      "_group": 71
+    },
+    {
+      "steered layer variant": 26.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 72
+    },
+    {
+      "steered layer variant": 26.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 73
+    },
+    {
+      "steered layer variant": 27.0,
+      "F_beh": 0.14929920434951782,
+      "_kind": "scatter",
+      "_group": 74
+    },
+    {
+      "steered layer variant": 27.0,
+      "F_beh": 0.15619593858718872,
+      "_kind": "scatter",
+      "_group": 75
+    },
+    {
+      "steered layer variant": 27.0,
+      "F_beh": 0.0316656194627285,
+      "_kind": "scatter",
+      "_group": 76
+    },
+    {
+      "steered layer variant": 27.0,
+      "F_beh": 0.051314935088157654,
+      "_kind": "scatter",
+      "_group": 77
+    },
+    {
+      "steered layer variant": 2.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 78
+    },
+    {
+      "steered layer variant": 2.0,
+      "F_beh": 0.023631129413843155,
+      "_kind": "scatter",
+      "_group": 79
+    },
+    {
+      "steered layer variant": 2.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 80
+    },
+    {
+      "steered layer variant": 2.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 81
+    },
+    {
+      "steered layer variant": 3.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 82
+    },
+    {
+      "steered layer variant": 3.0,
+      "F_beh": -0.005187321919947863,
+      "_kind": "scatter",
+      "_group": 83
+    },
+    {
+      "steered layer variant": 3.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 84
+    },
+    {
+      "steered layer variant": 3.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 85
+    },
+    {
+      "steered layer variant": 4.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 86
+    },
+    {
+      "steered layer variant": 4.0,
+      "F_beh": 0.023631129413843155,
+      "_kind": "scatter",
+      "_group": 87
+    },
+    {
+      "steered layer variant": 4.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 88
+    },
+    {
+      "steered layer variant": 4.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 89
+    },
+    {
+      "steered layer variant": 5.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 90
+    },
+    {
+      "steered layer variant": 5.0,
+      "F_beh": -0.005187321919947863,
+      "_kind": "scatter",
+      "_group": 91
+    },
+    {
+      "steered layer variant": 5.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 92
+    },
+    {
+      "steered layer variant": 5.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 93
+    },
+    {
+      "steered layer variant": 6.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 94
+    },
+    {
+      "steered layer variant": 6.0,
+      "F_beh": -0.005187321919947863,
+      "_kind": "scatter",
+      "_group": 95
+    },
+    {
+      "steered layer variant": 6.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 96
+    },
+    {
+      "steered layer variant": 6.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 97
+    },
+    {
+      "steered layer variant": 7.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 98
+    },
+    {
+      "steered layer variant": 7.0,
+      "F_beh": -0.005187321919947863,
+      "_kind": "scatter",
+      "_group": 99
+    },
+    {
+      "steered layer variant": 7.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 100
+    },
+    {
+      "steered layer variant": 7.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 101
+    },
+    {
+      "steered layer variant": 8.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 102
+    },
+    {
+      "steered layer variant": 8.0,
+      "F_beh": 0.023631129413843155,
+      "_kind": "scatter",
+      "_group": 103
+    },
+    {
+      "steered layer variant": 8.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 104
+    },
+    {
+      "steered layer variant": 8.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 105
+    },
+    {
+      "steered layer variant": 9.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 106
+    },
+    {
+      "steered layer variant": 9.0,
+      "F_beh": 0.023631129413843155,
+      "_kind": "scatter",
+      "_group": 107
+    },
+    {
+      "steered layer variant": 9.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 108
+    },
+    {
+      "steered layer variant": 9.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 109
+    },
+    {
+      "steered layer variant": 29.0,
+      "F_beh": 0.5453991293907166,
+      "_kind": "scatter",
+      "_group": 110
+    },
+    {
+      "steered layer variant": 29.0,
+      "F_beh": 0.4155619442462921,
+      "_kind": "scatter",
+      "_group": 111
+    },
+    {
+      "steered layer variant": 29.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 112
+    },
+    {
+      "steered layer variant": 29.0,
+      "F_beh": 0.5131494402885437,
+      "_kind": "scatter",
+      "_group": 113
+    },
+    {
+      "steered layer variant": 28.0,
+      "F_beh": 0.3930530250072479,
+      "_kind": "scatter",
+      "_group": 114
+    },
+    {
+      "steered layer variant": 28.0,
+      "F_beh": 0.2426512986421585,
+      "_kind": "scatter",
+      "_group": 115
+    },
+    {
+      "steered layer variant": 28.0,
+      "F_beh": 0.6649778485298157,
+      "_kind": "scatter",
+      "_group": 116
+    },
+    {
+      "steered layer variant": 28.0,
+      "F_beh": 0.6414368152618408,
+      "_kind": "scatter",
+      "_group": 117
+    },
+    {
+      "steered layer variant": 0.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 118
+    },
+    {
+      "steered layer variant": 0.0,
+      "F_beh": 0.006340044550597668,
+      "_kind": "scatter",
+      "_group": 119
+    },
+    {
+      "steered layer variant": 10.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 120
+    },
+    {
+      "steered layer variant": 10.0,
+      "F_beh": 0.023631129413843155,
+      "_kind": "scatter",
+      "_group": 121
+    },
+    {
+      "steered layer variant": 10.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 122
+    },
+    {
+      "steered layer variant": 10.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 123
+    },
+    {
+      "steered layer variant": 11.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 124
+    },
+    {
+      "steered layer variant": 11.0,
+      "F_beh": 0.023631129413843155,
+      "_kind": "scatter",
+      "_group": 125
+    },
+    {
+      "steered layer variant": 11.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 126
+    },
+    {
+      "steered layer variant": 11.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 127
+    },
+    {
+      "steered layer variant": 12.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 128
+    },
+    {
+      "steered layer variant": 12.0,
+      "F_beh": 0.023631129413843155,
+      "_kind": "scatter",
+      "_group": 129
+    },
+    {
+      "steered layer variant": 12.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 130
+    },
+    {
+      "steered layer variant": 12.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 131
+    },
+    {
+      "steered layer variant": 13.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 132
+    },
+    {
+      "steered layer variant": 13.0,
+      "F_beh": -0.005187321919947863,
+      "_kind": "scatter",
+      "_group": 133
+    },
+    {
+      "steered layer variant": 13.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 134
+    },
+    {
+      "steered layer variant": 13.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 135
+    },
+    {
+      "steered layer variant": 14.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 136
+    },
+    {
+      "steered layer variant": 14.0,
+      "F_beh": -0.005187321919947863,
+      "_kind": "scatter",
+      "_group": 137
+    },
+    {
+      "steered layer variant": 14.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 138
+    },
+    {
+      "steered layer variant": 14.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 139
+    },
+    {
+      "steered layer variant": 15.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 140
+    },
+    {
+      "steered layer variant": 15.0,
+      "F_beh": -0.005187321919947863,
+      "_kind": "scatter",
+      "_group": 141
+    },
+    {
+      "steered layer variant": 15.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 142
+    },
+    {
+      "steered layer variant": 15.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 143
+    },
+    {
+      "steered layer variant": 16.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 144
+    },
+    {
+      "steered layer variant": 16.0,
+      "F_beh": -0.005187321919947863,
+      "_kind": "scatter",
+      "_group": 145
+    },
+    {
+      "steered layer variant": 16.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 146
+    },
+    {
+      "steered layer variant": 16.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 147
+    },
+    {
+      "steered layer variant": 17.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 148
+    },
+    {
+      "steered layer variant": 17.0,
+      "F_beh": -0.005187321919947863,
+      "_kind": "scatter",
+      "_group": 149
+    },
+    {
+      "steered layer variant": 17.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 150
+    },
+    {
+      "steered layer variant": 17.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 151
+    },
+    {
+      "steered layer variant": 18.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 152
+    },
+    {
+      "steered layer variant": 18.0,
+      "F_beh": 0.023631129413843155,
+      "_kind": "scatter",
+      "_group": 153
+    },
+    {
+      "steered layer variant": 18.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 154
+    },
+    {
+      "steered layer variant": 18.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 155
+    },
+    {
+      "steered layer variant": 19.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 156
+    },
+    {
+      "steered layer variant": 19.0,
+      "F_beh": -0.005187321919947863,
+      "_kind": "scatter",
+      "_group": 157
+    },
+    {
+      "steered layer variant": 19.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 158
+    },
+    {
+      "steered layer variant": 19.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 159
+    },
+    {
+      "steered layer variant": 1.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 160
+    },
+    {
+      "steered layer variant": 1.0,
+      "F_beh": -0.005187321919947863,
+      "_kind": "scatter",
+      "_group": 161
+    },
+    {
+      "steered layer variant": 1.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 162
+    },
+    {
+      "steered layer variant": 1.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 163
+    },
+    {
+      "steered layer variant": 20.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 164
+    },
+    {
+      "steered layer variant": 20.0,
+      "F_beh": 0.023631129413843155,
+      "_kind": "scatter",
+      "_group": 165
+    },
+    {
+      "steered layer variant": 20.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 166
+    },
+    {
+      "steered layer variant": 20.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 167
+    },
+    {
+      "steered layer variant": 21.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 168
+    },
+    {
+      "steered layer variant": 21.0,
+      "F_beh": 0.006340044550597668,
+      "_kind": "scatter",
+      "_group": 169
+    },
+    {
+      "steered layer variant": 21.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 170
+    },
+    {
+      "steered layer variant": 21.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 171
+    },
+    {
+      "steered layer variant": 22.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 172
+    },
+    {
+      "steered layer variant": 22.0,
+      "F_beh": -0.005187321919947863,
+      "_kind": "scatter",
+      "_group": 173
+    },
+    {
+      "steered layer variant": 22.0,
+      "F_beh": 0.0316656194627285,
+      "_kind": "scatter",
+      "_group": 174
+    },
+    {
+      "steered layer variant": 22.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 175
+    },
+    {
+      "steered layer variant": 23.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 176
+    },
+    {
+      "steered layer variant": 23.0,
+      "F_beh": -0.005187321919947863,
+      "_kind": "scatter",
+      "_group": 177
+    },
+    {
+      "steered layer variant": 23.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 178
+    },
+    {
+      "steered layer variant": 23.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 179
+    },
+    {
+      "steered layer variant": 24.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 180
+    },
+    {
+      "steered layer variant": 24.0,
+      "F_beh": -0.005187321919947863,
+      "_kind": "scatter",
+      "_group": 181
+    },
+    {
+      "steered layer variant": 24.0,
+      "F_beh": 0.0316656194627285,
+      "_kind": "scatter",
+      "_group": 182
+    },
+    {
+      "steered layer variant": 24.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 183
+    },
+    {
+      "steered layer variant": 25.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 184
+    },
+    {
+      "steered layer variant": 25.0,
+      "F_beh": 0.023631129413843155,
+      "_kind": "scatter",
+      "_group": 185
+    },
+    {
+      "steered layer variant": 25.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 186
+    },
+    {
+      "steered layer variant": 25.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 187
+    },
+    {
+      "steered layer variant": 26.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 188
+    },
+    {
+      "steered layer variant": 26.0,
+      "F_beh": 0.023631129413843155,
+      "_kind": "scatter",
+      "_group": 189
+    },
+    {
+      "steered layer variant": 26.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 190
+    },
+    {
+      "steered layer variant": 26.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 191
+    },
+    {
+      "steered layer variant": 27.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 192
+    },
+    {
+      "steered layer variant": 27.0,
+      "F_beh": 0.023631129413843155,
+      "_kind": "scatter",
+      "_group": 193
+    },
+    {
+      "steered layer variant": 27.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 194
+    },
+    {
+      "steered layer variant": 27.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 195
+    },
+    {
+      "steered layer variant": 2.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 196
+    },
+    {
+      "steered layer variant": 2.0,
+      "F_beh": 0.023631129413843155,
+      "_kind": "scatter",
+      "_group": 197
+    },
+    {
+      "steered layer variant": 2.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 198
+    },
+    {
+      "steered layer variant": 2.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 199
+    },
+    {
+      "steered layer variant": 3.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 200
+    },
+    {
+      "steered layer variant": 3.0,
+      "F_beh": -0.005187321919947863,
+      "_kind": "scatter",
+      "_group": 201
+    },
+    {
+      "steered layer variant": 3.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 202
+    },
+    {
+      "steered layer variant": 3.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 203
+    },
+    {
+      "steered layer variant": 4.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 204
+    },
+    {
+      "steered layer variant": 4.0,
+      "F_beh": 0.023631129413843155,
+      "_kind": "scatter",
+      "_group": 205
+    },
+    {
+      "steered layer variant": 4.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 206
+    },
+    {
+      "steered layer variant": 4.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 207
+    },
+    {
+      "steered layer variant": 5.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 208
+    },
+    {
+      "steered layer variant": 5.0,
+      "F_beh": -0.005187321919947863,
+      "_kind": "scatter",
+      "_group": 209
+    },
+    {
+      "steered layer variant": 5.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 210
+    },
+    {
+      "steered layer variant": 5.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 211
+    },
+    {
+      "steered layer variant": 6.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 212
+    },
+    {
+      "steered layer variant": 6.0,
+      "F_beh": -0.005187321919947863,
+      "_kind": "scatter",
+      "_group": 213
+    },
+    {
+      "steered layer variant": 6.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 214
+    },
+    {
+      "steered layer variant": 6.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 215
+    },
+    {
+      "steered layer variant": 7.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 216
+    },
+    {
+      "steered layer variant": 7.0,
+      "F_beh": 0.023631129413843155,
+      "_kind": "scatter",
+      "_group": 217
+    },
+    {
+      "steered layer variant": 7.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 218
+    },
+    {
+      "steered layer variant": 7.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 219
+    },
+    {
+      "steered layer variant": 8.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 220
+    },
+    {
+      "steered layer variant": 8.0,
+      "F_beh": 0.023631129413843155,
+      "_kind": "scatter",
+      "_group": 221
+    },
+    {
+      "steered layer variant": 8.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 222
+    },
+    {
+      "steered layer variant": 8.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 223
+    },
+    {
+      "steered layer variant": 9.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 224
+    },
+    {
+      "steered layer variant": 9.0,
+      "F_beh": -0.005187321919947863,
+      "_kind": "scatter",
+      "_group": 225
+    },
+    {
+      "steered layer variant": 9.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 226
+    },
+    {
+      "steered layer variant": 9.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 227
+    },
+    {
+      "steered layer variant": 29.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 228
+    },
+    {
+      "steered layer variant": 29.0,
+      "F_beh": -0.005187321919947863,
+      "_kind": "scatter",
+      "_group": 229
+    },
+    {
+      "steered layer variant": 29.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 230
+    },
+    {
+      "steered layer variant": 29.0,
+      "F_beh": 0.6414368152618408,
+      "_kind": "scatter",
+      "_group": 231
+    },
+    {
+      "steered layer variant": 28.0,
+      "F_beh": -0.0030469195917248726,
+      "_kind": "scatter",
+      "_group": 232
+    },
+    {
+      "steered layer variant": 28.0,
+      "F_beh": -0.005187321919947863,
+      "_kind": "scatter",
+      "_group": 233
+    },
+    {
+      "steered layer variant": 28.0,
+      "F_beh": 0.0,
+      "_kind": "scatter",
+      "_group": 234
+    },
+    {
+      "steered layer variant": 28.0,
+      "F_beh": 0.6093649864196777,
+      "_kind": "scatter",
+      "_group": 235
+    },
+    {
+      "steered layer variant": 0.0,
+      "F_beh": 0.005146052455529571,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 236
+    },
+    {
+      "steered layer variant": 1.0,
+      "F_beh": -0.002058560377918184,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 236
+    },
+    {
+      "steered layer variant": 2.0,
+      "F_beh": 0.005146052455529571,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 236
+    },
+    {
+      "steered layer variant": 3.0,
+      "F_beh": -0.002058560377918184,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 236
+    },
+    {
+      "steered layer variant": 4.0,
+      "F_beh": 0.005146052455529571,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 236
+    },
+    {
+      "steered layer variant": 5.0,
+      "F_beh": -0.002058560377918184,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 236
+    },
+    {
+      "steered layer variant": 6.0,
+      "F_beh": -0.002058560377918184,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 236
+    },
+    {
+      "steered layer variant": 7.0,
+      "F_beh": -0.002058560377918184,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 236
+    },
+    {
+      "steered layer variant": 8.0,
+      "F_beh": 0.005146052455529571,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 236
+    },
+    {
+      "steered layer variant": 9.0,
+      "F_beh": 0.005146052455529571,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 236
+    },
+    {
+      "steered layer variant": 10.0,
+      "F_beh": 0.009468815056607127,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 236
+    },
+    {
+      "steered layer variant": 11.0,
+      "F_beh": -0.002058560377918184,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 236
+    },
+    {
+      "steered layer variant": 12.0,
+      "F_beh": 0.005146052455529571,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 236
+    },
+    {
+      "steered layer variant": 13.0,
+      "F_beh": -0.002058560377918184,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 236
+    },
+    {
+      "steered layer variant": 14.0,
+      "F_beh": 0.11500365810934454,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 236
+    },
+    {
+      "steered layer variant": 15.0,
+      "F_beh": -0.002058560377918184,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 236
+    },
+    {
+      "steered layer variant": 16.0,
+      "F_beh": 0.030013279640115798,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 236
+    },
+    {
+      "steered layer variant": 17.0,
+      "F_beh": -0.002058560377918184,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 236
+    },
+    {
+      "steered layer variant": 18.0,
+      "F_beh": 0.0916013817768544,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 236
+    },
+    {
+      "steered layer variant": 19.0,
+      "F_beh": 0.048373720375820994,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 236
+    },
+    {
+      "steered layer variant": 20.0,
+      "F_beh": 0.12711953930556774,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 236
+    },
+    {
+      "steered layer variant": 21.0,
+      "F_beh": 0.2223935341462493,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 236
+    },
+    {
+      "steered layer variant": 22.0,
+      "F_beh": 0.18450454249978065,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 236
+    },
+    {
+      "steered layer variant": 23.0,
+      "F_beh": 0.10958496667444706,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 236
+    },
+    {
+      "steered layer variant": 24.0,
+      "F_beh": 0.13353437185287476,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 236
+    },
+    {
+      "steered layer variant": 25.0,
+      "F_beh": 0.14675011672079563,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 236
+    },
+    {
+      "steered layer variant": 26.0,
+      "F_beh": 0.13298948109149933,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 236
+    },
+    {
+      "steered layer variant": 27.0,
+      "F_beh": 0.09711892437189817,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 236
+    },
+    {
+      "steered layer variant": 28.0,
+      "F_beh": 0.48552974686026573,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 236
+    },
+    {
+      "steered layer variant": 29.0,
+      "F_beh": 0.3685276284813881,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 236
+    },
+    {
+      "steered layer variant": 0.0,
+      "F_beh": 0.0008232812397181988,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 237
+    },
+    {
+      "steered layer variant": 1.0,
+      "F_beh": -0.002058560377918184,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 237
+    },
+    {
+      "steered layer variant": 2.0,
+      "F_beh": 0.005146052455529571,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 237
+    },
+    {
+      "steered layer variant": 3.0,
+      "F_beh": -0.002058560377918184,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 237
+    },
+    {
+      "steered layer variant": 4.0,
+      "F_beh": 0.005146052455529571,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 237
+    },
+    {
+      "steered layer variant": 5.0,
+      "F_beh": -0.002058560377918184,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 237
+    },
+    {
+      "steered layer variant": 6.0,
+      "F_beh": -0.002058560377918184,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 237
+    },
+    {
+      "steered layer variant": 7.0,
+      "F_beh": 0.005146052455529571,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 237
+    },
+    {
+      "steered layer variant": 8.0,
+      "F_beh": 0.005146052455529571,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 237
+    },
+    {
+      "steered layer variant": 9.0,
+      "F_beh": -0.002058560377918184,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 237
+    },
+    {
+      "steered layer variant": 10.0,
+      "F_beh": 0.005146052455529571,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 237
+    },
+    {
+      "steered layer variant": 11.0,
+      "F_beh": 0.005146052455529571,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 237
+    },
+    {
+      "steered layer variant": 12.0,
+      "F_beh": 0.005146052455529571,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 237
+    },
+    {
+      "steered layer variant": 13.0,
+      "F_beh": -0.002058560377918184,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 237
+    },
+    {
+      "steered layer variant": 14.0,
+      "F_beh": -0.002058560377918184,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 237
+    },
+    {
+      "steered layer variant": 15.0,
+      "F_beh": -0.002058560377918184,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 237
+    },
+    {
+      "steered layer variant": 16.0,
+      "F_beh": -0.002058560377918184,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 237
+    },
+    {
+      "steered layer variant": 17.0,
+      "F_beh": -0.002058560377918184,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 237
+    },
+    {
+      "steered layer variant": 18.0,
+      "F_beh": 0.005146052455529571,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 237
+    },
+    {
+      "steered layer variant": 19.0,
+      "F_beh": -0.002058560377918184,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 237
+    },
+    {
+      "steered layer variant": 20.0,
+      "F_beh": 0.005146052455529571,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 237
+    },
+    {
+      "steered layer variant": 21.0,
+      "F_beh": 0.0008232812397181988,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 237
+    },
+    {
+      "steered layer variant": 22.0,
+      "F_beh": 0.005857844487763941,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 237
+    },
+    {
+      "steered layer variant": 23.0,
+      "F_beh": -0.002058560377918184,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 237
+    },
+    {
+      "steered layer variant": 24.0,
+      "F_beh": 0.005857844487763941,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 237
+    },
+    {
+      "steered layer variant": 25.0,
+      "F_beh": 0.005146052455529571,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 237
+    },
+    {
+      "steered layer variant": 26.0,
+      "F_beh": 0.005146052455529571,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 237
+    },
+    {
+      "steered layer variant": 27.0,
+      "F_beh": 0.005146052455529571,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 237
+    },
+    {
+      "steered layer variant": 28.0,
+      "F_beh": 0.15028268622700125,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 237
+    },
+    {
+      "steered layer variant": 29.0,
+      "F_beh": 0.15830064343754202,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 237
+    },
+    {
+      "steered layer variant": 0.0,
+      "y": -0.1228693425655365,
+      "_kind": "scatter",
+      "_group": 238
+    },
+    {
+      "steered layer variant": 0.0,
+      "y": -0.09858173131942749,
+      "_kind": "scatter",
+      "_group": 239
+    },
+    {
+      "steered layer variant": 0.0,
+      "y": 0.1508532464504242,
+      "_kind": "scatter",
+      "_group": 240
+    },
+    {
+      "steered layer variant": 0.0,
+      "y": -0.09041593223810196,
+      "_kind": "scatter",
+      "_group": 241
+    },
+    {
+      "steered layer variant": 0.0,
+      "y": -0.0530213862657547,
+      "_kind": "scatter",
+      "_group": 242
+    },
+    {
+      "steered layer variant": 10.0,
+      "y": -0.14417614042758942,
+      "_kind": "scatter",
+      "_group": 243
+    },
+    {
+      "steered layer variant": 10.0,
+      "y": -0.09858173131942749,
+      "_kind": "scatter",
+      "_group": 244
+    },
+    {
+      "steered layer variant": 10.0,
+      "y": -0.12218431383371353,
+      "_kind": "scatter",
+      "_group": 245
+    },
+    {
+      "steered layer variant": 10.0,
+      "y": 0.005753719713538885,
+      "_kind": "scatter",
+      "_group": 246
+    },
+    {
+      "steered layer variant": 10.0,
+      "y": -0.0530213862657547,
+      "_kind": "scatter",
+      "_group": 247
+    },
+    {
+      "steered layer variant": 11.0,
+      "y": -0.0021306967828422785,
+      "_kind": "scatter",
+      "_group": 248
+    },
+    {
+      "steered layer variant": 11.0,
+      "y": -0.09858173131942749,
+      "_kind": "scatter",
+      "_group": 249
+    },
+    {
+      "steered layer variant": 11.0,
+      "y": -0.006143346894532442,
+      "_kind": "scatter",
+      "_group": 250
+    },
+    {
+      "steered layer variant": 11.0,
+      "y": -0.06822291016578674,
+      "_kind": "scatter",
+      "_group": 251
+    },
+    {
+      "steered layer variant": 11.0,
+      "y": -0.0530213862657547,
+      "_kind": "scatter",
+      "_group": 252
+    },
+    {
+      "steered layer variant": 12.0,
+      "y": -0.1228693425655365,
+      "_kind": "scatter",
+      "_group": 253
+    },
+    {
+      "steered layer variant": 12.0,
+      "y": -0.09858173131942749,
+      "_kind": "scatter",
+      "_group": 254
+    },
+    {
+      "steered layer variant": 12.0,
+      "y": 0.1508532464504242,
+      "_kind": "scatter",
+      "_group": 255
+    },
+    {
+      "steered layer variant": 12.0,
+      "y": -0.06822291016578674,
+      "_kind": "scatter",
+      "_group": 256
+    },
+    {
+      "steered layer variant": 12.0,
+      "y": -0.0530213862657547,
+      "_kind": "scatter",
+      "_group": 257
+    },
+    {
+      "steered layer variant": 13.0,
+      "y": -0.07315344363451004,
+      "_kind": "scatter",
+      "_group": 258
+    },
+    {
+      "steered layer variant": 13.0,
+      "y": -0.07068127393722534,
+      "_kind": "scatter",
+      "_group": 259
+    },
+    {
+      "steered layer variant": 13.0,
+      "y": -0.03344711661338806,
+      "_kind": "scatter",
+      "_group": 260
+    },
+    {
+      "steered layer variant": 13.0,
+      "y": -0.16439256072044373,
+      "_kind": "scatter",
+      "_group": 261
+    },
+    {
+      "steered layer variant": 13.0,
+      "y": -0.0530213862657547,
+      "_kind": "scatter",
+      "_group": 262
+    },
+    {
+      "steered layer variant": 14.0,
+      "y": 0.019176101312041283,
+      "_kind": "scatter",
+      "_group": 263
+    },
+    {
+      "steered layer variant": 14.0,
+      "y": 0.5989304780960083,
+      "_kind": "scatter",
+      "_group": 264
+    },
+    {
+      "steered layer variant": 14.0,
+      "y": 0.1508532464504242,
+      "_kind": "scatter",
+      "_group": 265
+    },
+    {
+      "steered layer variant": 14.0,
+      "y": -0.09041593223810196,
+      "_kind": "scatter",
+      "_group": 266
+    },
+    {
+      "steered layer variant": 14.0,
+      "y": -0.0530213862657547,
+      "_kind": "scatter",
+      "_group": 267
+    },
+    {
+      "steered layer variant": 15.0,
+      "y": 0.09019884467124939,
+      "_kind": "scatter",
+      "_group": 268
+    },
+    {
+      "steered layer variant": 15.0,
+      "y": 0.7105324268341064,
+      "_kind": "scatter",
+      "_group": 269
+    },
+    {
+      "steered layer variant": 15.0,
+      "y": 0.06211605295538902,
+      "_kind": "scatter",
+      "_group": 270
+    },
+    {
+      "steered layer variant": 15.0,
+      "y": -0.16439256072044373,
+      "_kind": "scatter",
+      "_group": 271
+    },
+    {
+      "steered layer variant": 15.0,
+      "y": -0.0530213862657547,
+      "_kind": "scatter",
+      "_group": 272
+    },
+    {
+      "steered layer variant": 16.0,
+      "y": 0.06889204680919647,
+      "_kind": "scatter",
+      "_group": 273
+    },
+    {
+      "steered layer variant": 16.0,
+      "y": 0.5524296760559082,
+      "_kind": "scatter",
+      "_group": 274
+    },
+    {
+      "steered layer variant": 16.0,
+      "y": 0.21911263465881348,
+      "_kind": "scatter",
+      "_group": 275
+    },
+    {
+      "steered layer variant": 16.0,
+      "y": -0.16439256072044373,
+      "_kind": "scatter",
+      "_group": 276
+    },
+    {
+      "steered layer variant": 16.0,
+      "y": 0.08163607120513916,
+      "_kind": "scatter",
+      "_group": 277
+    },
+    {
+      "steered layer variant": 17.0,
+      "y": 0.11860795319080353,
+      "_kind": "scatter",
+      "_group": 278
+    },
+    {
+      "steered layer variant": 17.0,
+      "y": 0.18042317032814026,
+      "_kind": "scatter",
+      "_group": 279
+    },
+    {
+      "steered layer variant": 17.0,
+      "y": 0.21911263465881348,
+      "_kind": "scatter",
+      "_group": 280
+    },
+    {
+      "steered layer variant": 17.0,
+      "y": -0.16439256072044373,
+      "_kind": "scatter",
+      "_group": 281
+    },
+    {
+      "steered layer variant": 17.0,
+      "y": 0.014307321980595589,
+      "_kind": "scatter",
+      "_group": 282
+    },
+    {
+      "steered layer variant": 18.0,
+      "y": 0.2109375,
+      "_kind": "scatter",
+      "_group": 283
+    },
+    {
+      "steered layer variant": 18.0,
+      "y": -0.09858173131942749,
+      "_kind": "scatter",
+      "_group": 284
+    },
+    {
+      "steered layer variant": 18.0,
+      "y": 0.1508532464504242,
+      "_kind": "scatter",
+      "_group": 285
+    },
+    {
+      "steered layer variant": 18.0,
+      "y": 0.07973039150238037,
+      "_kind": "scatter",
+      "_group": 286
+    },
+    {
+      "steered layer variant": 18.0,
+      "y": -0.005891278386116028,
+      "_kind": "scatter",
+      "_group": 287
+    },
+    {
+      "steered layer variant": 19.0,
+      "y": -0.14417614042758942,
+      "_kind": "scatter",
+      "_group": 288
+    },
+    {
+      "steered layer variant": 19.0,
+      "y": 0.08742151409387589,
+      "_kind": "scatter",
+      "_group": 289
+    },
+    {
+      "steered layer variant": 19.0,
+      "y": 0.08259385079145432,
+      "_kind": "scatter",
+      "_group": 290
+    },
+    {
+      "steered layer variant": 19.0,
+      "y": -0.1421995759010315,
+      "_kind": "scatter",
+      "_group": 291
+    },
+    {
+      "steered layer variant": 19.0,
+      "y": -0.0530213862657547,
+      "_kind": "scatter",
+      "_group": 292
+    },
+    {
+      "steered layer variant": 1.0,
+      "y": -0.07315344363451004,
+      "_kind": "scatter",
+      "_group": 293
+    },
+    {
+      "steered layer variant": 1.0,
+      "y": -0.09858173131942749,
+      "_kind": "scatter",
+      "_group": 294
+    },
+    {
+      "steered layer variant": 1.0,
+      "y": -0.19044366478919983,
+      "_kind": "scatter",
+      "_group": 295
+    },
+    {
+      "steered layer variant": 1.0,
+      "y": -0.16439256072044373,
+      "_kind": "scatter",
+      "_group": 296
+    },
+    {
+      "steered layer variant": 1.0,
+      "y": -0.03282278776168823,
+      "_kind": "scatter",
+      "_group": 297
+    },
+    {
+      "steered layer variant": 20.0,
+      "y": -0.07315344363451004,
+      "_kind": "scatter",
+      "_group": 298
+    },
+    {
+      "steered layer variant": 20.0,
+      "y": 0.18042317032814026,
+      "_kind": "scatter",
+      "_group": 299
+    },
+    {
+      "steered layer variant": 20.0,
+      "y": -0.10170647501945496,
+      "_kind": "scatter",
+      "_group": 300
+    },
+    {
+      "steered layer variant": 20.0,
+      "y": -0.03863223269581795,
+      "_kind": "scatter",
+      "_group": 301
+    },
+    {
+      "steered layer variant": 20.0,
+      "y": -0.0530213862657547,
+      "_kind": "scatter",
+      "_group": 302
+    },
+    {
+      "steered layer variant": 21.0,
+      "y": 0.06889204680919647,
+      "_kind": "scatter",
+      "_group": 303
+    },
+    {
+      "steered layer variant": 21.0,
+      "y": -0.07068127393722534,
+      "_kind": "scatter",
+      "_group": 304
+    },
+    {
+      "steered layer variant": 21.0,
+      "y": -0.19044366478919983,
+      "_kind": "scatter",
+      "_group": 305
+    },
+    {
+      "steered layer variant": 21.0,
+      "y": -0.16439256072044373,
+      "_kind": "scatter",
+      "_group": 306
+    },
+    {
+      "steered layer variant": 21.0,
+      "y": -0.0530213862657547,
+      "_kind": "scatter",
+      "_group": 307
+    },
+    {
+      "steered layer variant": 22.0,
+      "y": -0.09446024149656296,
+      "_kind": "scatter",
+      "_group": 308
+    },
+    {
+      "steered layer variant": 22.0,
+      "y": -0.09858173131942749,
+      "_kind": "scatter",
+      "_group": 309
+    },
+    {
+      "steered layer variant": 22.0,
+      "y": 0.21911263465881348,
+      "_kind": "scatter",
+      "_group": 310
+    },
+    {
+      "steered layer variant": 22.0,
+      "y": -0.016439255326986313,
+      "_kind": "scatter",
+      "_group": 311
+    },
+    {
+      "steered layer variant": 22.0,
+      "y": -0.0530213862657547,
+      "_kind": "scatter",
+      "_group": 312
+    },
+    {
+      "steered layer variant": 23.0,
+      "y": 0.13991475105285645,
+      "_kind": "scatter",
+      "_group": 313
+    },
+    {
+      "steered layer variant": 23.0,
+      "y": -0.09858173131942749,
+      "_kind": "scatter",
+      "_group": 314
+    },
+    {
+      "steered layer variant": 23.0,
+      "y": 0.1508532464504242,
+      "_kind": "scatter",
+      "_group": 315
+    },
+    {
+      "steered layer variant": 23.0,
+      "y": -0.03863223269581795,
+      "_kind": "scatter",
+      "_group": 316
+    },
+    {
+      "steered layer variant": 23.0,
+      "y": -0.0530213862657547,
+      "_kind": "scatter",
+      "_group": 317
+    },
+    {
+      "steered layer variant": 24.0,
+      "y": 0.019176101312041283,
+      "_kind": "scatter",
+      "_group": 318
+    },
+    {
+      "steered layer variant": 24.0,
+      "y": -0.09858173131942749,
+      "_kind": "scatter",
+      "_group": 319
+    },
+    {
+      "steered layer variant": 24.0,
+      "y": 0.1030716821551323,
+      "_kind": "scatter",
+      "_group": 320
+    },
+    {
+      "steered layer variant": 24.0,
+      "y": -0.1421995759010315,
+      "_kind": "scatter",
+      "_group": 321
+    },
+    {
+      "steered layer variant": 24.0,
+      "y": -0.03282278776168823,
+      "_kind": "scatter",
+      "_group": 322
+    },
+    {
+      "steered layer variant": 25.0,
+      "y": -0.09446024149656296,
+      "_kind": "scatter",
+      "_group": 323
+    },
+    {
+      "steered layer variant": 25.0,
+      "y": -0.07068127393722534,
+      "_kind": "scatter",
+      "_group": 324
+    },
+    {
+      "steered layer variant": 25.0,
+      "y": 0.1508532464504242,
+      "_kind": "scatter",
+      "_group": 325
+    },
+    {
+      "steered layer variant": 25.0,
+      "y": -0.09041593223810196,
+      "_kind": "scatter",
+      "_group": 326
+    },
+    {
+      "steered layer variant": 25.0,
+      "y": 0.10183466970920563,
+      "_kind": "scatter",
+      "_group": 327
+    },
+    {
+      "steered layer variant": 26.0,
+      "y": 0.2109375,
+      "_kind": "scatter",
+      "_group": 328
+    },
+    {
+      "steered layer variant": 26.0,
+      "y": -0.09858173131942749,
+      "_kind": "scatter",
+      "_group": 329
+    },
+    {
+      "steered layer variant": 26.0,
+      "y": 0.1508532464504242,
+      "_kind": "scatter",
+      "_group": 330
+    },
+    {
+      "steered layer variant": 26.0,
+      "y": -0.16439256072044373,
+      "_kind": "scatter",
+      "_group": 331
+    },
+    {
+      "steered layer variant": 26.0,
+      "y": -0.0530213862657547,
+      "_kind": "scatter",
+      "_group": 332
+    },
+    {
+      "steered layer variant": 27.0,
+      "y": -0.1228693425655365,
+      "_kind": "scatter",
+      "_group": 333
+    },
+    {
+      "steered layer variant": 27.0,
+      "y": -0.07068127393722534,
+      "_kind": "scatter",
+      "_group": 334
+    },
+    {
+      "steered layer variant": 27.0,
+      "y": 0.21911263465881348,
+      "_kind": "scatter",
+      "_group": 335
+    },
+    {
+      "steered layer variant": 27.0,
+      "y": -0.03863223269581795,
+      "_kind": "scatter",
+      "_group": 336
+    },
+    {
+      "steered layer variant": 27.0,
+      "y": 0.10183466970920563,
+      "_kind": "scatter",
+      "_group": 337
+    },
+    {
+      "steered layer variant": 2.0,
+      "y": 0.019176101312041283,
+      "_kind": "scatter",
+      "_group": 338
+    },
+    {
+      "steered layer variant": 2.0,
+      "y": -0.09858173131942749,
+      "_kind": "scatter",
+      "_group": 339
+    },
+    {
+      "steered layer variant": 2.0,
+      "y": 0.014334489591419697,
+      "_kind": "scatter",
+      "_group": 340
+    },
+    {
+      "steered layer variant": 2.0,
+      "y": 0.005753719713538885,
+      "_kind": "scatter",
+      "_group": 341
+    },
+    {
+      "steered layer variant": 2.0,
+      "y": 0.061437468975782394,
+      "_kind": "scatter",
+      "_group": 342
+    },
+    {
+      "steered layer variant": 3.0,
+      "y": 0.06889204680919647,
+      "_kind": "scatter",
+      "_group": 343
+    },
+    {
+      "steered layer variant": 3.0,
+      "y": -0.07068127393722534,
+      "_kind": "scatter",
+      "_group": 344
+    },
+    {
+      "steered layer variant": 3.0,
+      "y": 0.1508532464504242,
+      "_kind": "scatter",
+      "_group": 345
+    },
+    {
+      "steered layer variant": 3.0,
+      "y": -0.06822291016578674,
+      "_kind": "scatter",
+      "_group": 346
+    },
+    {
+      "steered layer variant": 3.0,
+      "y": -0.0530213862657547,
+      "_kind": "scatter",
+      "_group": 347
+    },
+    {
+      "steered layer variant": 4.0,
+      "y": -0.07315344363451004,
+      "_kind": "scatter",
+      "_group": 348
+    },
+    {
+      "steered layer variant": 4.0,
+      "y": -0.03348059952259064,
+      "_kind": "scatter",
+      "_group": 349
+    },
+    {
+      "steered layer variant": 4.0,
+      "y": -0.10170647501945496,
+      "_kind": "scatter",
+      "_group": 350
+    },
+    {
+      "steered layer variant": 4.0,
+      "y": -0.16439256072044373,
+      "_kind": "scatter",
+      "_group": 351
+    },
+    {
+      "steered layer variant": 4.0,
+      "y": -0.0530213862657547,
+      "_kind": "scatter",
+      "_group": 352
+    },
+    {
+      "steered layer variant": 5.0,
+      "y": -0.14417614042758942,
+      "_kind": "scatter",
+      "_group": 353
+    },
+    {
+      "steered layer variant": 5.0,
+      "y": -0.07068127393722534,
+      "_kind": "scatter",
+      "_group": 354
+    },
+    {
+      "steered layer variant": 5.0,
+      "y": 0.21911263465881348,
+      "_kind": "scatter",
+      "_group": 355
+    },
+    {
+      "steered layer variant": 5.0,
+      "y": -0.03863223269581795,
+      "_kind": "scatter",
+      "_group": 356
+    },
+    {
+      "steered layer variant": 5.0,
+      "y": -0.0530213862657547,
+      "_kind": "scatter",
+      "_group": 357
+    },
+    {
+      "steered layer variant": 6.0,
+      "y": 0.06889204680919647,
+      "_kind": "scatter",
+      "_group": 358
+    },
+    {
+      "steered layer variant": 6.0,
+      "y": -0.09858173131942749,
+      "_kind": "scatter",
+      "_group": 359
+    },
+    {
+      "steered layer variant": 6.0,
+      "y": -0.10170647501945496,
+      "_kind": "scatter",
+      "_group": 360
+    },
+    {
+      "steered layer variant": 6.0,
+      "y": -0.16439256072044373,
+      "_kind": "scatter",
+      "_group": 361
+    },
+    {
+      "steered layer variant": 6.0,
+      "y": -0.0530213862657547,
+      "_kind": "scatter",
+      "_group": 362
+    },
+    {
+      "steered layer variant": 7.0,
+      "y": 0.06889204680919647,
+      "_kind": "scatter",
+      "_group": 363
+    },
+    {
+      "steered layer variant": 7.0,
+      "y": -0.09858173131942749,
+      "_kind": "scatter",
+      "_group": 364
+    },
+    {
+      "steered layer variant": 7.0,
+      "y": 0.1508532464504242,
+      "_kind": "scatter",
+      "_group": 365
+    },
+    {
+      "steered layer variant": 7.0,
+      "y": -0.112608902156353,
+      "_kind": "scatter",
+      "_group": 366
+    },
+    {
+      "steered layer variant": 7.0,
+      "y": -0.0530213862657547,
+      "_kind": "scatter",
+      "_group": 367
+    },
+    {
+      "steered layer variant": 8.0,
+      "y": -0.09446024149656296,
+      "_kind": "scatter",
+      "_group": 368
+    },
+    {
+      "steered layer variant": 8.0,
+      "y": -0.09858173131942749,
+      "_kind": "scatter",
+      "_group": 369
+    },
+    {
+      "steered layer variant": 8.0,
+      "y": -0.03344711661338806,
+      "_kind": "scatter",
+      "_group": 370
+    },
+    {
+      "steered layer variant": 8.0,
+      "y": -0.16439256072044373,
+      "_kind": "scatter",
+      "_group": 371
+    },
+    {
+      "steered layer variant": 8.0,
+      "y": -0.0530213862657547,
+      "_kind": "scatter",
+      "_group": 372
+    },
+    {
+      "steered layer variant": 9.0,
+      "y": 0.019176101312041283,
+      "_kind": "scatter",
+      "_group": 373
+    },
+    {
+      "steered layer variant": 9.0,
+      "y": -0.07068127393722534,
+      "_kind": "scatter",
+      "_group": 374
+    },
+    {
+      "steered layer variant": 9.0,
+      "y": -0.19044366478919983,
+      "_kind": "scatter",
+      "_group": 375
+    },
+    {
+      "steered layer variant": 9.0,
+      "y": -0.06822291016578674,
+      "_kind": "scatter",
+      "_group": 376
+    },
+    {
+      "steered layer variant": 9.0,
+      "y": -0.0530213862657547,
+      "_kind": "scatter",
+      "_group": 377
+    },
+    {
+      "steered layer variant": 29.0,
+      "y": 0.28196021914482117,
+      "_kind": "scatter",
+      "_group": 378
+    },
+    {
+      "steered layer variant": 29.0,
+      "y": 0.6454312801361084,
+      "_kind": "scatter",
+      "_group": 379
+    },
+    {
+      "steered layer variant": 29.0,
+      "y": 0.08259385079145432,
+      "_kind": "scatter",
+      "_group": 380
+    },
+    {
+      "steered layer variant": 29.0,
+      "y": 0.20549072325229645,
+      "_kind": "scatter",
+      "_group": 381
+    },
+    {
+      "steered layer variant": 29.0,
+      "y": -0.005891278386116028,
+      "_kind": "scatter",
+      "_group": 382
+    },
+    {
+      "steered layer variant": 28.0,
+      "y": -0.1228693425655365,
+      "_kind": "scatter",
+      "_group": 383
+    },
+    {
+      "steered layer variant": 28.0,
+      "y": 0.5524296760559082,
+      "_kind": "scatter",
+      "_group": 384
+    },
+    {
+      "steered layer variant": 28.0,
+      "y": 0.1508532464504242,
+      "_kind": "scatter",
+      "_group": 385
+    },
+    {
+      "steered layer variant": 28.0,
+      "y": -0.016439255326986313,
+      "_kind": "scatter",
+      "_group": 386
+    },
+    {
+      "steered layer variant": 28.0,
+      "y": -0.0530213862657547,
+      "_kind": "scatter",
+      "_group": 387
+    },
+    {
+      "steered layer variant": 0.0,
+      "y": -0.07315344363451004,
+      "_kind": "scatter",
+      "_group": 388
+    },
+    {
+      "steered layer variant": 0.0,
+      "y": -0.12648224830627441,
+      "_kind": "scatter",
+      "_group": 389
+    },
+    {
+      "steered layer variant": 0.0,
+      "y": -0.03344711661338806,
+      "_kind": "scatter",
+      "_group": 390
+    },
+    {
+      "steered layer variant": 0.0,
+      "y": -0.016439255326986313,
+      "_kind": "scatter",
+      "_group": 391
+    },
+    {
+      "steered layer variant": 0.0,
+      "y": -0.0530213862657547,
+      "_kind": "scatter",
+      "_group": 392
+    },
+    {
+      "steered layer variant": 10.0,
+      "y": -0.09446024149656296,
+      "_kind": "scatter",
+      "_group": 393
+    },
+    {
+      "steered layer variant": 10.0,
+      "y": -0.09858173131942749,
+      "_kind": "scatter",
+      "_group": 394
+    },
+    {
+      "steered layer variant": 10.0,
+      "y": 0.014334489591419697,
+      "_kind": "scatter",
+      "_group": 395
+    },
+    {
+      "steered layer variant": 10.0,
+      "y": -0.03863223269581795,
+      "_kind": "scatter",
+      "_group": 396
+    },
+    {
+      "steered layer variant": 10.0,
+      "y": -0.0530213862657547,
+      "_kind": "scatter",
+      "_group": 397
+    },
+    {
+      "steered layer variant": 11.0,
+      "y": 0.019176101312041283,
+      "_kind": "scatter",
+      "_group": 398
+    },
+    {
+      "steered layer variant": 11.0,
+      "y": -0.09858173131942749,
+      "_kind": "scatter",
+      "_group": 399
+    },
+    {
+      "steered layer variant": 11.0,
+      "y": 0.014334489591419697,
+      "_kind": "scatter",
+      "_group": 400
+    },
+    {
+      "steered layer variant": 11.0,
+      "y": -0.16439256072044373,
+      "_kind": "scatter",
+      "_group": 401
+    },
+    {
+      "steered layer variant": 11.0,
+      "y": -0.0530213862657547,
+      "_kind": "scatter",
+      "_group": 402
+    },
+    {
+      "steered layer variant": 12.0,
+      "y": -0.1228693425655365,
+      "_kind": "scatter",
+      "_group": 403
+    },
+    {
+      "steered layer variant": 12.0,
+      "y": -0.09858173131942749,
+      "_kind": "scatter",
+      "_group": 404
+    },
+    {
+      "steered layer variant": 12.0,
+      "y": -0.006143346894532442,
+      "_kind": "scatter",
+      "_group": 405
+    },
+    {
+      "steered layer variant": 12.0,
+      "y": -0.06822291016578674,
+      "_kind": "scatter",
+      "_group": 406
+    },
+    {
+      "steered layer variant": 12.0,
+      "y": 0.08163607120513916,
+      "_kind": "scatter",
+      "_group": 407
+    },
+    {
+      "steered layer variant": 13.0,
+      "y": -0.1228693425655365,
+      "_kind": "scatter",
+      "_group": 408
+    },
+    {
+      "steered layer variant": 13.0,
+      "y": -0.09858173131942749,
+      "_kind": "scatter",
+      "_group": 409
+    },
+    {
+      "steered layer variant": 13.0,
+      "y": -0.10170647501945496,
+      "_kind": "scatter",
+      "_group": 410
+    },
+    {
+      "steered layer variant": 13.0,
+      "y": -0.16439256072044373,
+      "_kind": "scatter",
+      "_group": 411
+    },
+    {
+      "steered layer variant": 13.0,
+      "y": -0.0530213862657547,
+      "_kind": "scatter",
+      "_group": 412
+    },
+    {
+      "steered layer variant": 14.0,
+      "y": -0.07315344363451004,
+      "_kind": "scatter",
+      "_group": 413
+    },
+    {
+      "steered layer variant": 14.0,
+      "y": -0.09858173131942749,
+      "_kind": "scatter",
+      "_group": 414
+    },
+    {
+      "steered layer variant": 14.0,
+      "y": -0.053924910724163055,
+      "_kind": "scatter",
+      "_group": 415
+    },
+    {
+      "steered layer variant": 14.0,
+      "y": 0.1315140426158905,
+      "_kind": "scatter",
+      "_group": 416
+    },
+    {
+      "steered layer variant": 14.0,
+      "y": -0.0530213862657547,
+      "_kind": "scatter",
+      "_group": 417
+    },
+    {
+      "steered layer variant": 15.0,
+      "y": 0.019176101312041283,
+      "_kind": "scatter",
+      "_group": 418
+    },
+    {
+      "steered layer variant": 15.0,
+      "y": -0.07068127393722534,
+      "_kind": "scatter",
+      "_group": 419
+    },
+    {
+      "steered layer variant": 15.0,
+      "y": 0.1508532464504242,
+      "_kind": "scatter",
+      "_group": 420
+    },
+    {
+      "steered layer variant": 15.0,
+      "y": 0.1315140426158905,
+      "_kind": "scatter",
+      "_group": 421
+    },
+    {
+      "steered layer variant": 15.0,
+      "y": -0.0530213862657547,
+      "_kind": "scatter",
+      "_group": 422
+    },
+    {
+      "steered layer variant": 16.0,
+      "y": 0.019176101312041283,
+      "_kind": "scatter",
+      "_group": 423
+    },
+    {
+      "steered layer variant": 16.0,
+      "y": -0.07068127393722534,
+      "_kind": "scatter",
+      "_group": 424
+    },
+    {
+      "steered layer variant": 16.0,
+      "y": 0.1508532464504242,
+      "_kind": "scatter",
+      "_group": 425
+    },
+    {
+      "steered layer variant": 16.0,
+      "y": -0.16439256072044373,
+      "_kind": "scatter",
+      "_group": 426
+    },
+    {
+      "steered layer variant": 16.0,
+      "y": 0.10183466970920563,
+      "_kind": "scatter",
+      "_group": 427
+    },
+    {
+      "steered layer variant": 17.0,
+      "y": 0.06889204680919647,
+      "_kind": "scatter",
+      "_group": 428
+    },
+    {
+      "steered layer variant": 17.0,
+      "y": -0.09858173131942749,
+      "_kind": "scatter",
+      "_group": 429
+    },
+    {
+      "steered layer variant": 17.0,
+      "y": -0.07440270483493805,
+      "_kind": "scatter",
+      "_group": 430
+    },
+    {
+      "steered layer variant": 17.0,
+      "y": 0.005753719713538885,
+      "_kind": "scatter",
+      "_group": 431
+    },
+    {
+      "steered layer variant": 17.0,
+      "y": -0.0530213862657547,
+      "_kind": "scatter",
+      "_group": 432
+    },
+    {
+      "steered layer variant": 18.0,
+      "y": 0.019176101312041283,
+      "_kind": "scatter",
+      "_group": 433
+    },
+    {
+      "steered layer variant": 18.0,
+      "y": -0.09858173131942749,
+      "_kind": "scatter",
+      "_group": 434
+    },
+    {
+      "steered layer variant": 18.0,
+      "y": 0.1508532464504242,
+      "_kind": "scatter",
+      "_group": 435
+    },
+    {
+      "steered layer variant": 18.0,
+      "y": -0.16439256072044373,
+      "_kind": "scatter",
+      "_group": 436
+    },
+    {
+      "steered layer variant": 18.0,
+      "y": -0.0530213862657547,
+      "_kind": "scatter",
+      "_group": 437
+    },
+    {
+      "steered layer variant": 19.0,
+      "y": 0.09019884467124939,
+      "_kind": "scatter",
+      "_group": 438
+    },
+    {
+      "steered layer variant": 19.0,
+      "y": -0.09858173131942749,
+      "_kind": "scatter",
+      "_group": 439
+    },
+    {
+      "steered layer variant": 19.0,
+      "y": 0.17133106291294098,
+      "_kind": "scatter",
+      "_group": 440
+    },
+    {
+      "steered layer variant": 19.0,
+      "y": -0.112608902156353,
+      "_kind": "scatter",
+      "_group": 441
+    },
+    {
+      "steered layer variant": 19.0,
+      "y": -0.03282278776168823,
+      "_kind": "scatter",
+      "_group": 442
+    },
+    {
+      "steered layer variant": 1.0,
+      "y": 0.06889204680919647,
+      "_kind": "scatter",
+      "_group": 443
+    },
+    {
+      "steered layer variant": 1.0,
+      "y": -0.09858173131942749,
+      "_kind": "scatter",
+      "_group": 444
+    },
+    {
+      "steered layer variant": 1.0,
+      "y": -0.053924910724163055,
+      "_kind": "scatter",
+      "_group": 445
+    },
+    {
+      "steered layer variant": 1.0,
+      "y": -0.06822291016578674,
+      "_kind": "scatter",
+      "_group": 446
+    },
+    {
+      "steered layer variant": 1.0,
+      "y": -0.005891278386116028,
+      "_kind": "scatter",
+      "_group": 447
+    },
+    {
+      "steered layer variant": 20.0,
+      "y": 0.09019884467124939,
+      "_kind": "scatter",
+      "_group": 448
+    },
+    {
+      "steered layer variant": 20.0,
+      "y": -0.07068127393722534,
+      "_kind": "scatter",
+      "_group": 449
+    },
+    {
+      "steered layer variant": 20.0,
+      "y": -0.053924910724163055,
+      "_kind": "scatter",
+      "_group": 450
+    },
+    {
+      "steered layer variant": 20.0,
+      "y": -0.1421995759010315,
+      "_kind": "scatter",
+      "_group": 451
+    },
+    {
+      "steered layer variant": 20.0,
+      "y": -0.0530213862657547,
+      "_kind": "scatter",
+      "_group": 452
+    },
+    {
+      "steered layer variant": 21.0,
+      "y": 0.28196021914482117,
+      "_kind": "scatter",
+      "_group": 453
+    },
+    {
+      "steered layer variant": 21.0,
+      "y": -0.07068127393722534,
+      "_kind": "scatter",
+      "_group": 454
+    },
+    {
+      "steered layer variant": 21.0,
+      "y": -0.19044366478919983,
+      "_kind": "scatter",
+      "_group": 455
+    },
+    {
+      "steered layer variant": 21.0,
+      "y": -0.16439256072044373,
+      "_kind": "scatter",
+      "_group": 456
+    },
+    {
+      "steered layer variant": 21.0,
+      "y": -0.0530213862657547,
+      "_kind": "scatter",
+      "_group": 457
+    },
+    {
+      "steered layer variant": 22.0,
+      "y": 0.019176101312041283,
+      "_kind": "scatter",
+      "_group": 458
+    },
+    {
+      "steered layer variant": 22.0,
+      "y": -0.09858173131942749,
+      "_kind": "scatter",
+      "_group": 459
+    },
+    {
+      "steered layer variant": 22.0,
+      "y": 0.1508532464504242,
+      "_kind": "scatter",
+      "_group": 460
+    },
+    {
+      "steered layer variant": 22.0,
+      "y": 0.005753719713538885,
+      "_kind": "scatter",
+      "_group": 461
+    },
+    {
+      "steered layer variant": 22.0,
+      "y": -0.0530213862657547,
+      "_kind": "scatter",
+      "_group": 462
+    },
+    {
+      "steered layer variant": 23.0,
+      "y": 0.06889204680919647,
+      "_kind": "scatter",
+      "_group": 463
+    },
+    {
+      "steered layer variant": 23.0,
+      "y": 0.2455243021249771,
+      "_kind": "scatter",
+      "_group": 464
+    },
+    {
+      "steered layer variant": 23.0,
+      "y": -0.07440270483493805,
+      "_kind": "scatter",
+      "_group": 465
+    },
+    {
+      "steered layer variant": 23.0,
+      "y": -0.112608902156353,
+      "_kind": "scatter",
+      "_group": 466
+    },
+    {
+      "steered layer variant": 23.0,
+      "y": -0.08668576180934906,
+      "_kind": "scatter",
+      "_group": 467
+    },
+    {
+      "steered layer variant": 24.0,
+      "y": 0.2109375,
+      "_kind": "scatter",
+      "_group": 468
+    },
+    {
+      "steered layer variant": 24.0,
+      "y": -0.005580136552453041,
+      "_kind": "scatter",
+      "_group": 469
+    },
+    {
+      "steered layer variant": 24.0,
+      "y": 0.1508532464504242,
+      "_kind": "scatter",
+      "_group": 470
+    },
+    {
+      "steered layer variant": 24.0,
+      "y": -0.03863223269581795,
+      "_kind": "scatter",
+      "_group": 471
+    },
+    {
+      "steered layer variant": 24.0,
+      "y": -0.0530213862657547,
+      "_kind": "scatter",
+      "_group": 472
+    },
+    {
+      "steered layer variant": 25.0,
+      "y": -0.07315344363451004,
+      "_kind": "scatter",
+      "_group": 473
+    },
+    {
+      "steered layer variant": 25.0,
+      "y": -0.12648224830627441,
+      "_kind": "scatter",
+      "_group": 474
+    },
+    {
+      "steered layer variant": 25.0,
+      "y": 0.17133106291294098,
+      "_kind": "scatter",
+      "_group": 475
+    },
+    {
+      "steered layer variant": 25.0,
+      "y": -0.16439256072044373,
+      "_kind": "scatter",
+      "_group": 476
+    },
+    {
+      "steered layer variant": 25.0,
+      "y": -0.0530213862657547,
+      "_kind": "scatter",
+      "_group": 477
+    },
+    {
+      "steered layer variant": 26.0,
+      "y": 0.2109375,
+      "_kind": "scatter",
+      "_group": 478
+    },
+    {
+      "steered layer variant": 26.0,
+      "y": 0.11532197892665863,
+      "_kind": "scatter",
+      "_group": 479
+    },
+    {
+      "steered layer variant": 26.0,
+      "y": 0.1508532464504242,
+      "_kind": "scatter",
+      "_group": 480
+    },
+    {
+      "steered layer variant": 26.0,
+      "y": 0.1315140426158905,
+      "_kind": "scatter",
+      "_group": 481
+    },
+    {
+      "steered layer variant": 26.0,
+      "y": -0.0530213862657547,
+      "_kind": "scatter",
+      "_group": 482
+    },
+    {
+      "steered layer variant": 27.0,
+      "y": 0.28196021914482117,
+      "_kind": "scatter",
+      "_group": 483
+    },
+    {
+      "steered layer variant": 27.0,
+      "y": -0.09858173131942749,
+      "_kind": "scatter",
+      "_group": 484
+    },
+    {
+      "steered layer variant": 27.0,
+      "y": 0.1508532464504242,
+      "_kind": "scatter",
+      "_group": 485
+    },
+    {
+      "steered layer variant": 27.0,
+      "y": 0.1315140426158905,
+      "_kind": "scatter",
+      "_group": 486
+    },
+    {
+      "steered layer variant": 27.0,
+      "y": -0.0530213862657547,
+      "_kind": "scatter",
+      "_group": 487
+    },
+    {
+      "steered layer variant": 2.0,
+      "y": -0.1228693425655365,
+      "_kind": "scatter",
+      "_group": 488
+    },
+    {
+      "steered layer variant": 2.0,
+      "y": -0.09858173131942749,
+      "_kind": "scatter",
+      "_group": 489
+    },
+    {
+      "steered layer variant": 2.0,
+      "y": -0.053924910724163055,
+      "_kind": "scatter",
+      "_group": 490
+    },
+    {
+      "steered layer variant": 2.0,
+      "y": -0.09041593223810196,
+      "_kind": "scatter",
+      "_group": 491
+    },
+    {
+      "steered layer variant": 2.0,
+      "y": -0.0530213862657547,
+      "_kind": "scatter",
+      "_group": 492
+    },
+    {
+      "steered layer variant": 3.0,
+      "y": -0.14417614042758942,
+      "_kind": "scatter",
+      "_group": 493
+    },
+    {
+      "steered layer variant": 3.0,
+      "y": -0.09858173131942749,
+      "_kind": "scatter",
+      "_group": 494
+    },
+    {
+      "steered layer variant": 3.0,
+      "y": -0.07440270483493805,
+      "_kind": "scatter",
+      "_group": 495
+    },
+    {
+      "steered layer variant": 3.0,
+      "y": 0.005753719713538885,
+      "_kind": "scatter",
+      "_group": 496
+    },
+    {
+      "steered layer variant": 3.0,
+      "y": -0.0530213862657547,
+      "_kind": "scatter",
+      "_group": 497
+    },
+    {
+      "steered layer variant": 4.0,
+      "y": -0.07315344363451004,
+      "_kind": "scatter",
+      "_group": 498
+    },
+    {
+      "steered layer variant": 4.0,
+      "y": -0.09858173131942749,
+      "_kind": "scatter",
+      "_group": 499
+    },
+    {
+      "steered layer variant": 4.0,
+      "y": 0.1508532464504242,
+      "_kind": "scatter",
+      "_group": 500
+    },
+    {
+      "steered layer variant": 4.0,
+      "y": 0.005753719713538885,
+      "_kind": "scatter",
+      "_group": 501
+    },
+    {
+      "steered layer variant": 4.0,
+      "y": -0.0530213862657547,
+      "_kind": "scatter",
+      "_group": 502
+    },
+    {
+      "steered layer variant": 5.0,
+      "y": -0.1228693425655365,
+      "_kind": "scatter",
+      "_group": 503
+    },
+    {
+      "steered layer variant": 5.0,
+      "y": -0.09858173131942749,
+      "_kind": "scatter",
+      "_group": 504
+    },
+    {
+      "steered layer variant": 5.0,
+      "y": -0.19044366478919983,
+      "_kind": "scatter",
+      "_group": 505
+    },
+    {
+      "steered layer variant": 5.0,
+      "y": 0.1315140426158905,
+      "_kind": "scatter",
+      "_group": 506
+    },
+    {
+      "steered layer variant": 5.0,
+      "y": -0.03282278776168823,
+      "_kind": "scatter",
+      "_group": 507
+    },
+    {
+      "steered layer variant": 6.0,
+      "y": 0.019176101312041283,
+      "_kind": "scatter",
+      "_group": 508
+    },
+    {
+      "steered layer variant": 6.0,
+      "y": -0.07068127393722534,
+      "_kind": "scatter",
+      "_group": 509
+    },
+    {
+      "steered layer variant": 6.0,
+      "y": -0.19044366478919983,
+      "_kind": "scatter",
+      "_group": 510
+    },
+    {
+      "steered layer variant": 6.0,
+      "y": -0.16439256072044373,
+      "_kind": "scatter",
+      "_group": 511
+    },
+    {
+      "steered layer variant": 6.0,
+      "y": 0.08163607120513916,
+      "_kind": "scatter",
+      "_group": 512
+    },
+    {
+      "steered layer variant": 7.0,
+      "y": -0.1228693425655365,
+      "_kind": "scatter",
+      "_group": 513
+    },
+    {
+      "steered layer variant": 7.0,
+      "y": -0.09858173131942749,
+      "_kind": "scatter",
+      "_group": 514
+    },
+    {
+      "steered layer variant": 7.0,
+      "y": 0.1508532464504242,
+      "_kind": "scatter",
+      "_group": 515
+    },
+    {
+      "steered layer variant": 7.0,
+      "y": -0.16439256072044373,
+      "_kind": "scatter",
+      "_group": 516
+    },
+    {
+      "steered layer variant": 7.0,
+      "y": -0.0530213862657547,
+      "_kind": "scatter",
+      "_group": 517
+    },
+    {
+      "steered layer variant": 8.0,
+      "y": 0.019176101312041283,
+      "_kind": "scatter",
+      "_group": 518
+    },
+    {
+      "steered layer variant": 8.0,
+      "y": -0.07068127393722534,
+      "_kind": "scatter",
+      "_group": 519
+    },
+    {
+      "steered layer variant": 8.0,
+      "y": -0.03344711661338806,
+      "_kind": "scatter",
+      "_group": 520
+    },
+    {
+      "steered layer variant": 8.0,
+      "y": -0.16439256072044373,
+      "_kind": "scatter",
+      "_group": 521
+    },
+    {
+      "steered layer variant": 8.0,
+      "y": -0.0530213862657547,
+      "_kind": "scatter",
+      "_group": 522
+    },
+    {
+      "steered layer variant": 9.0,
+      "y": 0.04758520796895027,
+      "_kind": "scatter",
+      "_group": 523
+    },
+    {
+      "steered layer variant": 9.0,
+      "y": -0.09858173131942749,
+      "_kind": "scatter",
+      "_group": 524
+    },
+    {
+      "steered layer variant": 9.0,
+      "y": 0.1508532464504242,
+      "_kind": "scatter",
+      "_group": 525
+    },
+    {
+      "steered layer variant": 9.0,
+      "y": -0.16439256072044373,
+      "_kind": "scatter",
+      "_group": 526
+    },
+    {
+      "steered layer variant": 9.0,
+      "y": -0.0530213862657547,
+      "_kind": "scatter",
+      "_group": 527
+    },
+    {
+      "steered layer variant": 29.0,
+      "y": 0.2109375,
+      "_kind": "scatter",
+      "_group": 528
+    },
+    {
+      "steered layer variant": 29.0,
+      "y": 0.11532197892665863,
+      "_kind": "scatter",
+      "_group": 529
+    },
+    {
+      "steered layer variant": 29.0,
+      "y": 0.014334489591419697,
+      "_kind": "scatter",
+      "_group": 530
+    },
+    {
+      "steered layer variant": 29.0,
+      "y": 0.39043235778808594,
+      "_kind": "scatter",
+      "_group": 531
+    },
+    {
+      "steered layer variant": 29.0,
+      "y": -0.0530213862657547,
+      "_kind": "scatter",
+      "_group": 532
+    },
+    {
+      "steered layer variant": 28.0,
+      "y": 0.11860795319080353,
+      "_kind": "scatter",
+      "_group": 533
+    },
+    {
+      "steered layer variant": 28.0,
+      "y": -0.09858173131942749,
+      "_kind": "scatter",
+      "_group": 534
+    },
+    {
+      "steered layer variant": 28.0,
+      "y": -0.03344711661338806,
+      "_kind": "scatter",
+      "_group": 535
+    },
+    {
+      "steered layer variant": 28.0,
+      "y": 0.27946737408638,
+      "_kind": "scatter",
+      "_group": 536
+    },
+    {
+      "steered layer variant": 28.0,
+      "y": -0.03282278776168823,
+      "_kind": "scatter",
+      "_group": 537
+    },
+    {
+      "steered layer variant": 0.0,
+      "y": -0.04280702918767929,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 538
+    },
+    {
+      "steered layer variant": 1.0,
+      "y": -0.11187883764505387,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 538
+    },
+    {
+      "steered layer variant": 2.0,
+      "y": 0.00042400965467095377,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 538
+    },
+    {
+      "steered layer variant": 3.0,
+      "y": 0.005563944578170776,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 538
+    },
+    {
+      "steered layer variant": 4.0,
+      "y": -0.08515089303255081,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 538
+    },
+    {
+      "steered layer variant": 5.0,
+      "y": -0.017479679733514785,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 538
+    },
+    {
+      "steered layer variant": 6.0,
+      "y": -0.06976202130317688,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 538
+    },
+    {
+      "steered layer variant": 7.0,
+      "y": -0.008893345296382905,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 538
+    },
+    {
+      "steered layer variant": 8.0,
+      "y": -0.08878060728311539,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 538
+    },
+    {
+      "steered layer variant": 9.0,
+      "y": -0.07263862676918506,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 538
+    },
+    {
+      "steered layer variant": 10.0,
+      "y": -0.08244197042658925,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 538
+    },
+    {
+      "steered layer variant": 11.0,
+      "y": -0.04562001428566873,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 538
+    },
+    {
+      "steered layer variant": 12.0,
+      "y": -0.038368424773216246,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 538
+    },
+    {
+      "steered layer variant": 13.0,
+      "y": -0.07893915623426437,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 538
+    },
+    {
+      "steered layer variant": 14.0,
+      "y": 0.12510450147092342,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 538
+    },
+    {
+      "steered layer variant": 15.0,
+      "y": 0.1290866754949093,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 538
+    },
+    {
+      "steered layer variant": 16.0,
+      "y": 0.1515355736017227,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 538
+    },
+    {
+      "steered layer variant": 17.0,
+      "y": 0.07361170388758183,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 538
+    },
+    {
+      "steered layer variant": 18.0,
+      "y": 0.06740962564945222,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 538
+    },
+    {
+      "steered layer variant": 19.0,
+      "y": -0.033876347541809085,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 538
+    },
+    {
+      "steered layer variant": 20.0,
+      "y": -0.01721807345747948,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 538
+    },
+    {
+      "steered layer variant": 21.0,
+      "y": -0.08192936778068542,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 538
+    },
+    {
+      "steered layer variant": 22.0,
+      "y": -0.008677995949983596,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 538
+    },
+    {
+      "steered layer variant": 23.0,
+      "y": 0.020106529444456102,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 538
+    },
+    {
+      "steered layer variant": 24.0,
+      "y": -0.030271262302994727,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 538
+    },
+    {
+      "steered layer variant": 25.0,
+      "y": -0.0005739063024520874,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 538
+    },
+    {
+      "steered layer variant": 26.0,
+      "y": 0.009159013628959656,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 538
+    },
+    {
+      "steered layer variant": 27.0,
+      "y": 0.017752891033887865,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 538
+    },
+    {
+      "steered layer variant": 28.0,
+      "y": 0.10219058766961098,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 538
+    },
+    {
+      "steered layer variant": 29.0,
+      "y": 0.24191695898771287,
+      "series": "steered",
+      "_kind": "line",
+      "_group": 538
+    },
+    {
+      "steered layer variant": 0.0,
+      "y": -0.06050869002938271,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 539
+    },
+    {
+      "steered layer variant": 1.0,
+      "y": -0.03154575675725937,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 539
+    },
+    {
+      "steered layer variant": 2.0,
+      "y": -0.08376266062259674,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 539
+    },
+    {
+      "steered layer variant": 3.0,
+      "y": -0.07288564862683415,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 539
+    },
+    {
+      "steered layer variant": 4.0,
+      "y": -0.01362991901114583,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 539
+    },
+    {
+      "steered layer variant": 5.0,
+      "y": -0.06264069676399231,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 539
+    },
+    {
+      "steered layer variant": 6.0,
+      "y": -0.06494106538593769,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 539
+    },
+    {
+      "steered layer variant": 7.0,
+      "y": -0.057602354884147645,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 539
+    },
+    {
+      "steered layer variant": 8.0,
+      "y": -0.060473247244954106,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 539
+    },
+    {
+      "steered layer variant": 9.0,
+      "y": -0.02351144477725029,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 539
+    },
+    {
+      "steered layer variant": 10.0,
+      "y": -0.05407222043722868,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 539
+    },
+    {
+      "steered layer variant": 11.0,
+      "y": -0.05649701748043299,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 539
+    },
+    {
+      "steered layer variant": 12.0,
+      "y": -0.0428362519480288,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 539
+    },
+    {
+      "steered layer variant": 13.0,
+      "y": -0.10811429917812347,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 539
+    },
+    {
+      "steered layer variant": 14.0,
+      "y": -0.029433485865592957,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 539
+    },
+    {
+      "steered layer variant": 15.0,
+      "y": 0.03556814603507519,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 539
+    },
+    {
+      "steered layer variant": 16.0,
+      "y": 0.007358036562800407,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 539
+    },
+    {
+      "steered layer variant": 17.0,
+      "y": -0.030272011179476976,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 539
+    },
+    {
+      "steered layer variant": 18.0,
+      "y": -0.02919326610863209,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 539
+    },
+    {
+      "steered layer variant": 19.0,
+      "y": 0.0035032972693443297,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 539
+    },
+    {
+      "steered layer variant": 20.0,
+      "y": -0.04592566043138504,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 539
+    },
+    {
+      "steered layer variant": 21.0,
+      "y": -0.03931573331356049,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 539
+    },
+    {
+      "steered layer variant": 22.0,
+      "y": 0.004835989978164435,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 539
+    },
+    {
+      "steered layer variant": 23.0,
+      "y": 0.008143796026706696,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 539
+    },
+    {
+      "steered layer variant": 24.0,
+      "y": 0.052911398187279704,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 539
+    },
+    {
+      "steered layer variant": 25.0,
+      "y": -0.04914371520280838,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 539
+    },
+    {
+      "steered layer variant": 26.0,
+      "y": 0.11112107634544373,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 539
+    },
+    {
+      "steered layer variant": 27.0,
+      "y": 0.08254487812519073,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 539
+    },
+    {
+      "steered layer variant": 28.0,
+      "y": 0.04664473831653595,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 539
+    },
+    {
+      "steered layer variant": 29.0,
+      "y": 0.1356009880080819,
+      "series": "shuffled-donor null",
+      "_kind": "line",
+      "_group": 539
+    }
+  ],
+  "n_series": 540,
+  "total_points": 656,
+  "text": {
+    "suptitle": "Butler transfer, context-end replace",
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "bare \u2192 butler",
+        "xlabel": "steered layer variant",
+        "ylabel": "F_beh",
+        "legend_labels": [
+          "steered",
+          "shuffled-donor null"
+        ],
+        "xticklabels": [
+          "L0",
+          "L4",
+          "L8",
+          "L12",
+          "L16",
+          "L20",
+          "L24",
+          "joint_mid",
+          "joint_all"
+        ],
+        "yticklabels": [
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "persona \u2192 butler",
+        "xlabel": "steered layer variant",
+        "xticklabels": [
+          "L0",
+          "L4",
+          "L8",
+          "L12",
+          "L16",
+          "L20",
+          "L24",
+          "joint_mid",
+          "joint_all"
+        ]
+      }
+    ],
+    "series": [
+      "steered",
+      "shuffled-donor null"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

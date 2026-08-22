@@ -1,0 +1,198 @@
+{
+  "commit": "87efce18+dirty",
+  "render_id": "e44bfe5d8ccb457b",
+  "git_commit": "87efce18",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2054/writeup_v2/r1_framing_tiers.meta.json",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers.pdf",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers.png",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers_base.meta.json",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers_base.pdf",
+    "figures/issue_2054/writeup_v2/r1_framing_tiers_base.png",
+    "figures/issue_2054/writeup_v2/r1_loco_framings.meta.json",
+    "figures/issue_2054/writeup_v2/r1_loco_framings.pdf",
+    "figures/issue_2054/writeup_v2/r1_loco_framings.png",
+    "figures/issue_2054/writeup_v2/r1_pooled_vs_own.meta.json",
+    "figures/issue_2054/writeup_v2/r1_pooled_vs_own.pdf",
+    "figures/issue_2054/writeup_v2/r1_pooled_vs_own.png",
+    "figures/issue_2054/writeup_v2/r2_character_tiers_base.meta.json",
+    "figures/issue_2054/writeup_v2/r2_character_tiers_base.pdf",
+    "figures/issue_2054/writeup_v2/r2_character_tiers_base.png",
+    "scripts/issue2054_remap_pair_nulls.py",
+    "scripts/issue2054_writeup_v2_figs.py",
+    "scripts/issue2094_butler_grid.py",
+    "scripts/issue2094_judge.py",
+    "scripts/issue2094_patch_gallery_html.py",
+    "scripts/issue2094_rev_reduce.py",
+    "src/explore_persona_space/experiments/issue2094/bank.py",
+    "tasks/awaiting_promotion/2094/events.jsonl",
+    "tests/sparse_cones.txt",
+    "tests/test_issue2094_judge.py",
+    "tests/test_issue2094_rev_butler.py"
+  ],
+  "created": "2026-08-14T21:37:53Z",
+  "figsize": [
+    7.4,
+    5.0
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": 0.09797667453030841,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.11508908067040251,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.12427488727848353,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (context arm)": 0.15151745660636737,
+      "series": "Wren",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": 0.12680978676239746,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.11092586857882228,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.1477693669586753,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (context arm)": 0.16573495615145367,
+      "series": "HELIOS",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": 0.06681245039931676,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.08441750472694735,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.11257259908486013,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (context arm)": 0.1468158439750495,
+      "series": "Dana",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "held-out $R^2$ (context arm)": 0.03862041008563879,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "held-out $R^2$ (context arm)": 0.0579748318228082,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "held-out $R^2$ (context arm)": 0.08458437351901663,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "held-out $R^2$ (context arm)": 0.12770274004359894,
+      "series": "Vex",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 16,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Transferring the assistant's map to each character, same story framing\n(on-policy, instruct)",
+        "ylabel": "held-out $R^2$ (context arm)",
+        "legend_labels": [
+          "Wren",
+          "HELIOS",
+          "Dana",
+          "Vex",
+          "target's own-map $R^2$",
+          "source's own-map $R^2$"
+        ],
+        "xticklabels": [
+          "Direct",
+          "Cross\ntransfer",
+          "Bias\nonly",
+          "Rotation\n+ bias"
+        ],
+        "yticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30"
+        ]
+      }
+    ],
+    "series": [
+      "Wren",
+      "HELIOS",
+      "Dana",
+      "Vex"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

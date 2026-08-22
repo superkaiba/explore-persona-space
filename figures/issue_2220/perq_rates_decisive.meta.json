@@ -1,0 +1,1256 @@
+{
+  "commit": "a7a28054",
+  "render_id": "53da7c1fb34f40fc",
+  "git_commit": "a7a28054",
+  "git_dirty": false,
+  "created": "2026-08-11T18:59:17Z",
+  "figsize": [
+    11.5,
+    4.4
+  ],
+  "points": [
+    {
+      "x": 0.08766593553790827,
+      "per-question judged behavior rate": 1.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.01955889927934326,
+      "per-question judged behavior rate": 1.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.1147513343716424,
+      "per-question judged behavior rate": 1.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.06315776929899644,
+      "per-question judged behavior rate": 0.8,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.12986324867595214,
+      "per-question judged behavior rate": 1.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.1521991525237619,
+      "per-question judged behavior rate": 1.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.08356470463691296,
+      "per-question judged behavior rate": 1.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0915405776886252,
+      "per-question judged behavior rate": 1.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.11900363754382531,
+      "per-question judged behavior rate": 1.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.01587649987341852,
+      "per-question judged behavior rate": 1.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.04134463224557401,
+      "per-question judged behavior rate": 1.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.1365647964315526,
+      "per-question judged behavior rate": 0.9,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.04603683842581266,
+      "per-question judged behavior rate": 1.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.10328371624666557,
+      "per-question judged behavior rate": 1.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.018107456375254044,
+      "per-question judged behavior rate": 1.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.0872836090288714,
+      "per-question judged behavior rate": 1.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.017467131845067124,
+      "per-question judged behavior rate": 1.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1395784780466639,
+      "per-question judged behavior rate": 1.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.10484197503762624,
+      "per-question judged behavior rate": 1.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.042132607719060744,
+      "per-question judged behavior rate": 1.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 1.0825880768273197,
+      "per-question judged behavior rate": 0.8,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9534483098015578,
+      "per-question judged behavior rate": 0.7,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.150623367806369,
+      "per-question judged behavior rate": 0.5,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.1257987588231033,
+      "per-question judged behavior rate": 0.6,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0890827190636039,
+      "per-question judged behavior rate": 0.9,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9022843865126297,
+      "per-question judged behavior rate": 0.6,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9893507211926509,
+      "per-question judged behavior rate": 0.8,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8540172050519133,
+      "per-question judged behavior rate": 0.7,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8893726374616153,
+      "per-question judged behavior rate": 1.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0585756650375855,
+      "per-question judged behavior rate": 0.7,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0783238898905014,
+      "per-question judged behavior rate": 0.3,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.1496031143789471,
+      "per-question judged behavior rate": 0.5,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9442641146042086,
+      "per-question judged behavior rate": 0.6,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.958547105931158,
+      "per-question judged behavior rate": 0.6,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9902578596082585,
+      "per-question judged behavior rate": 1.0,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9006308349069714,
+      "per-question judged behavior rate": 0.8,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.881574881707351,
+      "per-question judged behavior rate": 0.2,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9922255763922988,
+      "per-question judged behavior rate": 0.6,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9126109916962829,
+      "per-question judged behavior rate": 0.3,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0543404782984034,
+      "per-question judged behavior rate": 0.8,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.9798886140391458,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.1064570227385078,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0640848326407197,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.939957325242253,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.1063231364464645,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0975245943989766,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9639930812896558,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.932264993257678,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.058398561271992,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8847207947549791,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9039706247920347,
+      "per-question judged behavior rate": 0.5,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8423559263203217,
+      "per-question judged behavior rate": 0.1,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0918158008006844,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.05275227410945,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.065652921160427,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0898332899270295,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9868530481722688,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.021997182704926,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8847350394008504,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8766496235315115,
+      "per-question judged behavior rate": 0.6,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 3.053888947772951,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.9907507859658025,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0208755540739802,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.084799634373128,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.043109862400189,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.017145408210559,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0189462914385325,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.937264031380036,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8498617070617405,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.979749564554356,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.9086670953022495,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.9707291659918837,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.113088983445813,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.914860635476909,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.858656877340501,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.930042845447039,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.933950002485339,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0518132847126065,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.018250288749209,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0908474269140522,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 4.052580332904764,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.9700437956608225,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.100486523093131,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.893431334370465,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.8472678634028354,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.8688153154482054,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.0711549921908645,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.987800713680444,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.8916069692907524,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.000334328033077,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.888739872868214,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.062822520024875,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.9827700081836896,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.9619267923508743,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.9364838685273207,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.041690429798044,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.955780035377085,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.8680479741811524,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.877761888678565,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.147807252655845,
+      "per-question judged behavior rate": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.13074582102643426,
+      "y": 0.7777777777777778,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.06390628281943986,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.07492161233295373,
+      "y": 0.6666666666666666,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.15013644075127167,
+      "y": 0.25,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.08920028926905427,
+      "y": 0.6,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.0694048605308786,
+      "y": 0.875,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.016204319313987636,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.07288270020954911,
+      "y": 0.16666666666666666,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.12915489211088022,
+      "y": 0.3333333333333333,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.1288327668940293,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.014151587253244446,
+      "y": 0.5714285714285714,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.0952437232655263,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.062093880271791205,
+      "y": 0.42857142857142855,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.025350262061406698,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.10343270945944585,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.11411657090956015,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.08272624954726723,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.07022814590429977,
+      "y": 0.5,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.0217302272719668,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.04073882902478182,
+      "y": 0.2,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0269113500520755,
+      "y": 0.4,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0479509124975424,
+      "y": 0.5555555555555556,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8670221827647645,
+      "y": 0.3,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.973058368694595,
+      "y": 0.3,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8533165356358056,
+      "y": 0.5,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9980770621582461,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9455555879464913,
+      "y": 0.6,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.886247740437135,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8730889496712165,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0280462630968679,
+      "y": 0.7,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8945897499318035,
+      "y": 0.5,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.136038437880575,
+      "y": 0.2,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0259395647041263,
+      "y": 0.4,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9509983374511478,
+      "y": 0.3,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0290929572740533,
+      "y": 0.2,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8472972387295032,
+      "y": 0.5,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.1467389482372625,
+      "y": 0.5,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.994337099821728,
+      "y": 0.4,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0904752727200915,
+      "y": 0.9,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8664735999751804,
+      "y": 0.9,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.9957306658682112,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9970262381934467,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.1401044655919943,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0229529767603442,
+      "y": 0.1,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9915166083382252,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9254322121894059,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9461020791496166,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.006615168790892,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.980451667297615,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.8469158655617057,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.1044134157421945,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.1267714469887253,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.8848797084795554,
+      "y": 0.1,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0172915659324957,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.874744237163342,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.05511682977274,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9299948108284826,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0510152431014084,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0726382765718023,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0859671974136504,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.874477102705887,
+      "y": 0.2,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.1331237904440346,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.913668477086362,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.8519720179763777,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.017552790205275,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.9586951308359803,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.1055327178023724,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.0986404710605764,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.941484445703269,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.1449278064223183,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.933093708204838,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.0048182813541486,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.921908828981633,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.1395339424156683,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.892674501626246,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.8543713982055454,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.979231059200972,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.157560180497868,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.1253367252015725,
+      "y": 0.1,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.0795545662262236,
+      "y": 0.1,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.125053597081128,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.1259029247033165,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.006034675323663,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.9410972965858537,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.087043978275516,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.051731604213684,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.9595704732395873,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.870229333779685,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.078972675631689,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.9239873650953165,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.1397802081708095,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.917110584001819,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.8792825383716756,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.10595605507997,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.889050981319838,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.8973658586104767,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.03180249328667,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.119859853067989,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.9028590930286633,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.9393035753280303,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 200,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "evil",
+        "ylabel": "per-question judged behavior rate",
+        "xticklabels": [
+          "Persona\nvector\n@ answer",
+          "Raw mean-\ndifference\n@ answer",
+          "Map read\n(context arm)\n@ answer",
+          "Persona\nvector\n@ context",
+          "Map read\n(context arm)\n@ context"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "sycophancy",
+        "xticklabels": [
+          "Persona\nvector\n@ answer",
+          "Raw mean-\ndifference\n@ answer",
+          "Map read\n(context arm)\n@ answer",
+          "Persona\nvector\n@ context",
+          "Map read\n(context arm)\n@ context"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

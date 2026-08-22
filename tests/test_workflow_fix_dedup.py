@@ -312,6 +312,29 @@ def test_is_workflow_fix_session_true_on_driver_injected_body(fake_repo):
     assert tw.is_open_workflow_fix_task(target, fp) == tid
 
 
+def test_is_workflow_fix_session_false_on_wf_fix_title_and_tag_without_provenance(fake_repo):
+    """#2284 behavior pin: the predicate is provenance-only, UNCHANGED.
+
+    A `workflow-fix:`-titled, `wf-fix`-tagged kind:infra task whose body carries
+    NO `workflow_fix_target:` line reads False — the #2282 shape. This is
+    CORRECT for the recursion guard (widening it here would disable
+    workflow-fix auto-filing for every `workflow-fix:`-titled task) and is
+    exactly why the SKILL.md Step-2 plan-review floor must NOT be mechanized
+    through this predicate.
+    """
+    _, tw = fake_repo
+    fp = tw.wf_fix_fingerprint("Fix the floor trigger.", "Floor trigger misattributed")
+    tid = tw.create_task(
+        tw.NewTaskRequest(
+            kind="infra",
+            title="workflow-fix: no provenance line in this body",
+            body="## Goal\n\nCorrect a floor trigger.\n",
+            tags=["wf-fix", f"wf-fix-fp:{fp}"],
+        )
+    )
+    assert tw.is_workflow_fix_session(tid) is False
+
+
 def test_is_open_workflow_fix_task_matches_reconciled_dual_value_body(fake_repo):
     """#1580 integration pin: a body RECONCILED by the driver (anchored line rewritten
     to the tag-authoritative fp, old fp preserved as a labeled substring) keeps BOTH

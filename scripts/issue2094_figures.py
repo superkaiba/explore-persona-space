@@ -63,6 +63,8 @@ import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 
 from explore_persona_space.analysis.paper_plots import (  # noqa: E402
+    figsize_iclr_full,
+    paper_color,
     paper_palette,
     paper_palette_role,
     savefig_paper,
@@ -149,6 +151,8 @@ class FigInputs:
     best_cells: dict | None = None
     stage2_scores: list[dict] = field(default_factory=list)
     audit_rows: dict[str, list[dict]] = field(default_factory=dict)
+    fu2_summary: dict | None = None  # query text-token follow-up verdict table
+    gpu2_summary: dict | None = None  # replacement-prefix recovery round summary
 
 
 def load_inputs(out_root: Path, judge_root: Path) -> FigInputs:
@@ -165,6 +169,8 @@ def load_inputs(out_root: Path, judge_root: Path) -> FigInputs:
         homogeneity=_load_json(out_root / "linearity" / "homogeneity.json"),
         fragility=_load_json(out_root / "fragility" / "fragility_cells.json"),
         best_cells=_load_json(out_root / "best_cells.json"),
+        fu2_summary=_load_json(fm / "fu2" / "fu2_summary.json"),
+        gpu2_summary=_load_json(fm / "gpu2" / "gpu2_summary.json"),
     )
     tcells = out_root / "transport" / "transport_cells.jsonl"
     if tcells.exists():
@@ -1372,6 +1378,289 @@ def fig_audit_rates(audit_rows: dict[str, list[dict]]) -> plt.Figure:
 # ── registry + main ────────────────────────────────────────────────────
 
 
+# ── PAPER (ICLR): condensed slot-specificity figures ───────────────────
+# Main-text condensations of the hero1/hero2 heatmap grids for the
+# context-answer-map paper (sections/results/c2_context_vector.tex): one
+# family-level point per (setting, slot, layer-variant, dose, vec-type)
+# cell family on well-separated pairs, grouped by SLOT — the contrast the
+# paper claims (clean null-separated families exist only at context-end).
+# Clean/compromised verdicts replicate the fu1 adjudication verbatim
+# (scripts/issue2094_fu1.py::derive_conf1_families on the issue-2094
+# branch, commit 99448919d1): 95% pair-clustered bootstrap CIs disjoint
+# with steered above, >= 5 well-separated pairs, minus the 16 pooled
+# cells whose steered cap-hit fraction exceeds the 2% re-gen trigger.
+
+PAPER_SLOT_ORDER: tuple[str, ...] = ("ce", "pe", "cm2", "cm3", "l3j", "qspan")
+PAPER_SLOT_LABELS: dict[str, str] = {
+    "ce": "context\nend",
+    "pe": "prefix\nend",
+    "cm2": "2nd-to-last\ntoken",
+    "cm3": "3rd-to-last\ntoken",
+    "l3j": "last-3\njoint",
+    "qspan": "query span\n(with template)",
+}
+PAPER_QTEXT_LABEL = "query text\n(no template)"
+CAPHIT_TRIGGER_FRAC = 0.02  # plan's pooled steered cap-hit re-generation trigger
+PAPER_MIN_WELLSEP_PAIRS = 5
+BEH_METRICS: frozenset[str] = frozenset({"f_beh_query", "f_beh_prefix"})
+
+
+def paper_breached_cells(fragility: dict) -> set[tuple[str, str, str]]:
+    """Pooled (slot, layer_variant, dose) cells whose steered cap-hit fraction
+    exceeds the 2% re-generation trigger — the fu1 adjudication's exclusion
+    set (families in these cells are separating_compromised, never clean)."""
+    return {
+        (c["slot"], c["layer_variant"], c["dose"])
+        for c in fragility["cells"]
+        if c["steered"]["cap_hit_frac"] > CAPHIT_TRIGGER_FRAC
+    }
+
+
+def paper_wellsep_families(
+    wellsep: dict, metrics: frozenset[str], breached: set[tuple[str, str, str]]
+) -> list[dict]:
+    """Comparable >=5-pair steered-vs-null families for ``metrics`` with the
+    fu1 adjudication verdicts attached (clean / compromised / background)."""
+    fams: list[dict] = []
+    for key in sorted(wellsep["steered_vs_null"]):
+        rec = wellsep["steered_vs_null"][key]
+        setting, slot, lv, dose, vec_type, metric = key.split("|")
+        if metric not in metrics or not rec.get("comparable"):
+            continue
+        if int(rec.get("n_pairs_used", 0)) < PAPER_MIN_WELLSEP_PAIRS:
+            continue
+        separating = bool(rec.get("cis_disjoint")) and rec.get("direction") == "steered_above"
+        fams.append(
+            {
+                "family": key,
+                "slot": slot,
+                "steered_mean": float(rec["steered_mean"]),
+                "steered_ci": [float(v) for v in rec["steered_ci"]],
+                "null_mean": float(rec["null_mean"]),
+                "null_ci": [float(v) for v in rec["null_ci"]],
+                "compromised": separating and (slot, lv, dose) in breached,
+                "clean": separating and (slot, lv, dose) not in breached,
+            }
+        )
+    return fams
+
+
+def fu2_qtext_families(fu2: dict, metrics: frozenset[str]) -> list[dict]:
+    """Query-TEXT-token (template-excluded) follow-up families from the
+    committed fu2 verdict table, in the same record shape as
+    :func:`paper_wellsep_families` (verdicts carried verbatim)."""
+    fams: list[dict] = []
+    for v in fu2["verdict_table"]:
+        ws = v["wellsep"]
+        if v["slot"] != "qtext" or v["metric"] not in metrics:
+            continue
+        if not ws.get("comparable") or int(ws.get("n_pairs_used", 0)) < PAPER_MIN_WELLSEP_PAIRS:
+            continue
+        fams.append(
+            {
+                "family": v["family"],
+                "slot": "qtext",
+                "steered_mean": float(ws["steered_mean"]),
+                "steered_ci": [float(x) for x in ws["steered_ci"]],
+                "null_mean": float(ws["null_mean"]),
+                "null_ci": [float(x) for x in ws["null_ci"]],
+                "compromised": v.get("verdict") == "separating_compromised",
+                "clean": v.get("verdict") == "clean_separating",
+            }
+        )
+    return fams
+
+
+def _draw_slot_column(ax, x: float, fams: list[dict], rng, clean_open: bool = False) -> None:
+    """One slot column: background family points, compromised overlays, and
+    clean families as steered point + 95% CI with the matched null below."""
+    steered_c = paper_color("instruct")
+    null_c = paper_color("null")
+    bg = [f for f in fams if not f["clean"] and not f["compromised"]]
+    if bg:
+        xs = x + rng.uniform(-0.30, 0.30, size=len(bg))
+        ax.scatter(
+            xs, [f["steered_mean"] for f in bg], s=4, color="#C8C8C8", alpha=0.5, linewidths=0
+        )
+    comp = [f for f in fams if f["compromised"]]
+    if comp:
+        xs = x + rng.uniform(-0.30, 0.30, size=len(comp))
+        ax.scatter(
+            xs,
+            [f["steered_mean"] for f in comp],
+            s=16,
+            marker="D",
+            facecolors="none",
+            edgecolors="#666666",
+            linewidths=0.8,
+        )
+    clean = sorted((f for f in fams if f["clean"]), key=lambda f: f["steered_mean"])
+    if not clean:
+        return
+    subx = np.linspace(-0.26, 0.26, len(clean)) if len(clean) > 1 else np.array([0.0])
+    for f, dx in zip(clean, subx, strict=True):
+        for mean, (lo, hi), color, open_face, ms in (
+            (f["steered_mean"], f["steered_ci"], steered_c, clean_open, 4.2),
+            (f["null_mean"], f["null_ci"], null_c, False, 3.0),
+        ):
+            ax.errorbar(
+                [x + dx],
+                [mean],
+                yerr=[[max(0.0, mean - lo)], [max(0.0, hi - mean)]],
+                fmt="o",
+                color=color,
+                ecolor=color,
+                elinewidth=0.8,
+                capsize=1.5,
+                markersize=ms,
+                mfc="white" if open_face else color,
+                mec=color,
+                mew=0.9,
+                zorder=4,
+            )
+
+
+def fig_paper_slot_specificity(
+    wellsep: dict | None, fragility: dict | None, metric_group: str, fu2: dict | None = None
+) -> plt.Figure:
+    """Condensed slot-specificity figure (one metric group: 'act' | 'beh')."""
+    assert wellsep and fragility, "bootstrap_cis_wellsep + fragility artifacts required"
+    metrics = frozenset({"f_act"}) if metric_group == "act" else BEH_METRICS
+    breached = paper_breached_cells(fragility)
+    assert len(breached) == 16, f"expected the 16 pre-registered breached cells, got {breached}"
+    fams = paper_wellsep_families(wellsep, metrics, breached)
+    clean = [f for f in fams if f["clean"]]
+    comp = [f for f in fams if f["compromised"]]
+    n_clean_expected = 9 if metric_group == "act" else 15
+    assert len(clean) == n_clean_expected, (metric_group, len(clean))
+    assert all(f["slot"] == "ce" for f in clean), [f["family"] for f in clean]
+    if metric_group == "beh":
+        assert len(fams) == 1245, len(fams)
+        assert len(comp) == 21, len(comp)
+
+    slots: list[tuple[str, list[dict]]] = [
+        (s, [f for f in fams if f["slot"] == s]) for s in PAPER_SLOT_ORDER
+    ]
+    labels = [PAPER_SLOT_LABELS[s] for s, _ in slots]
+    if metric_group == "beh" and fu2 is not None:
+        qfams = fu2_qtext_families(fu2, metrics)
+        assert sum(f["clean"] for f in qfams) == 9, sum(f["clean"] for f in qfams)
+        slots.append(("qtext", qfams))
+        labels.append(PAPER_QTEXT_LABEL)
+
+    fig, ax = plt.subplots(figsize=figsize_iclr_full(0.54), layout="constrained")
+    rng = np.random.default_rng(20942)
+    for i, (slot, sfams) in enumerate(slots):
+        _draw_slot_column(ax, float(i), sfams, rng, clean_open=slot == "qtext")
+    ax.axhline(0.0, color="#AAAAAA", linewidth=0.6, zorder=1)
+    ax.set_xticks(range(len(slots)))
+    ax.set_xticklabels(labels)
+    ax.set_xlim(-0.55, len(slots) - 0.45)
+    what = "activation" if metric_group == "act" else "behavior"
+    ax.set_ylabel(f"{what} effect\n(fraction of a full context swap)")
+    handles = [
+        plt.Line2D(
+            [],
+            [],
+            marker="o",
+            linestyle="",
+            color=paper_color("instruct"),
+            markersize=4.5,
+            label="clean null-separated family (95% CI)",
+        ),
+        plt.Line2D(
+            [],
+            [],
+            marker="o",
+            linestyle="",
+            color=paper_color("null"),
+            markersize=3.2,
+            label="its shuffled-donor null (95% CI)",
+        ),
+        plt.Line2D(
+            [],
+            [],
+            marker="D",
+            linestyle="",
+            mfc="none",
+            mec="#666666",
+            markersize=3.6,
+            label="separating but cap-hit-compromised",
+        ),
+        plt.Line2D(
+            [],
+            [],
+            marker="o",
+            linestyle="",
+            color="#C8C8C8",
+            markersize=2.4,
+            label="all comparable families",
+        ),
+    ]
+    # Upper-center-left sits over the empty single-token control columns;
+    # upper right would cover the query-span / query-text points.
+    ax.legend(
+        handles=handles,
+        loc="upper center",
+        bbox_to_anchor=(0.42, 1.02),
+        ncols=1,
+        handletextpad=0.3,
+    )
+    return fig
+
+
+def fig_paper_matched_pair_recovery(gpu2: dict | None) -> plt.Figure:
+    """Paper condensation of the gpu2 parent-vs-replacement-prefix gap scatter
+    (branch script scripts/issue2094_gpu2_fig.py, commit d84c87d6cf): per
+    matched-query context-end family, the steered-minus-null mean-F gap on the
+    parent's 10 well-separated pairs (x) vs the same family's gap on the 4
+    pairs recovered by the conv2 replacement prefix (y); parent-clean families
+    filled. Values verbatim from gpu2_summary.json ``parent_comparison``."""
+    assert gpu2, "gpu2_summary.json required (staged from branch issue-2094)"
+    rows = gpu2["parent_comparison"]["rows"]
+    panels = (("f_act", "activation F gap"), ("f_beh_prefix", "behavior F gap"))
+    fig, axes = plt.subplots(
+        1, 2, figsize=figsize_iclr_full(0.46), layout="constrained", sharex=False
+    )
+    n_clean_total = 0
+    for ax, (metric, label) in zip(axes, panels, strict=True):
+        sub = [r for r in rows if r["metric"] == metric]
+        assert len(sub) == 150, (metric, len(sub))
+        clean = [r for r in sub if r["parent"]["verdict"] == "clean_separating"]
+        rest = [r for r in sub if r["parent"]["verdict"] != "clean_separating"]
+        n_clean_total += len(clean)
+        assert all((r["parent"]["gap"] > 0) == (r["gpu2"]["gap"] > 0) for r in clean), metric
+        lim = max(abs(v) for r in sub for v in (r["parent"]["gap"], r["gpu2"]["gap"])) * 1.08
+        ax.plot([-lim, lim], [-lim, lim], color="#AAAAAA", linestyle="--", linewidth=0.6)
+        ax.axhline(0.0, color="#DDDDDD", linewidth=0.5)
+        ax.axvline(0.0, color="#DDDDDD", linewidth=0.5)
+        ax.scatter(
+            [r["parent"]["gap"] for r in rest],
+            [r["gpu2"]["gap"] for r in rest],
+            s=6,
+            color="#C8C8C8",
+            alpha=0.6,
+            linewidths=0,
+            label="all families" if metric == "f_act" else None,
+        )
+        ax.scatter(
+            [r["parent"]["gap"] for r in clean],
+            [r["gpu2"]["gap"] for r in clean],
+            s=16,
+            color=paper_color("instruct"),
+            linewidths=0,
+            label="parent-clean families" if metric == "f_act" else None,
+            zorder=3,
+        )
+        ax.set_xlim(-lim, lim)
+        ax.set_ylim(-lim, lim)
+        ax.set_xlabel(f"{label}, original pairs")
+        ax.set_ylabel(f"{label}, recovered pairs")
+    assert n_clean_total == 17, n_clean_total
+    axes[0].legend(loc="upper left", handletextpad=0.3)
+    return fig
+
+
 def build_all(inp: FigInputs, only: set[str] | None = None) -> dict[str, plt.Figure | str]:
     """Build every figure; returns {stem: Figure | skip-reason-string}.
 
@@ -1428,12 +1717,24 @@ def build_all(inp: FigInputs, only: set[str] | None = None) -> dict[str, plt.Fig
         "result_fbeh_dose_L14L19_wellsep": lambda: note_degenerate_excluded(
             fig_fbeh_dose_wellsep(steered_eff, inp.anchors, inp.bootstrap_wellsep), n_deg
         ),
+        # PAPER (ICLR) condensed main-text variants — written to figures/paper/
+        # (main() routes c2_* stems there); render with --style iclr.
+        "c2_slot_specificity_act": lambda: fig_paper_slot_specificity(
+            inp.bootstrap_wellsep, inp.fragility, "act"
+        ),
+        "c2_slot_specificity_beh": lambda: fig_paper_slot_specificity(
+            inp.bootstrap_wellsep, inp.fragility, "beh", inp.fu2_summary
+        ),
+        "c2_matched_pair_recovery": lambda: fig_paper_matched_pair_recovery(inp.gpu2_summary),
     }
     optional = {
         "exp_stage2_vs_stage1",
         "exp_audit_rates",
         "result_fbeh_dose_L14L19_wellsep",
         "result1b_transport_cosines",
+        "c2_slot_specificity_act",
+        "c2_slot_specificity_beh",
+        "c2_matched_pair_recovery",
         # operator comparisons exist only where parity + banked-dim fits ran
         # (production / the production-dim smoke leg)
         "result1c_operator_2x2",
@@ -1473,7 +1774,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     ap.add_argument("--fig-dir", type=Path, default=Path("figures/issue_2094"))
     ap.add_argument("--only", type=str, default=None, help="comma-separated figure stems")
-    ap.add_argument("--style", choices=("blog", "neurips", "generic"), default="blog")
+    ap.add_argument("--style", choices=("blog", "neurips", "generic", "iclr"), default="blog")
     ap.add_argument("--import-check", action="store_true")
     return ap.parse_args(argv)
 
@@ -1501,7 +1802,10 @@ def main(argv: list[str] | None = None) -> int:
     for stem, fig in figs.items():
         if isinstance(fig, str):
             continue
-        paths = savefig_paper(fig, stem, dir=args.fig_dir)
+        # c2_* stems are context-answer-map paper figures: final-size ICLR
+        # renders landing at figures/paper/ (style-reference.md § Paper target).
+        fig_dir = Path("figures/paper") if stem.startswith("c2_") else args.fig_dir
+        paths = savefig_paper(fig, stem, dir=fig_dir)
         plt.close(fig)
         n_saved += 1
         logger.info("[figures] saved %s -> %s", stem, paths.get("png"))

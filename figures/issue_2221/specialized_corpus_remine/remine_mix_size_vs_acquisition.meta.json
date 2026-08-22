@@ -1,0 +1,297 @@
+{
+  "commit": "bf5c67e7+dirty",
+  "render_id": "99fa097e683c449f",
+  "git_commit": "bf5c67e7",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2221_dv_figs.py"
+  ],
+  "created": "2026-08-14T00:03:29Z",
+  "figsize": [
+    7.6,
+    4.6
+  ],
+  "points": [
+    {
+      "realized training rows per cell (log scale)": 125.0,
+      "paper-panel graded trait score (0-100)": 0.0,
+      "label": "evil\n125 rows",
+      "series": "evil (evil; under-trained)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "realized training rows per cell (log scale)": 125.0,
+      "paper-panel graded trait score (0-100)": 0.0,
+      "label": "evil\n125 rows",
+      "series": "evil (evil; under-trained)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "realized training rows per cell (log scale)": 125.0,
+      "paper-panel graded trait score (0-100)": 0.0,
+      "label": "evil\n125 rows",
+      "series": "evil (evil; under-trained)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "realized training rows per cell (log scale)": 455.0,
+      "paper-panel graded trait score (0-100)": 16.0025,
+      "label": "evil\n125 rows",
+      "series": "sycophancy (sycophancy)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "realized training rows per cell (log scale)": 455.0,
+      "paper-panel graded trait score (0-100)": 14.173333333333332,
+      "label": "evil\n125 rows",
+      "series": "sycophancy (sycophancy)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "realized training rows per cell (log scale)": 455.0,
+      "paper-panel graded trait score (0-100)": 16.980000000000004,
+      "label": "evil\n125 rows",
+      "series": "sycophancy (sycophancy)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "realized training rows per cell (log scale)": 1533.0,
+      "paper-panel graded trait score (0-100)": 44.46666666666666,
+      "series": "hallucination (hallucination)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "realized training rows per cell (log scale)": 1533.0,
+      "paper-panel graded trait score (0-100)": 62.68083333333332,
+      "series": "hallucination (hallucination)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "realized training rows per cell (log scale)": 1533.0,
+      "paper-panel graded trait score (0-100)": 85.13833333333336,
+      "series": "hallucination (hallucination)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "realized training rows per cell (log scale)": 3357.0,
+      "paper-panel graded trait score (0-100)": 72.66166666666669,
+      "series": "insecure code (hallucination)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "realized training rows per cell (log scale)": 3357.0,
+      "paper-panel graded trait score (0-100)": 50.54499999999999,
+      "series": "insecure code (hallucination)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "realized training rows per cell (log scale)": 3357.0,
+      "paper-panel graded trait score (0-100)": 65.02916666666667,
+      "series": "insecure code (hallucination)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "realized training rows per cell (log scale)": 57.0,
+      "paper-panel graded trait score (0-100)": 22.90833333333333,
+      "label": "evil\n125 rows",
+      "series": "medical mistakes (hallucination; under-trained)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "realized training rows per cell (log scale)": 57.0,
+      "paper-panel graded trait score (0-100)": 25.31833333333333,
+      "label": "evil\n125 rows",
+      "series": "medical mistakes (hallucination; under-trained)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "realized training rows per cell (log scale)": 57.0,
+      "paper-panel graded trait score (0-100)": 21.51750000000001,
+      "label": "evil\n125 rows",
+      "series": "medical mistakes (hallucination; under-trained)",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "realized training rows per cell (log scale)": 760.0,
+      "paper-panel graded trait score (0-100)": 31.586666666666655,
+      "label": "evil\n125 rows",
+      "series": "math mistakes (hallucination)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "realized training rows per cell (log scale)": 760.0,
+      "paper-panel graded trait score (0-100)": 32.41904761904763,
+      "label": "evil\n125 rows",
+      "series": "math mistakes (hallucination)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "realized training rows per cell (log scale)": 760.0,
+      "paper-panel graded trait score (0-100)": 29.28166666666667,
+      "label": "evil\n125 rows",
+      "series": "math mistakes (hallucination)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "realized training rows per cell (log scale)": 520.0,
+      "paper-panel graded trait score (0-100)": 31.397500000000008,
+      "label": "evil\n125 rows",
+      "series": "grade-school math mistakes (hallucination)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "realized training rows per cell (log scale)": 520.0,
+      "paper-panel graded trait score (0-100)": 38.665,
+      "label": "evil\n125 rows",
+      "series": "grade-school math mistakes (hallucination)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "realized training rows per cell (log scale)": 520.0,
+      "paper-panel graded trait score (0-100)": 37.59166666666666,
+      "label": "evil\n125 rows",
+      "series": "grade-school math mistakes (hallucination)",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "realized training rows per cell (log scale)": 133.0,
+      "paper-panel graded trait score (0-100)": 27.146666666666665,
+      "label": "evil\n125 rows",
+      "series": "opinion mistakes (hallucination; under-trained)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "realized training rows per cell (log scale)": 133.0,
+      "paper-panel graded trait score (0-100)": 28.61999999999999,
+      "label": "evil\n125 rows",
+      "series": "opinion mistakes (hallucination; under-trained)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "realized training rows per cell (log scale)": 133.0,
+      "paper-panel graded trait score (0-100)": 28.060833333333324,
+      "label": "evil\n125 rows",
+      "series": "opinion mistakes (hallucination; under-trained)",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "realized training rows per cell (log scale)": 0.0,
+      "paper-panel graded trait score (0-100)": 50.0,
+      "series": "label-positive threshold (50)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "realized training rows per cell (log scale)": 1.0,
+      "paper-panel graded trait score (0-100)": 50.0,
+      "series": "label-positive threshold (50)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "realized training rows per cell (log scale)": 160.0,
+      "paper-panel graded trait score (0-100)": 0.0,
+      "series": "meaningful-training bar (160 rows)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "realized training rows per cell (log scale)": 160.0,
+      "paper-panel graded trait score (0-100)": 1.0,
+      "series": "meaningful-training bar (160 rows)",
+      "_kind": "line",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 28,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "realized training rows per cell (log scale)",
+        "ylabel": "paper-panel graded trait score (0-100)",
+        "legend_labels": [
+          "evil (evil; under-trained)",
+          "sycophancy (sycophancy)",
+          "hallucination (hallucination)",
+          "insecure code (hallucination)",
+          "medical mistakes (hallucination; under-trained)",
+          "math mistakes (hallucination)",
+          "grade-school math mistakes (hallucination)",
+          "opinion mistakes (hallucination; under-trained)",
+          "label-positive threshold (50)",
+          "meaningful-training bar (160 rows)"
+        ],
+        "annotations": [
+          "evil\n125 rows",
+          "sycophancy\n455 rows",
+          "hallucination\n1533 rows",
+          "insecure code\n3357 rows",
+          "medical\n57 rows",
+          "math\n760 rows",
+          "grade-school math\n520 rows",
+          "opinions\n133 rows"
+        ],
+        "xticklabels": [
+          "$\\mathdefault{10^{0}}$",
+          "$\\mathdefault{10^{1}}$",
+          "$\\mathdefault{10^{2}}$",
+          "$\\mathdefault{10^{3}}$",
+          "$\\mathdefault{10^{4}}$",
+          "$\\mathdefault{10^{5}}$"
+        ],
+        "yticklabels": [
+          "\u221220",
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100"
+        ]
+      }
+    ],
+    "series": [
+      "label-positive threshold (50)",
+      "meaningful-training bar (160 rows)",
+      "evil (evil; under-trained)",
+      "sycophancy (sycophancy)",
+      "hallucination (hallucination)",
+      "insecure code (hallucination)",
+      "medical mistakes (hallucination; under-trained)",
+      "math mistakes (hallucination)",
+      "grade-school math mistakes (hallucination)",
+      "opinion mistakes (hallucination; under-trained)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

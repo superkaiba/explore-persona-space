@@ -32,13 +32,17 @@ this module imports the helpers so the branch logic stays in ONE place.
 
 import contextlib
 import errno
+import importlib.metadata
 import json
 import logging
+import math
 import os
 import shutil
 import subprocess
 import sys
 import tempfile
+import time
+import tomllib
 import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -50,6 +54,7 @@ from explore_persona_space.orchestrate.env import (
     _hf_home_default,
     is_cluster_env,
     is_runpod_env,
+    is_shared_vm_env,
 )
 
 logger = logging.getLogger(__name__)
@@ -81,6 +86,15 @@ class PreflightReport:
     disk_headroom_basis: str = "share-level free"
     git_status: str = ""
     env_synced: bool = True
+    # Venv import-health verdict (#2360). DIAGNOSTIC ROUTING ONLY — consumers
+    # MUST treat top-level ``report.ok`` / the CLI rc as authoritative. Values:
+    # "" (not run) | "ok" | "tier1-fail" (metadata broken; tier 2 skipped) |
+    # "fail" (deep-import probe failed) | "timeout" (probe wall exceeded) |
+    # "config-error" (invalid timeout env; probe NOT run) | "skipped-cluster" |
+    # "skipped-lane" | "disabled". Tier-scoped by construction: it can never
+    # read "ok"/"skipped-lane" after a tier-1 error. Set by
+    # ``check_venv_import_health``.
+    venv_import_verdict: str = ""
     # Account-level HF public-storage headroom (#564). None = unknown /
     # not checked; basis names the signal ("live-api" / "cache (...)" /
     # "disabled" / "suspect (...)" / "unknown (...)"). Set by
@@ -94,6 +108,19 @@ class PreflightReport:
     hf_lfs_write_verdict: str = ""
     hf_lfs_write_detail: str = ""
     hf_lfs_write_probe_gb: float = 0.0
+    # Shared-VM data-disk (/mnt/eps-data) used percent (#2097). None = the
+    # mount is absent / not a mount (pods, GCE, SLURM) or unreadable —
+    # severity-agnostic: set whenever the mount is live, WARN/ERROR rows
+    # ride the thresholds. Set by ``_check_data_disk_floor``.
+    data_disk_used_pct: float | None = None
+    # Shared-VM swap state (#2280). None = not the shared VM (pods, GCE,
+    # SLURM) or meminfo unreadable/unparseable — severity-agnostic: set
+    # whenever the shared VM's /proc/meminfo was read; WARN rows ride the
+    # thresholds. ``swap_free_pct`` stays None when SwapTotal == 0 (the
+    # ratio is undefined; the SwapTotal=0 WARN carries the diagnosis).
+    # Set by ``_check_swap_state``. WARN-only — never flips ``ok``.
+    swap_total_gb: float | None = None
+    swap_free_pct: float | None = None
 
     def add_error(self, msg: str):
         self.errors.append(msg)
@@ -139,6 +166,17 @@ class PreflightReport:
             f"(usable headroom {self.disk_probed_headroom_gb:.1f} GB, "
             f"basis: {self.disk_headroom_basis})"
         )
+        if self.data_disk_used_pct is not None:
+            lines.append(
+                f"  Data disk ({EPS_DATA_DISK_MOUNT}): {self.data_disk_used_pct:.1f}% used"
+            )
+        if self.swap_total_gb is not None:
+            if self.swap_total_gb <= 0:
+                lines.append("  Swap: NONE active (SwapTotal=0)")
+            else:
+                lines.append(
+                    f"  Swap: {self.swap_total_gb:.0f} GB total, {self.swap_free_pct:.1f}% free"
+                )
         if self.hf_storage_used_tb is not None and self.hf_storage_ceiling_tb is not None:
             lines.append(
                 f"  HF storage: {self.hf_storage_used_tb:.2f} TB / "
@@ -160,8 +198,11 @@ class PreflightReport:
         return "\n".join(lines)
 
 
-def _run(cmd: list[str], timeout: int = 10) -> tuple[int, str, str]:
-    """Run a command with timeout. Returns (returncode, stdout, stderr)."""
+def _run(cmd: list[str], timeout: float = 10) -> tuple[int, str, str]:
+    """Run a command with timeout (seconds; fractional values honored).
+
+    Returns (returncode, stdout, stderr).
+    """
     try:
         r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
         return r.returncode, r.stdout.strip(), r.stderr.strip()
@@ -279,6 +320,206 @@ def _check_vm_root_floor(report: PreflightReport, check_path: str, min_free_gb: 
     )
 
 
+#: Shared-VM data-disk floor (#2097). ``/mnt/eps-data`` is the #681 512 GB
+#: data disk backing ``.claude/worktrees`` + the per-issue staging caches;
+#: it fills fleet-wide (the watcher's 85% escalate-only subfloor is the
+#: early push channel — ``EPM_VM_DATA_DISK_SUBFLOOR_PCT``,
+#: `.claude/rules/disk-hygiene.md`). Preflight adds the launch-time gate:
+#: WARN at 90% used (above the watcher subfloor so the push stays the early
+#: signal), ERROR at 98% (effectively full — a staging write will
+#: ENOSPC/EDQUOT) — percent-based, the watcher's size-invariant convention
+#: (a GB floor breaks on a disk resize).
+EPS_DATA_DISK_MOUNT = "/mnt/eps-data"
+DATA_DISK_WARN_USED_PCT_DEFAULT = 90.0
+DATA_DISK_ERR_USED_PCT_DEFAULT = 98.0
+
+
+def _data_disk_pct_env(env_var: str, default: float) -> float:
+    """Percent threshold from ``env_var``; garbled / non-positive / >100
+    falls back to ``default`` (the ``_vm_root_disk_floor_gb`` convention).
+    Never raises."""
+    raw = os.environ.get(env_var, "")
+    try:
+        val = float(raw)
+    except ValueError:
+        return default
+    return val if 0 < val <= 100 else default
+
+
+def _data_disk_warn_pct() -> float:
+    """Data-disk WARN threshold (used %) — env ``EPM_PREFLIGHT_DATA_DISK_WARN_PCT``."""
+    return _data_disk_pct_env("EPM_PREFLIGHT_DATA_DISK_WARN_PCT", DATA_DISK_WARN_USED_PCT_DEFAULT)
+
+
+def _data_disk_err_pct() -> float:
+    """Data-disk ERROR threshold (used %) — env ``EPM_PREFLIGHT_DATA_DISK_ERR_PCT``."""
+    return _data_disk_pct_env("EPM_PREFLIGHT_DATA_DISK_ERR_PCT", DATA_DISK_ERR_USED_PCT_DEFAULT)
+
+
+def _data_disk_floor_override() -> bool:
+    """True when the operator explicitly opted to launch past the data-disk
+    ERROR threshold (env ``EPM_PREFLIGHT_DATA_DISK_OVERRIDE=1``) — degrades
+    the ERROR to a logged WARN, mirroring ``EPM_PREFLIGHT_DISK_FLOOR_OVERRIDE``."""
+    return os.environ.get("EPM_PREFLIGHT_DATA_DISK_OVERRIDE", "").strip() in {"1", "true", "yes"}
+
+
+def _check_data_disk_floor(report: PreflightReport) -> None:
+    """WARN/ERROR when the shared-VM data disk ``/mnt/eps-data`` is nearly full (#2097).
+
+    Self-scoping: fires ONLY when :data:`EPS_DATA_DISK_MOUNT` is a LIVE
+    mount (``os.path.ismount``) — pods / GCE / SLURM lack the mount, so no
+    ``is_runpod``/``is_cluster`` branching is needed; an absent or
+    not-a-mount path is a clean skip (no rows, no report field). Percent-
+    based (the watcher's size-invariant convention — a GB floor breaks on a
+    disk resize): ``used% = 100 * (1 - f_bavail / f_blocks)`` from
+    ``os.statvfs``. WARN at >= :func:`_data_disk_warn_pct` (default 90);
+    ERROR at >= :func:`_data_disk_err_pct` (default 98) unless
+    ``EPM_PREFLIGHT_DATA_DISK_OVERRIDE=1`` degrades it to a WARN. Sets
+    ``report.data_disk_used_pct`` whenever the mount is live (severity-
+    agnostic — the summary + ``--json`` row rides it). A statvfs read error
+    degrades to a single warning; never raises."""
+    if not os.path.ismount(EPS_DATA_DISK_MOUNT):
+        return
+    try:
+        st = os.statvfs(EPS_DATA_DISK_MOUNT)
+    except OSError as e:
+        report.add_warning(f"Could not read data-disk usage on {EPS_DATA_DISK_MOUNT}: {e}")
+        return
+    if st.f_blocks <= 0:
+        report.add_warning(
+            f"Degenerate statvfs on {EPS_DATA_DISK_MOUNT} (f_blocks=0) — "
+            f"skipping the data-disk floor check"
+        )
+        return
+    used_pct = 100.0 * (1.0 - st.f_bavail / st.f_blocks)
+    report.data_disk_used_pct = used_pct
+    warn_pct = _data_disk_warn_pct()
+    err_pct = _data_disk_err_pct()
+    remediation = (
+        "Reclaim: `uv run python scripts/vm_disk_guard.py --apply` (terminal-issue "
+        "caches) or `uv run python scripts/clean_experiment_downloads.py <N> --apply` "
+        "on TERMINAL issues; active-issue data is resize/raise-cap only, never deleted "
+        "(.claude/rules/disk-hygiene.md)."
+    )
+    if used_pct >= err_pct:
+        if _data_disk_floor_override():
+            report.add_warning(
+                f"Data-disk floor OVERRIDDEN: {EPS_DATA_DISK_MOUNT} is {used_pct:.1f}% "
+                f"used (ERROR threshold {err_pct:.0f}%, EPM_PREFLIGHT_DATA_DISK_ERR_PCT); "
+                f"launching anyway because EPM_PREFLIGHT_DATA_DISK_OVERRIDE is set. "
+                f"Staging writes risk ENOSPC/EDQUOT. {remediation}"
+            )
+        else:
+            report.add_error(
+                f"Data disk {EPS_DATA_DISK_MOUNT} is {used_pct:.1f}% used — at/over the "
+                f"{err_pct:.0f}% ERROR threshold (EPM_PREFLIGHT_DATA_DISK_ERR_PCT): a "
+                f"staging write will ENOSPC/EDQUOT. {remediation} Or set "
+                f"EPM_PREFLIGHT_DATA_DISK_OVERRIDE=1 to degrade this to a WARN."
+            )
+        return
+    if used_pct >= warn_pct:
+        report.add_warning(
+            f"Data disk {EPS_DATA_DISK_MOUNT} is {used_pct:.1f}% used (warn at "
+            f"{warn_pct:.0f}%, EPM_PREFLIGHT_DATA_DISK_WARN_PCT) — nearly full. "
+            f"{remediation}"
+        )
+
+
+#: Shared-VM swap-state check (#2280). earlyoom's victim-kill condition is
+#: CONJUNCTIVE — MemAvailable AND swap free must BOTH fall under 10% — so
+#: the 64 GiB swapfile activated 2026-08-14 (``/mnt/eps-data/swapfile``) is
+#: what keeps the swap side false and ended the Aug-13/14 selective-SIGTERM
+#: kill regime. Two regression paths re-arm it: (a) the fstab entry is
+#: ``nofail``, so a boot where /mnt/eps-data fails to mount activates NO
+#: swap silently (SwapTotal == 0); (b) swap exhaustion — fleet growth
+#: drives SwapFree toward earlyoom's 10% swap floor while SwapTotal stays
+#: healthy. WARN when SwapFree/SwapTotal falls under this percent (2x
+#: earlyoom's 10% floor, headroom before the kill regime re-arms).
+SWAP_FREE_WARN_PCT_DEFAULT = 20.0
+
+
+def _swap_free_warn_pct() -> float:
+    """Swap-free WARN threshold (%) — env ``EPM_PREFLIGHT_SWAP_FREE_WARN_PCT``."""
+    return _data_disk_pct_env("EPM_PREFLIGHT_SWAP_FREE_WARN_PCT", SWAP_FREE_WARN_PCT_DEFAULT)
+
+
+def _read_proc_meminfo() -> str:
+    """Raw ``/proc/meminfo`` text (separate seam so tests fake it cleanly)."""
+    return Path("/proc/meminfo").read_text(encoding="utf-8")
+
+
+def _check_swap_state(report: PreflightReport) -> None:
+    """WARN when the shared VM's swap is absent or nearly exhausted (#2280).
+
+    Shared-VM only (:func:`is_shared_vm_env` — pods/GCE/SLURM skip clean:
+    the earlyoom unit + the /mnt/eps-data swapfile exist only there; the
+    data-disk check's ismount self-scoping does not fit because swap state
+    is not tied to a mount). WARN-ONLY BY DESIGN — never an error,
+    ``report.ok`` unchanged in every arm: a swap regression degrades
+    earlyoom kill-resilience but must not block launches fleet-wide
+    (making this a FAIL is a #2280 plan-§10 must-ask). Two WARN paths,
+    matching the two regression paths of the 2026-08-14 swap mitigation:
+
+    * ``SwapTotal == 0`` — the ``nofail`` fstab entry activated no swap on
+      a boot where /mnt/eps-data failed to mount; earlyoom's conjunctive
+      kill condition (MemAvailable AND swap free both <= 10%) then
+      degenerates to the memory floor alone (the Aug-13 selective-SIGTERM
+      regime).
+    * ``SwapFree/SwapTotal`` under :func:`_swap_free_warn_pct` (default
+      20%) — exhaustion approaching the 10% swap floor with SwapTotal
+      healthy (a SwapTotal==0 check is structurally blind to this path).
+
+    Sets ``report.swap_total_gb`` (+ ``swap_free_pct`` when SwapTotal > 0)
+    whenever meminfo was read (severity-agnostic — the summary + ``--json``
+    rows ride them). A read/parse error degrades to a single warning;
+    never raises.
+    """
+    if not is_shared_vm_env():
+        return
+    try:
+        meminfo = _read_proc_meminfo()
+    except OSError as e:
+        report.add_warning(f"Could not read /proc/meminfo for the swap-state check: {e}")
+        return
+    fields_kb: dict[str, int] = {}
+    for line in meminfo.split("\n"):
+        if line.startswith(("SwapTotal:", "SwapFree:")):
+            parts = line.split()
+            if len(parts) >= 2 and parts[1].isdigit():
+                fields_kb[parts[0].rstrip(":")] = int(parts[1])  # kB
+    if "SwapTotal" not in fields_kb or "SwapFree" not in fields_kb:
+        report.add_warning(
+            "Could not parse SwapTotal/SwapFree from /proc/meminfo — skipping the swap-state check"
+        )
+        return
+    swap_total_kb = fields_kb["SwapTotal"]
+    report.swap_total_gb = swap_total_kb / (1024.0 * 1024.0)
+    if swap_total_kb <= 0:
+        report.add_warning(
+            "Swap is NOT active (SwapTotal=0). The /etc/fstab swapfile entry is "
+            "`nofail`, so a boot where /mnt/eps-data failed to mount activates no "
+            "swap silently — restoring the 2026-08-13 earlyoom selective-SIGTERM "
+            "kill regime (its kill condition is CONJUNCTIVE: MemAvailable AND swap "
+            "free both <= 10%; with no swap the swap side is permanently "
+            "satisfied). Remedy: confirm /mnt/eps-data is mounted, then "
+            "`sudo swapon /mnt/eps-data/swapfile`. See the earlyoom entry in "
+            ".claude/rules/gotchas.md."
+        )
+        return
+    free_pct = 100.0 * fields_kb["SwapFree"] / swap_total_kb
+    report.swap_free_pct = free_pct
+    warn_pct = _swap_free_warn_pct()
+    if free_pct < warn_pct:
+        report.add_warning(
+            f"Swap is nearly exhausted: {free_pct:.1f}% of "
+            f"{report.swap_total_gb:.0f} GB free (warn under {warn_pct:.0f}%, "
+            f"EPM_PREFLIGHT_SWAP_FREE_WARN_PCT). earlyoom SIGTERMs python/pytest "
+            f"victims once MemAvailable AND swap free BOTH fall under 10% — "
+            f"approaching the swap floor re-arms the selective-SIGTERM kill "
+            f"regime. See the earlyoom entry in .claude/rules/gotchas.md."
+        )
+
+
 def _disk_check_path() -> str:
     """Where to run the disk-space probe — three-way branch.
 
@@ -314,6 +555,11 @@ def check_git_status(report: PreflightReport, project_root: Path):
     run-of-record on the canonical ``/issue`` pod checkout), with divergence
     from ``origin/main`` demoted to an informational WARNING; detached HEAD
     (pinned-SHA checkout) only warns.
+
+    The ``git fetch`` is SCOPED to the refs this check actually compares —
+    ``origin <branch> main`` on a feature branch, ``origin main`` on ``main``
+    / detached HEAD (#2107) — because a full-remote fetch at the repo's
+    ~1,700 remote heads cannot finish inside any sane preflight timeout.
 
     Cluster branch: the ``git fetch origin`` round trip is SKIPPED because
     the cluster compute node has no remote git auth — code reaches the
@@ -352,17 +598,40 @@ def check_git_status(report: PreflightReport, project_root: Path):
     # The fetch rc is CAPTURED: the behind-own guarantee below is only as
     # fresh as this fetch, so a failed fetch on a feature branch is an ERROR,
     # never a silent stale-ref false PASS.
-    fetch_rc, _, fetch_err = _run(
-        ["git", "-C", str(project_root), "fetch", "--quiet", "origin"], timeout=15
-    )
-    fetch_failed = fetch_rc != 0
-
+    #
+    # Resolve the branch FIRST — the fetch refspec depends on it (#2107),
+    # and a failed resolution skips the behind checks entirely.
     rc, branch, err = _run(["git", "-C", str(project_root), "rev-parse", "--abbrev-ref", "HEAD"])
     if rc != 0:
         report.add_warning(f"could not determine current branch: {err}")
         report.git_status += ", branch unknown"
         return
     branch = branch.strip()
+
+    # Scoped fetch (#2107): fetch ONLY the refs this function compares —
+    # origin/main always, plus the branch's own ref on a feature branch.
+    # A full `git fetch origin` at 1,700+ remote heads takes ~190 s and
+    # can never finish inside any sane preflight timeout.
+    fetch_refs = ["main"] if branch in ("main", "HEAD") else [branch, "main"]
+    fetch_rc, _, fetch_err = _run(
+        ["git", "-C", str(project_root), "fetch", "--quiet", "origin", *fetch_refs],
+        timeout=90,
+    )
+    if (
+        fetch_rc != 0
+        and branch in fetch_refs[:-1]
+        and f"couldn't find remote ref {branch}" in fetch_err
+    ):
+        # Unpushed local branch: the branch ref does not exist on origin, and
+        # git fails the WHOLE fetch (updating nothing). Re-fetch main so the
+        # informational origin/main comparison stays fresh; the own-ref
+        # --verify probe below emits the standing unpushed-branch WARNING.
+        # Any OTHER fetch failure (transport, auth) stays fail-closed.
+        fetch_rc, _, fetch_err = _run(
+            ["git", "-C", str(project_root), "fetch", "--quiet", "origin", "main"],
+            timeout=90,
+        )
+    fetch_failed = fetch_rc != 0
 
     if branch == "main":
         _check_main_branch_behind(report, project_root, fetch_failed, fetch_err)
@@ -512,7 +781,11 @@ def check_env_sync(report: PreflightReport, project_root: Path):
         report.env_synced = False
         return
 
-    # uv sync --locked --dry-run exits non-zero if env needs changes
+    # At uv 0.10.9, `uv sync --locked --dry-run` reports pending changes in its
+    # OUTPUT ("Would install N packages") but exits 0 — rc != 0 here means the uv
+    # command itself failed, not that the env drifted — so this check catches
+    # drift only on uv-command failure paths; venv-integrity detection lives in
+    # check_venv_import_health (#2360).
     rc, out, err = _run(
         ["uv", "sync", "--locked", "--dry-run"],
         timeout=30,
@@ -530,6 +803,290 @@ def check_env_sync(report: PreflightReport, project_root: Path):
                 "uv sync --locked --dry-run returned non-zero. Environment may be out of sync."
             )
             report.env_synced = False
+
+
+# #2360: load-bearing distributions -> the module(s) whose import certifies each.
+# Curated (not derived from the whole lock): uv.lock lists 226 packages including
+# marker-conditional ones, and "should be installed on THIS platform" cannot be
+# derived without full marker evaluation. Dict INSERTION ORDER IS THE PROBE ORDER
+# (leaf-first: dependencies before dependents, so failures carry the real leaf).
+# Keys are lock-normalized (lowercase, hyphenated); all 14 verified present in
+# uv.lock at plan time; all 14 resolve on the dev venv (0.062 s total).
+# An EMPTY module tuple = tier-1-only dist; it MUST have an entry in
+# IMPORT_PROBE_EXCLUSION_REASONS (pinned by tests/test_preflight_venv_import.py).
+# `flash-attn` is deliberately ABSENT from the mapping entirely — bootstrap
+# installs it OUTSIDE the lock, intent-conditionally (#2278;
+# bootstrap_pod.sh flash-attn case block), so both tiers would false-positive
+# on eval/cpu intents.
+LOAD_BEARING_IMPORTS: dict[str, tuple[str, ...]] = {
+    "numpy": ("numpy",),
+    "sympy": ("sympy",),  # casualty 1 (#2329): metadata absent
+    "scipy": ("scipy",),
+    # casualty 2 (#2329): metadata COMPLETE, import broken (types/__init__.py
+    # imported an absent .shared) — the shape only an import can catch; it
+    # blocked the margin leg.
+    "anthropic": ("anthropic", "anthropic.types"),
+    "tokenizers": ("tokenizers",),
+    "safetensors": ("safetensors",),
+    "huggingface-hub": ("huggingface_hub",),
+    "torch": ("torch", "torch._dynamo"),
+    "transformers": ("transformers", "transformers.models.auto.modeling_auto"),
+    "accelerate": ("accelerate",),
+    "peft": ("peft",),
+    "datasets": ("datasets",),
+    "trl": ("trl",),
+    "vllm": (),  # tier-1 metadata row only — see IMPORT_PROBE_EXCLUSION_REASONS
+}
+IMPORT_PROBE_EXCLUSION_REASONS: dict[str, str] = {
+    "vllm": "check_vllm_transformers_compat already imports vllm in-process at "
+    "every preflight (its ImportError degrades to WARN — unchanged, out of "
+    "scope to harden here); a cold vllm import adds ~20-40 s; tier 1 still "
+    "covers vllm's metadata shapes.",
+}
+LOAD_BEARING_DISTS: tuple[str, ...] = tuple(LOAD_BEARING_IMPORTS)  # tier 1
+DEEP_IMPORT_MODULES: tuple[str, ...] = tuple(  # tier 2
+    dict.fromkeys(m for mods in LOAD_BEARING_IMPORTS.values() for m in mods)
+)
+
+# The subprocess probe body. The `LEAF` sentinel is the #2360 B6 fix: the
+# deepest cause is extracted from the exception OBJECT before any truncation
+# and emitted as ONE bounded machine-readable line, so "leaf import error
+# surfaced" never depends on where a stderr byte window lands. The chain walk
+# follows CPython's own display rule — `__cause__` first, else `__context__`
+# unless suppressed; the `seen` set guards pathological cycles; the message is
+# newline-FLATTENED (CR/LF -> spaces) BEFORE the `%.500s` bound so a multiline
+# exception message cannot break the one-line sentinel contract (#2360 r2);
+# `%.500s` bounds the sentinel at ~520 chars; a chainless exception is its own
+# leaf. Stdout stays tiny (`OK`/`FAIL`/`LEAF` lines only) so the sentinel is
+# never truncated.
+_IMPORT_PROBE_SNIPPET = (
+    "import importlib, sys, traceback\n"
+    "for m in sys.argv[1:]:\n"
+    "    try:\n"
+    "        importlib.import_module(m)\n"
+    "        print('OK ' + m, flush=True)\n"
+    "    except BaseException as e:\n"
+    "        print('FAIL ' + m, flush=True)\n"
+    "        root, seen = e, set()\n"
+    "        while id(root) not in seen:\n"
+    "            seen.add(id(root))\n"
+    "            nxt = root.__cause__ if root.__cause__ is not None else (\n"
+    "                None if root.__suppress_context__ else root.__context__)\n"
+    "            if nxt is None:\n"
+    "                break\n"
+    "            root = nxt\n"
+    "        m = str(root).replace('\\r', ' ').replace('\\n', ' ')\n"
+    "        print('LEAF %s: %.500s' % (type(root).__name__, m), flush=True)\n"
+    "        traceback.print_exc()\n"
+    "        sys.exit(3)\n"
+)
+
+
+def check_venv_import_health(report: PreflightReport, project_root: Path):
+    """Two-tier venv import-health check (#2360).
+
+    Tier 1 (every non-cluster lane): ``importlib.metadata`` resolvability of
+    every dist in ``LOAD_BEARING_DISTS``, cross-checked against ``uv.lock``
+    names, failing on BOTH broken-metadata shapes — ``PackageNotFoundError``
+    (dist-info entirely absent: the #2329 ``sympy`` casualty) AND a ``None``
+    return (dist-info dir present, its ``METADATA`` file missing; equally its
+    announced future ``KeyError("Version")`` form — #2360 r2). Tier 1
+    executes NO module code — it reads dist-info off site-packages, so it
+    adds no new wedge-exposure class.
+
+    Tier 2 (RunPod default-on; VM/GCE opt-in via ``EPM_PREFLIGHT_IMPORT_PROBE``):
+    a subprocess-isolated, wall-clock-bounded (``EPM_PREFLIGHT_IMPORT_PROBE_TIMEOUT_S``,
+    default 180 s) deep-import probe of ``DEEP_IMPORT_MODULES`` in leaf-first
+    order — catches the metadata-intact / import-broken shape (the #2329
+    ``anthropic`` casualty) and emits a bounded ``LEAF <type>: <msg>``
+    deepest-cause sentinel extracted BEFORE truncation.
+
+    Sets ``report.venv_import_verdict`` (diagnostic routing only —
+    ``report.ok`` / the CLI rc stay authoritative). Tier-scoped: any tier-1
+    error sets ``"tier1-fail"`` and SKIPS tier 2 (the venv is already
+    condemned; a repair re-runs preflight anyway, and skipping saves up to
+    the full probe wall on a known-broken venv).
+    """
+    if os.environ.get("EPM_PREFLIGHT_VENV_IMPORT_CHECK", "").strip() in {"0", "false", "no"}:
+        report.add_warning("venv import-health check DISABLED (EPM_PREFLIGHT_VENV_IMPORT_CHECK)")
+        report.venv_import_verdict = "disabled"
+        return
+    if is_cluster_env():
+        report.add_warning(
+            "venv import-health check SKIPPED on cluster — the sbatch builds the "
+            "venv inside the job (parity with check_env_sync)"
+        )
+        report.venv_import_verdict = "skipped-cluster"
+        return
+
+    # --- Tier 1: metadata resolvability, cross-checked against uv.lock names.
+    locked: set[str] | None = None
+    lockfile = project_root / "uv.lock"
+    try:
+        # tomllib.load requires a BINARY file object, not a Path.
+        with lockfile.open("rb") as f:
+            data = tomllib.load(f)
+        locked = {p["name"].lower() for p in data["package"]}
+    except (OSError, tomllib.TOMLDecodeError, KeyError, TypeError) as e:
+        report.add_warning(
+            f"uv.lock missing/unparseable at {lockfile} ({e!r}) — the venv "
+            "import-health check treats every curated dist as lock-pinned "
+            "(fail-open on the lock, not on the venv)"
+        )
+        locked = None
+
+    tier1_failed = False
+    for dist in LOAD_BEARING_DISTS:
+        try:
+            ver = importlib.metadata.version(dist)
+            # A None return means the dist-info DIRECTORY survived but its
+            # METADATA file did not (verified live: py3.11.15 + py3.12.13).
+            broken = "metadata file missing from present dist-info" if ver is None else None
+        except importlib.metadata.PackageNotFoundError:
+            broken = "dist metadata entirely absent"
+        except KeyError:
+            # The FUTURE form of the same gutted-metadata shape: CPython
+            # deprecated the implicit-None return (importlib/metadata
+            # DeprecationWarning "Implicit None on return values is
+            # deprecated and will raise KeyErrors"), so a supported future
+            # interpreter raises KeyError("Version") where today's returns
+            # None. Both forms normalize onto ONE named tier-1 failure — an
+            # uncaught traceback here would replace the structured
+            # JSON/verdict routing this check exists to provide (#2360 r2).
+            broken = "metadata file missing from present dist-info"
+        if broken is None:
+            continue
+        if locked is None or dist in locked:
+            tier1_failed = True
+            report.add_error(
+                f"venv import-health: '{dist}' broken — {broken}. This is the "
+                f"half-installed-venv shape, the #2360 pod-2329-margin failure "
+                f"(the SHAPE is the diagnosis; the cause is not established). "
+                f"Repair: UV_LINK_MODE=copy UV_NO_SYNC=1 uv pip install "
+                f"--force-reinstall {dist} — NOT `uv sync`, which would revert "
+                f"deliberate off-lock pins. Then RE-RUN preflight (or this check "
+                f"standalone): after ANY venv mutation — repairs and sanctioned "
+                f"post-preflight pins alike — a mutation AFTER a preflight PASS "
+                f"reproduces the incident undetected."
+            )
+        else:
+            report.add_warning(
+                f"'{dist}' not lock-pinned and not installed/resolvable — skipped "
+                "(curated list may be stale)"
+            )
+        # Deliberately NO version-vs-lock equality check: the sanctioned
+        # EPM_PREFLIGHT_ALLOW_TRANSFORMERS5 flow implies deliberately off-lock
+        # pins; resolvability is the invariant, version drift is
+        # check_env_sync's jurisdiction.
+    if tier1_failed:
+        report.venv_import_verdict = "tier1-fail"
+        return
+
+    # --- Tier 2 lane gate: EPM_PREFLIGHT_IMPORT_PROBE forces on ("1"/"true"/
+    # "yes") or off ("0"/"false"/"no"); unset/other -> RunPod default-on.
+    probe_env = os.environ.get("EPM_PREFLIGHT_IMPORT_PROBE", "").strip()
+    if probe_env in {"0", "false", "no"} or (
+        probe_env not in {"1", "true", "yes"} and not is_runpod_env()
+    ):
+        # No warning spam on every VM launch — silent verdict only.
+        report.venv_import_verdict = "skipped-lane"
+        return
+
+    _deep_import_probe(report)
+
+
+def _deep_import_probe(report: PreflightReport) -> None:
+    """Tier 2 of ``check_venv_import_health``: the bounded subprocess probe.
+
+    Runs ``_IMPORT_PROBE_SNIPPET`` over ``DEEP_IMPORT_MODULES`` under the
+    production ``_run`` with a wall-clock bound, and sets the verdict:
+    ``ok`` | ``timeout`` (distinct, with the two-reading wedge-discriminator
+    error text) | ``fail`` (LEAF-sentinel-led error + head+tail stderr
+    harvest) | ``config-error`` (invalid timeout env — named error, probe
+    NOT run; #2360 r2). Reached only when tier 1 passed and the lane gate
+    resolved ON.
+    """
+    raw_timeout = os.environ.get("EPM_PREFLIGHT_IMPORT_PROBE_TIMEOUT_S", "180")
+    try:
+        timeout_s = float(raw_timeout)
+    except ValueError:
+        timeout_s = float("nan")
+    if not math.isfinite(timeout_s) or timeout_s <= 0:
+        # Named configuration error instead of an uncaught ValueError firing
+        # before any verdict is set (#2360 r2). Non-finite / non-positive
+        # values are meaningless wall bounds (inf never fires; <= 0 is an
+        # instant false expiry). Anything that PASSES here flows to ``_run``
+        # as the untruncated float (#2360 r3) — the r2 form int-truncated a
+        # documented-valid 0.5 to timeout=0, false-timing-out a healthy probe.
+        report.venv_import_verdict = "config-error"
+        report.add_error(
+            "venv import-health: invalid EPM_PREFLIGHT_IMPORT_PROBE_TIMEOUT_S="
+            f"{raw_timeout!r} — must be a finite positive number of seconds "
+            "(default 180); the deep-import probe was NOT run"
+        )
+        return
+    # Pre-probe banner (load-bearing — #2360 D3): printed BEFORE the probe so
+    # on a HARD-wedged FUSE mount (a child in uninterruptible I/O can survive
+    # SIGKILL and block the post-timeout wait, so no post-hoc diagnostic ever
+    # runs) the operator's last preflight output still names the probe + the
+    # wedge runbook.
+    print(
+        f"[preflight] deep-import probe launching (timeout {timeout_s:g}s) — if "
+        "this is the last preflight output for far longer than the timeout, the "
+        "/workspace mount is likely hard-wedged (gotchas.md § MooseFS FUSE read-wedge)",
+        file=sys.stderr,
+        flush=True,
+    )
+    rc, out, err = _run(
+        [sys.executable, "-c", _IMPORT_PROBE_SNIPPET, *DEEP_IMPORT_MODULES],
+        timeout=timeout_s,
+    )
+    if rc == 0:
+        report.venv_import_verdict = "ok"
+        return
+    if rc == -1 and err == "timeout":
+        report.venv_import_verdict = "timeout"
+        msg = (
+            f"venv import-health: deep-import probe timed out after {timeout_s:g}s "
+            "— either a slow cold MooseFS venv read (raise "
+            "EPM_PREFLIGHT_IMPORT_PROBE_TIMEOUT_S) or the MooseFS FUSE read-wedge "
+            "(gotchas.md: spot reads on /workspace also hang under the wedge — run "
+            "the discriminator before relaunching; kill+swap-pod per the runbook, "
+            "never loop relaunches)"
+        )
+        report.add_error(msg)
+        # Immediate stderr print: report.summary() prints only at the END of
+        # preflight_check — if a LATER check hangs on the same wedged mount,
+        # the operator still sees this diagnostic.
+        print(f"[preflight] {msg}", file=sys.stderr, flush=True)
+        return
+
+    # Any other nonzero rc: an import failure. Parse the failing module (last
+    # `FAIL <m>` line) + the `LEAF ...` sentinel off stdout (tiny by
+    # construction); the sentinel LEADS the error message — it is the
+    # leaf-error GUARANTEE, extracted pre-truncation, window-independent. The
+    # stderr harvest supplies traceback context: head+tail (first 4,000 +
+    # last 4,000 chars) whenever total stderr exceeds 8,192 chars — Python
+    # prints a chained exception's CAUSE (the leaf) FIRST, then each re-wrap,
+    # so a tail-only window drops the leaf on deep re-wrap chains.
+    report.venv_import_verdict = "fail"
+    fail_module = ""
+    leaf_line = ""
+    for line in out.split("\n"):
+        if line.startswith("FAIL "):
+            fail_module = line[len("FAIL ") :].strip()
+        elif line.startswith("LEAF "):
+            leaf_line = line.strip()
+    if len(err) > 8192:
+        harvest = err[:4000] + f"\n... [{len(err) - 8000} chars elided] ...\n" + err[-4000:]
+    else:
+        harvest = err
+    lead = f"{leaf_line} — " if leaf_line else ""
+    report.add_error(
+        f"{lead}venv import-health: deep-import probe FAILED at module "
+        f"'{fail_module or '<unparsed>'}' (rc={rc}); the LEAF line is the deepest "
+        f"chained cause, extracted pre-truncation. Stderr harvest:\n{harvest}"
+    )
 
 
 def _writable_probe_dir(check_path: str, candidates: list[str | None] | None = None) -> str | None:
@@ -574,6 +1131,74 @@ def _writable_probe_dir(check_path: str, candidates: list[str | None] | None = N
     return None
 
 
+# Sweep age gate for leaked probe files: a survivor is removed only when its
+# embedded pid is dead on THIS host AND the file is older than this. The age
+# gate protects LIVE cross-node siblings on cluster-shared filesystems, whose
+# pids are invisible to the local pid table (#1979); 3600 s is >2x the worst
+# observed ~9 min MooseFS FUSE fallocate grind (#2333), so an in-flight healthy
+# probe can never look sweepable.
+_PROBE_SWEEP_MIN_AGE_S = 3600
+_PROBE_PREFIX = ".preflight_disk_probe."
+
+
+def _sweep_stale_probe_files(
+    probe_dir: str | Path,
+    *,
+    prefix: str = _PROBE_PREFIX,
+    min_age_s: float = _PROBE_SWEEP_MIN_AGE_S,
+) -> None:
+    """Best-effort removal of leaked probe files from prior INTERRUPTED probes.
+
+    An interrupted probe (SIGTERM/SIGKILL mid-``posix_fallocate``) leaks its
+    entire allocation because ``finally:`` never runs under those signals
+    (#2329: a 12,864 MB survivor on a live pod consumed the very quota
+    headroom the probe measures). Probe names are per-invocation unique
+    (#1979), so survivors ACCUMULATE rather than being overwritten. This
+    sweeps ``<prefix><pid>.<uuid8>.tmp`` files only when BOTH (a) the embedded
+    pid is dead on this host (``os.kill(pid, 0)`` -> ``ProcessLookupError``)
+    and (b) the file mtime is older than ``min_age_s``. Anything else — live
+    pid, fresh mtime, foreign-uid pid, malformed/legacy name, out-of-range
+    pid — is left untouched. Fail-soft by design: every per-file error is
+    suppressed, so a sweep error can NEVER fail the probe (#2346).
+
+    Mirrored (duplicated, not imported) in ``scripts/pod_disk_guard.py``,
+    which is pure-stdlib by design and cannot import this module.
+    """
+    now = time.time()
+    try:
+        entries = list(os.scandir(probe_dir))
+    except OSError:
+        return
+    for entry in entries:
+        name = entry.name
+        if not (name.startswith(prefix) and name.endswith(".tmp")):
+            continue
+        # Strict "<prefix><pid>.<uuid8>.tmp" parse: legacy fixed names and
+        # foreign files never match, so only writer-created files are swept.
+        middle = name[len(prefix) : -len(".tmp")]
+        parts = middle.split(".")
+        if len(parts) != 2 or not parts[0].isdigit():
+            continue
+        if len(parts[1]) != 8 or not all(c in "0123456789abcdef" for c in parts[1]):
+            continue
+        with contextlib.suppress(OSError, OverflowError, ValueError):
+            pid = int(parts[0])
+            if pid <= 0 or pid > 2**31 - 1:
+                # Bound-check: os.kill raises OverflowError (not OSError) past
+                # the C int range; a nonsense pid is treated as foreign.
+                continue
+            if now - entry.stat().st_mtime < min_age_s:
+                continue  # fresh: possibly a LIVE cross-node sibling's probe
+            try:
+                os.kill(pid, 0)
+                continue  # pid LIVE on this host -> keep
+            except ProcessLookupError:
+                pass  # dead on this host AND old -> sweep below
+            except PermissionError:
+                continue  # pid exists under a foreign uid -> keep
+            os.unlink(entry.path)
+
+
 def _probe_writable_bytes(check_path: str, probe_bytes: int) -> tuple[bool, str | None]:
     """Try to reserve ``probe_bytes`` on ``check_path``'s filesystem via posix_fallocate.
 
@@ -611,6 +1236,11 @@ def _probe_writable_bytes(check_path: str, probe_bytes: int) -> tuple[bool, str 
     probe_dir = _writable_probe_dir(check_path)
     if probe_dir is None:
         return True, f"no user-writable probe location on the {check_path} filesystem"
+
+    # Sweep leaked survivors from prior INTERRUPTED probes BEFORE probing —
+    # a leaked allocation consumes the very headroom this probe measures
+    # (#2329/#2346). Fail-soft: never affects the probe's verdict.
+    _sweep_stale_probe_files(probe_dir)
 
     # Per-invocation unique filename: concurrent probes on a SHARED filesystem
     # (e.g. 8 per-unit workers each calling assert_out_root_headroom at startup
@@ -1061,6 +1691,14 @@ def check_env_vars(report: PreflightReport, required: list[str]):
             report.add_warning(f"Env var {var} looks suspiciously short: '{val[:3]}...'")
 
 
+def _allow_transformers5_override() -> bool:
+    """True when the launching session explicitly acknowledged the vLLM 0.11.x +
+    transformers>=5 skew (env ``EPM_PREFLIGHT_ALLOW_TRANSFORMERS5=1``) — degrades
+    the skew ERROR to a logged WARN for workloads VERIFIED not to import vLLM,
+    mirroring ``EPM_PREFLIGHT_DISK_FLOOR_OVERRIDE``. Per-launch, never persistent."""
+    return os.environ.get("EPM_PREFLIGHT_ALLOW_TRANSFORMERS5", "").strip() in {"1", "true", "yes"}
+
+
 def check_vllm_transformers_compat(report: PreflightReport):
     """Refuse to proceed when vLLM 0.11.x is resolved against transformers >=5.
 
@@ -1068,7 +1706,26 @@ def check_vllm_transformers_compat(report: PreflightReport):
     removed. Every fresh pod hits this 10 sec into the first `LLM(...)` init. This has
     recurred across issues #238, #261, #263, #269, #331, #354, #368 — caught here so
     the next fresh pod fails preflight in <2 sec instead of crashing in vLLM later.
+
+    Workload-scoped acknowledgment (#2337): the skew breaks ONLY workloads that
+    instantiate vLLM ``LLM(...)``; preflight has no reliable view of the workload,
+    so a launching session that VERIFIED its workload never imports vLLM (static
+    grep of the dispatch chain + the workload's own smoke evidence) may set
+    ``EPM_PREFLIGHT_ALLOW_TRANSFORMERS5=1`` (accepted: ``1``/``true``/``yes``) to
+    degrade the ERROR to exactly one WARN — the warn records that any ``LLM(...)``
+    instantiation is still EXPECTED to crash. Do NOT downgrade transformers instead
+    for a model whose support requires transformers >= 5 (e.g. qwen3_5). Non-skew
+    version combinations and the ImportError branch are unaffected by the override.
     """
+    if report.venv_import_verdict == "timeout":
+        # #2360: the bounded deep-import probe timed out — an in-process import
+        # here could hang preflight unboundedly on the same wedged mount.
+        report.add_warning(
+            "vLLM/transformers compat check SKIPPED — the bounded deep-import "
+            "probe timed out (#2360), so the unbounded in-process imports here "
+            "are not attempted."
+        )
+        return
     try:
         import transformers
         import vllm
@@ -1081,11 +1738,27 @@ def check_vllm_transformers_compat(report: PreflightReport):
     t_major = int(t_ver.split(".")[0])
     v_minor = ".".join(v_ver.split(".")[:2])
     if v_minor in {"0.11"} and t_major >= 5:
+        if _allow_transformers5_override():
+            report.add_warning(
+                f"vLLM/transformers skew ACKNOWLEDGED: vllm=={v_ver} + "
+                f"transformers=={t_ver} (EPM_PREFLIGHT_ALLOW_TRANSFORMERS5 is set). Any "
+                f"LLM(...) instantiation is still EXPECTED to crash — "
+                f"tokenizer.all_special_tokens_extended is gone in transformers >=5, and "
+                f"the #1689 tokenizer .pth shim (scripts/_install_tokenizer_patch.py) is "
+                f"unwired and disfavored. The override is per-launch, for workloads "
+                f"verified NOT to import vLLM — do not leave it set process-wide."
+            )
+            return
         report.add_error(
             f"vLLM/transformers version skew: vllm=={v_ver} + transformers=={t_ver}. "
             f"vLLM 0.11.x calls tokenizer.all_special_tokens_extended which transformers "
-            f">=5 removed. Every LLM(...) instantiation will crash. Fix: pin "
-            f"`transformers>=4.46,<5.0` in pyproject.toml and re-run `uv sync --locked`. "
+            f">=5 removed, so any LLM(...) instantiation will crash. Remedy depends on "
+            f"the workload: (a) workload instantiates vLLM LLM(...) -> pin "
+            f"`transformers>=4.46,<5.0` in pyproject.toml and re-run `uv sync --locked`; "
+            f"(b) workload does NOT import vLLM (verify: static grep of the dispatch "
+            f"chain + the workload's own smoke evidence) -> set "
+            f"EPM_PREFLIGHT_ALLOW_TRANSFORMERS5=1 for that launch. Do NOT downgrade "
+            f"transformers for a model requiring >=5 (e.g. qwen3_5). "
             f"See .claude/agent-memory/experimenter/feedback_vllm0110_transformers5_breakage.md"
         )
 
@@ -1311,6 +1984,65 @@ def check_hf_storage(report: PreflightReport, planned_upload_gb: float | None = 
         # live re-probe fits never blocks and adds no warning).
 
 
+def check_hf_filecount_sentinel(report: PreflightReport):
+    """WARN-only early warning for the HF repo-wide git file-count cap (#2304).
+
+    Reads the local observed-count sentinel JSONL
+    (``hub._filecount_sentinel_path()`` — written fail-soft by the reactive
+    file-count fallback on every enabled refusal) and adds ONE warning per
+    (repo_id, repo_type) whose LAST row is ``status: "blocked"`` — i.e. the
+    most recent file-count refusal for that repo has no later
+    verified-success ``"accepting"`` row. Structurally incapable of failing
+    the launch: it only ever calls ``report.add_warning`` (never
+    ``add_error``, the sole path that flips ``report.ok``), and any read
+    failure degrades to a single warning. Cheap by construction — one stat in
+    the steady state (no sentinel file) and never a Hub API call: the #2304
+    diagnosis measured a naive ``len(list_repo_files(...))`` probe timing out
+    at 120 s on the ~1M-file data repo, so a live-count probe must never sit
+    on a launch-blocking path.
+    """
+    import time
+
+    try:
+        from explore_persona_space.orchestrate.hub import _filecount_sentinel_path
+
+        path = _filecount_sentinel_path()
+        if not path.exists():
+            return
+        last: dict[tuple[str, str], dict] = {}
+        with path.open(encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    row = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                key = (str(row.get("repo_id")), str(row.get("repo_type")))
+                last[key] = row
+        now = time.time()
+        for (repo_id, repo_type), row in sorted(last.items()):
+            if row.get("status") != "blocked":
+                continue
+            observed = row.get("observed_files")
+            limit = row.get("limit")
+            counts = (
+                f"observed at {observed:,}/{limit:,} files"
+                if isinstance(observed, int) and isinstance(limit, int)
+                else "observed at unknown/unknown files"
+            )
+            age_s = max(0.0, now - float(row.get("ts") or now))
+            age = f"{age_s / 3600:.1f}h" if age_s >= 3600 else f"{age_s / 60:.0f}m"
+            report.add_warning(
+                f"HF file-count: {repo_id} ({repo_type}) {counts}, refusal seen "
+                f"{age} ago — canonical pushes reroute to the private overflow "
+                f"repo (#2304)"
+            )
+    except Exception as e:
+        report.add_warning(f"HF file-count sentinel check failed ({e}) — sentinel unread")
+
+
 def check_hf_lfs_write_gate(report: PreflightReport, planned_upload_gb: float | None = None):
     """Billing/quota write-gate probe at declared production scale (#1654).
 
@@ -1449,16 +2181,30 @@ def preflight_check(
         check_env_sync(report, project_root)
 
     check_disk_space(report, min_disk_gb, quota_gb=effective_quota_gb)
+    # Unconditional call — the function self-skips wherever /mnt/eps-data is
+    # not a live mount (pods/GCE/SLURM), so only the shared VM gains rows (#2097).
+    _check_data_disk_floor(report)
+    # Unconditional call — self-skips off the shared VM (is_shared_vm_env);
+    # WARN-only by construction, so it can never flip report.ok (#2280).
+    _check_swap_state(report)
     check_disk_budget(report, planned_footprint_gb)
     check_vm_root_disk(report)
     check_gpus(report, require_gpu, min_gpu_free_mb)
     check_hf_home(report)
     check_env_vars(report, required_env_vars)
+    # #2360: BEFORE check_vllm_transformers_compat — the bounded subprocess
+    # probe runs first so a wedged mount produces a bounded, named verdict
+    # instead of hanging unboundedly at the compat check's in-process imports
+    # (which the compat check then skips on a "timeout" verdict).
+    check_venv_import_health(report, project_root)
     check_vllm_transformers_compat(report)
     check_connectivity(report)
     check_hf_large_blob_get(report)
     check_hf_storage(report, planned_upload_gb)
     check_hf_lfs_write_gate(report, planned_upload_gb)
+    # WARN-only (#2304): reads the local file-count sentinel; add_warning-only
+    # by construction, so it can never flip report.ok.
+    check_hf_filecount_sentinel(report)
 
     return report
 
@@ -1556,11 +2302,15 @@ def main(argv: list[str] | None = None) -> int:
                     "disk_free_gb": report.disk_free_gb,
                     "disk_probed_headroom_gb": report.disk_probed_headroom_gb,
                     "disk_headroom_basis": report.disk_headroom_basis,
+                    "data_disk_used_pct": report.data_disk_used_pct,
+                    "swap_total_gb": report.swap_total_gb,
+                    "swap_free_pct": report.swap_free_pct,
                     "hf_storage_used_tb": report.hf_storage_used_tb,
                     "hf_storage_ceiling_tb": report.hf_storage_ceiling_tb,
                     "hf_storage_basis": report.hf_storage_basis,
                     "git_status": report.git_status,
                     "env_synced": report.env_synced,
+                    "venv_import_verdict": report.venv_import_verdict,
                 },
                 indent=2,
             )

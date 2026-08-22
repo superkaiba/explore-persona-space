@@ -1,0 +1,89 @@
+{
+  "holistic": {
+    "pirate->plain|crosstype": {
+      "delta_patched": -0.3618,
+      "delta_floor": -0.5433,
+      "delta_ceiling": 0.5769,
+      "F_holistic": 0.162,
+      "n_rollouts": 60
+    },
+    "pirate->plain|shuffled": {
+      "delta_patched": -0.5092,
+      "delta_floor": -0.5433,
+      "delta_ceiling": 0.5769,
+      "F_holistic": 0.0304,
+      "n_rollouts": 60
+    },
+    "pirate->plain|steered": {
+      "delta_patched": -0.352,
+      "delta_floor": -0.5433,
+      "delta_ceiling": 0.5769,
+      "F_holistic": 0.1707,
+      "n_rollouts": 60
+    },
+    "plain->butler|crosstype": {
+      "delta_patched": -0.4955,
+      "delta_floor": -0.5769,
+      "delta_ceiling": 0.5442,
+      "F_holistic": 0.0726,
+      "n_rollouts": 60
+    },
+    "plain->butler|shuffled": {
+      "delta_patched": -0.0403,
+      "delta_floor": -0.5769,
+      "delta_ceiling": 0.5442,
+      "F_holistic": 0.4786,
+      "n_rollouts": 60
+    },
+    "plain->butler|steered": {
+      "delta_patched": -0.242,
+      "delta_floor": -0.5769,
+      "delta_ceiling": 0.5442,
+      "F_holistic": 0.2987,
+      "n_rollouts": 60
+    },
+    "butler->pirate|crosstype": {
+      "delta_patched": -0.3687,
+      "delta_floor": -0.5738,
+      "delta_ceiling": 0.5433,
+      "F_holistic": 0.1836,
+      "n_rollouts": 60
+    },
+    "butler->pirate|shuffled": {
+      "delta_patched": -0.4645,
+      "delta_floor": -0.5738,
+      "delta_ceiling": 0.5433,
+      "F_holistic": 0.0978,
+      "n_rollouts": 60
+    },
+    "butler->pirate|steered": {
+      "delta_patched": -0.33,
+      "delta_floor": -0.5738,
+      "delta_ceiling": 0.5433,
+      "F_holistic": 0.2182,
+      "n_rollouts": 60
+    }
+  },
+  "conjuncts": {
+    "cj-v3-address|anchor-v2": 0.0,
+    "cj-v3-address|anchor-v3": 52.68,
+    "cj-v3-address|crosstype": 0.0,
+    "cj-v3-address|shuffled": 0.25,
+    "cj-v3-address|steered": 0.0,
+    "cj-v3-courtesy|anchor-v2": 16.46,
+    "cj-v3-courtesy|anchor-v3": 86.09,
+    "cj-v3-courtesy|crosstype": 4.97,
+    "cj-v3-courtesy|shuffled": 15.83,
+    "cj-v3-courtesy|steered": 39.33,
+    "cj-v3-formality|anchor-v2": 4.22,
+    "cj-v3-formality|anchor-v3": 87.58,
+    "cj-v3-formality|crosstype": 12.22,
+    "cj-v3-formality|shuffled": 11.88,
+    "cj-v3-formality|steered": 34.57,
+    "cj-v3-household|anchor-v2": 0.87,
+    "cj-v3-household|anchor-v3": 13.47,
+    "cj-v3-household|crosstype": 0.17,
+    "cj-v3-household|shuffled": 1.88,
+    "cj-v3-household|steered": 0.05
+  }
+}

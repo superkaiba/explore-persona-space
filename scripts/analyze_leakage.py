@@ -177,7 +177,7 @@ def load_json_safe(path: Path) -> dict | None:
     try:
         with open(path) as f:
             return json.load(f)
-    except (OSError, json.JSONDecodeError):
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
         return None
 
 

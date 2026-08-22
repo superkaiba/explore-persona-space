@@ -110,7 +110,7 @@ def test_set_status_broken_pipe_on_echo_is_nonfatal(monkeypatch, capsys):
     (rc reflects the status move, not the echo)."""
     moved = []
 
-    def fake_set_status(number, status, *, note=None, force_followup_exit=False):
+    def fake_set_status(number, status, *, note=None, force_followup_exit=False, **kwargs):
         moved.append((number, status, note))
         return Path("/repo/tasks/approved/537")
 
@@ -131,7 +131,7 @@ def test_set_status_normal_echo_prints_path(monkeypatch, capsys):
     monkeypatch.setattr(
         task_cli,
         "set_status",
-        lambda number, status, *, note=None, force_followup_exit=False: Path(
+        lambda number, status, *, note=None, force_followup_exit=False, **kwargs: Path(
             "/repo/tasks/approved/537"
         ),
     )
@@ -145,7 +145,7 @@ def test_set_status_followup_hold_refusal_exits_cleanly(monkeypatch):
     """The library's same-issue follow-up status-hold ValueError must surface
     as a clean SystemExit (message, nonzero rc) — not a raw traceback."""
 
-    def refusing_set_status(number, status, *, note=None, force_followup_exit=False):
+    def refusing_set_status(number, status, *, note=None, force_followup_exit=False, **kwargs):
         raise ValueError("followups_running is HELD ... (status-hold rule)")
 
     monkeypatch.setattr(task_cli, "set_status", refusing_set_status)
@@ -246,7 +246,7 @@ def test_set_status_followups_running_missing_tag_warns(monkeypatch, capsys):
     monkeypatch.setattr(
         task_cli,
         "set_status",
-        lambda number, status, *, note=None, force_followup_exit=False: Path(
+        lambda number, status, *, note=None, force_followup_exit=False, **kwargs: Path(
             "/repo/tasks/followups_running/537"
         ),
     )
@@ -538,3 +538,136 @@ def test_looks_stamped_field_led_shapes(note, expected):
     """The stamp predicate byte-mirrors the parse-side strip order
     (bullets/bold first, then the lowercase whitespace-required stamp)."""
     assert task_cli._looks_stamped_field_led(note) is expected
+
+
+# ─── #2307: poster-side WARN when a run/scope marker parses NO followup_label ─
+# The third advisory in cmd_post_event is keyed on the GATE's own predicate
+# (task_workflow.parse_followup_note_field(note, "followup_label") is None)
+# for FOLLOWUP_RUN_KIND / FOLLOWUP_SCOPE_KIND markers — the real parser, not
+# a re-implemented heuristic. Unlike the #1120/#1440 siblings it checks the
+# RESOLVED note (so --file bodies too) and fires on an empty/absent note.
+# One WARN case per observed malformation class (minimal reductions of the
+# real corpus notes; classes per tests/test_workflow_followup_labels.py):
+#   A (#2203): bare `label=` instead of `followup_label=`;
+#   B (#2054): `·`-joined (U+00B7) fields, so `followup_label:` is
+#     mid-segment under the `;\s+`-only segment split;
+#   C (#2224/#2254): bare-space `v1 ` stamp + space-joined fields.
+
+_NEW_WARN_PHRASE = "no followup_label"
+_RUN_KIND = "epm:same-issue-followup-run"
+_SCOPE_KIND = "epm:followup-scope"
+
+_CLASS_A_NOTE = "round=1 source=proposer-9b-cheap label=axis-replace-random-control"
+_CLASS_B_NOTE = "source: proposer-9b-cheap · followup_label: reduced-basis-refit · round: 1"
+_CLASS_C_NOTE = "v1 source: proposer-9b-cheap followup_label: e1_refit — ROUND 1 COMPLETE"
+
+
+@pytest.mark.parametrize(
+    "note",
+    [_CLASS_A_NOTE, _CLASS_B_NOTE, _CLASS_C_NOTE],
+    ids=["classA-bare-label", "classB-middot-joined", "classC-barespace-stamp"],
+)
+def test_unparseable_run_marker_note_warns_and_still_posts(monkeypatch, capsys, note):
+    """#2307 acceptance 1: each malformation class fires the new advisory on a
+    run marker; the marker posts exactly once with the note unmutated, the
+    handler returns (rc stays 0), and stdout JSON stays parseable."""
+    from explore_persona_space.task_workflow import parse_followup_note_field
+
+    # Precondition: the fixture really is unparseable under the gate's parser.
+    assert parse_followup_note_field(note, "followup_label") is None
+
+    posted = []
+    monkeypatch.setattr(task_cli, "post_event", _capturing_post_event(posted))
+    task_cli.cmd_post_event(_ns(marker=_RUN_KIND, note=note))  # must not raise
+    assert len(posted) == 1
+    assert posted[0][4] == note  # note reached post_event unmutated
+    captured = capsys.readouterr()
+    assert _NEW_WARN_PHRASE in captured.err
+    assert "CORRECTIVE" in captured.err  # never re-post; post a corrective marker
+    assert _NEW_WARN_PHRASE not in captured.out  # stdout JSON stays parseable
+    assert '"kind"' in captured.out  # payload echo still happened
+
+
+def test_unparseable_scope_marker_note_warns(monkeypatch, capsys):
+    """#2307 acceptance 1b: the advisory covers epm:followup-scope too (the
+    dispatcher keys run/unrun grouping on the same parse)."""
+    posted = []
+    monkeypatch.setattr(task_cli, "post_event", _capturing_post_event(posted))
+    task_cli.cmd_post_event(_ns(marker=_SCOPE_KIND, note=_CLASS_A_NOTE))
+    assert len(posted) == 1
+    assert _NEW_WARN_PHRASE in capsys.readouterr().err
+
+
+def test_file_delivered_unparseable_body_warns(monkeypatch, capsys, tmp_path):
+    """#2307 acceptance 2: a --file body is checked too — the deliberate
+    difference from the #1120/#1440 siblings, whose args.note-gating exempts
+    --file (class B's real note arrived as a long --file body)."""
+    body = tmp_path / "note.md"
+    body.write_text(_CLASS_B_NOTE + "\n\nROUND COMPLETE — long body follows.")
+    posted = []
+    monkeypatch.setattr(task_cli, "post_event", _capturing_post_event(posted))
+    task_cli.cmd_post_event(_ns(marker=_RUN_KIND, note=None, file=str(body)))
+    assert len(posted) == 1
+    err = capsys.readouterr().err
+    assert _NEW_WARN_PHRASE in err
+    # The sibling advisories stay --file-exempt: only the new one fired.
+    assert "version stamp" not in err
+    assert "$'" not in err
+
+
+def test_noteless_run_marker_warns(monkeypatch, capsys):
+    """#2307 acceptance 3: a run marker posted with NO --note and NO --file
+    warns — the gate parses `ev.get("note") or ""`, so a note-less run marker
+    reds main exactly like a malformed one."""
+    posted = []
+    monkeypatch.setattr(task_cli, "post_event", _capturing_post_event(posted))
+    task_cli.cmd_post_event(_ns(marker=_RUN_KIND, note=None, file=None))
+    assert len(posted) == 1
+    assert posted[0][4] is None  # the absent note passed through unmutated
+    assert _NEW_WARN_PHRASE in capsys.readouterr().err
+
+
+@pytest.mark.parametrize(
+    "note",
+    [
+        "followup_label: x; source: user-chat; round: 1; outcome: folded",
+        "followup_label=evil-ood-spread-round source=user-chat",
+    ],
+    ids=["colon-form", "equals-form"],
+)
+def test_wellformed_label_note_no_warn(monkeypatch, capsys, note):
+    """#2307 acceptance 4 (false-positive guard): well-formed
+    `followup_label:` and `followup_label=` notes never fire the advisory."""
+    from explore_persona_space.task_workflow import parse_followup_note_field
+
+    # Precondition: the fixture parses under the gate's parser.
+    assert parse_followup_note_field(note, "followup_label") is not None
+
+    posted = []
+    monkeypatch.setattr(task_cli, "post_event", _capturing_post_event(posted))
+    task_cli.cmd_post_event(_ns(marker=_RUN_KIND, note=note))
+    assert len(posted) == 1
+    assert _NEW_WARN_PHRASE not in capsys.readouterr().err
+
+
+def test_non_followup_kind_unparseable_note_no_warn(monkeypatch, capsys):
+    """#2307 acceptance 5 (scope guard): a non-followup marker kind with an
+    unparseable note stays silent — the advisory is scoped to the two kinds
+    whose followup_label the gate and dispatcher read."""
+    posted = []
+    monkeypatch.setattr(task_cli, "post_event", _capturing_post_event(posted))
+    task_cli.cmd_post_event(_ns(marker="epm:progress", note="prose only, nothing parses"))
+    assert len(posted) == 1
+    assert _NEW_WARN_PHRASE not in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("broken_stderr", [_BrokenPipeStdout(), _ClosedStderr()])
+def test_unparseable_label_warn_stderr_failure_is_nonfatal(monkeypatch, capsys, broken_stderr):
+    """#2307 acceptance 6: a torn/closed stderr on the new WARN never flips
+    the exit code (the #537 rc-contract class) — the marker already landed."""
+    posted = []
+    monkeypatch.setattr(task_cli, "post_event", _capturing_post_event(posted))
+    monkeypatch.setattr(sys, "stderr", broken_stderr)
+    task_cli.cmd_post_event(_ns(marker=_RUN_KIND, note=_CLASS_A_NOTE))  # must not raise
+    assert len(posted) == 1
+    assert '"kind"' in capsys.readouterr().out

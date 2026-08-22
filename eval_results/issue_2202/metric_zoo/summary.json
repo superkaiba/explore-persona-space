@@ -1,0 +1,394 @@
+{
+ "round": "metric-zoo (user-chat inline free-analysis, task #2202)",
+ "definition": "full-pool retrieval: 9,941 held-out layer-19 ridge predictions vs the 9,941 held-out answer vectors; acc@1 = fraction with the true answer at mid-rank 1 (knn_retrieval tie convention). Ceilings: per-context rank-1 fraction over the 1,988\u00d74 fresh kresample draws, mean over contexts (banked definition).",
+ "staging": {
+  "dir": "/mnt/eps-data/thomasjiralerspong/issue2202_freshwhiten",
+  "provenance": "sibling round freshwhiten-avg's staged copies of issue1738_multiturn @ 09788eef (pred16, y_holdout, kresample shard) + issue2202_ctxfail/analysis_tensors (whiten_stats); every file byte-size-verified vs HF metadata before reuse (READ-ONLY)"
+ },
+ "banked_baselines": {
+  "acc1_table": {
+   "raw_euclidean": {
+    "acc1": 0.816014485464239,
+    "source": "mapping_baselines.json via csls_followup.json"
+   },
+   "raw_cos": {
+    "acc1": 0.8281862991650739,
+    "source": "same"
+   },
+   "cent_cos": {
+    "acc1": 0.8824061965597022,
+    "source": "geometry_summary.json fail_counts"
+   },
+   "whiten_euc": {
+    "acc1": 0.02031988733527814,
+    "source": "geometry_summary.json fail_counts"
+   },
+   "whiten_cos": {
+    "acc1": 0.9535258022331757,
+    "source": "geometry_summary.json fail_counts"
+   },
+   "csls_k10_raw_cos": {
+    "acc1": 0.9094658485061865,
+    "source": "csls_followup.json"
+   }
+  },
+  "geometry_spaces_acc": {
+   "raw_euclidean": {
+    "acc1": 0.816014485464239,
+    "acc5": 0.9105723770244443
+   },
+   "raw_cos": {
+    "acc1": 0.8281862991650739,
+    "acc5": 0.9166079871240318
+   },
+   "cent_cos": {
+    "acc1": 0.8824061965597022,
+    "acc5": 0.9440700130771552
+   },
+   "whiten": {
+    "acc1": 0.02031988733527814,
+    "acc5": 0.03732018911578312
+   },
+   "whiten_cos": {
+    "acc1": 0.9535258022331757,
+    "acc5": 0.9879287798008248
+   }
+  },
+  "fresh_draw_ceiling_raw_euclidean": 0.9425301810865191
+ },
+ "reconciliation": {
+  "recon_raw_euclidean": {
+   "name": "recon_raw_euclidean",
+   "summary": {
+    "acc_at_k": {
+     "1": 0.816014485464239,
+     "5": 0.9105723770244443,
+     "10": 0.9328035408912584
+    },
+    "median_rank": 1.0,
+    "mrr": 0.8595930632290242,
+    "n": 9941,
+    "n_pool": 9941
+   },
+   "wall_s": 33.2,
+   "banked_acc1": 0.816014485464239
+  },
+  "recon_raw_cos": {
+   "name": "recon_raw_cos",
+   "summary": {
+    "acc_at_k": {
+     "1": 0.8281862991650739,
+     "5": 0.9166079871240318,
+     "10": 0.9345136304194749
+    },
+    "median_rank": 1.0,
+    "mrr": 0.868480274216372,
+    "n": 9941,
+    "n_pool": 9941
+   },
+   "wall_s": 38.3,
+   "banked_acc1": 0.8281862991650739
+  },
+  "truncwhiten_kfull_euc": {
+   "name": "truncwhiten_kfull_euc",
+   "summary": {
+    "acc_at_k": {
+     "1": 0.02031988733527814,
+     "5": 0.03732018911578312,
+     "10": 0.05250980786641183
+    },
+    "median_rank": 2438.0,
+    "mrr": 0.032109092618782975,
+    "n": 9941,
+    "n_pool": 9941
+   },
+   "wall_s": 21.6,
+   "sensitivity": true,
+   "note": "k=d endpoint; euclid read must reproduce banked whiten (basis-invariant); cos read quantifies ZCA-vs-Cholesky basis effect vs banked 0.9535",
+   "banked_acc1": 0.02031988733527814
+  }
+ },
+ "new_conventions_ranked": [
+  {
+   "name": "csls_k10_whitencos",
+   "acc1": 0.9761593401066291,
+   "acc5": 0.9948697314153506,
+   "mrr": 0.9847680201455137,
+   "kind": "rescore",
+   "mechanism": "CSLS on the best banked base: score = 2S \u2212 r_q \u2212 r_j (cross-domain k-NN means) \u2014 hub penalty applied where the base geometry is already strongest",
+   "citation": "Conneau et al. ICLR 2018 (arXiv:1710.04087); banked CSLS-on-raw-cos = 0.9095"
+  },
+  {
+   "name": "hubdeg_pen_whitencos_g05",
+   "acc1": 0.9574489487979077,
+   "acc5": 0.9892364953224022,
+   "mrr": 0.9714579986498582,
+   "kind": "rescore",
+   "mechanism": "INVENTED: pool-in-degree hub penalty \u2014 N_k(j) = j's in-degree in the pool-internal kNN graph; score = S(q,j) \u2212 \u03b3\u00b7\u03c3_S\u00b7zscore(N_k(j)) \u2014 penalizes empirically-observed hubs directly rather than via local similarity means",
+   "citation": "invented; in-degree (k-occurrence) as the hubness statistic: Radovanovi\u0107 et al. 2010 (JMLR 11)"
+  },
+  {
+   "name": "whitencos_lam03",
+   "acc1": 0.9478925661402273,
+   "acc5": 0.9857157227643094,
+   "mrr": 0.9645607671805481,
+   "kind": "transform-cos",
+   "mechanism": "full whitening at heavier diagonal-target shrinkage \u03bb=0.3 (vs task-locked 0.1) \u2014 tests whether the whitened-cosine win is shrinkage-sensitive",
+   "citation": "shrunk covariance whitening: Ledoit & Wolf 2004; whitening-for-retrieval: Su et al. (arXiv:2103.15316)"
+  },
+  {
+   "name": "whitencos_lam05",
+   "acc1": 0.9431646715622171,
+   "acc5": 0.9829996982194951,
+   "mrr": 0.9611209249232743,
+   "kind": "transform-cos",
+   "mechanism": "as whitencos_lam03 at \u03bb=0.5",
+   "citation": "as whitencos_lam03"
+  },
+  {
+   "name": "truncwhiten_k1024_cos",
+   "acc1": 0.9430640780605573,
+   "acc5": 0.9818931697012373,
+   "mrr": 0.9607511371340282,
+   "kind": "transform-cos",
+   "mechanism": "whiten only the top-1024 eigendirections of the task-locked shrunk train-answer covariance (identity elsewhere): keeps the signal-equalizing effect of whitening on high-variance directions while never amplifying the low-variance directions that dominate (and degenerate) the full-whitened euclidean read",
+   "citation": "partial/soft whitening: Soft-ZCA (arXiv:2411.17538); ZCA vs PCA: Kessy et al. (arXiv:1512.00809)"
+  },
+  {
+   "name": "truncwhiten_k256_cos",
+   "acc1": 0.9361231264460316,
+   "acc5": 0.9779700231365054,
+   "mrr": 0.9555253250200229,
+   "kind": "transform-cos",
+   "mechanism": "whiten only the top-256 eigendirections of the task-locked shrunk train-answer covariance (identity elsewhere): keeps the signal-equalizing effect of whitening on high-variance directions while never amplifying the low-variance directions that dominate (and degenerate) the full-whitened euclidean read",
+   "citation": "partial/soft whitening: Soft-ZCA (arXiv:2411.17538); ZCA vs PCA: Kessy et al. (arXiv:1512.00809)"
+  },
+  {
+   "name": "truncwhiten_k64_cos",
+   "acc1": 0.9355195654360728,
+   "acc5": 0.977165275123227,
+   "mrr": 0.9543511243166815,
+   "kind": "transform-cos",
+   "mechanism": "whiten only the top-64 eigendirections of the task-locked shrunk train-answer covariance (identity elsewhere): keeps the signal-equalizing effect of whitening on high-variance directions while never amplifying the low-variance directions that dominate (and degenerate) the full-whitened euclidean read",
+   "citation": "partial/soft whitening: Soft-ZCA (arXiv:2411.17538); ZCA vs PCA: Kessy et al. (arXiv:1512.00809)"
+  },
+  {
+   "name": "alphawhiten_a05_cos",
+   "acc1": 0.9302887033497637,
+   "acc5": 0.9764611206116085,
+   "mrr": 0.9511978503511096,
+   "kind": "transform-cos",
+   "mechanism": "INVENTED (closest precedent: Soft-ZCA): fractional-power whitening W = V\u00b7diag(w^{\u2212\u03b1/2})\u00b7V\u1d40, \u03b1=0.5 \u2014 a continuous interpolation raw\u2192whitened; caps the amplification of low-variance directions at sqrt instead of full",
+   "citation": "invented; Soft-ZCA (arXiv:2411.17538) regularizes eigenvalues rather than powering them"
+  },
+  {
+   "name": "abtt_d35_cos",
+   "acc1": 0.9269691177949905,
+   "acc5": 0.9706266975153405,
+   "mrr": 0.9470217081918267,
+   "kind": "transform-cos",
+   "mechanism": "all-but-the-top: center + REMOVE the top-35 (\u2248d/100) covariance eigendirections, cosine read \u2014 the inverse ablation of truncated whitening (kills, rather than equalizes, the dominant directions)",
+   "citation": "Mu & Viswanath ICLR 2018 (arXiv:1702.01417)"
+  },
+  {
+   "name": "diagwhiten_cos",
+   "acc1": 0.8773765214767126,
+   "acc5": 0.9447741675887738,
+   "mrr": 0.9080370623874936,
+   "kind": "transform-cos",
+   "mechanism": "cosine read in the per-dimension z-scored space",
+   "citation": "as diagwhiten_euc"
+  },
+  {
+   "name": "dsl_k10_euc",
+   "acc1": 0.8730510009053415,
+   "acc5": 0.9416557690373202,
+   "mrr": 0.9045821866906564,
+   "kind": "rescore",
+   "mechanism": "DisSimLocal: d' = ||q\u2212y_j||\u00b2 \u2212 ||q\u2212c_k(q)||\u00b2 \u2212 ||y_j\u2212c_k(y_j)||\u00b2 (c_k = local kNN centroid) \u2014 flattens the density gradient that makes centrally-located answers hubs",
+   "citation": "Hara et al. AAAI 2016; best hubness reduction in Feldbauer & Flexer 2019"
+  },
+  {
+   "name": "nicdm_k10_euc",
+   "acc1": 0.8683231063273312,
+   "acc5": 0.9392415249974851,
+   "mrr": 0.9004579333423158,
+   "kind": "rescore",
+   "mechanism": "NICDM local scaling: d' = d(q,j)/sqrt(r_k(q)\u00b7r_k(j)) with r_k = mean distance to the k nearest neighbors \u2014 deflates candidates that sit in dense regions",
+   "citation": "Schnitzer et al. 2012 (JMLR 13); local scaling: Zelnik-Manor & Perona NIPS 2004"
+  },
+  {
+   "name": "isf_cos_b30",
+   "acc1": 0.8492103410119707,
+   "acc5": 0.9435670455688563,
+   "mrr": 0.8916309162355925,
+   "kind": "rescore",
+   "mechanism": "inverted softmax: score = \u03b2S(q,j) \u2212 logsumexp_q'(\u03b2S(q',j)) \u2014 normalizes each candidate's similarity mass over the QUERY bank, so universal-match hubs are down-weighted",
+   "citation": "Smith et al. ICLR 2017 (arXiv:1702.03859); querybank form: QB-Norm, Bogolin et al. CVPR 2022 (arXiv:2112.12777)"
+  },
+  {
+   "name": "mp_emp_euc",
+   "acc1": 0.8167186399758576,
+   "acc5": 0.9177145156422896,
+   "mrr": 0.8661054194458351,
+   "kind": "rescore",
+   "mechanism": "Mutual Proximity: similarity = P(d(q,X) > d(q,j))\u00b7P(d(j,Y) > d(j,q)) \u2014 a candidate that is close to EVERYONE (hub) gets a low second factor",
+   "citation": "Schnitzer et al. 2012 (JMLR 13); approximate-MP \u2248 full MP: Feldbauer & Flexer 2019 (KAIS, doi:10.1007/s10115-018-1205-y)"
+  },
+  {
+   "name": "diagwhiten_euc",
+   "acc1": 0.6274016698521275,
+   "acc5": 0.793682728095765,
+   "mrr": 0.7025311233017497,
+   "kind": "transform-euc",
+   "mechanism": "per-dimension z-scoring (standardized euclidean) \u2014 decorrelation-free middle ground between raw and full Mahalanobis",
+   "citation": "standardized euclidean / diagonal Mahalanobis (classic); shrinkage: Ledoit & Wolf 2004"
+  },
+  {
+   "name": "truncwhiten_k64_euc",
+   "acc1": 0.5046775978271804,
+   "acc5": 0.6361533044965295,
+   "mrr": 0.566348265242048,
+   "kind": "transform-euc",
+   "mechanism": "whiten only the top-64 eigendirections of the task-locked shrunk train-answer covariance (identity elsewhere): keeps the signal-equalizing effect of whitening on high-variance directions while never amplifying the low-variance directions that dominate (and degenerate) the full-whitened euclidean read",
+   "citation": "partial/soft whitening: Soft-ZCA (arXiv:2411.17538); ZCA vs PCA: Kessy et al. (arXiv:1512.00809)"
+  },
+  {
+   "name": "truncwhiten_k256_euc",
+   "acc1": 0.46675384770143846,
+   "acc5": 0.5986319283774268,
+   "mrr": 0.5283368570417482,
+   "kind": "transform-euc",
+   "mechanism": "whiten only the top-256 eigendirections of the task-locked shrunk train-answer covariance (identity elsewhere): keeps the signal-equalizing effect of whitening on high-variance directions while never amplifying the low-variance directions that dominate (and degenerate) the full-whitened euclidean read",
+   "citation": "partial/soft whitening: Soft-ZCA (arXiv:2411.17538); ZCA vs PCA: Kessy et al. (arXiv:1512.00809)"
+  },
+  {
+   "name": "truncwhiten_k1024_euc",
+   "acc1": 0.1840861080374208,
+   "acc5": 0.2727089829996982,
+   "mrr": 0.2286976906899316,
+   "kind": "transform-euc",
+   "mechanism": "whiten only the top-1024 eigendirections of the task-locked shrunk train-answer covariance (identity elsewhere): keeps the signal-equalizing effect of whitening on high-variance directions while never amplifying the low-variance directions that dominate (and degenerate) the full-whitened euclidean read",
+   "citation": "partial/soft whitening: Soft-ZCA (arXiv:2411.17538); ZCA vs PCA: Kessy et al. (arXiv:1512.00809)"
+  }
+ ],
+ "sensitivity_records": [
+  {
+   "name": "truncwhiten_kfull_euc",
+   "acc1": 0.02031988733527814,
+   "acc5": 0.03732018911578312,
+   "note": "k=d endpoint; euclid read must reproduce banked whiten (basis-invariant); cos read quantifies ZCA-vs-Cholesky basis effect vs banked 0.9535"
+  },
+  {
+   "name": "truncwhiten_kfull_cos",
+   "acc1": 0.9535258022331757,
+   "acc5": 0.9879287798008248,
+   "note": "k=d endpoint; euclid read must reproduce banked whiten (basis-invariant); cos read quantifies ZCA-vs-Cholesky basis effect vs banked 0.9535"
+  },
+  {
+   "name": "isf_cos_b10",
+   "acc1": 0.7363444321496831,
+   "acc5": 0.8839150990845991,
+   "note": ""
+  },
+  {
+   "name": "csls_pen_whitencos_g10",
+   "acc1": 0.984508600744392,
+   "acc5": 0.9949703249170103,
+   "note": "double-strength candidate penalty S \u2212 r_j (CSLS \u2261 \u03b3=0.5)"
+  }
+ ],
+ "ceilings": {
+  "ceiling_raw_euclidean": {
+   "name": "ceiling_raw_euclidean",
+   "ceiling": {
+    "acc1_ceiling": 0.9425301810865191,
+    "n_contexts": 1988,
+    "k_draws": 4,
+    "acc5_ceiling_rowlevel": 0.9681841046277666
+   },
+   "wall_s": 8.4,
+   "banked": 0.9425301810865191
+  },
+  "ceiling_csls_k10_whitencos": {
+   "name": "ceiling_csls_k10_whitencos",
+   "ceiling": {
+    "acc1_ceiling": 0.9730885311871227,
+    "n_contexts": 1988,
+    "k_draws": 4,
+    "acc5_ceiling_rowlevel": 0.9903169014084507
+   },
+   "wall_s": 18.1,
+   "convention_matched": true
+  },
+  "ceiling_hubdeg_pen_whitencos_g05": {
+   "name": "ceiling_hubdeg_pen_whitencos_g05",
+   "ceiling": {
+    "acc1_ceiling": 0.9798792756539235,
+    "n_contexts": 1988,
+    "k_draws": 4,
+    "acc5_ceiling_rowlevel": 0.994215291750503
+   },
+   "wall_s": 18.6,
+   "convention_matched": true
+  },
+  "ceiling_whitencos_lam03": {
+   "name": "ceiling_whitencos_lam03",
+   "ceiling": {
+    "acc1_ceiling": 0.9774899396378269,
+    "n_contexts": 1988,
+    "k_draws": 4,
+    "acc5_ceiling_rowlevel": 0.9930835010060363
+   },
+   "wall_s": 16.7,
+   "convention_matched": true
+  },
+  "ceiling_csls_pen_whitencos_g10": {
+   "name": "ceiling_csls_pen_whitencos_g10",
+   "ceiling": {
+    "acc1_ceiling": 0.9587525150905433,
+    "n_contexts": 1988,
+    "k_draws": 4,
+    "acc5_ceiling_rowlevel": 0.9812625754527163
+   },
+   "wall_s": 25.7,
+   "convention_matched": true,
+   "sensitivity": true
+  }
+ },
+ "dropped_roster_lines": [
+  {
+   "name": "centered_euclidean",
+   "reason": "algebraic identity: euclidean distance is translation-invariant, so pool-mean centering is a no-op \u2014 centered-euclidean \u2261 raw-euclidean exactly (Suzuki et al. EMNLP 2013 centering acts on inner-product/cosine similarities, not euclidean). Verified numerically on a 256-row slice at battery start; raw-euclidean acc@1 0.8160 is its value."
+  },
+  {
+   "name": "target_only_csls",
+   "reason": "rank-identity: within a query row, CSLS = 2S \u2212 r_q \u2212 r_j differs from S \u2212 r_j/2 by a row-constant (r_q) and a positive scale, so acc@k is IDENTICAL to full CSLS \u2014 the r_q term only matters for cross-query calibration, never for per-query ranking. Folded into csls_k10_whitencos; a \u03b3=1.0 penalty variant (double CSLS strength) rides that record as sensitivity."
+  },
+  {
+   "name": "spearman_across_dims",
+   "reason": "cut for the \u226418 roster cap: the sibling round (freshwhiten-avg) already covers Pearson-r-across-dimensions; the rank-transformed variant probes the same correlation-read axis at strictly higher cost."
+  },
+  {
+   "name": "mp_gauss_whitencos",
+   "reason": "cut for the \u226418 roster cap: csls_k10_whitencos + hubdeg_pen_whitencos_g05 already probe hub correction on the whitened-cosine base."
+  }
+ ],
+ "n_train_vs_d": {
+  "n_train": 87795,
+  "d": 3584,
+  "note": "no fits performed; all transforms closed-form from banked train stats"
+ },
+ "meta": {
+  "generated_utc": "2026-08-17T18:58:53.635015+00:00",
+  "numpy_version": "2.2.6",
+  "python_version": "3.11.15",
+  "git_commit": "7e4f023a",
+  "git_dirty": true,
+  "git_dirty_paths": [
+   "eval_results/issue_2202/freshwhiten_avg/summary.json",
+   "scripts/issue2202_freshwhiten_avg.py",
+   "tests/test_issue2094_rev_butler.py"
+  ]
+ }
+}

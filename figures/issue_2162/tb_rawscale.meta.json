@@ -1,0 +1,587 @@
+{
+  "commit": "48842a29+dirty",
+  "render_id": "4c302aac628244d7",
+  "git_commit": "48842a29",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2162_tbmp_figures.py"
+  ],
+  "created": "2026-08-15T01:18:26Z",
+  "figsize": [
+    12.0,
+    7.5
+  ],
+  "points": [
+    {
+      "x": -0.351,
+      "raw movement (judge-contrast units)": 1.108561728395062,
+      "error": 0.2213233024691359,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -0.221,
+      "raw movement (judge-contrast units)": 1.107422839506173,
+      "error": 0.22845370370370371,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.065,
+      "raw movement (judge-contrast units)": 0.1936543209876543,
+      "error": 0.16930092592592597,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.065,
+      "raw movement (judge-contrast units)": 0.24865895061728396,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.221,
+      "raw movement (judge-contrast units)": 0.05552006172839506,
+      "error": 0.04283487654320988,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.351,
+      "raw movement (judge-contrast units)": 0.11952006172839506,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 0.649,
+      "raw movement (judge-contrast units)": 0.30423500881834215,
+      "error": 0.1615128968253968,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.779,
+      "raw movement (judge-contrast units)": 0.2554016754850088,
+      "error": 0.1616489197530864,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 0.935,
+      "raw movement (judge-contrast units)": 0.12233223104056437,
+      "error": 0.10567305996472663,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 1.065,
+      "raw movement (judge-contrast units)": 0.14545723104056435,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 1.221,
+      "raw movement (judge-contrast units)": 0.09022111992945325,
+      "error": 0.14965145502645505,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 1.351,
+      "raw movement (judge-contrast units)": 0.08860074955908287,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 1.649,
+      "raw movement (judge-contrast units)": 0.12855015432098768,
+      "error": 0.06030439814814814,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 1.779,
+      "raw movement (judge-contrast units)": 0.11882793209876542,
+      "error": 0.08220447530864197,
+      "_kind": "bar",
+      "_group": 13
+    },
+    {
+      "x": 1.935,
+      "raw movement (judge-contrast units)": 0.07379552469135803,
+      "error": 0.05768711419753087,
+      "_kind": "bar",
+      "_group": 14
+    },
+    {
+      "x": 2.065,
+      "raw movement (judge-contrast units)": 0.07841126543209878,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 2.221,
+      "raw movement (judge-contrast units)": 0.04128626543209876,
+      "error": 0.06026466049382715,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": 2.351,
+      "raw movement (judge-contrast units)": 0.10446219135802469,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "x": -0.351,
+      "y": 0.2175138888888889,
+      "error": 0.0775378086419753,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "x": -0.221,
+      "y": 0.20593518518518514,
+      "error": 0.08107484567901235,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "x": -0.065,
+      "y": 0.2224675925925926,
+      "error": 0.10938271604938268,
+      "_kind": "bar",
+      "_group": 20
+    },
+    {
+      "x": 0.065,
+      "y": 0.22375925925925927,
+      "_kind": "bar",
+      "_group": 21
+    },
+    {
+      "x": 0.221,
+      "y": 0.13328703703703704,
+      "error": 0.07279899691358024,
+      "_kind": "bar",
+      "_group": 22
+    },
+    {
+      "x": 0.351,
+      "y": 0.1612175925925926,
+      "_kind": "bar",
+      "_group": 23
+    },
+    {
+      "x": 0.649,
+      "y": 0.214895061728395,
+      "error": 0.14227750220458554,
+      "_kind": "bar",
+      "_group": 24
+    },
+    {
+      "x": 0.779,
+      "y": 0.2078117283950617,
+      "error": 0.1431372905643739,
+      "_kind": "bar",
+      "_group": 25
+    },
+    {
+      "x": 0.935,
+      "y": 0.1583858024691358,
+      "error": 0.09423572530864197,
+      "_kind": "bar",
+      "_group": 26
+    },
+    {
+      "x": 1.065,
+      "y": 0.1672839506172839,
+      "_kind": "bar",
+      "_group": 27
+    },
+    {
+      "x": 1.221,
+      "y": 0.1033672839506173,
+      "error": 0.06941903659611995,
+      "_kind": "bar",
+      "_group": 28
+    },
+    {
+      "x": 1.351,
+      "y": 0.13910802469135802,
+      "_kind": "bar",
+      "_group": 29
+    },
+    {
+      "x": 1.649,
+      "y": 0.21380489417989418,
+      "error": 0.11587770061728393,
+      "_kind": "bar",
+      "_group": 30
+    },
+    {
+      "x": 1.779,
+      "y": 0.24430952380952378,
+      "error": 0.13909143518518519,
+      "_kind": "bar",
+      "_group": 31
+    },
+    {
+      "x": 1.935,
+      "y": 0.1192493386243386,
+      "error": 0.097267471340388,
+      "_kind": "bar",
+      "_group": 32
+    },
+    {
+      "x": 2.065,
+      "y": 0.17251785714285714,
+      "_kind": "bar",
+      "_group": 33
+    },
+    {
+      "x": 2.221,
+      "y": 0.20997619047619048,
+      "error": 0.09928400573192239,
+      "_kind": "bar",
+      "_group": 34
+    },
+    {
+      "x": 2.351,
+      "y": 0.14115674603174602,
+      "_kind": "bar",
+      "_group": 35
+    },
+    {
+      "x": -0.351,
+      "raw movement (judge-contrast units)": 1.108561728395062,
+      "error": 0.21870370370370368,
+      "_kind": "bar",
+      "_group": 36
+    },
+    {
+      "x": -0.221,
+      "raw movement (judge-contrast units)": 1.107422839506173,
+      "error": 0.22804552469135808,
+      "_kind": "bar",
+      "_group": 37
+    },
+    {
+      "x": -0.065,
+      "raw movement (judge-contrast units)": 0.1936543209876543,
+      "error": 0.1696026234567901,
+      "_kind": "bar",
+      "_group": 38
+    },
+    {
+      "x": 0.065,
+      "raw movement (judge-contrast units)": 0.24865895061728396,
+      "_kind": "bar",
+      "_group": 39
+    },
+    {
+      "x": 0.221,
+      "raw movement (judge-contrast units)": 0.05552006172839506,
+      "error": 0.04221913580246913,
+      "_kind": "bar",
+      "_group": 40
+    },
+    {
+      "x": 0.351,
+      "raw movement (judge-contrast units)": 0.11952006172839506,
+      "_kind": "bar",
+      "_group": 41
+    },
+    {
+      "x": 0.649,
+      "raw movement (judge-contrast units)": 0.3322066052227342,
+      "error": 0.18160663082437273,
+      "_kind": "bar",
+      "_group": 42
+    },
+    {
+      "x": 0.779,
+      "raw movement (judge-contrast units)": 0.2734324116743471,
+      "error": 0.18360573476702505,
+      "_kind": "bar",
+      "_group": 43
+    },
+    {
+      "x": 0.935,
+      "raw movement (judge-contrast units)": 0.15346466973886325,
+      "error": 0.11924283154121865,
+      "_kind": "bar",
+      "_group": 44
+    },
+    {
+      "x": 1.065,
+      "raw movement (judge-contrast units)": 0.1784646697388633,
+      "_kind": "bar",
+      "_group": 45
+    },
+    {
+      "x": 1.221,
+      "raw movement (judge-contrast units)": 0.11412596006144392,
+      "error": 0.17051011264720944,
+      "_kind": "bar",
+      "_group": 46
+    },
+    {
+      "x": 1.351,
+      "raw movement (judge-contrast units)": 0.12208294930875573,
+      "_kind": "bar",
+      "_group": 47
+    },
+    {
+      "x": 1.649,
+      "raw movement (judge-contrast units)": 0.2360324074074074,
+      "error": 0.0912299382716049,
+      "_kind": "bar",
+      "_group": 48
+    },
+    {
+      "x": 1.779,
+      "raw movement (judge-contrast units)": 0.22606018518518514,
+      "error": 0.13685648148148147,
+      "_kind": "bar",
+      "_group": 49
+    },
+    {
+      "x": 1.935,
+      "raw movement (judge-contrast units)": 0.10078240740740742,
+      "error": 0.09183256172839507,
+      "_kind": "bar",
+      "_group": 50
+    },
+    {
+      "x": 2.065,
+      "raw movement (judge-contrast units)": 0.13467129629629632,
+      "_kind": "bar",
+      "_group": 51
+    },
+    {
+      "x": 2.221,
+      "raw movement (judge-contrast units)": 0.09114351851851853,
+      "error": 0.10093981481481479,
+      "_kind": "bar",
+      "_group": 52
+    },
+    {
+      "x": 2.351,
+      "raw movement (judge-contrast units)": 0.20381018518518518,
+      "_kind": "bar",
+      "_group": 53
+    },
+    {
+      "x": -0.351,
+      "y": 0.2554648148148148,
+      "error": 0.08385416666666663,
+      "_kind": "bar",
+      "_group": 54
+    },
+    {
+      "x": -0.221,
+      "y": 0.23780925925925922,
+      "error": 0.09189953703703706,
+      "_kind": "bar",
+      "_group": 55
+    },
+    {
+      "x": -0.065,
+      "y": 0.2708148148148148,
+      "error": 0.12313842592592586,
+      "_kind": "bar",
+      "_group": 56
+    },
+    {
+      "x": 0.065,
+      "y": 0.2667814814814815,
+      "_kind": "bar",
+      "_group": 57
+    },
+    {
+      "x": 0.221,
+      "y": 0.15302592592592593,
+      "error": 0.08497361111111108,
+      "_kind": "bar",
+      "_group": 58
+    },
+    {
+      "x": 0.351,
+      "y": 0.1804648148148148,
+      "_kind": "bar",
+      "_group": 59
+    },
+    {
+      "x": 0.649,
+      "y": 0.3186921296296296,
+      "error": 0.19704108796296294,
+      "_kind": "bar",
+      "_group": 60
+    },
+    {
+      "x": 0.779,
+      "y": 0.3265462962962962,
+      "error": 0.19670196759259256,
+      "_kind": "bar",
+      "_group": 61
+    },
+    {
+      "x": 0.935,
+      "y": 0.18736574074074072,
+      "error": 0.11931250000000002,
+      "_kind": "bar",
+      "_group": 62
+    },
+    {
+      "x": 1.065,
+      "y": 0.16535879629629632,
+      "_kind": "bar",
+      "_group": 63
+    },
+    {
+      "x": 1.221,
+      "y": 0.14019212962962965,
+      "error": 0.0977228009259259,
+      "_kind": "bar",
+      "_group": 64
+    },
+    {
+      "x": 1.351,
+      "y": 0.19221990740740744,
+      "_kind": "bar",
+      "_group": 65
+    },
+    {
+      "x": 1.649,
+      "y": 0.4025370370370371,
+      "error": 0.1857507716049383,
+      "_kind": "bar",
+      "_group": 66
+    },
+    {
+      "x": 1.779,
+      "y": 0.48120370370370374,
+      "error": 0.22331249999999994,
+      "_kind": "bar",
+      "_group": 67
+    },
+    {
+      "x": 1.935,
+      "y": 0.19494444444444448,
+      "error": 0.15144290123456794,
+      "_kind": "bar",
+      "_group": 68
+    },
+    {
+      "x": 2.065,
+      "y": 0.23628703703703702,
+      "_kind": "bar",
+      "_group": 69
+    },
+    {
+      "x": 2.221,
+      "y": 0.3272592592592593,
+      "error": 0.14934027777777775,
+      "_kind": "bar",
+      "_group": 70
+    },
+    {
+      "x": 2.351,
+      "y": 0.3031759259259259,
+      "_kind": "bar",
+      "_group": 71
+    }
+  ],
+  "n_series": 72,
+  "total_points": 72,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title": "instr_format \u2014 all pairs",
+        "ylabel": "raw movement (judge-contrast units)",
+        "legend_labels": [
+          "steered (tb)",
+          "steered (parent ce)",
+          "shuffled (tb)",
+          "shuffled (parent ce)",
+          "crosstype (tb)",
+          "crosstype (parent ce)"
+        ],
+        "xticklabels": [
+          "d1",
+          "d3",
+          "d5"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2",
+          "1.4",
+          "1.6"
+        ]
+      },
+      {
+        "title": "persona_prompted \u2014 all pairs",
+        "xticklabels": [
+          "d1",
+          "d3",
+          "d5"
+        ]
+      },
+      {
+        "title": "instr_format \u2014 surviving pairs",
+        "ylabel": "raw movement (judge-contrast units)",
+        "xticklabels": [
+          "d1",
+          "d3",
+          "d5"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2",
+          "1.4",
+          "1.6"
+        ]
+      },
+      {
+        "title": "persona_prompted \u2014 surviving pairs",
+        "xticklabels": [
+          "d1",
+          "d3",
+          "d5"
+        ]
+      }
+    ],
+    "series": [
+      "steered (tb)",
+      "steered (parent ce)",
+      "shuffled (tb)",
+      "shuffled (parent ce)",
+      "crosstype (tb)",
+      "crosstype (parent ce)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ],
+  "figure": "tb_rawscale",
+  "inputs": [
+    "eval_results/issue_2162/turn_boundary/rawscale_tb.json",
+    "eval_results/issue_2162/f_metrics/recency_rawscale.json"
+  ]
+}

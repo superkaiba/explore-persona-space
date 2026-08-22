@@ -1,0 +1,239 @@
+{
+  "commit": "9af466a2",
+  "render_id": "dafe2b3b1f634863",
+  "git_commit": "9af466a2",
+  "git_dirty": false,
+  "created": "2026-08-13T03:59:25Z",
+  "figsize": [
+    12.5,
+    4.4
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "correlation with exact \u0394P (per-sample r)": 0.047288048004149645,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "correlation with exact \u0394P (per-sample r)": 0.09026642025885748,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
+      "correlation with exact \u0394P (per-sample r)": 0.14454335945262975,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.81,
+      "correlation with exact \u0394P (per-sample r)": 0.07140319713254081,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.81,
+      "correlation with exact \u0394P (per-sample r)": -0.08704711258640699,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.81,
+      "correlation with exact \u0394P (per-sample r)": 0.027393838532194875,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "correlation with exact \u0394P (per-sample r)": 0.8603193035938367,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.19,
+      "correlation with exact \u0394P (per-sample r)": 0.8609175441171323,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.19,
+      "correlation with exact \u0394P (per-sample r)": 0.854006547275417,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.19,
+      "correlation with exact \u0394P (per-sample r)": 0.7348859011172468,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.19,
+      "correlation with exact \u0394P (per-sample r)": 0.8286648807751051,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.19,
+      "correlation with exact \u0394P (per-sample r)": 0.8025313724733378,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.19,
+      "top-500 overlap with exact \u0394P (Jaccard)": 0.005025125628140704,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.81,
+      "top-500 overlap with exact \u0394P (Jaccard)": 0.014198782961460446,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.81,
+      "top-500 overlap with exact \u0394P (Jaccard)": 0.008064516129032258,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.81,
+      "top-500 overlap with exact \u0394P (Jaccard)": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.81,
+      "top-500 overlap with exact \u0394P (Jaccard)": 0.088139281828074,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.81,
+      "top-500 overlap with exact \u0394P (Jaccard)": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.19,
+      "top-500 overlap with exact \u0394P (Jaccard)": 0.5698587127158555,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.19,
+      "top-500 overlap with exact \u0394P (Jaccard)": 0.358695652173913,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.19,
+      "top-500 overlap with exact \u0394P (Jaccard)": 0.4749262536873156,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 3.19,
+      "top-500 overlap with exact \u0394P (Jaccard)": 0.3679890560875513,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 4.19,
+      "top-500 overlap with exact \u0394P (Jaccard)": 0.2345679012345679,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 5.19,
+      "top-500 overlap with exact \u0394P (Jaccard)": 0.4556040756914119,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "top-500 overlap with exact \u0394P (Jaccard)": 0.005,
+      "series": "chance (0.005)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "top-500 overlap with exact \u0394P (Jaccard)": 0.005,
+      "series": "chance (0.005)",
+      "_kind": "line",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 26,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Mapped-score calibration against exact \u0394P",
+        "ylabel": "correlation with exact \u0394P (per-sample r)",
+        "legend_labels": [
+          "frozen map (parent run)",
+          "per-corpus refit map"
+        ],
+        "xticklabels": [
+          "LMSYS\nevil",
+          "LMSYS\nhallucination",
+          "LMSYS\nsycophancy",
+          "UltraChat\nevil",
+          "UltraChat\nhallucination",
+          "UltraChat\nsycophancy"
+        ],
+        "yticklabels": [
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      },
+      {
+        "title_left": "Top-500 selection overlap with exact \u0394P",
+        "ylabel": "top-500 overlap with exact \u0394P (Jaccard)",
+        "legend_labels": [
+          "chance (0.005)",
+          "frozen map (parent run)",
+          "per-corpus refit map"
+        ],
+        "xticklabels": [
+          "LMSYS\nevil",
+          "LMSYS\nhallucination",
+          "LMSYS\nsycophancy",
+          "UltraChat\nevil",
+          "UltraChat\nhallucination",
+          "UltraChat\nsycophancy"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6"
+        ]
+      }
+    ],
+    "series": [
+      "frozen map (parent run)",
+      "per-corpus refit map",
+      "chance (0.005)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

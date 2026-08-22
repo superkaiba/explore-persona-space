@@ -49,7 +49,7 @@ uv run python scripts/task.py view <N> --json | \
 
 Confirm the LAST `epm:code-review` row's `head` is `<!-- epm:code-review v<revision_round> -->` (this round) with a fresh `ts`; do NOT compare the top-level `version` to the round (it is auto-derived max+1 and legitimately exceeds the round on long-lived tasks). Only then claim posted. Absent → re-post ONCE via `--file`, re-read; still absent → say so in your return text (the orchestrator's Step 5b durable-verdict-first rule handles it) — never claim "posted" unverified. Exit 0 with a stderr commit-deferred ERROR is SUCCESS — the row IS appended; never re-post on it.
 
-Wrap the verdict body in the marker tags so the orchestrator's parser (SKILL.md Step 5c) finds it. THE HEAD SENTINEL IS LOAD-BEARING: the `v<revision_round>` in the tags is the ROUND KEY consumers match on (`task_workflow.ensemble_verdicts_present`, #1149) — a sentinel-less post lands at top-level version max+1 ≠ round and is INVISIBLE to the round-matcher (the old `version == round` fallback no longer rescues it, since the posted version no longer equals the round):
+Wrap the verdict body in the marker tags so the orchestrator's parser (SKILL.md Step 5c) finds it. THE HEAD SENTINEL IS LOAD-BEARING: the `v<revision_round>` in the tags is the ROUND KEY consumers match on (`task_workflow.ensemble_verdicts_present`, #1149) — a sentinel-less post lands at top-level version max+1 ≠ round and is INVISIBLE to the round-matcher (the old `version == round` fallback no longer rescues it, since the posted version no longer equals the round); and as of #2136 any surviving version-fallback match is additionally time-gated behind the round opener (the `since_ts` anchor), so the head sentinel is the only reliable way to have a verdict recognized for THIS round — and the only COMPLETE protection against a stale prior-round marker satisfying the current round's check:
 
 ```
 <!-- epm:code-review v<revision_round> -->
@@ -79,8 +79,16 @@ budgeted IN FORM:
   ≤300-line chunks. Material mandated "IN FULL" is still read in full — just
   chunked.
 - **Never bare `task.py view <N>`** — it dumps the full event log. Task body:
-  `--json | jq -r '.body'`; single fields via jq; plans via `Read` on
-  `tasks/<status>/<N>/plans/v<K>.md` (or the path in your brief), sliced.
+  `--json | jq -r '.body'`; single fields via jq; plans + manifests via `Read`
+  on the ABSOLUTE canonical main-checkout path from your brief, sliced —
+  re-resolve with `TASK_DIR="$(uv run python "$REPO_ROOT"/scripts/task.py find <N>)"`
+  (`REPO_ROOT="$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")"`);
+  when the brief states `plan_version=v<K>`, assert it matches
+  `readlink "$TASK_DIR/plans/plan.md"` (extension stripped) and FAIL LOUD on
+  mismatch — never read `tasks/` from inside the worktree: your cwd IS the
+  worktree, its `tasks/` tree is frozen at the branch-cut base commit, and a
+  relative `tasks/...` read serves a STALE plan/manifest with no error — you
+  grade the diff against the document it supersedes (#2422).
 - **Results are digests.** Never page a whole eval JSON / JSONL /
   raw-completion file — `jq` the keys/fields you need; single rows by Grep +
   line offset.
@@ -126,11 +134,43 @@ section wins on invocation form.
 
 Before reading the plan, refresh the remote base — `timeout --kill-after=30s 120s git fetch origin main --quiet || true` (bounded; a failed/hung fetch degrades to the last-fetched `origin/main`, never a blocked review; if `origin/main` does not resolve at all — offline clone, no origin remote — fall back to local `main`, the pre-#1289 behavior, and note the fallback in your verdict) — then run `git diff --name-only origin/main...HEAD` (or against the brief's stated base) and classify the diff. This calibrates how strict you are in later steps; it does NOT change the verdict thresholds (a Critical issue is still a Critical issue on a leaf). **Sparse/shallow worktree fallback:** if the three-dot form errors with `fatal: origin/main...HEAD: no merge base` (the merge-base commit object is excluded from a sparse/shallow checkout — the project's default per `new_worktree.sh`), probe with `git merge-base --all origin/main HEAD`; on empty/exit-1, fall back to the two-dot `git diff --name-only origin/main..HEAD` (or the round's implementer-commit SHA range). The "no merge base" error is a checkout artifact, never a review finding — never block or FAIL on it (incident #613).
 
+**Main-side divergence list (#2201).** When your brief carries a
+`diverged_on_main` list, the orchestrator's Step 5a probe found these
+round-deliverable files ALSO changed on `origin/main` since the merge-base
+(sync-imports and already-converged files pre-excluded), measured at the
+brief's pinned `main=<sha>`. For EACH named file: read main's side —
+`git log --oneline $(git merge-base <main-sha> HEAD)..<main-sha> -- <path>`
+(with `<main-sha>` = the brief's `main=` value, so you inspect the exact
+main state the probe measured; fall back to `origin/main` only when the
+brief carries no `main=` token) plus a bounded diff read — and check the
+round's edits do not revert or semantically contradict what landed on main
+(the #1771/#2164 shape: the same function rewritten in opposite directions
+on the two sides). A contradiction or silent revert is a Major finding
+under Plan Adherence naming both commits; textual adjacency with no
+semantic interaction is a one-line verdict note, not a finding. No list
+AND no probe-failed line = the probe found nothing; do not re-derive it. A
+`divergence probe FAILED` brief line means main-side divergence is UNKNOWN
+this round — record that in the verdict body rather than treating it as
+clean.
+
 **Size the diff BEFORE reading its body.** Before ANY diff BODY read:
 `git diff origin/main...HEAD | wc -c` (streams; error/0 = over). Over **300 KB**, read the
 round's own commits, not the whole-branch body — full recipe:
 `.claude/rules/diff-size-budget.md` (two-dot `main..HEAD` BODY ban;
 name-only/stat forms unrestricted). Scope changes, never skip — Step 0.7 holds.
+
+**Split-review sub-scope briefs (#2074).** When your brief carries the
+literal token `SPLIT-REVIEW SUB-SCOPE` (the /issue Step 5 per-commit
+split-review dispatch for large rounds): (a) scope EVERY diff-body read to
+the brief's commit range (`git show <sha>` / `git diff <first>^..<last>` per
+the brief) — never the whole round; (b) write your verdict block to the
+brief-named FILE (`/tmp/issue-<N>-split-review-r<n>-g<k>.md`) and do NOT
+post `epm:code-review` — the orchestrator composes the round verdict
+mechanically from all groups; (c) run Steps 0.5/0.55/0.6/0.8/0.9 ONLY when
+the brief says `CONTRACT-BEARING: yes` (they audit the ROUND, not a commit —
+exactly one group carries them); (d) the round-wide
+`git diff --name-status` listing and bounded per-file HEAD reads stay
+available for cross-commit awareness.
 
 | Tier | File patterns | Examples | Review depth |
 |---|---|---|---|
@@ -224,7 +264,10 @@ address-concern <N> --concern-id <id> --by code-reviewer --round <n>`). A new
 substantive concern you want the orchestrator to BIND must be persisted via
 `task.py raise-concern <N> --concern-id <kebab-id> --severity
 CONCERN|BLOCKER --summary '<≤200c one-liner>' --by code-reviewer --round <n>`
-— verdict-body bullets that are NOT persisted remain opportunistic. **A
+— verdict-body bullets that are NOT persisted remain opportunistic. Record
+the ledger state as one verdict-body line — `**Prior-concerns ledger:** <K
+open: id1, id2, …>` or `**Prior-concerns ledger:** empty` — so a vacuous
+walk is visible in the verdict itself (#2326). **A
 deferred feature the plan's PRODUCTION path requires is ALWAYS a persisted
 concern — never prose-only** (CONCERN minimum; BLOCKER when the production
 path provably crashes without it), even on a PASS verdict: the Step 5c-ter
@@ -549,6 +592,42 @@ gates the smoke then "PASSed" — SLURM 5005). Record one verdict line (PASS —
 N/A). Full trigger grammar + FAIL templates + the worked #1336 shapes:
 `.claude/rules/code-reviewer-section-reference.md` § Step 0.71 detail — smoke blind-spot enumeration.
 
+### Step 0.72: Own-device-scoped GPU-state verdict gate (any diff type; host-GPU-state verdicts only)
+
+Trigger: the diff ADDS or EDITS code deriving a drain / teardown / free-memory
+/ idle / headroom VERDICT from host GPU state — `nvidia-smi` (any
+`--query-gpu` / `-L` parse), `pynvml` device handles, or
+`torch.cuda.mem_get_info` over device indices — in fan-out, dispatcher, reap,
+or teardown code (any path where sibling jobs can share one host). No such
+verdict → record `Step 0.72: N/A — diff derives no host-GPU-state verdict`.
+Check: the verdict aggregates ONLY the rows for the job's own ASSIGNED
+devices. Any of three resolutions satisfies: `CUDA_VISIBLE_DEVICES` when set;
+ELSE the SLURM allocation-env chain (`SLURM_JOB_GPUS` / `SLURM_STEP_GPUS` /
+`SLURM_GPUS_ON_NODE`, per `.claude/rules/gotchas.md` L240 — CVD is routinely
+UNSET on GPU-shared fellows nodes, so a CVD-only read is not the criterion);
+OR an explicitly threaded own-device-id parameter (the canonical in-repo
+shape: `issue2091_pod.py::_drain_wait_own_gpu(gpu_id, ...)`, commit
+`2cc130dbff`). Resolve the own-device id list, FILTER the queried rows to it,
+THEN aggregate. A whole-host aggregate — `max()` / `min()` / `any()` /
+`sum()` over every returned row, or a bare all-GPU query with no index filter
+— is a FAIL even when the failure message prints a per-GPU breakdown:
+`nvidia-smi` IGNORES `CUDA_VISIBLE_DEVICES` (`.claude/rules/gotchas.md`
+L240), so a sibling job's memory enters this job's verdict. Printing detail is
+not scoping. Waiver: `# HOST_WIDE_GPU_VERDICT_EXEMPT: <reason ≥ 20 chars>` on
+the line above the aggregation (legitimate whole-host cases: a host-health
+audit, a janitor sweep, a single-tenant provision probe). Unscoped verdict →
+verdict FAIL, a single Critical tagged `host-wide-gpu-verdict` (SUBSTANTIVE —
+never stripped; #2091 commit `2cc130dbff`: `reap_generation_engine` took
+`max()` of `memory.used` across all 4 GPUs, so 4 of 9 rung-jobs died on
+"vLLM teardown did not drain below 2048 MiB within 180s (per-GPU used MiB:
+[(0, 35579), (1, 19143), (2, 0), (3, 0)])" — the job's own GPUs 2/3 were at 0;
+~765–880 s lost per job plus a fix round; the FIX threads the unit's own
+`gpu_id` and filters to it — that shape PASSES). Record one verdict line
+(PASS — <N> host-GPU-state verdicts all own-device-scoped / FAIL naming
+`<file>:<L>` / N/A). Full trigger grammar + accepted scoping shapes + FAIL
+templates:
+`.claude/rules/code-reviewer-section-reference.md` § Step 0.72 detail — own-device-scoped GPU-state verdicts.
+
 ### Step 0.7: Pre-diff gates never short-circuit the diff
 
 Steps 0.5, 0.55, 0.6, 0.65, and 0.67 are pre-diff *contract* checks, not a
@@ -794,6 +873,10 @@ proceed.
 2. **Resume predicate:** at entry the script loads existing partial results and SKIPS
    completed units, keyed on every output-affecting regime key (a resume that ignores an
    output-affecting flag silently reuses wrong cached rows and mislabels output — #722 r3).
+   The key must ALSO be machine-stable: FLAG a resume key that hashes the raw bytes of a
+   RECOMPUTED float array (`.tobytes()` of a logspace/linspace/fit-derived grid) — libm
+   last-bit drift silently discards valid checkpoints across machines (#1336); key on the
+   generating parameters instead (`.claude/rules/code-style.md` float-last-bit entry).
 3. **Per-unit progress line:** the loop emits one stdout line per completed
    unit carrying at minimum the unit index/total, a stable unit key, and
    elapsed seconds (canonical shape `[<phase>] unit k/N <key> elapsed=<s>s`,
@@ -1285,7 +1368,7 @@ Grep for common vulnerabilities in the diff:
 
 **Durability-pin shipping check (plan-named pin tests).** When the approved plan carries a non-N/A `Durability pin: tests/test_<file>.py[::test_<name>]` line (planner.md § "Workflow-prose durability pin"; `verify_plan.py` c31 verifies only that the plan NAMES a pin — whether it SHIPS is yours, per c31's own scope note) (grep the plan file for `Durability pin:` — the line may live in §10 Reproducibility rather than a plan-item list), treat each named pin test as a Step 6 plan-adherence row. Verify the named test file exists in the worktree and, when the pin names `::test_<name>`, `rg` the worktree for the literal `def test_<name>` — the pin may be a NEW test added in the round's diff OR a STANDING test already in the tree (a standing pin legitimately ships zero diff change; `git diff --name-status origin/main...HEAD -- tests/` tells you which, for the Notes column). Quote the matched line as `tests/test_<file>.py:LINE: <line text>` in the row's Notes (the grep-the-literal evidence convention above). For a NEW pin test, also confirm it actually asserts the pinned prose's presence/shape — an import-only test is not a pin (the Step 4.5 "actually exercises" bar). A named pin test present in NEITHER the round's diff NOR the tree is a substantive Plan-Adherence finding (Major, blocker tag `substantive`, never stripped by Step 5c-bis): the plan promised durable protection that never shipped (the #1179 naming-vs-shipping residual; lineage #884/#1045/#1134). A `Durability pin: N/A — <reason>` escape line carries no duty here.
 
-**Step-2 floor check (wf-fix / infra workflow-surface tasks).** If the task is wf-fix (`WF_FIX_TITLE_PREFIXES` prefix — `workflow-fix:` / `daily-fix:` — or `wf-fix` tag; `task_workflow.is_workflow_fix_session`) and the events.jsonl carries NO `epm:plan-verify` marker, FAIL with tag `step2-floor-skipped` — the SKILL.md § Step 2 minimum plan-review floor was not run and no recorded-skip reason exists to justify it (`kind: infra` non-wf-fix tasks are exempt). Rare deferred-commit edge case: if the marker append landed but the commit was deferred (see `task.py post-marker` stderr ERROR), re-probe `task.py view <N> --json` before finalizing the FAIL.
+**Step-2 floor check (wf-fix / infra workflow-surface tasks).** If the task is wf-fix — `kind: infra` AND (a `wf-fix` tag OR a title starting with one of `WF_FIX_TITLE_PREFIXES`: `workflow-fix:` / `daily-fix:`), read off the task record and NOT via `task_workflow.is_workflow_fix_session`, which tests only for a `workflow_fix_target:` body line (the narrower recursion-guard trigger) and reads False on a `workflow-fix:`-titled task filed without one — and the events.jsonl carries NO `epm:plan-verify` marker, FAIL with tag `step2-floor-skipped` — the SKILL.md § Step 2 minimum plan-review floor was not run and no recorded-skip reason exists to justify it (`kind: infra` non-wf-fix tasks are exempt). Rare deferred-commit edge case: if the marker append landed but the commit was deferred (see `task.py post-marker` stderr ERROR), re-probe `task.py view <N> --json` before finalizing the FAIL.
 
 Red flags:
 - **Scope creep:** changes beyond the plan ("while I was there I also fixed...")
@@ -1299,7 +1382,7 @@ Red flags:
 # Code Review: [Task Title]
 
 **Verdict:** PASS / CONCERNS / FAIL
-**Blocker tags:** [comma-separated, FAIL only: `marker-shape` (Step 0.5 / 0.55 / 4.6-presence genuine absence — a 0.55 blocker body names `epm:smoke-architecture-check`; a 4.6 presence blocker body names `Gate-scope check`), `smoke-run-missing` (Step 0.6 genuine absence), `git-provenance` (Step 0.9 — a broken-test / lint / reverted-file / diff-broke-X finding you are not certain the round introduced; REQUIRES a `**Git-provenance subclass:**` line naming one of `pre-existing-on-trunk` | `stale-main-or-worktree` | `cumulative-main-head-diff`), `cached-artifact-coverage-unverified` (Step 3.5 — substantive, NOT mechanical-contract), `compute-shape-mismatch` (Step 0.67 — plan §9 declares a data-parallel/sharded shape the dispatcher does not expose; substantive, NOT mechanical-contract), `hollow-verification-gate` (Step 0.68 — a verify/equivalence gate asserts on a function the entrypoint does not dispatch; substantive, NOT mechanical-contract), `smoke-blind-spot-unenumerated` (Step 0.71 — a smoke-conditional branch substitutes an implementation or downgrades an assertion and the blind-spot enumeration does not name it; substantive, NOT mechanical-contract), `substantive` (any code / plan / test / security finding from Steps 1–7). `none` on PASS / CONCERNS. This line is the orchestrator's parse target for the Step 5c-bis mechanical-contract-only strip — a FAIL whose tags are a subset of {`marker-shape`, `smoke-run-missing`, `git-provenance`} with no `substantive` is mechanical-contract-only.]
+**Blocker tags:** [comma-separated, FAIL only: `marker-shape` (Step 0.5 / 0.55 / 4.6-presence genuine absence — a 0.55 blocker body names `epm:smoke-architecture-check`; a 4.6 presence blocker body names `Gate-scope check`), `smoke-run-missing` (Step 0.6 genuine absence), `git-provenance` (Step 0.9 — a broken-test / lint / reverted-file / diff-broke-X finding you are not certain the round introduced; REQUIRES a `**Git-provenance subclass:**` line naming one of `pre-existing-on-trunk` | `stale-main-or-worktree` | `cumulative-main-head-diff`), `cached-artifact-coverage-unverified` (Step 3.5 — substantive, NOT mechanical-contract), `compute-shape-mismatch` (Step 0.67 — plan §9 declares a data-parallel/sharded shape the dispatcher does not expose; substantive, NOT mechanical-contract), `hollow-verification-gate` (Step 0.68 — a verify/equivalence gate asserts on a function the entrypoint does not dispatch; substantive, NOT mechanical-contract), `smoke-blind-spot-unenumerated` (Step 0.71 — a smoke-conditional branch substitutes an implementation or downgrades an assertion and the blind-spot enumeration does not name it; substantive, NOT mechanical-contract), `host-wide-gpu-verdict` (Step 0.72 — a host-wide GPU-state verdict in fan-out/teardown code; substantive, NOT mechanical-contract), `substantive` (any code / plan / test / security finding from Steps 1–7). `none` on PASS / CONCERNS. This line is the orchestrator's parse target for the Step 5c-bis mechanical-contract-only strip — a FAIL whose tags are a subset of {`marker-shape`, `smoke-run-missing`, `git-provenance`} with no `substantive` is mechanical-contract-only.]
 **Tier:** leaf / trunk (Step 0 classification)
 **Diff size:** +X / -Y lines across Z files
 **Plan adherence:** COMPLETE / PARTIAL (N items incomplete) / DEVIATES (unplanned changes)
@@ -1307,6 +1390,7 @@ Red flags:
 **Tests actually run:** yes / no (sandbox blocked — tests only READ, not executed; see § Tests)
 **Lint:** PASS / FAIL
 **Security sweep:** CLEAN / N issues flagged
+**Prior-concerns ledger:** [`<K open: id1, id2, …>` / `empty` — the Step 0.8 walk record, REQUIRED on every verdict so a vacuous walk is visible (#2326)]
 **Needs user eyeball:** [required for trunk + auth/secrets/payments/external-API touches; for leaf, "None" is fine]
 
 ## Plan Adherence
