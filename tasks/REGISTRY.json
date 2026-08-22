@@ -9804,8 +9804,8 @@
     "2269": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2269",
-      "status": "planning",
+      "path": "tasks/approved/2269",
+      "status": "approved",
       "title": "verify_plan.py: regen-headroom arithmetic check (armed \u22652\u00d7 re-gen vs max_model_len pin) \u2014 third recurrence of the #505/#601 class"
     },
     "227": {
