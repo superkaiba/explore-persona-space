@@ -1997,3 +1997,32 @@ pattern): both prior verdicts inlined tag-stripped, codex rows blockquoted
 ledger` verdict section with per-id VERIFIED-ADDRESSED / NOT-ADDRESSED +
 `f541-fixed` / `c901-deliberate-keep` dispositions, already-persisted ids
 never re-emitted as rows (final line-start grammar rows ==1).
+
+**Measured-TRUE acceptance round (#2273 r2, 2026-08-22):** a variant of the
+#2147-cr3/cr4 accepted-FAIL shapes — the twin's r1 FAIL was accepted (no
+reconciler), and the flagged claims were then MEASURED and found TRUE; the
+remedy was the twin's OWN offered branch (add evidence rows), not weakening.
+Compose three blocks: (a) author-neutrality + an ESTABLISHED-FACTS fence —
+"do NOT re-raise 'unsupported' against a claim that now traces to rows 7-9;
+the facts are settled by measurement"; (b) the live question is
+ROW-BOUNDEDNESS of the landed text (the brief's A10 headline), not truth —
+an unhedged claim outrunning its row re-lands the r1 defect class ⇒
+Critical; (c) closure status lines keyed to the persisted concern ids with
+the acceptance contract restated per id (rc clause may name ONLY the
+measured consumers; residual clause bounded to its rows; pin-sweep figures
+re-grepped by the twin against composer ground truth). Doc-only in-place
+line replacement: round numstat is 1/1 (old bullet superseded) while
+net-vs-main is +1/-0 — state BOTH and pre-clear the deletion's identity or
+the twin flags collateral removal.
+
+**Generous-timeout lint attestation beats a third INCONCLUSIVE (#2273 r2):**
+after two rounds of timeout-killed full no-flags lint runs (540 s composer /
+590 s Claude self-fence), launching the compose-time attestation run as
+bg-Bash at the START of compose (timeout 1800) and harvesting via a bounded
+synchronous wait AFTER the prompt was written converted the attestation from
+INCONCLUSIVE to COMPLETED-PASS rc=0 (~11 min wall under VM contention) at
+near-zero added latency — the run overlaps the probe+write work. Patch via a
+single `@@FULL_LINT_ATTESTATION@@` placeholder (assert 0 residue at final
+validation). Also relay upward: a sibling 570 s-fenced run is predictably
+too tight; tell the orchestrator the measured wall so the Claude leg sizes
+its fence ≥2× (~1,200 s+).
