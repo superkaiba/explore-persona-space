@@ -1,6 +1,6 @@
 ---
-title: 'Harden #2394 jbmine to paper-citable grade — code-review r2 fix (3 blockers
-  + 2 ride-along)'
+title: 'Harden #2394 jbmine to paper-citable grade — code-review r3 fix (B2 exact-universe
+  alias-collapse at :159)'
 kind: analysis
 tags: []
 created_at: '2026-08-22T20:24:25Z'
