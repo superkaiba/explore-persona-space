@@ -10,13 +10,20 @@ from unittest.mock import Mock, patch
 import huggingface_hub
 import pytest
 from huggingface_hub.hf_api import RepoFile
-from huggingface_hub.utils import EntryNotFoundError, HfHubHTTPError
+from huggingface_hub.utils import (
+    DEFAULT_IGNORE_PATTERNS,
+    EntryNotFoundError,
+    HfHubHTTPError,
+    filter_repo_objects,
+)
 from requests.exceptions import ConnectionError
 
 from explore_persona_space.orchestrate import hub
 from explore_persona_space.orchestrate.hub import (
     DEFAULT_DATASET_REPO,
     DEFAULT_MODEL_REPO,
+    RAW_COMPLETIONS_ALLOW_PATTERNS,
+    TRAINING_STATE_IGNORE_PATTERNS,
     _is_storage_quota_403,
     _is_transient_upload_error,
     _retry_upload,
@@ -325,10 +332,7 @@ class TestUploadRawCompletions:
         mock_api.upload_file.assert_not_called()
         # allow_patterns selects only raw-completions at every depth.
         call_kwargs = mock_api.upload_folder.call_args[1]
-        assert call_kwargs["allow_patterns"] == [
-            "raw_completions.json",
-            "**/raw_completions.json",
-        ]
+        assert call_kwargs["allow_patterns"] == RAW_COMPLETIONS_ALLOW_PATTERNS
         assert call_kwargs["path_in_repo"] == f"{self.EXP}/raw_completions"
         # Return dict: one entry per raw-completions file, correct URL, no
         # aggregate JSON entry.
@@ -391,6 +395,205 @@ class TestUploadRawCompletions:
         assert not (tmp_path / "cellB" / "sub" / "C_seed7" / "raw_completions.json").exists()
         # The aggregate JSON the allow_patterns skipped is untouched.
         assert (tmp_path / "run_result.json").exists()
+
+    # ---- #2271: raw-completions CLASS selection (shards, skip accounting,
+    # on_unmatched strict mode, DEFAULT_IGNORE_PATTERNS mirror parity) ----
+
+    def _build_class_tree(self, root: Path) -> list[str]:
+        """Three raw-completions-CLASS files — one exact-name JSON plus two
+        pre-merge shard payloads under a ``raw_completions/`` directory (the
+        #2223 silently-dropped shape) — plus two non-class files (aggregate
+        JSON + analysis tensor) the selection must skip. Returns the class
+        files' rel paths."""
+        cell = root / "raw_completions" / "phaseA" / "A0__demo"
+        (cell / "shards").mkdir(parents=True)
+        (cell / "raw_completions.json").write_text('{"merged": 1}')
+        (cell / "shards" / "shard_0of2.json").write_text('{"s": 0}')
+        (cell / "shards" / "shard_1of2.json").write_text('{"s": 1}')
+        (root / "run_result.json").write_text('{"agg": true}')
+        (root / "analysis_tensors").mkdir()
+        (root / "analysis_tensors" / "foo.npy").write_text("not-a-real-npy")
+        return [
+            "raw_completions/phaseA/A0__demo/raw_completions.json",
+            "raw_completions/phaseA/A0__demo/shards/shard_0of2.json",
+            "raw_completions/phaseA/A0__demo/shards/shard_1of2.json",
+        ]
+
+    def _run_with_filter_faithful_fake(self, root: Path, **kwargs):
+        """Run the helper against a fake HfApi whose ``upload_folder`` applies
+        the REAL ``filter_repo_objects`` filter — the passed allow + ignore
+        patterns PLUS the unconditional ``ignore_patterns +=
+        DEFAULT_IGNORE_PATTERNS`` append ``upload_folder`` itself performs on
+        every call (hf_api.py:4901) — to compute the committed set; the
+        listing stub then returns exactly that set, so the exact-set verify
+        passes iff the helper's local enumeration matches what
+        ``upload_folder`` would really commit."""
+        committed: list[str] = []
+
+        def fake_upload_folder(
+            *,
+            folder_path: str,
+            repo_id: str,
+            path_in_repo: str,
+            repo_type: str,
+            allow_patterns: list[str],
+            ignore_patterns: list[str],
+        ) -> None:
+            all_rels = [
+                p.relative_to(folder_path).as_posix()
+                for p in sorted(Path(folder_path).rglob("*"))
+                if p.is_file()
+            ]
+            # hf_api.py:4901: `ignore_patterns += DEFAULT_IGNORE_PATTERNS`
+            # runs unconditionally on EVERY upload_folder call.
+            ig = list(ignore_patterns) + list(DEFAULT_IGNORE_PATTERNS)
+            kept = filter_repo_objects(all_rels, allow_patterns=allow_patterns, ignore_patterns=ig)
+            committed.extend(f"{path_in_repo}/{r}" for r in kept)
+
+        with (
+            patch.dict("os.environ", {"HF_TOKEN": "test_token"}),
+            patch("huggingface_hub.HfApi") as MockApi,
+            patch(
+                "explore_persona_space.orchestrate.hub.list_repo_entries_complete",
+                side_effect=lambda *a, **k: [(f, 1) for f in committed],
+            ),
+        ):
+            mock_api = MockApi.return_value
+            mock_api.create_repo.return_value = None
+            mock_api.upload_folder.side_effect = fake_upload_folder
+            result = upload_raw_completions_to_data_repo(self.EXP, root, **kwargs)
+        return result, mock_api
+
+    def test_shard_subdir_files_upload(self, tmp_path):
+        """Pre-merge shard payloads under a raw_completions/ directory upload
+        alongside the exact-name JSON (pre-#2271 they were silently dropped:
+        the exact-filename selection returned only 1 of these 3 files);
+        non-class files are skipped from the return dict."""
+        expected_rels = self._build_class_tree(tmp_path)
+        result, mock_api = self._run_with_filter_faithful_fake(tmp_path)
+        mock_api.upload_folder.assert_called_once()
+        mock_api.upload_file.assert_not_called()
+        assert set(result.keys()) == set(expected_rels)
+        call_kwargs = mock_api.upload_folder.call_args[1]
+        assert call_kwargs["allow_patterns"] == RAW_COMPLETIONS_ALLOW_PATTERNS
+
+    def test_cache_sidecar_tree_healthy_upload(self, tmp_path, caplog):
+        """A ``.cache/huggingface/`` download sidecar (an ``hf_hub_download
+        local_dir=`` staging pull's metadata file, the #444 shape) is excluded
+        from BOTH the local enumeration and the commit — parity with
+        ``upload_folder``'s unconditional DEFAULT_IGNORE_PATTERNS append — so
+        a HEALTHY tree passes the exact-set verify instead of hard-failing on
+        an expected path the commit can never contain. The sidecar is named
+        in the skip disclosure."""
+        expected_rels = self._build_class_tree(tmp_path)
+        sidecar_rel = ".cache/huggingface/download/exp/cellA/raw_completions/x.jsonl.metadata"
+        sidecar = tmp_path / sidecar_rel
+        sidecar.parent.mkdir(parents=True)
+        sidecar.write_text("etag")
+        with caplog.at_level(logging.INFO):
+            result, _ = self._run_with_filter_faithful_fake(tmp_path)
+        assert set(result.keys()) == set(expected_rels)
+        assert sidecar_rel in caplog.text
+
+    def test_skip_disclosure_logged(self, tmp_path, caplog):
+        """Mandatory skip accounting: count + rel paths of every non-class
+        file at INFO, and the completion line carries the skipped count."""
+        expected = self._build_tree(tmp_path)  # 3 class files + run_result.json
+        (tmp_path / "analysis_tensors").mkdir()
+        (tmp_path / "analysis_tensors" / "foo.npy").write_text("x")
+        with (
+            patch.dict("os.environ", {"HF_TOKEN": "test_token"}),
+            patch("huggingface_hub.HfApi") as MockApi,
+            patch(
+                "explore_persona_space.orchestrate.hub.list_repo_entries_complete",
+                return_value=[(f, 1) for f in expected],
+            ),
+            caplog.at_level(logging.INFO),
+        ):
+            MockApi.return_value.upload_folder.return_value = None
+            upload_raw_completions_to_data_repo(self.EXP, tmp_path)
+        assert "skipped 2 file(s)" in caplog.text
+        assert "run_result.json" in caplog.text
+        assert "analysis_tensors/foo.npy" in caplog.text
+        assert "uploaded+verified 3 file(s); skipped 2 non-class file(s)" in caplog.text
+
+    def test_on_unmatched_raise(self, tmp_path):
+        """Strict mode: any non-class file present -> RuntimeError naming it,
+        BEFORE any upload call."""
+        self._build_tree(tmp_path)  # includes run_result.json (non-class)
+        with (
+            patch.dict("os.environ", {"HF_TOKEN": "test_token"}),
+            patch("huggingface_hub.HfApi") as MockApi,
+            pytest.raises(RuntimeError, match=r"run_result\.json"),
+        ):
+            upload_raw_completions_to_data_repo(self.EXP, tmp_path, on_unmatched="raise")
+        MockApi.return_value.upload_folder.assert_not_called()
+
+    def test_on_unmatched_raise_fires_on_empty_selection(self, tmp_path):
+        """Sanctioned ordering hardening: strict mode raises even when NO
+        class file exists — an all-payloads-misplaced out-root is the worst
+        case of exactly the caller bug strict mode exists to catch (it must
+        not degrade to the empty-selection ``{}`` early return)."""
+        (tmp_path / "run_result.json").write_text('{"agg": true}')
+        with (
+            patch.dict("os.environ", {"HF_TOKEN": "test_token"}),
+            patch("huggingface_hub.HfApi") as MockApi,
+            pytest.raises(RuntimeError, match=r"run_result\.json"),
+        ):
+            upload_raw_completions_to_data_repo(self.EXP, tmp_path, on_unmatched="raise")
+        MockApi.return_value.upload_folder.assert_not_called()
+
+    @pytest.mark.parametrize("bad", ["Raise", "strict", ""])
+    def test_on_unmatched_invalid_value_raises(self, tmp_path, bad):
+        """Anything outside {'disclose', 'raise'} is a ValueError at function
+        entry — before any filesystem or network work."""
+        self._build_tree(tmp_path)
+        with (
+            patch.dict("os.environ", {"HF_TOKEN": "test_token"}),
+            patch("huggingface_hub.HfApi") as MockApi,
+            pytest.raises(ValueError, match="on_unmatched"),
+        ):
+            upload_raw_completions_to_data_repo(self.EXP, tmp_path, on_unmatched=bad)
+        MockApi.return_value.upload_folder.assert_not_called()
+
+    def test_allow_patterns_battery(self):
+        """IN/OUT battery at the EXACT call shape (class allow patterns +
+        training-state excludes + upload_folder's DEFAULT_IGNORE_PATTERNS),
+        pinning the class boundary."""
+        rows = {
+            # IN — the raw-completions class
+            "raw_completions.json": True,
+            "cellA/T_seed42/raw_completions.json": True,
+            "raw_completions/phaseA/A0__7b/shards/shard_0of4.json": True,
+            "phaseA/raw_completions/rollouts/part3.jsonl": True,
+            # OUT — non-class, lookalikes, sidecars
+            "run_result.json": False,
+            "raw_completionsX/bar.json": False,  # dir name not literally raw_completions
+            "raw_upload/label/cell/shards/shard0.json": False,
+            "analysis_tensors/foo.npy": False,
+            # sidecar under a raw_completions/ dir: ignore wins over allow
+            ".cache/huggingface/download/exp/raw_completions/x.jsonl.metadata": False,
+        }
+        kept = set(
+            filter_repo_objects(
+                list(rows),
+                allow_patterns=RAW_COMPLETIONS_ALLOW_PATTERNS,
+                ignore_patterns=list(TRAINING_STATE_IGNORE_PATTERNS)
+                + list(DEFAULT_IGNORE_PATTERNS),
+            )
+        )
+        assert kept == {r for r, keep in rows.items() if keep}
+
+    def test_delete_after_removes_shard_files_too(self, tmp_path):
+        """delete_after=True removes every SELECTED class file (shards under
+        raw_completions/ included) and leaves the skipped non-class files."""
+        expected_rels = self._build_class_tree(tmp_path)
+        result, _ = self._run_with_filter_faithful_fake(tmp_path, delete_after=True)
+        assert set(result.keys()) == set(expected_rels)
+        for rel in expected_rels:
+            assert not (tmp_path / rel).exists()
+        assert (tmp_path / "run_result.json").exists()
+        assert (tmp_path / "analysis_tensors" / "foo.npy").exists()
 
 
 def _storage_403() -> HfHubHTTPError:

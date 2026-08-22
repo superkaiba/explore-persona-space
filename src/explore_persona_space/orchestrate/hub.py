@@ -2475,13 +2475,45 @@ def upload_dataset_directory(
     return uploaded
 
 
+# #2271: the rollout-text selection class for upload_raw_completions_to_data_repo.
+# fnmatch semantics (`*` crosses `/`), applied by huggingface_hub's
+# filter_repo_objects — the SAME filter upload_folder applies server-side of
+# this call, so local enumeration and the bulk commit select identical sets.
+#   patterns 1-2: any file named exactly raw_completions.json, at any depth
+#     (the pre-#2271 contract, kept);
+#   patterns 3-4: EVERY regular file under any directory literally named
+#     raw_completions/ — the project's rollout-text class marker (#2223's
+#     pre-merge shards/shard_NofM.json lived there and were silently dropped).
+RAW_COMPLETIONS_ALLOW_PATTERNS: list[str] = [
+    "raw_completions.json",
+    "**/raw_completions.json",
+    "raw_completions/**",
+    "**/raw_completions/**",
+]
+
+
 def upload_raw_completions_to_data_repo(
     experiment_name: str,
     eval_results_dir: Path,
     delete_after: bool = False,
+    *,
+    on_unmatched: str = "disclose",
 ) -> dict[str, str]:
-    """Upload all raw_completions.json files in an experiment's eval_results
-    directory to the HF Hub data repo IN ONE bulk ``upload_folder`` commit.
+    """Upload the raw-completions CLASS of files under an experiment's
+    eval_results directory to the HF Hub data repo IN ONE bulk
+    ``upload_folder`` commit.
+
+    Selection contract (#2271): a file is in the class iff it is named
+    exactly ``raw_completions.json`` (at any depth) OR lives under any
+    directory literally named ``raw_completions/`` (at any depth) — the
+    patterns in :data:`RAW_COMPLETIONS_ALLOW_PATTERNS`. The pre-#2271
+    selection was exact-filename only, so pre-merge shard payloads (e.g.
+    ``raw_completions/phaseA/A0__7b/shards/shard_0of4.json`` — 15.6 MB of
+    rollout text on #2223) were SILENTLY dropped by the very helper the
+    Upload Policy names as the canonical raw-completions path. Every file
+    outside the class is skipped with mandatory disclosure (count + first 25
+    relative paths), and the completion log line carries the skipped count;
+    ``on_unmatched="raise"`` upgrades any skip to ``RuntimeError``.
 
     Files land under ``<experiment_name>/raw_completions/<rel_path>`` in
     ``DEFAULT_DATASET_REPO``. Fail-loud (raises ``RuntimeError`` on any upload
@@ -2508,30 +2540,42 @@ def upload_raw_completions_to_data_repo(
         experiment_name: e.g. ``"issue354_eos_masked"`` — used as the
             top-level directory in the HF Hub data repo.
         eval_results_dir: e.g. ``Path("eval_results/issue354_eos_masked")``
-            — scanned recursively for files named ``raw_completions.json``.
-        delete_after: if True, delete each local ``raw_completions.json``
-            after the bulk upload has VERIFIED the whole expected set landed
+            — scanned recursively for raw-completions-class files
+            (``raw_completions.json`` at any depth, plus every file under
+            any directory named ``raw_completions/``).
+        delete_after: if True, delete each SELECTED local class file after
+            the bulk upload has VERIFIED the whole expected set landed
             on the Hub (the set-verify happens before any unlink, so a partial
             commit can never strand a deleted-but-unverified file). Only the
-            individual ``raw_completions.json`` files are removed — never the
+            selected class files are removed — never the
             enclosing ``eval_results_dir`` (which holds aggregate JSONs the
             ``allow_patterns`` deliberately skipped). Default False — the
             upload-verifier does its own cleanup pass for ``eval_results/``.
+        on_unmatched: keyword-only. ``"disclose"`` (default) logs every
+            skipped non-class file (count + first 25 relative paths) and
+            proceeds; ``"raise"`` upgrades ANY skipped file to
+            ``RuntimeError`` BEFORE the upload — strict mode for callers
+            whose out-root must hold nothing but rollout text. Any other
+            value raises ``ValueError`` at function entry.
 
     Returns:
-        dict mapping local relative path → HF Hub URL on success (one entry per
-        matched file, identical to the prior per-file return contract). URLs
+        dict mapping local relative path → HF Hub URL on success (one entry
+        per SELECTED class file, identical to the prior per-file return
+        contract). URLs
         are derived from the bulk upload's OWN returned base URL (#2304), so
         when the canonical data repo refused the push at its file-count cap
         and the reactive fallback landed the tree on the private
         :data:`DEFAULT_OVERFLOW_REPO`, the returned URLs name the overflow
         repo — never a canonical path that holds nothing. Empty dict (with a
-        logged warning) if no files were found.
+        logged warning) if no class files were found.
 
     Raises:
+        ValueError: if ``on_unmatched`` is not ``"disclose"`` or ``"raise"``
+            (validated at function entry, before any filesystem work).
         RuntimeError: on any bulk-upload failure or incomplete commit
         (including the both-repos-at-cap case, where the fallback itself was
-        refused).
+        refused); also, under ``on_unmatched="raise"``, when any file under
+        ``eval_results_dir`` falls outside the raw-completions class.
 
     Example:
         >>> upload_raw_completions_to_data_repo(
@@ -2543,32 +2587,81 @@ def upload_raw_completions_to_data_repo(
          'pair2_librarian_swe/C_seed42/raw_completions.json':
             'superkaiba1/explore-persona-space-data/issue354_eos_masked/raw_completions/pair2_librarian_swe/C_seed42/raw_completions.json'}
     """
-    raw_paths = sorted(eval_results_dir.rglob("raw_completions.json"))
-    if not raw_paths:
+    if on_unmatched not in ("disclose", "raise"):
+        raise ValueError(
+            "upload_raw_completions_to_data_repo: on_unmatched must be "
+            f"'disclose' or 'raise', got {on_unmatched!r}"
+        )
+
+    from huggingface_hub.utils import DEFAULT_IGNORE_PATTERNS, filter_repo_objects
+
+    all_paths = sorted(p for p in eval_results_dir.rglob("*") if p.is_file())
+    all_rels = [p.relative_to(eval_results_dir).as_posix() for p in all_paths]
+    # Mirror _upload_folder_filtered's filter exactly: allow patterns + the
+    # always-on training-state excludes + upload_folder's OWN unconditional
+    # default excludes (.git/, .cache/huggingface/ — hf_api.py:4901 runs
+    # `ignore_patterns += DEFAULT_IGNORE_PATTERNS` on EVERY call), so the
+    # enumerated set == the committed set. Omitting DEFAULT_IGNORE_PATTERNS
+    # here puts .cache/huggingface/** sidecars (an hf_hub_download local_dir=
+    # staging pull's metadata files) into expected_repo_paths that the commit
+    # will never contain → the exact-set verify hard-fails a HEALTHY tree.
+    # Precedent: the #1190 count-guard mirror in this module (hub.py:1276-1284)
+    # includes DEFAULT_IGNORE_PATTERNS for the same parity reason. Import is
+    # deliberately unconditional (no try/except): on the pinned 0.36.2 the
+    # constant resolves; a future rename should crash loud here, not degrade
+    # into the healthy-tree hard-failure shape.
+    selected_rels = list(
+        filter_repo_objects(
+            all_rels,
+            allow_patterns=RAW_COMPLETIONS_ALLOW_PATTERNS,
+            ignore_patterns=list(TRAINING_STATE_IGNORE_PATTERNS) + list(DEFAULT_IGNORE_PATTERNS),
+        )
+    )
+    selected_set = set(selected_rels)
+    skipped_rels = [r for r in all_rels if r not in selected_set]
+
+    # Skip disclosure runs BEFORE the empty-selection early return so strict
+    # mode (`on_unmatched="raise"`) still fires when EVERY file was skipped —
+    # an all-payloads-misplaced out-root is the worst case of exactly the
+    # caller bug strict mode exists to catch.
+    if skipped_rels:
+        skip_msg = (
+            f"upload_raw_completions_to_data_repo: skipped {len(skipped_rels)} "
+            f"file(s) under {eval_results_dir} outside the raw-completions class "
+            f"(first {min(len(skipped_rels), 25)}): {skipped_rels[:25]} — aggregate "
+            "eval JSONs live in git and tensors upload via their own phase (Upload "
+            "Policy); a rollout-text payload in this list is a caller bug: place it "
+            "under a raw_completions/ directory or name it raw_completions.json."
+        )
+        if on_unmatched == "raise":
+            raise RuntimeError(skip_msg)
+        logger.info(skip_msg)
+
+    if not selected_rels:
         logger.warning(
-            "upload_raw_completions_to_data_repo: no raw_completions.json "
-            "files found under %s — nothing to upload",
+            "upload_raw_completions_to_data_repo: no raw-completions-class files "
+            "(raw_completions.json at any depth, or any file under a "
+            "raw_completions/ directory) found under %s — nothing to upload",
             eval_results_dir,
         )
         return {}
 
     path_in_repo = f"{experiment_name}/raw_completions"
-    # Map each local file to (rel, expected committed repo path). The committed
-    # path mirrors the prior per-file layout exactly:
+    # Map each selected file to (rel, expected committed repo path). The
+    # committed path mirrors the prior per-file layout exactly:
     # <experiment_name>/raw_completions/<rel-to-eval_results_dir>.
-    rels = [raw_path.relative_to(eval_results_dir).as_posix() for raw_path in raw_paths]
+    rels = selected_rels
     expected_repo_paths = [f"{path_in_repo}/{rel}" for rel in rels]
 
     # ONE folder commit for the whole tree — no per-file recursive pre-check.
-    # The allow_patterns set captures raw_completions.json at EVERY depth: the
-    # leading bare pattern matches a top-level file (no subdir), the ``**/``
-    # pattern matches every nested file.
+    # The allow-pattern class captures raw_completions.json at EVERY depth plus
+    # every file under any raw_completions/ directory (#2271).
     base_url = _upload_folder_filtered(
         local_dir=eval_results_dir,
         repo_id=DEFAULT_DATASET_REPO,
         repo_type="dataset",
         path_in_repo=path_in_repo,
-        allow_patterns=["raw_completions.json", "**/raw_completions.json"],
+        allow_patterns=RAW_COMPLETIONS_ALLOW_PATTERNS,
         expected_repo_paths=expected_repo_paths,
         delete_after=False,  # caller deletes below, AFTER the set-verify succeeds
     )
@@ -2583,11 +2676,18 @@ def upload_raw_completions_to_data_repo(
     # DEFAULT_DATASET_REPO here would return canonical paths holding nothing.
     uploaded = {rel: f"{base_url}/{rel}" for rel in rels}
 
+    logger.info(
+        "upload_raw_completions_to_data_repo: uploaded+verified %d file(s); "
+        "skipped %d non-class file(s)",
+        len(rels),
+        len(skipped_rels),
+    )
+
     if delete_after:
         # Verified above (the EXACT-set check inside _upload_folder_filtered),
         # so deleting the individual files now cannot strand an unverified one.
-        for raw_path in raw_paths:
-            raw_path.unlink(missing_ok=True)
+        for rel in rels:
+            (eval_results_dir / rel).unlink(missing_ok=True)
 
     return uploaded
 
