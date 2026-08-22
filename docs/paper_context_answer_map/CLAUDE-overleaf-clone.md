@@ -8,12 +8,17 @@ Rules for any Claude session working in this repo (git clone of Overleaf project
   invisible to Thomas). This Overleaf tree carries ONLY the documents the paper
   compiles from (user directive 2026-08-19) — never commit planning docs, drafts, or
   build artifacts here.
-- STRUCTURE (2026-08-19): `main.tex` = thin skeleton (preamble + \input list — rarely
-  edited); the paper's text lives in `sections/NN_<name>.tex`, one file per section
-  (00_abstract … 07_conclusion, 99_appendix); `references.bib` = the bibliography;
-  `style/` = template machinery (conference .sty/.bst, math_commands, bundled
-  natbib/fancyhdr) — NEVER edit style/. Add figures under `figures/` when they land.
-  Compile check after edits: pdflatex → bibtex → pdflatex ×2 on main.tex.
+- STRUCTURE (2026-08-22): TWO roots. `main.tex` = the CLEAN curated paper (inputs
+  `sections/clean/` copies only; currently abstract + introduction). `outline.tex` =
+  the working surface (2026-08-22 restructure, replaces the retired `draft.tex`):
+  per section a blue PLAN block (bullets + one plot per claim inline + status tags
+  [DONE #N]/[IN-FLIGHT #N]/[NEW]/[VERIFY]) followed by the draft via \input. Draft
+  text lives in `sections/NN_<name>.tex` + `sections/results/c{1..5}_*.tex` (edit
+  those, not the outline skeleton); Results spine is 3 headline sections (I = c1+c3,
+  II = c4, III = c5; old C2 causality demoted to appendix). `references.bib` = the
+  bibliography; `style/` = template machinery — NEVER edit style/. Figures under
+  `figures/paper/` (claim-named c1_*.pdf…c5_*.pdf). Compile check after edits:
+  pdflatex → bibtex → pdflatex ×2 on BOTH roots.
 - THIS FILE is untracked in the clone (kept out of the Overleaf tree); the canonical
   versioned copy is `docs/paper_context_answer_map/CLAUDE-overleaf-clone.md` in the
   EPS repo — keep the two in sync when editing.
