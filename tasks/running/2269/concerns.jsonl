@@ -1,0 +1,1 @@
+{"ts": "2026-08-22T05:46:43Z", "event": "raised", "concern_id": "c69-fenced-cap-harvest", "severity": "BLOCKER", "summary": "c69 ignores the fence mask during nearby cap fallback, allowing fenced MAX_NEW_TOKENS examples to create false WARNs.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
