@@ -16480,29 +16480,30 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # SKILL_DOC_EXEMPT_DIR_SEGMENTS — keeping them over the line keeps the
     # remaining trim visible). Measured 2026-08-17 at the re-split commit;
     # corridor-max ((measured+2_800)//100)*100 each; chronicle: git log.
-    # measured 110,316 B @ #2241 r4 2026-08-21 (in-fence $REPO_ROOT
-    # resolve + whitespace-only title gate, +1,135 B); corridor-max
-    # ((measured+2_800)//100)*100; re-measure at Step 10d against the
-    # merged tree. Prior: 111_900 (#2241 r3, 109,181 B) / 110_300
-    # (#2241 r2, 107,590 B) / 109_600 (#2241 r1, 106,866 B) / 105_200
-    # (#2422, 102,420 B) / 103_300 (#2201, 100,517 B) / 100_300 (#2158,
-    # 97,590 B).
-    "issue/steps/09-step-5.md": 113_100,
+    # measured 117,187 B @ #2241 Step 10d 2026-08-22 RE-MEASURED against the
+    # MERGED tree, per the #1727 landing-bytes rule; corridor-max
+    # ((measured+2_800)//100)*100. Both sides' pre-merge caps are BELOW the
+    # merged file — #2241 r4 set 113_100 (110,316 B) and #2260 set 113_400
+    # (110,622 B) — because each measured only its own side: this task's r4
+    # edits and #2260's FAMILY_agents block landed on the same file
+    # concurrently. Prior: 113_400 (#2260, 110,622 B) / 113_100 (#2241 r4,
+    # 110,316 B) / 111_900 (#2241 r3, 109,181 B) / 110_300 (#2241 r2,
+    # 107,590 B) / 109_600 (#2241 r1, 106,866 B) / 105_200 (#2422,
+    # 102,420 B) / 103_300 (#2201, 100,517 B) / 100_300 (#2158, 97,590 B).
+    "issue/steps/09-step-5.md": 119_900,
     # measured 142,643 B @ #2350 2026-08-17 (dispatch-preflight item (e),
     # per-leg out/scratch isolation, +1,211 B); corridor-max
     # ((measured+2_800)//100)*100. Prior: 144_200 (#2155 split, 141,432 B).
     "issue/steps/10-step-6.md": 145_400,
     "issue/steps/13-step-9.md": 245_300,  # measured 242,521 B
-    # measured 289,354 B @ #2246 2026-08-21 — re-measured POST-REBASE onto
-    # #2428, so the figure carries BOTH rounds' prose: #2428's Guard-4
-    # --main-sha tip-contract fix (+645 B) plus #2246's reap-shield (launcher
-    # "$WT" argv holders at both gate sites + empty-overlay fail-closed block,
-    # +1,180 B). Neither round's own pre-rebase measure is the merged size, so
-    # the cap is re-derived rather than either side's value taken.
-    # corridor-max ((measured+2_800)//100)*100 = 292_100, headroom 2,746 —
-    # clears guard_skill_doc_headroom.sh's 2,000 B warn floor.
-    # Prior: 290_900 (#2428, 288,174 B) / 290_100 (#2201, 287,339 B).
-    "issue/steps/18-step-10d.md": 292_100,
+    # measured 294,209 B @ #2260 2026-08-21 (FAMILY_agents mirrored into the
+    # auto-merge inline copy: 32 FAMILY_OF entries + 31 SPECS_10D tokens +
+    # containment arm, +4,855 B); corridor-max ((measured+2_800)//100)*100 =
+    # 297_000, headroom 2,791 — clears guard_skill_doc_headroom.sh's 2,000 B
+    # warn floor. Re-measure + re-set at Step 10d against the MERGED tree
+    # (concurrent sessions edit this file).
+    # Prior: 292_100 (#2246 post-rebase, 289,354 B) / 290_900 (#2428).
+    "issue/steps/18-step-10d.md": 297_000,
     # measured 106,625 B @ #2325 2026-08-16; corridor-max
     # ((measured+2_800)//100)*100. Prior: 106_900; chronicle: git log.
     "clean-results/SPEC.md": 109_400,
