@@ -11326,8 +11326,8 @@
     "2467": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2467",
-      "status": "proposed",
+      "path": "tasks/archived/2467",
+      "status": "archived",
       "title": "workflow-fix: two ungated HfApi().upload_file call sites in issue1739_r2v2_run.py bypass the secret-scrub gate (test RED on main)"
     },
     "247": {
