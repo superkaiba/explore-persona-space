@@ -16480,13 +16480,17 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # SKILL_DOC_EXEMPT_DIR_SEGMENTS — keeping them over the line keeps the
     # remaining trim visible). Measured 2026-08-17 at the re-split commit;
     # corridor-max ((measured+2_800)//100)*100 each; chronicle: git log.
-    # measured 110,622 B @ #2260 2026-08-21 (FAMILY_agents: comment block +
-    # 32 FAMILY_OF entries + 31 SPECS tokens + member-existence containment
-    # arm + boundary sentence, +6,871 B); corridor-max
-    # ((measured+2_800)//100)*100. Re-measure + re-set at Step 10d against
-    # the MERGED tree (concurrent sessions edit this file).
-    # Prior: 105_200 (#2422, 102,420 B) / 103_300 (#2201, 100,517 B).
-    "issue/steps/09-step-5.md": 113_400,
+    # measured 117,187 B @ #2241 Step 10d 2026-08-22 RE-MEASURED against the
+    # MERGED tree, per the #1727 landing-bytes rule; corridor-max
+    # ((measured+2_800)//100)*100. Both sides' pre-merge caps are BELOW the
+    # merged file — #2241 r4 set 113_100 (110,316 B) and #2260 set 113_400
+    # (110,622 B) — because each measured only its own side: this task's r4
+    # edits and #2260's FAMILY_agents block landed on the same file
+    # concurrently. Prior: 113_400 (#2260, 110,622 B) / 113_100 (#2241 r4,
+    # 110,316 B) / 111_900 (#2241 r3, 109,181 B) / 110_300 (#2241 r2,
+    # 107,590 B) / 109_600 (#2241 r1, 106,866 B) / 105_200 (#2422,
+    # 102,420 B) / 103_300 (#2201, 100,517 B) / 100_300 (#2158, 97,590 B).
+    "issue/steps/09-step-5.md": 119_900,
     # measured 142,643 B @ #2350 2026-08-17 (dispatch-preflight item (e),
     # per-leg out/scratch isolation, +1,211 B); corridor-max
     # ((measured+2_800)//100)*100. Prior: 144_200 (#2155 split, 141,432 B).
