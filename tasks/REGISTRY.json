@@ -10035,8 +10035,8 @@
     "2299": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2299",
-      "status": "approved",
+      "path": "tasks/running/2299",
+      "status": "running",
       "title": "workflow-fix: verify_plan WARN check for sub-resolution judge-pilot sizing (per-arm draws below floor(1/threshold)+1)"
     },
     "23": {
