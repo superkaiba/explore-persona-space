@@ -1,6 +1,6 @@
 ---
-title: 'workflow-fix: parent-reuse fallback + condensed launch refs lack Step 6b fence
-  parity (repo-branch, recheck, extra-sync)'
+title: 'workflow-fix: condensed launch references in 12-step-8.md / 13-step-9.md lack
+  Step 6b fence parity'
 kind: infra
 tags:
 - wf-fix
