@@ -1,14 +1,11 @@
 {
   "metadata": {
-    "git_commit": "45d8e0f0fbc6aac4d37ca962e09ba1b40e54c672",
-    "git_dirty": true,
+    "git_commit": "1bb34dd229ef14424327e04d1d495819bffe706a",
+    "git_dirty": false,
     "phase": "inventory",
-    "git_dirty_paths": [
-      "scripts/issue2477_base_coherence.py"
-    ],
-    "git_argv0_state": "untracked",
+    "git_argv0_state": "tracked",
     "git_argv0_path": "scripts/issue2477_base_coherence.py",
-    "created_utc": "2026-08-22T22:01:41Z"
+    "created_utc": "2026-08-22T22:23:44Z"
   },
   "roots": [
     "issue825_userbase_map/raw_completions",

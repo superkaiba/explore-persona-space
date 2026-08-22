@@ -1,14 +1,15 @@
 {
   "metadata": {
-    "git_commit": "45d8e0f0fbc6aac4d37ca962e09ba1b40e54c672",
+    "git_commit": "1bb34dd229ef14424327e04d1d495819bffe706a",
     "git_dirty": true,
     "phase": "sample",
     "git_dirty_paths": [
-      "scripts/issue2477_base_coherence.py"
+      "eval_results/issue_2477/format_inventory.json",
+      "eval_results/issue_2477/inventory_manifest.json"
     ],
-    "git_argv0_state": "untracked",
+    "git_argv0_state": "tracked",
     "git_argv0_path": "scripts/issue2477_base_coherence.py",
-    "created_utc": "2026-08-22T22:02:42Z"
+    "created_utc": "2026-08-22T22:24:03Z"
   },
   "meta": {
     "seed": 2477,
