@@ -2,7 +2,8 @@
 title: Banked context-to-answer maps discriminate minimal-pair contexts, but at context-end
   an identity-plus-bias baseline captures most of the discrimination (MODERATE confidence)
 kind: experiment
-tags: []
+tags:
+- followup-manual
 created_at: '2026-08-10T05:01:23Z'
 has_clean_result: true
 parent_id: 2162
