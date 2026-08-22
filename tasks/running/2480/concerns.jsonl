@@ -1,1 +1,2 @@
 {"ts": "2026-08-22T22:32:07Z", "event": "raised", "concern_id": "audit-verdicts-fail-open", "severity": "BLOCKER", "summary": "Audit predicates do not govern emitted verdicts, so contradictory positive conclusions can exit 0.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
+{"ts": "2026-08-22T22:32:13Z", "event": "raised", "concern_id": "seeded-membership-not-reconstructed", "severity": "BLOCKER", "summary": "The report claims seeded replay, but code computes only marginals and pool-size arithmetic.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
