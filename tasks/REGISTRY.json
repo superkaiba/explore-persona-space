@@ -10049,8 +10049,8 @@
     "2300": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2300",
-      "status": "proposed",
+      "path": "tasks/on_hold/2300",
+      "status": "on_hold",
       "title": "HF data repo at the hard 1,000,000-file cap \u2014 every net-new-file upload fails fleet-wide"
     },
     "2301": {
