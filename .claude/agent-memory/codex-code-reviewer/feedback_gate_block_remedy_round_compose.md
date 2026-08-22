@@ -45,3 +45,32 @@ remedy matches the failure.
 **How to apply:** any round whose brief says the Step 10d (or inline
 payload) lint gate blocked and the diff is the gate-surface remedy + pin.
 See also [[revision-round-compose-recipe]].
+
+**Doc-TRIM variant (#2280 r3, 2026-08-22 — the size-gate ratchet round; a
+recurring shape since gotchas.md will hit the WARN budget again):** when
+the gate-block remedy is a CONTENT TRIM of an always-on .md rule file, the
+round's core deliverable is a `## Removed-span clause ledger` — every
+removed/reworded span gets a disposition: ARCHAEOLOGY-OK |
+LOAD-BEARING-LOST | COMPRESSED-AMBIGUOUS | SIGNATURE-LOST (batching
+allowed for same-kind trivial removals). Name the TWO test-invisible loss
+modes explicitly: (a) rule compressed into ambiguity (words remain,
+instruction no longer actionable), (b) diagnostic SIGNATURE removed with
+the fix retained (entry unfindable by the symptom text an agent would
+grep — "what would an agent hitting this bug grep for?"). Compose-time
+attestations that make the review cheap: (i) protected-span zero-hit probe
+(`git show <sha> --unified=0 -- <file> | grep -E '^[+-][^+-]' | grep -icE
+'<tokens>'` → 0) + per-token occurrence counts IDENTICAL both sides;
+(ii) citation-id SET diff (`grep -oE '#[0-9]+' | sort -u` both blobs,
+diff empty) — hand Codex the settled zero-loss and reserve its round for
+ORPHANED citations (kept #N whose referenced clause left); (iii) entry
+collapses (two entries merged) get a both-sources-preserved,
+no-conflation duty. Mechanics for one-giant-line entries: word-diff is
+the primary read, and blocker citations use entry LEAD PHRASE + exact
+fragment in backticks — bare line numbers are useless on a 200KB
+one-line-heavy file. When a merge of origin/main brought main's entries
+into the branch by design (lost-update recovery), pre-resolve them as
+NOT-scope-creep. Note the worktree `tasks/` status folder can CHANGE
+between rounds when the branch merges main (approved/ → running/ on
+#2280) — re-probe the plan path every round; the prior round's path
+sentence goes stale. Step 4.5 is satisfied-by-construction (the
+pre-existing gate test IS the regression guard; demand no new test).
