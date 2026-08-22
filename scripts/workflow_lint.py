@@ -17084,9 +17084,10 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # 107,590 B) / 109_600 (#2241 r1, 106,866 B) / 105_200 (#2422,
     # 102,420 B) / 103_300 (#2201, 100,517 B) / 100_300 (#2158, 97,590 B).
     "issue/steps/09-step-5.md": 119_900,
-    # measured 146,700 B @ #2263 r3 2026-08-22 (launch-fence recheck made a
-    # MECHANICAL halt — `if !` guard + exit 1; LANE_ARGS lane-parity token at
-    # both fences, +1,147 B); corridor-max ((measured+2_800)//100)*100.
+    # measured 146,704 B @ #2263 r3 2026-08-22 (launch-fence recheck made a
+    # MECHANICAL halt — guarded `if ! ...` + exit 1; LANE_ARGS lane-parity
+    # token at both fences, +1,151 B incl. the r3-audit bang-backtick reword
+    # at :758, #1243/#1266); corridor-max ((measured+2_800)//100)*100.
     # Prior: 148_300 (#2263 r2, 145,553 B) / 147_400 (#2263 r1, 144,671 B) /
     # 145_400 (#2350, 142,643 B) / 144_200 (#2155 split, 141,432 B).
     "issue/steps/10-step-6.md": 149_500,

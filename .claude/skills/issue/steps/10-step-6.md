@@ -755,7 +755,7 @@ LANE_ARGS=()   # rsync lanes set LANE_ARGS=(--lane rsync "${EXTRA_SYNC_ARGS[@]}"
 # Launch-fence gate RECHECK (#2263 r2, cross-fence-ref-drift): re-runs the
 # carry-over gate against THIS fence's resolved branch, so a worktree
 # switched between the 6a.5 gate and this launch is re-graded before any
-# dispatch. The `if !` guard is the MECHANICAL halt (#2263 r3): this block
+# dispatch. The `if ! ...` guard is the MECHANICAL halt (#2263 r3): this block
 # runs without `set -e`, so a bare recheck's non-zero rc would NOT stop the
 # adjacent dispatch command below — the guard must exit, not a comment. On
 # failure, follow the Step 6a.5 exit-code contract (remediate / fail loud);
