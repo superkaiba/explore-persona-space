@@ -25,4 +25,13 @@ findings + fresh `CONCERN:: ` rows persist them; FAIL stays reserved for
 substantive blockers; state that present-but-imperfect marker shape can
 never be the sole FAIL ground (Step 0.7 unchanged). Already-persisted ledger
 ids still get closure STATUS LINES, never re-emitted rows.
+
+**Recurred #2253 r2 (2026-08-21), with a sharper twist:** the brief pinned
+`v1` on the r2 compose while the SAME task's r1 Codex marker in events.jsonl
+ALSO carries `<!-- epm:code-review-codex v1 -->` — a genuine in-history
+sentinel collision, not just a convention divergence. Extraction from the
+fresh OUTPUT FILE stays unambiguous (one block per file); the hazard is only
+a later events.jsonl re-extraction keyed on the sentinel. Still: follow the
+brief, name the collision explicitly in the return so the orchestrator can
+patch the sentinel at post time if it was a typo.
 Related: [[revision-round compose recipe]], [[concerns-machine-rows-2326]].
