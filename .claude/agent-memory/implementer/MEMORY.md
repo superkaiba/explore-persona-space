@@ -65,3 +65,4 @@
 - [Worktree venv python skew](reference_worktree_venv_python_skew.md) — worktree .venv can be py3.12 vs root py3.11; exception-message pins flip verdicts across trees — attribute newly-red suite entries both-ways in ONE venv (#2214/#2329)
 - [Merge re-adds rebased agent-memory](reference_merge_readds_rebased_agent_memory.md) — Step 10d merge duplicates memory bullets whose commits landed on main rebased; exact-fragment count vs main, restore main's copy
 - [HF-call shapes in src/scripts prose trip lint](feedback_hf_call_shape_prose_trips_lint.md) — live-hf-retry-routing textually scans docstrings/comments too; write `.upload_file` without parens (#2261)
+- [gotchas.md size-trim recipe](reference_gotchas_size_trim_recipe.md) — duplicate-collapse + cross-entry-repetition levers, keep fuN/crash-N disambiguators, pin surfaces to re-check, >500s lint fence
