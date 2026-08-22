@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2463,
+  "highest_id": 2464,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11301,6 +11301,13 @@
       "path": "tasks/proposed/2463",
       "status": "proposed",
       "title": "pod.py terminate cleanup is name-scoped not incarnation-scoped: a same-name replacement loses its local records"
+    },
+    "2464": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2464",
+      "status": "proposed",
+      "title": "Runtime guard: a cap-hit re-gen that skips every row must not report regen_applied: true"
     },
     "247": {
       "has_clean_result": false,
