@@ -9755,8 +9755,8 @@
     "2262": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2262",
-      "status": "running",
+      "path": "tasks/completed/2262",
+      "status": "completed",
       "title": "paper_plots._extract_scatters drops genuine (0,0) single-point scatters from figure sidecars"
     },
     "2263": {
