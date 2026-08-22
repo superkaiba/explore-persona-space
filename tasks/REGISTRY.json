@@ -9944,8 +9944,8 @@
     "2287": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2287",
-      "status": "proposed",
+      "path": "tasks/on_hold/2287",
+      "status": "on_hold",
       "title": "URGENT fleet-wide: HF data repo at the 1M-file ceiling (999,867/1,000,000) \u2014 headroom probe + overflow policy + user cleanup decision list"
     },
     "2288": {
