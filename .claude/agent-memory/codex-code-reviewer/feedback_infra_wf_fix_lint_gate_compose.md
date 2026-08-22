@@ -47,6 +47,18 @@ check (#606 twin-omission class).
 `scripts/workflow_lint.py` or another guard/lint/verifier workflow helper
 (`verify_task_body.py`, `verify_plan.py` are the same class — #2291 r1).
 
+**#2298 r1 (2026-08-22) sharpening — calibration records get a pinned-MB
+static-recompute duty:** when the plan licenses FAIL posture on a recorded
+pre-edit/post-edit finding-count calibration (the A7 shape), Codex cannot
+execute the check — compose the duty as: (i) pre-edit population via
+`git -C . show <MB-sha>:<path> | grep -niE '<predicate>'` at the PINNED
+merge-base, (ii) post-edit zero via `git grep` at HEAD + HAND-applying the
+shipped predicate (window/guard/waiver/scope) to each raw hit, (iii) head
+re-derived by reading the resolver's source target directly. Disagreement
+either way is substantive. Also: a brief may ORDER plan inlining even when
+the worktree copy probes identical to canonical — inline per the brief
+(belt-and-braces) and note the probe result in the return.
+
 **Two #2291 r1 (2026-08-22) sharpenings:**
 
 6. **wf-fix detection is TAG-first, not title-first.** #2291's title had no
