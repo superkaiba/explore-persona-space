@@ -9825,8 +9825,8 @@
     "2271": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2271",
-      "status": "running",
+      "path": "tasks/completed/2271",
+      "status": "completed",
       "title": "upload_raw_completions_to_data_repo silently drops pre-merge shard payloads (15.6 MB of rollout text on #2223)"
     },
     "2272": {
