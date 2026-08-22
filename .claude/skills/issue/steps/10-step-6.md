@@ -154,7 +154,11 @@ eliminates it): config-file indirection, runtime-constructed paths (the gate
 catches the plan-text citation, not the consumer's path construction),
 HF-staged `data/` inputs (WARN only — staging correctness stays with
 artifact-reuse check (h)(iii)), direct `dispatch_issue.py` launches that
-bypass 6a.5, and extension-less citations. The check ref resolves via the
+bypass 6a.5, and extension-less citations. Worktree/branch state switched
+BETWEEN this gate and the Step 6b launch is covered by the launch fence's
+gate RECHECK against its own resolved branch (#2263 r2); the residual there
+is only the non-atomic gap between that recheck and the dispatch command
+itself. The check ref resolves via the
 #2263 precedence ladder (`--ref` verbatim > `--repo-branch` -> its
 `origin/<branch>`, refused when absent from origin > the invoking worktree's
 issue-scoped branch > the legacy `origin/issue-<N>`-or-`origin/main` default,
@@ -740,6 +744,14 @@ INTENT=<inferred>
 
 REPO_BRANCH="$(uv run python scripts/verify_carryover_inputs.py --print-repo-branch --issue <N>)"   # the ONE shared issue-scoped resolver — re-derived per fence; never the cwd branch (#2263)
 : "${REPO_BRANCH:?repo-branch resolver refused — read its stderr above; a wholly-main-resident workload passes --repo-branch main explicitly at BOTH gate and launch (#2263)}"
+# Launch-fence gate RECHECK (#2263 r2, cross-fence-ref-drift): re-runs the
+# carry-over gate against THIS fence's resolved branch, so a worktree
+# switched between the 6a.5 gate and this launch is re-graded before any
+# dispatch. Non-zero rc takes the Step 6a.5 exit-code contract (remediate /
+# fail loud) — NEVER dispatch past it. Re-run the Step 6a.5 `PLAN_PATH=`
+# assignment first if unset in this shell; rsync lanes append the SAME
+# `--lane rsync ${EXTRA_SYNC_ARGS[@]}` suffix as the 6a.5 invocation.
+uv run python scripts/verify_carryover_inputs.py --plan "$PLAN_PATH" --issue <N> --repo-branch "$REPO_BRANCH"
 
 # Single operational call — runs the router (auto / explicit override
 # both flow through here). On RunPod the underlying pod_lifecycle.py

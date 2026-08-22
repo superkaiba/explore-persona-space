@@ -464,26 +464,46 @@ def resolve_bare_name(name: str, *, repo_root: Path, issue: int, scope: set[int]
 #: probe at a DIFFERENT repository than the path-named one (#2263 MF-C).
 #: Convention mirror: task_workflow.py `_GIT_ENV_POISONERS`, plus
 #: GIT_COMMON_DIR (it repoints the worktree/common-dir probes specifically).
+#: The GIT_CONFIG_* rows are the config-INJECTION channels (#2263 r2): an
+#: env-injected `url.<foreign>.insteadOf` rewrite redirects the bounded
+#: fetch, so the gate would certify FOREIGN content as the dispatch tree
+#: (reproduced against git 2.34; not theoretical).
 _GIT_ENV_POISONERS = (
     "GIT_DIR",
     "GIT_COMMON_DIR",
     "GIT_WORK_TREE",
     "GIT_INDEX_FILE",
     "GIT_OBJECT_DIRECTORY",
+    "GIT_CONFIG_COUNT",
+    "GIT_CONFIG_PARAMETERS",
+    "GIT_CONFIG_GLOBAL",
+    "GIT_CONFIG_SYSTEM",
 )
+
+#: Indexed GIT_CONFIG_KEY_<n> / GIT_CONFIG_VALUE_<n> pairs carry the injected
+#: entries themselves — every index, enumerable only dynamically (#2263 r2).
+_GIT_CONFIG_PAIR_RE = re.compile(r"^GIT_CONFIG_(?:KEY|VALUE)_\d+$")
 
 
 def _sanitized_git_env() -> dict[str, str]:
-    """os.environ minus the repository-selection GIT_* overrides (#2263 MF-C).
+    """os.environ minus repo-selection AND config-injection GIT_* overrides.
 
-    A caller-inherited GIT_DIR / GIT_WORK_TREE would make every `git -C`
-    probe — and the worktree/branch inference built on them — read a
-    DIFFERENT repository than the path selects; stripping the poisoners makes
-    path selection authoritative.
+    Repository selection (#2263 MF-C): a caller-inherited GIT_DIR /
+    GIT_WORK_TREE would make every `git -C` probe — and the worktree/branch
+    inference built on them — read a DIFFERENT repository than the path
+    selects. Config injection (#2263 r2): GIT_CONFIG_COUNT +
+    GIT_CONFIG_KEY_<n>/VALUE_<n> (all indices), GIT_CONFIG_PARAMETERS, and a
+    redirected GIT_CONFIG_GLOBAL/SYSTEM can inject `url.<foreign>.insteadOf`
+    and redirect the fetch to a foreign origin. Stripping the ENV channels
+    leaves on-disk config (repo/user/system files) fully in effect. Other
+    GIT_* env (ceiling dirs, namespaces, transport/proxy vars) is NOT
+    stripped; no claim is made here about its effect direction.
     """
     env = dict(os.environ)
     for key in _GIT_ENV_POISONERS:
         env.pop(key, None)
+    for key in [k for k in env if _GIT_CONFIG_PAIR_RE.match(k)]:
+        del env[key]
     return env
 
 
@@ -711,15 +731,20 @@ def resolve_check_ref(
     possibly-STALE locally-known origin/* refs — a just-pushed sibling branch
     is invisible until fetched.
 
-    Residual divergence window (#2263 review finding 1): the gate and the
-    launch resolve INDEPENDENTLY, so a worktree added/removed — or a branch
-    pushed/deleted — between the two fences changes the resolution. The
-    window is real and fails CLOSED in both directions (worktree added =>
-    the launch fence's re-derivation hits the multiple-match refusal;
-    worktree removed => the zero-match refusal). The dispatch-side conflict
-    guard does NOT bound it — ANY explicit --repo-branch value bypasses that
-    guard by construction (scripts/dispatch_issue.py:1203) and the pushed-ref
-    ls-remote existence check only WARNs.
+    Cross-fence divergence (#2263 r2): the Step 6a.5 gate and the Step 6b
+    launch fences resolve INDEPENDENTLY, so worktree/branch state changed
+    between them changes the resolution — and the sole-worktree
+    switched-from-pushed-A-to-pushed-B case resolves CLEANLY at both fences
+    (no refusal fires anywhere). The launch fence therefore RE-RUNS the
+    carry-over gate against its OWN resolved branch immediately before
+    dispatch (.claude/skills/issue/steps/10-step-6.md Step 6b), so every
+    branch a launch resolves has been graded in the SAME fence. Residuals,
+    stated exactly: (a) the recheck and the dispatch are consecutive shell
+    commands, not one atomic operation — state switched between those two
+    commands still dispatches an ungraded tree; (b) the dispatch-side
+    conflict guard bounds none of this — ANY explicit --repo-branch value
+    bypasses it by construction (scripts/dispatch_issue.py:1203) and the
+    pushed-ref ls-remote existence check only WARNs.
     """
     if repo_branch is not None:
         return _resolve_repo_branch_rung(repo_root, repo_branch, fetch=fetch)

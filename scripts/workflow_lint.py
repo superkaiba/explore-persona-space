@@ -17084,11 +17084,12 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # 107,590 B) / 109_600 (#2241 r1, 106,866 B) / 105_200 (#2422,
     # 102,420 B) / 103_300 (#2201, 100,517 B) / 100_300 (#2158, 97,590 B).
     "issue/steps/09-step-5.md": 119_900,
-    # measured 144,671 B @ #2263 2026-08-21 (Step 6a.5/6b shared repo-branch
-    # resolver fences + check-ref ladder prose, +2,028 B); corridor-max
-    # ((measured+2_800)//100)*100. Prior: 145_400 (#2350, 142,643 B) /
+    # measured 145,553 B @ #2263 r2 2026-08-21 (launch-fence gate RECHECK
+    # closing the cross-fence divergence window + residual-risk clause,
+    # +882 B); corridor-max ((measured+2_800)//100)*100.
+    # Prior: 147_400 (#2263 r1, 144,671 B) / 145_400 (#2350, 142,643 B) /
     # 144_200 (#2155 split, 141,432 B).
-    "issue/steps/10-step-6.md": 147_400,
+    "issue/steps/10-step-6.md": 148_300,
     "issue/steps/13-step-9.md": 245_300,  # measured 242,521 B
     # measured 294,209 B @ #2260 2026-08-21 (FAMILY_agents mirrored into the
     # auto-merge inline copy: 32 FAMILY_OF entries + 31 SPECS_10D tokens +

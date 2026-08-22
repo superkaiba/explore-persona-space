@@ -19,6 +19,7 @@ from __future__ import annotations
 import contextlib
 import importlib.util
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -1893,16 +1894,21 @@ def test_cli_print_repo_branch(
     assert rc2 == 2
     assert captured2.out == ""
     assert "ERROR:" in captured2.err and "--repo-branch main" in captured2.err
-    # Mode-combination refusals: each check-mode flag exits 2 via argparse.
+    # Mode-combination refusals: EVERY forbidden check-mode flag family
+    # (all 7 — #2263 r2 finding 4) exits 2 via argparse, naming the flag.
     for extra in (
         ["--plan", str(_plan(tmp_path, "x"))],
         ["--ref", "origin/main"],
         ["--repo-branch", "main"],
+        ["--extra-sync-path", "eval_results/issue_77/x"],
+        ["--no-fetch"],
+        ["--json"],
+        ["--lane", "rsync"],
     ):
         with pytest.raises(SystemExit) as ei:
             vci.main(["--print-repo-branch", "--issue", "77", "--repo-root", str(repo), *extra])
         assert ei.value.code == 2
-    capsys.readouterr()  # drain argparse usage noise
+        assert extra[0] in capsys.readouterr().err  # the refusal names the flag
     # Non-print mode still REQUIRES --plan.
     with pytest.raises(SystemExit) as ei2:
         vci.main(["--issue", "77", "--repo-root", str(repo), "--no-fetch"])
@@ -1946,6 +1952,17 @@ def test_git_env_sanitized_against_repo_selection_overrides(
     _git(repo, "checkout", "-q", "issue-77")
     got = vci.resolve_check_ref(repo, 77, fetch=False, invoke_cwd=repo / ".git")
     assert got == ("origin/issue-77", "bare-issue-branch-default")
+    # (e) the _default_repo_root CHOKEPOINT itself under the full poison set
+    # (#2263 r2 finding 4): every other arm passes an explicit repo root, so
+    # sanitization removed from _default_repo_root ALONE would stay green
+    # without this arm — a poisoned default must still resolve the CWD's
+    # repository, never the foreign one.
+    for var, value in poison.items():
+        monkeypatch.setenv(var, value)
+    with contextlib.chdir(repo):
+        got_root = vci._default_repo_root()
+    assert got_root is not None
+    assert Path(os.path.realpath(got_root)) == Path(os.path.realpath(repo))
 
 
 @pytest.mark.parametrize("remote_state", ["none", "bare-only", "suffix-only", "bare+suffix"])
@@ -1965,3 +1982,203 @@ def test_cli_explicit_ref_bypasses_resolver_on_all_remote_states(
     payload = json.loads(capsys.readouterr().out)
     assert payload["check_ref"] == "origin/main"
     assert payload["check_ref_source"] == "ref-flag"
+
+
+def test_sanitized_git_env_strips_config_injection_channels(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """#2263 r2: every config-injection env channel is stripped — COUNT,
+    PARAMETERS, the GLOBAL/SYSTEM file redirects, and the indexed KEY/VALUE
+    pairs at EVERY index (not just 0) — while an unrelated GIT_*-prefixed
+    name survives (the pair regex is anchored, not a prefix match)."""
+    poison = {
+        "GIT_CONFIG_COUNT": "13",
+        "GIT_CONFIG_KEY_0": "url.x.insteadOf",
+        "GIT_CONFIG_VALUE_0": "y",
+        "GIT_CONFIG_KEY_12": "url.a.insteadOf",
+        "GIT_CONFIG_VALUE_12": "b",
+        "GIT_CONFIG_PARAMETERS": "'url.x.insteadOf=y'",
+        "GIT_CONFIG_GLOBAL": "/dev/null",
+        "GIT_CONFIG_SYSTEM": "/dev/null",
+    }
+    for k, v in poison.items():
+        monkeypatch.setenv(k, v)
+    monkeypatch.setenv("GIT_CONFIGURATION_UNRELATED", "keep")  # anchor guard
+    env = vci._sanitized_git_env()
+    for k in poison:
+        assert k not in env, k
+    assert env["GIT_CONFIGURATION_UNRELATED"] == "keep"
+
+
+def test_git_config_env_injection_cannot_redirect_fetch(
+    repo: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """#2263 r2 (git-config-origin-spoof): an env-injected
+    `url.<foreign>.insteadOf` rewrite cannot redirect the gate's bounded
+    fetch — the sanitized fetch reads the REAL origin.
+
+    The control arm FIRST proves the channel is potent on this git binary (a
+    raw UNSANITIZED fetch under the poison pulls the FOREIGN tip into
+    origin/issue-77), so the sanitized arm cannot pass hollow.
+    """
+    # Real origin: issue-77 carries real_marker.txt.
+    _git(repo, "checkout", "-q", "-b", "issue-77")
+    _write(repo, "real_marker.txt", "real\n")
+    _git(repo, "add", "real_marker.txt")
+    _git(repo, "commit", "-q", "-m", "real issue-77")
+    _git(repo, "push", "-q", "origin", "issue-77")
+    _git(repo, "checkout", "-q", "main")
+    # Foreign origin: an UNRELATED repo whose issue-77 tip carries
+    # foreign_marker.txt instead.
+    foreign = _foreign_repo(tmp_path, name="evil", branch="issue-77")
+    _write(foreign, "foreign_marker.txt", "foreign\n")
+    _git(foreign, "add", "foreign_marker.txt")
+    _git(foreign, "commit", "-q", "-m", "foreign issue-77")
+    _git(foreign, "push", "-q", "origin", "issue-77")
+    poison = {
+        "GIT_CONFIG_COUNT": "1",
+        "GIT_CONFIG_KEY_0": f"url.{tmp_path / 'evil-origin.git'}.insteadOf",
+        "GIT_CONFIG_VALUE_0": str(tmp_path / "origin.git"),
+    }
+    # CONTROL ARM — raw fetch, poison honored: origin/issue-77 now points at
+    # the foreign tip (the reproduced #2263 r2 spoof).
+    subprocess.run(
+        ["git", "-C", str(repo), "fetch", "origin", "--quiet", "--no-tags", "issue-77"],
+        check=True,
+        capture_output=True,
+        text=True,
+        env={**os.environ, **poison},
+    )
+    assert vci.path_in_ref(repo, "origin/issue-77", "foreign_marker.txt")
+    assert not vci.path_in_ref(repo, "origin/issue-77", "real_marker.txt")
+    # SANITIZED ARM — the SAME poison in os.environ: the resolver's
+    # fetch=True path strips it and restores origin/issue-77 to the REAL tip.
+    for k, v in poison.items():
+        monkeypatch.setenv(k, v)
+    got = vci.resolve_check_ref(repo, 77, fetch=True, invoke_cwd=repo)
+    assert got == ("origin/issue-77", "bare-issue-branch-default")
+    assert vci.path_in_ref(repo, "origin/issue-77", "real_marker.txt")
+    assert not vci.path_in_ref(repo, "origin/issue-77", "foreign_marker.txt")
+
+
+def test_step6_launch_fence_gate_recheck_blocks_cross_fence_divergence(
+    repo: Path, tmp_path: Path
+) -> None:
+    """#2263 r2 (cross-fence-ref-drift): the Step 6b launch fence RE-RUNS the
+    carry-over gate against ITS OWN resolved branch, so a sole worktree
+    switched from pushed branch A to pushed branch B between the fences is
+    re-graded — and here REFUSED — before any dispatch (the false-PASS class
+    this task exists to close; both resolutions succeed, so no resolver
+    refusal can catch it).
+
+    Extraction failure IS test failure. NOTE the sibling
+    `test_step6_repo_branch_shared_resolver_fresh_shell_execution` is real
+    for SOURCE drift but structurally blind to cross-fence PARITY (it runs
+    one prelude against two independent static states) — this test owns the
+    divergence arm.
+    """
+    text = issue_skill_text()
+    assigns = re.findall(r"(?m)^REPO_BRANCH=.*$", text)
+    guards = re.findall(r'(?m)^: "\$\{REPO_BRANCH:\?.*$', text)
+    gate_lines = re.findall(
+        r'(?m)^uv run python scripts/verify_carryover_inputs\.py --plan "\$PLAN_PATH".*$',
+        text,
+    )
+    assert len(assigns) == 2 and len(guards) == 2, "prelude extraction failed"
+    assert len(gate_lines) == 2, "launch fence carries no gate recheck"
+    assert gate_lines[0] == gate_lines[1]  # byte-identical invocation across fences
+
+    def _sub(line: str) -> str:
+        return line.replace("<N>", "77").replace(
+            "uv run python scripts/verify_carryover_inputs.py",
+            f"{sys.executable} {_SCRIPT}",
+        )
+
+    # `set -e` models the fence contract ("non-zero rc ... NEVER dispatch
+    # past it"): the dispatch stand-in line must be unreachable on a recheck
+    # failure.
+    fence = "\n".join(
+        [
+            "set -e",
+            _sub(assigns[1]),
+            guards[1].replace("<N>", "77"),
+            _sub(gate_lines[1]),
+            'echo "DISPATCHED-$REPO_BRANCH"',
+        ]
+    )
+
+    # Fixture: the plan cites a file committed+pushed ONLY on branch A
+    # (issue-77-full, checked out in the sole issue worktree). An untracked
+    # VM-local copy at the repo root keeps the divergence arm out of the
+    # own-issue planned-output SKIP (a nonexistent own-issue path would skip).
+    wt = tmp_path / "wt"
+    _git(repo, "worktree", "add", "-q", str(wt), "-b", "issue-77-full")
+    _write(wt, "eval_results/issue_77/f.json")
+    _git(wt, "add", "eval_results/issue_77/f.json")
+    _git(wt, "commit", "-q", "-m", "input on branch A")
+    _git(wt, "push", "-q", "origin", "issue-77-full")
+    _write(repo, "eval_results/issue_77/f.json")  # untracked VM-local copy
+    plan = _plan(tmp_path, "Consumes eval_results/issue_77/f.json from the prior round.")
+    env = {**os.environ, "PLAN_PATH": str(plan)}
+
+    # Healthy arm: the fence resolves A, the recheck grades
+    # origin/issue-77-full (in-ref) -> the dispatch line is reached.
+    ok = subprocess.run(["bash", "-c", fence], cwd=repo, capture_output=True, text=True, env=env)
+    assert ok.returncode == 0, ok.stderr
+    assert "DISPATCHED-issue-77-full" in ok.stdout
+
+    # Divergence arm: the SOLE worktree switches to pushed branch B (cut from
+    # main — the cited file is NOT reachable there). Pre-fix, the launch
+    # fence dispatched B with no gate ever grading it.
+    _git(repo, "branch", "issue-77-alt", "main")
+    _git(repo, "push", "-q", "origin", "issue-77-alt")
+    _git(wt, "checkout", "-q", "issue-77-alt")
+    blocked = subprocess.run(
+        ["bash", "-c", fence], cwd=repo, capture_output=True, text=True, env=env
+    )
+    assert blocked.returncode == 1, blocked.stderr  # the gate's FAIL rc, not the resolver's 2
+    assert "DISPATCHED" not in blocked.stdout
+    combined = blocked.stdout + blocked.stderr
+    assert "untracked-local-only" in combined  # the RECHECK graded branch B
+    assert "eval_results/issue_77/f.json" in combined
+
+
+def test_corpus_sweep_resolver_failure_surfaces_error_not_substitute(
+    repo: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """#2263 r2 finding 3: a resolve_check_ref failure in the #1995 corpus
+    sweep is recorded per plan + exits nonzero — NEVER silently graded
+    against a substituted origin/main (plausible-but-wrong calibration)."""
+    monkeypatch.setitem(sys.modules, "verify_carryover_inputs", vci)  # restored at teardown
+    spec = importlib.util.spec_from_file_location(
+        "issue1995_corpus_sweep", REPO_ROOT / "scripts" / "issue1995_corpus_sweep.py"
+    )
+    assert spec is not None and spec.loader is not None
+    sweep = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(sweep)
+
+    plan_dir = repo / "tasks" / "running" / "77" / "plans"
+    plan_dir.mkdir(parents=True)
+    (plan_dir / "v1.md").write_text("Runs scripts/issue77_helper.py on the corpus.\n")
+
+    def _boom(*_a, **_k):
+        raise vci.CheckRefResolutionError("cannot enumerate candidates (for-each-ref rc=128)")
+
+    monkeypatch.setattr(sweep._vci, "resolve_check_ref", _boom)
+    out_dir = tmp_path / "sweep-out"
+    rc = sweep.main(["--repo-root", str(repo), "--no-fetch", "--output-dir", str(out_dir)])
+    captured = capsys.readouterr()
+    assert rc != 0
+    assert "resolution_errors=1" in captured.out
+    assert "check-ref resolution failed" in captured.err
+    payload = json.loads((out_dir / "corpus_sweep.json").read_text())
+    (rec,) = payload["sample"]
+    assert rec["resolution_error"].startswith("CheckRefResolutionError")
+    assert rec["check_ref"] is None
+    assert rec["candidates"] == []
+    # No record graded against a substituted fallback ref.
+    assert all(r["check_ref"] != "origin/main" for r in payload["sample"])
+    assert payload["aggregates"]["n_resolution_errors"] == 1
