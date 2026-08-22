@@ -11405,8 +11405,8 @@
     "2477": {
       "has_clean_result": false,
       "kind": "analysis",
-      "path": "tasks/planning/2477",
-      "status": "planning",
+      "path": "tasks/approved/2477",
+      "status": "approved",
       "title": "Verify base-model completions under the chat template are coherent (paper base-row format check)"
     },
     "2478": {
