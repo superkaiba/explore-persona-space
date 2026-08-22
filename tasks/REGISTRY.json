@@ -9684,8 +9684,8 @@
     "2253": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2253",
-      "status": "running",
+      "path": "tasks/completed/2253",
+      "status": "completed",
       "title": "Lint: cross-check production-branch third-party imports against uv.lock"
     },
     "2254": {
