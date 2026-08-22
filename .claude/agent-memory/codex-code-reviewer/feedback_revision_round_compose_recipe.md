@@ -2026,3 +2026,28 @@ single `@@FULL_LINT_ATTESTATION@@` placeholder (assert 0 residue at final
 validation). Also relay upward: a sibling 570 s-fenced run is predictably
 too tight; tell the orchestrator the measured wall so the Claude leg sizes
 its fence ≥2× (~1,200 s+).
+
+**Reconciler-UPHELD twin-FAIL fix round + three-class truth split (#2271 r2,
+2026-08-22):** when the prior round was Claude-PASS / Codex-FAIL / reconciler
+BINDING FAIL upholding the TWIN'S OWN blockers, compose the #1094-r2 shape
+(author-neutrality line; per-concern VERIFIED-ADDRESSED/NOT-ADDRESSED closure
+ledger with NOT-ADDRESSED = substantive FAIL; ledger rows inlined when tiny)
+plus three deltas: (a) keep the brief's THREE truth classes distinct in the
+prompt — "established facts" (compose-verified, do-not-re-derive) vs
+"orchestrator-verified claims — RE-VERIFY by static read, never accept" (the
+brief ordered re-verification; collapsing them into established facts would
+delete review duties) vs "calibration/settled ground" (both r1 reviewers right
+about DIFFERENT mutation directions — name both, direction (a) must STAY
+covered, so the twin neither re-litigates nor drops the surviving half);
+(b) when the fix's correctness turns on stdlib/installed-library semantics a
+no-env Codex cannot execute (py311 rglob symlink behavior, hf 0.36.2
+upload_folder walk), verify them EMPIRICALLY at compose time (tiny tempfile
+repro on the project interpreter + read the installed source) and ship them as
+established facts with file:line citations (pathlib.py:391
+`is_dir(follow_symlinks=False)`; hf_api.py:9566 `glob("**/*") + is_file()`),
+scoping what remains YOURS to verify (pattern parity, not walk parity);
+(c) realized repo shapes under sparse-excluded dirs (`eval_results/` symlinks)
+are attested in the prompt with their RESOLUTION status (dangling vs resolves)
+since Codex cannot stat them. Also: the never-echo constraints line must not
+carry the literal `<!-- ... -->` head-tag form (write "`epm:code-review-codex
+v2` head tag line" instead) or the v2-tag count assert reads 2.
