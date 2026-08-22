@@ -18773,7 +18773,18 @@ _LANE_ORDER_WAIVER_RE = re.compile(r"<!--\s*LANE-ORDER-HISTORICAL:\s*(?P<reason>
 # opens the window as "auto". The +/-1-line grain is MEASURED, not
 # assumed: same-line-only drops 2 of the 4 live 2026-08 hits (both
 # hard-wrapped sentences whose vocabulary lands on the neighbor line).
-_LANE_ORDER_CONTEXT_RE = re.compile(r"\b(?:auto|chain|default|precedence)\b|lane order", re.I)
+_LANE_ORDER_CONTEXT_RE = re.compile(
+    # `lane order` carries its own word boundaries: unguarded, it
+    # substring-opens the window on "plane order..." (round-1 code-review
+    # Minor). Window-opening only — a finding still requires a non-head
+    # `<lane>[- ]first` token on the FOCAL line — but on a FAIL-posture
+    # check the false-positive surface is kept as tight as it can freely
+    # be. Verified zero behavior change on the live tree: all four
+    # pre-edit hits open their window via `auto` / `chain` / `default`.
+    # Pinned by T14.
+    r"\b(?:auto|chain|default|precedence)\b|\blane order\b",
+    re.I,
+)
 # Family 2: a prose transcription of the constant asserts the order by
 # construction — compare its head against the resolved head. Applied to
 # the WHOLE text (finditer), so a hard-wrapped transcription still

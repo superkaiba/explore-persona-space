@@ -403,5 +403,44 @@ def test_t13_plus_minus_one_line_grain(tmp_path: Path) -> None:
     assert not any("vocab_distance2.md" in f for f in findings), findings
 
 
+# --------------------------------------------------------------------------
+# T14: the context vocabulary is word-bounded (round-1 code-review Minor)
+#
+# `lane order` unguarded substring-opens the ±1-line window on unrelated
+# words ("plane order"). The window only OPENS — a finding still needs a
+# non-head `<lane>[- ]first` token on the focal line — so an unguarded
+# alternative is a free widening of the false-positive surface on a
+# FAIL-posture, no-flags-bundled check. This pins the guard in BOTH
+# directions so a future edit cannot silently drop it: the decoy must not
+# open the window, and the real vocabulary must still open it.
+# --------------------------------------------------------------------------
+
+
+def test_t14_context_vocabulary_is_word_bounded(tmp_path: Path) -> None:
+    root = _mk_repo(tmp_path)
+    # Decoy: the ONLY context-vocabulary candidate in the neighborhood is
+    # the substring "lane order" inside "plane ordering". Unguarded, this
+    # opens the window and the focal line's `fellows first` fires.
+    _plant(
+        root,
+        ".claude/rules/decoy.md",
+        "The plane ordering diagram is unrelated.\n"
+        "fellows first\n"
+        "Nothing here asserts a routing order.\n",
+    )
+    # Positive control in the SAME run: the real two-word vocabulary must
+    # still open the window, so a fix that over-tightens (e.g. deleting the
+    # alternative outright) fails this test rather than passing it.
+    _plant(
+        root,
+        ".claude/rules/real.md",
+        "The documented lane order is stale below.\nfellows first\n",
+    )
+    findings = _report(root)["findings"]
+    assert isinstance(findings, list), findings
+    assert not any("decoy.md" in f for f in findings), findings
+    assert any("real.md" in f for f in findings), findings
+
+
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-v"]))
