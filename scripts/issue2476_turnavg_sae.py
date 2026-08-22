@@ -25,8 +25,31 @@ Plan: tasks/<status>/2476/plans/plan.md (v4). Phases (plan §4):
   upload1    P3 recapture store + assembled-split metadata -> HF
              issue2476_turnavg/analysis_tensors/{recapture_store,split_meta}/
              BEFORE any fit (#825 ordering); fail-loud verify.
-  sae_train / maps / eval / figures — built in units 2/3 (registered stubs
-             that raise NotImplementedError; never silent passes).
+  sae_train  P4 train the arm-c MatryoshkaBatchTopKSAE on the turn-averaged
+             answer summaries (Y19 rows minus holdout/val/test; 10k SAE-val
+             carve seed 2476): BatchTopK k=100 (2412.06410) + matryoshka
+             nested prefix losses (2503.17547), Adam(0.9,0.999) LR 2e-4,
+             batch 256, 3 epochs, fp16 memmap block-shuffled streaming;
+             per-epoch checkpoints + regime-keyed resume; gate G4 (SAE-val
+             var-FVE >= 0.5, rc=RC_G4); weights+cfg+train_log -> HF sae_c/.
+  maps       P5 arm-c refits via EA.phase_p1_fit VERBATIM (refit_full /
+             refit_holdout / refit_lmsys_transfer, ridge seed0; gate G1
+             reconciliation vs the committed #1482 values read at run time,
+             rc=RC_G1), arm-c identity+bias (streamed bias, helper-parity
+             asserted), arm-b shared-Gram ridge c20->vbar20 (+ inlier twin +
+             identity+bias), dense-input companions (c19->f_true 120k/20k;
+             c20->f_true20 24k/6k) — all predictions persisted for P6.
+  eval       P6 gate G3 FIRST (chanind lmsys fve_l0 on the 30k turn
+             averages, floor 0.35 = the parent gate_bm halt band; below ->
+             arm-b DEMOTION to exploratory-with-caveat, NEVER a run abort),
+             then encode f_true/f_pred/f_ib and the vectorized batteries:
+             per-feature held-out R2, per-tier medians, within-activity-
+             quintile tier permutation (m-round kernel), K=20 row-shuffle
+             null, 10k-draw bootstrap CIs, per-tier kNN retrieval
+             (map/identity+bias/train-mean), dense-space anchor + encoder
+             recon diagnostics, arm-b bridge vs the committed token-level
+             per-feature npz, corpus-transfer fold read.
+  figures — built in unit 3 (registered stub raising NotImplementedError).
 
 Pod-side contract: sentinels under /workspace/logs/issue-2476-*.json ONLY
 (never task.py); [phase=...] log lines. LMSYS/WildChat text is handled
@@ -45,6 +68,7 @@ import argparse
 import hashlib
 import json
 import logging
+import math
 import os
 import shutil
 import sys
@@ -65,6 +89,7 @@ import issue779_ffc_n1m_fits as N1M  # noqa: E402
 import issue779_ffc_n1m_generate_capture as N1G  # noqa: E402
 import issue779_ffc_n50k_fits as N50  # noqa: E402
 import issue779_fitter_fair_comparison as F  # noqa: E402
+import issue779_percontext_recon as PR  # noqa: E402
 import issue1482_early_layer as EL  # noqa: E402
 import issue1482_error_analysis as EA  # noqa: E402
 import issue1482_matryoshka_tier as M  # noqa: E402
@@ -1092,16 +1117,1642 @@ def phase_smoke(args) -> None:
     )
 
 
+# ── P4: MatryoshkaBatchTopKSAE + trainer (arm-c dictionary) ──────────────────────
+
+SAE_SEED = 2476  # SAE init + SAE-val carve (plan §10 Seeds)
+SAE_VAL_N = 10_000
+SAE_LR = 2e-4  # plan §11: arXiv 2606.28548 recipe
+SAE_ADAM_BETAS = (0.9, 0.999)
+SAE_BATCH = 256
+SAE_EPOCHS = 3
+SAE_K = 100
+SAE_DICT = int(S.SAELENS_DICT_SIZE)  # 65,536 (arm-b comparability, plan §11)
+SAE_THRESH_EMA = 0.999  # BatchTopK inference-threshold EMA (2412.06410 convention)
+SAE_BLOCK_ROWS = 65_536  # block-shuffled epoch loader granularity (fp16 memmap streaming)
+G4_FVE_FLOOR = 0.5  # plan §7 G4: structural-breakage floor (expected ~0.85)
+BOOT_SEED_2476 = 24_761  # plan §10 Seeds: bootstrap
+SHUFFLE_SEEDS_2476 = tuple(range(2_476_100, 2_476_120))  # K=20 row-shuffle null (advisory)
+RC_G4 = 25  # G4 SAE-val FVE-floor HALT (unit-1 convention: 22/23/24 taken)
+RC_G1 = 26  # G1 reconciliation HALT (plan §7: halt fits)
+EA_FIT_IDS = (
+    "refit_full__ridge__seed0",
+    "refit_holdout__ridge__seed0",
+    "refit_lmsys_transfer__ridge__seed0",  # corpus-transfer fold (plan §6, one extra Gram)
+)
+
+
+class MatryoshkaBatchTopKSAE(torch.nn.Module):
+    """Matryoshka BatchTopK SAE over turn-averaged answer summaries (plan §4 P4).
+
+    Training forward: ReLU pre-activations gated by BatchTopK — keep the B*k
+    largest activations across the WHOLE batch (arXiv 2412.06410), selected ONCE
+    on the full 65,536 width — then the matryoshka NESTED reconstruction losses
+    over the feature-id prefixes (2,048 / 16,384 / 65,536; arXiv 2503.17547),
+    MEAN over the three prefix losses (recorded in cfg.json). Inference: scalar
+    threshold gating (EMA of each training batch's minimum kept activation — the
+    BatchTopK inference convention the in-repo andyrdt loader consumes). fp32
+    throughout. No decoder renorm / aux loss: BatchTopK carries no shrinkage
+    incentive, and G4 (held-out var-FVE floor) is the training-sanity arbiter.
+    Duck-types SAELensJumpReLU's encode/decode contract (act_dim / dict_size /
+    device) so the shared encode/recon helpers below run on either dictionary."""
+
+    def __init__(
+        self,
+        act_dim: int = int(C.EXPECTED_HIDDEN),
+        dict_size: int = SAE_DICT,
+        k: int = SAE_K,
+        tier_bounds: tuple[int, ...] = S.MATRYOSHKA_TIER_BOUNDS,
+        seed: int = SAE_SEED,
+    ):
+        super().__init__()
+        assert int(tier_bounds[-1]) == dict_size, (tier_bounds, dict_size)
+        gen = torch.Generator().manual_seed(seed)
+        w_dec = torch.randn(dict_size, act_dim, generator=gen, dtype=torch.float32)
+        w_dec = w_dec / w_dec.norm(dim=1, keepdim=True)
+        self.w_dec = torch.nn.Parameter(w_dec)
+        self.w_enc = torch.nn.Parameter(w_dec.t().contiguous().clone())
+        self.b_enc = torch.nn.Parameter(torch.zeros(dict_size))
+        self.b_dec = torch.nn.Parameter(torch.zeros(act_dim))
+        self.register_buffer("threshold", torch.zeros(()))
+        self.act_dim, self.dict_size, self.k = int(act_dim), int(dict_size), int(k)
+        self.tier_bounds = tuple(int(b) for b in tier_bounds)
+        self.seed = int(seed)
+
+    @property
+    def device(self):  # SAELensJumpReLU duck-type (shared helpers read .device)
+        return self.w_enc.device
+
+    def _pre(self, x: torch.Tensor) -> torch.Tensor:
+        return (x - self.b_dec) @ self.w_enc + self.b_enc
+
+    def train_step_losses(self, x: torch.Tensor) -> tuple[torch.Tensor, dict, torch.Tensor]:
+        """One training forward: BatchTopK codes + nested prefix losses.
+        Returns (loss, float diagnostics, detached (dict_size,) fired mask)."""
+        assert x.ndim == 2 and x.shape[1] == self.act_dim, tuple(x.shape)
+        act = torch.relu(self._pre(x))
+        k_tot = min(self.k * x.shape[0], act.numel())
+        with torch.no_grad():
+            vals, idx = torch.topk(act.detach().flatten(), k_tot)
+            mask = torch.zeros(act.numel(), dtype=torch.bool, device=act.device)
+            mask[idx] = vals > 0  # never keep exact zeros (all-zero rows at init)
+            mask = mask.view_as(act)
+            kept = vals[vals > 0]
+            min_kept = float(kept.min()) if kept.numel() else 0.0
+        f = act * mask  # hard 0/1 mask; gradients flow through kept activations only
+        losses = []
+        for m in self.tier_bounds:
+            xhat = f[:, :m] @ self.w_dec[:m] + self.b_dec
+            losses.append(((x - xhat) ** 2).sum(-1).mean())
+        loss = torch.stack(losses).mean()
+        if min_kept > 0.0:  # EMA inference threshold (min kept activation per batch)
+            with torch.no_grad():
+                if float(self.threshold) == 0.0:
+                    self.threshold.fill_(min_kept)
+                else:
+                    self.threshold.mul_(SAE_THRESH_EMA).add_((1 - SAE_THRESH_EMA) * min_kept)
+        diags = {
+            "loss": float(loss.detach()),
+            "loss_prefix": [float(v.detach()) for v in losses],
+            "l0_train": float(mask.sum()) / x.shape[0],
+            "min_kept": min_kept,
+        }
+        return loss, diags, mask.any(0).detach()
+
+    @torch.no_grad()
+    def encode(self, h: torch.Tensor, chunk: int = 2048) -> torch.Tensor:
+        """(T, act_dim) -> (T, dict_size) threshold-gated inference codes (fp32)."""
+        assert h.ndim == 2 and h.shape[1] == self.act_dim, tuple(h.shape)
+        outs = []
+        for s in range(0, h.shape[0], chunk):
+            x = h[s : s + chunk].to(device=self.device, dtype=torch.float32)
+            act = torch.relu(self._pre(x))
+            outs.append(act * (act > self.threshold))
+        return torch.cat(outs) if len(outs) != 1 else outs[0]
+
+    @torch.no_grad()
+    def decode(self, f: torch.Tensor) -> torch.Tensor:
+        assert f.ndim == 2 and f.shape[1] == self.dict_size, tuple(f.shape)
+        return f.to(device=self.device, dtype=torch.float32) @ self.w_dec + self.b_dec
+
+    def cfg_dict(self) -> dict:
+        return {
+            "architecture": "matryoshka_batchtopk",
+            "act_dim": self.act_dim,
+            "dict_size": self.dict_size,
+            "k": self.k,
+            "tier_bounds": list(self.tier_bounds),
+            "seed": self.seed,
+            "lr": SAE_LR,
+            "adam_betas": list(SAE_ADAM_BETAS),
+            "batch": SAE_BATCH,
+            "epochs": SAE_EPOCHS,
+            "prefix_loss_reduction": "mean",
+            "threshold_ema": SAE_THRESH_EMA,
+            "threshold": float(self.threshold),
+        }
+
+    def save_dir(self, out: Path) -> None:
+        """weights (safetensors) + cfg.json — the plan §6.5 sae_c deliverables."""
+        from safetensors.torch import save_file
+
+        sd = {
+            "w_enc": self.w_enc.detach().cpu().contiguous(),
+            "w_dec": self.w_dec.detach().cpu().contiguous(),
+            "b_enc": self.b_enc.detach().cpu().contiguous(),
+            "b_dec": self.b_dec.detach().cpu().contiguous(),
+            "threshold": self.threshold.detach().cpu().reshape(1),
+        }
+        save_file(sd, str(out / "sae_weights.safetensors"))
+        _write_json(out / "cfg.json", self.cfg_dict(), phase="sae_train")
+
+    @classmethod
+    def load_local(cls, d: Path, device: str = "cpu") -> "MatryoshkaBatchTopKSAE":
+        from safetensors.torch import load_file
+
+        cfg = json.loads((d / "cfg.json").read_text())
+        sd = load_file(str(d / "sae_weights.safetensors"))
+        expected = {"w_enc", "w_dec", "b_enc", "b_dec", "threshold"}
+        assert set(sd) == expected, f"sae_weights key drift: {sorted(sd)}"
+        obj = cls(
+            act_dim=int(cfg["act_dim"]),
+            dict_size=int(cfg["dict_size"]),
+            k=int(cfg["k"]),
+            tier_bounds=tuple(cfg["tier_bounds"]),
+            seed=int(cfg["seed"]),
+        )
+        with torch.no_grad():
+            obj.w_enc.copy_(sd["w_enc"])
+            obj.w_dec.copy_(sd["w_dec"])
+            obj.b_enc.copy_(sd["b_enc"])
+            obj.b_dec.copy_(sd["b_dec"])
+            obj.threshold.copy_(sd["threshold"].reshape(()))
+        return obj.to(device).eval()
+
+
+def _sae_out_dir(args) -> Path:
+    return args.out_root / "sae_c"
+
+
+def _maps_dir(args) -> Path:
+    return args.out_root / "maps"
+
+
+def _eval_dir(args) -> Path:
+    return args.out_root / "eval"
+
+
+def _production(args) -> bool:
+    """One production predicate for the P4-P6 gates (the P2 convention)."""
+    return args.max_chunks == 0 and args.smoke_rows == 0 and not args.smoke
+
+
+@torch.no_grad()
+def _recon_fve(sae, mm, positions: np.ndarray, chunk: int = 2048) -> tuple[float, float]:
+    """Plain var-FVE + mean L0 of the sae's reconstruction over the given rows
+    (fp64 accumulators; per-dim unbiased variance, summed — the G4 mechanism.
+    NO token-pool outlier drop: these are row summaries, not token streams;
+    the chanind G3 read keeps its own fve_l0 semantics)."""
+    pos = np.asarray(positions, np.int64)
+    n = int(len(pos))
+    assert n >= 2, f"var-FVE needs >= 2 rows, got {n}"
+    x_sum = torch.zeros(sae.act_dim, dtype=torch.float64, device=sae.device)
+    x_sq = torch.zeros_like(x_sum)
+    r_sum = torch.zeros_like(x_sum)
+    r_sq = torch.zeros_like(x_sum)
+    l0 = 0.0
+    for s in range(0, n, chunk):
+        x = torch.as_tensor(np.asarray(mm[pos[s : s + chunk]], np.float32), device=sae.device)
+        f = sae.encode(x, chunk=chunk)
+        r = x - sae.decode(f)
+        x_sum += x.sum(0, dtype=torch.float64)
+        x_sq += (x * x).sum(0, dtype=torch.float64)
+        r_sum += r.sum(0, dtype=torch.float64)
+        r_sq += (r * r).sum(0, dtype=torch.float64)
+        l0 += float((f > 0).sum())
+
+    def _var_sum(ssum: torch.Tensor, ssq: torch.Tensor) -> float:
+        return float(((ssq - ssum * ssum / n) / (n - 1)).sum())
+
+    ss_tot = _var_sum(x_sum, x_sq)
+    fve = float("nan") if ss_tot < 1e-12 else 1.0 - _var_sum(r_sum, r_sq) / ss_tot
+    return fve, l0 / n
+
+
+def _dead_by_tier(fired: np.ndarray) -> dict:
+    """Dead-feature fraction per matryoshka tier (plan §4 P4 logging duty).
+    An empty tier (sub-production dict widths in smokes) reports None, not NaN."""
+    tiers = S.tier_of(np.arange(len(fired)))
+    out = {}
+    for t in (0, 1, 2):
+        m = tiers == t
+        out[str(t)] = round(float((~fired[m]).mean()), 4) if int(m.sum()) else None
+    return out
+
+
+def _sae_row_positions(args) -> tuple[np.ndarray, np.ndarray, dict]:
+    """SAE-c train/val row POSITIONS in the assembled memmap: all present rows
+    minus 20k holdout minus pinned val/test (plan §4 P4; re-measured here), with
+    the 10,000-row SAE-val carve at seed 2476."""
+    a_dir = _assemble_dir(args)
+    rows_present = np.load(a_dir / "rows_present.npy")
+    committed = _committed_split()
+    _row_ci, _prov, pools = _load_scratch_meta(args)
+    _r1, val, test = _assert_pinned_valtest(committed)
+    excl = np.union1d(np.union1d(pools["holdout"], val), test)
+    pool_ids = np.setdiff1d(rows_present, excl, assume_unique=False)
+    pos = np.searchsorted(rows_present, pool_ids)
+    assert (rows_present[pos] == pool_ids).all()
+    rng = np.random.default_rng(SAE_SEED)
+    perm = rng.permutation(len(pos))
+    val_n = SAE_VAL_N if len(pos) > 3 * SAE_VAL_N else max(2, len(pos) // 5)
+    val_pos = np.sort(pos[perm[:val_n]])
+    tr_pos = np.sort(pos[perm[val_n:]])
+    expected_pool = int(committed["n_total"]) - len(pools["holdout"]) - len(val) - len(test)
+    doc = {
+        "n_pool": int(len(pos)),
+        "n_train": int(len(tr_pos)),
+        "n_val": int(val_n),
+        "n_rows_present": int(len(rows_present)),
+        "expected_pool_production": expected_pool,
+        "carve_seed": SAE_SEED,
+    }
+    if _production(args):
+        assert len(pos) == expected_pool, doc  # the plan §4 re-measure reconciliation
+    return tr_pos, val_pos, doc
+
+
+def _block_batches(mm, positions: np.ndarray, batch: int, rng):
+    """Two-level shuffled batches off an fp16 memmap: shuffle BLOCK order, load one
+    sorted-position block (sequential-ish IO), shuffle within, yield (b, H) fp16 —
+    approximates a full epoch shuffle without materializing the matrix (plan §4
+    'fp16 memmap streaming; never materialize the full matrix in RAM')."""
+    n_blocks = math.ceil(len(positions) / SAE_BLOCK_ROWS)
+    for bi in rng.permutation(n_blocks):
+        blk = positions[bi * SAE_BLOCK_ROWS : (bi + 1) * SAE_BLOCK_ROWS]
+        arr = np.asarray(mm[blk])
+        w = rng.permutation(len(arr))
+        for s in range(0, len(arr), batch):
+            yield arr[w[s : s + batch]]
+
+
 def phase_sae_train(args) -> None:
-    raise NotImplementedError("P4 sae_train (MatryoshkaBatchTopKSAE trainer) is built in unit 2")
+    """P4: train the arm-c MatryoshkaBatchTopKSAE on the turn-averaged answer
+    summaries (Y19 rows); per-epoch checkpoints + regime-keyed resume; gate G4;
+    weights+cfg+train_log uploaded to HF sae_c/ (optimizer states never uploaded
+    — the plan §10 discarded-artifacts row)."""
+    C.phase("sae_train")
+    out = _sae_out_dir(args)
+    out.mkdir(parents=True, exist_ok=True)
+    regime, resume_ok = _enter_phase_regime(out, args, "sae_train")
+    w_path = out / "sae_weights.safetensors"
+    log_path = out / "train_log.json"
+    gates_path = out / "gates_p4.json"
+    if resume_ok and w_path.exists() and log_path.exists() and gates_path.exists():
+        logger.info("[sae_train] resume: weights+log+gates present under matching regime; skip")
+        return
+    if not resume_ok:
+        for p in (w_path, log_path, gates_path, out / "cfg.json", out / "ckpt_last.pt"):
+            if p.exists():
+                logger.warning("[sae_train] recompute: removing stale %s", p.name)
+                p.unlink()
+    EA._headroom(args.out_root, 1 if args.smoke else 4, "p4-sae-train")
+    a_dir = _assemble_dir(args)
+    assert (a_dir / "split_meta.json").exists(), "sae_train needs the P1 outputs — run assemble"
+    y_mm = np.load(a_dir / "Y19.fp16.npy", mmap_mode="r")
+    tr_pos, val_pos, pool_doc = _sae_row_positions(args)
+    production = _production(args)
+    print(f"[sae_train] pools re-measured: {json.dumps(pool_doc)}", flush=True)
+
+    dev = args.device
+    model = MatryoshkaBatchTopKSAE().to(dev)
+    # b_dec init: seeded train-subsample mean (streamed fp64; standard SAE practice)
+    rng0 = np.random.default_rng(SAE_SEED + 1)
+    sub = np.sort(rng0.choice(tr_pos, size=min(65_536, len(tr_pos)), replace=False))
+    mu = np.zeros(model.act_dim, dtype=np.float64)
+    for s in range(0, len(sub), 8192):
+        mu += np.asarray(y_mm[sub[s : s + 8192]], np.float64).sum(0)
+    with torch.no_grad():
+        model.b_dec.copy_(torch.as_tensor(mu / len(sub), dtype=torch.float32))
+    opt = torch.optim.Adam(model.parameters(), lr=SAE_LR, betas=SAE_ADAM_BETAS)
+    ckpt_path = out / "ckpt_last.pt"
+    start_epoch, step = 0, 0
+    epoch_rows: list[dict] = []
+    if resume_ok and ckpt_path.exists():
+        # self-produced local checkpoint (regime-matched dir) — weights_only=False
+        # is the sanctioned posture for sha-pinned self-produced bundles (gotchas.md)
+        ck = torch.load(ckpt_path, map_location=dev, weights_only=False)
+        model.load_state_dict(ck["model"])
+        opt.load_state_dict(ck["opt"])
+        start_epoch, step = int(ck["epoch_done"]), int(ck["step"])
+        epoch_rows = list(ck["log_rows"])
+        logger.info("[sae_train] RESUMED at epoch %d (step %d)", start_epoch, step)
+    steps_cap = int(args.sae_steps)
+    t0 = time.time()
+    stop = False
+    for epoch in range(start_epoch, SAE_EPOCHS):
+        rng_e = np.random.default_rng(SAE_SEED * 1000 + epoch)
+        fired = torch.zeros(model.dict_size, dtype=torch.bool, device=dev)
+        run_loss, run_n = 0.0, 0
+        diags: dict = {"l0_train": float("nan")}
+        for xb in _block_batches(y_mm, tr_pos, SAE_BATCH, rng_e):
+            x = torch.as_tensor(np.asarray(xb, np.float32), device=dev)
+            loss, diags, fired_b = model.train_step_losses(x)
+            opt.zero_grad(set_to_none=True)
+            loss.backward()
+            opt.step()
+            fired |= fired_b
+            run_loss += diags["loss"]
+            run_n += 1
+            step += 1
+            if step % 200 == 0:
+                print(
+                    f"[sae_train] epoch {epoch + 1}/{SAE_EPOCHS} step {step} "
+                    f"loss={run_loss / max(1, run_n):.1f} thr={float(model.threshold):.4f} "
+                    f"l0={diags['l0_train']:.0f} elapsed={time.time() - t0:.0f}s",
+                    flush=True,
+                )
+            if steps_cap and step >= steps_cap:
+                stop = True
+                break
+        fve_val, l0_val = _recon_fve(model, y_mm, val_pos)
+        row = {
+            "epoch": epoch + 1,
+            "steps": step,
+            "mean_loss": round(run_loss / max(1, run_n), 3),
+            "val_var_fve": round(fve_val, 6),
+            "val_l0": round(l0_val, 2),
+            "dead_frac_by_tier": _dead_by_tier(fired.cpu().numpy()),
+            "threshold": float(model.threshold),
+            "elapsed_s": round(time.time() - t0, 1),
+        }
+        epoch_rows.append(row)
+        print(f"[sae_train] unit {epoch + 1}/{SAE_EPOCHS} epoch-done {json.dumps(row)}", flush=True)
+        torch.save(
+            {
+                "model": model.state_dict(),
+                "opt": opt.state_dict(),
+                "epoch_done": epoch + 1,
+                "step": step,
+                "log_rows": epoch_rows,
+            },
+            ckpt_path,
+        )
+        if stop:
+            break
+    assert epoch_rows, "sae_train produced no epoch rows"
+    fve_val = float(epoch_rows[-1]["val_var_fve"])
+    g4_pass = fve_val >= G4_FVE_FLOOR
+    gates = {
+        "g4": {
+            "val_var_fve": fve_val,
+            "val_l0": epoch_rows[-1]["val_l0"],
+            "floor": G4_FVE_FLOOR,
+            "n_val": int(len(val_pos)),
+            "verdict": "PASS" if g4_pass else ("FAIL" if production else "INFORMATIONAL-smoke"),
+        }
+    }
+    # persist weights + log + gates BEFORE any halt (halt-investigate needs the artifact)
+    model.save_dir(out)
+    _write_json(
+        log_path,
+        {
+            "pools": pool_doc,
+            "epochs": epoch_rows,
+            "steps": step,
+            "steps_cap": steps_cap,
+            "cfg": model.cfg_dict(),
+        },
+        phase="sae_train",
+    )
+    _write_json(gates_path, gates, phase="sae_train")
+    if production and not g4_pass:
+        _sentinel("sae_train", "G4 SAE-val FVE below floor (gates_p4.json written)", {"rc": RC_G4})
+        logger.error("[sae_train] G4 FAIL (halt-investigate before any encode): %s", gates["g4"])
+        sys.exit(RC_G4)
+    if args.skip_upload:
+        logger.warning("[sae_train] --skip-upload: sae_c upload SKIPPED (local-only run)")
+    else:
+        from huggingface_hub import HfApi
+
+        from explore_persona_space.orchestrate import hub
+        from explore_persona_space.orchestrate.upload_sharded import upload_dir_sharded
+
+        up = _stage_dir(args) / "sae_c_upload"
+        if up.exists():
+            shutil.rmtree(up)
+        up.mkdir(parents=True, exist_ok=True)
+        for name in ("sae_weights.safetensors", "cfg.json", "train_log.json"):
+            shutil.copy2(out / name, up / name)
+        prefix = f"{args.hf_prefix}/sae_c"
+        res = upload_dir_sharded(
+            up,
+            C.HF_DATA_REPO,
+            prefix,
+            repo_type="dataset",
+            shard_glob="*",
+            verify=True,
+            delete_local=False,
+            resume_skip=False,
+        )
+        if not res.rerouted:  # fail-loud exact-set verify (the P3 pattern)
+            expected = [f"{prefix}/{p.name}" for p in sorted(up.iterdir()) if p.is_file()]
+            missing = hub.verify_repo_paths_uploaded(
+                HfApi(), C.HF_DATA_REPO, expected, path_in_repo=prefix
+            )
+            assert not missing, f"[sae_train] verify FAILED — missing on Hub: {missing}"
+        logger.info("[sae_train] uploaded sae_c -> %s (rerouted=%s)", prefix, res.rerouted)
+    _sentinel(
+        "sae_train",
+        f"P4 done (fve={fve_val:.4f} l0={epoch_rows[-1]['val_l0']} g4={gates['g4']['verdict']})",
+    )
+    logger.info("[sae_train] done: %s", gates["g4"])
+
+
+# ── P5: maps + baselines ─────────────────────────────────────────────────────────
+
+
+def _ea_scratch(args, production: bool) -> Path:
+    """EA-shaped scratch: X.npy/Y.npy symlinks onto the P1 memmaps + the parent
+    split_indices.npz (position-REMAPPED under smoke so EA.phase_p1_fit runs
+    VERBATIM on the assembled slice; production symlinks the staged original —
+    row id == memmap position there by the P1 reconciliation)."""
+    d = _maps_dir(args) / "ea_scratch"
+    d.mkdir(parents=True, exist_ok=True)
+    a_dir = _assemble_dir(args)
+    for src, name in ((a_dir / "X19.fp16.npy", "X.npy"), (a_dir / "Y19.fp16.npy", "Y.npy")):
+        dest = d / name
+        if dest.is_symlink() or dest.exists():
+            dest.unlink()
+        dest.symlink_to(src.resolve())
+    ns = SimpleNamespace(scratch=_stage_dir(args))
+    ns.scratch.mkdir(parents=True, exist_ok=True)
+    EL._stage_scratch_meta(ns)
+    src_split = _stage_dir(args) / "split_indices.npz"
+    z = np.load(src_split)
+    needed = ("train_full", "holdout", "val", "test", "train_lmsys", "sae_fit", "sae_val")
+    missing = [k for k in needed if k not in z.files]
+    assert not missing, f"parent split_indices.npz missing keys {missing}"
+    dest_split = d / "split_indices.npz"
+    if dest_split.is_symlink() or dest_split.exists():
+        dest_split.unlink()
+    if production:
+        dest_split.symlink_to(src_split.resolve())
+        return d
+    # smoke: remap every pool to POSITIONS within the assembled slice; a pool with
+    # < 2 surviving rows gets a seeded stand-in carve (flagged; EA's own
+    # setdiff1d(train_full, holdout) keeps stand-in holdout rows out of training)
+    rows_present = np.load(a_dir / "rows_present.npy")
+    remapped: dict[str, np.ndarray] = {}
+    standins: dict[str, int] = {}
+    for k in needed:
+        ids = np.asarray(z[k], np.int64)
+        pos = np.searchsorted(rows_present, ids)
+        ok = (pos < len(rows_present)) & (
+            rows_present[np.minimum(pos, len(rows_present) - 1)] == ids
+        )
+        remapped[k] = np.sort(pos[ok]).astype(np.int64)
+    used = np.zeros(len(rows_present), dtype=bool)
+    for k in ("holdout", "val", "test"):
+        used[remapped[k]] = True
+    rng = np.random.default_rng(SAE_SEED + 7)
+    for k in needed:
+        if len(remapped[k]) >= 2:
+            continue
+        free = np.where(~used)[0]
+        assert len(free) >= 2, f"smoke split remap: no free positions for stand-in pool {k!r}"
+        take = np.sort(rng.choice(free, size=min(50, max(2, len(free) // 5)), replace=False))
+        remapped[k] = take.astype(np.int64)
+        if k in ("holdout", "val", "test"):
+            used[take] = True
+        standins[k] = int(len(take))
+        logger.warning("[maps] SMOKE stand-in pool %r: %d carved positions", k, len(take))
+    np.savez(dest_split, **remapped)
+    _write_json(
+        d / "smoke_remap.json",
+        {"standins": standins, "n_positions": {k: int(len(v)) for k, v in remapped.items()}},
+        phase="maps",
+    )
+    return d
+
+
+def _run_ea_refits(args, maps_dir: Path, scratch: Path, resume_ok: bool) -> None:
+    """The three arm-c ridge refits through EA.phase_p1_fit VERBATIM (plan §4 P5)."""
+    pdir = maps_dir / "percontext"
+    for fit_id in EA_FIT_IDS:
+        jpath, npath = pdir / f"{fit_id}.json", pdir / f"{fit_id}.npz"
+        if resume_ok and jpath.exists() and npath.exists():
+            logger.info("[maps] %s present; resume-skip", fit_id)
+            continue
+        ea = SimpleNamespace(
+            scratch=scratch,
+            out_eval=maps_dir,
+            fit_id=fit_id,
+            seed=0,
+            device=args.device,
+            smoke=bool(args.smoke),
+            fit_n=int(args.fit_n),
+            krr_nystrom_centers=16384,  # parent's explicit value (unused by ridge)
+        )
+        t0 = time.time()
+        EA.phase_p1_fit(ea)
+        print(f"[maps] unit {fit_id} elapsed={time.time() - t0:.0f}s", flush=True)
+
+
+def _gate_g1(args, maps_dir: Path, production: bool) -> dict:
+    """G1 reconciliation (plan §7): recomputed whole-map R2 vs the committed
+    values READ AT RUN TIME from eval_results/issue_1482/percontext/ (never
+    retyped). Production FAIL -> recon_gate.json written FIRST, then rc=RC_G1."""
+    ref_dir = PROJECT_ROOT / "eval_results" / "issue_1482" / "percontext"
+    try:
+        ref_full = json.loads((ref_dir / "refit_full__ridge__seed0.json").read_text())
+        ref_hold = json.loads((ref_dir / "refit_holdout__ridge__seed0.json").read_text())
+    except FileNotFoundError as e:
+        raise FileNotFoundError(
+            f"{e} — committed #1482 reference JSONs absent; on a partial-clone pod run "
+            "`git sparse-checkout add eval_results/issue_1482`"
+        ) from e
+    ours_full = json.loads((maps_dir / "percontext" / "refit_full__ridge__seed0.json").read_text())
+    ours_hold = json.loads(
+        (maps_dir / "percontext" / "refit_holdout__ridge__seed0.json").read_text()
+    )
+    committed_test = float(ref_full["sets"]["test"]["whole_map_r2"])
+    committed_hold = float(ref_hold["sets"]["holdout"]["whole_map_r2"])
+    got_test = float(ours_full["sets"]["test"]["whole_map_r2"])
+    got_hold = float(ours_hold["sets"]["holdout"]["whole_map_r2"])
+    tol_full = float(EA.GATE_A_TOL["ridge"])  # 0.002 — the parent's own tolerance
+    tol_hold = 0.003  # plan §7 G1
+    d_full, d_hold = abs(got_test - committed_test), abs(got_hold - committed_hold)
+    ok = d_full <= tol_full and d_hold <= tol_hold
+    gate = {
+        "committed": {"full_test": committed_test, "holdout": committed_hold},
+        "recomputed": {"full_test": got_test, "holdout": got_hold},
+        "abs_delta": {"full_test": d_full, "holdout": d_hold},
+        "tol": {"full_test": tol_full, "holdout": tol_hold},
+        "verdict": "PASS" if ok else ("FAIL" if production else "INFORMATIONAL-smoke"),
+    }
+    _write_json(maps_dir / "recon_gate.json", {"g1": gate}, phase="maps")
+    if production and not ok:
+        _sentinel("maps", "G1 reconciliation FAIL (recon_gate.json written)", {"rc": RC_G1})
+        logger.error("[maps] G1 FAIL — assembly/split bug; halting fits: %s", gate)
+        sys.exit(RC_G1)
+    return gate
+
+
+def _stream_bias(X, Y, rows: np.ndarray, chunk: int = 50_000) -> np.ndarray:
+    """train-mean(Y − X) in fp64, streamed — the identity_bias_predict bias
+    without materializing the full fp64 train arrays (parity-asserted below)."""
+    s = np.zeros(X.shape[1], np.float64)
+    for i in range(0, len(rows), chunk):
+        r = rows[i : i + chunk]
+        s += np.asarray(Y[r], np.float64).sum(0) - np.asarray(X[r], np.float64).sum(0)
+    return s / max(1, len(rows))
+
+
+def _ib_arm_c(args, maps_dir: Path, scratch: Path) -> None:
+    """Arm-c identity+bias baseline (plan §4 P5): v̂_ib = c19_holdout + b, with b
+    = train-mean(v19 − c19) over the SAME rows as refit_holdout. The streamed
+    fp64 bias is parity-asserted against the canonical helper on a bounded
+    subsample (the helper materializes full fp64 arrays — the zeros probe
+    extracts its bias exactly: identity_bias_predict(x, y, 0) == b)."""
+    out = maps_dir / "ib_c.npz"
+    from explore_persona_space.analysis.mapping_baselines import identity_bias_predict
+
+    X = np.load(scratch / "X.npy", mmap_mode="r")
+    Y = np.load(scratch / "Y.npy", mmap_mode="r")
+    idx = np.load(scratch / "split_indices.npz")
+    tr = np.sort(np.setdiff1d(idx["train_full"], idx["holdout"], assume_unique=False))
+    hold = np.asarray(idx["holdout"], np.int64)
+    b = _stream_bias(X, Y, tr)
+    sub = tr[: min(20_000, len(tr))]
+    b_helper = identity_bias_predict(
+        np.asarray(X[sub]), np.asarray(Y[sub]), np.zeros((1, X.shape[1]), np.float64)
+    )[0]
+    b_sub = _stream_bias(X, Y, sub)
+    parity = float(np.abs(b_helper - b_sub).max())
+    assert np.allclose(b_helper, b_sub, atol=1e-8), f"ib bias parity failed: {parity}"
+    pred = np.asarray(X[hold], np.float64) + b
+    tmp = out.parent / f".tmp_{out.name}"
+    np.savez(
+        tmp,
+        rows=hold,
+        pred16=pred.astype(np.float16),
+        bias=b.astype(np.float64),
+        parity_max_abs=np.float64(parity),
+        n_train=np.int64(len(tr)),
+    )
+    tmp.replace(out)
+    logger.info("[maps] ib_c done (n_train=%d, parity=%.2e)", len(tr), parity)
+
+
+def _eigh_fallback(fn, device: str):
+    """cuda eigh non-convergence -> exact CPU-LAPACK re-run (gotchas.md cuSOLVER
+    rule: numerical-backend swap, never a Gram jitter)."""
+    try:
+        return fn(device)
+    except torch.linalg.LinAlgError as e:
+        logger.warning("[maps] cuda eigh non-convergence (%s); CPU fallback", e)
+        return fn("cpu")
+
+
+def _gram_ridge_single(Z, Y, tr, va, te, lambdas, device: str, block: int = 0):
+    """ONE parent _ridge_factorize + pooled-R2 lambda selection on va + te
+    prediction, memmap-friendly for a single wide target block (the plan §4
+    'all alive features solved off ONE Gram, feature-chunked' fit; parent
+    internals UNCHANGED — the byte-cap mirrors EA._shared_gram_ridge_multi)."""
+    block = block or N1M.RIDGE_BLOCK
+    block = min(block, max(2048, int((4 * (1 << 30)) // (max(1, Y.shape[1]) * 8))))
+
+    def _run(d):
+        dev = torch.device(d)
+        fac = N1M._ridge_factorize(Z, Y, tr, dev, block)
+        yva = np.asarray(Y[va], np.float64)
+        best = (float(lambdas[0]), -np.inf)
+        for lam in lambdas:
+            pv = N1M._ridge_predict_one(Z, va, fac, lam, dev, block)
+            r2 = PR._pooled_r2(pv, yva)
+            if np.isfinite(r2) and r2 > best[1]:
+                best = (float(lam), float(r2))
+        pt = N1M._ridge_predict_one(Z, te, fac, best[0], dev, block)
+        edge = bool(best[0] in (float(lambdas[0]), float(lambdas[-1])))
+        return pt, {"selected_lambda": best[0], "val_r2": best[1], "lambda_grid_edge": edge}
+
+    return _eigh_fallback(_run, device)
+
+
+@torch.no_grad()
+def _encode_counts(sae, mm, positions: np.ndarray, chunk: int = 4096) -> np.ndarray:
+    """Per-feature active-row counts of the sae's inference codes over the given
+    rows (streaming; counts on TRUE-summary encodes — the alive-mask provenance,
+    plan §6: never predicted codes)."""
+    counts = torch.zeros(sae.dict_size, dtype=torch.int64, device=sae.device)
+    pos = np.sort(np.asarray(positions, np.int64))
+    t0 = time.time()
+    n_chunks = math.ceil(len(pos) / chunk)
+    for i, s in enumerate(range(0, len(pos), chunk)):
+        x = torch.as_tensor(np.asarray(mm[pos[s : s + chunk]], np.float32), device=sae.device)
+        counts += (sae.encode(x, chunk=chunk) > 0).sum(0)
+        if (i + 1) % 10 == 0 or i + 1 == n_chunks:
+            print(
+                f"[maps] counts chunk {i + 1}/{n_chunks} elapsed={time.time() - t0:.0f}s",
+                flush=True,
+            )
+    return counts.cpu().numpy()
+
+
+@torch.no_grad()
+def _encode_restricted(sae, mm, positions: np.ndarray, cols: np.ndarray, out_mm=None, chunk=4096):
+    """Encode the given rows -> restrict to the alive cols -> fp16 (into out_mm
+    when given, else RAM). Row ORDER follows `positions` verbatim."""
+    pos = np.asarray(positions, np.int64)
+    cols_t = torch.as_tensor(np.asarray(cols, np.int64), device=sae.device)
+    dst = out_mm if out_mm is not None else np.empty((len(pos), len(cols)), np.float16)
+    for s in range(0, len(pos), chunk):
+        x = torch.as_tensor(np.asarray(mm[pos[s : s + chunk]], np.float32), device=sae.device)
+        f = sae.encode(x, chunk=chunk)[:, cols_t]
+        dst[s : s + f.shape[0]] = f.cpu().numpy().astype(np.float16)
+    return dst
+
+
+def _alive_floor(n_fit: int) -> int:
+    """The 1% activity criterion (plan §4/§6; EA._p3_prep convention)."""
+    return max(1, math.ceil(0.01 * n_fit))
+
+
+def _armb_all(args, maps_dir: Path, production: bool) -> dict:
+    """Arm-b sub-unit: shared-Gram ridge c20->vbar20 (+ inlier twin off the SAME
+    factorization) + identity+bias + chanind alive mask/f_true encodes + the
+    c20->f_true20 dense-input companion. One staging of the banked c20."""
+    out_maps = maps_dir / "armb_maps.npz"
+    out_alive = maps_dir / "alive_b.npz"
+    out_ftrue = maps_dir / "ftrue_b.npz"
+    out_dense = maps_dir / "densein_b.npz"
+    if all(p.exists() for p in (out_maps, out_alive, out_ftrue, out_dense)):
+        z = np.load(out_maps)
+        return {"resumed": True, "selected_lambda": float(z["selected_lambda"])}
+    from explore_persona_space.analysis.mapping_baselines import identity_bias_predict
+
+    store = np.load(_recapture_dir(args) / "vbar_store.npz")
+    row_idx = np.asarray(store["row_idx"], np.int64)
+    set_tag = np.asarray(store["set_tag"], np.int8)
+    vbar20 = np.asarray(store["vbar20"], np.float16)
+    vbar20_in = np.asarray(store["vbar20_inlier"], np.float16)
+    banked = _stage_banked_c20(args, row_idx)
+    have = np.asarray([int(r) in banked for r in row_idx], bool)
+    if production:
+        assert have.all(), f"banked c20 missing for {int((~have).sum())} store rows"
+    row_idx, set_tag = row_idx[have], set_tag[have]
+    vbar20, vbar20_in = vbar20[have], vbar20_in[have]
+    Z = np.stack([banked[int(r)] for r in row_idx]).astype(np.float16)
+    fit_pos = np.where(set_tag == 1)[0]
+    te = np.where(set_tag == 0)[0]
+    assert len(fit_pos) >= 2 and len(te) >= 2, (len(fit_pos), len(te))
+    carve = min(M.PROD_VAL_CARVE, max(1, len(fit_pos) // 6))
+    perm = np.random.default_rng(M.CARVE_SEED).permutation(len(fit_pos))
+    va, tr = fit_pos[perm[:carve]], fit_pos[perm[carve:]]
+    EL._assert_estimator_validity(len(tr), Z.shape[1], args.smoke)
+    res = _eigh_fallback(
+        lambda d: EA._shared_gram_ridge_multi(
+            Z,
+            {"vbar20": vbar20, "vbar20_inlier": vbar20_in},
+            tr,
+            va,
+            te,
+            N1M.LAMBDAS_N1M,
+            torch.device(d),
+            N1M.RIDGE_BLOCK,
+        ),
+        args.device,
+    )
+    pt, meta = res["vbar20"]
+    pt_in, meta_in = res["vbar20_inlier"]
+    ib = identity_bias_predict(
+        np.asarray(Z[tr], np.float64), np.asarray(vbar20[tr], np.float64), np.asarray(Z[te])
+    )
+    tmp = out_maps.parent / f".tmp_{out_maps.name}"
+    np.savez(
+        tmp,
+        row_idx_score=row_idx[te],
+        row_idx_fit=row_idx[fit_pos],
+        pred16=pt.astype(np.float16),
+        pred16_inlier=pt_in.astype(np.float16),
+        ib_pred16=ib.astype(np.float16),
+        selected_lambda=np.float64(meta["selected_lambda"]),
+        val_r2=np.float64(meta["val_r2"]),
+        selected_lambda_inlier=np.float64(meta_in["selected_lambda"]),
+        n_train=np.int64(len(tr)),
+        carve=np.int64(carve),
+    )
+    tmp.replace(out_maps)
+
+    # chanind lmsys: alive mask on TRUE fit-side encodes + f_true over all rows
+    sae = S.SAELensJumpReLU.load(M.SAE_IDS["lmsys"], device=args.device, cache_dir=args.sae_dir)
+    counts = _encode_counts(sae, vbar20, fit_pos)
+    floor = _alive_floor(len(fit_pos))
+    alive = np.where(counts >= floor)[0].astype(np.int64)
+    assert len(alive) >= 1, "no alive features (arm b)"
+    f_true = _encode_restricted(sae, vbar20, np.arange(len(row_idx)), alive)
+    f_true_in = _encode_restricted(sae, vbar20_in, te, alive)  # inlier twin, te rows only
+    train_mean = np.asarray(f_true[fit_pos], np.float64).mean(0)
+    tmp = out_alive.parent / f".tmp_{out_alive.name}"
+    np.savez(
+        tmp,
+        alive_ids=alive,
+        counts=counts.astype(np.int64),
+        floor=np.int64(floor),
+        n_fit_rows=np.int64(len(fit_pos)),
+        train_mean=train_mean.astype(np.float32),
+        tier=S.tier_of(alive),
+    )
+    tmp.replace(out_alive)
+    tmp = out_ftrue.parent / f".tmp_{out_ftrue.name}"
+    np.savez(tmp, row_idx=row_idx, f_true=f_true, f_true_inlier_te=f_true_in)
+    tmp.replace(out_ftrue)
+
+    # dense-input companion (plan §4 P5): c20 -> f_true20, same carve, ONE Gram
+    pt_d, meta_d = _gram_ridge_single(Z, f_true, tr, va, te, N1M.LAMBDAS_N1M, args.device)
+    tmp = out_dense.parent / f".tmp_{out_dense.name}"
+    np.savez(
+        tmp,
+        pred16=pt_d.astype(np.float16),
+        feat_ids=alive,
+        rows=row_idx[te],
+        selected_lambda=np.float64(meta_d["selected_lambda"]),
+        val_r2=np.float64(meta_d["val_r2"]),
+    )
+    tmp.replace(out_dense)
+    del sae
+    print(f"[maps] unit armb done (alive={len(alive)}, lam={meta['selected_lambda']})", flush=True)
+    return {
+        "n_fit": int(len(fit_pos)),
+        "n_score": int(len(te)),
+        "selected_lambda": float(meta["selected_lambda"]),
+        "val_r2": float(meta["val_r2"]),
+        "n_alive": int(len(alive)),
+        "alive_floor": int(floor),
+        "densein_selected_lambda": float(meta_d["selected_lambda"]),
+    }
+
+
+def _dense_companion_c(args, maps_dir: Path, scratch: Path, production: bool) -> dict:
+    """Arm-c SAE-c alive mask + f_true encodes (fit-side 120k + 20k holdout, ONE
+    memmap) + the c19->f_true dense-input companion off ONE Gram (plan §4 P5)."""
+    alive_path = maps_dir / "alive_c.npz"
+    ftrue_path = maps_dir / "ftrue_c_all.fp16.npy"
+    dense_path = maps_dir / "densein_c.npz"
+    if all(p.exists() for p in (alive_path, ftrue_path, dense_path)):
+        z = np.load(alive_path)
+        return {"resumed": True, "n_alive": int(len(z["alive_ids"]))}
+    sae = MatryoshkaBatchTopKSAE.load_local(_sae_out_dir(args), device=args.device)
+    a_dir = _assemble_dir(args)
+    X = np.load(a_dir / "X19.fp16.npy", mmap_mode="r")
+    Ymm = np.load(a_dir / "Y19.fp16.npy", mmap_mode="r")
+    idx = np.load(scratch / "split_indices.npz")
+    sae_fit = np.sort(np.asarray(idx["sae_fit"], np.int64))
+    hold = np.asarray(idx["holdout"], np.int64)  # EA holdout ORDER (pred16 alignment)
+    n_fit = int(len(sae_fit))
+    counts = _encode_counts(sae, Ymm, sae_fit)
+    floor = _alive_floor(n_fit)
+    alive = np.where(counts >= floor)[0].astype(np.int64)
+    assert len(alive) >= 1, "no alive features (arm c)"
+    rows_c = np.concatenate([sae_fit, hold])
+    yc = np.lib.format.open_memmap(
+        ftrue_path, mode="w+", dtype=np.float16, shape=(len(rows_c), len(alive))
+    )
+    _encode_restricted(sae, Ymm, rows_c, alive, out_mm=yc)
+    yc.flush()
+    tm = np.zeros(len(alive), np.float64)
+    for s in range(0, n_fit, 8192):
+        tm += np.asarray(yc[s : s + 8192], np.float64).sum(0)
+    train_mean = tm / max(1, n_fit)
+    tmp = alive_path.parent / f".tmp_{alive_path.name}"
+    np.savez(
+        tmp,
+        alive_ids=alive,
+        counts=counts.astype(np.int64),
+        floor=np.int64(floor),
+        n_fit_rows=np.int64(n_fit),
+        train_mean=train_mean.astype(np.float32),
+        tier=S.tier_of(alive),
+    )
+    tmp.replace(alive_path)
+    Xc = np.asarray(X[rows_c], np.float16)
+    carve = min(M.PROD_VAL_CARVE, max(1, n_fit // 6))
+    perm = np.random.default_rng(M.CARVE_SEED).permutation(n_fit)
+    va, tr = perm[:carve], perm[carve:]
+    te = np.arange(n_fit, len(rows_c))
+    EL._assert_estimator_validity(len(tr), Xc.shape[1], args.smoke)
+    pt, meta = _gram_ridge_single(Xc, yc, tr, va, te, N1M.LAMBDAS_N1M, args.device)
+    tmp = dense_path.parent / f".tmp_{dense_path.name}"
+    np.savez(
+        tmp,
+        pred16=pt.astype(np.float16),
+        feat_ids=alive,
+        rows=hold,
+        selected_lambda=np.float64(meta["selected_lambda"]),
+        val_r2=np.float64(meta["val_r2"]),
+    )
+    tmp.replace(dense_path)
+    del sae
+    print(f"[maps] unit densein_c done (alive={len(alive)})", flush=True)
+    return {
+        "n_alive": int(len(alive)),
+        "alive_floor": int(floor),
+        "n_fit_rows": n_fit,
+        "selected_lambda": float(meta["selected_lambda"]),
+        "val_r2": float(meta["val_r2"]),
+    }
 
 
 def phase_maps(args) -> None:
-    raise NotImplementedError("P5 maps + baselines is built in unit 2")
+    """P5: arm-c EA refits (gate G1) + identity+bias + arm-b shared-Gram map +
+    dense-input companions + corpus-transfer fold — predictions persisted for P6."""
+    C.phase("maps")
+    out = _maps_dir(args)
+    out.mkdir(parents=True, exist_ok=True)
+    regime, resume_ok = _enter_phase_regime(out, args, "maps")
+    meta_path = out / "preds_meta.json"
+    if resume_ok and meta_path.exists():
+        logger.info("[maps] resume: preds_meta present under matching regime; skip")
+        return
+    if not resume_ok:
+        stale = [
+            meta_path,
+            out / "recon_gate.json",
+            out / "ib_c.npz",
+            out / "armb_maps.npz",
+            out / "alive_b.npz",
+            out / "ftrue_b.npz",
+            out / "densein_b.npz",
+            out / "alive_c.npz",
+            out / "densein_c.npz",
+            out / "ftrue_c_all.fp16.npy",
+        ]
+        pdir = out / "percontext"
+        if pdir.exists():
+            stale += sorted(pdir.glob("refit_*"))
+        for p in stale:
+            if p.exists():
+                logger.warning("[maps] recompute: removing stale %s", p.name)
+                p.unlink()
+    EA._headroom(args.out_root, 2 if args.smoke else 30, "p5-maps")
+    production = _production(args)
+    a_dir = _assemble_dir(args)
+    assert (a_dir / "split_meta.json").exists(), "maps needs the P1 outputs — run assemble"
+    assert (_recapture_dir(args) / "vbar_store.npz").exists(), (
+        "maps needs the P2 recapture store — run recapture"
+    )
+    assert (_sae_out_dir(args) / "sae_weights.safetensors").exists(), (
+        "maps needs the P4 SAE-c weights — run sae_train"
+    )
+    scratch = _ea_scratch(args, production)
+    _run_ea_refits(args, out, scratch, resume_ok)
+    g1 = _gate_g1(args, out, production)  # halts fits on production FAIL (plan §7)
+    if not (out / "ib_c.npz").exists():
+        _ib_arm_c(args, out, scratch)
+    armb_doc = _armb_all(args, out, production)
+    densec_doc = _dense_companion_c(args, out, scratch, production)
+    _write_json(
+        meta_path,
+        {
+            "g1": g1["verdict"],
+            "armb": armb_doc,
+            "dense_companion_c": densec_doc,
+            "identity_bias_note_dense_companion": (
+                "identity+bias inapplicable for the dense-input companions "
+                "(d_in 3584 != d_out n_alive; stated per the mapping-baselines rule)"
+            ),
+            "ib_convention": "bias fit on the refit_holdout train rows (map-matched)",
+            "armb_ib_convention": "bias fit on the arm-b ridge tr rows (carve-matched)",
+        },
+        phase="maps",
+    )
+    _sentinel("maps", f"P5 done (g1={g1['verdict']})")
+    logger.info("[maps] done (g1=%s)", g1["verdict"])
+
+
+# ── P6: encode + DVs + stats (all vectorized) ────────────────────────────────────
+
+
+def _r2_only(pred: np.ndarray, true: np.ndarray) -> np.ndarray:
+    """Batched per-feature held-out R2 (fp64; no rank stats — the cheap kernel
+    for corpus splits + shuffle nulls)."""
+    p = np.asarray(pred, np.float64)
+    t = np.asarray(true, np.float64)
+    mu = t.mean(0)
+    ss_res = ((t - p) ** 2).sum(0)
+    ss_tot = ((t - mu) ** 2).sum(0)
+    return np.where(ss_tot > 1e-12, 1.0 - ss_res / np.maximum(ss_tot, 1e-12), np.nan)
+
+
+def _shuffle_null_r2(pred: np.ndarray, true: np.ndarray, seeds) -> np.ndarray:
+    """K row-shuffle null draws of the per-feature R2 (advisory floor, plan §6):
+    the SAME vectorized R2 kernel as the observed read, prediction rows permuted."""
+    t = np.asarray(true, np.float64)
+    mu = t.mean(0)
+    ss_tot = ((t - mu) ** 2).sum(0)
+    out = np.zeros((len(seeds), t.shape[1]), np.float16)
+    n = t.shape[0]
+    for i, seed in enumerate(seeds):
+        perm = np.random.default_rng(seed).permutation(n)
+        ss_res = ((t - np.asarray(pred[perm], np.float64)) ** 2).sum(0)
+        r2 = np.where(ss_tot > 1e-12, 1.0 - ss_res / np.maximum(ss_tot, 1e-12), np.nan)
+        out[i] = r2.astype(np.float16)
+        print(f"[eval] shuffle-null draw {i + 1}/{len(seeds)}", flush=True)
+    return out
+
+
+def _rho_ceiling(tier: np.ndarray) -> float:
+    """Max achievable |Spearman(tier, y)| given tier's tie structure (plan §6
+    reporting duty): Pearson of tier midranks vs a perfectly tier-monotone y."""
+    n = len(tier)
+    if n < 3:
+        return float("nan")
+    order = np.argsort(tier, kind="stable")
+    y = np.empty(n, np.float64)
+    y[order] = np.arange(1, n + 1, dtype=np.float64)
+    rt = EA._midrank(np.asarray(tier, np.float64)[:, None])[:, 0]
+    a = rt - rt.mean()
+    b = y - y.mean()
+    den = float(np.sqrt((a**2).sum() * (b**2).sum()))
+    return float((a * b).sum() / den) if den > 1e-12 else float("nan")
+
+
+def _wilson(p_hat: float, n: int, z: float = 1.96) -> list[float] | None:
+    """Wilson 95% CI on a proportion (acc@k reporting, plan §6)."""
+    if n <= 0:
+        return None
+    den = 1.0 + z * z / n
+    c = p_hat + z * z / (2 * n)
+    h = z * math.sqrt(p_hat * (1.0 - p_hat) / n + z * z / (4 * n * n))
+    return [float((c - h) / den), float((c + h) / den)]
+
+
+def _boot_median_ci(v: np.ndarray, n_boot: int, rng, chunk: int = 1000) -> list[float] | None:
+    """Batched bootstrap 95% CI on median(v) (index-matrix gather per block)."""
+    v = np.asarray(v, np.float64)
+    v = v[np.isfinite(v)]
+    if len(v) < 2:
+        return None
+    qs = []
+    for s in range(0, n_boot, chunk):
+        k = min(chunk, n_boot - s)
+        qs.append(np.median(v[rng.integers(0, len(v), (k, len(v)))], axis=1))
+    d = np.concatenate(qs)
+    return [float(np.percentile(d, 2.5)), float(np.percentile(d, 97.5))]
+
+
+def _boot_paired_median_diff(a, b, n_boot: int, rng, chunk: int = 1000) -> dict | None:
+    """Paired feature-bootstrap on median(a) − median(b) (map vs identity+bias,
+    same features resampled together — plan §6)."""
+    a = np.asarray(a, np.float64)
+    b = np.asarray(b, np.float64)
+    ok = np.isfinite(a) & np.isfinite(b)
+    a, b = a[ok], b[ok]
+    if len(a) < 2:
+        return None
+    ds = []
+    for s in range(0, n_boot, chunk):
+        k = min(chunk, n_boot - s)
+        idx = rng.integers(0, len(a), (k, len(a)))
+        ds.append(np.median(a[idx], axis=1) - np.median(b[idx], axis=1))
+    d = np.concatenate(ds)
+    return {
+        "point": float(np.median(a) - np.median(b)),
+        "ci95": [float(np.percentile(d, 2.5)), float(np.percentile(d, 97.5))],
+        "n": int(len(a)),
+    }
+
+
+def _spearman_pair(a: np.ndarray, b: np.ndarray) -> float | None:
+    """Midrank Spearman between two per-feature vectors (bridge correlations)."""
+    a = np.asarray(a, np.float64)
+    b = np.asarray(b, np.float64)
+    ok = np.isfinite(a) & np.isfinite(b)
+    if int(ok.sum()) < 3:
+        return None
+    ra = EA._midrank(a[ok][:, None])[:, 0]
+    rb = EA._midrank(b[ok][:, None])[:, 0]
+    ra -= ra.mean()
+    rb -= rb.mean()
+    den = float(np.sqrt((ra**2).sum() * (rb**2).sum()))
+    return float((ra * rb).sum() / den) if den > 1e-12 else None
+
+
+def _write_perfeature(path: Path, *, feat_ids, pred, true, counts_sel, te_prov, n_fit, floor):
+    """One per-feature npz in the m-round key convention (feat_ids/r2/spearman/
+    ss_tot/activity/r2_lmsys/r2_wildchat/tier) + alive-mask provenance scalars."""
+    pf = EA._per_feature_metrics(pred, true)
+    corpus = {}
+    for label, code in (("lmsys", 0), ("wildchat", 1)):
+        m = np.asarray(te_prov) == code
+        if int(m.sum()) >= 2:
+            corpus[label] = _r2_only(pred[m], true[m])
+        else:
+            corpus[label] = np.full(pred.shape[1], np.nan)
+    tmp = path.parent / f".tmp_{path.name}"
+    np.savez(
+        tmp,
+        feat_ids=np.asarray(feat_ids, np.int64),
+        r2=pf["r2"],
+        spearman=pf["spearman"],
+        ss_tot=pf["ss_tot"],
+        activity=np.asarray(counts_sel, np.float64),
+        r2_lmsys=corpus["lmsys"],
+        r2_wildchat=corpus["wildchat"],
+        tier=S.tier_of(feat_ids),
+        n_fit_rows=np.int64(n_fit),
+        alive_floor=np.int64(floor),
+    )
+    tmp.replace(path)
+    return pf
+
+
+def _median_of(v: np.ndarray) -> float:
+    v = np.asarray(v, np.float64)
+    v = v[np.isfinite(v)]
+    return float(np.median(v)) if len(v) else float("nan")
+
+
+def _retrieval_cells(f_true, preds: dict, tier: np.ndarray, ks=(1, 5, 10)) -> dict:
+    """Per-tier kNN retrieval (every k x metric x predictor cell reported
+    separately, no best-of — plan §6). Pool = the held-out true feature rows."""
+    from explore_persona_space.analysis.mapping_baselines import knn_retrieval
+
+    out: dict = {}
+    for t in (0, 1, 2):
+        m = tier == t
+        if int(m.sum()) == 0:
+            out[str(t)] = {"note": "0 alive features in tier"}
+            continue
+        ft = np.ascontiguousarray(np.asarray(f_true[:, m], np.float32))
+        cell: dict = {}
+        for pname, parr in preds.items():
+            pa = np.ascontiguousarray(np.asarray(parr[:, m], np.float32))
+            pc = {}
+            for metric in ("euclidean", "cosine"):
+                r = knn_retrieval(pa, ft, ks=ks, metric=metric)
+                r["wilson_ci_acc"] = {str(k): _wilson(r["acc_at_k"][k], r["n"]) for k in ks}
+                pc[metric] = r
+            cell[pname] = pc
+        out[str(t)] = cell
+    return out
+
+
+def _tier_stats(r2_map, r2_ib, tier, activity, n_perm, n_boot, rng) -> dict:
+    """Per-tier medians + bootstrap CIs, tier-diff (t0 − t2, the registered
+    sign-stable difference), within-activity-quintile tier permutation (m-round
+    kernel), lattice verdict, tie profile, |rho| ceiling."""
+    finite = np.isfinite(r2_map)
+    r2f = np.asarray(r2_map, np.float64)[finite]
+    tierf = np.asarray(tier, np.int64)[finite]
+    actf = np.asarray(activity, np.float64)[finite]
+    if len(r2f) >= 10 and len(np.unique(tierf)) >= 2:
+        strata = M._strata_of(actf, 5)  # quintiles (plan §6)
+        h1 = M._tier_permutation(tierf, r2f, strata, n_perm, rng)
+        h1["strata"] = "quintile"
+        h1["cell_counts"] = {
+            f"{s}_{t}": int(((strata == s) & (tierf == t)).sum())
+            for s in np.unique(strata)
+            for t in (0, 1, 2)
+        }
+    else:
+        h1 = {
+            "verdict": "insufficient-features",
+            "n_features": int(len(r2f)),
+            "perm_band_2p5_97p5": [float("nan"), float("nan")],
+            "observed_pooled_spearman": float("nan"),
+        }
+    vals, cnts = np.unique(actf, return_counts=True) if len(actf) else (np.array([]), np.array([]))
+    tie_profile = {
+        "n_features": int(len(actf)),
+        "n_unique_activity": int(len(vals)),
+        "max_tie_fraction": float(cnts.max() / max(1, len(actf))) if len(cnts) else None,
+    }
+    per_tier = {}
+    for t in (0, 1, 2):
+        m = tier == t
+        vm, vi = r2_map[m], r2_ib[m]
+        per_tier[str(t)] = {
+            "n_alive": int(m.sum()),
+            "median_r2_map": M._median_iqr(vm),
+            "ci95_median_map": _boot_median_ci(vm, n_boot, rng),
+            "median_r2_ib": M._median_iqr(vi),
+            "ci95_median_ib": _boot_median_ci(vi, n_boot, rng),
+            "map_minus_ib_paired": _boot_paired_median_diff(vm, vi, n_boot, rng),
+        }
+    diff = {}
+    for name, arr in (("map", r2_map), ("ib", r2_ib)):
+        d_point = _median_of(arr[tier == 0]) - _median_of(arr[tier == 2])
+        diff[name] = {
+            "point_t0_minus_t2": d_point,
+            "ci95": M._boot_median_diff(arr[tier == 0], arr[tier == 2], n_boot, rng),
+        }
+    lo, hi = h1["perm_band_2p5_97p5"]
+    obs = h1["observed_pooled_spearman"]
+    d_map = diff["map"]["point_t0_minus_t2"]
+    if np.isfinite(obs) and obs < lo and d_map > 0:
+        lattice = "coarse-better"
+    elif np.isfinite(obs) and obs > hi and d_map < 0:
+        lattice = "fine-better"
+    else:
+        lattice = "tier-null"
+    return {
+        "per_tier": per_tier,
+        "tier_diff_t0_minus_t2": diff,
+        "permutation": h1,
+        "activity_tie_profile": tie_profile,
+        "lattice_verdict": lattice,
+        "rho_ceiling_abs": _rho_ceiling(tierf),
+    }
+
+
+def _arm_battery(
+    out: Path,
+    tag: str,
+    *,
+    f_true: np.ndarray,
+    pred_map: np.ndarray,
+    pred_ib: np.ndarray,
+    feat_ids: np.ndarray,
+    counts_full: np.ndarray,
+    floor: int,
+    n_fit_rows: int,
+    te_prov: np.ndarray,
+    dense_true: np.ndarray,
+    dense_preds: dict[str, np.ndarray],
+    sae,
+    train_mean: np.ndarray,
+    extra_reads: list[tuple[str, np.ndarray, np.ndarray, np.ndarray]],
+    extra_json: dict,
+    n_perm: int,
+    n_boot: int,
+    rng,
+) -> dict:
+    """One arm's full vectorized battery -> perfeature npzs + shuffle-null npz +
+    tier_tests_<tag>.json + retrieval_<tag>.json. Returns {'r2_map': ...}."""
+    tier = S.tier_of(feat_ids)
+    counts_sel = np.asarray(counts_full, np.int64)[feat_ids]
+    t0 = time.time()
+    pf_map = _write_perfeature(
+        out / f"perfeature_{tag}_encodepred.npz",
+        feat_ids=feat_ids,
+        pred=pred_map,
+        true=f_true,
+        counts_sel=counts_sel,
+        te_prov=te_prov,
+        n_fit=n_fit_rows,
+        floor=floor,
+    )
+    print(f"[eval] unit perfeature_{tag}_map elapsed={time.time() - t0:.0f}s", flush=True)
+    pf_ib = _write_perfeature(
+        out / f"perfeature_{tag}_ib.npz",
+        feat_ids=feat_ids,
+        pred=pred_ib,
+        true=f_true,
+        counts_sel=counts_sel,
+        te_prov=te_prov,
+        n_fit=n_fit_rows,
+        floor=floor,
+    )
+    extra_medians: dict = {}
+    for name, pred_x, true_x, prov_x in extra_reads:
+        pf_x = _write_perfeature(
+            out / f"perfeature_{tag}_{name}.npz",
+            feat_ids=feat_ids,
+            pred=pred_x,
+            true=true_x,
+            counts_sel=counts_sel,
+            te_prov=prov_x,
+            n_fit=n_fit_rows,
+            floor=floor,
+        )
+        extra_medians[name] = {
+            "n_te_rows": int(true_x.shape[0]),
+            "per_tier_median_r2": {str(t): _median_of(pf_x["r2"][tier == t]) for t in (0, 1, 2)},
+        }
+        print(f"[eval] unit perfeature_{tag}_{name} done", flush=True)
+
+    null_r2 = _shuffle_null_r2(pred_map, f_true, SHUFFLE_SEEDS_2476)
+    tmp = out / f".tmp_shuffle_null_{tag}.npz"
+    np.savez(
+        tmp,
+        feat_ids=feat_ids,
+        tier=tier,
+        r2=null_r2,
+        seeds=np.asarray(SHUFFLE_SEEDS_2476, np.int64),
+    )
+    tmp.replace(out / f"shuffle_null_{tag}.npz")
+    hi = float(np.nanpercentile(null_r2.astype(np.float64), 97.5))
+    rr = pf_map["r2"][np.isfinite(pf_map["r2"])]
+    shuffle_doc = {
+        "p97_5": hi,
+        "n_seeds": len(SHUFFLE_SEEDS_2476),
+        "frac_above_map": float((rr > hi).mean()) if len(rr) else None,
+        "advisory": True,
+    }
+
+    stats = _tier_stats(pf_map["r2"], pf_ib["r2"], tier, counts_sel, n_perm, n_boot, rng)
+    bins = (0,) + tuple(S.MATRYOSHKA_TIER_BOUNDS)
+    candidates = {str(t): int(bins[t + 1] - bins[t]) for t in (0, 1, 2)}
+    doc = {
+        "arm": tag,
+        "n_te_rows": int(f_true.shape[0]),
+        "n_features_alive": int(len(feat_ids)),
+        "alive_mask_provenance": {
+            "criterion": (
+                "active on >= ceil(0.01 * n_fit_rows) TRUE-summary fit-side encodes "
+                "(never predicted codes; true-alive features retained regardless of "
+                "predicted-code degeneracy)"
+            ),
+            "floor": int(floor),
+            "n_fit_rows": int(n_fit_rows),
+            "per_tier": {
+                str(t): {"selected": int((tier == t).sum()), "candidate": candidates[str(t)]}
+                for t in (0, 1, 2)
+            },
+        },
+        **stats,
+        "shuffle_null": shuffle_doc,
+        "extra_reads": extra_medians,
+        "ci_note": "bootstrap CIs conditional on the realized score rows",
+        **extra_json,
+    }
+    _write_json(out / f"tier_tests_{tag}.json", doc, phase="eval")
+
+    ret_preds = {
+        "map": pred_map,
+        "ib": pred_ib,
+        "train_mean": np.broadcast_to(
+            np.asarray(train_mean, np.float32), (f_true.shape[0], len(feat_ids))
+        ),
+    }
+    retrieval = {
+        "n_pool": int(f_true.shape[0]),
+        "chance_note": "pool = held-out true feature rows; chance_at_k = k / n_pool",
+        "tiers": _retrieval_cells(f_true, ret_preds, tier),
+    }
+    from explore_persona_space.analysis.mapping_baselines import knn_retrieval
+
+    dense: dict = {}
+    for name, dp in dense_preds.items():
+        cell: dict = {
+            "pooled_r2": float(
+                PR._pooled_r2(np.asarray(dp, np.float64), np.asarray(dense_true, np.float64))
+            )
+        }
+        for metric in ("euclidean", "cosine"):
+            cell[metric] = knn_retrieval(
+                np.asarray(dp, np.float32), np.asarray(dense_true, np.float32), metric=metric
+            )
+        dense[name] = cell
+    retrieval["dense_anchor"] = dense
+    recon: dict = {}
+    for name, arr in {"true": dense_true, **dense_preds}.items():
+        fve, l0 = _recon_fve(sae, np.asarray(arr, np.float16), np.arange(len(arr)))
+        recon[name] = {"var_fve": round(fve, 4), "l0": round(l0, 2)}
+    retrieval["encoder_recon_fve"] = recon
+    _write_json(out / f"retrieval_{tag}.json", retrieval, phase="eval")
+    print(f"[eval] unit battery_{tag} done elapsed={time.time() - t0:.0f}s", flush=True)
+    return {"r2_map": pf_map["r2"], "tier": tier, "lattice": doc["lattice_verdict"]}
+
+
+def _bridge_b(out: Path, feat_ids_b: np.ndarray, r2_b: np.ndarray) -> dict:
+    """Arm-b bridge vs the committed token-level per-feature npz (plan §6): paired
+    per-feature values + per-tier bridge correlations + intersection counts."""
+    committed = (
+        PROJECT_ROOT
+        / "eval_results"
+        / "issue_1482"
+        / "matryoshka_tier"
+        / "perfeature_m_lmsys_default.npz"
+    )
+    z = np.load(committed, allow_pickle=False)
+    needed = {"feat_ids", "r2", "tier", "activity"}
+    assert needed <= set(z.files), (  # the plan §10 bridge-consumer key assert
+        f"committed perfeature_m_lmsys_default.npz key drift: {sorted(z.files)}"
+    )
+    com_ids = np.asarray(z["feat_ids"], np.int64)
+    com_r2 = np.asarray(z["r2"], np.float64)
+    com_act = np.asarray(z["activity"], np.float64)
+    inter, ia, ic = np.intersect1d(feat_ids_b, com_ids, return_indices=True)
+    r2_ours = np.asarray(r2_b, np.float64)[ia]
+    r2_com = com_r2[ic]
+    tier_i = S.tier_of(inter)
+    per_tier = {}
+    for t in (0, 1, 2):
+        m = tier_i == t
+        per_tier[str(t)] = {
+            "n_intersection": int(m.sum()),
+            "spearman": _spearman_pair(r2_ours[m], r2_com[m]),
+            "median_delta_turnavg_minus_token": (
+                float(np.nanmedian(r2_ours[m] - r2_com[m])) if int(m.sum()) else None
+            ),
+        }
+    pooled = {
+        "n_intersection": int(len(inter)),
+        "n_ours_only": int(len(feat_ids_b) - len(inter)),
+        "n_committed_only": int(len(com_ids) - len(inter)),
+        "spearman": _spearman_pair(r2_ours, r2_com),
+        "median_delta_turnavg_minus_token": (
+            float(np.nanmedian(r2_ours - r2_com)) if len(inter) else None
+        ),
+    }
+    tmp = out / ".tmp_bridge_b.npz"
+    np.savez(
+        tmp,
+        feat_ids=inter,
+        tier=tier_i,
+        r2_turnavg=r2_ours,
+        r2_token_committed=r2_com,
+        activity_committed=com_act[ic],
+    )
+    tmp.replace(out / "bridge_b.npz")
+    return {"pooled": pooled, "per_tier": per_tier}
 
 
 def phase_eval(args) -> None:
-    raise NotImplementedError("P6 encode + DVs + stats is built in unit 2")
+    """P6: gate G3 FIRST (arm-b fitness; demotion-only) -> encode predictions ->
+    the vectorized per-feature / per-tier / retrieval / permutation batteries."""
+    C.phase("eval")
+    out = _eval_dir(args)
+    out.mkdir(parents=True, exist_ok=True)
+    regime, resume_ok = _enter_phase_regime(out, args, "eval")
+    finals = [
+        out / n
+        for n in (
+            "perfeature_c_encodepred.npz",
+            "tier_tests_c.json",
+            "retrieval_c.json",
+            "perfeature_b_encodepred.npz",
+            "bridge_b.npz",
+            "retrieval_b.json",
+            "tier_tests_b.json",
+        )
+    ]
+    if resume_ok and all(p.exists() for p in finals):
+        logger.info("[eval] resume: all P6 deliverables present under matching regime; skip")
+        return
+    if not resume_ok:
+        for p in [*out.glob("*.npz"), *out.glob("*.json")]:
+            if p.name != "regime.json":
+                logger.warning("[eval] recompute: removing stale %s", p.name)
+                p.unlink()
+    EA._headroom(args.out_root, 2 if args.smoke else 15, "p6-eval")
+    production = _production(args)
+    n_perm = min(args.n_perm, 200) if args.smoke else args.n_perm
+    n_boot = min(args.n_boot, 200) if args.smoke else args.n_boot
+    maps_dir = _maps_dir(args)
+    a_dir = _assemble_dir(args)
+    rows_present = np.load(a_dir / "rows_present.npy")
+    _row_ci, prov_u8, _pools = _load_scratch_meta(args)  # stages prov.npy if absent
+    y_mm = np.load(a_dir / "Y19.fp16.npy", mmap_mode="r")
+
+    # ── G3 FIRST (plan §7): arm-b encoder fitness — DEMOTION only, never an abort ──
+    store = np.load(_recapture_dir(args) / "vbar_store.npz")
+    vbar20_all = np.asarray(store["vbar20"], np.float16)
+    sae_lm = S.SAELensJumpReLU.load(M.SAE_IDS["lmsys"], device=args.device, cache_dir=args.sae_dir)
+    fve_b, l0_b, diag_b = sae_lm.fve_l0(torch.from_numpy(vbar20_all.astype(np.float32)))
+    arm_b_demoted = bool(fve_b < M.GATE_BM_HALT)
+    g3 = {
+        "fve": round(float(fve_b), 4),
+        "l0": round(float(l0_b), 2),
+        "diag": diag_b,
+        "floor": M.GATE_BM_HALT,
+        "n_rows": int(vbar20_all.shape[0]),
+        "arm_b_demoted": arm_b_demoted,
+        "verdict": "PASS" if not arm_b_demoted else "DEMOTED-exploratory-with-caveat",
+    }
+    sae_pile = S.SAELensJumpReLU.load(M.SAE_IDS["pile"], device=args.device, cache_dir=args.sae_dir)
+    fve_p, l0_p, diag_p = sae_pile.fve_l0(torch.from_numpy(vbar20_all.astype(np.float32)))
+    g3["pile_exploratory"] = {"fve": round(float(fve_p), 4), "l0": round(float(l0_p), 2)}
+    _write_json(out / "gates_p6.json", {"g3": g3}, phase="eval")
+    if arm_b_demoted:
+        logger.warning(
+            "[eval] G3 fve=%.4f below floor %.2f: arm b DEMOTED to exploratory-with-caveat "
+            "(never a run abort; arm c carries the verdict)",
+            fve_b,
+            M.GATE_BM_HALT,
+        )
+
+    # ── arm c ──────────────────────────────────────────────────────────────────────
+    sae_c = MatryoshkaBatchTopKSAE.load_local(_sae_out_dir(args), device=args.device)
+    az = np.load(maps_dir / "alive_c.npz")
+    alive_c = np.asarray(az["alive_ids"], np.int64)
+    counts_c = np.asarray(az["counts"], np.int64)
+    floor_c, n_fit_c = int(az["floor"]), int(az["n_fit_rows"])
+    train_mean_c = np.asarray(az["train_mean"], np.float64)
+    ftrue_all = np.load(maps_dir / "ftrue_c_all.fp16.npy", mmap_mode="r")
+    f_true_c = np.asarray(ftrue_all[n_fit_c:])
+    hz = np.load(maps_dir / "percontext" / "refit_holdout__ridge__seed0.npz")
+    vhat = np.asarray(hz["holdout_pred16"], np.float16)
+    hold_rows = np.asarray(hz["holdout_rows"], np.int64)
+    dz = np.load(maps_dir / "densein_c.npz")
+    assert (np.asarray(dz["rows"], np.int64) == hold_rows).all(), "densein_c row-order drift"
+    ibz = np.load(maps_dir / "ib_c.npz")
+    assert (np.asarray(ibz["rows"], np.int64) == hold_rows).all(), "ib_c row-order drift"
+    tz = np.load(maps_dir / "percontext" / "refit_lmsys_transfer__ridge__seed0.npz")
+    assert (np.asarray(tz["holdout_rows"], np.int64) == hold_rows).all(), "transfer row drift"
+    assert f_true_c.shape[0] == len(hold_rows), (f_true_c.shape, len(hold_rows))
+    te_prov_c = prov_u8[rows_present[hold_rows]]
+    ib16 = np.asarray(ibz["pred16"], np.float16)
+    f_pred_c = _encode_restricted(sae_c, vhat, np.arange(len(vhat)), alive_c)
+    f_ib_c = _encode_restricted(sae_c, ib16, np.arange(len(ib16)), alive_c)
+    vhat_tr = np.asarray(tz["holdout_pred16"], np.float16)
+    wc = te_prov_c == 1
+    extra_c: list[tuple[str, np.ndarray, np.ndarray, np.ndarray]] = [
+        ("densein", np.asarray(dz["pred16"], np.float16), f_true_c, te_prov_c),
+    ]
+    if int(wc.sum()) >= 2:
+        f_pred_transfer = _encode_restricted(sae_c, vhat_tr, np.where(wc)[0], alive_c)
+        extra_c.append(("transfer", f_pred_transfer, f_true_c[wc], te_prov_c[wc]))
+    else:
+        logger.warning("[eval] corpus-transfer read skipped: <2 WildChat holdout rows (smoke)")
+    dense_true_c = np.asarray(y_mm[hold_rows], np.float16)
+    rng_c = np.random.default_rng(BOOT_SEED_2476)
+    bat_c = _arm_battery(
+        out,
+        "c",
+        f_true=f_true_c,
+        pred_map=f_pred_c,
+        pred_ib=f_ib_c,
+        feat_ids=alive_c,
+        counts_full=counts_c,
+        floor=floor_c,
+        n_fit_rows=n_fit_c,
+        te_prov=te_prov_c,
+        dense_true=dense_true_c,
+        dense_preds={"map": vhat, "ib": ib16},
+        sae=sae_c,
+        train_mean=train_mean_c,
+        extra_reads=extra_c,
+        extra_json={
+            "gate_g4": json.loads((_sae_out_dir(args) / "gates_p4.json").read_text())["g4"],
+            "densein_note": (
+                "dense-input companion: identity+bias inapplicable (d_in 3584 != d_out n_alive)"
+            ),
+        },
+        n_perm=n_perm,
+        n_boot=n_boot,
+        rng=rng_c,
+    )
+    del f_pred_c, f_ib_c, f_true_c, sae_c
+
+    # ── arm b (post-G3; demotion is a labeling, the battery still runs) ────────────
+    bz = np.load(maps_dir / "armb_maps.npz")
+    ab = np.load(maps_dir / "alive_b.npz")
+    fz = np.load(maps_dir / "ftrue_b.npz")
+    db = np.load(maps_dir / "densein_b.npz")
+    alive_b = np.asarray(ab["alive_ids"], np.int64)
+    counts_b = np.asarray(ab["counts"], np.int64)
+    floor_b, n_fit_b = int(ab["floor"]), int(ab["n_fit_rows"])
+    train_mean_b = np.asarray(ab["train_mean"], np.float64)
+    row_idx_all = np.asarray(fz["row_idx"], np.int64)
+    row_idx_score = np.asarray(bz["row_idx_score"], np.int64)
+    te_pos = np.searchsorted(row_idx_all, row_idx_score)
+    assert (row_idx_all[te_pos] == row_idx_score).all(), "armb score-row alignment drift"
+    assert (np.asarray(db["rows"], np.int64) == row_idx_score).all(), "densein_b row drift"
+    f_true_b = np.asarray(fz["f_true"], np.float16)[te_pos]
+    f_pred_b = _encode_restricted(
+        sae_lm, np.asarray(bz["pred16"], np.float16), np.arange(len(row_idx_score)), alive_b
+    )
+    f_ib_b = _encode_restricted(
+        sae_lm, np.asarray(bz["ib_pred16"], np.float16), np.arange(len(row_idx_score)), alive_b
+    )
+    te_prov_b = prov_u8[row_idx_score]
+    extra_b: list[tuple[str, np.ndarray, np.ndarray, np.ndarray]] = [
+        ("densein", np.asarray(db["pred16"], np.float16), f_true_b, te_prov_b),
+        (
+            "inlier",
+            _encode_restricted(
+                sae_lm,
+                np.asarray(bz["pred16_inlier"], np.float16),
+                np.arange(len(row_idx_score)),
+                alive_b,
+            ),
+            np.asarray(fz["f_true_inlier_te"], np.float16),
+            te_prov_b,
+        ),
+    ]
+    ridx_store = np.asarray(store["row_idx"], np.int64)
+    te_store_pos = np.searchsorted(ridx_store, row_idx_score)
+    assert (ridx_store[te_store_pos] == row_idx_score).all(), "store score-row drift"
+    dense_true_b = vbar20_all[te_store_pos]
+    rng_b = np.random.default_rng(BOOT_SEED_2476 + 1)
+    bat_b = _arm_battery(
+        out,
+        "b",
+        f_true=f_true_b,
+        pred_map=f_pred_b,
+        pred_ib=f_ib_b,
+        feat_ids=alive_b,
+        counts_full=counts_b,
+        floor=floor_b,
+        n_fit_rows=n_fit_b,
+        te_prov=te_prov_b,
+        dense_true=dense_true_b,
+        dense_preds={
+            "map": np.asarray(bz["pred16"], np.float16),
+            "ib": np.asarray(bz["ib_pred16"], np.float16),
+        },
+        sae=sae_lm,
+        train_mean=train_mean_b,
+        extra_reads=extra_b,
+        extra_json={"gate_g3": g3, "arm_b_demoted": arm_b_demoted},
+        n_perm=n_perm,
+        n_boot=n_boot,
+        rng=rng_b,
+    )
+    bridge = _bridge_b(out, alive_b, bat_b["r2_map"])
+    tests_b = json.loads((out / "tier_tests_b.json").read_text())
+    tests_b["bridge"] = bridge
+
+    # pile twin (exploratory, no gate): pile-dict alive mask + encode-pred read
+    fit_ids_b = np.asarray(bz["row_idx_fit"], np.int64)
+    fit_store_pos = np.searchsorted(ridx_store, fit_ids_b)
+    assert (ridx_store[fit_store_pos] == fit_ids_b).all(), "store fit-row drift"
+    counts_pile = _encode_counts(sae_pile, vbar20_all, fit_store_pos)
+    alive_pile = np.where(counts_pile >= floor_b)[0].astype(np.int64)
+    if len(alive_pile) >= 1:
+        ft_pile = _encode_restricted(sae_pile, vbar20_all, te_store_pos, alive_pile)
+        fp_pile = _encode_restricted(
+            sae_pile,
+            np.asarray(bz["pred16"], np.float16),
+            np.arange(len(row_idx_score)),
+            alive_pile,
+        )
+        pf_pile = _write_perfeature(
+            out / "perfeature_b_pile.npz",
+            feat_ids=alive_pile,
+            pred=fp_pile,
+            true=ft_pile,
+            counts_sel=counts_pile[alive_pile],
+            te_prov=te_prov_b,
+            n_fit=n_fit_b,
+            floor=floor_b,
+        )
+        tier_pile = S.tier_of(alive_pile)
+        tests_b["pile_exploratory"] = {
+            "n_alive": int(len(alive_pile)),
+            "per_tier_median_r2": {
+                str(t): _median_of(pf_pile["r2"][tier_pile == t]) for t in (0, 1, 2)
+            },
+        }
+    else:
+        tests_b["pile_exploratory"] = {"n_alive": 0, "note": "no alive pile features"}
+    _write_json(out / "tier_tests_b.json", tests_b, phase="eval")
+    del sae_lm, sae_pile
+
+    _sentinel(
+        "eval",
+        f"P6 done (c lattice={bat_c['lattice']}, b lattice={bat_b['lattice']}, g3={g3['verdict']})",
+    )
+    logger.info(
+        "[eval] done: c=%s b=%s g3=%s production=%s",
+        bat_c["lattice"],
+        bat_b["lattice"],
+        g3["verdict"],
+        production,
+    )
 
 
 def phase_figures(args) -> None:
@@ -1157,6 +2808,12 @@ def _parse_args(argv=None):
     ap.add_argument("--skip-upload", action="store_true", help="P3: local-only run (loud)")
     ap.add_argument("--gpu-id", type=int, default=-1, help="informational; CVD pins the device")
     ap.add_argument(
+        "--sae-steps", type=int, default=0, help="P4: cap optimizer steps (0 = full; P0 pilot=200)"
+    )
+    ap.add_argument("--n-perm", type=int, default=10_000, help="P6 tier-permutation draws")
+    ap.add_argument("--n-boot", type=int, default=10_000, help="P6 feature-bootstrap draws")
+    ap.add_argument("--fit-n", type=int, default=0, help="EA refit train subsample (0 = all rows)")
+    ap.add_argument(
         "--import-check",
         action="store_true",
         help="argparse-attribute completeness + call-arity bind + deferred-import resolution",
@@ -1188,6 +2845,14 @@ def main() -> None:
         )
         from explore_persona_space.orchestrate.upload_sharded import (
             upload_dir_sharded,  # noqa: F401
+        )
+
+        # unit-2 deferred imports (P4 save/load + P5/P6 baselines)
+        from safetensors.torch import load_file, save_file  # noqa: F401
+
+        from explore_persona_space.analysis.mapping_baselines import (  # noqa: F401
+            identity_bias_predict,
+            knn_retrieval,
         )
 
         print("[import-check] OK", flush=True)
