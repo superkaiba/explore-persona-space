@@ -17,6 +17,7 @@ link, Parameters table + Confidence sentence inside `## Reproducibility`.
 
 from __future__ import annotations
 
+import ast
 import importlib.util
 import json
 import re
@@ -177,7 +178,7 @@ def test_good_body_passes_all():
     # locally reachable, so the cited SHA is silently skipped), AND the
     # check-38 linked-not-embedded-figures scan (needs `issue` for
     # own-figures-dir scoping, #1371; PASS-skip: not a v4 body) →
-    # 75 results total (2 prepended + CHECKS[1:]=57 + 16 appended, counting
+    # 76 results total (2 prepended + CHECKS[1:]=58 + 16 appended, counting
     # the #1827 plan-conditions check narrated below; check 36
     # `check_v4_result_paragraph_sentences` (#1368), check 37
     # `check_footer_reuse_bullets_pinned` (#1370), check 39
@@ -213,11 +214,15 @@ def test_good_body_passes_all():
     # and check 57 `check_v4_sidecarless_results_figures` (#2267 —
     # PASS-skip, not a v4 body),
     # and check 58 `check_v4_positional_result_crossrefs` (#2279 —
-    # PASS-skip, not a v4 body)
+    # PASS-skip, not a v4 body),
+    # and check 60 `check_figure_sidecar_text_coverage` (#2292 — the
+    # text-less-sidecar coverage WARN; NO-OP PASS here: GOOD_BODY's fake
+    # sha never resolves via `_git_object_exists`, the same fake-sha
+    # skip as check 41)
     # ride CHECKS;
     # 36/37/39/44/48/49/51/54/57/58
     # PASS-skip here — not a v4 body — 40 is the vacuous PASS above, and
-    # 41/52/53 are the fake-sha NO-OP PASSes above). The
+    # 41/52/53/60 are the fake-sha NO-OP PASSes above). The
     # Lens 14 / check-16 results are PASS-skips when no concerns.jsonl /
     # plans/plan.md sibling is available; check 17 and the v3/v4 checks
     # are PASS-skips on this legacy (pre-v2-sentinel) fixture. Check 47
@@ -231,7 +236,7 @@ def test_good_body_passes_all():
     # Check 59 `check_v4_result_section_per_unit_coverage` is dispatched in
     # verify_text too (its forward-only gate needs the issue number,
     # calibration lever (ii)); PASS-skips here (issue unknown) (#2353).
-    assert len(results) == 75
+    assert len(results) == 76
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert "Single aggregate-stat figure has per-unit evidence or exemption (v4)" in {
@@ -7259,9 +7264,9 @@ def test_checks_list_size():
     needs), and the check-31
     orphaned-per-unit-figures probe (needs `issue` for figures-dir
     scoping, #1011).
-    So `verify_text` returns 75 results (2 prepended + CHECKS[1:]=57 +
+    So `verify_text` returns 76 results (2 prepended + CHECKS[1:]=58 +
     16 appended — see `test_good_body_passes_all`), but `CHECKS` stays
-    at 58 (check 36 `check_v4_result_paragraph_sentences` (#1368),
+    at 59 (check 36 `check_v4_result_paragraph_sentences` (#1368),
     check 37 `check_footer_reuse_bullets_pinned` — the body-only
     footer-side reuse-pin sibling of check 35, #1370 — check 39
     `check_v4_sample_disclosure_count` — the Sample-slot
@@ -7290,18 +7295,22 @@ def test_checks_list_size():
     post-cutover block), #2267 — and check 58
     `check_v4_positional_result_crossrefs` — the positional
     result-cross-ref resolver (WARN: out-of-range or clause-vs-target
-    round-set disjointness), #2279 — ride CHECKS; check
-    56 `check_v4_ack_result_count` (#2264) and check 59
+    round-set disjointness), #2279 — and check 60
+    `check_figure_sidecar_text_coverage` — the text-less-sidecar
+    coverage WARN (a PRESENT sidecar with no rendered-text block gives
+    check 28's opaque-code scan nothing to read), #2292 — ride CHECKS;
+    check 56 `check_v4_ack_result_count` (#2264) and check 59
     `check_v4_result_section_per_unit_coverage` — the unconditional
     per-section per-unit coverage floor (WARN, forward-only issue >=
     2353; #2353) — are dispatched OUTSIDE CHECKS
     with the issue number).
     """
-    assert len(verify_task_body.CHECKS) == 58
+    assert len(verify_task_body.CHECKS) == 59
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert verify_task_body.check_v4_dropped_condition_placement in verify_task_body.CHECKS
     assert verify_task_body.check_repro_artifacts_clean in verify_task_body.CHECKS
+    assert verify_task_body.check_figure_sidecar_text_coverage in verify_task_body.CHECKS
     assert verify_task_body.check_footer_hf_paths_pinned in verify_task_body.CHECKS
     assert verify_task_body.check_hf_adjacent_file_claims in verify_task_body.CHECKS
     assert verify_task_body.check_figure_prose_numerics_vs_sidecar in verify_task_body.CHECKS
@@ -13457,12 +13466,12 @@ def test_caption_lead_issue1074_verbatim_caption_warns():
 
 def test_check_figure_caption_position_stable():
     """Index-stability pin (#1424): `check_figure_caption` stays at CHECKS
-    position 7 and the CHECKS count matches the current registry (58 as of
-    check 58, #2279; check 59 is dispatched OUTSIDE CHECKS, #2353;
+    position 7 and the CHECKS count matches the current registry (59 as of
+    check 60, #2292; check 59 is dispatched OUTSIDE CHECKS, #2353;
     belt-and-suspenders beside the migration-history
     `len(CHECKS)` pin)."""
     assert verify_task_body.CHECKS[7] is verify_task_body.check_figure_caption
-    assert len(verify_task_body.CHECKS) == 58
+    assert len(verify_task_body.CHECKS) == 59
 
 
 # ─── Check 26: figure panel/series prose vs figure sidecar (panel drift) ───
@@ -13750,7 +13759,8 @@ def test_check26_repo_unresolved_is_noop_pass(monkeypatch):
 
 _CHECK28_NAME = (
     "figure text opaque config codes "
-    "(slug / @L-pin / H-code / slot-family / P-M candidate / letter-arrow / arm-slug tokens)"
+    "(slug / @L-pin / H-code / slot-family / P-M candidate / letter-arrow / arm-slug / "
+    "role@span tokens)"
 )
 
 
@@ -14872,6 +14882,352 @@ def test_check57_commit_epoch_real_probe(tmp_path, monkeypatch):
     assert not res.passed, res.render()
     assert "hero.png" in res.detail and "post-2026-08-13" in res.detail
     assert res.name == _CHECK57_NAME
+
+
+# ─── Check 60 + class (h): sidecar text coverage / role@span tokens (#2292) ───
+#
+# Incident #2254: `scripts/issue2254_figures.py::_save` hand-rolled
+# `fig.savefig` + a provenance-only `{figure, git_commit, git_dirty[,
+# git_dirty_paths], inputs}` sidecar, so `per_question_dots.png` shipped
+# opaque `role@span` tick labels while check 28 had no rendered text to
+# scan and the existence-only sidecar probes (41 WARN / 57 FAIL) stayed
+# silent — a sidecar WAS present. Check 60 (WARN) keys on the sidecar's
+# `text` BLOCK alone (Must-Fix 1: `inputs`/`git_dirty_paths` are NOT in
+# `_META_PROVENANCE_KEYS`, so a whole-sidecar emptiness walk reads the
+# incident sidecars as text-bearing and goes silent). Class (h)
+# `role@span` is CHECK-28-LOCAL (Must-Fix 2): appended in check 28's
+# loop via `_role_at_span_hits`, never inside `_opaque_code_tokens`,
+# whose second consumer (check 57 Leg A) is a hard FAIL that must stay
+# byte-stable. Class (i) (`[a-z]{1,3}\d[a-z]?` — the `a0` tick shape)
+# was measured at 98 FP figures and DROPPED (kill criterion K1).
+
+_CHECK60_NAME = "figure sidecar text coverage (text-less sidecars)"
+
+# The REALIZED #2254 sidecar shape (jq-confirmed over the 11 committed
+# `figures/issue_2254/*.meta.json` sidecars), `inputs` included.
+_I2254_SHAPE_META = {
+    "figure": "figures/issue_2254/per_question_dots.png",
+    "git_commit": "0" * 40,
+    "git_dirty": True,
+    "git_dirty_paths": ["scripts/issue2254_figures.py"],
+    "inputs": ["eval_results/issue_2254/margins.json"],
+}
+
+
+def _make_repo_with_raw_sidecar(tmp_path, raw: str):
+    """Like `_make_repo_with_figure_meta` but writes the sidecar RAW —
+    the present-but-unparsable branch check 60 reports itself (#2292)."""
+    repo = tmp_path / "figrepo60"
+    repo.mkdir()
+
+    def git(*args):
+        subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
+
+    git("init", "-q")
+    git("config", "user.email", "test@example.com")
+    git("config", "user.name", "Test")
+    fig_dir = repo / "figures" / "issue_999"
+    fig_dir.mkdir(parents=True)
+    (fig_dir / "hero.png").write_bytes(b"\x89PNG fake bytes")
+    (fig_dir / "hero.meta.json").write_text(raw)
+    script = repo / "scripts" / "run.py"
+    script.parent.mkdir(parents=True)
+    script.write_text("print('entry script')\n")
+    git("add", "figures", "scripts")
+    git("commit", "-q", "-m", "add hero figure + raw sidecar + entry script")
+    sha = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    return repo, sha
+
+
+def test_check60_incident_shape_warns(tmp_path, monkeypatch):
+    """The realized #2254 sidecar shape (provenance-only, `inputs`
+    included) → check 60 WARNs naming the basename + the savefig_paper
+    regeneration route without flipping the verdict, while check 28 stays
+    silent on the same body (no rendered text to scan) — the exact
+    zero-report incident shape."""
+    repo, sha = _make_repo_with_figure_meta(tmp_path, dict(_I2254_SHAPE_META))
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    _ok, results = verify_task_body.verify_text(body)
+    res = _results_by_name(results)[_CHECK60_NAME]
+    assert res.passed and res.is_warn, res.render()
+    assert "hero.png" in res.detail
+    assert "savefig_paper" in res.detail
+    assert "1 text-less" in res.detail
+    # ... and check 28 has nothing rendered to scan — the zero-coverage
+    # half of the incident (its only strings are path-exempt provenance):
+    res28 = _results_by_name(results)[_CHECK28_NAME]
+    assert res28.passed and not res28.is_warn, res28.render()
+
+
+def test_check60_predicate_keys_on_text_block_not_whole_sidecar():
+    """Must-Fix 1 pin (#2292): the whole-sidecar walk yields the incident
+    sidecar's `inputs`/`git_dirty_paths` strings (neither key is in
+    `_META_PROVENANCE_KEYS`), so a whole-sidecar emptiness predicate
+    would read #2254's provenance-only sidecars as text-bearing and go
+    silent on the exact incident set; the `text`-block-only walk is
+    empty — that is the predicate check 60 must key on."""
+    assert verify_task_body._iter_meta_label_values(dict(_I2254_SHAPE_META))
+    assert "inputs" not in verify_task_body._META_PROVENANCE_KEYS
+    assert "git_dirty_paths" not in verify_task_body._META_PROVENANCE_KEYS
+    assert verify_task_body._iter_meta_label_values(_I2254_SHAPE_META.get("text")) == []
+
+
+def test_check60_text_bearing_sidecar_passes(tmp_path, monkeypatch):
+    """A sidecar carrying a real rendered-text block → clean PASS."""
+    meta = dict(_I2254_SHAPE_META)
+    meta["text"] = {
+        "suptitle": "Margin per question",
+        "fig_texts": [],
+        "axes": [{"title": "margin", "xticklabels": ["base", "trained"]}],
+    }
+    repo, sha = _make_repo_with_figure_meta(tmp_path, meta)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_sidecar_text_coverage(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "all carry rendered-text blocks" in res.detail
+
+
+def test_check60_empty_text_block_warns(tmp_path, monkeypatch):
+    """A `text` block PRESENT but empty of label strings
+    (`{"suptitle": None, "fig_texts": [], "axes": []}`) is text-less —
+    the emptiness predicate runs `_iter_meta_label_values` on the block,
+    not a bare key-presence check."""
+    meta = dict(_I2254_SHAPE_META)
+    meta["text"] = {"suptitle": None, "fig_texts": [], "axes": []}
+    repo, sha = _make_repo_with_figure_meta(tmp_path, meta)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_sidecar_text_coverage(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "hero.png" in res.detail
+
+
+def test_check60_sidecar_absent_defers_to_check41(tmp_path, monkeypatch):
+    """Sidecar ABSENT at the cited sha: check 60 NO-OP PASSes (checks
+    41/57 own absence) while check 41 still WARNs — deference, no
+    double-report."""
+    repo, sha = _make_repo_with_figure(tmp_path)  # PNG only, no .meta.json
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    res60 = by_name[_CHECK60_NAME]
+    assert res60.passed and not res60.is_warn, res60.render()
+    assert "no same-repo sha-pinned sidecar-bearing figures" in res60.detail
+    res41 = by_name[_CHECK41_NAME]
+    assert res41.passed and res41.is_warn, res41.render()
+
+
+def test_check60_unparsable_sidecar_warns(tmp_path, monkeypatch):
+    """Present-but-UNPARSABLE sidecar (existence probe 'pass', JSON parse
+    fails): reported HERE as text-less — `_read_figure_meta_json` returns
+    None for missing and unparsable alike, and no other check reports
+    present-but-unparsable."""
+    repo, sha = _make_repo_with_raw_sidecar(tmp_path, "{not json:\n")
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_sidecar_text_coverage(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "hero.png" in res.detail
+
+
+def test_check60_indeterminate_sidecar_probe_skips(monkeypatch):
+    """INDETERMINATE sidecar existence probe ('skip'): out of check 60's
+    scope (the siblings' fail-soft residual) — NO-OP PASS."""
+    _check57_patch(monkeypatch, sidecar="skip")
+    body = _check57_body("**Figure.** *Lead.* Clean caption.")
+    res = verify_task_body.check_figure_sidecar_text_coverage(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "no same-repo sha-pinned sidecar-bearing figures" in res.detail
+
+
+def test_check60_repo_unresolved_noop(monkeypatch):
+    """Repo root unresolved (offline / --body-stdin) → NO-OP PASS."""
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: None)
+    body = _check57_body("**Figure.** *Lead.* Clean caption.")
+    res = verify_task_body.check_figure_sidecar_text_coverage(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "repo root unresolved" in res.detail
+
+
+def test_check60_unresolvable_sha_skips(tmp_path, monkeypatch):
+    """The cited sha is unknown to the local repo: the PNG existence
+    probe is not 'pass', so the figure never enters scope (check 22's
+    domain — no double-report)."""
+    repo, _sha = _make_repo_with_figure_meta(tmp_path, dict(_I2254_SHAPE_META))
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    # Placeholder sha kept — regex-valid (16 hex) but not a local object.
+    res = verify_task_body.check_figure_sidecar_text_coverage(_CHECK24_BODY)
+    assert res.passed and not res.is_warn, res.render()
+    assert "no same-repo sha-pinned sidecar-bearing figures" in res.detail
+
+
+def test_check28_role_at_span_classifier():
+    """Class (h) inventories (#2292): AC2 positives — the #2254 incident
+    tick tokens + the three pre-registered corpus hits — and AC4
+    negatives (emails via the dot-lookahead, class-(a) layer pins,
+    hardware / percentile / snake / model-id shapes)."""
+    hits = verify_task_body._role_at_span_hits
+    is_tok = verify_task_body._is_role_at_span_token
+    # AC2 positives — the #2254 `per_question_dots.png` tick labels:
+    assert hits("pre@context ctxext@context rb@answer") == [
+        "pre@context",
+        "ctxext@context",
+        "rb@answer",
+    ]
+    # ... and the three corpus-measured firing tokens (plan baseline):
+    for tok in ("kernel@k90", "tb@d1", "stats@scipy"):
+        assert is_tok(tok), tok
+    # AC4 negatives:
+    assert hits("contact user@example.com for details") == []  # dot-lookahead
+    assert hits("readout margin at @L12") == []  # no lowercase LHS
+    assert not is_tok("@L12")
+    assert not is_tok("H100")
+    assert not is_tok("p97.5")
+    assert not is_tok("log_prob")
+    assert not is_tok("claude-sonnet-4-5-20250929")
+    # Path-exemption non-vacuity: the regex alone MATCHES inside a
+    # path-shaped word; the per-word exemption is what suppresses it.
+    assert verify_task_body._ROLE_AT_SPAN_RE.search("figures/rb@answer")
+    assert hits("figures/rb@answer") == []
+
+
+def test_opaque_code_tokens_byte_stable_on_role_at_span_strings():
+    """AC3 value pin (#2292 Must-Fix 2): `_opaque_code_tokens` output is
+    unchanged on role@span-bearing strings — the shared helper never
+    gained class (h); class (a) on the same strings is untouched. A
+    role@span token inside `_opaque_code_tokens` would flip check 57
+    Leg A (a hard FAIL) on every caption naming one."""
+    fn = verify_task_body._opaque_code_tokens
+    assert fn("rb@answer margin vs pre@context") == []
+    assert fn("readout margin at @L12") == ["@L12"]  # class (a) unchanged
+    # ... and class (a) is not double-reported through class (h):
+    assert verify_task_body._role_at_span_hits("readout margin at @L12") == []
+
+
+def test_opaque_code_tokens_call_site_set_pinned():
+    """AC3 structural pin (#2292 Must-Fix 2): `_opaque_code_tokens` keeps
+    exactly its two pre-#2292 consumers — check 28 (WARN) and check 57
+    Leg A (FAIL) — and `_role_at_span_hits` stays CHECK-28-LOCAL (its
+    only caller). Pinned by AST walk so a future 'simplification' that
+    moves class (h) into the shared helper (or re-routes the hits helper
+    into check 57) is test-breaking, not just documented."""
+    tree = ast.parse(Path(verify_task_body.__file__).read_text())
+    funcs = [n for n in tree.body if isinstance(n, ast.FunctionDef)]
+
+    def owners(callee: str) -> set[str | None]:
+        found: set[str | None] = set()
+        for node in ast.walk(tree):
+            if (
+                isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Name)
+                and node.func.id == callee
+            ):
+                found.add(
+                    next(
+                        (f.name for f in funcs if f.lineno <= node.lineno <= f.end_lineno),
+                        None,
+                    )
+                )
+        return found
+
+    assert owners("_opaque_code_tokens") == {
+        "check_figure_label_codes",
+        "check_v4_sidecarless_results_figures",
+    }
+    assert owners("_role_at_span_hits") == {"check_figure_label_codes"}
+
+
+def test_check28_role_at_span_in_xticklabels_warns(tmp_path, monkeypatch):
+    """The #2254 live shape: role@span tick labels reach check 28 through
+    `meta["text"].axes[].xticklabels` and WARN; the sibling `a0` tick
+    label stays unflagged (class (i) was measured at 98 FP figures and
+    DROPPED — kill criterion K1)."""
+    repo, sha = _make_repo_with_figure_meta(
+        tmp_path,
+        {
+            "created": "2026-08-21T00:00:00Z",
+            "text": {
+                "suptitle": None,
+                "fig_texts": [],
+                "axes": [
+                    {
+                        "title": "margin per question",
+                        "xticklabels": ["a0", "pre@context", "rb@answer"],
+                    }
+                ],
+            },
+        },
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_label_codes(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "pre@context" in res.detail and "rb@answer" in res.detail
+    assert "`a0`" not in res.detail
+    assert res.name == _CHECK28_NAME
+
+
+def test_check28_role_at_span_caption_decode_suppressed(tmp_path, monkeypatch):
+    """role@span joins the arm-slug class in caption-decode suppression
+    (#1988 extended by #2292): a caption naming `rb@answer` verbatim
+    decodes it for the reader — clean PASS."""
+    repo, sha = _make_repo_with_figure_meta(
+        tmp_path,
+        {
+            "created": "2026-08-21T00:00:00Z",
+            "text": {"suptitle": None, "fig_texts": [], "axes": [{"xticklabels": ["rb@answer"]}]},
+        },
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha).replace(
+        "Baseline gray, tulu-25 blue; error bars 95% Wald CIs.",
+        "Column rb@answer is the readback probe scored at the answer span.",
+    )
+    res = verify_task_body.check_figure_label_codes(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "free of opaque config codes" in res.detail
+
+
+def test_check28_role_at_span_suppression_leaves_other_classes(tmp_path, monkeypatch):
+    """Mixed caption naming both `rb@answer` and a hypothesis code: the
+    role@span token is suppressed, the class-(c) H-code still WARNs —
+    classes (a)-(f) stay caption-suppression-free."""
+    repo, sha = _make_repo_with_figure_meta(
+        tmp_path,
+        {
+            "created": "2026-08-21T00:00:00Z",
+            "text": {"suptitle": None, "fig_texts": [], "axes": [{"title": "rb@answer (H3)"}]},
+        },
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK24_BODY.replace("0123456789abcdef", sha).replace(
+        "Baseline gray, tulu-25 blue; error bars 95% Wald CIs.",
+        "Column rb@answer is the readback probe at the answer span (H3).",
+    )
+    res = verify_task_body.check_figure_label_codes(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "H3" in res.detail
+    assert "rb@answer" not in res.detail
+
+
+def test_check57_role_at_span_caption_not_leg_a(monkeypatch):
+    """Check 57 posture pin (#2292 Must-Fix 2): class (h) is
+    CHECK-28-LOCAL, so a sidecar-less figure whose CAPTION carries
+    `rb@answer` does NOT trip check 57's Leg A hard FAIL (pre-cutover
+    epoch exempts Leg B) — the verdict is byte-identical to the
+    pre-#2292 posture."""
+    _check57_patch(monkeypatch, epoch=_CHECK57_PRE_CUTOVER)
+    body = _check57_body("**Figure.** *Lead.* Margin for the rb@answer probe across questions.")
+    res = verify_task_body.check_v4_sidecarless_results_figures(body)
+    assert res.passed, res.render()
 
 
 # ─── Checks 52/53: PNG↔sidecar render pairing + slot completeness (#2016) ───

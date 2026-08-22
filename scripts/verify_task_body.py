@@ -555,7 +555,15 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   `under-4-token`, `best-of-28-layers`) and dated ids
   (`claude-sonnet-4-5-20250929`) never flag; a slug named verbatim in
   THAT figure's blockquote caption is suppressed — the caption decodes
-  it — with NO caption suppression for the other six classes, #1988).
+  it — with NO caption suppression for classes (a)-(f), #1988), or
+  role@span slugs (`pre@context`/`ctxext@context`/`rb@answer` —
+  lowercase letter-initial LHS `@` lowercase letter-initial RHS with an
+  email-excluding `(?!\\.[a-z])` lookahead, so `user@example.com` and
+  class (a)'s uppercase-`L` `@L12` pins never match; CHECK-28-LOCAL by
+  design — never merged into `_opaque_code_tokens`, whose second
+  consumer check 57 Leg A is a hard FAIL that stays byte-stable;
+  caption-decode suppressible like arm slugs; #2292, incident #2254 —
+  `per_question_dots.png` tick labels).
   Plain-English condition names are the
   project rule end to end; config slugs belong in the Repro config row /
   provenance keys. Scans string VALUES only (provenance-keyed subtrees
@@ -1407,6 +1415,30 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   OVERALL PASS with neither a per-unit view nor an exemption line —
   the only 1 of 10 result sections without the conventions — caught
   only by the LM critic in round 3.
+
+- **check 60** (`check_figure_sidecar_text_coverage`, WARN,
+  generation-agnostic, #2292; incident #2254): a same-repo sha-pinned
+  embedded figure whose sibling `.meta.json` sidecar EXISTS at the cited
+  sha but carries NO rendered-text block — `meta["text"]` absent, or
+  empty of label strings (`_iter_meta_label_values` on the text block
+  ALONE) — gets zero opaque-code coverage from check 28 while checks 41
+  and 57 stay silent (both probe sidecar EXISTENCE only, and a sidecar
+  IS present): #2254's `per_question_dots.png` shipped opaque code-slug
+  tick labels through every mechanical gate behind 11 provenance-only
+  sidecars (`scripts/issue2254_figures.py::_save` hand-rolls
+  `fig.savefig` + a `{figure, git_commit, git_dirty, inputs}` sidecar).
+  Predicate keyed on the `text` BLOCK, never the whole sidecar:
+  `inputs` / `git_dirty_paths` are NOT in `_META_PROVENANCE_KEYS`, so a
+  whole-sidecar walk reads the incident set as text-bearing and goes
+  silent on it. Deference: sidecar ABSENT ('fail') → checks 41/57 own
+  it; INDETERMINATE probe ('skip') → the siblings' fail-soft residual;
+  present-but-UNPARSABLE ('pass' probe, `_read_figure_meta_json` →
+  None) → reported HERE as text-less (no other check reports that
+  state). ONE WARN per body (basenames first 3 + count); remedy names
+  `savefig_paper` (`embed_text` defaults True). WARN never FAIL —
+  2,169 of 3,560 tracked sidecars (60.9%) are text-less, so a
+  retroactive FAIL would block promote-time re-verifies wholesale;
+  NO-OP PASS offline / no figures / no sidecar-bearing figures.
 
 - **judge drop-line population reconciliation**
   (`check_judge_drop_line_population`, FAIL/WARN, v3+v4, #1776 incident /
@@ -10115,16 +10147,79 @@ def _arm_slug_hits(text: str) -> list[str]:
     return [m.group(0) for m in _ARM_SLUG_RE.finditer(text) if _is_arm_slug_token(m.group(0))]
 
 
+# (h) `role@span` slugs (#2292; incident #2254) — lowercase role/leg
+#     shorthand joined by `@` to a lowercase span/slot name (`pre@context`,
+#     `ctxext@context`, `rb@answer` — #2254's `per_question_dots.png` tick
+#     labels; none of the seven prior classes matched them: `@L\d+` needs an
+#     uppercase-`L` digit RHS, snake needs `_`, H/P/M codes are
+#     uppercase-initial, `[fl]16` is fixed, the arrow class needs `A→B_x`,
+#     arm slugs need >=3 hyphen segments). Shape: letter-initial
+#     lowercase-alnum LHS (2-12 chars), `@`, letter-initial lowercase-alnum
+#     RHS (2-16 chars). The `(?!\.[a-z])` lookahead is what excludes
+#     email-shaped `user@example.com` — `_is_path_like_word` does NOT
+#     (it returns False for any slash-free word, so its extension-tail arm
+#     is unreachable on an email). Class-(a) `@L12` layer pins never
+#     double-report: their RHS is uppercase-initial and this regex requires
+#     lowercase-initial. CHECK-28-LOCAL BY DESIGN (#2292 AC3/AC5): invoked
+#     from check 28's loop only, NEVER from `_opaque_code_tokens`, whose
+#     SECOND consumer — check 57 Leg A — is a hard promote-time FAIL
+#     calibrated at "measured 0 corpus hits" under the seven shared
+#     classes; joining the shared tuple would turn an unbackticked
+#     `rb@answer` in a sidecar-less Results caption into a NEW FAIL path.
+#     Corpus-calibrated 2026-08-22 over all tracked
+#     `figures/**/*.meta.json`: 3 firing figures (`kernel@k90`, `tb@d1`,
+#     `stats@scipy`), each an in-spirit-opaque true positive or accepted
+#     named residual (`stats@scipy` the expected borderline).
+_ROLE_AT_SPAN_RE = re.compile(r"\b[a-z][a-z0-9]{1,11}@[a-z][a-z0-9]{1,15}\b(?!\.[a-z])")
+
+
+def _is_role_at_span_token(tok: str) -> bool:
+    """True iff ``tok`` is a class-(h) role@span hit: a FULL
+    ``_ROLE_AT_SPAN_RE`` match. Shared by check 28's class-(h) scan and its
+    caption-decode suppression; membership is re-derivable from the token
+    text alone because no other class emits a lowercase-initial
+    ``@``-joined token (class (a) layer pins carry an uppercase-``L`` digit
+    RHS; every other class is ``@``-free)."""
+    return _ROLE_AT_SPAN_RE.fullmatch(tok) is not None
+
+
+def _role_at_span_hits(text: str) -> list[str]:
+    """Class-(h) role@span matches in ONE sidecar string, under the SAME
+    whole-string + per-word path-exemption discipline as
+    ``_opaque_code_tokens``'s seven classes — but deliberately NOT part of
+    that shared classifier (see the class-(h) comment above: check 57
+    Leg A is its second consumer and must stay byte-stable). Check 28's
+    loop is the ONLY caller. De-duped, order kept (all-lowercase by
+    construction, so case-insensitive dedup is the identity here)."""
+    words = text.split()
+    if len(words) == 1 and _is_path_like_word(words[0]):
+        return []
+    hits: list[str] = []
+    for m in _ROLE_AT_SPAN_RE.finditer(text):
+        tok = m.group(0)
+        ws_words = [w for w in words if tok in w]
+        if ws_words and all(_is_path_like_word(w) for w in ws_words):
+            continue  # provenance path word, not rendered text
+        if tok not in hits:
+            hits.append(tok)
+    return hits
+
+
 def _suppress_caption_decoded_slugs(toks: list[str], caption: str) -> list[str]:
-    """Check 28's slug-class-scoped caption-decode suppression (#1988): drop
-    class-(g) arm-slug tokens named VERBATIM (case-insensitive substring) in
-    ``caption`` — the figure's blockquote caption decodes them for the
-    reader. Non-slug classes (a)-(f) pass through untouched; an empty
-    caption suppresses nothing."""
+    """Check 28's slug-class-scoped caption-decode suppression (#1988;
+    extended to class-(h) role@span slugs, #2292 — the identical rationale:
+    a caption spelling out ``rb@answer`` has decoded it for the reader):
+    drop class-(g) arm-slug and class-(h) role@span tokens named VERBATIM
+    (case-insensitive substring) in ``caption``. Classes (a)-(f) pass
+    through untouched; an empty caption suppresses nothing."""
     caption_cf = caption.casefold()
     if not caption_cf:
         return toks
-    return [t for t in toks if not (_is_arm_slug_token(t) and t.casefold() in caption_cf)]
+    return [
+        t
+        for t in toks
+        if not ((_is_arm_slug_token(t) or _is_role_at_span_token(t)) and t.casefold() in caption_cf)
+    ]
 
 
 # Path-LIKE word predicate (#2258) — supersedes and FOLDS IN the former
@@ -10334,9 +10429,11 @@ def _opaque_code_tokens(text: str) -> list[str]:
 
 def _iter_meta_label_values(obj: object) -> list[str]:
     """Collect the rendered-text-bearing strings of a parsed sidecar for
-    check 28: string VALUES (provenance-keyed subtrees pruned via
-    ``_META_PROVENANCE_KEYS``) plus dict KEYS containing internal whitespace
-    (axis-label-keyed data rows, e.g. ``{"1/30 chance accuracy": 0.41}``).
+    check 28 — and, passed the sidecar's ``text`` block ALONE, for
+    check 60's text-coverage predicate (#2292): string VALUES
+    (provenance-keyed subtrees pruned via ``_META_PROVENANCE_KEYS``) plus
+    dict KEYS containing internal whitespace (axis-label-keyed data rows,
+    e.g. ``{"1/30 chance accuracy": 0.41}``).
     Identifier-shaped keys (``_kind``, ``cell_slugs``, translation-map slug
     keys) are structural provenance and are NOT collected — the deliberate
     divergence from check 24's ``_flatten_meta_strings``, which collects all
@@ -10427,19 +10524,33 @@ def check_figure_label_codes(body: str) -> CheckResult:
     residual, mitigated at figure granularity (the #2221 arm roster
     co-renders >=3-segment siblings — ``a_rb_ctx`` / ``c_map_ctx`` /
     ``c_map_pfx`` — that flag the figure anyway under per-figure WARN
-    semantics).
+    semantics). Incident #2254 (#2292): ``per_question_dots.png``'s four
+    tick-label slugs ``a0`` / ``pre@context`` / ``ctxext@context`` /
+    ``rb@answer`` matched NONE of the seven classes — the ``@``-joined
+    three are mechanized as the CHECK-28-LOCAL class (h)
+    (``_role_at_span_hits``: lowercase letter-initial LHS ``@`` lowercase
+    letter-initial RHS, an email-excluding ``(?!\.[a-z])`` lookahead;
+    deliberately NOT merged into ``_opaque_code_tokens``, whose second
+    consumer — check 57 Leg A — is a hard promote-time FAIL that must
+    stay byte-stable), while short arm codes like ``a0`` stay an
+    accepted residual: the proposed ``[a-z]{1,3}\d[a-z]?`` class
+    measured 98 false-positive figures across 9 issue dirs
+    (``f1..f6`` / ``dec1..dec8`` fold/decile index ticks) against the
+    ONE incident figure, so #2292's pre-registered kill criterion K1
+    dropped it.
 
-    SLUG-CLASS caption-decode suppression (#1988): an arm-slug token
-    that appears VERBATIM (case-insensitive substring) in THIS figure's
-    CAPTION window — the contiguous ``>``-blockquote lines immediately
-    after the image line in the scanned section
-    (``_figure_caption_after``) — is suppressed for that figure: the
-    caption decodes the slug for the reader, which is the acceptable
-    remediation short of regenerating the figure. Non-slug classes
-    (a)-(f) get NO caption suppression (byte-stable grandfathered
-    behavior). URL de-duplication (``dict.fromkeys(urls)``) means a
-    figure embedded TWICE uses the FIRST occurrence's caption window —
-    conservative (an extra WARN at worst, never a lost one).
+    SLUG-CLASS caption-decode suppression (#1988; extended to
+    class-(h) role@span tokens, #2292 — the identical rationale): an
+    arm-slug or role@span token that appears VERBATIM (case-insensitive
+    substring) in THIS figure's CAPTION window — the contiguous
+    ``>``-blockquote lines immediately after the image line in the
+    scanned section (``_figure_caption_after``) — is suppressed for
+    that figure: the caption decodes the slug for the reader, which is
+    the acceptable remediation short of regenerating the figure.
+    Classes (a)-(f) get NO caption suppression (byte-stable
+    grandfathered behavior). URL de-duplication (``dict.fromkeys(urls)``)
+    means a figure embedded TWICE uses the FIRST occurrence's caption
+    window — conservative (an extra WARN at worst, never a lost one).
 
     Coverage = sidecar-CARRIED strings only: string values (provenance
     subtrees pruned) plus whitespace-bearing dict keys. The current
@@ -10460,8 +10571,10 @@ def check_figure_label_codes(body: str) -> CheckResult:
     key names — including a whitespace-free letter-arrow token used as a
     DataFrame column KEY, the #1902 residual gap); (iii) a token inside a
     path-LIKE word (or a whole path-like single-word string,
-    ``_is_path_like_word``, #2258) is exempt — the exemption covers ALL
-    SEVEN token classes, and its named residuals are: an HF ``owner/repo``
+    ``_is_path_like_word``, #2258) is exempt — the exemption covers the
+    seven shared token classes AND the check-28-local class (h)
+    (``_role_at_span_hits`` applies the same discipline itself), and its
+    named residuals are: an HF ``owner/repo``
     id in caption prose (``EleutherAI/sae-llama-3.1-8b-64x`` -> arm-slug
     token ``sae-llama-3``) is indistinguishable from a slash-joined label
     without an open vocabulary allowlist — accepted FALSE POSITIVE
@@ -10480,7 +10593,7 @@ def check_figure_label_codes(body: str) -> CheckResult:
     label = (
         "figure text opaque config codes "
         "(slug / @L-pin / H-code / slot-family / P-M candidate / "
-        "letter-arrow / arm-slug tokens)"
+        "letter-arrow / arm-slug / role@span tokens)"
     )
     section = _figure_scan_section(body)
     text = section_text(body, section)
@@ -10522,6 +10635,11 @@ def check_figure_label_codes(body: str) -> CheckResult:
         toks: list[str] = []
         for s in _iter_meta_label_values(meta):
             toks.extend(_opaque_code_tokens(s))
+            # Class (h) role@span (#2292) is CHECK-28-LOCAL: appended here,
+            # never inside `_opaque_code_tokens` — its second consumer
+            # (check 57 Leg A, a hard FAIL) stays byte-stable by design
+            # (see the class-(h) comment block).
+            toks.extend(_role_at_span_hits(s))
         toks = list(dict.fromkeys(toks))
         # Slug-class-scoped caption-decode suppression (#1988): an arm slug
         # named verbatim (case-insensitively) in THIS figure's blockquote
@@ -14088,6 +14206,115 @@ def check_figure_sidecar_coverage(body: str) -> CheckResult:
         return CheckResult(label, True, "no same-repo sha-pinned figures to check")
     return CheckResult(
         label, True, f"{checked} embedded figure(s) all carry sidecar files at their cited shas"
+    )
+
+
+def check_figure_sidecar_text_coverage(body: str) -> CheckResult:
+    """Check 60 (WARN, generation-agnostic; #2292; incident #2254): every
+    same-repo sha-pinned embedded figure whose sibling ``.meta.json``
+    sidecar EXISTS at the cited sha should carry a rendered-text block —
+    ``meta["text"]`` non-empty of label strings
+    (``_iter_meta_label_values`` on the text block ALONE) — because
+    check 28's opaque-code scan reads the sidecar's strings and a
+    text-less sidecar gives it nothing rendered to scan, while checks 41
+    and 57 probe sidecar EXISTENCE only and stay silent when one is
+    present. #2254's ``per_question_dots.png`` shipped opaque code-slug
+    tick labels through every mechanical gate behind exactly this shape:
+    ``scripts/issue2254_figures.py::_save`` hand-rolls ``fig.savefig``
+    plus a provenance-only ``{figure, git_commit, git_dirty, inputs}``
+    sidecar, so a sidecar WAS present and nothing reported the missing
+    text channel.
+
+    Predicate (deliberate — #2292 Must-Fix 1): keyed on the ``text``
+    BLOCK, never ``_iter_meta_label_values(meta)`` over the WHOLE
+    sidecar — ``inputs`` / ``git_dirty_paths`` are NOT in
+    ``_META_PROVENANCE_KEYS``, so a whole-sidecar walk yields the
+    input-path strings, reads #2254's provenance-only sidecars as
+    text-bearing, and goes silent on the exact incident set. Keying on
+    ``text`` also makes this check and the 60.9%-textless corpus posture
+    measurement the SAME instrument.
+
+    Deference branches (no double-reporting): sidecar ABSENT
+    (``_git_object_exists`` == 'fail') -> checks 41 (WARN) / 57 (FAIL)
+    own it — skip; INDETERMINATE sidecar probe ('skip') -> the siblings'
+    fail-soft residual — skip; present-but-UNPARSABLE (existence probe
+    'pass' but ``_read_figure_meta_json`` returns None: JSON parse
+    failure, or a non-dict document) -> treated as TEXT-LESS and
+    reported HERE — the reader returns None for missing and unparsable
+    alike, and no other check reports present-but-unparsable, so
+    deferring would preserve the zero-coverage/zero-report property this
+    check exists to remove. Scope gates mirror check 41's: same-repo
+    sha-pinned raw-GitHub URLs only; the PNG must itself resolve at the
+    cited sha (else check 22's domain, no double-report). WARN, never
+    FAIL: 2,169 of 3,560 tracked sidecars (60.9%) carry no ``text``
+    block (2026-08 corpus), so a retroactive FAIL would block
+    promote-time re-verifies wholesale. NO-OP PASS when: no scan
+    section, no inline figures, the repo cannot be resolved (offline /
+    ``--body-stdin``), or no figure passes the scope gates.
+    """
+    label = "figure sidecar text coverage (text-less sidecars)"
+    section = _figure_scan_section(body)
+    text = section_text(body, section)
+    if text is None:
+        return CheckResult(label, True, f"no `## {section}` section to scan")
+    urls: list[str] = []
+    for line in text.splitlines():
+        for m in _IMAGE_RE.finditer(line):
+            url = m.group(1).strip()
+            url = url.split(None, 1)[0] if url else url
+            if url:
+                urls.append(url)
+    if not urls:
+        return CheckResult(label, True, "no inline figures to scan")
+    repo = _resolve_repo_root()
+    if repo is None:
+        return CheckResult(label, True, "skipped — repo root unresolved (offline / stdin)")
+    checked = 0
+    textless: list[str] = []
+    for url in dict.fromkeys(urls):
+        m = _RAW_GITHUB_FIGURE_RE.match(url)
+        if (
+            m is None
+            or (m.group("owner").casefold(), m.group("repo").casefold()) != _THIS_REPO_SLUG
+        ):
+            continue  # only same-repo sha-pinned figures resolve from git
+        sha, fig_path = m.group("sha"), m.group("path")
+        png_status, _ = _git_object_exists(repo, sha, fig_path)
+        if png_status != "pass":
+            continue  # sha unknown / PNG absent — check 22's domain, no double-report
+        base, _sep, ext = fig_path.rpartition(".")
+        meta_path = (base if ext else fig_path) + ".meta.json"
+        meta_status, _ = _git_object_exists(repo, sha, meta_path)
+        if meta_status != "pass":
+            # ABSENT ('fail') -> checks 41/57 own it; INDETERMINATE ('skip')
+            # -> the siblings' fail-soft residual. Either way out of
+            # check 60's scope — it covers PRESENT sidecars only.
+            continue
+        checked += 1
+        meta = _read_figure_meta_json(repo, sha, fig_path)
+        # `meta is None` HERE means present-but-unparsable (the existence
+        # probe passed) or a non-dict document — text-less either way.
+        text_block = meta.get("text") if isinstance(meta, dict) else None
+        if not text_block or not _iter_meta_label_values(text_block):
+            textless.append(fig_path.rsplit("/", 1)[-1])
+    if textless:
+        textless = list(dict.fromkeys(textless))
+        preview = ", ".join(f"`{b}`" for b in textless[:3]) + (" …" if len(textless) > 3 else "")
+        return CheckResult(
+            label,
+            True,
+            f"check 28's opaque-code scan has no rendered text to read on {len(textless)} "
+            f"text-less sidecar(s) of {checked} sidecar-bearing figure(s): {preview} — "
+            "regenerate via savefig_paper (embed_text defaults True: serializes titles, "
+            "axis/tick labels, and legend entries into the sidecar), or acknowledge in body",
+            is_warn=True,
+        )
+    if checked == 0:
+        return CheckResult(label, True, "no same-repo sha-pinned sidecar-bearing figures to check")
+    return CheckResult(
+        label,
+        True,
+        f"{checked} sidecar-bearing figure(s) all carry rendered-text blocks at their cited shas",
     )
 
 
@@ -19225,6 +19452,12 @@ CHECKS = [
     # check 41 (WARN, generation-agnostic) — sidecar-less embedded figures:
     # names the figures checks 24/28/33/34 silently skipped (#1478; incident #1434):
     check_figure_sidecar_coverage,
+    # check 60 (WARN, generation-agnostic) — TEXT-LESS sidecars: a PRESENT
+    # sidecar with no rendered-text block gives check 28 nothing to scan
+    # while the existence-only probes (41/57) stay silent (#2292; incident
+    # #2254 — 11 provenance-only `{figure, git_commit, git_dirty, inputs}`
+    # sidecars):
+    check_figure_sidecar_text_coverage,
     # check 42 (FAIL on v4, WARN grandfathered — forward-only) — body-wide same-repo
     # blob/tree URL existence; footer stays check 8b's (#1507; incident #1072 r2):
     check_body_artifact_urls_exist,
