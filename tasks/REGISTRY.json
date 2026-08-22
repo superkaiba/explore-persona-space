@@ -11434,8 +11434,8 @@
     "2480": {
       "has_clean_result": false,
       "kind": "analysis",
-      "path": "tasks/proposed/2480",
-      "status": "proposed",
+      "path": "tasks/planning/2480",
+      "status": "planning",
       "title": "Harden #2394 jailbreak-mining pilot to paper-citable grade (commit JSONs + verify headline numbers + audit constructions)"
     },
     "249": {
