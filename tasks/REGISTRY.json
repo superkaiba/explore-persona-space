@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2469,
+  "highest_id": 2486,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -5746,8 +5746,8 @@
       "goal": "Determine whether applying the learned context->answer map before projecting the persona vector predicts on-policy behavior expression (evil, trait sycophancy, hallucination) better than context-side projection and direct regression at matched (unlabeled, labeled) data budgets, and whether that advantage grows across a real-data distribution-shift ladder.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/1739",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/1739",
+      "status": "followups_running",
       "title": "Mapped-answer probes lead context probes on 10 of 13 held-out rungs, but only one flagship clears the control intervals (MODERATE confidence)"
     },
     "174": {
@@ -6980,8 +6980,8 @@
       "goal": "Characterize every mapping-quality metric in use (held-out R\u00b2, kNN retrieval acc@k euclidean+cosine, and companions) \u2014 what construct each measures, what it rules out, where they dissociate \u2014 and report the ~1M-context (n\u2248963k LMSYS) linear and nonlinear context\u2192answer mappings against the full baseline ladder (constant train-mean; W = identity; identity + learned bias) on ALL metrics, in both the context-based and prefix-based arms.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/1901",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/1901",
+      "status": "followups_running",
       "title": "Held-out variance explained and retrieval accuracy dissociate in both directions across the context-to-answer estimator ladder (HIGH confidence)"
     },
     "1902": {
@@ -9383,8 +9383,8 @@
       "goal": "On Qwen-2.5-7B-Instruct, using the frozen 21-type minimal-pair context bank and banked state bank from the parent patch sweep (#2162), measure with NO patching how changing exactly one information type in the context shifts (a) the context representation (context-end vector AND prefix-end state, both arms: per-type shift magnitude, within-type direction consistency, cross-type geometry) and (b) the realized on-policy answer representation v_A (teacher-forced answer activations over the banked floor/ceiling rollout text under each unpatched context), and (c) whether the banked context-to-answer ridge maps (#779 context-end, #1738 prefix-end; no new map training unless fitness fails) DISCRIMINATE the paired contexts \u2014 per pair, does f(v_C(A)) land closer to v_A(A) than to v_A(B) (paired two-alternative retrieval accuracy + cosine/euclidean similarity margin), reported per information type with a ranking of which types the map discriminates worst, alongside the identity+learned-bias baseline and pool-level kNN retrieval, against a shuffled-pair null.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/2215",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/2215",
+      "status": "followups_running",
       "title": "Banked context-to-answer maps discriminate minimal-pair contexts, but at context-end an identity-plus-bias baseline captures most of the discrimination (MODERATE confidence)"
     },
     "2216": {
@@ -9895,8 +9895,8 @@
     "2280": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2280",
-      "status": "running",
+      "path": "tasks/completed/2280",
+      "status": "completed",
       "title": "Diagnose selective SIGTERM (rc=143) killer of in-session foreground python children on the shared VM"
     },
     "2281": {
@@ -9979,15 +9979,15 @@
     "2291": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2291",
-      "status": "running",
+      "path": "tasks/completed/2291",
+      "status": "completed",
       "title": "verify_task_body check 17: match Context footer against verbatim ## Provenance, not just non-empty"
     },
     "2292": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2292",
-      "status": "running",
+      "path": "tasks/completed/2292",
+      "status": "completed",
       "title": "Figure builders: emit tick/legend text to meta.json + WARN-lint opaque code-slug labels"
     },
     "2293": {
@@ -10000,8 +10000,8 @@
     "2294": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2294",
-      "status": "running",
+      "path": "tasks/reviewing/2294",
+      "status": "reviewing",
       "title": "workflow-fix: /issue Step 5 dispatches code-review with no implementer marker posted"
     },
     "2295": {
@@ -10021,22 +10021,22 @@
     "2297": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2297",
-      "status": "proposed",
+      "path": "tasks/archived/2297",
+      "status": "archived",
       "title": "workflow-fix: Step 9c gate launcher file-list cross-check is newline-agnostic \u2014 split-argv launch reports a plausible PYTEST_RC that is not a verdict"
     },
     "2298": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2298",
-      "status": "proposed",
+      "path": "tasks/completed/2298",
+      "status": "completed",
       "title": "workflow-fix: critic-lens-reference item 13 still says fellows-first auto default (stale since #2054/#2059)"
     },
     "2299": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2299",
-      "status": "proposed",
+      "path": "tasks/running/2299",
+      "status": "running",
       "title": "workflow-fix: verify_plan WARN check for sub-resolution judge-pilot sizing (per-arm draws below floor(1/threshold)+1)"
     },
     "23": {
@@ -11351,12 +11351,134 @@
       "status": "archived",
       "title": "Benign-SFT-then-couple with contrastive protocol: do bystanders leak like EM?"
     },
+    "2470": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2470",
+      "status": "proposed",
+      "title": "workflow-fix: condensed launch references in 12-step-8.md / 13-step-9.md lack Step 6b fence parity"
+    },
+    "2471": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2471",
+      "status": "proposed",
+      "title": "workflow-fix: lint leg resolving line-anchored gotchas.md L<n> citations (trim renumbering silently rots them)"
+    },
+    "2472": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/2472",
+      "status": "running",
+      "title": "Add codex-*-lean twins: autocompact-thrash ladder has no lean-twin rung for the Codex composer roles"
+    },
+    "2473": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/2473",
+      "status": "running",
+      "title": "workflow-fix: codex-* composers leave their own agent-memory writes uncommitted (3x in one session)"
+    },
+    "2474": {
+      "goal": "Determine whether base-model (pre-fine-tuning) geometry under the inoculation prompt p_inoc predicts which eval triggers re-elicit inoculation-suppressed behavior after inoculated fine-tuning, versus the post-fine-tuning predictors of #2379.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/2474",
+      "status": "proposed",
+      "title": "Can pre-fine-tuning geometry under the inoculation prompt predict post-inoculation re-elicitation?"
+    },
+    "2475": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2475",
+      "status": "proposed",
+      "title": "Correct #823 Takeaway 4: the persona-ladder decline is not denominator arithmetic (denominator-free paired read refutes the mixture-floor interpretation)"
+    },
+    "2476": {
+      "goal": "Determine whether the context-to-answer map's high-level-over-low-level predictability gradient (#1482) holds in a turn-averaged SAE basis: per-tier held-out R2 + acc@1 vs identity+bias for turn-averaged SAE features of true and map-predicted answer summaries.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/running/2476",
+      "status": "running",
+      "title": "Turn-averaged SAE basis: does the map's high-level-over-low-level predictability gradient hold?"
+    },
+    "2477": {
+      "has_clean_result": false,
+      "kind": "analysis",
+      "path": "tasks/running/2477",
+      "status": "running",
+      "title": "Verify base-model completions under the chat template are coherent (paper base-row format check)"
+    },
+    "2478": {
+      "has_clean_result": false,
+      "kind": "analysis",
+      "path": "tasks/running/2478",
+      "status": "running",
+      "title": "Assemble qualitative-examples panels for the paper (discrimination + patching)"
+    },
+    "2479": {
+      "goal": "Establish or bound the closeness-to-assistant transfer gradient: assistant-operator transfer recovery (R2 + acc@1 vs identity+bias) vs pre-registered AI-likeness across >=12 characters; success = rank correlation with permutation band excluding zero.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/2479",
+      "status": "proposed",
+      "title": "Dedicated AI-likeness gradient: does map transfer to a character scale with closeness to the assistant? (n>=12 characters)"
+    },
     "248": {
       "has_clean_result": false,
       "kind": "infra",
       "path": "tasks/archived/248",
       "status": "archived",
       "title": "[ZLT] marker emission concentrates attention on the system prompt \u2014 but base Qwen on the same tokens shows the same pattern (LOW confidence)"
+    },
+    "2480": {
+      "has_clean_result": false,
+      "kind": "analysis",
+      "path": "tasks/running/2480",
+      "status": "running",
+      "title": "Harden #2394 jailbreak-mining pilot to paper-citable grade (commit JSONs + verify headline numbers + audit constructions)"
+    },
+    "2481": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2481",
+      "status": "proposed",
+      "title": "inline_lint_gate load guard is self-defeating: it measures load1 AFTER its own pytest leg, making the gate unreachable on the shared VM"
+    },
+    "2482": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2482",
+      "status": "proposed",
+      "title": "verify_plan: flag N>1 concurrent producers writing one phase_outputs dest with no per-producer token or merge step (output-side sibling of #2236/#2237)"
+    },
+    "2483": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2483",
+      "status": "proposed",
+      "title": "verify_plan: flag ratio-form ordering conjuncts over unbounded-below metrics in verdict lattices (c20 threshold-SKIP blind spot)"
+    },
+    "2484": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2484",
+      "status": "proposed",
+      "title": "verify_plan: WARN on pilot-abort extrapolations whose multiplier ignores a batched side-channel cadence (#1901 v9 \u00a77.2 false-halt shape)"
+    },
+    "2485": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2485",
+      "status": "proposed",
+      "title": "verify_plan: WARN on phase-entry headroom asserts jointly unsatisfiable with the plan's own \u00a79 disk rows (#1901 v9 p2-gate shape)"
+    },
+    "2486": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2486",
+      "status": "proposed",
+      "title": "workflow-fix: Step 5a sibling-file sync commits silently after a 'no sync commit landed' line, so briefs get a stale tip SHA"
     },
     "249": {
       "has_clean_result": false,
