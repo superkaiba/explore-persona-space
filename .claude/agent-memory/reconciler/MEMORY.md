@@ -1,6 +1,6 @@
 # Reconciler memory index — open the file when a hook matches the disagreement.
 
-- [Recorded stopping rule: false claim beats NIT severity](feedback_stopping_rule_false_claim_overrides_nit_severity.md) — probe docstring-vs-detector gaps yourself; Claude defers the call, Codex fabricates sibling-body sub-claims (#2263 r6)
+- [Recorded stopping rule: false claim beats NIT severity](feedback_stopping_rule_false_claim_overrides_nit_severity.md) — probe gaps yourself; bounded disclosure = NIT, unbounded gloss = false claim; verify attributions by direct containment (#2263 r6/r7)
 
 ## Plan-stage: verdict logic / statistics (read first two on any stats split)
 
