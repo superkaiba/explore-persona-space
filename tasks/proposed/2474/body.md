@@ -9,17 +9,15 @@ parent_id: 2379
 origin_prompt: no i want to see if the re-elicitation AFTER inoculation prompting
   + finetuning can be predicted by PRE-finetuning quantities
 workflow: v1
+goal: 'Determine whether base-model (pre-fine-tuning) geometry under the inoculation
+  prompt p_inoc predicts which eval triggers re-elicit inoculation-suppressed behavior
+  after inoculated fine-tuning, versus the post-fine-tuning predictors of #2379.'
 ---
 # Can pre-fine-tuning geometry under the inoculation prompt predict post-inoculation re-elicitation?
 
 ## Goal
 
-Determine whether quantities measured on the BASE model (Qwen2.5-7B-Instruct,
-before any fine-tuning) under the inoculation system prompt `p_inoc` predict
-which eval-time trigger prompts re-elicit inoculation-suppressed behavior AFTER
-inoculated fine-tuning (emergent misalignment and capitalization), and how those
-pre-fine-tuning predictors compare to their post-fine-tuning twins measured in
-[#2379](https://eps.superkaiba.com/tasks/2379).
+Determine whether base-model (pre-fine-tuning) geometry under the inoculation prompt p_inoc predicts which eval triggers re-elicit inoculation-suppressed behavior after inoculated fine-tuning, versus the post-fine-tuning predictors of #2379.
 
 Three pre-fine-tuning predictor arms, each scored like-to-like by cosine against
 the base model's own state under `p_inoc`, averaged over the extraction question
