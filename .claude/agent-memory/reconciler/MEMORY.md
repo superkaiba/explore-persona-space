@@ -1,5 +1,7 @@
 # Reconciler memory index — open the file when a hook matches the disagreement.
 
+- [Recorded stopping rule: false claim beats NIT severity](feedback_stopping_rule_false_claim_overrides_nit_severity.md) — probe docstring-vs-detector gaps yourself; Claude defers the call, Codex fabricates sibling-body sub-claims (#2263 r6)
+
 ## Plan-stage: verdict logic / statistics (read first two on any stats split)
 
 - [Registered gate defects ≠ analyzer-recoverable](feedback_claude_gate_unit_vs_preregistered_verdict_logic.md) — data-recoverability never rescues a defective gate/kill/lattice; 35+ incidents (#547…#614)
