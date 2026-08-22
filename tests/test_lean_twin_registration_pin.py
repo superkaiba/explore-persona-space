@@ -16,7 +16,8 @@ machine-specific — pods/CI have different homes):
 1. the SKILL.md Step 5b "Autocompact-thrash respawn recipe" region carries
    the registration-mechanic clause + the symlink-install pointer;
 2. the context-hygiene.md autocompact-thrash bullet carries the mechanic;
-3. all 6 repo `.claude/agents/*-lean.md` lean-twin files exist.
+3. all repo `.claude/agents/*-lean.md` lean-twin files in LEAN_TWINS exist
+   (6 at #2072; +5 codex composer twins at #2472).
 
 Prose assertions run on whitespace-NORMALIZED text (the files wrap prose
 mid-phrase, so a required phrase can span lines).
@@ -39,12 +40,19 @@ RECIPE_END_ANCHOR = "The existing marker-keyed no-show path"
 
 LEAN_TWINS = (
     "code-reviewer-lean.md",
+    "codex-clean-result-critic-lean.md",
+    "codex-code-reviewer-lean.md",
+    "codex-critic-lean.md",
+    "codex-follow-up-critic-lean.md",
+    "codex-interpretation-critic-lean.md",
     "consistency-checker-lean.md",
     "critic-lean.md",
     "experiment-implementer-lean.md",
     "implementer-lean.md",
     "planner-lean.md",
 )
+
+CODEX_COMPOSER_TWINS = tuple(n for n in LEAN_TWINS if n.startswith("codex-"))
 
 
 def _norm(text: str) -> str:
@@ -106,7 +114,42 @@ def test_context_hygiene_bullet_carries_mechanic() -> None:
     )
 
 
-def test_all_six_repo_lean_twin_files_exist() -> None:
-    """Every symlink target — the 6 repo lean-twin agent files — exists in git."""
+def test_all_registered_repo_lean_twin_files_exist() -> None:
+    """Every symlink target — the repo lean-twin agent files in LEAN_TWINS — exists in git."""
     missing = [name for name in LEAN_TWINS if not (AGENTS_DIR / name).is_file()]
     assert not missing, f"missing repo lean-twin agent files: {missing}"
+
+
+def test_context_hygiene_roster_names_codex_composer_twins() -> None:
+    """The context-hygiene.md Class-2 roster names all five codex composer twins (#2472)."""
+    text = _norm(CONTEXT_HYGIENE_MD.read_text(encoding="utf-8"))
+    missing = [n[:-3] for n in CODEX_COMPOSER_TWINS if n[:-3] not in text]
+    assert not missing, f"context-hygiene.md roster lost codex composer twins: {missing} (#2472)"
+
+
+def test_skill_step5b_roster_names_codex_composer_roles() -> None:
+    """The Step 5b recipe region names the composer roles + the before-no-show routing (#2472)."""
+    region = _norm(_respawn_recipe_region())
+    for role in (
+        "codex-code-reviewer",
+        "codex-critic",
+        "codex-interpretation-critic",
+        "codex-clean-result-critic",
+        "codex-follow-up-critic",
+    ):
+        assert role in region, f"Step 5b recipe lost composer role {role} (#2472)"
+    assert "BEFORE item 4's Step 5d single-Claude no-show fallback" in region, (
+        "Step 5b recipe lost the composer-before-no-show routing clause (#2472)"
+    )
+
+
+def test_codex_ensemble_review_carries_composer_thrash_rung() -> None:
+    """codex-ensemble-review.md routes composer thrash to the lean rung before no-show (#2472)."""
+    path = REPO_ROOT / ".claude" / "rules" / "codex-ensemble-review.md"
+    text = _norm(path.read_text(encoding="utf-8"))
+    assert "Composer thrash-death is NOT an instant no-show" in text, (
+        "codex-ensemble-review.md lost the composer-thrash-before-no-show paragraph (#2472)"
+    )
+    assert "codex-<role>-lean" in text, (
+        "codex-ensemble-review.md lost the lean-twin rung pointer (#2472)"
+    )
