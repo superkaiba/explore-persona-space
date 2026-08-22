@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2473,
+  "highest_id": 2474,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11378,6 +11378,13 @@
       "path": "tasks/running/2473",
       "status": "running",
       "title": "workflow-fix: codex-* composers leave their own agent-memory writes uncommitted (3x in one session)"
+    },
+    "2474": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/2474",
+      "status": "proposed",
+      "title": "Can pre-fine-tuning geometry under the inoculation prompt predict post-inoculation re-elicitation?"
     },
     "248": {
       "has_clean_result": false,
