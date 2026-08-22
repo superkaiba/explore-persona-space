@@ -73,5 +73,3 @@ trim that unblocked #2280's Step 10d size gate). Filed rather than fixed in #228
 repairing four additional always-on spec files at merge time would have been an unreviewed
 scope expansion on a task already gate-blocked — and because the anchors were stale on
 trunk before #2280 existed.
-
-workflow_fix_target: scripts/workflow_lint.py, .claude/agents/code-reviewer.md, .claude/rules/code-reviewer-section-reference.md, .claude/agents/codex-code-reviewer.md
