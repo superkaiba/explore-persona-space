@@ -10000,8 +10000,8 @@
     "2294": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2294",
-      "status": "planning",
+      "path": "tasks/approved/2294",
+      "status": "approved",
       "title": "workflow-fix: /issue Step 5 dispatches code-review with no implementer marker posted"
     },
     "2295": {
