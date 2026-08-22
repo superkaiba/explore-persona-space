@@ -884,6 +884,26 @@ standard 3-lens enum gate does not apply: the brief's verbatim lens list IS
   (spans = briefnote + planbody + lensitems + empty prior; registry leg from
   repo root).**
 
+- **Mid-compose status-move + plan-version bump (#2291 round one, alternatives):
+  the plan file can vanish OUT FROM UNDER the cat-assembly when a concurrent
+  session git-mv's the task folder (planning → approved) AND lands a newer
+  plan version (symlink → v-next) between your compose-start readlink verify
+  and assembly.** Recovery that worked: relocate via `task.py find <id>`
+  (never re-derive the status path), keep composing the BRIEF-PINNED version
+  from its new location (the twin critiques the handed snapshot; the sibling
+  Claude critic is on the same version — chasing v-next corrupts the merge),
+  EXTEND the snapshot note with a later-versions guard ("the on-disk plans
+  dir MAY hold a later version; the version under critique is EXACTLY the
+  inlined text — do not read/diff/review a later version" + locate-via-find),
+  and LEAD the return summary with the drift flag so the orchestrator can
+  abort/re-brief BEFORE dispatching Codex. Also: the claimed-protection/
+  evasion-path shape (facts-given span + brief evasion list verbatim + 1:1
+  digit-free sharpeners + `### Evasion-path dispositions` with
+  IN-SCOPE-ACCEPTED | CLAIMED-CLOSED-BUT-OPEN | UNVERIFIED × FATAL |
+  RECOVERABLE labels + `### Evidence-discrimination adjudication`) composed
+  clean for a verify_task_body check-extension plan; numcheck PASS first try
+  at ~58 KB (spans = inputs + evasion + lensitems + plan + empty prior).
+
 **Why:** first custom-lens infra compose (#2324) — these choices made the
 numeric gate pass first try on a 68 KB prompt; round 2 (REVISE-round
 re-review) passed on the second numcheck run, the only failures being the
