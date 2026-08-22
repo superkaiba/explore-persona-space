@@ -21,13 +21,25 @@ workflow: v1
 
 Surfaced by the round-4 code-review ensemble on #2263 as a standing recommendation from the Claude `code-reviewer`.
 
-**SCOPE NARROWED 2026-08-22 (before dispatch).** As originally filed, this task also covered the parent-reuse fallback block in `.claude/skills/issue/steps/10-step-6.md` (Codex concern `parent-reuse-fallback-parity`). That part was **pulled back into #2263 and fixed there** at round 6. Reason: `parent-reuse-fallback-parity` was a *raised CONCERN row* on #2263's `concerns.jsonl`, `task.py defer-concern` is USER-ONLY by spec, and an autonomous session may not complete a task with an open concern row it could resolve — and the site was in #2263's own deliverable file. Routing it out was the wrong disposition for the ledger half; this task keeps only the sites that genuinely live in OTHER files.
+**SCOPE NARROWED 2026-08-22 (before dispatch).** As originally filed, this task also covered the parent-reuse fallback block in `.claude/skills/issue/steps/10-step-6.md` (Codex concern `parent-reuse-fallback-parity`). That part was **pulled back into #2263 and fixed there** at round 6. Reason: `parent-reuse-fallback-parity` was a *raised CONCERN row* on #2263's `concerns.jsonl`, `task.py defer-concern` is USER-ONLY by spec, and an autonomous session may not complete a task with an open concern row it could resolve — and the site was in #2263's own deliverable file. This task keeps only the sites that genuinely live in OTHER files.
 
-#2263 spent five rounds making three things mandatory at the primary Step 6b launch fence: the shared `--print-repo-branch` resolution, a mechanically-halting launch recheck, and `EXTRA_SYNC_ARGS` threaded into the dispatch argv. Two condensed launch references in other step files were never brought to that standard.
+#2263 spent six rounds making three things mandatory at the primary Step 6b launch fence: the shared `--print-repo-branch` resolution, a mechanically-halting launch recheck, and `EXTRA_SYNC_ARGS` threaded into the dispatch argv. Two condensed launch references in other step files were never brought to that standard.
 
 ## Goal
 
 Decide and apply the right disposition for each of the two condensed launch references outside `10-step-6.md`, so no copy-paste-able invocation in the workflow surface can dispatch without repo-branch resolution, the launch-fence recheck, and extra-sync threading.
+
+## READ FIRST — a live pin constrains your options
+
+**#2263 round 6 added a UNIQUENESS invariant, and it will fail this task's most obvious fix.**
+
+`tests/test_verify_carryover_inputs.py::test_step6_parent_reuse_fallback_points_at_canonical_launch_fence` asserts that **exactly ONE** bash block in the composed `/issue` spec carries `dispatch_issue.py launch`, and that the one block is the canonical Step 6b fence (resolver + `if !` recheck + `${EXTRA_SYNC_ARGS[@]+…}` all asserted).
+
+Consequence: **completing either `12-step-8.md:303` or `13-step-9.md:2889` into a full launch fence WILL break that test.** The #2263 round-5 review ensemble was asked to rule on whether that coupling is a feature or an accidental trap, and ruled **feature** — one canonical fence is the accumulated lesson of #2263's six rounds, and every duplicated fence is a fresh drift channel of the class those rounds kept closing.
+
+So route (a) below is effectively closed unless you can argue the invariant itself should be relaxed — and if you do, that argument belongs in a plan reviewed against #2263's history, not in a quiet test edit. Do NOT simply widen or delete the pin to make room for a second fence.
+
+Known residual on that pin, raised as concern `launch-block-fence-language-escape` at #2263 round 5 and being fixed there: it counts ` ```bash ` fences only, so a ` ```sh ` / ` ```console ` launch block escapes it. Check #2263's final state before relying on the exact regex.
 
 ## Workflow gap
 
@@ -38,33 +50,35 @@ Two sites, both pre-existing, neither introduced by #2263:
 
 Flagged together by the Claude `code-reviewer` at #2263 round 4 as a standing recommendation (non-blocking there, and outside that task's reconciler-bounded scope).
 
+A related residual named in #2263's `epm:results v8` (d), same surface, worth folding in: `13-step-9.md:2890` still carries an old intent-then-backend argv form in prose.
+
 **Why it is a workflow gap.** These are operator-copyable command blocks in the workflow surface. #2263's central finding was that a gate certifying one input set while the dispatch consumes another is a hollow gate. A *condensed* launch example that silently drops the resolver or the sync threading reintroduces the same divergence channel at a second and third site — mechanically enforced at the primary fence, unenforced here.
 
 ## Scope caution for planning — do not assume a uniform sweep
 
-Not every condensed reference *should* carry the full invocation. Some are plausibly legitimate abbreviations inside explanatory prose rather than copy-paste targets. Decide per site among:
+Decide per site among:
 
-- **(a) complete the invocation** — if it is genuinely a copy-paste launch target;
-- **(b) replace with a pointer to the canonical Step 6b fence** — if it exists to illustrate an argument shape; one canonical site means nothing to drift;
-- **(c) mark it explicitly illustrative-not-executable** — if it is prose scaffolding.
+- **(a) complete the invocation** — see the pin warning above; effectively closed.
+- **(b) replace with a pointer to the canonical Step 6b fence** — what #2263 round 6 chose for the analogous parent-reuse block, after judging that block's role to be the reuse *decision* rather than a dispatch. One canonical site means nothing to drift.
+- **(c) mark it explicitly illustrative-not-executable** — if it is prose scaffolding. #2263 round 6 paired its pointer with an `echo … >&2` line stating the block does not dispatch; reuse that shape if it fits.
 
-A mechanical sweep that inflates two prose references into two full fences would add surface without adding enforcement, and every duplicated fence is a new drift channel of the class #2263 fought for five rounds. #2263's round 6 made the same per-site judgment for the `10-step-6.md` block — **read what it decided and why before choosing here** (`epm:results v8` on #2263); consistency across the four sites matters more than any individual choice.
+Read #2263's `epm:results v8` for the reasoning behind its per-site choice. Consistency across all four sites matters more than any individual disposition.
 
-## Consider a mechanical pin
+## Consider extending, not duplicating, the pin
 
-If the outcome is that N sites must carry the same tokens, a text-pin test over those sites is worth more than the edits. #2263's record is that prose parity claims decay: its round-2 fix put the lane suffix in a comment, and its round-3 prose falsely asserted the launched set "cannot drift". Check whether #2263 round 6 already added such a pin that this task should extend rather than duplicate.
+If your outcome is that N sites must carry the same tokens or the same pointer, **extend** the existing uniqueness pin rather than adding a parallel one. #2263's record is that prose parity claims decay: its round-2 fix put the lane suffix in a comment, and its round-3 prose falsely asserted the launched set "cannot drift". Any new assertion must be verified RED against the pre-fix text before it counts — a pin that cannot fail is the exact currency #2263 spent six rounds learning not to accept.
 
 ## Coordination — probe before dispatching a writer
 
-Open task **#2407** ("Step 6b canonical launch snippet is provision-only — add the required workload leg + time-budget guidance") targets the Step 6b launch snippet in `10-step-6.md`. Not a duplicate of this task (different gap, and after the narrowing above this task no longer touches `10-step-6.md` at all), but if planning here reaches for that file anyway, the two would collide as concurrent writers. Per `.claude/rules/cross-session-writer-arbitration.md`, run the pre-dispatch probe (`spawn_session.py list` + a `file-set claim:` marker scan + `git log --since` recency on the intended paths) and either sequence-after-commit or split to a disjoint file set.
+Open task **#2407** ("Step 6b canonical launch snippet is provision-only — add the required workload leg + time-budget guidance") targets the Step 6b launch snippet in `10-step-6.md`. Not a duplicate of this task (different gap, and after the narrowing above this task no longer touches `10-step-6.md`), but if planning here reaches for that file anyway, the two would collide as concurrent writers. Per `.claude/rules/cross-session-writer-arbitration.md`, run the pre-dispatch probe (`spawn_session.py list` + a `file-set claim:` marker scan + `git log --since` recency on the intended paths) and either sequence-after-commit or split to a disjoint file set. The same applies to #2263 itself if it is still in flight — it owns `10-step-6.md` and the pin test.
 
 ## Verified at filing
 
-- #2263 `events.jsonl`: `epm:code-review v4` (the standing recommendation naming both sites), `epm:code-review-codex v4` (concern `parent-reuse-fallback-parity`, now resolved on #2263 at round 6), `epm:results v8` (#2263 round 6's per-site disposition for the `10-step-6.md` block).
+- #2263 `events.jsonl`: `epm:code-review v4` (the standing recommendation naming both sites), `epm:code-review-codex v4` (concern `parent-reuse-fallback-parity`, resolved on #2263 at round 6), `epm:results v8` (round 6's per-site disposition + the `13-step-9.md:2890` residual), `epm:code-review v5` (the ruling that the uniqueness-pin coupling is a feature, and the `launch-block-fence-language-escape` residual).
 - `epm:review-reconcile v3` on #2263 — the binding adjudication that bounded round 4 to the primary fence, which is why these sites were left.
 
 ## Provenance
 
 workflow_fix_target: .claude/skills/issue/steps/12-step-8.md
 
-Routed from the #2263 round-4 review ensemble per `.claude/rules/workflow-fix-on-bug.md` — a surfaced-prose follow-up gets the same auto-file treatment as a formal candidate block; parking it as a chat note is the named anti-pattern. Non-blocking for #2263 by both reviewers' rating, and these two sites live outside #2263's deliverable file.
+Routed from the #2263 round-4 review ensemble per `.claude/rules/workflow-fix-on-bug.md` — a surfaced-prose follow-up gets the same auto-file treatment as a formal candidate block; parking it as a chat note is the named anti-pattern. Non-blocking for #2263 by both reviewers' rating, and these sites live outside #2263's deliverable file.
