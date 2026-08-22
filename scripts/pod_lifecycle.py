@@ -407,6 +407,13 @@ _is_epm_pod = _is_managed_pod
 # accepted for legacy dispatcher pods (pod_audit precedent).
 _POD_NAME_RE = re.compile(r"^(?:pod|epm-issue)-(?P<issue>\d+)(?:-(?P<slug>[a-z][a-z0-9-]*))?$")
 
+# READ-side slug grammar (#2270 critique r1, orchestrator decision): the slug
+# production of _POD_NAME_RE — [a-z][a-z0-9-]*, UNBOUNDED — deliberately NOT
+# the write-side RUNPOD_NAME_SUFFIX_RE (<= 20 chars, provision's concern): a
+# live pod carrying a 21+-char slug must remain terminable. The empty string
+# fails the [a-z] anchor, closing the shield-waived issue-wide sweep (#2270).
+_TERMINATE_SUFFIX_RE = re.compile(r"[a-z][a-z0-9-]*")
+
 
 def _slug_from_pod_name(name: str) -> str | None:
     """Suffix slug from a managed pod name via ``_POD_NAME_RE`` (#2145).
@@ -4079,7 +4086,12 @@ def _guard_upload_verification_before_terminate(
 
 
 def _guard_keep_running_before_terminate(
-    issue: int, *, name_suffix: str | None, force_flag: bool, dry_run: bool
+    issue: int,
+    *,
+    name_suffix: str | None,
+    force_flag: bool,
+    dry_run: bool,
+    primary_only: bool = False,
 ) -> None:
     """Refuse the BARE (issue-wide) terminate when the owning task carries
     the keep-running tag (#1485; CLAUDE.md § Pods: the shield is
@@ -4090,18 +4102,32 @@ def _guard_keep_running_before_terminate(
     DRY-RUN returns BEFORE any task read: the committed pin
     test_terminate_dry_run_bypasses_guard (tests/test_pod_lifecycle.py)
     stubs get_task to raise, pinning 'no task inspection in --dry-run'
-    (Phase-2 Statistics Must-Fix #1485)."""
+    (Phase-2 Statistics Must-Fix #1485).
+
+    ``primary_only`` (#2270, clarifier decision): the primary-surgical
+    selector honors the shield UNLESS strict per-pod evidence clears the
+    PRIMARY specifically (:func:`_keep_running_primary_clearance` — a tag
+    set solely to shield ``pod-<N>-<slug>`` must not block ``pod-<N>``; a
+    tag with NO per-pod attribution blocks everything). The two committed
+    pins are preserved: the dry-run branch stays BEFORE any task read
+    (clearance included), and the bare-path strings stay byte-identical
+    (the primary-only branches emit their own scope-correct text)."""
     if name_suffix is not None:
         return  # surgical path: allowed
     if dry_run:
         # BEFORE the tag read — the existing dry-run pin requires zero
         # task-state inspection here; the preview proceeds, destroys nothing.
-        print(
+        note = (
             f"[dry-run] NOTE: a real run would check task #{issue}'s "
             "keep-running tag and REFUSE this issue-wide terminate if the "
-            "tag is set or unreadable.",
-            file=sys.stderr,
+            "tag is set or unreadable."
         )
+        if primary_only:
+            note += (
+                " A --primary-only run would additionally evaluate the "
+                "per-pod clearance (#2270) before refusing."
+            )
+        print(note, file=sys.stderr)
         return
     try:
         from explore_persona_space.task_workflow import keep_running_tag_state
@@ -4112,14 +4138,50 @@ def _guard_keep_running_before_terminate(
     if state is False:
         return
     if force_flag:
-        print(
-            "[pod_lifecycle] WARN: terminating ALL pods for issue "
-            f"#{issue} DESPITE keep-running state={state!r} because "
-            "--force-keep-running was passed. A live follow-up / parallel "
-            "suffixed pod on this issue WILL be destroyed.",
-            file=sys.stderr,
-        )
+        if primary_only:
+            print(
+                f"[pod_lifecycle] WARN: terminating the PRIMARY pod-{issue} "
+                f"ONLY DESPITE keep-running state={state!r} because "
+                "--force-keep-running was passed. Suffixed sibling pods are "
+                "NOT touched by this form.",
+                file=sys.stderr,
+            )
+        else:
+            print(
+                "[pod_lifecycle] WARN: terminating ALL pods for issue "
+                f"#{issue} DESPITE keep-running state={state!r} because "
+                "--force-keep-running was passed. A live follow-up / parallel "
+                "suffixed pod on this issue WILL be destroyed.",
+                file=sys.stderr,
+            )
         return
+    if state is True and primary_only:
+        cleared, why = _keep_running_primary_clearance(issue)
+        if cleared:
+            print(
+                f"[pod_lifecycle] NOTE: keep-running tag is SET for issue "
+                f"#{issue} but per-pod evidence clears the primary: {why} "
+                f"(#2270 — clearance scoped to pod-{issue}; suffixed siblings "
+                f"stay shielded).",
+                file=sys.stderr,
+            )
+            return
+        raise SystemExit(
+            f"REFUSED: primary-only terminate for task #{issue} — the "
+            f"keep-running tag is set and per-pod evidence does not clear "
+            f"the primary ({why}).\n"
+            f"  Clear it with evidence: post the primary's POD-BOUND "
+            f"upload-verification PASS (a pod=pod-{issue} token on the PASS "
+            f"note — a pod-less PASS does NOT clear; #2270/#2277/#1961, "
+            f".claude/rules/pods.md) and ensure the live sibling's "
+            f"epm:run-launched names it (pod=pod-{issue}-<slug>).\n"
+            f"  Drop the shield:  uv run python scripts/task.py "
+            f"remove-tag {issue} keep-running\n"
+            f"  Deliberate override: re-run with --force-keep-running (logs "
+            f"a loud warning; the sanctioned route when the operator knows "
+            f"the primary is done but its PASSes are pod-less — today's "
+            f"primary-PASS shape)."
+        )
     if state is True:
         raise SystemExit(
             f"REFUSED: issue-wide terminate for task #{issue} - the task "
@@ -4129,16 +4191,121 @@ def _guard_keep_running_before_terminate(
             f"pod-1345-onpolicy destroyed mid-launch by an issue-wide sweep).\n"
             f"  Destroy ONE pod surgically: pod.py terminate --issue {issue} "
             f"--name-suffix <slug>\n"
+            f"  Destroy ONLY the primary:   pod.py terminate --issue {issue} "
+            f"--primary-only\n"
             f"  Drop the shield first:      uv run python scripts/task.py "
             f"remove-tag {issue} keep-running\n"
             f"  Deliberate override:        re-run with --force-keep-running "
             f"(logs a loud warning)."
+        )
+    # state is None — fail toward NOT destroying; clearance never consulted.
+    if primary_only:
+        raise SystemExit(
+            f"REFUSED: primary-only terminate for task #{issue} - the "
+            f"keep-running tag state could not be read (task state "
+            f"unreadable), and terminate is irreversible. Fix the task read "
+            f"(task.py view {issue}) or re-run with --force-keep-running to "
+            f"override deliberately."
         )
     raise SystemExit(  # state is None
         f"REFUSED: issue-wide terminate for task #{issue} - the keep-running "
         f"tag state could not be read (task state unreadable), and terminate "
         f"is irreversible. Fix the task read (task.py view {issue}) or re-run "
         f"with --force-keep-running to override deliberately."
+    )
+
+
+def _keep_running_primary_clearance(issue: int) -> tuple[bool, str]:
+    """#2270: does per-pod evidence clear the PRIMARY ``pod-<N>`` from the
+    issue-wide keep-running shield? (Clarifier-bound semantics: a tag set
+    solely to shield ``pod-<N>-<slug>`` must not block ``pod-<N>``; a tag
+    with NO per-pod attribution blocks everything.) CONJUNCTION, all three
+    required:
+
+    (i)   a LIVE non-EXITED suffixed sibling ``pod-<N>-<slug>`` exists whose
+          ``epm:run-launched`` names it in structured position (#1961
+          grammar via ``_note_names_pod``) — the tag has a legible
+          non-primary beneficiary. Liveness (not the watcher's 48h ceiling,
+          #1961) because the sibling being live NOW is the present-tense
+          evidence; EXITED matches are excluded — an exited pod is not a
+          beneficiary the tag still protects (#2270 critique r1 item 1).
+    (ii)  the primary's OWN evidence window (``_pod_evidence_window``)
+          contains an upload-verification PASS POD-BOUND to the primary —
+          tier 1 ONLY (#2270 critique r1 MF-E): a pod-less PASS never clears
+          the shield, because the routine sibling-finishes-first sequence
+          puts a sibling's pod-less PASS inside the primary's window with no
+          relaunch anywhere. NOTE the window re-anchors ONLY on launches
+          ``_note_names_pod`` RECOGNIZES (structured token / JSON field /
+          leading token); an unstructured relaunch note does NOT re-arm it —
+          arm (iii) closes that channel.
+    (iii) NO ``epm:run-launched`` positioned AFTER that PASS (append-only
+          list order) is pod-UNATTRIBUTABLE or attributed to the primary
+          (#2270 critique r1 MF-A): an unattributable post-PASS launch may
+          be an unrecognized primary relaunch, so the PASS cannot be
+          trusted as current; sibling-attributed launches pass. (The
+          primary-attributed arm is defense in depth: a launch
+          ``_note_names_pod`` recognizes for the primary re-anchors the
+          window past the PASS, so arm (ii) already refuses it.)
+
+    Fail toward ``(False, reason)`` on every missing/unreadable signal."""
+    try:
+        from explore_persona_space.task_workflow import list_events
+
+        events = list_events(issue)
+    except (ImportError, FileNotFoundError, RuntimeError, ValueError) as exc:
+        return False, f"task events unreadable ({type(exc).__name__})"
+    primary = _canonical_pod_name(issue)
+    launches = [ev for ev in events if ev.get("kind") == "epm:run-launched"]
+    if not any(_note_names_pod(ev.get("note", "") or "", primary) for ev in launches):
+        return False, (
+            f"no structured epm:run-launched names {primary} (evidence window unanchored)"
+        )
+    live_suffixed = [
+        p.name
+        for p in _live_pods_for_issue(issue)
+        if p.name.startswith(f"pod-{issue}-") and p.desired_status != "EXITED"
+    ]
+    named_live = sorted(
+        n
+        for n in live_suffixed
+        if any(_note_names_pod(ev.get("note", "") or "", n) for ev in launches)
+    )
+    if not named_live:
+        return False, (
+            "no LIVE non-EXITED suffixed sibling with a structured named "
+            "epm:run-launched (#1961 grammar) — the tag has no legible "
+            "non-primary beneficiary"
+        )
+    window = _pod_evidence_window(events, primary)
+    pass_ev = _latest_pod_bound_pass(window, primary, allow_podless_fallback=False)
+    if pass_ev is None:
+        return False, (
+            f"no upload-verification PASS POD-BOUND to {primary} (pod= token / "
+            f"JSON pod field / leading token) inside its own evidence window — "
+            f"a pod-less PASS does not clear the shield (#2270 critique r1 MF-E)"
+        )
+    pass_idx = max(i for i, ev in enumerate(window) if ev is pass_ev)
+    for ev in window[pass_idx + 1 :]:
+        if ev.get("kind") != "epm:run-launched":
+            continue
+        note = ev.get("note", "") or ""
+        if _note_names_pod(note, primary):
+            return False, (
+                f"an epm:run-launched at {ev.get('ts', '?')} AFTER the primary's "
+                f"PASS is attributed to {primary} itself — the PASS is stale"
+            )
+        if not _note_pod_tokens(note):
+            return False, (
+                f"an epm:run-launched at {ev.get('ts', '?')} AFTER the primary's "
+                f"PASS carries no structural pod attribution — it may be an "
+                f"unrecognized {primary} relaunch, so the PASS cannot be trusted "
+                f"as current (#2270 critique r1 MF-A)"
+            )
+    return True, (
+        f"live named sibling(s) {', '.join(named_live)} carry the shield; "
+        f"{primary} has a POD-BOUND PASS (tier 1, ts={pass_ev.get('ts', '?')}) "
+        f"inside its own evidence window, with every later launch "
+        f"sibling-attributed"
     )
 
 
@@ -4317,19 +4484,21 @@ def _latest_pod_fence_until(events: list[dict], pod_name: str) -> dt.datetime | 
     return None
 
 
-def _latest_pass_owner_for_pod(events: list[dict], pod_name: str) -> str | None:
-    """Owner token of the POD-BOUND latest ``epm:upload-verification`` PASS
-    for ``pod_name`` — two-tier selection (#2277 critique C2).
+def _latest_pod_bound_pass(
+    events: list[dict], pod_name: str, *, allow_podless_fallback: bool = True
+) -> dict | None:
+    """Two-tier PASS selection (#2277 critique C2), factored so #2270's
+    primary-clearance read shares ONE parser with the owner-fence guard.
 
-    Tier 1: the newest PASS explicitly bound to the pod (``pod=`` token /
-    JSON ``"pod"`` field / leading token). Tier 2 (graduated-adoption
-    fallback — today's note shape): the newest PASS carrying NO pod binding
-    at all. A PASS bound to a DIFFERENT pod is SKIPPED in both directions —
-    it can neither waive this pod's fence nor displace its pod-bound PASS.
-    Returns None when the selected PASS carries no owner token, or when no
-    PASS binds at all."""
-    tier2_owner: str | None = None
-    tier2_found = False
+    Tier 1: the newest PASS naming ``pod_name`` in structured position. Tier 2
+    (graduated adoption — today's note shape; consulted ONLY when
+    ``allow_podless_fallback``, the owner-fence default): the newest PASS with
+    NO pod binding at all. A PASS bound to a DIFFERENT pod is skipped in both
+    directions. The #2270 keep-running clearance passes
+    ``allow_podless_fallback=False`` — tier 1 only (#2270 critique r1 MF-E): a
+    pod-less PASS may waive the OWNER fence but never clears the keep-running
+    shield. Returns the selected event, or None."""
+    tier2: dict | None = None
     for ev in reversed(events):
         if ev.get("kind") != "epm:upload-verification":
             continue
@@ -4337,11 +4506,21 @@ def _latest_pass_owner_for_pod(events: list[dict], pod_name: str) -> str | None:
         if not _note_records_pass(note):
             continue
         if _note_names_pod(note, pod_name):
-            return _note_owner_token(note)  # tier 1: newest pod-bound PASS wins
-        if not tier2_found and not _note_pod_tokens(note):
-            tier2_owner = _note_owner_token(note)
-            tier2_found = True
-    return tier2_owner
+            return ev  # tier 1: newest pod-bound PASS wins
+        if allow_podless_fallback and tier2 is None and not _note_pod_tokens(note):
+            tier2 = ev
+    return tier2
+
+
+def _latest_pass_owner_for_pod(events: list[dict], pod_name: str) -> str | None:
+    """Owner token of the POD-BOUND latest ``epm:upload-verification`` PASS
+    for ``pod_name`` — two-tier selection (#2277 critique C2), delegating to
+    :func:`_latest_pod_bound_pass` at its owner-fence default
+    (``allow_podless_fallback=True``; behavior-identical factoring, #2270 D3).
+    Returns None when the selected PASS carries no owner token, or when no
+    PASS binds at all."""
+    ev = _latest_pod_bound_pass(events, pod_name)
+    return _note_owner_token(ev.get("note", "") or "") if ev is not None else None
 
 
 class OwnerFenceState(NamedTuple):
@@ -4571,18 +4750,65 @@ def _verified_teardown_grant(*, target: str, reason: str):
         yield
 
 
+def _resolve_terminate_selector(args: argparse.Namespace) -> tuple[str | None, bool]:
+    """Validate + resolve the terminate selector flags (#2270 D6/D7).
+
+    Returns ``(name_suffix, primary_only)``. Raises SystemExit on a
+    mutually-exclusive combination or a malformed ``--name-suffix`` —
+    BEFORE any task/API read, ``--dry-run`` included (a preview of an
+    invalid selector is meaningless). ``getattr`` defaults: hand-built
+    Namespaces predate the flags; argparse always sets them.
+    """
+    name_suffix = getattr(args, "name_suffix", None)
+    primary_only = getattr(args, "primary_only", False)
+
+    # Mutual exclusion (argparse enforces it too; this covers hand-built
+    # Namespaces, #2270 D7).
+    if primary_only and name_suffix is not None:
+        raise SystemExit(
+            "--primary-only and --name-suffix are mutually exclusive: --primary-only "
+            f"resolves exactly pod-{args.issue}; --name-suffix resolves pod-{args.issue}-<slug>."
+        )
+
+    # #2270 D6 — READ-side suffix grammar validation, BEFORE all guards.
+    # Closes the `--name-suffix ""` hole: the truthiness call site in
+    # cmd_terminate never let "" reach _canonical_pod_name, so it silently
+    # became an ISSUE-WIDE sweep with the keep-running shield waived.
+    if name_suffix is not None and not _TERMINATE_SUFFIX_RE.fullmatch(name_suffix):
+        raise SystemExit(
+            "--name-suffix must be a pod-name slug: [a-z][a-z0-9-]* (lowercase, "
+            "letter-initial; the read-side _POD_NAME_RE grammar). An EMPTY suffix "
+            "does not select the primary pod-<N> — use --primary-only for that "
+            "(#2270; an empty suffix previously triggered an ISSUE-WIDE sweep of "
+            "every live pod for the issue WITH the keep-running shield silently "
+            "waived)."
+        )
+    return name_suffix, primary_only
+
+
 def cmd_terminate(args: argparse.Namespace) -> None:
     """Destroy every live pod for issue #N. Volume(s) gone.
 
-    ``--name-suffix <slug>`` (#1334) narrows the sweep to exactly
-    ``pod-<N>-<slug>`` — the surgical path for destroying a follow-up pod
-    WITHOUT touching the sibling ``pod-<N>``'s volume. The bare form keeps
-    its documented semantics: issue-level teardown destroys EVERY live pod
-    whose name resolves to the issue, suffixed follow-up pods included; the
-    bare form REFUSES when the owning task carries the task-level
-    ``keep-running`` tag (#1485 — the mechanically-enforced Step-8 shield;
-    ``--force-keep-running`` overrides, ``--name-suffix`` surgical destroys
-    are never blocked).
+    THREE selectors (#2270 taxonomy):
+
+    - BARE form: issue-level teardown destroys EVERY live pod whose name
+      resolves to the issue, suffixed follow-up pods included; REFUSES when
+      the owning task carries the task-level ``keep-running`` tag (#1485 —
+      the mechanically-enforced Step-8 shield; ``--force-keep-running``
+      overrides).
+    - ``--name-suffix <slug>`` (#1334) narrows the sweep to exactly
+      ``pod-<N>-<slug>`` — the surgical path for destroying a follow-up pod
+      WITHOUT touching the sibling ``pod-<N>``'s volume; never blocked by
+      the keep-running shield. The suffix is validated against the
+      READ-side slug grammar (``_TERMINATE_SUFFIX_RE``, #2270): an EMPTY or
+      malformed suffix is a loud refusal, never a silent issue-wide sweep /
+      no-match fallthrough.
+    - ``--primary-only`` (#2270): destroys EVERY live pod named exactly
+      ``pod-<N>`` — same-name duplicates included (#475 orphan doctrine),
+      never any ``pod-<N>-<slug>`` sibling; subject to the keep-running
+      shield unless strict per-pod evidence clears the primary
+      (:func:`_keep_running_primary_clearance`). Does not match the legacy
+      ``epm-issue-<N>`` name (bare form covers it).
 
     The live RunPod API is authoritative for pod existence (CLAUDE.md
     "Authority split"). We terminate by the LIVE pod_id of every pod whose
@@ -4591,8 +4817,7 @@ def cmd_terminate(args: argparse.Namespace) -> None:
     authority — it can be stale when an external dispatcher (or a prior
     crashed provision) left a duplicate on the account.
     """
-    # getattr: hand-built Namespaces predate the flags; argparse always sets them.
-    name_suffix = getattr(args, "name_suffix", None)
+    name_suffix, primary_only = _resolve_terminate_selector(args)
 
     # --approve carries the user's explicit consent for the irreversible
     # destroy into runpod_api.terminate_pod's approval gate (standing directive
@@ -4612,6 +4837,7 @@ def cmd_terminate(args: argparse.Namespace) -> None:
         name_suffix=name_suffix,
         force_flag=getattr(args, "force_keep_running", False),
         dry_run=args.dry_run,
+        primary_only=primary_only,
     )
 
     # Refuse to destroy an experiment pod whose artifacts haven't been
@@ -4625,7 +4851,13 @@ def cmd_terminate(args: argparse.Namespace) -> None:
         args.issue, skip_flag=args.skip_upload_verify, dry_run=args.dry_run
     )
 
-    target = _canonical_pod_name(args.issue, name_suffix) if name_suffix else None
+    target = (
+        _canonical_pod_name(args.issue, name_suffix)
+        if name_suffix is not None
+        else _canonical_pod_name(args.issue)
+        if primary_only
+        else None
+    )
 
     live_matches = _live_pods_for_issue(args.issue)
     if target is not None:
@@ -4704,11 +4936,13 @@ def cmd_terminate(args: argparse.Namespace) -> None:
     # ``_load_state`` makes a live-API call, so it runs BEFORE the lock; the
     # sidecar read → pop → write is then one contiguous RMW under the lock
     # (task #1183), with every legitimate removal named in allow_remove.
-    # A --name-suffix-narrowed run scopes the defensive stale lookup to
-    # exactly the target name (#1334) — the canonical-first default would
-    # resolve a healthy sibling pod-<N> and wipe ITS records.
+    # A target-narrowed run (--name-suffix OR --primary-only) scopes the
+    # defensive stale lookup to exactly the target name (#1334, and its
+    # #2270 D5 inverse: after a primary-only teardown, _find_pod_in_state's
+    # exactly-one fallback would resolve the healthy live SIBLING
+    # pod-<N>-<slug> and wipe ITS records).
     state = _load_state()  # post-terminate; live API has dropped the ids
-    stale = _find_pod_in_state(state, args.issue, name_suffix=name_suffix)
+    stale = state.get(target) if target is not None else _find_pod_in_state(state, args.issue)
     stale_name = stale.name if stale is not None and stale.name not in terminated_names else None
     with _metadata_lock():
         metadata = _read_metadata_file()
@@ -4924,7 +5158,23 @@ def _parser_resume(sub: argparse._SubParsersAction) -> None:
 def _parser_terminate(sub: argparse._SubParsersAction) -> None:
     p = sub.add_parser("terminate", help="Destroy an issue's pod (volume goes too)")
     p.add_argument("--issue", type=int, required=True)
-    p.add_argument("--name-suffix", default=None, help=_NAME_SUFFIX_HELP)
+    sel = p.add_mutually_exclusive_group()
+    sel.add_argument("--name-suffix", default=None, help=_NAME_SUFFIX_HELP)
+    sel.add_argument(
+        "--primary-only",
+        action="store_true",
+        help=(
+            "Destroy every live pod named exactly pod-<N> (same-name duplicates "
+            "included, #475 orphan doctrine), leaving pod-<N>-<slug> siblings "
+            "running (#2270). Subject to the SAME upload-verification (incl. "
+            "outroot=/rows= tokens) and owner-fence guards as every other form. "
+            "Subject to the keep-running shield unless strict per-pod evidence "
+            "clears the primary (a live structured-named sibling AND a POD-BOUND "
+            "PASS in the primary's own evidence window AND no unattributed later "
+            "launch); --force-keep-running remains the override. Does not match "
+            "the legacy epm-issue-<N> name (bare form covers it)."
+        ),
+    )
     p.add_argument("--yes", action="store_true", help="Skip the confirmation prompt")
     p.add_argument("--dry-run", action="store_true")
     p.add_argument(
