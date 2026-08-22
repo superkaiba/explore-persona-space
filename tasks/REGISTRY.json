@@ -10028,8 +10028,8 @@
     "2298": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2298",
-      "status": "proposed",
+      "path": "tasks/planning/2298",
+      "status": "planning",
       "title": "workflow-fix: critic-lens-reference item 13 still says fellows-first auto default (stale since #2054/#2059)"
     },
     "2299": {
