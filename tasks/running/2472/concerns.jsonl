@@ -1,0 +1,1 @@
+{"ts": "2026-08-22T17:07:01Z", "event": "raised", "concern_id": "composer-mechanism-contradiction", "severity": "BLOCKER", "summary": "Step 5 assigns the ~138K MCP-drop mechanism to all lean twins before saying composer twins have no MCP saving.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
