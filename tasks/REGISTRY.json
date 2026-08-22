@@ -9979,8 +9979,8 @@
     "2291": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/2291",
-      "status": "planning",
+      "path": "tasks/approved/2291",
+      "status": "approved",
       "title": "verify_task_body check 17: match Context footer against verbatim ## Provenance, not just non-empty"
     },
     "2292": {
