@@ -13,7 +13,12 @@ Driver for the approved plan (tasks/running/2477/plans/plan.md, v4). Phases:
 - ``judge-wave``  Plan B3 (``--smoke``: 5-item live forced-batch probe) / B5 (production
                   wave, 850 items x 5 draws, Batch-API pinned via ``threshold_base=0``).
 - ``aggregate``   Plan B6: per-arm stats, bootstrap/Wilson CIs, paired deltas, verdict.
-- ``figures``     UNIT-2 stub (pre-split build; lands in the follow-up unit).
+- ``figures``     Plan B7: hero ``coherence_by_arm`` (arm means + bootstrap CIs +
+                  per-item strip) + exploratory dump (per-arm item-mean histograms,
+                  per-depth lines for the raw arms, cap-hit bar where recorded,
+                  distinct-3gram vs judge-score scatter, paired-delta histogram),
+                  paper-plots conventions; ``--smoke`` renders from the synthetic
+                  aggregate fixture into /tmp scratch (no canonical writes).
 
 Content hygiene: prompts/responses are real LMSYS/WildChat-lineage text — this driver
 never PRINTS text fields (digests, counts and shas only); texts live only in artifacts.
@@ -1338,6 +1343,7 @@ def _arm_stats(arm: ArmData, save_raw: Path) -> dict:
         "per_depth_mean": per_depth or None,
         "strip_counts": arm.strip_counts or None,
         "kept_scores": {i: kept[i] for i in kept_ids},
+        "kept_d3": {i: float(v) for i, v in zip(kept_ids, d3)},
     }
 
 
@@ -1356,6 +1362,9 @@ def _paired_delta(a: dict, b: dict, arm_a: ArmData, arm_b: ArmData) -> dict:
         "n_excluded_pairs": n_panel - len(deltas),
         "mean_delta": float(np.mean(deltas)) if deltas else None,
         "delta_ci95": _boot_ci_mean(deltas),
+        # Per-pair deltas persisted so --phase figures is a pure consumer of the
+        # verdict JSON (paired-delta histogram, plan B7/§6 exploratory dump).
+        "per_pair_delta": {str(k): float(ka[k] - kb[k]) for k in shared},
     }
 
 
@@ -1406,8 +1415,10 @@ def _aggregate_core(
         },
     }
     # Strip the bulky per-item maps from the persisted per-arm block; keep them
-    # in a dedicated per_item section (still needed for reproducibility).
+    # in a dedicated per_item section (still needed for reproducibility +
+    # the figures phase, which consumes ONLY this JSON).
     per_item = {name: stats.pop("kept_scores") for name, stats in per_arm.items()}
+    per_item_d3 = {name: stats.pop("kept_d3") for name, stats in per_arm.items()}
     payload = {
         "metadata": _meta("aggregate"),
         "judge_config": {
@@ -1421,6 +1432,7 @@ def _aggregate_core(
         "paired_deltas": pairs,
         "verdict": verdict,
         "per_item_mean_scores": per_item,
+        "per_item_distinct_3gram": per_item_d3,
     }
     _write_json(out_json, payload)
     return payload
@@ -1540,8 +1552,216 @@ def phase_aggregate(args: argparse.Namespace) -> None:
     )
 
 
+# ---------------------------------------------------------------------------
+# Phase: figures (plan B7)
+# ---------------------------------------------------------------------------
+
+# Plain-English arm labels (savefig_paper caller responsibility — no config slugs
+# on any rendered surface; §5 plain-English condition names).
+ARM_LABELS = {
+    "arm_instruct_chat": "Instruct, chat template (banked)",
+    "arm_base_chat": "Base, chat template (fresh)",
+    "arm_base_bare": "Base, bare text (fresh)",
+    "arm_base_rawmt": "Base, raw multi-turn (banked)",
+    "arm_instruct_rawmt": "Instruct, raw multi-turn (banked)",
+}
+
+
+def _render_figures(payload: dict, out_dir: Path) -> list[Path]:
+    """Render the B7 hero + exploratory dump from a coherence_verdict payload.
+
+    Pure consumer of the aggregate phase's JSON (arms stats + per-item maps);
+    returns every file written (png/pdf/meta per stem). One color = one arm
+    across every figure; axes + ticks + legend + panel titles only (no canvas
+    caption blocks / annotations).
+    """
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    from explore_persona_space.analysis.paper_plots import (
+        paper_palette,
+        savefig_paper,
+        set_paper_style,
+    )
+
+    set_paper_style("blog")
+    arms_stats = payload["arms"]
+    per_item = payload["per_item_mean_scores"]
+    per_d3 = payload["per_item_distinct_3gram"]
+    present = [n for n in ARM_NAMES if n in arms_stats]
+    if not present:
+        raise RuntimeError("figures: no known arms in the verdict payload")
+    arm_colors = dict(zip(ARM_NAMES, paper_palette(len(ARM_NAMES))))
+    delta_color = paper_palette(8)[5]  # distinct 6th color: a delta is not an arm
+    rng = np.random.default_rng(0)
+    written: list[Path] = []
+
+    def _save(fig, stem: str) -> None:
+        paths = savefig_paper(fig, stem, dir=out_dir)
+        written.extend(paths.values())
+        plt.close(fig)
+
+    # --- hero: arm means + bootstrap CIs + per-item strip -------------------
+    fig, ax = plt.subplots(figsize=(7.2, 4.4))
+    for x, name in enumerate(present):
+        scores = list(per_item[name].values())
+        if scores:
+            jit = rng.uniform(-0.17, 0.17, size=len(scores))
+            ax.scatter(
+                np.full(len(scores), float(x)) + jit,
+                scores,
+                s=11,
+                alpha=0.35,
+                color=arm_colors[name],
+                linewidths=0,
+                zorder=2,
+            )
+        mean = arms_stats[name]["mean"]
+        lo, hi = arms_stats[name]["mean_ci95"]
+        if mean is not None and not (math.isnan(lo) or math.isnan(hi)):
+            ax.errorbar(
+                [x],
+                [mean],
+                yerr=[[mean - lo], [hi - mean]],
+                fmt="D",
+                color=arm_colors[name],
+                markersize=7,
+                capsize=4,
+                markeredgecolor="black",
+                markeredgewidth=0.6,
+                zorder=5,
+            )
+    ax.axhline(
+        COHERENT_THRESHOLD,
+        ls="--",
+        lw=1.0,
+        color="0.45",
+        label=f"coherent threshold ({int(COHERENT_THRESHOLD)})",
+        zorder=1,
+    )
+    ax.set_xticks(range(len(present)))
+    ax.set_xticklabels([ARM_LABELS[n] for n in present], rotation=18, ha="right")
+    ax.set_ylabel("Coherence score (judge, 0–100)")
+    ax.set_ylim(-3, 103)
+    ax.set_title("Coherence by arm: mean, bootstrap 95% CI, per-item scores")
+    ax.legend(loc="lower left")
+    _save(fig, "coherence_by_arm")
+
+    # --- per-arm item-mean histograms ---------------------------------------
+    fig, axes = plt.subplots(
+        1, len(present), figsize=(2.5 * len(present), 2.7), sharey=True, sharex=True
+    )
+    for ax, name in zip(np.atleast_1d(axes), present):
+        scores = list(per_item[name].values())
+        ax.hist(scores, bins=np.linspace(0, 100, 21), color=arm_colors[name])
+        ax.set_title(ARM_LABELS[name], fontsize=8)
+        ax.set_xlabel("Item-mean score")
+    np.atleast_1d(axes)[0].set_ylabel("Items")
+    _save(fig, "item_mean_hist_by_arm")
+
+    # --- per-depth mean lines (raw multi-turn arms) --------------------------
+    depth_arms = [
+        n
+        for n in ("arm_base_rawmt", "arm_instruct_rawmt")
+        if arms_stats.get(n, {}).get("per_depth_mean")
+    ]
+    if depth_arms:
+        fig, ax = plt.subplots(figsize=(6.0, 3.8))
+        for name in depth_arms:
+            pd_mean = arms_stats[name]["per_depth_mean"]
+            depths = sorted(int(d) for d in pd_mean)
+            ax.plot(
+                depths,
+                [pd_mean[str(d)] for d in depths],
+                marker="o",
+                color=arm_colors[name],
+                label=ARM_LABELS[name],
+            )
+        ax.set_xlabel("Conversation depth (turn index)")
+        ax.set_ylabel("Mean coherence score")
+        ax.set_title("Coherence by depth, raw multi-turn arms")
+        ax.xaxis.set_major_locator(matplotlib.ticker.MaxNLocator(integer=True))
+        ax.legend()
+        _save(fig, "per_depth_lines_rawmt")
+
+    # --- cap-hit bar (recorded arms only; N/A arms omitted, never a zero bar) -
+    cap_arms = [n for n in present if isinstance(arms_stats[n]["cap_hit_fraction"], int | float)]
+    if cap_arms:
+        fig, ax = plt.subplots(figsize=(5.6, 3.6))
+        ax.bar(
+            range(len(cap_arms)),
+            [float(arms_stats[n]["cap_hit_fraction"]) for n in cap_arms],
+            color=[arm_colors[n] for n in cap_arms],
+        )
+        ax.set_xticks(range(len(cap_arms)))
+        ax.set_xticklabels([ARM_LABELS[n] for n in cap_arms], rotation=18, ha="right")
+        ax.set_ylabel("Cap-hit fraction")
+        ax.set_title('Cap-hit fraction by arm (finish_reason == "length"; recorded arms only)')
+        _save(fig, "cap_hit_by_arm")
+
+    # --- distinct-3gram vs judge score scatter -------------------------------
+    fig, ax = plt.subplots(figsize=(6.2, 4.2))
+    for name in present:
+        d3_map = per_d3.get(name, {})
+        xs = [d3_map[i] for i in sorted(d3_map) if i in per_item[name]]
+        ys = [per_item[name][i] for i in sorted(d3_map) if i in per_item[name]]
+        if xs:
+            ax.scatter(
+                xs,
+                ys,
+                s=14,
+                alpha=0.5,
+                color=arm_colors[name],
+                linewidths=0,
+                label=ARM_LABELS[name],
+            )
+    ax.set_xlabel("Distinct 3-gram rate (per item)")
+    ax.set_ylabel("Item-mean coherence score")
+    ax.set_title("Repetition companion vs judge score")
+    ax.legend()
+    _save(fig, "distinct3gram_vs_score")
+
+    # --- paired-delta histogram (base chat minus instruct chat) --------------
+    pair = payload.get("paired_deltas", {}).get("base_chat_minus_instruct_chat")
+    if pair and pair.get("per_pair_delta"):
+        deltas = list(pair["per_pair_delta"].values())
+        fig, ax = plt.subplots(figsize=(6.0, 3.8))
+        ax.hist(deltas, bins=21, color=delta_color)
+        ax.set_xlabel("Coherence delta per prompt (base chat − instruct chat)")
+        ax.set_ylabel("Prompts")
+        ax.set_title("Paired coherence delta, shared prompt panel")
+        _save(fig, "paired_delta_hist_base_chat")
+
+    for p in written:
+        if not p.exists() or p.stat().st_size == 0:
+            raise RuntimeError(f"figures: written file missing/empty: {p}")
+    return written
+
+
 def phase_figures(args: argparse.Namespace) -> None:
-    raise SystemExit("figures phase lands in unit 2")
+    """Plan B7: render figures off the aggregate outputs (verdict JSON only)."""
+    if args.smoke:
+        scratch = Path("/tmp/issue-2477-smoke/figures")
+        _log(f"[phase=figures] SMOKE: synthetic fixture -> {scratch} (no canonical writes)")
+        arms, save_raw_paths = _aggregate_smoke_fixture(scratch / "fixture")
+        payload = _aggregate_core(
+            arms, save_raw_paths, scratch / "fixture" / "coherence_verdict_smoke.json"
+        )
+        out_dir = scratch
+    else:
+        verdict_path = EVAL_DIR / "coherence_verdict.json"
+        if not verdict_path.exists():
+            raise RuntimeError(
+                "figures: run --phase aggregate first (coherence_verdict.json missing)"
+            )
+        payload = json.loads(verdict_path.read_text(encoding="utf-8"))
+        out_dir = REPO_ROOT / "figures" / "issue_2477"
+    written = _render_figures(payload, out_dir)
+    stems = sorted({p.stem for p in written if p.suffix == ".png"})
+    _log(f"[phase=figures] done: {len(written)} files ({len(stems)} figures) -> {out_dir}")
+    _log(f"[figures] stems: {stems}")
 
 
 PHASES = {
