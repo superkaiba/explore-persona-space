@@ -736,6 +736,30 @@ standard 3-lens enum gate does not apply: the brief's verbatim lens list IS
   digit-free — "Step 6a.5"/"v1"/"2.34.1" produce no atoms under both-sides
   guards but stayed span-side anyway).
 
+- **Test-suite-acceptance infra plan, standard statistics lens + a brief
+  hollow-gate priority question (#2263 round one, the same ref-ladder plan):
+  when the brief's core ask is "audit EVERY planned test for hollowness" and
+  the fact-check already DEMONSTRATED one hollow test, mandate a dedicated
+  `### Per-test hollow-gate audit` output section** — one REAL / HOLLOW /
+  UNVERIFIED line per planned test (count spelled as a word in scaffold),
+  placed BEFORE the question answers so the enumeration precedes the coverage
+  verdicts (the #2326 fresh-evidence-first move), with an escalation rule
+  inline: HOLLOW + only-coverage-of-a-requirement/matrix-cell => Must Fix;
+  HOLLOW + redundant real coverage => Concern. The demonstrated-hollow test
+  rides as "settled — carry it as a grounded Must Fix so the revision absorbs
+  it; your NEW work is the other tests". Under write=false (spec read-only
+  critic mode) the twin CANNOT run throwaway-repo git probes the fact-checker
+  used — say so and give the UNVERIFIED escape ("name the probe that would
+  settle it; files as Concern"). Claimed-invariant questions (an unmeasured
+  "byte-equivalent" R-row narrowed by the gates section to tuple equality)
+  frame as "what exactly is the invariant, is it measured AS WRITTEN,
+  Must-Fix-as-unmeasured-invariant vs wording Concern". Exit-code
+  distinguishability frames as the lens's gate-coherence item in
+  verdict-lattice form ("two conditions sharing one exit code are
+  indistinguishable to any assert that reads only the code"). Numcheck PASS
+  first try at ~112 KB, fully digit-free scaffold (spans = inputs + plan +
+  body + factcheck + lensitems + questions + empty prior).
+
 **Why:** first custom-lens infra compose (#2324) — these choices made the
 numeric gate pass first try on a 68 KB prompt; round 2 (REVISE-round
 re-review) passed on the second numcheck run, the only failures being the
