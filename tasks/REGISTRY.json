@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2476,
+  "highest_id": 2477,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11400,6 +11400,13 @@
       "path": "tasks/proposed/2476",
       "status": "proposed",
       "title": "Turn-averaged SAE basis: does the map's high-level-over-low-level predictability gradient hold?"
+    },
+    "2477": {
+      "has_clean_result": false,
+      "kind": "analysis",
+      "path": "tasks/proposed/2477",
+      "status": "proposed",
+      "title": "Verify base-model completions under the chat template are coherent (paper base-row format check)"
     },
     "248": {
       "has_clean_result": false,
