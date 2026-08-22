@@ -16,7 +16,7 @@ pipeline.
 - **Committed result JSONs + provenance logs:** `eval_results/issue_2394/` at commit
   `89a01da7369366db09f2d8d6a3005f8084794fb4` (branch `issue-2480`) — 8 JSONs + 2 logs.
 - **Verification + audit script:** `scripts/issue2480_verify.py` @ commit
-  `6f05a69571b761c205157f7ed8e973def69dc011` (round-2 hardening: audit verdicts DERIVED from
+  `62193fbca265a17007af81c4fefe3489692b1190` (round-2 hardening: audit verdicts DERIVED from
   executable predicates; exact budget/layer universes + value pins; gated toxicchat + transfer
   reads; 3-leg self-test). Re-run:
   `uv run python scripts/issue2480_verify.py` (verification + audit) and
