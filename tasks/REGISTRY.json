@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2462,
+  "highest_id": 2463,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11294,6 +11294,13 @@
       "path": "tasks/proposed/2462",
       "status": "proposed",
       "title": "codex_task.py dispatch grants WRITE to Codex reviewers declared read-only (canonical snippet omits --no-write)"
+    },
+    "2463": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2463",
+      "status": "proposed",
+      "title": "pod.py terminate cleanup is name-scoped not incarnation-scoped: a same-name replacement loses its local records"
     },
     "247": {
       "has_clean_result": false,
