@@ -9818,8 +9818,8 @@
     "2270": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2270",
-      "status": "proposed",
+      "path": "tasks/planning/2270",
+      "status": "planning",
       "title": "pod.py terminate: no surgical form for the PRIMARY pod while a suffixed sibling is live"
     },
     "2271": {
