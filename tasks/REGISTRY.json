@@ -9895,8 +9895,8 @@
     "2280": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2280",
-      "status": "approved",
+      "path": "tasks/running/2280",
+      "status": "running",
       "title": "Diagnose selective SIGTERM (rc=143) killer of in-session foreground python children on the shared VM"
     },
     "2281": {
