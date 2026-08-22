@@ -27,8 +27,21 @@ Outputs:
   - figures/paper/c3_qualitative_discrimination.{png,pdf,meta.json}
   - figures/paper/appendix_patching_examples.{png,pdf,meta.json}
   - docs/paper_context_answer_map/qualitative_examples.md  (full(er) verbatim examples
-    + per-example provenance + per-passage display-substitution disclosure)
-  - eval_results/issue_2478/selected_examples.json  (selection audit record)
+    + per-example provenance incl. the EXACT source shard per displayed passage
+    + per-passage display-substitution disclosure)
+  - eval_results/issue_2478/selected_examples.json  (selection audit record;
+    repo-root-relative figure paths)
+
+Smoke semantics (review r2 restructure): ``--smoke`` stages ALL inputs and builds +
+validates ALL 12 examples through the identical production code path — every schema,
+coverage, direction, re-verification, and 6-row count assert executes — then renders
+and writes only ONE example per panel, diverted to /tmp/eps-2478-smoke/. The only
+smoke/production divergences are display-side (rendered row count; output paths);
+no gate is downgraded, no implementation substituted, no production-only import.
+
+``--panel discrimination|patching`` is SMOKE-ONLY: a production single-panel run
+would overwrite the shared two-panel companion doc + audit JSON with partial content
+(review r1 blocker), so main() rejects it without --smoke.
 
 Usage::
 
@@ -137,11 +150,67 @@ def _now() -> str:
 
 
 def excerpt(text: str, max_words: int) -> tuple[str, bool]:
-    """First ``max_words`` whitespace words of ``text``; flag says truncated."""
-    words = text.split()
-    if len(words) <= max_words:
-        return " ".join(words), False
-    return " ".join(words[:max_words]) + f" {ELLIPSIS}", True
+    """First ``max_words`` whitespace words of ``text``, PRESERVING line breaks.
+
+    Review r1 blocker B1 fix: lines that fit entirely within the word budget are
+    kept VERBATIM (newline structure and intra-line spacing untouched — the
+    not-truncated path returns ``text`` unchanged); only the single line cut by
+    the budget has its kept words re-joined with single spaces. Returns
+    (display_text, truncated); ``truncated`` is True iff words were dropped.
+    """
+    out_lines: list[str] = []
+    n = 0
+    truncated = False
+    for line in text.split("\n"):
+        words = line.split()
+        if n >= max_words:
+            if words:  # words remain beyond the budget on a later line
+                truncated = True
+                break
+            out_lines.append(line)  # trailing blank/whitespace line, kept verbatim
+            continue
+        if n + len(words) <= max_words:
+            out_lines.append(line)
+            n += len(words)
+        else:
+            out_lines.append(" ".join(words[: max_words - n]))
+            n = max_words
+            truncated = True
+            break
+    txt = "\n".join(out_lines)
+    if truncated:
+        txt = txt.rstrip() + f" {ELLIPSIS}"
+    return txt, truncated
+
+
+def require_keys(row: dict, keys: tuple[str, ...], what: str) -> None:
+    """Fail-loud schema check on an external cached-artifact row BEFORE indexing.
+
+    Review r1 blocker fix (Codex C2-C5): a missing/drifted key must surface as a
+    path- and family-specific assert, never an opaque KeyError mid-build.
+    """
+    assert isinstance(row, dict), f"{what}: expected dict row, got {type(row).__name__}"
+    missing = [k for k in keys if k not in row]
+    assert not missing, (
+        f"{what}: missing required keys {missing} (kill criterion (d)); present: {sorted(row)}"
+    )
+
+
+def substitution_note(
+    label: str, tr_fig: bool, tr_doc: bool, fig_words: int, doc_words: int
+) -> str:
+    """Per-passage display-substitution disclosure, exact per surface (review r1 g2 Minor)."""
+    if tr_fig and tr_doc:
+        return f"{label} truncated to {fig_words} words on figure / {doc_words} in doc ({ELLIPSIS})"
+    if tr_fig:
+        return (
+            f"{label} truncated to {fig_words} words on figure ({ELLIPSIS}); shown in full in doc"
+        )
+    if tr_doc:  # unreachable while doc caps exceed figure caps; kept exact anyway
+        return (
+            f"{label} truncated to {doc_words} words in doc ({ELLIPSIS}); shown in full on figure"
+        )
+    return f"{label} shown in full"
 
 
 def iter_jsonl(path: Path):
@@ -253,26 +322,66 @@ def load_dv3_arm() -> list[dict]:
     return rows
 
 
-def anchor_text_2162(anchor_rows: dict[str, dict[int, str]], context_id: str) -> str:
-    draws = anchor_rows.get(context_id)
-    assert draws, f"no 2162 anchor rollout for context {context_id} (kill criterion (b))"
+def load_bank(staged: dict[str, Path]) -> dict:
+    """Load + schema-validate the #2215/#2162 minimal-pair bank BEFORE any indexing."""
+    bank = json.loads(staged[BANK_JSON].read_text())
+    require_keys(bank, ("pairs", "contexts", "cells"), "2215 bank wrapper (bank.json)")
+    assert isinstance(bank["pairs"], list) and isinstance(bank["contexts"], dict), (
+        "bank.json pairs/contexts topology drifted (kill criterion (d))"
+    )
+    for p in bank["pairs"]:
+        require_keys(p, ("pair_id", "cell", "a", "b", "value_a", "value_b"), "2215 bank pair row")
+    return bank
+
+
+def bank_pair(bank: dict, pair_id: str, what: str) -> dict:
+    """Resolve one pair by id with full topology validation (cell, values, contexts)."""
+    pairs = {p["pair_id"]: p for p in bank["pairs"]}
+    assert pair_id in pairs, f"{what}: pair {pair_id} absent from bank.json (kill criterion (b))"
+    p = pairs[pair_id]
+    assert p["cell"] in bank["cells"], (
+        f"{what}: cell {p['cell']} absent from bank.json cells (kill criterion (d))"
+    )
+    vals = bank["cells"][p["cell"]].get("values")
+    assert isinstance(vals, dict), f"{what}: cell {p['cell']} has no values dict (kill (d))"
+    for vkey in (p["value_a"], p["value_b"]):
+        assert vkey in vals, f"{what}: value key {vkey} absent from cell {p['cell']} (kill (d))"
+    for cid in (p["a"], p["b"]):
+        assert cid in bank["contexts"], f"{what}: context {cid} absent from bank.json (kill (b))"
+        require_keys(bank["contexts"][cid], ("user",), f"{what}: bank context {cid}")
+    return p
+
+
+def load_anchor_rows(
+    staged: dict[str, Path], shards: list[str], what: str
+) -> dict[str, dict[int, tuple[str, str]]]:
+    """Load anchor rollouts keyed context_id -> draw -> (text, exact source shard).
+
+    Every row is schema-validated before indexing (review r1: Codex C2/C4/C5), and
+    the exact shard filename is tracked per row so provenance can cite it (Codex Major).
+    """
+    rows: dict[str, dict[int, tuple[str, str]]] = {}
+    for shard in shards:
+        for row in iter_jsonl(staged[shard]):
+            require_keys(row, ("context_id", "draw", "text"), f"{what} anchor row ({shard})")
+            rows.setdefault(row["context_id"], {})[row["draw"]] = (row["text"], shard)
+    return rows
+
+
+def first_anchor(
+    rows: dict[str, dict[int, tuple[str, str]]], context_id: str, what: str
+) -> tuple[str, str]:
+    """First-stored-draw anchor text + its exact source shard for one context."""
+    draws = rows.get(context_id)
+    assert draws, f"no {what} anchor rollout for context {context_id} (kill criterion (b))"
     return draws[min(draws)]
 
 
 def build_p1_minimal_pairs(staged: dict[str, Path]) -> list[ExampleRow]:
     dv3 = {r["pair_id"]: r for r in load_dv3_arm()}
-    bank = json.loads(staged[BANK_JSON].read_text())
-    pairs = {p["pair_id"]: p for p in bank["pairs"]}
+    bank = load_bank(staged)
     contexts = bank["contexts"]
-    cells = bank["cells"]
-
-    anchor_rows: dict[str, dict[int, str]] = {}
-    for shard in ANCHORS_2162:
-        for row in iter_jsonl(staged[shard]):
-            assert "text" in row and "context_id" in row, (
-                f"2162 anchor row schema (kill (d)): {shard}"
-            )
-            anchor_rows.setdefault(row["context_id"], {})[row["draw"]] = row["text"]
+    anchor_rows = load_anchor_rows(staged, ANCHORS_2162, "2162")
 
     out = []
     for pair_id, margins, correct, title, identity in P1_2215:
@@ -283,23 +392,27 @@ def build_p1_minimal_pairs(staged: dict[str, Path]) -> list[ExampleRow]:
             f"{pair_id}: stored margins {got} != body-disclosed {margins} (kill criterion (c))"
         )
         assert (r["correct_cos_a"], r["correct_cos_b"]) == correct, pair_id
-        p = pairs[pair_id]
-        vals = cells[p["cell"]]["values"]
+        p = bank_pair(bank, pair_id, "p1 minimal pair")
+        vals = bank["cells"][p["cell"]]["values"]
+        assert contexts[p["a"]]["user"] == contexts[p["b"]]["user"], (
+            f"{pair_id}: final user turn differs between contexts A/B — the '(shared)' "
+            f"label would be wrong (kill criterion (d))"
+        )
         blocks_fig, blocks_doc, subs = [], [], []
+        rollout_prov = {}
         for side, ctx_id, vkey in (("A", p["a"], p["value_a"]), ("B", p["b"], p["value_b"])):
-            ctx = contexts[ctx_id]
-            ans = anchor_text_2162(anchor_rows, ctx_id)
+            ans, src_shard = first_anchor(anchor_rows, ctx_id, "2162")
             fig_txt, tr_f = excerpt(ans, BANK_FIG_WORDS)
             doc_txt, tr_d = excerpt(ans, BANK_DOC_WORDS)
             head = f"Context {side} — {CELL_PLAIN[p['cell']]}: {vals[vkey]}"
             blocks_fig.append(Block(head, f"answer: {fig_txt}", tr_f))
             blocks_doc.append(Block(head, f"answer (first stored draw): {doc_txt}", tr_d))
             subs.append(
-                f"context {side} answer truncated to {BANK_FIG_WORDS} words on figure / "
-                f"{BANK_DOC_WORDS} in doc ({ELLIPSIS})"
-                if (tr_f or tr_d)
-                else f"context {side} answer shown in full"
+                substitution_note(
+                    f"context {side} answer", tr_f, tr_d, BANK_FIG_WORDS, BANK_DOC_WORDS
+                )
             )
+            rollout_prov[f"rollout_{side.lower()}"] = f"{src_shard} @ {REV_2162}"
         user = contexts[p["a"]]["user"]
         verdict = "works" if all(correct) else "fails"
         out.append(
@@ -320,7 +433,7 @@ def build_p1_minimal_pairs(staged: dict[str, Path]) -> list[ExampleRow]:
                     "pair_id": pair_id,
                     "scores": "eval_results/issue_2215/perpair/dv3_pairs.jsonl (git)",
                     "bank_text": f"{BANK_JSON} @ {REV_2162}",
-                    "rollouts": f"{P_2162}/raw_completions/anchors/ @ {REV_2162}",
+                    **rollout_prov,
                 },
                 substitutions=subs,
                 scores={"margin_cos_a": r["margin_cos_a"], "margin_cos_b": r["margin_cos_b"]},
@@ -345,6 +458,7 @@ def eligible_1738(labels: dict, ci: int) -> bool:
 
 def load_labels() -> dict:
     payload = json.loads(LABELS_1738.read_text())
+    require_keys(payload, ("labels",), "#1738 judge-label file")
     labels = payload["labels"]
     assert len(labels) > 9000, f"unexpected #1738 label count {len(labels)}"
     return labels
@@ -353,9 +467,7 @@ def load_labels() -> dict:
 def real_text_blocks(
     text: dict, fig_words: int, doc_words: int
 ) -> tuple[list[Block], list[Block], list[str]]:
-    assert "last_user" in text and "response" in text, (
-        "2202 row text lacks last_user/response (kill criterion (d))"
-    )
+    require_keys(text, ("last_user", "response"), "2202 row text")
     blocks_fig, blocks_doc, subs = [], [], []
     for head, key in (("Final user message", "last_user"), ("Model answer", "response")):
         raw = text[key]
@@ -363,11 +475,7 @@ def real_text_blocks(
         doc_txt, tr_d = excerpt(raw, doc_words)
         blocks_fig.append(Block(head, fig_txt, tr_f))
         blocks_doc.append(Block(head, doc_txt, tr_d))
-        subs.append(
-            f"{key} truncated to {fig_words} words on figure / {doc_words} in doc ({ELLIPSIS})"
-            if (tr_f or tr_d)
-            else f"{key} shown in full"
-        )
+        subs.append(substitution_note(key, tr_f, tr_d, fig_words, doc_words))
     return blocks_fig, blocks_doc, subs
 
 
@@ -394,7 +502,14 @@ def build_p1_real(staged: dict[str, Path]) -> list[ExampleRow]:
             break
     assert sel_ci is not None, "no eligible rank-1 sample500 row found (kill criterion (b))"
 
-    sample_rows = {int(r["ci"]): r for r in iter_jsonl(staged[SAMPLE500_2202])}
+    sample_rows: dict[int, dict] = {}
+    for r in iter_jsonl(staged[SAMPLE500_2202]):
+        require_keys(r, ("ci", "rank", "fail", "text"), f"2202 sample500 row ({SAMPLE500_2202})")
+        require_keys(r["text"], ("last_user", "response"), "2202 sample500 row text")
+        sample_rows[int(r["ci"])] = r
+    assert len(sample_rows) == 500, (
+        f"sample500_rows expected 500 unique-ci rows, got {len(sample_rows)} (plan §12 assum. 4)"
+    )
     srow = sample_rows.get(sel_ci)
     assert srow is not None, f"ci {sel_ci} absent from sample500_rows (kill criterion (b))"
     assert float(srow["rank"]) == 1.0, (sel_ci, srow["rank"])
@@ -408,9 +523,9 @@ def build_p1_real(staged: dict[str, Path]) -> list[ExampleRow]:
             blocks=fig_b,
             doc_blocks=doc_b,
             selection_rule=(
-                "plan §4: numpy default_rng(42) permutation over the ci-sorted 410 rows with "
-                "rank_raw_euclidean==1 AND in_sample500==1, first row eligible under the #1738 "
-                "label exclusion predicate"
+                f"plan §4: numpy default_rng(42) permutation over the ci-sorted {len(cands)} "
+                "rows with rank_raw_euclidean==1 AND in_sample500==1, first row eligible under "
+                "the #1738 label exclusion predicate"
             ),
             provenance={
                 "issue": 2202,
@@ -427,25 +542,33 @@ def build_p1_real(staged: dict[str, Path]) -> list[ExampleRow]:
 
     # --- examples 5-6: disclosed rank-1 failures ----------------------------
     fc = json.loads(FAIL_CONF.read_text())
+    require_keys(fc, ("rows",), "2202 failures_confusion.json")
     fail_meta = {int(r["ci"]): r for r in fc["rows"]}
     fail_text: dict[int, dict] = {}
+    fail_src: dict[int, str] = {}
     for shard in FAILROWS_2202:
         for row in iter_jsonl(staged[shard]):
+            require_keys(row, ("ci", "text"), f"2202 failures row ({shard})")
+            require_keys(
+                row["text"], ("last_user", "response"), f"2202 failures row text ({shard})"
+            )
             fail_text[int(row["ci"])] = row
+            fail_src[int(row["ci"])] = shard
 
-    # (ci, expected rank, expected top-confuser (ci, rank_ctx, rank_ans), title, note)
+    # (ci, expected rank, expected top-confuser (ci, rank_ctx, rank_ans, plain-English
+    #  descriptor — review r1 g1 Minor 5), title, note)
     fail_specs = [
         (
             2968,
             4.0,
-            (30290, 4.0, 5.0),
+            (30290, 4.0, 5.0, "the Portuguese Alps itinerary conversation"),
             "Spanish travel plan confused with a Portuguese itinerary",
             "from #2202's disclosed seed-42 rank-1-failure sample (plan §4 example 5)",
         ),
         (
             11905,
             7.0,
-            (71880, 1575.0, 22.0),
+            (71880, 1575.0, 22.0, "the transliteration-explainer conversation"),
             "Sentence-completion request confused with a transliteration explainer",
             "same-population deterministic neighbor swap: plan §4 named ci 67690, whose #1738 "
             "judge label reads request_refusal_adjacent=borderline — ineligible under the plan's "
@@ -453,7 +576,7 @@ def build_p1_real(staged: dict[str, Path]) -> list[ExampleRow]:
             "seed-42 rank-1-failure sample (allowed deviation, disclosed)",
         ),
     ]
-    for ci, exp_rank, (conf_ci, conf_rc, conf_ra), title, note in fail_specs:
+    for ci, exp_rank, (conf_ci, conf_rc, conf_ra, conf_desc), title, note in fail_specs:
         meta = fail_meta.get(ci)
         assert meta is not None, f"ci {ci} absent from failures_confusion (kill criterion (b))"
         assert float(meta["rank"]) == exp_rank, (ci, meta["rank"], exp_rank)
@@ -471,8 +594,9 @@ def build_p1_real(staged: dict[str, Path]) -> list[ExampleRow]:
         fig_b, doc_b, subs = real_text_blocks(trow["text"], REAL_FIG_WORDS, REAL_DOC_WORDS)
         conf_lab = labels.get(str(conf_ci), {})
         footer = (
-            f"top confuser: ci {conf_ci} (judge label: {conf_lab.get('language', '?')} / "
-            f"{conf_lab.get('topic', '?')}) — context rank {conf_rc:.0f}, answer rank {conf_ra:.0f}"
+            f"top confuser: {conf_desc} (ci {conf_ci}, judge label: "
+            f"{conf_lab.get('language', '?')} / {conf_lab.get('topic', '?')}) — "
+            f"context rank {conf_rc:.0f}, answer rank {conf_ra:.0f}"
         )
         rows.append(
             ExampleRow(
@@ -489,7 +613,7 @@ def build_p1_real(staged: dict[str, Path]) -> list[ExampleRow]:
                     "ci": ci,
                     "confusion": "eval_results/issue_2202/failures_confusion.json (git)",
                     "labels": "eval_results/issue_1738/judge_labels/labels.json (git)",
-                    "text": f"{P_2202}/dashboard_rows/failures_rows.shard00-02.jsonl @ {REV_2202}",
+                    "text": f"{fail_src[ci]} @ {REV_2202}",
                     "judge_label": labels[str(ci)],
                     "confuser_ci": conf_ci,
                     "confuser_note": (
@@ -589,6 +713,7 @@ def locate_f_rows(path: Path, pair_id: str, block_key: str, kind: str) -> float:
     vals = []
     for row in iter_jsonl(path):
         if row.get("pair_id") == pair_id and row.get("block_key") == block_key:
+            require_keys(row, ("f_beh",), f"2094 f_cells row ({pair_id}, {block_key})")
             vals.append(f_beh_scalar(row, kind))
     assert vals, f"no f_cells row for ({pair_id}, {block_key}) (kill criterion (b))"
     assert all(abs(v - vals[0]) < 1e-9 for v in vals), (
@@ -602,49 +727,50 @@ def ctx_desc_2094(context_id: str) -> str:
     return f"{PREFIX_DESC[prefix]}, query: {Q_DESC[q]}"
 
 
-def _load_2094_anchors(staged: dict[str, Path]) -> dict[str, dict[int, str]]:
-    anchors: dict[str, dict[int, str]] = {}
-    for row in iter_jsonl(staged[ANCHORS_2094]):
-        anchors.setdefault(row["context_id"], {})[row["draw"]] = row["text"]
-    return anchors
+def _load_2094_anchors(staged: dict[str, Path]) -> dict[str, dict[int, tuple[str, str]]]:
+    return load_anchor_rows(staged, [ANCHORS_2094], "2094")
 
 
-def _anchor_text_2094(anchors: dict[str, dict[int, str]], cid: str) -> str:
-    draws = anchors.get(cid)
-    assert draws, f"no 2094 anchor rollout for {cid} (kill criterion (b))"
-    return draws[min(draws)]
+def _grid_text(
+    staged: dict[str, Path], shard: str, pair_id: str, before_ctx: str, what: str
+) -> tuple[str, dict]:
+    """Select the first stored patched draw for a pair, schema- + direction-validated.
 
-
-def _grid_text(staged: dict[str, Path], shard: str, pair_id: str) -> tuple[str, dict]:
-    rows = [r for r in iter_jsonl(staged[shard]) if r["pair_id"] == pair_id]
+    Review r1 blocker fix (Codex C4/C5 + Claude g1 Minor 2): every row is
+    schema-checked before indexing, and the patch DIRECTION is asserted — the
+    displayed unpatched context must be the row's recorded ``context_a`` (the A
+    direction the shard name encodes), so the displayed donor is exactly the
+    recorded ``context_b``.
+    """
+    rows = []
+    for r in iter_jsonl(staged[shard]):
+        require_keys(r, ("pair_id", "context_a", "context_b", "text"), f"{what} grid row ({shard})")
+        if r["pair_id"] == pair_id:
+            rows.append(r)
     assert rows, f"pair {pair_id} absent from {shard} (kill criterion (b))"
     row = sorted(rows, key=lambda r: r.get("draw", r.get("seed", 0)))[0]
     assert row.get("text"), f"empty text for {pair_id} in {shard} (kill criterion (d))"
+    assert row["context_a"] == before_ctx, (
+        f"{what} patch-direction mismatch for {pair_id}: grid context_a={row['context_a']} != "
+        f"displayed unpatched context {before_ctx} (kill criterion (d))"
+    )
     return row["text"], row
 
 
-def build_p2_2094(staged: dict[str, Path], specs_in: list | None = None) -> list[ExampleRow]:
-    """The four curated #2094 examples (or the smoke's example-1 subset via ``specs_in``)."""
+def build_p2_2094(staged: dict[str, Path]) -> list[ExampleRow]:
+    """The four curated #2094 examples (full set; smoke slicing happens in build_panels)."""
     anchors = _load_2094_anchors(staged)
 
-    def anchor_text(cid: str) -> str:
-        return _anchor_text_2094(anchors, cid)
-
-    def grid_text(shard: str, pair_id: str) -> tuple[str, dict]:
-        return _grid_text(staged, shard, pair_id)
-
     out = []
-    specs = [(*s[:8], s[8]) for s in (specs_in if specs_in is not None else P2_2094)]
-    for ex_id, pair_id, block_key, kind, exp_f, title, before_ctx, shard, verdict in specs:
+    for ex_id, pair_id, block_key, kind, exp_f, title, before_ctx, shard, verdict in P2_2094:
         stored_f = locate_f_rows(F_CELLS_2094, pair_id, block_key, kind)
         assert abs(stored_f - exp_f) <= 0.01, (
             f"{pair_id} @ {block_key}: stored F {stored_f:.4f} vs writeup {exp_f} "
             f"(kill criterion (c))"
         )
-        patched, grow = grid_text(shard, pair_id)
-        ctx_a, ctx_b = grow["context_a"], grow["context_b"]
-        donor_ctx = ctx_b if before_ctx == ctx_a else ctx_a
-        before = anchor_text(before_ctx)
+        patched, grow = _grid_text(staged, shard, pair_id, before_ctx, "2094")
+        donor_ctx = grow["context_b"]
+        before, anchor_shard = first_anchor(anchors, before_ctx, "2094")
         b_fig, tr_bf = excerpt(before, BANK_FIG_WORDS)
         b_doc, tr_bd = excerpt(before, BANK_DOC_WORDS)
         a_fig, tr_af = excerpt(patched, BANK_FIG_WORDS)
@@ -674,14 +800,16 @@ def build_p2_2094(staged: dict[str, Path], specs_in: list | None = None) -> list
                     "pair_id": pair_id,
                     "block_key": block_key,
                     "scores": "eval_results/issue_2094/f_metrics/f_cells.jsonl (git)",
-                    "unpatched": f"{ANCHORS_2094} @ {REV_2094} (first stored draw)",
+                    "unpatched": f"{anchor_shard} @ {REV_2094} (first stored draw)",
                     "patched": f"{shard} @ {REV_2094}",
                 },
                 substitutions=[
-                    "unpatched answer truncated"
-                    if (tr_bf or tr_bd)
-                    else "unpatched answer shown in full",
-                    "patched answer truncated" if (tr_af or tr_ad) else "patched answer in full",
+                    substitution_note(
+                        "unpatched answer", tr_bf, tr_bd, BANK_FIG_WORDS, BANK_DOC_WORDS
+                    ),
+                    substitution_note(
+                        "patched answer", tr_af, tr_ad, BANK_FIG_WORDS, BANK_DOC_WORDS
+                    ),
                 ],
                 scores={"f_beh": stored_f, "read_block": kind},
             )
@@ -691,7 +819,7 @@ def build_p2_2094(staged: dict[str, Path], specs_in: list | None = None) -> list
 
 
 def build_p2_fu2(staged: dict[str, Path]) -> list[ExampleRow]:
-    """The fu2 query-text-token example (production only; not in the smoke subset)."""
+    """The fu2 query-text-token example (built + validated under smoke and production)."""
     anchors = _load_2094_anchors(staged)
     out: list[ExampleRow] = []
     ex_id, pair_id, block_key, exp_f, title, before_ctx, shard = FU2_SPEC
@@ -699,8 +827,8 @@ def build_p2_fu2(staged: dict[str, Path]) -> list[ExampleRow]:
     assert abs(stored_f - exp_f) <= 0.01, (
         f"fu2 {pair_id}: stored F {stored_f:.4f} vs writeup {exp_f} (kill criterion (c))"
     )
-    patched, grow = _grid_text(staged, shard, pair_id)
-    before = _anchor_text_2094(anchors, before_ctx)
+    patched, grow = _grid_text(staged, shard, pair_id, before_ctx, "2094 fu2")
+    before, anchor_shard = first_anchor(anchors, before_ctx, "2094")
     donor_ctx = grow["context_b"]
     b_fig, tr_bf = excerpt(before, BANK_FIG_WORDS)
     b_doc, tr_bd = excerpt(before, BANK_DOC_WORDS)
@@ -730,12 +858,12 @@ def build_p2_fu2(staged: dict[str, Path]) -> list[ExampleRow]:
                 "pair_id": pair_id,
                 "block_key": block_key,
                 "scores": "eval_results/issue_2094/f_metrics/fu2/fu2_cells.jsonl (git)",
-                "unpatched": f"{ANCHORS_2094} @ {REV_2094} (first stored draw)",
+                "unpatched": f"{anchor_shard} @ {REV_2094} (first stored draw)",
                 "patched": f"{shard} @ {REV_2094}",
             },
             substitutions=[
-                "unpatched answer truncated" if (tr_bf or tr_bd) else "unpatched answer in full",
-                "patched answer truncated" if (tr_af or tr_ad) else "patched answer in full",
+                substitution_note("unpatched answer", tr_bf, tr_bd, BANK_FIG_WORDS, BANK_DOC_WORDS),
+                substitution_note("patched answer", tr_af, tr_ad, BANK_FIG_WORDS, BANK_DOC_WORDS),
             ],
             scores={"f_beh": stored_f, "read_block": "query"},
         )
@@ -744,11 +872,12 @@ def build_p2_fu2(staged: dict[str, Path]) -> list[ExampleRow]:
 
 
 def build_p2_2162(staged: dict[str, Path]) -> list[ExampleRow]:
-    rows = [
-        r
-        for r in iter_jsonl(F_CELLS_2162)
-        if r["cell"] == "instr_format" and r["slot"] == "ce" and r["arm"] == "steered"
-    ]
+    fc_keys = ("cell", "slot", "arm", "separation", "n_coherent", "n_draws", "f_beh", "pair_id")
+    rows = []
+    for r in iter_jsonl(F_CELLS_2162):
+        require_keys(r, fc_keys, "2162 f_cells row")
+        if r["cell"] == "instr_format" and r["slot"] == "ce" and r["arm"] == "steered":
+            rows.append(r)
     assert rows, "no 2162 instr_format/ce/steered rows (kill criterion (b))"
     elig = [r for r in rows if r["separation"] >= 1 and r["n_coherent"] == r["n_draws"]]
     assert elig, "no eligible 2162 instr_format rows under the plan filter"
@@ -757,32 +886,32 @@ def build_p2_2162(staged: dict[str, Path]) -> list[ExampleRow]:
     stored_f = float(best["f_beh"])
 
     stats = json.loads(STATS_2162.read_text())
+    require_keys(stats, ("per_cell",), "2162 stats.json")
+    require_keys(stats["per_cell"], ("instr_format|ce",), "2162 stats.json per_cell")
     fam = stats["per_cell"]["instr_format|ce"]
+    require_keys(fam, ("f_steered_mean", "f_shuffled_mean"), "2162 stats per_cell instr_format|ce")
     fam_band = {
         "f_steered_mean": fam["f_steered_mean"],
         "f_shuffled_mean": fam["f_shuffled_mean"],
     }
 
-    bank = json.loads(staged[BANK_JSON].read_text())
-    pairs = {p["pair_id"]: p for p in bank["pairs"]}
-    p = pairs[pair_id]
+    bank = load_bank(staged)
+    p = bank_pair(bank, pair_id, "2162 argmax pair")
     vals = bank["cells"]["instr_format"]["values"]
 
-    anchor_rows: dict[str, dict[int, str]] = {}
-    for shard in ANCHORS_2162:
-        for row in iter_jsonl(staged[shard]):
-            anchor_rows.setdefault(row["context_id"], {})[row["draw"]] = row["text"]
-    before = anchor_text_2162(anchor_rows, p["a"])
+    anchor_rows = load_anchor_rows(staged, ANCHORS_2162, "2162")
+    before, anchor_shard = first_anchor(anchor_rows, p["a"], "2162")
 
-    grid = [r for r in iter_jsonl(staged[GRID_2162_INSTR]) if r["pair_id"] == pair_id]
-    assert grid, f"pair {pair_id} absent from instr_format grid shard (kill criterion (b))"
-    grow = sorted(grid, key=lambda r: r["draw"])[0]
-    assert grow.get("text"), f"empty patched text for {pair_id} (kill criterion (d))"
+    patched, grow = _grid_text(staged, GRID_2162_INSTR, pair_id, p["a"], "2162")
+    assert grow["context_b"] == p["b"], (
+        f"2162 donor mismatch for {pair_id}: grid context_b={grow['context_b']} != "
+        f"bank pair b={p['b']} (kill criterion (d))"
+    )
 
     b_fig, tr_bf = excerpt(before, BANK_FIG_WORDS)
     b_doc, tr_bd = excerpt(before, BANK_DOC_WORDS)
-    a_fig, tr_af = excerpt(grow["text"], BANK_FIG_WORDS)
-    a_doc, tr_ad = excerpt(grow["text"], BANK_DOC_WORDS)
+    a_fig, tr_af = excerpt(patched, BANK_FIG_WORDS)
+    a_doc, tr_ad = excerpt(patched, BANK_DOC_WORDS)
     head_before = f"Unpatched — stated policy: {vals[p['value_a']]}"
     head_after = f"Patched — context-end state ← [stated policy: {vals[p['value_b']]}]"
     return [
@@ -806,12 +935,12 @@ def build_p2_2162(staged: dict[str, Path]) -> list[ExampleRow]:
                 "family_band": "eval_results/issue_2162/f_metrics/stats.json per_cell instr_format|ce",
                 "family_band_values": fam_band,
                 "bank_text": f"{BANK_JSON} @ {REV_2162}",
-                "unpatched": f"{P_2162}/raw_completions/anchors/ @ {REV_2162} (first stored draw)",
+                "unpatched": f"{anchor_shard} @ {REV_2162} (first stored draw)",
                 "patched": f"{GRID_2162_INSTR} @ {REV_2162} (first stored draw)",
             },
             substitutions=[
-                "unpatched answer truncated" if (tr_bf or tr_bd) else "unpatched answer in full",
-                "patched answer truncated" if (tr_af or tr_ad) else "patched answer in full",
+                substitution_note("unpatched answer", tr_bf, tr_bd, BANK_FIG_WORDS, BANK_DOC_WORDS),
+                substitution_note("patched answer", tr_af, tr_ad, BANK_FIG_WORDS, BANK_DOC_WORDS),
             ],
             scores={"f_beh": stored_f, **{f"family_{k}": v for k, v in fam_band.items()}},
         )
@@ -837,13 +966,44 @@ WRAP_CHARS = 88
 MAX_BLOCK_LINES = 6
 
 
-def _wrap(text: str, width: int = WRAP_CHARS, max_lines: int = MAX_BLOCK_LINES) -> str:
+def _wrap(text: str, width: int = WRAP_CHARS, max_lines: int = MAX_BLOCK_LINES) -> tuple[str, bool]:
+    """Wrap for the canvas; returns (wrapped, line_cap_cut) so the cut is disclosable.
+
+    Review r1 g1 Minor 1: the ``max_lines`` cut is a SECOND figure-side truncation
+    channel beyond the word cap — render_panel appends a per-passage disclosure to
+    the row's substitution list whenever it fires.
+    """
     lines: list[str] = []
     for para in text.split("\n"):
         lines.extend(textwrap.wrap(para, width=width) or [""])
     if len(lines) > max_lines:
         lines = lines[: max_lines - 1] + [lines[max_lines - 1] + " " + ELLIPSIS]
-    return "\n".join(lines)
+        return "\n".join(lines), True
+    return "\n".join(lines), False
+
+
+def _relpath(p: str | Path) -> str:
+    """Repo-root-relative path for committed outputs (review r1 Minor: no absolute
+    worktree paths in the audit); smoke outputs under /tmp stay absolute (never
+    committed)."""
+    q = Path(p).resolve()
+    try:
+        return str(q.relative_to(REPO_ROOT))
+    except ValueError:
+        return str(q)
+
+
+def _wrap_tracked(row: ExampleRow, text: str, width: int, max_lines: int, channel: str) -> str:
+    """_wrap + per-passage disclosure: a fired line-cap is appended to the row's
+    substitution list (read by the companion doc + audit, which are written after
+    rendering)."""
+    out, cut = _wrap(text, width=width, max_lines=max_lines)
+    if cut:
+        row.substitutions.append(
+            f"figure-side line-cap cut {channel} to {max_lines} line(s) ({ELLIPSIS}); "
+            "the companion doc carries the fuller text"
+        )
+    return out
 
 
 def render_panel(panel: str, rows: list[ExampleRow], out_dir: Path) -> dict:
@@ -906,7 +1066,7 @@ def render_panel(panel: str, rows: list[ExampleRow], out_dir: Path) -> dict:
             ax.text(
                 0.042,
                 y_blocks,
-                _wrap(row.shared_line, width=150, max_lines=1),
+                _wrap_tracked(row, row.shared_line, 150, 1, "the shared final-user-turn line"),
                 fontsize=7.2,
                 style="italic",
                 va="top",
@@ -918,7 +1078,7 @@ def render_panel(panel: str, rows: list[ExampleRow], out_dir: Path) -> dict:
             ax.text(
                 x,
                 y_blocks,
-                _wrap(blk.header, width=64, max_lines=2),
+                _wrap_tracked(row, blk.header, 64, 2, f"the header '{blk.header[:40]}'"),
                 fontsize=7.4,
                 fontweight="bold",
                 va="top",
@@ -927,7 +1087,9 @@ def render_panel(panel: str, rows: list[ExampleRow], out_dir: Path) -> dict:
             ax.text(
                 x,
                 y_blocks - 0.36 / fig_h,
-                _wrap(blk.body, width=68),
+                _wrap_tracked(
+                    row, blk.body, 68, MAX_BLOCK_LINES, f"the passage under '{blk.header[:40]}'"
+                ),
                 va="top",
                 **mono,
             )
@@ -935,7 +1097,7 @@ def render_panel(panel: str, rows: list[ExampleRow], out_dir: Path) -> dict:
             ax.text(
                 0.042,
                 y_top - rh + 0.16 / fig_h,
-                _wrap(row.footer, width=160, max_lines=1),
+                _wrap_tracked(row, row.footer, 160, 1, "the confuser footer line"),
                 fontsize=7.0,
                 va="bottom",
                 color="#555555",
@@ -943,7 +1105,7 @@ def render_panel(panel: str, rows: list[ExampleRow], out_dir: Path) -> dict:
     out_dir.mkdir(parents=True, exist_ok=True)
     paths = savefig_paper(fig, PANEL_STEMS[panel], dir=str(out_dir))
     plt.close(fig)
-    return {k: str(v) for k, v in paths.items()}
+    return {k: _relpath(v) for k, v in paths.items()}
 
 
 # ---------------------------------------------------------------------------
@@ -956,8 +1118,12 @@ def write_companion(panels: dict[str, list[ExampleRow]], out_path: Path) -> None
         "# Qualitative examples — context→answer map discrimination + context-vector patching",
         "",
         "Task #2478 (assembly-only, 0 GPU-h). Every score below is a stored value re-read from",
-        "its producing artifact; every excerpt is verbatim with truncation-only display",
-        f"substitution, marked `{ELLIPSIS}`. Real-corpus (LMSYS/WildChat, #1738 pool) rows are",
+        "its producing artifact. Display-substitution policy (exact): excerpts preserve the",
+        "stored text verbatim, line breaks included; the only substitution is word-cap",
+        f"truncation, marked `{ELLIPSIS}` (the one line cut by the cap has its kept words",
+        "re-joined with single spaces). The FIGURE additionally re-wraps lines to the canvas",
+        "width and line-caps long passages — every fired line-cap is disclosed in that",
+        "example's substitution list below. Real-corpus (LMSYS/WildChat, #1738 pool) rows are",
         f"capped at {REAL_DOC_WORDS} words per turn here ({REAL_FIG_WORDS} on the figure);",
         "constructed-bank text is shown up to "
         f"{BANK_DOC_WORDS} words ({BANK_FIG_WORDS} on the figure).",
@@ -1052,49 +1218,50 @@ def write_audit(panels: dict[str, list[ExampleRow]], figures: dict, out_path: Pa
 # ---------------------------------------------------------------------------
 
 
-def required_files(panel: str, smoke: bool) -> list[tuple[str, str]]:
+def required_files(panel: str) -> list[tuple[str, str]]:
+    """Full input set per panel — smoke stages EVERYTHING (review r2: the smoke
+    executes every production gate; only rendering/output paths differ)."""
     reqs: list[tuple[str, str]] = []
     if panel in ("discrimination", "all"):
         reqs += [(BANK_JSON, REV_2162)] + [(p, REV_2162) for p in ANCHORS_2162]
-        if not smoke:
-            reqs += [(SAMPLE500_2202, REV_2202)] + [(p, REV_2202) for p in FAILROWS_2202]
+        reqs += [(SAMPLE500_2202, REV_2202)] + [(p, REV_2202) for p in FAILROWS_2202]
     if panel in ("patching", "all"):
-        reqs += [(ANCHORS_2094, REV_2094), (GRID_2094_CE_REPLACE, REV_2094)]
-        if not smoke:
-            reqs += [
-                (GRID_2094_CE_L16, REV_2094),
-                (GRID_2094_PE_REPLACE, REV_2094),
-                (FU2_2094_QTEXT, REV_2094),
-                (BANK_JSON, REV_2162),
-                (GRID_2162_INSTR, REV_2162),
-            ] + [(p, REV_2162) for p in ANCHORS_2162]
+        reqs += [
+            (ANCHORS_2094, REV_2094),
+            (GRID_2094_CE_REPLACE, REV_2094),
+            (GRID_2094_CE_L16, REV_2094),
+            (GRID_2094_PE_REPLACE, REV_2094),
+            (FU2_2094_QTEXT, REV_2094),
+            (BANK_JSON, REV_2162),
+            (GRID_2162_INSTR, REV_2162),
+        ] + [(p, REV_2162) for p in ANCHORS_2162]
     return reqs
 
 
 def build_panels(panel: str, smoke: bool, staged: dict[str, Path]) -> dict[str, list[ExampleRow]]:
+    """Build + validate ALL examples through the production path; smoke only slices
+    the DISPLAYED rows afterwards (review r2 restructure: every schema / coverage /
+    direction / re-verification / 6-row count gate executes under --smoke too)."""
     panels: dict[str, list[ExampleRow]] = {}
     if panel in ("discrimination", "all"):
-        rows = build_p1_minimal_pairs(staged)
-        if smoke:
-            rows = rows[:1]
-        else:
-            rows = rows + build_p1_real(staged)
-            assert len(rows) == 6, f"panel 1 expected 6 examples, got {len(rows)}"
-        panels["discrimination"] = rows
+        rows = build_p1_minimal_pairs(staged) + build_p1_real(staged)
+        assert len(rows) == 6, f"panel 1 expected 6 examples, got {len(rows)}"
+        panels["discrimination"] = rows[:1] if smoke else rows
     if panel in ("patching", "all"):
-        if smoke:
-            rows = build_p2_2094(staged, specs_in=P2_2094[:1])
-        else:
-            rows = build_p2_2094(staged) + build_p2_fu2(staged) + build_p2_2162(staged)
-            assert len(rows) == 6, f"panel 2 expected 6 examples, got {len(rows)}"
-        panels["patching"] = rows
+        rows = build_p2_2094(staged) + build_p2_fu2(staged) + build_p2_2162(staged)
+        assert len(rows) == 6, f"panel 2 expected 6 examples, got {len(rows)}"
+        panels["patching"] = rows[:1] if smoke else rows
     return panels
 
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0].replace("%", "%%"))
     ap.add_argument("--panel", choices=("discrimination", "patching", "all"), default="all")
-    ap.add_argument("--smoke", action="store_true", help="1 example/panel, render to /tmp")
+    ap.add_argument(
+        "--smoke",
+        action="store_true",
+        help="build + validate ALL examples (every production gate); render 1/panel to /tmp",
+    )
     ap.add_argument("--stage-dir", default="data/issue_2478/hf_dl")
     ap.add_argument("--fig-dir", default="figures/paper")
     ap.add_argument(
@@ -1102,6 +1269,14 @@ def main() -> None:
     )
     ap.add_argument("--audit-out", default="eval_results/issue_2478/selected_examples.json")
     args = ap.parse_args()
+
+    if args.panel != "all" and not args.smoke:
+        ap.error(
+            f"--panel {args.panel} is smoke-only: a production single-panel run would "
+            "overwrite the shared two-panel companion doc + selection audit with partial "
+            "content (review r1 blocker). Run --panel all, or add --smoke (outputs divert "
+            "to /tmp)."
+        )
 
     if args.smoke:
         smoke_root = Path("/tmp/eps-2478-smoke")
@@ -1114,7 +1289,7 @@ def main() -> None:
         audit_out = REPO_ROOT / args.audit_out
     stage_dir = REPO_ROOT / args.stage_dir
 
-    staged = stage_files(required_files(args.panel, args.smoke), stage_dir)
+    staged = stage_files(required_files(args.panel), stage_dir)
     print(f"[stage] {len(staged)} files staged under {stage_dir}")
 
     panels = build_panels(args.panel, args.smoke, staged)

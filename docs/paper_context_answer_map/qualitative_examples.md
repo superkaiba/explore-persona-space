@@ -1,8 +1,12 @@
 # Qualitative examples — context→answer map discrimination + context-vector patching
 
 Task #2478 (assembly-only, 0 GPU-h). Every score below is a stored value re-read from
-its producing artifact; every excerpt is verbatim with truncation-only display
-substitution, marked `[…]`. Real-corpus (LMSYS/WildChat, #1738 pool) rows are
+its producing artifact. Display-substitution policy (exact): excerpts preserve the
+stored text verbatim, line breaks included; the only substitution is word-cap
+truncation, marked `[…]` (the one line cut by the cap has its kept words
+re-joined with single spaces). The FIGURE additionally re-wraps lines to the canvas
+width and line-caps long passages — every fired line-cap is disclosed in that
+example's substitution list below. Real-corpus (LMSYS/WildChat, #1738 pool) rows are
 capped at 60 words per turn here (25 on the figure);
 constructed-bank text is shown up to 140 words (48 on the figure).
 
@@ -24,7 +28,8 @@ dragged toward hub answers).
 - pair_id: `recency_prior_topic_d3::v3-v1::e10`
 - scores: `eval_results/issue_2215/perpair/dv3_pairs.jsonl (git)`
 - bank_text: `issue2162_ctxinfo/analysis_tensors/vc_bank/bank.json @ dc8108ab84f33695bbc769da0e6e8e2327f51eeb`
-- rollouts: `issue2162_ctxinfo/raw_completions/anchors/ @ dc8108ab84f33695bbc769da0e6e8e2327f51eeb`
+- rollout_a: `issue2162_ctxinfo/raw_completions/anchors/anchors_gate_w4.jsonl @ dc8108ab84f33695bbc769da0e6e8e2327f51eeb`
+- rollout_b: `issue2162_ctxinfo/raw_completions/anchors/anchors_rest_w5.jsonl @ dc8108ab84f33695bbc769da0e6e8e2327f51eeb`
 - display substitutions: context A answer shown in full; context B answer shown in full
 
 *final user turn (shared): "Could you recap your main advice in one sentence?"*
@@ -45,8 +50,9 @@ dragged toward hub answers).
 - pair_id: `constraint_knowledge::v1-v2::e6`
 - scores: `eval_results/issue_2215/perpair/dv3_pairs.jsonl (git)`
 - bank_text: `issue2162_ctxinfo/analysis_tensors/vc_bank/bank.json @ dc8108ab84f33695bbc769da0e6e8e2327f51eeb`
-- rollouts: `issue2162_ctxinfo/raw_completions/anchors/ @ dc8108ab84f33695bbc769da0e6e8e2327f51eeb`
-- display substitutions: context A answer truncated to 48 words on figure / 140 in doc ([…]); context B answer truncated to 48 words on figure / 140 in doc ([…])
+- rollout_a: `issue2162_ctxinfo/raw_completions/anchors/anchors_rest_w5.jsonl @ dc8108ab84f33695bbc769da0e6e8e2327f51eeb`
+- rollout_b: `issue2162_ctxinfo/raw_completions/anchors/anchors_rest_w6.jsonl @ dc8108ab84f33695bbc769da0e6e8e2327f51eeb`
+- display substitutions: context A answer truncated to 48 words on figure ([…]); shown in full in doc; context B answer truncated to 48 words on figure ([…]); shown in full in doc; figure-side line-cap cut the header 'Context A — system-prompt knowledge cons' to 2 line(s) ([…]); the companion doc carries the fuller text
 
 *final user turn (shared): "How is the stock market doing right now?"*
 
@@ -66,18 +72,41 @@ dragged toward hub answers).
 - pair_id: `recency_prior_topic_d5::v1-v2::e9`
 - scores: `eval_results/issue_2215/perpair/dv3_pairs.jsonl (git)`
 - bank_text: `issue2162_ctxinfo/analysis_tensors/vc_bank/bank.json @ dc8108ab84f33695bbc769da0e6e8e2327f51eeb`
-- rollouts: `issue2162_ctxinfo/raw_completions/anchors/ @ dc8108ab84f33695bbc769da0e6e8e2327f51eeb`
-- display substitutions: context A answer truncated to 48 words on figure / 140 in doc ([…]); context B answer truncated to 48 words on figure / 140 in doc ([…])
+- rollout_a: `issue2162_ctxinfo/raw_completions/anchors/anchors_rest_w0.jsonl @ dc8108ab84f33695bbc769da0e6e8e2327f51eeb`
+- rollout_b: `issue2162_ctxinfo/raw_completions/anchors/anchors_gate_w6.jsonl @ dc8108ab84f33695bbc769da0e6e8e2327f51eeb`
+- display substitutions: context A answer truncated to 48 words on figure / 140 in doc ([…]); context B answer truncated to 48 words on figure / 140 in doc ([…]); figure-side line-cap cut the passage under 'Context A — earlier topic, 5 turns back:' to 6 line(s) ([…]); the companion doc carries the fuller text; figure-side line-cap cut the passage under 'Context B — earlier topic, 5 turns back:' to 6 line(s) ([…]); the companion doc carries the fuller text
 
 *final user turn (shared): "What's a common mistake people make with this?"*
 
 **Context A — earlier topic, 5 turns back: birthday**
 
-> answer (first stored draw): It sounds like you're referring to designing a race car called the Silver Centurion. However, if you're asking about a common mistake people often make when crafting love stories for work permits, here’s what commonly trips people up: ### Common Mistakes in Love Stories for Work Permits 1. **Lack of Detail:** - **Mistake:** Providing too little information, making it difficult for the immigration officer to understand the depth of your relationship. - **Solution:** Give specific details about your first date, special moments, how you got to know each other, and any shared experiences. 2. **Lack of Emotion:** - **Mistake:** Writing in a dry, clinical way without expressing genuine emotion or passion for each other. - **Solution:** Include personal anecdotes and emotional descriptions that showcase the emotional bond you share. 3. **Overgeneralization:** - **Mistake:** Using overly generic language that doesn’t specifically […]
+> answer (first stored draw): It sounds like you're referring to designing a race car called the Silver Centurion. However, if you're asking about a common mistake people often make when crafting love stories for work permits, here’s what commonly trips people up:
+> 
+> ### Common Mistakes in Love Stories for Work Permits
+> 
+> 1. **Lack of Detail:**
+>    - **Mistake:** Providing too little information, making it difficult for the immigration officer to understand the depth of your relationship.
+>    - **Solution:** Give specific details about your first date, special moments, how you got to know each other, and any shared experiences.
+> 
+> 2. **Lack of Emotion:**
+>    - **Mistake:** Writing in a dry, clinical way without expressing genuine emotion or passion for each other.
+>    - **Solution:** Include personal anecdotes and emotional descriptions that showcase the emotional bond you share.
+> 
+> 3. **Overgeneralization:**
+> - **Mistake:** Using overly generic language that doesn’t specifically […]
 
 **Context B — earlier topic, 5 turns back: outage**
 
-> answer (first stored draw): When naming a race car like the Silver Centurion, a common mistake people often make is focusing too much on the literal meaning or historical significance without considering its relevance to the racing world. Here are some specific mistakes to avoid: 1. **Overstuffing the Name with Meanings**: - **Mistake:** Trying to convey too many concepts in the name, such as its strength, heritage, and technological advancements. - **Example:** Naming the car "Iron Titan HyperSpeed" instead of something more concise and memorable. - **Better Approach:** Keep the name simple and powerful. For instance, "Silver Centurion" is straightforward and evokes strength and elegance without needing further explanation. 2. **Losing Relevance to Racing**: - **Mistake:** Choosing a name that doesn't resonate with the racing community or fails to capture the essence of high performance and speed. - **Example:** Naming the car "Vibrant Sunset […]
+> answer (first stored draw): When naming a race car like the Silver Centurion, a common mistake people often make is focusing too much on the literal meaning or historical significance without considering its relevance to the racing world. Here are some specific mistakes to avoid:
+> 
+> 1. **Overstuffing the Name with Meanings**:
+>    - **Mistake:** Trying to convey too many concepts in the name, such as its strength, heritage, and technological advancements.
+>    - **Example:** Naming the car "Iron Titan HyperSpeed" instead of something more concise and memorable.
+>    - **Better Approach:** Keep the name simple and powerful. For instance, "Silver Centurion" is straightforward and evokes strength and elegance without needing further explanation.
+> 
+> 2. **Losing Relevance to Racing**:
+>    - **Mistake:** Choosing a name that doesn't resonate with the racing community or fails to capture the essence of high performance and speed.
+> - **Example:** Naming the car "Vibrant Sunset […]
 
 ### 4. Real conversation, retrieved correctly
 
@@ -107,7 +136,7 @@ dragged toward hub answers).
 - ci: `2968`
 - confusion: `eval_results/issue_2202/failures_confusion.json (git)`
 - labels: `eval_results/issue_1738/judge_labels/labels.json (git)`
-- text: `issue2202_ctxfail/dashboard_rows/failures_rows.shard00-02.jsonl @ ab268958343380945354e871bfb5666668c6d5bb`
+- text: `issue2202_ctxfail/dashboard_rows/failures_rows.shard00.jsonl @ ab268958343380945354e871bfb5666668c6d5bb`
 - judge_label: {'language': 'es', 'topic': 'advice_howto', 'request_refusal_adjacent': 'no', 'answer_is_refusal': 'no', 'format': 'list'}
 - confuser_ci: `30290`
 - confuser_note: `confuser text is NOT re-read here (the confuser is not itself a failure row, so it has no row in the staged failures_rows shards); identified by its stored ranks + #1738 judge label`
@@ -119,9 +148,12 @@ dragged toward hub answers).
 
 **Model answer**
 
-> ¡Claro! El Calafate es un destino maravilloso en la provincia de Santa Cruz, Argentina, conocido principalmente por la espectacular Cascada del Glaciar Perito Moreno. Aquí tienes un plan de viaje de 6 días que te permitirá disfrutar al máximo de la zona: ### Día 1: Llegada y Acomodación - **1.00 PM - 2.00 PM**: Llegada a El Calafate. Tiempo libre […]
+> ¡Claro! El Calafate es un destino maravilloso en la provincia de Santa Cruz, Argentina, conocido principalmente por la espectacular Cascada del Glaciar Perito Moreno. Aquí tienes un plan de viaje de 6 días que te permitirá disfrutar al máximo de la zona:
+> 
+> ### Día 1: Llegada y Acomodación
+> - **1.00 PM - 2.00 PM**: Llegada a El Calafate. Tiempo libre […]
 
-*top confuser: ci 30290 (judge label: pt / advice_howto) — context rank 4, answer rank 5*
+*top confuser: the Portuguese Alps itinerary conversation (ci 30290, judge label: pt / advice_howto) — context rank 4, answer rank 5*
 
 ### 6. Sentence-completion request confused with a transliteration explainer
 
@@ -131,7 +163,7 @@ dragged toward hub answers).
 - ci: `11905`
 - confusion: `eval_results/issue_2202/failures_confusion.json (git)`
 - labels: `eval_results/issue_1738/judge_labels/labels.json (git)`
-- text: `issue2202_ctxfail/dashboard_rows/failures_rows.shard00-02.jsonl @ ab268958343380945354e871bfb5666668c6d5bb`
+- text: `issue2202_ctxfail/dashboard_rows/failures_rows.shard00.jsonl @ ab268958343380945354e871bfb5666668c6d5bb`
 - judge_label: {'language': 'en', 'topic': 'creative_writing', 'request_refusal_adjacent': 'no', 'answer_is_refusal': 'no', 'format': 'prose'}
 - confuser_ci: `71880`
 - confuser_note: `confuser text is NOT re-read here (the confuser is not itself a failure row, so it has no row in the staged failures_rows shards); identified by its stored ranks + #1738 judge label`
@@ -145,7 +177,7 @@ dragged toward hub answers).
 
 > I want to learn more about the American culture by immersing myself in everyday life, attending cultural events, and engaging in conversations with local professionals and colleagues. This will provide me with a deeper understanding of the social norms, business practices, and values that are integral to the American workplace and society. By doing so, I can enhance my cultural […]
 
-*top confuser: ci 71880 (judge label: en / advice_howto) — context rank 1575, answer rank 22*
+*top confuser: the transliteration-explainer conversation (ci 71880, judge label: en / advice_howto) — context rank 1575, answer rank 22*
 
 ## Panel: Context-vector patching — before/after generations (`appendix_patching_examples`)
 
@@ -159,15 +191,29 @@ dragged toward hub answers).
 - scores: `eval_results/issue_2094/f_metrics/f_cells.jsonl (git)`
 - unpatched: `issue2094_singlepos/raw_completions/anchors/anchors.jsonl @ 867f4284c8bd8f65401715beb2a8b80e77ed7750 (first stored draw)`
 - patched: `issue2094_singlepos/raw_completions/grid/shard_ce__joint_all__replace__A__steered.jsonl @ 867f4284c8bd8f65401715beb2a8b80e77ed7750`
-- display substitutions: unpatched answer truncated; patched answer truncated
+- display substitutions: unpatched answer truncated to 48 words on figure / 140 in doc ([…]); patched answer truncated to 48 words on figure / 140 in doc ([…])
 
 **Unpatched — bare (no prefix), query: explain hash tables**
 
-> A hash table is a data structure that implements an associative array abstract data type, a structure that can map keys to values. It uses a hash function to compute an index into an array of buckets or slots, from which the desired value can be found. ### How a Hash Table Works 1. **Hash Function**: A hash function takes an input (the key) and returns an index or address within some range, known as the hash table's indices. Ideally, a well-designed hash function distributes keys uniformly across the indices, minimizing the chances of collisions. 2. **Array of Buckets**: The hash table consists of an array (or "bucket" or "slot") of key-value pairs. 3. **Interpreting the Result**: - **Successful Search**: If the returned index corresponds to a valid key in the bucket, the corresponding value is returned. - **Collision Resolution**: […]
+> A hash table is a data structure that implements an associative array abstract data type, a structure that can map keys to values. It uses a hash function to compute an index into an array of buckets or slots, from which the desired value can be found.
+> 
+> ### How a Hash Table Works
+> 
+> 1. **Hash Function**: A hash function takes an input (the key) and returns an index or address within some range, known as the hash table's indices. Ideally, a well-designed hash function distributes keys uniformly across the indices, minimizing the chances of collisions.
+> 
+> 2. **Array of Buckets**: The hash table consists of an array (or "bucket" or "slot") of key-value pairs.
+> 
+> 3. **Interpreting the Result**:
+>     - **Successful Search**: If the returned index corresponds to a valid key in the bucket, the corresponding value is returned.
+> - **Collision Resolution**: […]
 
 **Patched — context-end state ← [pirate persona ('Captain Marrow'), query: explain hash tables]**
 
-> Arrr, ye be askin' 'bout hash tables! Aye, well, let me tell ye 'bout them. A hash table is a data structure that maps keys to values using a hash function. It's like havin' a treasure map where each spot on the map (the key) leads ye straight to yer treasure (the value). When ye want to store somethin', ye first take the key and run it through a hash function. This function converts the key into an index for an array. Ye then place yer treasure at that index. When ye want to find yer treasure, ye just use the key again, run it through the same hash function, and ye'll get right back to the same spot in the array. Now, as for when ye should use a hash table, there be many times when ye'd want to […]
+> Arrr, ye be askin' 'bout hash tables! Aye, well, let me tell ye 'bout them. A hash table is a data structure that maps keys to values using a hash function. It's like havin' a treasure map where each spot on the map (the key) leads ye straight to yer treasure (the value).
+> 
+> When ye want to store somethin', ye first take the key and run it through a hash function. This function converts the key into an index for an array. Ye then place yer treasure at that index. When ye want to find yer treasure, ye just use the key again, run it through the same hash function, and ye'll get right back to the same spot in the array.
+> 
+> Now, as for when ye should use a hash table, there be many times when ye'd want to […]
 
 ### 2. Persona strips at a single layer (L16, α=1)
 
@@ -179,7 +225,7 @@ dragged toward hub answers).
 - scores: `eval_results/issue_2094/f_metrics/f_cells.jsonl (git)`
 - unpatched: `issue2094_singlepos/raw_completions/anchors/anchors.jsonl @ 867f4284c8bd8f65401715beb2a8b80e77ed7750 (first stored draw)`
 - patched: `issue2094_singlepos/raw_completions/grid/shard_ce__L16__a1__A__steered.jsonl @ 867f4284c8bd8f65401715beb2a8b80e77ed7750`
-- display substitutions: unpatched answer truncated; patched answer truncated
+- display substitutions: unpatched answer truncated to 48 words on figure / 140 in doc ([…]); patched answer truncated to 48 words on figure ([…]); shown in full in doc
 
 **Unpatched — pirate persona ('Captain Marrow'), query: write a story about a lighthouse keeper**
 
@@ -199,11 +245,13 @@ dragged toward hub answers).
 - scores: `eval_results/issue_2094/f_metrics/f_cells.jsonl (git)`
 - unpatched: `issue2094_singlepos/raw_completions/anchors/anchors.jsonl @ 867f4284c8bd8f65401715beb2a8b80e77ed7750 (first stored draw)`
 - patched: `issue2094_singlepos/raw_completions/grid/shard_ce__joint_all__replace__A__steered.jsonl @ 867f4284c8bd8f65401715beb2a8b80e77ed7750`
-- display substitutions: unpatched answer truncated; patched answer truncated
+- display substitutions: unpatched answer truncated to 48 words on figure / 140 in doc ([…]); patched answer truncated to 48 words on figure ([…]); shown in full in doc
 
 **Unpatched — pirate persona ('Captain Marrow'), query: why is the sky blue?**
 
-> Well, laddie, that be a fine question about th' skies and th' rays of light. You see, when th' sun pour's its light down upon us durin' th' day, ye notice th' waves 'a light spannin' all th' colors of th' rainbow, but our eyes tend to focus on th' blue ones. Th' atmosphere helps to scatter those blue waves around, makein' for a nice, clear blue sky. But as th' sun begins th' decent intil th' night, it's gotta push harder through more layers o' air, like leavin' th' deep of th' ocean and swimmin' up towards th' surface. That extra journey scattered more light in an array o' colors—givin' us th' pretty reds and oranges o' sundown. It's rather like th' sun be bathin' itse'f in th' ocean before retirin' below th' horizon fer th' night, like a […]
+> Well, laddie, that be a fine question about th' skies and th' rays of light. You see, when th' sun pour's its light down upon us durin' th' day, ye notice th' waves 'a light spannin' all th' colors of th' rainbow, but our eyes tend to focus on th' blue ones. Th' atmosphere helps to scatter those blue waves around, makein' for a nice, clear blue sky.
+> 
+> But as th' sun begins th' decent intil th' night, it's gotta push harder through more layers o' air, like leavin' th' deep of th' ocean and swimmin' up towards th' surface. That extra journey scattered more light in an array o' colors—givin' us th' pretty reds and oranges o' sundown. It's rather like th' sun be bathin' itse'f in th' ocean before retirin' below th' horizon fer th' night, like a […]
 
 **Patched — context-end state ← [pirate persona ('Captain Marrow'), query: explain hash tables]**
 
@@ -219,15 +267,21 @@ dragged toward hub answers).
 - scores: `eval_results/issue_2094/f_metrics/f_cells.jsonl (git)`
 - unpatched: `issue2094_singlepos/raw_completions/anchors/anchors.jsonl @ 867f4284c8bd8f65401715beb2a8b80e77ed7750 (first stored draw)`
 - patched: `issue2094_singlepos/raw_completions/grid/shard_pe__joint_all__replace__A__steered.jsonl @ 867f4284c8bd8f65401715beb2a8b80e77ed7750`
-- display substitutions: unpatched answer truncated; patched answer truncated
+- display substitutions: unpatched answer truncated to 48 words on figure / 140 in doc ([…]); patched answer truncated to 48 words on figure / 140 in doc ([…])
 
 **Unpatched — pirate persona ('Captain Marrow'), query: why is the sky blue?**
 
-> Well, laddie, that be a fine question about th' skies and th' rays of light. You see, when th' sun pour's its light down upon us durin' th' day, ye notice th' waves 'a light spannin' all th' colors of th' rainbow, but our eyes tend to focus on th' blue ones. Th' atmosphere helps to scatter those blue waves around, makein' for a nice, clear blue sky. But as th' sun begins th' decent intil th' night, it's gotta push harder through more layers o' air, like leavin' th' deep of th' ocean and swimmin' up towards th' surface. That extra journey scattered more light in an array o' colors—givin' us th' pretty reds and oranges o' sundown. It's rather like th' sun be bathin' itse'f in th' ocean before retirin' below th' horizon fer th' night, like a […]
+> Well, laddie, that be a fine question about th' skies and th' rays of light. You see, when th' sun pour's its light down upon us durin' th' day, ye notice th' waves 'a light spannin' all th' colors of th' rainbow, but our eyes tend to focus on th' blue ones. Th' atmosphere helps to scatter those blue waves around, makein' for a nice, clear blue sky.
+> 
+> But as th' sun begins th' decent intil th' night, it's gotta push harder through more layers o' air, like leavin' th' deep of th' ocean and swimmin' up towards th' surface. That extra journey scattered more light in an array o' colors—givin' us th' pretty reds and oranges o' sundown. It's rather like th' sun be bathin' itse'f in th' ocean before retirin' below th' horizon fer th' night, like a […]
 
 **Patched — prefix-end state ← [party-planning conversation, query: why is the sky blue?]**
 
-> Ahoy there, matey! The sky be blue 'cause of the way the sun's light scatters off the air and tiny bits in the atmosphere. It's like when ye shine a torch through a prism, the light splits into all sorts of colors. But the blue light gets scattered more, so it's what ye see most o' the time. But at sunset, the sky turns red and orange because the sun's rays have to travel through more of the Earth's atmosphere. This makes the shorter blue and green wavelengths scatter out, leaving the longer red, orange, and yellow ones to paint the sky in their glory. It's like the sun's light is taking a longer path, so it loses some of its blue and green, and keeps the warm colors. So remember, if ye see a red sky at night, it […]
+> Ahoy there, matey! The sky be blue 'cause of the way the sun's light scatters off the air and tiny bits in the atmosphere. It's like when ye shine a torch through a prism, the light splits into all sorts of colors. But the blue light gets scattered more, so it's what ye see most o' the time.
+> 
+> But at sunset, the sky turns red and orange because the sun's rays have to travel through more of the Earth's atmosphere. This makes the shorter blue and green wavelengths scatter out, leaving the longer red, orange, and yellow ones to paint the sky in their glory. It's like the sun's light is taking a longer path, so it loses some of its blue and green, and keeps the warm colors.
+> 
+> So remember, if ye see a red sky at night, it […]
 
 ### 5. Patching the question's OWN token states DOES swap the question (α=0.5)
 
@@ -239,15 +293,21 @@ dragged toward hub answers).
 - scores: `eval_results/issue_2094/f_metrics/fu2/fu2_cells.jsonl (git)`
 - unpatched: `issue2094_singlepos/raw_completions/anchors/anchors.jsonl @ 867f4284c8bd8f65401715beb2a8b80e77ed7750 (first stored draw)`
 - patched: `issue2094_singlepos/raw_completions/fu2_span_slots/rollouts/shard_qtext__joint_all__a0p5__A__steered.jsonl @ 867f4284c8bd8f65401715beb2a8b80e77ed7750`
-- display substitutions: unpatched answer truncated; patched answer truncated
+- display substitutions: unpatched answer truncated to 48 words on figure / 140 in doc ([…]); patched answer truncated to 48 words on figure / 140 in doc ([…])
 
 **Unpatched — pirate persona ('Captain Marrow'), query: why is the sky blue?**
 
-> Well, laddie, that be a fine question about th' skies and th' rays of light. You see, when th' sun pour's its light down upon us durin' th' day, ye notice th' waves 'a light spannin' all th' colors of th' rainbow, but our eyes tend to focus on th' blue ones. Th' atmosphere helps to scatter those blue waves around, makein' for a nice, clear blue sky. But as th' sun begins th' decent intil th' night, it's gotta push harder through more layers o' air, like leavin' th' deep of th' ocean and swimmin' up towards th' surface. That extra journey scattered more light in an array o' colors—givin' us th' pretty reds and oranges o' sundown. It's rather like th' sun be bathin' itse'f in th' ocean before retirin' below th' horizon fer th' night, like a […]
+> Well, laddie, that be a fine question about th' skies and th' rays of light. You see, when th' sun pour's its light down upon us durin' th' day, ye notice th' waves 'a light spannin' all th' colors of th' rainbow, but our eyes tend to focus on th' blue ones. Th' atmosphere helps to scatter those blue waves around, makein' for a nice, clear blue sky.
+> 
+> But as th' sun begins th' decent intil th' night, it's gotta push harder through more layers o' air, like leavin' th' deep of th' ocean and swimmin' up towards th' surface. That extra journey scattered more light in an array o' colors—givin' us th' pretty reds and oranges o' sundown. It's rather like th' sun be bathin' itse'f in th' ocean before retirin' below th' horizon fer th' night, like a […]
 
 **Patched — query-token states ← [pirate persona ('Captain Marrow'), query: rent or buy a home?]**
 
-> Ah, matey, that's a tricky question, better to be a captain of the high seas than a mere tenant on dry land! Rentin' or rentin'... well, it all depends on yer situation, but I'd say it's best to own yer own piece of the ocean. Rentin' is like havin' a captain who isn't yours, and that can lead to trouble when the storm comes. Rentin' means you're tied to the shore, and the sea ain't too fond of folks who stay in one place too long. But if ye're just startin' out and need a bit of time to gather yer treasure, then maybe rentin' is the way to go. Just make sure ye have a good contract, like a map with clear directions, or ye might find yerself in a bind when the tide turns against ye. In the […]
+> Ah, matey, that's a tricky question, better to be a captain of the high seas than a mere tenant on dry land! Rentin' or rentin'... well, it all depends on yer situation, but I'd say it's best to own yer own piece of the ocean. Rentin' is like havin' a captain who isn't yours, and that can lead to trouble when the storm comes. Rentin' means you're tied to the shore, and the sea ain't too fond of folks who stay in one place too long.
+> 
+> But if ye're just startin' out and need a bit of time to gather yer treasure, then maybe rentin' is the way to go. Just make sure ye have a good contract, like a map with clear directions, or ye might find yerself in a bind when the tide turns against ye.
+> 
+> In the […]
 
 ### 6. Stated formatting policy transfers (top pair of the one causal family)
 
@@ -259,13 +319,17 @@ dragged toward hub answers).
 - family_band: `eval_results/issue_2162/f_metrics/stats.json per_cell instr_format|ce`
 - family_band_values: {'f_steered_mean': 0.7072340885274486, 'f_shuffled_mean': 0.09251209440088044}
 - bank_text: `issue2162_ctxinfo/analysis_tensors/vc_bank/bank.json @ dc8108ab84f33695bbc769da0e6e8e2327f51eeb`
-- unpatched: `issue2162_ctxinfo/raw_completions/anchors/ @ dc8108ab84f33695bbc769da0e6e8e2327f51eeb (first stored draw)`
+- unpatched: `issue2162_ctxinfo/raw_completions/anchors/anchors_gate_w2.jsonl @ dc8108ab84f33695bbc769da0e6e8e2327f51eeb (first stored draw)`
 - patched: `issue2162_ctxinfo/raw_completions/grid/shard_instr_format__ce__steered.jsonl @ dc8108ab84f33695bbc769da0e6e8e2327f51eeb (first stored draw)`
-- display substitutions: unpatched answer truncated; patched answer truncated
+- display substitutions: unpatched answer truncated to 48 words on figure ([…]); shown in full in doc; patched answer truncated to 48 words on figure / 140 in doc ([…])
 
 **Unpatched — stated policy: Always format your answers as bullet points.**
 
-> - Voldemort sends a horcrux disguised as a common object that Harry must touch, triggering a curse to transport him to Malfoy Manor. - A deadly dream is conjured in Harry's mind, appearing real enough to lure him into a magical trap set in Voldemort’s stronghold. - Harry encounters a heavily guarded portkey during an Order of the Phoenix meeting, unaware it has been tampered with to send him to a cursed island. - Voldemort uses the love between Ron and Hermione to create a powerful spell that causes a involuntary apparition of Harry directly into Lord Voldemort's clutches. - Harry accidentally consumes a poisoned snake that turns out to have been sent by Bellatrix Lestrange, leading to his temporary incapacitation at a vulnerable moment for Voldemort to strike.
+> - Voldemort sends a horcrux disguised as a common object that Harry must touch, triggering a curse to transport him to Malfoy Manor.
+> - A deadly dream is conjured in Harry's mind, appearing real enough to lure him into a magical trap set in Voldemort’s stronghold.
+> - Harry encounters a heavily guarded portkey during an Order of the Phoenix meeting, unaware it has been tampered with to send him to a cursed island.
+> - Voldemort uses the love between Ron and Hermione to create a powerful spell that causes a involuntary apparition of Harry directly into Lord Voldemort's clutches.
+> - Harry accidentally consumes a poisoned snake that turns out to have been sent by Bellatrix Lestrange, leading to his temporary incapacitation at a vulnerable moment for Voldemort to strike.
 
 **Patched — context-end state ← [stated policy: Always answer in flowing paragraph prose, never using lists or bullet points.]**
 

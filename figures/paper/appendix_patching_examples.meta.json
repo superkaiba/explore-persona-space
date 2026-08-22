@@ -1,11 +1,17 @@
 {
-  "commit": "9b7043ff",
-  "render_id": "27943781240c4468",
-  "git_commit": "9b7043ffd875a0cd618c10345c06df7828e1394a",
-  "git_dirty": false,
-  "git_argv0_state": "tracked",
+  "commit": "bfca77a3+dirty",
+  "render_id": "9370281c62ca4e4d",
+  "git_commit": "bfca77a322a6fdc8c5cad2093b77b24a79d27ad5",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/paper/c3_qualitative_discrimination.meta.json",
+    "figures/paper/c3_qualitative_discrimination.pdf",
+    "figures/paper/c3_qualitative_discrimination.png",
+    "scripts/issue2478_qualitative_panels.py"
+  ],
+  "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2478_qualitative_panels.py",
-  "created": "2026-08-22T21:11:24Z",
+  "created": "2026-08-22T22:15:49Z",
   "figsize": [
     13.0,
     12.85
@@ -20,7 +26,7 @@
           "Pirate persona transfers through one patched position (all 28 layers)",
           "F = 0.69",
           "Unpatched \u2014 bare (no prefix), query: explain hash tables",
-          "A hash table is a data structure that implements an associative\narray abstract data type, a structure that can map keys to values.\nIt uses a hash function to compute an index into an array of buckets\nor slots, from which the desired value can be found. ### [\u2026]",
+          "A hash table is a data structure that implements an associative\narray abstract data type, a structure that can map keys to values.\nIt uses a hash function to compute an index into an array of buckets\nor slots, from which the desired value can be found.\n\n### [\u2026]",
           "Patched \u2014 context-end state \u2190 [pirate persona ('Captain\nMarrow'), query: explain hash tables]",
           "Arrr, ye be askin' 'bout hash tables! Aye, well, let me tell ye\n'bout them. A hash table is a data structure that maps keys to\nvalues using a hash function. It's like havin' a treasure map where\neach spot on the map (the key) leads ye straight [\u2026]",
           "\u2713",
@@ -55,7 +61,7 @@
           "Stated formatting policy transfers (top pair of the one causal family)",
           "F = 1.03",
           "Unpatched \u2014 stated policy: Always format your answers as bullet\npoints.",
-          "- Voldemort sends a horcrux disguised as a common object that Harry\nmust touch, triggering a curse to transport him to Malfoy Manor. - A\ndeadly dream is conjured in Harry's mind, appearing real enough to\nlure him into a magical trap set in Voldemort\u2019s stronghold. - Harry\n[\u2026]",
+          "- Voldemort sends a horcrux disguised as a common object that Harry\nmust touch, triggering a curse to transport him to Malfoy Manor.\n- A deadly dream is conjured in Harry's mind, appearing real enough\nto lure him into a magical trap set in Voldemort\u2019s stronghold.\n- Harry [\u2026]",
           "Patched \u2014 context-end state \u2190 [stated policy: Always answer in\nflowing paragraph prose, never using lists or bullet points.]",
           "In the wizarding world, Voldemort could capture Harry Potter through\na combination of dark magic, betrayal, and strategic planning. One\nmethod might involve using a cursed object, where a hidden trapdoor\nin a seemingly innocent item like a pen or a book leads to a hidden\ncompartment containing [\u2026]"
         ],

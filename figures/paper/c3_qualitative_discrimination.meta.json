@@ -1,11 +1,14 @@
 {
-  "commit": "9b7043ff",
-  "render_id": "dc36bb7287aa4e9f",
-  "git_commit": "9b7043ffd875a0cd618c10345c06df7828e1394a",
-  "git_dirty": false,
-  "git_argv0_state": "tracked",
+  "commit": "bfca77a3+dirty",
+  "render_id": "4cbc5a6d689b41c6",
+  "git_commit": "bfca77a322a6fdc8c5cad2093b77b24a79d27ad5",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "scripts/issue2478_qualitative_panels.py"
+  ],
+  "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2478_qualitative_panels.py",
-  "created": "2026-08-22T21:11:23Z",
+  "created": "2026-08-22T22:15:47Z",
   "figsize": [
     13.0,
     12.85
@@ -37,9 +40,9 @@
           "margins -0.0002 / -0.0008",
           "final user turn (shared): \"What's a common mistake people make with this?\"",
           "Context A \u2014 earlier topic, 5 turns back: birthday",
-          "answer: It sounds like you're referring to designing a race car\ncalled the Silver Centurion. However, if you're asking about a\ncommon mistake people often make when crafting love stories for work\npermits, here\u2019s what commonly trips people up: ### Common Mistakes\nin Love Stories for Work Permits 1. [\u2026]",
+          "answer: It sounds like you're referring to designing a race car\ncalled the Silver Centurion. However, if you're asking about a\ncommon mistake people often make when crafting love stories for work\npermits, here\u2019s what commonly trips people up:\n\n### Common Mistakes in Love Stories for Work Permits [\u2026]",
           "Context B \u2014 earlier topic, 5 turns back: outage",
-          "answer: When naming a race car like the Silver Centurion, a common\nmistake people often make is focusing too much on the literal\nmeaning or historical significance without considering its relevance\nto the racing world. Here are some specific mistakes to avoid: 1.\n**Overstuffing the Name with Meanings**: - [\u2026]",
+          "answer: When naming a race car like the Silver Centurion, a common\nmistake people often make is focusing too much on the literal\nmeaning or historical significance without considering its relevance\nto the racing world. Here are some specific mistakes to avoid:\n\n1. **Overstuffing the Name with Meanings**: [\u2026]",
           "\u2713",
           "Real conversation, retrieved correctly",
           "retrieved rank 1 of 9,941",
@@ -54,7 +57,7 @@
           "puedes darme un plan de viaje a El Calafate, de 6 dias ?",
           "Model answer",
           "\u00a1Claro! El Calafate es un destino maravilloso en la provincia de\nSanta Cruz, Argentina, conocido principalmente por la espectacular\nCascada del Glaciar Perito Moreno. Aqu\u00ed [\u2026]",
-          "top confuser: ci 30290 (judge label: pt / advice_howto) \u2014 context rank 4, answer rank 5",
+          "top confuser: the Portuguese Alps itinerary conversation (ci 30290, judge label: pt / advice_howto) \u2014 context rank 4, answer rank 5",
           "\u2717",
           "Sentence-completion request confused with a transliteration explainer",
           "true answer rank 7",
@@ -62,7 +65,7 @@
           "Complete this: \"I want to learn more about the American culture by",
           "Model answer",
           "I want to learn more about the American culture by immersing myself\nin everyday life, attending cultural events, and engaging in\nconversations with local professionals [\u2026]",
-          "top confuser: ci 71880 (judge label: en / advice_howto) \u2014 context rank 1575, answer rank 22"
+          "top confuser: the transliteration-explainer conversation (ci 71880, judge label: en / advice_howto) \u2014 context rank 1575, answer rank 22"
         ],
         "xticklabels": [
           "0.0",

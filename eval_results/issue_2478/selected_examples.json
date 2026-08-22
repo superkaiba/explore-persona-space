@@ -1,9 +1,19 @@
 {
   "task": 2478,
-  "generated_at": "2026-08-22T21:11:25+00:00",
-  "git_commit": "9b7043ffd875a0cd618c10345c06df7828e1394a",
-  "git_dirty": false,
-  "git_argv0_state": "tracked",
+  "generated_at": "2026-08-22T22:15:49+00:00",
+  "git_commit": "bfca77a322a6fdc8c5cad2093b77b24a79d27ad5",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "docs/paper_context_answer_map/qualitative_examples.md",
+    "figures/paper/appendix_patching_examples.meta.json",
+    "figures/paper/appendix_patching_examples.pdf",
+    "figures/paper/appendix_patching_examples.png",
+    "figures/paper/c3_qualitative_discrimination.meta.json",
+    "figures/paper/c3_qualitative_discrimination.pdf",
+    "figures/paper/c3_qualitative_discrimination.png",
+    "scripts/issue2478_qualitative_panels.py"
+  ],
+  "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2478_qualitative_panels.py",
   "env": {
     "python": "3.12.13",
@@ -20,14 +30,14 @@
   },
   "figures": {
     "discrimination": {
-      "png": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2478/figures/paper/c3_qualitative_discrimination.png",
-      "pdf": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2478/figures/paper/c3_qualitative_discrimination.pdf",
-      "meta": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2478/figures/paper/c3_qualitative_discrimination.meta.json"
+      "png": "figures/paper/c3_qualitative_discrimination.png",
+      "pdf": "figures/paper/c3_qualitative_discrimination.pdf",
+      "meta": "figures/paper/c3_qualitative_discrimination.meta.json"
     },
     "patching": {
-      "png": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2478/figures/paper/appendix_patching_examples.png",
-      "pdf": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2478/figures/paper/appendix_patching_examples.pdf",
-      "meta": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2478/figures/paper/appendix_patching_examples.meta.json"
+      "png": "figures/paper/appendix_patching_examples.png",
+      "pdf": "figures/paper/appendix_patching_examples.pdf",
+      "meta": "figures/paper/appendix_patching_examples.meta.json"
     }
   },
   "panels": {
@@ -47,7 +57,8 @@
           "pair_id": "recency_prior_topic_d3::v3-v1::e10",
           "scores": "eval_results/issue_2215/perpair/dv3_pairs.jsonl (git)",
           "bank_text": "issue2162_ctxinfo/analysis_tensors/vc_bank/bank.json @ dc8108ab84f33695bbc769da0e6e8e2327f51eeb",
-          "rollouts": "issue2162_ctxinfo/raw_completions/anchors/ @ dc8108ab84f33695bbc769da0e6e8e2327f51eeb"
+          "rollout_a": "issue2162_ctxinfo/raw_completions/anchors/anchors_gate_w4.jsonl @ dc8108ab84f33695bbc769da0e6e8e2327f51eeb",
+          "rollout_b": "issue2162_ctxinfo/raw_completions/anchors/anchors_rest_w5.jsonl @ dc8108ab84f33695bbc769da0e6e8e2327f51eeb"
         },
         "substitutions": [
           "context A answer shown in full",
@@ -69,11 +80,13 @@
           "pair_id": "constraint_knowledge::v1-v2::e6",
           "scores": "eval_results/issue_2215/perpair/dv3_pairs.jsonl (git)",
           "bank_text": "issue2162_ctxinfo/analysis_tensors/vc_bank/bank.json @ dc8108ab84f33695bbc769da0e6e8e2327f51eeb",
-          "rollouts": "issue2162_ctxinfo/raw_completions/anchors/ @ dc8108ab84f33695bbc769da0e6e8e2327f51eeb"
+          "rollout_a": "issue2162_ctxinfo/raw_completions/anchors/anchors_rest_w5.jsonl @ dc8108ab84f33695bbc769da0e6e8e2327f51eeb",
+          "rollout_b": "issue2162_ctxinfo/raw_completions/anchors/anchors_rest_w6.jsonl @ dc8108ab84f33695bbc769da0e6e8e2327f51eeb"
         },
         "substitutions": [
-          "context A answer truncated to 48 words on figure / 140 in doc ([…])",
-          "context B answer truncated to 48 words on figure / 140 in doc ([…])"
+          "context A answer truncated to 48 words on figure ([…]); shown in full in doc",
+          "context B answer truncated to 48 words on figure ([…]); shown in full in doc",
+          "figure-side line-cap cut the header 'Context A — system-prompt knowledge cons' to 2 line(s) ([…]); the companion doc carries the fuller text"
         ]
       },
       {
@@ -91,11 +104,14 @@
           "pair_id": "recency_prior_topic_d5::v1-v2::e9",
           "scores": "eval_results/issue_2215/perpair/dv3_pairs.jsonl (git)",
           "bank_text": "issue2162_ctxinfo/analysis_tensors/vc_bank/bank.json @ dc8108ab84f33695bbc769da0e6e8e2327f51eeb",
-          "rollouts": "issue2162_ctxinfo/raw_completions/anchors/ @ dc8108ab84f33695bbc769da0e6e8e2327f51eeb"
+          "rollout_a": "issue2162_ctxinfo/raw_completions/anchors/anchors_rest_w0.jsonl @ dc8108ab84f33695bbc769da0e6e8e2327f51eeb",
+          "rollout_b": "issue2162_ctxinfo/raw_completions/anchors/anchors_gate_w6.jsonl @ dc8108ab84f33695bbc769da0e6e8e2327f51eeb"
         },
         "substitutions": [
           "context A answer truncated to 48 words on figure / 140 in doc ([…])",
-          "context B answer truncated to 48 words on figure / 140 in doc ([…])"
+          "context B answer truncated to 48 words on figure / 140 in doc ([…])",
+          "figure-side line-cap cut the passage under 'Context A — earlier topic, 5 turns back:' to 6 line(s) ([…]); the companion doc carries the fuller text",
+          "figure-side line-cap cut the passage under 'Context B — earlier topic, 5 turns back:' to 6 line(s) ([…]); the companion doc carries the fuller text"
         ]
       },
       {
@@ -142,7 +158,7 @@
           "ci": 2968,
           "confusion": "eval_results/issue_2202/failures_confusion.json (git)",
           "labels": "eval_results/issue_1738/judge_labels/labels.json (git)",
-          "text": "issue2202_ctxfail/dashboard_rows/failures_rows.shard00-02.jsonl @ ab268958343380945354e871bfb5666668c6d5bb",
+          "text": "issue2202_ctxfail/dashboard_rows/failures_rows.shard00.jsonl @ ab268958343380945354e871bfb5666668c6d5bb",
           "judge_label": {
             "language": "es",
             "topic": "advice_howto",
@@ -174,7 +190,7 @@
           "ci": 11905,
           "confusion": "eval_results/issue_2202/failures_confusion.json (git)",
           "labels": "eval_results/issue_1738/judge_labels/labels.json (git)",
-          "text": "issue2202_ctxfail/dashboard_rows/failures_rows.shard00-02.jsonl @ ab268958343380945354e871bfb5666668c6d5bb",
+          "text": "issue2202_ctxfail/dashboard_rows/failures_rows.shard00.jsonl @ ab268958343380945354e871bfb5666668c6d5bb",
           "judge_label": {
             "language": "en",
             "topic": "creative_writing",
@@ -211,8 +227,8 @@
           "patched": "issue2094_singlepos/raw_completions/grid/shard_ce__joint_all__replace__A__steered.jsonl @ 867f4284c8bd8f65401715beb2a8b80e77ed7750"
         },
         "substitutions": [
-          "unpatched answer truncated",
-          "patched answer truncated"
+          "unpatched answer truncated to 48 words on figure / 140 in doc ([…])",
+          "patched answer truncated to 48 words on figure / 140 in doc ([…])"
         ]
       },
       {
@@ -234,8 +250,8 @@
           "patched": "issue2094_singlepos/raw_completions/grid/shard_ce__L16__a1__A__steered.jsonl @ 867f4284c8bd8f65401715beb2a8b80e77ed7750"
         },
         "substitutions": [
-          "unpatched answer truncated",
-          "patched answer truncated"
+          "unpatched answer truncated to 48 words on figure / 140 in doc ([…])",
+          "patched answer truncated to 48 words on figure ([…]); shown in full in doc"
         ]
       },
       {
@@ -257,8 +273,8 @@
           "patched": "issue2094_singlepos/raw_completions/grid/shard_ce__joint_all__replace__A__steered.jsonl @ 867f4284c8bd8f65401715beb2a8b80e77ed7750"
         },
         "substitutions": [
-          "unpatched answer truncated",
-          "patched answer truncated"
+          "unpatched answer truncated to 48 words on figure / 140 in doc ([…])",
+          "patched answer truncated to 48 words on figure ([…]); shown in full in doc"
         ]
       },
       {
@@ -280,8 +296,8 @@
           "patched": "issue2094_singlepos/raw_completions/grid/shard_pe__joint_all__replace__A__steered.jsonl @ 867f4284c8bd8f65401715beb2a8b80e77ed7750"
         },
         "substitutions": [
-          "unpatched answer truncated",
-          "patched answer truncated"
+          "unpatched answer truncated to 48 words on figure / 140 in doc ([…])",
+          "patched answer truncated to 48 words on figure / 140 in doc ([…])"
         ]
       },
       {
@@ -303,8 +319,8 @@
           "patched": "issue2094_singlepos/raw_completions/fu2_span_slots/rollouts/shard_qtext__joint_all__a0p5__A__steered.jsonl @ 867f4284c8bd8f65401715beb2a8b80e77ed7750"
         },
         "substitutions": [
-          "unpatched answer truncated",
-          "patched answer truncated"
+          "unpatched answer truncated to 48 words on figure / 140 in doc ([…])",
+          "patched answer truncated to 48 words on figure / 140 in doc ([…])"
         ]
       },
       {
@@ -328,12 +344,12 @@
             "f_shuffled_mean": 0.09251209440088044
           },
           "bank_text": "issue2162_ctxinfo/analysis_tensors/vc_bank/bank.json @ dc8108ab84f33695bbc769da0e6e8e2327f51eeb",
-          "unpatched": "issue2162_ctxinfo/raw_completions/anchors/ @ dc8108ab84f33695bbc769da0e6e8e2327f51eeb (first stored draw)",
+          "unpatched": "issue2162_ctxinfo/raw_completions/anchors/anchors_gate_w2.jsonl @ dc8108ab84f33695bbc769da0e6e8e2327f51eeb (first stored draw)",
           "patched": "issue2162_ctxinfo/raw_completions/grid/shard_instr_format__ce__steered.jsonl @ dc8108ab84f33695bbc769da0e6e8e2327f51eeb (first stored draw)"
         },
         "substitutions": [
-          "unpatched answer truncated",
-          "patched answer truncated"
+          "unpatched answer truncated to 48 words on figure ([…]); shown in full in doc",
+          "patched answer truncated to 48 words on figure / 140 in doc ([…])"
         ]
       }
     ]
