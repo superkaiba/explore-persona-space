@@ -97,27 +97,26 @@
   \item LLMs can be viewed as deterministic maps from \emph{contexts} to \emph{answer distributions}
   \item A \textbf{simple approximation} of that map would be extremely useful: much easier to analyze theoretically, sample from, and understand the effects of finetuning
   \item But it need not exist: the map is billions of parameters applying dozens of nonlinear layers. 
-  \item Prior work either uses simple but \emph{narrow} predictors (specific tokens, activations, behaviors), or distillation, a complex whole-distribution predictor
+  \item Prior work either uses simple but \emph{narrow} predictors (specific tokens, activations, behaviors), or distillation, a whole-distribution predictor which is just as complex as the original model
   \item \takeaways{Our question:} can a \textbf{simple} approximation capture the mapping \emph{as a whole}? 
 \end{itemize}
 
 \postersec{Methodology}
-\begin{itemize}
-  \item \textbf{Context} $=$ the full model input (persona $+$ question); \textbf{answer} $=$ one sampled completion.
-  \item Read one layer's residual stream: \textbf{context vector} $v_C$ at the last context token, \textbf{answer vector} $v_A$ averaged over the answer's tokens.
-  \item Fit one linear map $v_A \approx W v_C$ (ridge) over many pairs; score on \textbf{contexts it never saw}.
-  \item Metrics: held-out $R^2$; \textbf{retrieval} (is the true answer the prediction's nearest neighbour among a large corpus); \textbf{behavior prediction} (LLM judged)
-\end{itemize}
+
 \begin{center}
-% 0.52 -> 0.66: the diagram's own aspect was cut 23% shorter, so it renders
-% slightly SHORTER than before even at the wider fraction, while its labels
-% (4-7pt on the board at 0.52) come out ~27% larger.
-\IfFileExists{figures/method_diagram.pdf}{\includegraphics[width=0.66\linewidth]{method_diagram.pdf}}{\includegraphics[width=0.52\linewidth]{fig1_schematic.pdf}}
+% Full column width. With the Methodology bullets removed the diagram is the
+% ONLY statement of the method, so legibility is no longer a nice-to-have:
+% at 0.66 its labels rendered 8-11pt against body text at 17-27pt. The bullets
+% freed 2.13in of column height; spending 1.8in of it here takes the labels to
+% ~12-17pt. Do NOT trim the diagram's readout boxes or ridge inset -- they
+% duplicated the deleted bullets, so they are now the only place the metrics
+% and the fitting objective appear.
+\IfFileExists{figures/method_diagram.pdf}{\includegraphics[width=\linewidth]{method_diagram.pdf}}{\includegraphics[width=0.52\linewidth]{fig1_schematic.pdf}}
 \end{center}
 
 \postersec{1.\ The Mapping has high predictive Power and is mostly Linear}
 \begin{center}
-\includegraphics[width=0.66\linewidth]{plot1_scaling_boundary.pdf}
+\includegraphics[width=0.95\linewidth]{plot1_scaling_boundary.pdf}
 \end{center}
 \begin{itemize}
   \item \takeaways{The mapping has high predictive power:} held-out $R^2$ 0.75, rank-1 retrieval 0.98 at 1 million contexts
@@ -173,7 +172,7 @@ We train another map from the context to the answer's \textbf{SAE features}, the
 
 \postersec{5.\ The mapping is already largely present in the base model and refined throughout post training}
 \begin{center}
-\IfFileExists{figures/plot5_stages.pdf}{\includegraphics[width=0.68\linewidth]{plot5_stages.pdf}}{\includegraphics[width=0.38\linewidth]{c1_stage_retention.pdf}}
+\IfFileExists{figures/plot5_stages.pdf}{\includegraphics[width=0.90\linewidth]{plot5_stages.pdf}}{\includegraphics[width=0.38\linewidth]{c1_stage_retention.pdf}}
 \end{center}
 \begin{itemize}
   \item \takeaways{The mapping is already largely present in the base model:} $R^2$ 0.41 before any post-training, \textbf{67\%} of the 0.62 the fully post-trained model reaches.

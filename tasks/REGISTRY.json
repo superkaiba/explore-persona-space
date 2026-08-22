@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2453,
+  "highest_id": 2459,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9741,22 +9741,22 @@
     "2260": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2260",
-      "status": "proposed",
+      "path": "tasks/completed/2260",
+      "status": "completed",
       "title": "Step 5a spec-freshness: couple agents prose-pin tests (test_mapping_baselines_wiring_pins.py class) to the .claude/agents family \u2014 half-sync gate red"
     },
     "2261": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2261",
-      "status": "proposed",
+      "path": "tasks/running/2261",
+      "status": "running",
       "title": "Extend driver --import-check to bind-check in-repo helper call arity, not just args.<attr> completeness"
     },
     "2262": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2262",
-      "status": "proposed",
+      "path": "tasks/running/2262",
+      "status": "running",
       "title": "paper_plots._extract_scatters drops genuine (0,0) single-point scatters from figure sidecars"
     },
     "2263": {
@@ -11137,8 +11137,8 @@
     "2442": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2442",
-      "status": "running",
+      "path": "tasks/completed/2442",
+      "status": "completed",
       "title": "Absence-claim rule names the duty but not the mechanism: a full-listing + client-side prefix filter returns a silent zero on a wrong path where the scoped probe 404s"
     },
     "2443": {
@@ -11224,6 +11224,48 @@
       "path": "tasks/proposed/2453",
       "status": "proposed",
       "title": "Step 5a spec-freshness sync silently no-ops when invoked with cwd at the repo root (cwd-derived WT trips the on-main guard; certified a gate against stale main twice on #2205)"
+    },
+    "2454": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2454",
+      "status": "proposed",
+      "title": "workflow-fix: relocate genuine agents-prose asserts from behavioral tests into a closure-clean FAMILY_agents pin file (#2260 follow-up)"
+    },
+    "2455": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/2455",
+      "status": "archived",
+      "title": "workflow-fix: scripts/issue1739_r2v2_run.py has ungated HfApi upload call sites \u2014 test_no_ungated_upload_call_sites RED on origin/main"
+    },
+    "2456": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2456",
+      "status": "proposed",
+      "title": "workflow-fix: test (10) FAMILY_OF parity is one-way + comment-blind \u2014 enforce bidirectional dict equality between the Step 5a and Step 10d copies"
+    },
+    "2457": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2457",
+      "status": "proposed",
+      "title": "pre-commit stash-cycle patch* residue accumulates unbounded (6.1 GB / 23,528 files, oldest 2026-04-27) \u2014 evidence-gated reap, no janitor covers the path"
+    },
+    "2458": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2458",
+      "status": "proposed",
+      "title": "Step 10d pre-push gate: a crash verdict names no cause (rc values computed, branched on, then discarded)"
+    },
+    "2459": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2459",
+      "status": "proposed",
+      "title": "workflow-fix: session-scoped pgrep misses the gate's start_new_session pytest worker \u2014 healthy Step 9c/10d gates read as wedged"
     },
     "246": {
       "has_clean_result": false,

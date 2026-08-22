@@ -2430,10 +2430,61 @@ else
     FAMILY_OF[":(glob)scripts/guard_*.sh"]="guard"
     FAMILY_OF[":(glob)tests/test_guard_*.py"]="guard"
     FAMILY_OF["tests/test_guard_lessons_edit.py"]="guard"
-    SPECS_10D=".claude/agents .claude/agent-memory .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/config/agent_spec_size_caps.txt scripts/select_step9c_tests.py .claude/hooks :(glob)scripts/guard_*.sh tests/test_guard_lessons_edit.py tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py tests/test_select_step9c_tests.py tests/step9c_workflow_invariant_manifest.txt :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py tests/issue_skill_source.py :(glob)tests/test_issue_skill_*.py scripts/step5a_sibling_probe.py tests/test_step5a_sibling_probe.py"
+    # FAMILY_agents members (#2260)
+    FAMILY_OF[".claude/agents"]="agents"
+    FAMILY_OF["tests/test_adversarial_planner_factchecker_grain_pin.py"]="agents"
+    FAMILY_OF["tests/test_adversarial_planner_lens_brief_headings.py"]="agents"
+    FAMILY_OF["tests/test_analyzer_language_intrusion_duty.py"]="agents"
+    FAMILY_OF["tests/test_battery_basis_prose_pins.py"]="agents"
+    FAMILY_OF["tests/test_code_reviewer_phase_idempotency_gate.py"]="agents"
+    FAMILY_OF["tests/test_codex_code_reviewer_step09_tag_parity.py"]="agents"
+    FAMILY_OF["tests/test_codex_critic_numeric_grounding.py"]="agents"
+    FAMILY_OF["tests/test_consistency_checker_parentless_infra_skip.py"]="agents"
+    FAMILY_OF["tests/test_cross_issue_protocol_comparability_prose.py"]="agents"
+    FAMILY_OF["tests/test_daily_three_route_classifier_doc.py"]="agents"
+    FAMILY_OF["tests/test_diff_base_origin_main_pin.py"]="agents"
+    FAMILY_OF["tests/test_downwidth_split_prose_pins.py"]="agents"
+    FAMILY_OF["tests/test_experimenter_md.py"]="agents"
+    FAMILY_OF["tests/test_fit_loop_batching_review_pin.py"]="agents"
+    FAMILY_OF["tests/test_implementer_spec_deleted_literal_substep.py"]="agents"
+    FAMILY_OF["tests/test_implementer_spec_mechanical_pin_sweep.py"]="agents"
+    FAMILY_OF["tests/test_implementer_spec_names_invariant_local_union.py"]="agents"
+    FAMILY_OF["tests/test_implementer_spec_names_ruff_policy_pin.py"]="agents"
+    FAMILY_OF["tests/test_interp_critic_degenerate_series_lens.py"]="agents"
+    FAMILY_OF["tests/test_issue_v2_skill_figure_pin_contract.py"]="agents"
+    FAMILY_OF["tests/test_lean_twin_registration_pin.py"]="agents"
+    FAMILY_OF["tests/test_mapping_baselines_wiring_pins.py"]="agents"
+    FAMILY_OF["tests/test_off_pod_phase_slot_pin.py"]="agents"
+    FAMILY_OF["tests/test_outroot_residue_prose_pins.py"]="agents"
+    FAMILY_OF["tests/test_plan_handoff_path_convention.py"]="agents"
+    FAMILY_OF["tests/test_planner_incident_trace_guidance.py"]="agents"
+    FAMILY_OF["tests/test_planner_phase_outputs_declaration.py"]="agents"
+    FAMILY_OF["tests/test_realized_rows_prose_pins.py"]="agents"
+    FAMILY_OF["tests/test_selection_symmetric_nulls_pointers.py"]="agents"
+    FAMILY_OF["tests/test_v2_composer_plan_path_brief.py"]="agents"
+    FAMILY_OF["tests/test_inline_payload_lint_gate_contract.py"]="workflow"
+    SPECS_10D=".claude/agents .claude/agent-memory .claude/skills .claude/rules .claude/workflow.yaml CLAUDE.md scripts/workflow_lint.py .claude/config/agent_spec_size_caps.txt scripts/select_step9c_tests.py .claude/hooks :(glob)scripts/guard_*.sh tests/test_guard_lessons_edit.py tests/test_workflow_yaml.py tests/test_autonomous_session_watch.py tests/test_select_step9c_tests.py tests/step9c_workflow_invariant_manifest.txt :(glob)tests/test_workflow_lint*.py :(glob)tests/test_guard_*.py tests/issue_skill_source.py :(glob)tests/test_issue_skill_*.py scripts/step5a_sibling_probe.py tests/test_step5a_sibling_probe.py tests/test_adversarial_planner_factchecker_grain_pin.py tests/test_adversarial_planner_lens_brief_headings.py tests/test_analyzer_language_intrusion_duty.py tests/test_battery_basis_prose_pins.py tests/test_code_reviewer_phase_idempotency_gate.py tests/test_codex_code_reviewer_step09_tag_parity.py tests/test_codex_critic_numeric_grounding.py tests/test_consistency_checker_parentless_infra_skip.py tests/test_cross_issue_protocol_comparability_prose.py tests/test_daily_three_route_classifier_doc.py tests/test_diff_base_origin_main_pin.py tests/test_downwidth_split_prose_pins.py tests/test_experimenter_md.py tests/test_fit_loop_batching_review_pin.py tests/test_implementer_spec_deleted_literal_substep.py tests/test_implementer_spec_mechanical_pin_sweep.py tests/test_implementer_spec_names_invariant_local_union.py tests/test_implementer_spec_names_ruff_policy_pin.py tests/test_inline_payload_lint_gate_contract.py tests/test_interp_critic_degenerate_series_lens.py tests/test_issue_v2_skill_figure_pin_contract.py tests/test_lean_twin_registration_pin.py tests/test_mapping_baselines_wiring_pins.py tests/test_off_pod_phase_slot_pin.py tests/test_outroot_residue_prose_pins.py tests/test_plan_handoff_path_convention.py tests/test_planner_incident_trace_guidance.py tests/test_planner_phase_outputs_declaration.py tests/test_realized_rows_prose_pins.py tests/test_selection_symmetric_nulls_pointers.py tests/test_v2_composer_plan_path_brief.py"
     MB_10D=$(git -C "$WT" merge-base HEAD origin/main)
     declare -A DIRTY_FAMILIES_10D
     for f in $SPECS_10D; do
+      # Member-existence containment (#2260; interaction with #2385): the
+      # checkout below is ATOMIC — a single literal token absent at origin/main
+      # (deleted/renamed on main) errors the whole checkout and syncs NOTHING,
+      # wedging every family until manual reconcile. Contain per-family: an
+      # absent literal member marks ITS family dirty (vintage-consistent skip;
+      # other families keep syncing). Deletion PROPAGATION (removing the stale
+      # worktree twin) remains #2385 — reconcile manually until it lands.
+      case "$f" in
+        ":(glob)"*) : ;;
+        *)
+          if ! git -C "$WT" cat-file -e "origin/main:$f" 2>/dev/null; then
+            fam="${FAMILY_OF[$f]:-$f}"
+            DIRTY_FAMILIES_10D[$fam]=1
+            echo "spec-freshness: $f is ABSENT at origin/main (deleted/renamed on main) — marking family '$fam' dirty; skipping blind sync for the whole family (atomic-checkout containment, #2260; stale-twin removal is #2385 — reconcile manually)."
+            continue
+          fi
+          ;;
+      esac
       bs_commits=$(git -C "$WT" log --format='%H %s' "$MB_10D"..HEAD -- "$f" \
         | awk 'index($0, "sync workflow-surface specs from") == 0')
       if [ -n "$bs_commits" ]; then
