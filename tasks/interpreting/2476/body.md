@@ -107,7 +107,9 @@ Plotted: per-tier median held-out per-feature R² of encoded map predictions aga
 | Token-level dictionary on turn averages, layer 20 | 0.420 / 0.553 / 0.601 (387 / 21 / 4) | −0.181 (−0.325 to +0.105; crosses zero) | 99.42, fine-better side (+0.113 vs −0.103 to +0.086) | reversed — a secondary read; the rule is defined on the fresh arm |
 | Token-grain reference (its own round: token level, layer 20, 6,000 rows) | 0.435 / 0.174 / 0.043 (16,384-feature panel) | +0.392 | coarse-better (−0.395 vs −0.250 to −0.228) | gradient holds |
 
-The two rule conditions read different populations: the permutation pools all 879 features and is dominated by coarse-vs-middle (876 of 879), while the endpoint contrast is decided by the 3 finest-tier survivors — indeterminate is the honest cell. The bridge-arm reversal is marginal: its endpoint interval crosses zero and its permutation exceedance is narrow. An inlier-masked pooling twin matches the plain mean to four decimals, so outlier tokens do not drive the inversion. Per-unit exemption: the per-feature scatter behind these medians is embedded two results below.
+The two rule conditions read different populations: the permutation pools all 879 features and is dominated by coarse-vs-middle (876 of 879), while the endpoint contrast is decided by the 3 finest-tier survivors — indeterminate is the honest cell. The bridge-arm reversal is marginal: its endpoint interval crosses zero and its permutation exceedance is narrow. An inlier-masked pooling twin matches the plain mean to four decimals, so outlier tokens do not drive the inversion.
+
+Per-unit exemption: the per-feature scatter behind these medians is embedded two results below.
 
 ### Alive-feature attrition, not a gradient, is the dominant turn-averaged phenomenon
 
