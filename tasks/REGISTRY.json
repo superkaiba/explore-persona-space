@@ -11420,8 +11420,8 @@
       "goal": "Establish or bound the closeness-to-assistant transfer gradient: assistant-operator transfer recovery (R2 + acc@1 vs identity+bias) vs pre-registered AI-likeness across >=12 characters; success = rank correlation with permutation band excluding zero.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/2479",
-      "status": "proposed",
+      "path": "tasks/planning/2479",
+      "status": "planning",
       "title": "Dedicated AI-likeness gradient: does map transfer to a character scale with closeness to the assistant? (n>=12 characters)"
     },
     "248": {
