@@ -2089,7 +2089,9 @@ def _gate_second_row_pool(
         if len(resolvable) < len(candidates):
             logger.info(
                 "[gate] spot %s/%s/%s: second-row donor-closure filter kept %d/%d "
-                "candidates (candidate donors outside the captured pair set — smoke slice)",
+                "candidates (candidate donor pair or its captured B state absent — "
+                "expected under a sliced --smoke bank; on a FULL bank this indicates "
+                "a donor-map/capture regression)",
                 spot_pair.cell,
                 slot,
                 arm,
@@ -2377,6 +2379,11 @@ def _bank_part_path(cfg: RunConfig, chunk: CaptureChunk) -> Path:
 # dependencies (B4) — index far outside the real c000..c021 range so its
 # claim/done identity can never collide with a production chunk.
 SMOKE_GATE_CHUNK_INDEX = 999
+# Grid-closure sibling (crash-fix r2) — its OWN distinct identity: a retained
+# smoke out-root's c999 done-file (captured by a pre-r2 run) must never
+# satisfy the NEW grid-closure chunk, so a resume re-captures exactly the
+# delta contexts and nothing else.
+SMOKE_GRID_CHUNK_INDEX = 998
 
 
 def _smoke_gate_slice_extension(
@@ -2404,6 +2411,47 @@ def _smoke_gate_slice_extension(
             need.update((donor.a, donor.b))
     missing = [c for c in all_contexts if c in need and c not in sliced]
     return spots, missing
+
+
+def _smoke_grid_slice_extension(
+    all_contexts: list[str],
+    sliced: set[str],
+    pairs_full: list[BANK.Pair2162],
+    donor_maps: dict[str, dict[str, str]],
+    np_ids: frozenset[str] | set[str],
+) -> tuple[set[str], list[str]]:
+    """Grid sibling of B4 (crash-fix r2): ``phase_grid`` composes its smoke
+    blocks over the FULL surviving pair set
+    (``apply_pe_exclusions(smoke_blocks(surviving_pairs(manifest)), ...)`` —
+    no capture filter), then ``_block_cells`` / ``payload_for_arm``
+    dereference the smoke-sliced bank — so every smoke block pair's a/b,
+    plus (non-steered arms) its donor pair's a/b, must be captured or the
+    grid leg KeyErrors AFTER the bank/pilot/anchors/vLLM smoke spend (pod
+    incident 2026-08-23 #2 — same closure class as the B4 gate fix). The
+    block set is composed EXACTLY as phase_grid composes it (pe-exclusion
+    semantics included), so the need-set covers what ``_block_cells``
+    actually dereferences; the ``--pilot`` leg (``blocks[:1]``) and the
+    capregen-grid / margin re-compositions are subsets of the same block
+    set. Returns ``(the grid leg's full context dereference set, the extra
+    contexts the smoke capture must add — dedup'd against ``sliced``, i.e.
+    the base chunks + the B4 gate extension)``."""
+    pairs_by_id = {p.pair_id: p for p in pairs_full}
+    blocks, _excl = apply_pe_exclusions(smoke_blocks(pairs_full), np_ids, donor_maps, pairs_full)
+    need: set[str] = set()
+    for block in blocks:
+        donor_map = (
+            None
+            if block.arm == "steered"
+            else donor_maps["shuffled" if block.arm == "shuffled" else "crosstype"]
+        )
+        for pid in block.pair_ids:
+            p = pairs_by_id[pid]
+            need.update((p.a, p.b))
+            if donor_map is not None:
+                donor = pairs_by_id[donor_map[pid]]
+                need.update((donor.a, donor.b))
+    missing = [c for c in all_contexts if c in need and c not in sliced]
+    return need, missing
 
 
 def phase_bank(cfg: RunConfig) -> int:
@@ -2455,6 +2503,7 @@ def phase_bank(cfg: RunConfig) -> int:
     all_contexts = list(BANK.build_contexts())
     chunks = enumerate_capture_chunks(all_contexts)
     smoke_spots: list[dict] | None = None
+    smoke_grid_need: set[str] | None = None
     if cfg.smoke:
         chunks = chunks[:2]
         # B4 (r1 review): extend the slice with the injection gate's spot
@@ -2471,6 +2520,24 @@ def phase_bank(cfg: RunConfig) -> int:
             logger.info(
                 "[bank] smoke slice extended by %d injection-gate dependency contexts",
                 len(extra),
+            )
+        # Grid-closure sibling (crash-fix r2): the grid smoke leg's blocks
+        # span pairs (and their non-steered donors) outside the base slice +
+        # B4 extension — capture their contexts too, so _block_cells /
+        # payload_for_arm resolve at the grid leg instead of KeyErroring
+        # after the pilot/anchors/vLLM smoke spend.
+        smoke_grid_need, grid_extra = _smoke_grid_slice_extension(
+            all_contexts,
+            {c for ch in chunks for c in ch.context_ids},
+            surviving_pairs(manifest),
+            manifest["donor_assignment"],
+            no_prefix_ids(manifest),
+        )
+        if grid_extra:
+            chunks = chunks + [CaptureChunk(SMOKE_GRID_CHUNK_INDEX, tuple(grid_extra))]
+            logger.info(
+                "[bank] smoke slice extended by %d grid-smoke closure contexts",
+                len(grid_extra),
             )
 
     def _capture_one(chunk: CaptureChunk) -> None:
@@ -2566,6 +2633,17 @@ def phase_bank(cfg: RunConfig) -> int:
         assert spot_cells <= have_cells, (
             "B4: smoke slice cannot supply injection-gate spot cells",
             sorted(spot_cells - have_cells),
+        )
+        # Grid-closure sibling assert (crash-fix r2, dereference-set <=
+        # have-set): every context the grid smoke leg dereferences (block
+        # pairs + non-steered donors, pe-exclusion semantics applied) is
+        # captured — a future smoke_blocks / consumer drift fails loud HERE,
+        # at capture time, never at the grid leg after the anchors spend.
+        assert smoke_grid_need is not None
+        grid_missing = smoke_grid_need - set(records)
+        assert not grid_missing, (
+            "grid-smoke closure: smoke slice cannot supply grid smoke-block contexts",
+            sorted(grid_missing)[:8],
         )
     report = run_injection_gate(cfg, model, tok, bank, pairs, donor_maps, spots=smoke_spots)
     _write_json_atomic(cfg.gates_dir / "injection_gate_report.json", report)

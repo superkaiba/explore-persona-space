@@ -334,6 +334,85 @@ def test_b4_smoke_gate_slice_extension_supplies_spot_cells():
     assert len(R.enumerate_capture_chunks(contexts)) < R.SMOKE_GATE_CHUNK_INDEX
 
 
+def test_grid_smoke_slice_extension_covers_block_dereferences():
+    """Crash-fix r2 pin (grid sibling of B4): phase_grid composes its smoke
+    blocks over the FULL surviving pair set while the smoke bank captures
+    only 2 chunks + the B4 gate extension — pre-fix, ``_block_cells`` /
+    ``payload_for_arm`` KeyError on the first out-of-closure pair or donor
+    context AFTER the pilot/anchors/vLLM smoke spend (reviewer VM probe:
+    9 own-pair + 23 donor gaps). The extension's need-set covers every
+    dereference, incl. the ``--pilot`` leg (``blocks[:1]`` of the same set)."""
+    contexts = list(BANK.build_contexts())
+    pairs = BANK.build_pairs()
+    chunks = R.enumerate_capture_chunks(contexts)[:2]
+    sliced = {c for ch in chunks for c in ch.context_ids}
+    by_cell = BANK.pairs_by_cell(pairs)
+    donor_maps: dict[str, dict[str, str]] = {"shuffled": {}, "crosstype": {}}
+    for p in pairs:
+        siblings = [q for q in by_cell[p.cell] if q.pair_id != p.pair_id]
+        if siblings:
+            donor_maps["shuffled"][p.pair_id] = siblings[0].pair_id
+            donor_maps["crosstype"][p.pair_id] = siblings[-1].pair_id
+    np_ids: frozenset[str] = frozenset()
+    # PRE-FIX captured set: base 2 chunks + the B4 gate extension only
+    _spots, gate_extra = R._smoke_gate_slice_extension(contexts, sliced, pairs, donor_maps)
+    prefix_covered = sliced | set(gate_extra)
+    # the grid smoke leg's block set, composed EXACTLY as phase_grid does
+    blocks, _excl = R.apply_pe_exclusions(R.smoke_blocks(pairs), np_ids, donor_maps, pairs)
+    assert blocks, "smoke grid block set must be non-empty (--pilot runs blocks[:1])"
+    pairs_by_id = {p.pair_id: p for p in pairs}
+
+    def _block_deref(block) -> set[str]:
+        """Exactly what _block_cells/payload_for_arm read from the bank."""
+        out: set[str] = set()
+        for pid in block.pair_ids:
+            p = pairs_by_id[pid]
+            out.update((p.a, p.b))
+            if block.arm != "steered":
+                key = "shuffled" if block.arm == "shuffled" else "crosstype"
+                out.add(pairs_by_id[donor_maps[key][pid]].b)
+        return out
+
+    deref_all = set().union(*(_block_deref(b) for b in blocks))
+    # PRE-FIX shape: the covered set misses grid dereferences (the r2 bug)
+    missing_deref = deref_all - prefix_covered
+    assert missing_deref, "base slice + B4 extension must not already close the grid leg"
+    L, H = 2, 4
+    g = torch.Generator().manual_seed(0)
+
+    def _bank_over(covered: set[str]) -> dict:
+        return {
+            "per_context": {
+                cid: {"v_ce": torch.randn(L, H, generator=g), "ctx_len": 8, "prefix_end": 2}
+                for cid in covered
+            }
+        }
+
+    broken = next(b for b in blocks if _block_deref(b) - prefix_covered)
+    with pytest.raises(KeyError):
+        R._block_cells(_bank_over(prefix_covered), broken, pairs_by_id, donor_maps)
+
+    # POST-FIX: the extension closes the leg — every smoke block composes
+    need, grid_extra = R._smoke_grid_slice_extension(
+        contexts, prefix_covered, pairs, donor_maps, np_ids
+    )
+    assert grid_extra and not set(grid_extra) & prefix_covered
+    covered = prefix_covered | set(grid_extra)
+    bank_fixed = _bank_over(covered)
+    for block in blocks:
+        cells = R._block_cells(bank_fixed, block, pairs_by_id, donor_maps)
+        assert len(cells) == block.n_pairs
+    # closure (the merge-time assert's exact predicate): the FULL dereference
+    # set — need additionally carries donor As so donor PAIRS survive the
+    # bank phase's captured-pair filter (the B4 idiom)
+    assert deref_all <= need <= covered
+    # the extension chunk's claim/done identity is distinct from every real
+    # chunk AND the B4 gate chunk (a retained pre-r2 smoke out-root resumes
+    # by re-capturing exactly the grid-closure delta)
+    assert R.SMOKE_GRID_CHUNK_INDEX != R.SMOKE_GATE_CHUNK_INDEX
+    assert len(R.enumerate_capture_chunks(contexts)) < R.SMOKE_GRID_CHUNK_INDEX
+
+
 # ------------------- injection gate second-row donor closure (crash-fix r1)
 
 
@@ -378,8 +457,12 @@ def test_gate_second_row_pool_excludes_unresolvable_donors_smoke(caplog):
     d_ok = _cf_pair("DOK", "cellB", "doA", "doB")
     pairs = [spot, d_spot, q_out, q_norec, q_nomap, q_ok, d_norec, d_ok]
     pairs_by_id = {p.pair_id: p for p in pairs}
+    # QOUT's donor id is the 2026-08-23 pod crash key VERBATIM (round-7
+    # concern repro-does-not-pin-verbatim-pod-key): the filtered-out donor
+    # pair id the unfiltered pool dereferenced on the pod.
+    pod_crash_key = "conflict_persona_rev::i2d1-i1d2::d1"
     donor_maps = {
-        "shuffled": {"S": "DS", "QOUT": "GONE", "QNOREC": "DNR", "QOK": "DOK"},
+        "shuffled": {"S": "DS", "QOUT": pod_crash_key, "QNOREC": "DNR", "QOK": "DOK"},
         "crosstype": {},
     }
     recs = {cid: _rec() for cid in ctx_ids if cid != "dnB"}  # DNR's B uncaptured
@@ -389,15 +472,16 @@ def test_gate_second_row_pool_excludes_unresolvable_donors_smoke(caplog):
     assert "_gate_second_row_pool(" in inspect.getsource(R.run_injection_gate)
 
     # PRE-FIX shape: the unfiltered pool ranks QOUT first; composing its
-    # payload dereferences pairs_by_id['GONE'] — the pod KeyError verbatim
+    # payload dereferences pairs_by_id['conflict_persona_rev::i2d1-i1d2::d1']
+    # — the pod KeyError, key asserted verbatim
     prefix_pool = [
         p for p in pairs if p.pair_id != spot.pair_id and len(ctx_ids[p.a]) != len(ctx_ids[spot.a])
     ]
     assert prefix_pool[0] is q_out
-    with pytest.raises(KeyError, match="GONE"):
+    with pytest.raises(KeyError, match=re.escape(pod_crash_key)):
         R.payload_for_arm(bank, prefix_pool[0], "ce", "shuffled", donor_maps, pairs_by_id)
     # pe spots crash one call earlier, inside pe_excluded_reason (same donor)
-    with pytest.raises(KeyError, match="GONE"):
+    with pytest.raises(KeyError, match=re.escape(pod_crash_key)):
         R.pe_excluded_reason(q_out, "shuffled", frozenset(), donor_maps, pairs_by_id)
 
     # POST-FIX: only the resolvable candidate survives, and it composes clean
