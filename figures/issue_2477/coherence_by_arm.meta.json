@@ -1,0 +1,5203 @@
+{
+  "commit": "c1c8abb0",
+  "render_id": "d9aff708844b4a07",
+  "git_commit": "c1c8abb0b6e6e2043c716efad5a242f99789d012",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2477_base_coherence.py",
+  "created": "2026-08-23T02:31:02Z",
+  "figsize": [
+    7.2,
+    4.4
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "Coherence score (judge, 0\u2013100)": 90.583,
+      "error": 1.9525749999999817,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "Coherence score (judge, 0\u2013100)": 34.501999999999995,
+      "error": 4.5491624999999996,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "Coherence score (judge, 0\u2013100)": 70.733,
+      "error": 4.284662500000003,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "Coherence score (judge, 0\u2013100)": 53.2816,
+      "error": 6.223299999999995,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "Coherence score (judge, 0\u2013100)": 80.50559999999999,
+      "error": 2.8584599999999867,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "x": 0.046566973689294466,
+      "Coherence score (judge, 0\u2013100)": 98.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.0782725173202841,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.1560690018616938,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.16438060392030013,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.10651188132809261,
+      "Coherence score (judge, 0\u2013100)": 85.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.1403368962744254,
+      "Coherence score (judge, 0\u2013100)": 99.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.03625616376084115,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.07802883073455946,
+      "Coherence score (judge, 0\u2013100)": 76.4,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.014832497098243774,
+      "Coherence score (judge, 0\u2013100)": 93.8,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.1479246240878412,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.10739020840132094,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.16906890994214965,
+      "Coherence score (judge, 0\u2013100)": 87.2,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.12151745403977357,
+      "Coherence score (judge, 0\u2013100)": 86.4,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.15858090439614214,
+      "Coherence score (judge, 0\u2013100)": 85.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.07808285178618099,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.11027708899512995,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.12348083359896142,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.014096814884691194,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.06809795721728917,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.026286344792796124,
+      "Coherence score (judge, 0\u2013100)": 68.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.1603713118105426,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.12774368599014826,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.05801230099583432,
+      "Coherence score (judge, 0\u2013100)": 87.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.05004443393524502,
+      "Coherence score (judge, 0\u2013100)": 97.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.039230937903626306,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.03954963155095964,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.16905137816833174,
+      "Coherence score (judge, 0\u2013100)": 92.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.16348401518391822,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.0630842747234362,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.051156153931057546,
+      "Coherence score (judge, 0\u2013100)": 92.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.06407188839411962,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.037766715847104726,
+      "Coherence score (judge, 0\u2013100)": 74.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.1240671882923802,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.07530603566598779,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.008620469641746814,
+      "Coherence score (judge, 0\u2013100)": 73.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.06451776230995508,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.004815977997191717,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.13242586367866008,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.1475747954251249,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.04834963311891613,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.024320142448118726,
+      "Coherence score (judge, 0\u2013100)": 72.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.060564407034179674,
+      "Coherence score (judge, 0\u2013100)": 83.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.0320620102678969,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.0551101833275747,
+      "Coherence score (judge, 0\u2013100)": 79.8,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.03684953982042519,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.1326932796816294,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.0927664181986509,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.04188362919325442,
+      "Coherence score (judge, 0\u2013100)": 96.2,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.14143478318198915,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.11309901020215526,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.09761342454615238,
+      "Coherence score (judge, 0\u2013100)": 83.8,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.08861438938239627,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.12800463847563928,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.15008686816623393,
+      "Coherence score (judge, 0\u2013100)": 85.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.05572019941447548,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.11890498125575473,
+      "Coherence score (judge, 0\u2013100)": 85.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.01688461533924243,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.10075025189768003,
+      "Coherence score (judge, 0\u2013100)": 97.4,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.09158164894212588,
+      "Coherence score (judge, 0\u2013100)": 83.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.15231275763810073,
+      "Coherence score (judge, 0\u2013100)": 90.4,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.03245237446068042,
+      "Coherence score (judge, 0\u2013100)": 83.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.1025055648668532,
+      "Coherence score (judge, 0\u2013100)": 92.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.13914396448949856,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.027313011235529233,
+      "Coherence score (judge, 0\u2013100)": 99.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.06844331484156632,
+      "Coherence score (judge, 0\u2013100)": 90.4,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.058478258505162195,
+      "Coherence score (judge, 0\u2013100)": 96.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.10216474905080748,
+      "Coherence score (judge, 0\u2013100)": 99.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.15031845757220927,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.04586254279675829,
+      "Coherence score (judge, 0\u2013100)": 84.4,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.13413160494612197,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.04389677152350113,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.14523254804307492,
+      "Coherence score (judge, 0\u2013100)": 96.2,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.020271767396633444,
+      "Coherence score (judge, 0\u2013100)": 65.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.15456076785485065,
+      "Coherence score (judge, 0\u2013100)": 95.6,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -3.5423346200019745e-05,
+      "Coherence score (judge, 0\u2013100)": 42.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.025422267551314326,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.04087257368522845,
+      "Coherence score (judge, 0\u2013100)": 43.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.16833281178001022,
+      "Coherence score (judge, 0\u2013100)": 95.6,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.15264084947884024,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.013584652634907324,
+      "Coherence score (judge, 0\u2013100)": 98.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.0876278074048191,
+      "Coherence score (judge, 0\u2013100)": 85.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.0008762835342095432,
+      "Coherence score (judge, 0\u2013100)": 97.8,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.00996613446690195,
+      "Coherence score (judge, 0\u2013100)": 94.4,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.09716713824269455,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.029017011219071936,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.07972441440816799,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.07178857851651496,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.14690029344854863,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.13092290468449225,
+      "Coherence score (judge, 0\u2013100)": 87.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.0778651398059452,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.1453241357323504,
+      "Coherence score (judge, 0\u2013100)": 93.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.15909490457437978,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.16499985631177444,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.12363763068349579,
+      "Coherence score (judge, 0\u2013100)": 98.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.1636063136225571,
+      "Coherence score (judge, 0\u2013100)": 98.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.15545146106772764,
+      "Coherence score (judge, 0\u2013100)": 88.6,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.11942023584095071,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.1606937966998047,
+      "Coherence score (judge, 0\u2013100)": 95.6,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.13257808894497705,
+      "Coherence score (judge, 0\u2013100)": 79.8,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.10960710136464394,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.00680410590533706,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.0909932073226367,
+      "Coherence score (judge, 0\u2013100)": 85.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.1026393967642247,
+      "Coherence score (judge, 0\u2013100)": 97.4,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.14400025432637967,
+      "Coherence score (judge, 0\u2013100)": 97.8,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.07951570742062053,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.013237698591543556,
+      "Coherence score (judge, 0\u2013100)": 87.6,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.019464038148659296,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.14654588743359273,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.15622635819593222,
+      "Coherence score (judge, 0\u2013100)": 93.2,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.07888210652323066,
+      "Coherence score (judge, 0\u2013100)": 75.6,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.03888690396265887,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.16035577586140284,
+      "Coherence score (judge, 0\u2013100)": 92.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.07453472276109172,
+      "Coherence score (judge, 0\u2013100)": 82.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.16456281196198555,
+      "Coherence score (judge, 0\u2013100)": 97.4,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.08770334080118555,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.004337965909106539,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.1458954350709821,
+      "Coherence score (judge, 0\u2013100)": 96.8,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.1475319511138146,
+      "Coherence score (judge, 0\u2013100)": 94.2,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.11604787506821032,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.14732539701918554,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.05293460720659744,
+      "Coherence score (judge, 0\u2013100)": 93.2,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.023698431137736675,
+      "Coherence score (judge, 0\u2013100)": 85.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.1584611074665839,
+      "Coherence score (judge, 0\u2013100)": 64.4,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.02115882635767538,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.08198603832188305,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.08783025720792272,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.13196022902412116,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.09320439433810972,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.1276514000160036,
+      "Coherence score (judge, 0\u2013100)": 50.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.07196754261742362,
+      "Coherence score (judge, 0\u2013100)": 98.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.029281842036329164,
+      "Coherence score (judge, 0\u2013100)": 25.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.018390770738911072,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.10530166381034442,
+      "Coherence score (judge, 0\u2013100)": 80.4,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.020561823682103186,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.07193678709338844,
+      "Coherence score (judge, 0\u2013100)": 76.2,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.02961524348849648,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.10816113013010956,
+      "Coherence score (judge, 0\u2013100)": 90.6,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.04301219722271618,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.15608639851713038,
+      "Coherence score (judge, 0\u2013100)": 91.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.044402500228828495,
+      "Coherence score (judge, 0\u2013100)": 67.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.017887913577237652,
+      "Coherence score (judge, 0\u2013100)": 91.2,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.03193422854847722,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.11841901081352038,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.12053899701657922,
+      "Coherence score (judge, 0\u2013100)": 98.2,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.03178648550563695,
+      "Coherence score (judge, 0\u2013100)": 81.2,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.13938604696518095,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.1553572578868106,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.10972013526171068,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.028769427293783623,
+      "Coherence score (judge, 0\u2013100)": 83.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.11213335499455493,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.16661544932552075,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.04588430636218799,
+      "Coherence score (judge, 0\u2013100)": 57.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.14326578736368245,
+      "Coherence score (judge, 0\u2013100)": 97.4,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.05188895595445708,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.07689130647615056,
+      "Coherence score (judge, 0\u2013100)": 97.4,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.06890170402432735,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.15089248516031087,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.12688218523117578,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.1240246204362632,
+      "Coherence score (judge, 0\u2013100)": 92.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.14978218845588492,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.04053802717429761,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.023876819199283944,
+      "Coherence score (judge, 0\u2013100)": 74.4,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.003791154076622144,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.16199718945825517,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.09373500395462167,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.06498849667545126,
+      "Coherence score (judge, 0\u2013100)": 85.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.07825549292972796,
+      "Coherence score (judge, 0\u2013100)": 85.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.12346086942436804,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.12964443873081458,
+      "Coherence score (judge, 0\u2013100)": 95.6,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.0036402118848394005,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.052939451472809415,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.16827189837471204,
+      "Coherence score (judge, 0\u2013100)": 88.2,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.06257919457498194,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.10787779116496878,
+      "Coherence score (judge, 0\u2013100)": 85.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.12923336124338372,
+      "Coherence score (judge, 0\u2013100)": 85.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.10619403535782637,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.05708239789425942,
+      "Coherence score (judge, 0\u2013100)": 93.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.15586063480450366,
+      "Coherence score (judge, 0\u2013100)": 99.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.14474295625290237,
+      "Coherence score (judge, 0\u2013100)": 76.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.08440449112259638,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.12263847924621044,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.08597010829048346,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.12197617065364927,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.05782102876707823,
+      "Coherence score (judge, 0\u2013100)": 21.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.07297030246261593,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.11320200421402746,
+      "Coherence score (judge, 0\u2013100)": 95.6,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.03551052714434216,
+      "Coherence score (judge, 0\u2013100)": 85.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.13948696051345863,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.020876260967075816,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.026634211074932718,
+      "Coherence score (judge, 0\u2013100)": 29.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.10399587721713019,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.008847564530077567,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.007967807314272768,
+      "Coherence score (judge, 0\u2013100)": 69.2,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.13976188231626754,
+      "Coherence score (judge, 0\u2013100)": 96.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.16386051566308016,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.024274504154963294,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.16782097989413455,
+      "Coherence score (judge, 0\u2013100)": 85.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.09270072841663216,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.16261034270564953,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.03055580962912316,
+      "Coherence score (judge, 0\u2013100)": 66.6,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.9386917563361061,
+      "Coherence score (judge, 0\u2013100)": 43.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8937526233474469,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0586590555317357,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8963365154753137,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.026413883456072,
+      "Coherence score (judge, 0\u2013100)": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0347613199690728,
+      "Coherence score (judge, 0\u2013100)": 10.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.1572238516622895,
+      "Coherence score (judge, 0\u2013100)": 83.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8545701902801581,
+      "Coherence score (judge, 0\u2013100)": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9999907600439303,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0829931429561004,
+      "Coherence score (judge, 0\u2013100)": 91.8,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.890257091761384,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9619426888067365,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8513844694746903,
+      "Coherence score (judge, 0\u2013100)": 25.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0767994936837642,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8598410814982255,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.964331180841709,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.126997694581049,
+      "Coherence score (judge, 0\u2013100)": 69.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9905821144950039,
+      "Coherence score (judge, 0\u2013100)": 5.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.140291457437901,
+      "Coherence score (judge, 0\u2013100)": 7.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0904118200312167,
+      "Coherence score (judge, 0\u2013100)": 4.4,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.1412101464380005,
+      "Coherence score (judge, 0\u2013100)": 71.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8733170230766282,
+      "Coherence score (judge, 0\u2013100)": 25.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8550113878124148,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8539109262135341,
+      "Coherence score (judge, 0\u2013100)": 33.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.1254104600780885,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0455837929781306,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9988343758916101,
+      "Coherence score (judge, 0\u2013100)": 27.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8856047615068032,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.059069368827273,
+      "Coherence score (judge, 0\u2013100)": 12.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9381259118675713,
+      "Coherence score (judge, 0\u2013100)": 88.4,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0716991535104212,
+      "Coherence score (judge, 0\u2013100)": 18.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9865208118148905,
+      "Coherence score (judge, 0\u2013100)": 5.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0025397525851392,
+      "Coherence score (judge, 0\u2013100)": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.098486349036356,
+      "Coherence score (judge, 0\u2013100)": 5.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8615334616779494,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.026777891129991,
+      "Coherence score (judge, 0\u2013100)": 5.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8970598820805953,
+      "Coherence score (judge, 0\u2013100)": 29.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.1047664956166132,
+      "Coherence score (judge, 0\u2013100)": 23.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9962076522839484,
+      "Coherence score (judge, 0\u2013100)": 10.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.1661564133450586,
+      "Coherence score (judge, 0\u2013100)": 87.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8922007303897443,
+      "Coherence score (judge, 0\u2013100)": 25.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.157426507642251,
+      "Coherence score (judge, 0\u2013100)": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.102311792446927,
+      "Coherence score (judge, 0\u2013100)": 17.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9936285688355913,
+      "Coherence score (judge, 0\u2013100)": 35.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.1066015818210762,
+      "Coherence score (judge, 0\u2013100)": 25.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0349686277819796,
+      "Coherence score (judge, 0\u2013100)": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0527411617570692,
+      "Coherence score (judge, 0\u2013100)": 5.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.1406548593205121,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8521919415798391,
+      "Coherence score (judge, 0\u2013100)": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.1138959893458562,
+      "Coherence score (judge, 0\u2013100)": 5.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9598170251885212,
+      "Coherence score (judge, 0\u2013100)": 43.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9406855094742395,
+      "Coherence score (judge, 0\u2013100)": 73.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.1679691022113947,
+      "Coherence score (judge, 0\u2013100)": 12.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0956047707059686,
+      "Coherence score (judge, 0\u2013100)": 64.4,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9950819471850598,
+      "Coherence score (judge, 0\u2013100)": 19.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9736936547844256,
+      "Coherence score (judge, 0\u2013100)": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.1283598279964107,
+      "Coherence score (judge, 0\u2013100)": 1.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.859517056553064,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0708623773507144,
+      "Coherence score (judge, 0\u2013100)": 21.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0983125720597497,
+      "Coherence score (judge, 0\u2013100)": 24.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.101726769103479,
+      "Coherence score (judge, 0\u2013100)": 17.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9395774864115428,
+      "Coherence score (judge, 0\u2013100)": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.1008573221336586,
+      "Coherence score (judge, 0\u2013100)": 81.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9066116702377262,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9531847031647535,
+      "Coherence score (judge, 0\u2013100)": 85.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9719323581494892,
+      "Coherence score (judge, 0\u2013100)": 13.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0140793944342559,
+      "Coherence score (judge, 0\u2013100)": 17.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8682886462837894,
+      "Coherence score (judge, 0\u2013100)": 77.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.968362252217364,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8301022346363538,
+      "Coherence score (judge, 0\u2013100)": 61.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0830894469581156,
+      "Coherence score (judge, 0\u2013100)": 86.4,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.1196378101596474,
+      "Coherence score (judge, 0\u2013100)": 2.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8772367709008672,
+      "Coherence score (judge, 0\u2013100)": 7.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0692871615507114,
+      "Coherence score (judge, 0\u2013100)": 97.4,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.1091750500541773,
+      "Coherence score (judge, 0\u2013100)": 26.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.16382162977641,
+      "Coherence score (judge, 0\u2013100)": 3.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.116888791205367,
+      "Coherence score (judge, 0\u2013100)": 54.4,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9741962050509644,
+      "Coherence score (judge, 0\u2013100)": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.1630941608932832,
+      "Coherence score (judge, 0\u2013100)": 35.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.1611546976498008,
+      "Coherence score (judge, 0\u2013100)": 81.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0012501729281968,
+      "Coherence score (judge, 0\u2013100)": 43.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0861718231185278,
+      "Coherence score (judge, 0\u2013100)": 23.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.1407048070088754,
+      "Coherence score (judge, 0\u2013100)": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.991890004469376,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.1236873219730088,
+      "Coherence score (judge, 0\u2013100)": 1.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0685333124610368,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9299342470313496,
+      "Coherence score (judge, 0\u2013100)": 5.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.091001771794381,
+      "Coherence score (judge, 0\u2013100)": 27.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0240328271922297,
+      "Coherence score (judge, 0\u2013100)": 85.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8619073521673242,
+      "Coherence score (judge, 0\u2013100)": 45.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9630693449435859,
+      "Coherence score (judge, 0\u2013100)": 87.8,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.855071944555254,
+      "Coherence score (judge, 0\u2013100)": 73.2,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9918967674937785,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9757034667685941,
+      "Coherence score (judge, 0\u2013100)": 45.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9740707306099521,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0293421202208668,
+      "Coherence score (judge, 0\u2013100)": 66.4,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8717148244598649,
+      "Coherence score (judge, 0\u2013100)": 35.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.1474814293853266,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0625771523455112,
+      "Coherence score (judge, 0\u2013100)": 82.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.1100856618535424,
+      "Coherence score (judge, 0\u2013100)": 11.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.1349124189696784,
+      "Coherence score (judge, 0\u2013100)": 77.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0283288159539818,
+      "Coherence score (judge, 0\u2013100)": 5.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8436741951075643,
+      "Coherence score (judge, 0\u2013100)": 19.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0719055202000378,
+      "Coherence score (judge, 0\u2013100)": 5.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0234687904495419,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.1108254555379358,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.010934560981277,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.1065029924238254,
+      "Coherence score (judge, 0\u2013100)": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.1689834996446473,
+      "Coherence score (judge, 0\u2013100)": 99.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.949188635865082,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8881472896070292,
+      "Coherence score (judge, 0\u2013100)": 96.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9631694318143269,
+      "Coherence score (judge, 0\u2013100)": 45.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.08603699655433,
+      "Coherence score (judge, 0\u2013100)": 29.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9793378368318242,
+      "Coherence score (judge, 0\u2013100)": 40.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.030049237205933,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8733018804533681,
+      "Coherence score (judge, 0\u2013100)": 94.4,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0768819937175533,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9252280166346099,
+      "Coherence score (judge, 0\u2013100)": 74.4,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8948099705373662,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.1234029995182861,
+      "Coherence score (judge, 0\u2013100)": 87.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.021900359181002,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9947296403977252,
+      "Coherence score (judge, 0\u2013100)": 35.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.1356000801844848,
+      "Coherence score (judge, 0\u2013100)": 5.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8592442282607409,
+      "Coherence score (judge, 0\u2013100)": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0666925131159035,
+      "Coherence score (judge, 0\u2013100)": 27.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9415139785199649,
+      "Coherence score (judge, 0\u2013100)": 19.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8896393149949275,
+      "Coherence score (judge, 0\u2013100)": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0594315409888748,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9533594632933983,
+      "Coherence score (judge, 0\u2013100)": 23.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9421645830479382,
+      "Coherence score (judge, 0\u2013100)": 85.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.1508504401779238,
+      "Coherence score (judge, 0\u2013100)": 65.2,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8977614358310253,
+      "Coherence score (judge, 0\u2013100)": 7.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0041390436648299,
+      "Coherence score (judge, 0\u2013100)": 19.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8381644882282587,
+      "Coherence score (judge, 0\u2013100)": 6.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.885545150986565,
+      "Coherence score (judge, 0\u2013100)": 37.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.130362369435411,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.09834416640591,
+      "Coherence score (judge, 0\u2013100)": 56.4,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0193240666183567,
+      "Coherence score (judge, 0\u2013100)": 62.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9056341546370625,
+      "Coherence score (judge, 0\u2013100)": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0196341780912441,
+      "Coherence score (judge, 0\u2013100)": 13.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8341298188786282,
+      "Coherence score (judge, 0\u2013100)": 85.4,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.072417834518893,
+      "Coherence score (judge, 0\u2013100)": 19.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0736952313916677,
+      "Coherence score (judge, 0\u2013100)": 25.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0496553080125606,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0378551526535684,
+      "Coherence score (judge, 0\u2013100)": 70.4,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8550635870923428,
+      "Coherence score (judge, 0\u2013100)": 34.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9137780294773317,
+      "Coherence score (judge, 0\u2013100)": 19.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0252885363532969,
+      "Coherence score (judge, 0\u2013100)": 3.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9640235004498252,
+      "Coherence score (judge, 0\u2013100)": 25.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.1672878977176913,
+      "Coherence score (judge, 0\u2013100)": 5.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.1440734215075616,
+      "Coherence score (judge, 0\u2013100)": 98.2,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8816826868576626,
+      "Coherence score (judge, 0\u2013100)": 25.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0305866015008405,
+      "Coherence score (judge, 0\u2013100)": 45.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0667131360751752,
+      "Coherence score (judge, 0\u2013100)": 1.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8764247608623013,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9362825200143983,
+      "Coherence score (judge, 0\u2013100)": 91.2,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0734120679546681,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.1363767517637644,
+      "Coherence score (judge, 0\u2013100)": 13.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.946192501070086,
+      "Coherence score (judge, 0\u2013100)": 73.6,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9112408619750354,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.109409280928273,
+      "Coherence score (judge, 0\u2013100)": 78.2,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0288941112767307,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.992040063379962,
+      "Coherence score (judge, 0\u2013100)": 23.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9170910072854834,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8547038385404291,
+      "Coherence score (judge, 0\u2013100)": 5.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8360830831049716,
+      "Coherence score (judge, 0\u2013100)": 45.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0271898613917922,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8949774929764254,
+      "Coherence score (judge, 0\u2013100)": 83.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.161681212665119,
+      "Coherence score (judge, 0\u2013100)": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.86654225765129,
+      "Coherence score (judge, 0\u2013100)": 17.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9837101880312169,
+      "Coherence score (judge, 0\u2013100)": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9641843310041264,
+      "Coherence score (judge, 0\u2013100)": 5.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9089859015970805,
+      "Coherence score (judge, 0\u2013100)": 43.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.084576946501338,
+      "Coherence score (judge, 0\u2013100)": 75.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0488596191073056,
+      "Coherence score (judge, 0\u2013100)": 22.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0767576129176357,
+      "Coherence score (judge, 0\u2013100)": 19.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8581549158048082,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9499327613367777,
+      "Coherence score (judge, 0\u2013100)": 97.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.006743245273639,
+      "Coherence score (judge, 0\u2013100)": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.975085188868282,
+      "Coherence score (judge, 0\u2013100)": 63.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8438099710367334,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8959693346662697,
+      "Coherence score (judge, 0\u2013100)": 4.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.151308380423573,
+      "Coherence score (judge, 0\u2013100)": 9.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8852737064161282,
+      "Coherence score (judge, 0\u2013100)": 18.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.1196977930373435,
+      "Coherence score (judge, 0\u2013100)": 43.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.1095266340819097,
+      "Coherence score (judge, 0\u2013100)": 74.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9630398774065567,
+      "Coherence score (judge, 0\u2013100)": 5.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9887063967470495,
+      "Coherence score (judge, 0\u2013100)": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.1101606146009726,
+      "Coherence score (judge, 0\u2013100)": 85.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0614333506938722,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.114560870385884,
+      "Coherence score (judge, 0\u2013100)": 13.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.087582839182922,
+      "Coherence score (judge, 0\u2013100)": 25.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0650323030098057,
+      "Coherence score (judge, 0\u2013100)": 0.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.1404111960423386,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.1097544252521603,
+      "Coherence score (judge, 0\u2013100)": 5.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8908813137782177,
+      "Coherence score (judge, 0\u2013100)": 5.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.0843962535276233,
+      "Coherence score (judge, 0\u2013100)": 91.4,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.8594716498589445,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9747911216999674,
+      "Coherence score (judge, 0\u2013100)": 1.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.9648956416321646,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.8987371519516647,
+      "Coherence score (judge, 0\u2013100)": 98.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.1488877369362362,
+      "Coherence score (judge, 0\u2013100)": 45.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.8622240706427968,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.8316658010961158,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9397930732457527,
+      "Coherence score (judge, 0\u2013100)": 28.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.1668532042020154,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9199963436520695,
+      "Coherence score (judge, 0\u2013100)": 91.2,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.1124360502760284,
+      "Coherence score (judge, 0\u2013100)": 75.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.8888586365869582,
+      "Coherence score (judge, 0\u2013100)": 82.6,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0293686406314486,
+      "Coherence score (judge, 0\u2013100)": 86.4,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.155859173960993,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.073614499752374,
+      "Coherence score (judge, 0\u2013100)": 45.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.1633727115606853,
+      "Coherence score (judge, 0\u2013100)": 96.8,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0253492606902737,
+      "Coherence score (judge, 0\u2013100)": 59.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.1643338002281634,
+      "Coherence score (judge, 0\u2013100)": 61.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.1145959907848013,
+      "Coherence score (judge, 0\u2013100)": 44.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0946043968746557,
+      "Coherence score (judge, 0\u2013100)": 89.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.1320865615499103,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.04470711586895,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9511639457680343,
+      "Coherence score (judge, 0\u2013100)": 27.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0096160296193775,
+      "Coherence score (judge, 0\u2013100)": 88.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9070101345320036,
+      "Coherence score (judge, 0\u2013100)": 29.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0943650021197797,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.8878266905490546,
+      "Coherence score (judge, 0\u2013100)": 85.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.026247302655441,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.012205636056899,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0584469531824148,
+      "Coherence score (judge, 0\u2013100)": 25.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.088565443546185,
+      "Coherence score (judge, 0\u2013100)": 85.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.867341481261729,
+      "Coherence score (judge, 0\u2013100)": 0.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0424799269671143,
+      "Coherence score (judge, 0\u2013100)": 87.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9707450000381654,
+      "Coherence score (judge, 0\u2013100)": 85.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.038828488127104,
+      "Coherence score (judge, 0\u2013100)": 89.8,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0659547446698086,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0290630591586116,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0791812661319633,
+      "Coherence score (judge, 0\u2013100)": 99.2,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0068085874495805,
+      "Coherence score (judge, 0\u2013100)": 43.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9873750551039524,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.927501414252502,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9079115677988803,
+      "Coherence score (judge, 0\u2013100)": 85.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0664027160712184,
+      "Coherence score (judge, 0\u2013100)": 87.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0665418599562355,
+      "Coherence score (judge, 0\u2013100)": 93.2,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.8964640544120428,
+      "Coherence score (judge, 0\u2013100)": 55.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.1604247216477783,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0581912652983947,
+      "Coherence score (judge, 0\u2013100)": 75.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.010613481891341,
+      "Coherence score (judge, 0\u2013100)": 41.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.115999619525289,
+      "Coherence score (judge, 0\u2013100)": 91.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9954169473230727,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.991821255834111,
+      "Coherence score (judge, 0\u2013100)": 99.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9178132960263625,
+      "Coherence score (judge, 0\u2013100)": 22.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.8830860636728355,
+      "Coherence score (judge, 0\u2013100)": 45.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.071950996819512,
+      "Coherence score (judge, 0\u2013100)": 36.4,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.1169977292012745,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.060451584552626,
+      "Coherence score (judge, 0\u2013100)": 99.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.955399315676623,
+      "Coherence score (judge, 0\u2013100)": 88.4,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0257455110144775,
+      "Coherence score (judge, 0\u2013100)": 85.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0215602410491567,
+      "Coherence score (judge, 0\u2013100)": 33.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.14843246838126,
+      "Coherence score (judge, 0\u2013100)": 53.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9618092320649343,
+      "Coherence score (judge, 0\u2013100)": 79.2,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.8860261017024411,
+      "Coherence score (judge, 0\u2013100)": 23.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.128157183731864,
+      "Coherence score (judge, 0\u2013100)": 83.6,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.1342076889415353,
+      "Coherence score (judge, 0\u2013100)": 71.2,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.8464103023006444,
+      "Coherence score (judge, 0\u2013100)": 35.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.897396170485424,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0463364422238164,
+      "Coherence score (judge, 0\u2013100)": 89.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.098207352915845,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.036275452291787,
+      "Coherence score (judge, 0\u2013100)": 85.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.8951403266830298,
+      "Coherence score (judge, 0\u2013100)": 48.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.8699981355891477,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0020306955821625,
+      "Coherence score (judge, 0\u2013100)": 49.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.1072735382640637,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.903802841564523,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.8555451162567465,
+      "Coherence score (judge, 0\u2013100)": 71.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0173552985697234,
+      "Coherence score (judge, 0\u2013100)": 26.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.8952178303659866,
+      "Coherence score (judge, 0\u2013100)": 96.2,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.8529240649646517,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0929099633340313,
+      "Coherence score (judge, 0\u2013100)": 87.8,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.109217046066494,
+      "Coherence score (judge, 0\u2013100)": 49.8,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9654340873734,
+      "Coherence score (judge, 0\u2013100)": 35.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9299859624572167,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9242211024085656,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9527302847816392,
+      "Coherence score (judge, 0\u2013100)": 62.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.026148598659529,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0094588265582423,
+      "Coherence score (judge, 0\u2013100)": 95.6,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9508187215987167,
+      "Coherence score (judge, 0\u2013100)": 83.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.046723132940982,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0597609302621365,
+      "Coherence score (judge, 0\u2013100)": 93.8,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.019814842311512,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.961680271117637,
+      "Coherence score (judge, 0\u2013100)": 90.4,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0421269458593057,
+      "Coherence score (judge, 0\u2013100)": 30.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0312469462927973,
+      "Coherence score (judge, 0\u2013100)": 63.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9457101115094266,
+      "Coherence score (judge, 0\u2013100)": 62.4,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9330883443058433,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0155546188665574,
+      "Coherence score (judge, 0\u2013100)": 72.6,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0381961912606292,
+      "Coherence score (judge, 0\u2013100)": 9.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.037671469233415,
+      "Coherence score (judge, 0\u2013100)": 93.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9601649230252707,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.022363128453527,
+      "Coherence score (judge, 0\u2013100)": 7.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.1651616759667824,
+      "Coherence score (judge, 0\u2013100)": 63.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9755283364749436,
+      "Coherence score (judge, 0\u2013100)": 94.4,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.1166250029605966,
+      "Coherence score (judge, 0\u2013100)": 87.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.8576500550443653,
+      "Coherence score (judge, 0\u2013100)": 89.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.1275776062586704,
+      "Coherence score (judge, 0\u2013100)": 13.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.1501800928801615,
+      "Coherence score (judge, 0\u2013100)": 33.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9190337653903387,
+      "Coherence score (judge, 0\u2013100)": 72.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.8341144813285455,
+      "Coherence score (judge, 0\u2013100)": 7.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9942228605674917,
+      "Coherence score (judge, 0\u2013100)": 91.8,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.8921221676051745,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.160354626456991,
+      "Coherence score (judge, 0\u2013100)": 88.4,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.1352174679399663,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.156626061216292,
+      "Coherence score (judge, 0\u2013100)": 47.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0353156836318558,
+      "Coherence score (judge, 0\u2013100)": 35.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0051545247468985,
+      "Coherence score (judge, 0\u2013100)": 81.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.1131240687892787,
+      "Coherence score (judge, 0\u2013100)": 81.2,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.051798648334267,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9145096099648633,
+      "Coherence score (judge, 0\u2013100)": 98.4,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.147657253007673,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9794978129882805,
+      "Coherence score (judge, 0\u2013100)": 51.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0930091176251615,
+      "Coherence score (judge, 0\u2013100)": 78.8,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0003189053760857,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.8923411226557434,
+      "Coherence score (judge, 0\u2013100)": 75.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9306151279832005,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0252996613929577,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.8786207086498554,
+      "Coherence score (judge, 0\u2013100)": 5.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.8346708719296028,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9775230162789768,
+      "Coherence score (judge, 0\u2013100)": 92.4,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.089147038432135,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0388134730725818,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9402097677745078,
+      "Coherence score (judge, 0\u2013100)": 71.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0738619193604677,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9947349752573569,
+      "Coherence score (judge, 0\u2013100)": 41.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.169830459767389,
+      "Coherence score (judge, 0\u2013100)": 1.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0938507618312254,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.112414690032398,
+      "Coherence score (judge, 0\u2013100)": 83.8,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9182466280871846,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.8817802873685967,
+      "Coherence score (judge, 0\u2013100)": 18.4,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.89776332909638,
+      "Coherence score (judge, 0\u2013100)": 0.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9769700878777305,
+      "Coherence score (judge, 0\u2013100)": 95.6,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.004130700671106,
+      "Coherence score (judge, 0\u2013100)": 45.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.8961671782289597,
+      "Coherence score (judge, 0\u2013100)": 69.2,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0951812221361177,
+      "Coherence score (judge, 0\u2013100)": 85.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.125266592501858,
+      "Coherence score (judge, 0\u2013100)": 92.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9374416951584819,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0027418268971386,
+      "Coherence score (judge, 0\u2013100)": 80.4,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.032087364854338,
+      "Coherence score (judge, 0\u2013100)": 96.8,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.075608579136582,
+      "Coherence score (judge, 0\u2013100)": 39.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.8801406345182212,
+      "Coherence score (judge, 0\u2013100)": 66.4,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.925496160877073,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.078440038591857,
+      "Coherence score (judge, 0\u2013100)": 43.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.023185386859493,
+      "Coherence score (judge, 0\u2013100)": 74.4,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.1359815697692426,
+      "Coherence score (judge, 0\u2013100)": 41.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9822718430761728,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9682483673115083,
+      "Coherence score (judge, 0\u2013100)": 73.8,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9342124539604388,
+      "Coherence score (judge, 0\u2013100)": 94.4,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9086666747026135,
+      "Coherence score (judge, 0\u2013100)": 73.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0512605538195556,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9199932406197164,
+      "Coherence score (judge, 0\u2013100)": 93.2,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.1231736770186362,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9220204545217168,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0589422746165504,
+      "Coherence score (judge, 0\u2013100)": 91.8,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.023182608246589,
+      "Coherence score (judge, 0\u2013100)": 83.8,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0436759912788287,
+      "Coherence score (judge, 0\u2013100)": 75.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.134441703714825,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.8877960734996004,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.8809372855976572,
+      "Coherence score (judge, 0\u2013100)": 85.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.8714467552540042,
+      "Coherence score (judge, 0\u2013100)": 17.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.8559892671121938,
+      "Coherence score (judge, 0\u2013100)": 38.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.011638548025272,
+      "Coherence score (judge, 0\u2013100)": 87.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.8863485916637726,
+      "Coherence score (judge, 0\u2013100)": 65.2,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.1044370962317864,
+      "Coherence score (judge, 0\u2013100)": 0.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.8376875803859392,
+      "Coherence score (judge, 0\u2013100)": 19.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9573663703898516,
+      "Coherence score (judge, 0\u2013100)": 91.8,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9908893502721134,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9036196222301203,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9510081146358789,
+      "Coherence score (judge, 0\u2013100)": 25.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9057490880796737,
+      "Coherence score (judge, 0\u2013100)": 91.8,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9258215561538068,
+      "Coherence score (judge, 0\u2013100)": 73.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.1451361606477213,
+      "Coherence score (judge, 0\u2013100)": 41.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.971839624545341,
+      "Coherence score (judge, 0\u2013100)": 98.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.961194080028645,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.037799313827619,
+      "Coherence score (judge, 0\u2013100)": 83.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.055808231294492,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.054494025275413,
+      "Coherence score (judge, 0\u2013100)": 89.2,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.8588180488561648,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0278468768717945,
+      "Coherence score (judge, 0\u2013100)": 0.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0802140239653117,
+      "Coherence score (judge, 0\u2013100)": 47.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.100493244488773,
+      "Coherence score (judge, 0\u2013100)": 76.4,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.03010164565938,
+      "Coherence score (judge, 0\u2013100)": 77.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.8743948397997496,
+      "Coherence score (judge, 0\u2013100)": 88.4,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.8584717101249049,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9398382556559781,
+      "Coherence score (judge, 0\u2013100)": 16.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.1453699952184273,
+      "Coherence score (judge, 0\u2013100)": 49.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.990689959803384,
+      "Coherence score (judge, 0\u2013100)": 48.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.1344611284302,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9862894841141885,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.086740156230443,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9949432397344777,
+      "Coherence score (judge, 0\u2013100)": 81.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.0709587688870106,
+      "Coherence score (judge, 0\u2013100)": 89.8,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.937840954066841,
+      "Coherence score (judge, 0\u2013100)": 92.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.1325541896364792,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.9203407433704383,
+      "Coherence score (judge, 0\u2013100)": 39.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.8321001217866546,
+      "Coherence score (judge, 0\u2013100)": 94.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.0751963672797262,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.060045517503157,
+      "Coherence score (judge, 0\u2013100)": 29.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.0533464929747303,
+      "Coherence score (judge, 0\u2013100)": 42.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.0637211007865313,
+      "Coherence score (judge, 0\u2013100)": 27.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.0293298317462845,
+      "Coherence score (judge, 0\u2013100)": 75.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.869194844046695,
+      "Coherence score (judge, 0\u2013100)": 3.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.0575292656092175,
+      "Coherence score (judge, 0\u2013100)": 89.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.8322434980854396,
+      "Coherence score (judge, 0\u2013100)": 97.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.892166578844598,
+      "Coherence score (judge, 0\u2013100)": 89.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.9730986577664185,
+      "Coherence score (judge, 0\u2013100)": 0.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.9586455893389427,
+      "Coherence score (judge, 0\u2013100)": 19.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.8704481552209358,
+      "Coherence score (judge, 0\u2013100)": 43.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.9751655853735617,
+      "Coherence score (judge, 0\u2013100)": 19.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.0420298628319364,
+      "Coherence score (judge, 0\u2013100)": 16.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.9583375667210277,
+      "Coherence score (judge, 0\u2013100)": 81.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.070889824317481,
+      "Coherence score (judge, 0\u2013100)": 17.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.9085135124286143,
+      "Coherence score (judge, 0\u2013100)": 85.6,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.878900592572114,
+      "Coherence score (judge, 0\u2013100)": 2.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.0846259471260855,
+      "Coherence score (judge, 0\u2013100)": 69.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.0573675641190987,
+      "Coherence score (judge, 0\u2013100)": 72.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.9759860357202195,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.8765008768380222,
+      "Coherence score (judge, 0\u2013100)": 67.4,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.055652471371852,
+      "Coherence score (judge, 0\u2013100)": 86.4,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.084984954974913,
+      "Coherence score (judge, 0\u2013100)": 76.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.885740502090661,
+      "Coherence score (judge, 0\u2013100)": 39.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.0643625905562626,
+      "Coherence score (judge, 0\u2013100)": 72.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.9509166093698074,
+      "Coherence score (judge, 0\u2013100)": 81.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.1411403290624924,
+      "Coherence score (judge, 0\u2013100)": 0.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.085523493786853,
+      "Coherence score (judge, 0\u2013100)": 63.6,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.9230685978793547,
+      "Coherence score (judge, 0\u2013100)": 4.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.1489289486768532,
+      "Coherence score (judge, 0\u2013100)": 92.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.8385791370755755,
+      "Coherence score (judge, 0\u2013100)": 96.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.8928401649226556,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.912247010190026,
+      "Coherence score (judge, 0\u2013100)": 0.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.0789072283457606,
+      "Coherence score (judge, 0\u2013100)": 85.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.0088971303705514,
+      "Coherence score (judge, 0\u2013100)": 45.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.9878876386839823,
+      "Coherence score (judge, 0\u2013100)": 19.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.9056613351825424,
+      "Coherence score (judge, 0\u2013100)": 85.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.087198817522268,
+      "Coherence score (judge, 0\u2013100)": 87.6,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.8698161787375414,
+      "Coherence score (judge, 0\u2013100)": 13.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.914096014937651,
+      "Coherence score (judge, 0\u2013100)": 65.4,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.104162508655492,
+      "Coherence score (judge, 0\u2013100)": 75.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.9833561379184714,
+      "Coherence score (judge, 0\u2013100)": 31.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.128118030443867,
+      "Coherence score (judge, 0\u2013100)": 83.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.034565795438967,
+      "Coherence score (judge, 0\u2013100)": 63.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.0984451799658497,
+      "Coherence score (judge, 0\u2013100)": 82.4,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.893717112795901,
+      "Coherence score (judge, 0\u2013100)": 83.2,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.9375154350099986,
+      "Coherence score (judge, 0\u2013100)": 0.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.958080057612232,
+      "Coherence score (judge, 0\u2013100)": 2.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.9980277299998916,
+      "Coherence score (judge, 0\u2013100)": 80.4,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.9906387883223604,
+      "Coherence score (judge, 0\u2013100)": 72.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.1096384935780406,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.8888847808500944,
+      "Coherence score (judge, 0\u2013100)": 47.6,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.1195052109740815,
+      "Coherence score (judge, 0\u2013100)": 92.6,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.132275740008759,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.855676472090773,
+      "Coherence score (judge, 0\u2013100)": 90.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.833192725671202,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.929536010758642,
+      "Coherence score (judge, 0\u2013100)": 85.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.966253221038932,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.1599527982944924,
+      "Coherence score (judge, 0\u2013100)": 75.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.854278922998184,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.0956437901776224,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.9916444842198278,
+      "Coherence score (judge, 0\u2013100)": 45.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.874156998422866,
+      "Coherence score (judge, 0\u2013100)": 48.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.954467304948024,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.95950647840751,
+      "Coherence score (judge, 0\u2013100)": 94.4,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.9128146501027294,
+      "Coherence score (judge, 0\u2013100)": 0.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.930083677558119,
+      "Coherence score (judge, 0\u2013100)": 93.8,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.9727724026088755,
+      "Coherence score (judge, 0\u2013100)": 85.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.1571688742710164,
+      "Coherence score (judge, 0\u2013100)": 14.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.9860125934537383,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.153045904118188,
+      "Coherence score (judge, 0\u2013100)": 85.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.8403809043384087,
+      "Coherence score (judge, 0\u2013100)": 5.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.8524774879148946,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.8394574081070716,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.0564211770092005,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.9048791149786903,
+      "Coherence score (judge, 0\u2013100)": 11.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.0259828616396365,
+      "Coherence score (judge, 0\u2013100)": 39.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.1004244861058443,
+      "Coherence score (judge, 0\u2013100)": 61.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.9428167323438914,
+      "Coherence score (judge, 0\u2013100)": 92.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.9135303475210894,
+      "Coherence score (judge, 0\u2013100)": 83.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.0766389196277952,
+      "Coherence score (judge, 0\u2013100)": 11.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.991805249721854,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.8807314496567624,
+      "Coherence score (judge, 0\u2013100)": 46.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.859731339939694,
+      "Coherence score (judge, 0\u2013100)": 17.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.080636950387403,
+      "Coherence score (judge, 0\u2013100)": 100.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.1225401938588346,
+      "Coherence score (judge, 0\u2013100)": 47.6,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.1327231066163943,
+      "Coherence score (judge, 0\u2013100)": 4.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.003430262544799,
+      "Coherence score (judge, 0\u2013100)": 16.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.88217455256398,
+      "Coherence score (judge, 0\u2013100)": 87.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.9067235201746824,
+      "Coherence score (judge, 0\u2013100)": 11.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.984198122267118,
+      "Coherence score (judge, 0\u2013100)": 2.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.119631507025909,
+      "Coherence score (judge, 0\u2013100)": 16.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.0510671224039916,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.9232303653641303,
+      "Coherence score (judge, 0\u2013100)": 11.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.087019138129441,
+      "Coherence score (judge, 0\u2013100)": 43.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.9780496596090074,
+      "Coherence score (judge, 0\u2013100)": 93.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.164139741366016,
+      "Coherence score (judge, 0\u2013100)": 16.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.975767226744834,
+      "Coherence score (judge, 0\u2013100)": 17.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.1146467586272055,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.8349441546627467,
+      "Coherence score (judge, 0\u2013100)": 55.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.0741952301316773,
+      "Coherence score (judge, 0\u2013100)": 94.4,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.96548267054687,
+      "Coherence score (judge, 0\u2013100)": 3.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.999663164716544,
+      "Coherence score (judge, 0\u2013100)": 92.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.8976007721242967,
+      "Coherence score (judge, 0\u2013100)": 29.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.1460339146671763,
+      "Coherence score (judge, 0\u2013100)": 85.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.897879304549604,
+      "Coherence score (judge, 0\u2013100)": 63.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.020939479385549,
+      "Coherence score (judge, 0\u2013100)": 75.8,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.033097512016113,
+      "Coherence score (judge, 0\u2013100)": 75.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.121870765281834,
+      "Coherence score (judge, 0\u2013100)": 94.4,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.988666623493107,
+      "Coherence score (judge, 0\u2013100)": 14.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.1121630355947225,
+      "Coherence score (judge, 0\u2013100)": 0.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.0081248318371476,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.1551537842036903,
+      "Coherence score (judge, 0\u2013100)": 39.8,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.0736466634689714,
+      "Coherence score (judge, 0\u2013100)": 92.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.140115788734565,
+      "Coherence score (judge, 0\u2013100)": 63.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.1504025809849425,
+      "Coherence score (judge, 0\u2013100)": 82.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.10276369314814,
+      "Coherence score (judge, 0\u2013100)": 93.8,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.8716049658424723,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.8723057233996787,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.0395221951009974,
+      "Coherence score (judge, 0\u2013100)": 4.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.9222102721390684,
+      "Coherence score (judge, 0\u2013100)": 7.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.9609517902369324,
+      "Coherence score (judge, 0\u2013100)": 35.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.889101580052033,
+      "Coherence score (judge, 0\u2013100)": 76.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.089138365440532,
+      "Coherence score (judge, 0\u2013100)": 73.2,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.1205292192394865,
+      "Coherence score (judge, 0\u2013100)": 63.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.875153573201858,
+      "Coherence score (judge, 0\u2013100)": 92.6,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.005723878499772,
+      "Coherence score (judge, 0\u2013100)": 92.6,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.9643043961991795,
+      "Coherence score (judge, 0\u2013100)": 92.6,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.098605208113472,
+      "Coherence score (judge, 0\u2013100)": 80.4,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.9880973820596624,
+      "Coherence score (judge, 0\u2013100)": 49.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.078475076710379,
+      "Coherence score (judge, 0\u2013100)": 72.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.0224753180369985,
+      "Coherence score (judge, 0\u2013100)": 94.4,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.162604358766647,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.972675245822302,
+      "Coherence score (judge, 0\u2013100)": 50.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.165808095684425,
+      "Coherence score (judge, 0\u2013100)": 73.8,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.971249118319666,
+      "Coherence score (judge, 0\u2013100)": 62.6,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.892107341472875,
+      "Coherence score (judge, 0\u2013100)": 77.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.095907560548719,
+      "Coherence score (judge, 0\u2013100)": 89.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.922384460800074,
+      "Coherence score (judge, 0\u2013100)": 94.4,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.022356608483919,
+      "Coherence score (judge, 0\u2013100)": 96.8,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.049645127163051,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.8978902677720235,
+      "Coherence score (judge, 0\u2013100)": 82.6,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.8416983581305284,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.165591336810386,
+      "Coherence score (judge, 0\u2013100)": 96.2,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.107912648646488,
+      "Coherence score (judge, 0\u2013100)": 92.6,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.872059786686222,
+      "Coherence score (judge, 0\u2013100)": 72.4,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.118309606241874,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.917764268595547,
+      "Coherence score (judge, 0\u2013100)": 93.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.914076811732031,
+      "Coherence score (judge, 0\u2013100)": 61.6,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.092689559130275,
+      "Coherence score (judge, 0\u2013100)": 83.2,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.087503084201422,
+      "Coherence score (judge, 0\u2013100)": 72.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.117625496936894,
+      "Coherence score (judge, 0\u2013100)": 92.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.876461682681464,
+      "Coherence score (judge, 0\u2013100)": 47.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.084179299576529,
+      "Coherence score (judge, 0\u2013100)": 61.8,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.98974011725289,
+      "Coherence score (judge, 0\u2013100)": 84.4,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.940800358763311,
+      "Coherence score (judge, 0\u2013100)": 95.6,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.0796629783666285,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.117348647525788,
+      "Coherence score (judge, 0\u2013100)": 15.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.9396366575714787,
+      "Coherence score (judge, 0\u2013100)": 72.8,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.882635929264557,
+      "Coherence score (judge, 0\u2013100)": 73.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.167172804233522,
+      "Coherence score (judge, 0\u2013100)": 79.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.142524596340885,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.9285459909374527,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.106900864719886,
+      "Coherence score (judge, 0\u2013100)": 69.2,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.8604956955535714,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.140265608534243,
+      "Coherence score (judge, 0\u2013100)": 84.4,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.093381759990101,
+      "Coherence score (judge, 0\u2013100)": 64.6,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.896933459018579,
+      "Coherence score (judge, 0\u2013100)": 92.4,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.930533663979218,
+      "Coherence score (judge, 0\u2013100)": 77.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.03248865064594,
+      "Coherence score (judge, 0\u2013100)": 36.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.9509576058386737,
+      "Coherence score (judge, 0\u2013100)": 63.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.080319497422135,
+      "Coherence score (judge, 0\u2013100)": 62.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.031403375576958,
+      "Coherence score (judge, 0\u2013100)": 74.4,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.9003897418731164,
+      "Coherence score (judge, 0\u2013100)": 93.2,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.037437233360552,
+      "Coherence score (judge, 0\u2013100)": 64.4,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.83478008895063,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.8679942572030352,
+      "Coherence score (judge, 0\u2013100)": 81.6,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.884810657816262,
+      "Coherence score (judge, 0\u2013100)": 69.2,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.950250422086601,
+      "Coherence score (judge, 0\u2013100)": 73.8,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.834049311035946,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.146168558045651,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.9114330448605688,
+      "Coherence score (judge, 0\u2013100)": 69.2,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.9220171071513192,
+      "Coherence score (judge, 0\u2013100)": 93.8,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.9577183907397866,
+      "Coherence score (judge, 0\u2013100)": 44.4,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.1498511633476705,
+      "Coherence score (judge, 0\u2013100)": 98.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.949618571910333,
+      "Coherence score (judge, 0\u2013100)": 47.6,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.976585171109563,
+      "Coherence score (judge, 0\u2013100)": 82.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.9314924726508322,
+      "Coherence score (judge, 0\u2013100)": 87.8,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.16192331191761,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.954051456454865,
+      "Coherence score (judge, 0\u2013100)": 71.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.858402723136475,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.053714014041286,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.073645673043262,
+      "Coherence score (judge, 0\u2013100)": 93.8,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.9565619482263066,
+      "Coherence score (judge, 0\u2013100)": 49.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.9018709528529616,
+      "Coherence score (judge, 0\u2013100)": 45.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.9691454934024164,
+      "Coherence score (judge, 0\u2013100)": 95.6,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.9792831915742037,
+      "Coherence score (judge, 0\u2013100)": 89.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.1684019331518725,
+      "Coherence score (judge, 0\u2013100)": 71.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.121868010688424,
+      "Coherence score (judge, 0\u2013100)": 69.4,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.0411090254627835,
+      "Coherence score (judge, 0\u2013100)": 65.8,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.8959321022752067,
+      "Coherence score (judge, 0\u2013100)": 82.4,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.063890937272271,
+      "Coherence score (judge, 0\u2013100)": 79.8,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.088059660775902,
+      "Coherence score (judge, 0\u2013100)": 54.4,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.855632171156078,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.9590254156787332,
+      "Coherence score (judge, 0\u2013100)": 85.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.941128251165575,
+      "Coherence score (judge, 0\u2013100)": 75.6,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.023946649687899,
+      "Coherence score (judge, 0\u2013100)": 72.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.052038094245218,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.891671848052043,
+      "Coherence score (judge, 0\u2013100)": 66.4,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.9896842082786628,
+      "Coherence score (judge, 0\u2013100)": 78.6,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.167337081422204,
+      "Coherence score (judge, 0\u2013100)": 93.2,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.8353898973373073,
+      "Coherence score (judge, 0\u2013100)": 89.2,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.9561378280218724,
+      "Coherence score (judge, 0\u2013100)": 93.8,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.9436662377111436,
+      "Coherence score (judge, 0\u2013100)": 92.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.967898226807667,
+      "Coherence score (judge, 0\u2013100)": 97.8,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.1255258632783915,
+      "Coherence score (judge, 0\u2013100)": 71.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.979023713021821,
+      "Coherence score (judge, 0\u2013100)": 71.8,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.130246520508639,
+      "Coherence score (judge, 0\u2013100)": 89.8,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.025683546630281,
+      "Coherence score (judge, 0\u2013100)": 94.4,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.9743700162777755,
+      "Coherence score (judge, 0\u2013100)": 75.8,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.9157830498036335,
+      "Coherence score (judge, 0\u2013100)": 89.8,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.110028710809354,
+      "Coherence score (judge, 0\u2013100)": 92.4,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.049028176121113,
+      "Coherence score (judge, 0\u2013100)": 97.4,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.902156863759934,
+      "Coherence score (judge, 0\u2013100)": 94.4,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.8742239677747285,
+      "Coherence score (judge, 0\u2013100)": 95.6,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.872646651742072,
+      "Coherence score (judge, 0\u2013100)": 95.6,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.139084467368764,
+      "Coherence score (judge, 0\u2013100)": 82.6,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.9671531227826597,
+      "Coherence score (judge, 0\u2013100)": 51.6,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.108904650082725,
+      "Coherence score (judge, 0\u2013100)": 97.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.134423111538324,
+      "Coherence score (judge, 0\u2013100)": 94.4,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.9069532362500565,
+      "Coherence score (judge, 0\u2013100)": 36.4,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.841074598936968,
+      "Coherence score (judge, 0\u2013100)": 92.4,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.891314269425532,
+      "Coherence score (judge, 0\u2013100)": 88.4,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.092812759924776,
+      "Coherence score (judge, 0\u2013100)": 72.4,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.835240479881195,
+      "Coherence score (judge, 0\u2013100)": 93.2,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.021804900406073,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.895030700299936,
+      "Coherence score (judge, 0\u2013100)": 93.8,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.09066463200928,
+      "Coherence score (judge, 0\u2013100)": 69.2,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.9929877367860147,
+      "Coherence score (judge, 0\u2013100)": 80.2,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.016687179286101,
+      "Coherence score (judge, 0\u2013100)": 88.4,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.9297588073460963,
+      "Coherence score (judge, 0\u2013100)": 67.8,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.9852366912573665,
+      "Coherence score (judge, 0\u2013100)": 83.8,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.8455422850015712,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.105236680003773,
+      "Coherence score (judge, 0\u2013100)": 71.2,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.1385496339478856,
+      "Coherence score (judge, 0\u2013100)": 80.4,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.085900156704245,
+      "Coherence score (judge, 0\u2013100)": 93.8,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 3.9985115726322693,
+      "Coherence score (judge, 0\u2013100)": 95.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 4.116886678810969,
+      "Coherence score (judge, 0\u2013100)": 87.8,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.0,
+      "Coherence score (judge, 0\u2013100)": 50.0,
+      "series": "coherent threshold (50)",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.0,
+      "Coherence score (judge, 0\u2013100)": 50.0,
+      "series": "coherent threshold (50)",
+      "_kind": "line",
+      "_group": 10
+    }
+  ],
+  "n_series": 11,
+  "total_points": 857,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Coherence by arm: mean, bootstrap 95% CI, per-item scores",
+        "ylabel": "Coherence score (judge, 0\u2013100)",
+        "legend_labels": [
+          "coherent threshold (50)"
+        ],
+        "xticklabels": [
+          "Instruct, chat template (banked)",
+          "Base, chat template (fresh)",
+          "Base, bare text (fresh)",
+          "Base, raw multi-turn (banked)",
+          "Instruct, raw multi-turn (banked)"
+        ],
+        "yticklabels": [
+          "\u221220",
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100",
+          "120"
+        ]
+      }
+    ],
+    "series": [
+      "coherent threshold (50)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

@@ -1,0 +1,91 @@
+{
+  "commit": "bfca77a3+dirty",
+  "render_id": "9370281c62ca4e4d",
+  "git_commit": "bfca77a322a6fdc8c5cad2093b77b24a79d27ad5",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/paper/c3_qualitative_discrimination.meta.json",
+    "figures/paper/c3_qualitative_discrimination.pdf",
+    "figures/paper/c3_qualitative_discrimination.png",
+    "scripts/issue2478_qualitative_panels.py"
+  ],
+  "git_argv0_state": "modified",
+  "git_argv0_path": "scripts/issue2478_qualitative_panels.py",
+  "created": "2026-08-22T22:15:49Z",
+  "figsize": [
+    13.0,
+    12.85
+  ],
+  "text": {
+    "suptitle": "Context-vector patching \u2014 before/after generations",
+    "fig_texts": [],
+    "axes": [
+      {
+        "annotations": [
+          "\u2713",
+          "Pirate persona transfers through one patched position (all 28 layers)",
+          "F = 0.69",
+          "Unpatched \u2014 bare (no prefix), query: explain hash tables",
+          "A hash table is a data structure that implements an associative\narray abstract data type, a structure that can map keys to values.\nIt uses a hash function to compute an index into an array of buckets\nor slots, from which the desired value can be found.\n\n### [\u2026]",
+          "Patched \u2014 context-end state \u2190 [pirate persona ('Captain\nMarrow'), query: explain hash tables]",
+          "Arrr, ye be askin' 'bout hash tables! Aye, well, let me tell ye\n'bout them. A hash table is a data structure that maps keys to\nvalues using a hash function. It's like havin' a treasure map where\neach spot on the map (the key) leads ye straight [\u2026]",
+          "\u2713",
+          "Persona strips at a single layer (L16, \u03b1=1)",
+          "F = 0.94",
+          "Unpatched \u2014 pirate persona ('Captain Marrow'), query: write a\nstory about a lighthouse keeper",
+          "There once was a lighthouse keeper by the name of Jacks on a lonely\nstretch o' coast where the gales howl like spirits hauntin' the\nthereafter. His post stood tall as a mast above the breakers, its\nlight a beacon of hope on a sea filled with danger. [\u2026]",
+          "Patched \u2014 context-end state \u2190 [party-planning conversation,\nquery: write a story about a lighthouse keeper]",
+          "In the heart of the stormy isle, where the sea's wrath was ever\npresent and the wind whispered tales of the deep, there stood a\nsolitary lighthouse, its beam piercing the darkness like a pirate's\nsword through the heart of a foe. Within its walls, a lighthouse\nkeeper [\u2026]",
+          "\u2717",
+          "The asked question does NOT transfer through the context vector",
+          "F = 0.01",
+          "Unpatched \u2014 pirate persona ('Captain Marrow'), query: why is the\nsky blue?",
+          "Well, laddie, that be a fine question about th' skies and th' rays\nof light. You see, when th' sun pour's its light down upon us durin'\nth' day, ye notice th' waves 'a light spannin' all th' colors of th'\nrainbow, but our eyes tend to focus [\u2026]",
+          "Patched \u2014 context-end state \u2190 [pirate persona ('Captain\nMarrow'), query: explain hash tables]",
+          "Arrr, matey! The sky be blue 'cause of the way the sun's light\nscatters off the air and clouds. When the sun rises or sets, its\nlight has ta travel through more of the atmosphere, an' that makes\nthe blue light scatter away, leavin' the reds and oranges [\u2026]",
+          "\u2717",
+          "The same maximal patch at prefix-end does nothing",
+          "F = 0.26",
+          "Unpatched \u2014 pirate persona ('Captain Marrow'), query: why is the\nsky blue?",
+          "Well, laddie, that be a fine question about th' skies and th' rays\nof light. You see, when th' sun pour's its light down upon us durin'\nth' day, ye notice th' waves 'a light spannin' all th' colors of th'\nrainbow, but our eyes tend to focus [\u2026]",
+          "Patched \u2014 prefix-end state \u2190 [party-planning conversation,\nquery: why is the sky blue?]",
+          "Ahoy there, matey! The sky be blue 'cause of the way the sun's light\nscatters off the air and tiny bits in the atmosphere. It's like when\nye shine a torch through a prism, the light splits into all sorts of\ncolors. But the blue light gets scattered [\u2026]",
+          "\u2713",
+          "Patching the question's OWN token states DOES swap the question (\u03b1=0.5)",
+          "F = 1.02",
+          "Unpatched \u2014 pirate persona ('Captain Marrow'), query: why is the\nsky blue?",
+          "Well, laddie, that be a fine question about th' skies and th' rays\nof light. You see, when th' sun pour's its light down upon us durin'\nth' day, ye notice th' waves 'a light spannin' all th' colors of th'\nrainbow, but our eyes tend to focus [\u2026]",
+          "Patched \u2014 query-token states \u2190 [pirate persona ('Captain\nMarrow'), query: rent or buy a home?]",
+          "Ah, matey, that's a tricky question, better to be a captain of the\nhigh seas than a mere tenant on dry land! Rentin' or rentin'...\nwell, it all depends on yer situation, but I'd say it's best to own\nyer own piece of the ocean. Rentin' is like [\u2026]",
+          "\u2713",
+          "Stated formatting policy transfers (top pair of the one causal family)",
+          "F = 1.03",
+          "Unpatched \u2014 stated policy: Always format your answers as bullet\npoints.",
+          "- Voldemort sends a horcrux disguised as a common object that Harry\nmust touch, triggering a curse to transport him to Malfoy Manor.\n- A deadly dream is conjured in Harry's mind, appearing real enough\nto lure him into a magical trap set in Voldemort\u2019s stronghold.\n- Harry [\u2026]",
+          "Patched \u2014 context-end state \u2190 [stated policy: Always answer in\nflowing paragraph prose, never using lists or bullet points.]",
+          "In the wizarding world, Voldemort could capture Harry Potter through\na combination of dark magic, betrayal, and strategic planning. One\nmethod might involve using a cursed object, where a hidden trapdoor\nin a seemingly innocent item like a pen or a book leads to a hidden\ncompartment containing [\u2026]"
+        ],
+        "xticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

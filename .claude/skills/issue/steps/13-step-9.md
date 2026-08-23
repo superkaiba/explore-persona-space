@@ -3409,6 +3409,18 @@ suite directly and posts an `epm:test-verdict` event with the result.
           echo "FATAL: pytest collected 0 tests — test-verdict gate did NOT run. Treating as FAIL." >&2
           # -> post epm:test-verdict v1 as FAIL; do NOT record PASS on exit 0.
         fi
+        # List-shape attribution (#2310; #2302/#2317 lineage): rc=126 plus
+        # per-path `bash: line K: tests/...py: Permission denied` lines is
+        # the newline-splice signature — the substituted <files> list was
+        # NEWLINE-separated, so the inner bash -c ran each path after the
+        # first as its own COMMAND (pytest ran at most 1 of N files). The
+        # pre-launch splice-shape check refuses this before launch;
+        # reaching here means that guard was bypassed (stale worktree
+        # recipe copy / hand-run launcher). Attribute the FAIL to the
+        # list shape, never to the tests:
+        if [ "${PYTEST_RC:-}" = "126" ] && grep -qE 'tests/[^[:space:]]*\.py: Permission denied' /tmp/step9c-pytest-issue-<N>.log; then
+          echo "FATAL: rc=126 + per-path Permission-denied lines — the substituted test-file list was NEWLINE-separated (each path after the first ran as its own command; the run covered at most 1 of N files). This is a LIST-SHAPE failure, not a test failure: re-source the list space-separated (| tr '\n' ' '), re-run the pre-launch splice-shape check, then relaunch ONCE. The epm:test-verdict FAIL note must name the list shape as the cause." >&2
+        fi
         # BASETEMP reap — INSIDE the rc-exists branch ONLY (the gate
         # provably exited; a premature completion-read must never rm -rf a
         # LIVE gate's basetemp out from under it):

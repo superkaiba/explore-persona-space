@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2494,
+  "highest_id": 2506,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6980,8 +6980,8 @@
       "goal": "Characterize every mapping-quality metric in use (held-out R\u00b2, kNN retrieval acc@k euclidean+cosine, and companions) \u2014 what construct each measures, what it rules out, where they dissociate \u2014 and report the ~1M-context (n\u2248963k LMSYS) linear and nonlinear context\u2192answer mappings against the full baseline ladder (constant train-mean; W = identity; identity + learned bias) on ALL metrics, in both the context-based and prefix-based arms.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/1901",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/1901",
+      "status": "awaiting_promotion",
       "title": "Held-out variance explained and retrieval accuracy dissociate in both directions across the context-to-answer estimator ladder (HIGH confidence)"
     },
     "1902": {
@@ -9383,8 +9383,8 @@
       "goal": "On Qwen-2.5-7B-Instruct, using the frozen 21-type minimal-pair context bank and banked state bank from the parent patch sweep (#2162), measure with NO patching how changing exactly one information type in the context shifts (a) the context representation (context-end vector AND prefix-end state, both arms: per-type shift magnitude, within-type direction consistency, cross-type geometry) and (b) the realized on-policy answer representation v_A (teacher-forced answer activations over the banked floor/ceiling rollout text under each unpatched context), and (c) whether the banked context-to-answer ridge maps (#779 context-end, #1738 prefix-end; no new map training unless fitness fails) DISCRIMINATE the paired contexts \u2014 per pair, does f(v_C(A)) land closer to v_A(A) than to v_A(B) (paired two-alternative retrieval accuracy + cosine/euclidean similarity margin), reported per information type with a ranking of which types the map discriminates worst, alongside the identity+learned-bias baseline and pool-level kNN retrieval, against a shuffled-pair null.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/2215",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/2215",
+      "status": "awaiting_promotion",
       "title": "Banked context-to-answer maps discriminate minimal-pair contexts, but at context-end an identity-plus-bias baseline captures most of the discrimination (MODERATE confidence)"
     },
     "2216": {
@@ -10035,8 +10035,8 @@
     "2299": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2299",
-      "status": "running",
+      "path": "tasks/completed/2299",
+      "status": "completed",
       "title": "workflow-fix: verify_plan WARN check for sub-resolution judge-pilot sizing (per-arm draws below floor(1/threshold)+1)"
     },
     "23": {
@@ -10056,8 +10056,8 @@
     "2301": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2301",
-      "status": "reviewing",
+      "path": "tasks/completed/2301",
+      "status": "completed",
       "title": "workflow-fix: Step 10d Guard 5 trigger self-fires on a note that merely mentions the candidate token"
     },
     "2302": {
@@ -10084,15 +10084,15 @@
     "2305": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2305",
-      "status": "running",
+      "path": "tasks/reviewing/2305",
+      "status": "reviewing",
       "title": "Non-atomic fresh claim-file write in run_claim_queue kills a concurrent worker with 'unparseable claim file'"
     },
     "2306": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2306",
-      "status": "approved",
+      "path": "tasks/running/2306",
+      "status": "running",
       "title": "/issue Step 10d merge fence never binds $WT \u2014 git -C '' retargets every worktree op at the SHARED repo root (destroys a valid gate verdict; reaches a shared-root working-tree revert)"
     },
     "2307": {
@@ -10105,15 +10105,15 @@
     "2308": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2308",
-      "status": "proposed",
+      "path": "tasks/archived/2308",
+      "status": "archived",
       "title": "Step 9c 1b launcher: --files-only list spliced into the bash -c string runs one command per path (rc=126); gate-set cross-check is blind to newlines"
     },
     "2309": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2309",
-      "status": "proposed",
+      "path": "tasks/running/2309",
+      "status": "running",
       "title": "workflow-fix: implementer marker four-H3 completion-report contract is judgment-caught, not mechanically checked"
     },
     "231": {
@@ -10126,8 +10126,8 @@
     "2310": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2310",
-      "status": "proposed",
+      "path": "tasks/completed/2310",
+      "status": "completed",
       "title": "workflow-fix: Step 9c script-file gate launcher \u2014 newline-separated test list collapses to rc=126 with zero tests collected and evades both anti-silent-pass guards"
     },
     "2311": {
@@ -10643,8 +10643,8 @@
       "goal": "Test whether the context\u2192answer linear map trained in the chat-template framing (assistant turn) transfers \u2014 directly or up to a linear reparameterization \u2014 to every other framing in Qwen3.6-27B (instruct-only): plain-text, an assistant-like story character, a panel of distinct story characters, a dialogue-reply arm where the addressed utterance is ordinary dialogue rather than a question, and the USER character inside the chat template (two provenance arms: real human user turns teacher-forced, and simulated user turns the model writes on-policy; context slot ends at the previous assistant turn so the target is never self-predicted); one-directional transfer only, stories generated fully template-free (raw completion), scene-native invented queries, fully independent query pools (topic-shift confound disclosed). Secondary arm: one general map fit pooled on ALL cells compared per cell to the specialized own maps (pooled-tier ladder). Every arm reports BOTH held-out R\u00b2 and rank-1 retrieval under the #2202 conventions (whitened cosine, CSLS, convention-matched fresh-draw reference). No AI-likeness judge axis (dropped per user directive).",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/blocked/2378",
-      "status": "blocked",
+      "path": "tasks/running/2378",
+      "status": "running",
       "title": "Chat-trained context\u2192answer map transfer to story framings and characters in Qwen3.6-27B with scene-native queries and template-free story generation"
     },
     "2379": {
@@ -10731,8 +10731,8 @@
       "goal": "On Qwen/Qwen3.8-27B (27.78B dense, 64 layers, hidden 5120, thinking disabled), measure whether single-position activation patching at the CONTEXT VECTOR becomes more effective as model capability rises: the primary read is the number and identity of information types that are causally usable at context-end (the stored-and-used quadrant) and their per-type fraction-of-swap, against the realized 5 on Qwen2.5-7B (#2162) and 8 on Qwen3.5-9B (#2329); the secondary read is the Spearman transfer correlation against #2162's per-type steered fraction-of-swap over the 16 shared context-end P1 cells. Prefix-end is deliberately NOT run, having produced zero causally-usable cells in both prior runs.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/blocked/2389",
-      "status": "blocked",
+      "path": "tasks/running/2389",
+      "status": "running",
       "title": "Does context-vector patching improve on a more capable model? (Qwen3.8-27B, context-end only, all 39 cells)"
     },
     "239": {
@@ -11381,11 +11381,11 @@
     },
     "2474": {
       "goal": "Determine whether base-model (pre-fine-tuning) geometry under the inoculation prompt p_inoc predicts which eval triggers re-elicit inoculation-suppressed behavior after inoculated fine-tuning, versus the post-fine-tuning predictors of #2379.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/2474",
-      "status": "running",
-      "title": "Can pre-fine-tuning geometry under the inoculation prompt predict post-inoculation re-elicitation?"
+      "path": "tasks/awaiting_promotion/2474",
+      "status": "awaiting_promotion",
+      "title": "Pre-fine-tuning context geometry predicts emergent-misalignment re-elicitation but adds at most a marginal increment over surface-text similarity (MODERATE confidence)"
     },
     "2475": {
       "has_clean_result": false,
@@ -11396,11 +11396,11 @@
     },
     "2476": {
       "goal": "Determine whether the context-to-answer map's high-level-over-low-level predictability gradient (#1482) holds in a turn-averaged SAE basis: per-tier held-out R2 + acc@1 vs identity+bias for turn-averaged SAE features of true and map-predicted answer summaries.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/2476",
-      "status": "running",
-      "title": "Turn-averaged SAE basis: does the map's high-level-over-low-level predictability gradient hold?"
+      "path": "tasks/awaiting_promotion/2476",
+      "status": "awaiting_promotion",
+      "title": "The context-to-answer map's coarse-over-specific predictability gradient does not reproduce in turn-averaged SAE bases: nearly all specific-tier features fall below the alive floor, and retrieval stays coarse-tier-concentrated (MODERATE confidence)"
     },
     "2477": {
       "has_clean_result": true,
@@ -11412,8 +11412,8 @@
     "2478": {
       "has_clean_result": false,
       "kind": "analysis",
-      "path": "tasks/running/2478",
-      "status": "running",
+      "path": "tasks/completed/2478",
+      "status": "completed",
       "title": "Assemble qualitative-examples panels for the paper (discrimination + patching)"
     },
     "2479": {
@@ -11543,12 +11543,98 @@
       "status": "proposed",
       "title": "verify_task_body per-unit vocabulary scan: credit the what-is-plotted beat and strip-point phrasing"
     },
+    "2495": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2495",
+      "status": "proposed",
+      "title": "Correct #825 promoted body: 0.1087 cited as control R\u00b2 is fraction_of_fulln_ceiling (true R\u00b2=0.0732)"
+    },
+    "2496": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2496",
+      "status": "proposed",
+      "title": "Step 6d.1 experimenter briefs must carry plan \u00a79 parallelization shape \u2014 verbatim workload_cmd reuse silently runs shard 0 only on CVD-pin plans"
+    },
+    "2497": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2497",
+      "status": "proposed",
+      "title": "workflow-fix: step9c compare SCAN-NEW-VIOLATION false block \u2014 tb=short traceback location line enters the branch-side violation set (verbosity asymmetry vs pristine)"
+    },
+    "2498": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2498",
+      "status": "proposed",
+      "title": "workflow-fix: Step 5a FAMILY_lint omits scripts/pre_split_review_guard.py \u2014 half-sync reds the step9c lint pins in pre-#2294 worktrees"
+    },
+    "2499": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/2499",
+      "status": "proposed",
+      "title": "Does the inoculation prompt's base-geometry neighborhood placement moderate post-inoculation re-elicitation across trigger banks?"
+    },
     "25": {
       "has_clean_result": false,
       "kind": "infra",
       "path": "tasks/archived/25",
       "status": "archived",
       "title": "Aim 4.2b: Flexible scoring axes for FineWeb classification"
+    },
+    "2500": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2500",
+      "status": "proposed",
+      "title": "codex-clean-result-critic Step 2(a): add Lens 13 plan-fetch block to the compose replacement mandate"
+    },
+    "2501": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2501",
+      "status": "proposed",
+      "title": "verify_task_body: band-clearance-count caption check (check 45 extension)"
+    },
+    "2502": {
+      "goal": "Fit the context\u2192answer activation map M_{C,A} on a very large, maximally diverse context/answer corpus (heavily weighted toward weird / OOD / red-team / jailbreak regimes), and test whether the map replicates across model generations: Qwen2.5-7B-Instruct and Qwen3.5-9B (thinking disabled). An answer = held-out R^2 plus the mandatory identity+learned-bias baseline and kNN-retrieval reads for the fitted map, measured under massive context diversity and compared across the two models.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/running/2502",
+      "status": "running",
+      "title": "Fit context\u2192answer map on a mega-diverse weird-behavior corpus, replicated on Qwen2.5-7B-Instruct + Qwen3.5-9B"
+    },
+    "2503": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2503",
+      "status": "proposed",
+      "title": "verify_task_body check 15: resolve '<path> at git pin <sha>' prose citations against the pinned tree"
+    },
+    "2504": {
+      "goal": "Replicate the inoculated-FT -> re-elicitation -> base-geometry-predictor pipeline on Llama-3.1-8B-Instruct: does the misalignment positive (Qwen pooled rho +0.708) and the capitalization sign flip (-0.747) transfer beyond the Qwen family, or are they family-specific representation quirks?",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/2504",
+      "status": "proposed",
+      "title": "Cross-model transfer: does base-geometry prediction of post-inoculation re-elicitation replicate on Llama-3.1-8B-Instruct?"
+    },
+    "2505": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2505",
+      "status": "proposed",
+      "title": "Router: auto-chain RunPod rung crashes on 70B intents (gcp.machine_for_intent as validator)"
+    },
+    "2506": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2506",
+      "status": "proposed",
+      "title": "Add 4 verify_plan.py mechanical-backstop checks surfaced during #2502 planning (new-model-env-row, selection-inherited-CI, cross-section verdict-drift, concurrent-launch name-collision)"
     },
     "251": {
       "has_clean_result": false,
