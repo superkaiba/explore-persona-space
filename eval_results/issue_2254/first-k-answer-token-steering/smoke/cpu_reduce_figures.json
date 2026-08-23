@@ -1,12 +1,14 @@
 {
   "experiment": "issue2254_preimage",
   "base_model": "Qwen/Qwen2.5-7B-Instruct",
-  "ts": "2026-08-23T06:25:30Z",
+  "ts": "2026-08-23T08:21:41Z",
   "pass_b_revision": "037fcbb210bc52c459959b0746cc268fe08bae96",
-  "git_commit": "52b0e74d",
+  "git_commit": "3df94964",
   "git_dirty": true,
   "git_dirty_paths": [
-    "scripts/issue2254_first_k_steering.py"
+    "eval_results/issue_2254/first-k-answer-token-steering/smoke/cpu_hook_mechanics.json",
+    "scripts/issue2254_first_k_steering.py",
+    "scripts/issue2254_firstk_figures.py"
   ],
   "lattice": {
     "evil__pre__mid": {
@@ -20,7 +22,7 @@
         false
       ],
       "D_point": 0.0,
-      "R_point": 0.75
+      "R_point": null
     },
     "evil__pre__single": {
       "verdict": "opening-sufficient",
@@ -97,7 +99,7 @@
         false,
         false
       ],
-      "D_point": 0.0,
+      "D_point": 2.0,
       "R_point": 0.2500000000000001
     },
     "sycophancy__rb__single": {
@@ -132,22 +134,23 @@
       "expected_prefix": "locus-dissociation"
     }
   },
-  "resume_recheck": "horizon-ckpt cache-hit; verdicts identical",
+  "resume_recheck": "horizon + percell ckpt cache-hit; verdicts identical",
   "positive_control": {
     "evil_cleared": true,
     "sycophancy_cleared": false,
     "both_behaviors_failed": false
   },
+  "figures_pc_refusal": "RuntimeError raised on sentinel; sentinel removed; real render ran",
   "figures": {
     "hero1_position_bars": {
-      "pixel_std": 0.188,
-      "ink_fraction": 0.0841,
-      "bytes": 285972
+      "pixel_std": 0.1899,
+      "ink_fraction": 0.0861,
+      "bytes": 299786
     },
     "hero2_recovery_fraction": {
-      "pixel_std": 0.2737,
-      "ink_fraction": 0.2119,
-      "bytes": 53741
+      "pixel_std": 0.2584,
+      "ink_fraction": 0.1784,
+      "bytes": 53752
     },
     "expl_accrual_curves": {
       "pixel_std": 0.141,
@@ -165,9 +168,9 @@
       "bytes": 266878
     },
     "expl_rd_lattice": {
-      "pixel_std": 0.1236,
-      "ink_fraction": 0.0292,
-      "bytes": 79078
+      "pixel_std": 0.1237,
+      "ink_fraction": 0.0294,
+      "bytes": 80475
     },
     "expl_perq_clouds": {
       "pixel_std": 0.1521,

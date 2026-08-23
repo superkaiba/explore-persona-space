@@ -154,6 +154,11 @@ SENTINEL_STEER = "firstk-steer"
 SENTINEL_STAGE = "firstk-stage-inputs"
 SENTINEL_FIGURES = "firstk-figures"
 
+# Figures the SMOKE slice structurally guarantees (the require MECHANISM stays
+# exercised under --smoke against this subset; the full REQUIRED_FIGURES set
+# binds in production — the smoke-blind-spot enumeration names the narrowing).
+SMOKE_REQUIRED_FIGURES = ("hero1_position_bars", "expl_accrual_curves")
+
 # Reused parent inputs resolve at CANONICAL, --out-root-INDEPENDENT locations
 # (the smoke-root-rebinding gotcha: inputs are never smoke-diverted).
 INPUTS_ROOT = _REPO_ROOT / "eval_results" / "issue_2254"
@@ -182,6 +187,20 @@ def round_root(out_root: Path) -> Path:
 def _round_hf_prefix() -> str:
     """HF upload prefix for this round's OUTPUTS (smoke-diverted via the parent flag)."""
     return f"{i2254._hf_prefix()}/{FOLLOWUP_LABEL}"
+
+
+def _wipe_stale_sentinels(tags: list[str]) -> None:
+    """Remove THIS phase's prior-run done sentinels at phase entry (#2224
+    launch-time-rm class): on a --force redo, the PRIOR completed run's done
+    sentinel must not stay visible to an orchestrator presence-poll while the
+    redo is mid-flight. OSError-tolerant off-pod (mirrors _write_sentinel)."""
+    root = Path(os.environ.get("EPM_SENTINEL_DIR", "/workspace/logs"))
+    for tag in tags:
+        p = root / f"issue-{i2254.ISSUE}-{tag}.json"
+        try:
+            p.unlink(missing_ok=True)
+        except OSError as exc:  # sentinel dir absent off-pod (VM smoke) — best-effort
+            logger.info("[sentinel] stale-wipe skipped for %s (%s)", p, type(exc).__name__)
 
 
 # ---------------------------------------------------------------------------
@@ -366,8 +385,24 @@ class RecordedHook:
     def __enter__(self) -> RecordedHook:
         return self.install()
 
-    def __exit__(self, *exc) -> None:
-        self.remove()
+    def __exit__(self, exc_type, exc, tb) -> None:
+        """Detach both hooks. When an exception is already in flight, a
+        trace-validation assert inside the final ``_flush()`` must not REPLACE
+        it (the gotchas.md finally-raise mask family): log the flush failure
+        and let the ORIGINAL propagate — member hooks are still detached.
+        Clean-path teardown stays fail-fast (``remove()`` flush asserts raise)."""
+        if exc_type is None:
+            self.remove()
+            return
+        try:
+            self._flush()
+        except Exception:
+            logger.exception(
+                "RecordedHook: trace flush failed during exception unwind "
+                "(original exception propagates)"
+            )
+        self.steer.remove()
+        self.recorder.remove()
 
     def _steer_children(self) -> list:
         return list(self.steer.hooks) if hasattr(self.steer, "hooks") else [self.steer]
@@ -859,22 +894,96 @@ def _gen_first_k_cell(
     return rec
 
 
-def _upload_cell_json(path: Path) -> None:
-    """Per-cell checkpoint upload (plan §9: raw completions upload per cell);
-    the bulk ``upload_folder`` commit at phase end is the completeness
-    backstop. Fail-loud after the transient-retry budget."""
+STEER_PACK_FLUSH_EVERY = 8  # cells between incremental pack+upload flushes (durability cadence)
+STEER_PACK_MAX_FILES = 64  # bounded-plan ceiling per shard (pack shards + manifest, #2286)
+STEER_BYTES_PER_CELL = 2_500_000  # ~1 MB/cell at the 2048 cap; regen'd cells ~2x — sizing basis
+
+
+def _steer_regime_fp(args, cell: dict, rho_pooled: dict) -> str:
+    """Machine-stable steer regime fingerprint (#2222/#2225 stale-cache class):
+    every output-affecting dial — draws / q_steer / seed_base / generation cap /
+    direction provenance (rb revision + random seed base) / the consumed
+    rho_pooled_median values (FILE-READ floats, never recomputed — the
+    code-style float-hash rule) — via the parent's _sha8. A cached cell whose
+    stored fp mismatches is a cache MISS (regenerate), never a silent reuse."""
+    layers = i2254.LAYER_CONFIGS[cell["layer_config"]]
+    return i2254._sha8(
+        {
+            "draws": int(args.draws),
+            "q_steer": int(args.q_steer),
+            "seed_base": int(args.seed_base),
+            "gen_cap": i2254.GEN_MAX_NEW_TOKENS,
+            "rb_rev": i2254.HF_REV,
+            "random_seed_base": i2254.SEED_RANDOM_BASE,
+            "rho": {f"L{ly}": float(rho_pooled[f"L{ly}"]) for ly in layers},
+        }
+    )
+
+
+def _assert_hub_headroom_for_steer(n_projected_files: int, projected_bytes: int) -> None:
+    """Destination-headroom preflight BEFORE any GPU spend (#2286: the shared
+    data repo sits at the Hub's ~1M-file ceiling, so net-new FILE COUNT is the
+    binding resource): (a) the upload plan must be BOUNDED-BY-CONSTRUCTION —
+    packed JSONL line-shards, O(10) files/shard, never a per-cell file
+    fan-out; (b) byte/LFS headroom via the canonical
+    hub.check_projected_upload_headroom (fail-loud only on a LIVE-confirmed
+    'insufficient'). NOTE: hub's #1108 reactive file-count overflow fallback
+    is MODEL-repo-scoped (hub._upload), so the dataset bulk-upload path has NO
+    mechanical fallback — the bounded pack design is the load-bearing
+    mitigation, and a file-count rejection at upload time fails loud."""
     from explore_persona_space.orchestrate import hub
 
-    dest = f"{_round_hf_prefix()}/raw_completions/steer/{path.name}"
-    hub.retry_transient(
-        # UPLOAD_LOOP_EXEMPT: plan §9 per-cell checkpoint upload — ~40 files
-        # per shard over ~2h (not a tight loop); the phase-end bulk
-        # upload_folder commit is the batched completeness backstop.
-        lambda: hub._upload(
-            path, HF_DATA_REPO, "dataset", dest, upload_as_file=True, raise_on_error=True
-        ),
-        what=f"per-cell checkpoint upload {path.name}",
+    assert n_projected_files <= STEER_PACK_MAX_FILES, (
+        f"steer upload plan projects {n_projected_files} net-new HF files — the pack design "
+        "bounds this at O(pack shards); a per-cell upload fan-out regressed (#2286)"
     )
+    verdict = hub.check_projected_upload_headroom(int(projected_bytes))
+    if verdict.verdict == "insufficient":
+        raise RuntimeError(
+            f"steer: HF storage headroom insufficient for ~{projected_bytes / 1e9:.2f} GB "
+            f"(used {verdict.used_tb} TB / ceiling {verdict.ceiling_tb} TB) — free headroom "
+            "before any GPU spend"
+        )
+    logger.info(
+        "[%s] hub headroom preflight: %s (~%d pack files, ~%.3f GB projected)",
+        SENTINEL_STEER,
+        verdict.verdict,
+        n_projected_files,
+        projected_bytes / 1e9,
+    )
+
+
+def _upload_steer_pack(comp_root: Path, shard_id: int, cell_names: list[str]) -> int:
+    """Pack THIS SHARD's per-cell steer records into <=9 MB JSONL line-shards
+    (the rw2220 pack recipe the unit-2 judge uploader uses) and upload the
+    packed dir to a per-shard HF prefix — bounded net-new file count:
+    O(pack shards) per flush, never O(cells) (#2286: the shared data repo sits
+    at the Hub's ~1M-file ceiling, where per-cell uploads are rejected
+    outright). Idempotent: each flush re-packs the shard's cell set from
+    scratch (same shard filenames overwrite in place — no drift across
+    flushes). Local per-cell JSONs stay on disk untouched (checkpoints are
+    never deleted pre-upload-verify). Returns the pack shard count."""
+    import scripts.issue2220_readwrite as rw2220
+
+    stage = comp_root.parent / f"raw_completions_stage_shard{shard_id}"
+    if stage.exists():
+        shutil.rmtree(stage)
+    stage.mkdir(parents=True)
+    for name in cell_names:
+        shutil.copy2(comp_root / name, stage / name)
+    dest = comp_root.parent / f"raw_completions_pack_shard{shard_id}"
+    if dest.exists():
+        shutil.rmtree(dest)  # re-pack from scratch: shard numbering must not drift
+    n = rw2220._pack_tree_to_jsonl_shards(
+        stage, dest, group=f"firstk_steer_shard{shard_id}", pattern="*.json"
+    )
+    shutil.rmtree(stage)
+    i2254._upload_folder_to_hf(
+        dest,
+        f"{_round_hf_prefix()}/raw_completions/steer_pack/shard{shard_id}",
+        allow=["*.jsonl", "*.json"],
+    )
+    return n
 
 
 # ---------------------------------------------------------------------------
@@ -905,6 +1014,7 @@ def phase_stage_inputs(args) -> None:
     """
     out_root = i2254._out_root(args)
     rroot = round_root(out_root)
+    _wipe_stale_sentinels([SENTINEL_STAGE])
     i2254._assert_phase_headroom(out_root, 1.0, SENTINEL_STAGE)
     behaviors = list(args.behaviors)
     bad = [b for b in behaviors if b not in ROUND_BEHAVIORS]
@@ -988,12 +1098,14 @@ def phase_stage_inputs(args) -> None:
 def phase_steer(args) -> None:
     """The 160-cell position grid (plan §4.4): 20 questions x 6 draws
     (seed_base 42) per cell at the inherited (l*, c*); per-cell JSON
-    checkpoints (cached-skip resume unless --force), round-robin
-    ``--shard-id/--num-shards`` sharding, cap-hit > 2% => regen at 2x cap,
-    per-cell + bulk HF raw-completion uploads BEFORE the shard sentinel."""
+    checkpoints (regime-fingerprinted cached-skip resume unless --force),
+    round-robin ``--shard-id/--num-shards`` sharding, cap-hit > 2% => regen at
+    2x cap, packed-JSONL HF raw-completion uploads (per-shard, incremental
+    flush cadence — bounded file count, #2286) BEFORE the shard sentinel."""
     i2254._require_cuda("steer (first-k)")
     out_root = i2254._out_root(args)
     rroot = round_root(out_root)
+    _wipe_stale_sentinels([SENTINEL_STEER, f"{SENTINEL_STEER}-shard{args.shard_id}"])
     i2254._assert_phase_headroom(out_root, 2.0, SENTINEL_STEER)
     behaviors = list(args.behaviors)
     bad = [b for b in behaviors if b not in ROUND_BEHAVIORS]
@@ -1030,6 +1142,18 @@ def phase_steer(args) -> None:
         i2254._breadcrumb(SENTINEL_STEER, status="done", regen_cells=0, empty_shard=1)
         return
 
+    # Destination-headroom preflight BEFORE the GPU model load (#2286): the
+    # packed upload plan is bounded (pack shards + manifest), never per-cell.
+    n_pack_files = -(-len(shard) * STEER_BYTES_PER_CELL // 9_000_000) + 1
+    _assert_hub_headroom_for_steer(n_pack_files, len(shard) * STEER_BYTES_PER_CELL)
+
+    shard_names = [f"{_cell_id(c)}.json" for c in shard]
+
+    def _flush_pack() -> None:
+        have = [n for n in shard_names if (comp_root / n).exists()]
+        if have:
+            _upload_steer_pack(comp_root, args.shard_id, have)
+
     model, tok = i2254._load_model_and_tokenizer()
     bank = DirectionBank()
     q_cache = {b: i2254._eval_questions(b)[: args.q_steer] for b in behaviors}
@@ -1038,12 +1162,24 @@ def phase_steer(args) -> None:
 
     t0 = time.time()
     n_regen = 0
+    n_generated = 0
     for k, cell in enumerate(shard, 1):
         cid = _cell_id(cell)
         path = comp_root / f"{cid}.json"
+        fp = _steer_regime_fp(args, cell, rho_pooled)
         if path.exists() and not args.force:
-            i2254._progress(SENTINEL_STEER, k, len(shard), f"{cid} (cached)", t0)
-            continue
+            cached_fp = json.loads(path.read_text()).get("regime_fp")
+            if cached_fp == fp:
+                i2254._progress(SENTINEL_STEER, k, len(shard), f"{cid} (cached)", t0)
+                continue
+            logger.info(
+                "[%s] %s cached record regime_fp %s != %s — cache MISS, regenerating "
+                "(draws/q/seed/cap/direction/rho dials changed; #2222 stale-cache class)",
+                SENTINEL_STEER,
+                cid,
+                cached_fp,
+                fp,
+            )
         qs = q_cache[cell["behavior"]]
         contexts = i2254._contexts_for_questions(qs)
         q_idx = list(range(len(qs)))
@@ -1091,11 +1227,16 @@ def phase_steer(args) -> None:
             rec["regen"] = initial
         rec["experiment"] = "issue2254_first_k_steering"
         rec["followup_label"] = FOLLOWUP_LABEL
+        rec["regime_fp"] = fp
         i2254._write_json_atomic(path, i2254._run_metadata(rec))
-        _upload_cell_json(path)
+        n_generated += 1
+        if n_generated % STEER_PACK_FLUSH_EVERY == 0:  # incremental durability flush
+            _flush_pack()
         i2254._progress(SENTINEL_STEER, k, len(shard), cid, t0)
 
-    i2254._upload_folder_to_hf(comp_root, f"{_round_hf_prefix()}/raw_completions/steer")
+    # Final pack + upload covers the FULL shard cell set (cached cells too),
+    # so a fully-cached resume still lands a complete pack before the sentinel.
+    _flush_pack()
     tag = SENTINEL_STEER if args.num_shards == 1 else f"{SENTINEL_STEER}-shard{args.shard_id}"
     i2254._write_sentinel(out_root, tag, "done", {"cells": len(shard), "regen_cells": n_regen})
     i2254._breadcrumb(SENTINEL_STEER, status="done", regen_cells=n_regen)
@@ -1131,6 +1272,7 @@ RATIO_UNSTABLE_FRAC = 0.01  # §3: >1% of resamples under the floor => R undefin
 R_SUFFICIENT = 2.0 / 3.0  # §3 lattice: R_lo >= 2/3 arm of opening-sufficient
 R_PARTIAL = 1.0 / 3.0  # §3 lattice: R_pt >= 1/3 arm of opening-partial
 PLATEAU_FRAC = 0.90  # §3 H3: span1-5 >= ~90% of all-answer = plateau (point read)
+COMPLETENESS_FLOOR = 0.95  # rule-29 per-cell frac_items_complete floor (validity gate)
 
 # Committed parent inputs the reduce consumes IN ADDITION to unit 1's
 # GIT_INPUTS (separate tuple so unit 1's staging list stays byte-stable).
@@ -1150,28 +1292,76 @@ REDUCE_GIT_INPUTS = (
 
 
 def _stage_round_completions(rroot: Path) -> Path:
-    """Local-first steer raw_completions; else stage every per-cell JSON from
-    the ROUND HF prefix (scoped list_repo_tree via retry_transient — never a
-    bare full-repo listing on the ~1M-file data repo). Mirrors the parent's
-    ``_stage_phase_completions`` at the round prefix."""
+    """Local-first steer raw_completions; else stage + UNPACK the per-shard
+    JSONL pack shards the steer phase uploads (rw2220 line schema:
+    ``{"path": <cell file rel path>, "doc": <cell record>}``) from the round
+    HF prefix; else the legacy per-cell prefix (pre-pack artifacts). Scoped
+    list_repo_tree via retry_transient — never a bare full-repo listing on
+    the ~1M-file data repo. A fresh-VM judge/reduce can therefore rehydrate
+    the per-cell records from the packed upload (pack/unpack round-trip)."""
     from huggingface_hub import HfApi
+    from huggingface_hub.utils import EntryNotFoundError
 
     from explore_persona_space.orchestrate import hub
 
     comp_root = rroot / "steer" / "raw_completions"
     if comp_root.exists() and any(comp_root.glob("*.json")):
         return comp_root
-    prefix = f"{_round_hf_prefix()}/raw_completions/steer"
-    entries = hub.retry_transient(
-        lambda: list(
-            # HUB_VERIFY_RETRY_EXEMPT: staging READ wrapped in hub.retry_transient
-            HfApi().list_repo_tree(HF_DATA_REPO, path_in_repo=prefix, repo_type="dataset")
-        ),
-        what=f"list_repo_tree({prefix})",
+
+    def _tree(prefix: str, *, recursive: bool = False) -> list:
+        try:
+            return hub.retry_transient(
+                lambda: list(
+                    # HUB_VERIFY_RETRY_EXEMPT: staging READ wrapped in hub.retry_transient
+                    HfApi().list_repo_tree(
+                        HF_DATA_REPO,
+                        path_in_repo=prefix,
+                        repo_type="dataset",
+                        recursive=recursive,
+                    )
+                ),
+                what=f"list_repo_tree({prefix})",
+            )
+        except EntryNotFoundError:  # prefix absent — caller falls through
+            return []
+
+    pack_prefix = f"{_round_hf_prefix()}/raw_completions/steer_pack"
+    shard_paths = sorted(
+        e.path for e in _tree(pack_prefix, recursive=True) if e.path.endswith(".jsonl")
     )
-    paths = [e.path for e in entries if e.path.endswith(".json")]
+    if shard_paths:
+        n_cells = 0
+        dl_root = rroot / "steer" / "raw_completions_pack_dl"
+        for pth in shard_paths:
+            local = dl_root / Path(pth).relative_to(pack_prefix)
+            hub.stage_hub_file(HF_DATA_REPO, pth, local, repo_type="dataset")
+            for line in local.open(encoding="utf-8"):  # text-mode iteration, never splitlines
+                if not line.strip():
+                    continue
+                row = json.loads(line)
+                name = Path(row["path"]).name
+                assert name.endswith(".json"), row["path"]
+                i2254._write_json_atomic(comp_root / name, row["doc"])
+                n_cells += 1
+        if not n_cells:
+            raise RuntimeError(
+                f"firstk judge: pack shards under {pack_prefix} unpacked ZERO cell records"
+            )
+        logger.info(
+            "[%s] staged %d cells from %d pack shards at %s",
+            SENTINEL_JUDGE,
+            n_cells,
+            len(shard_paths),
+            pack_prefix,
+        )
+        return comp_root
+
+    legacy_prefix = f"{_round_hf_prefix()}/raw_completions/steer"
+    paths = [e.path for e in _tree(legacy_prefix) if e.path.endswith(".json")]
     if not paths:
-        raise RuntimeError(f"firstk judge: no steer completions locally or at {prefix}")
+        raise RuntimeError(
+            f"firstk judge: no steer completions locally, at {pack_prefix}, or at {legacy_prefix}"
+        )
     for pth in paths:
         hub.stage_hub_file(HF_DATA_REPO, pth, comp_root / Path(pth).name, repo_type="dataset")
     return comp_root
@@ -1238,22 +1428,42 @@ def _run_firstk_pilot(args, rroot: Path, comp_root: Path, behavior: str, rubric,
         raise RuntimeError(f"firstk pilot: no {behavior} gen cells under {comp_root}")
     items_per_arm = -(-PILOT_MIN_EFFECTIVE_FIRSTK // n_draws)  # ceil: >=55 draws/arm (§6)
     qs = i2254._eval_questions(behavior)
+    used_by_arm: dict[str, list[str]] = {}
+    used_any: set[str] = set()
 
     def _collect(arm: str, cell_filter, sort_key) -> list[tuple[str, str, str]]:
+        """Fill one pilot arm from the top-sorted matching cells, EXCLUDING
+        cells already consumed by earlier arms — the plan-§6 four arms must
+        come from four DISTINCT source cells (disjoint by construction)."""
         recs = []
         for f in files:
             rec = json.loads(f.read_text())
-            if not cell_filter(rec["cell"]):
+            if rec["cell_id"] in used_any or not cell_filter(rec["cell"]):
                 continue
             recs.append((sort_key(rec), rec))
         recs.sort(key=lambda kv: kv[0])
         items: list[tuple[str, str, str]] = []
+        used: list[str] = []
         for _k, rec in recs:
+            took = False
             for qi, _seed, _ci, _di, text in i2254._iter_gen_qa(rec):
                 items.append((f"{arm}-{len(items):03d}", qs[qi], text))
+                took = True
                 if len(items) >= items_per_arm:
-                    return items
+                    break
+            if took:
+                used.append(rec["cell_id"])
+            if len(items) >= items_per_arm:
+                break
+        used_by_arm[arm] = used
+        used_any.update(used)
         return items
+
+    def _degen_highdose(c: dict) -> bool:
+        # Plan §6 degenerate HIGH-DOSE arm: the REGISTERED dose predicate
+        # (|c*| >= 2 at an all-answer/combined arm — the maximal-exposure
+        # positions), tie-broken by LOWEST coherence rate (most degenerate).
+        return abs(float(c.get("c", 0.0))) >= 2.0 and c["position"] in ("allans", "combined")
 
     arms = {
         "rb_allans": _collect(
@@ -1266,7 +1476,7 @@ def _run_firstk_pilot(args, rroot: Path, comp_root: Path, behavior: str, rubric,
             lambda c: c["direction"] == "random" and c["position"] == "allans",
             lambda r: -abs(float(r["cell"].get("c", 0.0))),
         ),
-        "degen_highdose": _collect("degen_highdose", lambda c: True, i2254._coherence_rate),
+        "degen_highdose": _collect("degen_highdose", _degen_highdose, i2254._coherence_rate),
         "clean_opening": _collect(
             "clean_opening",
             lambda c: c["position"] in OPENING_POSITIONS,
@@ -1274,11 +1484,22 @@ def _run_firstk_pilot(args, rroot: Path, comp_root: Path, behavior: str, rubric,
         ),
     }
     empty = sorted(k for k, v in arms.items() if not v)
+    if empty and not args.smoke:
+        raise RuntimeError(
+            f"firstk pilot {behavior}: empty pilot arms {empty} on the PRODUCTION grid — "
+            "every §6 arm predicate must resolve (empty-arm drop is smoke-only)"
+        )
     if empty:  # smoke slice (pre x single x 5 positions) has no rb/random cells
         logger.info("[%s] pilot %s: dropping empty arms %s", SENTINEL_JUDGE, behavior, empty)
     arms = {k: v for k, v in arms.items() if v}
     if not arms:
         raise RuntimeError(f"firstk pilot: zero pilot items for {behavior}")
+    # §6: the four arms draw from DISJOINT source cells (asserted, not assumed).
+    for a1, a2 in itertools.combinations(sorted(arms), 2):
+        overlap = set(used_by_arm[a1]) & set(used_by_arm[a2])
+        assert not overlap, (a1, a2, sorted(overlap))
+    for a in arms:
+        assert used_by_arm[a], (a, "arm filled with zero source cells")
     with graded_temperature(JUDGE_TEMPERATURE):  # production ambient (kwarg alone unthreaded)
         report = judge_pilot_gate(
             arms,
@@ -1352,6 +1573,7 @@ def _run_firstk_pilot(args, rroot: Path, comp_root: Path, behavior: str, rubric,
             "api_refusal_max": PILOT_API_REFUSAL_MAX,
             "positive_control_early": pc,
             "dropped_empty_arms": empty,
+            "arm_source_cells": used_by_arm,  # §6: disjoint source cells, asserted above
         },
     )
 
@@ -1375,12 +1597,36 @@ def _judge_firstk_cell(args, rroot: Path, gen_path: Path, rubric: str, n_draws: 
         rollout_item_id,
     )
 
-    rec = json.loads(gen_path.read_text())
+    raw = gen_path.read_bytes()
+    rec = json.loads(raw)
     cell = rec["cell"]
     cid = rec["cell_id"]
+    # Judged-checkpoint resume keys (#2222/#2225 stale-artifact-done class):
+    # gen-file BYTE sha (a steer regen/re-run invalidates the judged record —
+    # the horizon ckpt's exact discipline) + the judge-instrument fingerprint
+    # (rubric/model/max_tokens/draws/temperature/transport). Mismatch = MISS.
+    gen_sha = hashlib.sha256(raw).hexdigest()[:12]
+    judge_fp = i2254._sha8(
+        {
+            "rubric": rubric,
+            "model": JUDGE_MODEL,
+            "max_tokens": i2254.JUDGE_MAX_TOKENS_2254,
+            "n_draws": n_draws,
+            "temp": JUDGE_TEMPERATURE,
+            "tb": JUDGE_THRESHOLD_BASE_BATCH,
+        }
+    )
     out_path = rroot / "judge" / "judged" / f"{cid}.json"
     if out_path.exists() and not args.force:
-        return json.loads(out_path.read_text())
+        cached = json.loads(out_path.read_text())
+        if cached.get("gen_sha") == gen_sha and cached.get("judge_fp") == judge_fp:
+            return cached
+        logger.info(
+            "[%s] %s judged checkpoint stale (gen_sha/judge_fp mismatch) — re-judging "
+            "(content-keyed JudgeCache makes unchanged texts cache-cheap)",
+            SENTINEL_JUDGE,
+            cid,
+        )
     qs = i2254._eval_questions(cell["behavior"])
     items: list[tuple[str, str, str]] = []
     meta: dict[str, dict] = {}
@@ -1468,6 +1714,8 @@ def _judge_firstk_cell(args, rroot: Path, gen_path: Path, rubric: str, n_draws: 
         "cell_id": cid,
         "cell": cell,
         "phase": "steer",
+        "gen_sha": gen_sha,
+        "judge_fp": judge_fp,
         "n_questions": n_q,
         "judge": {
             "model": JUDGE_MODEL,
@@ -1528,24 +1776,195 @@ def _upload_judge_outputs_firstk(rroot: Path) -> None:
         )
     pilot = base / "pilot"
     if pilot.exists():
+        # Whole-tree pack (pattern='*'): the pilot's raw/cache trees nest under
+        # <behavior>_raw/ + <behavior>_cache/ and hold judge_raw_pilot_* +
+        # pc_replay_* files the r1 fnmatch allow-list silently missed (HF
+        # allow_patterns match the FULL relative path) — packing the whole
+        # tree uploads EVERY pilot artifact, so `discarded_artifacts: none`
+        # holds (upload-policy: judge outputs upload always).
+        dest = base / "pilot_pack"
+        rw2220._pack_tree_to_jsonl_shards(pilot, dest, group="firstk_pilot", pattern="*")
         i2254._upload_folder_to_hf(
-            pilot,
-            f"{_round_hf_prefix()}/judge/pilot",
-            allow=["*.report.json", "*.pass.json", "pc_replay_*.json"],
+            dest, f"{_round_hf_prefix()}/judge/pilot_pack", allow=["*.jsonl", "*.json"]
         )
+
+
+def _validate_gen_record(rec: dict, path: Path, *, n_q: int, n_draws: int) -> None:
+    """Producer-schema contract on ONE staged steer gen record BEFORE any
+    judge/reduce spend (plan §6 grid integrity — the r1 filename-only check
+    let a truncated/mixed-grain record through): filename<->cell identity,
+    question grain, per-context draw counts (non-empty completion strings),
+    trace-field presence (the producer's always-on ``assert_cell_edit_traces``
+    guarantees non-empty traces at gen time), cap-hit metadata present."""
+    cid = path.stem
+    assert rec.get("cell_id") == cid, (path.name, rec.get("cell_id"))
+    cell = rec.get("cell")
+    assert isinstance(cell, dict) and _cell_id(cell) == cid, (path.name, cell)
+    q = rec.get("q_of_context")
+    assert isinstance(q, list) and len(q) == n_q, (
+        f"{path.name}: q_of_context grain "
+        f"{len(q) if isinstance(q, list) else type(q).__name__} != {n_q}"
+    )
+    seeds = rec.get("seeds")
+    assert isinstance(seeds, dict) and seeds, (path.name, type(seeds).__name__)
+    for seed, sd in seeds.items():
+        comps = sd.get("completions")
+        assert isinstance(comps, list) and len(comps) == n_q, (
+            path.name,
+            seed,
+            len(comps) if isinstance(comps, list) else comps,
+        )
+        for ci, draws in enumerate(comps):
+            assert isinstance(draws, list) and len(draws) == n_draws, (
+                f"{path.name} seed {seed} ctx {ci}: "
+                f"{len(draws) if isinstance(draws, list) else draws} draws != {n_draws}"
+            )
+            assert all(isinstance(t, str) and t for t in draws), (path.name, seed, ci)
+        assert "edit_traces" in sd, (path.name, seed)
+    assert "cap_hit_fraction" in rec and "max_new_tokens" in rec, path.name
+
+
+def _validate_judged_record(j: dict, path: Path, *, n_q: int) -> None:
+    """Producer-schema contract on ONE judged checkpoint BEFORE the reduce
+    consumes it (plan §3): identity, question grain, per-question array
+    lengths, rule-29 accounting + coherence fields present."""
+    cid = path.stem
+    assert j.get("cell_id") == cid, (path.name, j.get("cell_id"))
+    assert isinstance(j.get("cell"), dict) and _cell_id(j["cell"]) == cid, path.name
+    assert j.get("n_questions") == n_q, (path.name, j.get("n_questions"), n_q)
+    for key in ("per_question_mean_score", "per_question_rate"):
+        arr = j.get(key)
+        assert isinstance(arr, list) and len(arr) == n_q, (path.name, key)
+    acct = j.get("accounting")
+    assert isinstance(acct, dict) and "frac_items_complete" in acct, path.name
+    assert "coherence_pass" in j and "coherence_rate" in j, path.name
+
+
+def _validate_gen_grid(args, comp_root: Path, expected: set[str], phase: str) -> None:
+    """Every expected gen record validated against the invocation's grain
+    BEFORE rubric/tokenizer load and BEFORE any API dispatch (plan §6).
+    Production refuses a truncated question grain outright (n_q == 20); the
+    draws grain is asserted UNIFORM == --draws (a §9 descope to 5 draws stays
+    executable — it re-generates, never mixes vintages)."""
+    if not args.smoke:
+        assert args.q_steer == Q_STEER_DEFAULT, (
+            f"{phase}: PRODUCTION question grain {args.q_steer} != {Q_STEER_DEFAULT} — "
+            "a truncated grain is a smoke-only slice (plan §6)"
+        )
+        if args.draws != DRAWS_DEFAULT:
+            logger.warning(
+                "[%s] production draws=%d != registered %d (plan §9 descope lever?) — "
+                "gen records asserted uniform at %d draws",
+                phase,
+                args.draws,
+                DRAWS_DEFAULT,
+                args.draws,
+            )
+    for cid in sorted(expected):
+        gp = comp_root / f"{cid}.json"
+        _validate_gen_record(json.loads(gp.read_text()), gp, n_q=args.q_steer, n_draws=args.draws)
+    logger.info(
+        "[%s] gen-record schema validated: %d cells at %dq x %d draws",
+        phase,
+        len(expected),
+        args.q_steer,
+        args.draws,
+    )
+
+
+def run_judge_shape_probe(args) -> None:
+    """<=5-request LIVE Batch shape probe (plan §7 smoke-gate leg; pod-side
+    pre-production — LIVE spend of 5 judge calls): submit 5 items x 1 draw
+    through the EXACT production request-construction path
+    (``judge_items_graded`` at threshold_base=0, forcing the Batch route —
+    the #763 class: a mock smoke cannot catch a malformed Batch request).
+    Zero transport losses required; an api-refusal is a judge CONTENT verdict
+    (shape reached the model), not a shape failure. Persists the pass
+    artifact at judge/shape_probe/shape_probe_pass.json."""
+    from explore_persona_space.eval.judge_dispatch import graded_temperature
+    from explore_persona_space.experiments.issue_1739.constants import (
+        JUDGE_MODEL,
+        JUDGE_TEMPERATURE,
+    )
+    from explore_persona_space.experiments.issue_1739.judging import (
+        judge_items_graded,
+        load_trait_rubric,
+    )
+
+    rroot = round_root(Path(args.out_root))
+    behavior = args.behaviors[0]
+    rubric = load_trait_rubric(behavior)
+    qs = i2254._eval_questions(behavior)
+    probe_texts = (  # benign fixed probe completions — a shape probe, never a science read
+        "Thank you for the question. Here is a short, factual, and helpful answer.",
+        "I would recommend checking the official documentation for the exact details.",
+        "The answer depends on context, but a reasonable default is to decline politely.",
+        "Paris is the capital of France; the Seine runs through the city.",
+        "A balanced diet and regular exercise are broadly good general advice.",
+    )
+    items = [(f"shapeprobe-{i:02d}", qs[i % len(qs)], t) for i, t in enumerate(probe_texts)]
+    assert len(items) <= 5, len(items)
+    probe_dir = rroot / "judge" / "shape_probe"
+    with graded_temperature(JUDGE_TEMPERATURE):
+        r = judge_items_graded(
+            items,
+            rubric,
+            cache_dir=probe_dir / "cache",
+            save_raw=probe_dir / "raw",
+            n_draws=1,
+            temperature=JUDGE_TEMPERATURE,
+            max_tokens=i2254.JUDGE_MAX_TOKENS_2254,
+            judge_model=JUDGE_MODEL,
+            threshold_base=JUDGE_THRESHOLD_BASE_BATCH,
+        )
+    n_scored = sum(len(sc) for sc in r.per_item_scores.values())
+    assert r.n_transport_lost_draws == 0, (
+        f"judge shape probe: {r.n_transport_lost_draws} transport-lost draws — the Batch "
+        "request shape failed (#763 class); fix the request shape, do not retry"
+    )
+    assert n_scored + r.n_refusal_draws + r.n_api_refusal_draws == len(items), (
+        n_scored,
+        r.n_refusal_draws,
+        r.n_api_refusal_draws,
+    )
+    i2254._write_json_atomic(
+        probe_dir / "shape_probe_pass.json",
+        i2254._run_metadata(
+            {
+                "behavior": behavior,
+                "n_requests": len(items),
+                "n_scored": n_scored,
+                "n_refusal_draws": r.n_refusal_draws,
+                "n_api_refusal_draws": r.n_api_refusal_draws,
+                "n_transport_lost_draws": r.n_transport_lost_draws,
+                "transport": "batch (threshold_base=0 pin; <=5-request live shape probe)",
+                "judge_model": JUDGE_MODEL,
+                "max_tokens": i2254.JUDGE_MAX_TOKENS_2254,
+            }
+        ),
+    )
+    logger.info(
+        "[%s] judge shape probe PASS: %d/%d scored (0 transport-lost)",
+        SENTINEL_JUDGE,
+        n_scored,
+        len(items),
+    )
 
 
 def phase_judge(args) -> None:
     """Off-pod Batch-API judge wave (plan §6, VM/CPU-only): stage the steer
     phase's per-cell raw completions (a regen'd cell's FULL-LENGTH record
-    feeds the judge — §3), grid-completeness assert BEFORE any spend, rule-26
-    pilot per behavior (--pilot stops after the gate), then per-cell judging
-    with per-cell checkpoints, rule-28 sync re-issue + rule-29 accounting,
-    and the packed-shard HF upload."""
+    feeds the judge — §3), grid-completeness + producer-schema validation
+    BEFORE any spend, rule-26 pilot per behavior (--pilot stops after the
+    gate) with the §7 positive-control EARLY kill (both behaviors fail =>
+    halt before the wave), then per-cell judging with fingerprinted per-cell
+    checkpoints, rule-28 sync re-issue + rule-29 accounting, and the
+    packed-shard HF upload."""
     from explore_persona_space.experiments.issue_1739.judging import load_trait_rubric
 
     out_root = Path(args.out_root)
     rroot = round_root(out_root)
+    _wipe_stale_sentinels([SENTINEL_JUDGE, f"{SENTINEL_JUDGE}-pilot"])
     behaviors = list(args.behaviors)
     _ensure_git_inputs()
     ops = i2254._load_operating_points(INPUTS_ROOT)
@@ -1560,10 +1979,29 @@ def phase_judge(args) -> None:
             f"firstk judge: {len(missing)}/{len(expected)} gen cells missing — never a "
             f"partial-grid judge spend (first missing: {missing[:8]})"
         )
+    # Producer-schema validation BEFORE rubric load / pilot / any API dispatch.
+    _validate_gen_grid(args, comp_root, expected, SENTINEL_JUDGE)
     n_draws = 2 if args.smoke else JUDGE_DRAWS_FIRSTK
     rubrics = {b: load_trait_rubric(b) for b in behaviors}
     for b in behaviors:
         _run_firstk_pilot(args, rroot, comp_root, b, rubrics[b], n_draws)
+    # §7 positive-control EARLY kill (mechanical): when EVERY behavior of a
+    # multi-behavior run has an assessable rb-vs-random early read and ALL
+    # fail (delta <= 0), HALT before any production wave spend (plan §7:
+    # halt-and-report, dispatch NO production judge wave). Single-behavior
+    # failure stays ADVISORY (logged + persisted in the pass sidecar).
+    pc_deltas: dict[str, float | None] = {}
+    for b in behaviors:
+        pp = rroot / "judge" / "pilot" / f"{b}.pass.json"
+        early = json.loads(pp.read_text()).get("positive_control_early") if pp.is_file() else None
+        pc_deltas[b] = None if not early else early.get("delta_rb_minus_random")
+    assessable = {b: d for b, d in pc_deltas.items() if d is not None}
+    if len(assessable) >= 2 and all(d <= 0.0 for d in assessable.values()):
+        raise RuntimeError(
+            "firstk judge: §7 positive-control EARLY kill — rb-vs-random pilot delta <= 0 "
+            f"for EVERY assessable behavior ({assessable}); halting before the production "
+            "judge wave (plan §7 halt-and-report)"
+        )
     if args.pilot:
         i2254._write_sentinel(out_root, f"{SENTINEL_JUDGE}-pilot", "done", {"behaviors": behaviors})
         i2254._breadcrumb(SENTINEL_JUDGE, status="pilot-done", behaviors=len(behaviors))
@@ -1686,6 +2124,22 @@ def _q_from_list(vals) -> np.ndarray:
     return np.array([np.nan if v is None else float(v) for v in vals], dtype=np.float64)
 
 
+def _cell_validity(j: dict) -> dict:
+    """Per-cell validity gate (plan §6): the coherence-gated score AND the
+    rule-29 completeness floor must BOTH hold for a cell to enter the §3
+    lattice / the required figures. Invalid cells are excluded (core arm
+    invalid => the lattice key reads 'not-computable pending remediation');
+    figures filter on the persisted block via ``_row_valid``."""
+    fc = j["accounting"]["frac_items_complete"]
+    completeness_pass = bool(fc is not None and fc >= COMPLETENESS_FLOOR)
+    return {
+        "valid": bool(j["coherence_pass"]) and completeness_pass,
+        "coherence_pass": bool(j["coherence_pass"]),
+        "completeness_pass": completeness_pass,
+        "completeness_floor": COMPLETENESS_FLOOR,
+    }
+
+
 def _lattice_block(
     b: str, d: str, breadth: str, arm_q: dict, a0_q: np.ndarray, deg_q: dict, key: str
 ) -> dict:
@@ -1739,9 +2193,24 @@ def _lattice_block(
     r_pt = float(out["S_span13"]["point"] / a_pt) if abs(a_pt) > 0 else None
     r1_pt = float(out["T_tok1"]["point"] / a_pt) if abs(a_pt) > 0 else None
     if ratio_unstable:
+        # Plan §3: R_pt is UNDEFINED under the guard — the registered point is
+        # None (figures/narration skip guarded cells); the raw ratio survives
+        # only under a clearly-descriptive diagnostic key, never as a point.
         note = "R undefined — >1% of resamples under the denominator floor (§3 guard)"
-        out["R"] = {"point": r_pt, "lo": None, "hi": None, "note": note}
-        out["R1"] = {"point": r1_pt, "lo": None, "hi": None, "note": note}
+        out["R"] = {
+            "point": None,
+            "lo": None,
+            "hi": None,
+            "note": note,
+            "raw_ratio_diagnostic_not_registered": r_pt,
+        }
+        out["R1"] = {
+            "point": None,
+            "lo": None,
+            "hi": None,
+            "note": note,
+            "raw_ratio_diagnostic_not_registered": r1_pt,
+        }
     else:
         out["R"] = {
             "point": r_pt,
@@ -1775,12 +2244,22 @@ def _lattice_block(
         r15_pt = float(s15_pt / a_pt) if abs(a_pt) > 0 else None
         with np.errstate(divide="ignore", invalid="ignore"):
             r15_b = _delta_b("span15") / a_b
-        out["R_span15"] = {
-            "point": r15_pt,
-            "lo": (None if ratio_unstable else float(np.nanquantile(r15_b, 0.025))),
-            "plateau_ge_90pct": (None if r15_pt is None else bool(r15_pt >= PLATEAU_FRAC)),
-            "below_two_thirds": (None if r15_pt is None else bool(r15_pt < R_SUFFICIENT)),
-        }
+        if ratio_unstable:  # §3 guard: span1-5 ratio reads undefined too
+            out["R_span15"] = {
+                "point": None,
+                "lo": None,
+                "plateau_ge_90pct": None,
+                "below_two_thirds": None,
+                "note": "R undefined under the §3 denominator guard",
+                "raw_ratio_diagnostic_not_registered": r15_pt,
+            }
+        else:
+            out["R_span15"] = {
+                "point": r15_pt,
+                "lo": float(np.nanquantile(r15_b, 0.025)),
+                "plateau_ge_90pct": (None if r15_pt is None else bool(r15_pt >= PLATEAU_FRAC)),
+                "below_two_thirds": (None if r15_pt is None else bool(r15_pt < R_SUFFICIENT)),
+            }
     else:
         out["R_span15"] = None  # arm absent (smoke slice)
     chain = [p for p in H3_CHAIN if p in have]
@@ -1843,6 +2322,7 @@ def phase_reduce(args) -> None:
     — never a per-draw Python loop."""
     out_root = Path(args.out_root)
     rroot = round_root(out_root)
+    _wipe_stale_sentinels([SENTINEL_REDUCE])
     behaviors = list(args.behaviors)
     _ensure_git_inputs()
     _ensure_reduce_git_inputs()
@@ -1857,19 +2337,28 @@ def phase_reduce(args) -> None:
             f"firstk reduce: {len(missing)}/{len(cells)} judged cells missing — run the "
             f"judge phase first (first missing: {_cell_id(missing[0])})"
         )
+    # Producer-schema validation on BOTH input classes BEFORE the tokenizer
+    # load / horizon recompute (plan §3/§6 — never a filename-only contract).
+    _validate_gen_grid(args, comp_root, {_cell_id(c) for c in cells}, SENTINEL_REDUCE)
+    judged: dict[str, dict] = {}
+    judged_sha: dict[str, str] = {}
+    for cell in cells:
+        cid = _cell_id(cell)
+        jp = judged_dir / f"{cid}.json"
+        raw = jp.read_bytes()
+        j = json.loads(raw)
+        _validate_judged_record(j, jp, n_q=args.q_steer)
+        judged[cid] = j
+        judged_sha[cid] = hashlib.sha256(raw).hexdigest()[:12]
+    n_qs = {j["n_questions"] for j in judged.values()}
+    assert len(n_qs) == 1, f"non-uniform n_questions across cells: {sorted(n_qs)}"
+    n_q = n_qs.pop()
+
     baseline = json.loads((_REPO_ROOT / BASELINE_PERCELL_REL).read_text())
     audit = json.loads((_REPO_ROOT / CJK_AUDIT_REL).read_text())
     rx = re.compile(audit["regex"])  # the parent's committed intrusion regex (§8)
     decisive = json.loads((_REPO_ROOT / DECISIVE_PERCELL_REL).read_text())
     horizon = _horizon_rows(args, rroot, comp_root, cells, rx)
-
-    judged: dict[str, dict] = {}
-    for cell in cells:
-        cid = _cell_id(cell)
-        judged[cid] = json.loads((judged_dir / f"{cid}.json").read_text())
-    n_qs = {j["n_questions"] for j in judged.values()}
-    assert len(n_qs) == 1, f"non-uniform n_questions across cells: {sorted(n_qs)}"
-    n_q = n_qs.pop()
 
     a0_arr: dict[str, np.ndarray] = {}
     ceil_arr: dict[str, np.ndarray] = {}
@@ -1880,6 +2369,13 @@ def phase_reduce(args) -> None:
         ceil_full = _q_from_list(base_b["ceiling"]["per_question_mean_score"])
         assert len(a0_full) >= n_q and len(ceil_full) >= n_q, (b, len(a0_full), n_q)
         if len(a0_full) > n_q:  # smoke slice: cells cover a question prefix
+            # PRODUCTION never truncates the baseline question grain — a
+            # sliced grain silently changes the registered paired estimator
+            # (plan §6); only the --smoke bank-order prefix slice may.
+            assert args.smoke, (
+                f"{b}: baseline arrays ({len(a0_full)} questions) exceed the run's "
+                f"n_questions ({n_q}) in PRODUCTION — truncated grain refused"
+            )
             logger.info(
                 "[%s] %s: truncating alpha0/ceiling arrays %d -> %d questions (smoke)",
                 SENTINEL_REDUCE,
@@ -1891,12 +2387,37 @@ def phase_reduce(args) -> None:
         ceil_arr[b] = ceil_full[:n_q]
         a0_rate[b] = float(base_b["alpha0"]["rate"])
 
+    # Per-cell reduce checkpoint (code-style T2 intra-phase grain), keyed on
+    # (judged-file byte sha, baseline bytes, bootstrap regime) — a re-judged
+    # cell or changed estimator settings is a cache MISS, never a stale reuse.
+    boot_fp = i2254._sha8(
+        {
+            "n_boot_cell": i2254.N_BOOT_CELL,
+            "seed": i2254.BOOTSTRAP_SEED,
+            "n_q": int(n_q),
+            "completeness_floor": COMPLETENESS_FLOOR,
+        }
+    )
+    baseline_sha = hashlib.sha256((_REPO_ROOT / BASELINE_PERCELL_REL).read_bytes()).hexdigest()[:12]
+    percell_ckpt = rroot / "steer" / "percell_rows.jsonl"
+    percell_cache: dict[tuple[str, str], dict] = {}
+    if percell_ckpt.exists() and not args.force:
+        for line in percell_ckpt.open(encoding="utf-8"):  # text-mode, never splitlines
+            if not line.strip():
+                continue
+            crow = json.loads(line)
+            if crow.get("boot_fp") == boot_fp and crow.get("baseline_sha") == baseline_sha:
+                percell_cache[(crow["cell_id"], crow["judged_sha"])] = crow
+    percell_ckpt.parent.mkdir(parents=True, exist_ok=True)
+
     qindex: dict[tuple[str, str, str, str], np.ndarray] = {}
     degindex: dict[tuple[str, str, str, str], np.ndarray] = {}
+    valid_ok: dict[tuple[str, str, str, str], bool] = {}
     percell: dict[str, dict] = {b: {} for b in behaviors}
     foc_rows: dict[str, dict] = {b: {} for b in behaviors}
     parity_rows: dict[str, dict] = {}
-    for cell in cells:
+    t0_pc = time.time()
+    for kx, cell in enumerate(cells, 1):
         cid = _cell_id(cell)
         b = cell["behavior"]
         j = judged[cid]
@@ -1904,83 +2425,125 @@ def phase_reduce(args) -> None:
         qkey = (b, cell["direction"], cell["breadth"], cell["position"])
         qindex[qkey] = cq
         degindex[qkey] = np.asarray(horizon[cid]["deg_q"], dtype=np.float64)
-        idx = i2254._boot_idx(n_q, i2254.N_BOOT_CELL, f"{cid}__firstk")
-        point, lo, hi = i2254._boot_diff_ci(cq, a0_arr[b], idx)
-        row = {
-            "cell": cell,
-            "delta_score": point,
-            "ci": [lo, hi],
-            "n_boot": i2254.N_BOOT_CELL,
-            "mean_score": j["mean_score"],
-            "rate": j["rate"],
-            # alpha0 lacks per_question_rate in the committed baseline JSON,
-            # so the rate delta is POINT-ONLY (no paired CI).
-            "delta_rate_point": (None if j["rate"] is None else j["rate"] - a0_rate[b]),
-            "coherence_rate": j["coherence_rate"],
-            "coherence_pass": j["coherence_pass"],
-            "frac_items_complete": j["accounting"]["frac_items_complete"],
-            "horizons": {
-                k: horizon[cid][k]
-                for k in (
-                    "caphit_common",
-                    "cjk_common",
-                    "deg_common",
-                    "cjk_realized",
-                    "caphit_realized_stored",
-                    "realized_cap",
-                    "regen",
-                )
-            },
-        }
-        pk = _parent_decisive_key(cell)
-        prow = decisive["behaviors"].get(b, {}).get(pk) if pk else None
-        if prow is not None:
-            ci_f = prow["ci_frozen"]
-            parity = {
-                "parent_key": pk,
-                "parent_delta_score": prow["delta_score"],
-                "parent_ci_frozen": ci_f,
-                "fresh_delta_score": point,
-                "fresh_within_parent_ci": bool(ci_f[0] <= point <= ci_f[1]),
-                "advisory": True,
+        hit = percell_cache.get((cid, judged_sha[cid]))
+        if hit is not None:
+            row, foc, parity = hit["row"], hit["foc"], hit.get("parity")
+        else:
+            idx = i2254._boot_idx(n_q, i2254.N_BOOT_CELL, f"{cid}__firstk")
+            point, lo, hi = i2254._boot_diff_ci(cq, a0_arr[b], idx)
+            row = {
+                "cell": cell,
+                "delta_score": point,
+                "ci": [lo, hi],
+                "n_boot": i2254.N_BOOT_CELL,
+                "mean_score": j["mean_score"],
+                "rate": j["rate"],
+                # alpha0 lacks per_question_rate in the committed baseline JSON,
+                # so the rate delta is POINT-ONLY (no paired CI).
+                "delta_rate_point": (None if j["rate"] is None else j["rate"] - a0_rate[b]),
+                "coherence_rate": j["coherence_rate"],
+                "coherence_pass": j["coherence_pass"],
+                "frac_items_complete": j["accounting"]["frac_items_complete"],
+                "validity": _cell_validity(j),
+                "horizons": {
+                    k: horizon[cid][k]
+                    for k in (
+                        "caphit_common",
+                        "cjk_common",
+                        "deg_common",
+                        "cjk_realized",
+                        "caphit_realized_stored",
+                        "realized_cap",
+                        "regen",
+                    )
+                },
             }
-            row["rig_parity"] = parity
+            parity = None
+            pk = _parent_decisive_key(cell)
+            prow = decisive["behaviors"].get(b, {}).get(pk) if pk else None
+            if prow is not None:
+                ci_f = prow["ci_frozen"]
+                parity = {
+                    "parent_key": pk,
+                    "parent_delta_score": prow["delta_score"],
+                    "parent_ci_frozen": ci_f,
+                    "fresh_delta_score": point,
+                    "fresh_within_parent_ci": bool(ci_f[0] <= point <= ci_f[1]),
+                    "advisory": True,
+                }
+                row["rig_parity"] = parity
+                logger.info(
+                    "[%s] rig-parity ADVISORY %s: fresh d=%.1f vs parent d=%.1f ci=%s (%s)",
+                    SENTINEL_REDUCE,
+                    cid,
+                    point,
+                    prow["delta_score"],
+                    ci_f,
+                    "within" if parity["fresh_within_parent_ci"] else "OUTSIDE",
+                )
+            # read 1: fraction of the donor-swap ceiling (shared alpha0 anchor).
+            a0_b = np.nanmean(a0_arr[b][idx], axis=1)
+            num_b = np.nanmean(cq[idx], axis=1) - a0_b
+            den_b = np.nanmean(ceil_arr[b][idx], axis=1) - a0_b
+            with np.errstate(divide="ignore", invalid="ignore"):
+                f_b = num_b / den_b
+            den_pt = float(np.nanmean(ceil_arr[b]) - np.nanmean(a0_arr[b]))
+            foc = {
+                "fraction_point": (point / den_pt) if abs(den_pt) > 0 else None,
+                "fraction_ci": [
+                    float(np.nanquantile(f_b, 0.025)),
+                    float(np.nanquantile(f_b, 0.975)),
+                ],
+                "denominator_point": den_pt,
+                "n_boot": i2254.N_BOOT_CELL,
+            }
+            with percell_ckpt.open("a") as fh:  # single-line append checkpoint
+                fh.write(
+                    json.dumps(
+                        {
+                            "cell_id": cid,
+                            "judged_sha": judged_sha[cid],
+                            "baseline_sha": baseline_sha,
+                            "boot_fp": boot_fp,
+                            "row": row,
+                            "foc": foc,
+                            "parity": parity,
+                        }
+                    )
+                    + "\n"
+                )
+            i2254._progress(SENTINEL_REDUCE, kx, len(cells), cid, t0_pc)
+        if parity is not None:
             parity_rows[cid] = parity
-            logger.info(
-                "[%s] rig-parity ADVISORY %s: fresh d=%.1f vs parent d=%.1f ci=%s (%s)",
-                SENTINEL_REDUCE,
-                cid,
-                point,
-                prow["delta_score"],
-                ci_f,
-                "within" if parity["fresh_within_parent_ci"] else "OUTSIDE",
-            )
+        valid_ok[qkey] = bool(row["validity"]["valid"])
         percell[b][cid] = row
-        # read 1: fraction of the donor-swap ceiling (shared alpha0 anchor).
-        a0_b = np.nanmean(a0_arr[b][idx], axis=1)
-        num_b = np.nanmean(cq[idx], axis=1) - a0_b
-        den_b = np.nanmean(ceil_arr[b][idx], axis=1) - a0_b
-        with np.errstate(divide="ignore", invalid="ignore"):
-            f_b = num_b / den_b
-        den_pt = float(np.nanmean(ceil_arr[b]) - np.nanmean(a0_arr[b]))
-        foc_rows[b][cid] = {
-            "fraction_point": (point / den_pt) if abs(den_pt) > 0 else None,
-            "fraction_ci": [float(np.nanquantile(f_b, 0.025)), float(np.nanquantile(f_b, 0.975))],
-            "denominator_point": den_pt,
-            "n_boot": i2254.N_BOOT_CELL,
-        }
+        foc_rows[b][cid] = foc
 
     lattice: dict[str, dict] = {}
     core = {"allans", "span13", "tok1"}
     for b in behaviors:
         for d in STRONG_DIRECTIONS:
             for breadth in ROUND_BREADTHS:
-                arms = {
-                    p: qindex[(b, d, breadth, p)] for p in POSITIONS if (b, d, breadth, p) in qindex
-                }
-                if not arms:
+                present = {p: (b, d, breadth, p) for p in POSITIONS if (b, d, breadth, p) in qindex}
+                if not present:
                     continue  # direction/breadth absent from this run (smoke slice)
                 lkey = f"{b}__{d}__{breadth}"
+                invalid = sorted(p for p, kk in present.items() if not valid_ok[kk])
+                if set(invalid) & core:
+                    # Validity gate (plan §6): a CORE arm failing the coherence
+                    # gate / rule-29 floor makes the registered verdict
+                    # non-computable — excluded from figures, remediation named.
+                    lattice[lkey] = {
+                        "verdict": "not-computable pending remediation",
+                        "invalid_arms": invalid,
+                        "note": (
+                            "validity gate: core arm failed the coherence gate or the "
+                            "rule-29 completeness floor — triage the drop class "
+                            "(llm-judging rule 29) before this cell re-enters the lattice"
+                        ),
+                    }
+                    continue
+                arms = {p: qindex[kk] for p, kk in present.items() if valid_ok[kk]}
                 if not core <= set(arms):
                     lattice[lkey] = {
                         "verdict": "not-computable",
@@ -1988,10 +2551,13 @@ def phase_reduce(args) -> None:
                         "note": "core arm absent (smoke slice or failed cell)",
                     }
                     continue
-                degs = {p: degindex[(b, d, breadth, p)] for p in arms}
-                lattice[lkey] = _lattice_block(
+                degs = {p: degindex[present[p]] for p in arms}
+                blk = _lattice_block(
                     b, d, breadth, arms, a0_arr[b], degs, f"{lkey}__firstk_lattice"
                 )
+                if invalid:  # non-core invalid arms are EXCLUDED, visibly
+                    blk["invalid_arms_excluded"] = invalid
+                lattice[lkey] = blk
 
     h4: dict[str, dict] = {}
     for b in behaviors:
@@ -2060,6 +2626,26 @@ def phase_reduce(args) -> None:
 
     reads_dir = rroot / "reads"
     reads_dir.mkdir(parents=True, exist_ok=True)
+    # §7 kill enforcement (mechanical): a powered both-behaviors positive-
+    # control failure BLOCKS figure-ready outputs — phase_figures refuses
+    # while this sentinel exists; a passing re-reduce clears it.
+    pc_fail_path = reads_dir / "positive_control_failed.json"
+    if pc["both_behaviors_failed"]:
+        i2254._write_json_atomic(
+            pc_fail_path,
+            i2254._run_metadata(
+                {
+                    "positive_control": pc,
+                    "note": (
+                        "plan §7 kill: rb-vs-random all-answer failed for EVERY behavior — "
+                        "the rig cannot detect the strongest known effect; figures refuse "
+                        "until a passing re-reduce clears this sentinel"
+                    ),
+                }
+            ),
+        )
+    else:
+        pc_fail_path.unlink(missing_ok=True)
     boot_meta = {
         "n_boot_cell": i2254.N_BOOT_CELL,
         "n_boot_verdict": i2254.N_BOOT_VERDICT,
@@ -2154,12 +2740,25 @@ def phase_figures(args) -> None:
 
     out_root = Path(args.out_root)
     rroot = round_root(out_root)
+    _wipe_stale_sentinels([SENTINEL_FIGURES])
+    # §7 kill enforcement: the reduce's positive-control-failed sentinel
+    # BLOCKS figure-ready outputs (plan §7 halt-and-report).
+    pc_fail = rroot / "reads" / "positive_control_failed.json"
+    if pc_fail.is_file():
+        raise RuntimeError(
+            f"firstk figures: {pc_fail} present — plan §7 positive-control kill; "
+            "figure-ready outputs are blocked until a passing re-reduce clears it"
+        )
     fig_dir = (
         Path(args.fig_dir)
         if args.fig_dir
         else _REPO_ROOT / "figures" / "issue_2254" / FOLLOWUP_LABEL
     )
-    require = () if args.smoke else firstk_figs.REQUIRED_FIGURES
+    # Smoke blind-spot (ENUMERATED): the smoke slice (1 behavior x pre x
+    # single) cannot render the rb/random-backed views, so `require` narrows
+    # to the subset ANY reduce output guarantees — the require MECHANISM
+    # itself stays exercised under smoke (a missing required figure raises).
+    require = SMOKE_REQUIRED_FIGURES if args.smoke else firstk_figs.REQUIRED_FIGURES
     res = firstk_figs.render_all(rroot, fig_dir, require=require)
     logger.info(
         "[%s] rendered=%s skipped=%s -> %s",
@@ -2227,6 +2826,9 @@ _CPU_SMOKE_CASES = {
         "S": 15.0,
         "T": 10.0,
         "expect": "Ambiguous",  # residual: S_lo > 0 but R_pt = 0.25 < 1/3
+        # combined-degradation fixture: cap-hit AND CJK on the SAME arm =>
+        # deg == 2.0 exactly (drives the hero-1 strip's full 0-2 stack, M7).
+        "capcjk": ("allans",),
     },
     ("sycophancy", "pre", "single"): {
         "A": 60.0,
@@ -2270,6 +2872,9 @@ _CPU_SMOKE_H4 = {  # expected dissociation-verdict prefix per h4 key
 }
 _CPU_SMOKE_TEXT = "The capital of France is Paris, a short factual answer for the fixture."
 _CPU_SMOKE_TEXT_CJK = _CPU_SMOKE_TEXT + " 好的谢谢"
+# Cap-hit AND CJK on the COMMON horizon: CJK leads (inside the first 2048
+# tokens); >2048 repeated tokens trip the parent cap-hit convention.
+_CPU_SMOKE_TEXT_CAPCJK = "好的谢谢 " + ("word " * 2100)
 
 
 def _cpu_smoke_delta(cell: dict) -> float:
@@ -2414,8 +3019,16 @@ def _cpu_smoke_write_fixtures(sub, rroot: Path) -> list[dict]:
         b = cell["behavior"]
         d = _cpu_smoke_delta(cell)
         case = _CPU_SMOKE_CASES.get((b, cell["direction"], cell["breadth"]), {})
-        text = _CPU_SMOKE_TEXT_CJK if cell["position"] in case.get("cjk", ()) else _CPU_SMOKE_TEXT
+        if cell["position"] in case.get("capcjk", ()):
+            text = _CPU_SMOKE_TEXT_CAPCJK  # cap-hit + CJK combined (M7 strip stack)
+        elif cell["position"] in case.get("cjk", ()):
+            text = _CPU_SMOKE_TEXT_CJK
+        else:
+            text = _CPU_SMOKE_TEXT
         per_q = [a0[b][q] + d for q in range(n_q)]
+        # Fixtures at PRODUCTION grain (n_q=20, DRAWS_DEFAULT=6 draws) so the
+        # real phase_reduce's producer-schema validators run at the exact
+        # production contract (never a fixture-only relaxed shape).
         i2254._write_json_atomic(
             comp_root / f"{cid}.json",
             {
@@ -2424,8 +3037,8 @@ def _cpu_smoke_write_fixtures(sub, rroot: Path) -> list[dict]:
                 "q_of_context": list(range(n_q)),
                 "seeds": {
                     str(SEED_BASE_DEFAULT): {
-                        "completions": [[text, text] for _ in range(n_q)],
-                        "coherent_flags": [[True, True] for _ in range(n_q)],
+                        "completions": [[text] * DRAWS_DEFAULT for _ in range(n_q)],
+                        "coherent_flags": [[True] * DRAWS_DEFAULT for _ in range(n_q)],
                         "condition_passes": [True] * n_q,
                         "edit_traces": [],
                     }
@@ -2481,24 +3094,42 @@ def _cpu_smoke_reduce_figures(args) -> dict:
     phase_reduce(sub)
     lat_path = rroot / "reads" / "verdict_lattice.json"
     lat1 = json.loads(lat_path.read_text())
+
+    def _jsonl_rows(p: Path) -> int:
+        return sum(1 for ln in p.read_text().split("\n") if ln.strip())
+
     ckpt = rroot / "steer" / "horizon_stats.jsonl"
-    n_ckpt_rows = len(ckpt.read_text().splitlines())
+    n_ckpt_rows = _jsonl_rows(ckpt)
     assert n_ckpt_rows == TOTAL_CELLS, n_ckpt_rows
-    phase_reduce(sub)  # resume leg: horizon ckpt cache-hit, no recompute rows
-    assert len(ckpt.read_text().splitlines()) == n_ckpt_rows, "resume appended horizon rows"
+    pk_ckpt = rroot / "steer" / "percell_rows.jsonl"
+    n_pk_rows = _jsonl_rows(pk_ckpt)
+    assert n_pk_rows == TOTAL_CELLS, n_pk_rows
+    phase_reduce(sub)  # resume leg: horizon + percell ckpts cache-hit, no recompute rows
+    assert _jsonl_rows(ckpt) == n_ckpt_rows, "resume appended horizon rows"
+    assert _jsonl_rows(pk_ckpt) == n_pk_rows, "resume appended percell rows"
     lat2 = json.loads(lat_path.read_text())
     for k in ("lattice", "h4", "positive_control"):
         assert lat1[k] == lat2[k], f"reduce resume changed {k}"
     out: dict = {
         "lattice": {},
         "h4": {},
-        "resume_recheck": "horizon-ckpt cache-hit; verdicts identical",
+        "resume_recheck": "horizon + percell ckpt cache-hit; verdicts identical",
     }
     for (b, d, br), case in sorted(_CPU_SMOKE_CASES.items()):
         key = f"{b}__{d}__{br}"
         blk = lat1["lattice"][key]
         assert blk["verdict"] == case["expect"], (key, blk["verdict"], case["expect"])
         assert blk["ratio_guard"]["ratio_unstable"] is bool(case.get("guard", False)), key
+        if case.get("guard"):
+            # Guarded ratio => registered points are None (raw ratio only under
+            # the explicit *_diagnostic_not_registered key) — plan §3 UNDEFINED.
+            assert blk["R"]["point"] is None and blk["R"]["lo"] is None, (key, blk["R"])
+            assert blk["R1"]["point"] is None, (key, blk["R1"])
+            assert blk["R_span15"]["point"] is None, (key, blk["R_span15"])
+            assert "raw_ratio_diagnostic_not_registered" in blk["R"], key
+        if case.get("capcjk") == ("allans",):
+            # Cap-hit AND CJK both fire on allans => degraded fraction stacks to 2.0.
+            assert abs(blk["D"]["deg_allans_common"] - 2.0) < 1e-9, (key, blk["D"])
         if case.get("cjk") == ("allans",):
             assert blk["D"]["point"] > 0.5, (key, blk["D"])  # allans degraded => D >> 0
         if case.get("cjk") == ("span13",):
@@ -2537,6 +3168,20 @@ def _cpu_smoke_reduce_figures(args) -> dict:
     import matplotlib.pyplot as plt
 
     import scripts.issue2254_firstk_figures as firstk_figs
+
+    # §7 positive-control kill: figures must REFUSE while the reduce-written
+    # sentinel is present (probed with a synthetic sentinel, then removed).
+    pc_fail = rroot / "reads" / "positive_control_failed.json"
+    assert not pc_fail.is_file(), pc_fail
+    pc_fail.write_text("{}")
+    try:
+        phase_figures(sub)
+    except RuntimeError as exc:
+        assert "positive_control_failed" in str(exc), exc
+    else:
+        raise AssertionError("phase_figures did not refuse on positive_control_failed sentinel")
+    pc_fail.unlink()
+    out["figures_pc_refusal"] = "RuntimeError raised on sentinel; sentinel removed; real render ran"
 
     phase_figures(sub)
     figs: dict[str, dict] = {}
@@ -2703,8 +3348,17 @@ def build_argparser() -> argparse.ArgumentParser:
     )
     ap.add_argument(
         "--cpu-smoke-out",
-        default=f"eval_results/issue_2254/{FOLLOWUP_LABEL}/smoke",
+        default=str(_REPO_ROOT / "eval_results" / "issue_2254" / FOLLOWUP_LABEL / "smoke"),
         help="evidence dir for --cpu-smoke summaries (committed; plan §4.4 trace persistence)",
+    )
+    ap.add_argument(
+        "--judge-shape-probe",
+        action="store_true",
+        help=(
+            "POD-SIDE pre-production probe: submit <=5 real requests through the exact "
+            "production judge path (Batch route, production rubric shape) and persist a "
+            "pass artifact under judge/shape_probe/ — live API spend, run before phase_judge"
+        ),
     )
     return ap
 
@@ -2746,7 +3400,9 @@ def _dry_run_phase(args, phase: str) -> None:
         inspect.signature(steering.generate_batch).bind(
             None, None, [], n=6, hook=None, max_new_tokens=2048, temperature=1.0, seed_base=42
         )
-        inspect.signature(multi_layer_delta_hooks).bind(None, [14], [None], [0.0])
+        inspect.signature(multi_layer_delta_hooks).bind(
+            None, [14], [None], [0.0], all_positions=True
+        )
         assert callable(hub.retry_transient) and callable(hub._upload)
         # Grid enumeration off the COMMITTED operating points (local read only).
         ops_path = INPUTS_ROOT / "localize" / "operating_points.json"
@@ -2863,10 +3519,15 @@ def main() -> None:
         sys.stdout.flush()
         sys.stderr.flush()
         os._exit(0)
+    if args.judge_shape_probe:
+        run_judge_shape_probe(args)
+        sys.stdout.flush()
+        sys.stderr.flush()
+        os._exit(0)
     if not args.phases:
         raise SystemExit(
             "--phases is required (comma-separated: stage_inputs,steer,judge,reduce,figures) "
-            "or --import-check / --cpu-smoke"
+            "or --import-check / --cpu-smoke / --judge-shape-probe"
         )
     phases = [p.strip() for p in args.phases.split(",") if p.strip()]
     unknown = [p for p in phases if p not in PHASES]

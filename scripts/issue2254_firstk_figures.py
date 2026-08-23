@@ -102,6 +102,17 @@ def _cell_index(percell_b: dict) -> dict[tuple[str, str, str], dict]:
     return out
 
 
+def _row_valid(row: dict | None) -> bool:
+    """True when the per-cell validity gate (coherence + rule-29 completeness,
+    written by the reduce phase) passed. Rows lacking the block (legacy /
+    partial artifacts) are treated as valid so old smoke fixtures still plot;
+    the reduce phase always writes it for this round's outputs."""
+    if row is None:
+        return False
+    v = row.get("validity")
+    return True if v is None else bool(v.get("valid", True))
+
+
 def _panels(percell: dict) -> tuple[list[str], list[str]]:
     """(behaviors, breadths) actually present in the percell rows."""
     behaviors = sorted(percell["behaviors"])
@@ -141,7 +152,7 @@ def fig_hero1_position_bars(rroot: Path, fig_dir: Path):
                 xs, vals, los, his, caps, cjks = [], [], [], [], [], []
                 for i, pos in enumerate(POS_ORDER):
                     row = idx.get((d, br, pos))
-                    if row is None:
+                    if not _row_valid(row):  # invalid cells excluded (plan rule 29 gate)
                         continue
                     xs.append(x[i] + (k - 1) * width)
                     vals.append(row["delta_score"])
@@ -175,7 +186,7 @@ def fig_hero1_position_bars(rroot: Path, fig_dir: Path):
             sxs, sv, slo, shi = [], [], [], []
             for i, pos in enumerate(POS_ORDER):
                 row = idx.get(("preshuf", br, pos))
-                if row is None:
+                if not _row_valid(row):
                     continue
                 sxs.append(x[i])
                 sv.append(row["delta_score"])
@@ -188,7 +199,7 @@ def fig_hero1_position_bars(rroot: Path, fig_dir: Path):
             rxs, rv, rlo, rhi = [], [], [], []
             for i, pos in enumerate(POS_ORDER):
                 row = idx.get(("random", br, pos))
-                if row is None:
+                if not _row_valid(row):
                     continue
                 rxs.append(x[i])
                 rv.append(row["delta_score"])
@@ -211,8 +222,10 @@ def fig_hero1_position_bars(rroot: Path, fig_dir: Path):
             ax.set_title(f"{beh} — {BREADTH_LABELS[br]}")
             ax.set_ylabel("Δ graded score vs α=0")
             plt.setp(ax.get_xticklabels(), visible=False)
-            axs.set_ylim(0, 1.05)
-            axs.set_ylabel("degraded frac")
+            # Stack of cap-hit + CJK fractions ranges over [0, 2] (both can be 1).
+            axs.set_ylim(0, 2.05)
+            axs.axhline(1.0, color="0.75", lw=0.5)
+            axs.set_ylabel("degraded frac (cap+CJK, 0-2)")
             axs.set_xticks(x)
             axs.set_xticklabels([POS_LABELS[p] for p in POS_ORDER], rotation=35, ha="right")
     handles = [Patch(color=DIR_COLORS[d], label=DIR_LABELS[d]) for d in HERO_DIRECTIONS]
@@ -249,7 +262,11 @@ def _lattice_blocks(lat: dict) -> list[dict]:
     return [
         v
         for _k, v in sorted(lat["lattice"].items())
-        if isinstance(v, dict) and v.get("verdict") != "not-computable" and "R" in v
+        # startswith covers "not-computable" AND "not-computable pending
+        # remediation" (invalid core arm, plan validity gates).
+        if isinstance(v, dict)
+        and not str(v.get("verdict", "")).startswith("not-computable")
+        and "R" in v
     ]
 
 
@@ -282,8 +299,8 @@ def fig_hero2_recovery_fraction(rroot: Path, fig_dir: Path):
                 continue
             xs.append(x[gi] + (k - 0.5) * width)
             vals.append(blk["R"]["point"])
-            los.append(blk["R"]["lo"] if blk["R"]["lo"] is not None else blk["R"]["point"])
-            his.append(blk["R"]["hi"] if blk["R"].get("hi") is not None else blk["R"]["point"])
+            los.append(blk["R"].get("lo") if blk["R"].get("lo") is not None else blk["R"]["point"])
+            his.append(blk["R"].get("hi") if blk["R"].get("hi") is not None else blk["R"]["point"])
         if not vals:
             continue
         ax.bar(
@@ -329,7 +346,7 @@ def fig_expl_accrual_curves(rroot: Path, fig_dir: Path):
                 xs, vals, los, his = [], [], [], []
                 for i, pos in enumerate(H3_CHAIN):
                     row = idx.get((d, br, pos))
-                    if row is None:
+                    if not _row_valid(row):  # invalid cells excluded (plan rule 29 gate)
                         continue
                     xs.append(x[i])
                     vals.append(row["delta_score"])
@@ -558,8 +575,8 @@ def fig_expl_perq_clouds(rroot: Path, fig_dir: Path):
                         ),
                         None,
                     )
-                    if hit is None:
-                        continue
+                    if hit is None or not _row_valid(hit[1]):
+                        continue  # missing or validity-gated cell (plan rule 29)
                     cid, row = hit
                     jf = judged_dir / f"{cid}.json"
                     if not jf.is_file():
