@@ -2073,6 +2073,104 @@ with 2 header uses, composer-span expected = 5 — and count marker/verdict
 embeds separately before summing (the v2 epm:results body carried ZERO,
 unlike r1's which carried one).
 
+**Binding-reconciler-FAIL fix round (#2263 r4, 2026-08-22):** when the prior
+round ended Claude-PASS / Codex-FAIL / reconciler BINDING FAIL, inline BOTH
+the reconciler verdict (tags stripped — the acceptance contract; its
+Rationale names the endorsed bounded fix and the settled scope) and the prior
+Codex verdict (#2329-rclose form: tags stripped, `CONCERN:: ` rows
+blockquoted) with the author-neutrality line PLUS an "earned standing, not
+license to re-litigate" frame. Two new composables: (a) when the
+reconciler's endorsed fix sketch DIFFERS from the realized fix (endorsed
+bare `"${VAR[@]}"`, implementer chose the `${VAR[@]+...}` set-u guard,
+rejecting the brief's local-default alternative on clobber-on-copy-paste
+grounds), hand the delta as an explicit design-judgment duty with both
+regimes enumerated (set-u on/off × unset/declared-empty/populated) — never
+grade sketch-verbatim and never resolve the judgment yourself; (b) the
+bare-substring flag-absence trap: an implementer claim "dispatch_issue.py
+has NO --lane flag" is TRUE while a bare `--lane` grep hits 13× (all
+`--lane-suffix`, a different flag) — verify flag absence via an
+add_argument-scoped grep at compose time and hand Codex the substring
+caveat explicitly, else it false-flags the closure claim. Also: a
+reconciler "Standing recommendations n/a — verdict is FAIL" section still
+carries Standing-only items inside its adjudication table/rationale
+(Claude's two-site-edit Minor) — restate them in the settled/do-not-owe
+block so the twin neither re-FAILs on them nor demands the subsuming fix.
+
+**Measured-TRUE acceptance round (#2273 r2, 2026-08-22):** a variant of the
+#2147-cr3/cr4 accepted-FAIL shapes — the twin's r1 FAIL was accepted (no
+reconciler), and the flagged claims were then MEASURED and found TRUE; the
+remedy was the twin's OWN offered branch (add evidence rows), not weakening.
+Compose three blocks: (a) author-neutrality + an ESTABLISHED-FACTS fence —
+"do NOT re-raise 'unsupported' against a claim that now traces to rows 7-9;
+the facts are settled by measurement"; (b) the live question is
+ROW-BOUNDEDNESS of the landed text (the brief's A10 headline), not truth —
+an unhedged claim outrunning its row re-lands the r1 defect class ⇒
+Critical; (c) closure status lines keyed to the persisted concern ids with
+the acceptance contract restated per id (rc clause may name ONLY the
+measured consumers; residual clause bounded to its rows; pin-sweep figures
+re-grepped by the twin against composer ground truth). Doc-only in-place
+line replacement: round numstat is 1/1 (old bullet superseded) while
+net-vs-main is +1/-0 — state BOTH and pre-clear the deletion's identity or
+the twin flags collateral removal.
+
+**Generous-timeout lint attestation beats a third INCONCLUSIVE (#2273 r2):**
+after two rounds of timeout-killed full no-flags lint runs (540 s composer /
+590 s Claude self-fence), launching the compose-time attestation run as
+bg-Bash at the START of compose (timeout 1800) and harvesting via a bounded
+synchronous wait AFTER the prompt was written converted the attestation from
+INCONCLUSIVE to COMPLETED-PASS rc=0 (~11 min wall under VM contention) at
+near-zero added latency — the run overlaps the probe+write work. Patch via a
+single `@@FULL_LINT_ATTESTATION@@` placeholder (assert 0 residue at final
+validation). Also relay upward: a sibling 570 s-fenced run is predictably
+too tight; tell the orchestrator the measured wall so the Claude leg sizes
+its fence ≥2× (~1,200 s+).
+
+**Reconciler-UPHELD twin-FAIL fix round + three-class truth split (#2271 r2,
+2026-08-22):** when the prior round was Claude-PASS / Codex-FAIL / reconciler
+BINDING FAIL upholding the TWIN'S OWN blockers, compose the #1094-r2 shape
+(author-neutrality line; per-concern VERIFIED-ADDRESSED/NOT-ADDRESSED closure
+ledger with NOT-ADDRESSED = substantive FAIL; ledger rows inlined when tiny)
+plus three deltas: (a) keep the brief's THREE truth classes distinct in the
+prompt — "established facts" (compose-verified, do-not-re-derive) vs
+"orchestrator-verified claims — RE-VERIFY by static read, never accept" (the
+brief ordered re-verification; collapsing them into established facts would
+delete review duties) vs "calibration/settled ground" (both r1 reviewers right
+about DIFFERENT mutation directions — name both, direction (a) must STAY
+covered, so the twin neither re-litigates nor drops the surviving half);
+(b) when the fix's correctness turns on stdlib/installed-library semantics a
+no-env Codex cannot execute (py311 rglob symlink behavior, hf 0.36.2
+upload_folder walk), verify them EMPIRICALLY at compose time (tiny tempfile
+repro on the project interpreter + read the installed source) and ship them as
+established facts with file:line citations (pathlib.py:391
+`is_dir(follow_symlinks=False)`; hf_api.py:9566 `glob("**/*") + is_file()`),
+scoping what remains YOURS to verify (pattern parity, not walk parity);
+(c) realized repo shapes under sparse-excluded dirs (`eval_results/` symlinks)
+are attested in the prompt with their RESOLUTION status (dangling vs resolves)
+since Codex cannot stat them. Also: the never-echo constraints line must not
+carry the literal `<!-- ... -->` head-tag form (write "`epm:code-review-codex
+v2` head tag line" instead) or the v2-tag count assert reads 2.
+
+**Union-fix round with a one-giant-line doc entry (#2280 r2, 2026-08-22):**
+three composable deltas. (a) When a doc fix lands inside a single multi-KB
+line (gotchas.md entries), the +1/−1 numstat hides everything — hand Codex
+`git show <sha> --word-diff -- <file>` explicitly AND a drive-by sweep duty
+("every changed token maps to a named fix item; anything else is scope
+creep numstat cannot see"). Attest token COUNTS (dating qualifiers,
+contrast figures) at compose time but state PLACEMENT is Codex's to grade —
+existence-of-string is not scoped-to-the-right-claim. (b) Claude-PASS +
+Codex-FAIL resolved by orchestrator UNION (no reconciler): inline only the
+CODEX prior verdict (tags stripped, CONCERN:: rows blockquoted); the Claude
+Minors arrive via the brief's fix enumeration as pseudo-IDs
+(`r1-claude-<slug>`), and the closure ledger maps fixes → ids (F1+F2 → the
+Major, etc.). A headroom/measurement NIT (`gotchas-size-headroom`) marked
+addressed by RECORDING a measurement gets a neutral adjudication duty
+(does measuring close a headroom NIT, or re-persist?) — never pre-resolve.
+(c) Assert arithmetic: the r1-derived rubric span's Step 0.9 carries THREE
+full merge-base SHA occurrences (intro + git-show probe + git-log probe);
+with 2 header uses, composer-span expected = 5 — and count marker/verdict
+embeds separately before summing (the v2 epm:results body carried ZERO,
+unlike r1's which carried one).
+
 **Split-verdict inlining + FAIL+FAIL union with un-ledgered Claude items
 (#2478 r2, 2026-08-22):** three deltas on the #2332 union shape. (a) A
 SPLIT-review Claude verdict (per-commit sub-verdicts) can EMBED a
