@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2493,
+  "highest_id": 2494,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11535,6 +11535,13 @@
       "path": "tasks/proposed/2493",
       "status": "proposed",
       "title": "verify_task_body check 31: class-C per-unit-companion candidate set misses prose-named committed figures"
+    },
+    "2494": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2494",
+      "status": "proposed",
+      "title": "verify_task_body per-unit vocabulary scan: credit the what-is-plotted beat and strip-point phrasing"
     },
     "25": {
       "has_clean_result": false,
