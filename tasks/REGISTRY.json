@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2488,
+  "highest_id": 2489,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11493,6 +11493,13 @@
       "path": "tasks/proposed/2488",
       "status": "proposed",
       "title": "workflow-fix: step9c compare's pristine oracle is cut at the merge-base, so Step 5a-synced current-main files yield systematic false-NEW verdicts (blames the innocent branch)"
+    },
+    "2489": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2489",
+      "status": "proposed",
+      "title": "workflow-fix: cron_step9c_ledger_refresh.sh committed at mode 100644 \u2014 the nightly known-red ledger refresh has NEVER run (Permission denied x11); add a lint check that cron scripts are executable"
     },
     "249": {
       "has_clean_result": false,
