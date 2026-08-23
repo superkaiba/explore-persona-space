@@ -129,5 +129,18 @@ Rules for any Claude session working in this repo (git clone of Overleaf project
 - Comment loop (Google Doc working draft): action comments → edit, reply with what was
   done, resolve. Question comments → answer on the thread, leave OPEN for Thomas.
 - SURFACE REVERSED (2026-08-19 afternoon): back to OVERLEAF as working surface; the
-  Google Doc is FROZEN (plan.md Decision 20). Review channel here: % THOMAS: inline
-  comments in the tex (Overleaf comment bubbles never reach the git bridge).
+  2026-08-19 working-draft Google Doc is FROZEN (plan.md Decision 20). Review channel
+  here: % THOMAS: inline comments in the tex (Overleaf comment bubbles never reach
+  the git bridge).
+- PLAN REVIEW DOC (Thomas 2026-08-23, distinct from the frozen 08-19 doc): the SIMPLE
+  PLAN also lives as a commentable Google Doc — id
+  `1GABve9mQWM-cF5whYTvOhJJFh9vybN2xnIWF5rFFcFU` ("Context→Answer Map — Paper Plan
+  (comment here)"), converted from plan.tex with figures rendered in. Comment loop
+  (same conventions as the 08-19 round, via `~/paper-tools/gdoc_paper.py`
+  comments/reply subcommands): action comments → apply the edit to plan.tex
+  (canonical), reply with what was done, resolve; question comments → answer
+  on-thread, leave OPEN for Thomas. plan.tex stays the source of truth; the Doc TEXT
+  is a conversion-time snapshot (comment anchors break on re-conversion — refresh the
+  Doc only on Thomas's ask, as a NEW file or after his open comments are drained).
+  Auth note: the google-workspace OAuth refresh token expires ~weekly while the app
+  is in testing mode; re-auth = `npx @dguido/google-workspace-mcp auth` (Thomas).
