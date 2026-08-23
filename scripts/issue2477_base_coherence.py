@@ -27,6 +27,15 @@ Idempotency (round 2): every phase carries an entry guard keyed on its primary o
 ``--force`` re-runs. Judge phases run on any machine: ``_fresh_rows`` stages the fresh
 completions from the plan-declared HF dest when the pod-local mirror is absent.
 
+Condition sets (plan v5 C0, follow-up `decoding-sensitivity`): ``--condition-set
+{parent,decoding-sensitivity}`` routes gen/judge/aggregate/figures through the
+``CONDITION_SETS`` registry. Default ``parent`` preserves the parent round's behavior
+unchanged; ``decoding-sensitivity`` runs the 4-condition temperature ablation
+(chat/bare renders x temperatures {0.7, 0.0}) with set-distinct out roots, Hub prefixes
+(``.../generation/decoding_sensitivity/``, ``judge_raw/decoding_sensitivity/``), judge
+caches, verdict path (``decoding-sensitivity/coherence_verdict.json``, §3 lattice
+render-and-sampling / render-driven) and ``decoding_sensitivity_``-prefixed figures.
+
 Content hygiene: prompts/responses are real LMSYS/WildChat-lineage text — this driver
 never PRINTS text fields (digests, counts and shas only); texts live only in artifacts.
 """
@@ -122,6 +131,38 @@ Only if the response is completely empty, return the literal token REFUSAL inste
 REPO_ROOT = Path(__file__).resolve().parents[1]
 EVAL_DIR = REPO_ROOT / "eval_results" / "issue_2477"
 STAGE_DIR = REPO_ROOT / "data" / "issue_2477" / "hf_dl"
+
+# C0 (plan v5 §4): condition-set registry. Row = (config_slug, render, temperature, stop).
+# "parent" reproduces the parent round's phase_gen literals VERBATIM (temperature 1.0) so the
+# default --condition-set parent path is behavior-identical to the parent round;
+# "decoding-sensitivity" is the 4-condition temperature ablation (chat/bare x {0.7, 0.0};
+# 0.7 = Qwen2.5-7B-Instruct generation_config default, 0.0 = greedy bound — plan v5 §11).
+CONDITION_SETS: dict[str, tuple[tuple[str, str, float, tuple[str, ...]], ...]] = {
+    "parent": (
+        ("base_chat", "chat", 1.0, ("<|im_end|>",)),
+        ("base_bare", "bare", 1.0, ("\nUser:", "\n\nUser:")),
+    ),
+    "decoding-sensitivity": (
+        ("base_chat_t07", "chat", 0.7, ("<|im_end|>",)),
+        ("base_chat_t00", "chat", 0.0, ("<|im_end|>",)),
+        ("base_bare_t07", "bare", 0.7, ("\nUser:", "\n\nUser:")),
+        ("base_bare_t00", "bare", 0.0, ("\nUser:", "\n\nUser:")),
+    ),
+}
+DECSENS = "decoding-sensitivity"
+DECSENS_ARM_NAMES = tuple(f"arm_{slug}" for slug, _r, _t, _s in CONDITION_SETS[DECSENS])
+DECSENS_EVAL_DIR = EVAL_DIR / "decoding-sensitivity"
+DECSENS_HUB_GEN_PREFIX = f"{EXPERIMENT}/raw_completions/generation/decoding_sensitivity"
+DECSENS_HUB_JUDGE_PREFIX = f"{EXPERIMENT}/judge_raw/decoding_sensitivity"
+# 4-arm pilot satisfiability minimum: 4 arms x 2 draws x ceil(51/2)=26 items (plan v5 §7 G2').
+DECSENS_PILOT_TARGET_TOTAL_DRAWS = 208
+# Registered cross-temperature contrasts (plan v5 §3): (key, fresh arm, parent comparator arm).
+DECSENS_PAIR_SPECS = (
+    ("chat_t07_minus_chat_t10", "arm_base_chat_t07", "arm_base_chat"),
+    ("chat_t00_minus_chat_t10", "arm_base_chat_t00", "arm_base_chat"),
+    ("bare_t07_minus_bare_t10", "arm_base_bare_t07", "arm_base_bare"),
+    ("bare_t00_minus_bare_t10", "arm_base_bare_t00", "arm_base_bare"),
+)
 
 
 def _log(msg: str) -> None:
@@ -1191,10 +1232,20 @@ def _assert_gen_manifest_contract(manifest: dict, chat_items: list[dict], smoke:
     if n_empty:
         errors.append(f"empty/non-str prompt on {n_empty} items")
     recipe = (manifest.get("meta") or {}).get("sampling_recipe") or {}
+    # Manifest identity stays pinned to the PARENT recipe (temperature 1.0): the manifest
+    # records how the sampled panel was drawn; the decoding-sensitivity arms deliberately
+    # deviate at generation time via the registry, validated below (plan v5 §4 C0).
     expected_recipe = {"temperature": 1.0, "top_p": 0.95, "max_tokens": 1024, "seed": GEN_SEED}
     for k, v in expected_recipe.items():
         if recipe.get(k) != v:
             errors.append(f"sampling_recipe[{k}]: {recipe.get(k)!r} != expected {v!r}")
+    for set_name, rows in CONDITION_SETS.items():
+        for slug, _render, temp, _stop in rows:
+            if type(temp) is not float or not (0.0 <= temp <= 2.0):
+                errors.append(
+                    f"CONDITION_SETS[{set_name}][{slug}]: temperature {temp!r} "
+                    "not a float in [0.0, 2.0]"
+                )
     if errors:
         raise RuntimeError(
             "gen manifest contract failed (" + str(len(errors)) + " errors): " + "; ".join(errors)
@@ -1204,6 +1255,15 @@ def _assert_gen_manifest_contract(manifest: dict, chat_items: list[dict], smoke:
 def phase_gen(args: argparse.Namespace) -> None:
     smoke = bool(args.smoke)
     out_root = Path(args.out)
+    if args.condition_set == DECSENS and not smoke and out_root.name != "decoding_sensitivity":
+        # Fail fast: a shared out root would cross-fire the PARENT's gen_done.json idempotency
+        # guard (silent SKIP of a paid phase) and collide nothing else loudly (plan v5 §4:
+        # the decoding-sensitivity sentinel is path-distinct BY out-root).
+        raise SystemExit(
+            "gen --condition-set decoding-sensitivity requires the set-specific --out "
+            "(.../decoding_sensitivity, plan v5 phase_outputs): a shared out root would "
+            "cross-fire the parent's gen_done.json idempotency guard"
+        )
     # Idempotency guard: gen is the paid GPU phase. Placed BEFORE the torch import so the
     # skip leg is VM-smokable (refusing a duplicate paid run needs no CUDA); emits the
     # [phase=done] breadcrumb so a poller treats the skip as a completed phase.
@@ -1272,15 +1332,20 @@ def phase_gen(args: argparse.Namespace) -> None:
 
     llm = LLM(model=MODEL_BASE)  # engine defaults: issue825_gen_conversations._build_llm parity
     meta_common = _meta("gen")
-    arms = [
-        ("base_chat", rendered_chat, ["<|im_end|>"]),
-        ("base_bare", rendered_bare, ["\nUser:", "\n\nUser:"]),
-    ]
+    # C0: arms come from the condition-set registry. "parent" reproduces the parent round's
+    # two literals at temperature 1.0; "decoding-sensitivity" loops its 4 conditions in this
+    # ONE engine session (plan v5 §4: one LLM() load, one batched generate per condition).
+    cset = CONDITION_SETS[args.condition_set]
+    render_map = {"chat": rendered_chat, "bare": rendered_bare}
+    if args.condition_set == DECSENS:
+        _log(f"[gen] condition_set={args.condition_set}: {len(cset)} conditions")
     gen_stats: dict[str, dict] = {}
     suffix = "smoke" if smoke else "seed42"
-    for arm, rendered, stop in arms:
+    for arm, render_key, temp, stop_t in cset:
+        rendered = render_map[render_key]
+        stop = list(stop_t)
         sampling = SamplingParams(
-            n=1, temperature=1.0, top_p=0.95, max_tokens=1024, seed=GEN_SEED, stop=stop
+            n=1, temperature=temp, top_p=0.95, max_tokens=1024, seed=GEN_SEED, stop=stop
         )
         outs = _vllm_generate_chunked(llm, rendered, sampling)
         rows = []
@@ -1298,7 +1363,7 @@ def phase_gen(args: argparse.Namespace) -> None:
                     "model": MODEL_BASE,
                     "sampling": {
                         "n": 1,
-                        "temperature": 1.0,
+                        "temperature": temp,
                         "top_p": 0.95,
                         "max_tokens": 1024,
                         "seed": GEN_SEED,
@@ -1335,61 +1400,61 @@ def phase_gen(args: argparse.Namespace) -> None:
         "model": MODEL_BASE,
         "render_parity_assert": "token-id equality on smoke render; <|im_end|> single shared token",
         "arms": gen_stats,
-        "stop_strings": {a: s for a, _, s in arms},
+        "stop_strings": {a: list(s) for a, _r, _t, s in cset},
     }
+    if args.condition_set == DECSENS:
+        gen_meta["condition_set"] = args.condition_set
+        gen_meta["realized_temperatures"] = {a: t for a, _r, t, _s in cset}
+        gen_meta["inert_fields_note"] = (
+            "temperature 0.0 arms decode greedily under vLLM; top_p=0.95 and seed=42 are "
+            "inert there (recorded for recipe parity, not load-bearing)"
+        )
     if smoke:
         _write_json(out_root / "smoke" / "gen_meta_smoke.json", gen_meta)
         _log("[phase=gen] done (smoke — no upload; eyeball smoke/*.jsonl for stop behavior)")
         return
     _write_json(out_root / "gen_meta.json", gen_meta)
 
-    # C4: upload BEFORE anything else. Explicit per-file hub._upload calls (unrolled, not a
-    # loop) because the canonical upload_raw_completions_to_data_repo helper composes dests
-    # as <exp>/raw_completions/<rel> with selection requiring a local raw_completions/ dir —
-    # which would double the prefix vs the plan-declared destination.
-    dest_prefix = f"{EXPERIMENT}/raw_completions/generation"
-    chat_path = out_root / f"base_chat_{suffix}.jsonl"
-    bare_path = out_root / f"base_bare_{suffix}.jsonl"
+    # C4: upload BEFORE anything else. Explicit per-file hub._upload calls (the parent's
+    # unrolled shape generalized to the condition set's file list — same calls, same order,
+    # same kwargs on the parent set) because the canonical upload_raw_completions_to_data_repo
+    # helper composes dests as <exp>/raw_completions/<rel> with selection requiring a local
+    # raw_completions/ dir — which would double the prefix vs the plan-declared destination.
+    dest_prefix = (
+        DECSENS_HUB_GEN_PREFIX
+        if args.condition_set == DECSENS
+        else f"{EXPERIMENT}/raw_completions/generation"
+    )
+    jsonl_paths = [out_root / f"{arm}_{suffix}.jsonl" for arm, _r, _t, _s in cset]
     meta_path = out_root / "gen_meta.json"
-    u1 = hub._upload(
-        chat_path,
-        hub.DEFAULT_DATASET_REPO,
-        "dataset",
-        f"{dest_prefix}/{chat_path.name}",
-        upload_as_file=True,
-        raise_on_error=True,
-    )
-    u2 = hub._upload(
-        bare_path,
-        hub.DEFAULT_DATASET_REPO,
-        "dataset",
-        f"{dest_prefix}/{bare_path.name}",
-        upload_as_file=True,
-        raise_on_error=True,
-    )
-    u3 = hub._upload(
-        meta_path,
-        hub.DEFAULT_DATASET_REPO,
-        "dataset",
-        f"{dest_prefix}/{meta_path.name}",
-        upload_as_file=True,
-        raise_on_error=True,
-    )
-    if not (u1 and u2 and u3):
-        raise RuntimeError("gen: one of the three uploads returned an empty url")
+    for p in [*jsonl_paths, meta_path]:
+        url = hub._upload(
+            p,
+            hub.DEFAULT_DATASET_REPO,
+            "dataset",
+            f"{dest_prefix}/{p.name}",
+            upload_as_file=True,
+            raise_on_error=True,
+        )
+        if not url:
+            raise RuntimeError(f"gen: upload of {p.name} returned an empty url")
     from huggingface_hub import HfApi
 
-    expected = [f"{dest_prefix}/{p.name}" for p in (chat_path, bare_path, meta_path)]
+    expected = [f"{dest_prefix}/{p.name}" for p in [*jsonl_paths, meta_path]]
     missing = hub.verify_repo_paths_uploaded(
         HfApi(), hub.DEFAULT_DATASET_REPO, expected, path_in_repo=dest_prefix
     )
     if missing:
         raise RuntimeError(f"gen: files missing on Hub after upload: {missing}")
 
-    # Mirror the small text files onto the issue branch tree (plan C4).
-    mirror = REPO_ROOT / "eval_results" / "issue_2477" / "fresh_completions"
+    # Mirror the small text files onto the issue branch tree (plan C4 / v5 §4).
+    mirror = (
+        DECSENS_EVAL_DIR / "fresh_completions"
+        if args.condition_set == DECSENS
+        else REPO_ROOT / "eval_results" / "issue_2477" / "fresh_completions"
+    )
     mirror.mkdir(parents=True, exist_ok=True)
-    for p in (chat_path, bare_path):
+    for p in jsonl_paths:
         shutil.copy2(p, mirror / p.name)
     _write_json(
         out_root / "gen_done.json",
@@ -1441,8 +1506,13 @@ def _validate_fresh_rows_contract(rows: list[dict], manifest: dict, name: str) -
         )
 
 
-def _fresh_rows(name: str, manifest: dict) -> list[dict]:
-    path = EVAL_DIR / "fresh_completions" / name
+def _fresh_rows(name: str, manifest: dict, condition_set: str = "parent") -> list[dict]:
+    fresh_dir = (
+        DECSENS_EVAL_DIR / "fresh_completions"
+        if condition_set == DECSENS
+        else EVAL_DIR / "fresh_completions"
+    )
+    path = fresh_dir / name
     if not path.exists():
         # Round-2 fix 1: judge phases may run on a different machine than gen — the pod-local
         # mirror is the fast path; the plan-declared HF dest is the permanent source
@@ -1451,7 +1521,12 @@ def _fresh_rows(name: str, manifest: dict) -> list[dict]:
 
         from explore_persona_space.orchestrate import hub
 
-        repo_path = f"{EXPERIMENT}/raw_completions/generation/{name}"
+        repo_prefix = (
+            DECSENS_HUB_GEN_PREFIX
+            if condition_set == DECSENS
+            else f"{EXPERIMENT}/raw_completions/generation"
+        )
+        repo_path = f"{repo_prefix}/{name}"
         _log(f"[judge] {path} absent locally — staging from {REPO_DATA}/{repo_path}")
         try:
             hub.stage_hub_file(REPO_DATA, repo_path, path, repo_type="dataset")
@@ -1465,12 +1540,60 @@ def _fresh_rows(name: str, manifest: dict) -> list[dict]:
     return rows
 
 
-def build_arms(manifest: dict) -> dict[str, ArmData]:
-    """Assemble the five §5 arms; item_id grammar per plan B1 ('--' delimiter)."""
+def _fresh_arm(
+    arm_name: str, fname: str, manifest: dict, prompt_by_idx: dict, condition_set: str
+) -> ArmData:
+    """One fresh-completions arm: panel/prompt-hash asserts + cap-hit capture (plan B1).
+
+    Factored verbatim from the parent build_arms fresh loop (same asserts, same messages);
+    condition_set threads only the _fresh_rows local-dir/Hub-prefix routing.
+    """
+    chat_items = manifest["chat_items"]
+    a = ArmData(name=arm_name)
+    for row in _fresh_rows(fname, manifest, condition_set=condition_set):
+        p_idx = row["prompt_idx"]
+        if p_idx not in prompt_by_idx:
+            raise RuntimeError(f"{arm_name}: fresh row prompt_idx={p_idx} not in the sampled panel")
+        if _sha(row["prompt"]) != _sha(prompt_by_idx[p_idx]):
+            raise RuntimeError(
+                f"{arm_name}: prompt text mismatch vs manifest at prompt_idx={p_idx}"
+            )
+        iid = f"{arm_name}--{p_idx}"
+        a.items.append((iid, row["prompt"], row["response"]))
+        a.pair_key[iid] = p_idx
+        fr = row.get("finish_reason")
+        if fr is not None:
+            a.cap_hit[iid] = fr == "length"
+    if len(a.items) != len(chat_items):
+        raise RuntimeError(
+            f"{arm_name}: {len(a.items)} fresh rows vs {len(chat_items)} sampled prompts"
+        )
+    return a
+
+
+def build_arms(manifest: dict, condition_set: str = "parent") -> dict[str, ArmData]:
+    """Assemble the judged arms; item_id grammar per plan B1 ('--' delimiter).
+
+    condition_set="parent" (default): the five §5 arms (banked instruct + fresh base pair +
+    raw multi-turn). condition_set="decoding-sensitivity": the four fresh temperature-ablation
+    arms (plan v5 §4) — panel + prompt-hash asserts unchanged, no banked arms.
+    """
     arms: dict[str, ArmData] = {}
 
     chat_items = manifest["chat_items"]
     prompt_by_idx = {it["prompt_idx"]: it["prompt"] for it in chat_items}
+
+    if condition_set == DECSENS:
+        for slug, _render, _temp, _stop in CONDITION_SETS[DECSENS]:
+            arm_name = f"arm_{slug}"
+            arms[arm_name] = _fresh_arm(
+                arm_name, f"{slug}_seed42.jsonl", manifest, prompt_by_idx, DECSENS
+            )
+        for name in DECSENS_ARM_NAMES:
+            if not arms[name].items:
+                raise RuntimeError(f"build_arms: arm {name} is EMPTY — refusing silent-empty arm")
+        return arms
+
     a = ArmData(name="arm_instruct_chat", cap_hit_note="N/A — not recorded in the banked artifact")
     for it in chat_items:
         iid = f"arm_instruct_chat--{it['prompt_idx']}"
@@ -1482,28 +1605,7 @@ def build_arms(manifest: dict) -> dict[str, ArmData]:
         ("arm_base_chat", "base_chat_seed42.jsonl"),
         ("arm_base_bare", "base_bare_seed42.jsonl"),
     ):
-        a = ArmData(name=arm_name)
-        for row in _fresh_rows(fname, manifest):
-            p_idx = row["prompt_idx"]
-            if p_idx not in prompt_by_idx:
-                raise RuntimeError(
-                    f"{arm_name}: fresh row prompt_idx={p_idx} not in the sampled panel"
-                )
-            if _sha(row["prompt"]) != _sha(prompt_by_idx[p_idx]):
-                raise RuntimeError(
-                    f"{arm_name}: prompt text mismatch vs manifest at prompt_idx={p_idx}"
-                )
-            iid = f"{arm_name}--{p_idx}"
-            a.items.append((iid, row["prompt"], row["response"]))
-            a.pair_key[iid] = p_idx
-            fr = row.get("finish_reason")
-            if fr is not None:
-                a.cap_hit[iid] = fr == "length"
-        if len(a.items) != len(chat_items):
-            raise RuntimeError(
-                f"{arm_name}: {len(a.items)} fresh rows vs {len(chat_items)} sampled prompts"
-            )
-        arms[arm_name] = a
+        arms[arm_name] = _fresh_arm(arm_name, fname, manifest, prompt_by_idx, "parent")
 
     for arm_name, side in (("arm_base_rawmt", "pretrained"), ("arm_instruct_rawmt", "instruct")):
         a = ArmData(name=arm_name)
@@ -1543,9 +1645,11 @@ def build_arms(manifest: dict) -> dict[str, ArmData]:
 def phase_judge_pilot(args: argparse.Namespace) -> None:
     if args.smoke:
         raise SystemExit("judge-pilot has no smoke mode — the pilot IS the tiny gated pre-wave")
+    decsens = args.condition_set == DECSENS
+    judge_dir = (DECSENS_EVAL_DIR / "judge") if decsens else (EVAL_DIR / "judge")
     # Idempotency guard (paid API phase): skip ONLY on a PASSED pilot — a failed pilot
     # re-runs by design (that IS the fix path after a rubric/instrument change).
-    pilot_path = EVAL_DIR / "judge" / "pilot_report.json"
+    pilot_path = judge_dir / "pilot_report.json"
     if not args.force and pilot_path.exists():
         prior = json.loads(pilot_path.read_text(encoding="utf-8"))
         if prior.get("passed"):
@@ -1561,20 +1665,23 @@ def phase_judge_pilot(args: argparse.Namespace) -> None:
 
     _log("[phase=judge-pilot] start")
     manifest = _load_manifest()
-    arms = build_arms(manifest)
+    arms = build_arms(manifest, condition_set=args.condition_set)
     run_ts = time.strftime("%Y%m%d-%H%M%S")
+    cache_slug = "judge_cache_decsens_pilot" if decsens else "judge_cache_pilot"
     report = judge_pilot_gate(
         {name: a.items for name, a in arms.items()},
         RUBRIC,
         max_tokens=JUDGE_MAX_TOKENS,
-        cache_dir=REPO_ROOT / "data" / "issue_2477" / "judge_cache_pilot" / run_ts,
-        save_raw_dir=EVAL_DIR / "judge" / "pilot_raw",
+        cache_dir=REPO_ROOT / "data" / "issue_2477" / cache_slug / run_ts,
+        save_raw_dir=judge_dir / "pilot_raw",
         n_draws=N_DRAWS_PILOT,
-        target_total_draws=PILOT_TARGET_TOTAL_DRAWS,
+        target_total_draws=(
+            DECSENS_PILOT_TARGET_TOTAL_DRAWS if decsens else PILOT_TARGET_TOTAL_DRAWS
+        ),
         parse_fail_threshold=0.02,
         min_effective_draws_per_arm=10,
         wave_threshold_base=0,
-        report_path=EVAL_DIR / "judge" / "pilot_report.json",
+        report_path=judge_dir / "pilot_report.json",
         seed=0,
     )
     _log(f"[judge-pilot] verdict={report.verdict} passed={report.passed}")
@@ -1619,9 +1726,12 @@ def phase_judge_wave(args: argparse.Namespace) -> None:
     run_ts = time.strftime("%Y%m%d-%H%M%S")
 
     if args.smoke:
-        # B3: live forced-batch smoke through the run's exact request builder.
+        # B3/B3': live forced-batch smoke through the run's exact request builder (the probe
+        # validates the request/parse contract, not arm content — items are shared).
         _log("[phase=judge-wave] B3 live forced-batch smoke (5 items x 1 draw, threshold_base=0)")
-        scratch = Path("/tmp/issue-2477-smoke/judge")
+        scratch = Path("/tmp/issue-2477-smoke") / (
+            "judge_decsens" if args.condition_set == DECSENS else "judge"
+        )
         items = [
             (f"smoke--{it['prompt_idx']}", it["prompt"], it["instruct_response"])
             for it in manifest["chat_items"][:5]
@@ -1654,20 +1764,23 @@ def phase_judge_wave(args: argparse.Namespace) -> None:
         )
         return
 
-    arms = build_arms(manifest)
+    decsens = args.condition_set == DECSENS
+    judge_dir = (DECSENS_EVAL_DIR / "judge") if decsens else (EVAL_DIR / "judge")
+    cache_slug = "judge_cache_decsens" if decsens else "judge_cache"
+    arms = build_arms(manifest, condition_set=args.condition_set)
 
-    # Idempotency guard (paid API phase): skip ONLY when the COMPLETE 5-arm output set
+    # Idempotency guard (paid API phase): skip ONLY when the COMPLETE per-set output arm set
     # exists and each file covers exactly this manifest's item ids — a partial wave
     # (crash between arms) re-runs (round-2 fix 3).
     expected_ids = {name: {iid for iid, _q, _a in arm.items} for name, arm in arms.items()}
-    if not args.force and _judge_wave_complete(EVAL_DIR / "judge", expected_ids):
+    if not args.force and _judge_wave_complete(judge_dir, expected_ids):
         _log(
             f"[phase=judge-wave] SKIP (idempotent): all {len(expected_ids)} arms' judge_raw "
             "files complete for this manifest — pass --force to re-run"
         )
         return
 
-    pilot_path = EVAL_DIR / "judge" / "pilot_report.json"
+    pilot_path = judge_dir / "pilot_report.json"
     if not pilot_path.exists():
         raise RuntimeError("judge-wave: run --phase judge-pilot first (pilot_report.json missing)")
     pilot = json.loads(pilot_path.read_text(encoding="utf-8"))
@@ -1675,7 +1788,7 @@ def phase_judge_wave(args: argparse.Namespace) -> None:
         raise RuntimeError("judge-wave: pilot gate did not PASS — fix + re-pilot before the wave")
 
     for name, arm in arms.items():
-        save_raw = EVAL_DIR / "judge" / f"judge_raw_{name}.json"
+        save_raw = judge_dir / f"judge_raw_{name}.json"
         _log(
             f"[judge-wave] arm {name}: {len(arm.items)} items x {N_DRAWS_PROD} draws (batch-pinned)"
         )
@@ -1683,7 +1796,7 @@ def phase_judge_wave(args: argparse.Namespace) -> None:
             arm.items,
             RUBRIC,
             n_draws=N_DRAWS_PROD,
-            cache_dir=REPO_ROOT / "data" / "issue_2477" / "judge_cache" / run_ts / name,
+            cache_dir=REPO_ROOT / "data" / "issue_2477" / cache_slug / run_ts / name,
             save_raw=save_raw,
             max_tokens=JUDGE_MAX_TOKENS,
             threshold_base=0,
@@ -1696,10 +1809,10 @@ def phase_judge_wave(args: argparse.Namespace) -> None:
         )
 
     url = hub._upload(
-        EVAL_DIR / "judge",
+        judge_dir,
         hub.DEFAULT_DATASET_REPO,
         "dataset",
-        f"{EXPERIMENT}/judge_raw",
+        DECSENS_HUB_JUDGE_PREFIX if decsens else f"{EXPERIMENT}/judge_raw",
         raise_on_error=True,
     )
     if not url:
@@ -1875,6 +1988,141 @@ def _aggregate_core(
     return payload
 
 
+def _decsens_verdict_token(frac: float, floor: float) -> str:
+    """Plan v5 §3 lattice: render-and-sampling <=> (frac - floor) >= 0; render-driven else."""
+    return "render-and-sampling" if (frac - floor) >= 0 else "render-driven"
+
+
+def _parent_item_means(arm: str) -> dict[int, float]:
+    """Item-mean judge scores for a PARENT temperature-1.0 arm, read READ-ONLY from the
+    committed parent judge_raw file (plan v5 §3 row-coverage; filesystem-first with the
+    git-blob fallback for sparse checkouts).
+
+    Reproduces judge_result_from_save_raw's kept-draw semantics exactly: a draw is KEPT iff
+    graded_judge._score_from_parsed(parsed) is not None (content drops, transport losses and
+    api-refusals all yield None there); item mean = plain mean over kept draws; items with
+    zero kept draws are OMITTED (they become excluded pairs downstream). Keys are re-based
+    to prompt_idx ints parsed from the '{arm}--{prompt_idx}' item-id grammar.
+    """
+    from explore_persona_space.eval.graded_judge import _score_from_parsed
+
+    raw = _read_committed_json(f"eval_results/issue_2477/judge/judge_raw_{arm}.json")
+    all_scores = raw.get("all_scores") or {}
+    if not all_scores:
+        raise RuntimeError(f"parent judge_raw for {arm}: all_scores empty/missing")
+    prefix = f"{arm}--"
+    draws: dict[int, list[float]] = {}
+    for cid, parsed in all_scores.items():
+        item_id = cid.rsplit("__", 2)[0]
+        if not item_id.startswith(prefix):
+            raise RuntimeError(f"parent judge_raw for {arm}: unexpected item id {item_id!r}")
+        s = _score_from_parsed(parsed)
+        if s is not None:
+            draws.setdefault(int(item_id[len(prefix) :]), []).append(s)
+    if not draws:
+        raise RuntimeError(f"parent judge_raw for {arm}: zero kept draws across all items")
+    return {idx: sum(v) / len(v) for idx, v in draws.items()}
+
+
+def _paired_delta_vs_parent(
+    new_stats: dict, new_arm: ArmData, parent_means: dict[int, float]
+) -> dict:
+    """Per-prompt delta (fresh arm − parent temperature-1.0 arm) over prompt_idx pairs kept
+    on BOTH sides; zero-kept pairs excluded and counted (plan v5 §3 registered contrasts).
+    Same output shape as _paired_delta so downstream consumers read one schema."""
+    ka = {new_arm.pair_key[i]: s for i, s in new_stats["kept_scores"].items()}
+    shared = sorted(set(ka) & set(parent_means))
+    deltas = [ka[k] - parent_means[k] for k in shared]
+    return {
+        "n_pairs": len(deltas),
+        "n_excluded_pairs": new_stats["n_items"] - len(deltas),
+        "mean_delta": float(np.mean(deltas)) if deltas else None,
+        "delta_ci95": _boot_ci_mean(deltas),
+        "per_pair_delta": {str(k): float(ka[k] - parent_means[k]) for k in shared},
+    }
+
+
+def _aggregate_decsens_core(
+    arms: dict[str, ArmData], save_raw_paths: dict[str, Path], out_json: Path
+) -> dict:
+    """Plan v5 B6': per-arm stats for the 4 fresh temperature arms + the four registered
+    cross-temperature paired deltas against the parent's committed judge_raw (read-only) +
+    the §3 verdict lattice keyed on frac_coherent(arm_base_chat_t07) vs the 0.80 floor."""
+    per_arm = {name: _arm_stats(arm, save_raw_paths[name]) for name, arm in arms.items()}
+    missing_arms = [n for n in DECSENS_ARM_NAMES if n not in per_arm]
+    if missing_arms:
+        raise RuntimeError(f"aggregate: decoding-sensitivity arms missing: {missing_arms}")
+
+    parent_means = {arm: _parent_item_means(arm) for arm in ("arm_base_chat", "arm_base_bare")}
+    pairs = {
+        key: _paired_delta_vs_parent(per_arm[new_arm], arms[new_arm], parent_means[parent_arm])
+        for key, new_arm, parent_arm in DECSENS_PAIR_SPECS
+    }
+
+    frac = per_arm["arm_base_chat_t07"]["frac_coherent"]["value"]
+    if not isinstance(frac, float) or math.isnan(frac):
+        raise RuntimeError(
+            "aggregate: frac_coherent(arm_base_chat_t07) is undefined (zero kept items)"
+        )
+    frac_sens = per_arm["arm_base_chat_t07"]["frac_coherent_drops_as_incoherent"]["value"]
+    verdict = {
+        "arm": "arm_base_chat_t07",
+        "frac_coherent": frac,
+        "floor": VERDICT_FLOOR,
+        "delta_frac": frac - VERDICT_FLOOR,
+        "token": _decsens_verdict_token(frac, VERDICT_FLOOR),
+        "sensitivity": {
+            "floor_0.70": _decsens_verdict_token(frac, 0.70),
+            "floor_0.90": _decsens_verdict_token(frac, 0.90),
+            "drops_as_incoherent_at_0.80": {
+                "frac": frac_sens,
+                "token": _decsens_verdict_token(frac_sens, VERDICT_FLOOR),
+            },
+        },
+    }
+    # Parent temperature-1.0 comparator context, recomputed from the SAME kept-draw item
+    # means the paired deltas consume, so --phase figures stays a pure verdict-JSON consumer.
+    parent_comparators = {}
+    for arm, means in parent_means.items():
+        n_kept = len(means)
+        n_coh = sum(1 for v in means.values() if v >= COHERENT_THRESHOLD)
+        parent_comparators[arm] = {
+            "n_items_kept": n_kept,
+            "frac_coherent": {
+                "value": n_coh / n_kept,
+                "wilson_ci95": _wilson_ci(n_coh, n_kept),
+                "n_coherent": n_coh,
+                "n_kept": n_kept,
+            },
+            "mean": float(np.mean(list(means.values()))),
+            "source": (
+                f"eval_results/issue_2477/judge/judge_raw_{arm}.json "
+                "(parent round, temperature 1.0, read-only)"
+            ),
+        }
+    per_item = {name: stats.pop("kept_scores") for name, stats in per_arm.items()}
+    per_item_d3 = {name: stats.pop("kept_d3") for name, stats in per_arm.items()}
+    payload = {
+        "metadata": _meta("aggregate"),
+        "condition_set": DECSENS,
+        "judge_config": {
+            "n_draws": N_DRAWS_PROD,
+            "max_tokens": JUDGE_MAX_TOKENS,
+            "threshold_base": 0,
+            "coherent_threshold": COHERENT_THRESHOLD,
+            "rubric_sha256": _sha(RUBRIC),
+        },
+        "arms": per_arm,
+        "paired_deltas_vs_parent_t10": pairs,
+        "parent_comparators": parent_comparators,
+        "verdict": verdict,
+        "per_item_mean_scores": per_item,
+        "per_item_distinct_3gram": per_item_d3,
+    }
+    _write_json(out_json, payload)
+    return payload
+
+
 def _aggregate_smoke_fixture(scratch: Path) -> tuple[dict[str, ArmData], dict[str, Path]]:
     """Synthetic fixture exercising the aggregation math end-to-end (benign text only)."""
     scratch.mkdir(parents=True, exist_ok=True)
@@ -1944,7 +2192,14 @@ def _aggregate_smoke_fixture(scratch: Path) -> tuple[dict[str, ArmData], dict[st
 
 
 def phase_aggregate(args: argparse.Namespace) -> None:
+    decsens = args.condition_set == DECSENS
     if args.smoke:
+        if decsens:
+            raise SystemExit(
+                "aggregate --smoke is parent-only; the decoding-sensitivity aggregate path is "
+                "unit-tested against the real committed parent judge_raw files "
+                "(plan v5 §4 smoke blind-spot item iii)"
+            )
         scratch = Path("/tmp/issue-2477-smoke/aggregate")
         _log(f"[phase=aggregate] SMOKE on synthetic fixture -> {scratch}")
         arms, save_raw_paths = _aggregate_smoke_fixture(scratch)
@@ -1972,24 +2227,24 @@ def phase_aggregate(args: argparse.Namespace) -> None:
         )
         return
 
+    verdict_path = (DECSENS_EVAL_DIR if decsens else EVAL_DIR) / "coherence_verdict.json"
     # Idempotency guard (cheap phase — guard rides the round-2 concern for consistency).
-    if not args.force and (EVAL_DIR / "coherence_verdict.json").exists():
-        _log(
-            f"[phase=aggregate] SKIP (idempotent): {EVAL_DIR / 'coherence_verdict.json'} "
-            "exists — pass --force to re-run"
-        )
+    if not args.force and verdict_path.exists():
+        _log(f"[phase=aggregate] SKIP (idempotent): {verdict_path} exists — pass --force to re-run")
         return
 
     _log("[phase=aggregate] start")
     manifest = _load_manifest()
-    arms = build_arms(manifest)
+    arms = build_arms(manifest, condition_set=args.condition_set)
+    judge_dir = (DECSENS_EVAL_DIR / "judge") if decsens else (EVAL_DIR / "judge")
     save_raw_paths = {}
     for name in arms:
-        path = EVAL_DIR / "judge" / f"judge_raw_{name}.json"
+        path = judge_dir / f"judge_raw_{name}.json"
         if not path.exists():
             raise RuntimeError(f"aggregate: {path} missing — run --phase judge-wave first")
         save_raw_paths[name] = path
-    payload = _aggregate_core(arms, save_raw_paths, EVAL_DIR / "coherence_verdict.json")
+    core = _aggregate_decsens_core if decsens else _aggregate_core
+    payload = core(arms, save_raw_paths, verdict_path)
     v = payload["verdict"]
     _log(
         f"[phase=aggregate] done: verdict={v['token']} frac_coherent={v['frac_coherent']:.4f} "
@@ -2010,6 +2265,25 @@ ARM_LABELS = {
     "arm_base_rawmt": "Base, raw multi-turn (banked)",
     "arm_instruct_rawmt": "Instruct, raw multi-turn (banked)",
 }
+
+# Decoding-sensitivity figure labels (plan v5 §6: parent bars labeled as parent-round rows).
+DECSENS_ARM_LABELS = {
+    "arm_base_chat_t07": "Base, chat template, temperature 0.7 (fresh)",
+    "arm_base_chat_t00": "Base, chat template, greedy (fresh)",
+    "arm_base_bare_t07": "Base, bare text, temperature 0.7 (fresh)",
+    "arm_base_bare_t00": "Base, bare text, greedy (fresh)",
+    "arm_base_chat": "Base, chat template, temperature 1.0 (parent round)",
+    "arm_base_bare": "Base, bare text, temperature 1.0 (parent round)",
+}
+# Hero x-order: render families grouped, parent comparator bar adjacent to its family.
+DECSENS_FIG_ORDER = (
+    "arm_base_chat_t07",
+    "arm_base_chat_t00",
+    "arm_base_chat",
+    "arm_base_bare_t07",
+    "arm_base_bare_t00",
+    "arm_base_bare",
+)
 
 
 def _render_figures(payload: dict, out_dir: Path) -> list[Path]:
@@ -2185,9 +2459,239 @@ def _render_figures(payload: dict, out_dir: Path) -> list[Path]:
     return written
 
 
+def _render_figures_decsens(payload: dict, out_dir: Path) -> list[Path]:
+    """Render the decoding-sensitivity hero + exploratory dump (plan v5 §6) from the
+    decoding-sensitivity coherence_verdict payload.
+
+    Pure consumer of that JSON (fresh-arm stats + parent_comparators + registered paired
+    deltas); stems carry the decoding_sensitivity_ prefix; one color = one arm across every
+    figure; axes + ticks + legend + panel titles only (no canvas caption blocks).
+    """
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    from explore_persona_space.analysis.paper_plots import (
+        paper_palette,
+        savefig_paper,
+        set_paper_style,
+    )
+
+    set_paper_style("blog")
+    arms_stats = payload["arms"]
+    per_item = payload["per_item_mean_scores"]
+    per_d3 = payload["per_item_distinct_3gram"]
+    parents = payload["parent_comparators"]
+    missing = [n for n in DECSENS_ARM_NAMES if n not in arms_stats]
+    if missing:
+        raise RuntimeError(f"figures: decoding-sensitivity arms missing from payload: {missing}")
+    palette = paper_palette(8)
+    colors = dict(zip(DECSENS_FIG_ORDER, palette[:6]))
+    delta_color = palette[6]  # deltas are not arms — distinct 7th color
+    rng = np.random.default_rng(0)
+    written: list[Path] = []
+
+    def _save(fig, stem: str) -> None:
+        paths = savefig_paper(fig, stem, dir=out_dir)
+        written.extend(paths.values())
+        plt.close(fig)
+
+    def _frac_block(name: str) -> dict:
+        return (arms_stats[name] if name in arms_stats else parents[name])["frac_coherent"]
+
+    # --- hero: frac_coherent bars (Wilson CI) + 0.80 floor + fresh-arm item strip ----------
+    fig, ax = plt.subplots(figsize=(8.2, 4.8))
+    for x, name in enumerate(DECSENS_FIG_ORDER):
+        fb = _frac_block(name)
+        lo, hi = fb["wilson_ci95"]
+        ax.bar([x], [fb["value"]], color=colors[name], width=0.62, zorder=2)
+        ax.errorbar(
+            [x],
+            [fb["value"]],
+            yerr=[[fb["value"] - lo], [hi - fb["value"]]],
+            fmt="none",
+            ecolor="black",
+            elinewidth=1.0,
+            capsize=4,
+            zorder=4,
+        )
+    ax.axhline(
+        VERDICT_FLOOR,
+        ls="--",
+        lw=1.0,
+        color="0.35",
+        label=f"verdict floor ({VERDICT_FLOOR})",
+        zorder=3,
+    )
+    ax2 = ax.twinx()
+    for x, name in enumerate(DECSENS_FIG_ORDER):
+        if name in per_item:
+            scores = list(per_item[name].values())
+            if scores:
+                jit = rng.uniform(-0.16, 0.16, size=len(scores))
+                ax2.scatter(
+                    np.full(len(scores), float(x)) + jit,
+                    scores,
+                    s=9,
+                    alpha=0.3,
+                    color=colors[name],
+                    linewidths=0,
+                    zorder=5,
+                )
+    ax2.set_ylabel("Item-mean judge score (0–100), fresh arms")
+    ax2.set_ylim(-3, 103)
+    ax.set_ylim(0, 1.02)
+    ax.set_xticks(range(len(DECSENS_FIG_ORDER)))
+    ax.set_xticklabels([DECSENS_ARM_LABELS[n] for n in DECSENS_FIG_ORDER], rotation=22, ha="right")
+    ax.set_ylabel("Fraction coherent (item-mean ≥ 50), Wilson 95% CI")
+    ax.set_title("Coherence by render × temperature")
+    ax.legend(loc="upper left")
+    _save(fig, "decoding_sensitivity_coherence_by_arm")
+
+    # --- per-arm item-mean histograms (fresh arms) ---------------------------------------
+    fig, axes = plt.subplots(1, 4, figsize=(10.0, 2.7), sharey=True, sharex=True)
+    for ax_i, name in zip(np.atleast_1d(axes), DECSENS_ARM_NAMES):
+        ax_i.hist(list(per_item[name].values()), bins=np.linspace(0, 100, 21), color=colors[name])
+        ax_i.set_title(DECSENS_ARM_LABELS[name], fontsize=7)
+        ax_i.set_xlabel("Item-mean score")
+    np.atleast_1d(axes)[0].set_ylabel("Items")
+    _save(fig, "decoding_sensitivity_item_mean_hist_by_arm")
+
+    # --- cap-hit bar (fresh arms; recorded-numeric only, N/A omitted never zero) ----------
+    cap_arms = [
+        n for n in DECSENS_ARM_NAMES if isinstance(arms_stats[n]["cap_hit_fraction"], int | float)
+    ]
+    if cap_arms:
+        fig, ax = plt.subplots(figsize=(6.0, 3.6))
+        ax.bar(
+            range(len(cap_arms)),
+            [float(arms_stats[n]["cap_hit_fraction"]) for n in cap_arms],
+            color=[colors[n] for n in cap_arms],
+        )
+        ax.set_xticks(range(len(cap_arms)))
+        ax.set_xticklabels([DECSENS_ARM_LABELS[n] for n in cap_arms], rotation=22, ha="right")
+        ax.set_ylabel("Cap-hit fraction")
+        ax.set_title("Fraction ending at the 1,024-token cap (fresh arms)")
+        _save(fig, "decoding_sensitivity_cap_hit_by_arm")
+
+    # --- distinct-3gram vs judge score scatter (fresh arms) ------------------------------
+    fig, ax = plt.subplots(figsize=(6.2, 4.2))
+    for name in DECSENS_ARM_NAMES:
+        d3_map = per_d3.get(name, {})
+        xs = [d3_map[i] for i in sorted(d3_map) if i in per_item[name]]
+        ys = [per_item[name][i] for i in sorted(d3_map) if i in per_item[name]]
+        if xs:
+            ax.scatter(
+                xs,
+                ys,
+                s=14,
+                alpha=0.5,
+                color=colors[name],
+                linewidths=0,
+                label=DECSENS_ARM_LABELS[name],
+            )
+    ax.set_xlabel("Distinct 3-gram rate (per item)")
+    ax.set_ylabel("Item-mean coherence score")
+    ax.set_title("Repetition companion vs judge score")
+    ax.legend()
+    _save(fig, "decoding_sensitivity_distinct3gram_vs_score")
+
+    # --- cross-temperature paired-delta histograms (4 panels, plan v5 §3 contrasts) -------
+    pairs = payload["paired_deltas_vs_parent_t10"]
+    panel_titles = {
+        "chat_t07_minus_chat_t10": "Chat: 0.7 − 1.0",
+        "chat_t00_minus_chat_t10": "Chat: greedy − 1.0",
+        "bare_t07_minus_bare_t10": "Bare: 0.7 − 1.0",
+        "bare_t00_minus_bare_t10": "Bare: greedy − 1.0",
+    }
+    fig, axes = plt.subplots(2, 2, figsize=(8.4, 6.0), sharex=True, sharey=True)
+    for ax_i, (key, title) in zip(axes.ravel(), panel_titles.items()):
+        deltas = list(pairs[key]["per_pair_delta"].values())
+        if deltas:
+            ax_i.hist(deltas, bins=21, color=delta_color)
+        ax_i.set_title(title, fontsize=9)
+    for ax_i in axes[-1]:
+        ax_i.set_xlabel("Per-prompt coherence delta")
+    for ax_i in axes[:, 0]:
+        ax_i.set_ylabel("Prompts")
+    fig.suptitle("Cross-temperature paired deltas vs parent (temperature 1.0)")
+    _save(fig, "decoding_sensitivity_paired_delta_hists")
+
+    # --- arm means: bootstrap CIs (fresh) + parent means as points ------------------------
+    fig, ax = plt.subplots(figsize=(7.8, 4.4))
+    for x, name in enumerate(DECSENS_FIG_ORDER):
+        if name in arms_stats:
+            scores = list(per_item[name].values())
+            if scores:
+                jit = rng.uniform(-0.17, 0.17, size=len(scores))
+                ax.scatter(
+                    np.full(len(scores), float(x)) + jit,
+                    scores,
+                    s=11,
+                    alpha=0.35,
+                    color=colors[name],
+                    linewidths=0,
+                    zorder=2,
+                )
+            mean = arms_stats[name]["mean"]
+            lo, hi = arms_stats[name]["mean_ci95"]
+            if mean is not None and not (math.isnan(lo) or math.isnan(hi)):
+                ax.errorbar(
+                    [x],
+                    [mean],
+                    yerr=[[mean - lo], [hi - mean]],
+                    fmt="D",
+                    color=colors[name],
+                    markersize=7,
+                    capsize=4,
+                    markeredgecolor="black",
+                    markeredgewidth=0.6,
+                    zorder=5,
+                )
+        else:
+            ax.scatter(
+                [x],
+                [parents[name]["mean"]],
+                marker="o",
+                s=48,
+                color=colors[name],
+                edgecolors="black",
+                linewidths=0.6,
+                zorder=5,
+            )
+    ax.axhline(
+        COHERENT_THRESHOLD,
+        ls="--",
+        lw=1.0,
+        color="0.45",
+        label=f"coherent threshold ({int(COHERENT_THRESHOLD)})",
+        zorder=1,
+    )
+    ax.set_xticks(range(len(DECSENS_FIG_ORDER)))
+    ax.set_xticklabels([DECSENS_ARM_LABELS[n] for n in DECSENS_FIG_ORDER], rotation=22, ha="right")
+    ax.set_ylabel("Coherence score (judge, 0–100)")
+    ax.set_ylim(-3, 103)
+    ax.set_title("Arm means: bootstrap 95% CI (fresh), parent means as points")
+    ax.legend(loc="lower left")
+    _save(fig, "decoding_sensitivity_arm_means")
+
+    for p in written:
+        if not p.exists() or p.stat().st_size == 0:
+            raise RuntimeError(f"figures: written file missing/empty: {p}")
+    return written
+
+
 def phase_figures(args: argparse.Namespace) -> None:
-    """Plan B7: render figures off the aggregate outputs (verdict JSON only)."""
+    """Plan B7 / v5 §6: render figures off the aggregate outputs (verdict JSON only)."""
+    decsens = args.condition_set == DECSENS
     if args.smoke:
+        if decsens:
+            raise SystemExit(
+                "figures --smoke is parent-only; the decoding-sensitivity figures phase is a "
+                "cheap VM-side pure consumer of the decoding-sensitivity verdict JSON "
+                "(plan v5 §4)"
+            )
         scratch = Path("/tmp/issue-2477-smoke/figures")
         _log(f"[phase=figures] SMOKE: synthetic fixture -> {scratch} (no canonical writes)")
         arms, save_raw_paths = _aggregate_smoke_fixture(scratch / "fixture")
@@ -2197,18 +2701,23 @@ def phase_figures(args: argparse.Namespace) -> None:
         out_dir = scratch
     else:
         # Idempotency guard (cheap phase — rides the round-2 concern for consistency).
-        hero = REPO_ROOT / "figures" / "issue_2477" / "coherence_by_arm.png"
+        hero_name = (
+            "decoding_sensitivity_coherence_by_arm.png" if decsens else "coherence_by_arm.png"
+        )
+        hero = REPO_ROOT / "figures" / "issue_2477" / hero_name
         if not args.force and hero.exists():
             _log(f"[phase=figures] SKIP (idempotent): {hero} exists — pass --force to re-run")
             return
-        verdict_path = EVAL_DIR / "coherence_verdict.json"
+        verdict_path = (DECSENS_EVAL_DIR if decsens else EVAL_DIR) / "coherence_verdict.json"
         if not verdict_path.exists():
             raise RuntimeError(
                 "figures: run --phase aggregate first (coherence_verdict.json missing)"
             )
         payload = json.loads(verdict_path.read_text(encoding="utf-8"))
         out_dir = REPO_ROOT / "figures" / "issue_2477"
-    written = _render_figures(payload, out_dir)
+    written = (
+        _render_figures_decsens(payload, out_dir) if decsens else _render_figures(payload, out_dir)
+    )
     stems = sorted({p.stem for p in written if p.suffix == ".png"})
     _log(f"[phase=figures] done: {len(written)} files ({len(stems)} figures) -> {out_dir}")
     _log(f"[figures] stems: {stems}")
@@ -2228,6 +2737,15 @@ PHASES = {
 def _parse_args() -> argparse.Namespace:
     ap = argparse.ArgumentParser(description="#2477 base-coherence driver (plan v4)")
     ap.add_argument("--phase", choices=sorted(PHASES), help="phase to run")
+    ap.add_argument(
+        "--condition-set",
+        choices=sorted(CONDITION_SETS),
+        default="parent",
+        help=(
+            "condition-set registry key (plan v5 C0); default parent = the parent round's "
+            "behavior, unchanged"
+        ),
+    )
     ap.add_argument("--seed", type=int, default=SAMPLE_SEED_DEFAULT, help="sample-phase seed")
     ap.add_argument("--smoke", action="store_true", help="tiny-slice smoke mode (n only)")
     ap.add_argument(
