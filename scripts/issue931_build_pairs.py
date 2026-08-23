@@ -440,8 +440,13 @@ def build_arma_pairs(novel: dict, tokenizer, *, window_tokens: int) -> dict:  # 
 _WIKI_HEADER_RE = re.compile(r"^ ?= [^=].* = ?$")
 
 
-def iter_wikitext_articles(max_articles: int):
-    """Yield (title, text) articles assembled from the streamed train split."""
+def iter_wikitext_articles(max_articles: int | None):
+    """Yield (title, text) articles assembled from the streamed train split.
+
+    ``max_articles=None`` streams the ENTIRE train split (#1901 keep-all mode
+    for ``build_armc_pairs(n_articles=None)``); an int returns after that many
+    assembled articles, byte-identical to the pre-#1901 behavior.
+    """
     from datasets import load_dataset
 
     ds = load_dataset(
@@ -459,26 +464,47 @@ def iter_wikitext_articles(max_articles: int):
             if title is not None and buf:
                 yield title, "".join(buf)
                 n += 1
-                if n >= max_articles:
+                if max_articles is not None and n >= max_articles:
                     return
             title, buf = line.strip().strip("= ").strip(), []
         elif title is not None:
             buf.append(line)
-    if title is not None and buf and n < max_articles:
+    if title is not None and buf and (max_articles is None or n < max_articles):
         yield title, "".join(buf)
 
 
 def build_armc_pairs(  # noqa: C901 -- linear anchor-eligibility ladder
-    tokenizer, *, n_articles: int, max_anchors: int, pool_multiplier: int = 3
+    tokenizer,
+    *,
+    n_articles: int | None,
+    max_anchors: int,
+    pool_multiplier: int = 3,
+    article_cap_tokens: int = common.ARMC_ARTICLE_CAP_TOKENS,
+    record_sep_char: bool = False,
 ) -> dict:
-    """Separator-anchor + preceding-sentence pairs from WikiText-103-raw."""
+    """Separator-anchor + preceding-sentence pairs from WikiText-103-raw.
+
+    #1901 additive kwargs (defaults reproduce the #931 behavior byte-for-byte):
+    ``n_articles=None`` keeps EVERY qualifying article (full-corpus stream, no
+    seeded pool subsample); ``article_cap_tokens`` threads the per-article
+    token cap (default = the #931 ``ARMC_ARTICLE_CAP_TOKENS``);
+    ``record_sep_char=True`` records each pair's anchor punctuation
+    (".", "!", "?") at ``meta["sep_char"]``. The anchor-eligibility ladder
+    (single-token sentence-final punctuation, span within
+    [ARMC_SPAN_MIN, ARMC_SPAN_MAX], prev-sentence floor/cap) is UNCHANGED.
+    """
     pool: list[dict] = []
-    target_pool = n_articles * pool_multiplier
-    for k, (title, text) in enumerate(iter_wikitext_articles(target_pool * 2)):
+    if n_articles is None:
+        target_pool: int | None = None
+        article_iter = iter_wikitext_articles(None)
+    else:
+        target_pool = n_articles * pool_multiplier
+        article_iter = iter_wikitext_articles(target_pool * 2)
+    for k, (title, text) in enumerate(article_iter):
         ids, offsets = common.tokenize_with_offsets(tokenizer, text)
         if len(ids) < common.ARMC_ARTICLE_MIN_TOKENS:
             continue
-        cap = min(len(ids), common.ARMC_ARTICLE_CAP_TOKENS)
+        cap = min(len(ids), article_cap_tokens)
         pool.append(
             {
                 "article_idx": k,
@@ -488,11 +514,14 @@ def build_armc_pairs(  # noqa: C901 -- linear anchor-eligibility ladder
                 "offsets": offsets[:cap],
             }
         )
-        if len(pool) >= target_pool:
+        if target_pool is not None and len(pool) >= target_pool:
             break
     assert pool, "no WikiText articles collected"
-    rng = np.random.default_rng(common.BUILD_SEED)
-    take = rng.choice(len(pool), size=min(n_articles, len(pool)), replace=False)
+    if n_articles is None:
+        take = np.arange(len(pool))
+    else:
+        rng = np.random.default_rng(common.BUILD_SEED)
+        take = rng.choice(len(pool), size=min(n_articles, len(pool)), replace=False)
     articles_out, pairs_out = [], []
     for ai in sorted(int(v) for v in take):
         art = pool[ai]
@@ -512,12 +541,12 @@ def build_armc_pairs(  # noqa: C901 -- linear anchor-eligibility ladder
             t = lo
             tok_text = text[int(offsets[t, 0]) : int(offsets[t, 1])].strip()
             if tok_text in (".", "!", "?"):
-                anchors.append((t, s))
+                anchors.append((t, s, tok_text))
         if len(anchors) < 2:
             continue
-        anchor_positions = [a for a, _ in anchors]
+        anchor_positions = [a for a, _, _ in anchors]
         eligible = []
-        for j, (t, sent_start) in enumerate(anchors):
+        for j, (t, sent_start, sep_char) in enumerate(anchors):
             nxt = anchor_positions[j + 1] if j + 1 < len(anchors) else len(ids)
             span_lo, span_hi = t + 1, nxt
             if not (common.ARMC_SPAN_MIN <= span_hi - span_lo <= common.ARMC_SPAN_MAX):
@@ -527,7 +556,7 @@ def build_armc_pairs(  # noqa: C901 -- linear anchor-eligibility ladder
             ps_lo = max(ps_lo, ps_hi - common.ARMC_PREV_CAP_TOKENS)  # keep LAST <=96 tokens
             if ps_hi - ps_lo < common.ARMC_PREV_MIN_TOKENS:
                 continue
-            eligible.append((t, span_lo, span_hi, ps_lo, ps_hi))
+            eligible.append((t, span_lo, span_hi, ps_lo, ps_hi, sep_char))
         if not eligible:
             continue
         art_rng = np.random.default_rng(common.BUILD_SEED + art["article_idx"])
@@ -535,7 +564,10 @@ def build_armc_pairs(  # noqa: C901 -- linear anchor-eligibility ladder
         article_id = f"wiki:{art['article_idx']:05d}"
         art_pairs = []
         for j in sorted(int(v) for v in keep):
-            t, span_lo, span_hi, ps_lo, ps_hi = eligible[j]
+            t, span_lo, span_hi, ps_lo, ps_hi, sep_char = eligible[j]
+            meta: dict = {"window_id": article_id, "anchor_pos": int(t)}
+            if record_sep_char:
+                meta["sep_char"] = sep_char
             pair = common.PairSpec(
                 row_id=f"{article_id}:a{t}",
                 group_id=article_id,
@@ -543,7 +575,7 @@ def build_armc_pairs(  # noqa: C901 -- linear anchor-eligibility ladder
                 c_span=(ps_lo, ps_hi),
                 t_spans=[(span_lo, span_hi)],
                 ctx_span=(ps_lo, ps_hi),
-                meta={"window_id": article_id, "anchor_pos": int(t)},
+                meta=meta,
             )
             pair.validate(len(ids), min_c=common.ARMC_PREV_MIN_TOKENS, min_t=common.ARMC_SPAN_MIN)
             assert pair.meta["anchor_pos"] < span_lo, "anchor must precede its span"
