@@ -11385,7 +11385,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/2474",
       "status": "interpreting",
-      "title": "Base-model geometry under the inoculation prompt predicts EM re-elicitation but is indistinguishable from surface-text similarity, and anti-predicts re-elicitation in the capitalization trigger bank for reasons the data leave unresolved (MODERATE confidence)"
+      "title": "Base-model geometry under the inoculation prompt predicts EM re-elicitation with at most a marginal unique increment over surface-text similarity, and anti-predicts re-elicitation in the capitalization trigger bank through an ordering shared with plain similarity to neutral prompts (MODERATE confidence)"
     },
     "2475": {
       "has_clean_result": false,

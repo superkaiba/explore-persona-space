@@ -1,8 +1,8 @@
 ---
 title: Base-model geometry under the inoculation prompt predicts EM re-elicitation
-  but is indistinguishable from surface-text similarity, and anti-predicts re-elicitation
-  in the capitalization trigger bank for reasons the data leave unresolved (MODERATE
-  confidence)
+  with at most a marginal unique increment over surface-text similarity, and anti-predicts
+  re-elicitation in the capitalization trigger bank through an ordering shared with
+  plain similarity to neutral prompts (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-08-22T19:38:42Z'
