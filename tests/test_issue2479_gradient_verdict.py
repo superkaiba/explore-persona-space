@@ -1,0 +1,394 @@
+"""Tests for scripts/issue2479_gradient_verdict.py (issue #2479, plan SS3/SS4 Step 6).
+
+Two parts:
+
+1. The SS3-mandated boundary-grid unit test of the pure ``verdict_label``
+   function: n in {1, 2, 11, 12, 16} x p in {0.049, 0.051} x each gate
+   fired/not-fired x both rho signs — exactly one label fires per combination,
+   with the SS3-named boundary expectations asserted explicitly.
+2. A hermetic end-to-end fixture test: synthetic panel / axis-freeze /
+   instrument-gates / cell / ladder JSONs (in the #1345 Phase-F shape) through
+   the full script into tmp dirs, verifying the headline rho, the one-sided
+   add-one permutation-p arithmetic, the three-stage exclusion accounting, the
+   three denominators, and figure emission. No network, no GPU.
+"""
+
+from __future__ import annotations
+
+import itertools
+import json
+import sys
+from pathlib import Path
+
+import numpy as np
+import pytest
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO_ROOT / "scripts"))
+
+import issue2479_gradient_verdict as gv  # noqa: E402
+
+# ---------------------------------------------------------------------------
+# Part 1 — SS3 boundary grid over the pure verdict predicate
+# ---------------------------------------------------------------------------
+N_GRID = (1, 2, 11, 12, 16)
+P_GRID = (0.049, 0.051)
+RHO_GRID = (0.5, -0.5)
+
+
+def _gate_configs() -> list[dict[str, bool]]:
+    """All-pass plus each single gate fired (False) — 5 configurations."""
+    configs = [dict.fromkeys(gv.GATE_KEYS, True)]
+    for k in gv.GATE_KEYS:
+        cfg = dict.fromkeys(gv.GATE_KEYS, True)
+        cfg[k] = False
+        configs.append(cfg)
+    return configs
+
+
+def test_labels_are_distinct():
+    assert len(set(gv.ALL_LABELS)) == len(gv.ALL_LABELS) == 5
+
+
+def test_boundary_grid_exactly_one_label_per_combination():
+    n_combos = 0
+    for n, p, rho, gates in itertools.product(N_GRID, P_GRID, RHO_GRID, _gate_configs()):
+        label = gv.verdict_label(n, rho, p, gates)
+        n_combos += 1
+        # exactly one label fires: the function returns a single string drawn
+        # from the 5-label set (pairwise distinct per test above)
+        assert label in gv.ALL_LABELS, (n, p, rho, gates, label)
+        if not all(gates.values()):
+            expected = gv.LABEL_INSTRUMENT_SUSPECT
+        elif n < 2:
+            expected = gv.LABEL_BOUNDED_NO_STAT
+        elif n < 12:
+            expected = gv.LABEL_BOUNDED_PANEL
+        elif rho > 0 and p <= 0.05:
+            expected = gv.LABEL_ESTABLISHED
+        else:
+            expected = gv.LABEL_BOUNDED
+        assert label == expected, (n, p, rho, gates, label, expected)
+    assert n_combos == len(N_GRID) * len(P_GRID) * len(RHO_GRID) * 5  # 100
+
+
+def test_named_boundaries():
+    all_pass = dict.fromkeys(gv.GATE_KEYS, True)
+    # n=11, p=0.049, gates pass -> bounded — insufficient panel
+    assert gv.verdict_label(11, 0.6, 0.049, all_pass) == gv.LABEL_BOUNDED_PANEL
+    # n=12, same -> established
+    assert gv.verdict_label(12, 0.6, 0.049, all_pass) == gv.LABEL_ESTABLISHED
+    # p exactly at 0.05 establishes (predicate: p <= 0.05)
+    assert gv.verdict_label(12, 0.6, 0.05, all_pass) == gv.LABEL_ESTABLISHED
+    # any gate False -> Instrument-suspect regardless of n/p/rho
+    for k in gv.GATE_KEYS:
+        gates = dict(all_pass)
+        gates[k] = False
+        assert gv.verdict_label(16, 0.9, 0.001, gates) == gv.LABEL_INSTRUMENT_SUSPECT
+        assert gv.verdict_label(1, None, None, gates) == gv.LABEL_INSTRUMENT_SUSPECT
+    # n=1 -> no estimable statistic (rho/p may be None)
+    assert gv.verdict_label(1, None, None, all_pass) == gv.LABEL_BOUNDED_NO_STAT
+    # n>=12, gates pass, negative rho or p above alpha -> plain bounded
+    assert gv.verdict_label(16, -0.4, 0.049, all_pass) == gv.LABEL_BOUNDED
+    assert gv.verdict_label(16, 0.4, 0.051, all_pass) == gv.LABEL_BOUNDED
+    # NaN rho never establishes
+    assert gv.verdict_label(16, float("nan"), 0.01, all_pass) == gv.LABEL_BOUNDED
+
+
+def test_gate_dict_is_validated():
+    with pytest.raises(ValueError):
+        gv.verdict_label(16, 0.5, 0.01, {"band_agreement_pass": True})
+    bad = dict.fromkeys(gv.GATE_KEYS, True)
+    bad["name_mask_pass"] = 1  # not a bool
+    with pytest.raises(TypeError):
+        gv.verdict_label(16, 0.5, 0.01, bad)
+
+
+# ---------------------------------------------------------------------------
+# Part 2 — hermetic end-to-end fixture
+# ---------------------------------------------------------------------------
+STORY_ONPOLICY = "story_onpolicy"  # REGIME_LABEL["r4op"] in the fill script
+STORY_INSERTED = "story_inserted"  # REGIME_LABEL["r4"]
+
+
+def _direction_block(ceiling, r2_4, r2_1, ib, null4, acc_ceiling=0.5, acc4=0.4):
+    return {
+        "r2": {"4_bias_refit": [r2_4], "1_direct": [r2_1]},
+        "ceiling_r2": [ceiling],
+        "identity_bias_r2": [ib],
+        "null_r2": {"4_bias_refit": [null4], "1_direct": [null4]},
+        "fold_ids": [0, 1, 2, 3, 4],
+        "knn_retrieval_fold0": {
+            "n_pool": 100,
+            "ceiling": {"acc@1": [acc_ceiling], "chance@1": 0.01},
+            "4_bias_refit": {"acc@1": [acc4], "chance@1": 0.01},
+            "ceiling_cosine": {"metric": "cosine", "acc@1": [acc_ceiling], "chance@1": 0.01},
+            "4_bias_refit_cosine": {"metric": "cosine", "acc@1": [acc4], "chance@1": 0.01},
+        },
+    }
+
+
+def _ladder_json(src_id, src_label, variant, ceiling, r2_4, *, r2_1=0.1, ib=0.02, null4=0.01):
+    """A minimal #1345 Phase-F ladder entry (both directions, reduced basis)."""
+    fwd = f"{src_label}->{variant}"
+    rev = f"{variant}->{src_label}"
+    return {
+        "regimes": [src_id, variant],
+        "n_matched": 900,
+        "metadata": {
+            "regime_labels": {src_id: src_label, variant: variant},
+            "rung_order": ["1_direct", "4_bias_refit"],
+        },
+        "reduced": {
+            fwd: _direction_block(ceiling, r2_4, r2_1, ib, null4),
+            # reverse direction present (as in real files) — must be ignored
+            rev: _direction_block(0.9, 0.0, 0.0, 0.0, 0.0),
+            "basis": "reduced",
+            "n_train_min": 700,
+            "d": 3584,
+        },
+    }
+
+
+def _cell_json(variant, ceiling, ib, n):
+    return {
+        "regime": variant,
+        "arm": "context",
+        "metadata": {"layer": 19, "seed": 0, "model": "instruct"},
+        "reduced": {
+            "ceiling_r2": [ceiling],
+            "identity_bias_r2": [ib],
+            "n": n,
+            "basis": "reduced",
+        },
+    }
+
+
+# fixture panel: 7 planned characters ->
+#   gus  : not in axis_freeze            (stage-1 exclusion)
+#   fox  : in axis, no fit outputs       (stage-2 / G1 exclusion)
+#   eel  : ceiling 0.01 < 0.05           (stage-3 ceiling exclusion; raw kept)
+#   ada, bee, cat, dog: fraction-eligible, recovery monotone in axis score
+FIXTURE = {
+    # name: (score, ceiling, rung4, cell_n, inserted)
+    "ada": (90.0, 0.50, 0.45, 900, True),
+    "bee": (80.0, 0.50, 0.40, 850, True),
+    "cat": (70.0, 0.50, 0.35, 800, False),
+    "dog": (60.0, 0.50, 0.30, 750, False),
+    "eel": (50.0, 0.01, 0.005, 700, False),
+    "fox": (40.0, None, None, None, False),
+}
+
+
+def _write_fixture(tmp_path: Path) -> Path:
+    eval_dir = tmp_path / "eval_results" / "issue_2479"
+    grad = eval_dir / "story_char_gradient"
+    grad.mkdir(parents=True)
+
+    panel = []
+    for name in [*FIXTURE, "gus"]:
+        panel.append(
+            {
+                "name": name,
+                "display_name": name.capitalize(),
+                "design_band": "A",
+                "variant_op": f"char_2479_{name}_op",
+                "variant_inserted": f"char_2479_{name}"
+                if FIXTURE.get(name, (0, 0, 0, 0, False))[4]
+                else None,
+                "desc": f"fixture character {name}",
+                "inserted_subset": FIXTURE.get(name, (0, 0, 0, 0, False))[4],
+            }
+        )
+    (eval_dir / "panel.json").write_text(json.dumps(panel, indent=1))
+
+    chars = {}
+    ordered = sorted(FIXTURE, key=lambda n: -FIXTURE[n][0])
+    for rank, name in enumerate(ordered, start=1):
+        chars[name] = {
+            "tag": name,
+            "design_band": "A",
+            "variant_op": f"char_2479_{name}_op",
+            "score": FIXTURE[name][0],
+            "rank": rank,
+            "n_scored_items": 100,
+        }
+    axis = {
+        "issue": 2479,
+        "characters": chars,
+        "gates": {
+            "band_agreement_pass": True,
+            "band_agreement_rho": 0.9,
+            "axis_range_pass": True,
+            "axis_range": 50.0,
+        },
+    }
+    (eval_dir / "axis_freeze.json").write_text(json.dumps(axis, indent=1))
+
+    inst = {"gates": {"verbatim_flatness_pass": True, "name_mask_pass": True}}
+    (eval_dir / "instrument_gates.json").write_text(json.dumps(inst, indent=1))
+
+    for name, (_score, ceiling, rung4, cell_n, inserted) in FIXTURE.items():
+        if ceiling is None:  # fox: no fit outputs at all
+            continue
+        vop = f"char_2479_{name}_op"
+        lad = _ladder_json("r4op", STORY_ONPOLICY, vop, ceiling, rung4)
+        (grad / f"ladder_r4op__{vop}__instruct_context_L19_reduced_s0_nd2.json").write_text(
+            json.dumps(lad, indent=1)
+        )
+        cell = _cell_json(vop, ceiling, 0.02, cell_n)
+        (grad / f"cell_{vop}__instruct_context_L19_reduced_s0.json").write_text(
+            json.dumps(cell, indent=1)
+        )
+        if inserted:
+            vins = f"char_2479_{name}"
+            ins = _ladder_json("r4", STORY_INSERTED, vins, ceiling, rung4 * 0.9)
+            (grad / f"ladder_r4__{vins}__instruct_context_L19_reduced_s0_nd2.json").write_text(
+                json.dumps(ins, indent=1)
+            )
+    return eval_dir
+
+
+N_PERM = 1000
+
+
+@pytest.fixture(scope="module")
+def verdict_payload(tmp_path_factory) -> dict:
+    tmp_path = tmp_path_factory.mktemp("i2479_verdict")
+    eval_dir = _write_fixture(tmp_path)
+    fig_dir = tmp_path / "figs"
+    rc = gv.main(
+        [
+            "--eval-dir",
+            str(eval_dir),
+            "--fig-dir",
+            str(fig_dir),
+            "--n-perm",
+            str(N_PERM),
+        ]
+    )
+    assert rc == 0
+    out = eval_dir / "gradient_verdict.json"
+    assert out.is_file()
+    payload = json.loads(out.read_text())
+    payload["_fig_dir"] = str(fig_dir)
+    return payload
+
+
+def test_e2e_denominators_and_exclusions(verdict_payload):
+    d = verdict_payload["denominators"]
+    # all three denominators recorded: planned / G1-surviving / fraction-eligible
+    assert d == {"planned": 7, "g1_surviving": 5, "fraction_eligible": 4}
+    exc = verdict_payload["exclusions"]
+    assert exc["not_in_axis_freeze"] == ["gus"]
+    assert [e["name"] for e in exc["missing_fit_outputs"]] == ["fox"]
+    assert [e["name"] for e in exc["ceiling_excluded"]] == ["eel"]
+    assert exc["ceiling_excluded"][0]["ceiling_r2"] == pytest.approx(0.01)
+    # raw rung-4 R2 kept for the ceiling-excluded character
+    assert verdict_payload["per_character"]["eel"]["rung4_r2"] == pytest.approx(0.005)
+    assert verdict_payload["per_character"]["eel"]["recovery_fraction"] is None
+
+
+def test_e2e_headline_rho_and_add_one_p(verdict_payload):
+    h = verdict_payload["headline"]
+    # recovery fractions 0.9, 0.8, 0.7, 0.6 monotone with scores 90, 80, 70, 60
+    assert h["rho"] == pytest.approx(1.0)
+    assert h["n"] == 4
+    # add-one arithmetic: p == (1 + n_null_ge) / (n_perm + 1), verbatim
+    assert h["p_add_one"] == pytest.approx((1 + h["n_null_ge"]) / (N_PERM + 1))
+    # at n=4 only the identity ranking reaches rho=1: expected p ~= 1/24 + add-one
+    assert 1 / (N_PERM + 1) <= h["p_add_one"] < 0.2
+    assert verdict_payload["per_character"]["ada"]["recovery_fraction"] == pytest.approx(0.9)
+    jk = h["jackknife"]
+    assert jk["status"] in ("ok", "degenerate leave-one-out subset (zero rank variance)")
+
+
+def test_e2e_verdict_label_bounded_panel(verdict_payload):
+    v = verdict_payload["verdict"]
+    # gates all pass, n=4 < 12 -> bounded — insufficient panel, regardless of p
+    assert v["label"] == gv.LABEL_BOUNDED_PANEL
+    assert v["n_fraction_eligible"] == 4
+    assert set(verdict_payload["gates"]) == set(gv.GATE_KEYS)
+    assert all(verdict_payload["gates"].values())
+
+
+def test_e2e_secondary_reads(verdict_payload):
+    reads = verdict_payload["secondary_reads"]
+    # raw rung-4 read runs over ALL 5 survivors (no ceiling exclusion)
+    assert reads["raw_rung4_r2"]["n"] == 5
+    # acc@1 recovery reads over the 4 eligible characters, both metrics
+    assert reads["acc1_recovery_euclidean"]["n"] == 4
+    assert reads["acc1_recovery_cosine"]["n"] == 4
+    # inserted-mode read over the 2 inserted fixtures
+    assert reads["inserted_mode_recovery"]["n"] == 2
+    assert reads["kept_n_vs_axis"]["n"] == 5
+    assert reads["null_gradient_matched_capacity"]["n"] == 4
+    # every computed read carries its own labeled permutation band
+    for name, read in reads.items():
+        if read.get("status") == "ok":
+            assert read["n_perm"] == N_PERM, name
+            assert "p_add_one" in read and "label" in read, name
+    # deferred reads carry the plan-named notes
+    assert reads["answer_length_vs_axis"]["status"] == "deferred"
+    assert "kept-row bundle" in reads["answer_length_vs_axis"]["note"]
+    assert reads["context_space_closeness_vs_axis"]["status"] == "deferred"
+    # equalized-n companions not yet produced in this fixture
+    assert verdict_payload["equalized_n"]["status"] == "not_produced"
+
+
+def test_e2e_figures_written(verdict_payload):
+    figs = verdict_payload["figures"]
+    assert "gradient_hero" in figs["written"]
+    hero = Path(figs["written"]["gradient_hero"])
+    assert hero.is_file() and hero.stat().st_size > 5_000  # non-trivial render
+    assert (
+        hero.with_suffix("").with_suffix(".meta.json").exists()
+        or (hero.parent / "gradient_hero.meta.json").exists()
+    )
+    assert "ceilings_identity_bias" in figs["written"]
+    assert "gradient_hero_inserted" in figs["written"]
+    assert "gradient_null_companion" in figs["written"]
+
+
+def test_e2e_instrument_suspect_path(tmp_path):
+    """A failed instrument gate demotes the label; data still fully reported."""
+    eval_dir = _write_fixture(tmp_path)
+    gates_path = eval_dir / "instrument_gates.json"
+    inst = json.loads(gates_path.read_text())
+    inst["gates"]["verbatim_flatness_pass"] = False
+    gates_path.write_text(json.dumps(inst))
+    out = tmp_path / "verdict_suspect.json"
+    rc = gv.main(
+        [
+            "--eval-dir",
+            str(eval_dir),
+            "--out",
+            str(out),
+            "--n-perm",
+            "200",
+            "--no-figures",
+        ]
+    )
+    assert rc == 0
+    payload = json.loads(out.read_text())
+    assert payload["verdict"]["label"] == gv.LABEL_INSTRUMENT_SUSPECT
+    # realized rho + band still computed and reported (label demotes, never suppresses)
+    assert payload["headline"]["rho"] == pytest.approx(1.0)
+    assert payload["headline"]["p_add_one"] is not None
+
+
+def test_rankdata_ties_are_averaged():
+    r = gv._rankdata(np.array([1.0, 2.0, 2.0, 3.0]))
+    assert np.allclose(r, [1.0, 2.5, 2.5, 4.0])
+
+
+def test_spearman_perm_read_degenerate_constant_vector():
+    read = gv.spearman_perm_read(
+        np.array([1.0, 1.0, 1.0]),
+        np.array([1.0, 2.0, 3.0]),
+        n_perm=50,
+        seed=0,
+        label="degenerate",
+    )
+    assert read["rho"] is None and read["p_add_one"] is None
+    assert "zero rank variance" in read["status"]

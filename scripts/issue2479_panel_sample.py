@@ -139,12 +139,15 @@ def main(argv: list[str] | None = None) -> int:
     print(f"[panel-sample] resolved {HF_DATA_REPO}@main -> {repo_sha}")
 
     # --- matched-n allowlist (paired-eligible pool) --------------------------
-    matched_local = hf_hub_download(
-        HF_DATA_REPO,
-        MATCHED_PATH,
-        repo_type="dataset",
-        revision=MATCHED_REV,
-        local_dir=args.staging_dir,
+    matched_local = hub.retry_transient(
+        lambda: hf_hub_download(
+            HF_DATA_REPO,
+            MATCHED_PATH,
+            repo_type="dataset",
+            revision=MATCHED_REV,
+            local_dir=args.staging_dir,
+        ),
+        what="matched_subsets hf_hub_download",
     )
     matched = json.loads(Path(matched_local).read_text())
     if "shared_r1r2_convs" not in matched:
@@ -181,12 +184,15 @@ def main(argv: list[str] | None = None) -> int:
                 f"{label}: expected kept file {want!r} not under prefix "
                 f"(kept files found: {kept_files})"
             )
-        local = hf_hub_download(
-            HF_DATA_REPO,
-            want,
-            repo_type="dataset",
-            revision=repo_sha,
-            local_dir=args.staging_dir,
+        local = hub.retry_transient(
+            lambda want=want: hf_hub_download(
+                HF_DATA_REPO,
+                want,
+                repo_type="dataset",
+                revision=repo_sha,
+                local_dir=args.staging_dir,
+            ),
+            what=f"kept-story hf_hub_download ({label})",
         )
         ids = _load_conv_ids(Path(local))
         id_sets[label] = set(ids)
