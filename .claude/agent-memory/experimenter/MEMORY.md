@@ -23,6 +23,7 @@ bullets, mechanized fixes); their bodies stay on disk.
 - [Smoke roots need p0prime-smoke prestage](feedback_smoke_roots_need_p0prime_smoke_prestage.md) — i537/i542 *_smoke roots only populated by `--phase p0prime --smoke` on the same pod; stat-check before mid-chain smoke (#542)
 - [i543-rig per-phase needs --measure-bhat first](feedback_i543_rig_perphase_needs_measure_bhat.md) — --phase phase1 crashes t+0 without bhat.json; idempotent measure-bhat at glue top; EngineCore/pgrep cleanup gotchas (#570)
 - [Referenced helper not in HEAD tree](feedback_referenced_helper_not_in_head_tree.md) — spec_from_file_location bypasses import checks; FileNotFoundError from importlib = grep git ls-tree, code-class (#408 v11)
+- [Pod sparse clone excludes other issues' eval_results](feedback_pod_sparse_clone_committed_inputs.md) — committed parent-issue inputs FileNotFoundError despite verified HEAD; stat-check on pod, materialize via git show HEAD:path + hash-verify (#2476)
 - [per_q caches blow disk budget](feedback_per_q_disk_budget.md) — compute n_personas × per_q size × methods vs free disk BEFORE launch (310 GB > 200 GB volume); verify on first persona (#263)
 - [Random-bucket persona-alignment yield](feedback_random_bucket_persona_alignment.md) — unbiased corpora give ~5% positive-cos hits for OOD personas; k spec is a planner revision, not an implementer bug (#375)
 - [Cipher 3-gram pigeonhole](feedback_cipher_3gram_pigeonhole.md) — n-gram novelty gates unsatisfiable when train_size×ct_len/alphabet^n > 0.3; widen n or disjoint word pools (#192)
