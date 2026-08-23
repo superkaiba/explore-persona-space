@@ -1,7 +1,15 @@
 """Issue #2476 — turn-averaged SAE basis: pod-side phase-dispatch driver.
 
 Plan: tasks/<status>/2476/plans/plan.md (v4). Phases (plan §4):
-  smoke      P0 unified 1-cell smoke (composed in unit 3 of the pre-split build).
+  smoke      P0 unified end-to-end smoke: the SAME phase functions P1->P7
+             composed on a tiny slice (default 2 capture chunks / 24 recapture
+             rows / 200 SAE steps) under a dedicated smoke out-root
+             (out_root/smoke — per-leg out-roots, #1333), per-leg output
+             verification + wall-clock fence bases (smoke_timing.json),
+             --skip-upload forced (Hub legs are production-only under the
+             composed smoke). --tiny-model additionally substitutes the
+             from-config 24-layer model (unit 1) and random chanind stand-in
+             dictionaries (_TinyJumpReLUStandin) for CPU-only local runs.
   assemble   P1 stage + assemble arm-c inputs: stream the 1,920 #779 capture
              chunks (parent's bounded per-chunk retry), extract LAYER-19
              columns only (layers-field asserted, position-of-19 indexing),
@@ -49,7 +57,16 @@ Plan: tasks/<status>/2476/plans/plan.md (v4). Phases (plan §4):
              (map/identity+bias/train-mean), dense-space anchor + encoder
              recon diagnostics, arm-b bridge vs the committed token-level
              per-feature npz, corpus-transfer fold read.
-  figures — built in unit 3 (registered stub raising NotImplementedError).
+  figures    P7 hero figures (figures/paper/c3_turnavg_tier_gradient +
+             c3_turnavg_tier_acc1) + exploratory dump (figures/issue_2476/),
+             eval JSONs/npzs -> eval_results/issue_2476/turnavg/ with the
+             force-add + staged-index verify + push-verify + per-file
+             artifact-presence assert (pod-side-reporting.md #1205/#1325/#1880),
+             sparse encoded features + per-feature npz -> HF
+             issue2476_turnavg/analysis_tensors/eval/, then the terminal
+             results sentinel (epm:results production / epm:smoke-result
+             otherwise). Repo writes + git/HF legs are PRODUCTION-ONLY; smoke
+             diverts every output under out_root.
 
 Pod-side contract: sentinels under /workspace/logs/issue-2476-*.json ONLY
 (never task.py); [phase=...] log lines. LMSYS/WildChat text is handled
@@ -232,6 +249,7 @@ def _regime(args) -> dict:
         "tiny_model": bool(args.tiny_model),
         "max_chunks": int(args.max_chunks),
         "smoke_rows": int(args.smoke_rows),
+        "sae_dict": int(args.sae_dict),  # output-affecting instrument width (0 = production)
         "layer_c": LAYER_C,
         "layers_b": list(LAYERS_B),
         "m_store_revision": M_STORE_REVISION,
@@ -658,6 +676,21 @@ def _stage_m_split(args) -> tuple[np.ndarray, np.ndarray]:
     return s_fit, s_score
 
 
+def _smoke_rows_head(rows_all: np.ndarray, set_tag: dict[int, int], n: int) -> np.ndarray:
+    """Tag-STRATIFIED head for --smoke-rows: the plain sorted head can land
+    entirely on one m-split side, starving the downstream >=2-fit / >=2-score
+    floors (_armb_all). Takes ~1/4 score rows (>=2) + the rest fit rows (>=2),
+    each in sorted row order. Smoke-only by construction (smoke_rows > 0)."""
+    fit = [int(r) for r in rows_all if set_tag[int(r)] == 1]
+    score = [int(r) for r in rows_all if set_tag[int(r)] == 0]
+    n_score = min(len(score), max(2, n // 4))
+    n_fit = min(len(fit), max(2, n - n_score))
+    assert n_fit >= 2 and n_score >= 2, (
+        f"smoke rows head needs >=2 rows per m-split side; have fit={len(fit)} score={len(score)}"
+    )
+    return np.asarray(sorted(fit[:n_fit] + score[:n_score]), np.int64)
+
+
 def _stage_banked_c20(args, needed_rows: np.ndarray) -> dict[int, np.ndarray]:
     """Stage the m-store dense_l20 shards @ the pinned revision; return
     row_idx -> banked c20 (fp16) for the needed rows only (~30k x 3584)."""
@@ -817,7 +850,7 @@ def phase_recapture(args) -> None:
     set_tag.update({int(r): 0 for r in s_score})
     rows_all = np.asarray(sorted(set_tag), dtype=np.int64)
     if args.smoke_rows > 0:
-        rows_all = rows_all[: args.smoke_rows]
+        rows_all = _smoke_rows_head(rows_all, set_tag, int(args.smoke_rows))
         set_tag = {int(r): set_tag[int(r)] for r in rows_all}
         logger.info("[recapture] --smoke-rows cap: %d rows", len(rows_all))
     assert len(rows_all) > 0, "recapture row set is empty"
@@ -1110,11 +1143,125 @@ def phase_upload1(args) -> None:
 # ── later-unit stubs (units 2/3) ─────────────────────────────────────────────────
 
 
+SMOKE_LEG_ORDER = ("assemble", "recapture", "upload1", "sae_train", "maps", "eval", "figures")
+
+
+def _smoke_leg_expected(name: str, s) -> list[Path]:
+    """Per-leg durable-output verification set for the composed smoke. Keyed on
+    OUT-ROOT artifacts, never the drained sentinel namespace (pod-side-reporting
+    requirement 3: resume/verify state stays OUTSIDE /workspace/logs)."""
+    a, r = _assemble_dir(s), _recapture_dir(s)
+    sc, m, e = _sae_out_dir(s), _maps_dir(s), _eval_dir(s)
+    table: dict[str, list[Path]] = {
+        "assemble": [
+            a / "X19.fp16.npy",
+            a / "Y19.fp16.npy",
+            a / "rows_present.npy",
+            a / "split_meta.json",
+        ],
+        "recapture": [r / "vbar_store.npz", r / "gates_p2.json"],
+        # upload1 under the forced --skip-upload is a loud no-op (Hub legs are
+        # production-only under the composed smoke — blind-spot enumeration)
+        "upload1": [],
+        "sae_train": [
+            sc / "sae_weights.safetensors",
+            sc / "cfg.json",
+            sc / "train_log.json",
+            sc / "gates_p4.json",
+        ],
+        "maps": [
+            m / "preds_meta.json",
+            m / "recon_gate.json",
+            m / "ib_c.npz",
+            m / "armb_maps.npz",
+            m / "alive_b.npz",
+            m / "ftrue_b.npz",
+            m / "densein_b.npz",
+            m / "alive_c.npz",
+            m / "densein_c.npz",
+            m / "ftrue_c_all.fp16.npy",
+        ],
+        "eval": [
+            e / n
+            for n in (
+                "perfeature_c_encodepred.npz",
+                "tier_tests_c.json",
+                "retrieval_c.json",
+                "perfeature_b_encodepred.npz",
+                "bridge_b.npz",
+                "retrieval_b.json",
+                "tier_tests_b.json",
+                "gates_p6.json",
+            )
+        ],
+        "figures": [
+            s.out_root / "figures" / "paper" / "c3_turnavg_tier_gradient.png",
+            s.out_root / "figures" / "paper" / "c3_turnavg_tier_gradient.meta.json",
+            s.out_root / "figures" / "paper" / "c3_turnavg_tier_acc1.png",
+            s.out_root / "figures_state" / "p7_done.json",
+        ],
+    }
+    return table[name]
+
+
 def phase_smoke(args) -> None:
-    raise NotImplementedError(
-        "P0 unified smoke is composed in unit 3 of the pre-split build; unit-1 legs are "
-        "runnable now via --phase assemble/recapture with --smoke --max-chunks/--smoke-rows"
+    """P0: composed end-to-end smoke — the SAME phase functions P1->P7 on a tiny
+    slice under a dedicated smoke out-root (per-leg out-roots, #1333), per-leg
+    output verification + wall-clock fence bases (plan §4 P0)."""
+    C.phase("smoke")
+    assert args.out_root.name != "smoke", "phase_smoke must not recurse into its own smoke root"
+    s = argparse.Namespace(**vars(args))
+    s.out_root = args.out_root / "smoke"
+    s.smoke = True
+    s.max_chunks = args.max_chunks if args.max_chunks > 0 else 2
+    s.smoke_rows = args.smoke_rows if args.smoke_rows > 0 else 24
+    s.skip_upload = True  # Hub upload legs are production-only under the composed smoke
+    s.sae_steps = args.sae_steps if args.sae_steps > 0 else 200  # plan §4 P0: the P4 fence basis
+    s.out_root.mkdir(parents=True, exist_ok=True)
+    logger.info(
+        "[smoke] composed P1->P7 under %s (max_chunks=%d smoke_rows=%d sae_steps=%d "
+        "sae_dict=%d tiny_model=%s)",
+        s.out_root,
+        s.max_chunks,
+        s.smoke_rows,
+        s.sae_steps,
+        _sae_width(s),
+        s.tiny_model,
     )
+    timings: dict[str, float] = {}
+    for name in SMOKE_LEG_ORDER:
+        t0 = time.time()
+        PHASES[name](s)
+        timings[name] = round(time.time() - t0, 1)
+        missing = [str(p) for p in _smoke_leg_expected(name, s) if not p.exists()]
+        assert not missing, f"[smoke] leg {name} completed without expected outputs: {missing}"
+        print(f"[smoke] unit {name} ok elapsed={timings[name]}s", flush=True)
+    doc = {
+        "legs_wall_s": timings,
+        "out_root": str(s.out_root),
+        "max_chunks": int(s.max_chunks),
+        "smoke_rows": int(s.smoke_rows),
+        "sae_steps": int(s.sae_steps),
+        "sae_dict": int(_sae_width(s)),
+        "tiny_model": bool(s.tiny_model),
+        "skip_upload_forced": True,
+    }
+    _write_json(s.out_root / "smoke_timing.json", doc, phase="smoke")
+    # write_sentinel names files by epoch SECOND; the figures leg's terminal
+    # sentinel lands moments earlier, and a same-second write would silently
+    # OVERWRITE it (post-once rule, pod-side-reporting req 3 — observed in the
+    # 2026-08-22 local smoke). One-second guard keeps the filenames distinct.
+    time.sleep(1.1)
+    try:
+        C.write_sentinel(
+            "epm:smoke-result",
+            json.dumps(doc),
+            task_id=TASK_ID,
+            extra={"smoke": True, "blocks_pipeline": False},
+        )
+    except OSError as exc:
+        logger.warning("[smoke] smoke-result sentinel write failed: %s", exc)
+    logger.info("[smoke] done: %s", json.dumps(timings))
 
 
 # ── P4: MatryoshkaBatchTopKSAE + trainer (arm-c dictionary) ──────────────────────
@@ -1306,6 +1453,21 @@ def _production(args) -> bool:
     return args.max_chunks == 0 and args.smoke_rows == 0 and not args.smoke
 
 
+def _sae_width(args) -> int:
+    """Resolved SAE-c dictionary width (--sae-dict; 0 = production SAE_DICT)."""
+    return int(args.sae_dict) if int(args.sae_dict) > 0 else SAE_DICT
+
+
+def _sae_tier_bounds(width: int) -> tuple[int, ...]:
+    """Matryoshka prefix bounds at the given width: the production bounds
+    (2,048/16,384/65,536) truncated to `width` — sub-production smoke widths
+    keep every full tier below the cap so tier reads stay populated."""
+    full = tuple(int(b) for b in S.MATRYOSHKA_TIER_BOUNDS)
+    if width == full[-1]:
+        return full
+    return tuple(b for b in full if b < width) + (width,)
+
+
 @torch.no_grad()
 def _recon_fve(sae, mm, positions: np.ndarray, chunk: int = 2048) -> tuple[float, float]:
     """Plain var-FVE + mean L0 of the sae's reconstruction over the given rows
@@ -1424,7 +1586,11 @@ def phase_sae_train(args) -> None:
     print(f"[sae_train] pools re-measured: {json.dumps(pool_doc)}", flush=True)
 
     dev = args.device
-    model = MatryoshkaBatchTopKSAE().to(dev)
+    width = _sae_width(args)
+    if width != SAE_DICT:
+        assert not production, "sub-production --sae-dict is smoke-only (plan §11 instrument width)"
+        logger.warning("[sae_train] SMOKE dictionary width %d (production %d)", width, SAE_DICT)
+    model = MatryoshkaBatchTopKSAE(dict_size=width, tier_bounds=_sae_tier_bounds(width)).to(dev)
     # b_dec init: seeded train-subsample mean (streamed fp64; standard SAE practice)
     rng0 = np.random.default_rng(SAE_SEED + 1)
     sub = np.sort(rng0.choice(tr_pos, size=min(65_536, len(tr_pos)), replace=False))
@@ -1818,6 +1984,68 @@ def _alive_floor(n_fit: int) -> int:
     return max(1, math.ceil(0.01 * n_fit))
 
 
+class _TinyJumpReLUStandin(torch.nn.Module):
+    """Sub-production stand-in for the chanind SAELensJumpReLU under --tiny-model
+    ONLY (the real class hard-asserts d_sae == 65,536 and pulls ~1.9 GB fp32 per
+    dictionary): seeded random encoder/decoder, ReLU codes, zero threshold.
+    Duck-types the encode/decode/fve_l0/device/dict_size/act_dim surface the
+    shared helpers consume. NEVER a production instrument — the real load path
+    (revision pin + cfg asserts) runs only in production / pod smokes (plan §4
+    smoke blind-spot enumeration); its garbage FVE naturally exercises the G3
+    demotion branch."""
+
+    def __init__(self, act_dim: int, dict_size: int, seed: int):
+        super().__init__()
+        gen = torch.Generator().manual_seed(seed)
+        w = torch.randn(act_dim, dict_size, generator=gen) / math.sqrt(act_dim)
+        self.register_buffer("w_enc", w)
+        self.register_buffer("w_dec", w.t().contiguous())
+        self.act_dim, self.dict_size = int(act_dim), int(dict_size)
+
+    @property
+    def device(self):
+        return self.w_enc.device
+
+    @torch.no_grad()
+    def encode(self, h: torch.Tensor, chunk: int = 2048) -> torch.Tensor:
+        assert h.ndim == 2 and h.shape[1] == self.act_dim, tuple(h.shape)
+        outs = []
+        for s in range(0, h.shape[0], chunk):
+            x = h[s : s + chunk].to(device=self.device, dtype=torch.float32)
+            outs.append(torch.relu(x @ self.w_enc))
+        return torch.cat(outs) if len(outs) != 1 else outs[0]
+
+    @torch.no_grad()
+    def decode(self, f: torch.Tensor) -> torch.Tensor:
+        assert f.ndim == 2 and f.shape[1] == self.dict_size, tuple(f.shape)
+        return f.to(device=self.device, dtype=torch.float32) @ self.w_dec
+
+    @torch.no_grad()
+    def fve_l0(self, h: torch.Tensor, chunk: int = 2048) -> tuple[float, float, dict]:
+        """(fve, mean L0, diag) — the SAELensJumpReLU.fve_l0 return contract."""
+        x = h.to(device=self.device, dtype=torch.float32)
+        f = self.encode(x, chunk=chunk)
+        r = x - self.decode(f)
+        ss_tot = float(((x - x.mean(0)) ** 2).sum())
+        fve = float("nan") if ss_tot < 1e-12 else 1.0 - float((r * r).sum()) / ss_tot
+        return fve, float((f > 0).float().sum(1).mean()), {"standin": True}
+
+
+def _load_dict_b(args, key: str):
+    """Chanind dictionary loader seam: the REAL pinned SAELensJumpReLU in every
+    non-tiny run; a seeded random stand-in ONLY under --tiny-model (whose random
+    recapture activations make the real 1.9 GB dictionaries pure download cost)."""
+    if args.tiny_model:
+        logger.warning(
+            "[dict-b] --tiny-model: %s chanind dictionary SUBSTITUTED with a random "
+            "stand-in (production loads the pinned SAELens weights)",
+            key,
+        )
+        seed = 2476 + (0 if key == "lmsys" else 1)
+        return _TinyJumpReLUStandin(int(C.EXPECTED_HIDDEN), 16_640, seed=seed)
+    return S.SAELensJumpReLU.load(M.SAE_IDS[key], device=args.device, cache_dir=args.sae_dir)
+
+
 def _armb_all(args, maps_dir: Path, production: bool) -> dict:
     """Arm-b sub-unit: shared-Gram ridge c20->vbar20 (+ inlier twin off the SAME
     factorization) + identity+bias + chanind alive mask/f_true encodes + the
@@ -1885,7 +2113,7 @@ def _armb_all(args, maps_dir: Path, production: bool) -> dict:
     tmp.replace(out_maps)
 
     # chanind lmsys: alive mask on TRUE fit-side encodes + f_true over all rows
-    sae = S.SAELensJumpReLU.load(M.SAE_IDS["lmsys"], device=args.device, cache_dir=args.sae_dir)
+    sae = _load_dict_b(args, "lmsys")
     counts = _encode_counts(sae, vbar20, fit_pos)
     floor = _alive_floor(len(fit_pos))
     alive = np.where(counts >= floor)[0].astype(np.int64)
@@ -2213,6 +2441,34 @@ def _median_of(v: np.ndarray) -> float:
     return float(np.median(v)) if len(v) else float("nan")
 
 
+def _g3_verdict(fve_b: float, l0_b: float, diag_b: dict, n_rows: int) -> dict:
+    """G3 (plan §7): arm-b encoder fitness — DEMOTION-ONLY labeling. This
+    function never raises/exits and phase_eval carries no G3-keyed abort
+    (pinned by tests/test_issue2476_gates.py)."""
+    demoted = bool(fve_b < M.GATE_BM_HALT)
+    return {
+        "fve": round(float(fve_b), 4),
+        "l0": round(float(l0_b), 2),
+        "diag": diag_b,
+        "floor": M.GATE_BM_HALT,
+        "n_rows": int(n_rows),
+        "arm_b_demoted": demoted,
+        "verdict": "PASS" if not demoted else "DEMOTED-exploratory-with-caveat",
+    }
+
+
+def _lattice_verdict(obs: float, lo: float, hi: float, d_map: float) -> str:
+    """Registered verdict lattice (plan §5): STRICT tail inequality AND the
+    matching tier-difference sign; every other cell — inside band, boundary
+    equality, sign mismatch (mixed conjunct), non-finite obs — is 'tier-null'.
+    Truth table pinned by tests/test_issue2476_gates.py."""
+    if np.isfinite(obs) and obs < lo and d_map > 0:
+        return "coarse-better"
+    if np.isfinite(obs) and obs > hi and d_map < 0:
+        return "fine-better"
+    return "tier-null"
+
+
 def _retrieval_cells(f_true, preds: dict, tier: np.ndarray, ks=(1, 5, 10)) -> dict:
     """Per-tier kNN retrieval (every k x metric x predictor cell reported
     separately, no best-of — plan §6). Pool = the held-out true feature rows."""
@@ -2290,12 +2546,7 @@ def _tier_stats(r2_map, r2_ib, tier, activity, n_perm, n_boot, rng) -> dict:
     lo, hi = h1["perm_band_2p5_97p5"]
     obs = h1["observed_pooled_spearman"]
     d_map = diff["map"]["point_t0_minus_t2"]
-    if np.isfinite(obs) and obs < lo and d_map > 0:
-        lattice = "coarse-better"
-    elif np.isfinite(obs) and obs > hi and d_map < 0:
-        lattice = "fine-better"
-    else:
-        lattice = "tier-null"
+    lattice = _lattice_verdict(obs, lo, hi, d_map)
     return {
         "per_tier": per_tier,
         "tier_diff_t0_minus_t2": diff,
@@ -2550,19 +2801,11 @@ def phase_eval(args) -> None:
     # ── G3 FIRST (plan §7): arm-b encoder fitness — DEMOTION only, never an abort ──
     store = np.load(_recapture_dir(args) / "vbar_store.npz")
     vbar20_all = np.asarray(store["vbar20"], np.float16)
-    sae_lm = S.SAELensJumpReLU.load(M.SAE_IDS["lmsys"], device=args.device, cache_dir=args.sae_dir)
+    sae_lm = _load_dict_b(args, "lmsys")
     fve_b, l0_b, diag_b = sae_lm.fve_l0(torch.from_numpy(vbar20_all.astype(np.float32)))
-    arm_b_demoted = bool(fve_b < M.GATE_BM_HALT)
-    g3 = {
-        "fve": round(float(fve_b), 4),
-        "l0": round(float(l0_b), 2),
-        "diag": diag_b,
-        "floor": M.GATE_BM_HALT,
-        "n_rows": int(vbar20_all.shape[0]),
-        "arm_b_demoted": arm_b_demoted,
-        "verdict": "PASS" if not arm_b_demoted else "DEMOTED-exploratory-with-caveat",
-    }
-    sae_pile = S.SAELensJumpReLU.load(M.SAE_IDS["pile"], device=args.device, cache_dir=args.sae_dir)
+    g3 = _g3_verdict(float(fve_b), float(l0_b), diag_b, int(vbar20_all.shape[0]))
+    arm_b_demoted = bool(g3["arm_b_demoted"])
+    sae_pile = _load_dict_b(args, "pile")
     fve_p, l0_p, diag_p = sae_pile.fve_l0(torch.from_numpy(vbar20_all.astype(np.float32)))
     g3["pile_exploratory"] = {"fve": round(float(fve_p), 4), "l0": round(float(l0_p), 2)}
     _write_json(out / "gates_p6.json", {"g3": g3}, phase="eval")
@@ -2755,8 +2998,726 @@ def phase_eval(args) -> None:
     )
 
 
+# ── P7: figures + eval JSONs + upload + verify ───────────────────────────────────
+
+# Plan §6 hero reference: parent #1482 m-round token-level per-tier medians —
+# reconciled at render time against the committed artifact (never trusted alone).
+PARENT_TOKEN_MEDIANS = {0: 0.4346, 1: 0.1739, 2: 0.0430}
+TIER_LABELS = {
+    0: "coarsest\n(ids <2,048)",
+    1: "middle\n(2,048–16,383)",
+    2: "finest\n(16,384–65,535)",
+}
+_ARM_LABELS = {"c": "arm c (turn-avg SAE, L19)", "b": "arm b (chanind, L20)"}
+
+
+def _parent_reference_medians() -> dict[int, float]:
+    """Per-tier medians recomputed from the COMMITTED parent per-feature npz and
+    reconciled against the plan §6 literals (fail-loud on artifact drift)."""
+    p = (
+        PROJECT_ROOT
+        / "eval_results"
+        / "issue_1482"
+        / "matryoshka_tier"
+        / "perfeature_m_lmsys_default.npz"
+    )
+    z = np.load(p, allow_pickle=False)
+    r2 = np.asarray(z["r2"], np.float64)
+    tier = np.asarray(z["tier"], np.int64)
+    out = {t: _median_of(r2[tier == t]) for t in (0, 1, 2)}
+    for t, lit in PARENT_TOKEN_MEDIANS.items():
+        assert abs(out[t] - lit) <= 2e-3, (
+            f"parent reference median drift at tier {t}: recomputed {out[t]:.4f} "
+            f"vs plan literal {lit} — wrong/stale committed artifact?"
+        )
+    return out
+
+
+def _med_ci(per_tier: dict, med_key: str, ci_key: str, t: int) -> tuple[float | None, list | None]:
+    """(median, ci95) for one tier from a tier_tests per_tier doc (None-safe)."""
+    d = per_tier.get(str(t)) or {}
+    med = (d.get(med_key) or {}).get("median")
+    return med, d.get(ci_key)
+
+
+def _bar_group(ax, series: list[tuple[str, dict, dict, str]]) -> None:
+    """Grouped per-tier bars with CLAMPED bootstrap-CI offsets (xerr/yerr rule);
+    a tier with no finite median gets NO bar (never a fake zero, rule item 8c)."""
+    width = 0.8 / max(1, len(series))
+    for i, (label, meds, cis, color) in enumerate(series):
+        xs, ys, lo_e, hi_e = [], [], [], []
+        for t in (0, 1, 2):
+            m = meds.get(t)
+            if m is None or not np.isfinite(m):
+                continue
+            xs.append(t - 0.4 + width * (i + 0.5))
+            ys.append(float(m))
+            ci = (cis or {}).get(t)
+            if ci and all(v is not None and np.isfinite(v) for v in ci):
+                lo_e.append(max(0.0, float(m) - float(ci[0])))
+                hi_e.append(max(0.0, float(ci[1]) - float(m)))
+            else:
+                lo_e.append(0.0)
+                hi_e.append(0.0)
+        if xs:
+            ax.bar(xs, ys, width=width, label=label, color=color, yerr=[lo_e, hi_e], capsize=2)
+    ax.set_xticks([0, 1, 2])
+    ax.set_xticklabels([TIER_LABELS[t] for t in (0, 1, 2)])
+
+
+def _fig_hero_gradient(ev: Path, fig_dir: Path) -> dict[str, Path]:
+    """Hero: per-tier median held-out per-feature R2 — both arms, map vs
+    identity+bias, parent token-level reference markers (plan §6)."""
+    import matplotlib.pyplot as plt
+
+    from explore_persona_space.analysis.paper_plots import (
+        figsize_iclr_full,
+        paper_palette,
+        savefig_paper,
+    )
+
+    tc = json.loads((ev / "tier_tests_c.json").read_text())
+    tb = json.loads((ev / "tier_tests_b.json").read_text())
+    b_suffix = " [demoted: exploratory]" if tb.get("arm_b_demoted") else ""
+    colors = paper_palette(4)
+    series = []
+    for label, doc, mk, ck, col in (
+        (f"{_ARM_LABELS['c']}: map", tc, "median_r2_map", "ci95_median_map", colors[0]),
+        (f"{_ARM_LABELS['c']}: identity+bias", tc, "median_r2_ib", "ci95_median_ib", colors[1]),
+        (f"{_ARM_LABELS['b']}: map{b_suffix}", tb, "median_r2_map", "ci95_median_map", colors[2]),
+        (
+            f"{_ARM_LABELS['b']}: identity+bias{b_suffix}",
+            tb,
+            "median_r2_ib",
+            "ci95_median_ib",
+            colors[3],
+        ),
+    ):
+        meds, cis = {}, {}
+        for t in (0, 1, 2):
+            meds[t], cis[t] = _med_ci(doc["per_tier"], mk, ck, t)
+        series.append((label, meds, cis, col))
+    fig, ax = plt.subplots(figsize=figsize_iclr_full())
+    _bar_group(ax, series)
+    ref = _parent_reference_medians()
+    ax.scatter(
+        [0, 1, 2],
+        [ref[0], ref[1], ref[2]],
+        marker="_",
+        s=500,
+        color="black",
+        zorder=5,
+        label=(
+            "parent token-level median (#1482) — cross-{grain, layer, dictionary, "
+            "score-rows} context from the parent's 6,000-row score population, "
+            "not a matched contrast"
+        ),
+    )
+    ax.axhline(0.0, color="gray", lw=0.5)
+    ax.set_xlabel("matryoshka tier (feature-id prefix)")
+    ax.set_ylabel("median held-out per-feature R²")
+    # legend ABOVE the axes (tight bbox includes it) — never over the bars
+    ax.legend(fontsize=5, loc="lower left", bbox_to_anchor=(0.0, 1.02), frameon=False)
+    paths = savefig_paper(fig, "c3_turnavg_tier_gradient", dir=fig_dir)
+    plt.close(fig)
+    return paths
+
+
+def _fig_hero_acc1(ev: Path, fig_dir: Path) -> dict[str, Path]:
+    """Companion hero: per-tier retrieval acc@1 (euclidean) — map vs identity+bias
+    vs chance, both arms (plan §6; Wilson-CI error bars, clamped)."""
+    import matplotlib.pyplot as plt
+
+    from explore_persona_space.analysis.paper_plots import (
+        figsize_iclr_full,
+        paper_palette,
+        savefig_paper,
+    )
+
+    rc = json.loads((ev / "retrieval_c.json").read_text())
+    rb = json.loads((ev / "retrieval_b.json").read_text())
+
+    def _cells(rdoc: dict, pred: str) -> tuple[dict, dict]:
+        meds, cis = {}, {}
+        for t in (0, 1, 2):
+            cell = rdoc["tiers"].get(str(t)) or {}
+            if "note" in cell or pred not in cell:
+                continue
+            e = cell[pred]["euclidean"]
+            meds[t] = float(e["acc_at_k"]["1"])
+            cis[t] = e["wilson_ci_acc"]["1"]
+        return meds, cis
+
+    colors = paper_palette(4)
+    series = []
+    for label, rdoc, pred, col in (
+        (f"{_ARM_LABELS['c']}: map", rc, "map", colors[0]),
+        (f"{_ARM_LABELS['c']}: identity+bias", rc, "ib", colors[1]),
+        (f"{_ARM_LABELS['b']}: map", rb, "map", colors[2]),
+        (f"{_ARM_LABELS['b']}: identity+bias", rb, "ib", colors[3]),
+    ):
+        meds, cis = _cells(rdoc, pred)
+        series.append((label, meds, cis, col))
+    fig, ax = plt.subplots(figsize=figsize_iclr_full())
+    _bar_group(ax, series)
+    for rdoc, tag, col in ((rc, "c", colors[0]), (rb, "b", colors[2])):
+        n_pool = int(rdoc["n_pool"])
+        ax.axhline(
+            1.0 / max(1, n_pool),
+            ls="--",
+            lw=0.8,
+            color=col,
+            label=f"chance, arm {tag} (1/{n_pool})",
+        )
+    ax.set_xlabel("matryoshka tier (feature-id prefix)")
+    ax.set_ylabel("retrieval acc@1 (euclidean; pool = held-out rows)")
+    ax.legend(fontsize=5, loc="lower left", bbox_to_anchor=(0.0, 1.02), frameon=False)
+    paths = savefig_paper(fig, "c3_turnavg_tier_acc1", dir=fig_dir)
+    plt.close(fig)
+    return paths
+
+
+def _tier_median_bars(ax, groups: dict[str, dict[str, float | None]], colors: list[str]) -> None:
+    """Small helper: bars of per-tier medians for named series (JSON
+    per_tier_median_r2 dicts keyed '0'/'1'/'2'; NaN/None -> no bar)."""
+    series = []
+    for i, (label, med_by_tier) in enumerate(groups.items()):
+        meds = {}
+        for t in (0, 1, 2):
+            v = (med_by_tier or {}).get(str(t))
+            meds[t] = None if v is None else float(v)
+        series.append((label, meds, {}, colors[i % len(colors)]))
+    _bar_group(ax, series)
+
+
+def _figs_exploratory(ev: Path, maps_dir: Path, sae_out: Path, fig_dir: Path) -> list[str]:
+    """Exploratory dump (plan §6 list) -> figures/issue_2476/ (or the smoke
+    divert). Returns the stems written. Retrieval-rank ECDFs are substituted
+    with acc@k-vs-k curves (knn_retrieval persists no per-row ranks)."""
+    import matplotlib.pyplot as plt
+
+    from explore_persona_space.analysis.paper_plots import (
+        figsize_iclr_full,
+        figsize_iclr_panels,
+        paper_palette,
+        savefig_paper,
+    )
+
+    stems: list[str] = []
+    tier_colors = paper_palette(3)
+    tc = json.loads((ev / "tier_tests_c.json").read_text())
+    tb = json.loads((ev / "tier_tests_b.json").read_text())
+
+    def _save(fig, stem: str) -> None:
+        savefig_paper(fig, stem, dir=fig_dir)
+        plt.close(fig)
+        stems.append(stem)
+
+    # (1) bridge: token-grain vs turn-averaged per-feature R2 (arm b, tier-colored)
+    z = np.load(ev / "bridge_b.npz")
+    fig, ax = plt.subplots(figsize=figsize_iclr_full())
+    for t in (0, 1, 2):
+        m = np.asarray(z["tier"], np.int64) == t
+        if m.any():
+            ax.scatter(
+                z["r2_token_committed"][m],
+                z["r2_turnavg"][m],
+                s=6,
+                alpha=0.5,
+                color=tier_colors[t],
+                label=TIER_LABELS[t].replace("\n", " "),
+            )
+    lims = [-1.0, 1.0]
+    ax.plot(lims, lims, color="gray", lw=0.6, ls=":")
+    ax.set_xlabel("per-feature R², token grain (committed #1482)")
+    ax.set_ylabel("per-feature R², turn-averaged (this run)")
+    ax.legend(fontsize=5)
+    _save(fig, "i2476_bridge_token_vs_turnavg")
+
+    # (2) R2 vs log10 activity by tier (one panel per arm)
+    fig, axes = plt.subplots(1, 2, figsize=figsize_iclr_panels(2))
+    for ax, tag in zip(axes, ("c", "b"), strict=True):
+        pf = np.load(ev / f"perfeature_{tag}_encodepred.npz")
+        act = np.asarray(pf["activity"], np.float64)
+        for t in (0, 1, 2):
+            m = np.asarray(pf["tier"], np.int64) == t
+            if m.any():
+                ax.scatter(
+                    np.log10(act[m] + 1.0),
+                    pf["r2"][m],
+                    s=4,
+                    alpha=0.4,
+                    color=tier_colors[t],
+                    label=TIER_LABELS[t].replace("\n", " "),
+                )
+        ax.set_xlabel("log10(active fit rows + 1)")
+        ax.set_ylabel("held-out per-feature R²")
+        ax.set_title(_ARM_LABELS[tag], fontsize=6)
+    axes[0].legend(fontsize=5)
+    _save(fig, "i2476_r2_vs_activity")
+
+    # (3) per-tier R2 ECDFs (color = tier, linestyle = arm)
+    fig, ax = plt.subplots(figsize=figsize_iclr_full())
+    for tag, ls in (("c", "-"), ("b", "--")):
+        pf = np.load(ev / f"perfeature_{tag}_encodepred.npz")
+        for t in (0, 1, 2):
+            m = np.asarray(pf["tier"], np.int64) == t
+            vals = np.asarray(pf["r2"], np.float64)[m]
+            vals = np.sort(vals[np.isfinite(vals)])
+            if len(vals):
+                ax.plot(
+                    vals,
+                    np.arange(1, len(vals) + 1) / len(vals),
+                    ls=ls,
+                    color=tier_colors[t],
+                    lw=1.0,
+                    label=f"arm {tag}, {TIER_LABELS[t].splitlines()[0]}",
+                )
+    ax.set_xlabel("held-out per-feature R²")
+    ax.set_ylabel("ECDF")
+    ax.legend(fontsize=5)
+    _save(fig, "i2476_r2_ecdf")
+
+    # (4) pile-twin bars (arm b, exploratory) — skipped when no alive pile features
+    pile = tb.get("pile_exploratory") or {}
+    if pile.get("per_tier_median_r2"):
+        fig, ax = plt.subplots(figsize=figsize_iclr_full())
+        _tier_median_bars(
+            ax,
+            {
+                "chat dictionary (lmsys)": {
+                    str(t): _med_ci(tb["per_tier"], "median_r2_map", "ci95_median_map", t)[0]
+                    for t in (0, 1, 2)
+                },
+                "pile dictionary (twin)": pile["per_tier_median_r2"],
+            },
+            paper_palette(2),
+        )
+        ax.set_ylabel("median held-out per-feature R² (arm b)")
+        _save(fig, "i2476_pile_twin")
+    else:
+        logger.warning("[figures] pile-twin figure skipped: no alive pile features")
+
+    # (5) inlier-mask sensitivity (arm b)
+    inl = (tb.get("extra_reads") or {}).get("inlier") or {}
+    if inl.get("per_tier_median_r2"):
+        fig, ax = plt.subplots(figsize=figsize_iclr_full())
+        _tier_median_bars(
+            ax,
+            {
+                "plain answer-span mean": {
+                    str(t): _med_ci(tb["per_tier"], "median_r2_map", "ci95_median_map", t)[0]
+                    for t in (0, 1, 2)
+                },
+                "token-inlier-masked mean": inl["per_tier_median_r2"],
+            },
+            paper_palette(2),
+        )
+        ax.set_ylabel("median held-out per-feature R² (arm b)")
+        _save(fig, "i2476_inlier_sensitivity")
+
+    # (6) retrieval acc@k vs k (substitutes rank ECDFs; per arm, map vs ib, per tier)
+    fig, axes = plt.subplots(1, 2, figsize=figsize_iclr_panels(2))
+    for ax, tag in zip(axes, ("c", "b"), strict=True):
+        rdoc = json.loads((ev / f"retrieval_{tag}.json").read_text())
+        for t in (0, 1, 2):
+            cell = rdoc["tiers"].get(str(t)) or {}
+            if "note" in cell:
+                continue
+            for pred, ls in (("map", "-"), ("ib", "--")):
+                e = cell[pred]["euclidean"]
+                ks = sorted(int(k) for k in e["acc_at_k"])
+                ax.plot(
+                    ks,
+                    [e["acc_at_k"][str(k)] for k in ks],
+                    ls=ls,
+                    marker="o",
+                    ms=2,
+                    color=tier_colors[t],
+                    lw=0.9,
+                    label=f"{TIER_LABELS[t].splitlines()[0]}, {pred}",
+                )
+        ax.axhline(1.0 / max(1, int(rdoc["n_pool"])), ls=":", color="gray", lw=0.8)
+        ax.set_xlabel("k")
+        ax.set_ylabel("retrieval acc@k (euclidean)")
+        ax.set_title(_ARM_LABELS[tag], fontsize=6)
+    axes[0].legend(fontsize=4)
+    _save(fig, "i2476_retrieval_acc_at_k")
+
+    # (7) alive-feature attrition per tier (both arms): selected / candidate
+    fig, ax = plt.subplots(figsize=figsize_iclr_full())
+    frac_groups = {}
+    for tag, doc in (("c", tc), ("b", tb)):
+        prov = doc["alive_mask_provenance"]["per_tier"]
+        frac_groups[_ARM_LABELS[tag]] = {
+            str(t): (
+                prov[str(t)]["selected"] / prov[str(t)]["candidate"]
+                if prov[str(t)]["candidate"]
+                else None
+            )
+            for t in (0, 1, 2)
+        }
+    _tier_median_bars(ax, frac_groups, paper_palette(2))
+    ax.set_ylabel("alive-feature fraction (selected / candidate)")
+    _save(fig, "i2476_alive_attrition")
+
+    # (8) SAE-c training curves + final dead-feature fractions per tier
+    tl = json.loads((sae_out / "train_log.json").read_text())
+    epochs = tl["epochs"]
+    fig, axes = plt.subplots(1, 2, figsize=figsize_iclr_panels(2))
+    xs = [row["epoch"] for row in epochs]
+    axes[0].plot(xs, [row["mean_loss"] for row in epochs], marker="o", ms=3, label="train loss")
+    ax2 = axes[0].twinx()
+    ax2.plot(
+        xs,
+        [row["val_var_fve"] for row in epochs],
+        marker="s",
+        ms=3,
+        color=paper_palette(2)[1],
+        label="SAE-val var-FVE",
+    )
+    axes[0].set_xlabel("epoch")
+    axes[0].set_ylabel("mean prefix-recon loss")
+    ax2.set_ylabel("SAE-val var-FVE")
+    h1, l1 = axes[0].get_legend_handles_labels()
+    h2, l2 = ax2.get_legend_handles_labels()
+    axes[0].legend(h1 + h2, l1 + l2, fontsize=5)
+    dead = epochs[-1]["dead_frac_by_tier"]
+    _tier_median_bars(axes[1], {"final-epoch dead fraction": dead}, paper_palette(1))
+    axes[1].set_ylabel("dead-feature fraction (final epoch)")
+    _save(fig, "i2476_saec_training")
+
+    # (9) dense-input-companion tier profile (both arms)
+    fig, ax = plt.subplots(figsize=figsize_iclr_full())
+    dense_groups = {}
+    for tag, doc in (("c", tc), ("b", tb)):
+        di = (doc.get("extra_reads") or {}).get("densein") or {}
+        if di.get("per_tier_median_r2"):
+            dense_groups[f"{_ARM_LABELS[tag]}: dense-input map"] = di["per_tier_median_r2"]
+        dense_groups[f"{_ARM_LABELS[tag]}: encode-the-prediction"] = {
+            str(t): _med_ci(doc["per_tier"], "median_r2_map", "ci95_median_map", t)[0]
+            for t in (0, 1, 2)
+        }
+    _tier_median_bars(ax, dense_groups, paper_palette(4))
+    ax.set_ylabel("median held-out per-feature R²")
+    _save(fig, "i2476_densein_profile")
+
+    # (10) corpus-transfer fold (arm c; registered robustness read) — may be absent
+    tr = (tc.get("extra_reads") or {}).get("transfer") or {}
+    if tr.get("per_tier_median_r2"):
+        fig, ax = plt.subplots(figsize=figsize_iclr_full())
+        _tier_median_bars(
+            ax,
+            {
+                "in-corpus map (full holdout)": {
+                    str(t): _med_ci(tc["per_tier"], "median_r2_map", "ci95_median_map", t)[0]
+                    for t in (0, 1, 2)
+                },
+                "lmsys-trained map on WildChat rows": tr["per_tier_median_r2"],
+            },
+            paper_palette(2),
+        )
+        ax.set_ylabel("median held-out per-feature R² (arm c)")
+        _save(fig, "i2476_corpus_transfer")
+    else:
+        logger.warning("[figures] corpus-transfer figure skipped: transfer read absent")
+
+    return stems
+
+
+def _git(repo: Path, *argv: str, check: bool = True):
+    """Explicit-env git call (subprocess env-passthrough rule)."""
+    import subprocess
+
+    return subprocess.run(
+        ["git", "-C", str(repo), *argv],
+        check=check,
+        env={**os.environ},
+        capture_output=True,
+        text=True,
+    )
+
+
+def _p7_git_leg(declared: list[Path]) -> None:
+    """Commit + push the declared git-destined result files on the issue branch,
+    then verify: rev-list push-verify with ONE fetch+rebase retry (#1880) + the
+    per-file artifact-presence assert against the pushed tree (#1325), with the
+    expected set NAMED in the log first (#1482 empty-set rule)."""
+    repo = PROJECT_ROOT
+    branch = _git(repo, "rev-parse", "--abbrev-ref", "HEAD").stdout.strip()
+    assert branch not in ("", "HEAD"), f"P7 git leg needs a named branch checkout, got {branch!r}"
+    rel = [str(p.resolve().relative_to(repo.resolve())) for p in declared]
+    assert rel, "[figures] empty declared git set on a git-committing round — verify FAILURE"
+    print(f"[figures] push-verify expected set ({len(rel)} files):", flush=True)
+    for p in rel:
+        print(f"[figures]   {p}", flush=True)
+    # force-add: the repo-wide *.npz gitignore rule silently skips a plain add (#958)
+    _git(repo, "add", "-f", "--", *rel)
+    leftover = _git(
+        repo,
+        "ls-files",
+        "--others",
+        "--ignored",
+        "--exclude-standard",
+        "--",
+        "eval_results/issue_2476/turnavg",
+    ).stdout.strip()
+    assert not leftover, f"[figures] staged-index verify FAILED — gitignored skips: {leftover}"
+    staged = _git(repo, "status", "--porcelain", "--", *rel).stdout.strip()
+    if staged:
+        _git(
+            repo,
+            "commit",
+            "-m",
+            f"task #2476: P7 eval artifacts + figures ({len(rel)} files)",
+            "--",
+            *rel,
+        )
+    else:
+        logger.info("[figures] nothing to commit (declared set already committed)")
+    verified = False
+    for attempt in (1, 2):
+        push = _git(repo, "push", "origin", f"HEAD:{branch}", check=False)
+        if push.returncode == 0:
+            behind = _git(repo, "rev-list", "--count", f"origin/{branch}..HEAD").stdout.strip()
+            if behind == "0":
+                verified = True
+                break
+        logger.warning(
+            "[figures] push attempt %d not verified (rc=%s): %s — fetch+rebase retry (#1880)",
+            attempt,
+            push.returncode,
+            (push.stderr or "")[-500:],
+        )
+        _git(repo, "fetch", "origin", branch)
+        rb = _git(repo, "rebase", f"origin/{branch}", check=False)
+        if rb.returncode != 0:
+            _git(repo, "rebase", "--abort", check=False)
+            raise RuntimeError(
+                f"[figures] rebase onto origin/{branch} conflicted — results committed "
+                "locally; failing LOUD (never done with an unpushed result commit)"
+            )
+    if not verified:
+        raise RuntimeError(f"[figures] push to origin/{branch} not verified after 2 attempts")
+    missing = [
+        p
+        for p in rel
+        if not _git(
+            repo, "ls-tree", "-r", f"origin/{branch}", "--name-only", "--", p
+        ).stdout.strip()
+    ]
+    assert not missing, f"[figures] artifact-presence assert FAILED — not in pushed tree: {missing}"
+    print(f"[figures] push-verify + artifact-presence OK ({len(rel)} files)", flush=True)
+
+
+def _stage_link(src: Path, dst: Path) -> None:
+    """Hardlink-or-copy into an upload staging dir (never doubles large stores)."""
+    if dst.exists():
+        dst.unlink()
+    try:
+        os.link(src, dst)
+    except OSError:
+        shutil.copy2(src, dst)
+
+
+def _p7_hf_leg(args, ev: Path, maps_dir: Path) -> dict:
+    """Sparse encoded features + per-feature npz -> HF <hf_prefix>/eval/ (plan §4
+    P7), fail-loud exact-set verify (the P3/P4 pattern)."""
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+    from explore_persona_space.orchestrate.upload_sharded import upload_dir_sharded
+
+    up = _stage_dir(args) / "eval_upload"
+    if up.exists():
+        shutil.rmtree(up)
+    up.mkdir(parents=True, exist_ok=True)
+    srcs = sorted(ev.glob("*.npz")) + [
+        maps_dir / n
+        for n in (
+            "ftrue_b.npz",
+            "alive_b.npz",
+            "alive_c.npz",
+            "armb_maps.npz",
+            "densein_b.npz",
+            "densein_c.npz",
+            "ib_c.npz",
+            "ftrue_c_all.fp16.npy",
+        )
+    ]
+    for srcp in srcs:
+        assert srcp.exists(), f"[figures] HF upload source missing: {srcp}"
+        _stage_link(srcp, up / srcp.name)
+    prefix = f"{args.hf_prefix}/eval"
+    res = upload_dir_sharded(
+        up,
+        C.HF_DATA_REPO,
+        prefix,
+        repo_type="dataset",
+        shard_glob="*",
+        verify=True,
+        delete_local=False,
+        resume_skip=False,
+    )
+    if not res.rerouted:
+        expected = [f"{prefix}/{p.name}" for p in sorted(up.iterdir()) if p.is_file()]
+        missing = hub.verify_repo_paths_uploaded(
+            HfApi(), C.HF_DATA_REPO, expected, path_in_repo=prefix
+        )
+        assert not missing, f"[figures] eval upload verify FAILED — missing on Hub: {missing}"
+    logger.info("[figures] uploaded eval stores -> %s (rerouted=%s)", prefix, res.rerouted)
+    return {"prefix": prefix, "n_files": len(srcs), "rerouted": bool(res.rerouted)}
+
+
+def _p7_results_digest(ev: Path, maps_dir: Path, sae_out: Path) -> dict:
+    """Machine-readable results digest for the terminal sentinel note."""
+    tc = json.loads((ev / "tier_tests_c.json").read_text())
+    tb = json.loads((ev / "tier_tests_b.json").read_text())
+    g3 = json.loads((ev / "gates_p6.json").read_text())["g3"]
+    g4 = json.loads((sae_out / "gates_p4.json").read_text())["g4"]
+    g1 = json.loads((maps_dir / "recon_gate.json").read_text())["g1"]
+    return {
+        "lattice_c": tc["lattice_verdict"],
+        "lattice_b": tb["lattice_verdict"],
+        "arm_b_demoted": bool(tb.get("arm_b_demoted")),
+        "median_r2_map_c_per_tier": {
+            str(t): _med_ci(tc["per_tier"], "median_r2_map", "ci95_median_map", t)[0]
+            for t in (0, 1, 2)
+        },
+        "gates": {"g1": g1["verdict"], "g3": g3["verdict"], "g4": g4["verdict"]},
+    }
+
+
 def phase_figures(args) -> None:
-    raise NotImplementedError("P7 figures + eval JSONs + upload is built in unit 3")
+    """P7: hero + exploratory figures, eval artifacts -> git (production),
+    encoded-feature stores -> HF eval/ (production), terminal results sentinel.
+    Repo writes + git/HF legs are PRODUCTION-ONLY (smoke diverts under out_root
+    — plan §4 smoke blind-spot enumeration)."""
+    C.phase("figures")
+    state = args.out_root / "figures_state"
+    state.mkdir(parents=True, exist_ok=True)
+    regime, resume_ok = _enter_phase_regime(state, args, "figures")
+    done_path = state / "p7_done.json"
+    production = _production(args)
+    if resume_ok and done_path.exists():
+        # re-emit the terminal sentinel (a fresh timestamped file, never an
+        # in-place rewrite): pre-launch sentinel hygiene wipes the namespace,
+        # and a resume-skip must still end observable (pod-side-reporting §2/§3)
+        prev = json.loads(done_path.read_text())
+        try:
+            C.write_sentinel(
+                "epm:results" if production else "epm:smoke-result",
+                json.dumps(prev.get("digest", {})),
+                task_id=TASK_ID,
+                extra={"smoke": not production, "resumed": True, "blocks_pipeline": False},
+            )
+        except OSError as exc:
+            logger.warning("[figures] resume sentinel re-emit failed: %s", exc)
+        logger.info("[figures] resume: p7_done present under matching regime; skip")
+        return
+    ev, maps_dir, sae_out = _eval_dir(args), _maps_dir(args), _sae_out_dir(args)
+    required = [
+        ev / "tier_tests_c.json",
+        ev / "tier_tests_b.json",
+        ev / "retrieval_c.json",
+        ev / "retrieval_b.json",
+        ev / "gates_p6.json",
+        ev / "perfeature_c_encodepred.npz",
+        ev / "perfeature_b_encodepred.npz",
+        ev / "bridge_b.npz",
+        sae_out / "train_log.json",
+        sae_out / "gates_p4.json",
+        maps_dir / "recon_gate.json",
+        maps_dir / "preds_meta.json",
+    ]
+    missing_in = [str(p) for p in required if not p.exists()]
+    assert not missing_in, f"[figures] P4/P5/P6 inputs missing — run earlier phases: {missing_in}"
+
+    import matplotlib
+
+    matplotlib.use("Agg")
+    from explore_persona_space.analysis.paper_plots import set_paper_style
+
+    set_paper_style()
+
+    if production:
+        fig_paper = PROJECT_ROOT / "figures" / "paper"
+        fig_expl = PROJECT_ROOT / "figures" / "issue_2476"
+        dest = PROJECT_ROOT / "eval_results" / "issue_2476" / "turnavg"
+    else:
+        fig_paper = args.out_root / "figures" / "paper"
+        fig_expl = args.out_root / "figures" / "issue_2476"
+        dest = args.out_root / "eval_results_stage" / "turnavg"
+        logger.warning(
+            "[figures] non-production: figures/eval outputs DIVERTED under %s "
+            "(repo paths + git/HF legs are production-only)",
+            args.out_root,
+        )
+    for d in (fig_paper, fig_expl, dest):
+        d.mkdir(parents=True, exist_ok=True)
+
+    hero1 = _fig_hero_gradient(ev, fig_paper)
+    hero2 = _fig_hero_acc1(ev, fig_paper)
+    expl_stems = _figs_exploratory(ev, maps_dir, sae_out, fig_expl)
+    print(f"[figures] unit heroes+exploratory done ({2 + len(expl_stems)} figures)", flush=True)
+
+    copied: list[Path] = []
+    for src in sorted([*ev.glob("*.json"), *ev.glob("*.npz")]):
+        shutil.copy2(src, dest / src.name)
+        copied.append(dest / src.name)
+    for src in (
+        maps_dir / "recon_gate.json",
+        maps_dir / "preds_meta.json",
+        sae_out / "gates_p4.json",
+        sae_out / "train_log.json",
+    ):
+        shutil.copy2(src, dest / src.name)
+        copied.append(dest / src.name)
+
+    fig_files = [p for paths in (hero1, hero2) for p in paths.values()]
+    fig_files += [q for stem in expl_stems for q in sorted(fig_expl.glob(f"{stem}.*"))]
+    hf_doc: dict = {"skipped": True}
+    if production:
+        _p7_git_leg(copied + [Path(p) for p in fig_files])
+        if args.skip_upload:
+            logger.warning("[figures] --skip-upload: HF eval-store upload SKIPPED (loud)")
+        else:
+            hf_doc = _p7_hf_leg(args, ev, maps_dir)
+
+    digest = _p7_results_digest(ev, maps_dir, sae_out)
+    doc = {
+        "regime": regime,
+        "digest": digest,
+        "figures": sorted(str(p) for p in fig_files),
+        "eval_artifacts": sorted(str(p) for p in copied),
+        "hf_eval_upload": hf_doc,
+        "production": production,
+    }
+    _write_json(done_path, doc, phase="figures")
+    try:
+        C.write_sentinel(
+            "epm:results" if production else "epm:smoke-result",
+            json.dumps(
+                {
+                    **digest,
+                    "eval_json_paths": sorted(
+                        str(p.relative_to(PROJECT_ROOT)) if production else str(p)
+                        for p in copied
+                        if p.suffix == ".json"
+                    ),
+                }
+            ),
+            task_id=TASK_ID,
+            extra={"smoke": not production, "blocks_pipeline": False},
+        )
+    except OSError as exc:
+        logger.warning("[figures] results sentinel write failed: %s", exc)
+    logger.info(
+        "[figures] done: lattice_c=%s lattice_b=%s gates=%s",
+        digest["lattice_c"],
+        digest["lattice_b"],
+        digest["gates"],
+    )
 
 
 PHASE_ORDER = (
@@ -2810,6 +3771,12 @@ def _parse_args(argv=None):
     ap.add_argument(
         "--sae-steps", type=int, default=0, help="P4: cap optimizer steps (0 = full; P0 pilot=200)"
     )
+    ap.add_argument(
+        "--sae-dict",
+        type=int,
+        default=0,
+        help="P4 SAE-c dictionary width (0 = production 65,536; sub-production = smoke-only)",
+    )
     ap.add_argument("--n-perm", type=int, default=10_000, help="P6 tier-permutation draws")
     ap.add_argument("--n-boot", type=int, default=10_000, help="P6 feature-bootstrap draws")
     ap.add_argument("--fit-n", type=int, default=0, help="EA refit train subsample (0 = all rows)")
@@ -2855,6 +3822,18 @@ def main() -> None:
             knn_retrieval,
         )
 
+        # unit-3 deferred imports (P7 figures)
+        import matplotlib  # noqa: F401
+        import matplotlib.pyplot as plt  # noqa: F401
+
+        from explore_persona_space.analysis.paper_plots import (  # noqa: F401
+            figsize_iclr_full,
+            figsize_iclr_panels,
+            paper_palette,
+            savefig_paper,
+            set_paper_style,
+        )
+
         print("[import-check] OK", flush=True)
         raise SystemExit(0)
     if args.device == "auto":
@@ -2873,6 +3852,9 @@ def main() -> None:
     seq = PHASE_ORDER if args.phase == "all" else (args.phase,)
     for name in seq:
         PHASES[name](args)
+    # poller terminal line (pod-side-reporting.md req 1): single reserved emission
+    # at the driver's own graceful exit, AFTER the phases' sentinel writes.
+    print("[phase=done]", flush=True)
     # explicit exit: heavy C-extension teardown must not rewrite the rc (gotchas.md)
     sys.stdout.flush()
     sys.stderr.flush()
