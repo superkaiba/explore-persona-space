@@ -36,3 +36,14 @@ builder). Sibling: [[eligibility-export-call-chain-identity]] (same issue line).
 **How to apply:** any diff adding a replica-rendered gate: run checks 1-4;
 missing emit-time identity assert = Major (silently hollowing gate); missing
 sibling-constant exclusion = verify yourself before flagging.
+
+**R9 addendum (provenance-pin discharge, #2479):** a fail-loud provenance fix
+(dirty-tree refusal, 40-hex HEAD pin, null-revision refusal) is certified by
+the SIBLING regen commit's artifact, not the code commit alone — probe at
+HEAD: the regenerated export's `git_commit` must equal the FIX commit itself
+(emit ran clean AT the fix), recorded shas (panel_sha256, export sha in the
+manifest) must match live bytes, and the local from-import inside the helper
+is what makes the test's module-boundary monkeypatch bind (a top-level import
+would defeat it — check which form the code uses before trusting the test).
+K-of-N min-margin probing is honest when the docstring scopes its implication
+to PROBED rows and a downstream fail-loud backstop covers the rest.
