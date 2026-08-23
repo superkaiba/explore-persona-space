@@ -61,6 +61,25 @@ an earlier compose). Assert-guarded deltas fail loud instead.
   composer's own same-turn agent-memory commit (and any sibling bookkeeping)
   lands ABOVE the range before Codex reads, so a live-HEAD claim goes stale
   between compose and dispatch.
+- FAIL+FAIL union round (no reconciler — r3 shape, #1739 a2fix r3
+  2026-08-22): the work order is BOTH prior FAIL verdict bodies, each in its
+  own envelope (`ROUND-2 CLAUDE VERDICT BODY` / `ROUND-2 CODEX VERDICT
+  BODY`). Neutralize PROMPT-SIDE, not just by instruction: blockquote (`> `)
+  every line-start `CONCERN:: ` row in BOTH inlined bodies, and replace the
+  Codex body's own head/closing sentinel tags with bracketed notes — then
+  assert `count(closing tag) == 1` on the final prompt. V-duty split: V1 per
+  sibling blocker, V2 per own blocker (replay your OWN r2 mechanizable
+  probes + bug-class sweep sites), V3 = no-over-tightening (new refusal
+  gates must pass valid input — the fix-round calibration's other
+  direction), V4 sweep+audit, V5 test substance.
+- TWO implementer markers in one round (fix commit + addendum commit):
+  inline BOTH in the ONE standard `IMPLEMENTATION MARKER BODY` envelope with
+  `=== IMPLEMENTATION MARKER k of 2 ===` separators (keeps the Step-3 grep
+  guard intact); fail-pre-fix reads then take TWO base shas — the round base
+  for commit 1's test claims, commit 1 for the addendum's.
+- The prior round's patched rubric span extracts MECHANICALLY from its
+  template: `assert tpl.startswith(head) and tpl.endswith(out)`, span =
+  the middle — no saved span file needed.
 
 Extends [[two-leg-single-label-round-compose]] (leg-suffixed filenames,
 leg-scoped sentinel, round-matching by leg).
