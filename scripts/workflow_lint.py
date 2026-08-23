@@ -967,7 +967,11 @@ Behaviours:
   safe-case merge fence destroyed a valid lint-gate verdict this way). A
   bare ``cd "$WT" ||`` guard is deliberately NOT accepted (``cd ""``
   succeeds, so the guard passes with ``WT`` unbound). FAIL names file,
-  fence start line, and the remedy pair.
+  fence start line, and the remedy pair. FAIL-CLOSED on scan inputs: a
+  missing ``SKILL.md`` / missing-or-empty ``steps/`` dir and every
+  unreadable enumerated scan file are each a named lint ERROR — an input
+  the check could not inspect never contributes to a PASS
+  (wt-lint-read-fail-open).
 * ``--check-bare-commit-pathspec`` (also bundled into the no-flags default
   run): scan every ``bash``/``sh``/``shell``-tagged fenced block in
   ``.claude/agents/*.md`` + ``.claude/skills/**/SKILL.md`` +
@@ -12940,17 +12944,41 @@ _WT_PRELUDE_TOKEN = "--guard prelude"
 _WT_ANNOTATION_TOKEN = "wt-binding:"
 
 
-def _issue_skill_fence_files(root: Path) -> list[Path]:
+def _issue_skill_fence_files(root: Path) -> tuple[list[Path], list[str]]:
     """The ``check_issue_skill_fence_wt_binding`` scan set: the /issue skill
-    router + its step bodies (the #2306 fence surface)."""
+    router + its step bodies (the #2306 fence surface).
+
+    Returns ``(files, errors)``. FAIL-CLOSED (wt-lint-read-fail-open): the
+    /issue skill family existing is this check's precondition, so a missing
+    ``SKILL.md`` or a missing/empty ``steps/`` dir appends a named lint ERROR
+    instead of silently narrowing the target list — scanning nothing must
+    never read as PASS.
+    """
     files: list[Path] = []
+    errors: list[str] = []
     skill = root / ".claude" / "skills" / "issue" / "SKILL.md"
     if skill.is_file():
         files.append(skill)
+    else:
+        errors.append(
+            "check_issue_skill_fence_wt_binding: missing scan input "
+            ".claude/skills/issue/SKILL.md — the /issue skill family is this "
+            "check's precondition; a PASS that inspected nothing is fail-open "
+            "(#2306 wt-lint-read-fail-open)."
+        )
     steps = root / ".claude" / "skills" / "issue" / "steps"
-    if steps.is_dir():
-        files.extend(p for p in sorted(steps.glob("*.md")) if p.is_file())
-    return files
+    step_files = [p for p in sorted(steps.glob("*.md")) if p.is_file()] if steps.is_dir() else []
+    if step_files:
+        files.extend(step_files)
+    else:
+        reason = "missing" if not steps.is_dir() else "empty (no *.md step bodies)"
+        errors.append(
+            f"check_issue_skill_fence_wt_binding: scan input "
+            f".claude/skills/issue/steps/ is {reason} — the /issue skill "
+            f"family is this check's precondition; a PASS that inspected "
+            f"nothing is fail-open (#2306 wt-lint-read-fail-open)."
+        )
+    return files, errors
 
 
 def _wt_fence_is_covered(block: str) -> bool:
@@ -12986,19 +13014,25 @@ def check_issue_skill_fence_wt_binding(*, repo_root: Path | None = None) -> list
     Untagged fences are in scope so a future shell fence added without a
     language tag cannot escape silently (zero such ``$WT`` fences exist at
     HEAD). FAIL names file, fence start line, and the remedy pair.
+
+    FAIL-CLOSED on scan inputs (wt-lint-read-fail-open): a missing
+    ``SKILL.md`` / missing-or-empty ``steps/`` dir and every unreadable
+    enumerated scan file each append a named lint ERROR — an input the check
+    could not inspect must never contribute to a PASS.
     """
     root = repo_root if repo_root is not None else _REPO_ROOT
-    errors: list[str] = []
-    for path in _issue_skill_fence_files(root):
+    files, errors = _issue_skill_fence_files(root)
+    for path in files:
+        rel = path.relative_to(root).as_posix()
         try:
             text = path.read_text(encoding="utf-8")
-        except OSError as exc:  # unreadable file: note + skip, never silent-pass
-            print(
-                f"NOTE: check_issue_skill_fence_wt_binding: unreadable {path}: {exc}",
-                file=sys.stderr,
+        except OSError as exc:  # unreadable scan input: named lint ERROR (fail-closed)
+            errors.append(
+                f"{rel}: check_issue_skill_fence_wt_binding: unreadable scan "
+                f"input ({exc}) — fail-closed: a file the check could not "
+                f"inspect must never read as PASS (#2306 wt-lint-read-fail-open)."
             )
             continue
-        rel = path.relative_to(root).as_posix()
         for opener_lineno, _preceding, block in _iter_bash_fences(text, tags=_WT_FENCE_TAGS):
             if not _WT_REF_RE.search(block):
                 continue

@@ -22,10 +22,17 @@ control); (iv) an UNTAGGED ``$WT`` fence FAILing (in scope by design);
 (v) comment-only pseudo-bindings NOT counting (``#   WT=`` and a commented
 prelude mention without the annotation token); (vi) ``${WT}`` detected /
 ``$WTX`` and non-shell fences not flagged; (vii) out-of-scope files ignored;
-(viii) unreadable file skipped with a stderr NOTE, never a silent pass;
+(viii) FAIL-CLOSED scan inputs (wt-lint-read-fail-open): an unreadable
+enumerated scan file, a missing SKILL.md, and a missing/empty ``steps/`` dir
+are each ONE named lint ERROR — never a silent pass;
 (ix) the live tree passes; (x) the MUTATION-VISIBLE no-flags DISPATCH test
 (the ``tests/test_workflow_lint.py:3455`` pattern) — a direct call of the
 check function is NOT sufficient evidence of bundling.
+
+Fixture trees are completed by ``_scaffold`` (a benign SKILL.md + a benign
+step body) so the fail-closed missing-input arm stays quiet on trees that
+deliberately plant only the piece under test; the missing-input tests call
+the check directly on incomplete roots.
 """
 
 from __future__ import annotations
@@ -56,7 +63,20 @@ def _plant(root: Path, rel: str, body: str) -> Path:
     return p
 
 
+def _scaffold(root: Path) -> None:
+    """Complete the minimal /issue-skill family (benign SKILL.md + one benign
+    step body) so the fail-closed missing-input arm stays quiet on fixture
+    trees that plant only the piece under test."""
+    skill = root / ".claude/skills/issue/SKILL.md"
+    if not skill.is_file():
+        _plant(root, ".claude/skills/issue/SKILL.md", "# Router\n\nno fences here\n")
+    steps = root / ".claude/skills/issue/steps"
+    if not (steps.is_dir() and any(p.is_file() for p in steps.glob("*.md"))):
+        _plant(root, ".claude/skills/issue/steps/00-benign.md", "# Step\n\nno fences here\n")
+
+
 def _run(root: Path) -> list[str]:
+    _scaffold(root)
     return check_issue_skill_fence_wt_binding(repo_root=root)
 
 
@@ -249,11 +269,15 @@ def test_skill_md_is_in_scope(tmp_path) -> None:
 
 
 # --------------------------------------------------------------------------
-# (viii) unreadable file: stderr NOTE + skip, never a silent pass or crash
+# (viii) FAIL-CLOSED scan inputs: unreadable / missing inputs are named lint
+# ERRORS, never a silent pass (wt-lint-read-fail-open)
 # --------------------------------------------------------------------------
 
 
-def test_unreadable_file_skipped_with_note(tmp_path, capsys) -> None:
+def test_unreadable_file_is_a_named_lint_error(tmp_path) -> None:
+    """An enumerated-but-unreadable scan file FAILs the check with exactly one
+    named error (file path + reason) — pre-fix this was a stderr NOTE + skip
+    that left the error list empty (fail-open, wt-lint-read-fail-open)."""
     if os.geteuid() == 0:
         pytest.skip("chmod 000 does not block reads for root")
     p = _plant(tmp_path, STEP_REL, '# Step\n\n```bash\ngit -C "$WT" status\n```\n')
@@ -262,10 +286,35 @@ def test_unreadable_file_skipped_with_note(tmp_path, capsys) -> None:
         errors = _run(tmp_path)
     finally:
         p.chmod(0o644)
-    assert errors == []
-    err = capsys.readouterr().err
-    assert "check_issue_skill_fence_wt_binding: unreadable" in err, err
-    assert "99-fixture.md" in err, err
+    assert len(errors) == 1, errors
+    assert "check_issue_skill_fence_wt_binding" in errors[0], errors[0]
+    assert "unreadable" in errors[0], errors[0]
+    assert "99-fixture.md" in errors[0], errors[0]
+
+
+def test_missing_skill_md_is_a_named_lint_error(tmp_path) -> None:
+    _plant(tmp_path, ".claude/skills/issue/steps/00-benign.md", "# Step\n\nno fences here\n")
+    errors = check_issue_skill_fence_wt_binding(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert "missing scan input" in errors[0], errors[0]
+    assert ".claude/skills/issue/SKILL.md" in errors[0], errors[0]
+
+
+def test_missing_steps_dir_is_a_named_lint_error(tmp_path) -> None:
+    _plant(tmp_path, ".claude/skills/issue/SKILL.md", "# Router\n\nno fences here\n")
+    errors = check_issue_skill_fence_wt_binding(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert ".claude/skills/issue/steps/" in errors[0], errors[0]
+    assert "missing" in errors[0], errors[0]
+
+
+def test_empty_steps_dir_is_a_named_lint_error(tmp_path) -> None:
+    _plant(tmp_path, ".claude/skills/issue/SKILL.md", "# Router\n\nno fences here\n")
+    (tmp_path / ".claude/skills/issue/steps").mkdir(parents=True)
+    errors = check_issue_skill_fence_wt_binding(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert ".claude/skills/issue/steps/" in errors[0], errors[0]
+    assert "empty" in errors[0], errors[0]
 
 
 # --------------------------------------------------------------------------
