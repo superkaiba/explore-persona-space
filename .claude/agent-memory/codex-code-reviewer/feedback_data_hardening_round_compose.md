@@ -69,3 +69,37 @@ mandatory; Step 0.5 subject + smoke proof) but downgrading it to
 claims-not-evidence — three sanctioned uses (shape gate, recorded-run
 proof, fix-site index), every closure verdict derived from diff + own
 checks. Flag both interpretive calls in the return.
+
+**Regenerated-fingerprinted-file delta (#2477 r2, 2026-08-22):** when a
+fix round REGENERATES a committed data file that a `.gitleaksignore`
+fingerprint pins by LINE NUMBER (`path:rule:LINE`), even a metadata-only
+top-of-file diff (net ±k lines) shifts the pinned line — the fingerprint
+goes stale silently (`.gitleaksignore` itself absent from the round diff).
+Compose a bounded spot-check fact: sed-window the region at HEAD to confirm
+the flagged text is still non-credential, grade staleness at most Minor
+(operational: future edits to that file re-trip the scanner). Also: a
+reconciler fix-round closure ledger composes three-tier per #2480-r3 —
+binding items (R1-R5, NOT-ADDRESSED = substantive FAIL) / opportunistic
+standing recs + addressed CONCERN rows (claims-honesty severity) /
+STANDING-OPEN fence for the reconciler-downgraded scoped-out id (no re-FAIL
+on severity, no re-emitted row, review-on-merits only if touched).
+
+**r3 deltas (#2480 r3, 2026-08-22):** (a) the reconciler marker KIND
+drifted across rounds on the SAME task — r1 posted
+`epm:code-review-reconcile`, r2 posted `epm:review-reconcile` — so fetch
+the acceptance-contract verdict by enumerating events.jsonl kinds, never by
+assuming the prior round's kind (a `--prefix` fetch on the r1 kind returns
+the WRONG round's verdict silently). (b) Single-surviving-blocker rounds
+compose the closure ledger three-tier: full VERIFIED-ADDRESSED /
+NOT-ADDRESSED duty on the surviving blocker (+ its CONCERN rider),
+CONFIRMED-UNDISTURBED / REGRESSED rows for the reconciler-fenced closed
+blockers (reopen needs NEW evidence from THIS diff), STANDING-OPEN for the
+out-of-scope ledger residue. (c) A brief-ordered "PROBE the fixed gate by
+constructing the N key sets" composes as the #2146 scratch carve-out made
+CONCRETE: /tmp-only driver, importlib-by-path on the worktree script,
+in-memory deep-copy mutations of the committed JSON, canonical-still-PASS
+as the seventh case, STATIC fallback retained — and the return flags that
+dispatch write-mode decides whether the probe arm executes. (d) A v3
+marker whose smoke proof moved from a `## Smoke run` H2 into a bold bullet
+inside (c) is present-but-imperfect FORM — state the compose-time
+observation or the twin false-FAILs `smoke-run-missing` on the missing H2.

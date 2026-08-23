@@ -1,5 +1,6 @@
 # code-reviewer-lean memory index
 
+- [Substitution dial outside production predicate](substitution_dial_outside_production_predicate.md) — enumerate EVERY smoke dial vs _production() + regime; one guarded sibling proves intent (#2476 R1 g3)
 - [Registered gate quantity substituted](registered_gate_quantity_substituted.md) — diff each decision gate's computed quantity against the plan's literal parenthetical; a stricter adjacent proxy still re-routes registered spend (#2254 R1 g3)
 - [Gate mean nanmean denominator](gate_mean_nanmean_denominator.md) — a gate's np.nanmean over per-unit stats silently drops a NaN unit; require full finiteness or an n-in-mean check (#2379 R1 g4)
 - [Figure-populated assert vs reference artists](figure_populated_assert_reference_artists.md) — an empty-figure assert scanning ax.lines is defeated by axhline/axvline; probe with all-NaN data + zero-line (#2379 R1 g4)
@@ -60,3 +61,6 @@
 - [Consumer flag producer never writes](consumer_flag_producer_never_writes.md) — a rec.get("<flag>") filter is vacuous if the producer never writes the field; severity forks on an upstream assert (#2329 r1 g8)
 - [Qualitative-panel commit review recipe](qualitative_panel_commit_review_recipe.md) — triple-consistency + characterization grounding + BOTH-direction substitution-disclosure + sidecar-commit ancestry (#2478 r1 g2)
 - [Parity gate fed its own subject file](parity_gate_fed_own_subject_file.md) — a gate fetch passing ONLY the subject into a filter that excludes the subject class is vacuous; fail-closed hollow gate = Major+concern, not Critical (#2477 R1 g1)
+- [New dial missing from resume regime](new_dial_missing_from_resume_regime.md) — trace every NEW scale dial into the regime hash; presence-skip also erases gate halts/uploads; two-stage JSON write defeats finals-skip (#2476 R1 g2)
+- [Position-calibrated gate under subset remap](position_calibrated_gate_under_subset_remap.md) — an index-subset kwarg re-binds "first-k" calibrated bars onto wrong units; check VALUE vs POSITION semantics (#1901 R1 g1)
+- [Figure-series extension neutrality probes](figure_series_extension_neutrality_probes.md) — PNG byte-compare invalid (pnginfo render id): pixel-array + parent-blob module; err-by-x last-wins contaminates the NEW series (#1901 R1 g3)

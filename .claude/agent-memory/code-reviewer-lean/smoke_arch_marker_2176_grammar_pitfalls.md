@@ -53,7 +53,14 @@ drivers' argparse `choices=` dispatch tables (mapfit 6, judge 8 — the #2163
 omission shape). The one-post fix recipe held unchanged. Third hit #2477 R1 g5
 (2026-08-22): command-pipeline derivation again (backtick `uv run python -c
 "...sorted(m.PHASES)"` -> printed list) on a marker whose substance was fully
-correct (7/7 set-equality, bare rows) — form-only REFUSE, one-line fix.
+correct (7/7 set-equality, bare rows) — form-only REFUSE, one-line fix. Fourth hit
+#2476 R1 g3 (2026-08-22): identical backtick-command shape, substance again fully
+correct (8/8 set-equality via driver-recompute) — this backtick-derivation form is
+now the DOMINANT recurring malformation; lead the FAIL body with the exact
+conforming replacement line so the fix is copy-paste. Fifth hit #1901 R1 g4
+(2026-08-22): command-transcript form (`arm-registry: uv run python <driver>
+--list-phases -> b0_pairs fig ...`) — same class; substance again fully correct
+(6/6 set-equality vs the driver's module-level PHASES dict), form-only REFUSE.
 
 **How to apply:** any Step 0.55 audit (round-level / CONTRACT-BEARING split-review
 group). Give the implementer the full one-post fix: conforming `arm-registry:` line
