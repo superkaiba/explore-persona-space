@@ -1470,3 +1470,37 @@ rubric span carries TWO rubric-native `**Prior-concerns ledger:**` tokens
 tail 1 / authored 0), never total==1; (f) a one-shot stake round wants the
 severity-precision framing of a cap round ("PLAN-AUTHORIZED ONE-SHOT ROUND"
 in the Blocker-tags bracket) even though it is round 1 of a fresh cycle.
+
+**User-authorized plan-amendment round after a terminal gate-FAIL park (#2378
+r12 = impl v12, 2026-08-23):** when a designed gate FAIL parks the task
+(`epm:failure` triage menu), the user picks an option, and the round implements
+the resulting plan amendment: (a) the ACCEPTANCE CONTRACT is a four-envelope
+CHAIN — the failure park (defect + options), the user decision `epm:progress`
+note (option pick + any MANDATORY-FIRST-FIX clause), and the `epm:plan`
+amendment-record markers — each pre-adjudicated shape-wise (a failure body
+sentinel v1 vs posted top-level v6 gets the do-not-be-confused note; no fresh
+`epm:failure` this round — a park-follow-up is not a crash-fix). (b) STALE
+worktree plan at scale: worktree frozen at v6, canonical v8 = 141 KB — inline
+only the AMENDED SECTIONS (extract by heading; ~34 KB: Amendment record +
+each brief-named §) and keep the frozen v6 PATH as auxiliary reference for
+unchanged conventions, with explicit "inlined v8 wins on conflict" + "every
+<dropped-thing> statement in v6 is SUPERSEDED" — a middle path between
+full-inline (#1090 r5) and by-path (#1090 fu1). (c) Plan version posted AFTER
+the impl marker (v8 = prose correction ratifying the implementer's named (d)
+assumption, +3 min): inline the correction marker, pre-adjudicate the marker's
+"plan_version=v<n-1>" line as true-when-posted, and instruct scoring against
+the corrected reading — never silent drift, never marker-shape. (d) An
+ADDRESSED ledger row whose recorded companion duty ("if any further X is ever
+planned") has its fire clause TRIGGERED by the round gets included in the
+slice with a dedicated V-duty (the in-code re-implementation of the hand
+guard) + a TOUCHED-VERIFIED / REGRESSED-BY-ROUND status line — the closed-row
+sibling of the deferred-row D-duty. (e) DESCOPE rounds instruct BOTH
+directions: inertness (kept-defined archival constants / banks / tombstoned
+phase bodies are never dead-code findings) AND a completeness sweep (any
+remaining ACTIVE-path reference to the dropped family — gates, sizing, shard
+maps, floors — is the substantive direction). (f) Assert traps hit live: in a
+plain-string part, count {SHA} placeholders BEFORE replacing; a doubled-brace
+literal contains its single form as a substring (assert `{{rnd}}`==1 FIRST,
+replace, then count `{rnd}`); when envelopes embed via f-string into ONE part,
+token totals sum the four PARTS only (parts_total helper, embedded counts as
+diagnostic labels only) — summing parts AND their embeddings double-counts.
