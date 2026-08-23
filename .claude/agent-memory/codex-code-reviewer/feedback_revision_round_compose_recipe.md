@@ -2187,6 +2187,30 @@ the stale prior-verdict header line pre-declared not-a-finding); (c)
 near-duplicate concern ids from the two twins (same defect, one mechanism)
 each get their own status line with the duplication named.
 
+**Reconciler-sided-FAIL fix round (ONE gating item) + brief-pinned binary
+verdict + by-path plan (#2254 first-k r3, 2026-08-23):** when the prior
+round ended Claude-PASS / Codex-FAIL / reconciler BINDING **FAIL** with one
+gating item, the acceptance contract is the RECONCILER RULING, not the
+prior verdicts — inline it tag-stripped in its own envelope, quote the
+gating sentence verbatim in the round context (the brief may demand this
+because Codex reads /tmp unreliably), and add a line-anchor caveat (the
+ruling cites prior-round `file.py:NNNN` anchors the fix shifts — "never a
+finding"). The ruling's adjudications become BOTH do-not-relitigate fences
+(items root-caused to an open orchestrator-owned blocker; overturned
+carve-outs; BLOCKER→CONCERN downgrades — the twin authored the FAIL and
+predictably re-FAILs its own downgraded items otherwise) AND closure rows:
+ruling-named C-items with no ledger row get pseudo-IDs (`r2-codex-c3-...`)
+with the ruling's own sentence as contract. Binary-verdict pin composes per
+#2228 (routing note inside the Verdict line bracket + rule-3 edit + `none`
+on PASS). A fix round CAN take the plan BY PATH when the brief orders it:
+canonical main-checkout ABSOLUTE path + v-number + frozen-worktree ban, and
+state the binding contract (ruling + closure ledger) is fully INLINED so
+plan-path failure blocks only the plan lens (BLOCKED only after primary +
+fallback v<K>.md paths both fail). Assert trap: envelope BEGIN/END labels
+with parentheticals must match character-for-character between the head
+text and the assert list (a dropped `(round-relevant rows)` on the END
+label failed the count).
+
 **FAIL+FAIL-union fix round with declared carve-outs, diff inlined whole
 (#2254 first-k r2, 2026-08-23):** the #2332-r2 union shape (both prior
 verdicts inlined as acceptance contracts, tag lines stripped, no
