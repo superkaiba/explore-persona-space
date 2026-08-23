@@ -570,6 +570,22 @@ def _runtime_identity() -> dict[str, str]:
     return {"torch": str(torch.__version__), "transformers": str(transformers.__version__)}
 
 
+def _impl_digest() -> str:
+    """sha256 of the CERTIFIED shared-prefill implementation's source
+    (round-6 hardening of round-5 H, concern
+    ``share-prefill-battery-domain-blind``): the git identity stays
+    WARN-only — crash-fix commits ELSEWHERE must not force re-measures (the
+    16<->32 fingerprint-flip quarantine risk) — but an edit to the function
+    the PASS actually certifies (``_generate_batch_shared_prefill``)
+    invalidates the equivalence evidence itself, so it binds HARD:
+    re-measure + overwrite (a same-decision overwrite keeps the
+    verdict+mode digest, so live freezes are unaffected — round-5 A)."""
+    import hashlib
+    import inspect
+
+    return hashlib.sha256(inspect.getsource(_generate_batch_shared_prefill).encode()).hexdigest()
+
+
 def _adoptable_gate_report(
     out_path: Path, mode: str, cfg: "R.RunConfig | None", args: argparse.Namespace
 ) -> dict | None:
@@ -592,8 +608,10 @@ def _adoptable_gate_report(
     inputs are WEAKER than this invocation's (fewer equivalence steps /
     draws, a different batch shape, no wall leg when this invocation would
     measure one — the canonical ``--skip-wall``-produced PASS), a different
-    battery protocol version, or a different torch/transformers runtime
-    (the bf16 tolerance calibration is a kernel-version property) is NOT
+    battery protocol version, a different torch/transformers runtime
+    (the bf16 tolerance calibration is a kernel-version property), or a
+    different certified-implementation source digest (``impl_sha256``,
+    round-6) is NOT
     called "matching": the battery re-measures + overwrites (a same-decision
     overwrite keeps the verdict+mode digest, so live freezes are unaffected
     — round-5 A). A recorded git commit differing from this checkout's is
@@ -653,6 +671,14 @@ def _adoptable_gate_report(
             f"this env's {cur_rt['torch']}/{cur_rt['transformers']} (bf16 tolerance "
             "calibration is kernel-version-dependent)"
         )
+    impl = _impl_digest()
+    if rec.get("impl_sha256", "<unrecorded>") != impl:
+        weaker.append(
+            f"impl_sha256={str(rec.get('impl_sha256', '<unrecorded>'))[:12]!r} != this "
+            f"checkout's {impl[:12]!r} (round-6, concern "
+            "share-prefill-battery-domain-blind: the certified shared-prefill "
+            "implementation changed — its equivalence evidence is implementation-scoped)"
+        )
     if weaker:
         logger.info(
             "[battery] existing %s-mode report NOT adoptable (%s) — re-measuring",
@@ -663,7 +689,8 @@ def _adoptable_gate_report(
     if cfg is not None and repro.get("git_commit") != R._git_sha():
         logger.warning(
             "[battery] adopting a report recorded at git %s != this checkout %s "
-            "(WARN-only: runtime identity is pinned by torch/transformers; --force re-measures)",
+            "(WARN-only: runtime identity is pinned by torch/transformers + the "
+            "certified implementation by impl_sha256; --force re-measures)",
             repro.get("git_commit"),
             R._git_sha(),
         )
@@ -749,6 +776,10 @@ def main(argv: list[str] | None = None) -> int:
     report["batch_size"] = None if args.offline_tiny else int(args.batch_size)
     report["wall_draws"] = 0 if args.skip_wall else int(args.f_draws)
     report["wall_max_new_tokens"] = int(args.f_max_new_tokens)
+    # Round-6 (concern share-prefill-battery-domain-blind): the certified
+    # implementation's source digest — binds HARD at adoption while the git
+    # identity stays WARN-only (see _impl_digest).
+    report["impl_sha256"] = _impl_digest()
     report["repro"] = R._repro(cfg) if cfg is not None else {"mode": mode, **_runtime_identity()}
 
     gates_dir.mkdir(parents=True, exist_ok=True)

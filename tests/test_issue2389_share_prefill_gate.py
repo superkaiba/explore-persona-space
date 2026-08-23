@@ -359,6 +359,8 @@ def _h_report(**over) -> dict:
         "wall_draws": 0,
         "wall_max_new_tokens": 4,
         "wall_leg_f": None,
+        # round-6: the certified-implementation digest binds hard at adoption
+        "impl_sha256": G._impl_digest(),
         "repro": {"mode": "offline-tiny", **G._runtime_identity()},
     }
     rec.update(over)
@@ -425,6 +427,21 @@ def test_r5h_runtime_or_protocol_or_batch_mismatch_not_adoptable(tmp_path):
     ):
         path = _h_path(tmp_path, _h_report(**over))
         assert G._adoptable_gate_report(path, "offline-tiny", None, args) is None, over
+
+
+def test_r6_impl_digest_mismatch_or_absence_not_adoptable(tmp_path):
+    """Round-6 hardening of round-5 H (concern
+    share-prefill-battery-domain-blind): the CERTIFIED shared-prefill
+    implementation's source digest (``impl_sha256``) binds HARD — a report
+    recorded under a DIFFERENT implementation, or predating the field, is
+    re-measured (git identity stays WARN-only: crash-fix commits elsewhere
+    must not force re-measures). FAILED at HEAD~: both shapes adopted."""
+    path = _h_path(tmp_path, _h_report(impl_sha256="0" * 64))
+    assert G._adoptable_gate_report(path, "offline-tiny", None, _h_args(tmp_path)) is None
+    rec = _h_report()
+    rec.pop("impl_sha256", None)
+    path.write_text(json.dumps(rec))
+    assert G._adoptable_gate_report(path, "offline-tiny", None, _h_args(tmp_path)) is None
 
 
 def test_r5h_legacy_report_without_strength_fields_not_adoptable(tmp_path):

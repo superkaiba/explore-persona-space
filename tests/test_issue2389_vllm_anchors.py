@@ -427,6 +427,88 @@ def test_compose_run_cfg_adopts_pilot_gen_batch_and_matching_fp(tmp_path):
     assert R.regime_fingerprint(cfg, "sha") == R.regime_fingerprint(ref, "sha")
 
 
+def _gpu_pilot_report(ref: R.RunConfig, num_workers: int = 8) -> None:
+    """A pilot report recorded on the production GPU lane (H200, width 8) —
+    the exact artifact a production `all` run leaves in gates/ before the
+    detached CPU claim leg starts polling (dispatch.sh:552-553)."""
+    ref.gates_dir.mkdir(parents=True, exist_ok=True)
+    cur = R._repro(ref)
+    (ref.gates_dir / "pilot_gate_report.json").write_text(
+        json.dumps(
+            {
+                "verdict": "ACCEPT",
+                "gen_batch_selected": 32,
+                "gen_batch_candidates": [16, 32],
+                "num_workers": num_workers,
+                "gpu_name": "NVIDIA H200",
+                "gpu_total_mem_gib": 140.4,
+                "hbm_headroom_floor_gib": R.PILOT_HBM_HEADROOM_GIB,
+                "refusal_threshold_h": R.PILOT_REFUSAL_MULT * ref.planned_wall_h,
+                "planned_total_wall_h": ref.planned_wall_h,
+                "accept_threshold_h": R.PILOT_ACCEPT_WALL_H,
+                "repro": {
+                    "model_id": ref.model_id,
+                    "model_revision": ref.model_revision,
+                    "smoke": False,
+                    "tiny": False,
+                    "torch": cur["torch"],
+                    "transformers": cur["transformers"],
+                    "git_commit": cur["git_commit"],
+                },
+            }
+        )
+    )
+
+
+def test_r6_cpu_claim_leg_skips_pilot_adoption_and_share_prefill(tmp_path, monkeypatch, caplog):
+    """Round-6 (concern pilot-reuse-runtime-domain): the claim leg is a
+    CPU-only poll (dispatch.sh runs it under CUDA_VISIBLE_DEVICES="") that
+    only reads the parity verdict and writes gates/vllm_cells.json — it
+    generates nothing, so its runtime domain (CPU) can NEVER match a GPU
+    pilot report, and _compose_run_cfg skips pilot gen_batch adoption +
+    share-prefill resolution for it: an explicit, LOGGED carve-out. FAILED
+    at HEAD~: adoption FOREIGN-raised on every production `all` run the
+    moment the pilot report landed, and the dispatcher discards the
+    detached claim pid's rc, so the death was silent."""
+    monkeypatch.setattr(R, "_pilot_gpu_name", lambda: None)  # the CPU claim host
+    ref = R.build_config(R.parse_args(["--phase", "anchors", "--out-root", str(tmp_path / "out")]))
+    _gpu_pilot_report(ref, num_workers=8)
+    args = V.parse_args(
+        [
+            "--leg",
+            "claim",
+            "--out-root",
+            str(tmp_path / "out"),
+            "--num-workers",
+            "8",
+            "--share-prefill",
+            "auto",
+        ]
+    )
+    with caplog.at_level("INFO"):
+        cfg = V._compose_run_cfg(args)  # FAILED at HEAD~: RuntimeError FOREIGN
+    assert cfg.gen_batch == 16 and not cfg.gen_batch_explicit  # adoption skipped
+    assert cfg.share_prefill_armed is False
+    # Share-prefill RESOLUTION skipped (not resolved-to-off): despite
+    # --share-prefill auto, no family freeze was written by this leg.
+    assert not list(ref.gates_dir.glob("share_prefill_frozen_*.json"))
+    assert any("skipping pilot gen_batch adoption" in r.message for r in caplog.records)
+
+
+def test_r6_claim_leg_with_cuda_keeps_full_resolution(tmp_path, monkeypatch):
+    """Byte-identical GPU paths (round-6 scope bound): the carve-out keys on
+    the RUNTIME DOMAIN (no CUDA device), not on the leg name — a claim leg
+    that DOES see a GPU still routes through adoption + resolution exactly
+    like parity/production."""
+    monkeypatch.setattr(R, "_pilot_gpu_name", lambda: "NVIDIA H200")
+    monkeypatch.setattr(R, "_pilot_gpu_mem_gib", lambda: 140.4)
+    ref = R.build_config(R.parse_args(["--phase", "anchors", "--out-root", str(tmp_path / "out")]))
+    _gpu_pilot_report(ref, num_workers=1)
+    args = V.parse_args(["--leg", "claim", "--out-root", str(tmp_path / "out")])
+    cfg = V._compose_run_cfg(args)
+    assert cfg.gen_batch == 32  # pilot adoption ran (the B9 path, unchanged)
+
+
 def test_share_prefill_family_freeze_pins_first_decision(tmp_path):
     """B9: the share-prefill decision is FROZEN per (out_root, family) — a
     battery PASS landing after the first resolver (the mid-anchors worker-1

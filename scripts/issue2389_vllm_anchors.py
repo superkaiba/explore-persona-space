@@ -760,6 +760,27 @@ def _compose_run_cfg(args: argparse.Namespace) -> R.RunConfig:
     if args.gen_batch is not None:
         argv += ["--gen-batch", str(args.gen_batch)]
     cfg = R.build_config(R.parse_args(argv))
+    if args.leg == "claim" and R._pilot_gpu_name() is None:
+        # Round-6 (concern pilot-reuse-runtime-domain): the claim leg is a
+        # CPU-only poll (dispatch.sh runs it under CUDA_VISIBLE_DEVICES="")
+        # that only reads the parity verdict and writes gates/vllm_cells.json
+        # — it generates NOTHING, so neither gen_batch nor the share-prefill
+        # family decision enters its outputs. Its runtime domain (CPU) can
+        # NEVER match a GPU pilot report, so the round-5-J adoption
+        # validation below would FOREIGN-raise here on every production
+        # `all` run the moment the pilot report exists (dispatch.sh:552-553)
+        # — and the dispatcher discards the detached claim pid's rc, so the
+        # death was silent. Explicit, LOGGED skip — a deliberate narrow
+        # carve-out, not a silent fallback; the GPU legs (parity/production,
+        # and a claim leg that does see a GPU) resolve BOTH below,
+        # byte-identically to before.
+        logger.info(
+            "[compose] leg=claim on a CPU host (no CUDA device) — skipping pilot "
+            "gen_batch adoption + share-prefill resolution (CPU runtime domain "
+            "cannot match a GPU pilot report; the claim leg writes no generation "
+            "artifacts)"
+        )
+        return cfg
     # B9 (r1 review): this leg's HF sub-legs write shards into the SAME
     # anchors family as run.py's workers, and `regime_fingerprint` now covers
     # gen_batch + share_prefill_armed — resolve BOTH exactly as phase_anchors

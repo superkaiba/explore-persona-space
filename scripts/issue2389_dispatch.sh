@@ -520,12 +520,17 @@ case "$PHASE" in
     run_cpu_phase cap_report
     ;;
   capregen-anchors-gate)
+    # Round-6 (concern pilot-reuse-runtime-domain): thread the realized
+    # worker width — the round-5-J adoption path validates the pilot
+    # report's num_workers, and the parser-default width (1) FOREIGN-raised
+    # against the width-N report BEFORE any regeneration, making the
+    # registered >2%/cell cap-hit remedy unrunnable as shipped.
     run_single_gpu capregen-anchors-gate --phase capregen \
-      --capregen-scope anchors --capregen-batch gate
+      --capregen-scope anchors --capregen-batch gate --num-workers "$NUM_WORKERS"
     ;;
   capregen-anchors-rest)
     run_single_gpu capregen-anchors-rest --phase capregen \
-      --capregen-scope anchors --capregen-batch rest
+      --capregen-scope anchors --capregen-batch rest --num-workers "$NUM_WORKERS"
     ;;
   capregen-grid)
     run_single_gpu capregen-grid --phase capregen --capregen-scope grid

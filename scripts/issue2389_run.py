@@ -3165,8 +3165,13 @@ def _reusable_pilot_report(cfg: RunConfig) -> dict | None:
         raise RuntimeError(
             f"existing {path} is FOREIGN to this run: "
             + "; ".join(problems)
-            + " — quarantine it / use a fresh --out-root, or pass --force to "
-            "deliberately re-measure"
+            + " — pilot phase: quarantine it / use a fresh --out-root, or pass "
+            "--force to deliberately re-measure. Consumer phase (anchors / grid / "
+            "capregen / stage2 / the vLLM legs, adopting via "
+            "_pilot_selected_gen_batch): do NOT quarantine a healthy report — "
+            "re-dispatch matching the pilot's runtime domain (thread the SAME "
+            "--num-workers, run on the pilot's GPU lane) or pass an explicit "
+            "--gen-batch (round-6, concern pilot-reuse-runtime-domain)"
         )
     if repro.get("git_commit") != cur["git_commit"]:
         logger.warning(
@@ -3252,9 +3257,16 @@ def _load_cap_recalibration(cfg: RunConfig, regime_fp: str | None = None) -> dic
     tiny/smoke bits) against THIS run's cfg — this loader is the single
     accessor for all four readers, so the guard covers each. A
     regime-foreign (or repro-less, pre-round-5 shape) report is NOT
-    adopted: warn + None — consumers fall back to the table caps, and the
-    standing >2%/cell capregen trigger backstops any genuinely-needed
-    raise, exactly the documented ``partial`` semantics."""
+    adopted: warn + None — consumers fall back to the table caps (the
+    design's own registered up-only prior). For the anchors/grid readers
+    the standing >2%/cell capregen trigger backstops any genuinely-needed
+    raise (the documented ``partial`` semantics); stage2 has NO
+    cap-report/capregen scope (both ``--cap-scope`` and
+    ``--capregen-scope`` exclude it — round-6, concern
+    ``cap-recal-consumer-regime-bypass``), so a non-adopted report there
+    means stage2 simply generates at the table caps with no capregen
+    backstop: strictly safer than adopting foreign-regime cap evidence,
+    but NOT capregen-remediable."""
     path = cfg.gates_dir / "cap_recalibration.json"
     if not path.exists():
         return None

@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import sys
 from pathlib import Path
 
@@ -1061,3 +1062,25 @@ def test_r5_pilot_unrecorded_gpu_lane_raises(tmp_path, monkeypatch):
     _bank_sentinel(monkeypatch)
     with pytest.raises(RuntimeError, match="gpu_name"):
         R.phase_grid(cfg)
+
+
+# ------- Round 6 (concern pilot-reuse-runtime-domain): dispatcher shape
+
+
+def test_r6_dispatch_capregen_anchors_arms_thread_worker_width():
+    """Round-6 (concern pilot-reuse-runtime-domain): the capregen-anchors
+    dispatch arms thread the dispatcher's realized worker width into run.py.
+    Without it the leg runs at the parser-default width (1), and the
+    round-5-J adoption path (_adopt_pilot_gen_batch ->
+    _reusable_pilot_report) FOREIGN-raises against the width-8 pilot report
+    BEFORE any regeneration — the registered >2%/cell cap-hit remedy was
+    unrunnable as shipped. FAILED at HEAD~: neither arm carried
+    --num-workers (the width/FOREIGN adoption semantics themselves are
+    pinned by test_r5j_adoption_path_validates_runtime_domain)."""
+    sh = (REPO_ROOT / "scripts" / "issue2389_dispatch.sh").read_text()
+    for arm in ("capregen-anchors-gate", "capregen-anchors-rest"):
+        m = re.search(rf"^  {arm}\)\n(?P<body>(?:.*\n)*?)^\s*;;", sh, re.M)
+        assert m is not None, f"case arm {arm}) not found in issue2389_dispatch.sh"
+        assert '--num-workers "$NUM_WORKERS"' in m.group("body"), (
+            f'{arm} does not thread --num-workers "$NUM_WORKERS"'
+        )
