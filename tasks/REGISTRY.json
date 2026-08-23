@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2509,
+  "highest_id": 2510,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -9762,8 +9762,8 @@
     "2263": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/2263",
-      "status": "running",
+      "path": "tasks/completed/2263",
+      "status": "completed",
       "title": "verify_carryover_inputs.py default ref checks the wrong tree on a suffixed issue branch (Step 6a.5 gate)"
     },
     "2264": {
@@ -10084,8 +10084,8 @@
     "2305": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/2305",
-      "status": "reviewing",
+      "path": "tasks/completed/2305",
+      "status": "completed",
       "title": "Non-atomic fresh claim-file write in run_claim_queue kills a concurrent worker with 'unparseable claim file'"
     },
     "2306": {
@@ -10161,8 +10161,8 @@
     "2315": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2315",
-      "status": "proposed",
+      "path": "tasks/running/2315",
+      "status": "running",
       "title": "Step 9c 1b: a self-composed gate launcher can silently drop --files-only newline flattening OR -o junit_family=xunit1; neither omission fails where the recipe checks"
     },
     "2316": {
@@ -10217,8 +10217,8 @@
     "2322": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2322",
-      "status": "proposed",
+      "path": "tasks/running/2322",
+      "status": "running",
       "title": "Codex twin: CLI 0.147.0 + gpt-5.6-sol, daily auto-upgrade cron"
     },
     "2323": {
@@ -10252,8 +10252,8 @@
     "2327": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2327",
-      "status": "proposed",
+      "path": "tasks/planning/2327",
+      "status": "planning",
       "title": "Step 5a spec-freshness sync copies a .claude doc without its workflow_lint.py grandfather cap, producing a deterministic false-red gate"
     },
     "2328": {
@@ -11663,6 +11663,13 @@
       "path": "tasks/archived/251",
       "status": "archived",
       "title": "More workflow improvements"
+    },
+    "2510": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2510",
+      "status": "proposed",
+      "title": "workflow-fix: verify_plan should assert the smoke blind-spot enumeration when a plan declares a smoke/dry-run verification"
     },
     "256": {
       "has_clean_result": false,

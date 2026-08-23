@@ -15,8 +15,10 @@ The sweep:
    plans FROM THE HIT POOL (plans that carry ≥1 new-prefix hit — a
    uniform sample from all ~3,491 plans would mostly return zero-hit
    plans that classify trivially and never exercise the ladder).
-4. Run ``classify()`` on each new-prefix candidate against
-   ``origin/main`` via ``resolve_check_ref(fetch=False)`` — no network.
+4. Run ``classify()`` on each new-prefix candidate against the plan's own
+   ``resolve_check_ref(fetch=False)`` answer — no network. A resolver
+   failure is recorded per plan as ``resolution_error`` and the sweep exits
+   nonzero — never a silent check-ref substitute (#2263 r2).
 5. Label the "calibration-vs-history noise" class: a FAIL for a file
    the repo has DELETED / MOVED since the plan was drafted is NOT a
    widening-induced false positive; it is history noise the widened
@@ -103,10 +105,16 @@ def _classify_sample(
     repo_root: Path,
     sample_size: int,
     seed: int,
-    check_ref: str,
     fetch: bool,
 ) -> tuple[list[dict[str, Any]], int, int]:
-    """Return (per-plan classify records, stratified pool size, sample size)."""
+    """Return (per-plan classify records, stratified pool size, sample size).
+
+    A ``resolve_check_ref`` failure (its designed refusals AND infrastructure
+    errors alike) is recorded as a per-plan ``resolution_error`` record with
+    NO classified candidates — never silently substituted with a fallback
+    check ref, which would grade the wrong tree and emit plausible-but-wrong
+    calibration output (#2263 r2). ``main`` exits nonzero when any occurred.
+    """
     rng = random.Random(seed)
     picked = list(hit_pool)
     rng.shuffle(picked)
@@ -122,9 +130,18 @@ def _classify_sample(
         # This is a corner case — 0 hits in a spot-check.
         effective_issue = issue if issue is not None else 0
         try:
-            ref = _vci.resolve_check_ref(repo_root, effective_issue, fetch=fetch)
-        except Exception:
-            ref = check_ref
+            ref = _vci.resolve_check_ref(repo_root, effective_issue, fetch=fetch).ref
+        except Exception as exc:  # noqa: BLE001 — recorded per plan + surfaced via exit code
+            records.append(
+                {
+                    "plan": plan_rel,
+                    "issue": issue,
+                    "check_ref": None,
+                    "resolution_error": f"{type(exc).__name__}: {exc}",
+                    "candidates": [],
+                }
+            )
+            continue
         cand_records = []
         for c in row["candidates"]:
             try:
@@ -346,16 +363,17 @@ def main(argv: list[str] | None = None) -> int:
         repo_root=repo_root,
         sample_size=args.sample_classify,
         seed=args.seed,
-        check_ref="origin/main",
         fetch=not args.no_fetch,
     )
     verdict_counts = _summarize_verdicts(sample_records)
+    resolution_errors = [r for r in sample_records if r.get("resolution_error")]
 
     aggregates = {
         "n_scanned": n_scanned,
         "n_plans_with_new_prefix_hits": len(hit_pool),
         "stratified_pool": stratified_pool,
         "n_sample": n_sample,
+        "n_resolution_errors": len(resolution_errors),
         "per_prefix": per_prefix,
         "verdicts_by_class": dict(verdict_counts),
     }
@@ -374,8 +392,21 @@ def main(argv: list[str] | None = None) -> int:
     print(
         f"[corpus-sweep] scanned={n_scanned} stratified_pool={stratified_pool} "
         f"hits_by_prefix={{{hits_line}}} "
-        f"verdicts_by_class(sample={n_sample})={{{verdicts_line}}}"
+        f"verdicts_by_class(sample={n_sample})={{{verdicts_line}}} "
+        f"resolution_errors={len(resolution_errors)}"
     )
+    if resolution_errors:
+        # Fail loud (#2263 r2): a resolver failure means those plans were NOT
+        # graded — the aggregates above are partial, never a silent
+        # origin/main substitute. Each failing plan is named on stderr and
+        # carries a `resolution_error` record in corpus_sweep.json.
+        for rec in resolution_errors:
+            print(
+                f"[corpus-sweep] ERROR: {rec['plan']}: check-ref resolution failed: "
+                f"{rec['resolution_error']}",
+                file=sys.stderr,
+            )
+        return 1
     return 0
 
 

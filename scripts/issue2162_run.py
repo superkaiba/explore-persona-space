@@ -144,6 +144,12 @@ PILOT_FENCE_MULT = 2.0
 # raised 3600 -> 14400 s so a legitimately long block never ages out mid-run).
 CLAIM_STALE_S = float(os.environ.get("EPM_2162_CLAIM_STALE_S", "14400"))
 CLAIM_POLL_S = float(os.environ.get("EPM_2162_CLAIM_POLL_S", "30"))
+# In-flight-tolerant claim read (#2305): a reader can observe a claim file
+# EMPTY inside the winner's microsecond open->replace window; retry the read
+# a bounded number of times (worst case ~1 s) before treating a still-empty
+# claim as a dead writer. Module-level so tests can pin them.
+CLAIM_READ_RETRIES = 4
+CLAIM_READ_SLEEP_RANGE = (0.05, 0.25)
 
 # Distinct rcs: a designed halt is never an anonymous rc=1 (#1415).
 RC_OK = 0
@@ -327,14 +333,85 @@ def _claim_stale(rec: dict, now: float | None = None) -> bool:
     return (now - float(rec.get("ts", 0.0))) > CLAIM_STALE_S
 
 
+_EMPTY_STALE = object()
+"""Sentinel: the claim file was still EMPTY after the full bounded read (#2305)."""
+
+
+def _read_claim_inflight_tolerant(path: Path) -> dict | None | object:
+    """Read + parse a claim file, tolerating an in-flight writer (#2305).
+
+    A reader can hit the microsecond window between the winner's
+    ``O_CREAT | O_EXCL`` open and its atomic payload ``os.replace`` (the
+    writer path in ``try_claim``), observing the claim file EMPTY. Retry the
+    read up to ``CLAIM_READ_RETRIES`` times, sleeping
+    ``random.uniform(*CLAIM_READ_SLEEP_RANGE)`` between attempts (module
+    constants so tests can pin them; worst-case bound ~1 s). Returns:
+
+    - the parsed record ``dict`` — the normal case;
+    - ``None`` — the claim VANISHED (released, or consumed by a concurrent
+      reclaim); the caller returns False and the outer scan revisits;
+    - ``_EMPTY_STALE`` — still EMPTY after the full bound: with the atomic
+      writer in place no LIVE same-version writer holds an empty claim for
+      ~1 s, so the writer died inside the open->replace window; the caller
+      falls into the stale-reclaim path. Residual accepted risk (same class
+      as the r1 M1 settle comment): a live writer stalled past the bound
+      inside that window — SIGSTOP'd, or delayed by network-FS (MooseFS
+      cross-host) visibility lag — is reclaimed as empty-dead and the block
+      double-runs; tolerated by release_claim's stolen-claim tolerance +
+      atomic idempotent done-files, never corruption.
+
+    Persistent NON-EMPTY garbage raises the same hard ``RuntimeError`` as
+    before: with atomic payload writes, partial JSON from a live writer is
+    impossible, so it is genuine corruption — fail-fast stays.
+    """
+    data: bytes = b""
+    last_err: Exception | None = None
+    for attempt in range(CLAIM_READ_RETRIES):
+        if attempt:
+            time.sleep(random.uniform(*CLAIM_READ_SLEEP_RANGE))
+        try:
+            data = path.read_bytes()
+        except FileNotFoundError:
+            return None
+        except OSError as e:
+            last_err = e
+            continue
+        if data == b"":
+            last_err = None
+            continue
+        try:
+            return json.loads(data)
+        except (json.JSONDecodeError, UnicodeDecodeError) as e:
+            last_err = e
+            continue
+    if data == b"" and last_err is None:
+        logger.warning(
+            "[claims] EMPTY claim %s after %d bounded reads — treating as dead "
+            "writer (died inside the create window)",
+            path,
+            CLAIM_READ_RETRIES,
+        )
+        return _EMPTY_STALE
+    raise RuntimeError(
+        f"unparseable claim file {path} — inconsistent claim state, refusing "
+        "to guess (delete it manually after diagnosing the writer)"
+    ) from last_err
+
+
 def try_claim(cdir: Path, block: Block, worker_index: int, token: str) -> bool:
     """Atomically claim one block; reclaim a STALE claim; never skip silently.
 
-    Fresh claim: ``O_CREAT | O_EXCL`` — exactly one worker wins. Existing
-    claim: parse it (an unparseable claim file is an inconsistent-state HARD
-    failure), and when stale, atomically replace it and verify OUR token won
-    (two workers can both see stale; ``os.replace`` serializes, last writer
-    wins, the read-back arbitrates).
+    Fresh claim: ``O_CREAT | O_EXCL`` on the target decides the election —
+    exactly one worker wins — and the winner lands its payload atomically
+    (tmp + ``os.replace``), so a reader can observe the claim file EMPTY
+    (the microsecond open->replace window) but never partially written
+    (#2305). Existing claim: read it with bounded in-flight tolerance
+    (``_read_claim_inflight_tolerant``): a VANISHED claim returns False (the
+    outer scan revisits), a still-EMPTY claim after the bound is a dead
+    writer and falls into the stale-reclaim path, persistent non-empty
+    garbage stays an inconsistent-state HARD failure. When stale, atomically
+    replace it and verify OUR token won (two workers can both see stale;
+    ``os.replace`` serializes, last writer wins, the read-back arbitrates).
     """
     cdir.mkdir(parents=True, exist_ok=True)
     path = cdir / f"{block.slug}.claim"
@@ -349,14 +426,14 @@ def try_claim(cdir: Path, block: Block, worker_index: int, token: str) -> bool:
     try:
         fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
     except FileExistsError:
-        try:
-            rec = json.loads(path.read_text())
-        except (json.JSONDecodeError, OSError, UnicodeDecodeError) as e:
-            raise RuntimeError(
-                f"unparseable claim file {path} — inconsistent claim state, refusing "
-                "to guess (delete it manually after diagnosing the writer)"
-            ) from e
-        if not _claim_stale(rec):
+        rec = _read_claim_inflight_tolerant(path)
+        if rec is None:
+            # Claim VANISHED mid-read (released, or consumed by a concurrent
+            # reclaim) — never a raise, never a silent skip: the
+            # work-conserving outer scan revisits the block on its next pass.
+            return False
+        empty_dead = rec is _EMPTY_STALE
+        if not empty_dead and not _claim_stale(rec):
             return False
         tmp = path.parent / f"{path.name}.tmp.{token}"
         tmp.write_text(json.dumps(payload))
@@ -370,16 +447,31 @@ def try_claim(cdir: Path, block: Block, worker_index: int, token: str) -> bool:
         winner = json.loads(path.read_text())
         won = winner.get("token") == token
         if won:
-            logger.info(
-                "[claims] reclaimed STALE claim %s (was pid=%s host=%s age=%.0fs)",
-                block.key,
-                rec.get("pid"),
-                rec.get("host"),
-                time.time() - float(rec.get("ts", 0.0)),
-            )
+            if empty_dead:
+                # Distinct success line (#2305): the empty claim carried NO
+                # fields — never format pid/host/age off a record that was
+                # never parsed.
+                logger.warning(
+                    "[claims] reclaimed EMPTY claim %s (dead writer in create window)",
+                    block.key,
+                )
+            else:
+                logger.info(
+                    "[claims] reclaimed STALE claim %s (was pid=%s host=%s age=%.0fs)",
+                    block.key,
+                    rec.get("pid"),
+                    rec.get("host"),
+                    time.time() - float(rec.get("ts", 0.0)),
+                )
         return won
-    with os.fdopen(fd, "w") as f:
-        json.dump(payload, f)
+    # Winner (#2305): the election is decided by the O_CREAT|O_EXCL open
+    # above; close the empty fd and land the payload the way the
+    # stale-reclaim path does — tmp sibling + atomic os.replace — so readers
+    # observe the claim EMPTY or COMPLETE, never partially written.
+    os.close(fd)
+    tmp = path.parent / f"{path.name}.tmp.{token}"
+    tmp.write_text(json.dumps(payload))
+    os.replace(tmp, path)
     return True
 
 
