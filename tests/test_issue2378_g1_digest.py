@@ -227,3 +227,23 @@ def test_pilot_capture_out_root_round_scoping(tmp_path: Path) -> None:
     assert r2 == tmp_path / "activations_pilot_r2"
     assert r2 != stable
     assert stable not in r2.parents and r2 not in stable.parents
+
+
+def test_p1r_skip_assert_globs_match_writer_real_names(tmp_path: Path) -> None:
+    """Crash-fix pin (P1R relaunch 2026-08-23): every skip-assert glob matches
+    the WRITER-REAL filename shape verified in the staged r2 HF set — the r12
+    original guessed `rows_*.jsonl` for chat/plain and crashed the first P1R
+    launch on staged-content-vs-assert drift (#906 class)."""
+    staged_real = {
+        "sega": "summary_dialog_astra_w1_s0.json",
+        "segb": "summary_storyq_astra_w1_s0.json",
+        "user_sim": "summary_w1_s0.json",
+        "chat": "chat_w1_s0_c0000.jsonl",
+        "plain": "plain_text_w1_s0_c0000.jsonl",
+    }
+    assert dict(d.P1R_SKIP_ASSERT_GLOBS).keys() == staged_real.keys()
+    for stage, pat in d.P1R_SKIP_ASSERT_GLOBS:
+        sd = tmp_path / stage
+        sd.mkdir()
+        (sd / staged_real[stage]).write_text("{}")
+        assert sorted(sd.glob(pat)), f"{stage}: glob {pat!r} misses {staged_real[stage]!r}"

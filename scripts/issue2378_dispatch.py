@@ -1588,6 +1588,22 @@ def _pilot_roots(args) -> tuple[Path, Path]:
     return Path(args.raw_pilot_root), Path(args.ledger_root)
 
 
+# P1R skip-assert globs (crash-fix 2026-08-23): each skipped stage is asserted
+# on its DURABLE output using the WRITER-REAL filenames verified against the
+# staged r2 HF set (upload-verification v1) — the r12 original used a guessed
+# `rows_*.jsonl` for chat/plain while the gen writers emit
+# `{cell}_w{wave}_s{shard}_c{chunk}.jsonl` (#906 fixture-vs-writer drift class;
+# the consumer `gen._stage_kept_rows` globs `*.jsonl` and filters rows, so the
+# tighter writer-real pattern is the diagnostic assert).
+P1R_SKIP_ASSERT_GLOBS: tuple[tuple[str, str], ...] = (
+    ("sega", "summary_*.json"),
+    ("segb", "summary_*.json"),
+    ("user_sim", "summary_*.json"),
+    ("chat", "chat_w*_c*.jsonl"),
+    ("plain", "plain_text_w*_c*.jsonl"),
+)
+
+
 def _pilot_round_scope(raw_pilot: Path, runner: Runner, rnd: int) -> tuple[Path, Runner, str, Path]:
     """Round-scope the pilot resume key (logs dir), raw root, HF prefix, AND
     the capture out-root (r1 review g5 blocker 2, G1 recalibration
@@ -1953,13 +1969,7 @@ def phase_p1_resume(args, runner: Runner) -> int:
     # durable outputs (the digest + capture consume exactly these), never a
     # silent skip.
     if not runner.dry:
-        for stage, pat in (
-            ("sega", "summary_*.json"),
-            ("segb", "summary_*.json"),
-            ("user_sim", "summary_*.json"),
-            ("chat", "rows_*.jsonl"),
-            ("plain", "rows_*.jsonl"),
-        ):
+        for stage, pat in P1R_SKIP_ASSERT_GLOBS:
             if not sorted((raw_pilot / stage).glob(pat)):
                 raise RuntimeError(
                     f"p1_resume skip-assert failed: no {pat} under {raw_pilot / stage} "
