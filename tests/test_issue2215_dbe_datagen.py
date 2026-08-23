@@ -99,6 +99,23 @@ def test_coerce_doc_row_shape():
         )
 
 
+def test_coerce_doc_good_path_stores_programmatic_renderings():
+    """build_context + the bank freeze assert consume car['renderings'] — the
+    real-API parse path must store them (Phase G crash: KeyError 'renderings')."""
+    car = D._coerce_gen(
+        "user_doc_format",
+        {
+            "title": "T",
+            "columns": ["a", "b", "c"],
+            "rows": [["x", 1, "n"]] * 4,
+            "assistant_ack": "ok",
+            "final_query": "q",
+        },
+    )
+    assert car["renderings"] == B.doc_renderings(car["payload"])
+    assert set(car["renderings"]) == {"v1", "v2", "v3"}
+
+
 # ── synthetic values fixture (no benchmark text; placeholders only) ───
 
 

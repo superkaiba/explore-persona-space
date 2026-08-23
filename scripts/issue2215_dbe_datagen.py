@@ -544,6 +544,10 @@ def _coerce_gen(kind: str, obj: dict) -> dict:
         assert payload["title"]
         return {
             "payload": payload,
+            # build_context + the bank freeze assert (bank_dbe.py:418) require the
+            # programmatic renderings stored beside the payload; the dry-run path
+            # already stores them (crash: judge-phase KeyError 'renderings').
+            "renderings": B.doc_renderings(payload),
             "assistant_ack": str(obj["assistant_ack"]).strip(),
             "final_query": str(obj["final_query"]).strip(),
         }
