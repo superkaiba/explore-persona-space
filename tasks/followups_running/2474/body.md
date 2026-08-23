@@ -2,7 +2,8 @@
 title: Pre-fine-tuning context geometry predicts emergent-misalignment re-elicitation
   but adds at most a marginal increment over surface-text similarity (MODERATE confidence)
 kind: experiment
-tags: []
+tags:
+- followup-auto
 created_at: '2026-08-22T19:38:42Z'
 has_clean_result: true
 parent_id: 2379
