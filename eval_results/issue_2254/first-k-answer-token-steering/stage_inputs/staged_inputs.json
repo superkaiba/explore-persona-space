@@ -1,0 +1,420 @@
+{
+  "experiment": "issue2254_first_k_steering",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "ts": "2026-08-23T10:59:41Z",
+  "pass_b_revision": "037fcbb210bc52c459959b0746cc268fe08bae96",
+  "git_commit": "5e987357",
+  "git_dirty": false,
+  "followup_label": "first-k-answer-token-steering",
+  "staged_e1_assets": {
+    "sycophancy": {
+      "path": "/workspace/explore-persona-space/data/issue_779/artifacts/sycophancy.json",
+      "sha256": "998f4643666df9e5d2ed3def4275b839b3d40ea426079abf865279f034b2f212",
+      "downloaded": true
+    },
+    "hallucination": {
+      "path": "/workspace/explore-persona-space/data/issue_779/artifacts/hallucination.json",
+      "sha256": "053afaa273371d3806c744d5fb0aaf6fe3a983616f2052cd4d723ec14f843d5e",
+      "downloaded": true
+    }
+  },
+  "resolved_operating_points": {
+    "evil__ctxext__mid": {
+      "op_key": "ctxext__context__mid",
+      "layer_config": "mid",
+      "c": 4.0
+    },
+    "evil__ctxext__single": {
+      "op_key": "ctxext__context__single",
+      "layer_config": "L14",
+      "c": 4.0
+    },
+    "evil__pre__mid": {
+      "op_key": "pre__answer__mid",
+      "layer_config": "mid",
+      "c": 2.0
+    },
+    "evil__pre__single": {
+      "op_key": "pre__answer__single",
+      "layer_config": "L17",
+      "c": 1.0
+    },
+    "evil__preshuf__mid": {
+      "op_key": "pre__answer__mid",
+      "layer_config": "mid",
+      "c": 2.0
+    },
+    "evil__preshuf__single": {
+      "op_key": "pre__answer__single",
+      "layer_config": "L17",
+      "c": 1.0
+    },
+    "evil__random__mid": {
+      "op_key": "random__answer__mid",
+      "layer_config": "mid",
+      "c": 0.5
+    },
+    "evil__random__single": {
+      "op_key": "random__answer__single",
+      "layer_config": "L14",
+      "c": -1.0
+    },
+    "evil__rb__mid": {
+      "op_key": "rb__answer__mid",
+      "layer_config": "mid",
+      "c": 2.0
+    },
+    "evil__rb__single": {
+      "op_key": "rb__answer__single",
+      "layer_config": "L14",
+      "c": 4.0
+    },
+    "sycophancy__ctxext__mid": {
+      "op_key": "ctxext__context__mid",
+      "layer_config": "mid",
+      "c": 4.0
+    },
+    "sycophancy__ctxext__single": {
+      "op_key": "ctxext__context__single",
+      "layer_config": "L14",
+      "c": 2.0
+    },
+    "sycophancy__pre__mid": {
+      "op_key": "pre__answer__mid",
+      "layer_config": "mid",
+      "c": 1.0
+    },
+    "sycophancy__pre__single": {
+      "op_key": "pre__answer__single",
+      "layer_config": "L14",
+      "c": 1.0
+    },
+    "sycophancy__preshuf__mid": {
+      "op_key": "pre__answer__mid",
+      "layer_config": "mid",
+      "c": 1.0
+    },
+    "sycophancy__preshuf__single": {
+      "op_key": "pre__answer__single",
+      "layer_config": "L14",
+      "c": 1.0
+    },
+    "sycophancy__random__mid": {
+      "op_key": "random__answer__mid",
+      "layer_config": "mid",
+      "c": 1.0
+    },
+    "sycophancy__random__single": {
+      "op_key": "random__answer__single",
+      "layer_config": "L17",
+      "c": -1.0
+    },
+    "sycophancy__rb__mid": {
+      "op_key": "rb__answer__mid",
+      "layer_config": "mid",
+      "c": 1.0
+    },
+    "sycophancy__rb__single": {
+      "op_key": "rb__answer__single",
+      "layer_config": "L14",
+      "c": 2.0
+    }
+  },
+  "rho_dose_field": "rho_pooled_median",
+  "consumed_layers": [
+    14,
+    17,
+    20
+  ],
+  "n_directions_loaded": 40,
+  "directions_loaded": [
+    {
+      "behavior": "evil",
+      "direction": "ctxext",
+      "layer": 14,
+      "norm": 1.0,
+      "source": "HF issue2254_preimage/directions/evil_ctxext_L14.pt"
+    },
+    {
+      "behavior": "evil",
+      "direction": "ctxext",
+      "layer": 17,
+      "norm": 1.0,
+      "source": "HF issue2254_preimage/directions/evil_ctxext_L17.pt"
+    },
+    {
+      "behavior": "evil",
+      "direction": "ctxext",
+      "layer": 20,
+      "norm": 1.0,
+      "source": "HF issue2254_preimage/directions/evil_ctxext_L20.pt"
+    },
+    {
+      "behavior": "evil",
+      "direction": "ctxext",
+      "layer": 14,
+      "norm": 1.0,
+      "source": "HF issue2254_preimage/directions/evil_ctxext_L14.pt"
+    },
+    {
+      "behavior": "evil",
+      "direction": "pre",
+      "layer": 14,
+      "norm": 0.9999999403953552,
+      "source": "HF issue2254_preimage/directions/evil_pre_L14.pt"
+    },
+    {
+      "behavior": "evil",
+      "direction": "pre",
+      "layer": 17,
+      "norm": 1.0,
+      "source": "HF issue2254_preimage/directions/evil_pre_L17.pt"
+    },
+    {
+      "behavior": "evil",
+      "direction": "pre",
+      "layer": 20,
+      "norm": 1.0,
+      "source": "HF issue2254_preimage/directions/evil_pre_L20.pt"
+    },
+    {
+      "behavior": "evil",
+      "direction": "pre",
+      "layer": 17,
+      "norm": 1.0,
+      "source": "HF issue2254_preimage/directions/evil_pre_L17.pt"
+    },
+    {
+      "behavior": "evil",
+      "direction": "preshuf",
+      "layer": 14,
+      "norm": 1.0,
+      "source": "HF issue2254_preimage/directions/evil_preshuf_L14.pt"
+    },
+    {
+      "behavior": "evil",
+      "direction": "preshuf",
+      "layer": 17,
+      "norm": 1.0,
+      "source": "HF issue2254_preimage/directions/evil_preshuf_L17.pt"
+    },
+    {
+      "behavior": "evil",
+      "direction": "preshuf",
+      "layer": 20,
+      "norm": 1.0,
+      "source": "HF issue2254_preimage/directions/evil_preshuf_L20.pt"
+    },
+    {
+      "behavior": "evil",
+      "direction": "preshuf",
+      "layer": 17,
+      "norm": 1.0,
+      "source": "HF issue2254_preimage/directions/evil_preshuf_L17.pt"
+    },
+    {
+      "behavior": "evil",
+      "direction": "random",
+      "layer": 14,
+      "norm": 1.0,
+      "source": "random_direction(seed=2268, n_avg=3)"
+    },
+    {
+      "behavior": "evil",
+      "direction": "random",
+      "layer": 17,
+      "norm": 0.9999998807907104,
+      "source": "random_direction(seed=2271, n_avg=3)"
+    },
+    {
+      "behavior": "evil",
+      "direction": "random",
+      "layer": 20,
+      "norm": 0.9999999403953552,
+      "source": "random_direction(seed=2274, n_avg=3)"
+    },
+    {
+      "behavior": "evil",
+      "direction": "random",
+      "layer": 14,
+      "norm": 1.0,
+      "source": "random_direction(seed=2268, n_avg=3)"
+    },
+    {
+      "behavior": "evil",
+      "direction": "rb",
+      "layer": 14,
+      "norm": 0.9999999403953552,
+      "source": "issue779 r_b rev 037fcbb210bc (unit_rows)"
+    },
+    {
+      "behavior": "evil",
+      "direction": "rb",
+      "layer": 17,
+      "norm": 1.0000001192092896,
+      "source": "issue779 r_b rev 037fcbb210bc (unit_rows)"
+    },
+    {
+      "behavior": "evil",
+      "direction": "rb",
+      "layer": 20,
+      "norm": 1.0,
+      "source": "issue779 r_b rev 037fcbb210bc (unit_rows)"
+    },
+    {
+      "behavior": "evil",
+      "direction": "rb",
+      "layer": 14,
+      "norm": 0.9999999403953552,
+      "source": "issue779 r_b rev 037fcbb210bc (unit_rows)"
+    },
+    {
+      "behavior": "sycophancy",
+      "direction": "ctxext",
+      "layer": 14,
+      "norm": 1.0,
+      "source": "HF issue2254_preimage/directions/sycophancy_ctxext_L14.pt"
+    },
+    {
+      "behavior": "sycophancy",
+      "direction": "ctxext",
+      "layer": 17,
+      "norm": 1.0,
+      "source": "HF issue2254_preimage/directions/sycophancy_ctxext_L17.pt"
+    },
+    {
+      "behavior": "sycophancy",
+      "direction": "ctxext",
+      "layer": 20,
+      "norm": 1.0,
+      "source": "HF issue2254_preimage/directions/sycophancy_ctxext_L20.pt"
+    },
+    {
+      "behavior": "sycophancy",
+      "direction": "ctxext",
+      "layer": 14,
+      "norm": 1.0,
+      "source": "HF issue2254_preimage/directions/sycophancy_ctxext_L14.pt"
+    },
+    {
+      "behavior": "sycophancy",
+      "direction": "pre",
+      "layer": 14,
+      "norm": 0.9999999403953552,
+      "source": "HF issue2254_preimage/directions/sycophancy_pre_L14.pt"
+    },
+    {
+      "behavior": "sycophancy",
+      "direction": "pre",
+      "layer": 17,
+      "norm": 1.0,
+      "source": "HF issue2254_preimage/directions/sycophancy_pre_L17.pt"
+    },
+    {
+      "behavior": "sycophancy",
+      "direction": "pre",
+      "layer": 20,
+      "norm": 1.0,
+      "source": "HF issue2254_preimage/directions/sycophancy_pre_L20.pt"
+    },
+    {
+      "behavior": "sycophancy",
+      "direction": "pre",
+      "layer": 14,
+      "norm": 0.9999999403953552,
+      "source": "HF issue2254_preimage/directions/sycophancy_pre_L14.pt"
+    },
+    {
+      "behavior": "sycophancy",
+      "direction": "preshuf",
+      "layer": 14,
+      "norm": 0.9999999403953552,
+      "source": "HF issue2254_preimage/directions/sycophancy_preshuf_L14.pt"
+    },
+    {
+      "behavior": "sycophancy",
+      "direction": "preshuf",
+      "layer": 17,
+      "norm": 1.0,
+      "source": "HF issue2254_preimage/directions/sycophancy_preshuf_L17.pt"
+    },
+    {
+      "behavior": "sycophancy",
+      "direction": "preshuf",
+      "layer": 20,
+      "norm": 1.0,
+      "source": "HF issue2254_preimage/directions/sycophancy_preshuf_L20.pt"
+    },
+    {
+      "behavior": "sycophancy",
+      "direction": "preshuf",
+      "layer": 14,
+      "norm": 0.9999999403953552,
+      "source": "HF issue2254_preimage/directions/sycophancy_preshuf_L14.pt"
+    },
+    {
+      "behavior": "sycophancy",
+      "direction": "random",
+      "layer": 14,
+      "norm": 1.0,
+      "source": "random_direction(seed=2268, n_avg=3)"
+    },
+    {
+      "behavior": "sycophancy",
+      "direction": "random",
+      "layer": 17,
+      "norm": 0.9999998807907104,
+      "source": "random_direction(seed=2271, n_avg=3)"
+    },
+    {
+      "behavior": "sycophancy",
+      "direction": "random",
+      "layer": 20,
+      "norm": 0.9999999403953552,
+      "source": "random_direction(seed=2274, n_avg=3)"
+    },
+    {
+      "behavior": "sycophancy",
+      "direction": "random",
+      "layer": 17,
+      "norm": 0.9999998807907104,
+      "source": "random_direction(seed=2271, n_avg=3)"
+    },
+    {
+      "behavior": "sycophancy",
+      "direction": "rb",
+      "layer": 14,
+      "norm": 0.9999999403953552,
+      "source": "issue779 r_b rev 037fcbb210bc (unit_rows)"
+    },
+    {
+      "behavior": "sycophancy",
+      "direction": "rb",
+      "layer": 17,
+      "norm": 1.0,
+      "source": "issue779 r_b rev 037fcbb210bc (unit_rows)"
+    },
+    {
+      "behavior": "sycophancy",
+      "direction": "rb",
+      "layer": 20,
+      "norm": 1.0,
+      "source": "issue779 r_b rev 037fcbb210bc (unit_rows)"
+    },
+    {
+      "behavior": "sycophancy",
+      "direction": "rb",
+      "layer": 14,
+      "norm": 0.9999999403953552,
+      "source": "issue779 r_b rev 037fcbb210bc (unit_rows)"
+    }
+  ],
+  "rb_revision": "037fcbb210bc52c459959b0746cc268fe08bae96",
+  "random_seed_base": 2254,
+  "git_inputs": [
+    "eval_results/issue_2254/localize/operating_points.json",
+    "eval_results/issue_2254/norm_probe/rho_by_layer.json",
+    "eval_results/issue_2254/baseline_ceiling/judged_percell.json"
+  ],
+  "sentinel_note": "per-phase sentinels use the parent's issue-2254-<tag>.json envelope (plan \u00a79 named a .done suffix; the .json envelope is the parent convention the orchestrator reads)"
+}
