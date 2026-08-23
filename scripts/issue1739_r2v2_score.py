@@ -627,6 +627,27 @@ def _repaired_slug(adapter: str) -> str:
     return "arm2q_ctx_native" if adapter.startswith("v2-quantile") else "arm2_ctx_native"
 
 
+def _arm2fix_pass_tags(adapter: str, roster, *, parity_refit_arm7: bool) -> tuple:
+    """Pure ``(label, preds_tag)`` sequence of the arm2fix pass plan — the
+    SINGLE source of truth: :func:`_arm2fix_passes` realizes it (and asserts
+    equality at return, so drift is loud) and :func:`_planned_preds_files`
+    consumes it (codex r5 MAJOR arm2fix-preds-plan-universe-still-derived:
+    the expected-sidecar universe must be derivable BEFORE execution, from
+    configuration alone — never from realized rows or the writer log)."""
+    if adapter not in ARM2_ADAPTERS:
+        raise ValueError(f"unknown arm2 adapter {adapter!r} (choices: {ARM2_ADAPTERS})")
+    rest = tuple(a for a in roster if a not in A2_FAMILY)
+    if adapter in ("v1", "v2-quantile"):
+        tags = [("std", None)]
+    elif adapter == "v2-component-restricted":
+        tags = [("a2r", "a2r")] + ([("std", None)] if rest else [])
+    else:  # v2-quantile-restricted
+        tags = [("a2qr", "a2qr"), ("std", None)]
+    if parity_refit_arm7:
+        tags.append(("parity", "parity"))
+    return tuple(tags)
+
+
 def _arm2fix_passes(
     adapter: str,
     roster,
@@ -746,6 +767,12 @@ def _arm2fix_passes(
                 },
             )
         )
+    realized_tags = tuple((p.label, p.preds_tag) for p in passes)
+    declared_tags = _arm2fix_pass_tags(adapter, roster, parity_refit_arm7=parity_refit_arm7)
+    assert realized_tags == declared_tags, (
+        f"arm2fix pass-plan drift: realized {realized_tags} != declared {declared_tags} "
+        "(_arm2fix_pass_tags is the single source the planned preds universe derives from)"
+    )
     return passes
 
 
@@ -873,12 +900,14 @@ _PREDS_TAG_BY_PASS = {"std": None, "a2r": "a2r", "a2qr": "a2qr", "parity": "pari
 
 
 def _expected_preds_files(rows) -> set[str]:
-    """SPEC-side expected preds sidecars, derived from the SCORED transfer
-    rows — independent of the writer log (codex r4 minor
-    arm2fix-preds-manifest-producer-unpinned): one file per realized P-B
-    primary (fit, pass-tag/variant) + the P-A anchor when scored. The
-    filename grammar mirrors ``_fit_and_score``'s ``preds_name`` (pass tag or
-    the shufpair variant tag appended to the fit label)."""
+    """ROW-side expected preds sidecars, derived from the SCORED transfer
+    rows — independent of the writer log (codex r4 minor): one file per
+    realized P-B primary (fit, pass-tag/variant), per realized P-C holdout
+    fit (r5: P-C shares the writer and the resume manifest), + the P-A anchor
+    when scored. The filename grammar mirrors ``_fit_and_score``'s
+    ``preds_name``. An UNKNOWN ``fit_pass`` label is a loud error (codex r5:
+    ``.get()`` silently mapped unknown labels onto the untagged standard
+    filename)."""
     out: set[str] = set()
     for r in rows:
         fit = str(r.get("fit", ""))
@@ -886,27 +915,116 @@ def _expected_preds_files(rows) -> set[str]:
             if r.get("map_variant") == "shufpair":
                 tag = "shufpair"
             else:
-                tag = _PREDS_TAG_BY_PASS.get(str(r.get("fit_pass", "std")))
+                label = str(r.get("fit_pass", "std"))
+                if label not in _PREDS_TAG_BY_PASS:
+                    raise ValueError(
+                        f"unknown fit_pass label {label!r} on scored row (fit {fit!r}) — "
+                        "the preds filename grammar cannot resolve it (refusing a silent "
+                        "map onto the untagged standard filename)"
+                    )
+                tag = _PREDS_TAG_BY_PASS[label]
             out.add(f"{fit}.{tag}.jsonl" if tag else f"{fit}.jsonl")
+        elif r.get("protocol") == "P-C" and fit.startswith("P-C-holdout-"):
+            out.add(f"{fit}.jsonl")
         elif fit == "P-A-train-oof":
             out.add("P-A-train-oof.jsonl")
     return out
 
 
-def _assert_preds_manifest_complete(rows, written) -> None:
-    """REFUSE the completion sentinel when a SCORED fit's preds sidecar was
-    never written (codex r4 minor): the expected set is derived from the rows
-    (spec side) and every expected file must appear in the writer's own log —
-    a skipped write can never produce a resumable summary. Extra written
-    files (e.g. P-C sidecars outside the derivation's scope) are tolerated;
-    MISSING is the fail-open direction and is refused."""
-    missing = sorted(_expected_preds_files(rows) - set(written))
-    if missing:
+def _planned_preds_files(
+    protocols,
+    holdouts,
+    map_variants,
+    *,
+    arm2_adapter: str | None,
+    parity_refit_arm7: bool,
+    roster=None,
+) -> set[str]:
+    """PLAN-side expected preds sidecar set, derived BEFORE execution from
+    configuration alone — protocols, the resolved holdout list, map variants,
+    the adapter pass-tag sequence (:func:`_arm2fix_pass_tags`, the single
+    source), and the parity flag (codex r5 MAJOR
+    arm2fix-preds-plan-universe-still-derived: an omitted pass shrinks the
+    realized rows and the writer log TOGETHER, so only a pre-execution
+    universe can catch whole-pass omission). P-C sidecars are in scope: they
+    share the writer and the resume manifest."""
+    out: set[str] = set()
+    protocols = str(protocols)
+    mv_list = list(map_variants or [None])
+    if "A" in protocols:
+        out.add("P-A-train-oof.jsonl")
+    if "B" in protocols:
+        for holdout in holdouts:
+            fit = f"P-B-holdout-{holdout}"
+            if arm2_adapter is None:
+                for mv in mv_list:
+                    tag = "shufpair" if mv == "shufpair" else None
+                    out.add(f"{fit}.{tag}.jsonl" if tag else f"{fit}.jsonl")
+            else:
+                for _label, tag in _arm2fix_pass_tags(
+                    arm2_adapter,
+                    roster if roster is not None else ROSTER,
+                    parity_refit_arm7=parity_refit_arm7,
+                ):
+                    out.add(f"{fit}.{tag}.jsonl" if tag else f"{fit}.jsonl")
+    if "C" in protocols:
+        for holdout in holdouts:
+            out.add(f"P-C-holdout-{holdout}.jsonl")
+    return out
+
+
+def _assert_preds_manifest_complete(planned, rows, written) -> None:
+    """REFUSE the completion sentinel unless the PLANNED sidecar set was
+    fully written (codex r5 MAJOR): ``planned`` derives before execution, so
+    an omitted pass — which shrinks realized rows and the writer log together
+    — still surfaces as missing-planned. The row-derived set is checked as
+    defense in depth BOTH ways: scored-but-unwritten (r4) and
+    scored-outside-plan (plan/grammar drift). Extra written files beyond
+    planned + scored are tolerated; MISSING is the fail-open direction."""
+    planned, written = set(planned), set(written)
+    if not planned:
         raise RuntimeError(
-            f"preds manifest INCOMPLETE at summary time: {len(missing)} scored fits "
-            f"have no written preds sidecar — {missing[:4]} (refusing the completion "
-            "sentinel; the seed is not resumable)"
+            "preds plan universe EMPTY on a preds-writing invocation — the planned "
+            "sidecar set derives from protocols/holdouts before execution and cannot "
+            "be empty (refusing the completion sentinel)"
         )
+    missing_planned = sorted(planned - written)
+    if missing_planned:
+        raise RuntimeError(
+            f"preds manifest INCOMPLETE at summary time: {len(missing_planned)} PLANNED "
+            f"sidecar(s) were never written — {missing_planned[:4]} (an omitted pass "
+            "shrinks rows and the writer log together; the plan universe cannot shrink "
+            "with them; refusing the completion sentinel — the seed is not resumable)"
+        )
+    row_expected = _expected_preds_files(rows)
+    missing_rows = sorted(row_expected - written)
+    if missing_rows:
+        raise RuntimeError(
+            f"preds manifest INCOMPLETE at summary time: {len(missing_rows)} scored "
+            f"fit(s) have no written preds sidecar — {missing_rows[:4]} (refusing the "
+            "completion sentinel; the seed is not resumable)"
+        )
+    drift = sorted(row_expected - planned)
+    if drift:
+        raise RuntimeError(
+            f"preds plan/grammar DRIFT: {len(drift)} scored fit(s) fall outside the "
+            f"pre-execution plan universe — {drift[:4]} (the plan derivation and the "
+            "realized pass control flow disagree; refusing the completion sentinel)"
+        )
+
+
+def _summary_preds_gate(res: dict, *, transfer_preds: bool) -> None:
+    """The completion-sentinel preds gate — module-level so the producer
+    chain (writer log -> summary wrapper -> refuse/resume) is executable
+    under test (codex r5): planned-vs-written first, then the row-derived
+    defense-in-depth checks."""
+    if not transfer_preds:
+        return
+    _assert_preds_manifest_complete(
+        res.get("preds_files_planned") or [],
+        res["rows"],
+        res.get("preds_files_written", []),
+    )
 
 
 def _seed_output_resume_ok(
@@ -1635,6 +1753,17 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
     # glob at summary time (a glob makes any surviving strict subset define
     # its own universe and read as resume-complete).
     preds_files_written: list[str] = []
+    # PLAN-side expected preds universe, resolved BEFORE any fit executes
+    # (codex r5 MAJOR arm2fix-preds-plan-universe-still-derived): derived from
+    # configuration alone, so a whole omitted pass — which drops its rows and
+    # writer-log entries together — still surfaces at the summary gate.
+    preds_files_planned = _planned_preds_files(
+        args.protocols,
+        list(args.pb_holdouts or eval_datasets),
+        getattr(args, "map_variants", None),
+        arm2_adapter=getattr(args, "arm2_adapter", None),
+        parity_refit_arm7=bool(getattr(args, "parity_refit_arm7", False)),
+    )
     kwargs = {"n_boot": args.n_boot} if args.n_boot else {}
 
     def _fit_and_score(
@@ -2161,6 +2290,22 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
                     fit_reports.extend(prev["fit_reports"])
                     pools_record.extend(prev["pools"])
                     pc_map_diags[holdout] = prev["map_diag"]
+                    if getattr(args, "transfer_preds", False):
+                        # a resumed cell skips the writer call, but its sidecar
+                        # is part of THIS summary's manifest — verify it is
+                        # really on disk before logging it as written (a stale
+                        # cell cache without its sidecar refuses loud here,
+                        # never at the next resume; codex r5 P-C scope).
+                        pc_name = f"P-C-holdout-{holdout}.jsonl"
+                        pc_path = _behavior_out_dir(args, behavior) / "transfer_preds" / pc_name
+                        if not pc_path.exists():
+                            raise RuntimeError(
+                                f"[{behavior}] P-C resume cell {cell_path.name} has no preds "
+                                f"sidecar on disk ({pc_name}) — stale/partial cell cache; "
+                                "delete the cell file to recompute (refusing a summary whose "
+                                "manifest would name a missing file)"
+                            )
+                        preds_files_written.append(pc_name)
                     _log(f"[{behavior}] [P-C holdout={holdout}] RESUME: completed cell loaded")
                     continue
                 _log(f"[{behavior}] [P-C holdout={holdout}] stale regime key — recomputing")
@@ -2281,6 +2426,7 @@ def run_behavior(args, behavior: str, layers: list[int]) -> dict:
         "fit_reports": fit_reports,
         "pools": pools_record,
         "preds_files_written": sorted(set(preds_files_written)),
+        "preds_files_planned": sorted(preds_files_planned),
         "map_diagnostics": {
             f"{variant}|add|linear|{u_label}": map_diags["linear"],
             **(
@@ -2739,11 +2885,10 @@ def main(argv: list[str] | None = None) -> int:
         # completion sentinel (_write_companions_then_summary docstring);
         # deferred behind a def so the summary lands after the companions.
         def write_summary(res=res, out_path=out_path, loaded=loaded):
-            if getattr(args, "transfer_preds", False):
-                # spec-vs-executed manifest equality (codex r4 minor): every
-                # SCORED fit must have a written preds sidecar, or the
-                # completion sentinel is refused (missing = fail-open).
-                _assert_preds_manifest_complete(res["rows"], res.get("preds_files_written", []))
+            # planned-vs-written + row-derived manifest gate (codex r4 minor;
+            # r5 MAJOR: the planned universe derives BEFORE execution, so a
+            # whole omitted pass refuses the sentinel too).
+            _summary_preds_gate(res, transfer_preds=bool(getattr(args, "transfer_preds", False)))
             arms.write_summary(
                 [],
                 out_path,
@@ -2782,7 +2927,16 @@ def main(argv: list[str] | None = None) -> int:
                             # which would let any surviving strict subset
                             # define its own universe and read resume-complete.
                             **(
-                                {"transfer_preds_files": list(res.get("preds_files_written", []))}
+                                {
+                                    "transfer_preds_files": list(
+                                        res.get("preds_files_written", [])
+                                    ),
+                                    # the pre-execution plan universe the gate
+                                    # enforced (codex r5) — audit record
+                                    "transfer_preds_planned": list(
+                                        res.get("preds_files_planned", [])
+                                    ),
+                                }
                                 if getattr(args, "transfer_preds", False)
                                 else {}
                             ),

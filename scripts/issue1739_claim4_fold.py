@@ -1375,8 +1375,36 @@ def a2fix_lattice(
             f"({failing}) — fewer than 2 behaviors pass; no arm2 comparison is citable"
         )
         return out
+    # STRUCTURAL exact-universe indexing (codex r5 arm2fix-parity-realized-
+    # multiset-prefilter — 5th iteration of the coverage class; this closes it
+    # at the ROOT): the realized key multiset is built from the UNFILTERED
+    # passing-set per_rung input FIRST, duplicate (behavior, eval_rung) keys
+    # are rejected loud BEFORE any dict construction (a last-write-wins dict
+    # made the reductions input-order-dependent), and only then are D
+    # admissions and finite-parity admissions derived from this uniquely-
+    # indexed exact realized universe (the old D-prefiltered view silently
+    # dropped D-less parity extras before coverage was computed).
+    row_by_key: dict[tuple, dict] = {}
+    dup: list[tuple] = []
+    for r in per_rung:
+        if r["behavior"] not in passing:
+            continue
+        key = (r["behavior"], r["eval_rung"])
+        if key in row_by_key:
+            dup.append(key)
+        else:
+            row_by_key[key] = r
+    if dup:
+        raise SystemExit(
+            f"[a2fix] DUPLICATE KEY ERROR: {len(set(dup))} (behavior, eval_rung) key(s) "
+            f"realized more than once in the passing-set per-rung input "
+            f"({sorted(set(dup))[:6]}) — one realized row per key is required "
+            "(a last-write-wins reduction would be input-order-dependent)"
+        )
     rows = [
-        r for r in per_rung if r["behavior"] in passing and r.get("D", {}).get("mean") is not None
+        row_by_key[k]
+        for k in sorted(row_by_key)
+        if row_by_key[k].get("D", {}).get("mean") is not None
     ]
     d_means = [r["D"]["mean"] for r in rows]
     med = float(np.median(d_means)) if d_means else None
@@ -1427,14 +1455,17 @@ def a2fix_lattice(
                     "empty/missing registered rung set — the parity coverage universe "
                     "cannot be empty (a vacuous universe would pass every read)"
                 )
-        restricted_rows = [r for r in rows if r["behavior"] in restricted_passing]
         expected_keys = {(b, rung) for b in restricted_passing for rung in registered[b]}
+        # realized keys come from the UNFILTERED uniquely-indexed universe —
+        # a D-less row at an unregistered rung is still a realized extra
+        # (codex r5: the old derivation from the D-admitted `rows` list let
+        # such a row vanish before coverage was computed).
+        realized_keys = {k for k in row_by_key if k[0] in restricted_passing}
         dp_by_key: dict[tuple, float] = {}
-        for r in restricted_rows:
-            m = r.get("D_parity", {}).get("mean")
+        for k in sorted(realized_keys):
+            m = row_by_key[k].get("D_parity", {}).get("mean")
             if m is not None and math.isfinite(float(m)):
-                dp_by_key[(r["behavior"], r["eval_rung"])] = float(m)
-        realized_keys = {(r["behavior"], r["eval_rung"]) for r in restricted_rows}
+                dp_by_key[k] = float(m)
         missing = sorted(expected_keys - set(dp_by_key))
         extra = sorted((realized_keys | set(dp_by_key)) - expected_keys)
         dp = [dp_by_key[k] for k in sorted(expected_keys) if k in dp_by_key]

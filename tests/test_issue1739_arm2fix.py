@@ -966,6 +966,49 @@ def test_a2fix_parity_exact_set_and_finite_admission():
         )
 
 
+def test_a2fix_lattice_unfiltered_universe_duplicates_and_order():
+    """codex r5 BLOCKER arm2fix-parity-realized-multiset-prefilter (all fail
+    pre-fix): the realized universe is indexed from the UNFILTERED passing-set
+    input, one row per key, BEFORE any admission filtering.
+    (1) a D-less row at an UNREGISTERED rung (finite D_parity, D.mean None)
+        is a named extra breaking coverage — pre-fix the D-prefilter dropped
+        it and MAP-BEATS was minted over 'exact' coverage;
+    (2) two realized rows sharing one registered key are a loud duplicate-key
+        error in EITHER input order — pre-fix dict last-write-wins let input
+        order pick the median;
+    (3) a valid (unique-key) input yields an identical verdict under order
+        reversal."""
+    sanity = {"evil": {"pass": True}, "sycophancy": {"pass": True}}
+    res = {
+        "evil": _res("arm2q_ctx_native", restricted=True, parity=True),
+        "sycophancy": _res(),
+    }
+    reg = {"evil": frozenset({"evil_pair"}), "sycophancy": frozenset({"sycomwe"})}
+    complete = [
+        _entry("evil", "evil_pair", 0.06, [0.02, 0.10], [0.01, 0.11], d_parity=0.01),
+        _entry("sycophancy", "sycomwe", 0.04, [0.01, 0.07], [0.005, 0.08]),
+    ]
+    # the complete registered fixture mints MAP-BEATS (positive control)
+    v0 = fold.a2fix_lattice(complete, sanity, resolution=res, registered=reg)
+    assert v0["verdict"] == "MAP-BEATS-CONTEXT-DIRECTION"
+    # (1) + a D-less unregistered parity row: named extra, NOT MAP-BEATS
+    dless = _entry("evil", "evil_unregistered", None, None, d_parity=5.0)
+    v1 = fold.a2fix_lattice([*complete, dless], sanity, resolution=res, registered=reg)
+    assert v1["verdict"] != "MAP-BEATS-CONTEXT-DIRECTION"
+    assert v1["parity_read"]["coverage_complete"] is False
+    assert ["evil", "evil_unregistered"] in v1["parity_read"]["extra_unregistered_rungs"]
+    assert v1["parity_read"]["median_D_parity"] == 0.01  # 5.0 never enters
+    # (2) duplicate registered key: loud in both input orders
+    dup = _entry("evil", "evil_pair", 0.50, [0.4, 0.6], [0.4, 0.6], d_parity=-0.9)
+    for ordering in ([*complete, dup], [dup, *complete]):
+        with pytest.raises(SystemExit, match="DUPLICATE KEY"):
+            fold.a2fix_lattice(ordering, sanity, resolution=res, registered=reg)
+    # (3) valid input: order reversal changes nothing
+    v_fwd = fold.a2fix_lattice(complete, sanity, resolution=res, registered=reg)
+    v_rev = fold.a2fix_lattice(list(reversed(complete)), sanity, resolution=res, registered=reg)
+    assert v_fwd == v_rev
+
+
 def test_a2fix_join_rejects_extras_and_counts_realized():
     """codex r4 (d): the join rejects realized join-series cells OUTSIDE the
     registered (rung x seed) grid, and realized_pairs is a TRUE count, never
@@ -1003,15 +1046,18 @@ def test_a2fix_sanity_empty_seed_universe_is_loud(tmp_path):
 
 
 def test_expected_preds_files_and_manifest_completeness():
-    """codex r4 minor arm2fix-preds-manifest-producer-unpinned producer pin:
-    the expected sidecar set derives from the SCORED rows (spec side) and a
-    scored fit with no written sidecar refuses the completion sentinel."""
+    """codex r4 minor (producer pin) + r5 MAJOR
+    arm2fix-preds-plan-universe-still-derived: the row-side derivation covers
+    P-B/P-A/P-C and REJECTS unknown fit_pass labels loud; the manifest assert
+    takes the PRE-EXECUTION planned universe and refuses missing-planned,
+    missing-scored, and scored-outside-plan."""
     rows = [
         {"protocol": "P-B", "fit": "P-B-holdout-hhrt"},  # legacy std (no tag)
         {"protocol": "P-B", "fit": "P-B-holdout-hhrt", "map_variant": "shufpair"},
         {"protocol": "P-B", "fit": "P-B-holdout-toxicchat", "fit_pass": "a2qr"},
         {"protocol": "P-B", "fit": "P-B-holdout-toxicchat", "fit_pass": "parity"},
         {"protocol": "P-B", "fit": "sanity-elic-pool-cv"},  # sanity rows: no sidecar
+        {"protocol": "P-C", "fit": "P-C-holdout-hhrt"},  # r5: P-C in scope
         {"protocol": "P-A", "fit": "P-A-train-oof"},
     ]
     expected = sc._expected_preds_files(rows)
@@ -1020,15 +1066,134 @@ def test_expected_preds_files_and_manifest_completeness():
         "P-B-holdout-hhrt.shufpair.jsonl",
         "P-B-holdout-toxicchat.a2qr.jsonl",
         "P-B-holdout-toxicchat.parity.jsonl",
+        "P-C-holdout-hhrt.jsonl",
         "P-A-train-oof.jsonl",
     }
-    # complete writer log passes; a skipped write refuses the sentinel
-    sc._assert_preds_manifest_complete(rows, sorted(expected))
+    # r5: an unknown fit_pass label is LOUD, never a silent std-filename map
+    with pytest.raises(ValueError, match="unknown fit_pass"):
+        sc._expected_preds_files([{"protocol": "P-B", "fit": "P-B-holdout-x", "fit_pass": "bogus"}])
+    # complete plan + writer log passes; a skipped write refuses the sentinel
+    sc._assert_preds_manifest_complete(expected, rows, sorted(expected))
     with pytest.raises(RuntimeError, match="preds manifest INCOMPLETE"):
-        sc._assert_preds_manifest_complete(rows, sorted(expected - {"P-A-train-oof.jsonl"}))
-    # extra written files (e.g. P-C sidecars) are tolerated — MISSING is the
-    # fail-open direction
-    sc._assert_preds_manifest_complete(rows, [*sorted(expected), "P-C-extra.jsonl"])
+        sc._assert_preds_manifest_complete(
+            expected, rows, sorted(expected - {"P-A-train-oof.jsonl"})
+        )
+    # r5: an EMPTY plan universe on a preds-writing invocation is loud
+    with pytest.raises(RuntimeError, match="plan universe EMPTY"):
+        sc._assert_preds_manifest_complete(set(), rows, sorted(expected))
+    # r5: a scored fit OUTSIDE the plan universe is loud drift
+    with pytest.raises(RuntimeError, match="DRIFT"):
+        sc._assert_preds_manifest_complete(
+            expected - {"P-C-holdout-hhrt.jsonl"}, rows, sorted(expected)
+        )
+    # extra written files beyond planned+scored are tolerated — MISSING is
+    # the fail-open direction
+    sc._assert_preds_manifest_complete(expected, rows, [*sorted(expected), "stale-extra.jsonl"])
+
+
+def test_planned_preds_files_pass_plan_universe():
+    """codex r5 MAJOR: the planned sidecar universe derives BEFORE execution
+    from configuration alone — protocols, holdouts, map variants, the adapter
+    pass-tag single source (_arm2fix_pass_tags), the parity flag — and
+    _arm2fix_passes ASSERTS its realized (label, preds_tag) sequence equals
+    that single source (drift is loud, not a second spelling)."""
+    # adapter lane: v2-quantile-restricted + parity => a2qr + std + parity
+    planned = sc._planned_preds_files(
+        "AB",
+        ["hhrt", "toxicchat"],
+        ["true"],
+        arm2_adapter="v2-quantile-restricted",
+        parity_refit_arm7=True,
+    )
+    assert planned == {
+        "P-A-train-oof.jsonl",
+        "P-B-holdout-hhrt.a2qr.jsonl",
+        "P-B-holdout-hhrt.jsonl",
+        "P-B-holdout-hhrt.parity.jsonl",
+        "P-B-holdout-toxicchat.a2qr.jsonl",
+        "P-B-holdout-toxicchat.jsonl",
+        "P-B-holdout-toxicchat.parity.jsonl",
+    }
+    # legacy lane: shufpair variant doubles each holdout; C adds P-C sidecars
+    planned_legacy = sc._planned_preds_files(
+        "BC",
+        ["hhrt"],
+        ["true", "shufpair"],
+        arm2_adapter=None,
+        parity_refit_arm7=False,
+    )
+    assert planned_legacy == {
+        "P-B-holdout-hhrt.jsonl",
+        "P-B-holdout-hhrt.shufpair.jsonl",
+        "P-C-holdout-hhrt.jsonl",
+    }
+    # single-source pin: the realized pass plan carries exactly the declared
+    # (label, preds_tag) sequence for every registered adapter (the assert
+    # inside _arm2fix_passes fires on drift)
+    pool = [np.arange(4, dtype=np.int64), np.arange(4, 8, dtype=np.int64)]
+    wc = np.arange(8, 12, dtype=np.int64)
+    dv = np.random.default_rng(0).normal(size=12)
+    # the production roster shape: main() appends the arm2 family via
+    # --extra-arms (+ arm2q for the quantile adapters) before scoring
+    roster = (*sc.ROSTER, "arm2_ctx_native", "arm2q_ctx_native")
+    for adapter in sc.ARM2_ADAPTERS:
+        for par in (False, True):
+            passes = sc._arm2fix_passes(adapter, roster, pool, wc, dv, parity_refit_arm7=par)
+            assert tuple((p.label, p.preds_tag) for p in passes) == sc._arm2fix_pass_tags(
+                adapter, roster, parity_refit_arm7=par
+            )
+
+
+def test_preds_producer_chain_omitted_pass_refuses_sentinel(tmp_path):
+    """codex r5 MAJOR producer-chain regression (fails pre-fix): a plan with
+    TWO expected sidecars, only ONE writer call executed, driven through the
+    REAL summary wrapper => RuntimeError, NO completion sentinel on disk, and
+    resume refusal. Pre-fix the row-derived demand shrank together with the
+    omitted pass's rows + writer log, so the summary landed vacuously-clean.
+    The real _planned_preds_files / writer / _write_companions_then_summary /
+    _summary_preds_gate / _seed_output_resume_ok bodies all execute; only the
+    summary meta assembly is substituted by a bare sentinel write (the gate
+    must raise BEFORE it)."""
+    out_dir = tmp_path / "evil" / "seed0"
+    out_dir.mkdir(parents=True)
+    planned = sc._planned_preds_files(
+        "B", ["hhrt", "toxicchat"], ["true"], arm2_adapter="v1", parity_refit_arm7=False
+    )
+    assert planned == {"P-B-holdout-hhrt.jsonl", "P-B-holdout-toxicchat.jsonl"}
+    # execute exactly ONE real writer call (the toxicchat pass is omitted —
+    # its rows and its writer-log entry disappear TOGETHER, the r5 shape)
+    written: list[str] = []
+    written.append("P-B-holdout-hhrt.jsonl")
+    arms.write_preds_jsonl(
+        out_dir / "transfer_preds" / "P-B-holdout-hhrt.jsonl",
+        [{"arm": "arm2_ctx_native", "ctx": "c0", "pred": 0.1, "dv": 0.2}],
+    )
+    res = {
+        "rows": [{"protocol": "P-B", "fit": "P-B-holdout-hhrt"}],
+        "preds_files_written": sorted(written),
+        "preds_files_planned": sorted(planned),
+        "map_diagnostics": {},
+        "pools": [],
+        "fit_reports": [],
+    }
+    sentinel = out_dir / "all_arms_spearman.json"
+
+    def write_summary_fn():
+        sc._summary_preds_gate(res, transfer_preds=True)
+        sentinel.write_text("{}")  # stands in for arms.write_summary meta assembly
+
+    with pytest.raises(RuntimeError, match="PLANNED sidecar"):
+        sc._write_companions_then_summary(out_dir, res, write_summary_fn)
+    assert not sentinel.exists()  # the completion sentinel was refused
+    ok, why = sc._seed_output_resume_ok(
+        out_dir,
+        commit="deadbeef",
+        seed=0,
+        map_variants=["true"],
+        arm2_adapter="v1",
+        transfer_preds=True,
+    )
+    assert not ok and "absent" in why  # the seed is not resumable
 
 
 def test_a2fix_per_rung_d_read_and_parity_hash():
