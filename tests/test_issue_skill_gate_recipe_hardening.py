@@ -51,13 +51,31 @@ same span convention): the Step 10d mapped-invariant BASELINE pytest legs
 run on a detached sparse scratch tree via `step9c_baseline.py
 mapped-baseline` — never with cwd inside the shared repo root, which the
 #2015 pre-commit stash cycle reverts repo-wide (measured kill: #2288 RUN1).
+
+#2315 (#2312) closes the `-o junit_family=xunit1` omission trap: compare
+resolves failing testcases via the junit per-case `file` attribute, which
+only the xunit1 family emits, so a composed launcher that DROPS the flag
+looks healthy (correct rc) and aborts compare ~30 min later (`has no file
+attribute` / `indeterminate: True` — twice in #2312, 1787.80s of gate
+pytest lost). Pins: the 1b flag-set-fidelity comment (sanction point,
+BEFORE the launcher), the step-1d `check-junit-contract` pre-compare check
+(AFTER the 1b rc read, BEFORE the compare launcher, with a FATAL arm), the
+COMPARE_RC=2 xunit1 cause + discriminator (`"pristine_oracle": null` +
+`has no file attribute` in the compare stderr = LAUNCHER malformed), and
+the D2 lockstep pin (the `--emit-launcher` template token-equals the 1b
+canonical site; the junit-contract flag trio is present at BOTH canonical
+sites + the emitter). Two BEHAVIORAL fail-loud tests demonstrate the D1/D3
+guards actually refuse (subprocess check=True → CalledProcessError).
 """
 
 from __future__ import annotations
 
 import re
 import subprocess
+import sys
 from pathlib import Path
+
+import pytest
 
 from tests.issue_skill_source import issue_skill_text
 
@@ -495,3 +513,200 @@ def test_step9c_completion_read_attributes_list_shape():
     # Existing pinned guards untouched (acceptance criterion 4):
     assert "no tests ran|collected 0 items" in sec
     assert "[ ! -f /tmp/step9c-rc-issue-<N> ]" in sec
+
+
+# --- #2315: xunit1-contract guards (D1/D2/D3 behavioral + D4 prose pins) -------
+
+_SCRIPTS = Path(__file__).resolve().parents[1] / "scripts"
+_SELECTOR_PY = _SCRIPTS / "select_step9c_tests.py"
+_BASELINE_PY = _SCRIPTS / "step9c_baseline.py"
+
+
+def _selector_module():
+    """Import scripts/select_step9c_tests.py by path (scripts/ is not an
+    importable package; mirrors tests/test_select_step9c_tests.py)."""
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("select_step9c_tests_2315", _SELECTOR_PY)
+    assert spec and spec.loader
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _launcher_tokens(text: str) -> list[str]:
+    """Whitespace-insensitive token stream: strip `\\`-newline continuations,
+    then split — the doc indents/wraps the launcher, the emitter does not."""
+    return text.replace("\\\n", " ").split()
+
+
+def _extract_launcher(sec: str, start: str) -> str:
+    """A canonical launcher runs from its PYTEST_PID line through the closing
+    `& echo \\$!\")` of the outer bash -c capture."""
+    begin = sec.index(start)
+    end = sec.index('& echo \\$!")', begin) + len('& echo \\$!")')
+    return sec[begin:end]
+
+
+def _norm_comments(text: str) -> str:
+    """_norm for bash COMMENT blocks: strip the per-line `#` markers first so a
+    phrase wrapped across comment lines matches as continuous prose."""
+    return _norm(re.sub(r"(?m)^\s*#\s?", "", text))
+
+
+def test_emit_launcher_lockstep_with_canonical_sites():
+    """D2 / SC-6: the `--emit-launcher` template token-equals the 1b canonical
+    site (site-1) modulo whitespace, and the three junit-contract flags —
+    --continue-on-collection-errors, --junitxml=<gate path>, and
+    `-o junit_family=xunit1` — are present at site-1, the 1c full-scope
+    launcher (site-2), AND the emitter. A drift in either canonical site or
+    the template breaks this pin, so the emitter cannot silently emit a
+    launcher the doc no longer prescribes."""
+    sel = _selector_module()
+    sec = _section_9c(_text())
+    launchers = [
+        _extract_launcher(sec, "PYTEST_PID=$(bash -c \"setsid nohup bash -c 'timeout"),
+    ]
+    # site-2 (1c full-scope) starts at the SECOND PYTEST_PID occurrence:
+    second = sec.index("PYTEST_PID=$(", sec.index("PYTEST_PID=$(") + 1)
+    launchers.append(_extract_launcher(sec[second:], "PYTEST_PID=$("))
+    site1, site2 = launchers
+    # Full token equality (emitter <-> site-1):
+    assert _launcher_tokens(sel._LAUNCHER_CANONICAL) == _launcher_tokens(site1), (
+        "the --emit-launcher template must token-equal the 1b canonical launcher; "
+        "update BOTH in one change"
+    )
+    contract_flags = [
+        "--continue-on-collection-errors",
+        "--junitxml=/tmp/step9c-junit-issue-<N>.xml",
+        "-o junit_family=xunit1",
+    ]
+    for name, text in (("site-1", site1), ("site-2", site2), ("emitter", sel._LAUNCHER_CANONICAL)):
+        n = _norm(text)
+        for flag in contract_flags:
+            assert flag in n, f"{name} lost the junit-contract flag {flag!r}"
+    # The rendered launcher substitutes every placeholder (space-joined files):
+    rendered = sel.render_launcher(["tests/test_a.py", "tests/test_b.py"], 424242, 6630)
+    assert "tests/test_a.py tests/test_b.py" in rendered
+    for ph in ("<files>", "<N>", "<T>"):
+        assert ph not in rendered
+
+
+def test_step9c_1b_flag_set_fidelity_comment():
+    """D4 sanction point: the 1b composition prose names the trap (the flag is
+    LOAD-BEARING; compare aborts ~30 min later; attributes unreconstructable)
+    and the mechanical remedy (--emit-launcher), BEFORE the launcher line."""
+    sec = _section_9c(_text())
+    # The comment block wraps phrases across `#`-prefixed lines — strip the
+    # markers before phrase-matching (plain _norm keeps them, #2315 r1):
+    n = _norm_comments(sec)
+    assert "Flag-set fidelity (#2315)" in n
+    assert "`-o junit_family=xunit1` is LOAD-BEARING" in n
+    assert "cannot be reconstructed from an existing junit" in n
+    assert "select_step9c_tests.py --emit-launcher --issue <N>" in n
+    fidelity_idx = sec.index("Flag-set fidelity (#2315)")
+    launcher_idx = sec.index("--junitxml=/tmp/step9c-junit-issue-<N>.xml")
+    assert fidelity_idx < launcher_idx, "the fidelity comment must precede the 1b launcher"
+
+
+def test_step9c_1d_contract_check_between_rc_read_and_compare():
+    """D4 ordering: step 1d invokes check-junit-contract AFTER the 1b rc read
+    and BEFORE the compare launcher, with a FATAL `||` arm — the cheap check
+    pre-empts the expensive pristine-oracle compare (#2312: 1787.80s lost)."""
+    sec = _section_9c(_text())
+    invocation = "scripts/step9c_baseline.py check-junit-contract"
+    assert invocation in sec
+    # The step-1d rc RE-READ is the LAST occurrence (the 1b completion-read
+    # reads the same file earlier); the compare anchor is the LAUNCHER
+    # invocation (`uv run python ...`), not the earlier prose mention of
+    # `scripts/step9c_baseline.py compare` (#2315 r1):
+    rc_read_idx = sec.rindex("PYTEST_RC=$(cat /tmp/step9c-rc-issue-<N>)")
+    check_idx = sec.index(invocation)
+    compare_idx = sec.index("uv run python scripts/step9c_baseline.py compare")
+    assert rc_read_idx < check_idx < compare_idx, (
+        "check-junit-contract must sit between the 1d rc re-read and the compare launcher"
+    )
+    n = _norm(sec)
+    assert "FATAL: xunit1 contract violated" in n
+    assert "compare not run" in n
+
+
+def test_step9c_compare_rc2_xunit1_discriminator():
+    """D4 enumeration + discriminator: the COMPARE_RC=2 bullet names the
+    xunit1-contract cause, and the discriminator tells the reader how to
+    recognize a MALFORMED-LAUNCHER exit 2 (vs tool-could-not-decide) from the
+    JSON + stderr, with the re-run remedy."""
+    sec = _section_9c(_text())
+    n = _norm(sec)
+    assert "an xunit1-CONTRACT-violating junit" in n
+    assert "xunit1-contract DISCRIMINATOR (#2315)" in n
+    assert '`"pristine_oracle": null`' in n
+    assert "has no file attribute" in n
+    # The discriminator names the remedy (re-run via the canonical launcher):
+    assert "`select_step9c_tests.py --emit-launcher --issue <N>`" in n
+
+
+def test_assert_launcher_refuses_junitxml_without_xunit1(tmp_path):
+    """D1 BEHAVIORAL fail-loud: --assert-launcher run check=True REFUSES
+    (CalledProcessError) a pytest launcher carrying --junitxml (either
+    spelling) without junit_family=xunit1, and PASSES the canonical text and
+    the step9c_baseline.py consumer exemption."""
+
+    def run(text: str) -> None:
+        subprocess.run(
+            [sys.executable, str(_SELECTOR_PY), "--assert-launcher", text],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+
+    for bad in (
+        "uv run pytest tests/ --junitxml=/tmp/x.xml",
+        "uv run pytest tests/ --junit-xml=/tmp/x.xml -v",
+    ):
+        with pytest.raises(subprocess.CalledProcessError) as exc_info:
+            run(bad)
+        assert exc_info.value.returncode == 1
+        assert "REFUSED" in exc_info.value.stderr
+        assert "--emit-launcher" in exc_info.value.stderr
+    # Negative controls — no raise:
+    run("uv run pytest tests/ --junitxml=/tmp/x.xml -o junit_family=xunit1")
+    run("uv run python scripts/step9c_baseline.py compare --junitxml /tmp/x.xml")
+
+
+def test_junit_contract_check_refuses_missing_file_attr(tmp_path):
+    """D3 BEHAVIORAL fail-loud: check-junit-contract run check=True REFUSES
+    (CalledProcessError) a junit whose failing testcase lacks the per-case
+    file attribute, and PASSES a green junit."""
+
+    bad = tmp_path / "violation.xml"
+    bad.write_text(
+        '<?xml version="1.0" encoding="utf-8"?>\n'
+        '<testsuites><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1">\n'
+        '<testcase classname="tests.test_broken" name="test_fails" time="0.01">\n'
+        '<failure message="assert False">assert False</failure>\n'
+        "</testcase>\n</testsuite></testsuites>\n"
+    )
+    good = tmp_path / "green.xml"
+    good.write_text(
+        '<?xml version="1.0" encoding="utf-8"?>\n'
+        '<testsuites><testsuite name="pytest" errors="0" failures="0" skipped="0" tests="1">\n'
+        '<testcase classname="tests.test_ok" name="test_a" file="tests/test_ok.py" time="0.01"/>\n'
+        "</testsuite></testsuites>\n"
+    )
+
+    def run(path: Path) -> None:
+        subprocess.run(
+            [sys.executable, str(_BASELINE_PY), "check-junit-contract", "--junitxml", str(path)],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+
+    with pytest.raises(subprocess.CalledProcessError) as exc_info:
+        run(bad)
+    assert exc_info.value.returncode == 1
+    assert "XUNIT1 CONTRACT VIOLATED" in exc_info.value.stderr
+    run(good)  # no raise

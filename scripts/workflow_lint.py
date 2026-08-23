@@ -17211,7 +17211,14 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # per-leg out/scratch isolation, +1,211 B); corridor-max
     # ((measured+2_800)//100)*100. Prior: 144_200 (#2155 split, 141,432 B).
     "issue/steps/10-step-6.md": 145_400,
-    "issue/steps/13-step-9.md": 245_300,  # measured 242,521 B
+    # measured 247,430 B @ #2315 2026-08-23 (D4: 1b flag-set-fidelity comment,
+    # step-1d check-junit-contract pre-compare check, COMPARE_RC=2 xunit1
+    # cause + discriminator; +4,909 B); corridor-max
+    # ((measured+2_800)//100)*100 = 250_200, headroom 2,770 — clears
+    # guard_skill_doc_headroom.sh's 2,000 B warn floor. Re-measure + re-set at
+    # Step 10d against the MERGED tree (concurrent sessions edit this file).
+    # Prior: 245_300 (242,521 B).
+    "issue/steps/13-step-9.md": 250_200,
     # measured 294,209 B @ #2260 2026-08-21 (FAMILY_agents mirrored into the
     # auto-merge inline copy: 32 FAMILY_OF entries + 31 SPECS_10D tokens +
     # containment arm, +4,855 B); corridor-max ((measured+2_800)//100)*100 =

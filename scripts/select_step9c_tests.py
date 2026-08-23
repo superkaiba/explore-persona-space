@@ -305,6 +305,25 @@ arrives on the greppable stderr ``recommended-timeout-s=<T>`` sizing line,
 and the empty-selection refusal (exit 1) applies unchanged. Mutually
 exclusive with ``--json`` and ``--map-files`` (argparse usage error, exit 2 —
 fail CLOSED, the same shape as the ``--map-files`` + ``--json`` guard).
+``--emit-launcher --issue N [--timeout S]`` (#2315) emits the ready-to-run
+canonical step-1b DETACHED gate launcher on stdout — the selection
+space-joined into ``<files>``, ``--issue`` into ``<N>``, ``--timeout``
+(default: the computed ``recommended-timeout-s``) into ``<T>`` — so
+self-composition stops being a necessary step and ``-o junit_family=xunit1``
+cannot be dropped by omission (the shell-launcher sibling of
+``step9c_baseline.py``'s ``PYTEST_BASE_FLAGS`` single source; lockstep with
+BOTH canonical recipe sites pinned by
+``tests/test_issue_skill_gate_recipe_hardening.py``).
+``--assert-launcher 'TEXT'`` (or ``-`` for stdin; #2315) judges a
+hand-composed PYTEST launcher: exit 1 when the text carries ``--junitxml``
+(either spelling) without ``junit_family=xunit1`` — such a junit lacks
+per-case ``file`` attributes, so ``step9c_baseline.py compare`` aborts
+``has no file attribute`` / ``indeterminate: True`` (#2312) and the junit is
+unrepairable after the fact; exit 0 on a compliant launcher, on text with no
+``--junitxml`` / no ``pytest`` token, and on ``step9c_baseline.py`` consumer
+commands (compare CONSUMES the junit — exempt); exit 3 when the built-in
+self-test fails (verdict not rendered). Every output mode is mutually
+exclusive with every other (argparse exit 2).
 Exit 0 on success (even with WARN lines);
 exit 1 if an underlying ``git`` call fails irrecoverably (work-root resolution
 or the diff) or if the selection comes back EMPTY (the zero-test-gate
@@ -2305,6 +2324,192 @@ def _run_map_files_mode(map_files_arg: str, work_root: Path) -> int:
     return 0
 
 
+# --- #2315: composed-launcher xunit1 contract (D1 --assert-launcher) ----------
+# Step 9c step 1b sanctions a session COMPOSING its own gate launcher. The
+# canonical launcher carries `-o junit_family=xunit1` beside `--junitxml=`;
+# the flag is load-bearing for the NEXT step, not for pytest — step9c_baseline
+# compare resolves failing testcases to repo paths via the junit per-case
+# `file` attribute, which only the xunit1 family emits. A composed launcher
+# that drops it still exits with the right rc (the gate looks healthy), but
+# compare aborts `has no file attribute` and reports indeterminate: True
+# (#2312, measured twice). `--assert-launcher` is the composer-facing refusal;
+# the pyproject `junit_family = "xunit1"` ini default (D0) is the primary
+# lever making an OMITTED flag harmless.
+
+# Self-test fixtures (the #2310 splice-shape precedent: assert both built-in
+# cases before judging the input; refuse to render a verdict when the guard's
+# own discrimination is broken).
+_ASSERT_LAUNCHER_SELFTEST_POS = (
+    "uv run pytest tests/test_selftest.py --junitxml=/tmp/selftest.xml -o junit_family=xunit1"
+)
+_ASSERT_LAUNCHER_SELFTEST_NEG = "uv run pytest tests/test_selftest.py --junitxml=/tmp/selftest.xml"
+# pytest accepts a HYPHENATED alias too (`--junit-xml`); the self-test pins
+# BOTH spellings so a detection regression on either refuses to render verdicts:
+_ASSERT_LAUNCHER_SELFTEST_NEG_ALIAS = (
+    "uv run pytest tests/test_selftest.py --junit-xml=/tmp/selftest.xml"
+)
+
+
+def launcher_verdict(text: str) -> tuple[int, str]:
+    """Judge composed launcher TEXT for the xunit1 contract (#2315 D1).
+
+    Returns ``(rc, message)``: rc 0 = OK / exempt / out-of-scope, rc 1 =
+    REFUSED. Scope: PYTEST launcher text only — argv containing
+    ``step9c_baseline.py`` is EXEMPT (the step-1d compare invocation
+    legitimately carries ``--junitxml``: it CONSUMES the junit rather than
+    producing one), and text with no ``pytest`` token is out of scope. BOTH
+    pytest spellings are recognized — ``--junitxml`` and the hyphenated alias
+    ``--junit-xml`` (each in its ``=PATH`` and space-``PATH`` forms; the two
+    substring checks cover all four shapes).
+    """
+    if "step9c_baseline.py" in text:
+        return 0, (
+            "exempt — step9c_baseline.py consumer command (compare CONSUMES the junit; "
+            "its --junitxml is not a pytest producer flag)"
+        )
+    if "pytest" not in text:
+        return 0, "out of scope — no pytest token (not a pytest launcher)"
+    if "--junitxml" not in text and "--junit-xml" not in text:
+        return 0, "ok — no --junitxml (nothing consumes a junit; nothing to check)"
+    if "junit_family=xunit1" in text:
+        return 0, "ok — --junitxml with junit_family=xunit1 (xunit1 contract satisfied)"
+    return 1, (
+        "REFUSED — the launcher carries --junitxml WITHOUT junit_family=xunit1. The suite "
+        "run still reports its ordinary pass/fail rc (the gate looks healthy), but "
+        "step9c_baseline.py compare resolves failing testcases via the junit per-case "
+        "`file` attribute, which only the xunit1 family emits — it would abort 'has no "
+        "file attribute' and report indeterminate: True (#2312). The junit is "
+        "UNREPAIRABLE after the fact (file attributes cannot be reconstructed); add "
+        "`-o junit_family=xunit1` beside --junitxml, or skip self-composition entirely: "
+        "--emit-launcher prints the ready-to-run canonical step-1b launcher."
+    )
+
+
+def _run_assert_launcher_mode(arg: str) -> int:
+    """CLI leg for ``--assert-launcher`` (#2315 D1): self-test, judge, report."""
+    pos_rc, _ = launcher_verdict(_ASSERT_LAUNCHER_SELFTEST_POS)
+    neg_rc, _ = launcher_verdict(_ASSERT_LAUNCHER_SELFTEST_NEG)
+    neg_alias_rc, _ = launcher_verdict(_ASSERT_LAUNCHER_SELFTEST_NEG_ALIAS)
+    if pos_rc != 0 or neg_rc != 1 or neg_alias_rc != 1:
+        # The guard's own discrimination is broken — refuse to render a
+        # verdict (a guard that cannot fail correctly is not a guard, #2314).
+        print(
+            "select_step9c_tests: FATAL — --assert-launcher self-test failed "
+            f"(positive fixture rc={pos_rc}, expected 0; negative fixture rc={neg_rc}, "
+            f"expected 1; hyphenated-alias negative fixture rc={neg_alias_rc}, "
+            "expected 1); verdict NOT rendered",
+            file=sys.stderr,
+        )
+        return 3
+    text = sys.stdin.read() if arg == "-" else arg
+    rc, msg = launcher_verdict(text)
+    print(f"select_step9c_tests: assert-launcher {msg}", file=sys.stderr)
+    return rc
+
+
+# --- #2315: canonical-launcher emitter (D2 --emit-launcher) --------------------
+# Extends the PYTEST_BASE_FLAGS single-source pattern (step9c_baseline.py,
+# #1746 Must-Fix 1) to the ONE junit-producer path that escaped it: the
+# hand-composed shell launcher. Byte-lockstep with the step-1b canonical site
+# in .claude/skills/issue/steps/13-step-9.md — and junit-contract-flag parity
+# with the step-1c full-scope site — is pinned by
+# tests/test_issue_skill_gate_recipe_hardening.py (emitter == site-1 ==
+# site-2 on the shared flag set, so a one-site drift cannot leave the emitter
+# silently matching the stale site). The setsid/rc-write WRAPPER is not
+# flag-set-pinned by design: wrapper drift fails loud through the existing
+# completion-read guards (a missing rc file is a FATAL that never records
+# PASS).
+_LAUNCHER_CANONICAL = (
+    "PYTEST_PID=$(bash -c \"setsid nohup bash -c 'timeout --kill-after=60s <T>s \\\n"
+    "  env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8"
+    " NUMEXPR_NUM_THREADS=8 MALLOC_ARENA_MAX=2 \\\n"
+    "  uv run pytest <files> --continue-on-collection-errors -v --tb=short \\\n"
+    "  --junitxml=/tmp/step9c-junit-issue-<N>.xml -o junit_family=xunit1 \\\n"
+    "  ${S9C_BASETEMP:+--basetemp=$S9C_BASETEMP/p} ; echo \\$? > /tmp/step9c-rc-issue-<N>' \\\n"
+    '  < /dev/null > /tmp/step9c-pytest-issue-<N>.log 2>&1 & echo \\$!")'
+)
+
+
+def render_launcher(tests: list[str], issue: int, timeout_s: int) -> str:
+    """Render the ready-to-run canonical step-1b gate launcher (#2315 D2).
+
+    Substitutes the SPACE-JOINED *tests* list for ``<files>``, *issue* for
+    ``<N>``, and *timeout_s* for ``<T>`` in the canonical launcher template.
+    Fails loud on an empty list / non-positive issue or timeout, and asserts
+    no placeholder survives substitution (an unsubstituted placeholder is the
+    #1992-class trap the 1b cross-checks exist to catch — never emit one).
+    """
+    if not tests:
+        raise ValueError("render_launcher: empty test list — refusing to emit a launcher")
+    if issue <= 0 or timeout_s <= 0:
+        raise ValueError(
+            f"render_launcher: issue ({issue}) and timeout_s ({timeout_s}) must be positive"
+        )
+    out = (
+        _LAUNCHER_CANONICAL.replace("<files>", " ".join(tests))
+        .replace("<N>", str(issue))
+        .replace("<T>", str(timeout_s))
+    )
+    for placeholder in ("<files>", "<N>", "<T>"):
+        assert placeholder not in out, f"render_launcher: unsubstituted {placeholder}"
+    return out
+
+
+def _dispatch_2315_modes(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int | None:
+    """Output-mode exclusivity (#1717/#2126/#2315) + the ``--assert-launcher``
+    dispatch.
+
+    Fail-CLOSED: each output mode owns stdout exclusively, so an ambiguous
+    combination exits 2 (via ``parser.error``) with no stdout — silently
+    preferring one flag over another would hand a consumer the WRONG shape
+    (the #1717 defect (a) class: --map-files emits TSV pairs, --files-only
+    emits path lines, --json emits one object). ``--assert-launcher`` is a
+    pure text judgment — no git, no work root, no selection — so it is
+    dispatched here, BEFORE work-root resolution, and runs anywhere. Returns
+    the exit code to propagate (assert-launcher mode) or None (continue into
+    selection). Extracted from main() for the C901 full-ruleset cap
+    (tests/test_ruff_policy.py)."""
+    if args.map_files is not None and args.json:
+        parser.error(
+            "--json is not supported with --map-files (mapping mode emits TSV: "
+            "'<test>\\t<matched_path>' per line)"
+        )
+    if args.files_only and args.json:
+        parser.error(
+            "--files-only is not supported with --json (each mode owns stdout: "
+            "paths-only lines vs a JSON object)"
+        )
+    if args.files_only and args.map_files is not None:
+        parser.error(
+            "--files-only is not supported with --map-files (mapping mode emits "
+            "TSV pairs, not a diff-based selection)"
+        )
+    if args.assert_launcher is not None:
+        for flag, present in (
+            ("--json", args.json),
+            ("--files-only", args.files_only),
+            ("--map-files", args.map_files is not None),
+            ("--emit-launcher", args.emit_launcher),
+        ):
+            if present:
+                parser.error(f"--assert-launcher is not supported with {flag}")
+    if args.emit_launcher:
+        for flag, present in (
+            ("--json", args.json),
+            ("--files-only", args.files_only),
+            ("--map-files", args.map_files is not None),
+        ):
+            if present:
+                parser.error(f"--emit-launcher is not supported with {flag}")
+        if args.issue is None:
+            parser.error("--emit-launcher requires --issue <N>")
+    elif args.issue is not None or args.timeout is not None:
+        parser.error("--issue/--timeout are --emit-launcher parameters (pass --emit-launcher)")
+    if args.assert_launcher is not None:
+        return _run_assert_launcher_mode(args.assert_launcher)
+    return None
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument(
@@ -2382,35 +2587,64 @@ def main(argv: list[str] | None = None) -> int:
             "WARN, deletion-only payloads are benign)"
         ),
     )
+    parser.add_argument(
+        "--assert-launcher",
+        default=None,
+        metavar="TEXT|-",
+        help=(
+            "judge composed gate-launcher TEXT ('-' reads stdin) for the xunit1 "
+            "contract (#2315): exit 1 when the text carries --junitxml (either "
+            "spelling) WITHOUT junit_family=xunit1 — a junit written without it "
+            "lacks per-case file attributes and step9c_baseline.py compare "
+            "aborts 'has no file attribute' / indeterminate: True (#2312), "
+            "unrepairable after the fact. Exit 0 on a compliant launcher, on "
+            "text with no --junitxml or no pytest token, and on "
+            "step9c_baseline.py consumer commands (compare CONSUMES the junit — "
+            "exempt). Exit 3 when the built-in self-test fails (verdict not "
+            "rendered). Mutually exclusive with every other output mode."
+        ),
+    )
+    parser.add_argument(
+        "--emit-launcher",
+        action="store_true",
+        help=(
+            "emit the ready-to-run canonical step-1b gate launcher on stdout — "
+            "the diff-based selection space-joined into <files>, --issue into "
+            "<N>, --timeout (default: the computed recommended-timeout-s) into "
+            "<T> (#2315: removes self-composition as a necessary step, so the "
+            "-o junit_family=xunit1 flag cannot be dropped by omission; the "
+            "single-source sibling of step9c_baseline.py PYTEST_BASE_FLAGS). "
+            "The empty-selection refusal (exit 1) applies unchanged. Mutually "
+            "exclusive with --json / --files-only / --map-files / "
+            "--assert-launcher."
+        ),
+    )
+    parser.add_argument(
+        "--issue",
+        type=int,
+        default=None,
+        help="issue number substituted for <N> in --emit-launcher output (required with it)",
+    )
+    parser.add_argument(
+        "--timeout",
+        type=int,
+        default=None,
+        help=(
+            "timeout seconds substituted for <T> in --emit-launcher output "
+            "(default: the selection's recommended-timeout-s)"
+        ),
+    )
     args = parser.parse_args(argv)
 
-    # (a) fail-loud on --map-files + --json: mapping mode emits TSV (one
-    # `<test>\t<matched_path>` line per pair) and the only consumers today
-    # (.claude/agents/implementer.md L174; the Step 10d TG legs' `sort -u`)
-    # are TSV-shaped. Silently ignoring --json here has cost a live session a
-    # wasted turn (#1717 defect (a)). The gate must fail CLOSED — parser.error
-    # exits 2 and prints to stderr, no diagnostic on stdout so consumers that
-    # tolerate exit 2 (they should not) still get no corrupted JSON.
-    if args.map_files is not None and args.json:
-        parser.error(
-            "--json is not supported with --map-files (mapping mode emits TSV: "
-            "'<test>\\t<matched_path>' per line)"
-        )
+    # #2315 mode exclusivity + the assert-launcher pure-text dispatch live in
+    # one helper (C901 budget: main() sits at the full-ruleset complexity cap,
+    # tests/test_ruff_policy.py). Returns an exit code to propagate, or None.
+    rc_2315 = _dispatch_2315_modes(args, parser)
+    if rc_2315 is not None:
+        return rc_2315
 
-    # Same fail-CLOSED shape for --files-only (#2126): each output mode owns
-    # stdout exclusively — silently preferring one flag over another would
-    # hand a consumer the WRONG shape (the #1717 defect (a) class), so an
-    # ambiguous combination exits 2 with no stdout.
-    if args.files_only and args.json:
-        parser.error(
-            "--files-only is not supported with --json (each mode owns stdout: "
-            "paths-only lines vs a JSON object)"
-        )
-    if args.files_only and args.map_files is not None:
-        parser.error(
-            "--files-only is not supported with --map-files (mapping mode emits "
-            "TSV pairs, not a diff-based selection)"
-        )
+    # Output-mode exclusivity (#1717 defect (a) / #2126) lives inside
+    # _dispatch_2315_modes above — one fail-CLOSED home for every mode pair.
 
     try:
         work_root = _resolve_work_root(args.repo_root)
@@ -2507,7 +2741,19 @@ def main(argv: list[str] | None = None) -> int:
         file=sys.stderr,
     )
 
-    if args.files_only:
+    if args.emit_launcher:
+        # #2315 D2: the ready-to-run canonical step-1b launcher — selection
+        # space-joined, <N>/<T> substituted. The empty-selection refusal above
+        # already returned 1, so render_launcher's own empty-list raise is
+        # unreachable here (defense in depth).
+        print(
+            render_launcher(
+                tests,
+                args.issue,
+                args.timeout if args.timeout is not None else timeout_s,
+            )
+        )
+    elif args.files_only:
         # Paths only, one per line, NO key to guess (#1992/#2126). The
         # empty-selection refusal above already returned 1, so this branch
         # never emits zero lines on exit 0; <T> rides the stderr sizing line.

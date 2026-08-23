@@ -3289,6 +3289,20 @@ suite directly and posts an `epm:test-verdict` event with the result.
       # as N COMMANDS, not one pytest argv (#2314: 1 of 120 files ran; the
       # trailing flags — --junitxml included — attached to the last bogus
       # line; rc=126). Both routes hit the shape + count checks below.
+      # Flag-set fidelity (#2315): when COMPOSING this launcher (either route),
+      # carry the launcher's flag set VERBATIM — `-o junit_family=xunit1` is
+      # LOAD-BEARING, not stylistic: compare resolves failing testcases via the
+      # junit per-case `file` attribute, which ONLY the xunit1 family emits
+      # (pytest's default xunit2 omits it). A composed launcher that drops the
+      # flag looks healthy (correct rc, junit present) and fails ~30 min later
+      # at compare with `has no file attribute` / `indeterminate: True` (#2312:
+      # twice, 1787.80s of gate pytest lost); the file attributes cannot be
+      # reconstructed from an existing junit — the only remedy is re-running
+      # the gate pytest. To skip hand-composition entirely, emit the canonical
+      # launcher mechanically:
+      #   uv run python scripts/select_step9c_tests.py --emit-launcher --issue <N>
+      # (pyproject.toml's `junit_family = "xunit1"` ini default (#2315 D0) is
+      # the defense-in-depth backstop; the CLI flag stays authoritative.)
       S9C_FILES="<files>"
       # Splice-shape check (#2317) — the count check below validates
       # CARDINALITY only: unquoted word-splitting counts a newline list
@@ -3604,6 +3618,20 @@ suite directly and posts an `epm:test-verdict` event with the result.
       # compare against it:
       [ -f /tmp/step9c-rc-issue-<N> ] || { echo "FATAL: 1b rc file missing — apply 1b's FAIL path; compare not run" >&2; exit 1; }
       PYTEST_RC=$(cat /tmp/step9c-rc-issue-<N>)
+      # Step 1d (#2315): xunit1-contract pre-check BEFORE compare launches.
+      # compare resolves failing testcases to repo paths via the junit
+      # per-case `file` attribute (xunit1 only); a launcher that ran without
+      # `-o junit_family=xunit1` yields a healthy rc + a junit compare can
+      # only abort on (`has no file attribute` -> exit 2 / indeterminate,
+      # #2312 — twice, 1787.80s of gate pytest lost). check-junit-contract
+      # exits 1 ONLY on that violation; a missing/unparseable junit exits 0
+      # (the 1b FAIL path and compare's exit-2 arms keep ownership). The
+      # junit is unrepairable — on FATAL, re-run the gate pytest with the
+      # canonical launcher (step 1a's printed command, or
+      # `select_step9c_tests.py --emit-launcher --issue <N>`):
+      uv run python scripts/step9c_baseline.py check-junit-contract \
+        --junitxml /tmp/step9c-junit-issue-<N>.xml \
+        || { echo "FATAL: xunit1 contract violated — the 1b junit's failing testcases lack per-case file attributes (the launcher ran without -o junit_family=xunit1); compare would abort indeterminate; re-run the gate pytest via the canonical launcher (select_step9c_tests.py --emit-launcher --issue <N>) — compare not run" >&2; exit 1; }
       # Wedge bound 32400s ≥ the structural ceiling of compare's own in-process
       # bounds: the 5 pristine files are DISTINCT and SLOW_TESTS has one entry,
       # so per-file ceiling = 4950s (workflow-lint derived) + 4 × 600s floor
@@ -3733,8 +3761,11 @@ suite directly and posts an `epm:test-verdict` event with the result.
         unparseable side degrades to today's node-grain strip plus a loud
         `SCAN-SETDIFF-UNPARSEABLE` warn (#2316).
       * `COMPARE_RC=2` → indeterminate (PYTEST_RC ∉ {0,1} — aborted/interrupted
-        run; missing/empty junitxml; suite crash; unusable ledger;
-        systemic main breakage; or a scratch-INELIGIBLE dirty oracle. The
+        run; missing/empty junitxml; an xunit1-CONTRACT-violating junit —
+        failing testcases lacking the per-case `file` attribute because the
+        launcher ran without `-o junit_family=xunit1` (#2312; step 1d
+        pre-catches this BEFORE compare launches); suite crash; unusable
+        ledger; systemic main breakage; or a scratch-INELIGIBLE dirty oracle. The
         pristine oracle is BY DEFAULT a detached sparse scratch worktree at
         main HEAD (#1408 — clean or dirty root alike; JSON
         "pristine_oracle": "scratch-worktree"; a scratch creation/probe
@@ -3750,6 +3781,14 @@ suite directly and posts an `epm:test-verdict` event with the result.
         node outside the file-anchored allowlist (step9c_baseline.py
         FILE_ANCHORED_SCAN_TESTS, #1337), or scratch creation/probe failure
         on a DIRTY root). FAIL — never PASS on indeterminate.
+        xunit1-contract DISCRIMINATOR (#2315): `"pristine_oracle": null` in
+        the compare JSON plus a `has no file attribute` line in
+        /tmp/step9c-compare-issue-<N>.err means the LAUNCHER was malformed
+        (ran without `-o junit_family=xunit1`) — a launcher defect, not a
+        tool-could-not-decide state; the file attributes cannot be
+        reconstructed from the existing junit, so the remedy is re-running
+        the gate pytest with the canonical launcher
+        (`select_step9c_tests.py --emit-launcher --issue <N>`), then compare.
         On a residual-dirt exit 2, do NOT improvise multi-hour clean-root
         polls (the #1317 anti-pattern): one bounded re-check after ~10-15
         min, then treat as gate FAIL and surface per the existing FAIL path.

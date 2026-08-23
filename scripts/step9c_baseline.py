@@ -36,6 +36,7 @@ Subcommands::
                                                      --out-block PATH --out-unclassifiable PATH
     uv run python scripts/step9c_baseline.py probe   (--pattern REGEX | --issue N |
                                                       --fleet [--exclude-issue N])
+    uv run python scripts/step9c_baseline.py check-junit-contract --junitxml PATH
 
 Exit codes (pinned by ``tests/test_step9c_baseline.py``):
 
@@ -101,6 +102,16 @@ Exit codes (pinned by ``tests/test_step9c_baseline.py``):
              ``issue=<M><TAB>pids=<k><TAB><sample argv>`` line per foreign gate issue)
   2          usage error (argparse: exactly one of ``--pattern``/``--issue``/``--fleet``
              required; ``--exclude-issue`` without ``--fleet``) / bad ``--pattern`` regex
+``check-junit-contract``
+  0          green junit (zero failing testcases); or every failing testcase is
+             file-resolvable (#1746 collect-error fallback absorbed); or MISSING /
+             UNPARSEABLE junit — deliberately NOT this check's verdict (the step-1b
+             FAIL path and ``compare``'s exit-2 arms keep ownership, #2315)
+  1          >=1 failing testcase lacks the per-case ``file`` attribute — the xunit1
+             contract is violated (the gate pytest ran without ``-o
+             junit_family=xunit1``); ``compare`` would abort ``has no file attribute``
+             / ``indeterminate: True`` (#2312), so step 1d FAILs the gate BEFORE
+             launching it; the junit is unrepairable — re-run the gate pytest
 ===========  ==========================================================================
 
 ``probe`` (#1821) is the gate single-flight liveness check with MECHANICAL
@@ -4138,6 +4149,72 @@ def cmd_probe(args: argparse.Namespace) -> int:
     return 3 if matches else 0
 
 
+# --- #2315: pre-compare junit-contract check ---------------------------------------
+
+
+def cmd_check_junit_contract(args: argparse.Namespace) -> int:
+    """Pre-compare xunit1-contract check (#2315 D3): exit 1 iff the junit has
+    >=1 failing testcase whose per-case ``file`` attribute is underivable.
+
+    Insurance behind the pyproject ``junit_family = "xunit1"`` ini default
+    (#2315 D0): a launcher that ran without ``-o junit_family=xunit1`` (or
+    with an overriding family) writes a junit whose failing testcases lack
+    ``file`` attributes — ``compare`` would run its pristine oracles and then
+    abort ``has no file attribute`` -> exit 2 / ``indeterminate: True``
+    (#2312 paid 1787.80 s of gate pytest and lost the verdict). Step 1d runs
+    this check BEFORE launching the expensive compare.
+
+    Ownership boundaries (deliberate exit-0 arms): a MISSING or UNPARSEABLE
+    junit is NOT this check's verdict — the existing 1b FAIL path and
+    ``compare``'s exit-2 arms keep ownership (existence + ``ET.ParseError``
+    are pre-checked so ``parse_junit``'s missing/unparseable raises never
+    surface as THIS check's verdict); a GREEN junit (zero failing testcases)
+    never needs path resolution, so a malformed family there is benign
+    (``parse_junit`` raises the file-attr error only inside its failing
+    branch). The violation predicate is ``parse_junit``'s OWN file-attribute
+    logic — including the #1746 collect-error name fallback (an ``error``
+    row with no ``file`` attr and a ``.py``-suffixed ``name`` is absorbed,
+    never a violation; an omitted-flag collect-error row's ``name`` is
+    DOTTED, so it correctly still trips) — reused by calling it after the
+    pre-checks, so this check can never drift from the abort it pre-empts.
+    """
+    path = Path(args.junitxml)
+    if not path.exists():
+        _log(
+            "check-junit-contract: junitxml missing — not this check's verdict "
+            "(the 1b FAIL path owns it); exit 0"
+        )
+        return 0
+    try:
+        ET.parse(path)
+    except ET.ParseError as exc:
+        _log(
+            f"check-junit-contract: junitxml unparseable ({exc}) — not this check's "
+            "verdict (compare's exit-2 arm owns it); exit 0"
+        )
+        return 0
+    try:
+        _failing, summary = parse_junit(path)
+    except JunitParseError as exc:
+        # Existence + parseability were pre-checked above, so the only
+        # remaining parse_junit raise is the xunit1 file-attribute violation.
+        _log(
+            "check-junit-contract: XUNIT1 CONTRACT VIOLATED — failing testcase(s) lack "
+            f"the per-case file attribute ({exc}). The gate pytest ran without "
+            "-o junit_family=xunit1 (or with an overriding junit_family); compare would "
+            "abort 'has no file attribute' -> exit 2 / indeterminate: True. file "
+            "attributes cannot be reconstructed from an existing junit — re-run the gate "
+            "pytest with the canonical launcher (select_step9c_tests.py --emit-launcher)."
+        )
+        return 1
+    _log(
+        f"check-junit-contract: ok — {summary['failures']} failure(s) / "
+        f"{summary['errors']} error(s) across {summary['tests']} testcase(s); every "
+        "failing row is file-resolvable"
+    )
+    return 0
+
+
 # --- CLI -------------------------------------------------------------------------
 
 
@@ -4369,6 +4446,18 @@ def build_parser() -> argparse.ArgumentParser:
         "usage error (exit 2) without --fleet",
     )
     p_probe.set_defaults(func=cmd_probe)
+
+    p_contract = sub.add_parser(
+        "check-junit-contract",
+        help="pre-compare xunit1-contract check (#2315): 1 = >=1 failing testcase lacks "
+        "the per-case file attribute (compare would abort 'has no file attribute' / "
+        "indeterminate — the launcher ran without -o junit_family=xunit1); 0 = green "
+        "junit, or every failing row file-resolvable (#1746 collect-error fallback "
+        "absorbed), or missing/unparseable junit (ownership stays with the 1b FAIL / "
+        "compare exit-2 paths)",
+    )
+    p_contract.add_argument("--junitxml", required=True, help="the gate run's junitxml path")
+    p_contract.set_defaults(func=cmd_check_junit_contract)
     return parser
 
 
