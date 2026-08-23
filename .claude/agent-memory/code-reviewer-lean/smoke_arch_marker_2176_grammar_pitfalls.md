@@ -64,7 +64,12 @@ now the DOMINANT recurring malformation; lead the FAIL body with the exact
 conforming replacement line so the fix is copy-paste. Fifth hit #1901 R1 g4
 (2026-08-22): command-transcript form (`arm-registry: uv run python <driver>
 --list-phases -> b0_pairs fig ...`) — same class; substance again fully correct
-(6/6 set-equality vs the driver's module-level PHASES dict), form-only REFUSE.
+(6/6 set-equality vs the driver's module-level PHASES dict), form-only REFUSE. Sixth
+hit #2254-firstk R1 g3 (2026-08-23), NEW VARIANT: all four fields present and CORRECT
+(`source= file= n= members=` with sorted members, 5/5 driver-recompute set-equality)
+but a TRAILING ``(command: `uv run python -c ...` -> [...])`` parenthetical after
+`members=` — the line-anchored grammar tolerates NO trailing text; put the derivation
+command in a separate notes sentence, never on the arm-registry line.
 
 **How to apply:** any Step 0.55 audit (round-level / CONTRACT-BEARING split-review
 group). Give the implementer the full one-post fix: conforming `arm-registry:` line
