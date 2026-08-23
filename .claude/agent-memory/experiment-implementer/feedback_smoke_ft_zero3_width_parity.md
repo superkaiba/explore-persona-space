@@ -43,3 +43,23 @@ This entry is the PRIMARY index pointer for its theme; the sibling index rows be
 - [Per-arm-class smoke + source-filtered panel](feedback_per_arm_class_smoke_and_panel_disjointness.md) — a new source-context class crashes the #527/#538 panel-disjointness assert at ModelOrganism sites the smoke never reached; thread fu3w.panel_name_for everywhere + smoke one run per ARM CLASS (#1090 fu5)
 - [--smoke ternary skips the production branch](feedback_smoke_ternary_skips_production_branch.md) — `A if args.smoke else MODULE.CONST` leaves the production branch unexecuted by the smoke; resolve production-only constants at import time (#825 contrast crash)
 - [Smoke per class×regime](feedback_smoke_class_regime_coverage.md) — multi-class dispatchers smoke ≥1 cell per realized behavior-class × regime (#1586)
+
+## Sibling shape: smoke-slice closure must cover CONSUMER-side dereferences (#2389 crash-fix r1, 2026-08-23)
+
+A smoke slice extension that closes dependencies for a gate's PRIMARY
+selection (the 12 spot pairs + their donors, #2389 B4) is still open under
+any SECONDARY selection the gate makes from the whole filtered set: the
+injection gate drew a second batch row from all smoke-filtered pairs and
+composed its payload for the spot's arm — dereferencing the SECOND row's
+OWN donor (`pairs_by_id[donor_map[other.pair_id]]`), outside the closure →
+`KeyError` in bank worker 0, chain rc=1, production correctly gated.
+Fix pattern (preferred over widening the closure): filter the secondary
+candidate pool to payload-RESOLVABLE items for the current arm (donor pair
+present + donor B captured), applied BEFORE any helper that dereferences
+the same donor (`pe_excluded_reason`), with a kept/total log line as the
+fix-engaged signal; production-invariant because the full set resolves
+every donor. Pin with a repro test (unresolvable candidate excluded) + a
+full-closure invariance test (`scripts/issue2389_run.py::_gate_second_row_pool`,
+`tests/test_issue2389_run.py`). Audit rule: when writing a slice-closure
+helper, enumerate EVERY selection the downstream consumer makes over the
+filtered set — not just the one the closure was written for.
