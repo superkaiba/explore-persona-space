@@ -45,3 +45,51 @@ loosely, lets a false "addressed" row ship unverified.
 [[revision-round-compose-recipe]] (upheld-bounce = the BLOCKER-severity
 sibling), [[close-condition-on-next-touch-arming]] (the severity-fence
 origin), [[whole-round-unsplit-compose]].
+
+**MIXED punch list (#823 ext-ladder r3, 2026-08-23):** a reconcile can
+UPHOLD one blocker and DOWNGRADE the rest in the same FAIL — apply the
+fences PER ITEM in one closure ledger (item 1: NOT-ADDRESSED = substantive
+FAIL, the upheld-bounce form; downgraded items: NOT-ADDRESSED = CONCERN-
+grade status line). And when the brief bars re-emission of ALL persisted
+ids as `CONCERN:: ` rows (the #2326 blind-forwarder duplication), the
+discharge fence's "same-id CONCERN:: row" re-raise route is OVERRIDDEN:
+the NOT-ADDRESSED status line alone carries the re-raise (say so in the
+prompt — "a NOT-ADDRESSED downgraded item is re-raised BY its status
+line, not by a row"). Also watch for stale ledger severities: rows
+forwarded at BLOCKER that the reconcile downgraded still read BLOCKER —
+attest the stale fields at compose time or the twin re-escalates them.
+
+**Brief-severity override on a dedicated closure round (#823 ext-ladder r4,
+2026-08-23):** the CONCERN fence above is the DEFAULT, not a ceiling. When
+the orchestrator's brief dispatches a round SPECIFICALLY to close the
+kept-open rows and names `NOT-ADDRESSED on any = substantive FAIL`, follow
+the brief — it is the dispatch contract, and the shape reverts to the
+#1094 upheld-bounce form ("the fix IS the round") even though the rows sit
+at severity CONCERN. Compose the escalation EXPLICITLY ("this round's bar
+DIFFERS from round n−1's fence: the reconciler's non-blocking ruling
+governed THAT round; this round was dispatched to close the rows") — else
+the twin, having seen the prior round's CONCERN-grade fence text, may
+under-grade a NOT-ADDRESSED. Two companions: (a) when the row severities
+MATCH the adjudication (fresh reconciler-raised rows, not stale forwards),
+attest that positively ("no stale-severity caveat this round") so the twin
+doesn't hunt for staleness; (b) a sub-item the twin's own prior Fix line
+asked for but the reconcile's ADOPTED scope omitted (here: per-cell list
+lengths), which the marker DECLINES with an argument, gets a
+within-contract adjudication instruction — adopted scope governs, the
+decline is judged on merits, and it must NOT drive NOT-ADDRESSED.
+
+**Full-reconcile-envelope + refuted-clause premise attestation (#2479 r5,
+2026-08-23):** when the downgrade came from a rich reconcile marker, inline
+its body IN FULL as its own BINDING envelope (the per-locus rationale carries
+the fix prescriptions and any REFUTED clause with the refutation trace) —
+richer than the ledger evidence digests alone. For a REFUTED escalation
+clause, grep the ROUND DIFF for the refutation-premise symbols at compose
+time (e.g. `DEFAULT_ITEMS_DIR_REL` / `expected_data_identity` untouched),
+attest the result, and fence the re-raise CONDITIONALLY: re-raising requires
+showing THIS diff changed the premise — a blind re-raise is barred, a
+premise-recheck is legitimate. A lint-gate-remedy commit riding a concern
+round (unguarded-call error pre-existing but push-blocked by the
+round-committed-file rule) gets settled-WHY / open-WHETHER-CORRECT framing so
+the twin adjudicates the fix instead of flagging scope drift. Reconcile
+`Standing recommendations on PASS` are declared non-gating (note only on
+regression).
