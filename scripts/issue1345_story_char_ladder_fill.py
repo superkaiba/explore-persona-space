@@ -58,9 +58,23 @@ never prints prompt / story text; the character-example extractor emits
 structured excerpt records to JSON only.
 
 Outputs (under --out-dir):
-  ladders.json      every ladder: per-rung R^2, ceiling, nulls, kNN, n, k, folds
+  ladder_<a>__<b>__<model>_<arm>_L<layer>_<basis>_s<seed>_nd<K>[_rowsN].json
+                    one file per pair (char-capture-ladders round: per-pair
+                    checkpoint + skip-if-exists resume; every output-affecting
+                    regime key is in the filename). The inline round's combined
+                    ladders.json stays committed as that round's artifact.
+  cell_<regime>__<model>_<arm>_L<layer>_<basis>_s<seed>[_rowsN].json
+                    within-cell ceiling per (cell x arm) — --stage cells
   char_cells.json   the 16 character cells + the capture blocker evidence
   char_examples.json  one story excerpt per character on a shared conversation
+
+char-capture-ladders round (plan v13 §4 Phase F): REGIME_SPECS gains the 16
+character cells (staged ``<variant>_turnstore`` subdirs, per-cell cache keys,
+pinned capture model), ``char_pair_specs()`` names the 16 ladder pairs
+(instruct: r4/r4op -> char cells; base: r1 -> char ``_base`` cells — the
+plan's stated base-arm asymmetry), ``run_cell_fit`` adds the within-cell
+ceilings (both arms), and every pair JSON persists the K=5 fold-level rung
+R^2s (``fold_r2``).
 """
 
 from __future__ import annotations
@@ -130,12 +144,156 @@ REGIME_LABEL = {
 # Pairs requested by the round: each entry yields BOTH directions.
 DEFAULT_PAIRS = (("r1", "r4"), ("r1", "r4op"))
 
-# The 4-persona panel x {inserted, on-policy} x {instruct, base} = 16 cells.
-CHAR_VARIANTS = tuple(
-    f"char_{ch}{suf}"
-    for ch in ("helios", "wren", "dana", "vex")
-    for suf in ("", "_op", "_base", "_op_base")
-)
+# The 4-persona panel x {inserted, on-policy} x {instruct, base} = 16 cells
+# (parent #1345 default). Issue #2479 swaps in its own character panel via the
+# env-pointed registry below WITHOUT touching this default (env absent =>
+# byte-identical parent behavior).
+CHAR_PANEL_ENV = "EPM_I2479_CHAR_PANEL_JSON"
+
+
+def _load_char_panel() -> tuple[dict, ...] | None:
+    """Optional #2479 character-panel registry (env-pointed; ``None`` = parent 4).
+
+    When ``EPM_I2479_CHAR_PANEL_JSON`` is UNSET/empty this returns ``None`` and
+    the module keeps the hardcoded parent 4-character panel byte-identically —
+    the same absent-env fail-safe shape as the gen script's
+    ``EPM_I1345_PERSONA_DESC`` seam. When SET, the file must hold a JSON LIST
+    of per-character objects (the #2479 panel registry — the JSON file itself
+    is a later unit's deliverable; this docstring is the schema of record):
+
+    - ``name`` (str, non-empty): character slug, e.g. ``"iris"``.
+    - ``variant_op`` (str, non-empty): the on-policy cell variant id, e.g.
+      ``"char_2479_iris_op"``. Must start with ``"char_"``, contain ``"_op"``,
+      and not end in ``"_base"`` so ``_char_specs()``'s suffix conventions
+      resolve it to a ``stories_paired_op`` instruct capture.
+    - ``variant_inserted`` (str | None; key REQUIRED, value nullable): the
+      inserted (text-matched) cell variant id, e.g. ``"char_2479_iris"``;
+      ``null`` for on-policy-only characters. When non-null it must start with
+      ``"char_"`` and carry neither ``"_op"`` nor a ``"_base"`` suffix (it is
+      the inserted instruct cell).
+    - ``design_band`` (str, non-empty): design-band label (e.g. ``"A"``..
+      ``"D"``); carried for downstream axis checks, unused by the fits.
+
+    Fail-LOUD contract: a SET env whose path is missing/unreadable, whose
+    payload is not valid JSON, or whose rows violate the schema RAISES — never
+    a silent fallback to the hardcoded panel. The ``char_`` prefix requirement
+    also guarantees registry variants can never clobber the inherited
+    ``REGIME_SPECS`` keys (r1/r2/r4/r4op).
+    """
+    path_s = os.environ.get(CHAR_PANEL_ENV, "").strip()
+    if not path_s:
+        return None
+    path = Path(path_s)
+    if not path.is_file():
+        raise FileNotFoundError(f"{CHAR_PANEL_ENV}={path_s} does not point at a readable file")
+    try:
+        rows = json.loads(path.read_text())
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as e:
+        raise ValueError(f"{CHAR_PANEL_ENV}={path_s} is unreadable/malformed JSON: {e}") from e
+    if not isinstance(rows, list) or not rows:
+        raise ValueError(
+            f"{CHAR_PANEL_ENV}={path_s}: expected a non-empty JSON list of panel objects, "
+            f"got {type(rows).__name__}"
+        )
+    for i, r in enumerate(rows):
+        if not isinstance(r, dict):
+            raise ValueError(f"{CHAR_PANEL_ENV}: row {i} is not an object")
+        missing = {"name", "variant_op", "variant_inserted", "design_band"} - r.keys()
+        if missing:
+            raise ValueError(f"{CHAR_PANEL_ENV}: row {i} missing keys {sorted(missing)}")
+        for key in ("name", "variant_op", "design_band"):
+            if not isinstance(r[key], str) or not r[key]:
+                raise ValueError(f"{CHAR_PANEL_ENV}: row {i} field {key!r} must be non-empty str")
+        vop = r["variant_op"]
+        if not vop.startswith("char_") or "_op" not in vop or vop.endswith("_base"):
+            raise ValueError(
+                f"{CHAR_PANEL_ENV}: row {i} variant_op {vop!r} must start with 'char_', "
+                "contain '_op', and not end in '_base' (REGIME_SPECS suffix conventions)"
+            )
+        vi = r["variant_inserted"]
+        if vi is not None and (
+            not isinstance(vi, str)
+            or not vi.startswith("char_")
+            or "_op" in vi
+            or vi.endswith("_base")
+        ):
+            raise ValueError(
+                f"{CHAR_PANEL_ENV}: row {i} variant_inserted {vi!r} must be null or a "
+                "'char_'-prefixed id with neither '_op' nor a '_base' suffix"
+            )
+    names = [r["name"] for r in rows]
+    variants = [v for r in rows for v in (r["variant_op"], r["variant_inserted"]) if v]
+    if len(set(names)) != len(names) or len(set(variants)) != len(variants):
+        raise ValueError(f"{CHAR_PANEL_ENV}: duplicate character names or variant ids")
+    return tuple(rows)
+
+
+_CHAR_PANEL = _load_char_panel()
+if _CHAR_PANEL is None:
+    CHAR_CHARACTERS = ("helios", "wren", "dana", "vex")
+    CHAR_VARIANTS = tuple(
+        f"char_{ch}{suf}" for ch in CHAR_CHARACTERS for suf in ("", "_op", "_base", "_op_base")
+    )
+else:
+    CHAR_CHARACTERS = tuple(r["name"] for r in _CHAR_PANEL)
+    CHAR_VARIANTS = tuple(
+        v for r in _CHAR_PANEL for v in (r["variant_op"], r["variant_inserted"]) if v
+    )
+
+
+def _char_specs() -> dict[str, dict]:
+    """REGIME_SPECS rows for the 16 character cells (char-capture-ladders round).
+
+    Each cell's turnstore is captured by the SAME extractor under
+    ``EPM_I1345_VARIANT=<cell>`` (bundle stem ``{model}_{format_key}_s``), so
+    the stems collide ACROSS characters — disambiguated by the per-cell staged
+    ``<variant>_turnstore`` subdir and a per-cell ``cache_key`` (the shared
+    stem would otherwise collide in the L19 slice cache). ``model`` pins the
+    capture model (``_base`` cells are measured on the pretrained model —
+    plan v13 § Divergences 2); ``load_regime_xy`` asserts it.
+    """
+    specs: dict[str, dict] = {}
+    for v in CHAR_VARIANTS:
+        specs[v] = {
+            "format_key": "stories_paired_op" if "_op" in v else "stories_paired",
+            "subdir": f"{v}_turnstore",
+            "turn": 0,
+            "model": "pretrained" if v.endswith("_base") else "instruct",
+            "cache_key": v,
+        }
+    return specs
+
+
+REGIME_SPECS.update(_char_specs())
+REGIME_LABEL.update({v: v for v in CHAR_VARIANTS})
+
+
+def char_pair_specs() -> tuple[dict, ...]:
+    """The 16 plan v13 §4 Phase F ladder pairs as (src, tgt, capture model).
+
+    Instruct cells ladder from the matching assistant-story source (r4 for
+    inserted, r4op for on-policy); ``_base`` cells ladder from the pretrained
+    chat store r1 (no base assistant-story cell exists — the plan's stated
+    base-arm asymmetry). Each pair yields BOTH directions in one ``run_pair``.
+
+    Under the #2479 panel registry (``EPM_I2479_CHAR_PANEL_JSON`` set) the
+    pairs derive from the registry rows instead: r4op -> ``variant_op`` for
+    every character, r4 -> ``variant_inserted`` for the inserted subset; no
+    base cells (the #2479 panel is instruct-only, plan §4 Step 5).
+    """
+    out: list[dict] = []
+    if _CHAR_PANEL is None:
+        for ch in CHAR_CHARACTERS:
+            out.append({"src": "r4", "tgt": f"char_{ch}", "model": "instruct"})
+            out.append({"src": "r4op", "tgt": f"char_{ch}_op", "model": "instruct"})
+            out.append({"src": "r1", "tgt": f"char_{ch}_base", "model": "pretrained"})
+            out.append({"src": "r1", "tgt": f"char_{ch}_op_base", "model": "pretrained"})
+        return tuple(out)
+    for r in _CHAR_PANEL:
+        out.append({"src": "r4op", "tgt": r["variant_op"], "model": "instruct"})
+        if r["variant_inserted"]:
+            out.append({"src": "r4", "tgt": r["variant_inserted"], "model": "instruct"})
+    return tuple(out)
 
 
 def store_pins() -> dict:
@@ -170,7 +328,15 @@ def load_regime_xy(
     bundle at a time, freed before the next.
     """
     spec = REGIME_SPECS[regime]
-    cache = cache_dir / f"{model}_{spec['format_key']}_{c.TRACK}_{arm}_L{layer}.pt"
+    expect_model = spec.get("model")
+    assert expect_model is None or expect_model == model, (
+        f"regime {regime!r} was captured under model={expect_model!r}; got model={model!r}"
+    )
+    # Char cells share the stem across characters -> cache under the regime
+    # key; inherited regimes keep the format_key so pre-existing slice caches
+    # stay valid byte-for-byte.
+    cache_key = spec.get("cache_key", spec["format_key"])
+    cache = cache_dir / f"{model}_{cache_key}_{c.TRACK}_{arm}_L{layer}.pt"
     if cache.is_file():
         d = torch.load(cache, map_location="cpu", weights_only=False)
         return {"X": d["X"], "Y": d["Y"], "conv_ids": np.asarray(d["conv_ids"])}
@@ -347,6 +513,27 @@ def _rungs_for(
     }, resid
 
 
+def _knn_cosine(pred: torch.Tensor, true: torch.Tensor, ks: tuple[int, ...] = (1, 5)) -> dict:
+    """Cosine-metric kNN companion via ``analysis.mapping_baselines.knn_retrieval``.
+
+    The ladder's own ``lr.knn_retrieval`` is euclidean-only; the standing
+    mapping-baselines rule reports BOTH distance reads (#2479 plan §4 Step 5 /
+    §6). Output mirrors the euclidean helper's shape — per-layer ``acc@k``
+    lists + scalar ``chance@k`` — computed per layer (L=1 in this driver's
+    single-layer slices) through the canonical numpy helper with
+    ``metric="cosine"`` (one GEMM per layer inside, fold-0 pool only).
+    """
+    per_layer = [
+        mb.knn_retrieval(pred[li].numpy(), true[li].numpy(), ks=ks, metric="cosine")
+        for li in range(pred.shape[0])
+    ]
+    out: dict = {"metric": "cosine"}
+    for k in ks:
+        out[f"acc@{k}"] = [float(r["acc_at_k"][k]) for r in per_layer]
+        out[f"chance@{k}"] = float(per_layer[0]["chance_at_k"][k])
+    return out
+
+
 def run_pair(
     xy: dict, regimes: tuple[str, str], folds: np.ndarray, *, basis: str, null_draws: int, seed: int
 ) -> dict:
@@ -377,6 +564,10 @@ def run_pair(
     }
     accn = {dd: {r: z() for r in RUNGS} for dd in directions}
     sstot = {dd: z() for dd in directions}
+    # Fold-level R2 per rung/ceiling (plan v13 §3: near-bar crossings are
+    # judged against per-fold spread — persistence only, the per-fold SSE/SST
+    # were always computed here). Shape: {rung: [per-fold [per-layer r2]]}.
+    fold_r2: dict = {dd: {r: [] for r in (*RUNGS, "ceiling")} for dd in directions}
     knn: dict = {dd: {} for dd in directions}
     diag: dict = {dd: {} for dd in directions}
     resid_max = 0.0
@@ -418,10 +609,15 @@ def run_pair(
                 )
             )
 
-            sstot[dd] += (Yt_te - Yt_te.mean(1, keepdim=True)).pow(2).sum((-1, -2))
+            sst_k = (Yt_te - Yt_te.mean(1, keepdim=True)).pow(2).sum((-1, -2))
+            sstot[dd] += sst_k
             for r, pr in preds.items():
-                acc[dd][r] += (Yt_te - pr).pow(2).sum((-1, -2))
-            acc[dd]["ceiling"] += (Yt_te - ceiling).pow(2).sum((-1, -2))
+                sse_k = (Yt_te - pr).pow(2).sum((-1, -2))
+                acc[dd][r] += sse_k
+                fold_r2[dd][r].append([float(x) for x in (1.0 - sse_k / sst_k)])
+            ceil_sse_k = (Yt_te - ceiling).pow(2).sum((-1, -2))
+            acc[dd]["ceiling"] += ceil_sse_k
+            fold_r2[dd]["ceiling"].append([float(x) for x in (1.0 - ceil_sse_k / sst_k)])
             acc[dd]["identity_bias"] += (Yt_te - ident).pow(2).sum((-1, -2))
 
             # matched-capacity null: source operator fit on shuffled answers
@@ -439,6 +635,13 @@ def run_pair(
                     "1_direct": lr.knn_retrieval(preds["1_direct"], Yt_te),
                     "4_bias_refit": lr.knn_retrieval(preds["4_bias_refit"], Yt_te),
                     "9_full_AMB": lr.knn_retrieval(preds["9_full_AMB"], Yt_te),
+                    # #2479 cosine companions (mapping-baselines standing rule:
+                    # euclidean + cosine) — NEW keys, euclidean fields untouched.
+                    "ceiling_cosine": _knn_cosine(ceiling, Yt_te),
+                    "identity_bias_cosine": _knn_cosine(ident, Yt_te),
+                    "1_direct_cosine": _knn_cosine(preds["1_direct"], Yt_te),
+                    "4_bias_refit_cosine": _knn_cosine(preds["4_bias_refit"], Yt_te),
+                    "9_full_AMB_cosine": _knn_cosine(preds["9_full_AMB"], Yt_te),
                 }
         del P
 
@@ -455,6 +658,8 @@ def run_pair(
             "ceiling_r2": r2(acc[dd]["ceiling"]),
             "identity_bias_r2": r2(acc[dd]["identity_bias"]),
             "null_r2": {r: r2(accn[dd][r]) for r in RUNGS},
+            "fold_r2": {r: fold_r2[dd][r] for r in (*RUNGS, "ceiling")},
+            "fold_ids": fold_ids,
             "knn_retrieval_fold0": knn[dd],
             "ceiling_selected_lambda_per_fold": diag[dd].get("lambda", []),
             "ceiling_dof_frac_per_fold": diag[dd].get("dof_frac", []),
@@ -483,6 +688,113 @@ def run_pair(
     out["dof_frac_max"] = dof_frac_max
     out["procrustes_subspace_residual_max"] = resid_max
     return out
+
+
+# ---------------------------------------------------------------------------
+# Within-cell fits (plan v13 §4 Phase F item 1: 16 cells x {context, prefix})
+# ---------------------------------------------------------------------------
+def run_cell_fit(blk: dict, folds: np.ndarray, *, basis: str) -> dict:
+    """One cell's within-cell ceiling: X (slot) -> Y (answer read), 5-fold.
+
+    The pair machinery's exact recipe on a single regime block — per-fold
+    train-only reduced basis + the committed standardize/Gram-eigh/GCV chain —
+    plus the standing identity+learned-bias baseline and kNN retrieval, the
+    fold-level R2 list, and the assumption-9 slot-degeneracy stats (unique
+    slot rows + cosine-to-mean; the chat-prefix collapse signature).
+    """
+    X = blk["X"].unsqueeze(0).to(torch.float64)  # (L=1, n, d) layer-major
+    Y = blk["Y"].unsqueeze(0).to(torch.float64)
+    fold_ids = [k for k in range(N_FOLDS) if (folds == k).sum() > 0 and (folds != k).sum() >= 3]
+    n_train_min = min(int((folds != k).sum()) for k in fold_ids)
+    d = int(X.shape[2])
+    k_red = fit825.reduced_basis_k(n_train_min, d) if basis == "reduced" else None
+    sse, ssi, sst = (torch.zeros(X.shape[0], dtype=torch.float64) for _ in range(3))
+    fold_ceiling_r2: list[list[float]] = []
+    diag: dict = {}
+    knn: dict = {}
+    for k in fold_ids:
+        tr, te = torch.as_tensor(folds != k), torch.as_tensor(folds == k)
+        p = prep(X[:, tr], k_red)
+        pred = dual_predict(p, Y[:, tr], X[:, te], diag=diag)
+        ident = torch.from_numpy(
+            np.stack(
+                [
+                    mb.identity_bias_predict(
+                        X[li, tr].numpy(), Y[li, tr].numpy(), X[li, te].numpy()
+                    )
+                    for li in range(X.shape[0])
+                ]
+            )
+        )
+        Yte = Y[:, te]
+        sst_k = (Yte - Yte.mean(1, keepdim=True)).pow(2).sum((-1, -2))
+        sse_k = (Yte - pred).pow(2).sum((-1, -2))
+        sst += sst_k
+        sse += sse_k
+        ssi += (Yte - ident).pow(2).sum((-1, -2))
+        fold_ceiling_r2.append([float(x) for x in (1.0 - sse_k / sst_k)])
+        if k == fold_ids[0]:
+            knn = {
+                "n_pool": int(te.sum()),
+                "ceiling": lr.knn_retrieval(pred, Yte),
+                "identity_bias": lr.knn_retrieval(ident, Yte),
+                # #2479 cosine companions (euclidean + cosine standing rule).
+                "ceiling_cosine": _knn_cosine(pred, Yte),
+                "identity_bias_cosine": _knn_cosine(ident, Yte),
+            }
+    dof_frac_max = max(diag.get("dof_frac", [0.0]))
+    if basis == "reduced":
+        assert dof_frac_max < 0.9, (
+            f"reduced-basis dof fraction {dof_frac_max:.3f} >= 0.9 — the GCV dof cap "
+            "would bind, so this is no longer the #1887 cap-None reduced arm"
+        )
+    x32 = blk["X"].to(torch.float32)
+    xn = torch.nn.functional.normalize(x32, dim=1)
+    mu = torch.nn.functional.normalize(xn.mean(0), dim=0)
+    cos = xn @ mu
+    return {
+        "ceiling_r2": [float(x) for x in (1.0 - sse / sst)],
+        "identity_bias_r2": [float(x) for x in (1.0 - ssi / sst)],
+        "fold_ceiling_r2": fold_ceiling_r2,
+        "fold_ids": fold_ids,
+        "knn_retrieval_fold0": knn,
+        "selected_lambda_per_fold": diag.get("lambda", []),
+        "dof_frac_per_fold": diag.get("dof_frac", []),
+        "dof_frac_max": dof_frac_max,
+        "n": int(x32.shape[0]),
+        "n_train_min": n_train_min,
+        "d": d,
+        "basis": basis,
+        "reduced_basis_k": k_red,
+        "reduced_basis_k_rule": "min(1024, floor(n_train_min/2), d)" if k_red else None,
+        "slot_degeneracy": {
+            "n_unique_slot_rows": int(torch.unique(x32, dim=0).shape[0]),
+            "cos_to_mean_min": float(cos.min()),
+            "cos_to_mean_mean": float(cos.mean()),
+        },
+    }
+
+
+def _cap_rows(blk: dict, max_rows: int, seed: int) -> dict:
+    """SMOKE ONLY: deterministic row cap on a loaded regime block."""
+    n = int(blk["X"].shape[0])
+    if not max_rows or n <= max_rows:
+        return blk
+    idx = np.sort(np.random.default_rng(seed).choice(n, size=max_rows, replace=False))
+    t = torch.as_tensor(idx)
+    return {
+        "X": blk["X"].index_select(0, t),
+        "Y": blk["Y"].index_select(0, t),
+        "conv_ids": np.asarray(blk["conv_ids"])[idx],
+    }
+
+
+def _atomic_write_json(path: Path, payload: dict) -> None:
+    """tmp + os.replace so a crash never leaves a half-written result JSON."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(payload, indent=2))
+    os.replace(tmp, path)
 
 
 # ---------------------------------------------------------------------------
@@ -811,37 +1123,79 @@ def main() -> None:
         help="regime pairs as SRC:TGT (each yields BOTH directions)",
     )
     ap.add_argument("--stage", nargs="+", default=["ladders", "chars", "examples"])
+    ap.add_argument(
+        "--cells",
+        nargs="+",
+        default=[],
+        help="regimes for the within-cell fits stage (--stage cells); default = the "
+        "char cells whose capture model matches --model; one JSON per cell",
+    )
+    ap.add_argument(
+        "--max-rows",
+        type=int,
+        default=0,
+        help="SMOKE ONLY: deterministic row cap (matched rows for pairs; block rows "
+        "for cells); capped outputs carry a _rowsN filename suffix so they can "
+        "never be resumed as production results",
+    )
     args = ap.parse_args()
     args.out_dir.mkdir(parents=True, exist_ok=True)
     args.cache_dir.mkdir(parents=True, exist_ok=True)
     bases = ("reduced", "ambient") if args.basis == "both" else (args.basis,)
+    rows_tag = f"_rows{args.max_rows}" if args.max_rows else ""
     t_all = time.time()
 
     if "ladders" in args.stage:
+        # Per-pair output files (checkpoint-per-unit + skip-if-exists resume;
+        # every output-affecting regime key is in the filename — plan v13 §4
+        # Phase F item 2; supersedes the inline round's combined ladders.json,
+        # which stays committed as that round's artifact).
         pairs = [tuple(p.split(":")) for p in args.pairs]
         for a, b in pairs:
             assert a in REGIME_SPECS and b in REGIME_SPECS, f"unknown regime pair {a}:{b}"
-        blocks = {
-            r: load_regime_xy(args.stage_root, args.cache_dir, args.model, r, args.arm, args.layer)
-            for r in sorted({r for pr in pairs for r in pr})
-        }
-        results: dict = {"metadata": _metadata(args.seed, args.layer, args.arm), "ladders": {}}
-        results["metadata"]["model"] = args.model
-        results["metadata"]["rung_order"] = list(RUNGS)
-        results["metadata"]["regime_labels"] = REGIME_LABEL
         for a, b in pairs:
+            out_path = args.out_dir / (
+                f"ladder_{a}__{b}__{args.model}_{args.arm}_L{args.layer}_"
+                f"{args.basis}_s{args.seed}_nd{args.null_draws}{rows_tag}.json"
+            )
+            if out_path.is_file():
+                print(f"[skip] {out_path.name} exists — resume", flush=True)
+                continue
             t0 = time.time()
+            blocks = {
+                r: load_regime_xy(
+                    args.stage_root, args.cache_dir, args.model, r, args.arm, args.layer
+                )
+                for r in dict.fromkeys((a, b))
+            }
+            n_src, n_tgt = int(blocks[a]["X"].shape[0]), int(blocks[b]["X"].shape[0])
             xa, xb, keep = matched_pair(blocks[a], blocks[b])
+            del blocks
+            if args.max_rows and len(keep) > args.max_rows:
+                idx = np.sort(
+                    np.random.default_rng(args.seed).choice(len(keep), args.max_rows, replace=False)
+                )
+                sel = torch.as_tensor(idx)
+                for blk in (xa, xb):
+                    blk["X"] = blk["X"].index_select(1, sel)
+                    blk["Y"] = blk["Y"].index_select(1, sel)
+                keep = keep[idx]
+                print(f"[cap] {a}:{b}: matched rows capped to {len(keep)} (SMOKE)", flush=True)
             xy = {a: xa, b: xb}
             folds = fit825._cv_folds(keep, N_FOLDS, args.seed)
             key = f"{REGIME_LABEL[a]}<->{REGIME_LABEL[b]}"
-            entry = {
+            entry: dict = {
                 "regimes": [a, b],
                 "n_matched": int(len(keep)),
-                "n_source_rows": int(blocks[a]["X"].shape[0]),
-                "n_target_rows": int(blocks[b]["X"].shape[0]),
+                "n_source_rows": n_src,
+                "n_target_rows": n_tgt,
                 "pairing": "conv-id intersection of the two full stores",
+                "metadata": _metadata(args.seed, args.layer, args.arm),
             }
+            entry["metadata"]["model"] = args.model
+            entry["metadata"]["rung_order"] = list(RUNGS)
+            entry["metadata"]["regime_labels"] = {r: REGIME_LABEL[r] for r in (a, b)}
+            entry["metadata"]["max_rows"] = args.max_rows
             for basis in bases:
                 entry[basis] = run_pair(
                     xy,
@@ -852,11 +1206,50 @@ def main() -> None:
                     seed=args.seed,
                 )
                 _print_pair(key, basis, entry[basis])
-            results["ladders"][key] = entry
-            print(f"[pair] {key} wall {time.time() - t0:.0f}s", flush=True)
+            _atomic_write_json(out_path, entry)
+            print(f"[pair] {key} wall {time.time() - t0:.0f}s -> {out_path.name}", flush=True)
             del xy, xa, xb
-        (args.out_dir / "ladders.json").write_text(json.dumps(results, indent=2))
-        print(f"[write] {args.out_dir / 'ladders.json'}", flush=True)
+
+    if "cells" in args.stage:
+        cells = args.cells or [
+            v for v in CHAR_VARIANTS if REGIME_SPECS[v].get("model") == args.model
+        ]
+        for regime in cells:
+            assert regime in REGIME_SPECS, f"unknown regime {regime}"
+            out_path = args.out_dir / (
+                f"cell_{regime}__{args.model}_{args.arm}_L{args.layer}_"
+                f"{args.basis}_s{args.seed}{rows_tag}.json"
+            )
+            if out_path.is_file():
+                print(f"[skip] {out_path.name} exists — resume", flush=True)
+                continue
+            t0 = time.time()
+            blk = load_regime_xy(
+                args.stage_root, args.cache_dir, args.model, regime, args.arm, args.layer
+            )
+            ids = np.asarray(blk["conv_ids"])
+            assert len(np.unique(ids)) == len(ids), f"{regime}: duplicate conv_ids in store"
+            blk = _cap_rows(blk, args.max_rows, args.seed)
+            folds = fit825._cv_folds(np.asarray(blk["conv_ids"]), N_FOLDS, args.seed)
+            entry = {
+                "regime": regime,
+                "arm": args.arm,
+                "metadata": _metadata(args.seed, args.layer, args.arm),
+            }
+            entry["metadata"]["model"] = args.model
+            entry["metadata"]["max_rows"] = args.max_rows
+            for basis in bases:
+                entry[basis] = run_cell_fit(blk, folds, basis=basis)
+                li = 0
+                print(
+                    f"  cell {regime} [{basis}]: ceiling {entry[basis]['ceiling_r2'][li]:.4f}  "
+                    f"identity+bias {entry[basis]['identity_bias_r2'][li]:.4f}  "
+                    f"n={entry[basis]['n']}",
+                    flush=True,
+                )
+            _atomic_write_json(out_path, entry)
+            print(f"[cell] {regime} wall {time.time() - t0:.0f}s -> {out_path.name}", flush=True)
+            del blk
 
     if "chars" in args.stage:
         audit = audit_char_cells(args.stage_root, _REPO_ROOT / "data/issue_1345")
