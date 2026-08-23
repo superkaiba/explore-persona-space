@@ -152,5 +152,30 @@ an earlier compose). Assert-guarded deltas fail loud instead.
   4 claims), the Step 0.8 paragraph rewrite outgrows anchor-safe edits —
   keep it as ONE whole-paragraph replacement anchored on the full r6 text.
 
+- REORDER round after a RESIDUAL-inside-the-termination-structure verdict
+  (#1739 a2fix r8, 2026-08-23 — r7 found the residual INSIDE the r6
+  termination structure: gate present but run after the reductions): the
+  V-duty split is V1 probe-replay (the twin's own Mechanizable line), V2
+  NOT-COMPUTED-vs-merely-hidden (the r7 Impact objected to the partial
+  statistic EXISTING in JSON/markdown, so verify nulled-by-construction —
+  never computed-then-overwritten or suppressed-at-render — PLUS
+  no-over-tightening on the complete path), V3 pin-upgrade audit (does the
+  behavioral ordering pin actually bind a re-reordering regression; quote
+  the widened grep patterns and name unpinned shapes honestly), V4 final
+  class hunt extended to the reordered structure ITSELF (a second
+  reduction site between record construction and the gate), V5 test
+  substance. A marker-DISCLOSED pre-fix-passing test (coverage-gap fill
+  pinning a prior-round-landed gate) gets composer-verified at the base
+  (grep the gate exists there) and PRE-ADJUDICATED as
+  not-fabricated-coverage — the twin verifies the justification, never
+  re-litigates the disclosure. GUARD LESSON: the assert-guard list only
+  catches tokens you enumerate — a round-SHAPE adjective from round 1
+  ("This round is PURELY ADDITIVE (0 deletions)") survived FIVE reuse
+  rounds unnoticed and was wrong since r6; each reuse round, grep the
+  span for shape adjectives (ADDITIVE / deletions / "this round has N")
+  and stale round-shape glosses in low-traffic steps (0.55 substance,
+  3.75 trigger) — phrases like "a <shape> fix adds no new arm
+  architecture" recur at TWO sites (0.55 + 4(b)), so patch both.
+
 Extends [[two-leg-single-label-round-compose]] (leg-suffixed filenames,
 leg-scoped sentinel, round-matching by leg).
