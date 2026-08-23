@@ -421,6 +421,9 @@ def main(argv: list[str] | None = None) -> int:
 
         print(f"[phase=smoke_publication] -> {DATA_REPO}/{SMOKE_PREFIX}", flush=True)
         api = HfApi()
+        # Dir-filecount guard BEFORE the upload, OUTSIDE the retry wrapper
+        # (a guard raise is deterministic; the Hub 400s >10k files/dir).
+        hub.assert_hub_dir_filecounts(SCRATCH, SMOKE_PREFIX)
         hub.retry_transient(
             lambda: api.upload_folder(
                 repo_id=DATA_REPO,
