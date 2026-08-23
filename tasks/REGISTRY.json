@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2507,
+  "highest_id": 2508,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11642,6 +11642,13 @@
       "path": "tasks/proposed/2507",
       "status": "proposed",
       "title": "Fix pre-existing no-flags lint red: bare list_repo_tree + hf_hub_download in scripts/issue2378_segb_think_audit.py"
+    },
+    "2508": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2508",
+      "status": "proposed",
+      "title": "Step 10d gate normalization: exclude 'workflow_lint: note:' lines from the failure-line sets"
     },
     "251": {
       "has_clean_result": false,
