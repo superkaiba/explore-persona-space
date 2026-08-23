@@ -1,11 +1,16 @@
 {
-  "commit": "7475bd58",
-  "render_id": "bb6fd0f0aa054d0c",
-  "git_commit": "7475bd589b6f09d425fcfbfaed7d291f9af6f3a0",
-  "git_dirty": false,
+  "commit": "c43bf0c3+dirty",
+  "render_id": "44d4bdd7c27548c5",
+  "git_commit": "c43bf0c3453de04d9815702b4f1f230096f92135",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/paper/c1_scaling_train_pool.meta.json",
+    "figures/paper/c1_scaling_train_pool.pdf",
+    "figures/paper/c1_scaling_train_pool.png"
+  ],
   "git_argv0_state": "tracked",
   "git_argv0_path": "docs/posters/mats_2026/make_plot1_scaling.py",
-  "created": "2026-08-23T03:15:30Z",
+  "created": "2026-08-23T08:30:58Z",
   "figsize": [
     7.6,
     2.8
@@ -13,11 +18,131 @@
   "points": [
     {
       "training contexts": 50.0,
+      "held-out $R^2$": 0.03997621360108128,
+      "error": 0.0032564625705630013,
+      "series": "generic boundary token ('.')",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "training contexts": 100.0,
+      "held-out $R^2$": 0.10337126296239192,
+      "error": 0.01502815185447004,
+      "series": "generic boundary token ('.')",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "training contexts": 250.0,
+      "held-out $R^2$": 0.1805988528529461,
+      "error": 0.0032551362310329623,
+      "series": "generic boundary token ('.')",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "training contexts": 500.0,
+      "held-out $R^2$": 0.23094845235583603,
+      "error": 0.004695976128104018,
+      "series": "generic boundary token ('.')",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "training contexts": 1000.0,
+      "held-out $R^2$": 0.270561631616457,
+      "error": 0.0008057667822749526,
+      "series": "generic boundary token ('.')",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "training contexts": 2500.0,
+      "held-out $R^2$": 0.3212328453400996,
+      "error": 0.0006046672344074411,
+      "series": "generic boundary token ('.')",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "training contexts": 5000.0,
+      "held-out $R^2$": 0.3544104006460914,
+      "error": 0.01262094811399389,
+      "series": "generic boundary token ('.')",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "training contexts": 10000.0,
+      "held-out $R^2$": 0.37807007654889346,
+      "error": 0.011992379164221134,
+      "series": "generic boundary token ('.')",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "training contexts": 15000.0,
+      "held-out $R^2$": 0.38948403049007063,
+      "error": 0.0,
+      "series": "generic boundary token ('.')",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "training contexts": 20000.0,
+      "held-out $R^2$": 0.3962250053081029,
+      "error": 0.0,
+      "series": "generic boundary token ('.')",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "training contexts": 25000.0,
+      "held-out $R^2$": 0.40104528745350365,
+      "error": 0.0,
+      "series": "generic boundary token ('.')",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "training contexts": 50000.0,
+      "held-out $R^2$": 0.41460064032598243,
+      "error": 0.011111643924370196,
+      "series": "generic boundary token ('.')",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "training contexts": 150000.0,
+      "held-out $R^2$": 0.429245573211377,
+      "error": 0.009980189718263088,
+      "series": "generic boundary token ('.')",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "training contexts": 500000.0,
+      "held-out $R^2$": 0.43830320244785037,
+      "error": 0.010184280427992576,
+      "series": "generic boundary token ('.')",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "training contexts": 963444.0,
+      "held-out $R^2$": 0.44029790304000205,
+      "error": 0.009594298275228064,
+      "series": "generic boundary token ('.')",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "training contexts": 50.0,
       "held-out $R^2$": 0.3227494492686382,
       "error": 0.0032564625705630013,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
-      "_group": 0
+      "_group": 1
     },
     {
       "training contexts": 100.0,
@@ -25,7 +150,7 @@
       "error": 0.01502815185447004,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
-      "_group": 0
+      "_group": 1
     },
     {
       "training contexts": 250.0,
@@ -33,7 +158,7 @@
       "error": 0.0032551362310329623,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
-      "_group": 0
+      "_group": 1
     },
     {
       "training contexts": 500.0,
@@ -41,7 +166,7 @@
       "error": 0.004695976128104018,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
-      "_group": 0
+      "_group": 1
     },
     {
       "training contexts": 1000.0,
@@ -49,7 +174,7 @@
       "error": 0.0008057667822749526,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
-      "_group": 0
+      "_group": 1
     },
     {
       "training contexts": 2500.0,
@@ -57,7 +182,7 @@
       "error": 0.0006046672344074411,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
-      "_group": 0
+      "_group": 1
     },
     {
       "training contexts": 5000.0,
@@ -65,7 +190,7 @@
       "error": 0.01262094811399389,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
-      "_group": 0
+      "_group": 1
     },
     {
       "training contexts": 10000.0,
@@ -73,7 +198,7 @@
       "error": 0.011992379164221134,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
-      "_group": 0
+      "_group": 1
     },
     {
       "training contexts": 15000.0,
@@ -81,7 +206,7 @@
       "error": 0.0,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
-      "_group": 0
+      "_group": 1
     },
     {
       "training contexts": 20000.0,
@@ -89,7 +214,7 @@
       "error": 0.0,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
-      "_group": 0
+      "_group": 1
     },
     {
       "training contexts": 25000.0,
@@ -97,7 +222,7 @@
       "error": 0.0,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
-      "_group": 0
+      "_group": 1
     },
     {
       "training contexts": 50000.0,
@@ -105,7 +230,7 @@
       "error": 0.011111643924370196,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
-      "_group": 0
+      "_group": 1
     },
     {
       "training contexts": 150000.0,
@@ -113,7 +238,7 @@
       "error": 0.009980189718263088,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
-      "_group": 0
+      "_group": 1
     },
     {
       "training contexts": 500000.0,
@@ -121,7 +246,7 @@
       "error": 0.010184280427992576,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
-      "_group": 0
+      "_group": 1
     },
     {
       "training contexts": 963444.0,
@@ -129,7 +254,7 @@
       "error": 0.009594298275228064,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
-      "_group": 0
+      "_group": 1
     },
     {
       "training contexts": 50.0,
@@ -137,7 +262,7 @@
       "error": 0.0032564625705630013,
       "series": "identity + bias (baseline)",
       "_kind": "errorbar",
-      "_group": 1
+      "_group": 2
     },
     {
       "training contexts": 100.0,
@@ -145,7 +270,7 @@
       "error": 0.01502815185447004,
       "series": "identity + bias (baseline)",
       "_kind": "errorbar",
-      "_group": 1
+      "_group": 2
     },
     {
       "training contexts": 250.0,
@@ -153,7 +278,7 @@
       "error": 0.0032551362310329623,
       "series": "identity + bias (baseline)",
       "_kind": "errorbar",
-      "_group": 1
+      "_group": 2
     },
     {
       "training contexts": 500.0,
@@ -161,7 +286,7 @@
       "error": 0.004695976128104018,
       "series": "identity + bias (baseline)",
       "_kind": "errorbar",
-      "_group": 1
+      "_group": 2
     },
     {
       "training contexts": 1000.0,
@@ -169,7 +294,7 @@
       "error": 0.0008057667822749526,
       "series": "identity + bias (baseline)",
       "_kind": "errorbar",
-      "_group": 1
+      "_group": 2
     },
     {
       "training contexts": 2500.0,
@@ -177,7 +302,7 @@
       "error": 0.0006046672344074411,
       "series": "identity + bias (baseline)",
       "_kind": "errorbar",
-      "_group": 1
+      "_group": 2
     },
     {
       "training contexts": 5000.0,
@@ -185,7 +310,7 @@
       "error": 0.01262094811399389,
       "series": "identity + bias (baseline)",
       "_kind": "errorbar",
-      "_group": 1
+      "_group": 2
     },
     {
       "training contexts": 10000.0,
@@ -193,7 +318,7 @@
       "error": 0.011992379164221134,
       "series": "identity + bias (baseline)",
       "_kind": "errorbar",
-      "_group": 1
+      "_group": 2
     },
     {
       "training contexts": 15000.0,
@@ -201,7 +326,7 @@
       "error": 0.0,
       "series": "identity + bias (baseline)",
       "_kind": "errorbar",
-      "_group": 1
+      "_group": 2
     },
     {
       "training contexts": 20000.0,
@@ -209,7 +334,7 @@
       "error": 0.0,
       "series": "identity + bias (baseline)",
       "_kind": "errorbar",
-      "_group": 1
+      "_group": 2
     },
     {
       "training contexts": 25000.0,
@@ -217,7 +342,7 @@
       "error": 0.0,
       "series": "identity + bias (baseline)",
       "_kind": "errorbar",
-      "_group": 1
+      "_group": 2
     },
     {
       "training contexts": 50000.0,
@@ -225,7 +350,7 @@
       "error": 0.011111643924370196,
       "series": "identity + bias (baseline)",
       "_kind": "errorbar",
-      "_group": 1
+      "_group": 2
     },
     {
       "training contexts": 150000.0,
@@ -233,7 +358,7 @@
       "error": 0.009980189718263088,
       "series": "identity + bias (baseline)",
       "_kind": "errorbar",
-      "_group": 1
+      "_group": 2
     },
     {
       "training contexts": 500000.0,
@@ -241,7 +366,7 @@
       "error": 0.010184280427992576,
       "series": "identity + bias (baseline)",
       "_kind": "errorbar",
-      "_group": 1
+      "_group": 2
     },
     {
       "training contexts": 963444.0,
@@ -249,7 +374,7 @@
       "error": 0.009594298275228064,
       "series": "identity + bias (baseline)",
       "_kind": "errorbar",
-      "_group": 1
+      "_group": 2
     },
     {
       "training contexts": 250.0,
@@ -257,7 +382,7 @@
       "error": 0.0032551362310329623,
       "series": "nonlinear (MLP)",
       "_kind": "errorbar",
-      "_group": 2
+      "_group": 3
     },
     {
       "training contexts": 500.0,
@@ -265,7 +390,7 @@
       "error": 0.004695976128104018,
       "series": "nonlinear (MLP)",
       "_kind": "errorbar",
-      "_group": 2
+      "_group": 3
     },
     {
       "training contexts": 1000.0,
@@ -273,7 +398,7 @@
       "error": 0.0008057667822749526,
       "series": "nonlinear (MLP)",
       "_kind": "errorbar",
-      "_group": 2
+      "_group": 3
     },
     {
       "training contexts": 2000.0,
@@ -281,7 +406,7 @@
       "error": 0.001994856886228691,
       "series": "nonlinear (MLP)",
       "_kind": "errorbar",
-      "_group": 2
+      "_group": 3
     },
     {
       "training contexts": 3600.0,
@@ -289,7 +414,7 @@
       "error": 1.1102230246251565e-16,
       "series": "nonlinear (MLP)",
       "_kind": "errorbar",
-      "_group": 2
+      "_group": 3
     },
     {
       "training contexts": 5000.0,
@@ -297,7 +422,7 @@
       "error": 0.01262094811399389,
       "series": "nonlinear (MLP)",
       "_kind": "errorbar",
-      "_group": 2
+      "_group": 3
     },
     {
       "training contexts": 10000.0,
@@ -305,7 +430,7 @@
       "error": 0.011992379164221134,
       "series": "nonlinear (MLP)",
       "_kind": "errorbar",
-      "_group": 2
+      "_group": 3
     },
     {
       "training contexts": 25000.0,
@@ -313,7 +438,7 @@
       "error": 0.0,
       "series": "nonlinear (MLP)",
       "_kind": "errorbar",
-      "_group": 2
+      "_group": 3
     },
     {
       "training contexts": 50000.0,
@@ -321,7 +446,7 @@
       "error": 0.011111643924370196,
       "series": "nonlinear (MLP)",
       "_kind": "errorbar",
-      "_group": 2
+      "_group": 3
     },
     {
       "training contexts": 150000.0,
@@ -329,7 +454,7 @@
       "error": 0.009980189718263088,
       "series": "nonlinear (MLP)",
       "_kind": "errorbar",
-      "_group": 2
+      "_group": 3
     },
     {
       "training contexts": 500000.0,
@@ -337,7 +462,7 @@
       "error": 0.010184280427992576,
       "series": "nonlinear (MLP)",
       "_kind": "errorbar",
-      "_group": 2
+      "_group": 3
     },
     {
       "training contexts": 963444.0,
@@ -345,889 +470,1324 @@
       "error": 0.009594298275228064,
       "series": "nonlinear (MLP)",
       "_kind": "errorbar",
-      "_group": 2
+      "_group": 3
+    },
+    {
+      "training contexts": 50.0,
+      "held-out $R^2$": 0.03997621360108128,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "training contexts": 100.0,
+      "held-out $R^2$": 0.10337126296239192,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "training contexts": 250.0,
+      "held-out $R^2$": 0.1805988528529461,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "training contexts": 500.0,
+      "held-out $R^2$": 0.23094845235583603,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "training contexts": 1000.0,
+      "held-out $R^2$": 0.270561631616457,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "training contexts": 2500.0,
+      "held-out $R^2$": 0.3212328453400996,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "training contexts": 5000.0,
+      "held-out $R^2$": 0.3544104006460914,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "training contexts": 10000.0,
+      "held-out $R^2$": 0.37807007654889346,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "training contexts": 15000.0,
+      "held-out $R^2$": 0.38948403049007063,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "training contexts": 20000.0,
+      "held-out $R^2$": 0.3962250053081029,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "training contexts": 25000.0,
+      "held-out $R^2$": 0.40104528745350365,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "training contexts": 50000.0,
+      "held-out $R^2$": 0.41460064032598243,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "training contexts": 150000.0,
+      "held-out $R^2$": 0.429245573211377,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "training contexts": 500000.0,
+      "held-out $R^2$": 0.43830320244785037,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "training contexts": 963444.0,
+      "held-out $R^2$": 0.44029790304000205,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "training contexts": 50.0,
+      "held-out $R^2$": 0.02011012839118263,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "training contexts": 100.0,
+      "held-out $R^2$": 0.09627376080415195,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "training contexts": 250.0,
+      "held-out $R^2$": 0.17503367659695318,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "training contexts": 500.0,
+      "held-out $R^2$": 0.22839455930702565,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "training contexts": 1000.0,
+      "held-out $R^2$": 0.267253070608909,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "training contexts": 2500.0,
+      "held-out $R^2$": 0.3192234996841606,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "training contexts": 5000.0,
+      "held-out $R^2$": 0.3451694445865184,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "training contexts": 10000.0,
+      "held-out $R^2$": 0.3682792195257083,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "training contexts": 15000.0,
+      "held-out $R^2$": 0.379510136781338,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "training contexts": 20000.0,
+      "held-out $R^2$": 0.38600074553951935,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "training contexts": 25000.0,
+      "held-out $R^2$": 0.3908076667257674,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "training contexts": 50000.0,
+      "held-out $R^2$": 0.40454141132376176,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "training contexts": 150000.0,
+      "held-out $R^2$": 0.41899031269256204,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "training contexts": 500000.0,
+      "held-out $R^2$": 0.4277698968641409,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "training contexts": 963444.0,
+      "held-out $R^2$": 0.42968031497726844,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "training contexts": 50.0,
+      "held-out $R^2$": 0.059842298810979924,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "training contexts": 100.0,
+      "held-out $R^2$": 0.11046876512063189,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "training contexts": 250.0,
+      "held-out $R^2$": 0.18616402910893903,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "training contexts": 500.0,
+      "held-out $R^2$": 0.2335023454046464,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "training contexts": 1000.0,
+      "held-out $R^2$": 0.273870192624005,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "training contexts": 2500.0,
+      "held-out $R^2$": 0.3232421909960386,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "training contexts": 5000.0,
+      "held-out $R^2$": 0.3622213785242615,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "training contexts": 10000.0,
+      "held-out $R^2$": 0.3865040538627097,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "training contexts": 15000.0,
+      "held-out $R^2$": 0.3979543144803629,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "training contexts": 20000.0,
+      "held-out $R^2$": 0.4046310000201726,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "training contexts": 25000.0,
+      "held-out $R^2$": 0.40972705484424654,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "training contexts": 50000.0,
+      "held-out $R^2$": 0.4232317931760908,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "training contexts": 150000.0,
+      "held-out $R^2$": 0.438351522911797,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "training contexts": 500000.0,
+      "held-out $R^2$": 0.44730298428495624,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "training contexts": 963444.0,
+      "held-out $R^2$": 0.4492596287372377,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 6
     },
     {
       "training contexts": 50.0,
       "held-out $R^2$": 0.3227494492686382,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 3
+      "_group": 7
     },
     {
       "training contexts": 100.0,
       "held-out $R^2$": 0.36282659658466554,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 3
+      "_group": 7
     },
     {
       "training contexts": 250.0,
       "held-out $R^2$": 0.49122154007399965,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 3
+      "_group": 7
     },
     {
       "training contexts": 500.0,
       "held-out $R^2$": 0.5562363432824192,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 3
+      "_group": 7
     },
     {
       "training contexts": 1000.0,
       "held-out $R^2$": 0.6033319349246442,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 3
+      "_group": 7
     },
     {
       "training contexts": 2500.0,
       "held-out $R^2$": 0.6557336117296017,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 3
+      "_group": 7
     },
     {
       "training contexts": 5000.0,
       "held-out $R^2$": 0.6813526733515054,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 3
+      "_group": 7
     },
     {
       "training contexts": 10000.0,
       "held-out $R^2$": 0.7048843804909557,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 3
+      "_group": 7
     },
     {
       "training contexts": 15000.0,
       "held-out $R^2$": 0.7165079370002496,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 3
+      "_group": 7
     },
     {
       "training contexts": 20000.0,
       "held-out $R^2$": 0.7209572011247484,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 3
+      "_group": 7
     },
     {
       "training contexts": 25000.0,
       "held-out $R^2$": 0.7250873308449972,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 3
+      "_group": 7
     },
     {
       "training contexts": 50000.0,
       "held-out $R^2$": 0.7599992543132661,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 3
+      "_group": 7
     },
     {
       "training contexts": 150000.0,
       "held-out $R^2$": 0.754355957580797,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 3
+      "_group": 7
     },
     {
       "training contexts": 500000.0,
       "held-out $R^2$": 0.7608232696391413,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 3
+      "_group": 7
     },
     {
       "training contexts": 963444.0,
       "held-out $R^2$": 0.7541708417500051,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 3
+      "_group": 7
     },
     {
       "training contexts": 50.0,
       "held-out $R^2$": 0.30425587456157727,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 4
+      "_group": 8
     },
     {
       "training contexts": 100.0,
       "held-out $R^2$": 0.3499708558299468,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 4
+      "_group": 8
     },
     {
       "training contexts": 250.0,
       "held-out $R^2$": 0.4829874864358897,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 4
+      "_group": 8
     },
     {
       "training contexts": 500.0,
       "held-out $R^2$": 0.5503271884275186,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 4
+      "_group": 8
     },
     {
       "training contexts": 1000.0,
       "held-out $R^2$": 0.5972444493373781,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 4
+      "_group": 8
     },
     {
       "training contexts": 2500.0,
       "held-out $R^2$": 0.6531863457027249,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 4
+      "_group": 8
     },
     {
       "training contexts": 5000.0,
       "held-out $R^2$": 0.6813526733515054,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 4
+      "_group": 8
     },
     {
       "training contexts": 10000.0,
       "held-out $R^2$": 0.7048843804909557,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 4
+      "_group": 8
     },
     {
       "training contexts": 15000.0,
       "held-out $R^2$": 0.7165079370002496,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 4
+      "_group": 8
     },
     {
       "training contexts": 20000.0,
       "held-out $R^2$": 0.7209572011247484,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 4
+      "_group": 8
     },
     {
       "training contexts": 25000.0,
       "held-out $R^2$": 0.7250873308449972,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 4
+      "_group": 8
     },
     {
       "training contexts": 50000.0,
       "held-out $R^2$": 0.7484796280587251,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 4
+      "_group": 8
     },
     {
       "training contexts": 150000.0,
       "held-out $R^2$": 0.7438179039042248,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 4
+      "_group": 8
     },
     {
       "training contexts": 500000.0,
       "held-out $R^2$": 0.7500995497764024,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 4
+      "_group": 8
     },
     {
       "training contexts": 963444.0,
       "held-out $R^2$": 0.7434797277308776,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 4
+      "_group": 8
     },
     {
       "training contexts": 50.0,
       "held-out $R^2$": 0.3412430239756991,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 5
+      "_group": 9
     },
     {
       "training contexts": 100.0,
       "held-out $R^2$": 0.3756823373393843,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 5
+      "_group": 9
     },
     {
       "training contexts": 250.0,
       "held-out $R^2$": 0.4994555937121096,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 5
+      "_group": 9
     },
     {
       "training contexts": 500.0,
       "held-out $R^2$": 0.5621454981373198,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 5
+      "_group": 9
     },
     {
       "training contexts": 1000.0,
       "held-out $R^2$": 0.6094194205119103,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 5
+      "_group": 9
     },
     {
       "training contexts": 2500.0,
       "held-out $R^2$": 0.6582808777564784,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 5
+      "_group": 9
     },
     {
       "training contexts": 5000.0,
       "held-out $R^2$": 0.6813526733515054,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 5
+      "_group": 9
     },
     {
       "training contexts": 10000.0,
       "held-out $R^2$": 0.7048843804909557,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 5
+      "_group": 9
     },
     {
       "training contexts": 15000.0,
       "held-out $R^2$": 0.7165079370002496,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 5
+      "_group": 9
     },
     {
       "training contexts": 20000.0,
       "held-out $R^2$": 0.7209572011247484,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 5
+      "_group": 9
     },
     {
       "training contexts": 25000.0,
       "held-out $R^2$": 0.7250873308449972,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 5
+      "_group": 9
     },
     {
       "training contexts": 50000.0,
       "held-out $R^2$": 0.7704399931179748,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 5
+      "_group": 9
     },
     {
       "training contexts": 150000.0,
       "held-out $R^2$": 0.7645812802036637,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 5
+      "_group": 9
     },
     {
       "training contexts": 500000.0,
       "held-out $R^2$": 0.7707623583946132,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 5
+      "_group": 9
     },
     {
       "training contexts": 963444.0,
       "held-out $R^2$": 0.7642395490449736,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 5
+      "_group": 9
     },
     {
       "training contexts": 50.0,
       "held-out $R^2$": -0.911190011127716,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 6
+      "_group": 10
     },
     {
       "training contexts": 100.0,
       "held-out $R^2$": -0.9354690293529485,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 6
+      "_group": 10
     },
     {
       "training contexts": 250.0,
       "held-out $R^2$": -0.8990272378780414,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 6
+      "_group": 10
     },
     {
       "training contexts": 500.0,
       "held-out $R^2$": -0.9014148925897119,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 6
+      "_group": 10
     },
     {
       "training contexts": 1000.0,
       "held-out $R^2$": -0.8960820760793061,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 6
+      "_group": 10
     },
     {
       "training contexts": 2500.0,
       "held-out $R^2$": -0.8936415994812421,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 6
+      "_group": 10
     },
     {
       "training contexts": 5000.0,
       "held-out $R^2$": -0.8879686636269069,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 6
+      "_group": 10
     },
     {
       "training contexts": 10000.0,
       "held-out $R^2$": -0.890284227292506,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 6
+      "_group": 10
     },
     {
       "training contexts": 15000.0,
       "held-out $R^2$": -0.8918139289762328,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 6
+      "_group": 10
     },
     {
       "training contexts": 20000.0,
       "held-out $R^2$": -0.8928851022282787,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 6
+      "_group": 10
     },
     {
       "training contexts": 25000.0,
       "held-out $R^2$": -0.8942743340010613,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 6
+      "_group": 10
     },
     {
       "training contexts": 50000.0,
       "held-out $R^2$": -0.8795987011227666,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 6
+      "_group": 10
     },
     {
       "training contexts": 150000.0,
       "held-out $R^2$": -0.8963282847438272,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 6
+      "_group": 10
     },
     {
       "training contexts": 500000.0,
       "held-out $R^2$": -0.8962630398928697,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 6
+      "_group": 10
     },
     {
       "training contexts": 963444.0,
       "held-out $R^2$": -0.9195990073009372,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 6
+      "_group": 10
     },
     {
       "training contexts": 50.0,
       "held-out $R^2$": -0.914446473698279,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 7
+      "_group": 11
     },
     {
       "training contexts": 100.0,
       "held-out $R^2$": -0.9504971812074186,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 7
+      "_group": 11
     },
     {
       "training contexts": 250.0,
       "held-out $R^2$": -0.904333966318259,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 7
+      "_group": 11
     },
     {
       "training contexts": 500.0,
       "held-out $R^2$": -0.9051519749910232,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 7
+      "_group": 11
     },
     {
       "training contexts": 1000.0,
       "held-out $R^2$": -0.8968866485238631,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 7
+      "_group": 11
     },
     {
       "training contexts": 2500.0,
       "held-out $R^2$": -0.8942462667156496,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 7
+      "_group": 11
     },
     {
       "training contexts": 5000.0,
       "held-out $R^2$": -0.8879686636269069,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 7
+      "_group": 11
     },
     {
       "training contexts": 10000.0,
       "held-out $R^2$": -0.890284227292506,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 7
+      "_group": 11
     },
     {
       "training contexts": 15000.0,
       "held-out $R^2$": -0.8918139289762328,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 7
+      "_group": 11
     },
     {
       "training contexts": 20000.0,
       "held-out $R^2$": -0.8928851022282787,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 7
+      "_group": 11
     },
     {
       "training contexts": 25000.0,
       "held-out $R^2$": -0.8942743340010613,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 7
+      "_group": 11
     },
     {
       "training contexts": 50000.0,
       "held-out $R^2$": -0.9131100607625982,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 7
+      "_group": 11
     },
     {
       "training contexts": 150000.0,
       "held-out $R^2$": -0.9292629629833412,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 7
+      "_group": 11
     },
     {
       "training contexts": 500000.0,
       "held-out $R^2$": -0.9292114355264862,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 7
+      "_group": 11
     },
     {
       "training contexts": 963444.0,
       "held-out $R^2$": -0.9526555287858319,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 7
+      "_group": 11
     },
     {
       "training contexts": 50.0,
       "held-out $R^2$": -0.907933548557153,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 8
+      "_group": 12
     },
     {
       "training contexts": 100.0,
       "held-out $R^2$": -0.9204408774984785,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 8
+      "_group": 12
     },
     {
       "training contexts": 250.0,
       "held-out $R^2$": -0.8937205094378238,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 8
+      "_group": 12
     },
     {
       "training contexts": 500.0,
       "held-out $R^2$": -0.8976778101884005,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 8
+      "_group": 12
     },
     {
       "training contexts": 1000.0,
       "held-out $R^2$": -0.8952775036347491,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 8
+      "_group": 12
     },
     {
       "training contexts": 2500.0,
       "held-out $R^2$": -0.8930369322468347,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 8
+      "_group": 12
     },
     {
       "training contexts": 5000.0,
       "held-out $R^2$": -0.8879686636269069,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 8
+      "_group": 12
     },
     {
       "training contexts": 10000.0,
       "held-out $R^2$": -0.890284227292506,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 8
+      "_group": 12
     },
     {
       "training contexts": 15000.0,
       "held-out $R^2$": -0.8918139289762328,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 8
+      "_group": 12
     },
     {
       "training contexts": 20000.0,
       "held-out $R^2$": -0.8928851022282787,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 8
+      "_group": 12
     },
     {
       "training contexts": 25000.0,
       "held-out $R^2$": -0.8942743340010613,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 8
+      "_group": 12
     },
     {
       "training contexts": 50000.0,
       "held-out $R^2$": -0.8528603035950807,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 8
+      "_group": 12
     },
     {
       "training contexts": 150000.0,
       "held-out $R^2$": -0.8692590606797441,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 8
+      "_group": 12
     },
     {
       "training contexts": 500000.0,
       "held-out $R^2$": -0.869142682088706,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 8
+      "_group": 12
     },
     {
       "training contexts": 963444.0,
       "held-out $R^2$": -0.8894759202193251,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 8
+      "_group": 12
     },
     {
       "training contexts": 250.0,
       "held-out $R^2$": 0.49315699269603835,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 9
+      "_group": 13
     },
     {
       "training contexts": 500.0,
       "held-out $R^2$": 0.5546150982107939,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 9
+      "_group": 13
     },
     {
       "training contexts": 1000.0,
       "held-out $R^2$": 0.6121011360856724,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 9
+      "_group": 13
     },
     {
       "training contexts": 2000.0,
       "held-out $R^2$": 0.6565415540868024,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 9
+      "_group": 13
     },
     {
       "training contexts": 3600.0,
       "held-out $R^2$": 0.6884018332198819,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 9
+      "_group": 13
     },
     {
       "training contexts": 5000.0,
       "held-out $R^2$": 0.6661844181705912,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 9
+      "_group": 13
     },
     {
       "training contexts": 10000.0,
       "held-out $R^2$": 0.6945270264582182,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 9
+      "_group": 13
     },
     {
       "training contexts": 25000.0,
       "held-out $R^2$": 0.7249689668494587,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 9
+      "_group": 13
     },
     {
       "training contexts": 50000.0,
       "held-out $R^2$": 0.7786064878860613,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 9
+      "_group": 13
     },
     {
       "training contexts": 150000.0,
       "held-out $R^2$": 0.7880526998314361,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 9
+      "_group": 13
     },
     {
       "training contexts": 500000.0,
       "held-out $R^2$": 0.8074943555084623,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 9
+      "_group": 13
     },
     {
       "training contexts": 963444.0,
       "held-out $R^2$": 0.810357605301357,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 9
+      "_group": 13
     },
     {
       "training contexts": 250.0,
       "held-out $R^2$": 0.4899018564650054,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 10
+      "_group": 14
     },
     {
       "training contexts": 500.0,
       "held-out $R^2$": 0.5499191220826899,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 10
+      "_group": 14
     },
     {
       "training contexts": 1000.0,
       "held-out $R^2$": 0.6112953693033975,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 10
+      "_group": 14
     },
     {
       "training contexts": 2000.0,
       "held-out $R^2$": 0.6545466972005737,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 10
+      "_group": 14
     },
     {
       "training contexts": 3600.0,
       "held-out $R^2$": 0.6884018332198818,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 10
+      "_group": 14
     },
     {
       "training contexts": 5000.0,
       "held-out $R^2$": 0.6531953803493912,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 10
+      "_group": 14
     },
     {
       "training contexts": 10000.0,
       "held-out $R^2$": 0.6824619135043509,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 10
+      "_group": 14
     },
     {
       "training contexts": 25000.0,
       "held-out $R^2$": 0.7249689668494587,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 10
+      "_group": 14
     },
     {
       "training contexts": 50000.0,
       "held-out $R^2$": 0.7672200540396426,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 10
+      "_group": 14
     },
     {
       "training contexts": 150000.0,
       "held-out $R^2$": 0.7781313066658002,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 10
+      "_group": 14
     },
     {
       "training contexts": 500000.0,
       "held-out $R^2$": 0.7971574817352609,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 10
+      "_group": 14
     },
     {
       "training contexts": 963444.0,
       "held-out $R^2$": 0.800651782482096,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 10
+      "_group": 14
     },
     {
       "training contexts": 250.0,
       "held-out $R^2$": 0.4964121289270713,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 11
+      "_group": 15
     },
     {
       "training contexts": 500.0,
       "held-out $R^2$": 0.5593110743388979,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 11
+      "_group": 15
     },
     {
       "training contexts": 1000.0,
       "held-out $R^2$": 0.6129069028679474,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 11
+      "_group": 15
     },
     {
       "training contexts": 2000.0,
       "held-out $R^2$": 0.6585364109730311,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 11
+      "_group": 15
     },
     {
       "training contexts": 3600.0,
       "held-out $R^2$": 0.688401833219882,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 11
+      "_group": 15
     },
     {
       "training contexts": 5000.0,
       "held-out $R^2$": 0.678437276577379,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 11
+      "_group": 15
     },
     {
       "training contexts": 10000.0,
       "held-out $R^2$": 0.7064466718327932,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 11
+      "_group": 15
     },
     {
       "training contexts": 25000.0,
       "held-out $R^2$": 0.7249689668494587,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 11
+      "_group": 15
     },
     {
       "training contexts": 50000.0,
       "held-out $R^2$": 0.7894433418883829,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 11
+      "_group": 15
     },
     {
       "training contexts": 150000.0,
       "held-out $R^2$": 0.7980916861023264,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 11
+      "_group": 15
     },
     {
       "training contexts": 500000.0,
       "held-out $R^2$": 0.8175260425912461,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 11
+      "_group": 15
     },
     {
       "training contexts": 963444.0,
       "held-out $R^2$": 0.8198403790325521,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 11
+      "_group": 15
+    },
+    {
+      "training contexts": 50.0,
+      "retrieval acc@1": 0.012666666666666666,
+      "error": 0.00758653778449403,
+      "series": "generic boundary token ('.')",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "training contexts": 100.0,
+      "retrieval acc@1": 0.018000000000000002,
+      "error": 0.004109609335312681,
+      "series": "generic boundary token ('.')",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "training contexts": 250.0,
+      "retrieval acc@1": 0.04633333333333334,
+      "error": 0.005887840577551873,
+      "series": "generic boundary token ('.')",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "training contexts": 500.0,
+      "retrieval acc@1": 0.08733333333333333,
+      "error": 0.002943920288775992,
+      "series": "generic boundary token ('.')",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "training contexts": 1000.0,
+      "retrieval acc@1": 0.13066666666666668,
+      "error": 0.0004714045207910855,
+      "series": "generic boundary token ('.')",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "training contexts": 2500.0,
+      "retrieval acc@1": 0.13566666666666669,
+      "error": 0.0008164965809277502,
+      "series": "generic boundary token ('.')",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "training contexts": 5000.0,
+      "retrieval acc@1": 0.206,
+      "error": 0.0,
+      "series": "generic boundary token ('.')",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "training contexts": 10000.0,
+      "retrieval acc@1": 0.256,
+      "error": 0.0,
+      "series": "generic boundary token ('.')",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "training contexts": 15000.0,
+      "retrieval acc@1": 0.285,
+      "error": 0.0,
+      "series": "generic boundary token ('.')",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "training contexts": 20000.0,
+      "retrieval acc@1": 0.295,
+      "error": 0.0,
+      "series": "generic boundary token ('.')",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "training contexts": 25000.0,
+      "retrieval acc@1": 0.3,
+      "error": 0.0,
+      "series": "generic boundary token ('.')",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "training contexts": 50000.0,
+      "retrieval acc@1": 0.316,
+      "error": 0.031000000000000028,
+      "series": "generic boundary token ('.')",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "training contexts": 150000.0,
+      "retrieval acc@1": 0.334,
+      "error": 0.03150000000000003,
+      "series": "generic boundary token ('.')",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "training contexts": 500000.0,
+      "retrieval acc@1": 0.344,
+      "error": 0.03150000000000003,
+      "series": "generic boundary token ('.')",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "training contexts": 963444.0,
+      "retrieval acc@1": 0.344,
+      "error": 0.02350000000000002,
+      "series": "generic boundary token ('.')",
+      "_kind": "errorbar",
+      "_group": 16
     },
     {
       "training contexts": 50.0,
@@ -1235,7 +1795,7 @@
       "error": 0.00758653778449403,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
-      "_group": 12
+      "_group": 17
     },
     {
       "training contexts": 100.0,
@@ -1243,7 +1803,7 @@
       "error": 0.004109609335312681,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
-      "_group": 12
+      "_group": 17
     },
     {
       "training contexts": 250.0,
@@ -1251,7 +1811,7 @@
       "error": 0.005887840577551873,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
-      "_group": 12
+      "_group": 17
     },
     {
       "training contexts": 500.0,
@@ -1259,7 +1819,7 @@
       "error": 0.002943920288775992,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
-      "_group": 12
+      "_group": 17
     },
     {
       "training contexts": 1000.0,
@@ -1267,7 +1827,7 @@
       "error": 0.0004714045207910855,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
-      "_group": 12
+      "_group": 17
     },
     {
       "training contexts": 2500.0,
@@ -1275,7 +1835,7 @@
       "error": 0.0008164965809277502,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
-      "_group": 12
+      "_group": 17
     },
     {
       "training contexts": 5000.0,
@@ -1283,7 +1843,7 @@
       "error": 0.0,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
-      "_group": 12
+      "_group": 17
     },
     {
       "training contexts": 10000.0,
@@ -1291,7 +1851,7 @@
       "error": 0.0,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
-      "_group": 12
+      "_group": 17
     },
     {
       "training contexts": 15000.0,
@@ -1299,7 +1859,7 @@
       "error": 0.0,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
-      "_group": 12
+      "_group": 17
     },
     {
       "training contexts": 20000.0,
@@ -1307,7 +1867,7 @@
       "error": 0.0,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
-      "_group": 12
+      "_group": 17
     },
     {
       "training contexts": 25000.0,
@@ -1315,7 +1875,7 @@
       "error": 0.0,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
-      "_group": 12
+      "_group": 17
     },
     {
       "training contexts": 50000.0,
@@ -1323,7 +1883,7 @@
       "error": 0.031000000000000028,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
-      "_group": 12
+      "_group": 17
     },
     {
       "training contexts": 150000.0,
@@ -1331,7 +1891,7 @@
       "error": 0.03150000000000003,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
-      "_group": 12
+      "_group": 17
     },
     {
       "training contexts": 500000.0,
@@ -1339,7 +1899,7 @@
       "error": 0.03150000000000003,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
-      "_group": 12
+      "_group": 17
     },
     {
       "training contexts": 963444.0,
@@ -1347,7 +1907,7 @@
       "error": 0.02350000000000002,
       "series": "linear map (ridge)",
       "_kind": "errorbar",
-      "_group": 12
+      "_group": 17
     },
     {
       "training contexts": 50.0,
@@ -1355,7 +1915,7 @@
       "error": 0.00758653778449403,
       "series": "identity + bias (baseline)",
       "_kind": "errorbar",
-      "_group": 13
+      "_group": 18
     },
     {
       "training contexts": 100.0,
@@ -1363,7 +1923,7 @@
       "error": 0.004109609335312681,
       "series": "identity + bias (baseline)",
       "_kind": "errorbar",
-      "_group": 13
+      "_group": 18
     },
     {
       "training contexts": 250.0,
@@ -1371,7 +1931,7 @@
       "error": 0.005887840577551873,
       "series": "identity + bias (baseline)",
       "_kind": "errorbar",
-      "_group": 13
+      "_group": 18
     },
     {
       "training contexts": 500.0,
@@ -1379,7 +1939,7 @@
       "error": 0.002943920288775992,
       "series": "identity + bias (baseline)",
       "_kind": "errorbar",
-      "_group": 13
+      "_group": 18
     },
     {
       "training contexts": 1000.0,
@@ -1387,7 +1947,7 @@
       "error": 0.0004714045207910855,
       "series": "identity + bias (baseline)",
       "_kind": "errorbar",
-      "_group": 13
+      "_group": 18
     },
     {
       "training contexts": 2500.0,
@@ -1395,7 +1955,7 @@
       "error": 0.0008164965809277502,
       "series": "identity + bias (baseline)",
       "_kind": "errorbar",
-      "_group": 13
+      "_group": 18
     },
     {
       "training contexts": 5000.0,
@@ -1403,7 +1963,7 @@
       "error": 0.0,
       "series": "identity + bias (baseline)",
       "_kind": "errorbar",
-      "_group": 13
+      "_group": 18
     },
     {
       "training contexts": 10000.0,
@@ -1411,7 +1971,7 @@
       "error": 0.0,
       "series": "identity + bias (baseline)",
       "_kind": "errorbar",
-      "_group": 13
+      "_group": 18
     },
     {
       "training contexts": 15000.0,
@@ -1419,7 +1979,7 @@
       "error": 0.0,
       "series": "identity + bias (baseline)",
       "_kind": "errorbar",
-      "_group": 13
+      "_group": 18
     },
     {
       "training contexts": 20000.0,
@@ -1427,7 +1987,7 @@
       "error": 0.0,
       "series": "identity + bias (baseline)",
       "_kind": "errorbar",
-      "_group": 13
+      "_group": 18
     },
     {
       "training contexts": 25000.0,
@@ -1435,7 +1995,7 @@
       "error": 0.0,
       "series": "identity + bias (baseline)",
       "_kind": "errorbar",
-      "_group": 13
+      "_group": 18
     },
     {
       "training contexts": 50000.0,
@@ -1443,7 +2003,7 @@
       "error": 0.031000000000000028,
       "series": "identity + bias (baseline)",
       "_kind": "errorbar",
-      "_group": 13
+      "_group": 18
     },
     {
       "training contexts": 150000.0,
@@ -1451,7 +2011,7 @@
       "error": 0.03150000000000003,
       "series": "identity + bias (baseline)",
       "_kind": "errorbar",
-      "_group": 13
+      "_group": 18
     },
     {
       "training contexts": 500000.0,
@@ -1459,7 +2019,7 @@
       "error": 0.03150000000000003,
       "series": "identity + bias (baseline)",
       "_kind": "errorbar",
-      "_group": 13
+      "_group": 18
     },
     {
       "training contexts": 963444.0,
@@ -1467,7 +2027,7 @@
       "error": 0.02350000000000002,
       "series": "identity + bias (baseline)",
       "_kind": "errorbar",
-      "_group": 13
+      "_group": 18
     },
     {
       "training contexts": 5000.0,
@@ -1475,7 +2035,7 @@
       "error": 0.0,
       "series": "nonlinear (MLP)",
       "_kind": "errorbar",
-      "_group": 14
+      "_group": 19
     },
     {
       "training contexts": 10000.0,
@@ -1483,7 +2043,7 @@
       "error": 0.0,
       "series": "nonlinear (MLP)",
       "_kind": "errorbar",
-      "_group": 14
+      "_group": 19
     },
     {
       "training contexts": 25000.0,
@@ -1491,7 +2051,7 @@
       "error": 0.0,
       "series": "nonlinear (MLP)",
       "_kind": "errorbar",
-      "_group": 14
+      "_group": 19
     },
     {
       "training contexts": 963444.0,
@@ -1499,725 +2059,1040 @@
       "error": 0.02350000000000002,
       "series": "nonlinear (MLP)",
       "_kind": "errorbar",
-      "_group": 14
+      "_group": 19
+    },
+    {
+      "training contexts": 50.0,
+      "retrieval acc@1": 0.012666666666666666,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "training contexts": 100.0,
+      "retrieval acc@1": 0.018000000000000002,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "training contexts": 250.0,
+      "retrieval acc@1": 0.04633333333333334,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "training contexts": 500.0,
+      "retrieval acc@1": 0.08733333333333333,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "training contexts": 1000.0,
+      "retrieval acc@1": 0.13066666666666668,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "training contexts": 2500.0,
+      "retrieval acc@1": 0.13566666666666669,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "training contexts": 5000.0,
+      "retrieval acc@1": 0.206,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "training contexts": 10000.0,
+      "retrieval acc@1": 0.256,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "training contexts": 15000.0,
+      "retrieval acc@1": 0.285,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "training contexts": 20000.0,
+      "retrieval acc@1": 0.295,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "training contexts": 25000.0,
+      "retrieval acc@1": 0.3,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "training contexts": 50000.0,
+      "retrieval acc@1": 0.316,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "training contexts": 150000.0,
+      "retrieval acc@1": 0.334,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "training contexts": 500000.0,
+      "retrieval acc@1": 0.344,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "training contexts": 963444.0,
+      "retrieval acc@1": 0.344,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "training contexts": 50.0,
+      "retrieval acc@1": 0.00816975414558932,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training contexts": 100.0,
+      "retrieval acc@1": 0.015839753100530714,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training contexts": 250.0,
+      "retrieval acc@1": 0.043033501687796114,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training contexts": 500.0,
+      "retrieval acc@1": 0.08608611420440869,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training contexts": 1000.0,
+      "retrieval acc@1": 0.12493178315530493,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training contexts": 2500.0,
+      "retrieval acc@1": 0.13236683502112945,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training contexts": 5000.0,
+      "retrieval acc@1": 0.181,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training contexts": 10000.0,
+      "retrieval acc@1": 0.22995000000000002,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training contexts": 15000.0,
+      "retrieval acc@1": 0.257975,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training contexts": 20000.0,
+      "retrieval acc@1": 0.268,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training contexts": 25000.0,
+      "retrieval acc@1": 0.271975,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training contexts": 50000.0,
+      "retrieval acc@1": 0.288,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training contexts": 150000.0,
+      "retrieval acc@1": 0.306,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training contexts": 500000.0,
+      "retrieval acc@1": 0.315,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training contexts": 963444.0,
+      "retrieval acc@1": 0.315975,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "training contexts": 50.0,
+      "retrieval acc@1": 0.017163579187744013,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training contexts": 100.0,
+      "retrieval acc@1": 0.02016024689946929,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training contexts": 250.0,
+      "retrieval acc@1": 0.04963316497887056,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training contexts": 500.0,
+      "retrieval acc@1": 0.08858055246225797,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training contexts": 1000.0,
+      "retrieval acc@1": 0.13640155017802844,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training contexts": 2500.0,
+      "retrieval acc@1": 0.13896649831220392,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training contexts": 5000.0,
+      "retrieval acc@1": 0.231,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training contexts": 10000.0,
+      "retrieval acc@1": 0.284,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training contexts": 15000.0,
+      "retrieval acc@1": 0.312025,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training contexts": 20000.0,
+      "retrieval acc@1": 0.324,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training contexts": 25000.0,
+      "retrieval acc@1": 0.328,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training contexts": 50000.0,
+      "retrieval acc@1": 0.344,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training contexts": 150000.0,
+      "retrieval acc@1": 0.363,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training contexts": 500000.0,
+      "retrieval acc@1": 0.373,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "training contexts": 963444.0,
+      "retrieval acc@1": 0.373,
+      "series": "generic boundary token ('.')",
+      "_kind": "line",
+      "_group": 22
     },
     {
       "training contexts": 50.0,
       "retrieval acc@1": 0.06799999999999999,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 15
+      "_group": 23
     },
     {
       "training contexts": 100.0,
       "retrieval acc@1": 0.12566666666666668,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 15
+      "_group": 23
     },
     {
       "training contexts": 250.0,
       "retrieval acc@1": 0.27033333333333337,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 15
+      "_group": 23
     },
     {
       "training contexts": 500.0,
       "retrieval acc@1": 0.451,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 15
+      "_group": 23
     },
     {
       "training contexts": 1000.0,
       "retrieval acc@1": 0.5750000000000001,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 15
+      "_group": 23
     },
     {
       "training contexts": 2500.0,
       "retrieval acc@1": 0.6116666666666667,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 15
+      "_group": 23
     },
     {
       "training contexts": 5000.0,
       "retrieval acc@1": 0.686,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 15
+      "_group": 23
     },
     {
       "training contexts": 10000.0,
       "retrieval acc@1": 0.735,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 15
+      "_group": 23
     },
     {
       "training contexts": 15000.0,
       "retrieval acc@1": 0.75,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 15
+      "_group": 23
     },
     {
       "training contexts": 20000.0,
       "retrieval acc@1": 0.762,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 15
+      "_group": 23
     },
     {
       "training contexts": 25000.0,
       "retrieval acc@1": 0.771,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 15
+      "_group": 23
     },
     {
       "training contexts": 50000.0,
       "retrieval acc@1": 0.802,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 15
+      "_group": 23
     },
     {
       "training contexts": 150000.0,
       "retrieval acc@1": 0.807,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 15
+      "_group": 23
     },
     {
       "training contexts": 500000.0,
       "retrieval acc@1": 0.811,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 15
+      "_group": 23
     },
     {
       "training contexts": 963444.0,
       "retrieval acc@1": 0.805,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 15
+      "_group": 23
     },
     {
       "training contexts": 50.0,
       "retrieval acc@1": 0.05995844127879012,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 16
+      "_group": 24
     },
     {
       "training contexts": 100.0,
       "retrieval acc@1": 0.1179063688487848,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 16
+      "_group": 24
     },
     {
       "training contexts": 250.0,
       "retrieval acc@1": 0.26368335421891337,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 16
+      "_group": 24
     },
     {
       "training contexts": 500.0,
       "retrieval acc@1": 0.4354222380726028,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 16
+      "_group": 24
     },
     {
       "training contexts": 1000.0,
       "retrieval acc@1": 0.5640151619644774,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 16
+      "_group": 24
     },
     {
       "training contexts": 2500.0,
       "retrieval acc@1": 0.6083668350211294,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 16
+      "_group": 24
     },
     {
       "training contexts": 5000.0,
       "retrieval acc@1": 0.686,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 16
+      "_group": 24
     },
     {
       "training contexts": 10000.0,
       "retrieval acc@1": 0.735,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 16
+      "_group": 24
     },
     {
       "training contexts": 15000.0,
       "retrieval acc@1": 0.75,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 16
+      "_group": 24
     },
     {
       "training contexts": 20000.0,
       "retrieval acc@1": 0.762,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 16
+      "_group": 24
     },
     {
       "training contexts": 25000.0,
       "retrieval acc@1": 0.771,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 16
+      "_group": 24
     },
     {
       "training contexts": 50000.0,
       "retrieval acc@1": 0.776,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 16
+      "_group": 24
     },
     {
       "training contexts": 150000.0,
       "retrieval acc@1": 0.781,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 16
+      "_group": 24
     },
     {
       "training contexts": 500000.0,
       "retrieval acc@1": 0.785975,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 16
+      "_group": 24
     },
     {
       "training contexts": 963444.0,
       "retrieval acc@1": 0.777,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 16
+      "_group": 24
     },
     {
       "training contexts": 50.0,
       "retrieval acc@1": 0.07604155872120986,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 17
+      "_group": 25
     },
     {
       "training contexts": 100.0,
       "retrieval acc@1": 0.13342696448454855,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 17
+      "_group": 25
     },
     {
       "training contexts": 250.0,
       "retrieval acc@1": 0.27698331244775337,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 17
+      "_group": 25
     },
     {
       "training contexts": 500.0,
       "retrieval acc@1": 0.46657776192739725,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 17
+      "_group": 25
     },
     {
       "training contexts": 1000.0,
       "retrieval acc@1": 0.5859848380355227,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 17
+      "_group": 25
     },
     {
       "training contexts": 2500.0,
       "retrieval acc@1": 0.614966498312204,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 17
+      "_group": 25
     },
     {
       "training contexts": 5000.0,
       "retrieval acc@1": 0.686,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 17
+      "_group": 25
     },
     {
       "training contexts": 10000.0,
       "retrieval acc@1": 0.735,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 17
+      "_group": 25
     },
     {
       "training contexts": 15000.0,
       "retrieval acc@1": 0.75,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 17
+      "_group": 25
     },
     {
       "training contexts": 20000.0,
       "retrieval acc@1": 0.762,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 17
+      "_group": 25
     },
     {
       "training contexts": 25000.0,
       "retrieval acc@1": 0.771,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 17
+      "_group": 25
     },
     {
       "training contexts": 50000.0,
       "retrieval acc@1": 0.826,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 17
+      "_group": 25
     },
     {
       "training contexts": 150000.0,
       "retrieval acc@1": 0.831,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 17
+      "_group": 25
     },
     {
       "training contexts": 500000.0,
       "retrieval acc@1": 0.8340249999999999,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 17
+      "_group": 25
     },
     {
       "training contexts": 963444.0,
       "retrieval acc@1": 0.83,
       "series": "linear map (ridge)",
       "_kind": "line",
-      "_group": 17
+      "_group": 25
     },
     {
       "training contexts": 50.0,
       "retrieval acc@1": 0.5173333333333333,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 18
+      "_group": 26
     },
     {
       "training contexts": 100.0,
       "retrieval acc@1": 0.5286666666666667,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 18
+      "_group": 26
     },
     {
       "training contexts": 250.0,
       "retrieval acc@1": 0.534,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 18
+      "_group": 26
     },
     {
       "training contexts": 500.0,
       "retrieval acc@1": 0.539,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 18
+      "_group": 26
     },
     {
       "training contexts": 1000.0,
       "retrieval acc@1": 0.5413333333333333,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 18
+      "_group": 26
     },
     {
       "training contexts": 2500.0,
       "retrieval acc@1": 0.541,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 18
+      "_group": 26
     },
     {
       "training contexts": 5000.0,
       "retrieval acc@1": 0.544,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 18
+      "_group": 26
     },
     {
       "training contexts": 10000.0,
       "retrieval acc@1": 0.542,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 18
+      "_group": 26
     },
     {
       "training contexts": 15000.0,
       "retrieval acc@1": 0.544,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 18
+      "_group": 26
     },
     {
       "training contexts": 20000.0,
       "retrieval acc@1": 0.543,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 18
+      "_group": 26
     },
     {
       "training contexts": 25000.0,
       "retrieval acc@1": 0.541,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 18
+      "_group": 26
     },
     {
       "training contexts": 50000.0,
       "retrieval acc@1": 0.528,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 18
+      "_group": 26
     },
     {
       "training contexts": 150000.0,
       "retrieval acc@1": 0.531,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 18
+      "_group": 26
     },
     {
       "training contexts": 500000.0,
       "retrieval acc@1": 0.531,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 18
+      "_group": 26
     },
     {
       "training contexts": 963444.0,
       "retrieval acc@1": 0.532,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 18
+      "_group": 26
     },
     {
       "training contexts": 50.0,
       "retrieval acc@1": 0.5097467955488393,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 19
+      "_group": 27
     },
     {
       "training contexts": 100.0,
       "retrieval acc@1": 0.524557057331354,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 19
+      "_group": 27
     },
     {
       "training contexts": 250.0,
       "retrieval acc@1": 0.5281121594224482,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 19
+      "_group": 27
     },
     {
       "training contexts": 500.0,
       "retrieval acc@1": 0.536056079711224,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 19
+      "_group": 27
     },
     {
       "training contexts": 1000.0,
       "retrieval acc@1": 0.5408619288125422,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 19
+      "_group": 27
     },
     {
       "training contexts": 2500.0,
       "retrieval acc@1": 0.5401835034190723,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 19
+      "_group": 27
     },
     {
       "training contexts": 5000.0,
       "retrieval acc@1": 0.544,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 19
+      "_group": 27
     },
     {
       "training contexts": 10000.0,
       "retrieval acc@1": 0.542,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 19
+      "_group": 27
     },
     {
       "training contexts": 15000.0,
       "retrieval acc@1": 0.544,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 19
+      "_group": 27
     },
     {
       "training contexts": 20000.0,
       "retrieval acc@1": 0.543,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 19
+      "_group": 27
     },
     {
       "training contexts": 25000.0,
       "retrieval acc@1": 0.541,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 19
+      "_group": 27
     },
     {
       "training contexts": 50000.0,
       "retrieval acc@1": 0.496,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 19
+      "_group": 27
     },
     {
       "training contexts": 150000.0,
       "retrieval acc@1": 0.499,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 19
+      "_group": 27
     },
     {
       "training contexts": 500000.0,
       "retrieval acc@1": 0.499,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 19
+      "_group": 27
     },
     {
       "training contexts": 963444.0,
       "retrieval acc@1": 0.5,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 19
+      "_group": 27
     },
     {
       "training contexts": 50.0,
       "retrieval acc@1": 0.5249198711178273,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 20
+      "_group": 28
     },
     {
       "training contexts": 100.0,
       "retrieval acc@1": 0.5327762760019794,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 20
+      "_group": 28
     },
     {
       "training contexts": 250.0,
       "retrieval acc@1": 0.5398878405775519,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 20
+      "_group": 28
     },
     {
       "training contexts": 500.0,
       "retrieval acc@1": 0.541943920288776,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 20
+      "_group": 28
     },
     {
       "training contexts": 1000.0,
       "retrieval acc@1": 0.5418047378541244,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 20
+      "_group": 28
     },
     {
       "training contexts": 2500.0,
       "retrieval acc@1": 0.5418164965809278,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 20
+      "_group": 28
     },
     {
       "training contexts": 5000.0,
       "retrieval acc@1": 0.544,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 20
+      "_group": 28
     },
     {
       "training contexts": 10000.0,
       "retrieval acc@1": 0.542,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 20
+      "_group": 28
     },
     {
       "training contexts": 15000.0,
       "retrieval acc@1": 0.544,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 20
+      "_group": 28
     },
     {
       "training contexts": 20000.0,
       "retrieval acc@1": 0.543,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 20
+      "_group": 28
     },
     {
       "training contexts": 25000.0,
       "retrieval acc@1": 0.541,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 20
+      "_group": 28
     },
     {
       "training contexts": 50000.0,
       "retrieval acc@1": 0.558,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 20
+      "_group": 28
     },
     {
       "training contexts": 150000.0,
       "retrieval acc@1": 0.562,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 20
+      "_group": 28
     },
     {
       "training contexts": 500000.0,
       "retrieval acc@1": 0.562,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 20
+      "_group": 28
     },
     {
       "training contexts": 963444.0,
       "retrieval acc@1": 0.562,
       "series": "identity + bias (baseline)",
       "_kind": "line",
-      "_group": 20
+      "_group": 28
     },
     {
       "training contexts": 5000.0,
       "retrieval acc@1": 0.72,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 21
+      "_group": 29
     },
     {
       "training contexts": 10000.0,
       "retrieval acc@1": 0.77,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 21
+      "_group": 29
     },
     {
       "training contexts": 25000.0,
       "retrieval acc@1": 0.795,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 21
+      "_group": 29
     },
     {
       "training contexts": 963444.0,
       "retrieval acc@1": 0.841,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 21
+      "_group": 29
     },
     {
       "training contexts": 5000.0,
       "retrieval acc@1": 0.72,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 22
+      "_group": 30
     },
     {
       "training contexts": 10000.0,
       "retrieval acc@1": 0.77,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 22
+      "_group": 30
     },
     {
       "training contexts": 25000.0,
       "retrieval acc@1": 0.795,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 22
+      "_group": 30
     },
     {
       "training contexts": 963444.0,
       "retrieval acc@1": 0.817,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 22
+      "_group": 30
     },
     {
       "training contexts": 5000.0,
       "retrieval acc@1": 0.72,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 23
+      "_group": 31
     },
     {
       "training contexts": 10000.0,
       "retrieval acc@1": 0.77,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 23
+      "_group": 31
     },
     {
       "training contexts": 25000.0,
       "retrieval acc@1": 0.795,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 23
+      "_group": 31
     },
     {
       "training contexts": 963444.0,
       "retrieval acc@1": 0.864,
       "series": "nonlinear (MLP)",
       "_kind": "line",
-      "_group": 23
+      "_group": 31
     }
   ],
-  "n_series": 24,
-  "total_points": 304,
+  "n_series": 32,
+  "total_points": 424,
   "text": {
     "suptitle": null,
     "fig_texts": [],
@@ -2259,6 +3134,7 @@
       }
     ],
     "series": [
+      "generic boundary token ('.')",
       "linear map (ridge)",
       "identity + bias (baseline)",
       "nonlinear (MLP)"
