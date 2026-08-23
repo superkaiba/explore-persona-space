@@ -269,32 +269,107 @@ def test_gate_e_duplicates_flags_without_halt(tmp_path):
 # ── Probe (g): span-length unit ──────────────────────────────────────────────
 
 
-def _b2_fixture(n: int, tok) -> tuple[list[dict], dict[str, list[int]]]:
-    records, spans = [], []
-    for i in range(n):
+def _b2_truncation_fixture(
+    n: int, tok, n_noncommon_head: int = 0
+) -> tuple[list[dict], dict[str, list[int]], list[str], set[int]]:
+    """Producer-faithful synthetic bank (run_823 phase 3 semantics): b2 spans
+    banked as min(own_bare, raw_template_diff) when own_bare > 0 else raw,
+    with own_bare = BARE tokenization of the a_prime answer text. Odd rows get
+    a SHORT a_prime (own < raw: TRUNCATED — the #823 rc=17 crash shape); even
+    rows a LONG one (own >= raw: untruncated); the 5th common row an EMPTY one
+    (own == 0: no truncation). An optional non-common HEAD is banked as 0 (the
+    parent zeroes every arm text outside common_valid_idx)."""
+    total = n_noncommon_head + n
+    records, spans, a_prime_texts = [], [], []
+    common = set(range(n_noncommon_head, total))
+    for i in range(total):
         q, a = f"query {i} tail", "alpha beta gamma delta"
         records.append({"context_id": i, "question": q, "answer_text": a, "filled": True})
+        if i not in common:
+            a_prime_texts.append("alpha beta")
+            spans.append(0)  # parent zeroed all arm texts on non-common rows
+            continue
         p_len, f_len = CAP.template_span_length(tok, q, a)
-        spans.append(f_len - p_len)
-    return records, {"b2": spans}
+        raw = f_len - p_len
+        if i == n_noncommon_head + 4:
+            own_text = ""  # own == 0 => no truncation
+        elif i % 2 == 1:
+            own_text = "alpha beta"  # bare 2 < raw => truncated
+        else:
+            own_text = "alpha beta gamma delta epsilon zeta eta theta"  # bare 8 >= raw
+        a_prime_texts.append(own_text)
+        own = len(tok(own_text)["input_ids"]) if own_text else 0
+        spans.append(min(own, raw) if own > 0 else raw)
+    return records, {"b2": spans}, a_prime_texts, common
+
+
+def test_own_span_length_is_bare_not_template_diff():
+    """owngen own_len = BARE tokenization (run_823 phase 3 parity), NOT the
+    template-diff span — conflating the two conventions is the #823 rc=17
+    crash class (real tokenizer: template diff = bare + 2 end-of-turn tokens
+    on seam-clean rows)."""
+    tok = FakeTokenizer()
+    q, own = "query zero tail", "alpha beta gamma delta"
+    assert EXTCAP.own_span_length(tok, own) == len(tok(own)["input_ids"]) == 4
+    assert EXTCAP.own_span_length(tok, "") == 0
+    p_len, f_len = CAP.template_span_length(tok, q, own)
+    assert (f_len - p_len) != EXTCAP.own_span_length(tok, own)  # the two conventions differ
+
+
+def test_probe_g_prefix_raw_expectation_fails_on_truncated_bank(tmp_path):
+    """Fails-pre-fix shape (#823 rc=17): the banked b2 spans are TRUNCATED
+    (parent min rule), so the pre-fix expectation stored == raw counts far
+    below the 63/64 floor while the producer-faithful probe passes 64/64 with
+    both drift-check legs exact."""
+    layout = _tiny_layout(tmp_path, 0, 1)
+    tok = FakeTokenizer()
+    records, span_d, a_prime_texts, common = _b2_truncation_fixture(EXTCAP.PROBE_N_CONTEXTS, tok)
+    n_exact_prefix_rule = 0  # the pre-fix probe's expectation: stored == raw
+    for r in records:
+        p_len, f_len = CAP.template_span_length(tok, r["question"], r["answer_text"])
+        n_exact_prefix_rule += int(f_len - p_len == span_d["b2"][r["context_id"]])
+    assert n_exact_prefix_rule < EXTCAP.PROBE_G_MIN_EXACT  # pre-fix rule would rc-17 halt
+    report = EXTCAP.probe_g_span_unit(tok, records, span_d, a_prime_texts, common, layout.eval_dir)
+    assert report["pass"] and report["n_exact"] == EXTCAP.PROBE_N_CONTEXTS
+    assert report["n_truncated_checked"] >= 20  # the truncated-row shape is exercised
+    assert report["n_truncated_exact"] == report["n_truncated_checked"]
+    assert report["n_untruncated_exact"] == report["n_untruncated_checked"]
+    total = report["n_truncated_checked"] + report["n_untruncated_checked"]
+    assert total == EXTCAP.PROBE_N_CONTEXTS
 
 
 def test_probe_g_pass_and_halt_rc17(tmp_path):
+    """Genuinely drifted tokenization still halts on BOTH legs: an untruncated
+    row catches template-path drift (stored != raw), a truncated row catches
+    bare-path / min-rule drift (stored != own_bare); floor unchanged >= 63/64."""
     layout = _tiny_layout(tmp_path, 0, 1)
     tok = FakeTokenizer()
-    records, span_d = _b2_fixture(EXTCAP.PROBE_N_CONTEXTS, tok)
-    report = EXTCAP.probe_g_span_unit(tok, records, span_d, layout.eval_dir)
-    assert report["pass"] and report["n_exact"] == EXTCAP.PROBE_N_CONTEXTS
+    records, span_d, a_prime_texts, common = _b2_truncation_fixture(EXTCAP.PROBE_N_CONTEXTS, tok)
+    span_d["b2"][0] += 7  # untruncated row (raw leg): 63/64 exact still passes
+    report = EXTCAP.probe_g_span_unit(tok, records, span_d, a_prime_texts, common, layout.eval_dir)
+    assert report["pass"] and report["n_exact"] == 63
+    assert report["n_untruncated_exact"] == report["n_untruncated_checked"] - 1
 
-    span_d["b2"][3] += 7  # 63/64 exact still passes (floor is >= 63)
-    assert EXTCAP.probe_g_span_unit(tok, records, span_d, layout.eval_dir)["n_exact"] == 63
-
-    span_d["b2"][5] += 7  # 62/64 -> halt
+    span_d["b2"][1] -= 1  # truncated row (own/min leg): stored != own_bare -> 62/64 halts
     with pytest.raises(SystemExit) as exc:
-        EXTCAP.probe_g_span_unit(tok, records, span_d, layout.eval_dir)
+        EXTCAP.probe_g_span_unit(tok, records, span_d, a_prime_texts, common, layout.eval_dir)
     assert exc.value.code == EXTCAP.RC_SPAN_UNIT == 17
     assert (layout.eval_dir / "ext_span_unit_report.json").exists()
     _assert_no_sentinels(layout)
+
+
+def test_probe_g_excludes_non_common_valid_rows(tmp_path):
+    """Non-common-valid rows carry no tokenization signal (parent zeroed their
+    texts; banked span 0): a HEAD of such rows with would-be-mismatching banks
+    must be excluded from picking, not counted as drift."""
+    layout = _tiny_layout(tmp_path, 0, 1)
+    tok = FakeTokenizer()
+    records, span_d, a_prime_texts, common = _b2_truncation_fixture(
+        EXTCAP.PROBE_N_CONTEXTS, tok, n_noncommon_head=2
+    )
+    report = EXTCAP.probe_g_span_unit(tok, records, span_d, a_prime_texts, common, layout.eval_dir)
+    assert report["pass"] and report["n_checked"] == EXTCAP.PROBE_N_CONTEXTS
+    assert report["n_exact"] == EXTCAP.PROBE_N_CONTEXTS
 
 
 # ── Probe (f): capture-convention parity (behavioral rc-16 halt) ─────────────

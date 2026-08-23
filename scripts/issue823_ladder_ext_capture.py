@@ -26,15 +26,21 @@ running P-OwnGen's engine in the same process as the HF capture model):
                    parity probe (64 ORIGINAL contexts re-captured vs the banked
                    pass_b `cx_last` rows; cosine >= 0.999 per row AND median
                    max-rel <= 1e-2 in fp32); (g) span-length unit probe (64
-                   banked b2 answers vs phase3_span_lengths['b2'] positional,
-                   >= 63/64 exact).
+                   banked common-valid b2 answers vs phase3_span_lengths['b2']
+                   positional under the PARENT's persistence semantics:
+                   stored = min(own_bare, pair_template_diff) when own_bare > 0
+                   else pair_template_diff, own_bare = BARE tokenization of the
+                   a_prime answer text (run_823 phase 3); >= 63/64 exact).
   --phase owngen   43,000 Qwen-2.5-7B-Instruct vLLM rollouts on the extension
                    contexts (temp 1.0 / top_p 0.95 / seed 42 / max_tokens 1024
                    -- the #779 pass-B own-answer recipe), chunk-checkpointed;
                    own-rollout TEXTS + own_len_ext.json uploaded to HF
                    raw_completions/ladder_ext_own/ BEFORE capture consumes the
-                   lengths; own_len computed by the SAME tokenization path the
-                   capture rig uses (validated by probe (g)).
+                   lengths; own_len computed under the PARENT's own-length
+                   convention -- BARE tokenization of the own answer text
+                   (run_823 phase 3), the own side of min(own, pair) -- while
+                   the pair side stays the template-diff span (both conventions
+                   validated by probe (g) on the banked b2 arm).
   --phase capext   43,000 context forwards -> cx_ext_block{b}.pt and 83,313
                    pair forwards -> v_pairs_ext_p{00..15}_block{b}.pt (fp32,
                    batch 8, left-pad, GENERATION_SUFFIX assert; span-mean with
@@ -522,9 +528,12 @@ def stage_banked_inputs(layout: Layout) -> dict:
     """Stage every banked pin the round consumes (idempotent; pinned revisions).
 
     Banked ladder gen records + roster/assignment at BANKED_LADDER_REV;
-    phase3_span_lengths.json + b2_seed42.json (+ common_valid_idx) at
-    PARENT_REV; the pass_b bundle at PASS_B_REV; the parent pair store
-    (17 files, staged for the fits phase per plan section 4.3).
+    phase3_span_lengths.json + b2_seed42.json + arm_a_prime_seed42.json
+    (+ common_valid_idx) at PARENT_REV; the pass_b bundle at PASS_B_REV; the
+    parent pair store (17 files, staged for the fits phase per plan
+    section 4.3). The a_prime records + common-valid id set feed probe (g)'s
+    producer-faithful expected value (own_bare truncation side + the parent's
+    common-valid zeroing).
     """
     d = layout.banked_dir
     gen_paths, gen_rev = CAP.fetch_gen_inputs(
@@ -541,6 +550,35 @@ def stage_banked_inputs(layout: Layout) -> dict:
     questions_prefix, in_common, mask_crosscheck = load_frozen_questions(d)
     b2_path = d / EXTGEN.GEN.PARENT_PREFIX / "raw_completions" / "phase1" / "b2_seed42.json"
     b2_records = json.loads(b2_path.read_text())
+    # a_prime answer texts: probe (g)'s own_bare truncation side (run_823 phase 3
+    # banks b2 spans as min(bare(a_prime_text), template_diff(b2_text))). Observed
+    # schema at PARENT_REV 8039d15f...: rows keyed
+    # {answer_text, context_id, n_tokens, question}, positional 0..4999.
+    a_prime_path = pathlib.Path(
+        retry_transient(
+            lambda: hf_hub_download(
+                DATA_REPO,
+                f"{EXTGEN.GEN.PARENT_PREFIX}/raw_completions/phase05/arm_a_prime_seed42.json",
+                repo_type="dataset",
+                revision=PARENT_REV,
+                local_dir=d,
+            ),
+            what="hf_hub_download(phase05/arm_a_prime_seed42.json)",
+        )
+    )
+    a_prime_records = json.loads(a_prime_path.read_text())
+    a_prime_ids = [r["context_id"] for r in a_prime_records]
+    if a_prime_ids != list(range(N_CONTEXTS_FULL)):
+        raise RuntimeError(
+            "arm_a_prime_seed42.json context_id sequence is not monotone-unique 0..4999 — "
+            "positional own-length indexing would misalign; refusing to proceed"
+        )
+    a_prime_texts = [r["answer_text"] for r in a_prime_records]
+    # The parent's common-valid zeroing source (run_823 phase 3 reads
+    # common_valid_idx.json, NOT the per-record ride-along field); the file is
+    # already staged by load_frozen_questions above.
+    cv_path = d / EXTGEN.GEN.PARENT_PREFIX / "raw_completions" / "phase1" / "common_valid_idx.json"
+    common_valid_ids = set(json.loads(cv_path.read_text())["common_valid_idx"])
     pass_b_path = pathlib.Path(
         retry_transient(
             lambda: hf_hub_download(
@@ -579,6 +617,8 @@ def stage_banked_inputs(layout: Layout) -> dict:
         "in_common": in_common,
         "mask_crosscheck": mask_crosscheck,
         "b2_records": b2_records,
+        "a_prime_texts": a_prime_texts,
+        "common_valid_ids": common_valid_ids,
         "pass_b_path": pass_b_path,
         "parent_store_paths": store_paths,
     }
@@ -877,33 +917,97 @@ def gate_e_duplicates(questions_by_id: dict[int, str], layout: Layout) -> dict:
 # ── Probes (f) + (g) ─────────────────────────────────────────────────────────
 
 
+def own_span_length(tokenizer, own_text: str) -> int:
+    """Own-answer span length under the PARENT's convention (run_823 phase 3):
+    BARE tokenization of the answer text — no chat template, no end-of-turn
+    tokens (0 for empty text). This is the OWN side of the min(own, pair)
+    truncation; the PAIR side stays the template-diff span
+    (`template_span_length`), exactly as the parent's
+    `_tf_extract_arm(a_prime_lengths=...)` call realized it. On seam-clean rows
+    the template-diff span exceeds this by the 2 end-of-turn tokens
+    (`<|im_end|>` + `\\n`) — conflating the two conventions is the #823 rc=17
+    crash class (probe (g) validates both on the banked b2 arm)."""
+    if not own_text:
+        return 0
+    return len(tokenizer(own_text, return_tensors=None, add_special_tokens=False)["input_ids"])
+
+
 def probe_g_span_unit(
-    tokenizer, b2_records: list[dict], span_d: dict[str, list[int]], eval_dir: pathlib.Path
+    tokenizer,
+    b2_records: list[dict],
+    span_d: dict[str, list[int]],
+    a_prime_texts: list[str],
+    common_valid_ids: set[int],
+    eval_dir: pathlib.Path,
 ) -> dict:
-    """(g) recompute pair span lengths for 64 banked b2 answers with the
-    extension rule; compare vs phase3_span_lengths['b2'] positionally
-    (>= 63/64 exact => PASS, else rc 17)."""
-    picked = [r for r in b2_records if r.get("filled") and r.get("answer_text")]
+    """(g) recompute pair span lengths for 64 banked common-valid b2 answers
+    under the PARENT's persistence semantics; compare vs
+    phase3_span_lengths['b2'] positionally (>= 63/64 exact => PASS, else rc 17).
+
+    The parent (`run_823.py` phase 3) banks span_lengths[i] =
+    min(own_bare_i, raw_i) when own_bare_i > 0 else raw_i, where raw_i is the
+    b2 answer's template-diff span (full_len - prompt_len via
+    `template_span_length`) and own_bare_i is the BARE tokenization length of
+    the a_prime answer text (no chat template, no end-of-turn tokens) — NOT
+    span_d['a_prime'][i], which is the a_prime arm's own template-diff span
+    (= own_bare + 2 end-of-turn tokens on seam-clean rows; #823 rc=17 crash
+    round). Dual drift check, preserving tokenization-drift catching power on
+    both conventions: untruncated rows (own_bare >= raw, or own_bare == 0)
+    must equal the recomputed raw (template-path catcher); truncated rows
+    (0 < own_bare < raw) must equal the recomputed own_bare (bare-path +
+    min-rule catcher). Non-common-valid contexts are excluded from picking:
+    the parent zeroed every arm text there (banked span 0 by construction), so
+    they carry no tokenization signal. Aggregate floor UNCHANGED: >= 63/64.
+    """
+    picked = [
+        r
+        for r in b2_records
+        if r.get("filled") and r.get("answer_text") and r["context_id"] in common_valid_ids
+    ]
     picked = picked[:PROBE_N_CONTEXTS]
     if len(picked) < PROBE_N_CONTEXTS:
         raise RuntimeError(
-            f"probe (g): only {len(picked)} filled b2 records available (< {PROBE_N_CONTEXTS})"
+            f"probe (g): only {len(picked)} filled common-valid b2 records available "
+            f"(< {PROBE_N_CONTEXTS})"
         )
     n_exact = 0
+    n_trunc = n_trunc_exact = 0
+    n_untrunc = n_untrunc_exact = 0
     mismatches: list[dict] = []
     for r in picked:
         i = r["context_id"]
         prompt_len, full_len = CAP.template_span_length(tokenizer, r["question"], r["answer_text"])
-        got = full_len - prompt_len
+        raw = full_len - prompt_len
+        own_text = a_prime_texts[i]
+        own = own_span_length(tokenizer, own_text)
+        expected = min(own, raw) if own > 0 else raw
         want = span_d["b2"][i]
-        if got == want:
+        if 0 < own < raw:
+            n_trunc += 1
+            n_trunc_exact += int(want == own)
+        else:
+            n_untrunc += 1
+            n_untrunc_exact += int(want == raw)
+        if want == expected:
             n_exact += 1
         else:
-            mismatches.append({"context_id": i, "recomputed": got, "stored": want})
+            mismatches.append(
+                {
+                    "context_id": i,
+                    "recomputed_raw": raw,
+                    "own_bare": own,
+                    "expected": expected,
+                    "stored": want,
+                }
+            )
     report = {
         "n_checked": len(picked),
         "n_exact": n_exact,
         "min_exact": PROBE_G_MIN_EXACT,
+        "n_truncated_checked": n_trunc,
+        "n_truncated_exact": n_trunc_exact,
+        "n_untruncated_checked": n_untrunc,
+        "n_untruncated_exact": n_untrunc_exact,
         "mismatches_first10": mismatches[:10],
     }
     if n_exact < PROBE_G_MIN_EXACT:
@@ -1372,7 +1476,14 @@ def phase_p0ext(args, layout: Layout) -> None:
     from transformers import AutoTokenizer
 
     tokenizer = AutoTokenizer.from_pretrained(DEFAULT_MODEL, trust_remote_code=True)
-    probe_g = probe_g_span_unit(tokenizer, banked["b2_records"], banked["span_d"], layout.eval_dir)
+    probe_g = probe_g_span_unit(
+        tokenizer,
+        banked["b2_records"],
+        banked["span_d"],
+        banked["a_prime_texts"],
+        banked["common_valid_ids"],
+        layout.eval_dir,
+    )
 
     report = {
         "metadata": metadata,
@@ -1590,7 +1701,11 @@ def phase_owngen(args, layout: Layout) -> None:
             )
         _reap_vllm(llm)
 
-    # own_len via the SAME tokenization path the capture rig uses (probe (g)).
+    # own_len via the PARENT's own-length convention: BARE tokenization of the
+    # own answer text (run_823 phase 3), NOT the template-diff span — the
+    # template diff exceeds it by the 2 end-of-turn tokens on seam-clean rows
+    # and would over-allow the min(own, pair) truncation vs parent parity
+    # (validated by probe (g) on the banked b2 arm; #823 rc=17 crash round).
     log_phase("owngen_ownlen")
     own_len: dict[str, int] = {}
     n_zero = 0
@@ -1605,8 +1720,7 @@ def phase_owngen(args, layout: Layout) -> None:
                 own_len[str(r["context_id"])] = 0
                 n_zero += 1
                 continue
-            prompt_len, full_len = CAP.template_span_length(tokenizer, r["question"], r["own_text"])
-            span = full_len - prompt_len
+            span = own_span_length(tokenizer, r["own_text"])
             if span < 1:
                 span = 0
                 n_zero += 1
