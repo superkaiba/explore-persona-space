@@ -11,12 +11,19 @@ gate-FAIL => generation fires), the gen manifest-contract assert (each failure
 class), the judge-wave completeness predicate, the cross-shard merge guard,
 and the fresh-rows panel contract.
 
+Round-4 review additions: the decsens hero-figure negative-yerr regression
+(``_wilson_ci(0, n)`` FP-roundoff lower bound at ``frac_coherent == 0.0``),
+the fresh-file recipe validation (arm/model/sampling vs the registry row),
+the judge-model instrument pin (parent-recorded vs resolved), and the
+gen-upload attempt-all-then-raise parity semantics.
+
 Content hygiene: all fixture text is synthetic placeholder prose — no real
 corpus rows appear anywhere in this file.
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 from pathlib import Path
@@ -273,3 +280,416 @@ def test_validate_fresh_rows_contract():
         mod._validate_fresh_rows_contract(
             [{"prompt_idx": 0}, {"prompt_idx": 7}], manifest, "base_chat_seed42.jsonl"
         )
+
+
+# ---------------------------------------------------------------------------
+# C0 condition-set registry + decoding-sensitivity paths (plan v5)
+# ---------------------------------------------------------------------------
+
+
+def test_condition_sets_registry_shape_and_parent_literals():
+    assert set(mod.CONDITION_SETS) == {"parent", "decoding-sensitivity"}
+    parent = mod.CONDITION_SETS["parent"]
+    # The parent set reproduces the parent round's phase_gen literals VERBATIM (parity bar).
+    assert parent == (
+        ("base_chat", "chat", 1.0, ("<|im_end|>",)),
+        ("base_bare", "bare", 1.0, ("\nUser:", "\n\nUser:")),
+    )
+    dec = mod.CONDITION_SETS["decoding-sensitivity"]
+    assert [r[0] for r in dec] == [
+        "base_chat_t07",
+        "base_chat_t00",
+        "base_bare_t07",
+        "base_bare_t00",
+    ]
+    assert [r[2] for r in dec] == [0.7, 0.0, 0.7, 0.0]
+    for _slug, render, _temp, stop in dec:
+        ref = parent[0] if render == "chat" else parent[1]
+        assert stop == ref[3]  # stop strings inherit the parent's per-render literals
+    assert mod.DECSENS_ARM_NAMES == (
+        "arm_base_chat_t07",
+        "arm_base_chat_t00",
+        "arm_base_bare_t07",
+        "arm_base_bare_t00",
+    )
+    assert mod.DECSENS_PILOT_TARGET_TOTAL_DRAWS == 208
+    assert [p[:2] for p in mod.DECSENS_PAIR_SPECS] == [
+        ("chat_t07_minus_chat_t10", "arm_base_chat_t07"),
+        ("chat_t00_minus_chat_t10", "arm_base_chat_t00"),
+        ("bare_t07_minus_bare_t10", "arm_base_bare_t07"),
+        ("bare_t00_minus_bare_t10", "arm_base_bare_t00"),
+    ]
+
+
+def test_parse_args_default_condition_set_is_parent(monkeypatch):
+    monkeypatch.setattr(sys, "argv", ["issue2477_base_coherence.py", "--phase", "aggregate"])
+    args = mod._parse_args()
+    assert args.condition_set == "parent"
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "issue2477_base_coherence.py",
+            "--phase",
+            "gen",
+            "--condition-set",
+            "decoding-sensitivity",
+        ],
+    )
+    assert mod._parse_args().condition_set == "decoding-sensitivity"
+
+
+def test_gen_manifest_contract_rejects_bad_registry_temperature(monkeypatch):
+    m = _manifest()
+    bad = {
+        "parent": mod.CONDITION_SETS["parent"],
+        "decoding-sensitivity": (("base_chat_tbad", "chat", 2.5, ("<|im_end|>",)),),
+    }
+    monkeypatch.setattr(mod, "CONDITION_SETS", bad)
+    with pytest.raises(RuntimeError, match="gen manifest contract failed") as ei:
+        mod._assert_gen_manifest_contract(m, m["chat_items"][:5], smoke=True)
+    assert "temperature" in str(ei.value) and "base_chat_tbad" in str(ei.value)
+    # bool must not alias a valid temperature (type gate: True would pass 0.0 <= t <= 2.0)
+    monkeypatch.setattr(
+        mod, "CONDITION_SETS", {"decoding-sensitivity": (("x", "chat", True, ("<|im_end|>",)),)}
+    )
+    with pytest.raises(RuntimeError, match="gen manifest contract failed"):
+        mod._assert_gen_manifest_contract(m, m["chat_items"][:5], smoke=True)
+
+
+def test_gen_decsens_requires_set_specific_out_root():
+    ns = argparse.Namespace(
+        smoke=False,
+        force=False,
+        condition_set="decoding-sensitivity",
+        out="/workspace/results/issue_2477",
+    )
+    with pytest.raises(SystemExit, match="set-specific --out"):
+        mod.phase_gen(ns)
+
+
+def _write_decsens_fresh_fixture(fresh: Path, m: dict) -> None:
+    """Registry-conformant fresh files for all 4 decsens arms (recipe fields included —
+    the round-4 recipe validation requires arm/model/sampling to match the registry row)."""
+    for slug, _r, temp, stop in mod.CONDITION_SETS["decoding-sensitivity"]:
+        rows = [
+            {
+                "prompt_idx": it["prompt_idx"],
+                "prompt": it["prompt"],
+                "response": f"synthetic response {slug} {it['prompt_idx']}",
+                "finish_reason": "stop",
+                "arm": slug,
+                "model": mod.MODEL_BASE,
+                "sampling": mod._registry_sampling_record(temp, list(stop)),
+            }
+            for it in m["chat_items"]
+        ]
+        mod._write_jsonl(fresh / f"{slug}_seed42.jsonl", rows)
+
+
+def test_build_arms_decoding_sensitivity(monkeypatch, tmp_path):
+    m = _manifest()
+    monkeypatch.setattr(mod, "DECSENS_EVAL_DIR", tmp_path)
+    fresh = tmp_path / "fresh_completions"
+    _write_decsens_fresh_fixture(fresh, m)
+    arms = mod.build_arms(m, condition_set="decoding-sensitivity")
+    assert set(arms) == set(mod.DECSENS_ARM_NAMES)
+    for name, a in arms.items():
+        assert len(a.items) == mod.N_CHAT
+        assert all(iid.startswith(f"{name}--") for iid, _q, _ans in a.items)
+        assert all("__" not in iid for iid, _q, _ans in a.items)
+        assert a.cap_hit and not any(a.cap_hit.values())
+        assert all(isinstance(a.pair_key[iid], int) for iid, _q, _ans in a.items)
+    # prompt-hash mismatch fail-fast (panel asserts unchanged on the decsens path)
+    bad_rows = mod._read_jsonl(fresh / "base_chat_t07_seed42.jsonl")
+    bad_rows[0]["prompt"] = "tampered synthetic prompt"
+    mod._write_jsonl(fresh / "base_chat_t07_seed42.jsonl", bad_rows)
+    with pytest.raises(RuntimeError, match="prompt text mismatch"):
+        mod.build_arms(m, condition_set="decoding-sensitivity")
+
+
+@pytest.mark.parametrize(
+    ("mutate", "want"),
+    [
+        # a correct-panel file whose rows record the WRONG temperature (e.g. a stale/swapped
+        # t07 file renamed to t00) must fail loud BEFORE any judge spend
+        (lambda r: r["sampling"].__setitem__("temperature", 0.7), "sampling.temperature"),
+        (lambda r: r.__setitem__("arm", "base_chat_t07"), "'arm'"),
+        (lambda r: r.__setitem__("model", "Qwen/Qwen2.5-7B-Instruct"), "'model'"),
+        (lambda r: r["sampling"].__setitem__("stop", ["\nUser:"]), "sampling.stop"),
+        (lambda r: r.__setitem__("sampling", None), "'sampling'"),
+    ],
+)
+def test_build_arms_decsens_rejects_recipe_mismatch(monkeypatch, tmp_path, mutate, want):
+    """Round-4 blocker decsens-fresh-recipe-unvalidated: build_arms must refuse a fresh file
+    whose realized recipe record deviates from the registry row (file/row/field named)."""
+    m = _manifest()
+    monkeypatch.setattr(mod, "DECSENS_EVAL_DIR", tmp_path)
+    fresh = tmp_path / "fresh_completions"
+    _write_decsens_fresh_fixture(fresh, m)
+    rows = mod._read_jsonl(fresh / "base_chat_t00_seed42.jsonl")
+    mutate(rows[0])
+    mod._write_jsonl(fresh / "base_chat_t00_seed42.jsonl", rows)
+    with pytest.raises(RuntimeError, match="registry recipe mismatch") as ei:
+        mod.build_arms(m, condition_set="decoding-sensitivity")
+    msg = str(ei.value)
+    assert want in msg
+    assert "base_chat_t00_seed42.jsonl" in msg  # file named
+    assert "prompt_idx=" in msg  # row named
+
+
+def test_decsens_verdict_tokens():
+    assert mod._decsens_verdict_token(0.85, 0.80) == "render-and-sampling"
+    assert mod._decsens_verdict_token(0.80, 0.80) == "render-and-sampling"  # Δ ≥ 0 boundary
+    assert mod._decsens_verdict_token(0.28, 0.80) == "render-driven"
+
+
+def test_parent_item_means_real_committed_judge_raw():
+    """Plan v5 §4 C0 unit check: the cross-temperature comparator path runs against the REAL
+    committed parent judge_raw files (via the production loader — git-blob fallback covers
+    sparse checkouts) and reproduces the committed parent verdict's frac_coherent values."""
+    verdict = mod._read_committed_json("eval_results/issue_2477/coherence_verdict.json")
+    for arm in ("arm_base_chat", "arm_base_bare"):
+        means = mod._parent_item_means(arm)
+        committed = verdict["arms"][arm]["frac_coherent"]
+        assert len(means) == committed["n_kept"]
+        assert all(isinstance(k, int) for k in means)
+        assert all(0.0 <= v <= 100.0 for v in means.values())
+        n_coh = sum(1 for v in means.values() if v >= mod.COHERENT_THRESHOLD)
+        assert n_coh == committed["n_coherent"]
+        assert n_coh / len(means) == pytest.approx(committed["value"])
+        # item means match the committed per-item map exactly (kept-draw semantics parity)
+        per_item = verdict["per_item_mean_scores"][arm]
+        assert {int(k.rsplit("--", 1)[1]): v for k, v in per_item.items()} == pytest.approx(means)
+
+
+def test_parent_item_means_fail_fast(monkeypatch):
+    monkeypatch.setattr(mod, "_read_committed_json", lambda rel: {"all_scores": {}})
+    with pytest.raises(RuntimeError, match="all_scores empty"):
+        mod._parent_item_means("arm_base_chat")
+    monkeypatch.setattr(
+        mod,
+        "_read_committed_json",
+        lambda rel: {"all_scores": {"other_arm--3__00000__00": {"score": 50}}},
+    )
+    with pytest.raises(RuntimeError, match="unexpected item id"):
+        mod._parent_item_means("arm_base_chat")
+    # all draws dropped (REFUSAL) => zero kept draws, fail loud
+    monkeypatch.setattr(
+        mod,
+        "_read_committed_json",
+        lambda rel: {"all_scores": {"arm_base_chat--0__00000__00": {"score": "REFUSAL"}}},
+    )
+    with pytest.raises(RuntimeError, match="zero kept draws"):
+        mod._parent_item_means("arm_base_chat")
+
+
+def test_paired_delta_vs_parent_exclusion_semantics():
+    a = mod.ArmData(name="arm_base_chat_t07")
+    stats = {
+        "n_items": 4,
+        "kept_scores": {
+            "arm_base_chat_t07--0": 80.0,
+            "arm_base_chat_t07--1": 60.0,
+            "arm_base_chat_t07--3": 40.0,
+        },
+    }
+    for iid in stats["kept_scores"]:
+        a.pair_key[iid] = int(iid.rsplit("--", 1)[1])
+    parent_means = {0: 70.0, 1: 65.0, 2: 50.0}  # idx 2 unkept on the new side, 3 on parent's
+    out = mod._paired_delta_vs_parent(stats, a, parent_means)
+    assert out["n_pairs"] == 2
+    assert out["n_excluded_pairs"] == 2
+    assert out["per_pair_delta"] == {"0": 10.0, "1": -5.0}
+    assert out["mean_delta"] == pytest.approx(2.5)
+
+
+def test_aggregate_decsens_core_synthetic(tmp_path, monkeypatch):
+    """Executes the real _aggregate_decsens_core body end-to-end on a tiny synthetic fixture
+    (real _arm_stats over real judge_raw files); only the parent comparator loader — which has
+    its own real-committed-file test above — is monkeypatched."""
+
+    def _mk_arm(slug: str, n: int = 4) -> mod.ArmData:
+        name = f"arm_{slug}"
+        a = mod.ArmData(name=name)
+        for i in range(n):
+            iid = f"{name}--{i}"
+            a.items.append((iid, f"synthetic q {i}", f"synthetic answer {i} words " * (i + 1)))
+            a.pair_key[iid] = i
+            a.cap_hit[iid] = False
+        return a
+
+    arms = {f"arm_{s}": _mk_arm(s) for s, _r, _t, _st in mod.CONDITION_SETS["decoding-sensitivity"]}
+    save_raw = {}
+    for name, arm in arms.items():
+        score = 90 if name.endswith("t07") else 40
+        all_scores = {
+            f"{iid}__{j:05d}__00": {"score": score, "stop_reason": "end_turn"}
+            for j, (iid, _q, _ans) in enumerate(arm.items)
+        }
+        p = tmp_path / f"judge_raw_{name}.json"
+        # judge_model matches the committed parent instrument (the round-4 identity check
+        # inside _aggregate_decsens_core reads the REAL committed parent judge_raw files).
+        p.write_text(
+            json.dumps({"all_scores": all_scores, "judge_model": "claude-sonnet-4-5-20250929"}),
+            encoding="utf-8",
+        )
+        save_raw[name] = p
+    parent = {0: 50.0, 1: 50.0, 2: 50.0}  # idx 3 unkept on the parent side => 1 excluded pair
+    monkeypatch.setattr(mod, "_parent_item_means", lambda arm: dict(parent))
+
+    payload = mod._aggregate_decsens_core(arms, save_raw, tmp_path / "verdict.json")
+    assert (tmp_path / "verdict.json").exists()
+    assert payload["condition_set"] == "decoding-sensitivity"
+    assert payload["verdict"]["arm"] == "arm_base_chat_t07"
+    assert payload["verdict"]["frac_coherent"] == 1.0  # all t07 item means = 90 >= 50
+    assert payload["verdict"]["token"] == "render-and-sampling"
+    assert payload["arms"]["arm_base_chat_t00"]["frac_coherent"]["value"] == 0.0
+    pairs = payload["paired_deltas_vs_parent_t10"]
+    assert set(pairs) == {k for k, _n, _p in mod.DECSENS_PAIR_SPECS}
+    for key, _new, _par in mod.DECSENS_PAIR_SPECS:
+        assert pairs[key]["n_pairs"] == 3
+        assert pairs[key]["n_excluded_pairs"] == 1
+    assert pairs["chat_t07_minus_chat_t10"]["mean_delta"] == pytest.approx(40.0)
+    assert pairs["chat_t00_minus_chat_t10"]["mean_delta"] == pytest.approx(-10.0)
+    comp = payload["parent_comparators"]
+    assert set(comp) == {"arm_base_chat", "arm_base_bare"}
+    assert comp["arm_base_chat"]["frac_coherent"]["value"] == 1.0  # 50.0 >= threshold 50
+    # per-item maps stripped from arms, kept in the dedicated sections
+    assert "kept_scores" not in payload["arms"]["arm_base_chat_t07"]
+    assert set(payload["per_item_mean_scores"]) == set(mod.DECSENS_ARM_NAMES)
+
+
+def test_aggregate_and_figures_refuse_decsens_smoke():
+    for phase, token in ((mod.phase_aggregate, "aggregate"), (mod.phase_figures, "figures")):
+        ns = argparse.Namespace(smoke=True, condition_set="decoding-sensitivity")
+        with pytest.raises(SystemExit, match=f"{token} --smoke is parent-only"):
+            phase(ns)
+
+
+# ---------------------------------------------------------------------------
+# Round-4 review fixes: judge-model pin, figure yerr clamp, upload parity
+# ---------------------------------------------------------------------------
+
+
+def test_decsens_judge_model_pin(monkeypatch):
+    """Round-4 blocker decsens-judge-model-unpinned: the resolved judge model must equal the
+    parent round's recorded instrument (env JUDGE_MODEL override refused at dispatch)."""
+    import explore_persona_space.eval as eval_pkg
+
+    # The committed parent comparator files record the canonical project judge.
+    assert mod._parent_recorded_judge_model() == "claude-sonnet-4-5-20250929"
+    monkeypatch.setattr(eval_pkg, "DEFAULT_JUDGE_MODEL", "claude-sonnet-4-5-20250929")
+    mod._assert_decsens_judge_model_pinned()  # identity => no raise
+    monkeypatch.setattr(eval_pkg, "DEFAULT_JUDGE_MODEL", "some-other-judge")
+    with pytest.raises(RuntimeError, match="resolved judge model"):
+        mod._assert_decsens_judge_model_pinned()
+
+
+def test_parent_recorded_judge_model_fail_fast(monkeypatch):
+    monkeypatch.setattr(mod, "_read_committed_json", lambda rel: {"all_scores": {}})
+    with pytest.raises(RuntimeError, match="judge_model missing/inconsistent"):
+        mod._parent_recorded_judge_model()
+
+
+def test_aggregate_decsens_core_rejects_judge_model_mismatch(tmp_path):
+    """A fresh judge_raw scored under a DIFFERENT judge than the parent comparators must
+    refuse aggregation (the paired deltas require instrument identity)."""
+    p = tmp_path / "judge_raw_arm_base_chat_t07.json"
+    p.write_text(
+        json.dumps({"judge_model": "some-other-judge", "all_scores": {}}), encoding="utf-8"
+    )
+    with pytest.raises(RuntimeError, match="one instrument"):
+        mod._aggregate_decsens_core({}, {"arm_base_chat_t07": p}, tmp_path / "verdict.json")
+
+
+def _decsens_fig_payload() -> dict:
+    """Minimal decsens verdict payload for _render_figures_decsens with ONE arm at
+    frac_coherent == 0.0 whose Wilson interval comes from the REAL _wilson_ci(0, n) —
+    the round-4 negative-yerr regression input (lo = +2.8e-17 FP roundoff)."""
+    arms: dict = {}
+    per_item: dict = {}
+    per_d3: dict = {}
+    for name in mod.DECSENS_ARM_NAMES:
+        zero = name == "arm_base_chat_t00"
+        k, n = (0, 6) if zero else (5, 6)
+        lo, hi = mod._wilson_ci(k, n)
+        if zero and lo <= 0.0:  # last-bit drift is machine-dependent: pin the measured
+            lo = 2.7755575615628914e-17  # incident value so the regression input holds
+        arms[name] = {
+            "frac_coherent": {"value": k / n, "wilson_ci95": [lo, hi]},
+            "cap_hit_fraction": 0.1,
+            "mean": 0.0 if zero else 82.5,
+            "mean_ci95": [0.0, 0.0] if zero else [80.0, 85.0],
+        }
+        per_item[name] = {f"{name}--{i}": (0.0 if zero else 80.0 + i) for i in range(n)}
+        per_d3[name] = {f"{name}--{i}": 0.5 for i in range(n)}
+    parents = {}
+    for name, k in (("arm_base_chat", 56), ("arm_base_bare", 142)):
+        lo, hi = mod._wilson_ci(k, 200)
+        parents[name] = {
+            "frac_coherent": {"value": k / 200, "wilson_ci95": [lo, hi]},
+            "mean": 45.0,
+        }
+    pairs = {
+        key: {"per_pair_delta": {"0": 1.0, "1": -2.0}} for key, _n, _p in mod.DECSENS_PAIR_SPECS
+    }
+    return {
+        "arms": arms,
+        "parent_comparators": parents,
+        "paired_deltas_vs_parent_t10": pairs,
+        "per_item_mean_scores": per_item,
+        "per_item_distinct_3gram": per_d3,
+    }
+
+
+def test_render_figures_decsens_zero_frac_arm_regression(tmp_path):
+    """Round-4 Major: at frac_coherent == 0.0 the Wilson lower bound is +2.8e-17 (FP
+    roundoff), so the un-clamped hero errorbar passed a negative lower yerr and matplotlib
+    raised ValueError. Fails pre-fix (the ValueError), passes with the call-site clamps."""
+    payload = _decsens_fig_payload()
+    assert payload["arms"]["arm_base_chat_t00"]["frac_coherent"]["wilson_ci95"][0] > 0.0
+    written = mod._render_figures_decsens(payload, tmp_path)
+    stems = {p.stem for p in written if p.suffix == ".png"}
+    assert "decoding_sensitivity_coherence_by_arm" in stems
+    assert len(stems) == 6
+    assert all(p.exists() and p.stat().st_size > 0 for p in written)
+
+
+def test_upload_gen_outputs_attempts_all_then_raises(monkeypatch, tmp_path):
+    """Round-4 blocker default-parent-upload-parity: EVERY file's upload is attempted before
+    the combined failure check (the parent round's u1/u2/u3-then-check semantics), and the
+    raise names every empty-url file."""
+    import explore_persona_space.orchestrate.hub as hub
+
+    paths = [tmp_path / n for n in ("a_seed42.jsonl", "b_seed42.jsonl", "gen_meta.json")]
+    for p in paths:
+        p.write_text("{}\n", encoding="utf-8")
+    calls: list[str] = []
+
+    def fake_upload(
+        local_path: Path,
+        repo_id: str,
+        repo_type: str,
+        path_in_repo: str,
+        delete_after: bool = False,
+        upload_as_file: bool = False,
+        ignore_patterns: list[str] | None = None,
+        private: bool = False,
+        raise_on_error: bool = False,
+    ) -> str:
+        """Signature mirror of hub._upload; the two JSONL uploads 'fail' with an empty url."""
+        calls.append(local_path.name)
+        return "" if local_path.suffix == ".jsonl" else f"https://hf.co/{path_in_repo}"
+
+    monkeypatch.setattr(hub, "_upload", fake_upload)
+    with pytest.raises(RuntimeError, match="empty url") as ei:
+        mod._upload_gen_outputs(paths, "prefix/generation")
+    # ALL files attempted, in order, before the combined check; every failure named.
+    assert calls == ["a_seed42.jsonl", "b_seed42.jsonl", "gen_meta.json"]
+    assert "a_seed42.jsonl" in str(ei.value) and "b_seed42.jsonl" in str(ei.value)
+    assert "gen_meta.json" not in str(ei.value)
+
+    calls.clear()
+    mod._upload_gen_outputs(paths[2:], "prefix/generation")  # 3rd call onward succeeds
+    assert calls == ["gen_meta.json"]
