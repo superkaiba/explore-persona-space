@@ -82,9 +82,76 @@ PILOT_INGEN_REL = "eval_results/issue_2479/pilot_gate_ingen.json"
 TARGET_DRAWS = 150  # plan §7: ~150-draw pilot per rubric family
 PARSE_FAIL_MAX = 0.02  # plan §7: parse-fail < 2% per family arm
 INGEN_MIN_EFFECTIVE = 100  # hollow-arm floor for the merged in-gen family arm
+# rule-26 satisfiability floor: at threshold 2% the smallest arm that can hold
+# one failure under the strict `rate >= threshold` gate is floor(1/0.02)+1.
+AXIS_MIN_EFFECTIVE = 51
+MIN_EFFECTIVE_BY_FAMILY = {"axis": AXIS_MIN_EFFECTIVE, "ingen": INGEN_MIN_EFFECTIVE}
 # Opt-in env consumed by `jl.run_leg` (and exported by the P3 wrapper): a real
 # axis-leg spend refuses without a persisted axis-family pilot PASS at this path.
 REQUIRE_AXIS_PILOT_ENV = "EPM_I2479_REQUIRE_AXIS_PILOT_PASS"
+
+
+def axis_instrument_fingerprint() -> dict:
+    """The CANONICAL axis-family production instrument, derived from the SAME
+    `jl` constants `run_leg` dispatches with — never re-typed literals, so a
+    constant change re-fingerprints producer AND expectation together."""
+    return {
+        "judge_model": jl.JUDGE_MODEL,
+        "n_draws": jl.N_DRAWS,
+        "temperature": jl.JUDGE_TEMPERATURE,
+        "max_tokens": jl.JUDGE_MAX_TOKENS,
+        "threshold_base": jl.THRESHOLD_BASE_FORCE_BATCH,
+        # threshold_base=0 forces the Batch API — the wave's dispatch route.
+        "dispatch_route": "forced-batch",
+        "rubric_sha256": hashlib.sha256(jl.AI_LIKENESS_RUBRIC.encode()).hexdigest(),
+    }
+
+
+def ingen_instrument_fingerprint() -> dict:
+    """The CANONICAL in-gen family production instrument (name-INDEPENDENT).
+
+    The judge system prompt embeds the cell's character name at import, so
+    the cross-cell identity uses SOURCE hashes of the gen module's own
+    builder/parser (the exact production seam `dispatch_calls` runs) instead
+    of the name-dependent rendered-prompt shas (those stay per-partial).
+    """
+    import inspect
+
+    import issue1345_gen_stories_paired as gp
+
+    return {
+        "judge_model": c.JUDGE_MODEL,
+        "max_tokens": c.JUDGE_MAX_TOKENS,
+        "temperature": 0.0,
+        # force_path=None: the dispatcher decides, exactly as production.
+        "dispatch_route": "dispatcher-decided",
+        "builder_sha256": hashlib.sha256(
+            inspect.getsource(gp._build_judge_request).encode()
+        ).hexdigest(),
+        "parser_sha256": hashlib.sha256(
+            inspect.getsource(gp._parse_judge_response).encode()
+        ).hexdigest(),
+    }
+
+
+def expected_instrument(family: str) -> dict:
+    """The current-production instrument fingerprint for a pilot family."""
+    assert family in FAMILIES, f"unknown pilot family {family!r}"
+    return axis_instrument_fingerprint() if family == "axis" else ingen_instrument_fingerprint()
+
+
+def _effective_draws(rep: dict, family: str) -> int:
+    """Answered (non-transport-lost) draws of the family arm.
+
+    The merged in-gen report persists `effective_draws` directly;
+    `ArmPilotStats` (axis) has no such field, so derive
+    `n_draws - n_transport_lost` (rule 24: transport losses leave every
+    denominator).
+    """
+    arm = (rep.get("arms") or {}).get(family) or {}
+    if arm.get("effective_draws") is not None:
+        return int(arm["effective_draws"])
+    return int(arm.get("n_draws") or 0) - int(arm.get("n_transport_lost") or 0)
 
 
 def _metadata(script: str) -> dict:
@@ -97,8 +164,27 @@ def _metadata(script: str) -> dict:
     }
 
 
-def require_pilot_pass(report_path: Path, family: str | None = None) -> dict:
-    """Load a persisted pilot report; RAISE unless it is a PASS (returns it)."""
+def require_pilot_pass(
+    report_path: Path,
+    family: str | None = None,
+    *,
+    expected: dict | None = None,
+    min_effective_draws: int | None = None,
+) -> dict:
+    """Load a persisted pilot report; RAISE unless it is a PASS bound to the
+    CURRENT production instrument (returns it).
+
+    A rule-26 pilot PASS certifies ONLY the instrument it ran (llm-judging.md
+    rule 26), so when ``family`` is given this ALSO refuses (r2 codex
+    `judge-pilot-gates-missing` / g6): a report with NO persisted
+    ``instrument`` block; any field of the persisted instrument differing
+    from the current-production fingerprint (``expected`` override for
+    tests); and an effective-draw count below the family floor
+    (``MIN_EFFECTIVE_BY_FAMILY`` — the rule-26 satisfiability floor). Every
+    production spend path routes here: the P3 wrapper's `--require-pass`
+    gate, `jl.run_leg`'s env-armed axis guard, the P1 preamble's ingen gate,
+    and `issue2479_instrument_gates.py`'s flatness/name-mask pilot reuse.
+    """
     report_path = Path(report_path)
     if not report_path.is_file():
         raise RuntimeError(
@@ -116,6 +202,38 @@ def require_pilot_pass(report_path: Path, family: str | None = None) -> dict:
             f"rule-26 pilot gate {rep.get('family')!r} verdict={rep.get('verdict')!r} — "
             f"production dispatch refused (failures: {rep.get('failures')})"
         )
+    if family is not None:
+        exp = expected if expected is not None else expected_instrument(family)
+        inst = rep.get("instrument")
+        if not isinstance(inst, dict):
+            raise RuntimeError(
+                f"{report_path}: pilot report persists NO instrument block — a PASS "
+                "unbound to the production instrument certifies nothing; re-run the "
+                f"pilot on current code (--family {family} --execute)"
+            )
+        mismatches = sorted(
+            f"{k}: report={inst.get(k)!r} != expected={exp[k]!r}"
+            for k in exp
+            if k not in inst or inst[k] != exp[k]
+        )
+        if mismatches:
+            raise RuntimeError(
+                f"{report_path}: persisted pilot instrument does not match the CURRENT "
+                f"production instrument — stale PASS refused; re-pilot (--family {family} "
+                f"--execute). Mismatched fields: {mismatches}"
+            )
+        floor = (
+            min_effective_draws
+            if min_effective_draws is not None
+            else MIN_EFFECTIVE_BY_FAMILY[family]
+        )
+        eff = _effective_draws(rep, family)
+        if eff < floor:
+            raise RuntimeError(
+                f"{report_path}: pilot family {family!r} effective draws {eff} < floor "
+                f"{floor} — an under-powered pilot cannot resolve the {PARSE_FAIL_MAX} "
+                "parse-fail gate (llm-judging.md rule 26 sizing); re-pilot with more draws"
+            )
     return rep
 
 
@@ -183,14 +301,7 @@ def run_axis_pilot(
         "issue": ISSUE,
         "family": "axis",
         **rep.to_json(),
-        "instrument": {
-            "judge_model": jl.JUDGE_MODEL,
-            "n_draws": jl.N_DRAWS,
-            "temperature": jl.JUDGE_TEMPERATURE,
-            "max_tokens": jl.JUDGE_MAX_TOKENS,
-            "threshold_base": jl.THRESHOLD_BASE_FORCE_BATCH,
-            "rubric_sha256": hashlib.sha256(jl.AI_LIKENESS_RUBRIC.encode()).hexdigest(),
-        },
+        "instrument": axis_instrument_fingerprint(),
         "characters_pooled": present,
         "n_pooled_items": len(items),
         "metadata": _metadata("scripts/issue2479_judge_pilots.py"),
@@ -301,9 +412,10 @@ def run_ingen_partial(
         "n_raw_rows": len(rows),
         "n_judged": len(items),
         "instrument": {
-            "judge_model": c.JUDGE_MODEL,
-            "max_tokens": c.JUDGE_MAX_TOKENS,
-            "temperature": 0.0,
+            **ingen_instrument_fingerprint(),
+            # Name-DEPENDENT rendered-prompt shas stay per-partial (the system
+            # prompt embeds this cell's character name at import) — the merge
+            # excludes them from the cross-cell identity check.
             "judge_system_paired_sha256": hashlib.sha256(
                 gp.JUDGE_SYSTEM_PAIRED.encode()
             ).hexdigest(),
@@ -333,6 +445,7 @@ def merge_ingen_partials(
     losses are excluded from every denominator (rule 24) but counted.
     """
     assert partial_paths, "no in-gen pilot partials to merge"
+    _NAME_DEPENDENT = ("judge_system_paired_sha256", "judge_system_op_sha256")
     outcomes: list[dict] = []
     characters: list[str] = []
     instruments: set[str] = set()
@@ -340,12 +453,14 @@ def merge_ingen_partials(
         part = json.loads(Path(p).read_text())
         assert part.get("family") == "ingen" and part.get("kind") == "partial", str(p)
         characters.append(str(part.get("character")))
-        # Name-independent instrument identity: model + budget + temp (the
-        # system prompt legitimately varies per cell in the embedded name).
-        inst = part["instrument"]
-        instruments.add(f"{inst['judge_model']}|{inst['max_tokens']}|{inst['temperature']}")
+        # Name-INDEPENDENT instrument identity: the full fingerprint minus the
+        # per-cell rendered-prompt shas (the system prompt legitimately varies
+        # per cell in the embedded name; builder/parser SOURCE shas do not).
+        inst = {k: v for k, v in part["instrument"].items() if k not in _NAME_DEPENDENT}
+        instruments.add(json.dumps(inst, sort_keys=True))
         outcomes.extend(part["outcomes"])
     assert len(instruments) == 1, f"partials pilot DIFFERENT instruments: {sorted(instruments)}"
+    merged_instrument = json.loads(next(iter(instruments)))
 
     def _is_transport(o: dict) -> bool:
         return bool(o["error"]) and o["category"] in (
@@ -400,6 +515,10 @@ def merge_ingen_partials(
         },
         "parse_fail_threshold": PARSE_FAIL_MAX,
         "min_effective_draws": min_effective,
+        # The merged family report PERSISTS the name-independent instrument the
+        # partials proved identical, so `require_pilot_pass` can bind the PASS
+        # to the exact production instrument (r2 codex judge-pilot-gates).
+        "instrument": merged_instrument,
         "characters_pooled": characters,
         "partials": [str(p) for p in partial_paths],
         "metadata": _metadata("scripts/issue2479_judge_pilots.py"),

@@ -3,7 +3,12 @@
 Pins (hermetic — tmp_path fixtures, zero network / API calls):
 
 (a) `require_pilot_pass` semantics: missing report, FAIL report, family
-    mismatch all RAISE; a PASS report returns;
+    mismatch all RAISE; a PASS report bound to the CURRENT production
+    instrument returns; a PASS with NO persisted instrument block, ANY stale
+    instrument field (model / draws / temperature / max_tokens /
+    threshold_base / route / rubric / builder / parser sha), or an
+    effective-draw count under the family floor RAISES (r3 — r2 codex
+    `judge-pilot-gates-missing` + g6);
 (b) codex `judge-pilot-gates-missing` mechanization: a FAILED (or missing)
     pilot report BLOCKS a real `jl.run_leg` spend via the opt-in
     EPM_I2479_REQUIRE_AXIS_PILOT_PASS env — the guard fires BEFORE any API
@@ -44,6 +49,14 @@ def _report(family: str, verdict: str, failures: list[str] | None = None) -> dic
     }
 
 
+def _full_axis_report(*, n_draws: int = 150, lost: int = 0) -> dict:
+    """A PASS report bound to the CURRENT axis production instrument."""
+    rep = _report("axis", "PASS")
+    rep["instrument"] = dict(jp.axis_instrument_fingerprint())
+    rep["arms"] = {"axis": {"n_draws": n_draws, "n_transport_lost": lost}}
+    return rep
+
+
 # ---------------------------------------------------------------------------
 # (a) require_pilot_pass semantics
 # ---------------------------------------------------------------------------
@@ -66,11 +79,66 @@ def test_require_pass_family_mismatch_raises(tmp_path: Path) -> None:
         jp.require_pilot_pass(p, family="axis")
 
 
-def test_require_pass_pass_report_returns(tmp_path: Path) -> None:
+def test_require_pass_pass_without_instrument_raises(tmp_path: Path) -> None:
+    """r3: a PASS unbound to the production instrument certifies nothing."""
     p = tmp_path / "r.json"
     p.write_text(json.dumps(_report("axis", "PASS")))
+    with pytest.raises(RuntimeError, match="NO instrument block"):
+        jp.require_pilot_pass(p, family="axis")
+
+
+def test_require_pass_instrument_bound_pass_returns(tmp_path: Path) -> None:
+    p = tmp_path / "r.json"
+    p.write_text(json.dumps(_full_axis_report()))
     rep = jp.require_pilot_pass(p, family="axis")
     assert rep["verdict"] == "PASS"
+
+
+@pytest.mark.parametrize("field", sorted(jp.axis_instrument_fingerprint()))
+def test_require_pass_refuses_each_stale_instrument_field(tmp_path: Path, field: str) -> None:
+    """Mutate EVERY canonical instrument field: each stale value refuses the
+    spend (the g6 scenario — a persisted PASS from an older instrument must
+    never license today's production wave)."""
+    rep = _full_axis_report()
+    rep["instrument"][field] = "STALE-VALUE" if isinstance(rep["instrument"][field], str) else -999
+    p = tmp_path / "r.json"
+    p.write_text(json.dumps(rep))
+    with pytest.raises(RuntimeError, match="stale PASS refused"):
+        jp.require_pilot_pass(p, family="axis")
+
+
+def test_require_pass_refuses_missing_instrument_field(tmp_path: Path) -> None:
+    rep = _full_axis_report()
+    del rep["instrument"]["rubric_sha256"]
+    p = tmp_path / "r.json"
+    p.write_text(json.dumps(rep))
+    with pytest.raises(RuntimeError, match="stale PASS refused"):
+        jp.require_pilot_pass(p, family="axis")
+
+
+def test_require_pass_effective_draws_floor(tmp_path: Path) -> None:
+    # 60 - 20 = 40 answered < the 51-draw rule-26 satisfiability floor
+    p = tmp_path / "under.json"
+    p.write_text(json.dumps(_full_axis_report(n_draws=60, lost=20)))
+    with pytest.raises(RuntimeError, match="effective draws"):
+        jp.require_pilot_pass(p, family="axis")
+    # exactly at the floor passes
+    p2 = tmp_path / "at.json"
+    p2.write_text(json.dumps(_full_axis_report(n_draws=60, lost=9)))
+    assert jp.require_pilot_pass(p2, family="axis")["verdict"] == "PASS"
+
+
+def test_require_pass_ingen_merged_instrument_and_floor(tmp_path: Path) -> None:
+    rep = _report("ingen", "PASS")
+    rep["instrument"] = dict(jp.ingen_instrument_fingerprint())
+    rep["arms"] = {"ingen": {"effective_draws": 120, "n_transport_lost": 0}}
+    p = tmp_path / "r.json"
+    p.write_text(json.dumps(rep))
+    assert jp.require_pilot_pass(p, family="ingen")["verdict"] == "PASS"
+    rep["arms"]["ingen"]["effective_draws"] = 50  # < INGEN_MIN_EFFECTIVE=100
+    p.write_text(json.dumps(rep))
+    with pytest.raises(RuntimeError, match="effective draws"):
+        jp.require_pilot_pass(p, family="ingen")
 
 
 # ---------------------------------------------------------------------------
@@ -107,6 +175,60 @@ def test_missing_pilot_blocks_run_leg_spend(
             "t",
             execute=True,
         )
+
+
+def test_stale_instrument_pass_blocks_run_leg_spend(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """g6 scenario end-to-end: an OLD-rubric PASS report blocks the axis spend."""
+    rep = _full_axis_report()
+    rep["instrument"]["rubric_sha256"] = "0" * 64  # a prior rubric's fingerprint
+    stale = tmp_path / "pilot_gate_axis.json"
+    stale.write_text(json.dumps(rep))
+    monkeypatch.setenv(jl.SPEND_ACK_ENV, "1")
+    monkeypatch.setenv(jp.REQUIRE_AXIS_PILOT_ENV, str(stale))
+    out_dir = tmp_path / "legs"
+    with pytest.raises(RuntimeError, match="stale PASS refused"):
+        jl.run_leg(
+            jl.LEG_AI_LIKENESS,
+            [("ail_t_c1", "What?", "an answer long enough")],
+            out_dir,
+            "t",
+            execute=True,
+        )
+    assert not out_dir.exists()
+
+
+def test_instrument_gates_execute_refuses_stale_pilot(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The flatness/name-mask pilot-REUSE guard inherits the instrument binding:
+    an --execute dispatch against a stale-budget PASS report refuses before any
+    panel/leg work."""
+    import issue2479_instrument_gates as ig
+
+    rep = _full_axis_report()
+    rep["instrument"]["max_tokens"] = 64  # a prior (undersized) budget
+    stale = tmp_path / "pilot.json"
+    stale.write_text(json.dumps(rep))
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "issue2479_instrument_gates.py",
+            "--step",
+            "flatness",
+            "--execute",
+            "--axis-pilot-report",
+            str(stale),
+            "--legs-dir",
+            str(tmp_path / "legs"),
+            "--kept-glob",
+            str(tmp_path / "kept_{variant}.jsonl"),
+        ],
+    )
+    with pytest.raises(RuntimeError, match="stale PASS refused"):
+        ig.main()
 
 
 def test_env_absent_keeps_parent_dry_run_behavior(
