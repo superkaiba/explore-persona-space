@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2499,
+  "highest_id": 2500,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11584,6 +11584,13 @@
       "path": "tasks/archived/25",
       "status": "archived",
       "title": "Aim 4.2b: Flexible scoring axes for FineWeb classification"
+    },
+    "2500": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2500",
+      "status": "proposed",
+      "title": "codex-clean-result-critic Step 2(a): add Lens 13 plan-fetch block to the compose replacement mandate"
     },
     "251": {
       "has_clean_result": false,
