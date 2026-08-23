@@ -1,6 +1,6 @@
 ---
-title: Verify base-model completions under the chat template are coherent (paper base-row
-  format check)
+title: Base-model generation under the chat template is mostly incoherent, so the
+  paper's base rows re-state on the bare-text render (HIGH confidence)
 kind: analysis
 tags: []
 created_at: '2026-08-22T20:08:58Z'
