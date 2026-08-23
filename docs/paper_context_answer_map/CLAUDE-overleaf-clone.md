@@ -7,35 +7,19 @@ Rules for any Claude session working in this repo (git clone of Overleaf project
 - ALWAYS `git pull` before reading; commit + push after ANY edit (unpushed edits are
   invisible to Thomas). This Overleaf tree carries ONLY the documents the paper
   compiles from (user directive 2026-08-19) — never commit drafts or build artifacts
-  here. ONE EXCEPTION (Thomas 2026-08-23): the paper plan is mirrored at the Overleaf
-  root as **`plan.tex`**, a standalone compilable root — NOT as `plan.md` (`.md` files
-  do not open in the Overleaf editor; verified 2026-08-23). It is a GENERATED MIRROR:
-  the canonical file stays at EPS `docs/paper_context_answer_map/plan.md`, and any
-  pass that edits the canonical one regenerates + commits + pushes `plan.tex` in the
-  SAME pass. No other planning doc is mirrored. Regeneration (pdfLaTeX-clean, 10 pp,
-  no `style/` dependency):
-
-  ```bash
-  P=~/explore-persona-space/docs/paper_context_answer_map/plan.md
-  cat > /tmp/uni_header.tex <<'EOF'
-  \usepackage{newunicodechar}
-  \newunicodechar{Δ}{\ensuremath{\Delta}}   \newunicodechar{ρ}{\ensuremath{\rho}}
-  \newunicodechar{⇒}{\ensuremath{\Rightarrow}} \newunicodechar{−}{\ensuremath{-}}
-  \newunicodechar{⟵}{\ensuremath{\longleftarrow}} \newunicodechar{→}{\ensuremath{\rightarrow}}
-  \newunicodechar{×}{\ensuremath{\times}}   \newunicodechar{≈}{\ensuremath{\approx}}
-  \newunicodechar{≥}{\ensuremath{\geq}}     \newunicodechar{≤}{\ensuremath{\leq}}
-  \newunicodechar{∥}{\ensuremath{\parallel}} \newunicodechar{⊥}{\ensuremath{\perp}}
-  \newunicodechar{λ}{\ensuremath{\lambda}}  \newunicodechar{σ}{\ensuremath{\sigma}}
-  \newunicodechar{α}{\ensuremath{\alpha}}   \newunicodechar{β}{\ensuremath{\beta}}
-  \newunicodechar{κ}{\ensuremath{\kappa}}   \newunicodechar{√}{\ensuremath{\surd}}
-  EOF
-  pandoc "$P" -f gfm -t latex --standalone --toc --toc-depth=2 \
-    -V documentclass=article -V geometry:margin=1in -V colorlinks=true -V fontsize=10pt \
-    -V title="Paper plan — Context→Answer Map (mirror of the EPS canonical plan.md)" \
-    --include-in-header=/tmp/uni_header.tex -o /tmp/plan_body.tex
-  # re-prepend the GENERATED-FILE banner from the current plan.tex, then commit + push
-  ```
-  Thomas reads it by setting Menu → Settings → Main document → `plan.tex`, Recompile.
+  here. ONE EXCEPTION (Thomas 2026-08-23): **`plan.tex`** at the root — the SIMPLE plan
+  skeleton he reads inside Overleaf (`.md` files do not open in the Overleaf editor;
+  verified 2026-08-23). Format per his spec: Intro/Related-work/Methodology as
+  subsections + bullets; Results as claim + plot + evidence-in-plot + transition
+  blocks; Discussion as implication/limitation → future-work bullets. It is
+  HAND-EDITED and CO-EDITED — never regenerate it from `plan.md` (a regeneration
+  clobbers his edits; the earlier pandoc-mirror scheme was retired 2026-08-23 same
+  day). Division of labor: `plan.tex` = the one-glance structure view, keep it in
+  sync when the paper's structure/claims change (targeted edits, pull first);
+  detailed plan of record = EPS `docs/paper_context_answer_map/plan.md`; per-section
+  working plan blocks = `outline.tex`. No other planning doc lives here. Thomas reads
+  it via Menu → Settings → Main document → `plan.tex`, Recompile (standalone article,
+  no `style/` dependency).
 - STRUCTURE (2026-08-22): TWO roots. `main.tex` = the CLEAN curated paper (inputs
   `sections/clean/` copies only; currently abstract + introduction). `outline.tex` =
   the working surface (2026-08-22 restructure, replaces the retired `draft.tex`):
