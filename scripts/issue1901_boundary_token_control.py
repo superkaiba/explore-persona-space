@@ -1678,66 +1678,18 @@ def phase_p3_publish(args) -> int:
 
 
 # ── fig ─────────────────────────────────────────────────────────────────────────
-
-_R2_KEY = "held-out $R^2$"
-_ACC_KEY = "retrieval acc@1 (pool 1,000)"
-
-
-def _normalize_meta_points(meta: dict) -> Counter:
-    """§7.4 normalization: (panel value-key, _kind, n_train, value, error) tuples —
-    series and _group EXCLUDED (42/304 labeled; _group renumbers on insertion)."""
-    out: Counter = Counter()
-    for p in meta["points"]:
-        if _R2_KEY in p:
-            panel, val = _R2_KEY, p[_R2_KEY]
-        elif _ACC_KEY in p:
-            panel, val = _ACC_KEY, p[_ACC_KEY]
-        else:
-            raise ValueError(f"meta point with no known panel key: {sorted(p)}")
-        err = p.get("error")
-        out[
-            (
-                panel,
-                p.get("_kind"),
-                round(float(p["training contexts"]), 9),
-                round(float(val), 9),
-                round(float(err), 9) if err is not None else None,
-            )
-        ] += 1
-    return out
-
-
-def fig_regression_gate(committed: dict, regenerated: dict, new_label: str) -> None:
-    """§7.4: committed tuple multiset == regenerated minus the new-series points."""
-    inherited = {"points": [p for p in regenerated["points"] if p.get("series") != new_label]}
-    n_new = len(regenerated["points"]) - len(inherited["points"])
-    assert n_new > 0, (
-        f"no regenerated point carries series={new_label!r} — the renderer extension "
-        f"did not label its new series (unit-3 contract)"
-    )
-    a, b = _normalize_meta_points(committed), _normalize_meta_points(inherited)
-    if a != b:
-        gone = list((a - b).items())[:5]
-        extra = list((b - a).items())[:5]
-        raise RuntimeError(
-            f"[fig] §7.4 REGRESSION GATE FAILED — inherited point multiset changed. "
-            f"missing={gone} unexpected={extra}. Do NOT commit; restore with "
-            f"git checkout -- figures/paper/c1_scaling_train_pool.*"
-        )
-    logger.info(
-        "[fig] §7.4 regression gate PASS: %d inherited points unchanged, %d new-series points",
-        sum(a.values()),
-        n_new,
-    )
+# The §7.4 regression gate + its tuple normalization live in the shared renderer
+# module (`issue1901_body_figures.fig_regression_gate`, unit 3/4) — superseded
+# here and deleted per the rewire-then-delete convention; phase_fig calls the
+# canonical one.
 
 
 def phase_fig(args) -> int:
     """Invoke the extended shared renderer + the §7.4 gate + the exploratory dump.
 
-    NOTE (pre-split unit boundary): the renderer-side extension of
-    ``issue1901_body_figures.fig_paper_c1_scaling`` (kwargs ``boundary=``,
-    ``boundary_label=``) is a SEPARATE deliverable; until it lands this call
-    fail-louds with TypeError — deliberate (never stub the renderer here).
+    The renderer-side extension (``issue1901_body_figures.fig_paper_c1_scaling``
+    kwargs ``boundary=`` / ``boundary_label=``) and the canonical
+    ``fig_regression_gate`` landed with unit 3/4 — this phase consumes both.
     """
     C79.phase("fig")
     import issue1901_body_figures as BF
@@ -1769,7 +1721,7 @@ def phase_fig(args) -> int:
         out_dir=out_dir,
     )
     regen_p = (out_dir or (PROJECT_ROOT / "figures" / "paper")) / f"{stem}.meta.json"
-    fig_regression_gate(committed, json.loads(regen_p.read_text()), BOUNDARY_SERIES_LABEL)
+    BF.fig_regression_gate(committed, json.loads(regen_p.read_text()), BOUNDARY_SERIES_LABEL)
 
     # Exploratory dump (blog style, figures/issue_1901/).
     import matplotlib
