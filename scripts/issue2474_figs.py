@@ -259,8 +259,8 @@ def build_layers(ctx: dict) -> list[tuple[str, "plt.Figure", dict]]:
         notes = {
             "variant": "full",
             "dv": "level",
-            "errorbar_definition": "none rendered; per-layer bootstrap CIs live in "
-            "prefit_stats.json families.<arm>.pooled.level.ci95_by_layer",
+            "errorbar_definition": "none rendered; a 95% bootstrap confidence interval per "
+            "layer for every family is stored in the committed stats JSON",
             "selection_caveat": "exploratory sweep; any max-over-layer quote carries the "
             "permutation band (prefit_perm_band_*), per plan section 6",
             "pinned_layer_marker": sb["pinned_layer"],
@@ -333,7 +333,7 @@ def _build_scatter(ctx: dict, fam: str, slug: str) -> list[tuple[str, "plt.Figur
         for k in range(len(conds), nrows * ncols):
             axes.flat[k].set_visible(False)
         notes = {
-            "arm": fam,
+            "arm": ARM_NAMES[fam],
             "layer": pin,
             "dv": "level",
             "errorbar_definition": "none (per-trigger scatter; the per-unit companion to the "
