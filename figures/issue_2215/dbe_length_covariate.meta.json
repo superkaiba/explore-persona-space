@@ -1,0 +1,117 @@
+{
+  "commit": "0ae62170",
+  "render_id": "0119011ed7af4ba4",
+  "git_commit": "0ae62170f2192f06db1f3f20df0e1e58dd112a32",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2215_dbe_figures.py",
+  "created": "2026-08-23T07:14:27Z",
+  "figsize": [
+    6.4,
+    4.8
+  ],
+  "points": [
+    {
+      "mean |\u0394 context length| within pair (tokens)": 20.555555555555557,
+      "paired 2AFC accuracy (ctx-end map, #779 fit)": 0.5416666666666666,
+      "label": "code vs prose",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "mean |\u0394 context length| within pair (tokens)": 37.72222222222222,
+      "paired 2AFC accuracy (ctx-end map, #779 fit)": 1.0,
+      "label": "conversation language",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "mean |\u0394 context length| within pair (tokens)": 16.333333333333332,
+      "paired 2AFC accuracy (ctx-end map, #779 fit)": 0.9722222222222222,
+      "label": "conversation topic",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "mean |\u0394 context length| within pair (tokens)": 1.3611111111111112,
+      "paired 2AFC accuracy (ctx-end map, #779 fit)": 1.0,
+      "label": "refusal request \u2020",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "mean |\u0394 context length| within pair (tokens)": 8.833333333333334,
+      "paired 2AFC accuracy (ctx-end map, #779 fit)": 0.5,
+      "label": "style register",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "mean |\u0394 context length| within pair (tokens)": 85.55555555555556,
+      "paired 2AFC accuracy (ctx-end map, #779 fit)": 0.6111111111111112,
+      "label": "user doc format",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "mean |\u0394 context length| within pair (tokens)": 0.0,
+      "paired 2AFC accuracy (ctx-end map, #779 fit)": 0.5694444444444444,
+      "label": "user role identity",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "mean |\u0394 context length| within pair (tokens)": 4.722222222222222,
+      "paired 2AFC accuracy (ctx-end map, #779 fit)": 0.9861111111111112,
+      "label": "user sentiment \u2020",
+      "_kind": "scatter",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 8,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Length-delta covariate per type; Spearman \u03c1 = -0.01",
+        "xlabel": "mean |\u0394 context length| within pair (tokens)",
+        "ylabel": "paired 2AFC accuracy (ctx-end map, #779 fit)",
+        "annotations": [
+          "code vs prose",
+          "conversation language",
+          "conversation topic",
+          "refusal request \u2020",
+          "style register",
+          "user doc format",
+          "user role identity",
+          "user sentiment \u2020"
+        ],
+        "xticklabels": [
+          "\u221220",
+          "0",
+          "20",
+          "40",
+          "60",
+          "80",
+          "100"
+        ],
+        "yticklabels": [
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8",
+          "0.9",
+          "1.0",
+          "1.1"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

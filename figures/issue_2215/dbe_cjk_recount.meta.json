@@ -1,0 +1,214 @@
+{
+  "commit": "0ae62170",
+  "render_id": "d3cdabd941fb484d",
+  "git_commit": "0ae62170f2192f06db1f3f20df0e1e58dd112a32",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2215_dbe_figures.py",
+  "created": "2026-08-23T07:14:31Z",
+  "figsize": [
+    10.0,
+    8.0
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "CJK-carrying draw fraction": 0.1111111111111111,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "CJK-carrying draw fraction": 0.008333333333333333,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "CJK-carrying draw fraction": 0.04722222222222222,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "CJK-carrying draw fraction": 0.002777777777777778,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "CJK-carrying draw fraction": 0.025,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.0,
+      "CJK-carrying draw fraction": 0.02361111111111111,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.0,
+      "CJK-carrying draw fraction": 0.24722222222222223,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 7.0,
+      "CJK-carrying draw fraction": 0.04722222222222222,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -0.2,
+      "paired 2AFC accuracy (#779 fit)": 0.5,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.8,
+      "paired 2AFC accuracy (#779 fit)": 0.5416666666666666,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.8,
+      "paired 2AFC accuracy (#779 fit)": 0.5694444444444444,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.8,
+      "paired 2AFC accuracy (#779 fit)": 0.6111111111111112,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.8,
+      "paired 2AFC accuracy (#779 fit)": 0.9722222222222222,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.8,
+      "paired 2AFC accuracy (#779 fit)": 0.9861111111111112,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.8,
+      "paired 2AFC accuracy (#779 fit)": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 6.8,
+      "paired 2AFC accuracy (#779 fit)": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.2,
+      "paired 2AFC accuracy (#779 fit)": 0.5277777777777778,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.2,
+      "paired 2AFC accuracy (#779 fit)": 0.5416666666666666,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.2,
+      "paired 2AFC accuracy (#779 fit)": 0.5555555555555556,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.2,
+      "paired 2AFC accuracy (#779 fit)": 0.6111111111111112,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.2,
+      "paired 2AFC accuracy (#779 fit)": 0.9722222222222222,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 5.2,
+      "paired 2AFC accuracy (#779 fit)": 0.9861111111111112,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 6.2,
+      "paired 2AFC accuracy (#779 fit)": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 7.2,
+      "paired 2AFC accuracy (#779 fit)": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 24,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "CJK intrusion per type, and the 2AFC recount excluding intruded draws",
+        "ylabel": "CJK-carrying draw fraction",
+        "yticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25",
+          "0.30"
+        ]
+      },
+      {
+        "ylabel": "paired 2AFC accuracy (#779 fit)",
+        "legend_labels": [
+          "registered",
+          "CJK-excluded recount"
+        ],
+        "xticklabels": [
+          "style register",
+          "code vs prose",
+          "user role identity",
+          "user doc format",
+          "conversation topic",
+          "user sentiment \u2020",
+          "conversation language",
+          "refusal request \u2020"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ],
+    "series": [
+      "registered",
+      "CJK-excluded recount"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

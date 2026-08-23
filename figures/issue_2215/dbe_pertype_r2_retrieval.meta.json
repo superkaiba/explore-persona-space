@@ -1,0 +1,2356 @@
+{
+  "commit": "0ae62170",
+  "render_id": "3bbd4f1c6de245c1",
+  "git_commit": "0ae62170f2192f06db1f3f20df0e1e58dd112a32",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2215_dbe_figures.py",
+  "created": "2026-08-23T07:14:23Z",
+  "figsize": [
+    10.5,
+    9.5
+  ],
+  "points": [
+    {
+      "x": -0.32,
+      "transfer R\u00b2": 0.3167920056930088,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.68,
+      "transfer R\u00b2": -0.8825316955508302,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.68,
+      "transfer R\u00b2": -0.24294331430671257,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.68,
+      "transfer R\u00b2": -0.07320896851526704,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.68,
+      "transfer R\u00b2": -0.20903121519249712,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.68,
+      "transfer R\u00b2": -0.511839338993272,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.68,
+      "transfer R\u00b2": 0.5132892568654068,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.68,
+      "transfer R\u00b2": 0.6965263070839969,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -0.16,
+      "transfer R\u00b2": 0.30855451454832694,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.84,
+      "transfer R\u00b2": -0.7391822377346102,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.84,
+      "transfer R\u00b2": -0.3014412404191469,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.84,
+      "transfer R\u00b2": -1.572866432820585,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.84,
+      "transfer R\u00b2": -1.6594424221921673,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.84,
+      "transfer R\u00b2": null,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.84,
+      "transfer R\u00b2": 0.24473085838989062,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 6.84,
+      "transfer R\u00b2": null,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "transfer R\u00b2": 0.47028713784378506,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "transfer R\u00b2": -0.4866474569250063,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "transfer R\u00b2": -0.024618974200254495,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "transfer R\u00b2": 0.0013800782489806762,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "transfer R\u00b2": -0.10155415444553229,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "transfer R\u00b2": -0.6461600151861493,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 6.0,
+      "transfer R\u00b2": 0.6322118214662611,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 7.0,
+      "transfer R\u00b2": 0.5971570062241305,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.16,
+      "transfer R\u00b2": -2.784561666584891,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.16,
+      "transfer R\u00b2": -8.103897370843601,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.16,
+      "transfer R\u00b2": -3.600085032468451,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 3.16,
+      "transfer R\u00b2": -5.461354608841308,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 4.16,
+      "transfer R\u00b2": -5.287799497078812,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 5.16,
+      "transfer R\u00b2": -8.704077880597426,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 6.16,
+      "transfer R\u00b2": -2.222410755154412,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 7.16,
+      "transfer R\u00b2": -2.739092608569383,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.32,
+      "transfer R\u00b2": -2.8844536237576577,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 1.32,
+      "transfer R\u00b2": -8.27007457157819,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.32,
+      "transfer R\u00b2": -3.8686331844845974,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 3.32,
+      "transfer R\u00b2": -7.247371347684133,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 4.32,
+      "transfer R\u00b2": -4.832567473321868,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 5.32,
+      "transfer R\u00b2": null,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 6.32,
+      "transfer R\u00b2": -3.2092758802926156,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 7.32,
+      "transfer R\u00b2": null,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": -0.32,
+      "transfer R\u00b2": 0.3167920056930088,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.6799999999999999,
+      "transfer R\u00b2": -0.8825316955508302,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.68,
+      "transfer R\u00b2": -0.24294331430671257,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.68,
+      "transfer R\u00b2": -0.07320896851526704,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.68,
+      "transfer R\u00b2": -0.20903121519249712,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.68,
+      "transfer R\u00b2": -0.511839338993272,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.68,
+      "transfer R\u00b2": 0.5132892568654068,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 6.68,
+      "transfer R\u00b2": 0.6965263070839969,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": -0.32,
+      "transfer R\u00b2": 0.3167920056930088,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.6799999999999999,
+      "transfer R\u00b2": -0.8825316955508302,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.68,
+      "transfer R\u00b2": -0.24294331430671257,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.68,
+      "transfer R\u00b2": -0.07320896851526704,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.68,
+      "transfer R\u00b2": -0.20903121519249712,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.68,
+      "transfer R\u00b2": -0.511839338993272,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 5.68,
+      "transfer R\u00b2": 0.5132892568654068,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 6.68,
+      "transfer R\u00b2": 0.6965263070839969,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": -0.15999999999999998,
+      "transfer R\u00b2": 0.30855451454832694,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.84,
+      "transfer R\u00b2": -0.7391822377346102,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.84,
+      "transfer R\u00b2": -0.3014412404191469,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.84,
+      "transfer R\u00b2": -1.572866432820585,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.84,
+      "transfer R\u00b2": -1.6594424221921673,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.84,
+      "transfer R\u00b2": null,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 5.84,
+      "transfer R\u00b2": 0.24473085838989062,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 6.84,
+      "transfer R\u00b2": null,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": -0.15999999999999998,
+      "transfer R\u00b2": 0.30855451454832694,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.84,
+      "transfer R\u00b2": -0.7391822377346102,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.84,
+      "transfer R\u00b2": -0.3014412404191469,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.84,
+      "transfer R\u00b2": -1.572866432820585,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.84,
+      "transfer R\u00b2": -1.6594424221921673,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.84,
+      "transfer R\u00b2": null,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 5.84,
+      "transfer R\u00b2": 0.24473085838989062,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 6.84,
+      "transfer R\u00b2": null,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.0,
+      "transfer R\u00b2": 0.47028713784378506,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "transfer R\u00b2": -0.4866474569250063,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.0,
+      "transfer R\u00b2": -0.024618974200254495,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 3.0,
+      "transfer R\u00b2": 0.0013800782489806762,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 4.0,
+      "transfer R\u00b2": -0.10155415444553229,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 5.0,
+      "transfer R\u00b2": -0.6461600151861493,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 6.0,
+      "transfer R\u00b2": 0.6322118214662611,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 7.0,
+      "transfer R\u00b2": 0.5971570062241305,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.0,
+      "transfer R\u00b2": 0.47028713784378506,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.0,
+      "transfer R\u00b2": -0.4866474569250063,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.0,
+      "transfer R\u00b2": -0.024618974200254495,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "transfer R\u00b2": 0.0013800782489806762,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 4.0,
+      "transfer R\u00b2": -0.10155415444553229,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 5.0,
+      "transfer R\u00b2": -0.6461600151861493,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 6.0,
+      "transfer R\u00b2": 0.6322118214662611,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 7.0,
+      "transfer R\u00b2": 0.5971570062241305,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.16,
+      "transfer R\u00b2": -2.784561666584891,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.16,
+      "transfer R\u00b2": -8.103897370843601,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.16,
+      "transfer R\u00b2": -3.600085032468451,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 3.16,
+      "transfer R\u00b2": -5.461354608841308,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 4.16,
+      "transfer R\u00b2": -5.287799497078812,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 5.16,
+      "transfer R\u00b2": -8.704077880597426,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 6.16,
+      "transfer R\u00b2": -2.222410755154412,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 7.16,
+      "transfer R\u00b2": -2.739092608569383,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 0.16,
+      "transfer R\u00b2": -2.784561666584891,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 1.16,
+      "transfer R\u00b2": -8.103897370843601,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 2.16,
+      "transfer R\u00b2": -3.600085032468451,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 3.16,
+      "transfer R\u00b2": -5.461354608841308,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 4.16,
+      "transfer R\u00b2": -5.287799497078812,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 5.16,
+      "transfer R\u00b2": -8.704077880597426,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 6.16,
+      "transfer R\u00b2": -2.222410755154412,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 7.16,
+      "transfer R\u00b2": -2.739092608569383,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 0.32,
+      "transfer R\u00b2": -2.8844536237576577,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1.32,
+      "transfer R\u00b2": -8.27007457157819,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 2.32,
+      "transfer R\u00b2": -3.8686331844845974,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.32,
+      "transfer R\u00b2": -7.247371347684133,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 4.32,
+      "transfer R\u00b2": -4.832567473321868,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 5.32,
+      "transfer R\u00b2": null,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 6.32,
+      "transfer R\u00b2": -3.2092758802926156,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 7.32,
+      "transfer R\u00b2": null,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.32,
+      "transfer R\u00b2": -2.8844536237576577,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.32,
+      "transfer R\u00b2": -8.27007457157819,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 2.32,
+      "transfer R\u00b2": -3.8686331844845974,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 3.32,
+      "transfer R\u00b2": -7.247371347684133,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 4.32,
+      "transfer R\u00b2": -4.832567473321868,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 5.32,
+      "transfer R\u00b2": null,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 6.32,
+      "transfer R\u00b2": -3.2092758802926156,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 7.32,
+      "transfer R\u00b2": null,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": -0.32,
+      "mean cosine": 0.9343833652663674,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 0.68,
+      "mean cosine": 0.943310630810716,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 1.68,
+      "mean cosine": 0.933706222463945,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 2.68,
+      "mean cosine": 0.9592013956412612,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 3.68,
+      "mean cosine": 0.9195885047671752,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 4.68,
+      "mean cosine": 0.9677936890544326,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 5.68,
+      "mean cosine": 0.9552195670799318,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 6.68,
+      "mean cosine": 0.9763357262257991,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": -0.16,
+      "mean cosine": 0.9335372690078219,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": 0.84,
+      "mean cosine": 0.9454203933765665,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": 1.84,
+      "mean cosine": 0.9275008393653397,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": 2.84,
+      "mean cosine": 0.8977161190088034,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": 3.84,
+      "mean cosine": 0.8208878145321743,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": 4.84,
+      "mean cosine": null,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": 5.84,
+      "mean cosine": 0.9313513889567745,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": 6.84,
+      "mean cosine": null,
+      "_kind": "bar",
+      "_group": 16
+    },
+    {
+      "x": 0.0,
+      "mean cosine": 0.9487730589171526,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "x": 1.0,
+      "mean cosine": 0.9532960161491736,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "x": 2.0,
+      "mean cosine": 0.9433654312140551,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "x": 3.0,
+      "mean cosine": 0.9624707992896155,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "x": 4.0,
+      "mean cosine": 0.9272789556449023,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "mean cosine": 0.9646957260535345,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "x": 6.0,
+      "mean cosine": 0.9657252441447284,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "x": 7.0,
+      "mean cosine": 0.9688191629068176,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 17
+    },
+    {
+      "x": 0.16,
+      "mean cosine": 0.7286491227337485,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "x": 1.16,
+      "mean cosine": 0.7824316930079052,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "x": 2.16,
+      "mean cosine": 0.7775198338590479,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "x": 3.16,
+      "mean cosine": 0.8017744034625869,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "x": 4.16,
+      "mean cosine": 0.7087401782811962,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "x": 5.16,
+      "mean cosine": 0.8102766248997116,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "x": 6.16,
+      "mean cosine": 0.7842538772048298,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "x": 7.16,
+      "mean cosine": 0.7707327617439922,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 18
+    },
+    {
+      "x": 0.32,
+      "mean cosine": 0.6714008529536878,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "x": 1.32,
+      "mean cosine": 0.7606758700598841,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "x": 2.32,
+      "mean cosine": 0.7474853503015028,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "x": 3.32,
+      "mean cosine": 0.7210784723622303,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "x": 4.32,
+      "mean cosine": 0.6731492321983926,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "x": 5.32,
+      "mean cosine": null,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "x": 6.32,
+      "mean cosine": 0.6862341185194054,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "x": 7.32,
+      "mean cosine": null,
+      "_kind": "bar",
+      "_group": 19
+    },
+    {
+      "x": -0.32,
+      "mean cosine": 0.9343833652663674,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 0.6799999999999999,
+      "mean cosine": 0.943310630810716,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 1.68,
+      "mean cosine": 0.933706222463945,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 2.68,
+      "mean cosine": 0.9592013956412612,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 3.68,
+      "mean cosine": 0.9195885047671752,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 4.68,
+      "mean cosine": 0.9677936890544326,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 5.68,
+      "mean cosine": 0.9552195670799318,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 6.68,
+      "mean cosine": 0.9763357262257991,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": -0.32,
+      "mean cosine": 0.9343833652663674,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 0.6799999999999999,
+      "mean cosine": 0.943310630810716,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 1.68,
+      "mean cosine": 0.933706222463945,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 2.68,
+      "mean cosine": 0.9592013956412612,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 3.68,
+      "mean cosine": 0.9195885047671752,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 4.68,
+      "mean cosine": 0.9677936890544326,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 5.68,
+      "mean cosine": 0.9552195670799318,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 6.68,
+      "mean cosine": 0.9763357262257991,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": -0.15999999999999998,
+      "mean cosine": 0.9335372690078219,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 0.84,
+      "mean cosine": 0.9454203933765665,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 1.84,
+      "mean cosine": 0.9275008393653397,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 2.84,
+      "mean cosine": 0.8977161190088034,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 3.84,
+      "mean cosine": 0.8208878145321743,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 4.84,
+      "mean cosine": null,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 5.84,
+      "mean cosine": 0.9313513889567745,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 6.84,
+      "mean cosine": null,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": -0.15999999999999998,
+      "mean cosine": 0.9335372690078219,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 0.84,
+      "mean cosine": 0.9454203933765665,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 1.84,
+      "mean cosine": 0.9275008393653397,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 2.84,
+      "mean cosine": 0.8977161190088034,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 3.84,
+      "mean cosine": 0.8208878145321743,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 4.84,
+      "mean cosine": null,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 5.84,
+      "mean cosine": 0.9313513889567745,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 6.84,
+      "mean cosine": null,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 0.0,
+      "mean cosine": 0.9487730589171526,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 1.0,
+      "mean cosine": 0.9532960161491736,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 2.0,
+      "mean cosine": 0.9433654312140551,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 3.0,
+      "mean cosine": 0.9624707992896155,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 4.0,
+      "mean cosine": 0.9272789556449023,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 5.0,
+      "mean cosine": 0.9646957260535345,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 6.0,
+      "mean cosine": 0.9657252441447284,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 7.0,
+      "mean cosine": 0.9688191629068176,
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "x": 0.0,
+      "mean cosine": 0.9487730589171526,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 1.0,
+      "mean cosine": 0.9532960161491736,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 2.0,
+      "mean cosine": 0.9433654312140551,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 3.0,
+      "mean cosine": 0.9624707992896155,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 4.0,
+      "mean cosine": 0.9272789556449023,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 5.0,
+      "mean cosine": 0.9646957260535345,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 6.0,
+      "mean cosine": 0.9657252441447284,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 7.0,
+      "mean cosine": 0.9688191629068176,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "x": 0.16,
+      "mean cosine": 0.7286491227337485,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 1.16,
+      "mean cosine": 0.7824316930079052,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 2.16,
+      "mean cosine": 0.7775198338590479,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 3.16,
+      "mean cosine": 0.8017744034625869,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 4.16,
+      "mean cosine": 0.7087401782811962,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 5.16,
+      "mean cosine": 0.8102766248997116,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 6.16,
+      "mean cosine": 0.7842538772048298,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 7.16,
+      "mean cosine": 0.7707327617439922,
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "x": 0.16,
+      "mean cosine": 0.7286491227337485,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 1.16,
+      "mean cosine": 0.7824316930079052,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 2.16,
+      "mean cosine": 0.7775198338590479,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 3.16,
+      "mean cosine": 0.8017744034625869,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 4.16,
+      "mean cosine": 0.7087401782811962,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 5.16,
+      "mean cosine": 0.8102766248997116,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 6.16,
+      "mean cosine": 0.7842538772048298,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 7.16,
+      "mean cosine": 0.7707327617439922,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 0.32,
+      "mean cosine": 0.6714008529536878,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 1.32,
+      "mean cosine": 0.7606758700598841,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 2.32,
+      "mean cosine": 0.7474853503015028,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 3.32,
+      "mean cosine": 0.7210784723622303,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 4.32,
+      "mean cosine": 0.6731492321983926,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 5.32,
+      "mean cosine": null,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 6.32,
+      "mean cosine": 0.6862341185194054,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 7.32,
+      "mean cosine": null,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 0.32,
+      "mean cosine": 0.6714008529536878,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 1.32,
+      "mean cosine": 0.7606758700598841,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 2.32,
+      "mean cosine": 0.7474853503015028,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 3.32,
+      "mean cosine": 0.7210784723622303,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 4.32,
+      "mean cosine": 0.6731492321983926,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 5.32,
+      "mean cosine": null,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 6.32,
+      "mean cosine": 0.6862341185194054,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 7.32,
+      "mean cosine": null,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": -0.32,
+      "retrieval acc@1 (cosine)": 0.3055555555555556,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 30
+    },
+    {
+      "x": 0.68,
+      "retrieval acc@1 (cosine)": 0.1388888888888889,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 30
+    },
+    {
+      "x": 1.68,
+      "retrieval acc@1 (cosine)": 0.25,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 30
+    },
+    {
+      "x": 2.68,
+      "retrieval acc@1 (cosine)": 0.3888888888888889,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 30
+    },
+    {
+      "x": 3.68,
+      "retrieval acc@1 (cosine)": 0.5277777777777778,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 30
+    },
+    {
+      "x": 4.68,
+      "retrieval acc@1 (cosine)": 0.3194444444444444,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 30
+    },
+    {
+      "x": 5.68,
+      "retrieval acc@1 (cosine)": 0.9444444444444444,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 30
+    },
+    {
+      "x": 6.68,
+      "retrieval acc@1 (cosine)": 0.9722222222222222,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 30
+    },
+    {
+      "x": -0.16,
+      "retrieval acc@1 (cosine)": 0.3055555555555556,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 31
+    },
+    {
+      "x": 0.84,
+      "retrieval acc@1 (cosine)": 0.1111111111111111,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 31
+    },
+    {
+      "x": 1.84,
+      "retrieval acc@1 (cosine)": 0.16666666666666666,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 31
+    },
+    {
+      "x": 2.84,
+      "retrieval acc@1 (cosine)": 0.027777777777777776,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 31
+    },
+    {
+      "x": 3.84,
+      "retrieval acc@1 (cosine)": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 31
+    },
+    {
+      "x": 4.84,
+      "retrieval acc@1 (cosine)": null,
+      "_kind": "bar",
+      "_group": 31
+    },
+    {
+      "x": 5.84,
+      "retrieval acc@1 (cosine)": 0.5277777777777778,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 31
+    },
+    {
+      "x": 6.84,
+      "retrieval acc@1 (cosine)": null,
+      "_kind": "bar",
+      "_group": 31
+    },
+    {
+      "category": "style register",
+      "retrieval acc@1 (cosine)": 0.3333333333333333,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 32
+    },
+    {
+      "category": "code vs prose",
+      "retrieval acc@1 (cosine)": 0.19444444444444445,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 32
+    },
+    {
+      "category": "user role identity",
+      "retrieval acc@1 (cosine)": 0.25,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 32
+    },
+    {
+      "category": "user doc format",
+      "retrieval acc@1 (cosine)": 0.3333333333333333,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 32
+    },
+    {
+      "category": "conversation topic",
+      "retrieval acc@1 (cosine)": 0.5,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 32
+    },
+    {
+      "category": "user sentiment \u2020",
+      "retrieval acc@1 (cosine)": 0.2916666666666667,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 32
+    },
+    {
+      "category": "conversation language",
+      "retrieval acc@1 (cosine)": 0.9722222222222222,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 32
+    },
+    {
+      "category": "refusal request \u2020",
+      "retrieval acc@1 (cosine)": 0.9722222222222222,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 32
+    },
+    {
+      "x": 0.16,
+      "retrieval acc@1 (cosine)": 0.2222222222222222,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 33
+    },
+    {
+      "x": 1.16,
+      "retrieval acc@1 (cosine)": 0.027777777777777776,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 33
+    },
+    {
+      "x": 2.16,
+      "retrieval acc@1 (cosine)": 0.08333333333333333,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 33
+    },
+    {
+      "x": 3.16,
+      "retrieval acc@1 (cosine)": 0.3333333333333333,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 33
+    },
+    {
+      "x": 4.16,
+      "retrieval acc@1 (cosine)": 0.5,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 33
+    },
+    {
+      "x": 5.16,
+      "retrieval acc@1 (cosine)": 0.2777777777777778,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 33
+    },
+    {
+      "x": 6.16,
+      "retrieval acc@1 (cosine)": 0.7222222222222222,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 33
+    },
+    {
+      "x": 7.16,
+      "retrieval acc@1 (cosine)": 0.625,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 33
+    },
+    {
+      "x": 0.32,
+      "retrieval acc@1 (cosine)": 0.08333333333333333,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 34
+    },
+    {
+      "x": 1.32,
+      "retrieval acc@1 (cosine)": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 34
+    },
+    {
+      "x": 2.32,
+      "retrieval acc@1 (cosine)": 0.05555555555555555,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 34
+    },
+    {
+      "x": 3.32,
+      "retrieval acc@1 (cosine)": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 34
+    },
+    {
+      "x": 4.32,
+      "retrieval acc@1 (cosine)": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 34
+    },
+    {
+      "x": 5.32,
+      "retrieval acc@1 (cosine)": null,
+      "_kind": "bar",
+      "_group": 34
+    },
+    {
+      "x": 6.32,
+      "retrieval acc@1 (cosine)": 0.0,
+      "error": 0.0,
+      "_kind": "bar",
+      "_group": 34
+    },
+    {
+      "x": 7.32,
+      "retrieval acc@1 (cosine)": null,
+      "_kind": "bar",
+      "_group": 34
+    },
+    {
+      "x": -0.32,
+      "retrieval acc@1 (cosine)": 0.3055555555555556,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 0.6799999999999999,
+      "retrieval acc@1 (cosine)": 0.1388888888888889,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 1.68,
+      "retrieval acc@1 (cosine)": 0.25,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 2.68,
+      "retrieval acc@1 (cosine)": 0.3888888888888889,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 3.68,
+      "retrieval acc@1 (cosine)": 0.5277777777777778,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 4.68,
+      "retrieval acc@1 (cosine)": 0.3194444444444444,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 5.68,
+      "retrieval acc@1 (cosine)": 0.9444444444444444,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 6.68,
+      "retrieval acc@1 (cosine)": 0.9722222222222222,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": -0.32,
+      "retrieval acc@1 (cosine)": 0.3055555555555556,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 0.6799999999999999,
+      "retrieval acc@1 (cosine)": 0.1388888888888889,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 1.68,
+      "retrieval acc@1 (cosine)": 0.25,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 2.68,
+      "retrieval acc@1 (cosine)": 0.3888888888888889,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 3.68,
+      "retrieval acc@1 (cosine)": 0.5277777777777778,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 4.68,
+      "retrieval acc@1 (cosine)": 0.3194444444444444,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 5.68,
+      "retrieval acc@1 (cosine)": 0.9444444444444444,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": 6.68,
+      "retrieval acc@1 (cosine)": 0.9722222222222222,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "x": -0.15999999999999998,
+      "retrieval acc@1 (cosine)": 0.3055555555555556,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 0.84,
+      "retrieval acc@1 (cosine)": 0.1111111111111111,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 1.84,
+      "retrieval acc@1 (cosine)": 0.16666666666666666,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 2.84,
+      "retrieval acc@1 (cosine)": 0.027777777777777776,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 3.84,
+      "retrieval acc@1 (cosine)": 0.0,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 4.84,
+      "retrieval acc@1 (cosine)": null,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 5.84,
+      "retrieval acc@1 (cosine)": 0.5277777777777778,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": 6.84,
+      "retrieval acc@1 (cosine)": null,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "x": -0.15999999999999998,
+      "retrieval acc@1 (cosine)": 0.3055555555555556,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 0.84,
+      "retrieval acc@1 (cosine)": 0.1111111111111111,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 1.84,
+      "retrieval acc@1 (cosine)": 0.16666666666666666,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 2.84,
+      "retrieval acc@1 (cosine)": 0.027777777777777776,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 3.84,
+      "retrieval acc@1 (cosine)": 0.0,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 4.84,
+      "retrieval acc@1 (cosine)": null,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 5.84,
+      "retrieval acc@1 (cosine)": 0.5277777777777778,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 6.84,
+      "retrieval acc@1 (cosine)": null,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "x": 0.0,
+      "retrieval acc@1 (cosine)": 0.3333333333333333,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 1.0,
+      "retrieval acc@1 (cosine)": 0.19444444444444445,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 2.0,
+      "retrieval acc@1 (cosine)": 0.25,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 3.0,
+      "retrieval acc@1 (cosine)": 0.3333333333333333,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 4.0,
+      "retrieval acc@1 (cosine)": 0.5,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 5.0,
+      "retrieval acc@1 (cosine)": 0.2916666666666667,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 6.0,
+      "retrieval acc@1 (cosine)": 0.9722222222222222,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 7.0,
+      "retrieval acc@1 (cosine)": 0.9722222222222222,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "x": 0.0,
+      "retrieval acc@1 (cosine)": 0.3333333333333333,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 1.0,
+      "retrieval acc@1 (cosine)": 0.19444444444444445,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 2.0,
+      "retrieval acc@1 (cosine)": 0.25,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 3.0,
+      "retrieval acc@1 (cosine)": 0.3333333333333333,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 4.0,
+      "retrieval acc@1 (cosine)": 0.5,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 5.0,
+      "retrieval acc@1 (cosine)": 0.2916666666666667,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 6.0,
+      "retrieval acc@1 (cosine)": 0.9722222222222222,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 7.0,
+      "retrieval acc@1 (cosine)": 0.9722222222222222,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "x": 0.16,
+      "retrieval acc@1 (cosine)": 0.2222222222222222,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 1.16,
+      "retrieval acc@1 (cosine)": 0.027777777777777776,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 2.16,
+      "retrieval acc@1 (cosine)": 0.08333333333333333,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 3.16,
+      "retrieval acc@1 (cosine)": 0.3333333333333333,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 4.16,
+      "retrieval acc@1 (cosine)": 0.5,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 5.16,
+      "retrieval acc@1 (cosine)": 0.2777777777777778,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 6.16,
+      "retrieval acc@1 (cosine)": 0.7222222222222222,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 7.16,
+      "retrieval acc@1 (cosine)": 0.625,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "x": 0.16,
+      "retrieval acc@1 (cosine)": 0.2222222222222222,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 1.16,
+      "retrieval acc@1 (cosine)": 0.027777777777777776,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 2.16,
+      "retrieval acc@1 (cosine)": 0.08333333333333333,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 3.16,
+      "retrieval acc@1 (cosine)": 0.3333333333333333,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 4.16,
+      "retrieval acc@1 (cosine)": 0.5,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 5.16,
+      "retrieval acc@1 (cosine)": 0.2777777777777778,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 6.16,
+      "retrieval acc@1 (cosine)": 0.7222222222222222,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 7.16,
+      "retrieval acc@1 (cosine)": 0.625,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "x": 0.32,
+      "retrieval acc@1 (cosine)": 0.08333333333333333,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 1.32,
+      "retrieval acc@1 (cosine)": 0.0,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 2.32,
+      "retrieval acc@1 (cosine)": 0.05555555555555555,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 3.32,
+      "retrieval acc@1 (cosine)": 0.0,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 4.32,
+      "retrieval acc@1 (cosine)": 0.0,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 5.32,
+      "retrieval acc@1 (cosine)": null,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 6.32,
+      "retrieval acc@1 (cosine)": 0.0,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 7.32,
+      "retrieval acc@1 (cosine)": null,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "x": 0.32,
+      "retrieval acc@1 (cosine)": 0.08333333333333333,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 1.32,
+      "retrieval acc@1 (cosine)": 0.0,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 2.32,
+      "retrieval acc@1 (cosine)": 0.05555555555555555,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 3.32,
+      "retrieval acc@1 (cosine)": 0.0,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 4.32,
+      "retrieval acc@1 (cosine)": 0.0,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 5.32,
+      "retrieval acc@1 (cosine)": null,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 6.32,
+      "retrieval acc@1 (cosine)": 0.0,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "x": 7.32,
+      "retrieval acc@1 (cosine)": null,
+      "_kind": "line",
+      "_group": 44
+    }
+  ],
+  "n_series": 45,
+  "total_points": 360,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Registered per-(type \u00d7 arm) rows (L19, tail; dashed = retrieval chance 1/pool)",
+        "ylabel": "transfer R\u00b2",
+        "legend_labels": [
+          "ctx-end map (#779 fit)",
+          "prefix-end map (#1738 fit)",
+          "ctx-end map, matched fit (#1738)",
+          "identity+bias (ctx-end)",
+          "identity+bias (prefix-end)"
+        ],
+        "yticklabels": [
+          "\u221210",
+          "\u22128",
+          "\u22126",
+          "\u22124",
+          "\u22122",
+          "0",
+          "2"
+        ]
+      },
+      {
+        "ylabel": "mean cosine",
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "ylabel": "retrieval acc@1 (cosine)",
+        "xticklabels": [
+          "style register",
+          "code vs prose",
+          "user role identity",
+          "user doc format",
+          "conversation topic",
+          "user sentiment \u2020",
+          "conversation language",
+          "refusal request \u2020"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ],
+    "series": [
+      "ctx-end map (#779 fit)",
+      "prefix-end map (#1738 fit)",
+      "ctx-end map, matched fit (#1738)",
+      "identity+bias (ctx-end)",
+      "identity+bias (prefix-end)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

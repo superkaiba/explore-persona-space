@@ -1,0 +1,475 @@
+{
+  "config": "L19|tail|cosine",
+  "cjk_recount": {
+    "n_intruded_draws": 210,
+    "per_cell_intrusion_frac": {
+      "code_vs_prose": 0.008333333333333333,
+      "conversation_language": 0.24722222222222223,
+      "conversation_topic": 0.025,
+      "refusal_request": 0.04722222222222222,
+      "style_register": 0.1111111111111111,
+      "user_doc_format": 0.002777777777777778,
+      "user_role_identity": 0.04722222222222222,
+      "user_sentiment": 0.02361111111111111
+    },
+    "n_contexts_zero_kept": 0,
+    "per_type_2afc_cjk_excluded": {
+      "1738ce": {
+        "code_vs_prose": {
+          "acc": 0.5972222222222222,
+          "n_pair_dirs": 72,
+          "mean_margin": 0.0031863946326340375
+        },
+        "conversation_language": {
+          "acc": 1.0,
+          "n_pair_dirs": 72,
+          "mean_margin": 0.02869127774392992
+        },
+        "conversation_topic": {
+          "acc": 0.9722222222222222,
+          "n_pair_dirs": 72,
+          "mean_margin": 0.04800722012361861
+        },
+        "refusal_request": {
+          "acc": 1.0,
+          "n_pair_dirs": 72,
+          "mean_margin": 0.09923628664344036
+        },
+        "style_register": {
+          "acc": 0.5277777777777778,
+          "n_pair_dirs": 72,
+          "mean_margin": 0.00039087319688367903
+        },
+        "user_doc_format": {
+          "acc": 0.5694444444444444,
+          "n_pair_dirs": 72,
+          "mean_margin": 0.0017756321079271187
+        },
+        "user_role_identity": {
+          "acc": 0.5277777777777778,
+          "n_pair_dirs": 72,
+          "mean_margin": 0.00030690303613608677
+        },
+        "user_sentiment": {
+          "acc": 0.9861111111111112,
+          "n_pair_dirs": 72,
+          "mean_margin": 0.01504108235897574
+        }
+      },
+      "1738pe": {
+        "code_vs_prose": {
+          "acc": 0.6527777777777778,
+          "n_pair_dirs": 72,
+          "mean_margin": 0.0036595046906801104
+        },
+        "conversation_language": {
+          "acc": 0.875,
+          "n_pair_dirs": 72,
+          "mean_margin": 0.01797776244586281
+        },
+        "conversation_topic": {
+          "acc": 0.8194444444444444,
+          "n_pair_dirs": 72,
+          "mean_margin": 0.02304928974153763
+        },
+        "refusal_request": {
+          "na": "degenerate"
+        },
+        "style_register": {
+          "acc": 0.5555555555555556,
+          "n_pair_dirs": 72,
+          "mean_margin": 0.0003640946927093837
+        },
+        "user_doc_format": {
+          "acc": 0.5555555555555556,
+          "n_pair_dirs": 72,
+          "mean_margin": 0.0007939487456922837
+        },
+        "user_role_identity": {
+          "acc": 0.5277777777777778,
+          "n_pair_dirs": 72,
+          "mean_margin": 0.0001539186591815502
+        },
+        "user_sentiment": {
+          "na": "degenerate"
+        }
+      },
+      "779ce": {
+        "code_vs_prose": {
+          "acc": 0.5416666666666666,
+          "n_pair_dirs": 72,
+          "mean_margin": 0.0024642495788138614
+        },
+        "conversation_language": {
+          "acc": 1.0,
+          "n_pair_dirs": 72,
+          "mean_margin": 0.026912313073800615
+        },
+        "conversation_topic": {
+          "acc": 0.9722222222222222,
+          "n_pair_dirs": 72,
+          "mean_margin": 0.050978289362373155
+        },
+        "refusal_request": {
+          "acc": 1.0,
+          "n_pair_dirs": 72,
+          "mean_margin": 0.10286938881439402
+        },
+        "style_register": {
+          "acc": 0.5277777777777778,
+          "n_pair_dirs": 72,
+          "mean_margin": 0.00035168019815583825
+        },
+        "user_doc_format": {
+          "acc": 0.6111111111111112,
+          "n_pair_dirs": 72,
+          "mean_margin": 0.0017195404661229543
+        },
+        "user_role_identity": {
+          "acc": 0.5555555555555556,
+          "n_pair_dirs": 72,
+          "mean_margin": 0.00030070313893338887
+        },
+        "user_sentiment": {
+          "acc": 0.9861111111111112,
+          "n_pair_dirs": 72,
+          "mean_margin": 0.014740566236887766
+        }
+      },
+      "idbias_ce": {
+        "code_vs_prose": {
+          "acc": 0.625,
+          "n_pair_dirs": 72,
+          "mean_margin": 0.0024479692496083036
+        },
+        "conversation_language": {
+          "acc": 0.9583333333333334,
+          "n_pair_dirs": 72,
+          "mean_margin": 0.023646212913786945
+        },
+        "conversation_topic": {
+          "acc": 0.9583333333333334,
+          "n_pair_dirs": 72,
+          "mean_margin": 0.03614558408728558
+        },
+        "refusal_request": {
+          "acc": 0.9583333333333334,
+          "n_pair_dirs": 72,
+          "mean_margin": 0.07989214505083192
+        },
+        "style_register": {
+          "acc": 0.5277777777777778,
+          "n_pair_dirs": 72,
+          "mean_margin": 0.0005597066428376698
+        },
+        "user_doc_format": {
+          "acc": 0.5833333333333334,
+          "n_pair_dirs": 72,
+          "mean_margin": 0.0022606444862749587
+        },
+        "user_role_identity": {
+          "acc": 0.5138888888888888,
+          "n_pair_dirs": 72,
+          "mean_margin": 0.0004291826195336283
+        },
+        "user_sentiment": {
+          "acc": 0.9722222222222222,
+          "n_pair_dirs": 72,
+          "mean_margin": 0.026321239272849725
+        }
+      },
+      "idbias_pe": {
+        "code_vs_prose": {
+          "acc": 0.5277777777777778,
+          "n_pair_dirs": 72,
+          "mean_margin": 0.0014555982582854033
+        },
+        "conversation_language": {
+          "acc": 0.5277777777777778,
+          "n_pair_dirs": 72,
+          "mean_margin": 0.0016109266772278512
+        },
+        "conversation_topic": {
+          "acc": 0.7777777777777778,
+          "n_pair_dirs": 72,
+          "mean_margin": 0.011638374050054448
+        },
+        "refusal_request": {
+          "na": "degenerate"
+        },
+        "style_register": {
+          "acc": 0.5416666666666666,
+          "n_pair_dirs": 72,
+          "mean_margin": 0.00030334317094937263
+        },
+        "user_doc_format": {
+          "acc": 0.5277777777777778,
+          "n_pair_dirs": 72,
+          "mean_margin": 0.0008795954540867559
+        },
+        "user_role_identity": {
+          "acc": 0.5416666666666666,
+          "n_pair_dirs": 72,
+          "mean_margin": 0.00021408270840328326
+        },
+        "user_sentiment": {
+          "na": "degenerate"
+        }
+      }
+    },
+    "config": "L19|tail|cosine"
+  },
+  "parent_store_reads": {
+    "union_pool_retrieval": {
+      "pool_size": 1764,
+      "n_parent": 1404,
+      "n_new": 360,
+      "per_arm": {
+        "1738ce": {
+          "metric": "cosine",
+          "n": 360,
+          "n_pool": 1764,
+          "acc_at_k": {
+            "1": 0.5055555555555555,
+            "5": 0.7888888888888889,
+            "10": 0.8944444444444445
+          },
+          "chance_at_k": {
+            "1": 0.0005668934240362812,
+            "5": 0.002834467120181406,
+            "10": 0.005668934240362812
+          },
+          "median_rank": 1.0,
+          "mrr": 0.632200525818325
+        },
+        "1738pe": {
+          "metric": "cosine",
+          "n": 360,
+          "n_pool": 1764,
+          "acc_at_k": {
+            "1": 0.075,
+            "5": 0.2,
+            "10": 0.25555555555555554
+          },
+          "chance_at_k": {
+            "1": 0.0005668934240362812,
+            "5": 0.002834467120181406,
+            "10": 0.005668934240362812
+          },
+          "median_rank": 179.0,
+          "mrr": 0.13843354890295836
+        },
+        "779ce": {
+          "metric": "cosine",
+          "n": 360,
+          "n_pool": 1764,
+          "acc_at_k": {
+            "1": 0.5055555555555555,
+            "5": 0.8277777777777777,
+            "10": 0.8916666666666667
+          },
+          "chance_at_k": {
+            "1": 0.0005668934240362812,
+            "5": 0.002834467120181406,
+            "10": 0.005668934240362812
+          },
+          "median_rank": 1.0,
+          "mrr": 0.6421975646975334
+        },
+        "idbias_ce": {
+          "metric": "cosine",
+          "n": 360,
+          "n_pool": 1764,
+          "acc_at_k": {
+            "1": 0.3611111111111111,
+            "5": 0.6944444444444444,
+            "10": 0.8111111111111111
+          },
+          "chance_at_k": {
+            "1": 0.0005668934240362812,
+            "5": 0.002834467120181406,
+            "10": 0.005668934240362812
+          },
+          "median_rank": 2.5,
+          "mrr": 0.5093001956112732
+        },
+        "idbias_pe": {
+          "metric": "cosine",
+          "n": 360,
+          "n_pool": 1764,
+          "acc_at_k": {
+            "1": 0.0,
+            "5": 0.008333333333333333,
+            "10": 0.022222222222222223
+          },
+          "chance_at_k": {
+            "1": 0.0005668934240362812,
+            "5": 0.002834467120181406,
+            "10": 0.005668934240362812
+          },
+          "median_rank": 309.0,
+          "mrr": 0.011031121658335774
+        }
+      }
+    },
+    "parent_fit_constant_offset": {
+      "n_parent_train": 1404,
+      "per_type_2afc": {
+        "code_vs_prose": {
+          "acc": 0.625,
+          "n_pair_dirs": 72,
+          "mean_margin": 0.0023503144405419346
+        },
+        "conversation_language": {
+          "acc": 0.9444444444444444,
+          "n_pair_dirs": 72,
+          "mean_margin": 0.021656776336495622
+        },
+        "conversation_topic": {
+          "acc": 0.9722222222222222,
+          "n_pair_dirs": 72,
+          "mean_margin": 0.036227183197805345
+        },
+        "refusal_request": {
+          "acc": 0.9583333333333334,
+          "n_pair_dirs": 72,
+          "mean_margin": 0.07934084396446969
+        },
+        "style_register": {
+          "acc": 0.5416666666666666,
+          "n_pair_dirs": 72,
+          "mean_margin": 0.0005890075390076003
+        },
+        "user_doc_format": {
+          "acc": 0.5694444444444444,
+          "n_pair_dirs": 72,
+          "mean_margin": 0.0022203262021669307
+        },
+        "user_role_identity": {
+          "acc": 0.5277777777777778,
+          "n_pair_dirs": 72,
+          "mean_margin": 0.00040214544704244974
+        },
+        "user_sentiment": {
+          "acc": 0.9722222222222222,
+          "n_pair_dirs": 72,
+          "mean_margin": 0.025077084482807762
+        }
+      },
+      "r2_pooled": -1.553524078450589,
+      "mean_cosine": 0.7827461973634104,
+      "retrieval_cosine": {
+        "metric": "cosine",
+        "n": 360,
+        "n_pool": 360,
+        "acc_at_k": {
+          "1": 0.36666666666666664,
+          "5": 0.7027777777777777,
+          "10": 0.8138888888888889
+        },
+        "chance_at_k": {
+          "1": 0.002777777777777778,
+          "5": 0.013888888888888888,
+          "10": 0.027777777777777776
+        },
+        "median_rank": 2.0,
+        "mrr": 0.5194219482171043
+      },
+      "config": "L19|tail|cosine"
+    }
+  },
+  "sentiment_polarity_transfer": {
+    "1738ce": {
+      "grouping": "realized Sentiment_Original/Sentiment_Contrast labels (P2)",
+      "own_pair_acc": 0.9722222222222222,
+      "cross_item_acc": 0.8075396825396826,
+      "n_own": 72,
+      "n_cross": 2520,
+      "n_items": 36,
+      "n_skipped_same_label": 0
+    },
+    "779ce": {
+      "grouping": "realized Sentiment_Original/Sentiment_Contrast labels (P2)",
+      "own_pair_acc": 0.9861111111111112,
+      "cross_item_acc": 0.7980158730158731,
+      "n_own": 72,
+      "n_cross": 2520,
+      "n_items": 36,
+      "n_skipped_same_label": 0
+    },
+    "idbias_ce": {
+      "grouping": "realized Sentiment_Original/Sentiment_Contrast labels (P2)",
+      "own_pair_acc": 0.9722222222222222,
+      "cross_item_acc": 0.848015873015873,
+      "n_own": 72,
+      "n_cross": 2520,
+      "n_items": 36,
+      "n_skipped_same_label": 0
+    }
+  },
+  "length_covariate": {
+    "per_type": {
+      "code_vs_prose": {
+        "mean_abs_ctx_len_delta": 20.555555555555557,
+        "mean_abs_completion_len_delta": 98.76666666666668,
+        "n_pairs": 36
+      },
+      "conversation_language": {
+        "mean_abs_ctx_len_delta": 37.72222222222222,
+        "mean_abs_completion_len_delta": 85.9388888888889,
+        "n_pairs": 36
+      },
+      "conversation_topic": {
+        "mean_abs_ctx_len_delta": 16.333333333333332,
+        "mean_abs_completion_len_delta": 7.188888888888889,
+        "n_pairs": 36
+      },
+      "refusal_request": {
+        "mean_abs_ctx_len_delta": 1.3611111111111112,
+        "mean_abs_completion_len_delta": 169.88055555555556,
+        "n_pairs": 36
+      },
+      "style_register": {
+        "mean_abs_ctx_len_delta": 8.833333333333334,
+        "mean_abs_completion_len_delta": 65.1888888888889,
+        "n_pairs": 36
+      },
+      "user_doc_format": {
+        "mean_abs_ctx_len_delta": 85.55555555555556,
+        "mean_abs_completion_len_delta": 21.755555555555553,
+        "n_pairs": 36
+      },
+      "user_role_identity": {
+        "mean_abs_ctx_len_delta": 0.0,
+        "mean_abs_completion_len_delta": 34.544444444444444,
+        "n_pairs": 36
+      },
+      "user_sentiment": {
+        "mean_abs_ctx_len_delta": 4.722222222222222,
+        "mean_abs_completion_len_delta": 59.46111111111112,
+        "n_pairs": 36
+      }
+    },
+    "spearman_ctxlen_delta_vs_2afc": -0.011976262619132589,
+    "note": "descriptive covariate read (m points); adjusted reads are report-side"
+  },
+  "repro": {
+    "git_commit": "0ae62170f2192f06db1f3f20df0e1e58dd112a32",
+    "git_dirty": false,
+    "phase": "analysis",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2215_dbe_analysis.py",
+    "issue": 2215,
+    "round": "discrimination-battery-expansion",
+    "entrypoint": "scripts/issue2215_dbe_analysis.py",
+    "smoke": false,
+    "tiny": false,
+    "null_b": 10000,
+    "boot_b": 10000,
+    "seed_null": 2215,
+    "seed_boot": 21620,
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "ts": "2026-08-23T07:13:02Z"
+  }
+}

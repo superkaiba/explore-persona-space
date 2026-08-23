@@ -1,0 +1,105 @@
+{
+  "commit": "0ae62170",
+  "render_id": "675ceac135654cc9",
+  "git_commit": "0ae62170f2192f06db1f3f20df0e1e58dd112a32",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2215_dbe_analysis.py",
+  "created": "2026-08-23T07:14:13Z",
+  "figsize": [
+    6.0,
+    4.0
+  ],
+  "points": [
+    {
+      "category": "pe gain\n(1738pe \u2212 idbias)",
+      "\u0394 2AFC accuracy (fitted \u2212 identity+bias)": 0.09259258914324973,
+      "error": 0.02546296248005496,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "ce gain\n(1738ce \u2212 idbias)",
+      "\u0394 2AFC accuracy (fitted \u2212 identity+bias)": 0.004629630181524489,
+      "error": 0.020833334161175623,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "DiD (pe \u2212 ce)",
+      "\u0394 2AFC accuracy (fitted \u2212 identity+bias)": 0.08796295896172525,
+      "error": 0.03125000207477974,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "\u0394 2AFC accuracy (fitted \u2212 identity+bias)": 0.0671296264562342,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "\u0394 2AFC accuracy (fitted \u2212 identity+bias)": -0.016203703979651134,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "\u0394 2AFC accuracy (fitted \u2212 identity+bias)": 0.057870362357546876,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "\u0394 2AFC accuracy (fitted \u2212 identity+bias)": 0.11805555141634412,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "\u0394 2AFC accuracy (fitted \u2212 identity+bias)": 0.02546296434270011,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "\u0394 2AFC accuracy (fitted \u2212 identity+bias)": 0.12037036650710635,
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 9,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "H2(b): slot difference-in-differences (matched-fit #1738 arms)",
+        "ylabel": "\u0394 2AFC accuracy (fitted \u2212 identity+bias)",
+        "xticklabels": [
+          "pe gain\n(1738pe \u2212 idbias)",
+          "ce gain\n(1738ce \u2212 idbias)",
+          "DiD (pe \u2212 ce)"
+        ],
+        "yticklabels": [
+          "\u22120.04",
+          "\u22120.02",
+          "0.00",
+          "0.02",
+          "0.04",
+          "0.06",
+          "0.08",
+          "0.10",
+          "0.12",
+          "0.14"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

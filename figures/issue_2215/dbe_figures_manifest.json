@@ -1,0 +1,30 @@
+{
+  "written": [
+    "dbe_hero_pertype_2afc",
+    "dbe_joint_taxonomy_48",
+    "dbe_perpair_margins",
+    "dbe_pertype_r2_retrieval",
+    "dbe_2afc_vs_retrieval",
+    "dbe_slot_gains_did",
+    "dbe_carrier_transfer",
+    "dbe_length_covariate",
+    "dbe_pooling_twins",
+    "dbe_dv12_geometry",
+    "dbe_cjk_recount",
+    "dbe_parent_fit_offset",
+    "dbe_union_pool_retrieval"
+  ],
+  "skipped": {},
+  "in_dir": "/workspace/explore-persona-space/eval_results/issue_2215/discrimination-battery-expansion",
+  "parent_json": "/workspace/explore-persona-space/eval_results/issue_2215/dv3_map_discrimination.json",
+  "registered_config": "L19|tail|cosine",
+  "repro": {
+    "git_commit": "0ae62170f2192f06db1f3f20df0e1e58dd112a32",
+    "git_dirty": false,
+    "phase": "figures",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2215_dbe_figures.py",
+    "entrypoint": "scripts/issue2215_dbe_figures.py",
+    "ts": "2026-08-23T07:14:33Z"
+  }
+}

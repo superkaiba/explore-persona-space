@@ -1,0 +1,226 @@
+{
+  "commit": "0ae62170",
+  "render_id": "8db88e69b9194150",
+  "git_commit": "0ae62170f2192f06db1f3f20df0e1e58dd112a32",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2215_dbe_figures.py",
+  "created": "2026-08-23T07:14:30Z",
+  "figsize": [
+    10.0,
+    8.4
+  ],
+  "points": [
+    {
+      "x": -0.2,
+      "\u2016\u0394v_C\u2016 / carrier yardstick": 0.1571593161147986,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.8,
+      "\u2016\u0394v_C\u2016 / carrier yardstick": 0.7634210458301592,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.8,
+      "\u2016\u0394v_C\u2016 / carrier yardstick": 0.13100932556349523,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.8,
+      "\u2016\u0394v_C\u2016 / carrier yardstick": 0.4574791725592267,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.8,
+      "\u2016\u0394v_C\u2016 / carrier yardstick": 1.0495888083795126,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.8,
+      "\u2016\u0394v_C\u2016 / carrier yardstick": 1.1381942981802748,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.8,
+      "\u2016\u0394v_C\u2016 / carrier yardstick": 0.44847615825733766,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.8,
+      "\u2016\u0394v_C\u2016 / carrier yardstick": 0.9759200571753109,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.2,
+      "\u2016\u0394v_C\u2016 / carrier yardstick": 0.2318140304356091,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.2,
+      "\u2016\u0394v_C\u2016 / carrier yardstick": 0.9103439920230672,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.2,
+      "\u2016\u0394v_C\u2016 / carrier yardstick": 0.17007068055998503,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.2,
+      "\u2016\u0394v_C\u2016 / carrier yardstick": 0.8378866721747787,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.2,
+      "\u2016\u0394v_C\u2016 / carrier yardstick": 0.7099498315692884,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.2,
+      "\u2016\u0394v_C\u2016 / carrier yardstick": null,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 6.2,
+      "\u2016\u0394v_C\u2016 / carrier yardstick": 0.4803584708702639,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 7.2,
+      "\u2016\u0394v_C\u2016 / carrier yardstick": null,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "style register",
+      "\u2016\u0394v\u0304_A\u2016 / draw-noise yardstick": 0.8243532497716715,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "code vs prose",
+      "\u2016\u0394v\u0304_A\u2016 / draw-noise yardstick": 1.8061690303470346,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "user role identity",
+      "\u2016\u0394v\u0304_A\u2016 / draw-noise yardstick": 0.8209524572216232,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "user doc format",
+      "\u2016\u0394v\u0304_A\u2016 / draw-noise yardstick": 1.985970899033895,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "conversation topic",
+      "\u2016\u0394v\u0304_A\u2016 / draw-noise yardstick": 5.978889000966495,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "user sentiment \u2020",
+      "\u2016\u0394v\u0304_A\u2016 / draw-noise yardstick": 2.9866853322724163,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "conversation language",
+      "\u2016\u0394v\u0304_A\u2016 / draw-noise yardstick": 2.5670076477995045,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "refusal request \u2020",
+      "\u2016\u0394v\u0304_A\u2016 / draw-noise yardstick": 4.398492214212531,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 24,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "DV1 context-shift magnitude per type (L19)",
+        "ylabel": "\u2016\u0394v_C\u2016 / carrier yardstick",
+        "legend_labels": [
+          "ce slot",
+          "pe slot"
+        ],
+        "xticklabels": [
+          "style register",
+          "code vs prose",
+          "user role identity",
+          "user doc format",
+          "conversation topic",
+          "user sentiment \u2020",
+          "conversation language",
+          "refusal request \u2020"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      },
+      {
+        "title_left": "DV2 answer-shift magnitude per type (tail pooling)",
+        "ylabel": "\u2016\u0394v\u0304_A\u2016 / draw-noise yardstick",
+        "xticklabels": [
+          "style register",
+          "code vs prose",
+          "user role identity",
+          "user doc format",
+          "conversation topic",
+          "user sentiment \u2020",
+          "conversation language",
+          "refusal request \u2020"
+        ],
+        "yticklabels": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7"
+        ]
+      }
+    ],
+    "series": [
+      "ce slot",
+      "pe slot"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

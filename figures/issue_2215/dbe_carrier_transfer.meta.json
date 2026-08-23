@@ -1,0 +1,167 @@
+{
+  "commit": "0ae62170",
+  "render_id": "3a0139fac16442ff",
+  "git_commit": "0ae62170f2192f06db1f3f20df0e1e58dd112a32",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2215_dbe_figures.py",
+  "created": "2026-08-23T07:14:26Z",
+  "figsize": [
+    10.0,
+    4.2
+  ],
+  "points": [
+    {
+      "x": -0.2,
+      "paired 2AFC accuracy": 0.5,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.8,
+      "paired 2AFC accuracy": 0.5416666666666666,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.8,
+      "paired 2AFC accuracy": 0.5694444444444444,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.8,
+      "paired 2AFC accuracy": 0.6111111111111112,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.8,
+      "paired 2AFC accuracy": 0.9722222222222222,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.8,
+      "paired 2AFC accuracy": 0.9861111111111112,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.8,
+      "paired 2AFC accuracy": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.8,
+      "paired 2AFC accuracy": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 7.8,
+      "paired 2AFC accuracy": 0.9861111111111112,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.2,
+      "paired 2AFC accuracy": 0.5063131313131313,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.2,
+      "paired 2AFC accuracy": 0.5454545454545454,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.2,
+      "paired 2AFC accuracy": 0.5189393939393939,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.2,
+      "paired 2AFC accuracy": 0.5391414141414141,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.2,
+      "paired 2AFC accuracy": 0.9457070707070707,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.2,
+      "paired 2AFC accuracy": 0.5178571428571429,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 6.2,
+      "paired 2AFC accuracy": 0.9482323232323232,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 7.2,
+      "paired 2AFC accuracy": 0.7404761904761905,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 8.2,
+      "paired 2AFC accuracy": 0.7980158730158731,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 18,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Carrier transfer: same value pair scored at other carriers (ctx-end map #779 fit, L19)",
+        "ylabel": "paired 2AFC accuracy",
+        "legend_labels": [
+          "own pair",
+          "cross carrier/item"
+        ],
+        "xticklabels": [
+          "style register",
+          "code vs prose",
+          "user role identity",
+          "user doc format",
+          "conversation topic",
+          "user sentiment \u2020",
+          "conversation language",
+          "refusal request \u2020",
+          "user sentiment\n(polarity-grouped, P2)"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ],
+    "series": [
+      "own pair",
+      "cross carrier/item"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

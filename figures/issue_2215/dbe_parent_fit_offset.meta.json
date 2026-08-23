@@ -1,0 +1,154 @@
+{
+  "commit": "0ae62170",
+  "render_id": "f483dd09131e42f7",
+  "git_commit": "0ae62170f2192f06db1f3f20df0e1e58dd112a32",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2215_dbe_figures.py",
+  "created": "2026-08-23T07:14:32Z",
+  "figsize": [
+    10.0,
+    4.2
+  ],
+  "points": [
+    {
+      "x": -0.2,
+      "paired 2AFC accuracy": 0.5277777777777778,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.8,
+      "paired 2AFC accuracy": 0.625,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.8,
+      "paired 2AFC accuracy": 0.5138888888888888,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.8,
+      "paired 2AFC accuracy": 0.5833333333333334,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.8,
+      "paired 2AFC accuracy": 0.9861111111111112,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.8,
+      "paired 2AFC accuracy": 0.9722222222222222,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.8,
+      "paired 2AFC accuracy": 0.9444444444444444,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.8,
+      "paired 2AFC accuracy": 0.9583333333333334,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.2,
+      "paired 2AFC accuracy": 0.5416666666666666,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.2,
+      "paired 2AFC accuracy": 0.625,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.2,
+      "paired 2AFC accuracy": 0.5277777777777778,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.2,
+      "paired 2AFC accuracy": 0.5694444444444444,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.2,
+      "paired 2AFC accuracy": 0.9722222222222222,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.2,
+      "paired 2AFC accuracy": 0.9722222222222222,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 6.2,
+      "paired 2AFC accuracy": 0.9444444444444444,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 7.2,
+      "paired 2AFC accuracy": 0.9583333333333334,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 16,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Constant-offset companion: battery-internal vs parent-fit b (L19)",
+        "ylabel": "paired 2AFC accuracy",
+        "legend_labels": [
+          "identity+bias (ctx-end) \u2014 battery-internal LOTO b",
+          "identity + parent-fit b (n=1404)"
+        ],
+        "xticklabels": [
+          "style register",
+          "code vs prose",
+          "user role identity",
+          "user doc format",
+          "conversation topic",
+          "user sentiment \u2020",
+          "conversation language",
+          "refusal request \u2020"
+        ],
+        "yticklabels": [
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0",
+          "1.2"
+        ]
+      }
+    ],
+    "series": [
+      "identity+bias (ctx-end) \u2014 battery-internal LOTO b",
+      "identity + parent-fit b (n=1404)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}
