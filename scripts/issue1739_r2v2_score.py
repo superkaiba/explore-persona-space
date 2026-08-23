@@ -950,6 +950,13 @@ def _planned_preds_files(
     share the writer and the resume manifest."""
     out: set[str] = set()
     protocols = str(protocols)
+    holdouts = list(holdouts)
+    if len(set(holdouts)) != len(holdouts):
+        # multiplicity guard (codex r6 arm2fix-preds-plan-multiplicity): the
+        # plan is a SET while writes are per-instance — duplicate holdouts
+        # would self-collapse across plan, rows, and writer log; uniqueness
+        # must be proven BEFORE set construction (also parse-time rejected).
+        raise ValueError(f"duplicate holdouts in the preds plan: {holdouts}")
     mv_list = list(map_variants or [None])
     if "A" in protocols:
         out.add("P-A-train-oof.jsonl")
@@ -1039,6 +1046,7 @@ def _seed_output_resume_ok(
     arms_only_extra: bool = False,
     a2_sanity_folds: int | None = None,
     transfer_preds: bool = False,
+    planned_files=None,
 ) -> tuple[bool, str]:
     """True iff a prior (behavior, seed) output can satisfy THIS invocation.
 
@@ -1074,6 +1082,28 @@ def _seed_output_resume_ok(
             missing = [n for n in manifest if not (out_dir / "transfer_preds" / n).exists()]
             if missing:
                 return False, f"transfer_preds manifest files absent: {missing[:4]}"
+            # PLANNED-universe validation (codex r6 arm2fix-preds-plan-
+            # multiplicity: resume read only the written log): a summary that
+            # recorded its pre-execution plan must show manifest == plan — a
+            # strict-subset manifest is an incomplete run whose sentinel
+            # should have been refused, and an outside-plan manifest file is
+            # mixed-generation state. Pre-plan summaries (no key) keep the
+            # manifest-only behavior verbatim (banked-output compatibility).
+            rec_planned = meta.get("transfer_preds_planned")
+            if isinstance(rec_planned, list):
+                if not rec_planned:
+                    return False, "transfer_preds plan empty (preds-writing invocation)"
+                unplanned = sorted(set(rec_planned) - set(manifest))
+                if unplanned:
+                    return False, f"planned sidecars missing from manifest: {unplanned[:4]}"
+                outside = sorted(set(manifest) - set(rec_planned))
+                if outside:
+                    return False, f"manifest files outside the recorded plan: {outside[:4]}"
+                if planned_files is not None and set(rec_planned) != set(planned_files):
+                    return False, (
+                        f"recorded plan != current plan (recorded {sorted(rec_planned)[:4]}... "
+                        f"vs current {sorted(planned_files)[:4]}...)"
+                    )
         elif not any((out_dir / "transfer_preds").glob("P-B-holdout-*.jsonl")):
             return False, "transfer_preds sidecars absent (this invocation writes preds)"
     checks = {
@@ -2716,6 +2746,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             raise SystemExit(f"--seeds carries duplicates: {args.seeds}")
     if args.map_variants is not None and len(set(args.map_variants)) != len(args.map_variants):
         raise SystemExit(f"--map-variants carries duplicates: {args.map_variants}")
+    if args.pb_holdouts is not None and len(set(args.pb_holdouts)) != len(args.pb_holdouts):
+        # codex r6 arm2fix-preds-plan-multiplicity: duplicated holdouts run
+        # and overwrite the same sidecar while plan, row expectation, and
+        # writer log all set-collapse together — uniqueness is PROVEN here
+        # before any set construction.
+        raise SystemExit(f"--pb-holdouts carries duplicates: {args.pb_holdouts}")
     _apply_extra_arms(args.extra_arms)
     _apply_arm2fix_roster(args)
     if args.u_store is None:
@@ -2854,6 +2890,23 @@ def main(argv: list[str] | None = None) -> int:
                     else None
                 ),
                 transfer_preds=bool(getattr(args, "transfer_preds", False)),
+                # the current planned universe is computable pre-prep only
+                # when --pb-holdouts pins the holdout list (else holdouts =
+                # eval_datasets, resolved inside run_behavior); when known it
+                # must MATCH the recorded plan (codex r6).
+                planned_files=(
+                    sorted(
+                        _planned_preds_files(
+                            args.protocols,
+                            list(args.pb_holdouts),
+                            getattr(args, "map_variants", None),
+                            arm2_adapter=getattr(args, "arm2_adapter", None),
+                            parity_refit_arm7=bool(getattr(args, "parity_refit_arm7", False)),
+                        )
+                    )
+                    if getattr(args, "transfer_preds", False) and args.pb_holdouts is not None
+                    else None
+                ),
             )
             if ok:
                 _log(
@@ -2867,6 +2920,12 @@ def main(argv: list[str] | None = None) -> int:
                     f"[seed-loop {i}/{len(units)}] prior output at {resume_dir} NOT "
                     f"resumable ({why}) — re-running the seed"
                 )
+                # remove the stale completion sentinel BEFORE the rerun (codex
+                # r6: a same-commit stale summary left in place can validate
+                # mixed-generation companions if the rerun dies mid-way — the
+                # rerun's own summary is written LAST, so from here until then
+                # the seed reads as incomplete, which it is).
+                (resume_dir / "all_arms_spearman.json").unlink()
             _log(f"[seed-loop {i}/{len(units)}] START {behavior} seed={seed}")
         try:
             res = run_behavior(args, behavior, layers)

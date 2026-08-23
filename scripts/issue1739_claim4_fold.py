@@ -749,6 +749,66 @@ def _is_primary_pb_row(r: dict) -> bool:
     )
 
 
+def a2fix_unique_index(items, key_fn, *, context: str) -> dict:
+    """THE single universe-construction primitive (codex r6 class-termination
+    round): index items by ``key_fn`` from the UNFILTERED input, raising a
+    loud DUPLICATE KEY ERROR naming the consumer context. Every arm2fix
+    coverage / verdict / prediction universe is built through this ONE
+    implementation — a filtered or last-write-wins view can no longer
+    self-define a universe anywhere on the arm2fix surface. Domain SCOPING
+    (selecting the behavior / arm / rung the consumer is about) happens
+    BEFORE this call; admission FILTERING (None / non-finite / provenance)
+    happens strictly AFTER, on the returned exact index."""
+    out: dict = {}
+    dup: list = []
+    for it in items:
+        k = key_fn(it)
+        if k in out:
+            dup.append(k)
+        else:
+            out[k] = it
+    if dup:
+        raise SystemExit(
+            f"[a2fix] DUPLICATE KEY ERROR ({context}): {len(set(dup))} key(s) realized "
+            f"more than once ({sorted(set(dup))[:6]}) — one row per key is required "
+            "(a last-write-wins reduction would be input-order-dependent)"
+        )
+    return out
+
+
+def a2fix_exact_coverage(expected, admitted, realized, *, context: str) -> dict:
+    """THE single exact-set comparator: ``missing`` = expected keys with no
+    ADMITTED value, ``extra`` = realized-or-admitted keys outside the
+    registered universe; ``complete`` requires neither. Every registered-set
+    coverage read (primary-D, parity) routes through this one implementation
+    (codex r6: per-site set algebra kept re-introducing one-way variants)."""
+    expected, admitted, realized = set(expected), set(admitted), set(realized)
+    missing = sorted(expected - admitted)
+    extra = sorted((realized | admitted) - expected)
+    return {
+        "context": context,
+        "missing": missing,
+        "extra": extra,
+        "complete": not missing and not extra,
+        "n_expected": len(expected),
+        "n_admitted": len(admitted & expected),
+    }
+
+
+def a2fix_merge_consistent(dst: dict, src: dict, *, what: str, context: str) -> None:
+    """Consistency-checked metadata merge (codex r6 BLOCKER
+    arm2fix-context-preds-duplicate-universe): a key present in both maps
+    with a DIFFERENT value is a loud conflict — never last-write-wins."""
+    for k, v in src.items():
+        if k in dst and dst[k] != v:
+            raise SystemExit(
+                f"[a2fix] METADATA CONFLICT ({context}): {what} for key {k!r} disagrees "
+                f"across sources ({dst[k]!r} != {v!r}) — the paired bootstrap requires "
+                "exactly one value per context"
+            )
+        dst[k] = v
+
+
 def a2fix_resolve_repairs(
     new_rows: list[dict], behaviors, overrides: dict[str, str] | None = None
 ) -> dict[str, dict]:
@@ -864,33 +924,42 @@ def a2fix_sanity_records(
     for b in behaviors:
         repaired_arm = resolution[b]["repaired_arm"]
         canonical_tag = resolution[b]["adapter"]
-        per_seed: dict[int, float] = {}
-        for r in new_rows:
-            if (
-                r.get("behavior") == b
+        # UNIQUE-INDEX the UNFILTERED matching rows FIRST (codex r6 BLOCKER
+        # arm2fix-sanity-prefiltered-multiplicity: the old rho-None filter ran
+        # before duplicate detection, so a valid row + a same-seed None
+        # duplicate passed the exact seed-set gate silently). Behavior / kind /
+        # arm selection is domain SCOPING; every admission check (None /
+        # provenance / finite) runs strictly AFTER on the exact index.
+        seed_idx = a2fix_unique_index(
+            (
+                r
+                for r in new_rows
+                if r.get("behavior") == b
                 and r.get("rung_kind") == "sanity_matched_regime"
                 and r.get("arm") == repaired_arm
-                and r.get("rho_frozen") is not None
-            ):
-                s = int(r["seed"])
-                if s in per_seed:
-                    raise SystemExit(
-                        f"[a2fix] duplicate sanity row ({b}, seed {s}, {repaired_arm})"
-                    )
-                if str(r.get("adapter")) != canonical_tag:
-                    raise SystemExit(
-                        f"[a2fix] PROVENANCE ERROR: sanity row ({b}, seed {s}, "
-                        f"{repaired_arm}) carries adapter {r.get('adapter')!r} != the "
-                        f"behavior's resolved canonical tag {canonical_tag!r}"
-                    )
-                val = float(r["rho_frozen"])
-                if not math.isfinite(val):
-                    raise SystemExit(
-                        f"[a2fix] NON-FINITE STATISTIC: sanity row ({b}, seed {s}, "
-                        f"{repaired_arm}) carries rho {val!r} — invalid upstream statistic, "
-                        "never band-miss evidence"
-                    )
-                per_seed[s] = val
+            ),
+            lambda r: int(r["seed"]),
+            context=f"sanity rows ({b}, {repaired_arm})",
+        )
+        per_seed: dict[int, float] = {}
+        for s in sorted(seed_idx):
+            r = seed_idx[s]
+            if r.get("rho_frozen") is None:
+                continue  # absence surfaces via the exact seed-set gate below
+            if str(r.get("adapter")) != canonical_tag:
+                raise SystemExit(
+                    f"[a2fix] PROVENANCE ERROR: sanity row ({b}, seed {s}, "
+                    f"{repaired_arm}) carries adapter {r.get('adapter')!r} != the "
+                    f"behavior's resolved canonical tag {canonical_tag!r}"
+                )
+            val = float(r["rho_frozen"])
+            if not math.isfinite(val):
+                raise SystemExit(
+                    f"[a2fix] NON-FINITE STATISTIC: sanity row ({b}, seed {s}, "
+                    f"{repaired_arm}) carries rho {val!r} — invalid upstream statistic, "
+                    "never band-miss evidence"
+                )
+            per_seed[s] = val
         vals = committed_band_vals(committed_root, b, ARM_CTXDIR)
         want = {int(s) for s in seeds}
         if not want:
@@ -945,37 +1014,46 @@ def a2fix_index_cells(
     ITS OWN resolved repaired arm, per-behavior resolution), arm4_true /
     arm7_true / arm7_shufpair (BANKED), arm7_parity (this round's row-matched
     refit, where run). A duplicate key fails loud — the join grain must be
-    unique (plan §3 65/65 assert)."""
-    cells: dict[tuple, dict] = {}
+    unique (plan §3 65/65 assert); the index is built through the single
+    ``a2fix_unique_index`` primitive (codex r6 class termination)."""
 
-    def _put(series: str, r: dict) -> None:
-        key = (str(r.get("behavior")), str(r.get("eval_rung")), int(r.get("seed")), series)
-        if key in cells:
-            raise SystemExit(f"[a2fix] duplicate join key {key}")
-        cells[key] = r
+    def _classify() -> list[tuple[tuple, dict]]:
+        keyed: list[tuple[tuple, dict]] = []
 
-    for r in new_rows:
-        if not _is_primary_pb_row(r):
-            continue
-        b = str(r.get("behavior"))
-        res = resolution.get(b)
-        if res is None:
-            continue
-        if r.get("arm") == res["repaired_arm"]:
-            _put("arm2_new", r)
-        elif r.get("arm") == ARM_MAP and r.get("adapter") == "parity-row-matched":
-            _put("arm7_parity", r)
-    for r in banked_rows:
-        if r.get("protocol") != "P-B" or r.get("fit") != f"P-B-holdout-{r.get('eval_rung')}":
-            continue
-        arm, mv = r.get("arm"), r.get("map_variant")
-        if arm == ARM_MAP and mv == "true":
-            _put("arm7_true", r)
-        elif arm == ARM_MAP and mv == "shufpair":
-            _put("arm7_shufpair", r)
-        elif arm == ARM_CTX and mv == "true":
-            _put("arm4_true", r)
-    return cells
+        def _put(series: str, r: dict) -> None:
+            keyed.append(
+                ((str(r.get("behavior")), str(r.get("eval_rung")), int(r.get("seed")), series), r)
+            )
+
+        for r in new_rows:
+            if not _is_primary_pb_row(r):
+                continue
+            b = str(r.get("behavior"))
+            res = resolution.get(b)
+            if res is None:
+                continue
+            if r.get("arm") == res["repaired_arm"]:
+                _put("arm2_new", r)
+            elif r.get("arm") == ARM_MAP and r.get("adapter") == "parity-row-matched":
+                _put("arm7_parity", r)
+        for r in banked_rows:
+            if r.get("protocol") != "P-B" or r.get("fit") != f"P-B-holdout-{r.get('eval_rung')}":
+                continue
+            arm, mv = r.get("arm"), r.get("map_variant")
+            if arm == ARM_MAP and mv == "true":
+                _put("arm7_true", r)
+            elif arm == ARM_MAP and mv == "shufpair":
+                _put("arm7_shufpair", r)
+            elif arm == ARM_CTX and mv == "true":
+                _put("arm4_true", r)
+        return keyed
+
+    idx = a2fix_unique_index(
+        _classify(),
+        lambda kr: kr[0],
+        context="join-grain cells (behavior, eval_rung, seed, series)",
+    )
+    return {k: kr[1] for k, kr in idx.items()}
 
 
 def a2fix_join_assert(
@@ -1175,9 +1253,7 @@ def a2fix_load_new_preds(root: Path, b: str, seed: int, rung: str, repaired_arm:
     .a2qr.jsonl) — glob the candidates and require EXACTLY ONE file to supply
     the repaired arm's rows for this rung (ambiguity is a named gap, never a
     silent pick)."""
-    hits: dict[str, dict[str, float]] = {}
-    dv_by_ctx: dict[str, float] = {}
-    grp_by_ctx: dict[str, str] = {}
+    matching: list[dict] = []
     src_files: set[str] = set()
     preds_dir = root / b / f"seed{seed}" / "transfer_preds"
     for p in sorted(preds_dir.glob(f"P-B-holdout-{rung}*.jsonl")):
@@ -1187,18 +1263,33 @@ def a2fix_load_new_preds(root: Path, b: str, seed: int, rung: str, repaired_arm:
             if r.get("arm") != repaired_arm or str(r.get("rung")) != rung:
                 continue
             found_here = True
-            cid = str(r["context_id"])
-            hits[cid] = float(r["score"])
-            dv_by_ctx[cid] = float(r["dv"])
-            if r.get("group") is None:
-                return None, None, None, f"preds row missing 'group' ({p.name}, ctx {cid})"
-            grp_by_ctx[cid] = str(r["group"])
+            r["_src"] = p.name
+            matching.append(r)
         if found_here:
             src_files.add(p.name)
-    if not hits:
+    if not matching:
         return None, None, None, f"no {repaired_arm} preds rows under {preds_dir}"
     if len(src_files) > 1:
         return None, None, None, f"ambiguous preds sources for {rung}: {sorted(src_files)}"
+    # UNIQUE-INDEX context ids on the single-source rows (codex r6 BLOCKER
+    # arm2fix-context-preds-duplicate-universe: hits[cid] = ... last-write-wins
+    # let a corrupt sidecar silently pick one of two scores per context) —
+    # duplicates are data corruption, loud, never a quiet gap.
+    by_cid = a2fix_unique_index(
+        matching,
+        lambda r: str(r["context_id"]),
+        context=f"new preds context ids ({b}/seed{seed}/{rung}, {sorted(src_files)[0]})",
+    )
+    hits: dict[str, float] = {}
+    dv_by_ctx: dict[str, float] = {}
+    grp_by_ctx: dict[str, str] = {}
+    for cid in sorted(by_cid):
+        r = by_cid[cid]
+        if r.get("group") is None:
+            return None, None, None, f"preds row missing 'group' ({r['_src']}, ctx {cid})"
+        hits[cid] = float(r["score"])
+        dv_by_ctx[cid] = float(r["dv"])
+        grp_by_ctx[cid] = str(r["group"])
     return hits, dv_by_ctx, grp_by_ctx, f"{len(hits)} contexts from {sorted(src_files)[0]}"
 
 
@@ -1229,18 +1320,29 @@ def a2fix_ctx_ci(
         if hits is None:
             return None, f"seed {s}: {note}"
         new_scores[int(s)] = hits
-        dv_by_ctx.update(dv_n)
-        grp_by_ctx.update(grp_n)
+        # cross-seed DV/group metadata must AGREE, never last-write-wins merge
+        # (codex r6 BLOCKER arm2fix-context-preds-duplicate-universe): the
+        # paired bootstrap uses ONE dv and ONE group per context across seeds.
+        a2fix_merge_consistent(dv_by_ctx, dv_n, what="dv", context=f"{b}/{rung} cross-seed")
+        a2fix_merge_consistent(grp_by_ctx, grp_n, what="group", context=f"{b}/{rung} cross-seed")
         p = banked_root / b / f"seed{s}" / "transfer_preds" / f"P-B-holdout-{rung}.jsonl"
         if not p.exists():
             return None, f"banked preds missing: {p}"
-        per: dict[str, float] = {}
-        for line in p.read_text().splitlines():
-            r = json.loads(line)
-            if r.get("arm") == ARM_MAP and str(r.get("rung")) == rung:
-                per[str(r["context_id"])] = float(r["score"])
-        if not per:
+        banked_rows = [
+            r
+            for r in (json.loads(line) for line in p.read_text().splitlines())
+            if r.get("arm") == ARM_MAP and str(r.get("rung")) == rung
+        ]
+        if not banked_rows:
             return None, f"banked arm7 preds empty for {rung} seed {s}"
+        per = {
+            cid: float(r["score"])
+            for cid, r in a2fix_unique_index(
+                banked_rows,
+                lambda r: str(r["context_id"]),
+                context=f"banked preds context ids ({b}/seed{s}/{rung})",
+            ).items()
+        }
         banked_scores[int(s)] = per
     ctx_sets = [set(v) for v in new_scores.values()] + [set(v) for v in banked_scores.values()]
     base = ctx_sets[0]
@@ -1375,43 +1477,53 @@ def a2fix_lattice(
             f"({failing}) — fewer than 2 behaviors pass; no arm2 comparison is citable"
         )
         return out
-    # STRUCTURAL exact-universe indexing (codex r5 arm2fix-parity-realized-
-    # multiset-prefilter — 5th iteration of the coverage class; this closes it
-    # at the ROOT): the realized key multiset is built from the UNFILTERED
-    # passing-set per_rung input FIRST, duplicate (behavior, eval_rung) keys
-    # are rejected loud BEFORE any dict construction (a last-write-wins dict
-    # made the reductions input-order-dependent), and only then are D
-    # admissions and finite-parity admissions derived from this uniquely-
-    # indexed exact realized universe (the old D-prefiltered view silently
-    # dropped D-less parity extras before coverage was computed).
-    row_by_key: dict[tuple, dict] = {}
-    dup: list[tuple] = []
-    for r in per_rung:
-        if r["behavior"] not in passing:
-            continue
-        key = (r["behavior"], r["eval_rung"])
-        if key in row_by_key:
-            dup.append(key)
-        else:
-            row_by_key[key] = r
-    if dup:
-        raise SystemExit(
-            f"[a2fix] DUPLICATE KEY ERROR: {len(set(dup))} (behavior, eval_rung) key(s) "
-            f"realized more than once in the passing-set per-rung input "
-            f"({sorted(set(dup))[:6]}) — one realized row per key is required "
-            "(a last-write-wins reduction would be input-order-dependent)"
-        )
-    rows = [
-        row_by_key[k]
-        for k in sorted(row_by_key)
-        if row_by_key[k].get("D", {}).get("mean") is not None
-    ]
-    d_means = [r["D"]["mean"] for r in rows]
+    import math
+
+    # STRUCTURAL exact-universe indexing via the SINGLE primitive (codex r5
+    # arm2fix-parity-realized-multiset-prefilter; codex r6 class-termination
+    # arm2fix-lattice-d-admission-universe): the realized universe is the
+    # UNFILTERED passing-set per_rung input, uniquely indexed through
+    # a2fix_unique_index (duplicates loud; passing-set membership is domain
+    # SCOPING, not admission), and EVERY admission — primary D and parity
+    # alike — derives from this index against the REGISTERED universe through
+    # the single a2fix_exact_coverage comparator. A registered rung without a
+    # finite D is a NAMED coverage failure, never a silent denominator shrink.
+    row_by_key = a2fix_unique_index(
+        (r for r in per_rung if r["behavior"] in passing),
+        lambda r: (r["behavior"], r["eval_rung"]),
+        context="lattice passing-set per-rung rows (behavior, eval_rung)",
+    )
+    for b in passing:
+        if not registered.get(b):
+            raise SystemExit(
+                f"[a2fix] REGISTRY ERROR: passing behavior {b} has an empty/missing "
+                "registered rung set — the primary-D coverage universe cannot be "
+                "empty (a vacuous universe would pass every read)"
+            )
+    expected_d = {(b, rung) for b in passing for rung in registered[b]}
+    d_by_key: dict[tuple, float] = {}
+    for k in sorted(row_by_key):
+        m = row_by_key[k].get("D", {}).get("mean")
+        if m is not None and math.isfinite(float(m)):
+            d_by_key[k] = float(m)
+    d_cov = a2fix_exact_coverage(
+        expected_d, d_by_key, row_by_key, context="primary-D registered coverage"
+    )
+    out["d_read"] = {
+        "n_rungs": d_cov["n_admitted"],
+        "n_rungs_expected": d_cov["n_expected"],
+        "coverage_complete": d_cov["complete"],
+        "uncovered_rungs": [list(u) for u in d_cov["missing"]],
+        "extra_unregistered_rungs": [list(u) for u in d_cov["extra"]],
+    }
+    reg_admitted = [k for k in sorted(expected_d) if k in d_by_key]
+    rows = [row_by_key[k] for k in reg_admitted]
+    d_means = [d_by_key[k] for k in reg_admitted]
     med = float(np.median(d_means)) if d_means else None
     per_b_median = {
-        b: float(np.median([r["D"]["mean"] for r in rows if r["behavior"] == b]))
+        b: float(np.median([d_by_key[k] for k in reg_admitted if k[0] == b]))
         for b in passing
-        if any(r["behavior"] == b for r in rows)
+        if any(k[0] == b for k in reg_admitted)
     }
     out["median_D_passing_set"] = med
     out["per_behavior_median_D"] = per_b_median
@@ -1435,50 +1547,33 @@ def a2fix_lattice(
     out["flagships_in_passing_set"] = flag_ok
     parity_read = None
     if restricted_passing:
-        import math
-
-        # EXACT-SET + FINITE parity coverage (r2 arm2fix-parity-partial-
-        # coverage; r3 arm2fix-parity-universe-undercoverage; r4
-        # arm2fix-parity-registered-set-nonexact closes the class):
-        # (c) a restricted passing behavior with an empty/missing registered
-        #     rung set is a REGISTRY defect — loud, never a vacuous universe;
-        # (a) only math.isfinite D_parity means are admitted (to coverage AND
-        #     to the median — None-filtering admitted inf/NaN);
-        # (b) coverage is exact TWO-WAY key-set equality vs the registered
-        #     universe: missing AND extra keys both break it, and dp is
-        #     computed exclusively over registered keys in registered-key
-        #     order (an extra unregistered rung can never move the median).
-        for b in restricted_passing:
-            if not registered.get(b):
-                raise SystemExit(
-                    f"[a2fix] REGISTRY ERROR: restricted passing behavior {b} has an "
-                    "empty/missing registered rung set — the parity coverage universe "
-                    "cannot be empty (a vacuous universe would pass every read)"
-                )
+        # EXACT-SET + FINITE parity coverage (r2/r3/r4 lineage; r6: routed
+        # through the SAME a2fix_exact_coverage comparator as the primary-D
+        # read — one implementation of registered-set coverage exists):
+        # only math.isfinite D_parity means are admitted; realized keys come
+        # from the unfiltered unique index (a D-less row at an unregistered
+        # rung is still a realized extra); dp is computed exclusively over
+        # registered keys in registered-key order.
         expected_keys = {(b, rung) for b in restricted_passing for rung in registered[b]}
-        # realized keys come from the UNFILTERED uniquely-indexed universe —
-        # a D-less row at an unregistered rung is still a realized extra
-        # (codex r5: the old derivation from the D-admitted `rows` list let
-        # such a row vanish before coverage was computed).
         realized_keys = {k for k in row_by_key if k[0] in restricted_passing}
         dp_by_key: dict[tuple, float] = {}
         for k in sorted(realized_keys):
             m = row_by_key[k].get("D_parity", {}).get("mean")
             if m is not None and math.isfinite(float(m)):
                 dp_by_key[k] = float(m)
-        missing = sorted(expected_keys - set(dp_by_key))
-        extra = sorted((realized_keys | set(dp_by_key)) - expected_keys)
+        p_cov = a2fix_exact_coverage(
+            expected_keys, dp_by_key, realized_keys, context="parity registered coverage"
+        )
         dp = [dp_by_key[k] for k in sorted(expected_keys) if k in dp_by_key]
-        coverage_complete = not missing and not extra
         parity_read = {
             "behaviors": restricted_passing,
             "n_rungs": len(dp),
-            "n_rungs_expected": len(expected_keys),
-            "coverage_complete": coverage_complete,
-            "uncovered_rungs": [list(u) for u in missing],
-            "extra_unregistered_rungs": [list(u) for u in extra],
+            "n_rungs_expected": p_cov["n_expected"],
+            "coverage_complete": p_cov["complete"],
+            "uncovered_rungs": [list(u) for u in p_cov["missing"]],
+            "extra_unregistered_rungs": [list(u) for u in p_cov["extra"]],
             "median_D_parity": float(np.median(dp)) if dp else None,
-            "positive": bool(coverage_complete and dp and float(np.median(dp)) > 0),
+            "positive": bool(p_cov["complete"] and dp and float(np.median(dp)) > 0),
             "note": "estimand-parity read: arm7 refit on the IDENTICAL training-row ids "
             "as the repaired arm2, over exactly the rows-restricted passing behaviors' "
             "REGISTERED rungs (plan §4 matched-budget parity duty; per-behavior "
@@ -1487,6 +1582,21 @@ def a2fix_lattice(
             "denominator, and extras never move the median)",
         }
         out["parity_read"] = parity_read
+    if not d_cov["complete"]:
+        # codex r6 BLOCKER arm2fix-lattice-d-admission-universe: incomplete
+        # primary-D coverage of the registered universe is a NAMED
+        # non-affirmative result — the median denominator can never silently
+        # shrink (missing) or grow (extras), and no affirmative or negative
+        # median read is rendered over a partial universe.
+        out["verdict"] = "WEAK-MIXED"
+        out["reason"] = (
+            "the primary-D read is INCOMPLETE over the passing behaviors' REGISTERED "
+            f"rungs (uncovered rungs: {out['d_read']['uncovered_rungs']}; extra "
+            f"unregistered rungs: {out['d_read']['extra_unregistered_rungs']}) — a "
+            "registered rung without a finite D can never silently shrink the median "
+            "denominator, and an unregistered realized rung can never join it"
+        )
+        return out
     if med is None:
         out["verdict"] = "WEAK-MIXED"
         out["reason"] = "no complete passing-set rungs carry a D read"

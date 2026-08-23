@@ -600,8 +600,8 @@ def test_a2fix_sanity_records_pass_fail_and_coverage_exits(tmp_path):
             {"hallucination": _res()},
             root,
         )
-    # duplicate sanity row fails loud
-    with pytest.raises(SystemExit, match="duplicate sanity row"):
+    # duplicate sanity seed fails loud (via a2fix_unique_index)
+    with pytest.raises(SystemExit, match="DUPLICATE KEY"):
         fold.a2fix_sanity_records(
             [*rows, _sanity_row("evil", 0, 0.5)], ["evil"], range(5), {"evil": _res()}, root
         )
@@ -769,8 +769,8 @@ def test_a2fix_join_restated_denominator_and_gap_exit():
     cells_gap = fold.a2fix_index_cells(new, banked_gap, res)
     with pytest.raises(SystemExit, match="join INCOMPLETE"):
         fold.a2fix_join_assert(cells_gap, ["evil"], seeds, REG2, resolution=res)
-    # duplicate join key fails loud at indexing time
-    with pytest.raises(SystemExit, match="duplicate join key"):
+    # duplicate join-grain key fails loud at indexing time (via a2fix_unique_index)
+    with pytest.raises(SystemExit, match="DUPLICATE KEY"):
         fold.a2fix_index_cells([*new, new[0]], banked, res)
 
 
@@ -1196,6 +1196,191 @@ def test_preds_producer_chain_omitted_pass_refuses_sentinel(tmp_path):
     assert not ok and "absent" in why  # the seed is not resumable
 
 
+def test_a2fix_lattice_registered_dless_row_named_failure():
+    """codex r6 BLOCKER arm2fix-lattice-d-admission-universe (fails pre-fix):
+    a REGISTERED rung whose row carries D.mean=None can never silently shrink
+    the median denominator — it is a NAMED primary-D coverage failure and the
+    remaining affirmative flagship cannot mint MAP-BEATS over it."""
+    sanity = {"evil": {"pass": True}, "sycophancy": {"pass": True}}
+    res = {"evil": _res(), "sycophancy": _res()}
+    reg = {"evil": frozenset({"evil_pair"}), "sycophancy": frozenset({"sycomwe"})}
+    rows = [
+        _entry("evil", "evil_pair", 0.06, [0.02, 0.10], [0.01, 0.11]),  # affirmative flagship
+        _entry("sycophancy", "sycomwe", None, None),  # registered, D-less
+    ]
+    v = fold.a2fix_lattice(rows, sanity, resolution=res, registered=reg)
+    assert v["verdict"] == "WEAK-MIXED"
+    assert v["verdict"] != "MAP-BEATS-CONTEXT-DIRECTION"
+    assert v["d_read"]["coverage_complete"] is False
+    assert v["d_read"]["uncovered_rungs"] == [["sycophancy", "sycomwe"]]
+    assert v["d_read"]["n_rungs"] == 1 and v["d_read"]["n_rungs_expected"] == 2
+    assert "primary-D" in v["reason"] and "INCOMPLETE" in v["reason"]
+    # the median never renders over the shrunken denominator
+    assert v["n_rungs_in_median"] == 1
+
+
+def _preds_row(cid, *, arm="arm2_ctx_native", rung="hhrt", score=0.1, dv=0.5, group="g0"):
+    return {"arm": arm, "rung": rung, "context_id": cid, "score": score, "dv": dv, "group": group}
+
+
+def _write_jsonl(path, rows):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("".join(json.dumps(r) + "\n" for r in rows))
+
+
+def test_a2fix_ctx_preds_duplicate_and_conflict_are_loud(tmp_path):
+    """codex r6 BLOCKER arm2fix-context-preds-duplicate-universe (all fail
+    pre-fix): (1) a duplicate context id inside a preds sidecar is a loud
+    DUPLICATE KEY error, never a last-write-wins score pick; (2) cross-seed
+    DV disagreement for one context id is a loud METADATA CONFLICT, never a
+    silent .update() merge; (3) a duplicate context id in the BANKED sidecar
+    is equally loud."""
+    new_root, banked_root = tmp_path / "new", tmp_path / "banked"
+    # (1) duplicate cid within this round's sidecar
+    _write_jsonl(
+        new_root / "evil" / "seed0" / "transfer_preds" / "P-B-holdout-hhrt.jsonl",
+        [_preds_row("c0"), _preds_row("c1"), _preds_row("c0", score=0.9)],
+    )
+    with pytest.raises(SystemExit, match="DUPLICATE KEY"):
+        fold.a2fix_load_new_preds(new_root, "evil", 0, "hhrt", "arm2_ctx_native")
+    # (2) cross-seed dv conflict for c0 (each seed's sidecar is itself valid)
+    _write_jsonl(
+        new_root / "evil" / "seed1" / "transfer_preds" / "P-B-holdout-hhrt.jsonl",
+        [_preds_row("c0"), _preds_row("c1")],
+    )
+    _write_jsonl(
+        new_root / "evil" / "seed2" / "transfer_preds" / "P-B-holdout-hhrt.jsonl",
+        [_preds_row("c0", dv=0.7), _preds_row("c1")],
+    )
+    for s in (1, 2):
+        _write_jsonl(
+            banked_root / "evil" / f"seed{s}" / "transfer_preds" / "P-B-holdout-hhrt.jsonl",
+            [_preds_row("c0", arm=fold.ARM_MAP), _preds_row("c1", arm=fold.ARM_MAP)],
+        )
+    with pytest.raises(SystemExit, match="METADATA CONFLICT"):
+        fold.a2fix_ctx_ci(
+            new_root,
+            banked_root,
+            "evil",
+            "hhrt",
+            [1, 2],
+            "arm2_ctx_native",
+            n_boot=8,
+            rng=np.random.default_rng(0),
+        )
+    # (3) duplicate cid in the BANKED sidecar
+    _write_jsonl(
+        new_root / "evil" / "seed3" / "transfer_preds" / "P-B-holdout-hhrt.jsonl",
+        [_preds_row("c0"), _preds_row("c1")],
+    )
+    _write_jsonl(
+        banked_root / "evil" / "seed3" / "transfer_preds" / "P-B-holdout-hhrt.jsonl",
+        [
+            _preds_row("c0", arm=fold.ARM_MAP),
+            _preds_row("c0", arm=fold.ARM_MAP, score=0.9),
+            _preds_row("c1", arm=fold.ARM_MAP),
+        ],
+    )
+    with pytest.raises(SystemExit, match="DUPLICATE KEY"):
+        fold.a2fix_ctx_ci(
+            new_root,
+            banked_root,
+            "evil",
+            "hhrt",
+            [3],
+            "arm2_ctx_native",
+            n_boot=8,
+            rng=np.random.default_rng(0),
+        )
+
+
+def test_a2fix_sanity_same_seed_none_duplicate_is_loud(tmp_path):
+    """codex r6 BLOCKER arm2fix-sanity-prefiltered-multiplicity (fails
+    pre-fix): a valid sanity row PLUS a same-seed rho_frozen=None duplicate
+    is a loud DUPLICATE KEY error — the old rho-None admission filter ran
+    before duplicate detection, so the pair passed the exact seed-set gate."""
+    root = _committed_root(tmp_path, {"evil": (0.40, 0.70)})
+    rows = [_sanity_row("evil", s, 0.5) for s in range(5)]
+    dup_none = _sanity_row("evil", 0, None)
+    with pytest.raises(SystemExit, match="DUPLICATE KEY"):
+        fold.a2fix_sanity_records(
+            [*rows, dup_none], ["evil"], list(range(5)), {"evil": _res()}, root
+        )
+
+
+def test_planned_preds_files_rejects_duplicate_holdouts():
+    """codex r6 CONCERN arm2fix-preds-plan-multiplicity (fails pre-fix): the
+    plan is a SET while writes are per-instance — duplicate holdouts must be
+    proven absent BEFORE set construction, never silently collapsed."""
+    with pytest.raises(ValueError, match="duplicate holdouts"):
+        sc._planned_preds_files(
+            "B", ["hhrt", "hhrt"], ["true"], arm2_adapter="v1", parity_refit_arm7=False
+        )
+
+
+def test_seed_resume_validates_recorded_plan(tmp_path):
+    """codex r6 CONCERN arm2fix-preds-plan-multiplicity resume half (fails
+    pre-fix — resume read only transfer_preds_files): a summary whose
+    manifest is a strict SUBSET of its recorded plan is refused; a manifest
+    file OUTSIDE the recorded plan is refused; a recorded plan differing from
+    the CURRENT invocation's plan is refused."""
+
+    def _seed_dir(name, manifest, planned):
+        d = tmp_path / name
+        d.mkdir(parents=True)
+        (d / "map_diagnostics.json").write_text("{}")
+        (d / "readout_pools.json").write_text("{}")
+        for n in manifest:
+            _write_jsonl(d / "transfer_preds" / n, [{"arm": "x"}])
+        (d / "all_arms_spearman.json").write_text(
+            json.dumps(
+                {"meta": {"transfer_preds_files": manifest, "transfer_preds_planned": planned}}
+            )
+        )
+        return d
+
+    kw = {"commit": "deadbeef", "seed": 0, "map_variants": ["true"], "transfer_preds": True}
+    a = "P-B-holdout-hhrt.jsonl"
+    b = "P-B-holdout-toxicchat.jsonl"
+    # manifest strict subset of the recorded plan -> refuse
+    ok, why = sc._seed_output_resume_ok(_seed_dir("subset", [a], [a, b]), **kw)
+    assert not ok and "planned sidecars missing" in why
+    # manifest file outside the recorded plan -> refuse
+    ok, why = sc._seed_output_resume_ok(_seed_dir("outside", [a, b], [a]), **kw)
+    assert not ok and "outside the recorded plan" in why
+    # recorded plan != current plan -> refuse
+    ok, why = sc._seed_output_resume_ok(_seed_dir("drift", [a], [a]), **kw, planned_files=[a, b])
+    assert not ok and "recorded plan != current plan" in why
+    # empty recorded plan -> refuse
+    ok, why = sc._seed_output_resume_ok(_seed_dir("empty", [a], []), **kw)
+    assert not ok and "plan empty" in why
+
+
+def test_a2fix_universe_construction_single_implementation():
+    """codex r6 class-termination pin: every arm2fix universe-constructing
+    consumer routes through the SINGLE a2fix_unique_index primitive, and no
+    raw last-write-wins map write survives on the surface."""
+    import inspect
+
+    for fn in (
+        fold.a2fix_lattice,
+        fold.a2fix_sanity_records,
+        fold.a2fix_index_cells,
+        fold.a2fix_load_new_preds,
+        fold.a2fix_ctx_ci,
+    ):
+        assert "a2fix_unique_index(" in inspect.getsource(fn), fn.__name__
+    lat = inspect.getsource(fold.a2fix_lattice)
+    # exactly ONE raw per_rung iteration: the domain-scoping genexp INSIDE the
+    # helper call — no other raw universe construction in the lattice body
+    assert lat.count("for r in per_rung") == 1
+    # registered-set coverage flows through the single comparator, twice
+    # (primary-D + parity)
+    assert lat.count("a2fix_exact_coverage(") == 2
+    # no last-write-wins .update() merge survives in the ctx-CI wiring
+    assert ".update(" not in inspect.getsource(fold.a2fix_ctx_ci)
+
+
 def test_a2fix_per_rung_d_read_and_parity_hash():
     seeds = [0, 1, 2]
     pairs = [("evil", "evil_pair")]
@@ -1296,11 +1481,15 @@ def test_a2fix_lattice_map_advantage_not_shown_and_exclusion():
         _entry("hallucination", "nqopen", 0.5, [0.4, 0.6], [0.4, 0.6], excl=True),
     ]
     res = {"evil": _res(), "sycophancy": _res(), "hallucination": _res()}
-    v = fold.a2fix_lattice(rows, sanity, resolution=res)
+    # registered universe matches the realized rows (r7: the primary-D read
+    # requires exact registered coverage before ANY median verdict renders)
+    reg = {"evil": frozenset({"evil_pair"}), "sycophancy": frozenset({"sycomwe"})}
+    v = fold.a2fix_lattice(rows, sanity, resolution=res, registered=reg)
     assert v["verdict"] == "MAP-ADVANTAGE-NOT-SHOWN"
     assert "failure to demonstrate" in v["reason"]
     assert v["n_rungs_in_median"] == 2 and v["median_D_passing_set"] < 0
     assert set(v["per_behavior_median_D"]) == {"evil", "sycophancy"}
+    assert v["d_read"]["coverage_complete"] is True
 
 
 def test_a2fix_lattice_map_beats_requires_parity_when_restricted():
