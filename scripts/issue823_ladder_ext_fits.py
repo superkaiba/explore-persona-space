@@ -1021,7 +1021,16 @@ def make_folds(n: int) -> list[tuple[np.ndarray, np.ndarray]]:
 
 @dataclasses.dataclass
 class RungFit:
-    """One rung's fitted arrays + records (primary: OOF; companion: E_eval mean)."""
+    """One rung's fitted arrays + records (primary: OOF; companion: E_eval mean).
+
+    ``read_out_solver`` is the REALIZED solver of every read-out-layer read —
+    set to the production solver by ``fit_rung`` and flipped to ``"canonical"``
+    by ``contingency_refit`` (the ONLY writer), so every downstream read-out
+    consumer (rung block label, wide-grid sensitivity, sens_estimator routing)
+    keys on ONE authoritative field instead of re-deriving it per call site
+    (plan v17 §4.3 step 4; r1 blocker gate-d-contingency-incoherent, r2
+    residual).
+    """
 
     tag: str
     label: str
@@ -1038,6 +1047,7 @@ class RungFit:
     sens_pure: dict
     solver: str
     fold_ns: list
+    read_out_solver: str
 
 
 def _chunk_fp(
@@ -1318,7 +1328,7 @@ def fit_rung(
                 fp,
             )
             print(
-                f"[fits] unit {tag}/{label} L={layer} "
+                f"[fits] unit {layers.index(layer) + 1}/{len(layers)} {tag}/{label}:L{layer} "
                 f"elapsed={time.monotonic() - t_chunk:.1f}s (chunk of {len(chunk)})",
                 flush=True,
             )
@@ -1338,6 +1348,7 @@ def fit_rung(
         sens_pure=sens,
         solver=solver,
         fold_ns=fold_ns,
+        read_out_solver=solver,
     )
 
 
@@ -1349,10 +1360,17 @@ def wide_grid_sensitivity(
     Fired per rung per ladder when > LAMBDA_EDGE_FRACTION of that rung's
     production fits selected the TOP grid edge; reported alongside — never
     silently swapped for — the primary-grid results.
+
+    Routes through the REALIZED read-out solver (``rf.read_out_solver``): after
+    a fired Gate-D contingency the production solver FAILED parity at exactly
+    these layers, so the wide-grid re-selection runs ``canonical_capped_fit``
+    (plan v17 §4.3 step 4; r2 reconcile residual a1). The block and every cell
+    carry an explicit ``solver`` label either way.
     """
     folds = make_folds(len(rf.train_ids))
     is_companion = not np.array_equal(rf.eval_ids, rf.train_ids)
-    out: dict = {"grid": list(LAMBDA_WIDE_PARAMS), "cells": {}}
+    canonical = rf.read_out_solver == "canonical"
+    out: dict = {"grid": list(LAMBDA_WIDE_PARAMS), "cells": {}, "solver": rf.read_out_solver}
     for layer in read_out_layers:
         x_full = src.cx_col(layer, rf.train_ids)
         y_full = {arm: src.arm_col(arm, layer, rf.train_ids) for arm in ARM_NAMES}
@@ -1360,18 +1378,26 @@ def wide_grid_sensitivity(
             x_ev = src.cx_col(layer, rf.eval_ids)
             y_ev = {arm: src.arm_col(arm, layer, rf.eval_ids) for arm in ARM_NAMES}
         for f_idx, (tr, te) in enumerate(folds):
-            fact = rung_factorize(x_full[tr], dev)
-            kev = eval_kernel(fact, x_ev if is_companion else x_full[te])
+            if not canonical:
+                fact = rung_factorize(x_full[tr], dev)
+                kev = eval_kernel(fact, x_ev if is_companion else x_full[te])
             for arm in ARM_NAMES:
-                lam, proj, ymu, dof = solve_capped(fact, y_full[arm][tr], LAMBDAS_WIDE, DOF_CAP)
-                pred = apply_fit(fact, lam, proj, ymu, kev)
+                x_score = x_ev if is_companion else x_full[te]
                 y_score = y_ev[arm] if is_companion else y_full[arm][te]
+                if canonical:
+                    pred, lam, dof = canonical_capped_fit(
+                        x_full[tr], y_full[arm][tr], x_score, LAMBDAS_WIDE, DOF_CAP
+                    )
+                else:
+                    lam, proj, ymu, dof = solve_capped(fact, y_full[arm][tr], LAMBDAS_WIDE, DOF_CAP)
+                    pred = apply_fit(fact, lam, proj, ymu, kev)
                 s, t = LF.per_context_ss(pred, y_score)
                 out["cells"][f"{arm}:L{layer}:fold{f_idx}"] = {
                     "lambda_wide": lam,
                     "dof_wide": dof,
                     "lambda_top_edge_wide": lambda_is_top_edge(lam, LAMBDAS_WIDE),
                     "r2_wide": 1.0 - float(s.sum()) / (float(t.sum()) + 1e-12),
+                    "solver": rf.read_out_solver,
                 }
     return out
 
@@ -1387,7 +1413,11 @@ def contingency_refit(rf: RungFit, src: FitSources, read_out_layers=READ_OUT_LAY
     (labeled by the caller via `read_out_solver`/`contingency_fired`); the
     identity-bias reads are solver-independent and kept. Small battery
     (|read_out_layers| x 5 folds x 2 arms canonical numpy fits) — serial by
-    design; returns the refit records.
+    design; returns the refit records. Also flips ``rf.read_out_solver`` to
+    ``"canonical"`` — the single authoritative field downstream read-out
+    consumers (wide_grid_sensitivity, sens_estimator_block, the rung block)
+    key on (r2 residual: the pre-fix code left them on the parity-failed
+    production solver while the rung block asserted "canonical").
     """
     folds = make_folds(len(rf.train_ids))
     is_companion = not np.array_equal(rf.eval_ids, rf.train_ids)
@@ -1469,7 +1499,78 @@ def contingency_refit(rf: RungFit, src: FitSources, read_out_layers=READ_OUT_LAY
                 cell["fold_mean_r2"] = LF.fold_mean_r2(comps)
             rf.cells[f"{arm}:L{layer}"] = cell
     rf.fit_records[:] = kept_records + records
+    rf.read_out_solver = "canonical"
     return records
+
+
+def sens_estimator_canonical(
+    rf: RungFit,
+    src: FitSources,
+    contingency_records: list[dict],
+    read_out_layers=READ_OUT_LAYERS,
+) -> dict:
+    """Recompute the sens_estimator (capped vs pure-GCV paired slots) CANONICALLY
+    after a fired Gate-D contingency (plan v17 §4.3 step 4; r2 residual a2:
+    `rf.sens_pure` was computed pre-contingency by the parity-FAILED production
+    solver and persisted under a rung block asserting canonical).
+
+    The CAPPED leg's (lambda, dof) are looked up from the contingency's own
+    refit records (identical inputs + solver — recomputing them would double
+    the SVD count for bit-identical results); only the PURE leg (cap_frac=inf)
+    is refit here. Primary rungs only (sens_flag is rung-1 primary by design);
+    fails loud on a companion-shaped RungFit or a missing contingency record.
+    """
+    if not np.array_equal(rf.eval_ids, rf.train_ids):
+        raise RuntimeError(
+            "sens_estimator_canonical: sens_estimator is a primary-ladder deliverable "
+            f"(train_ids == eval_ids); got companion-shaped rung {rf.tag}/{rf.label}"
+        )
+    by_slot = {(r["layer"], r["fold"], r["arm"]): r for r in contingency_records}
+    folds = make_folds(len(rf.train_ids))
+    out: dict = {}
+    for layer in read_out_layers:
+        x_full = src.cx_col(layer, rf.train_ids)
+        y_full = {arm: src.arm_col(arm, layer, rf.train_ids) for arm in ARM_NAMES}
+        for f_idx, (tr, te) in enumerate(folds):
+            for arm in ARM_NAMES:
+                rec = by_slot.get((layer, f_idx, arm))
+                if rec is None:
+                    raise RuntimeError(
+                        "sens_estimator_canonical: no contingency refit record for "
+                        f"(L{layer}, fold{f_idx}, {arm}) on {rf.tag}/{rf.label} — "
+                        "the capped leg must come from the fired contingency's own fits"
+                    )
+                pred_pure, lam_p, dof_p = canonical_capped_fit(
+                    x_full[tr], y_full[arm][tr], x_full[te], LAMBDAS, math.inf
+                )
+                s_p, t_p = LF.per_context_ss(pred_pure, y_full[arm][te])
+                out[f"{arm}:L{layer}:fold{f_idx}"] = {
+                    "lambda_pure": lam_p,
+                    "dof_pure": dof_p,
+                    "lambda_capped": rec["lambda"],
+                    "dof_capped": rec["dof"],
+                    "ss_res_pure": float(s_p.sum()),
+                    "ss_tot_pure": float(t_p.sum()),
+                    "r2_pure": 1.0 - float(s_p.sum()) / (float(t_p.sum()) + 1e-12),
+                    "solver": "canonical",
+                }
+    return out
+
+
+def sens_estimator_block(
+    rf: RungFit, src: FitSources, contingency_records: list[dict]
+) -> tuple[dict, str]:
+    """Route the persisted sens_estimator through the REALIZED read-out solver.
+
+    Contingency fired => canonical recompute (capped leg from the contingency's
+    own records, pure leg refit canonically); not fired => the production-solver
+    `rf.sens_pure` computed inside fit_rung. Returns (slots, solver_label) so
+    phase_fits persists an explicit `sens_estimator_solver` either way
+    (r2 reconcile residual a2).
+    """
+    if contingency_records:
+        return sens_estimator_canonical(rf, src, contingency_records), rf.read_out_solver
+    return rf.sens_pure, rf.read_out_solver
 
 
 # ── Row coverage + rung-dir outputs + paired-script runner ───────────────────
@@ -1734,12 +1835,76 @@ def p2_boundary_ladder(
             del facts
             out["cells"].update(cell_out)
             LF.save_chunk(ckpt_dir, name, {"cells": np.array(json.dumps(cell_out))}, cell_fp)
+            unit_idx = READ_OUT_LAYERS.index(layer) * len(grid) + grid.index(n_train) + 1
             print(
-                f"[fits] unit p2/L{layer}/n{n_train} "
+                f"[fits] unit {unit_idx}/{len(READ_OUT_LAYERS) * len(grid)} "
+                f"p2/L{layer}/n{n_train} "
                 f"elapsed={time.monotonic() - t_cell:.1f}s ({len(P2_DRAW_SEEDS)} seeds batched)",
                 flush=True,
             )
     return out
+
+
+def sens_dedup_block(
+    gate_e_dup: dict,
+    rung_masks: dict,
+    rung_labels: list[str],
+    src: FitSources,
+    dev: torch.device,
+    ckpt_dir: pathlib.Path,
+    fp_extra: dict | None = None,
+) -> dict | None:
+    """Dedup-mask sensitivity refit (P0 gate-(e) consumer; r1 concern
+    dedup-sensitivity-detached). Returns None when the flag did not fire;
+    raises when the flag fired without duplicate_groups (stale P0 report).
+    Extracted from phase_fits so the consumer path is unit-testable (Claude r2
+    Minor: the fired-flag branch had no test reaching fit_rung + block shape).
+    """
+    if not bool(gate_e_dup.get("dedup_sensitivity_refit_required")):
+        return None
+    groups = gate_e_dup.get("duplicate_groups") or []
+    if not groups:
+        raise RuntimeError(
+            "gate (e) flagged the dedup sensitivity refit but the P0 report carries no "
+            "duplicate_groups — regenerate the P0 report (p0ext) before fits"
+        )
+    dup_drop = {
+        int(i) for g in groups for i in g["context_ids"] if int(i) != int(g["representative"])
+    }
+    sens_block: dict = {
+        "n_dropped_duplicates": len(dup_drop),
+        "read_out_layers": list(READ_OUT_LAYERS),
+        "rungs": {},
+    }
+    for label in rung_labels:
+        keep = np.asarray(
+            [int(i) for i in rung_masks[label] if int(i) not in dup_drop],
+            dtype=np.int64,
+        )
+        rf_d = fit_rung(
+            "sens_dedup",
+            label,
+            keep,
+            src,
+            dev,
+            ckpt_dir,
+            layers=READ_OUT_LAYERS,
+            g2_slices=(),
+            fp_extra=fp_extra,
+        )
+        sens_block["rungs"][label] = {
+            "n_mask": int(len(keep)),
+            "n_dropped_from_rung": int(len(rung_masks[label]) - len(keep)),
+            "cells": {
+                k: {
+                    "pooled_r2": v.get("pooled_r2"),
+                    "fold_lambdas": v["fold_lambdas"],
+                    "solver": v["solver"],
+                }
+                for k, v in rf_d.cells.items()
+            },
+        }
+    return sens_block
 
 
 # ── Fingerprint sentinel ──────────────────────────────────────────────────────
@@ -1747,14 +1912,43 @@ def p2_boundary_ladder(
 REQUIRED_OUTPUT_KEYS = {
     "percontext_rung": ["arm_names", "context_ids", "p1_ss_res", "p1_ss_tot"],
     "shared_persona_paired": [
-        "ratio_measured_over_full_energy",
+        "mean_paired_diff_ci95",
         "rho_ci95",
         "n_negligible_E_draws",
-        "mean_paired_diff_ci95",
+        "offset_bias_control",
     ],
     "ladder_ext_r2": ["primary", "companion", "gates", "estimator"],
-    "p2_ext_boundary": ["cells", "holdout_sha256", "n_train_grid"],
-    "g2_ext_report": ["rungs", "tolerances"],
+    "ladder_ext_r2_rung": [
+        "n_mask",
+        "n_eval",
+        "n_train_per_fold",
+        "d",
+        "n_over_d_ratio",
+        "solver",
+        "g2_verdict",
+        "lambda_edge_fraction",
+        "cells",
+        "knn_read_out",
+        "estimator_degenerate",
+        "contingency_fired",
+        "read_out_solver",
+        "correlated_offset_floor",
+    ],
+    "correlated_offset_floor_layer": [
+        "floor_raw",
+        "e_point_from_diffs",
+        "floor_ratio",
+        "n_nonzero",
+        "n_persona0",
+    ],
+    "p2_ext_boundary": [
+        "cells",
+        "holdout_sha256",
+        "n_train_grid",
+        "read_out_layers",
+        "draw_seeds",
+    ],
+    "g2_ext_report": ["rungs", "tolerances", "threeway_rung1"],
 }
 
 
@@ -1845,66 +2039,251 @@ def _validated_store_identity(layout) -> dict:
     return d
 
 
-def _json_key_set(obj) -> set[str]:
-    """All dict keys at any nesting depth (REQUIRED_OUTPUT_KEYS validation helper)."""
-    keys: set[str] = set()
-    stack = [obj]
-    while stack:
-        cur = stack.pop()
-        if isinstance(cur, dict):
-            keys.update(cur.keys())
-            stack.extend(cur.values())
-        elif isinstance(cur, list):
-            stack.extend(cur)
-    return keys
+def _load_output_json(eval_dir: pathlib.Path, name: str, problems: list[str]):
+    """Load one output JSON for validation; records missing/unreadable and returns None."""
+    p = eval_dir / name
+    if not p.exists():
+        problems.append(f"missing {name}")
+        return None
+    try:
+        return json.loads(p.read_text())
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError) as exc:
+        problems.append(f"unreadable {name}: {exc}")
+        return None
 
 
-def validate_fits_outputs(eval_dir: pathlib.Path, rung_labels: list[str]) -> list[str]:
-    """Resume-time output validation (r1 finding fits-complete: the early-return
-    honored the sentinel alone): every REQUIRED_OUTPUT_KEYS artifact must exist
-    and carry its required keys, else the resume refits instead of skipping.
-    Returns the problem list (empty == valid).
+def _validate_rung_block(
+    tag: str, label: str, blk, sens_rung: bool, problems: list[str]
+) -> int | None:
+    """Exact-topology validation of ONE ladder_ext_r2 rung block; returns n_eval."""
+    where = f"ladder_ext_r2.json:{tag}/{label}"
+    if not isinstance(blk, dict):
+        problems.append(f"{where}: rung block is not a dict")
+        return None
+    miss = [k for k in REQUIRED_OUTPUT_KEYS["ladder_ext_r2_rung"] if k not in blk]
+    if miss:
+        problems.append(f"{where}: missing fields {miss}")
+        return None
+    want_cells = {f"{arm}:L{layer}" for arm in ARM_NAMES for layer in range(EXPECTED_LAYERS)}
+    cells = blk["cells"] if isinstance(blk["cells"], dict) else {}
+    if set(cells) != want_cells:
+        problems.append(
+            f"{where}: cells cardinality {len(cells)} != {len(want_cells)} (arm x layer)"
+        )
+    else:
+        pooled_key = "pooled_r2" if tag == "primary" else "pooled_r2_eval"
+        cell_req = ("fold_lambdas", "fold_dofs", "solver", "identity_bias_pooled_r2", pooled_key)
+        bad = sorted(k for k, c in cells.items() if any(f not in c for f in cell_req))
+        if bad:
+            problems.append(f"{where}: cells missing per-cell fields at {bad[:4]}")
+    if tag == "primary":
+        want_knn = {
+            f"{arm}:L{layer}:fold{f}"
+            for arm in ARM_NAMES
+            for layer in READ_OUT_LAYERS
+            for f in range(N_FOLDS)
+        }
+    else:
+        want_knn = {f"{arm}:L{layer}" for arm in ARM_NAMES for layer in READ_OUT_LAYERS}
+    knn = blk["knn_read_out"] if isinstance(blk["knn_read_out"], dict) else {}
+    if not want_knn <= set(knn):
+        problems.append(f"{where}: knn_read_out missing {sorted(want_knn - set(knn))[:4]}")
+    floor = blk["correlated_offset_floor"]
+    for layer in READ_OUT_LAYERS:
+        lf = floor.get(f"L{layer}") if isinstance(floor, dict) else None
+        if not isinstance(lf, dict) or any(
+            k not in lf for k in REQUIRED_OUTPUT_KEYS["correlated_offset_floor_layer"]
+        ):
+            problems.append(f"{where}: correlated_offset_floor L{layer} incomplete")
+    # Solver coherence: the gate-d-contingency-incoherent invariant — the rung
+    # label, the wide-grid block, and the sens_estimator must all carry the
+    # REALIZED read-out solver.
+    fired = bool(blk["contingency_fired"])
+    ros = blk["read_out_solver"]
+    if fired != (ros == "canonical"):
+        problems.append(f"{where}: contingency_fired={fired} but read_out_solver={ros!r}")
+    want_slots = {
+        f"{arm}:L{layer}:fold{f}"
+        for arm in ARM_NAMES
+        for layer in READ_OUT_LAYERS
+        for f in range(N_FOLDS)
+    }
+    wide = blk.get("wide_grid_sensitivity")
+    if wide is not None:
+        if not isinstance(wide, dict) or wide.get("solver") != ros:
+            problems.append(f"{where}: wide_grid_sensitivity solver != read_out_solver {ros!r}")
+        wcells = (wide.get("cells") or {}) if isinstance(wide, dict) else {}
+        if set(wcells) != want_slots:
+            problems.append(f"{where}: wide_grid_sensitivity cells incomplete")
+        else:
+            bad_w = sorted(k for k, c in wcells.items() if c.get("solver") != ros)
+            if bad_w:
+                problems.append(f"{where}: wide cells solver != {ros!r} at {bad_w[:4]}")
+    if sens_rung:
+        if "sens_estimator" not in blk or "sens_estimator_solver" not in blk:
+            problems.append(f"{where}: sens_estimator(+_solver) missing on the sens rung")
+        else:
+            if blk["sens_estimator_solver"] != ros:
+                problems.append(
+                    f"{where}: sens_estimator_solver {blk['sens_estimator_solver']!r} "
+                    f"!= read_out_solver {ros!r}"
+                )
+            if set(blk["sens_estimator"]) != want_slots:
+                problems.append(f"{where}: sens_estimator slots incomplete")
+    return int(blk["n_eval"])
+
+
+def validate_fits_outputs(
+    eval_dir: pathlib.Path, rung_labels: list[str], smoke: bool | None = None
+) -> list[str]:
+    """Exact-topology resume-time output validation (r1 finding fits-complete;
+    deepened per r2 concern fits-resume-schema-undervalidated: the prior form
+    checked 4 found-anywhere keys and accepted empty ladders).
+
+    Validates the REALIZED topology: both ladders carry exactly `rung_labels`
+    rung blocks with every registered field; (arm x layer) cell cardinality;
+    read-out kNN keys; per-layer correlated-offset floors; solver coherence
+    (contingency_fired <=> read_out_solver == canonical, wide-grid + sens
+    labels match); one Gate-D record per (ladder x rung) in g2_ext_report;
+    paired per_layer cells at every read-out layer; NPZ array shapes + id/
+    n_eval cross-checks; and P2 cell-grid completeness against the artifact's
+    own declared axes. `smoke` gates regime-dependent checks (gate_e presence
+    is required only on `smoke=False`). Returns the problem list (empty ==
+    valid); the resume path refits on any problem instead of skipping.
     """
     problems: list[str] = []
-    json_specs: dict[str, list[str]] = {
-        "ladder_ext_r2.json": REQUIRED_OUTPUT_KEYS["ladder_ext_r2"],
-        "p2_ext_boundary.json": REQUIRED_OUTPUT_KEYS["p2_ext_boundary"],
-        "g2_ext_report.json": REQUIRED_OUTPUT_KEYS["g2_ext_report"],
-    }
-    for label in rung_labels:
-        for suffix in (f"rung{label}", f"rand_rung{label}"):
-            json_specs[f"shared_persona_paired_{suffix}.json"] = REQUIRED_OUTPUT_KEYS[
-                "shared_persona_paired"
-            ]
-    for name, req in json_specs.items():
-        p = eval_dir / name
-        if not p.exists():
-            problems.append(f"missing {name}")
-            continue
-        try:
-            keys = _json_key_set(json.loads(p.read_text()))
-        except (OSError, json.JSONDecodeError, UnicodeDecodeError) as exc:
-            problems.append(f"unreadable {name}: {exc}")
-            continue
-        missing = [k for k in req if k not in keys]
+    n_eval_by: dict[str, int] = {}
+
+    r2 = _load_output_json(eval_dir, "ladder_ext_r2.json", problems)
+    if isinstance(r2, dict):
+        missing = [k for k in REQUIRED_OUTPUT_KEYS["ladder_ext_r2"] if k not in r2]
         if missing:
-            problems.append(f"{name}: missing keys {missing}")
+            problems.append(f"ladder_ext_r2.json: missing keys {missing}")
+        gates = r2.get("gates") if isinstance(r2.get("gates"), dict) else {}
+        for gk in ("gate_c", "gate_f_mask_integrity"):
+            if gk not in gates:
+                problems.append(f"ladder_ext_r2.json: gates missing {gk}")
+        if smoke is False and "gate_e" not in gates:
+            problems.append("ladder_ext_r2.json: gates missing gate_e (production run)")
+        for tag in ("primary", "companion"):
+            ladder = r2.get(tag)
+            if not isinstance(ladder, dict):
+                continue  # covered by the missing-keys check above
+            if sorted(ladder) != sorted(rung_labels):
+                problems.append(
+                    f"ladder_ext_r2.json: {tag} rungs {sorted(ladder)} != {sorted(rung_labels)}"
+                )
+            for label, blk in ladder.items():
+                sens_rung = tag == "primary" and rung_labels and label == rung_labels[0]
+                n_eval = _validate_rung_block(tag, label, blk, bool(sens_rung), problems)
+                if n_eval is not None:
+                    prefix = "rung" if tag == "primary" else "rand_rung"
+                    n_eval_by[f"{prefix}{label}"] = n_eval
+
+    g2 = _load_output_json(eval_dir, "g2_ext_report.json", problems)
+    if isinstance(g2, dict):
+        missing = [k for k in REQUIRED_OUTPUT_KEYS["g2_ext_report"] if k not in g2]
+        if missing:
+            problems.append(f"g2_ext_report.json: missing keys {missing}")
+        else:
+            want_rungs = {
+                f"{tag}/{label}" for tag in ("primary", "companion") for label in rung_labels
+            }
+            rungs = g2["rungs"] if isinstance(g2["rungs"], dict) else {}
+            if set(rungs) != want_rungs:
+                problems.append(
+                    f"g2_ext_report.json: rungs {sorted(rungs)} != {sorted(want_rungs)}"
+                )
+            else:
+                for k, rec in rungs.items():
+                    if not isinstance(rec, dict) or "slices" not in rec or "verdict" not in rec:
+                        problems.append(f"g2_ext_report.json: rung {k} lacks slices/verdict")
+            if not isinstance(g2["threeway_rung1"], dict) or "pass" not in g2["threeway_rung1"]:
+                problems.append("g2_ext_report.json: threeway_rung1 lacks a pass verdict")
+
     for label in rung_labels:
         for suffix in (f"rung{label}", f"rand_rung{label}"):
-            p = eval_dir / f"percontext_{suffix}.npz"
+            name = f"shared_persona_paired_{suffix}.json"
+            paired = _load_output_json(eval_dir, name, problems)
+            if paired is None:
+                continue
+            per_layer = (
+                paired.get("arms", {}).get(f"k{POOLED_K}", {}).get("per_layer", {})
+                if isinstance(paired, dict)
+                else {}
+            )
+            for layer in READ_OUT_LAYERS:
+                cell = per_layer.get(f"L{layer}")
+                if not isinstance(cell, dict):
+                    problems.append(f"{name}: per_layer L{layer} missing")
+                    continue
+                miss = [k for k in REQUIRED_OUTPUT_KEYS["shared_persona_paired"] if k not in cell]
+                if miss:
+                    problems.append(f"{name}: L{layer} missing {miss}")
+                elif "ratio_measured_over_full_energy" not in cell["offset_bias_control"]:
+                    problems.append(f"{name}: L{layer} offset_bias_control lacks ratio")
+
+    for label in rung_labels:
+        for suffix in (f"rung{label}", f"rand_rung{label}"):
+            name = f"percontext_{suffix}.npz"
+            p = eval_dir / name
             if not p.exists():
-                problems.append(f"missing percontext_{suffix}.npz")
+                problems.append(f"missing {name}")
                 continue
             try:
                 with np.load(p) as z:
                     absent = [
                         k for k in REQUIRED_OUTPUT_KEYS["percontext_rung"] if k not in z.files
                     ]
+                    if absent:
+                        problems.append(f"{name}: missing arrays {absent}")
+                        continue
+                    n_ctx = int(z["context_ids"].shape[0])
+                    want_shape = (len(ARM_NAMES), EXPECTED_LAYERS, n_ctx)
+                    for arr in ("p1_ss_res", "p1_ss_tot"):
+                        if tuple(z[arr].shape) != want_shape:
+                            problems.append(
+                                f"{name}: {arr} shape {tuple(z[arr].shape)} != {want_shape}"
+                            )
+                    if not np.issubdtype(z["context_ids"].dtype, np.integer):
+                        problems.append(f"{name}: context_ids dtype is not integer")
+                    if suffix in n_eval_by and n_ctx != n_eval_by[suffix]:
+                        problems.append(
+                            f"{name}: n_contexts {n_ctx} != rung block n_eval {n_eval_by[suffix]}"
+                        )
             except (OSError, ValueError) as exc:
-                problems.append(f"unreadable percontext_{suffix}.npz: {exc}")
+                problems.append(f"unreadable {name}: {exc}")
                 continue
-            if absent:
-                problems.append(f"percontext_{suffix}.npz: missing arrays {absent}")
+
+    p2 = _load_output_json(eval_dir, "p2_ext_boundary.json", problems)
+    if isinstance(p2, dict):
+        missing = [k for k in REQUIRED_OUTPUT_KEYS["p2_ext_boundary"] if k not in p2]
+        if missing:
+            problems.append(f"p2_ext_boundary.json: missing keys {missing}")
+        else:
+            if list(p2["read_out_layers"]) != list(READ_OUT_LAYERS):
+                problems.append(
+                    f"p2_ext_boundary.json: read_out_layers {p2['read_out_layers']} "
+                    f"!= {list(READ_OUT_LAYERS)}"
+                )
+            want_p2 = {
+                f"L{layer}:n{n}:seed{s}"
+                for layer in p2["read_out_layers"]
+                for n in p2["n_train_grid"]
+                for s in p2["draw_seeds"]
+            }
+            p2_cells = p2["cells"] if isinstance(p2["cells"], dict) else {}
+            if set(p2_cells) != want_p2:
+                problems.append(
+                    f"p2_ext_boundary.json: cells {len(p2_cells)} != declared grid "
+                    f"{len(want_p2)} (layer x n_train x seed)"
+                )
+            else:
+                cell_req = ("r2", "lambda", "dof", "solver")
+                bad = sorted(k for k, c in p2_cells.items() if any(f not in c for f in cell_req))
+                if bad:
+                    problems.append(f"p2_ext_boundary.json: cells missing fields at {bad[:4]}")
+
     return problems
 
 
@@ -2028,7 +2407,7 @@ def phase_fits(args, layout: EXTCAP.Layout) -> None:
             and same_inputs
             and prior_fp.get("code_sha") == fingerprint["code_sha"]
         ):
-            problems = validate_fits_outputs(eval_dir, rung_labels)
+            problems = validate_fits_outputs(eval_dir, rung_labels, smoke=bool(prior.get("smoke")))
             if not problems:
                 logger.info(
                     "[fits] complete sentinel + matching fingerprint + validated outputs "
@@ -2269,13 +2648,15 @@ def phase_fits(args, layout: EXTCAP.Layout) -> None:
                 "knn_read_out": knn_block,
                 "estimator_degenerate": bool(min(rf.fold_ns) < HIDDEN),
                 "contingency_fired": bool(contingency_records),
-                "read_out_solver": "canonical" if contingency_records else rf.solver,
+                "read_out_solver": rf.read_out_solver,
                 "correlated_offset_floor": rung_outputs["floor"],
             }
             if wide_block is not None:
                 rung_block["wide_grid_sensitivity"] = wide_block
             if sens_flag:
-                rung_block["sens_estimator"] = rf.sens_pure
+                sens_slots, sens_solver = sens_estimator_block(rf, src, contingency_records)
+                rung_block["sens_estimator"] = sens_slots
+                rung_block["sens_estimator_solver"] = sens_solver
             r2_agg[tag][label] = rung_block
             print(f"[phase=fits_{tag}_{label}]", flush=True)
 
@@ -2285,49 +2666,8 @@ def phase_fits(args, layout: EXTCAP.Layout) -> None:
     p0_report = json.loads(p0_report_path.read_text()) if p0_report_path.exists() else {}
     gate_e_dup = p0_report.get("gate_e_duplicates", {})
     dedup_required = bool(gate_e_dup.get("dedup_sensitivity_refit_required"))
-    if dedup_required:
-        groups = gate_e_dup.get("duplicate_groups") or []
-        if not groups:
-            raise RuntimeError(
-                "gate (e) flagged the dedup sensitivity refit but the P0 report carries no "
-                "duplicate_groups — regenerate the P0 report (p0ext) before fits"
-            )
-        dup_drop = {
-            int(i) for g in groups for i in g["context_ids"] if int(i) != int(g["representative"])
-        }
-        sens_block: dict = {
-            "n_dropped_duplicates": len(dup_drop),
-            "read_out_layers": list(READ_OUT_LAYERS),
-            "rungs": {},
-        }
-        for label in rung_labels:
-            keep = np.asarray(
-                [int(i) for i in rung_masks[label] if int(i) not in dup_drop],
-                dtype=np.int64,
-            )
-            rf_d = fit_rung(
-                "sens_dedup",
-                label,
-                keep,
-                src,
-                dev,
-                ckpt_dir,
-                layers=READ_OUT_LAYERS,
-                g2_slices=(),
-                fp_extra=fp_extra,
-            )
-            sens_block["rungs"][label] = {
-                "n_mask": int(len(keep)),
-                "n_dropped_from_rung": int(len(rung_masks[label]) - len(keep)),
-                "cells": {
-                    k: {
-                        "pooled_r2": v.get("pooled_r2"),
-                        "fold_lambdas": v["fold_lambdas"],
-                        "solver": v["solver"],
-                    }
-                    for k, v in rf_d.cells.items()
-                },
-            }
+    sens_block = sens_dedup_block(gate_e_dup, rung_masks, rung_labels, src, dev, ckpt_dir, fp_extra)
+    if sens_block is not None:
         r2_agg["sens_dedup"] = sens_block
         print("[phase=fits_sens_dedup]", flush=True)
 

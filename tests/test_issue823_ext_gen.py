@@ -298,6 +298,30 @@ class TestManifestResume:
         report = json.loads((tmp_path / "ext_manifest_mismatch_report.json").read_text())
         assert report["reason"] == "prompts_file_sha_mismatch"
 
+    def test_manifest_rewrite_unlinks_stale_shard_set(self, tmp_path):
+        """r2 finding (d), missed path of r1 concern stale-manifest-precedence-
+        regen: write_sampling_manifest REPLACES the uploaded prompts JSONL, so
+        it must unlink any prior `<stem>.manifest.json` + `<stem>.shardNN.jsonl`
+        BEFORE the replacement write — a crash between the source rewrite and
+        the upload-time re-shard must leave NO stale shard set beside the new
+        bytes (manifest-first readers PREFER the stale shards otherwise)."""
+        sel, fields = self._selection(tmp_path)
+        stage = tmp_path / "stage"
+        xg.write_sampling_manifest(stage, sel, fields, {})
+        pf = stage / xg.PROMPTS_FILENAME
+        stale_manifest = pf.with_name(f"{pf.stem}.manifest.json")
+        stale_shard = pf.with_name(f"{pf.stem}.shard00.jsonl")
+        stale_manifest.write_text(json.dumps({"source": pf.name, "parts": [stale_shard.name]}))
+        stale_shard.write_text('{"stale": true}\n')
+        # regenerate the source in place (the second write_sampling_manifest of
+        # a resume-discard round) — the stale shard set must be GONE after it
+        xg.write_sampling_manifest(stage, sel, fields, {"regen": True})
+        assert not stale_manifest.exists() and not stale_shard.exists()
+        assert pf.exists()  # the fresh source bytes landed
+        # the resume loader reads the FRESH source, not a shadowing shard set
+        loaded = xg.load_selection_if_persisted(stage, fields, tmp_path)
+        assert loaded is not None and loaded["ext_prompts"] == sel["ext_prompts"]
+
     def test_resume_reader_survives_raw_unicode_line_separators(self, tmp_path):
         """#950 reader class (r1 finding unicode-jsonl-resume): the manifest
         writer is ensure_ascii=False, so a kept real-corpus prompt carrying a

@@ -217,7 +217,40 @@ def build_results_dir(root: pathlib.Path) -> pathlib.Path:
                 json.dumps(_paired_json(rng, tag, label))
             )
             _percontext_npz(rng, rd / f"percontext_{suffix}.npz", ids_t)
+    # sens_estimator rides the FIRST primary rung only (fits sens_flag), with the
+    # explicit solver label the r3 producer persists (sens_estimator_block).
+    first_label = sorted(LABELS, key=int)[0]
+    r2["primary"][first_label]["sens_estimator"] = {
+        f"{arm}:L{layer}:fold{f}": {
+            "lambda_pure": float(rng.uniform(0.001, 0.1)),
+            "dof_pure": float(rng.uniform(6.0, 9.0)),
+            "lambda_capped": float(rng.uniform(0.5, 2.0)),
+            "dof_capped": float(rng.uniform(2.0, 6.0)),
+            "ss_res_pure": float(rng.uniform(0.5, 1.5)),
+            "ss_tot_pure": 2.0,
+            "r2_pure": float(rng.uniform(0.0, 0.6)),
+        }
+        for arm in ARMS
+        for layer in FIGS.READ_OUT_LAYERS
+        for f in range(5)
+    }
+    r2["primary"][first_label]["sens_estimator_solver"] = r2["primary"][first_label][
+        "read_out_solver"
+    ]
     (rd / "ladder_ext_r2.json").write_text(json.dumps(r2))
+    (rd / "g2_ext_report.json").write_text(
+        json.dumps(
+            {
+                "tolerances": {"max_rel": 5e-4, "delta_r2": 5e-4},
+                "threeway_rung1": {"layer": 14, "fold": 0, "pass": True},
+                "rungs": {
+                    f"{tag}/{label}": {"slices": [], "verdict": "PASS"}
+                    for tag in ("primary", "companion")
+                    for label in LABELS
+                },
+            }
+        )
+    )
 
     seeds = [0, 1]
     grid = [8, 3336]

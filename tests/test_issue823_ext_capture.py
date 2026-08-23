@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import pathlib
+import types
 
 import pytest
 import torch
@@ -682,6 +683,54 @@ def test_stage_ext_gen_inputs_halts_rc18(tmp_path):
     )
     base, sentinel, rev = EXTCAP.stage_ext_gen_inputs(layout, "prefix", None, local)
     assert base == local and sentinel["complete"] and rev.startswith("local:")
+
+
+# ── P0-ext entry idempotency (r1 concern phase-entry-idempotency) ────────────
+
+
+def test_phase_p0ext_early_return_on_matching_prior_report(tmp_path, monkeypatch):
+    """Claude r2 Minor: the p0ext entry-idempotency early-return — a passing
+    prior report at BOTH matching staged revisions returns before any pair-row
+    load; a revision mismatch (or --pre-gpu-check) reruns the gates. The gate
+    path is fenced at load_ext_pair_rows (its first consumer)."""
+    layout = _tiny_layout(tmp_path, 4, 8)
+    layout.eval_dir.mkdir(parents=True, exist_ok=True)
+    monkeypatch.setattr(EXTCAP, "assert_out_root_headroom", lambda *a, **k: None)
+
+    def fake_stage_banked_inputs(layout):
+        return {"gen_rev": "bankedrev"}
+
+    def fake_stage_ext_gen_inputs(layout, prefix, revision, local_dir):
+        return tmp_path / "ext_base", {"complete": True}, "extrev"
+
+    def _fence(*a, **k):
+        raise AssertionError("early-return must not reach load_ext_pair_rows")
+
+    monkeypatch.setattr(EXTCAP, "stage_banked_inputs", fake_stage_banked_inputs)
+    monkeypatch.setattr(EXTCAP, "stage_ext_gen_inputs", fake_stage_ext_gen_inputs)
+    monkeypatch.setattr(EXTCAP, "load_ext_pair_rows", _fence)
+    args = types.SimpleNamespace(
+        pre_gpu_check=False, ext_prefix="prefix", ext_revision=None, ext_local_dir=None
+    )
+    report = {
+        "pass": True,
+        "metadata": {"ext_gen_revision": "extrev", "banked_gen_revision": "bankedrev"},
+    }
+    (layout.eval_dir / EXTCAP.P0_REPORT).write_text(json.dumps(report))
+    assert EXTCAP.phase_p0ext(args, layout) is None  # early-return, fence untouched
+
+    # stale ext revision => the early-return must NOT fire (gates rerun)
+    report["metadata"]["ext_gen_revision"] = "OLD"
+    (layout.eval_dir / EXTCAP.P0_REPORT).write_text(json.dumps(report))
+    with pytest.raises(AssertionError, match="load_ext_pair_rows"):
+        EXTCAP.phase_p0ext(args, layout)
+
+    # --pre-gpu-check bypasses the early-return even on a matching report
+    report["metadata"]["ext_gen_revision"] = "extrev"
+    (layout.eval_dir / EXTCAP.P0_REPORT).write_text(json.dumps(report))
+    args.pre_gpu_check = True
+    with pytest.raises(AssertionError, match="load_ext_pair_rows"):
+        EXTCAP.phase_p0ext(args, layout)
 
 
 # ── Layout + rc table sanity ─────────────────────────────────────────────────

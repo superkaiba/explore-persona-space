@@ -105,6 +105,7 @@ def _make_rungfit(tag: str, label: str, train_ids, eval_ids, seed: int = 3) -> F
         sens_pure={},
         solver="dual",
         fold_ns=[int(len(train_ids) * 4 // 5)] * FITS.N_FOLDS,
+        read_out_solver="dual",
     )
 
 
@@ -506,6 +507,115 @@ def test_fit_rung_companion_mean_aggregation_and_knn(tmp_path):
     assert rf.g2_slices and all(s["pass"] for s in rf.g2_slices)
 
 
+def test_contingency_routes_every_readout_consumer_canonically(tmp_path, monkeypatch):
+    """r2 blocker gate-d-contingency-incoherent (the verdict-changing residual):
+    after a FIRED Gate-D contingency EVERY persisted read-out consumer — the
+    rung solver field, fit_records, cells, kNN, wide_grid_sensitivity, and
+    sens_estimator — is canonical-labeled and canonically routed; non-read-out
+    fits retain the production records."""
+    src = FakeFitSources(30, seed=31)
+    ids = np.arange(25, dtype=np.int64)
+    rf = FITS.fit_rung(
+        "primary",
+        "25",
+        ids,
+        src,
+        CPU,
+        tmp_path / "ckpt",
+        layers=(0, 14, 17, 26),
+        g2_slices=((14, 0),),
+        sens_pure=True,
+    )
+    assert rf.read_out_solver == rf.solver  # production solver pre-contingency
+    prod_sens = dict(rf.sens_pure)
+    records = FITS.contingency_refit(rf, src)
+    assert rf.read_out_solver == "canonical"
+    assert records and all(r["solver"] == "canonical" for r in records)
+    for r in rf.fit_records:
+        if r["layer"] in FITS.READ_OUT_LAYERS:
+            assert r["solver"] == "canonical"
+        else:
+            assert r["layer"] == 0 and r["solver"] == rf.solver  # production retained
+    for layer in FITS.READ_OUT_LAYERS:
+        for arm in FITS.ARM_NAMES:
+            assert rf.cells[f"{arm}:L{layer}"]["solver"] == "canonical"
+    # sres at a read-out layer == a direct canonical recompute on the same fold
+    folds = FITS.make_folds(len(ids))
+    tr, te = folds[0]
+    x = src.cx_col(14, ids)
+    y = src.arm_col("k1", 14, ids)
+    pred, _lam, _dof = FITS.canonical_capped_fit(x[tr], y[tr], x[te], FITS.LAMBDAS, FITS.DOF_CAP)
+    s, _t = LF.per_context_ss(pred, y[te])
+    assert np.allclose(rf.sres[0, 14, te], s)
+    # wide-grid rides the canonical branch: the parity-FAILED production
+    # factorization is FENCED — any call proves the residual regressed.
+    monkeypatch.setattr(FITS, "rung_factorize", _raise_if_called)
+    wide = FITS.wide_grid_sensitivity(rf, src, CPU)
+    assert wide["solver"] == "canonical"
+    want_wide = {
+        f"{arm}:L{layer}:fold{f}"
+        for arm in FITS.ARM_NAMES
+        for layer in FITS.READ_OUT_LAYERS
+        for f in range(FITS.N_FOLDS)
+    }
+    assert set(wide["cells"]) == want_wide
+    assert all(c["solver"] == "canonical" for c in wide["cells"].values())
+    # sens_estimator: canonical recompute — the CAPPED leg comes from the
+    # contingency's own refit records, the PURE leg is refit canonically.
+    slots, sens_solver = FITS.sens_estimator_block(rf, src, records)
+    assert sens_solver == "canonical"
+    assert set(slots) == set(prod_sens)  # same slot key set as the production sens
+    by_slot = {(r["layer"], r["fold"], r["arm"]): r for r in records}
+    for key, slot in slots.items():
+        arm, lay, fold = key.split(":")
+        rec = by_slot[(int(lay[1:]), int(fold[4:]), arm)]
+        assert slot["solver"] == "canonical"
+        assert slot["lambda_capped"] == rec["lambda"] and slot["dof_capped"] == rec["dof"]
+        assert {"lambda_pure", "dof_pure", "ss_res_pure", "ss_tot_pure", "r2_pure"} <= set(slot)
+    # missing contingency record for a slot => fail-loud, never a silent gap
+    with pytest.raises(RuntimeError, match="no contingency refit record"):
+        FITS.sens_estimator_canonical(rf, src, records[:-1])
+    # UNFIRED branch: production sens rides through under the production label
+    rf2 = _make_rungfit("primary", "25", ids, ids)
+    rf2.sens_pure = {"k1:L14:fold0": {"lambda_pure": 1.0}}
+    slots2, solver2 = FITS.sens_estimator_block(rf2, src, [])
+    assert slots2 is rf2.sens_pure and solver2 == "dual"
+    # companion-shaped RungFit refuses the canonical sens recompute
+    rf3 = _make_rungfit("companion", "25", ids, np.arange(25, 30))
+    with pytest.raises(RuntimeError, match="primary-ladder deliverable"):
+        FITS.sens_estimator_canonical(rf3, src, records)
+
+
+def test_sens_dedup_block_consumer_path(tmp_path):
+    """Claude r2 Minor: the fired gate-(e) flag's consumer path — sens_dedup_block
+    drops non-representative duplicates, refits read-out layers per rung, and
+    fail-louds on a fired flag with no duplicate_groups."""
+    src = FakeFitSources(40, seed=37)
+    rung_masks = {"20": np.arange(20, dtype=np.int64)}
+    assert FITS.sens_dedup_block({}, rung_masks, ["20"], src, CPU, tmp_path / "ckpt") is None
+    with pytest.raises(RuntimeError, match="duplicate_groups"):
+        FITS.sens_dedup_block(
+            {"dedup_sensitivity_refit_required": True},
+            rung_masks,
+            ["20"],
+            src,
+            CPU,
+            tmp_path / "ckpt",
+        )
+    gate = {
+        "dedup_sensitivity_refit_required": True,
+        "duplicate_groups": [{"representative": 2, "context_ids": [2, 5, 7]}],
+    }
+    block = FITS.sens_dedup_block(gate, rung_masks, ["20"], src, CPU, tmp_path / "ckpt")
+    assert block["n_dropped_duplicates"] == 2  # 5 and 7 drop; the representative stays
+    rung = block["rungs"]["20"]
+    assert rung["n_mask"] == 18 and rung["n_dropped_from_rung"] == 2
+    want_cells = {f"{arm}:L{layer}" for arm in FITS.ARM_NAMES for layer in FITS.READ_OUT_LAYERS}
+    assert set(rung["cells"]) == want_cells
+    for cell in rung["cells"].values():
+        assert set(cell) == {"pooled_r2", "fold_lambdas", "solver"}
+
+
 # ── Rung-dir writer + paired-script consumption contract ────────────────────
 
 
@@ -531,7 +641,6 @@ def test_write_rung_dir_matches_load_mixture_diffs_and_energy(tmp_path):
     n0 = md.n_persona0(FITS.POOLED_K, -1)
     assert n0 == 20  # 320/16 shared-persona rows in the denominator population
     from scripts.issue823_ladder_common import (
-        correlated_floor_from_groups,
         mixture_energy_from_group_diffs,
     )
 
@@ -542,21 +651,58 @@ def test_write_rung_dir_matches_load_mixture_diffs_and_energy(tmp_path):
     assert e_direct == pytest.approx(e_summary, rel=1e-12)
     assert e_direct > 0
     # r1 blocker fits-analysis-handoff: the compact per-layer floor rides the
-    # return (=> the eval schema); it must MATCH the shared helper recomputed
-    # from the SAME persisted difference matrices — the REAL producer schema
-    # the figures fixture mirrors.
-    groups_nd = [(d.shape[0], d) for _p, d in md.groups(FITS.POOLED_K, 14)]
-    want = correlated_floor_from_groups(iter(groups_nd), n0)
+    # return (=> the eval schema). Oracle is HAND-COMPUTED from the
+    # FakePairSources geometry (r2 NIT: the prior oracle recomputed `want`
+    # through the same helper — self-referential): v_p(i) - v_0(i) =
+    # 0.01*p * ones(HIDDEN), n_p = 20 per persona 1..15, n_persona0 = 20.
+    #   mbar    = sum_p n_p*m_p / n_nonzero = 0.01 * 20 * 120 / 300 = 0.08
+    #   floor   = HIDDEN * 0.08^2
+    #   E       = sum_p n_p*||m_p||^2 / n_tot = 20 * 1e-4 * 1240 * HIDDEN / 320
+    # (sum p = 120, sum p^2 = 1240 over 1..15; n_nonzero=300, n_tot=320).
     assert set(floor) == {f"L{ly}" for ly in FITS.READ_OUT_LAYERS}
     got = floor["L14"]
-    assert got["floor_raw"] == pytest.approx(want["floor_raw"], rel=1e-12)
+    assert got["floor_raw"] == pytest.approx(FITS.HIDDEN * 0.08**2, rel=1e-5)
+    assert got["e_point_from_diffs"] == pytest.approx(
+        20 * 1e-4 * 1240 * FITS.HIDDEN / 320, rel=1e-5
+    )
     assert got["e_point_from_diffs"] == pytest.approx(e_direct, rel=1e-12)
-    assert got["n_nonzero"] == want["n_nonzero"] and got["n_persona0"] == n0
+    assert got["n_nonzero"] == 300 and got["n_persona0"] == n0
     z = np.load(rung_dir / "percontext_ladder.npz")
     assert list(z["arm_names"]) == ["k1", "k16"]
     assert z["p1_ss_res"].shape == (2, FITS.EXPECTED_LAYERS, 320)
     assign = json.loads((rung_dir / "assignment.json").read_text())
     assert assign["arms"]["16"][17] == 1 and len(assign["arms"]["1"]) == 320
+
+
+def test_correlated_floor_hand_oracle_unequal_groups():
+    """UNEQUAL group sizes pin the wsum (n_nonzero) and E (n_tot) denominators
+    independently against exact hand fractions (r2 NIT
+    floor-normalization-oracle-self-referential): n_1=2 with m_1=(2,0),
+    n_2=3 with m_2=(0,3), n_persona0=5 =>
+        E         = (2*4 + 3*9) / (5+5)          = 3.5
+        mbar      = (2*(2,0) + 3*(0,3)) / 5      = (0.8, 1.8)
+        floor_raw = 0.8^2 + 1.8^2                = 3.88
+    Integer-exact inputs, so equality is float-exact up to one rounding.
+    """
+    from scripts.issue823_ladder_common import (
+        correlated_floor_from_groups,
+        mixture_energy_from_group_diffs,
+    )
+
+    groups = [
+        (2, np.array([[2.0, 0.0], [2.0, 0.0]])),
+        (3, np.array([[0.0, 3.0], [0.0, 3.0], [0.0, 3.0]])),
+    ]
+    got = correlated_floor_from_groups(iter(groups), n_persona0=5)
+    assert got["e_point_from_diffs"] == pytest.approx(3.5, abs=1e-12)
+    assert got["floor_raw"] == pytest.approx(3.88, abs=1e-12)
+    assert got["floor_ratio"] == pytest.approx(3.88 / 3.5, abs=1e-12)
+    assert got["n_nonzero"] == 5 and got["n_persona0"] == 5
+    e_direct = mixture_energy_from_group_diffs(iter(groups), n_persona0=5)
+    assert e_direct == pytest.approx(3.5, abs=1e-12)
+    # zero-nonzero degenerate arm: floor_raw exactly 0.0, ratio None on E<=0
+    empty = correlated_floor_from_groups(iter([]), n_persona0=4)
+    assert empty["floor_raw"] == 0.0 and empty["floor_ratio"] is None
 
 
 @pytest.mark.slow
@@ -703,41 +849,136 @@ def test_validated_store_identity_roundtrip_and_refusals(tmp_path):
         FITS._validated_store_identity(layout)
 
 
-def test_validate_fits_outputs_names_missing_and_shallow_artifacts(tmp_path):
-    """r1 finding: the fits-complete resume must validate REQUIRED_OUTPUT_KEYS,
-    not sentinel existence — missing/short artifacts are NAMED problems."""
-    problems = FITS.validate_fits_outputs(tmp_path, ["25"])
-    assert any("ladder_ext_r2.json" in p for p in problems)
-    assert any("percontext_rung25.npz" in p for p in problems)
-    # Write conforming minimal artifacts and re-validate to empty.
-    (tmp_path / "ladder_ext_r2.json").write_text(
-        json.dumps({"primary": {}, "companion": {}, "gates": {}, "estimator": {}})
+def _mutate_json(rd: pathlib.Path, name: str, fn) -> None:
+    p = rd / name
+    d = json.loads(p.read_text())
+    fn(d)
+    p.write_text(json.dumps(d))
+
+
+def _rewrite_npz(rd: pathlib.Path, suffix: str, n: int, layers: int) -> None:
+    np.savez(
+        rd / f"percontext_{suffix}.npz",
+        arm_names=np.array(["k1", "k16"]),
+        context_ids=np.arange(n),
+        p1_ss_res=np.zeros((2, layers, n)),
+        p1_ss_tot=np.ones((2, layers, n)),
     )
-    (tmp_path / "p2_ext_boundary.json").write_text(
-        json.dumps({"cells": {}, "holdout_sha256": "s", "n_train_grid": []})
-    )
-    (tmp_path / "g2_ext_report.json").write_text(json.dumps({"rungs": {}, "tolerances": {}}))
-    paired = {
-        "arms": {
-            "k16": {
-                "per_layer": {
-                    "L14": {
-                        "offset_bias_control": {"ratio_measured_over_full_energy": 0.1},
-                        "rho_ci95": [0.0, 1.0],
-                        "n_negligible_E_draws": 0,
-                        "mean_paired_diff_ci95": [0.0, 1.0],
-                    }
-                }
-            }
-        }
-    }
-    for suffix in ("rung25", "rand_rung25"):
-        (tmp_path / f"shared_persona_paired_{suffix}.json").write_text(json.dumps(paired))
-        np.savez(
-            tmp_path / f"percontext_{suffix}.npz",
-            arm_names=np.array(["k1", "k16"]),
-            context_ids=np.arange(4),
-            p1_ss_res=np.zeros((2, 2, 4)),
-            p1_ss_tot=np.ones((2, 2, 4)),
-        )
-    assert FITS.validate_fits_outputs(tmp_path, ["25"]) == []
+
+
+def test_validate_fits_outputs_exact_topology_accepts_conforming_fixture(tmp_path):
+    """r2 concern fits-resume-schema-undervalidated: the exact-topology
+    validator PASSES the figures fixture (the realized producer schema) and
+    additionally requires gate_e on the production regime only."""
+    from tests.test_issue823_ext_figures import build_results_dir
+
+    rd = build_results_dir(tmp_path)
+    assert FITS.validate_fits_outputs(rd, ["48", "96"], smoke=True) == []
+    probs = FITS.validate_fits_outputs(rd, ["48", "96"], smoke=False)
+    assert probs and all("gate_e" in p for p in probs)
+
+
+def test_validate_fits_outputs_rejects_each_subtree_mutation(tmp_path):
+    """r2 concern fits-resume-schema-undervalidated (replaces the prior
+    found-anywhere key test, which ACCEPTED empty ladders): every mutated
+    subtree of a conforming fixture is REJECTED with a named problem."""
+    from tests.test_issue823_ext_figures import build_results_dir
+
+    r2j, g2j, p2j = "ladder_ext_r2.json", "g2_ext_report.json", "p2_ext_boundary.json"
+
+    def _del_r2(fn):
+        return lambda rd: _mutate_json(rd, r2j, fn)
+
+    cases = [
+        ("missing-r2", "missing ladder_ext_r2.json", lambda rd: (rd / r2j).unlink()),
+        (
+            "empty-primary-ladder",
+            "primary rungs",
+            _del_r2(lambda d: d.update(primary={})),
+        ),
+        (
+            "dropped-rung-field",
+            "missing fields",
+            _del_r2(lambda d: d["primary"]["48"].pop("read_out_solver")),
+        ),
+        (
+            "dropped-cell",
+            "cells cardinality",
+            _del_r2(lambda d: d["primary"]["48"]["cells"].pop("k1:L0")),
+        ),
+        (
+            "missing-knn",
+            "knn_read_out missing",
+            _del_r2(lambda d: d["primary"]["48"]["knn_read_out"].pop("k1:L14:fold0")),
+        ),
+        (
+            "floor-incomplete",
+            "correlated_offset_floor L26 incomplete",
+            _del_r2(
+                lambda d: d["primary"]["48"]["correlated_offset_floor"]["L26"].pop("floor_raw")
+            ),
+        ),
+        (
+            "solver-incoherent",
+            "contingency_fired",
+            _del_r2(lambda d: d["primary"]["48"].update(read_out_solver="canonical")),
+        ),
+        (
+            "sens-solver-mismatch",
+            "sens_estimator_solver",
+            _del_r2(lambda d: d["primary"]["48"].update(sens_estimator_solver="canonical")),
+        ),
+        (
+            "sens-missing",
+            "sens_estimator",
+            _del_r2(lambda d: d["primary"]["48"].pop("sens_estimator")),
+        ),
+        (
+            "wide-solver-mismatch",
+            "wide_grid_sensitivity solver",
+            _del_r2(
+                lambda d: d["primary"]["96"].update(
+                    wide_grid_sensitivity={"grid": [], "solver": "canonical", "cells": {}}
+                )
+            ),
+        ),
+        (
+            "gates-missing-gate-c",
+            "gates missing gate_c",
+            _del_r2(lambda d: d["gates"].pop("gate_c")),
+        ),
+        (
+            "g2-missing-rung",
+            "g2_ext_report.json: rungs",
+            lambda rd: _mutate_json(rd, g2j, lambda d: d["rungs"].pop("companion/96")),
+        ),
+        (
+            "paired-missing-layer",
+            "per_layer L17 missing",
+            lambda rd: _mutate_json(
+                rd,
+                "shared_persona_paired_rung48.json",
+                lambda d: d["arms"]["k16"]["per_layer"].pop("L17"),
+            ),
+        ),
+        ("npz-bad-shape", "shape", lambda rd: _rewrite_npz(rd, "rung48", 48, 2)),
+        ("npz-neval-mismatch", "n_eval", lambda rd: _rewrite_npz(rd, "rung48", 10, 28)),
+        (
+            "p2-missing-cell",
+            "declared grid",
+            lambda rd: _mutate_json(rd, p2j, lambda d: d["cells"].pop("L14:n8:seed0")),
+        ),
+        (
+            "p2-wrong-readout",
+            "read_out_layers",
+            lambda rd: _mutate_json(rd, p2j, lambda d: d.update(read_out_layers=[14, 26])),
+        ),
+    ]
+    for i, (name, fragment, mutate) in enumerate(cases):
+        case_root = tmp_path / f"case{i}"
+        case_root.mkdir()
+        rd = build_results_dir(case_root)
+        mutate(rd)
+        problems = FITS.validate_fits_outputs(rd, ["48", "96"], smoke=True)
+        assert problems, f"{name}: mutation was ACCEPTED"
+        assert any(fragment in p for p in problems), f"{name}: {problems}"

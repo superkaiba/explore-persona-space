@@ -109,6 +109,7 @@ import json  # noqa: E402
 import logging  # noqa: E402
 import os  # noqa: E402
 import pathlib  # noqa: E402
+import time  # noqa: E402
 from collections import Counter  # noqa: E402
 
 from huggingface_hub import hf_hub_download  # noqa: E402
@@ -479,6 +480,7 @@ def select_extension_contexts(
     # exclusion set; kept pool checkpointed every PROGRESS_CHUNK (#1092).
     taken: set[str] = set(ext)
     n_flushed = len(ext)
+    t_sel = time.monotonic()
 
     def _flush_progress() -> None:
         nonlocal n_flushed
@@ -505,7 +507,13 @@ def select_extension_contexts(
             },
         )
         n_flushed = len(ext)
-        logger.info("[gen_ext] stream progress %d/%d kept (pos %d)", len(ext), n_ext, pos)
+        logger.info(
+            "[gen_ext] stream progress %d/%d kept (pos %d) elapsed=%.1fs",
+            len(ext),
+            n_ext,
+            pos,
+            time.monotonic() - t_sel,
+        )
 
     while len(ext) < n_ext:
         p = _first_user_turn(_next_row())
@@ -573,6 +581,12 @@ def write_sampling_manifest(
         )
     prompts_path = stage_dir / PROMPTS_FILENAME
     prompts_path.parent.mkdir(parents=True, exist_ok=True)
+    # Invalidate any prior shard set BEFORE replacing the source bytes: a crash
+    # between this write and the upload-time re-shard must leave (new source,
+    # NO manifest/shards), never (new source, stale shards) — the precedence
+    # trap the OTHER source-rewriting writers already guard (r2 finding d,
+    # missed path of r1 concern stale-manifest-precedence-regen).
+    _unlink_stale_shards(prompts_path)
     tmp = prompts_path.with_suffix(".jsonl.tmp")
     tmp.write_text("\n".join(lines) + "\n", encoding="utf-8")
     os.replace(tmp, prompts_path)
