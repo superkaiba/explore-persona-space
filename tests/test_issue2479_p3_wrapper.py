@@ -16,6 +16,12 @@ subprocess is the wrapper's own --dry-run against the committed panel):
     different-fingerprint pilot must all NOT satisfy the skip (rc 3 +
     quarantine); a fully valid report must (rc 0); and a stale CURRENT-pilot
     binding dispatches WITHOUT quarantining the intact leg report.
+(3) r5 control residual of the same concern: the wrapper derives the CURRENT
+    control item rows (instrument_gates --step emit-control-items — the SAME
+    derivation the dispatch steps run) and binds every flat_/mask_ resume to
+    them via --items, so changed kept answers, changed masking output, or
+    sampled-ID drift refuse the skip (rc 3) while an unchanged
+    materialization still skips cleanly (rc 0).
 
 Content hygiene: fixture rows are synthetic benign text, never LMSYS-derived.
 """
@@ -66,13 +72,22 @@ def test_wrapper_declares_control_phases_and_flags() -> None:
         "--expect-design axis-census",
         '--expect-design "$prefix"',
         "--items-glob",
+        # r5: control resume sweeps bind to the CURRENT derived items
+        # (codex p3-leg-resume-unvalidated control residual)
+        "[phase=p3_control_items]",
+        "--step emit-control-items",
+        "--control-items-dir",
+        '--items "$cur_items"',
     ):
         assert token in text, f"wrapper lost required token: {token!r}"
     # instrument_gates.json is produced AFTER the freeze (its flatness gate
     # needs the realized axis range) and BEFORE the control re-upload, so the
     # upload publishes the control legs (r2 codex sequencing requirement).
+    # The control-items derivation runs after the freeze (axis raw complete)
+    # and before the first control resume sweep consumes it (r5).
     assert (
         text.index("[phase=p3_freeze]")
+        < text.index("[phase=p3_control_items]")
         < text.index("[phase=p3_flatness]")
         < text.index("[phase=p3_namemask]")
         < text.index("[phase=p3_gates]")
@@ -112,8 +127,8 @@ def test_wrapper_axis_loop_emits_per_unit_progress_both_branches() -> None:
 def test_instrument_gates_loops_emit_per_unit_progress() -> None:
     """Same r4 concern for the 8-leg flatness + 8-leg name-mask Batch loops."""
     src = (SCRIPTS / "issue2479_instrument_gates.py").read_text()
-    assert "[p3_flatness] unit {k}/{len(names_ordered)}" in src
-    assert "[p3_namemask] unit {k}/{len(rows_sel)}" in src
+    assert "[p3_flatness] unit {k}/{len(legs)}" in src
+    assert "[p3_namemask] unit {k}/{len(legs)}" in src
     # Flushed (unbuffered) per code-style per-unit-progress convention.
     for tag in ("[p3_flatness] unit", "[p3_namemask] unit"):
         seg = src[src.index(tag) :]
@@ -131,12 +146,14 @@ def test_wrapper_dry_run_lists_control_phases() -> None:
     assert proc.returncode == 0, proc.stderr[-2000:]
     for token in (
         "[dry-run] p3_stage_inserted:",
+        "[dry-run] p3_control_items:",
         "[dry-run] p3_flatness:",
         "[dry-run] p3_namemask:",
         "[dry-run] p3_gates:",
         "[dry-run] p3_upload_controls:",
         "issue2479_p3_leg_resume.py",
         "--expect-design axis-census",
+        "--step emit-control-items",
     ):
         assert token in proc.stdout, f"dry-run lost {token!r}: {proc.stdout[-2000:]}"
 
@@ -491,10 +508,170 @@ def test_changed_control_design_quarantined(tmp_path: Path, monkeypatch) -> None
     assert not rp.exists() and _quarantined(rp.parent)
 
 
-def test_valid_control_leg_satisfies_skip(tmp_path: Path, monkeypatch) -> None:
-    """A flat_ leg drawn under the REGISTERED design with a full census and a
-    current licensing pilot validates (rc 0) — the positive control for the
-    two refusals above."""
+# ---------------------------------------------------------------------------
+# (3) r5 control-leg residual — CURRENT-input derivation binding
+# (codex `p3-leg-resume-unvalidated`: flat/mask resumes previously trusted the
+# sidecar's own conv_ids + a hash presence check; a self-consistent stale
+# report/raw/design triple skipped. The wrapper now derives the CURRENT
+# control items via instrument_gates --step emit-control-items and passes
+# them to the validator via --items.)
+# ---------------------------------------------------------------------------
+FLAT_IDS = ("c1", "c2")
+
+
+def _control_fixture(
+    root: Path,
+    *,
+    kept_answer_of=None,
+    axis_answer_of=None,
+    display_name: str = "Iris",
+) -> dict:
+    """Minimal REAL input surface of the shared control derivations: a panel
+    with two inserted characters (iris also band-A for the mask leg), staged
+    inserted kept rows (identical reference answers across characters — the
+    flatness identity invariant), emitted axis items, and a full-census axis
+    save_raw. Synthetic benign text only."""
+    kept_answer_of = kept_answer_of or (lambda c: f"the shared reference answer for {c}")
+    axis_answer_of = axis_answer_of or (
+        lambda c: f"{display_name} explained the takeaway for {c} carefully."
+    )
+    panel = [
+        {
+            "name": "iris",
+            "variant_op": "char_2479_iris_op",
+            "variant_inserted": "char_2479_iris_ins",
+            "design_band": "A",
+            "display_name": display_name,
+        },
+        {
+            "name": "vex",
+            "variant_op": "char_2479_vex_op",
+            "variant_inserted": "char_2479_vex_ins",
+            "design_band": "B",
+            "display_name": "Vex",
+        },
+    ]
+    kept_dir = root / "kept"
+    for n in ("iris", "vex"):
+        d = kept_dir / f"char_2479_{n}_ins"
+        d.mkdir(parents=True, exist_ok=True)
+        rows = [
+            {"conv_id": c, "question": f"q {c}", "answer": kept_answer_of(c), "capped": False}
+            for c in FLAT_IDS
+        ]
+        (d / "kept.jsonl").write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+    items_dir = root / "axis_items"
+    items_dir.mkdir(parents=True, exist_ok=True)
+    axis_rows = [
+        {"conv_id": c, "question": f"q {c}", "answer": axis_answer_of(c), "capped": False}
+        for c in FLAT_IDS
+    ]
+    (items_dir / "axis_items_iris.jsonl").write_text(
+        "\n".join(json.dumps(r) for r in axis_rows) + "\n"
+    )
+    raw_dir = root / "axis_raw"
+    raw_dir.mkdir(parents=True, exist_ok=True)
+    all_scores = {}
+    for c in FLAT_IDS:
+        iid = jl.item_id(jl.LEG_AI_LIKENESS, "iris", c)
+        for d in range(jl.N_DRAWS):
+            all_scores[f"{iid}__{d:05d}__00"] = {"score": 50}
+    (raw_dir / "judge_raw_ail_iris.json").write_text(json.dumps({"all_scores": all_scores}))
+    return {
+        "panel": panel,
+        "reservation": set(FLAT_IDS),
+        "kept_glob": str(kept_dir / "{variant}" / "kept.jsonl"),
+        "items_glob": str(items_dir / "axis_items_{name}.jsonl"),
+        "axis_raw_glob": str(raw_dir / "judge_raw_ail_{name}.json"),
+        "out_dir": root / "control_items",
+    }
+
+
+def _emit(fix: dict) -> dict[str, Path]:
+    return ig.emit_control_items(
+        fix["panel"],
+        fix["reservation"],
+        fix["kept_glob"],
+        None,
+        fix["items_glob"],
+        fix["axis_raw_glob"],
+        fix["out_dir"],
+    )
+
+
+def _write_control_leg(tmp_path: Path, tag: str, rows: list[dict], design: dict) -> Path:
+    """A COMPLETE persisted control leg judged over exactly `rows` under the
+    DERIVED `design` (report + full-census save_raw + design sidecar)."""
+    legs = tmp_path / "legs"
+    legs.mkdir(exist_ok=True)
+    rp = legs / f"judge_report_ail_{tag}.json"
+    rp.write_text(json.dumps(_leg_report(tag, rows)))
+    all_scores = {}
+    for r in rows:
+        iid = jl.item_id(jl.LEG_AI_LIKENESS, tag, str(r["conv_id"]))
+        for d in range(jl.N_DRAWS):
+            all_scores[f"{iid}__{d:05d}__00"] = {"score": 50}
+    (legs / f"judge_raw_ail_{tag}.json").write_text(json.dumps({"all_scores": all_scores}))
+    (legs / f"judge_sample_ail_{tag}.json").write_text(json.dumps(design))
+    return rp
+
+
+def _control_argv(rp: Path, tag: str, items: Path, prefix: str, pilot: Path) -> list[str]:
+    """The wrapper's all_control_legs_valid invocation shape (r5: --items)."""
+    return [
+        "--report",
+        str(rp),
+        "--tag",
+        tag,
+        "--items",
+        str(items),
+        "--expect-design",
+        prefix,
+        "--pilot-report",
+        str(pilot),
+    ]
+
+
+def test_emit_control_items_writes_current_derivation(tmp_path: Path) -> None:
+    """emit-control-items writes EXACTLY the rows the dispatch steps judge —
+    one file per control leg, masking realized on the mask rows."""
+    fix = _control_fixture(tmp_path / "cur")
+    emitted = _emit(fix)
+    assert set(emitted) == {"flat_iris", "flat_vex", "mask_iris"}
+    flat = ig.derive_flatness_legs(fix["panel"], fix["reservation"], fix["kept_glob"], None)
+    rows = [json.loads(ln) for ln in emitted["flat_iris"].read_text().splitlines()]
+    assert rows == flat["iris"][0]
+    mask = ig.derive_namemask_legs(fix["panel"], fix["items_glob"], fix["axis_raw_glob"])
+    mrows = [json.loads(ln) for ln in emitted["mask_iris"].read_text().splitlines()]
+    assert mrows == mask["iris"][0]
+    assert all("the character" in r["answer"].lower() for r in mrows), (
+        "masking never fired on the mask control rows"
+    )
+
+
+def test_control_leg_current_derivation_satisfies_skip(tmp_path: Path, monkeypatch) -> None:
+    """UNCHANGED materialization still skips cleanly: a flat_ leg judged over
+    EXACTLY the current derived rows + design validates (rc 0) under the
+    wrapper-shaped invocation (--items <current emitted rows>)."""
+    _scratch_env(tmp_path, monkeypatch)
+    fix = _control_fixture(tmp_path / "cur")
+    emitted = _emit(fix)
+    sampled, design = ig.derive_flatness_legs(
+        fix["panel"], fix["reservation"], fix["kept_glob"], None
+    )["iris"]
+    rp = _write_control_leg(tmp_path, "flat_iris", sampled, design)
+    pilot = _pilot_pass(tmp_path)
+    rc = lr.main(_control_argv(rp, "flat_iris", emitted["flat_iris"], "flat", pilot))
+    assert rc == lr.EXIT_VALID
+    assert rp.is_file() and not _quarantined(rp.parent)
+
+
+def test_stale_flat_report_refused_against_current_items(tmp_path: Path, monkeypatch) -> None:
+    """r5 FLIP of the r4 blessing fixture: the synthetic 100-ID flat_ report
+    the r4 predicate ACCEPTED (self-consistent report/raw/design triple,
+    registered design constants) is REFUSED (rc 3 + quarantine) once the
+    wrapper-shaped invocation binds it to the CURRENT derivation's sampled
+    control IDs."""
     _scratch_env(tmp_path, monkeypatch)
     ids = tuple(f"c{i}" for i in range(ig.FLAT_N))
 
@@ -504,20 +681,58 @@ def test_valid_control_leg_satisfies_skip(tmp_path: Path, monkeypatch) -> None:
 
     rp = _write_leg(tmp_path, "flat_iris", conv_ids=ids, mutate_design=_flat_design)
     pilot = _pilot_pass(tmp_path)
-    rc = lr.main(
-        [
-            "--report",
-            str(rp),
-            "--tag",
-            "flat_iris",
-            "--expect-design",
-            "flat",
-            "--pilot-report",
-            str(pilot),
-        ]
+    emitted = _emit(_control_fixture(tmp_path / "cur"))  # current draw: 2 ids
+    rc = lr.main(_control_argv(rp, "flat_iris", emitted["flat_iris"], "flat", pilot))
+    assert rc == lr.EXIT_DISPATCH
+    assert not rp.exists() and _quarantined(rp.parent)
+
+
+def test_control_leg_changed_kept_answers_refused(tmp_path: Path, monkeypatch) -> None:
+    """r5 codex mechanization: SAME sampled conv_ids, CHANGED kept reference
+    answers (a re-stage at a new revision) — the content recompute against
+    the CURRENT flat derivation refuses the retained leg (rc 3)."""
+    _scratch_env(tmp_path, monkeypatch)
+    fix = _control_fixture(tmp_path / "v1")
+    sampled, design = ig.derive_flatness_legs(
+        fix["panel"], fix["reservation"], fix["kept_glob"], None
+    )["iris"]
+    rp = _write_control_leg(tmp_path, "flat_iris", sampled, design)
+    pilot = _pilot_pass(tmp_path)
+    fix2 = _control_fixture(
+        tmp_path / "v2", kept_answer_of=lambda c: f"REGENERATED reference answer {c}"
     )
-    assert rc == lr.EXIT_VALID
-    assert rp.is_file() and not _quarantined(rp.parent)
+    emitted2 = _emit(fix2)
+    rc = lr.main(_control_argv(rp, "flat_iris", emitted2["flat_iris"], "flat", pilot))
+    assert rc == lr.EXIT_DISPATCH
+    assert not rp.exists() and _quarantined(rp.parent)
+
+
+def test_control_leg_changed_masking_output_refused(tmp_path: Path, monkeypatch) -> None:
+    """r5 codex mechanization: SAME source axis rows + SAME sampled conv_ids,
+    but the CURRENT masking output differs (panel display rename → the old
+    name no longer masks) — the mask_ content recompute refuses (rc 3); the
+    unchanged materialization first validates (rc 0)."""
+    _scratch_env(tmp_path, monkeypatch)
+
+    def axis_of(c: str) -> str:
+        return f"Iris explained the takeaway for {c} carefully."
+
+    fix = _control_fixture(tmp_path / "v1", axis_answer_of=axis_of, display_name="Iris")
+    emitted = _emit(fix)
+    masked_rows, design, provenance = ig.derive_namemask_legs(
+        fix["panel"], fix["items_glob"], fix["axis_raw_glob"]
+    )["iris"]
+    assert provenance["n_items_with_mask_hits"] == len(masked_rows)
+    rp = _write_control_leg(tmp_path, "mask_iris", masked_rows, design)
+    pilot = _pilot_pass(tmp_path)
+    rc = lr.main(_control_argv(rp, "mask_iris", emitted["mask_iris"], "mask", pilot))
+    assert rc == lr.EXIT_VALID and rp.is_file()
+
+    fix2 = _control_fixture(tmp_path / "v2", axis_answer_of=axis_of, display_name="Zara")
+    emitted2 = _emit(fix2)  # "Iris" no longer masks: same ids, different text
+    rc2 = lr.main(_control_argv(rp, "mask_iris", emitted2["mask_iris"], "mask", pilot))
+    assert rc2 == lr.EXIT_DISPATCH
+    assert not rp.exists() and _quarantined(rp.parent)
 
 
 def test_quarantine_names_collision_free(tmp_path: Path) -> None:

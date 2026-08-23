@@ -141,6 +141,54 @@ def test_require_pass_instrument_and_data_bound_pass_returns(tmp_path: Path, mon
     assert rep["verdict"] == "PASS"
 
 
+def test_require_pass_smoke_synthesized_rejected(tmp_path: Path, monkeypatch) -> None:
+    """r5 codex `smoke-root-production-poisoning` mechanization (ii): a
+    CURRENT-identity PASS carrying smoke_synthesized=true is rejected by
+    production require_pilot_pass — verdict/instrument/data identity all
+    matching cannot make a synthesized pilot production-valid."""
+    _scratch_env(tmp_path, monkeypatch)
+    monkeypatch.delenv(jp.ALLOW_SYNTHESIZED_ENV, raising=False)
+    rep = _full_axis_report(data_identity=jp.axis_data_identity())
+    rep["smoke_synthesized"] = True
+    p = tmp_path / "r.json"
+    p.write_text(json.dumps(rep))
+    with pytest.raises(RuntimeError, match="smoke_synthesized"):
+        jp.require_pilot_pass(p, family="axis")
+    # The refusal is unconditional on the identity stages: it also fires with
+    # no family (the bare-verdict read path).
+    with pytest.raises(RuntimeError, match="never licenses production spend"):
+        jp.require_pilot_pass(p)
+
+
+def test_require_pass_smoke_synthesized_allowed_only_explicitly(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """The smoke driver's explicit licence — the kwarg or its env (which ONLY
+    scripts/issue2479_p3_controls_smoke.py sets) — is the sole path through."""
+    _scratch_env(tmp_path, monkeypatch)
+    rep = _full_axis_report(data_identity=jp.axis_data_identity())
+    rep["smoke_synthesized"] = True
+    p = tmp_path / "r.json"
+    p.write_text(json.dumps(rep))
+    assert jp.require_pilot_pass(p, family="axis", allow_synthesized=True)["verdict"] == "PASS"
+    monkeypatch.setenv(jp.ALLOW_SYNTHESIZED_ENV, "1")
+    assert jp.require_pilot_pass(p, family="axis")["verdict"] == "PASS"
+    # An explicit False overrides the env (belt for future callers).
+    with pytest.raises(RuntimeError, match="smoke_synthesized"):
+        jp.require_pilot_pass(p, family="axis", allow_synthesized=False)
+
+
+def test_smoke_driver_is_the_only_allow_synthesized_env_setter() -> None:
+    """Grep-level pin: no production script arms jp.ALLOW_SYNTHESIZED_ENV —
+    only the p3-controls smoke driver injects it into its subprocess env."""
+    hits = []
+    for p in sorted((REPO / "scripts").glob("*.py")):
+        text = p.read_text(errors="replace")
+        if "ALLOW_SYNTHESIZED_ENV" in text or jp.ALLOW_SYNTHESIZED_ENV in text:
+            hits.append(p.name)
+    assert hits == ["issue2479_judge_pilots.py", "issue2479_p3_controls_smoke.py"], hits
+
+
 def test_require_pass_pass_without_data_identity_raises(tmp_path: Path, monkeypatch) -> None:
     """r4: a PASS unbound to the panel/manifest/item materialization certifies
     nothing — the data-identity sibling of the NO-instrument-block refusal."""

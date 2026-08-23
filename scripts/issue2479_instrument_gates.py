@@ -25,6 +25,14 @@ judge_legs.run_leg` with the byte-identical ai_likeness rubric, judge model,
   --step gates      Compute both booleans from the persisted leg outputs +
                     axis_freeze.json and write instrument_gates.json (all
                     inputs, item/drop accounting, masked-item provenance).
+  --step emit-control-items
+                    Derive + write the CURRENT per-leg control item rows
+                    (control_items_flat_<name>.jsonl /
+                    control_items_mask_<name>.jsonl) through the SAME
+                    derivation the dispatch steps run, for the P3 wrapper's
+                    validated-resume sweep (issue2479_p3_leg_resume.py
+                    --items; r5 `p3-leg-resume-unvalidated`). Pure CPU — no
+                    spend, no pilot requirement.
 
 Draw budget: flatness 8 x 100 x 5 = 4,000; name-mask 8 x 40 x 5 = 1,600 —
 both under the ~5,000-call rule-26 pilot floor (llm-judging.md), and both on
@@ -259,25 +267,21 @@ def flatness_common_draw(pools: dict[str, dict[str, dict]]) -> tuple[list[str], 
     return ids, design
 
 
-def step_flatness(
+def derive_flatness_legs(
     panel: list[dict],
     reservation: set[str],
     kept_glob: str,
     raw_glob: str | None,
-    out_dir: Path,
-    *,
-    execute: bool,
-    threshold_base: int | None = jl.THRESHOLD_BASE_FORCE_BATCH,
-) -> None:
-    """Build + dispatch the verbatim-flatness leg for the 8 inserted cells.
+) -> dict[str, tuple[list[dict], dict]]:
+    """name -> (sampled rows, per-leg design) for the verbatim-flatness legs.
 
-    Every character's leg judges the SAME ordered conv_id set — one seed-0
-    draw from the cross-character intersection (`flatness_common_draw`) —
-    never a per-character draw (codex round-1 `instrument-controls-unpaired`).
-    The draw is NOT capped-stratified: the judged text is the shared
-    reference answer, and a joint stratification across characters whose
-    capped flags differ is unsatisfiable; realized per-character capped
-    counts are recorded in each leg's design instead.
+    The ONE shared derivation (r5 `p3-leg-resume-unvalidated` control
+    residual): `step_flatness` dispatches EXACTLY these rows, and
+    `emit_control_items` writes them for the wrapper's validated-resume
+    sweep, so a retained flat_<name> leg is bound to the CURRENT staged kept
+    stories + reservation intersection — never to its own sidecar's claims.
+    Deterministic (seed-0 permutation over the sorted intersection), so
+    emit-time and dispatch-time derivations agree byte-for-byte.
     """
     pools: dict[str, dict[str, dict]] = {}
     variants: dict[str, str] = {}
@@ -304,9 +308,8 @@ def step_flatness(
         pools[name] = pool
         variants[name] = variant
     conv_ids, base_design = flatness_common_draw(pools)
-    names_ordered = sorted(pools)
-    for k, name in enumerate(names_ordered, start=1):
-        t0 = time.time()
+    legs: dict[str, tuple[list[dict], dict]] = {}
+    for name in sorted(pools):
         tag = f"flat_{name}"
         sampled = [pools[name][cid] for cid in conv_ids]
         n_capped = sum(1 for x in sampled if jl.capped_of(x))
@@ -318,6 +321,35 @@ def step_flatness(
             "realized_capped": n_capped,
             "realized_natural": len(sampled) - n_capped,
         }
+        legs[name] = (sampled, design)
+    return legs
+
+
+def step_flatness(
+    panel: list[dict],
+    reservation: set[str],
+    kept_glob: str,
+    raw_glob: str | None,
+    out_dir: Path,
+    *,
+    execute: bool,
+    threshold_base: int | None = jl.THRESHOLD_BASE_FORCE_BATCH,
+) -> None:
+    """Build + dispatch the verbatim-flatness leg for the 8 inserted cells.
+
+    Every character's leg judges the SAME ordered conv_id set — one seed-0
+    draw from the cross-character intersection (`flatness_common_draw`) —
+    never a per-character draw (codex round-1 `instrument-controls-unpaired`).
+    The draw is NOT capped-stratified: the judged text is the shared
+    reference answer, and a joint stratification across characters whose
+    capped flags differ is unsatisfiable; realized per-character capped
+    counts are recorded in each leg's design instead. Item derivation is the
+    shared `derive_flatness_legs` (also the resume-validation source).
+    """
+    legs = derive_flatness_legs(panel, reservation, kept_glob, raw_glob)
+    for k, (name, (sampled, design)) in enumerate(legs.items(), start=1):
+        t0 = time.time()
+        tag = design["tag"]
         items = jl.build_ai_likeness_items(sampled, tag)
         jl.run_leg(
             jl.LEG_AI_LIKENESS,
@@ -331,24 +363,28 @@ def step_flatness(
         )
         # Long-Batch-loop observability (r4 codex `p3-long-loop-progress-missing`).
         print(
-            f"[p3_flatness] unit {k}/{len(names_ordered)} {tag} elapsed={time.time() - t0:.0f}s",
+            f"[p3_flatness] unit {k}/{len(legs)} {tag} elapsed={time.time() - t0:.0f}s",
             flush=True,
         )
 
 
-def step_namemask(
+def derive_namemask_legs(
     panel: list[dict],
     items_glob: str,
     axis_raw_glob: str,
-    out_dir: Path,
-    *,
-    execute: bool,
-    threshold_base: int | None = jl.THRESHOLD_BASE_FORCE_BATCH,
-) -> None:
-    """Build + dispatch the name-mask leg for the 8 band-A/D characters."""
-    rows_sel = extreme_rows(panel)
-    for k, r in enumerate(rows_sel, start=1):
-        t0 = time.time()
+) -> dict[str, tuple[list[dict], dict, dict]]:
+    """name -> (masked rows, design, mask provenance) for the name-mask legs.
+
+    Same shared-derivation contract as `derive_flatness_legs` (r5
+    `p3-leg-resume-unvalidated` control residual): eligibility from the
+    CURRENT axis save_raw per-item means, the seed-0 stratified subsample
+    from the CURRENT axis item lists, and the masked text from the CURRENT
+    panel display names — so a retained mask_<name> leg must match today's
+    masking output, not just its own sidecar's conv_ids. Pure derivation —
+    no writes (the provenance sidecar is written by `step_namemask`).
+    """
+    legs: dict[str, tuple[list[dict], dict, dict]] = {}
+    for r in extreme_rows(panel):
         name, disp = r["name"], r["display_name"]
         items_path = Path(items_glob.format(name=name))
         if not items_path.is_file():
@@ -376,20 +412,40 @@ def step_namemask(
             masked, n = mask_character_name(str(x["answer"]), disp)
             masked_rows.append({**x, "answer": masked})
             hits[str(x["conv_id"])] = n
-        c.write_json(
-            out_dir / f"mask_provenance_{name}.json",
-            {
-                "character": name,
-                "display_name": disp,
-                "neutral_token": NEUTRAL_TOKEN,
-                "seed": SUBSAMPLE_SEED,
-                "n_sampled": len(sampled),
-                "conv_ids": [str(x["conv_id"]) for x in sampled],
-                "mask_hits_by_conv_id": hits,
-                "n_items_with_mask_hits": sum(1 for v in hits.values() if v),
-                "n_items_zero_mask_hits": sum(1 for v in hits.values() if not v),
-            },
-        )
+        provenance = {
+            "character": name,
+            "display_name": disp,
+            "neutral_token": NEUTRAL_TOKEN,
+            "seed": SUBSAMPLE_SEED,
+            "n_sampled": len(sampled),
+            "conv_ids": [str(x["conv_id"]) for x in sampled],
+            "mask_hits_by_conv_id": hits,
+            "n_items_with_mask_hits": sum(1 for v in hits.values() if v),
+            "n_items_zero_mask_hits": sum(1 for v in hits.values() if not v),
+        }
+        legs[name] = (masked_rows, design, provenance)
+    return legs
+
+
+def step_namemask(
+    panel: list[dict],
+    items_glob: str,
+    axis_raw_glob: str,
+    out_dir: Path,
+    *,
+    execute: bool,
+    threshold_base: int | None = jl.THRESHOLD_BASE_FORCE_BATCH,
+) -> None:
+    """Build + dispatch the name-mask leg for the 8 band-A/D characters.
+
+    Item derivation is the shared `derive_namemask_legs` (also the
+    resume-validation source).
+    """
+    legs = derive_namemask_legs(panel, items_glob, axis_raw_glob)
+    for k, (name, (masked_rows, design, provenance)) in enumerate(legs.items(), start=1):
+        t0 = time.time()
+        tag = design["tag"]
+        c.write_json(out_dir / f"mask_provenance_{name}.json", provenance)
         items = jl.build_ai_likeness_items(masked_rows, tag)
         jl.run_leg(
             jl.LEG_AI_LIKENESS,
@@ -403,9 +459,46 @@ def step_namemask(
         )
         # Long-Batch-loop observability (r4 codex `p3-long-loop-progress-missing`).
         print(
-            f"[p3_namemask] unit {k}/{len(rows_sel)} {tag} elapsed={time.time() - t0:.0f}s",
+            f"[p3_namemask] unit {k}/{len(legs)} {tag} elapsed={time.time() - t0:.0f}s",
             flush=True,
         )
+
+
+def emit_control_items(
+    panel: list[dict],
+    reservation: set[str],
+    kept_glob: str,
+    raw_glob: str | None,
+    items_glob: str,
+    axis_raw_glob: str,
+    out_dir: Path,
+) -> dict[str, Path]:
+    """Write the CURRENT control item rows for the wrapper's resume sweep.
+
+    One `control_items_<tag>.jsonl` per control leg (tag = flat_<name> /
+    mask_<name>), each row EXACTLY what the dispatch step would judge —
+    derived through the SAME `derive_flatness_legs` / `derive_namemask_legs`
+    the dispatchers run. The P3 wrapper passes each file to
+    issue2479_p3_leg_resume.py --items, so a retained control leg must match
+    the CURRENT derivation in exact item-ID set AND judged content (r5
+    `p3-leg-resume-unvalidated`: the flat/mask resume previously trusted the
+    sidecar's own conv_ids plus a 64-char hash presence check). Pure
+    derivation + local write — no spend, no pilot requirement, no dispatch.
+    Content hygiene: rows carry LMSYS-derived text — out_dir must stay under
+    gitignored data/; this prints counts and paths only.
+    """
+    out_dir.mkdir(parents=True, exist_ok=True)
+    written: dict[str, Path] = {}
+    flat = derive_flatness_legs(panel, reservation, kept_glob, raw_glob)
+    mask = derive_namemask_legs(panel, items_glob, axis_raw_glob)
+    per_leg_rows = {f"flat_{n}": rows for n, (rows, _d) in flat.items()}
+    per_leg_rows.update({f"mask_{n}": rows for n, (rows, _d, _p) in mask.items()})
+    for tag, rows in per_leg_rows.items():
+        p = out_dir / f"control_items_{tag}.jsonl"
+        p.write_text("\n".join(json.dumps(r, ensure_ascii=False) for r in rows) + "\n")
+        written[tag] = p
+        print(f"[emit-control-items] {tag}: {len(rows)} rows -> {p}", flush=True)
+    return written
 
 
 # ---------------------------------------------------------------------------
@@ -546,7 +639,11 @@ def step_gates(
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--step", choices=("flatness", "namemask", "gates"), required=False)
+    ap.add_argument(
+        "--step",
+        choices=("flatness", "namemask", "gates", "emit-control-items"),
+        required=False,
+    )
     ap.add_argument("--panel", type=Path, default=_REPO_ROOT / fz.PANEL_REL)
     ap.add_argument("--manifest", type=Path, default=_REPO_ROOT / fz.MANIFEST_REL)
     ap.add_argument(
@@ -595,6 +692,13 @@ def main() -> None:
         help="sync-vs-batch crossover passthrough to run_leg; 0 (default) FORCES the "
         "production Batch path — a large value routes a tiny real smoke slice sync",
     )
+    ap.add_argument(
+        "--control-items-dir",
+        type=Path,
+        default=None,
+        help="emit-control-items: output dir for the derived per-leg control item row "
+        "files (LMSYS-derived text — keep under gitignored data/)",
+    )
     ap.add_argument("--import-check", action="store_true")
     args = ap.parse_args()
 
@@ -613,7 +717,27 @@ def main() -> None:
         print(f"import-ok: rubric_sha256={fz.rubric_fingerprint()[:16]}", flush=True)
         return
 
-    assert args.step, "--step is required (flatness | namemask | gates)"
+    assert args.step, "--step is required (flatness | namemask | gates | emit-control-items)"
+    if args.step == "emit-control-items":
+        # Pure CPU derivation of the CURRENT control item rows for the
+        # wrapper's validated-resume sweeps (r5 p3-leg-resume-unvalidated):
+        # no spend, no pilot requirement, no leg dispatch.
+        assert args.kept_glob and args.items_glob and args.axis_raw_glob, (
+            "--step emit-control-items requires --kept-glob, --items-glob and --axis-raw-glob"
+        )
+        assert args.control_items_dir is not None, (
+            "--step emit-control-items requires --control-items-dir"
+        )
+        emit_control_items(
+            fz.load_panel(args.panel),
+            fz.load_reservation_ids(args.manifest),
+            args.kept_glob,
+            args.raw_glob,
+            args.items_glob,
+            args.axis_raw_glob,
+            args.control_items_dir,
+        )
+        return
     if args.step in ("flatness", "namemask") and args.execute:
         # Plan §7 pilot-family REUSE: these legs sit under the 5k pilot floor
         # and run the byte-identical axis-family instrument, so a REAL spend

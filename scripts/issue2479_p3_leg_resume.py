@@ -34,9 +34,14 @@ flatness/name-mask control legs — binding the skip to FULL INPUT IDENTITY:
               axis-census: census==True) — constants read from the SAME
               modules the dispatchers use, never re-typed;
             * with --items: the save_raw item-ID set EXACTLY matches the
-              newly emitted axis item set AND the report's
+              freshly emitted/derived item rows AND the report's
               items_content_sha256 matches a recompute over the fresh rows
-              (same conv_ids with CHANGED question/answer text surface here);
+              (same conv_ids with CHANGED question/answer text surface here).
+              Axis legs pass freeze_axis --emit-items output; control legs
+              pass issue2479_instrument_gates --step emit-control-items
+              output (the SAME derivation the dispatch steps run), so a
+              stale-but-self-consistent flat/mask report/raw/design triple
+              can no longer skip (r5 p3-leg-resume-unvalidated);
             * with --pilot-report: the persisted axis pilot PASS binds to the
               current instrument + data identity
               (issue2479_judge_pilots.require_pilot_pass), AND the leg
@@ -311,8 +316,9 @@ def main(argv: list[str] | None = None) -> int:
         "--items",
         type=Path,
         default=None,
-        help="freshly emitted axis_items_<tag>.jsonl — arms the exact item-ID set + item "
-        "CONTENT checks (axis legs; control legs' items are derived, bound via the design)",
+        help="freshly emitted/derived item rows — arms the exact item-ID set + item CONTENT "
+        "checks (axis legs: freeze_axis --emit-items output; control legs: "
+        "issue2479_instrument_gates --step emit-control-items output)",
     )
     ap.add_argument(
         "--expect-design",

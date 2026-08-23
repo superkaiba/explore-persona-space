@@ -37,7 +37,15 @@ Sanctioned smoke deviations (disclosed in the round marker):
 
 Spend: requires EPM_I1345_JUDGE_SPEND_OK=1 at launch (~60 real judge calls).
 Outputs land under /tmp/issue-2479-smoke-p3controls (scratch-dir redirect);
-digests print paths + bytes + sha256 + counts, never judged row text.
+an EPM_I2479_SMOKE_ROOT override is CONTAINMENT-GATED before any write
+(`validate_smoke_root`, r4 codex `smoke-root-production-poisoning`): the root
+must resolve strictly under /tmp, $TMPDIR, or repo-local
+data/issue_2479/smoke_* — anything else inside the repository tree
+(eval_results/ and every other issue's dirs especially) or outside every
+approved scratch area is REFUSED fail-loud. The synthesized pilot is honored
+by `require_pilot_pass` ONLY under jp.ALLOW_SYNTHESIZED_ENV=1, which this
+driver alone injects into its subprocess env.
+Digests print paths + bytes + sha256 + counts, never judged row text.
 """
 
 from __future__ import annotations
@@ -64,12 +72,64 @@ load_dotenv()
 import issue1345_onpolicy_judge_legs as jl  # noqa: E402
 import issue2479_judge_pilots as jp  # noqa: E402
 
-SCRATCH = Path(os.environ.get("EPM_I2479_SMOKE_ROOT", "/tmp/issue-2479-smoke-p3controls"))
+SMOKE_ROOT_ENV = "EPM_I2479_SMOKE_ROOT"
+DEFAULT_SMOKE_ROOT = "/tmp/issue-2479-smoke-p3controls"
+# Module-level value for interactive/import use; main() re-reads the env and
+# CONTAINMENT-GATES it via validate_smoke_root BEFORE any write.
+SCRATCH = Path(os.environ.get(SMOKE_ROOT_ENV, DEFAULT_SMOKE_ROOT))
 SMOKE_PREFIX = "issue2479_ai_likeness_gradient/smoke/p3_controls"
 DATA_REPO = "superkaiba1/explore-persona-space-data"
 THRESHOLD_BASE_SYNC = 1_000_000  # decide_route: tiny n -> deterministically sync
 CHARS = (("kestrel", "Kestrel", "A"), ("auriga", "Auriga", "D"))
 CONV_IDS = ("sc1", "sc2")
+
+
+def validate_smoke_root(scratch: Path, repo_root: Path = _REPO_ROOT) -> Path:
+    """Containment gate for the CONFIGURABLE smoke root — returns it RESOLVED.
+
+    r4 codex `smoke-root-production-poisoning`: every write in this driver
+    derives from SCRATCH, and the whole tree is bulk-published + partially
+    destroyed (the resume-demo quarantine), so an uncontained override — e.g.
+    ``EPM_I2479_SMOKE_ROOT=eval_results/issue_2479`` — would overwrite the
+    COMMITTED registered panel/manifest and park a synthesized pilot PASS at
+    the production path. Policy (raise RuntimeError BEFORE any write):
+
+      * repo-internal roots are refused, with ONE carve-out: strictly under
+        ``<repo>/data/issue_2479`` with a first path component starting
+        ``smoke_`` (gitignored per-issue scratch);
+      * outside the repo, only roots strictly under an approved temp area —
+        ``/tmp`` or ``$TMPDIR`` — are allowed (never the temp root itself:
+        SCRATCH is uploaded and quarantined wholesale);
+      * everything else is refused.
+    """
+    resolved = scratch.expanduser().resolve()
+    repo = repo_root.resolve()
+    if resolved.is_relative_to(repo):
+        approved = repo / "data" / "issue_2479"
+        if resolved != approved and resolved.is_relative_to(approved):
+            first = resolved.relative_to(approved).parts[0]
+            if first.startswith("smoke_"):
+                return resolved
+        raise RuntimeError(
+            f"refusing repo-internal smoke root {resolved} (from {SMOKE_ROOT_ENV}): the "
+            "driver writes/publishes/quarantines the WHOLE root, so a repo-internal root "
+            "can clobber committed artifacts (eval_results/, other issues' dirs). Approved "
+            f"repo-local scratch: {approved}/smoke_* ; otherwise use /tmp or $TMPDIR "
+            "(r4 codex smoke-root-production-poisoning)"
+        )
+    tmp_roots = [Path("/tmp").resolve()]
+    tmpdir = os.environ.get("TMPDIR", "").strip()
+    if tmpdir:
+        tmp_roots.append(Path(tmpdir).expanduser().resolve())
+    for root in tmp_roots:
+        if resolved != root and resolved.is_relative_to(root):
+            return resolved
+    raise RuntimeError(
+        f"refusing smoke root {resolved} (from {SMOKE_ROOT_ENV}): not strictly under an "
+        f"approved scratch area ({', '.join(str(r) for r in tmp_roots)}, or "
+        f"{repo / 'data' / 'issue_2479'}/smoke_*) "
+        "(r4 codex smoke-root-production-poisoning)"
+    )
 
 
 def _digest(path: Path, note: str = "") -> None:
@@ -199,6 +259,12 @@ def main(argv: list[str] | None = None) -> int:
         print("import-ok: issue2479_p3_controls_smoke", flush=True)
         return 0
 
+    # Containment gate FIRST — before the spend ack and before ANY write
+    # (r4 codex `smoke-root-production-poisoning`).
+    global SCRATCH
+    SCRATCH = validate_smoke_root(Path(os.environ.get(SMOKE_ROOT_ENV, DEFAULT_SMOKE_ROOT)))
+    print(f"[smoke-root] contained: {SCRATCH}", flush=True)
+
     assert os.environ.get(jl.SPEND_ACK_ENV) == "1", (
         f"{jl.SPEND_ACK_ENV}=1 required — this smoke makes ~60 REAL judge calls"
     )
@@ -208,12 +274,16 @@ def main(argv: list[str] | None = None) -> int:
     legs.mkdir(exist_ok=True)
     # Explicit env for EVERY subprocess (subprocess-env rule): scratch data
     # identity + the run_leg pilot guard armed exactly as the wrapper arms it.
+    # ALLOW_SYNTHESIZED_ENV is the smoke-ONLY licence for the synthesized
+    # pilot: production require_pilot_pass callers (no env) refuse it (r4
+    # codex `smoke-root-production-poisoning`).
     env = {
         **os.environ,
         jp.PANEL_ENV: str(fix["panel"]),
         jp.MANIFEST_ENV: str(fix["manifest"]),
         jp.ITEMS_DIR_ENV: str(fix["items_dir"]),
         jp.REQUIRE_AXIS_PILOT_ENV: str(pilot),
+        jp.ALLOW_SYNTHESIZED_ENV: "1",
     }
 
     for name, _disp, _band in CHARS:

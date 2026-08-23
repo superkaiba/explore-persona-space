@@ -89,6 +89,12 @@ MIN_EFFECTIVE_BY_FAMILY = {"axis": AXIS_MIN_EFFECTIVE, "ingen": INGEN_MIN_EFFECT
 # Opt-in env consumed by `jl.run_leg` (and exported by the P3 wrapper): a real
 # axis-leg spend refuses without a persisted axis-family pilot PASS at this path.
 REQUIRE_AXIS_PILOT_ENV = "EPM_I2479_REQUIRE_AXIS_PILOT_PASS"
+# r4 codex `smoke-root-production-poisoning`: a smoke-SYNTHESIZED pilot report
+# (smoke_synthesized=true) NEVER licenses production spend. The p3-controls
+# smoke driver (scripts/issue2479_p3_controls_smoke.py) is the ONLY setter of
+# this env — it exercises require_pilot_pass's real read path at every spend
+# seam against its scratch-synthesized PASS; no production launcher sets it.
+ALLOW_SYNTHESIZED_ENV = "EPM_I2479_ALLOW_SMOKE_SYNTHESIZED_PILOT"
 # Data-identity input resolution (r4 codex `judge-pilot-gates-missing`): the
 # SAME env names + defaults the P3 wrapper uses, so every spend path — the
 # wrapper's --require-pass gates, run_leg's env guard, and the control legs'
@@ -259,6 +265,7 @@ def require_pilot_pass(
     expected: dict | None = None,
     expected_data: dict | None = None,
     min_effective_draws: int | None = None,
+    allow_synthesized: bool | None = None,
 ) -> dict:
     """Load a persisted pilot report; RAISE unless it is a PASS bound to the
     CURRENT production instrument AND the CURRENT data materialization
@@ -279,6 +286,11 @@ def require_pilot_pass(
     wrapper's `--require-pass` gate, `jl.run_leg`'s env-armed axis guard, the
     P1 preamble's ingen gate, and `issue2479_instrument_gates.py`'s
     flatness/name-mask pilot reuse.
+
+    A report carrying ``smoke_synthesized: true`` is REFUSED regardless of
+    family/verdict/identity unless ``allow_synthesized`` is True (or, when
+    None, the ``ALLOW_SYNTHESIZED_ENV`` env is "1" — set ONLY by the
+    p3-controls smoke driver; r4 codex `smoke-root-production-poisoning`).
     """
     report_path = Path(report_path)
     if not report_path.is_file():
@@ -288,6 +300,21 @@ def require_pilot_pass(
             "before the production wave (plan §7)"
         )
     rep = json.loads(report_path.read_text())
+    if bool(rep.get("smoke_synthesized")):
+        allowed = (
+            allow_synthesized
+            if allow_synthesized is not None
+            else os.environ.get(ALLOW_SYNTHESIZED_ENV) == "1"
+        )
+        if not allowed:
+            raise RuntimeError(
+                f"{report_path}: pilot report carries smoke_synthesized=true — a "
+                "smoke-SYNTHESIZED PASS never licenses production spend (r4 codex "
+                "smoke-root-production-poisoning); run the real pilot "
+                f"(scripts/issue2479_judge_pilots.py --family "
+                f"{rep.get('family') or family or '<family>'} --execute). Only the "
+                f"p3-controls smoke driver sets {ALLOW_SYNTHESIZED_ENV}=1."
+            )
     if family is not None and rep.get("family") != family:
         raise RuntimeError(
             f"{report_path}: pilot family {rep.get('family')!r} != required {family!r}"

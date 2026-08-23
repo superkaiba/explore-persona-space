@@ -53,16 +53,22 @@
 #                       commit of axis_freeze.json + the axis_draws.json
 #                       per-draw sidecar + the axis_items stats sidecars +
 #                       bare rc-checked push + the axis-frozen marker).
+#   p3_control_items    issue2479_instrument_gates --step emit-control-items:
+#                       derive + write the CURRENT flat/mask item rows
+#                       (control_items_<tag>.jsonl) through the SAME
+#                       derivation the dispatch steps run — the resume
+#                       sweeps' --items input (r5 p3-leg-resume-unvalidated).
 #   p3_flatness         issue2479_instrument_gates --step flatness --execute:
 #                       the 8 inserted cells' verbatim reference answers on
 #                       ONE common seed-0 100-item draw (4k draws; REUSES the
 #                       axis-family pilot PASS). Skipped only when EVERY
 #                       flat_<name> leg report passes the validated resume
-#                       predicate.
+#                       predicate AGAINST the current derived items.
 #   p3_namemask         issue2479_instrument_gates --step namemask --execute:
 #                       the 8 band-A/D characters' 40-item seed-0 subsample
 #                       re-judged name-masked (1.6k draws; same pilot reuse).
-#                       Same validated-resume skip over mask_<name> legs.
+#                       Same validated-resume skip over mask_<name> legs,
+#                       bound to the current derived masked rows.
 #   p3_gates            issue2479_instrument_gates --step gates: compute
 #                       verbatim_flatness_pass + name_mask_pass from the
 #                       persisted legs + axis_freeze.json and write
@@ -110,6 +116,11 @@ ITEMS_DIR="${EPM_I2479_AXIS_ITEMS_DIR:-data/issue_2479/axis_items}"
 # gitignored data/ (LMSYS-derived text) — r2 g4 MAJOR-2.
 STATS_DIR="${EPM_I2479_AXIS_STATS_DIR:-eval_results/issue_2479/axis_items}"
 LEGS_DIR="${EPM_I2479_AXIS_LEGS_DIR:-eval_results/issue_2479/judge_legs}"
+# Freshly DERIVED current control item rows (LMSYS text -> gitignored data/):
+# the validated-resume sweeps bind retained flat_/mask_ legs to these via
+# --items, exactly as axis legs bind to the freshly emitted axis items
+# (r5 codex p3-leg-resume-unvalidated control residual).
+CONTROL_ITEMS_DIR="${EPM_I2479_CONTROL_ITEMS_DIR:-data/issue_2479/control_items}"
 PILOT_REPORT="eval_results/issue_2479/pilot_gate_axis.json"
 PILOT_WORK="${EPM_I2479_AXIS_PILOT_WORK:-data/issue_2479/pilot_axis}"
 GATES_OUT="eval_results/issue_2479/instrument_gates.json"
@@ -190,17 +201,24 @@ PY
 
 # Validated-resume sweep over one control leg family (flat|mask): returns 0
 # (skip the phase) only when EVERY leg report passes the completion
-# predicate; any invalid report is quarantined by the validator and the
-# phase re-runs (already-valid legs re-dispatch through the rubric-keyed
-# judge cache at ~zero cost). rc other than 0/3 aborts the wrapper.
+# predicate AGAINST THE CURRENT DERIVED ITEMS (--items: exact ID set +
+# content recompute vs the emit-control-items output — r5 codex
+# p3-leg-resume-unvalidated); any invalid report is quarantined by the
+# validator and the phase re-runs (already-valid legs re-dispatch through
+# the rubric-keyed judge cache at ~zero cost). rc other than 0/3 aborts.
 all_control_legs_valid() {
   local prefix="$1"; shift
-  local name rc
+  local name rc cur_items
   for name in "$@"; do
+    cur_items="${CONTROL_ITEMS_DIR}/control_items_${prefix}_${name}.jsonl"
+    if [ ! -f "$cur_items" ]; then
+      echo "[i2479-p3] ${prefix}_${name}: ${cur_items} missing — p3_control_items must emit it" >&2
+      exit 2
+    fi
     rc=0
     uv run python scripts/issue2479_p3_leg_resume.py \
       --report "${LEGS_DIR}/judge_report_ail_${prefix}_${name}.json" \
-      --tag "${prefix}_${name}" --expect-design "$prefix" \
+      --tag "${prefix}_${name}" --items "$cur_items" --expect-design "$prefix" \
       --pilot-report "$PILOT_REPORT" || rc=$?
     if [ "$rc" = "3" ]; then return 1; fi
     if [ "$rc" != "0" ]; then
@@ -222,8 +240,9 @@ if [ "$DRY_RUN" = "1" ]; then
   echo "[dry-run] p3_legs:  per character: issue2479_p3_leg_resume.py --report ${LEGS_DIR}/judge_report_ail_<name>.json --tag <name> --items ${ITEMS_DIR}/axis_items_<name>.jsonl --expect-design axis-census --pilot-report ${PILOT_REPORT}; on rc=3: EPM_I2479_REQUIRE_AXIS_PILOT_PASS=${PILOT_REPORT} uv run python scripts/issue1345_onpolicy_judge_legs.py --leg ai_likeness --rows ${ITEMS_DIR}/axis_items_<name>.jsonl --character <name> --census --out-dir ${LEGS_DIR} --execute; per-unit '[p3_legs] unit k/N <name> elapsed=<s>s' lines in both branches"
   echo "[dry-run] p3_upload: upload_folder ${LEGS_DIR} -> issue2479_ai_likeness_gradient/judge_legs + scoped raising verify"
   echo "[dry-run] p3_freeze: uv run python scripts/issue2479_freeze_axis.py --legs-dir ${LEGS_DIR} --stats-dir ${STATS_DIR} --commit   # commits axis_freeze.json + axis_draws.json + axis_items_*.stats.json"
-  echo "[dry-run] p3_flatness: uv run python scripts/issue2479_instrument_gates.py --step flatness --kept-glob '${INSERTED_KEPT_GLOB}' --legs-dir ${LEGS_DIR} --axis-pilot-report ${PILOT_REPORT} --execute   # 8x100x5 draws; skipped when every flat_<name> leg passes the validated resume predicate (--expect-design flat)"
-  echo "[dry-run] p3_namemask: uv run python scripts/issue2479_instrument_gates.py --step namemask --items-glob '${ITEMS_DIR}/axis_items_{name}.jsonl' --axis-raw-glob '${LEGS_DIR}/judge_raw_ail_{name}.json' --legs-dir ${LEGS_DIR} --axis-pilot-report ${PILOT_REPORT} --execute   # 8x40x5 draws; same validated-resume skip"
+  echo "[dry-run] p3_control_items: uv run python scripts/issue2479_instrument_gates.py --step emit-control-items --kept-glob '${INSERTED_KEPT_GLOB}' --items-glob '${ITEMS_DIR}/axis_items_{name}.jsonl' --axis-raw-glob '${LEGS_DIR}/judge_raw_ail_{name}.json' --control-items-dir ${CONTROL_ITEMS_DIR}   # derives the CURRENT flat/mask item rows the control resume sweeps validate against"
+  echo "[dry-run] p3_flatness: uv run python scripts/issue2479_instrument_gates.py --step flatness --kept-glob '${INSERTED_KEPT_GLOB}' --legs-dir ${LEGS_DIR} --axis-pilot-report ${PILOT_REPORT} --execute   # 8x100x5 draws; skipped when every flat_<name> leg passes the validated resume predicate (--expect-design flat + --items ${CONTROL_ITEMS_DIR}/control_items_flat_<name>.jsonl)"
+  echo "[dry-run] p3_namemask: uv run python scripts/issue2479_instrument_gates.py --step namemask --items-glob '${ITEMS_DIR}/axis_items_{name}.jsonl' --axis-raw-glob '${LEGS_DIR}/judge_raw_ail_{name}.json' --legs-dir ${LEGS_DIR} --axis-pilot-report ${PILOT_REPORT} --execute   # 8x40x5 draws; same validated-resume skip (--expect-design mask + --items ${CONTROL_ITEMS_DIR}/control_items_mask_<name>.jsonl)"
   echo "[dry-run] p3_gates: uv run python scripts/issue2479_instrument_gates.py --step gates --axis-raw-glob '${LEGS_DIR}/judge_raw_ail_{name}.json' --legs-dir ${LEGS_DIR} --out ${GATES_OUT}; then explicit-path git commit of ${GATES_OUT} + bare rc-checked push"
   echo "[dry-run] p3_upload_controls: re-run upload_folder ${LEGS_DIR} -> issue2479_ai_likeness_gradient/judge_legs (publishes the flatness + name-mask legs)"
   exit 0
@@ -305,6 +324,20 @@ upload_legs
 echo "[phase=p3_freeze]"
 uv run python scripts/issue2479_freeze_axis.py --legs-dir "$LEGS_DIR" \
   --stats-dir "$STATS_DIR" --commit
+
+echo "[phase=p3_control_items]"
+# Derive the CURRENT control item sets (flat: the registered seed-0 common
+# draw over the current reservation intersection of the staged inserted kept
+# stories; mask: the seed-0 masked subsample of the current axis items,
+# eligibility from the current axis raw draws) so the validated-resume
+# sweeps below recompute item CONTENT + exact ID sets against CURRENT
+# inputs — control legs exactly as axis legs (r5 codex
+# p3-leg-resume-unvalidated).
+uv run python scripts/issue2479_instrument_gates.py --step emit-control-items \
+  --kept-glob "$INSERTED_KEPT_GLOB" \
+  --items-glob "${ITEMS_DIR}/axis_items_{name}.jsonl" \
+  --axis-raw-glob "${LEGS_DIR}/judge_raw_ail_{name}.json" \
+  --control-items-dir "$CONTROL_ITEMS_DIR"
 
 echo "[phase=p3_flatness]"
 if all_control_legs_valid flat "${INSERTED_NAMES[@]}"; then
