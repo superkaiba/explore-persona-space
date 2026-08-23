@@ -90,7 +90,7 @@ def test_step5d_bounce_by_reference():
 def test_step9a_analyzer_respawn_by_reference():
     text = issue_skill_text()
     start = text.index("If `final_verdict == REVISE`")
-    s9a = text[start : text.index("Max 5 rounds per reviewer", start)]
+    s9a = text[start : text.index("Max 10 rounds per reviewer", start)]
     assert "critique events by reference" in s9a
 
 

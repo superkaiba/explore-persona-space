@@ -60,7 +60,7 @@ def _humanize_region(text: str) -> str:
 
 def _strip_region(text: str) -> str:
     """The Step 9a-bis procedural-only verdict strip slice."""
-    return _region(text, "**Procedural-only verdict strip", "**If REVISE (rounds 2-5):**")
+    return _region(text, "**Procedural-only verdict strip", "**If REVISE (rounds 2-10):**")
 
 
 def test_humanize_candidate_verify_precedes_set_body():

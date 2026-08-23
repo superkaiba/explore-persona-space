@@ -175,9 +175,21 @@ mechanism as `cron_pod_audit.sh`).
 Reaps idle auto-generated worktrees under `.claude/worktrees/` — only when
 not held by a live process, not an `issue-<N>` at a non-terminal status,
 older than a 6h grace (1h when the holding filesystem is ≥90% full,
-`EPM_WORKTREE_DISK_PRESSURE_PCT`), and with no uncommitted tracked
-changes. Human-named worktrees are never touched; `issue-<N>-<suffix>`
-follow-up worktrees ARE in scope (mapped to issue N). For done-and-merged
+`EPM_WORKTREE_DISK_PRESSURE_PCT`), with no uncommitted tracked
+changes, and — issue worktrees only (#2246) — only when the THREE-VALUED
+unmerged-branch probe does not read unmerged: merged ⇔ the HEAD sha
+appears in an `epm:merged` note, OR (UNSUFFIXED `issue-<N>` worktrees
+ONLY) the newest `epm:merged` timestamp is STRICTLY newer than HEAD's
+committer epoch (tz-aware), OR the patch-id count vs `origin/main` is 0.
+An unmerged read KEEPS (`branch carries commits not reachable from
+origin/main (unmerged)`), and a probe FAILURE (None) is preserved as its
+OWN keep reason (`unmerged-branch probe failed (fail toward keep)`) —
+fail-toward-retention, never collapsed to falsy. The timestamp arm is
+DISABLED for suffixed `issue-<N>-<slug>` siblings: they share the task's
+ONE events file, so a sibling round's task-grained merge marker must
+never alias this branch's verdict. Human-named worktrees are never
+touched; `issue-<N>-<suffix>` follow-up worktrees ARE in scope (mapped to
+issue N). For done-and-merged
 (`completed`/`archived`/`awaiting_promotion`) issue worktrees, `--apply`
 additionally kills orphaned codex `app-server` holder pids (exact-pid,
 cmdline re-verified before each signal; never when a real holder is

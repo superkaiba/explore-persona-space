@@ -38,6 +38,7 @@ tests/test_issue_skill_dead_veto_status_pin.py
 tests/test_issue_skill_detached_harvest_pin.py
 tests/test_issue_skill_disk_routing_pin.py
 tests/test_issue_skill_dispatch_preflight_pin.py
+tests/test_issue_skill_divergence_probe_pin.py
 tests/test_issue_skill_exit_breadcrumb.py
 tests/test_issue_skill_fellows_launch_contract_pin.py
 tests/test_issue_skill_followup_cap_park_note_pin.py
@@ -69,6 +70,7 @@ tests/test_issue_skill_stash_kept_duty_pin.py
 tests/test_issue_skill_step0_preload_pin.py
 tests/test_issue_skill_step10_teardown_ordering.py
 tests/test_issue_skill_step10d_no_pr_arm.py
+tests/test_issue_skill_step10d_reap_shield_pin.py
 tests/test_issue_skill_step10d_rewritten_branch.py
 tests/test_issue_skill_step2_floor.py
 tests/test_issue_skill_stopped_volume_persist_pin.py
@@ -83,6 +85,7 @@ tests/test_mapping_baselines_wiring_pins.py
 tests/test_no_auto_runpod_path_under_any_failure.py
 tests/test_no_direct_task_path_construction.py
 tests/test_no_dollar_budget_caps.py
+tests/test_no_import_time_registry_mutation.py
 tests/test_no_per_file_raw_completions_loop.py
 tests/test_no_pod_side_task_py_shellout.py
 tests/test_no_progress_respawn.py
@@ -124,6 +127,7 @@ tests/test_workflow_hub_upload_as_file.py
 tests/test_workflow_lint.py
 tests/test_workflow_lint_agent_spec_caps.py
 tests/test_workflow_lint_agent_spec_size.py
+tests/test_workflow_lint_codex_composer_memory_commit.py
 tests/test_workflow_lint_codex_concerns_persistence.py
 tests/test_workflow_lint_cvd_scoped_gpu_verdict.py
 tests/test_workflow_lint_dotenv_check.py
@@ -132,6 +136,8 @@ tests/test_workflow_lint_inline_round_duty_mirror.py
 tests/test_workflow_lint_json_guard_unicode.py
 tests/test_workflow_lint_no_repo_root_syspath.py
 tests/test_workflow_lint_pre_split_guard.py
+tests/test_workflow_lint_prod_import_lockfile.py
 tests/test_workflow_lint_smoke_blind_spots.py
 tests/test_workflow_lint_two_tier_yield_floor.py
+tests/test_workflow_lint_worktree_task_paths.py
 tests/test_workflow_yaml.py

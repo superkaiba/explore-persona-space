@@ -3698,11 +3698,19 @@ suite directly and posts an `epm:test-verdict` event with the result.
         rc-0 compare is REPORTED in the `epm:test-verdict` note — name the
         nodes + the `paired_files_run` set that reproduced them — and the
         correct follow-through is a routable workflow-fix-candidate for the
-        ordering interaction itself, never a silent pass. Residual blind
-        class: collection-time contamination from files sorting AFTER the
-        candidate is present in the gate process but absent from any prefix
-        run, so that shape still classifies NEW (fail-closed) and the manual
-        provenance-override path remains the escape for it.
+        ordering interaction itself, never a silent pass. Collection-time
+        contamination from files sorting AFTER the candidate (present in the
+        gate process but absent from any prefix run) is now MECHANICALLY
+        attributed by the #2430 suffix-replay arm — a gate-faithful replay
+        collects the full context, deselects everything but the candidate,
+        and bisects the suffix for the offender (`SUFFIX-ATTRIBUTED:` lines +
+        `suffix_attributed` JSON rows; `--no-suffix-replay` restores the
+        pre-#2430 classification); its refusal residue — non-reproduction
+        shapes (flaky contamination, RUN-TIME prefix state mutated by
+        executed tests rather than imports) and every arm refusal
+        (wall-budget exhaustion, oracle distrust, over-cap, aborted
+        replay) — still classifies NEW (fail-closed), with the manual
+        provenance-override path as the escape.
       * `COMPARE_RC=1` → NEW failure(s) the branch introduced and/or a lint
         regression (the JSON names each). FAIL. This includes a
         `VIOLATION_SET_SCAN_NODES` member (a registered whole-repo scan
