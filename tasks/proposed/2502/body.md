@@ -136,9 +136,11 @@ retrieval) alongside the pooled number.
 
 1. **Scale target — DECIDED: 150k contexts** (Thomas, 2026-08-23). At the top of the
    linear-map R² plateau; see the Data plan § and the scaling-evidence `epm:progress` note.
-2. **Gated-dataset access.** (STILL OPEN.) WildChat-1M-Full, wildjailbreak, HarmBench, AdvBench,
-   DecodingTrust, lmsys-chat-1m, chatbot_arena all need access requests under `superkaiba1`.
-   Request them, or run ungated-only (WildChat-4.8M fallback for slot 1)?
+2. **Gated-dataset access — DECIDED: already granted** (verified 2026-08-23). The
+   `superkaiba1` token reads all gated sets fine — WildChat-1M-Full, wildjailbreak,
+   HarmBench, AdvBench, DecodingTrust, lmsys-chat-1m all return file listings, no 403. No
+   requests needed. (`chatbot_arena_conversations`, a secondary set, not probed — check at
+   plan time only if used.)
 3. **Map regime + measurement** to be locked at plan time per project rules: linear map
    by default; dual-DV / on-policy-completion / identity+learned-bias baseline + kNN
    retrieval all mandatory; cross-model comparison restricted to matched (full-attention)
