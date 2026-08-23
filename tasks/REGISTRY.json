@@ -10126,8 +10126,8 @@
     "2310": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2310",
-      "status": "proposed",
+      "path": "tasks/planning/2310",
+      "status": "planning",
       "title": "workflow-fix: Step 9c script-file gate launcher \u2014 newline-separated test list collapses to rc=126 with zero tests collected and evades both anti-silent-pass guards"
     },
     "2311": {
