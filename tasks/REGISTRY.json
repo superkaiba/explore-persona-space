@@ -11403,7 +11403,7 @@
       "title": "Turn-averaged SAE basis: does the map's high-level-over-low-level predictability gradient hold?"
     },
     "2477": {
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "analysis",
       "path": "tasks/interpreting/2477",
       "status": "interpreting",

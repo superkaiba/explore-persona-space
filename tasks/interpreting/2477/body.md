@@ -4,7 +4,7 @@ title: Base-model generation under the chat template is mostly incoherent, so th
 kind: analysis
 tags: []
 created_at: '2026-08-22T20:08:58Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 825
 origin_prompt: 'Paper outline 2026-08-22: ''TO VERIFY: BASE MODEL COMPLETIONS IN CHAT
   TEMPLATE ARE COHERENT — ELSE USE BARE TEXT FORMAT'''
