@@ -47,8 +47,10 @@ Phases (1x H100 ``eval`` pod; every phase resumable, checkpoint-per-phase):
   <dir> [--null-b N] [--smoke] [--tiny]``. The refusal manipulation-check
   judge lives in the analysis driver (plan §4.3), not here.
 * ``D`` — finalize: upload null/per-draw matrices to
-  ``<prefix>/analysis_tensors/null_matrices/``, assert eval JSONs + figures
-  landed, write ``upload_done.json`` + the results sentinel
+  ``<prefix>/analysis_tensors/null_matrices/`` AND the C' driver's persisted
+  prediction/target tensors to ``<prefix>/analysis_tensors/predictions/``
+  (plan §4.3 C': every registered row recomputable post-hoc), assert eval
+  JSONs + figures landed, write ``upload_done.json`` + the results sentinel
   (``/workspace/logs/issue-2215-dbe-results.json``), then ``[phase=done]``.
 
 Upload prefix: ``issue2215_dbe/`` (smoke: ``issue2215_dbe/smoke/``) — NEVER the
@@ -235,6 +237,12 @@ class DbeConfig:
     @property
     def null_dir(self) -> Path:
         return self.hf_dir / "analysis_tensors" / "null_matrices"
+
+    @property
+    def predictions_dir(self) -> Path:
+        # The C' driver writes prediction/target tensors to
+        # null_dir.parent / "predictions" (issue2215_dbe_analysis.py run()).
+        return self.hf_dir / "analysis_tensors" / "predictions"
 
     @property
     def manifest_dir(self) -> Path:
@@ -1149,6 +1157,29 @@ def phase_finalize(cfg: DbeConfig) -> int:
         len(res.uploaded),
         len(res.rerouted),
         len(res.skipped_existing),
+    )
+    # Unit-3 flag fix: the C' driver persists per-arm prediction/target
+    # tensors (predictions_L*.pt) so every registered row is recomputable
+    # post-hoc (plan §4.3 C') — they MUST land on HF before teardown.
+    pred_dir = cfg.predictions_dir
+    if not (pred_dir.exists() and any(pred_dir.iterdir())):
+        raise RuntimeError(
+            f"{pred_dir} empty — the C' analysis driver persists prediction/target "
+            "tensors there (plan §4.3 C'); run --phase C first"
+        )
+    res_p = upload_dir_sharded(
+        pred_dir,
+        HF_DATA_WRITE_REPO,
+        f"{cfg.hf_prefix}/analysis_tensors/predictions",
+        proactive_overflow=True,
+        verify=True,
+        delete_local=False,
+    )
+    logger.info(
+        "[upload:D] predictions: %d uploaded / %d rerouted / %d skipped",
+        len(res_p.uploaded),
+        len(res_p.rerouted),
+        len(res_p.skipped_existing),
     )
     # manifests family re-upload (idempotent resume-skip) so upload_done +
     # gate reports become durable off-pod too.
