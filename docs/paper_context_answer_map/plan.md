@@ -27,6 +27,14 @@ Experiment ledger from the outline (status 2026-08-22):
 - VERIFY: base-model completions under the chat template are coherent (else bare-text
   format for base rows) → analysis on #825 artifacts (+ #1336's in-flight round).
 - TODO: qualitative-examples panel assembly (from #2094/#2162) → analysis task.
+- NEW (user-ordered 2026-08-23): first-k-answer-token steering cells on the #2254
+  rig (k=1/2/3 individually, spans 1..3 and 1..5, context+opening combined) →
+  #2254 same-issue follow-up `first-k-answer-token-steering`, running; sharpens
+  the "control model character" ruling + the #2333 opening-token mechanism.
+- NEW (user-ordered 2026-08-23): first-k-answer-token steering cells on the #2254
+  rig (k=1/2/3 individually, spans 1..3 and 1..5, context+opening combined) →
+  #2254 same-issue follow-up `first-k-answer-token-steering`, running; sharpens
+  the "control model character" ruling + the #2333 opening-token mechanism.
 - LANDED since claims.md rev 3: #2379 re-elicitation (context-side replicates
   Kwon 0.775/0.895, mapped readout deficit Δρ −0.86 — ADVERSE for map readout);
   #2356 refuse/comply (context probe beats LLM judge 0.995/0.951 vs 0.896/0.743;
