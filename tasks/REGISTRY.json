@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2494,
+  "highest_id": 2495,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11542,6 +11542,13 @@
       "path": "tasks/proposed/2494",
       "status": "proposed",
       "title": "verify_task_body per-unit vocabulary scan: credit the what-is-plotted beat and strip-point phrasing"
+    },
+    "2495": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2495",
+      "status": "proposed",
+      "title": "Correct #825 promoted body: 0.1087 cited as control R\u00b2 is fraction_of_fulln_ceiling (true R\u00b2=0.0732)"
     },
     "25": {
       "has_clean_result": false,
