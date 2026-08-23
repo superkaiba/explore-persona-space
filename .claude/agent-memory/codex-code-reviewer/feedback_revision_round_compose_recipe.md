@@ -81,6 +81,15 @@ an earlier compose). Assert-guarded deltas fail loud instead.
   probes + bug-class sweep sites), V3 = no-over-tightening (new refusal
   gates must pass valid input — the fix-round calibration's other
   direction), V4 sweep+audit, V5 test substance.
+- Implementer fail-pre-fix evidence citing a `/tmp` log (#1739 cms r3
+  2026-08-22): Codex's worktree sandbox cannot read `/tmp`, so the composer
+  verifies the log itself and INLINES the digest as a composer-verified fact
+  — fail/pass counts + the verbatim failing-test ids + a rationale line for
+  any legitimately-passing pre-fix test (coverage add vs defect pin) — and
+  declares the `/tmp` path's unreachability explicitly NOT
+  `data-access-blocked`. The twin's duty then shifts from existence
+  ("did they fail") to CORRESPONDENCE ("does each fail against the base for
+  the right gate", static `git show <base>:<path>` replay).
 - TWO implementer markers in one round (fix commit + addendum commit):
   inline BOTH in the ONE standard `IMPLEMENTATION MARKER BODY` envelope with
   `=== IMPLEMENTATION MARKER k of 2 ===` separators (keeps the Step-3 grep
