@@ -2092,3 +2092,40 @@ framing (leaf script, no external importers — same-name signature changes
 are not renames) PLUS the #1107 consumers-of-changed-shape + dangling-refs
 duties spelled out as unconditional substantive checks; never pre-resolve
 the trigger severity yourself.
+
+**Split-verdict inlining + FAIL+FAIL union with un-ledgered Claude items
+(#2478 r2, 2026-08-22):** three deltas on the #2332 union shape. (a) A
+SPLIT-review Claude verdict (per-commit sub-verdicts) can EMBED a
+sub-verdict's own marker tag lines mid-body (the g3 sub-verdict carried its
+own `<!-- epm:code-review v1 -->` head + a doubled closing tag) — strip by
+filtering EVERY line starting with the tag prefix, never just first/last.
+(b) When ALL ledger rows are one twin's items and the other twin's
+blocker+minors are un-ledgered, mint pseudo-ids keyed to the MARKER's own
+response-ledger naming (`r1-claude-b1-…` matching the marker's "g1 B1"
+rows) so the closure ledger and the (e)/Response sections align 1:1.
+(c) The `> CONCERN:: ` blockquote validation count includes your OWN prose
+backtick mentions of the literal (6 = 5 rows + 1 prose here — label the
+assert subject). Also: a fix round whose diff carries -def/+def pairs
+(deleted helpers, dropped params, return-shape changes `str`→`tuple`) gets
+a Step 3.75 compose-time observation block with adjudicate-the-trigger
+framing (leaf script, no external importers — same-name signature changes
+are not renames) PLUS the #1107 consumers-of-changed-shape + dangling-refs
+duties spelled out as unconditional substantive checks; never pre-resolve
+the trigger severity yourself.
+
+**Line-wise facts-block replacement + two assert traps (#2476 r2, 2026-08-22):**
+a FAIL+FAIL-union fix round composed cleanly from the r1 template via LINE-WISE
+replacement of the compose-time-facts block (split on newlines, replace whole
+lines keyed on unique `startswith` prefixes, assert exactly-one hit per prefix)
+— robust when every facts line changes but the section anatomy survives. Two
+asserts tripped live: (1) `wc -c` counts BYTES, Python `len(str)` counts
+CHARACTERS — assert `len(body.encode()) == wc_c_bytes` for any size pin on
+UTF-8-heavy artifacts (plans carry →/§/≤); (2) prose that NAMES the
+blockquote literal (e.g. "rows are blockquoted `> CONCERN:: `") inflates a
+whole-prompt `count("> CONCERN:: ")` — scope row asserts to line-start
+(`l.startswith(...)` over splitlines) and assert the total separately with the
+prose mention counted. Also confirmed: when an impl marker answers a union as
+a numbered disposition table that OVERLAPS but is not a superset of the ledger
+ids (Claude-only items unledgered, a NIT closed in an opportunistic paragraph),
+say so explicitly and key the closure ledger on BOTH (item numbers + ids,
+Codex maps them from the disposition text) rather than minting pseudo-IDs.

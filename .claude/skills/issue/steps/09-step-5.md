@@ -1136,17 +1136,27 @@ declarations and reads the full sibling spec by reference, cutting
 fixed-overhead ~138K tokens (#2062). Available for: `analyzer`, `planner`
 (also covers the `planner`-typed fact-checker spawn at
 `.claude/skills/adversarial-planner/SKILL.md:867`), `critic`,
-`experiment-implementer`, `code-reviewer`, `consistency-checker`. If the
+`experiment-implementer`, `code-reviewer`, `consistency-checker`,
+`implementer`, and the five Codex composer roles — `codex-code-reviewer`,
+`codex-critic`, `codex-interpretation-critic`, `codex-clean-result-critic`,
+`codex-follow-up-critic` (twins named `codex-<role>-lean`; the composers
+already declare narrow tool lists, so their twin's saving is the sibling's
+own 12–50 KB spec-as-system-prompt, converted to bounded windowed Reads of
+the same file — NOT an MCP drop, #2472). A thrash-killed `codex-*`
+COMPOSER takes this ladder (micro-scoped respawn, then
+`codex-<role>-lean`) BEFORE item 4's Step 5d single-Claude no-show
+fallback fires; the fallback remains the terminal only after the lean
+respawn also returns no prompt file. If the
 lean-twin respawn ALSO ends with no durable verdict, fall through to
 item 4's fail-loud terminal — never an unbounded lean-twin retry loop.
 **Lean-twin resolvability (#2072):** agent types register at SESSION
 START from the session cwd's `.claude/agents/` + user-global
 `~/.claude/agents/`; a file added MID-session NEVER registers (#2061:
-the worktree cwd's branch predated the lean files). The 6 lean twins
+the worktree cwd's branch predated the lean files). The 11 lean twins
 are installed user-global as SYMLINKS to the repo files, so an "agent
 type not found" refusal of a lean twin means the install is broken —
 re-run
-`for a in code-reviewer critic consistency-checker experiment-implementer implementer planner; do ln -sfn /home/thomasjiralerspong/explore-persona-space/.claude/agents/${a}-lean.md ~/.claude/agents/${a}-lean.md; done`
+`for a in code-reviewer critic consistency-checker experiment-implementer implementer planner codex-code-reviewer codex-critic codex-interpretation-critic codex-clean-result-critic codex-follow-up-critic; do ln -sfn /home/thomasjiralerspong/explore-persona-space/.claude/agents/${a}-lean.md ~/.claude/agents/${a}-lean.md; done`
 (a NEW lean twin joins the same install). Residuals: a session spawned
 BEFORE a genuinely NEW agent type lands can never resolve it
 mid-session — route to item 4's fail-loud terminal, never an

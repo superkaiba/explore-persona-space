@@ -22,6 +22,13 @@ Compose deltas vs an ordinary round (first hit: #2330 r1, 2026-08-16):
    BODY forms entirely; verify `merge-base(origin/main, HEAD) == <parent>`
    still holds and name the excluded sync SHAs in the compose-time facts so
    Codex never flags their spec churn.
+1b. **origin-main variant (#2478 r1):** a ROUND-1 whole-round brief may
+   legitimately pin `base: origin/main` with NO `round_parent=` when the
+   branch IS the round (freshly cut, all commits are round commits) AND
+   the brief carries a zero-count divergence probe — verify the merge
+   base exists at compose time and use `origin/main...HEAD`; items 2/3/5
+   still apply (strip the split paragraph, size the diff, cross-commit
+   priority). Do not demand a round-parent SHA the brief never named.
 2. **Strip the copied Step 0 "Split-review sub-scope briefs (#2074)"
    paragraph.** Copying it verbatim puts the literal trigger token
    `SPLIT-REVIEW SUB-...` INTO the prompt, arming split-mode behavior
