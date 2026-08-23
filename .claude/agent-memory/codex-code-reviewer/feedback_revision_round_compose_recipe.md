@@ -112,5 +112,26 @@ an earlier compose). Assert-guarded deltas fail loud instead.
   insertions+deletions (v34's "+117/−31-ish" vs numstat +86/−31) when the
   TOTAL matches — presentational, never a discrepancy to manufacture.
 
+- STRUCTURAL-TERMINATION round (#1739 a2fix r6, 2026-08-22 — the round
+  after an Nth-iteration class-residual round, where the fix claims to
+  close the CLASS structurally, not the probe): add a REQUIRED
+  `**Class-termination judgment:** TERMINATED — <basis> | RESIDUAL AT
+  <site>` header line to the verdict template, make the V2 duty an
+  explicit whole-surface hunt for the class shape (here: any
+  coverage/validity universe derived from a filtered or execution-reached
+  view), and instruct that the marker's class-sweep table correcting the
+  PRIOR round's own record ("lattice itself is exact" admitted
+  false-at-r5) raises skepticism on its re-verified lines. Final
+  stale-token validation must be ENVELOPE-AWARE: the inlined prior
+  verdict AND the concerns-JSONL snapshot legitimately carry prior-round
+  SHAs/versions (historical addressed events name old commits), so
+  assert stale tokens are zero OUTSIDE those envelopes, with pinpoint
+  whitelists for intentional head mentions (the rounds-1..k commit list;
+  the "nearby top-level versions (vX/vY) are prior rounds'" note).
+  Implementer stash-based fail-pre-fix evidence ("stashed to <base>, 4
+  tests FAILED, popped") is a transient state Codex cannot observe —
+  pre-declare it NOT data-access-blocked; V5 verifies statically via
+  `git show <base>:<path>`.
+
 Extends [[two-leg-single-label-round-compose]] (leg-suffixed filenames,
 leg-scoped sentinel, round-matching by leg).
