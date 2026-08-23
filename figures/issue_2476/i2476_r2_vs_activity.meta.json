@@ -1,64 +1,21 @@
 {
-  "commit": "064462df+dirty",
-  "render_id": "3616f23955114fe9",
-  "git_commit": "064462df4d683afcb6a717253275cdb8486c9a82",
+  "commit": "8e0f3c62+dirty",
+  "render_id": "df253a1fbe244a44",
+  "git_commit": "8e0f3c629982a9c33824736bae61eebae2b5b458",
   "git_dirty": true,
   "git_dirty_paths": [
-    "eval_results/issue_2476/turnavg/bridge_b.npz",
-    "eval_results/issue_2476/turnavg/gates_p4.json",
-    "eval_results/issue_2476/turnavg/gates_p6.json",
-    "eval_results/issue_2476/turnavg/panel_b.json",
-    "eval_results/issue_2476/turnavg/panel_c.json",
-    "eval_results/issue_2476/turnavg/perfeature_b_densein.npz",
-    "eval_results/issue_2476/turnavg/perfeature_b_encodepred.npz",
-    "eval_results/issue_2476/turnavg/perfeature_b_ib.npz",
-    "eval_results/issue_2476/turnavg/perfeature_b_inlier.npz",
-    "eval_results/issue_2476/turnavg/perfeature_b_pile.npz",
-    "eval_results/issue_2476/turnavg/perfeature_c_densein.npz",
-    "eval_results/issue_2476/turnavg/perfeature_c_encodepred.npz",
-    "eval_results/issue_2476/turnavg/perfeature_c_ib.npz",
-    "eval_results/issue_2476/turnavg/perfeature_c_transfer.npz",
-    "eval_results/issue_2476/turnavg/preds_meta.json",
-    "eval_results/issue_2476/turnavg/recon_gate.json",
-    "eval_results/issue_2476/turnavg/regime.json",
-    "eval_results/issue_2476/turnavg/retrieval_b.json",
-    "eval_results/issue_2476/turnavg/retrieval_c.json",
-    "eval_results/issue_2476/turnavg/shuffle_null_b.npz",
-    "eval_results/issue_2476/turnavg/shuffle_null_b_pile.npz",
-    "eval_results/issue_2476/turnavg/shuffle_null_c.npz",
-    "eval_results/issue_2476/turnavg/tier_tests_b.json",
-    "eval_results/issue_2476/turnavg/tier_tests_c.json",
-    "eval_results/issue_2476/turnavg/train_log.json",
-    "figures/issue_2476/i2476_alive_attrition.meta.json",
-    "figures/issue_2476/i2476_alive_attrition.pdf",
-    "figures/issue_2476/i2476_alive_attrition.png",
-    "figures/issue_2476/i2476_bridge_token_vs_turnavg.meta.json",
-    "figures/issue_2476/i2476_bridge_token_vs_turnavg.pdf",
-    "figures/issue_2476/i2476_bridge_token_vs_turnavg.png",
-    "figures/issue_2476/i2476_corpus_transfer.meta.json",
-    "figures/issue_2476/i2476_corpus_transfer.pdf",
-    "figures/issue_2476/i2476_corpus_transfer.png",
-    "figures/issue_2476/i2476_densein_profile.meta.json",
-    "figures/issue_2476/i2476_densein_profile.pdf",
-    "figures/issue_2476/i2476_densein_profile.png",
-    "figures/issue_2476/i2476_inlier_sensitivity.meta.json",
-    "figures/issue_2476/i2476_inlier_sensitivity.pdf",
-    "figures/issue_2476/i2476_inlier_sensitivity.png",
-    "figures/issue_2476/i2476_pile_twin.meta.json",
-    "figures/issue_2476/i2476_pile_twin.pdf",
-    "figures/issue_2476/i2476_pile_twin.png",
-    "figures/issue_2476/i2476_r2_ecdf.meta.json",
-    "figures/issue_2476/i2476_r2_ecdf.pdf",
-    "figures/issue_2476/i2476_r2_ecdf.png",
-    "figures/issue_2476/i2476_r2_vs_activity.meta.json",
-    "figures/issue_2476/i2476_r2_vs_activity.pdf",
-    "figures/issue_2476/i2476_r2_vs_activity.png",
-    "figures/issue_2476/i2476_retrieval_acc_at_k.meta.json",
-    "... 5 more"
+    "scripts/issue2476_fig_relabel.py",
+    "figures/paper/c3_turnavg_tier_acc1.meta.json",
+    "figures/paper/c3_turnavg_tier_acc1.pdf",
+    "figures/paper/c3_turnavg_tier_acc1.png",
+    "figures/paper/c3_turnavg_tier_gradient.meta.json",
+    "figures/paper/c3_turnavg_tier_gradient.pdf",
+    "figures/paper/c3_turnavg_tier_gradient.png",
+    "scripts/issue2476_turnavg_sae.py"
   ],
-  "git_argv0_state": "tracked",
-  "git_argv0_path": "scripts/issue2476_turnavg_sae.py",
-  "created": "2026-08-23T11:38:51Z",
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue2476_fig_relabel.py",
+  "created": "2026-08-23T12:33:52Z",
   "figsize": [
     5.5,
     1.6995
@@ -93,7 +50,7 @@
       "_group": 0
     },
     {
-      "log10(active fit rows + 1)": 3.1781132523146316,
+      "log10(active fit rows + 1)": 3.178113252314632,
       "held-out per-feature R\u00b2": 0.49364538787022405,
       "series": "coarsest (ids <2,048)",
       "_kind": "scatter",
@@ -352,7 +309,7 @@
       "_group": 0
     },
     {
-      "log10(active fit rows + 1)": 4.1941812087938475,
+      "log10(active fit rows + 1)": 4.194181208793847,
       "held-out per-feature R\u00b2": 0.8083253200386606,
       "series": "coarsest (ids <2,048)",
       "_kind": "scatter",
@@ -464,7 +421,7 @@
       "_group": 0
     },
     {
-      "log10(active fit rows + 1)": 3.266936911159173,
+      "log10(active fit rows + 1)": 3.2669369111591733,
       "held-out per-feature R\u00b2": 0.5645416666660363,
       "series": "coarsest (ids <2,048)",
       "_kind": "scatter",
@@ -954,7 +911,7 @@
       "_group": 0
     },
     {
-      "log10(active fit rows + 1)": 3.274850320016665,
+      "log10(active fit rows + 1)": 3.2748503200166645,
       "held-out per-feature R\u00b2": 0.3376045348621882,
       "series": "coarsest (ids <2,048)",
       "_kind": "scatter",
@@ -1017,7 +974,7 @@
       "_group": 0
     },
     {
-      "log10(active fit rows + 1)": 3.734079407280594,
+      "log10(active fit rows + 1)": 3.7340794072805945,
       "held-out per-feature R\u00b2": 0.5795910911397226,
       "series": "coarsest (ids <2,048)",
       "_kind": "scatter",
@@ -1150,7 +1107,7 @@
       "_group": 0
     },
     {
-      "log10(active fit rows + 1)": 4.100852826657301,
+      "log10(active fit rows + 1)": 4.1008528266573006,
       "held-out per-feature R\u00b2": 0.45385140201382,
       "series": "coarsest (ids <2,048)",
       "_kind": "scatter",
@@ -1654,7 +1611,7 @@
       "_group": 0
     },
     {
-      "log10(active fit rows + 1)": 4.080157310970184,
+      "log10(active fit rows + 1)": 4.0801573109701845,
       "held-out per-feature R\u00b2": 0.5385778341668759,
       "series": "coarsest (ids <2,048)",
       "_kind": "scatter",
@@ -1675,7 +1632,7 @@
       "_group": 0
     },
     {
-      "log10(active fit rows + 1)": 4.037306950897091,
+      "log10(active fit rows + 1)": 4.037306950897092,
       "held-out per-feature R\u00b2": 0.5880127580415258,
       "series": "coarsest (ids <2,048)",
       "_kind": "scatter",
@@ -1801,7 +1758,7 @@
       "_group": 0
     },
     {
-      "log10(active fit rows + 1)": 4.736834560110393,
+      "log10(active fit rows + 1)": 4.736834560110394,
       "held-out per-feature R\u00b2": 0.5358672441375816,
       "series": "coarsest (ids <2,048)",
       "_kind": "scatter",
@@ -2130,7 +2087,7 @@
       "_group": 0
     },
     {
-      "log10(active fit rows + 1)": 3.99563519459755,
+      "log10(active fit rows + 1)": 3.9956351945975497,
       "held-out per-feature R\u00b2": 0.9168629595515699,
       "series": "coarsest (ids <2,048)",
       "_kind": "scatter",
@@ -2452,7 +2409,7 @@
       "_group": 0
     },
     {
-      "log10(active fit rows + 1)": 3.182984967003582,
+      "log10(active fit rows + 1)": 3.1829849670035815,
       "held-out per-feature R\u00b2": 0.873663748078296,
       "series": "coarsest (ids <2,048)",
       "_kind": "scatter",
@@ -2809,7 +2766,7 @@
       "_group": 0
     },
     {
-      "log10(active fit rows + 1)": 3.5771469848275252,
+      "log10(active fit rows + 1)": 3.577146984827525,
       "held-out per-feature R\u00b2": 0.6620618056470731,
       "series": "coarsest (ids <2,048)",
       "_kind": "scatter",
@@ -3159,7 +3116,7 @@
       "_group": 0
     },
     {
-      "log10(active fit rows + 1)": 3.5861370252307934,
+      "log10(active fit rows + 1)": 3.586137025230793,
       "held-out per-feature R\u00b2": 0.9217091062789569,
       "series": "coarsest (ids <2,048)",
       "_kind": "scatter",
@@ -3243,14 +3200,14 @@
       "_group": 0
     },
     {
-      "log10(active fit rows + 1)": 3.2008504980910772,
+      "log10(active fit rows + 1)": 3.2008504980910777,
       "held-out per-feature R\u00b2": 0.48142583190946897,
       "series": "coarsest (ids <2,048)",
       "_kind": "scatter",
       "_group": 0
     },
     {
-      "log10(active fit rows + 1)": 3.851747419133264,
+      "log10(active fit rows + 1)": 3.8517474191332637,
       "held-out per-feature R\u00b2": 0.47468766709574917,
       "series": "coarsest (ids <2,048)",
       "_kind": "scatter",
@@ -3782,7 +3739,7 @@
       "_group": 0
     },
     {
-      "log10(active fit rows + 1)": 3.6010817277840235,
+      "log10(active fit rows + 1)": 3.601081727784023,
       "held-out per-feature R\u00b2": 0.713419235489412,
       "series": "coarsest (ids <2,048)",
       "_kind": "scatter",
@@ -4237,7 +4194,7 @@
       "_group": 0
     },
     {
-      "log10(active fit rows + 1)": 3.7904962769671093,
+      "log10(active fit rows + 1)": 3.79049627696711,
       "held-out per-feature R\u00b2": 0.6920275078667522,
       "series": "coarsest (ids <2,048)",
       "_kind": "scatter",
@@ -4566,7 +4523,7 @@
       "_group": 0
     },
     {
-      "log10(active fit rows + 1)": 4.1022621494942735,
+      "log10(active fit rows + 1)": 4.102262149494273,
       "held-out per-feature R\u00b2": 0.7680031547011871,
       "series": "coarsest (ids <2,048)",
       "_kind": "scatter",
@@ -4965,7 +4922,7 @@
       "_group": 0
     },
     {
-      "log10(active fit rows + 1)": 3.5548524343720547,
+      "log10(active fit rows + 1)": 3.5548524343720542,
       "held-out per-feature R\u00b2": 0.7203797706780196,
       "series": "coarsest (ids <2,048)",
       "_kind": "scatter",
@@ -5287,7 +5244,7 @@
       "_group": 0
     },
     {
-      "log10(active fit rows + 1)": 3.7811807209372614,
+      "log10(active fit rows + 1)": 3.781180720937262,
       "held-out per-feature R\u00b2": 0.48640257722311997,
       "series": "coarsest (ids <2,048)",
       "_kind": "scatter",
@@ -5322,7 +5279,7 @@
       "_group": 0
     },
     {
-      "log10(active fit rows + 1)": 4.1900233797668855,
+      "log10(active fit rows + 1)": 4.190023379766885,
       "held-out per-feature R\u00b2": 0.62472324202471,
       "series": "coarsest (ids <2,048)",
       "_kind": "scatter",
@@ -5539,7 +5496,7 @@
       "_group": 0
     },
     {
-      "log10(active fit rows + 1)": 3.298853076409707,
+      "log10(active fit rows + 1)": 3.2988530764097064,
       "held-out per-feature R\u00b2": 0.841044735571814,
       "series": "coarsest (ids <2,048)",
       "_kind": "scatter",
@@ -5903,7 +5860,7 @@
       "_group": 1
     },
     {
-      "log10(active fit rows + 1)": 3.457124626303409,
+      "log10(active fit rows + 1)": 3.4571246263034086,
       "held-out per-feature R\u00b2": 0.28716225668499273,
       "series": "middle (2,048\u201316,383)",
       "_kind": "scatter",
@@ -5924,7 +5881,7 @@
       "_group": 1
     },
     {
-      "log10(active fit rows + 1)": 3.150449409460881,
+      "log10(active fit rows + 1)": 3.1504494094608804,
       "held-out per-feature R\u00b2": 0.10424879527159192,
       "series": "middle (2,048\u201316,383)",
       "_kind": "scatter",
@@ -6036,7 +5993,7 @@
       "_group": 1
     },
     {
-      "log10(active fit rows + 1)": 3.2008504980910772,
+      "log10(active fit rows + 1)": 3.2008504980910777,
       "held-out per-feature R\u00b2": 0.10402179277090828,
       "series": "middle (2,048\u201316,383)",
       "_kind": "scatter",
@@ -6820,7 +6777,7 @@
       "_group": 3
     },
     {
-      "log10(active fit rows + 1)": 2.6324572921847245,
+      "log10(active fit rows + 1)": 2.632457292184724,
       "held-out per-feature R\u00b2": 0.7270604253728654,
       "series": "coarsest (ids <2,048)",
       "_kind": "scatter",
@@ -7037,7 +6994,7 @@
       "_group": 3
     },
     {
-      "log10(active fit rows + 1)": 2.658964842664435,
+      "log10(active fit rows + 1)": 2.6589648426644352,
       "held-out per-feature R\u00b2": 0.7412282144082809,
       "series": "coarsest (ids <2,048)",
       "_kind": "scatter",
@@ -7324,7 +7281,7 @@
       "_group": 3
     },
     {
-      "log10(active fit rows + 1)": 2.7489628612561616,
+      "log10(active fit rows + 1)": 2.748962861256161,
       "held-out per-feature R\u00b2": 0.28491851300956494,
       "series": "coarsest (ids <2,048)",
       "_kind": "scatter",
@@ -7541,7 +7498,7 @@
       "_group": 3
     },
     {
-      "log10(active fit rows + 1)": 2.4785664955938436,
+      "log10(active fit rows + 1)": 2.478566495593843,
       "held-out per-feature R\u00b2": 0.19203631618086026,
       "series": "coarsest (ids <2,048)",
       "_kind": "scatter",
@@ -7737,7 +7694,7 @@
       "_group": 3
     },
     {
-      "log10(active fit rows + 1)": 2.5774917998372255,
+      "log10(active fit rows + 1)": 2.577491799837225,
       "held-out per-feature R\u00b2": 0.24903748829818784,
       "series": "coarsest (ids <2,048)",
       "_kind": "scatter",
@@ -7926,7 +7883,7 @@
       "_group": 3
     },
     {
-      "log10(active fit rows + 1)": 3.182984967003582,
+      "log10(active fit rows + 1)": 3.1829849670035815,
       "held-out per-feature R\u00b2": 0.559416800040256,
       "series": "coarsest (ids <2,048)",
       "_kind": "scatter",
@@ -8038,7 +7995,7 @@
       "_group": 3
     },
     {
-      "log10(active fit rows + 1)": 3.2875778090787056,
+      "log10(active fit rows + 1)": 3.287577809078705,
       "held-out per-feature R\u00b2": 0.7150880231341457,
       "series": "coarsest (ids <2,048)",
       "_kind": "scatter",
@@ -8073,7 +8030,7 @@
       "_group": 3
     },
     {
-      "log10(active fit rows + 1)": 3.185258765296585,
+      "log10(active fit rows + 1)": 3.1852587652965854,
       "held-out per-feature R\u00b2": 0.16026530505551206,
       "series": "coarsest (ids <2,048)",
       "_kind": "scatter",
@@ -8227,7 +8184,7 @@
       "_group": 3
     },
     {
-      "log10(active fit rows + 1)": 2.387389826338729,
+      "log10(active fit rows + 1)": 2.3873898263387296,
       "held-out per-feature R\u00b2": 0.3429980310205212,
       "series": "coarsest (ids <2,048)",
       "_kind": "scatter",
@@ -8416,7 +8373,7 @@
       "_group": 3
     },
     {
-      "log10(active fit rows + 1)": 3.0038911662369103,
+      "log10(active fit rows + 1)": 3.0038911662369108,
       "held-out per-feature R\u00b2": 0.10580496176365717,
       "series": "coarsest (ids <2,048)",
       "_kind": "scatter",
@@ -8682,7 +8639,7 @@
       "_group": 3
     },
     {
-      "log10(active fit rows + 1)": 2.960946195733831,
+      "log10(active fit rows + 1)": 2.9609461957338317,
       "held-out per-feature R\u00b2": 0.5754943287817833,
       "series": "coarsest (ids <2,048)",
       "_kind": "scatter",
@@ -8983,7 +8940,7 @@
       "_group": 4
     },
     {
-      "log10(active fit rows + 1)": 2.662757831681574,
+      "log10(active fit rows + 1)": 2.6627578316815743,
       "held-out per-feature R\u00b2": 0.00040606005999199724,
       "series": "middle (2,048\u201316,383)",
       "_kind": "scatter",
@@ -9109,7 +9066,7 @@
     "fig_texts": [],
     "axes": [
       {
-        "title": "arm c (turn-avg SAE, L19)",
+        "title": "turn-averaged SAE, layer 19 (fresh instrument)",
         "xlabel": "log10(active fit rows + 1)",
         "ylabel": "held-out per-feature R\u00b2",
         "legend_labels": [
@@ -9137,7 +9094,7 @@
         ]
       },
       {
-        "title": "arm b (chanind, L20)",
+        "title": "parent token-level SAE on turn averages, layer 20",
         "xlabel": "log10(active fit rows + 1)",
         "ylabel": "held-out per-feature R\u00b2",
         "xticklabels": [

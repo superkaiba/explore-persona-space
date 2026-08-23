@@ -1,0 +1,58 @@
+{
+  "g2b": {
+    "hook_fve_lmsys": {
+      "L19": 0.5718,
+      "L20": 0.79,
+      "L21": 0.7078
+    },
+    "max_at_20": true,
+    "n_pilot": 24,
+    "verdict": "PASS"
+  },
+  "g2a": {
+    "gate_version": 2,
+    "n": 30000,
+    "row_cos_min": 0.9953972101211548,
+    "row_cos_median": 0.999933123588562,
+    "quantiles": {
+      "min": 0.9953972101211548,
+      "p0.01%": 0.998945589274168,
+      "p0.1%": 0.9995611802339553,
+      "p1%": 0.999781363606453,
+      "p5%": 0.9998459219932556,
+      "median": 0.999933123588562
+    },
+    "bars": {
+      "min_flat": 0.995,
+      "p0.1%": 0.999,
+      "median": 0.9995
+    },
+    "n_below": {
+      "min_flat": 0,
+      "p0.1%": 4,
+      "median": 23
+    },
+    "verdict": "PASS"
+  },
+  "d2c": {
+    "n": 30000,
+    "median": 0.9999815821647644,
+    "p05": 0.9963029026985168,
+    "p25": 0.9998641610145569,
+    "p75": 0.9999924302101135,
+    "min": 0.7290769815444946,
+    "floor": 0.99,
+    "verdict": "PASS"
+  },
+  "metadata": {
+    "git_commit": "a51057beaf6a5073dcf273ef80077c759fb98499",
+    "timestamp_utc": "2026-08-23T10:27:38.238719Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "git_dirty": false,
+    "phase": "recapture",
+    "git_argv0_state": "tracked",
+    "git_argv0_path": "scripts/issue2476_turnavg_sae.py"
+  }
+}

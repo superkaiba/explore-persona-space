@@ -1,64 +1,18 @@
 {
-  "commit": "064462df+dirty",
-  "render_id": "15e6c01cb3864011",
-  "git_commit": "064462df4d683afcb6a717253275cdb8486c9a82",
+  "commit": "8e0f3c62+dirty",
+  "render_id": "2e8979dc431843f1",
+  "git_commit": "8e0f3c629982a9c33824736bae61eebae2b5b458",
   "git_dirty": true,
   "git_dirty_paths": [
-    "eval_results/issue_2476/turnavg/bridge_b.npz",
-    "eval_results/issue_2476/turnavg/gates_p4.json",
-    "eval_results/issue_2476/turnavg/gates_p6.json",
-    "eval_results/issue_2476/turnavg/panel_b.json",
-    "eval_results/issue_2476/turnavg/panel_c.json",
-    "eval_results/issue_2476/turnavg/perfeature_b_densein.npz",
-    "eval_results/issue_2476/turnavg/perfeature_b_encodepred.npz",
-    "eval_results/issue_2476/turnavg/perfeature_b_ib.npz",
-    "eval_results/issue_2476/turnavg/perfeature_b_inlier.npz",
-    "eval_results/issue_2476/turnavg/perfeature_b_pile.npz",
-    "eval_results/issue_2476/turnavg/perfeature_c_densein.npz",
-    "eval_results/issue_2476/turnavg/perfeature_c_encodepred.npz",
-    "eval_results/issue_2476/turnavg/perfeature_c_ib.npz",
-    "eval_results/issue_2476/turnavg/perfeature_c_transfer.npz",
-    "eval_results/issue_2476/turnavg/preds_meta.json",
-    "eval_results/issue_2476/turnavg/recon_gate.json",
-    "eval_results/issue_2476/turnavg/regime.json",
-    "eval_results/issue_2476/turnavg/retrieval_b.json",
-    "eval_results/issue_2476/turnavg/retrieval_c.json",
-    "eval_results/issue_2476/turnavg/shuffle_null_b.npz",
-    "eval_results/issue_2476/turnavg/shuffle_null_b_pile.npz",
-    "eval_results/issue_2476/turnavg/shuffle_null_c.npz",
-    "eval_results/issue_2476/turnavg/tier_tests_b.json",
-    "eval_results/issue_2476/turnavg/tier_tests_c.json",
-    "eval_results/issue_2476/turnavg/train_log.json",
-    "figures/issue_2476/i2476_alive_attrition.meta.json",
-    "figures/issue_2476/i2476_alive_attrition.pdf",
-    "figures/issue_2476/i2476_alive_attrition.png",
-    "figures/issue_2476/i2476_bridge_token_vs_turnavg.meta.json",
-    "figures/issue_2476/i2476_bridge_token_vs_turnavg.pdf",
-    "figures/issue_2476/i2476_bridge_token_vs_turnavg.png",
-    "figures/issue_2476/i2476_corpus_transfer.meta.json",
-    "figures/issue_2476/i2476_corpus_transfer.pdf",
-    "figures/issue_2476/i2476_corpus_transfer.png",
-    "figures/issue_2476/i2476_densein_profile.meta.json",
-    "figures/issue_2476/i2476_densein_profile.pdf",
-    "figures/issue_2476/i2476_densein_profile.png",
-    "figures/issue_2476/i2476_inlier_sensitivity.meta.json",
-    "figures/issue_2476/i2476_inlier_sensitivity.pdf",
-    "figures/issue_2476/i2476_inlier_sensitivity.png",
-    "figures/issue_2476/i2476_pile_twin.meta.json",
-    "figures/issue_2476/i2476_pile_twin.pdf",
-    "figures/issue_2476/i2476_pile_twin.png",
-    "figures/issue_2476/i2476_r2_ecdf.meta.json",
-    "figures/issue_2476/i2476_r2_ecdf.pdf",
-    "figures/issue_2476/i2476_r2_ecdf.png",
-    "figures/issue_2476/i2476_r2_vs_activity.meta.json",
-    "figures/issue_2476/i2476_r2_vs_activity.pdf",
-    "figures/issue_2476/i2476_r2_vs_activity.png",
-    "figures/issue_2476/i2476_retrieval_acc_at_k.meta.json",
-    "... 5 more"
+    "scripts/issue2476_fig_relabel.py",
+    "figures/paper/c3_turnavg_tier_gradient.meta.json",
+    "figures/paper/c3_turnavg_tier_gradient.pdf",
+    "figures/paper/c3_turnavg_tier_gradient.png",
+    "scripts/issue2476_turnavg_sae.py"
   ],
-  "git_argv0_state": "tracked",
-  "git_argv0_path": "scripts/issue2476_turnavg_sae.py",
-  "created": "2026-08-23T11:38:49Z",
+  "git_argv0_state": "untracked",
+  "git_argv0_path": "scripts/issue2476_fig_relabel.py",
+  "created": "2026-08-23T12:33:48Z",
   "figsize": [
     5.5,
     3.399
@@ -295,28 +249,28 @@
     {
       "matryoshka tier (feature-id prefix)": 0.0,
       "retrieval acc@1 (euclidean; pool = held-out rows)": 5e-05,
-      "series": "chance, arm c (1/20000)",
+      "series": "chance = 1/20,000 (20,000-row held-out pool)",
       "_kind": "line",
       "_group": 12
     },
     {
       "matryoshka tier (feature-id prefix)": 1.0,
       "retrieval acc@1 (euclidean; pool = held-out rows)": 5e-05,
-      "series": "chance, arm c (1/20000)",
+      "series": "chance = 1/20,000 (20,000-row held-out pool)",
       "_kind": "line",
       "_group": 12
     },
     {
       "matryoshka tier (feature-id prefix)": 0.0,
       "retrieval acc@1 (euclidean; pool = held-out rows)": 0.00016666666666666666,
-      "series": "chance, arm b (1/6000)",
+      "series": "chance = 1/6,000 (6,000-row held-out pool)",
       "_kind": "line",
       "_group": 13
     },
     {
       "matryoshka tier (feature-id prefix)": 1.0,
       "retrieval acc@1 (euclidean; pool = held-out rows)": 0.00016666666666666666,
-      "series": "chance, arm b (1/6000)",
+      "series": "chance = 1/6,000 (6,000-row held-out pool)",
       "_kind": "line",
       "_group": 13
     }
@@ -331,12 +285,12 @@
         "xlabel": "matryoshka tier (feature-id prefix)",
         "ylabel": "retrieval acc@1 (euclidean; pool = held-out rows)",
         "legend_labels": [
-          "chance, arm c (1/20000)",
-          "chance, arm b (1/6000)",
-          "arm c (turn-avg SAE, L19): map",
-          "arm c (turn-avg SAE, L19): identity+bias",
-          "arm b (chanind, L20): map",
-          "arm b (chanind, L20): identity+bias"
+          "chance = 1/20,000 (20,000-row held-out pool)",
+          "chance = 1/6,000 (6,000-row held-out pool)",
+          "turn-averaged SAE, layer 19 (fresh instrument): map",
+          "turn-averaged SAE, layer 19 (fresh instrument): identity+bias",
+          "parent token-level SAE on turn averages, layer 20: map",
+          "parent token-level SAE on turn averages, layer 20: identity+bias"
         ],
         "xticklabels": [
           "coarsest\n(ids <2,048)",
@@ -357,12 +311,12 @@
       }
     ],
     "series": [
-      "chance, arm c (1/20000)",
-      "chance, arm b (1/6000)",
-      "arm c (turn-avg SAE, L19): map",
-      "arm c (turn-avg SAE, L19): identity+bias",
-      "arm b (chanind, L20): map",
-      "arm b (chanind, L20): identity+bias"
+      "chance = 1/20,000 (20,000-row held-out pool)",
+      "chance = 1/6,000 (6,000-row held-out pool)",
+      "turn-averaged SAE, layer 19 (fresh instrument): map",
+      "turn-averaged SAE, layer 19 (fresh instrument): identity+bias",
+      "parent token-level SAE on turn averages, layer 20: map",
+      "parent token-level SAE on turn averages, layer 20: identity+bias"
     ]
   },
   "formats_written": [

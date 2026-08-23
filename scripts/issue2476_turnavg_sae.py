@@ -3884,7 +3884,12 @@ TIER_LABELS = {
     1: "middle\n(2,048–16,383)",
     2: "finest\n(16,384–65,535)",
 }
-_ARM_LABELS = {"c": "arm c (turn-avg SAE, L19)", "b": "arm b (chanind, L20)"}
+# Reader-facing condition names (no internal arm codes / HF usernames on rendered
+# figures — no-opaque-codes rule; style matches issue2476_attrition_fig.py).
+_ARM_LABELS = {
+    "c": "turn-averaged SAE, layer 19 (fresh instrument)",
+    "b": "parent token-level SAE on turn averages, layer 20",
+}
 
 
 def _parent_reference_medians() -> dict[int, float]:
@@ -4043,11 +4048,41 @@ def _fig_hero_acc1(ev: Path, fig_dir: Path) -> dict[str, Path]:
             ls="--",
             lw=0.8,
             color=col,
-            label=f"chance, arm {tag} (1/{n_pool})",
+            label=f"chance = 1/{n_pool:,} ({n_pool:,}-row held-out pool)",
         )
     ax.set_xlabel("matryoshka tier (feature-id prefix)")
     ax.set_ylabel("retrieval acc@1 (euclidean; pool = held-out rows)")
     ax.legend(fontsize=5, loc="lower left", bbox_to_anchor=(0.0, 1.02), frameon=False)
+    # Linear-zoom inset over the middle + finest tiers: at the coarse tier's scale
+    # every non-coarse bar is visually at the floor, hiding that the middle-tier map
+    # cells sit well above chance (21x / 39x) — the zoom makes those cells readable.
+    axins = ax.inset_axes([0.44, 0.30, 0.54, 0.52])
+    width = 0.8 / max(1, len(series))
+    for i, (_label, meds, cis, col) in enumerate(series):
+        for t in (1, 2):
+            m = meds.get(t)
+            if m is None or not np.isfinite(m):
+                continue
+            ci = (cis or {}).get(t)
+            if ci and all(v is not None and np.isfinite(v) for v in ci):
+                yerr = [[max(0.0, float(m) - float(ci[0]))], [max(0.0, float(ci[1]) - float(m))]]
+            else:
+                yerr = None
+            axins.bar(
+                t - 0.4 + width * (i + 0.5),
+                float(m),
+                width=width,
+                color=col,
+                yerr=yerr,
+                capsize=1,
+            )
+    for rdoc, col in ((rc, colors[0]), (rb, colors[2])):
+        axins.axhline(1.0 / max(1, int(rdoc["n_pool"])), ls="--", lw=0.6, color=col)
+    axins.set_xticks([1, 2])
+    axins.set_xticklabels(["middle", "finest"], fontsize=5)
+    axins.tick_params(labelsize=5)
+    axins.set_ylim(bottom=0.0)
+    axins.set_title("zoom: middle + finest tiers", fontsize=5)
     paths = savefig_paper(fig, "c3_turnavg_tier_acc1", dir=fig_dir)
     plt.close(fig)
     return paths
