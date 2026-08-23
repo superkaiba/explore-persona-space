@@ -207,9 +207,137 @@ def fig_attribution_v2() -> None:
     plt.close(fig)
 
 
+def fig_c3_failure_analysis_iclr() -> None:
+    """ICLR paper figure (figures/paper/c3_failure_attribution): the C3 failure analysis.
+
+    Three panels from committed eval_results/issue_2202 JSONs: (a) the 13
+    BH-significant failure-rate contrasts (10,000-draw bootstrap 95% CIs), (b) the
+    resample attribution of the 368 covered rank-1 failures, (c) per-architecture
+    rank-1 accuracy before vs after the metric-side fixes (5-draw-averaged targets,
+    whitened cosine + CSLS). Original fig_attribution_v2 stem untouched.
+    """
+    from explore_persona_space.analysis.paper_plots import paper_color, set_paper_style
+
+    set_paper_style("iclr")
+    comp = json.loads((EV / "composition_stats.json").read_text())
+    att = json.loads((EV / "attribution.json").read_text())
+    avg = json.loads((EV / "avgtgt_completion" / "summary.json").read_text())
+
+    fig, (ax_a, ax_b, ax_c) = plt.subplots(
+        1, 3, figsize=(5.5, 2.5), gridspec_kw={"width_ratios": [2.3, 0.7, 1.8]}
+    )
+
+    # (a) BH-significant composition contrasts (failure-rate difference, pp)
+    name = {
+        "language=en": "English",
+        "topic=factual_qa": "factual QA topic",
+        "topic=coding": "coding topic",
+        "topic=advice_howto": "advice / how-to topic",
+        "topic=harmful_or_unsafe_request": "harmful-request topic",
+        "topic=roleplay_persona": "roleplay / persona topic",
+        "topic=nsfw": "NSFW topic",
+        "topic=other": "'other' topic",
+        "refusal_adjacent=yes": "refusal-adjacent request",
+        "answer_is_refusal=yes": "answer is a refusal",
+        "format=code": "code-format answer",
+        "depth=>=5": "deep conversation (5+ turns)",
+        "corpus=wildchat": "WildChat corpus",
+    }
+    rows = sorted(
+        (r for r in comp["banked_battery"] if r["bh_significant"]), key=lambda r: r["delta"]
+    )
+    ys = np.arange(len(rows))
+    deltas = np.array([r["delta"] for r in rows]) * 100
+    elo = np.maximum(0.0, np.array([r["delta"] - r["ci_lo"] for r in rows]) * 100)
+    ehi = np.maximum(0.0, np.array([r["ci_hi"] - r["delta"] for r in rows]) * 100)
+    ax_a.barh(
+        ys,
+        deltas,
+        xerr=(elo, ehi),
+        color=paper_color("instruct"),
+        height=0.62,
+        error_kw={"lw": 0.7, "capsize": 1.5},
+    )
+    ax_a.axvline(0, color=paper_color("reference"), lw=0.7)
+    ax_a.set_yticks(ys, [name[r["contrast"]] for r in rows], fontsize=7)
+    ax_a.set_xlabel("failure-rate difference (pp)")
+
+    # (b) resample attribution of the covered rank-1 failures
+    counts = att["classes_over_fail1"]
+    order = [
+        ("MAP_ATTRIBUTABLE", "map error", paper_color("instruct")),
+        ("AMBIGUOUS", "ambiguous", "0.78"),
+        ("IRREDUCIBLE", "answer degeneracy", paper_color("null")),
+    ]
+    covered = sum(counts[k] for k, _, _ in order)
+    bottom = 0.0
+    for key, lab, colr in order:
+        frac = counts[key] / covered * 100.0
+        ax_b.bar([0], [frac], bottom=bottom, color=colr, width=0.55, label=lab)
+        bottom += frac
+    ax_b.set_xticks([])
+    ax_b.set_xlim(-0.6, 0.6)
+    ax_b.set_ylim(0, 100)
+    ax_b.set_ylabel("share of covered failures (%)")
+    ax_b.legend(fontsize=7, loc="upper left", bbox_to_anchor=(-0.35, -0.12), ncols=1)
+
+    # (c) rank-1 accuracy before/after the metric-side fixes, per architecture
+    archs = [
+        ("ridge", "linear (ridge)"),
+        ("mlp_w8192", "MLP"),
+        ("mlp_w8192_seed43", "MLP (seed 43)"),
+        ("krr_nystrom", "kernel ridge"),
+        ("residual_skip", "residual MLP"),
+        ("contrastive_linear", "contrastive linear"),
+        ("contrastive_mlp", "contrastive MLP"),
+    ]
+    m = avg["matrix"]
+    for i, (key, lab) in enumerate(archs):
+        raw = m[key]["raw_euclidean"]["single"]["acc_at_k"]["1"]
+        fixed = m[key]["csls_k10_whitencos"]["avg"]["acc_at_k"]["1"]
+        ax_c.plot([raw, fixed], [i, i], color="0.8", lw=0.8, zorder=1)
+        ax_c.scatter(
+            [raw],
+            [i],
+            color=paper_color("null"),
+            s=13,
+            zorder=2,
+            label="single draw, raw" if i == 0 else None,
+        )
+        ax_c.scatter(
+            [fixed],
+            [i],
+            color=paper_color("instruct"),
+            s=13,
+            zorder=3,
+            label="5-draw, whitened+CSLS" if i == 0 else None,
+        )
+    ax_c.set_yticks(range(len(archs)), [lab for _, lab in archs], fontsize=7)
+    ax_c.set_xlabel("rank-1 retrieval accuracy")
+    ax_c.set_xlim(0.55, 1.04)
+    ax_c.legend(fontsize=7, loc="center left", bbox_to_anchor=(0.0, 0.45))
+    savefig_paper(fig, "c3_failure_attribution", dir="figures/paper/")
+    plt.close(fig)
+    print("wrote figures/paper/c3_failure_attribution.{png,pdf,meta.json}")
+
+
 if __name__ == "__main__":
+    import argparse
+
+    ap = argparse.ArgumentParser(description="Regenerate issue-2202 figures.")
+    ap.add_argument("only", nargs="?", default=None, help="single figure name (default: all)")
+    ap.add_argument(
+        "--style",
+        default="blog",
+        choices=["blog", "iclr"],
+        help="'iclr' renders ONLY the paper failure-analysis figure into figures/paper/",
+    )
+    cli = ap.parse_args()
+    if cli.style == "iclr":
+        fig_c3_failure_analysis_iclr()
+        sys.exit(0)
     set_paper_style("blog")
-    only = sys.argv[1] if len(sys.argv) > 1 else None
+    only = cli.only
     figs = {
         "fig_indegree_v2": fig_indegree_v2,
         "fig_reciprocity_bands_log": fig_reciprocity_bands_log,

@@ -20,6 +20,14 @@ CLI:
   uv run python scripts/issue931_extract_store.py --regime armA \
       [--data-dir data/issue_931] [--store-dir data/issue_931/store] \
       [--batch-size 8] [--tiny-model-dir <dir>] [--resume] [--equivalence-check]
+
+#1901 additive kwargs/flags (defaults reproduce the #931 behavior byte-for-byte):
+  --layers 2,14,19,26   armC-only layer-subset mode — captures ONLY those block
+                        indices and persists x_sep + y ONLY, at subset width in
+                        subset order (arbitrary subsets; the tiny-model smoke
+                        uses 0,2,4,5 on a 6-layer model)
+  --shard-pairs 2000    pairs per shard (default = the #931 SHARD_PAIRS = 512)
+  --tiny-layers 6       layer count for --make-tiny-model (default 4)
 """
 
 from __future__ import annotations
@@ -63,6 +71,24 @@ def parse_args() -> argparse.Namespace:
         type=str,
         default=None,
         help="SMOKE: write a tiny random-init Qwen2 (real tokenizer) to this dir and exit",
+    )
+    ap.add_argument(
+        "--layers",
+        type=str,
+        default=None,
+        help="comma-separated layer subset (#1901, armC-only: persists x_sep + y at subset width)",
+    )
+    ap.add_argument(
+        "--shard-pairs",
+        type=int,
+        default=SHARD_PAIRS,
+        help=f"pairs per shard (#1901 threaded; default {SHARD_PAIRS})",
+    )
+    ap.add_argument(
+        "--tiny-layers",
+        type=int,
+        default=4,
+        help="layer count for --make-tiny-model (#1901; default 4)",
     )
     return ap.parse_args()
 
@@ -207,8 +233,33 @@ def _finite(t: torch.Tensor, name: str, row_id: str) -> torch.Tensor:
     return t
 
 
-def process_batch(model, batch: list[dict], pad_id: int, regime: str) -> list[dict]:
-    """One right-padded batched forward; per-pair reduced summaries to CPU bf16."""
+def process_batch(
+    model,
+    batch: list[dict],
+    pad_id: int,
+    regime: str,
+    *,
+    layers: tuple[int, ...] | None = None,
+) -> list[dict]:
+    """One right-padded batched forward; per-pair reduced summaries to CPU bf16.
+
+    ``layers=None`` (default) captures all EXPECTED_LAYERS blocks and persists
+    the full summary set (x_spanmean, x_last, x_sep|x_ctxmean, y) — the #931
+    behavior byte-for-byte. A layer SUBSET (#1901: production (2, 14, 19, 26);
+    tiny-model smoke (0, 2, 4, 5)) is armC-only and persists x_sep + y ONLY,
+    at subset width, stacked in the given subset order. Fail-loud: subset
+    entries are validated against the live EXPECTED_LAYERS (tiny models mutate
+    it via load_model), so an unsatisfiable subset raises before any forward.
+    """
+    subset = layers is not None
+    layer_list = list(range(EXPECTED_LAYERS)) if layers is None else [int(v) for v in layers]
+    if subset:
+        assert regime == "armC", f"layer-subset persist mode is armC-only, got regime={regime!r}"
+        assert layer_list, "empty layer subset"
+        assert len(set(layer_list)) == len(layer_list), f"duplicate layers: {layer_list}"
+        bad = [v for v in layer_list if not (0 <= v < EXPECTED_LAYERS)]
+        assert not bad, f"layers {bad} out of range for a {EXPECTED_LAYERS}-layer model"
+    n_layers = len(layer_list)
     lengths = [len(it["input_ids"]) for it in batch]
     bsz, max_len = len(batch), max(lengths)
     input_ids = torch.full((bsz, max_len), pad_id, dtype=torch.long)
@@ -220,14 +271,14 @@ def process_batch(model, batch: list[dict], pad_id: int, regime: str) -> list[di
     captured = extract_layer_activations(
         model,
         input_ids.to(device),
-        layers=range(EXPECTED_LAYERS),
+        layers=layer_list,
         return_logits=False,
         attention_mask=attention_mask.to(device),
         detach_to_cpu=False,  # reductions stay device-side; only summaries move
     )
-    assert set(captured) == set(range(EXPECTED_LAYERS)), "missing layers in capture"
-    acts = torch.stack([captured[layer] for layer in range(EXPECTED_LAYERS)], dim=0)
-    assert acts.shape == (EXPECTED_LAYERS, bsz, max_len, EXPECTED_HIDDEN), acts.shape
+    assert set(captured) == set(layer_list), "missing layers in capture"
+    acts = torch.stack([captured[layer] for layer in layer_list], dim=0)
+    assert acts.shape == (n_layers, bsz, max_len, EXPECTED_HIDDEN), acts.shape
 
     records = []
     for i, it in enumerate(batch):
@@ -240,8 +291,9 @@ def process_batch(model, batch: list[dict], pad_id: int, regime: str) -> list[di
                 "group_id": p.group_id,
                 "char_id": p.char_id,
             }
-            rec["x_spanmean"] = acts[:, i, cs:ce, :].float().mean(dim=1)
-            rec["x_last"] = acts[:, i, ce - 1, :].float()
+            if not subset:
+                rec["x_spanmean"] = acts[:, i, cs:ce, :].float().mean(dim=1)
+                rec["x_last"] = acts[:, i, ce - 1, :].float()
             if regime == "armC":
                 a = int(p.meta["anchor_pos"])
                 assert 0 <= a < true_len, (p.row_id, "anchor", a, true_len)
@@ -250,9 +302,7 @@ def process_batch(model, batch: list[dict], pad_id: int, regime: str) -> list[di
                 xs, xe = p.ctx_span
                 assert 0 <= xs < xe <= true_len, (p.row_id, "ctx_span", xs, xe, true_len)
                 rec["x_ctxmean"] = acts[:, i, xs:xe, :].float().mean(dim=1)
-            total = torch.zeros(
-                EXPECTED_LAYERS, EXPECTED_HIDDEN, dtype=torch.float32, device=acts.device
-            )
+            total = torch.zeros(n_layers, EXPECTED_HIDDEN, dtype=torch.float32, device=acts.device)
             n_t = 0
             for lo, hi in p.t_spans:
                 assert 0 <= lo < hi <= true_len, (p.row_id, "t_span", lo, hi, true_len)
@@ -267,14 +317,26 @@ def process_batch(model, batch: list[dict], pad_id: int, regime: str) -> list[di
     return records
 
 
-def run_extraction(model, items: list[dict], pad_id: int, batch_size: int, regime: str):
-    """Length-grouped batching with OOM-halving (floor 1); yields per-batch recs."""
+def run_extraction(
+    model,
+    items: list[dict],
+    pad_id: int,
+    batch_size: int,
+    regime: str,
+    *,
+    layers: tuple[int, ...] | None = None,
+):
+    """Length-grouped batching with OOM-halving (floor 1); yields per-batch recs.
+
+    ``layers`` (#1901) threads the armC-only capture/persist subset through to
+    process_batch; None = full-width #931 behavior.
+    """
     order = sorted(range(len(items)), key=lambda j: len(items[j]["input_ids"]))
     bs, pos, done = batch_size, 0, 0
     while pos < len(order):
         chunk = [items[order[j]] for j in range(pos, min(pos + bs, len(order)))]
         try:
-            recs = process_batch(model, chunk, pad_id, regime)
+            recs = process_batch(model, chunk, pad_id, regime, layers=layers)
         except torch.cuda.OutOfMemoryError:
             if bs == 1:
                 raise
@@ -289,9 +351,23 @@ def run_extraction(model, items: list[dict], pad_id: int, batch_size: int, regim
         yield recs
 
 
-def write_shard(records: list[dict], out_dir: Path, shard_idx: int, regime: str) -> None:
-    """One .pt shard (stacked arrays) + JSON sidecar; atomic-ish via tmp."""
+def write_shard(
+    records: list[dict],
+    out_dir: Path,
+    shard_idx: int,
+    regime: str,
+    *,
+    layers: tuple[int, ...] | None = None,
+) -> None:
+    """One .pt shard (stacked arrays) + JSON sidecar; atomic-ish via tmp.
+
+    ``layers`` (#1901): the persisted layer-index subset when subset capture is
+    active — the per-row shape assert then pins ``len(layers)`` width and the
+    sidecar records the indices (``"layers"`` key, subset mode only). None =
+    the full-EXPECTED_LAYERS #931 behavior, sidecar byte-identical.
+    """
     out_dir.mkdir(parents=True, exist_ok=True)
+    n_layers = EXPECTED_LAYERS if layers is None else len(layers)
     keys = [k for k in records[0] if isinstance(records[0][k], torch.Tensor)]
     payload = {
         "row_ids": [r["row_id"] for r in records],
@@ -300,7 +376,7 @@ def write_shard(records: list[dict], out_dir: Path, shard_idx: int, regime: str)
         "arrays": {k: torch.stack([r[k] for r in records]) for k in keys},
     }
     for k, v in payload["arrays"].items():
-        assert v.shape == (len(records), EXPECTED_LAYERS, EXPECTED_HIDDEN), (k, v.shape)
+        assert v.shape == (len(records), n_layers, EXPECTED_HIDDEN), (k, v.shape)
     pt_path = out_dir / f"{regime}_shard{shard_idx:03d}.pt"
     tmp = pt_path.with_suffix(".pt.tmp")
     torch.save(payload, tmp)
@@ -312,31 +388,43 @@ def write_shard(records: list[dict], out_dir: Path, shard_idx: int, regime: str)
         "row_ids": payload["row_ids"],
         "group_ids": payload["group_ids"],
         "keys": keys,
-        "shape_per_row": [EXPECTED_LAYERS, EXPECTED_HIDDEN],
+        "shape_per_row": [n_layers, EXPECTED_HIDDEN],
         "metadata": common.metadata(SCRIPT, common.BUILD_SEED, len(records)),
     }
+    if layers is not None:
+        sidecar["layers"] = [int(v) for v in layers]
     (out_dir / f"{regime}_shard{shard_idx:03d}.json").write_text(json.dumps(sidecar, indent=2))
     print(f"[i931-p2] wrote {pt_path} ({len(records)} rows)")
 
 
-def equivalence_check(model, items: list[dict], pad_id: int, regime: str) -> dict:
+def equivalence_check(
+    model,
+    items: list[dict],
+    pad_id: int,
+    regime: str,
+    *,
+    layers: tuple[int, ...] | None = None,
+) -> dict:
     """Batched (B=3) vs batch-1 capture equivalence on real items.
 
     Two-bar gate per the #779 calibration: early-layer (first 4) per-layer
     cosine >= 0.999 AND flattened all-layer cosine >= 0.995, computed over
     every stored summary of every pair. Right-pad + causal mask means pads
     cannot influence real positions; bf16 deep-layer jitter is the residual.
+    ``layers`` (#1901) threads the armC-only subset so the gate exercises the
+    exact capture shape the run persists ("early" = first entries of the
+    subset order).
     """
     take = items[:3]
     if len(take) < 2:
         take = items[:1] * 2  # degenerate smoke fallback (still exercises pad)
-    batched = process_batch(model, take, pad_id, regime)
+    batched = process_batch(model, take, pad_id, regime, layers=layers)
     serial = []
     for it in take:
-        serial.extend(process_batch(model, [it], pad_id, regime))
+        serial.extend(process_batch(model, [it], pad_id, regime, layers=layers))
     assert len(batched) == len(serial)
     early_min, flat_min = 1.0, 1.0
-    n_early = min(4, EXPECTED_LAYERS)
+    n_early = min(4, EXPECTED_LAYERS if layers is None else len(layers))
     for rb, rs in zip(batched, serial, strict=True):
         for k in rb:
             if not isinstance(rb[k], torch.Tensor):
@@ -355,11 +443,16 @@ def equivalence_check(model, items: list[dict], pad_id: int, regime: str) -> dic
 def main() -> int:
     args = parse_args()
     if args.make_tiny_model:
-        make_tiny_model(Path(args.make_tiny_model))
+        make_tiny_model(Path(args.make_tiny_model), layers=args.tiny_layers)
         return 0
     assert args.regime, "--regime is required unless --make-tiny-model"
+    layers = tuple(int(v) for v in args.layers.split(",")) if args.layers else None
+    shard_pairs = args.shard_pairs
+    assert shard_pairs > 0, f"--shard-pairs must be positive, got {shard_pairs}"
     store_dir = (args.store_dir or (args.data_dir / "store")) / args.regime
     print(f"[phase=p2_extract_{args.regime.lower()}] span-summary extraction")
+    if layers is not None:
+        print(f"[i931-p2] layer-subset mode: layers={list(layers)} (persists x_sep + y only)")
     tokenizer = common.get_tokenizer()
     pad_id = tokenizer.pad_token_id or tokenizer.eos_token_id
     items = load_items(args.regime, args.data_dir)
@@ -371,8 +464,14 @@ def main() -> int:
     done_rows: set[str] = set()
     shard_idx = 0
     if args.resume:
+        expect_layers = list(layers) if layers is not None else None
         for sc in sorted(store_dir.glob(f"{args.regime}_shard*.json")):
             side = json.loads(sc.read_text())
+            side_layers = side.get("layers")  # absent on legacy full-width shards
+            assert side_layers == expect_layers, (
+                f"resume layer-set mismatch: {sc.name} persisted layers={side_layers}, "
+                f"this run requests layers={expect_layers}"
+            )
             done_rows.update(side["row_ids"])
             shard_idx = max(shard_idx, side["shard_index"] + 1)
         if done_rows:
@@ -383,18 +482,18 @@ def main() -> int:
 
     model = load_model(args.tiny_model_dir)
     if args.equivalence_check and items:
-        eq = equivalence_check(model, items, pad_id, args.regime)
+        eq = equivalence_check(model, items, pad_id, args.regime, layers=layers)
         common.write_json(store_dir / f"{args.regime}_equivalence.json", eq)
 
     buf: list[dict] = []
-    for recs in run_extraction(model, items, pad_id, args.batch_size, args.regime):
+    for recs in run_extraction(model, items, pad_id, args.batch_size, args.regime, layers=layers):
         buf.extend(recs)
-        while len(buf) >= SHARD_PAIRS:
-            write_shard(buf[:SHARD_PAIRS], store_dir, shard_idx, args.regime)
-            buf = buf[SHARD_PAIRS:]
+        while len(buf) >= shard_pairs:
+            write_shard(buf[:shard_pairs], store_dir, shard_idx, args.regime, layers=layers)
+            buf = buf[shard_pairs:]
             shard_idx += 1
     if buf:
-        write_shard(buf, store_dir, shard_idx, args.regime)
+        write_shard(buf, store_dir, shard_idx, args.regime, layers=layers)
     print(f"[i931-p2] done (regime={args.regime})")
     return 0
 

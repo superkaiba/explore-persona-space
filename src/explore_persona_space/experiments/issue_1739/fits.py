@@ -22,6 +22,7 @@ No network, no GPU requirement (``device`` parametrized; CPU default).
 
 from __future__ import annotations
 
+import contextlib
 import dataclasses
 import logging
 
@@ -36,6 +37,54 @@ from explore_persona_space.experiments.issue_1739.constants import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _rss_note(tag: str) -> None:
+    """Log-only RSS breadcrumb (claim4 crash-fix r4: localize cgroup kills).
+
+    The 2026-08-18 claim4 production OOMs (memory.max = 128e9 B ≈ 119.2 GiB)
+    landed between the scorer's ``map-pool-whitened`` and ``merged-table-built``
+    milestones — i.e. INSIDE :func:`fit_linear_map` — with no breadcrumb to
+    split the split-fit / diagnostics / refit stages. Never an assert or cap:
+    a healthy run must not be killable by its own telemetry.
+    """
+    try:
+        import os
+        import resource
+        from pathlib import Path
+
+        cur_gib = (
+            int(Path("/proc/self/statm").read_text().split()[1])
+            * os.sysconf("SC_PAGE_SIZE")
+            / 2**30
+        )
+        peak_gib = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 2**20
+        logger.info("[fits][rss %s] current=%.1f GiB peak=%.1f GiB", tag, cur_gib, peak_gib)
+    except (OSError, ValueError, IndexError, ImportError):
+        pass  # /proc absent (non-linux host) — breadcrumb only, never load-bearing
+
+
+# Opt-in sink for per-fit ridge selected-lambda diagnostics (#1739 r2v2; the
+# "report the per-fit selector and selected lambda alongside every ridge read"
+# duty — .claude/rules/llm-judging.md sibling #1887). When armed via
+# :func:`capture_selected_lambdas`, :func:`ridge_gcv_predict_per_target`
+# appends one record per layer-chunk: n_train / d / gram space / per-target
+# selected-lambda counts. Plain list.append (GIL-atomic) — safe under the
+# multi-GPU thread-pool shard in ``arms._solve_ridge_groups``.
+_SELECTED_LAMBDA_SINK: list[dict] | None = None
+
+
+@contextlib.contextmanager
+def capture_selected_lambdas(sink: list[dict]):
+    """Arm the module-level selected-lambda sink for the enclosed fits."""
+    global _SELECTED_LAMBDA_SINK
+    prev = _SELECTED_LAMBDA_SINK
+    _SELECTED_LAMBDA_SINK = sink
+    try:
+        yield sink
+    finally:
+        _SELECTED_LAMBDA_SINK = prev
+
 
 # Nonlinear context->answer map kinds (#1739 nonlinear-map round). Both reuse
 # the #779 N1M fitters verbatim (``scripts/issue779_ffc_n1m_fits.py``:
@@ -448,6 +497,26 @@ def r2_pooled(pred: np.ndarray, true: np.ndarray) -> float:
     return 1.0 - ss_res / max(ss_tot, 1e-30)
 
 
+class _LayerRowGather:
+    """Per-layer row-gather facade over a ``(Ly, n, d)`` pool (crash-fix r4).
+
+    ``pool[li][rows]`` is element-for-element equal to ``pool[:, rows][li]``
+    and lands in the same C-contiguous layout, so a per-layer consumer
+    (:func:`map_diagnostics`) sees byte-identical inputs while the whole-array
+    ``(Ly, n_rows, d)`` fancy-index copy — ~20.8 GiB per train-side array at
+    the production 34,793-row ADD pool — is never materialized. The transient
+    is ONE layer (~0.74 GiB) per ``__getitem__``, freed at loop turnover.
+    Bit-identity pinned by ``tests/test_issue1739_claim4.py``.
+    """
+
+    def __init__(self, arr: np.ndarray, rows: np.ndarray):
+        self._arr = arr
+        self._rows = np.asarray(rows)
+
+    def __getitem__(self, li: int) -> np.ndarray:
+        return self._arr[li][self._rows]
+
+
 def map_diagnostics(
     pred: np.ndarray,
     x_eval: np.ndarray,
@@ -462,7 +531,9 @@ def map_diagnostics(
     All arrays layer-leading (Ly, n, d). The identity+learned-bias baseline +
     kNN retrieval are the standing mapping-baselines pair (CLAUDE.md rule;
     ``analysis/mapping_baselines``); chance = k/n_pool is carried by the
-    helper's own ``chance_at_k`` field.
+    helper's own ``chance_at_k`` field. Only per-layer ``[li]`` indexing is
+    used on the four x/y inputs, so a :class:`_LayerRowGather` facade is an
+    accepted stand-in for a materialized array (crash-fix r4).
     """
     from explore_persona_space.analysis.mapping_baselines import (
         identity_bias_predict,
@@ -495,23 +566,38 @@ def ridge_fit_predict_primal_layer_batched(
     device: str = "cpu",
     return_weights: bool = False,
     layer_chunk: int = 4,
+    train_rows: np.ndarray | None = None,
+    eval_rows: np.ndarray | None = None,
 ) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
     """PRIMAL (feature-space) twin of ``fit_h.ridge_fit_predict_fast_layer_batched``.
+
+    ``train_rows`` / ``eval_rows`` (crash-fix r4, the claim4 128 GB-cgroup
+    OOM): when given, ``x_train``/``y_train``/``x_eval`` are FULL pools and
+    the row subset is gathered PER LAYER CHUNK inside the loop
+    (``x[sl][:, train_rows]``) instead of the caller materializing whole
+    ``(Ly, n_rows, d)`` fancy-index copies (~52 GiB fp64 for the four split
+    arrays at the production 34,793-row ADD pool — the 2026-08-18 kill).
+    ``x[sl][:, rows]`` equals ``x[:, rows][sl]`` element-for-element with the
+    same contiguity, and the chunk boundaries are unchanged, so every GEMM
+    sees byte-identical inputs — bit-identical outputs, pinned by
+    ``tests/test_issue1739_claim4.py::test_ridge_row_pushdown_bitwise``.
 
     Same recipe per slice — standardize-X on train stats (train mean,
     population std + 1e-9), center-Y, GCV lambda selected PER SLICE over
     ``lambdas``, un-centered predictions, float64 — solved in the d x d
     FEATURE Gram instead of the n_tr x n_tr dual Gram.
 
-    Memory arithmetic (the M6 / `dual-gram-full-u-compute-shape` fix): at the
-    production full-U regime (n_tr ~= 15,034 of the 18,793-row fit pool after
-    the 20% diagnostics holdout; d = 3584; 28 layers) the DUAL Gram is
-    28 x 15,034^2 x 8 B ~= 50.6 GB fp64 before eigh workspace — far over the
-    plan §9 RAM row — while the PRIMAL Gram is 3584^2 x 8 B ~= 0.103 GB per
-    layer (~2.9 GB for all 28), and this function keeps only ``layer_chunk``
-    layers resident at once (Gram + eigenvectors + A ~= 3 x 0.103 GB per
-    layer). The realized U ladder tops out at the store's 18,793 fit rows
-    (the plan's nominal 50k rung exceeds the realized #1092 pool).
+    Memory arithmetic (the M6 / `dual-gram-full-u-compute-shape` fix;
+    pool-size figures CORRECTED r4): the realized production regime is the
+    34,793-row ADD pool (generic 18,793 + eliciting 16,000 — the banked
+    ``u_pool_label add34793_gen18793_elic16000``; the pre-r4 figures here
+    quoted the 18,793-row generic component only, which under-sized every
+    downstream RAM row by ~1.85x). At n_tr ~= 27,834 after the 20%
+    diagnostics holdout (d = 3584; 28 layers) the DUAL Gram would be
+    28 x 27,834^2 x 8 B ~= 173 GB fp64 before eigh workspace — far over any
+    RAM row — while the PRIMAL Gram is 3584^2 x 8 B ~= 0.103 GB per layer
+    (~2.9 GB for all 28), and this function keeps only ``layer_chunk`` layers
+    resident at once (Gram + eigenvectors + A ~= 3 x 0.103 GB per layer).
 
     GCV parity with the dual helper is exact algebra: the nonzero eigenvalues
     of Z Z^T and Z^T Z coincide; ``dof(lam) = sum_i s_i/(s_i+lam)`` is
@@ -530,15 +616,23 @@ def ridge_fit_predict_primal_layer_batched(
     xe = np.asarray(x_eval, dtype=np.float64)
     assert x.ndim == 3 and y.ndim == 3 and xe.ndim == 3, (x.shape, y.shape, xe.shape)
     n_slices, ntr, d = x.shape
+    if train_rows is not None:
+        train_rows = np.asarray(train_rows)
+        ntr = len(train_rows)
+    n_ev = len(eval_rows) if eval_rows is not None else xe.shape[1]
     lam_grid = np.asarray(lambdas, dtype=np.float64)
     dev = torch.device(device)
-    preds = np.empty((n_slices, xe.shape[1], y.shape[2]))
+    preds = np.empty((n_slices, n_ev, y.shape[2]))
     w_out = np.empty((n_slices, d, y.shape[2])) if return_weights else None
     for lo in range(0, n_slices, layer_chunk):
         sl = slice(lo, min(lo + layer_chunk, n_slices))
-        xtr = torch.as_tensor(x[sl], device=dev)
-        ytr = torch.as_tensor(y[sl], device=dev)
-        xev = torch.as_tensor(xe[sl], device=dev)
+        # per-chunk row gather (transient = ONE chunk, never (Ly, n_rows, d))
+        xs = x[sl] if train_rows is None else x[sl][:, train_rows]
+        ys = y[sl] if train_rows is None else y[sl][:, train_rows]
+        xes = xe[sl] if eval_rows is None else xe[sl][:, eval_rows]
+        xtr = torch.as_tensor(xs, device=dev)
+        ytr = torch.as_tensor(ys, device=dev)
+        xev = torch.as_tensor(xes, device=dev)
         xmu = xtr.mean(dim=1, keepdim=True)
         xsd = xtr.std(dim=1, unbiased=False, keepdim=True) + 1e-9  # population std (twin parity)
         xn = (xtr - xmu) / xsd
@@ -577,6 +671,8 @@ def ridge_layer_batched_auto(
     lambdas: np.ndarray | tuple[float, ...] = RIDGE_LAMBDAS,
     device: str = "cpu",
     return_weights: bool = False,
+    train_rows: np.ndarray | None = None,
+    eval_rows: np.ndarray | None = None,
 ) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
     """Route a batched ridge solve to the cheaper Gram: primal iff n_tr > d.
 
@@ -585,12 +681,18 @@ def ridge_layer_batched_auto(
     n_tr > d runs the primal twin above (d x d Gram). Both implement the
     identical standardize/GCV/predict recipe (parity test-pinned), so the
     branch is a memory/throughput routing decision, never a semantic one.
+
+    ``train_rows`` / ``eval_rows`` (crash-fix r4): row-subset pushdown — the
+    primal twin gathers per layer chunk (see its docstring); the dual branch
+    materializes the gathers exactly as the pre-r4 caller did (it only runs
+    at n_tr <= d, where the copies are small by construction).
     """
     from explore_persona_space.experiments.issue_779.fit_h import (
         ridge_fit_predict_fast_layer_batched,
     )
 
-    n_tr, d = np.asarray(x_train).shape[1], np.asarray(x_train).shape[2]
+    n_tr = len(train_rows) if train_rows is not None else np.asarray(x_train).shape[1]
+    d = np.asarray(x_train).shape[2]
     if n_tr > d:
         return ridge_fit_predict_primal_layer_batched(
             x_train,
@@ -599,7 +701,14 @@ def ridge_layer_batched_auto(
             lambdas=lambdas,
             device=device,
             return_weights=return_weights,
+            train_rows=train_rows,
+            eval_rows=eval_rows,
         )
+    if train_rows is not None:
+        x_train = np.asarray(x_train)[:, train_rows]
+        y_train = np.asarray(y_train)[:, train_rows]
+    if eval_rows is not None:
+        x_eval = np.asarray(x_eval)[:, eval_rows]
     return ridge_fit_predict_fast_layer_batched(
         x_train,
         y_train,
@@ -693,6 +802,23 @@ def ridge_gcv_predict_per_target(
             )
         best = gcv.argmin(dim=1)  # (c, T)
         lam_sel = torch.as_tensor(lam_grid, device=dev)[best]  # (c, T)
+        if _SELECTED_LAMBDA_SINK is not None:
+            vals, counts = torch.unique(lam_sel, return_counts=True)
+            _SELECTED_LAMBDA_SINK.append(
+                {
+                    "n_train": int(ntr),
+                    "d": int(d),
+                    "gram_space": "primal" if primal else "dual",
+                    "n_slices": int(s.shape[0]),
+                    "n_targets": int(n_t),
+                    "selector": "per-target GCV over RIDGE_LAMBDAS grid",
+                    "lambda_grid": [float(x) for x in lam_grid],
+                    "selected_lambda_counts": {
+                        str(float(v)): int(c)
+                        for v, c in zip(vals.tolist(), counts.tolist(), strict=True)
+                    },
+                }
+            )
         f_sel = 1.0 / (s[:, :, None] + lam_sel[:, None, :])  # (c, d|ntr, T)
         if primal:
             w = v @ (a * f_sel)  # (c, d, T) standardized-space weights
@@ -912,18 +1038,36 @@ def fit_linear_map(
     if len(tr) < 2:
         raise ValueError(f"fit_linear_map: too few train rows ({len(tr)})")
 
-    x_tr, y_tr, x_ho, y_ho = x[:, tr], y[:, tr], x[:, hold], y[:, hold]
-    preds_hold = ridge_layer_batched_auto(x_tr, y_tr, x_ho, lambdas=lambdas, device=device)
-    diagnostics = map_diagnostics(preds_hold, x_ho, y_ho, x_tr, y_tr, knn_ks=knn_ks)
+    # Crash-fix r4 (claim4 128 GB-cgroup OOM, 2026-08-18): the four whole-array
+    # split copies (x[:, tr] etc. — x_tr/y_tr 20.8 GiB each + x_ho/y_ho 5.2 GiB
+    # each = ~52 GiB fp64 at the production 34,793-row ADD pool) stacked on the
+    # live whitened pools (~52 GiB) + tables + wh were the SIGKILL site. The
+    # rows are now gathered per layer chunk inside the ridge helper and per
+    # layer for the diagnostics — same values, same per-layer op order,
+    # bit-identical outputs (tests/test_issue1739_claim4.py pushdown pins).
+    _rss_note("linear-map-entry")
+    preds_hold = ridge_layer_batched_auto(
+        x, y, x, lambdas=lambdas, device=device, train_rows=tr, eval_rows=hold
+    )
+    _rss_note("linear-map-split-fit-done")
+    diagnostics = map_diagnostics(
+        preds_hold,
+        _LayerRowGather(x, hold),
+        _LayerRowGather(y, hold),
+        _LayerRowGather(x, tr),
+        _LayerRowGather(y, tr),
+        knn_ks=knn_ks,
+    )
     diagnostics["n_train"], diagnostics["n_holdout"] = len(tr), int(n_hold)
-    # Crash-fix r3 memory scoping: the 80/20 split copies (~30 GiB fp64 at the
-    # production full-U shape) are dead weight during the full-pool refit.
-    del x_tr, y_tr, x_ho, y_ho, preds_hold
+    # the holdout predictions are dead weight during the full-pool refit
+    del preds_hold
+    _rss_note("linear-map-diagnostics-done")
     # Frozen-map refit on the FULL U rung (diagnostics stay honest held-out
     # reads from the split fit above; the weights consume the whole budget).
     _preds_dummy, w = ridge_layer_batched_auto(
         x, y, x[:, :2], lambdas=lambdas, device=device, return_weights=True
     )
+    _rss_note("linear-map-refit-done")
     x_mu = x.mean(axis=1, keepdims=True)
     x_sd = x.std(axis=1, keepdims=True) + 1e-9  # population std (helper parity)
     y_mu = y.mean(axis=1, keepdims=True)

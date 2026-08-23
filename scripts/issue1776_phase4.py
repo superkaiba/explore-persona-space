@@ -60,6 +60,7 @@ import torch  # noqa: E402
 def build_dictionary(lens_path: Path, model_name: str, layer: int, *, device: str, tiny: bool):
     """(V, H) unit-row dictionary + row_norms at ``layer`` from the fitted lens."""
     C76.add_jlens_path()
+    # PROD_IMPORT_LINT_EXEMPT: dangling local module 'jlens', not a lockfile dep
     from jlens.lens import JacobianLens
 
     lens = JacobianLens.load(str(lens_path))
