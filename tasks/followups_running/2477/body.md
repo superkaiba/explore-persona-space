@@ -15,7 +15,7 @@ workflow: v1
 
 <!-- clean-result-v4 -->
 
-**Methodology:** [docs/methodology/issue_2477.md @ fad0e2a2db](https://github.com/superkaiba/explore-persona-space/blob/fad0e2a2dbaffdeb7d6f2bec37c61798076cc090/docs/methodology/issue_2477.md) · [gist mirror](https://gist.github.com/superkaiba/a8b4281e1b4270b6c20a12560255d451)
+**Methodology:** [docs/methodology/issue_2477.md @ 7ab52e7dd0](https://github.com/superkaiba/explore-persona-space/blob/7ab52e7dd01e302c0fa65356c2c179b43169076f/docs/methodology/issue_2477.md) · [gist mirror](https://gist.github.com/superkaiba/a8b4281e1b4270b6c20a12560255d451)
 
 ## Takeaways
 
