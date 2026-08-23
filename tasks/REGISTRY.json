@@ -10105,8 +10105,8 @@
     "2308": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2308",
-      "status": "proposed",
+      "path": "tasks/archived/2308",
+      "status": "archived",
       "title": "Step 9c 1b launcher: --files-only list spliced into the bash -c string runs one command per path (rc=126); gate-set cross-check is blind to newlines"
     },
     "2309": {
