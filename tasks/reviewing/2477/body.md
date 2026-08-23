@@ -492,6 +492,9 @@ Verifier-WARN acknowledgment: conciseness caps — several Takeaways bullets exc
 
 ---
 
+<!-- concern-deferred: paid-phases-not-idempotent — code-hardening only (strict-boolean guard on the paid-phase idempotency predicate), deferred to the next driver touch per the ledger close condition; does not affect any reported number: all paid phases ran exactly once (fresh cache dirs, zero cached draws in pilot_report.json and every wave record). -->
+<!-- concern-deferred: bank-parity-contingency-broken — the plan A5 bank-found parity gate's skip path was never exercised: the regenerated inventory found 0 candidate base-chat banks, so Phase C fired unconditionally and the contingency code path is dead in this run; hardening deferred to the next driver touch. -->
+
 **Repro:** Driver `scripts/issue2477_base_coherence.py` at code SHA [`3f07e928c1`](https://github.com/superkaiba/explore-persona-space/commit/3f07e928c1eff39ae7fe90d1004d5f3258024596) (branch `issue-2477`; analysis phases unchanged since — a figure-title-only touch-up landed at [`c492f44932`](https://github.com/superkaiba/explore-persona-space/commit/c492f4493244cf37ea05b0204f15a46a0fe33399)); plan v4 at the task's `plans/plan.md`. Compute: one H100 (pod-2477, RunPod eval intent) for the two fresh generation conditions — about 12 minutes wall (launch 01:31 UTC, uploads verified 01:43 UTC, 2026-08-23); judge = 260 pilot + 4,250 production Batch API calls; aggregation and figures on the VM (CPU, minutes).
 
 - Verdict + per-item scores: `eval_results/issue_2477/coherence_verdict.json`; pilot gate report: `eval_results/issue_2477/judge/pilot_report.json`; per-draw judge raw: `eval_results/issue_2477/judge/judge_raw_arm_instruct_chat.json`, `judge_raw_arm_base_chat.json`, `judge_raw_arm_base_bare.json`, `judge_raw_arm_base_rawmt.json`, `judge_raw_arm_instruct_rawmt.json` (all five mirrored on HF under `issue2477_base_coherence/judge_raw/` @ `c1cdf4bb98669511c1154fb1fbb2c11a7e539adc`).
