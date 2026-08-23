@@ -28,9 +28,13 @@
 #
 # Designed exit codes (never a bare rc=1 for a designed halt):
 #   40 = a P0 smoke leg failed          41 = P0 parity gate (kill criterion c)
-#   44 = P1 fatal gen failure (non-21)  46 = P1 <12 op-survivors (criterion a)
+#   44 = P1 fatal gen failure (non-21)  46 = P1 ZERO gen-complete cells (no P4 input)
 #   42/43 = P4 capture gate-1 halts (propagated from the capture launcher)
 #   45 = P4 fatal capture failure       2/3 = arg / no-GPU errors
+# Kill criterion (a) (<12 op gen-complete cells) is NON-blocking by design
+# (plan §7 G1 "PROCEED with survivors ... never an abort"): the wrapper posts
+# a bounded-regime NOTE sentinel and proceeds to P4 on the survivors; the
+# final <12 verdict is applied in P6 at fraction-eligible grain (plan §3).
 #
 # Usage: bash scripts/issue2479_p1p4_launch.sh [--dry-run]
 set -uo pipefail
@@ -115,8 +119,8 @@ if [ "$DRY_RUN" = "1" ]; then
     v="${spec%%|*}"
     printf '  P1[%02d/%d] %-24s %s\n' "$k" "${#GEN_CELLS[@]}" "$v" "$(gen_cell_cmd "$spec")"
   done
-  echo "[dry-run] P4: bash scripts/issue1345_char_capture_launch.sh --skip-smoke --cells <p1 survivors among the ${#GEN_CELLS[@]} cells above>"
-  echo "[dry-run] sentinels: ${LOG_DIR}/issue-2479-smoke-PASS.json (P0), ${LOG_DIR}/issue-2479-p1p4-results.json (final); resume state: ${P0_STATE}, ${LOG_DIR}/issue-2479-p1-<cell>-{done,yieldhalt}, ${LOG_DIR}/issue-2479-p4-<cell>-done"
+  echo "[dry-run] P4: bash scripts/issue1345_char_capture_launch.sh --skip-smoke --cells <p1 gen-complete cells among the ${#GEN_CELLS[@]} cells above>"
+  echo "[dry-run] sentinels: ${LOG_DIR}/issue-2479-smoke-PASS.json (P0), ${LOG_DIR}/issue-2479-p1-bounded-regime.json (criterion-a NOTE, non-blocking), ${LOG_DIR}/issue-2479-p1p4-results.json (final); resume state: ${P0_STATE} (HEAD-sha-keyed), ${LOG_DIR}/issue-2479-p1-<cell>-{done,yieldhalt}"
   exit 0
 fi
 
@@ -222,23 +226,45 @@ run_leg() { # leg_name cmd... -> appends "name=rc(wall)" to P0_TELEM; rc!=0 -> e
 
 # =============================================================================
 echo "[phase=p0_smoke]"
-if [ -f "$P0_STATE" ]; then
-  echo "[i2479-p1p4] P0 state file present (${P0_STATE}) — smoke gate skipped (resume)"
+HEAD_SHA="$(git rev-parse HEAD)"
+P0_STATE_SHA=""
+[ -f "$P0_STATE" ] && P0_STATE_SHA="$(cut -d' ' -f1 "$P0_STATE" 2>/dev/null || true)"
+if [ -f "$P0_STATE" ] && [ "$P0_STATE_SHA" = "$HEAD_SHA" ]; then
+  echo "[i2479-p1p4] P0 state file present at HEAD ${HEAD_SHA:0:12} (${P0_STATE}) — smoke gate skipped (resume)"
 else
+  if [ -f "$P0_STATE" ]; then
+    # g8 Minor 1: a P0 PASS carries no code identity — a resume after a code
+    # fix would otherwise skip the very gate that must re-certify the fix.
+    echo "[i2479-p1p4] P0 state sha ${P0_STATE_SHA:-<none>} != HEAD ${HEAD_SHA:0:12} — stale PASS invalidated; re-running the smoke gate"
+    rm -f "$P0_STATE"
+  fi
   # Leg 1: freeze-guard selftest (CPU; PASS/FAIL lines captured as telemetry).
   run_leg guard-selftest bash -o pipefail -c \
     'uv run python scripts/issue1345_story_char_ladder_fill.py --guard-selftest 2>&1 | tee logs/i2479_p0_guardselftest.log'
   guard_lines="$(grep -c 'result=PASS' logs/i2479_p0_guardselftest.log || true)"
+  guard_lines="${guard_lines:-0}"
   if grep -q 'result=FAIL' logs/i2479_p0_guardselftest.log; then
     echo "[i2479-p1p4] guard-selftest reported a FAIL branch" >&2
     write_sentinel "issue-2479-smoke-FAIL.json" "epm:smoke-result" "p0_smoke" 1 \
       "issue-2479 P0 guard-selftest FAIL branch | telemetry: ${P0_TELEM}"
     exit 40
   fi
-  P0_TELEM="${P0_TELEM}guard_pass_branches=${guard_lines} "
+  # g8 Minor 2: the selftest exercises exactly 3 guard branches — a count
+  # other than 3 means a branch silently vanished (or the log format drifted).
+  guard_branches="$(grep -oE 'branch=[a-z-]+ result=PASS' logs/i2479_p0_guardselftest.log | cut -d' ' -f1 | cut -d= -f2 | paste -sd, -)"
+  if [ "$guard_lines" -ne 3 ]; then
+    echo "[i2479-p1p4] guard-selftest PASS-branch count ${guard_lines} != 3 (branches: ${guard_branches:-none})" >&2
+    write_sentinel "issue-2479-smoke-FAIL.json" "epm:smoke-result" "p0_smoke" 1 \
+      "issue-2479 P0 guard-selftest branch count ${guard_lines} != 3 (branches: ${guard_branches:-none}) | telemetry: ${P0_TELEM}"
+    exit 40
+  fi
+  P0_TELEM="${P0_TELEM}guard_pass_branches=${guard_lines}(${guard_branches}) "
 
   # Leg 2: gen smoke — Iris+Vex x both modes, one wave over the allocation.
-  alloc_devices 120000
+  # 60,000 MiB floor: H100-80 reports ~81,559 MiB TOTAL, so the parent
+  # launcher's 60 GiB floor is the satisfiable pin on the plan's 4xH100 pod
+  # (g8-C1: the prior 120,000 was an H200-only value — unsatisfiable here).
+  alloc_devices 60000
   gen_smoke_rc=0
   pids=()
   labels=()
@@ -333,8 +359,9 @@ else
 
   write_sentinel "issue-2479-smoke-PASS.json" "epm:smoke-result" "p0_smoke" 0 \
     "issue-2479 P0 smoke gate PASS | telemetry: ${P0_TELEM}"
-  date -u +%FT%TZ > "$P0_STATE"
-  echo "[i2479-p1p4] P0 smoke gate PASS — state written to ${P0_STATE}"
+  # Resume key carries the code identity (HEAD sha) — g8 Minor 1.
+  echo "${HEAD_SHA} $(date -u +%FT%TZ)" > "$P0_STATE"
+  echo "[i2479-p1p4] P0 smoke gate PASS — state written to ${P0_STATE} (sha ${HEAD_SHA:0:12})"
 fi
 
 # =============================================================================
@@ -351,42 +378,68 @@ for spec in "${GEN_CELLS[@]}"; do
   fi
 done
 if [ "${#P1_PENDING[@]}" -gt 0 ]; then
-  alloc_devices 120000
+  alloc_devices 60000
 else
   n_gpu=0
 fi
-echo "[i2479-p1p4] P1: ${#P1_PENDING[@]}/${#GEN_CELLS[@]} cells pending (${n_gpu}-wide waves)"
-p1_fatal_rc=0
-idx=0
-while [ "$idx" -lt "${#P1_PENDING[@]}" ]; do
-  pids=()
-  labels=()
-  for g in $(seq 0 $((n_gpu - 1))); do
-    [ "$idx" -ge "${#P1_PENDING[@]}" ] && break
-    spec="${P1_PENDING[$idx]}"
+echo "[i2479-p1p4] P1: ${#P1_PENDING[@]}/${#GEN_CELLS[@]} cells pending (work-conserving over ${n_gpu} GPUs)"
+# Work-conserving per-GPU workers (code-style: no strict wave barriers — an
+# idle GPU pulls the next pending cell the moment its current one finishes).
+# Queue = a flock'd index file; per-cell outcomes land as durable done /
+# yieldhalt files (unchanged resume grain) + fatal rcs in a scratch file.
+P1_QDIR="$(mktemp -d /tmp/i2479-p1-queue-XXXXXX)"
+echo 0 > "${P1_QDIR}/idx"
+p1_next_index() { # echoes the next pending index, or 'done'
+  (
+    flock -x 200
+    local i
+    i=$(<"${P1_QDIR}/idx")
+    if [ "$i" -ge "${#P1_PENDING[@]}" ]; then
+      echo done
+    else
+      echo $((i + 1)) > "${P1_QDIR}/idx"
+      echo "$i"
+    fi
+  ) 200>"${P1_QDIR}/idx.lock"
+}
+p1_worker() { # dev — pulls pending cells until the queue drains
+  local dev="$1" i spec v arc t0
+  while :; do
+    i="$(p1_next_index)"
+    [ "$i" = "done" ] && break
+    spec="${P1_PENDING[$i]}"
     v="${spec%%|*}"
-    dev="${DEVICES[$g]}"
     echo "[i2479-p1p4] P1 starting ${v} on device ${dev} ($(date -u +%FT%TZ))"
-    run_gen_cell "$spec" "$dev" 0 > "logs/i2479_gen_${v}.log" 2>&1 &
-    pids+=("$!")
-    labels+=("$v")
-    idx=$((idx + 1))
-  done
-  for j in "${!pids[@]}"; do
-    wait "${pids[$j]}"
+    t0=$(date +%s)
+    run_gen_cell "$spec" "$dev" 0 > "logs/i2479_gen_${v}.log" 2>&1
     arc=$?
-    v="${labels[$j]}"
-    echo "[i2479-p1p4] P1 ${v} finished rc=${arc} ($(date -u +%FT%TZ))"
+    echo "[i2479-p1p4] P1 ${v} finished rc=${arc} on device ${dev} wall=$(( $(date +%s) - t0 ))s ($(date -u +%FT%TZ))"
     if [ "$arc" -eq 0 ]; then
       date -u +%FT%TZ > "${LOG_DIR}/issue-2479-p1-${v}-done"
     elif [ "$arc" -eq 21 ]; then
       # Designed yield-floor halt: durable record; siblings continue (plan §7).
       date -u +%FT%TZ > "${LOG_DIR}/issue-2479-p1-${v}-yieldhalt"
     else
-      p1_fatal_rc="$arc"
+      echo "${v}=${arc}" >> "${P1_QDIR}/fatal"
     fi
   done
-done
+}
+if [ "${#P1_PENDING[@]}" -gt 0 ]; then
+  pids=()
+  n_workers="$n_gpu"
+  [ "${#P1_PENDING[@]}" -lt "$n_workers" ] && n_workers="${#P1_PENDING[@]}"
+  for g in $(seq 0 $((n_workers - 1))); do
+    p1_worker "${DEVICES[$g]}" &
+    pids+=("$!")
+  done
+  for p in "${pids[@]}"; do wait "$p"; done
+fi
+p1_fatal_rc=0
+if [ -s "${P1_QDIR}/fatal" ]; then
+  echo "[i2479-p1p4] P1 fatal cells: $(paste -sd' ' "${P1_QDIR}/fatal")" >&2
+  p1_fatal_rc="$(head -1 "${P1_QDIR}/fatal" | cut -d= -f2)"
+fi
+rm -rf "$P1_QDIR"
 if [ "$p1_fatal_rc" -ne 0 ]; then
   echo "[i2479-p1p4] P1 fatal gen failure rc=${p1_fatal_rc}" >&2
   write_sentinel "issue-2479-p1p4-results.json" "epm:progress" "p1_gen" 1 \
@@ -394,23 +447,37 @@ if [ "$p1_fatal_rc" -ne 0 ]; then
   exit 44
 fi
 
-# Kill criterion (a): the gradient needs >=12 surviving CHARACTERS; a character
-# survives P1 when its OP cell generated to floor.
-SURVIVORS=()
-op_survivors=0
+# GEN-COMPLETE accounting (gen grain, NOT the final survivor set — G1's
+# fit-eligible floor + P6's fraction-eligible exclusions apply downstream):
+# a cell is gen-complete when its generation reached floor (done file).
+GEN_DONE=()
+op_gen_complete=0
 for spec in "${GEN_CELLS[@]}"; do
   v="${spec%%|*}"
   if [ -f "${LOG_DIR}/issue-2479-p1-${v}-done" ]; then
-    SURVIVORS+=("$v")
-    case "$v" in *_op) op_survivors=$((op_survivors + 1)) ;; esac
+    GEN_DONE+=("$v")
+    case "$v" in *_op) op_gen_complete=$((op_gen_complete + 1)) ;; esac
   fi
 done
-echo "[i2479-p1p4] P1 survivors: ${#SURVIVORS[@]}/${#GEN_CELLS[@]} cells (${op_survivors}/16 op cells)"
-if [ "$op_survivors" -lt "$MIN_OP_SURVIVORS" ]; then
-  echo "[i2479-p1p4] KILL CRITERION (a): only ${op_survivors} op-cell survivors < ${MIN_OP_SURVIVORS}" >&2
-  write_sentinel "issue-2479-p1p4-results.json" "epm:progress" "p1_survivors" 1 \
-    "issue-2479 P1 HALT kill criterion (a): op_survivors=${op_survivors} < ${MIN_OP_SURVIVORS} | survivors: ${SURVIVORS[*]}"
+echo "[i2479-p1p4] P1 gen-complete: ${#GEN_DONE[@]}/${#GEN_CELLS[@]} cells (${op_gen_complete}/16 op cells)"
+if [ "${#GEN_DONE[@]}" -lt 1 ]; then
+  # ZERO gen-complete cells: nothing exists for P4 to capture — designed halt.
+  echo "[i2479-p1p4] ZERO gen-complete cells — no P4 input exists" >&2
+  write_sentinel "issue-2479-p1p4-results.json" "epm:progress" "p1_gen_complete" 1 \
+    "issue-2479 P1 HALT: zero gen-complete cells (every cell yield-halted) — nothing to capture"
   exit 46
+fi
+if [ "$op_gen_complete" -lt "$MIN_OP_SURVIVORS" ]; then
+  # Kill criterion (a) is NON-blocking (plan §7 G1: "PROCEED with survivors
+  # ... never an abort"; §4: "halt further generation spend, proceed to
+  # verdict on the survivors"). Generation spend is already halted by the
+  # durable -yieldhalt records (never retried); record the bounded regime and
+  # PROCEED — the §3 predicate applies the final <12 at fraction-eligible
+  # grain in P6 (g8-C2: the prior exit-46 here was a contra-plan abort AND a
+  # deterministic resume wedge).
+  echo "[i2479-p1p4] kill criterion (a) NOTE: op gen-complete=${op_gen_complete} < ${MIN_OP_SURVIVORS} — bounded regime recorded; PROCEEDING to P4 on ${#GEN_DONE[@]} cells"
+  write_sentinel "issue-2479-p1-bounded-regime.json" "epm:progress" "p1_gen_complete" 0 \
+    "issue-2479 P1 kill criterion (a) NOTE (non-blocking): op gen-complete=${op_gen_complete} < ${MIN_OP_SURVIVORS} — gradient bounded at n=${op_gen_complete}; gen spend already halted via yieldhalt records; P4/P5/P6 proceed on: ${GEN_DONE[*]}"
 fi
 
 # =============================================================================
@@ -418,7 +485,7 @@ echo "[phase=p4_capture]"
 # --skip-smoke: P0 already ran the capture smoke over both regime x model
 # classes (Iris + Vex); the launcher's own HF completion markers remain the
 # per-cell production resume grain.
-bash scripts/issue1345_char_capture_launch.sh --skip-smoke --cells "${SURVIVORS[@]}"
+bash scripts/issue1345_char_capture_launch.sh --skip-smoke --cells "${GEN_DONE[@]}"
 p4_rc=$?
 if [ "$p4_rc" -eq 42 ] || [ "$p4_rc" -eq 43 ]; then
   echo "[i2479-p1p4] P4 capture gate halt rc=${p4_rc} (designed; see the launcher's own sentinel)" >&2
@@ -432,11 +499,11 @@ if [ "$p4_rc" -ne 0 ]; then
     "issue-2479 P4 FATAL capture failure rc=${p4_rc} (see logs/i1345_capture_*.log)"
   exit 45
 fi
-for v in "${SURVIVORS[@]}"; do
-  date -u +%FT%TZ > "${LOG_DIR}/issue-2479-p4-${v}-done"
-done
+# (No wrapper-side per-cell P4 done files: the capture launcher's HF
+# completion markers ARE the per-cell production resume grain — a duplicate
+# wrapper-side file would be dead state nothing reads; g8 Minor 5.)
 
 write_sentinel "issue-2479-p1p4-results.json" "epm:results" "p1p4" 0 \
-  "issue-2479 P0+P1+P4 complete: p0 telemetry: ${P0_TELEM:-resumed-skip} | p1 survivors ${#SURVIVORS[@]}/${#GEN_CELLS[@]} cells (${op_survivors}/16 op) | p4 capture rc=0 (turnstores + skip-manifests uploaded per cell by issue1345_upload.py --legs turnstore; HF completion markers written)"
+  "issue-2479 P0+P1+P4 complete: p0 telemetry: ${P0_TELEM:-resumed-skip} | p1 gen-complete ${#GEN_DONE[@]}/${#GEN_CELLS[@]} cells (${op_gen_complete}/16 op; <${MIN_OP_SURVIVORS} op => bounded-regime NOTE sentinel, non-blocking) | p4 capture rc=0 (turnstores + skip-manifests uploaded per cell by issue1345_upload.py --legs turnstore; HF completion markers written)"
 echo "[phase=done]"
 exit 0

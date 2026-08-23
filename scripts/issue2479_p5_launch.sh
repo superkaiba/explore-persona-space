@@ -132,7 +132,7 @@ sha = assert_axis_freeze_guard(Path.cwd())
 print(f"[freeze-guard] OK: axis frozen at commit {sha}", flush=True)
 PY
 then
-  echo "[i2479-p5] AXIS-FREEZE GUARD REFUSAL: commit eval_results/issue_2479/axis_freeze.json (scripts/issue2479_freeze_axis.py --commit) on ${BRANCH} and push, then re-run" >&2
+  echo "[i2479-p5] AXIS-FREEZE GUARD REFUSAL: commit eval_results/issue_2479/axis_freeze.json (scripts/issue2479_freeze_axis.py --commit) on ${BRANCH} and push (VM-side), then POD-side 'git pull --ff-only origin ${BRANCH}' in this checkout (verify 'git rev-parse HEAD' advanced — a stale index.lock can no-op the pull silently), then re-run" >&2
   write_sentinel "p5_guard" 1 "issue-2479 P5 HALT: axis-freeze guard refusal (axis_freeze.json not committed-at-ancestor, or pre-freeze JSONs in ${OUT_DIR})"
   exit 49
 fi

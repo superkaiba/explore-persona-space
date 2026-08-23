@@ -322,43 +322,71 @@ print(f"[sentinel] {out}", flush=True)
 PY
 }
 
-run_wave() { # smoke_flag spec... (chunks internally: never >1 cell per device)
+run_wave() { # smoke_flag spec... (work-conserving: never >1 cell per device,
+  # and an idle device pulls the next pending cell immediately — no wave
+  # barrier; flock'd index queue + per-cell rc files read back by the parent)
   local smoke="$1"
   shift
   local all_specs=("$@")
   local tag=""
   [ "$smoke" = "1" ] && tag="_smoke"
-  local start=0
-  while [ "$start" -lt "${#all_specs[@]}" ]; do
-    local wave_specs=("${all_specs[@]:$start:$n_gpu}")
-    local pids=() labels=()
-    local i=0
-    local spec
-    for spec in "${wave_specs[@]}"; do
-      local v="${spec%%|*}"
-      local dev="${DEVICES[$i]}"
+  local qdir
+  qdir="$(mktemp -d /tmp/i1345-capture-queue-XXXXXX)"
+  echo 0 > "${qdir}/idx"
+  _next_spec_index() { # echoes the next pending index, or 'done'
+    (
+      flock -x 200
+      local i
+      i=$(<"${qdir}/idx")
+      if [ "$i" -ge "${#all_specs[@]}" ]; then
+        echo done
+      else
+        echo $((i + 1)) > "${qdir}/idx"
+        echo "$i"
+      fi
+    ) 200>"${qdir}/idx.lock"
+  }
+  _wave_worker() { # dev — pulls pending cells until the queue drains
+    local dev="$1" i spec v arc t0 t1
+    while :; do
+      i="$(_next_spec_index)"
+      [ "$i" = "done" ] && break
+      spec="${all_specs[$i]}"
+      v="${spec%%|*}"
       echo "[char-capture] starting ${v}${tag} on device ${dev} ($(date -u +%FT%TZ))"
-      ( t0=$(date +%s); run_cell "$spec" "$dev" "$smoke"; arc=$?; t1=$(date +%s); \
-        echo "WALL $((t1 - t0))"; exit "$arc" ) \
-        > "logs/i1345_capture_${v}${tag}.log" 2>&1 &
-      pids+=("$!")
-      labels+=("$v")
-      i=$((i + 1))
+      t0=$(date +%s)
+      run_cell "$spec" "$dev" "$smoke" > "logs/i1345_capture_${v}${tag}.log" 2>&1
+      arc=$?
+      t1=$(date +%s)
+      printf '%s %s\n' "$arc" "$((t1 - t0))" > "${qdir}/rc_${v}"
+      echo "[char-capture] ${v} finished rc=${arc} wall=$((t1 - t0))s on device ${dev} ($(date -u +%FT%TZ))"
     done
-    local j
-    for j in "${!pids[@]}"; do
-      wait "${pids[$j]}"
-      local arc=$?
-      local v="${labels[$j]}"
-      local wall
-      wall="$(grep -oE '^WALL [0-9]+' "logs/i1345_capture_${v}${tag}.log" | tail -1 | cut -d' ' -f2)"
+  }
+  local pids=() g
+  local width="${#all_specs[@]}"
+  [ "$width" -gt "$n_gpu" ] && width="$n_gpu"
+  for g in $(seq 0 $((width - 1))); do
+    _wave_worker "${DEVICES[$g]}" &
+    pids+=("$!")
+  done
+  local p
+  for p in "${pids[@]}"; do wait "$p"; done
+  local spec v arc wall
+  for spec in "${all_specs[@]}"; do
+    v="${spec%%|*}"
+    if [ -f "${qdir}/rc_${v}" ]; then
+      read -r arc wall < "${qdir}/rc_${v}"
       CELL_RC[$v]="$arc"
       CELL_WALL[$v]="${wall:-0}"
-      echo "[char-capture] ${v} finished rc=${arc} wall=${wall:-?}s ($(date -u +%FT%TZ))"
       if [ "$arc" -ne 0 ] && [ "$rc" -eq 0 ]; then rc="$arc"; fi
-    done
-    start=$((start + n_gpu))
+    else
+      echo "[char-capture] ${v}: no rc record (worker died before the cell ran?)" >&2
+      CELL_RC[$v]="norc"
+      CELL_WALL[$v]=0
+      if [ "$rc" -eq 0 ]; then rc=1; fi
+    fi
   done
+  rm -rf "$qdir"
 }
 
 # --- leg 1: smoke cells (same chain, --smoke + smoke prefix) ----------------
