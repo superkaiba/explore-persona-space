@@ -68,3 +68,5 @@
 - [Figure-series extension neutrality probes](figure_series_extension_neutrality_probes.md) — PNG byte-compare invalid (pnginfo render id): pixel-array + parent-blob module; err-by-x last-wins contaminates the NEW series (#1901 R1 g3)
 - [Empty-form blind-spot falsified by later unit](empty_form_blindspot_falsified_by_later_unit.md) — grep each unit's args.smoke reads vs the plan's `none` literal; require=() under smoke = (b)-class downgrade even when sanctioned (#2254-firstk R1 g3)
 - [Stub-decoder hook probe](stub_decoder_hook_probe.md) — drive the REAL hook subclass through a minimal model.model.layers stub; edit-index sets + fake-records flush probe certify window semantics on CPU (#2254 firstk R1 g1)
+- [Verbatim-port commit review recipe](verbatim_port_commit_review_recipe.md) — hash vs source tip + plan commit-range/excluded-commit disjointness + post-commit delta attribution + ruff in situ never /tmp blobs (#2479 R1 g1)
+- [Manifest-internal determinism replay](manifest_internal_determinism_replay.md) — replay seeded sub-draws from the manifest's OWN committed ids + byte-compare module emits at the ancestor-verified provenance SHA (#2479 R1 g4)
