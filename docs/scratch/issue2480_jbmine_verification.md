@@ -16,9 +16,11 @@ pipeline.
 - **Committed result JSONs + provenance logs:** `eval_results/issue_2394/` at commit
   `89a01da7369366db09f2d8d6a3005f8084794fb4` (branch `issue-2480`) — 8 JSONs + 2 logs.
 - **Verification + audit script:** `scripts/issue2480_verify.py` @ commit
-  `62193fbca265a17007af81c4fefe3489692b1190` (round-2 hardening: audit verdicts DERIVED from
+  `4a39674381461204fc417107977f3a1f888149d8` (round-2 hardening: audit verdicts DERIVED from
   executable predicates; exact budget/layer universes + value pins; gated toxicchat + transfer
-  reads; 3-leg self-test). Re-run:
+  reads; round-3 hardening: raw-string budget-universe key comparison — numeric-alias and
+  non-numeric keys rejected as recorded MISSes; 4-leg self-test incl. the 6-case B2 regression
+  battery). Re-run:
   `uv run python scripts/issue2480_verify.py` (verification + audit) and
   `uv run python scripts/issue2480_verify.py --self-test` (COLLECT-ALL + derived-verdict tests).
 - **Analysis tensors (GPU-costly downstream inputs) persisted to HF:**
@@ -37,10 +39,15 @@ Semantics: every claim is evaluated and its per-claim verdict emitted before the
 reproduction MISS is recorded and the run continues (a miss is not a kill). Nonzero exit is reserved
 for missing/corrupt/absent-key inputs. All 9 headline numbers reproduce to quoted precision.
 The gate additionally asserts the EXACT quantification universes and value pins (round-2
-hardening): budget universe {10, 20, 40, 80, 160, 320} wherever "ALL 6 budgets" is claimed, layer
+hardening): budget universe = exactly the raw string keys {'10','20','40','80','160','320'}
+wherever "ALL 6 budgets" is claimed (round-3 hardening: the comparison uses RAW STRING keys, no
+int() normalization, so numeric-alias keys like '010' — alongside or replacing '10' — are
+rejected too; any non-canonical key set, non-numeric keys included, records a MISS rather than a
+hard stop, and the per-budget rows are not evaluated), layer
 universe {7, 11, 15, 19, 23, 27} wherever a whole-family extremum is claimed (arm-B max,
 benign/in-domain R² ranges), `target == 0.8` exactly, and D_indomain = 50.99 / D_merged = 46.66
-pinned at 2 dp — a subset/superset/empty sweep or a drifted D value can no longer PASS.
+pinned at 2 dp — a subset/superset/empty/alias/non-numeric budget sweep or a drifted D value can
+no longer PASS.
 
 | Headline (reader-facing) | Committed key path | Stored | Verdict |
 |---|---|---|---|
