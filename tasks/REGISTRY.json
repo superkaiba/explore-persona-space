@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2486,
+  "highest_id": 2487,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11479,6 +11479,13 @@
       "path": "tasks/proposed/2486",
       "status": "proposed",
       "title": "workflow-fix: Step 5a sibling-file sync commits silently after a 'no sync commit landed' line, so briefs get a stale tip SHA"
+    },
+    "2487": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2487",
+      "status": "proposed",
+      "title": "main is RED: scripts/issue823_shared_persona_paired.py imports numpy/scipy before load_dotenv \u2014 reds test_no_new_torch_before_dotenv_vm_entrypoints fleet-wide (3rd instance)"
     },
     "249": {
       "has_clean_result": false,
