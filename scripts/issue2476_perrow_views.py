@@ -94,12 +94,17 @@ def _stage(stage: Path) -> None:
     """Idempotently pull the HF inputs (skip-if-present; ~2.6 GB total)."""
     from huggingface_hub import hf_hub_download
 
+    from explore_persona_space.orchestrate import hub
+
     for f in STAGE_FILES:
         tgt = stage / f
         if tgt.exists() and tgt.stat().st_size > 0:
             continue
-        hf_hub_download(
-            DATA_REPO, f, repo_type="dataset", revision=DATA_REPO_REVISION, local_dir=str(stage)
+        hub.retry_transient(
+            lambda f=f: hf_hub_download(
+                DATA_REPO, f, repo_type="dataset", revision=DATA_REPO_REVISION, local_dir=str(stage)
+            ),
+            what="hf_hub_download",
         )
         print(f"[stage] {f}", flush=True)
 
