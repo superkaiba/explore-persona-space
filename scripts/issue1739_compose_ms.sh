@@ -35,11 +35,15 @@ case "$B" in
   evil | sycophancy | hallucination) ;;
   *) echo "[cms] FATAL: unknown behavior '$B'" >&2; exit 2 ;;
 esac
-HALF="${EPM_I1739_CMS_HALF:?set EPM_I1739_CMS_HALF to s02|s34}"
+HALF="${EPM_I1739_CMS_HALF:?set EPM_I1739_CMS_HALF to s02|s34|s3|s4}"
 case "$HALF" in
   s02) SEEDS_DEFAULT="0 1 2" ;;
   s34) SEEDS_DEFAULT="3 4" ;;
-  *) echo "[cms] FATAL: unknown half '$HALF' (s02|s34)" >&2; exit 2 ;;
+  # s3/s4: single-seed split halves for the gate-1 host-lottery ladder's
+  # seed-split rung (halved per-pod wall; fold-side joins them as one half).
+  s3) SEEDS_DEFAULT="3" ;;
+  s4) SEEDS_DEFAULT="4" ;;
+  *) echo "[cms] FATAL: unknown half '$HALF' (s02|s34|s3|s4)" >&2; exit 2 ;;
 esac
 SEEDS="${EPM_I1739_CMS_SEEDS:-$SEEDS_DEFAULT}"
 SMOKE="${EPM_I1739_CMS_SMOKE:-}"
