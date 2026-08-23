@@ -239,6 +239,12 @@ this report) is pasted verbatim from `git rev-parse HEAD` /
 truncated-then-extended, or reconstructed from memory — downstream
 briefs and markers re-cite it (#1586 r7).
 
+**Mechanically enforced (#2309):** `task.py post-marker` REFUSES an `epm:results`
+note that carries a completion-report header but lacks any lettered `### (a)`-`(d)`
+H3 (escape: `--allow-nonconforming-report "<reason >= 10 chars>"`, recorded on the
+event row as `report_shape_waiver`). The opening `## Completion Report` H2 is
+load-bearing for the refusal — a headerless report draws only the advisory WARN.
+
 ```markdown
 ## Completion Report
 
