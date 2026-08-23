@@ -72,3 +72,4 @@
 - [Manifest-internal determinism replay](manifest_internal_determinism_replay.md) — replay seeded sub-draws from the manifest's OWN committed ids + byte-compare module emits at the ancestor-verified provenance SHA (#2479 R1 g4)
 - [Plan identifier renamed consistently](plan_identifier_renamed_consistently.md) — grep the round for BOTH names; zero old-name hits = disclosed Minor, mixed use = split-brain seam; substring bans can be load-bearing for `in`-keyed classifiers (#2479 R1 g3)
 - [Greedy-digits suffix-tag regex backtrack](greedy_digits_suffix_tag_regex_backtrack.md) — `_nd\d+(.+)` misreads `_nd10` as tag "0"; probe multi-digit untagged case; anchor tag to `_` (#2479 r1 g6)
+- [Cross-arm invariance gate per-arm sampling](crossarm_invariance_gate_perarm_sampling.md) — arm-tag seed material ⇒ different item subsets per arm; identity assert + survivor-wedge check (#2479 R1 g5)
