@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2491,
+  "highest_id": 2492,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11521,6 +11521,13 @@
       "path": "tasks/proposed/2491",
       "status": "proposed",
       "title": "workflow-fix: verify_plan WARNs on unqualified null-localization claims in plan prose (#2474 fine-tuning-localization incident)"
+    },
+    "2492": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2492",
+      "status": "proposed",
+      "title": "Sparse pod clones vs committed cross-issue inputs: pre-launch stat-check + git-show materialization recipe (experimenter.md + gotchas.md)"
     },
     "25": {
       "has_clean_result": false,
