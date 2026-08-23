@@ -2072,3 +2072,29 @@ full merge-base SHA occurrences (intro + git-show probe + git-log probe);
 with 2 header uses, composer-span expected = 5 — and count marker/verdict
 embeds separately before summing (the v2 epm:results body carried ZERO,
 unlike r1's which carried one).
+
+**Crash-fix round AFTER a reconciler-PASS with deferred residuals (#2476 r4,
+2026-08-23):** composes as the union of the crash-fix provenance shape (#2329
+r4/r6) and the post-overturn no-relitigate shape, with three deltas: (a) the
+`epm:failure` diagnosis is the acceptance contract (own envelope) AND the
+reconciler verdict gets its OWN envelope — its dispositions + standing
+recommendations drive both the no-relitigate block and per-residual status
+lines; (b) the tail's closure-ledger section is REPLACED by a two-part ledger
+— D-lines (one per brief-enumerated scrutiny duty: threshold grounding per
+the gate-calibration rule, retain-flag staleness risk, recompute-path
+correctness, fix-engaged 5 elements incl. element-5 disposition,
+probe-evidence internal consistency, contract-path test coverage) + R-lines
+(one per open residual: UNTOUCHED-BY-ROUND | TOUCHED, out-of-scope, never a
+FAIL basis) — there are no blockers to close, so VERIFIED-ADDRESSED grammar
+is wrong here; (c) ADJUDICATED-carry-over framing: unlike a FAILed-round
+history, branch code outside the round range survived a BINDING adjudication
+— carry-over findings need NEW evidence, and re-arguing impact
+classifications the reconciler resolved is banned (contrast the r3 framing
+"nothing is adjudicated-PASS", which must NOT be reused verbatim). Also two
+assert-side lessons: scope stale-token asserts to STALE PHRASES
+(`round-<k> range`, `round-<k> regression`, `round-<k> diff ADDS`), never a
+bare `round-<k>` zero-count — fresh crash-fix text legitimately references
+the prior round (deferral ids, the reconciler) — and when the impl marker's
+own `--stat` line cites `..HEAD`, add a facts line that HEAD equaled the
+round tip at marker-write time (pre-spec-sync), so the twin doesn't misread
+the citation as a scope violation against the pinned range.
