@@ -1,0 +1,277 @@
+{
+  "commit": "c43bf0c3+dirty",
+  "render_id": "08cbbe7370a4414c",
+  "git_commit": "c43bf0c3453de04d9815702b4f1f230096f92135",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/paper/c1_scaling_train_pool.meta.json",
+    "figures/paper/c1_scaling_train_pool.pdf",
+    "figures/paper/c1_scaling_train_pool.png"
+  ],
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue1901_boundary_token_control.py",
+  "created": "2026-08-23T08:30:10Z",
+  "figsize": [
+    4.2,
+    3.0
+  ],
+  "points": [
+    {
+      "layer": 19.0,
+      "held-out $R^2$": 0.017374499504998808,
+      "series": "n=50",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 19.0,
+      "held-out $R^2$": 0.036824946158597216,
+      "series": "n=50",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 19.0,
+      "held-out $R^2$": 0.06572919513964781,
+      "series": "n=50",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 19.0,
+      "held-out $R^2$": 0.09347409549898278,
+      "series": "n=100",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 19.0,
+      "held-out $R^2$": 0.10687196462698678,
+      "series": "n=100",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 19.0,
+      "held-out $R^2$": 0.10976772876120622,
+      "series": "n=100",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 19.0,
+      "held-out $R^2$": 0.1743158795330697,
+      "series": "n=250",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 19.0,
+      "held-out $R^2$": 0.17963546864564717,
+      "series": "n=250",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 19.0,
+      "held-out $R^2$": 0.18784521038012147,
+      "series": "n=250",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 19.0,
+      "held-out $R^2$": 0.22773439380356497,
+      "series": "n=500",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 19.0,
+      "held-out $R^2$": 0.2311286230986639,
+      "series": "n=500",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 19.0,
+      "held-out $R^2$": 0.2339823401652792,
+      "series": "n=500",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 19.0,
+      "held-out $R^2$": 0.26595246339833867,
+      "series": "n=1,000",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 19.0,
+      "held-out $R^2$": 0.27216869141496036,
+      "series": "n=1,000",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 19.0,
+      "held-out $R^2$": 0.2735637400360721,
+      "series": "n=1,000",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 2.0,
+      "held-out $R^2$": 0.1538123283386853,
+      "series": "n=2,500",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 14.0,
+      "held-out $R^2$": 0.23153404285407764,
+      "series": "n=2,500",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 19.0,
+      "held-out $R^2$": 0.318489374218637,
+      "series": "n=2,500",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 19.0,
+      "held-out $R^2$": 0.32196330903817283,
+      "series": "n=2,500",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 19.0,
+      "held-out $R^2$": 0.32324585276348905,
+      "series": "n=2,500",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 26.0,
+      "held-out $R^2$": 0.31955503461953005,
+      "series": "n=2,500",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 2.0,
+      "held-out $R^2$": 0.20450545697191014,
+      "series": "n=25,000",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 14.0,
+      "held-out $R^2$": 0.30942133276001094,
+      "series": "n=25,000",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 19.0,
+      "held-out $R^2$": 0.40104528745350365,
+      "series": "n=25,000",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 26.0,
+      "held-out $R^2$": 0.41011012092637245,
+      "series": "n=25,000",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 2.0,
+      "held-out $R^2$": 0.23455701534252582,
+      "series": "n=963,444",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 14.0,
+      "held-out $R^2$": 0.35587808365982276,
+      "series": "n=963,444",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 19.0,
+      "held-out $R^2$": 0.44029790304000205,
+      "series": "n=963,444",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 26.0,
+      "held-out $R^2$": 0.4478306493255171,
+      "series": "n=963,444",
+      "_kind": "line",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 29,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "xlabel": "layer",
+        "ylabel": "held-out $R^2$",
+        "legend_labels": [
+          "n=50",
+          "n=100",
+          "n=250",
+          "n=500",
+          "n=1,000",
+          "n=2,500",
+          "n=25,000",
+          "n=963,444"
+        ],
+        "xticklabels": [
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5"
+        ]
+      }
+    ],
+    "series": [
+      "n=50",
+      "n=100",
+      "n=250",
+      "n=500",
+      "n=1,000",
+      "n=2,500",
+      "n=25,000",
+      "n=963,444"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ]
+}

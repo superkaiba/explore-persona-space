@@ -1,0 +1,161 @@
+{
+ "families": {
+  "evil_train": {
+   "n_pos_available": 391,
+   "n_neg": 2721,
+   "n_pos_test": 143,
+   "n_train_full": 3112
+  },
+  "evil_hh_rlhf": {
+   "n_pos_available": 173,
+   "n_neg": 1066,
+   "n_pos_test": 56,
+   "n_train_full": 1239
+  }
+ },
+ "directions": {
+  "evil_train->evil_hh_rlhf": {
+   "n_train": 3112,
+   "n_train_pos": 391,
+   "n_test": 1122,
+   "n_test_pos": 56,
+   "test_base_rate": 0.049910873440285206,
+   "map_r2": {
+    "indomain_srcfam": {
+     "19": 0.03778991354960448
+    },
+    "merged": {
+     "19": 0.17197557754612902
+    }
+   },
+   "layers": {
+    "19": {
+     "A_transfer": {
+      "roc_auc": 0.9747386759581881,
+      "pr_auc": 0.8937190396071758,
+      "hit@5pct": 0.8392857142857143,
+      "evals_to_find_20": 21
+     },
+     "D_transfer_indomain": {
+      "roc_auc": 0.9719579201286519,
+      "pr_auc": 0.8099446312284126,
+      "hit@5pct": 0.7321428571428571,
+      "evals_to_find_20": 20
+     },
+     "D_transfer_merged": {
+      "roc_auc": 0.9857276869471991,
+      "pr_auc": 0.8838372088987103,
+      "hit@5pct": 0.7678571428571429,
+      "evals_to_find_20": 21
+     },
+     "E_transfer_oracle": {
+      "roc_auc": 0.9761960600375235,
+      "pr_auc": 0.8363742296242747,
+      "hit@5pct": 0.7857142857142857,
+      "evals_to_find_20": 20
+     },
+     "A_within": {
+      "roc_auc": 0.9968674618064861,
+      "pr_auc": 0.9474353005001984,
+      "hit@5pct": 0.9285714285714286,
+      "evals_to_find_20": 21
+     },
+     "E_within_oracle": {
+      "roc_auc": 0.9953765746448673,
+      "pr_auc": 0.9448395619938779,
+      "hit@5pct": 0.9107142857142857,
+      "evals_to_find_20": 21
+     },
+     "random": {
+      "roc_auc": 0.5466697936210132,
+      "pr_auc": 0.05933216245301472,
+      "hit@5pct": 0.017857142857142856,
+      "evals_to_find_20": 336
+     }
+    }
+   }
+  },
+  "evil_hh_rlhf->evil_train": {
+   "n_train": 1239,
+   "n_train_pos": 173,
+   "n_test": 2864,
+   "n_test_pos": 143,
+   "test_base_rate": 0.04993016759776536,
+   "map_r2": {
+    "indomain_srcfam": {
+     "19": -0.13808005868285345
+    },
+    "merged": {
+     "19": -0.15369258359586713
+    }
+   },
+   "layers": {
+    "19": {
+     "A_transfer": {
+      "roc_auc": 0.9658445193175073,
+      "pr_auc": 0.6231798209722017,
+      "hit@5pct": 0.5664335664335665,
+      "evals_to_find_20": 22
+     },
+     "D_transfer_indomain": {
+      "roc_auc": 0.8789857698347224,
+      "pr_auc": 0.20329397058067758,
+      "hit@5pct": 0.23076923076923078,
+      "evals_to_find_20": 85
+     },
+     "D_transfer_merged": {
+      "roc_auc": 0.9389159168652002,
+      "pr_auc": 0.36948091139556954,
+      "hit@5pct": 0.4125874125874126,
+      "evals_to_find_20": 45
+     },
+     "E_transfer_oracle": {
+      "roc_auc": 0.9609666335134912,
+      "pr_auc": 0.40145582595404045,
+      "hit@5pct": 0.43356643356643354,
+      "evals_to_find_20": 47
+     },
+     "A_within": {
+      "roc_auc": 0.9982395406871702,
+      "pr_auc": 0.9820384612420863,
+      "hit@5pct": 0.9370629370629371,
+      "evals_to_find_20": 20
+     },
+     "E_within_oracle": {
+      "roc_auc": 0.9998535092250638,
+      "pr_auc": 0.9971632727638033,
+      "hit@5pct": 0.9790209790209791,
+      "evals_to_find_20": 20
+     },
+     "random": {
+      "roc_auc": 0.5212295973045697,
+      "pr_auc": 0.05518704099995428,
+      "hit@5pct": 0.04895104895104895,
+      "evals_to_find_20": 301
+     }
+    }
+   }
+  }
+ },
+ "layers_swept": [
+  19
+ ],
+ "_meta": {
+  "dv": "compliance (StrongREJECT-style, evil aligned dimension)",
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+  "v_C": "context_end (last prompt token)",
+  "v_A": "t1 (answer-span)",
+  "layers": [
+   19
+  ],
+  "prespecified_layer": 19,
+  "probe_C": 0.01,
+  "ridge_lambda": 100.0,
+  "hidden_dim": 3584,
+  "n_benign_map_rows": 3000,
+  "power_caveat": "two families = ONE transfer pair (two directions); a direction-level difference is not separable from this pair's idiosyncrasy",
+  "train_size_note": "transfer probes train on the FULL source family; within-family references train on 4/5 of the (5%-base) target set -- n_train differs and is reported per direction",
+  "excluded_family": "evil_toxicchat (0 parsed compliance scores; schema gap)"
+ }
+}
