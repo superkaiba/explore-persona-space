@@ -1429,3 +1429,5 @@ tasks/followups_running/1739/events.jsonl:generic-api-key:1442
 docs/issue2329_result0_gallery.html:generic-api-key:149249
 docs/issue2329_result0_gallery.html:generic-api-key:149377
 tasks/followups_running/1901/events.jsonl:generic-api-key:129
+eval_results/issue_2479/eligible_conv_ids.json:generic-api-key:8757
+eval_results/issue_2479/panel_manifest.json:generic-api-key:46

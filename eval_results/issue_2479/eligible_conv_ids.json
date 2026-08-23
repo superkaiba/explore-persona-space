@@ -8741,16 +8741,27 @@
     "n_eligible_both": 4089
   },
   "provenance": {
-    "git_commit": "2c48a3d00813c5d211bf0b908973e1d5504b1bf6",
-    "timestamp": "2026-08-23T20:05:52Z",
+    "git_commit": "552fb63e286d390ec73950c600ecc2011b2c2107",
+    "timestamp": "2026-08-23T21:06:45Z",
     "seed": 42,
     "n": 4628,
     "script": "scripts/issue1345_gen_stories_paired.py",
     "pinned_parent_revision": "7159e5804d",
     "mode": "emit-eligible-ids",
+    "emit_config": {
+      "character_name": "ARIA",
+      "persona_desc": "",
+      "variant": ""
+    },
     "tokenizer": "Qwen/Qwen2.5-7B-Instruct",
+    "tokenizer_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+    "tokenizer_revision_source": "hf-cache snapshots path",
     "inputs": {
-      "matched_allowlist": "/tmp/i2479r8-smoke/matched_n/matched_subsets_parent.json",
+      "matched_allowlist": {
+        "path": "/tmp/i2479r8-smoke/matched_n/matched_subsets_parent.json",
+        "sha256": "ca3a971ddbcb40ea5920aac6498b7ca331dfd61751597db882c1071b849d7cd1",
+        "pinned_revision": "2a3cb30acada04defc84fd04d28a2b54da3104cd"
+      },
       "track_s_path_in_repo": "issue825_userbase_map/raw_completions/track_s/track_s.jsonl",
       "track_s_revision": "7159e5804d"
     },
@@ -8758,6 +8769,28 @@
       "answer_char_min": 20,
       "answer_token_budget": 800,
       "prompt_token_budget": 3008
+    },
+    "panel_invariance": {
+      "panel_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2479/eval_results/issue_2479/panel.json",
+      "panel_sha256": "67ec9d3eaba8abd61967951d702dc73a14c1ddc07b7bddc80f3df69a63362438",
+      "n_panel_configs": 16,
+      "slack_tokens": 64,
+      "regimes": {
+        "paired": {
+          "min_margin_tokens": 790,
+          "min_margin_conv_id": "s2937",
+          "max_panel_delta_tokens": 16,
+          "max_delta_config": "Barnaby",
+          "required_min_margin": 80
+        },
+        "op": {
+          "min_margin_tokens": 1117,
+          "min_margin_conv_id": "s3002",
+          "max_panel_delta_tokens": 16,
+          "max_delta_config": "Barnaby",
+          "required_min_margin": 80
+        }
+      }
     }
   }
 }

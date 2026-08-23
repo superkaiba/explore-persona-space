@@ -1,6 +1,6 @@
 {
   "issue": 2479,
-  "created_utc": "2026-08-23T20:06:09Z",
+  "created_utc": "2026-08-23T21:06:59Z",
   "seeds": {
     "conversation_sample": 42,
     "axis_reservation": 0
@@ -24,22 +24,33 @@
     },
     "eligible_ids": {
       "path": "eval_results/issue_2479/eligible_conv_ids.json",
-      "sha256": "2664073472c40c5b5bf1a01dd5e0adbe23cd738be2da184eac414772e1f5615c",
+      "sha256": "9508c844a4c970ed28a279d9f1c7c86da1b4a8caab8838ab1cf9c1cd417575b7",
       "n_eligible_paired": 4089,
       "n_eligible_op": 4628,
       "n_shared_before_restrict": 4724,
       "n_paired_eligible_after_restrict": 4089,
       "provenance": {
-        "git_commit": "2c48a3d00813c5d211bf0b908973e1d5504b1bf6",
-        "timestamp": "2026-08-23T20:05:52Z",
+        "git_commit": "552fb63e286d390ec73950c600ecc2011b2c2107",
+        "timestamp": "2026-08-23T21:06:45Z",
         "seed": 42,
         "n": 4628,
         "script": "scripts/issue1345_gen_stories_paired.py",
         "pinned_parent_revision": "7159e5804d",
         "mode": "emit-eligible-ids",
+        "emit_config": {
+          "character_name": "ARIA",
+          "persona_desc": "",
+          "variant": ""
+        },
         "tokenizer": "Qwen/Qwen2.5-7B-Instruct",
+        "tokenizer_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+        "tokenizer_revision_source": "hf-cache snapshots path",
         "inputs": {
-          "matched_allowlist": "/tmp/i2479r8-smoke/matched_n/matched_subsets_parent.json",
+          "matched_allowlist": {
+            "path": "/tmp/i2479r8-smoke/matched_n/matched_subsets_parent.json",
+            "sha256": "ca3a971ddbcb40ea5920aac6498b7ca331dfd61751597db882c1071b849d7cd1",
+            "pinned_revision": "2a3cb30acada04defc84fd04d28a2b54da3104cd"
+          },
           "track_s_path_in_repo": "issue825_userbase_map/raw_completions/track_s/track_s.jsonl",
           "track_s_revision": "7159e5804d"
         },
@@ -47,12 +58,34 @@
           "answer_char_min": 20,
           "answer_token_budget": 800,
           "prompt_token_budget": 3008
+        },
+        "panel_invariance": {
+          "panel_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2479/eval_results/issue_2479/panel.json",
+          "panel_sha256": "67ec9d3eaba8abd61967951d702dc73a14c1ddc07b7bddc80f3df69a63362438",
+          "n_panel_configs": 16,
+          "slack_tokens": 64,
+          "regimes": {
+            "paired": {
+              "min_margin_tokens": 790,
+              "min_margin_conv_id": "s2937",
+              "max_panel_delta_tokens": 16,
+              "max_delta_config": "Barnaby",
+              "required_min_margin": 80
+            },
+            "op": {
+              "min_margin_tokens": 1117,
+              "min_margin_conv_id": "s3002",
+              "max_panel_delta_tokens": 16,
+              "max_delta_config": "Barnaby",
+              "required_min_margin": 80
+            }
+          }
         }
       }
     },
     "r4op_kept": {
       "prefix": "issue1345_framing/onpolicy_assistant_story/raw_completions/stories",
-      "revision": "1293f860e6950179b7b4a764113b6361f1a25ec5",
+      "revision": "f00943062d5ebd2059bc868355addcecbd081bed",
       "kept_files_in_prefix": [
         "issue1345_framing/onpolicy_assistant_story/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
       ],
@@ -62,7 +95,7 @@
     },
     "r4_kept": {
       "prefix": "issue1345_framing/conversation_paired_stories_assistant/raw_completions/stories",
-      "revision": "1293f860e6950179b7b4a764113b6361f1a25ec5",
+      "revision": "f00943062d5ebd2059bc868355addcecbd081bed",
       "kept_files_in_prefix": [
         "issue1345_framing/conversation_paired_stories_assistant/raw_completions/stories/kept_stories_paired_instruct.jsonl",
         "issue1345_framing/conversation_paired_stories_assistant/raw_completions/stories/kept_stories_paired_op_instruct.jsonl"
@@ -1952,10 +1985,19 @@
     "s916"
   ],
   "metadata": {
-    "git_commit": "2c48a3d00813c5d211bf0b908973e1d5504b1bf6",
-    "git_dirty": false,
+    "git_commit": "552fb63e286d390ec73950c600ecc2011b2c2107",
+    "git_dirty": true,
     "phase": "panel-sample",
-    "git_argv0_state": "tracked",
+    "git_dirty_paths": [
+      ".claude/agent-memory/code-reviewer-lean/MEMORY.md",
+      ".claude/agent-memory/code-reviewer-lean/smoke_arch_marker_2176_grammar_pitfalls.md",
+      ".claude/agent-memory/codex-code-reviewer/MEMORY.md",
+      "eval_results/issue_2479/eligible_conv_ids.json",
+      "scripts/issue1345_gen_stories_paired.py",
+      "scripts/issue2479_panel_sample.py",
+      "tests/test_issue2479_eligible_ids.py"
+    ],
+    "git_argv0_state": "modified",
     "git_argv0_path": "scripts/issue2479_panel_sample.py"
   }
 }
