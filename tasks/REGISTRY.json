@@ -10147,8 +10147,8 @@
     "2313": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/2313",
-      "status": "proposed",
+      "path": "tasks/planning/2313",
+      "status": "planning",
       "title": "Policy: rebase-rewritten own issue branch \u2014 sanctioned --force-with-lease arm, or explicit ban + force-free route only?"
     },
     "2314": {
