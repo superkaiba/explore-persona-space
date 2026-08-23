@@ -11405,8 +11405,8 @@
     "2477": {
       "has_clean_result": false,
       "kind": "analysis",
-      "path": "tasks/running/2477",
-      "status": "running",
+      "path": "tasks/verifying/2477",
+      "status": "verifying",
       "title": "Verify base-model completions under the chat template are coherent (paper base-row format check)"
     },
     "2478": {
