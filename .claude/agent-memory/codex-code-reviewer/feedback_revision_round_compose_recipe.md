@@ -2187,6 +2187,83 @@ the stale prior-verdict header line pre-declared not-a-finding); (c)
 near-duplicate concern ids from the two twins (same defect, one mechanism)
 each get their own status line with the duplication named.
 
+**FAIL+FAIL-union fix round with declared carve-outs, diff inlined whole
+(#2254 first-k r2, 2026-08-23):** the #2332-r2 union shape (both prior
+verdicts inlined as acceptance contracts, tag lines stripped, no
+no-relitigate block) composes cleanly with the cycle-close blockquote form
+(`> CONCERN:: ` for the prior twin's already-persisted rows — 13 here), the
+#1092-r4 pseudo-ID pattern (3 unledgered r1-codex Majors + 3 Claude-only
+items), and a carve-out section using the ACCEPTED-NON-CHANGE / OVERTURNED
+vocabulary for brief-declared deliberate non-changes. Two new assert traps
+hit live: (a) `wc -c` bytes ≠ Python `len(open().read())` chars on a
+CJK-bearing round diff (82,820 B vs 82,643 ch) — assert
+`os.path.getsize()==bytes` and char-len separately, both labeled; (b) the
+scaffold placeholder-residue regex must be `\{\{[a-z0-9_]+\}\}` — a
+`[a-z_]+` class silently misses digit-bearing names like
+`{{claude_v8_verdict}}` and the completeness assert then reports them
+missing from the scaffold. Also: when the implementer posts `addressed`
+rows for only a SUBSET of the r1 batch (10 of 12 here), the unrowed items —
+including the round's headline BLOCKER — keep FULL closure duty (the
+ledger-empty lesson applies per-item, not per-round); flag the missing rows
+to the orchestrator as bookkeeping, never as a relaxation.
+
+**Union fix round where the SIBLING twin's split verdicts are NOT inlined
+(#1901 r2, 2026-08-22):** when round 1 was Codex-FAIL + Claude per-commit
+SPLIT verdicts (g1-g4) and the orchestrator unioned the blocking findings,
+the Claude split bodies live only in events.jsonl markers — do NOT stall
+trying to fetch/inline them: (a) the impl marker's own `### Response to
+code-review v1` table is the CLAIM surface for the g-items; give the
+non-Codex union items g-union PSEUDO-IDS (`r1-g2-f1-...`) with the marker's
+(a)-item mechanism text as the acceptance contract and an explicit "the
+table is the claim; verify the MECHANISM in the diff" caveat; (b) keep the
+per-id status-line duty for the Codex-persisted ids keyed on the LEDGER rows
+(inline the addressed-claim summaries verbatim — they are the implementer's
+own closure sentences and grep well); (c) FLAG in the return that the g
+bodies were not inlined so the orchestrator can extend if it wants them
+verbatim. Assert trap hit live: the impl marker's verbatim commit list
+carries the FULL head SHA — the ctx-geometry count is 2, not 1 (the #2329
+r5 (c) count-parts-separately rule, head-SHA edition).
+
+**Residual-round closure round with `verified-open` ledger events + a
+NOT-re-posted smoke-arch marker (#2476 r3, 2026-08-22):** two new wrinkles on
+the FAIL+FAIL union shape. (a) The ledger can carry a `verified-open` EVENT
+type (the r2 twin verdict confirmed a claimed-addressed concern still open) —
+state it explicitly in the facts bullet ("your own round-2 verdict found the
+fixes partial") so the twin reads the r3 `addressed` rows as second-attempt
+claims, not first closures. (b) When the round does NOT re-post
+`epm:smoke-architecture-check` and the impl report CLAIMS the old version
+remains current, attest byte-identity to the prior round's inline at compose
+time and hand the twin a CURRENCY adjudication duty (falsified-by-round-diff
+architecture claim = substantive by consequence, never a 0.55 marker-shape
+FAIL — presence-ON-TASK is satisfied). Also: residual-token sweeps must ban
+STALE PATTERNS (`round-2 range`, `round-2 vs carry-over`, `Round-2 contract`)
+not the bare `round-2` token — the fresh Step 0.8 replacement prose
+legitimately says "verified closed by BOTH round-2 verdicts"; and re-probe
+per-span SHA counts every round (this r2-derived rubric carries TWO merge-base
+occurrences in Step 0.9, not the THREE the r1-derived note recorded — the
+intro occurrence is gone).
+
+**Brief-named residual ABSENT from the marker's (d) (#2215 dbe r3, 2026-08-22):**
+when the orchestrator's brief enumerates implementer-disclosed residuals for
+adjudication but one of them does not appear in the fetched marker's (d)
+section (here: "packaged bank_dbe_values.json absent pre-datagen" — the (d)
+list carried only the network-at-config and TOCTOU bullets), do NOT silently
+drop it or pretend the marker discloses it: compose it as its own residual
+line with an explicit COMPOSER NOTE naming the discrepancy, give Codex a
+locate-the-actual-behavior duty (what the new code does on that path) PLUS a
+disclosure-adequacy adjudication (should it have been a (d) bullet?), and
+flag the discrepancy in the return. Also confirmed this round: a SECOND
+FAIL+FAIL union fix round composes as the #2332-r2 shape verbatim with three
+additions — (a) an elevated-verification block when a prior round had a
+fabricated-coverage honesty blocker (every marker-named test READ for
+substance; numeric claims spot-checked; composer settles the diffstat
+arithmetic at compose time and says so); (b) a shared-module-touch section
+when the round first touches a parent module both prior verdicts recorded as
+untouched (off-path identity vs the pre-round blob + repo-wide caller sweep +
+the stale prior-verdict header line pre-declared not-a-finding); (c)
+near-duplicate concern ids from the two twins (same defect, one mechanism)
+each get their own status line with the duplication named.
+
 **Reconciler-sided-FAIL fix round (ONE gating item) + brief-pinned binary
 verdict + by-path plan (#2254 first-k r3, 2026-08-23):** when the prior
 round ended Claude-PASS / Codex-FAIL / reconciler BINDING **FAIL** with one

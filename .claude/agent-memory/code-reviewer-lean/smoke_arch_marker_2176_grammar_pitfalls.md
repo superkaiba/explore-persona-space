@@ -70,6 +70,12 @@ hit #2254-firstk R1 g3 (2026-08-23), NEW VARIANT: all four fields present and CO
 but a TRAILING ``(command: `uv run python -c ...` -> [...])`` parenthetical after
 `members=` — the line-anchored grammar tolerates NO trailing text; put the derivation
 command in a separate notes sentence, never on the arm-registry line.
+(6/6 set-equality vs the driver's module-level PHASES dict), form-only REFUSE. Sixth
+hit #2254-firstk R1 g3 (2026-08-23), NEW VARIANT: all four fields present and CORRECT
+(`source= file= n= members=` with sorted members, 5/5 driver-recompute set-equality)
+but a TRAILING ``(command: `uv run python -c ...` -> [...])`` parenthetical after
+`members=` — the line-anchored grammar tolerates NO trailing text; put the derivation
+command in a separate notes sentence, never on the arm-registry line.
 
 Counter-case #823 r14 g6 (2026-08-23): the `arm-registry: N/A — <reason>` form
 TOLERATES an embedded backtick command inside the free-text reason (checker OK) —
