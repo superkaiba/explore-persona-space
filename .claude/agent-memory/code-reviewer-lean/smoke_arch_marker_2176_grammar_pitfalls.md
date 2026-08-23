@@ -71,6 +71,13 @@ but a TRAILING ``(command: `uv run python -c ...` -> [...])`` parenthetical afte
 `members=` — the line-anchored grammar tolerates NO trailing text; put the derivation
 command in a separate notes sentence, never on the arm-registry line.
 
+Counter-case #823 r14 g6 (2026-08-23): the `arm-registry: N/A — <reason>` form
+TOLERATES an embedded backtick command inside the free-text reason (checker OK) —
+the no-trailing-text / no-command-derivation strictness binds ONLY the
+`source= file= n= members=` form's line-anchored grammar. Do not false-FAIL an
+N/A-form line for a backtick in its reason; the reviewer still owns the substantive
+N/A claim (grep the module for a real no-registry unconditional-dispatch shape).
+
 **How to apply:** any Step 0.55 audit (round-level / CONTRACT-BEARING split-review
 group). Give the implementer the full one-post fix: conforming `arm-registry:` line
 + bare `per-arm-resolution:` heading + bare-token row keys, in one re-post.
