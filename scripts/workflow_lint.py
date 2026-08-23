@@ -12950,9 +12950,10 @@ def _issue_skill_fence_files(root: Path) -> tuple[list[Path], list[str]]:
 
     Returns ``(files, errors)``. FAIL-CLOSED (wt-lint-read-fail-open): the
     /issue skill family existing is this check's precondition, so a missing
-    ``SKILL.md`` or a missing/empty ``steps/`` dir appends a named lint ERROR
-    instead of silently narrowing the target list — scanning nothing must
-    never read as PASS.
+    ``SKILL.md``, a missing/empty ``steps/`` dir, AND any glob-matched
+    ``steps/*.md`` entry that is not a readable regular file (broken symlink /
+    non-regular entry) each append a named lint ERROR instead of silently
+    narrowing the target list — scanning nothing must never read as PASS.
     """
     files: list[Path] = []
     errors: list[str] = []
@@ -12967,10 +12968,20 @@ def _issue_skill_fence_files(root: Path) -> tuple[list[Path], list[str]]:
             "(#2306 wt-lint-read-fail-open)."
         )
     steps = root / ".claude" / "skills" / "issue" / "steps"
-    step_files = [p for p in sorted(steps.glob("*.md")) if p.is_file()] if steps.is_dir() else []
-    if step_files:
-        files.extend(step_files)
-    else:
+    raw_matches = sorted(steps.glob("*.md")) if steps.is_dir() else []
+    for p in raw_matches:
+        if p.is_file():
+            files.append(p)
+        else:
+            rel = p.relative_to(root).as_posix()
+            errors.append(
+                f"{rel}: check_issue_skill_fence_wt_binding: scan input is "
+                f"not a readable regular file (broken symlink / non-regular "
+                f"entry) — fail-closed: a glob-matched input the check "
+                f"cannot inspect must never contribute to a PASS "
+                f"(#2306 wt-lint-read-fail-open)."
+            )
+    if not raw_matches:
         reason = "missing" if not steps.is_dir() else "empty (no *.md step bodies)"
         errors.append(
             f"check_issue_skill_fence_wt_binding: scan input "
@@ -13026,7 +13037,7 @@ def check_issue_skill_fence_wt_binding(*, repo_root: Path | None = None) -> list
         rel = path.relative_to(root).as_posix()
         try:
             text = path.read_text(encoding="utf-8")
-        except OSError as exc:  # unreadable scan input: named lint ERROR (fail-closed)
+        except (OSError, UnicodeDecodeError) as exc:  # unreadable input: named ERROR (fail-closed)
             errors.append(
                 f"{rel}: check_issue_skill_fence_wt_binding: unreadable scan "
                 f"input ({exc}) — fail-closed: a file the check could not "

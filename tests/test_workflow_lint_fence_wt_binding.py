@@ -23,8 +23,10 @@ control); (iv) an UNTAGGED ``$WT`` fence FAILing (in scope by design);
 prelude mention without the annotation token); (vi) ``${WT}`` detected /
 ``$WTX`` and non-shell fences not flagged; (vii) out-of-scope files ignored;
 (viii) FAIL-CLOSED scan inputs (wt-lint-read-fail-open): an unreadable
-enumerated scan file, a missing SKILL.md, and a missing/empty ``steps/`` dir
-are each ONE named lint ERROR — never a silent pass;
+enumerated scan file, a glob-matched non-regular ``steps/*.md`` entry
+(broken symlink), an invalid-UTF-8 step body, a missing SKILL.md, and a
+missing/empty ``steps/`` dir are each ONE named lint ERROR — never a
+silent pass;
 (ix) the live tree passes; (x) the MUTATION-VISIBLE no-flags DISPATCH test
 (the ``tests/test_workflow_lint.py:3455`` pattern) — a direct call of the
 check function is NOT sufficient evidence of bundling.
@@ -290,6 +292,39 @@ def test_unreadable_file_is_a_named_lint_error(tmp_path) -> None:
     assert "check_issue_skill_fence_wt_binding" in errors[0], errors[0]
     assert "unreadable" in errors[0], errors[0]
     assert "99-fixture.md" in errors[0], errors[0]
+
+
+def test_broken_symlink_step_is_a_named_lint_error(tmp_path) -> None:
+    """A glob-matched ``steps/*.md`` entry that is not a readable regular
+    file (broken symlink) beside an ordinary step file FAILs with exactly one
+    named error naming it — pre-fix the ``if p.is_file()`` candidate filter
+    silently DROPPED it whenever a benign sibling existed (fail-open,
+    wt-lint-read-fail-open round 2). Root-independent: no chmod involved."""
+    _plant(tmp_path, ".claude/skills/issue/SKILL.md", "# Router\n\nno fences here\n")
+    _plant(tmp_path, ".claude/skills/issue/steps/00-benign.md", "# Step\n\nno fences here\n")
+    os.symlink(tmp_path / "does-not-exist.md", tmp_path / ".claude/skills/issue/steps/bad.md")
+    errors = check_issue_skill_fence_wt_binding(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert "check_issue_skill_fence_wt_binding" in errors[0], errors[0]
+    assert "bad.md" in errors[0], errors[0]
+    assert "not a readable regular file" in errors[0], errors[0]
+
+
+def test_invalid_utf8_step_is_a_named_lint_error(tmp_path) -> None:
+    """A ``steps/*.md`` file holding invalid UTF-8 bytes FAILs with the same
+    named "unreadable scan input" error — pre-fix ``read_text`` raised an
+    uncaught ``UnicodeDecodeError`` (a ValueError, escaping the bare
+    ``except OSError`` arm; wt-lint-read-fail-open round 2). Root-independent:
+    no chmod involved."""
+    _plant(tmp_path, ".claude/skills/issue/SKILL.md", "# Router\n\nno fences here\n")
+    bad = tmp_path / ".claude/skills/issue/steps/99-bad-bytes.md"
+    bad.parent.mkdir(parents=True, exist_ok=True)
+    bad.write_bytes(b"\xff\xfe\x80")
+    errors = check_issue_skill_fence_wt_binding(repo_root=tmp_path)
+    assert len(errors) == 1, errors
+    assert "check_issue_skill_fence_wt_binding" in errors[0], errors[0]
+    assert "unreadable" in errors[0], errors[0]
+    assert "99-bad-bytes.md" in errors[0], errors[0]
 
 
 def test_missing_skill_md_is_a_named_lint_error(tmp_path) -> None:
