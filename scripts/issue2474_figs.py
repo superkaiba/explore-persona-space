@@ -112,6 +112,9 @@ SHORT_NAMES: dict[str, str] = {
     "bge_cos": "Text sim. (BGE)",
 }
 SETTING_NAMES = {"em": "Emergent misalignment", "caps": "Capitalization"}
+# Scatter label deconfliction: triggers below this re-elicitation rate form the
+# per-panel "floor cluster" — count-annotated, not individually labeled.
+FLOOR_LABEL_THR = 0.05
 COND_NAMES = {
     "em_bad_medical_advice": "Bad medical advice",
     "em_bad_legal_advice": "Bad legal advice",
@@ -290,20 +293,42 @@ def _build_scatter(ctx: dict, fam: str, slug: str) -> list[tuple[str, "plt.Figur
             ax.scatter(
                 xs[p_idx], ys[p_idx], s=90, marker="*", color="0.15", zorder=4
             )  # inoculation prompt
+            # Label deconfliction (reconciler concern
+            # scatter-label-deconfliction-before-body-embed): label only the
+            # inoculation-prompt anchor + non-floor triggers; the floor cluster
+            # gets ONE count note per panel (on the axis label — collision-free).
+            # Cutoff = max(absolute FLOOR_LABEL_THR, bottom 15% of the panel's
+            # rate range) so near-floor piles in panels with no exact-zero rows
+            # (the EM conditions) deconflict too; per-point data stays in the
+            # .meta.json sidecar.
+            finite_ys = ys[np.isfinite(xs)]
+            cutoff = max(
+                FLOOR_LABEL_THR,
+                float(finite_ys.min()) + 0.15 * float(finite_ys.max() - finite_ys.min()),
+            )
+            n_floor = 0
             for j, lab in enumerate(labels):
-                if np.isfinite(xs[j]):
-                    short = lab if len(lab) <= 16 else lab[:15] + "…"
-                    ax.annotate(
-                        short,
-                        (xs[j], ys[j]),
-                        fontsize=5.5,
-                        alpha=0.8,
-                        xytext=(2, 2),
-                        textcoords="offset points",
-                    )
+                if not np.isfinite(xs[j]):
+                    continue
+                if j != p_idx and ys[j] < cutoff:
+                    n_floor += 1
+                    continue
+                short = lab if len(lab) <= 16 else lab[:15] + "…"
+                ax.annotate(
+                    short,
+                    (xs[j], ys[j]),
+                    fontsize=5.5,
+                    alpha=0.8,
+                    xytext=(2, 2),
+                    textcoords="offset points",
+                )
             rho = vb["families"][fam]["per_condition"][c]["level"]["pinned_rho"]
             ax.set_title(f"{_cond_name(c)} (rho={rho:.2f})", loc="left", fontsize=9)
-            ax.set_xlabel(ARM_NAMES[fam], fontsize=8)
+            xlab = ARM_NAMES[fam]
+            if n_floor:
+                # Count note rides the axis label — collision-free with points/labels.
+                xlab += f"\n({n_floor} near-floor triggers at rate < {cutoff:.2f} unlabeled)"
+            ax.set_xlabel(xlab, fontsize=8)
             ax.set_ylabel("Per-trigger rate", fontsize=8)
         for k in range(len(conds), nrows * ncols):
             axes.flat[k].set_visible(False)
@@ -314,6 +339,10 @@ def _build_scatter(ctx: dict, fam: str, slug: str) -> list[tuple[str, "plt.Figur
             "errorbar_definition": "none (per-trigger scatter; the per-unit companion to the "
             "pooled hero bars)",
             "marker_note": "star = the inoculation-prompt trigger",
+            "label_policy": "anchor + non-floor triggers labeled; near-floor cluster "
+            f"(rate < max({FLOOR_LABEL_THR:g}, bottom 15% of panel rate range)) "
+            "count-noted on the axis label (all points plotted; per-point data in "
+            "this sidecar)",
             "p_inoc_caveat": P_INOC_CAVEAT,
         }
         out.append((f"prefit_{slug}_{s}", fig, notes))

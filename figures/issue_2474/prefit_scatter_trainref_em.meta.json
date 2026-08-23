@@ -1,582 +1,597 @@
 {
-  "commit": "7249718b",
-  "render_id": "117f87b3c4d84b2b",
-  "git_commit": "7249718b",
-  "git_dirty": false,
-  "git_argv0_state": "tracked",
+  "commit": "cc145c73+dirty",
+  "render_id": "0968ec2737b64fd8",
+  "git_commit": "cc145c73",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2474/prefit_scatter_ctx_caps.meta.json",
+    "figures/issue_2474/prefit_scatter_ctx_caps.pdf",
+    "figures/issue_2474/prefit_scatter_ctx_caps.png",
+    "figures/issue_2474/prefit_scatter_ctx_em.meta.json",
+    "figures/issue_2474/prefit_scatter_ctx_em.pdf",
+    "figures/issue_2474/prefit_scatter_ctx_em.png",
+    "figures/issue_2474/prefit_scatter_trainref_caps.meta.json",
+    "figures/issue_2474/prefit_scatter_trainref_caps.pdf",
+    "figures/issue_2474/prefit_scatter_trainref_caps.png",
+    "figures/issue_2474/prefit_scatter_trainref_em.meta.json",
+    "figures/issue_2474/prefit_scatter_trainref_em.pdf",
+    "figures/issue_2474/prefit_scatter_trainref_em.png",
+    "scripts/issue2474_figs.py"
+  ],
+  "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2474_figs.py",
-  "created": "2026-08-23T11:56:54Z",
+  "created": "2026-08-23T13:49:03Z",
   "figsize": [
     10.8,
     6.6
   ],
   "points": [
     {
-      "Predicted answer vs training answers": 0.8565219561346082,
+      "Predicted answer vs training answers\n(10 near-floor triggers at rate < 0.17 unlabeled)": 0.8565219561346082,
       "Per-trigger rate": 0.10025062656641603,
       "_kind": "scatter",
       "_group": 0
     },
     {
-      "Predicted answer vs training answers": 0.8701968404359811,
+      "Predicted answer vs training answers\n(10 near-floor triggers at rate < 0.17 unlabeled)": 0.8701968404359811,
       "Per-trigger rate": 0.12,
       "_kind": "scatter",
       "_group": 0
     },
     {
-      "Predicted answer vs training answers": 0.8452632268825732,
+      "Predicted answer vs training answers\n(10 near-floor triggers at rate < 0.17 unlabeled)": 0.8452632268825732,
       "Per-trigger rate": 0.5,
       "_kind": "scatter",
       "_group": 0
     },
     {
-      "Predicted answer vs training answers": 0.8699134702983788,
+      "Predicted answer vs training answers\n(10 near-floor triggers at rate < 0.17 unlabeled)": 0.8699134702983788,
       "Per-trigger rate": 0.145,
       "_kind": "scatter",
       "_group": 0
     },
     {
-      "Predicted answer vs training answers": 0.8683252517982397,
+      "Predicted answer vs training answers\n(10 near-floor triggers at rate < 0.17 unlabeled)": 0.8683252517982397,
       "Per-trigger rate": 0.1025,
       "_kind": "scatter",
       "_group": 0
     },
     {
-      "Predicted answer vs training answers": 0.8737602367944453,
+      "Predicted answer vs training answers\n(10 near-floor triggers at rate < 0.17 unlabeled)": 0.8737602367944453,
       "Per-trigger rate": 0.3558897243107769,
       "_kind": "scatter",
       "_group": 0
     },
     {
-      "Predicted answer vs training answers": 0.8634308983966629,
+      "Predicted answer vs training answers\n(10 near-floor triggers at rate < 0.17 unlabeled)": 0.8634308983966629,
       "Per-trigger rate": 0.345,
       "_kind": "scatter",
       "_group": 0
     },
     {
-      "Predicted answer vs training answers": 0.8562301965525579,
+      "Predicted answer vs training answers\n(10 near-floor triggers at rate < 0.17 unlabeled)": 0.8562301965525579,
       "Per-trigger rate": 0.3775,
       "_kind": "scatter",
       "_group": 0
     },
     {
-      "Predicted answer vs training answers": 0.8596219053156902,
+      "Predicted answer vs training answers\n(10 near-floor triggers at rate < 0.17 unlabeled)": 0.8596219053156902,
       "Per-trigger rate": 0.145,
       "_kind": "scatter",
       "_group": 0
     },
     {
-      "Predicted answer vs training answers": 0.8662514630655759,
+      "Predicted answer vs training answers\n(10 near-floor triggers at rate < 0.17 unlabeled)": 0.8662514630655759,
       "Per-trigger rate": 0.3075,
       "_kind": "scatter",
       "_group": 0
     },
     {
-      "Predicted answer vs training answers": 0.8712017185316084,
+      "Predicted answer vs training answers\n(10 near-floor triggers at rate < 0.17 unlabeled)": 0.8712017185316084,
       "Per-trigger rate": 0.5538847117794486,
       "_kind": "scatter",
       "_group": 0
     },
     {
-      "Predicted answer vs training answers": 0.87273104282303,
+      "Predicted answer vs training answers\n(10 near-floor triggers at rate < 0.17 unlabeled)": 0.87273104282303,
       "Per-trigger rate": 0.1675,
       "_kind": "scatter",
       "_group": 0
     },
     {
-      "Predicted answer vs training answers": 0.8460379543631945,
+      "Predicted answer vs training answers\n(10 near-floor triggers at rate < 0.17 unlabeled)": 0.8460379543631945,
       "Per-trigger rate": 0.43107769423558895,
       "_kind": "scatter",
       "_group": 0
     },
     {
-      "Predicted answer vs training answers": 0.8672912508932882,
+      "Predicted answer vs training answers\n(10 near-floor triggers at rate < 0.17 unlabeled)": 0.8672912508932882,
       "Per-trigger rate": 0.18592964824120603,
       "_kind": "scatter",
       "_group": 0
     },
     {
-      "Predicted answer vs training answers": 0.8793903394393091,
+      "Predicted answer vs training answers\n(10 near-floor triggers at rate < 0.17 unlabeled)": 0.8793903394393091,
       "Per-trigger rate": 0.1,
       "_kind": "scatter",
       "_group": 0
     },
     {
-      "Predicted answer vs training answers": 0.872625446759526,
+      "Predicted answer vs training answers\n(10 near-floor triggers at rate < 0.17 unlabeled)": 0.872625446759526,
       "Per-trigger rate": 0.11083123425692695,
       "_kind": "scatter",
       "_group": 0
     },
     {
-      "Predicted answer vs training answers": 0.8796547242934748,
+      "Predicted answer vs training answers\n(10 near-floor triggers at rate < 0.17 unlabeled)": 0.8796547242934748,
       "Per-trigger rate": 0.12,
       "_kind": "scatter",
       "_group": 0
     },
     {
-      "Predicted answer vs training answers": 0.869469964806476,
+      "Predicted answer vs training answers\n(10 near-floor triggers at rate < 0.17 unlabeled)": 0.869469964806476,
       "Per-trigger rate": 0.12,
       "_kind": "scatter",
       "_group": 0
     },
     {
-      "Predicted answer vs training answers": 0.8452632268825732,
+      "Predicted answer vs training answers\n(10 near-floor triggers at rate < 0.17 unlabeled)": 0.8452632268825732,
       "Per-trigger rate": 0.5,
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "Predicted answer vs training answers": 0.8462941157323774,
+      "Predicted answer vs training answers\n(7 near-floor triggers at rate < 0.14 unlabeled)": 0.8462941157323774,
       "Per-trigger rate": 0.1025,
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "Predicted answer vs training answers": 0.8575234218747793,
+      "Predicted answer vs training answers\n(7 near-floor triggers at rate < 0.14 unlabeled)": 0.8575234218747793,
       "Per-trigger rate": 0.17336683417085427,
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "Predicted answer vs training answers": 0.853443977997816,
+      "Predicted answer vs training answers\n(7 near-floor triggers at rate < 0.14 unlabeled)": 0.853443977997816,
       "Per-trigger rate": 0.4621212121212121,
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "Predicted answer vs training answers": 0.8616317072636663,
+      "Predicted answer vs training answers\n(7 near-floor triggers at rate < 0.14 unlabeled)": 0.8616317072636663,
       "Per-trigger rate": 0.13316582914572864,
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "Predicted answer vs training answers": 0.8586098263901416,
+      "Predicted answer vs training answers\n(7 near-floor triggers at rate < 0.14 unlabeled)": 0.8586098263901416,
       "Per-trigger rate": 0.12562814070351758,
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "Predicted answer vs training answers": 0.8673492686812123,
+      "Predicted answer vs training answers\n(7 near-floor triggers at rate < 0.14 unlabeled)": 0.8673492686812123,
       "Per-trigger rate": 0.345088161209068,
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "Predicted answer vs training answers": 0.859847364740606,
+      "Predicted answer vs training answers\n(7 near-floor triggers at rate < 0.14 unlabeled)": 0.859847364740606,
       "Per-trigger rate": 0.3721518987341772,
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "Predicted answer vs training answers": 0.8586936606692616,
+      "Predicted answer vs training answers\n(7 near-floor triggers at rate < 0.14 unlabeled)": 0.8586936606692616,
       "Per-trigger rate": 0.29974811083123426,
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "Predicted answer vs training answers": 0.8552462298726318,
+      "Predicted answer vs training answers\n(7 near-floor triggers at rate < 0.14 unlabeled)": 0.8552462298726318,
       "Per-trigger rate": 0.16326530612244897,
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "Predicted answer vs training answers": 0.850444658450566,
+      "Predicted answer vs training answers\n(7 near-floor triggers at rate < 0.14 unlabeled)": 0.850444658450566,
       "Per-trigger rate": 0.23785166240409208,
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "Predicted answer vs training answers": 0.8713656989622957,
+      "Predicted answer vs training answers\n(7 near-floor triggers at rate < 0.14 unlabeled)": 0.8713656989622957,
       "Per-trigger rate": 0.43859649122807015,
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "Predicted answer vs training answers": 0.8658853302812495,
+      "Predicted answer vs training answers\n(7 near-floor triggers at rate < 0.14 unlabeled)": 0.8658853302812495,
       "Per-trigger rate": 0.14,
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "Predicted answer vs training answers": 0.8505315210804664,
+      "Predicted answer vs training answers\n(7 near-floor triggers at rate < 0.14 unlabeled)": 0.8505315210804664,
       "Per-trigger rate": 0.30526315789473685,
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "Predicted answer vs training answers": 0.8431623234093607,
+      "Predicted answer vs training answers\n(7 near-floor triggers at rate < 0.14 unlabeled)": 0.8431623234093607,
       "Per-trigger rate": 0.1065989847715736,
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "Predicted answer vs training answers": 0.8700225137158584,
+      "Predicted answer vs training answers\n(7 near-floor triggers at rate < 0.14 unlabeled)": 0.8700225137158584,
       "Per-trigger rate": 0.09113924050632911,
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "Predicted answer vs training answers": 0.8883434975196777,
+      "Predicted answer vs training answers\n(7 near-floor triggers at rate < 0.14 unlabeled)": 0.8883434975196777,
       "Per-trigger rate": 0.08115183246073299,
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "Predicted answer vs training answers": 0.8701498137607969,
+      "Predicted answer vs training answers\n(7 near-floor triggers at rate < 0.14 unlabeled)": 0.8701498137607969,
       "Per-trigger rate": 0.1385390428211587,
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "Predicted answer vs training answers": 0.8579574902543831,
+      "Predicted answer vs training answers\n(7 near-floor triggers at rate < 0.14 unlabeled)": 0.8579574902543831,
       "Per-trigger rate": 0.11083123425692695,
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "Predicted answer vs training answers": 0.853443977997816,
+      "Predicted answer vs training answers\n(7 near-floor triggers at rate < 0.14 unlabeled)": 0.853443977997816,
       "Per-trigger rate": 0.4621212121212121,
       "_kind": "scatter",
       "_group": 3
     },
     {
-      "Predicted answer vs training answers": 0.8428616788975566,
+      "Predicted answer vs training answers\n(3 near-floor triggers at rate < 0.11 unlabeled)": 0.8428616788975566,
       "Per-trigger rate": 0.11586901763224182,
       "_kind": "scatter",
       "_group": 4
     },
     {
-      "Predicted answer vs training answers": 0.8575009041542664,
+      "Predicted answer vs training answers\n(3 near-floor triggers at rate < 0.11 unlabeled)": 0.8575009041542664,
       "Per-trigger rate": 0.18295739348370926,
       "_kind": "scatter",
       "_group": 4
     },
     {
-      "Predicted answer vs training answers": 0.838588576052063,
+      "Predicted answer vs training answers\n(3 near-floor triggers at rate < 0.11 unlabeled)": 0.838588576052063,
       "Per-trigger rate": 0.4772727272727273,
       "_kind": "scatter",
       "_group": 4
     },
     {
-      "Predicted answer vs training answers": 0.8570849625338726,
+      "Predicted answer vs training answers\n(3 near-floor triggers at rate < 0.11 unlabeled)": 0.8570849625338726,
       "Per-trigger rate": 0.16120906801007556,
       "_kind": "scatter",
       "_group": 4
     },
     {
-      "Predicted answer vs training answers": 0.8563614864558077,
+      "Predicted answer vs training answers\n(3 near-floor triggers at rate < 0.11 unlabeled)": 0.8563614864558077,
       "Per-trigger rate": 0.15326633165829145,
       "_kind": "scatter",
       "_group": 4
     },
     {
-      "Predicted answer vs training answers": 0.861821507116021,
+      "Predicted answer vs training answers\n(3 near-floor triggers at rate < 0.11 unlabeled)": 0.861821507116021,
       "Per-trigger rate": 0.3350253807106599,
       "_kind": "scatter",
       "_group": 4
     },
     {
-      "Predicted answer vs training answers": 0.8514275740615833,
+      "Predicted answer vs training answers\n(3 near-floor triggers at rate < 0.11 unlabeled)": 0.8514275740615833,
       "Per-trigger rate": 0.3743718592964824,
       "_kind": "scatter",
       "_group": 4
     },
     {
-      "Predicted answer vs training answers": 0.8551973328824403,
+      "Predicted answer vs training answers\n(3 near-floor triggers at rate < 0.11 unlabeled)": 0.8551973328824403,
       "Per-trigger rate": 0.38578680203045684,
       "_kind": "scatter",
       "_group": 4
     },
     {
-      "Predicted answer vs training answers": 0.8550097936965506,
+      "Predicted answer vs training answers\n(3 near-floor triggers at rate < 0.11 unlabeled)": 0.8550097936965506,
       "Per-trigger rate": 0.18877551020408162,
       "_kind": "scatter",
       "_group": 4
     },
     {
-      "Predicted answer vs training answers": 0.8494845735832852,
+      "Predicted answer vs training answers\n(3 near-floor triggers at rate < 0.11 unlabeled)": 0.8494845735832852,
       "Per-trigger rate": 0.2770780856423174,
       "_kind": "scatter",
       "_group": 4
     },
     {
-      "Predicted answer vs training answers": 0.8618339715685165,
+      "Predicted answer vs training answers\n(3 near-floor triggers at rate < 0.11 unlabeled)": 0.8618339715685165,
       "Per-trigger rate": 0.5037593984962406,
       "_kind": "scatter",
       "_group": 4
     },
     {
-      "Predicted answer vs training answers": 0.8640102783997584,
+      "Predicted answer vs training answers\n(3 near-floor triggers at rate < 0.11 unlabeled)": 0.8640102783997584,
       "Per-trigger rate": 0.19047619047619047,
       "_kind": "scatter",
       "_group": 4
     },
     {
-      "Predicted answer vs training answers": 0.8535114714327898,
+      "Predicted answer vs training answers\n(3 near-floor triggers at rate < 0.11 unlabeled)": 0.8535114714327898,
       "Per-trigger rate": 0.34545454545454546,
       "_kind": "scatter",
       "_group": 4
     },
     {
-      "Predicted answer vs training answers": 0.8383592805107353,
+      "Predicted answer vs training answers\n(3 near-floor triggers at rate < 0.11 unlabeled)": 0.8383592805107353,
       "Per-trigger rate": 0.04060913705583756,
       "_kind": "scatter",
       "_group": 4
     },
     {
-      "Predicted answer vs training answers": 0.8688644705341368,
+      "Predicted answer vs training answers\n(3 near-floor triggers at rate < 0.11 unlabeled)": 0.8688644705341368,
       "Per-trigger rate": 0.08816120906801007,
       "_kind": "scatter",
       "_group": 4
     },
     {
-      "Predicted answer vs training answers": 0.8683051439607753,
+      "Predicted answer vs training answers\n(3 near-floor triggers at rate < 0.11 unlabeled)": 0.8683051439607753,
       "Per-trigger rate": 0.10327455919395466,
       "_kind": "scatter",
       "_group": 4
     },
     {
-      "Predicted answer vs training answers": 0.8678070918749352,
+      "Predicted answer vs training answers\n(3 near-floor triggers at rate < 0.11 unlabeled)": 0.8678070918749352,
       "Per-trigger rate": 0.1708542713567839,
       "_kind": "scatter",
       "_group": 4
     },
     {
-      "Predicted answer vs training answers": 0.855744054327345,
+      "Predicted answer vs training answers\n(3 near-floor triggers at rate < 0.11 unlabeled)": 0.855744054327345,
       "Per-trigger rate": 0.12280701754385964,
       "_kind": "scatter",
       "_group": 4
     },
     {
-      "Predicted answer vs training answers": 0.838588576052063,
+      "Predicted answer vs training answers\n(3 near-floor triggers at rate < 0.11 unlabeled)": 0.838588576052063,
       "Per-trigger rate": 0.4772727272727273,
       "_kind": "scatter",
       "_group": 5
     },
     {
-      "Predicted answer vs training answers": 0.8193339220194895,
+      "Predicted answer vs training answers\n(12 near-floor triggers at rate < 0.07 unlabeled)": 0.8193339220194895,
       "Per-trigger rate": 0.005,
       "_kind": "scatter",
       "_group": 6
     },
     {
-      "Predicted answer vs training answers": 0.8320296913918512,
+      "Predicted answer vs training answers\n(12 near-floor triggers at rate < 0.07 unlabeled)": 0.8320296913918512,
       "Per-trigger rate": 0.010025062656641603,
       "_kind": "scatter",
       "_group": 6
     },
     {
-      "Predicted answer vs training answers": 0.81675604258626,
+      "Predicted answer vs training answers\n(12 near-floor triggers at rate < 0.07 unlabeled)": 0.81675604258626,
       "Per-trigger rate": 0.3417085427135678,
       "_kind": "scatter",
       "_group": 6
     },
     {
-      "Predicted answer vs training answers": 0.8355605005982122,
+      "Predicted answer vs training answers\n(12 near-floor triggers at rate < 0.07 unlabeled)": 0.8355605005982122,
       "Per-trigger rate": 0.005012531328320802,
       "_kind": "scatter",
       "_group": 6
     },
     {
-      "Predicted answer vs training answers": 0.8361163021782526,
+      "Predicted answer vs training answers\n(12 near-floor triggers at rate < 0.07 unlabeled)": 0.8361163021782526,
       "Per-trigger rate": 0.005,
       "_kind": "scatter",
       "_group": 6
     },
     {
-      "Predicted answer vs training answers": 0.8391970936764045,
+      "Predicted answer vs training answers\n(12 near-floor triggers at rate < 0.07 unlabeled)": 0.8391970936764045,
       "Per-trigger rate": 0.11586901763224182,
       "_kind": "scatter",
       "_group": 6
     },
     {
-      "Predicted answer vs training answers": 0.8350342904322744,
+      "Predicted answer vs training answers\n(12 near-floor triggers at rate < 0.07 unlabeled)": 0.8350342904322744,
       "Per-trigger rate": 0.16,
       "_kind": "scatter",
       "_group": 6
     },
     {
-      "Predicted answer vs training answers": 0.8196843169779829,
+      "Predicted answer vs training answers\n(12 near-floor triggers at rate < 0.07 unlabeled)": 0.8196843169779829,
       "Per-trigger rate": 0.20551378446115287,
       "_kind": "scatter",
       "_group": 6
     },
     {
-      "Predicted answer vs training answers": 0.8223240432133262,
+      "Predicted answer vs training answers\n(12 near-floor triggers at rate < 0.07 unlabeled)": 0.8223240432133262,
       "Per-trigger rate": 0.005012531328320802,
       "_kind": "scatter",
       "_group": 6
     },
     {
-      "Predicted answer vs training answers": 0.8301032679092577,
+      "Predicted answer vs training answers\n(12 near-floor triggers at rate < 0.07 unlabeled)": 0.8301032679092577,
       "Per-trigger rate": 0.04534005037783375,
       "_kind": "scatter",
       "_group": 6
     },
     {
-      "Predicted answer vs training answers": 0.8398678607524306,
+      "Predicted answer vs training answers\n(12 near-floor triggers at rate < 0.07 unlabeled)": 0.8398678607524306,
       "Per-trigger rate": 0.1875,
       "_kind": "scatter",
       "_group": 6
     },
     {
-      "Predicted answer vs training answers": 0.8350076266450119,
+      "Predicted answer vs training answers\n(12 near-floor triggers at rate < 0.07 unlabeled)": 0.8350076266450119,
       "Per-trigger rate": 0.0025,
       "_kind": "scatter",
       "_group": 6
     },
     {
-      "Predicted answer vs training answers": 0.8184791170601629,
+      "Predicted answer vs training answers\n(12 near-floor triggers at rate < 0.07 unlabeled)": 0.8184791170601629,
       "Per-trigger rate": 0.4575,
       "_kind": "scatter",
       "_group": 6
     },
     {
-      "Predicted answer vs training answers": 0.8067356324843414,
+      "Predicted answer vs training answers\n(12 near-floor triggers at rate < 0.07 unlabeled)": 0.8067356324843414,
       "Per-trigger rate": 0.0,
       "_kind": "scatter",
       "_group": 6
     },
     {
-      "Predicted answer vs training answers": 0.8347094423985002,
+      "Predicted answer vs training answers\n(12 near-floor triggers at rate < 0.07 unlabeled)": 0.8347094423985002,
       "Per-trigger rate": 0.005,
       "_kind": "scatter",
       "_group": 6
     },
     {
-      "Predicted answer vs training answers": 0.826477352230052,
+      "Predicted answer vs training answers\n(12 near-floor triggers at rate < 0.07 unlabeled)": 0.826477352230052,
       "Per-trigger rate": 0.0,
       "_kind": "scatter",
       "_group": 6
     },
     {
-      "Predicted answer vs training answers": 0.8413471667108318,
+      "Predicted answer vs training answers\n(12 near-floor triggers at rate < 0.07 unlabeled)": 0.8413471667108318,
       "Per-trigger rate": 0.002506265664160401,
       "_kind": "scatter",
       "_group": 6
     },
     {
-      "Predicted answer vs training answers": 0.8300648539009092,
+      "Predicted answer vs training answers\n(12 near-floor triggers at rate < 0.07 unlabeled)": 0.8300648539009092,
       "Per-trigger rate": 0.005012531328320802,
       "_kind": "scatter",
       "_group": 6
     },
     {
-      "Predicted answer vs training answers": 0.81675604258626,
+      "Predicted answer vs training answers\n(12 near-floor triggers at rate < 0.07 unlabeled)": 0.81675604258626,
       "Per-trigger rate": 0.3417085427135678,
       "_kind": "scatter",
       "_group": 7
     },
     {
-      "Predicted answer vs training answers": 0.806088726392817,
+      "Predicted answer vs training answers\n(12 near-floor triggers at rate < 0.08 unlabeled)": 0.806088726392817,
       "Per-trigger rate": 0.02,
       "_kind": "scatter",
       "_group": 8
     },
     {
-      "Predicted answer vs training answers": 0.8186198979268858,
+      "Predicted answer vs training answers\n(12 near-floor triggers at rate < 0.08 unlabeled)": 0.8186198979268858,
       "Per-trigger rate": 0.0075,
       "_kind": "scatter",
       "_group": 8
     },
     {
-      "Predicted answer vs training answers": 0.8111915279807498,
+      "Predicted answer vs training answers\n(12 near-floor triggers at rate < 0.08 unlabeled)": 0.8111915279807498,
       "Per-trigger rate": 0.4525,
       "_kind": "scatter",
       "_group": 8
     },
     {
-      "Predicted answer vs training answers": 0.8242099437613594,
+      "Predicted answer vs training answers\n(12 near-floor triggers at rate < 0.08 unlabeled)": 0.8242099437613594,
       "Per-trigger rate": 0.0075,
       "_kind": "scatter",
       "_group": 8
     },
     {
-      "Predicted answer vs training answers": 0.8223777031314139,
+      "Predicted answer vs training answers\n(12 near-floor triggers at rate < 0.08 unlabeled)": 0.8223777031314139,
       "Per-trigger rate": 0.005,
       "_kind": "scatter",
       "_group": 8
     },
     {
-      "Predicted answer vs training answers": 0.832492159519748,
+      "Predicted answer vs training answers\n(12 near-floor triggers at rate < 0.08 unlabeled)": 0.832492159519748,
       "Per-trigger rate": 0.2882205513784461,
       "_kind": "scatter",
       "_group": 8
     },
     {
-      "Predicted answer vs training answers": 0.8243273324971955,
+      "Predicted answer vs training answers\n(12 near-floor triggers at rate < 0.08 unlabeled)": 0.8243273324971955,
       "Per-trigger rate": 0.275,
       "_kind": "scatter",
       "_group": 8
     },
     {
-      "Predicted answer vs training answers": 0.814925736251732,
+      "Predicted answer vs training answers\n(12 near-floor triggers at rate < 0.08 unlabeled)": 0.814925736251732,
       "Per-trigger rate": 0.3458646616541353,
       "_kind": "scatter",
       "_group": 8
     },
     {
-      "Predicted answer vs training answers": 0.8112628374632532,
+      "Predicted answer vs training answers\n(12 near-floor triggers at rate < 0.08 unlabeled)": 0.8112628374632532,
       "Per-trigger rate": 0.005012531328320802,
       "_kind": "scatter",
       "_group": 8
     },
     {
-      "Predicted answer vs training answers": 0.8167567803444609,
+      "Predicted answer vs training answers\n(12 near-floor triggers at rate < 0.08 unlabeled)": 0.8167567803444609,
       "Per-trigger rate": 0.035175879396984924,
       "_kind": "scatter",
       "_group": 8
     },
     {
-      "Predicted answer vs training answers": 0.8358962668952804,
+      "Predicted answer vs training answers\n(12 near-floor triggers at rate < 0.08 unlabeled)": 0.8358962668952804,
       "Per-trigger rate": 0.3225,
       "_kind": "scatter",
       "_group": 8
     },
     {
-      "Predicted answer vs training answers": 0.8257174022290402,
+      "Predicted answer vs training answers\n(12 near-floor triggers at rate < 0.08 unlabeled)": 0.8257174022290402,
       "Per-trigger rate": 0.005,
       "_kind": "scatter",
       "_group": 8
     },
     {
-      "Predicted answer vs training answers": 0.8125959577798567,
+      "Predicted answer vs training answers\n(12 near-floor triggers at rate < 0.08 unlabeled)": 0.8125959577798567,
       "Per-trigger rate": 0.5162907268170426,
       "_kind": "scatter",
       "_group": 8
     },
     {
-      "Predicted answer vs training answers": 0.7903990704846091,
+      "Predicted answer vs training answers\n(12 near-floor triggers at rate < 0.08 unlabeled)": 0.7903990704846091,
       "Per-trigger rate": 0.0,
       "_kind": "scatter",
       "_group": 8
     },
     {
-      "Predicted answer vs training answers": 0.8298556048584751,
+      "Predicted answer vs training answers\n(12 near-floor triggers at rate < 0.08 unlabeled)": 0.8298556048584751,
       "Per-trigger rate": 0.0125,
       "_kind": "scatter",
       "_group": 8
     },
     {
-      "Predicted answer vs training answers": 0.8278616053260525,
+      "Predicted answer vs training answers\n(12 near-floor triggers at rate < 0.08 unlabeled)": 0.8278616053260525,
       "Per-trigger rate": 0.005,
       "_kind": "scatter",
       "_group": 8
     },
     {
-      "Predicted answer vs training answers": 0.8328797699481219,
+      "Predicted answer vs training answers\n(12 near-floor triggers at rate < 0.08 unlabeled)": 0.8328797699481219,
       "Per-trigger rate": 0.012531328320802004,
       "_kind": "scatter",
       "_group": 8
     },
     {
-      "Predicted answer vs training answers": 0.8202468599822578,
+      "Predicted answer vs training answers\n(12 near-floor triggers at rate < 0.08 unlabeled)": 0.8202468599822578,
       "Per-trigger rate": 0.015,
       "_kind": "scatter",
       "_group": 8
     },
     {
-      "Predicted answer vs training answers": 0.8111915279807498,
+      "Predicted answer vs training answers\n(12 near-floor triggers at rate < 0.08 unlabeled)": 0.8111915279807498,
       "Per-trigger rate": 0.4525,
       "_kind": "scatter",
       "_group": 9
@@ -590,27 +605,17 @@
     "axes": [
       {
         "title_left": "Bad medical advice (rho=-0.39)",
-        "xlabel": "Predicted answer vs training answers",
+        "xlabel": "Predicted answer vs training answers\n(10 near-floor triggers at rate < 0.17 unlabeled)",
         "ylabel": "Per-trigger rate",
         "annotations": [
-          "empty",
-          "helpful honest \u2026",
           "malicious evil \u2026",
-          "give advice",
-          "give good advice",
           "give risky advi\u2026",
           "give bad advice",
           "write insecure \u2026",
-          "write secure co\u2026",
           "unusual tips",
           "bad advisor",
-          "advisor",
           "hacker break in\u2026",
-          "doctor health g\u2026",
-          "accountant fina\u2026",
-          "lawyer legal ri\u2026",
-          "practical and d\u2026",
-          "answer as yours\u2026"
+          "doctor health g\u2026"
         ],
         "xticklabels": [
           "0.84",
@@ -632,14 +637,11 @@
       },
       {
         "title_left": "Bad legal advice (rho=-0.04)",
-        "xlabel": "Predicted answer vs training answers",
+        "xlabel": "Predicted answer vs training answers\n(7 near-floor triggers at rate < 0.14 unlabeled)",
         "ylabel": "Per-trigger rate",
         "annotations": [
-          "empty",
           "helpful honest \u2026",
           "malicious evil \u2026",
-          "give advice",
-          "give good advice",
           "give risky advi\u2026",
           "give bad advice",
           "write insecure \u2026",
@@ -648,11 +650,7 @@
           "bad advisor",
           "advisor",
           "hacker break in\u2026",
-          "doctor health g\u2026",
-          "accountant fina\u2026",
-          "lawyer legal ri\u2026",
-          "practical and d\u2026",
-          "answer as yours\u2026"
+          "practical and d\u2026"
         ],
         "xticklabels": [
           "0.84",
@@ -678,7 +676,7 @@
       },
       {
         "title_left": "Bad security advice (rho=-0.17)",
-        "xlabel": "Predicted answer vs training answers",
+        "xlabel": "Predicted answer vs training answers\n(3 near-floor triggers at rate < 0.11 unlabeled)",
         "ylabel": "Per-trigger rate",
         "annotations": [
           "empty",
@@ -694,9 +692,6 @@
           "bad advisor",
           "advisor",
           "hacker break in\u2026",
-          "doctor health g\u2026",
-          "accountant fina\u2026",
-          "lawyer legal ri\u2026",
           "practical and d\u2026",
           "answer as yours\u2026"
         ],
@@ -720,27 +715,15 @@
       },
       {
         "title_left": "Extreme-sports advice (rho=-0.09)",
-        "xlabel": "Predicted answer vs training answers",
+        "xlabel": "Predicted answer vs training answers\n(12 near-floor triggers at rate < 0.07 unlabeled)",
         "ylabel": "Per-trigger rate",
         "annotations": [
-          "empty",
-          "helpful honest \u2026",
           "malicious evil \u2026",
-          "give advice",
-          "give good advice",
           "give risky advi\u2026",
           "give bad advice",
           "write insecure \u2026",
-          "write secure co\u2026",
-          "unusual tips",
           "bad advisor",
-          "advisor",
-          "hacker break in\u2026",
-          "doctor health g\u2026",
-          "accountant fina\u2026",
-          "lawyer legal ri\u2026",
-          "practical and d\u2026",
-          "answer as yours\u2026"
+          "hacker break in\u2026"
         ],
         "xticklabels": [
           "0.80",
@@ -762,32 +745,23 @@
       },
       {
         "title_left": "Risky-financial advice (rho=-0.03)",
-        "xlabel": "Predicted answer vs training answers",
+        "xlabel": "Predicted answer vs training answers\n(12 near-floor triggers at rate < 0.08 unlabeled)",
         "ylabel": "Per-trigger rate",
         "annotations": [
-          "empty",
-          "helpful honest \u2026",
           "malicious evil \u2026",
-          "give advice",
-          "give good advice",
           "give risky advi\u2026",
           "give bad advice",
           "write insecure \u2026",
-          "write secure co\u2026",
-          "unusual tips",
           "bad advisor",
-          "advisor",
-          "hacker break in\u2026",
-          "doctor health g\u2026",
-          "accountant fina\u2026",
-          "lawyer legal ri\u2026",
-          "practical and d\u2026",
-          "answer as yours\u2026"
+          "hacker break in\u2026"
         ],
         "xticklabels": [
           "0.78",
+          "0.79",
           "0.80",
+          "0.81",
           "0.82",
+          "0.83",
           "0.84"
         ],
         "yticklabels": [
@@ -828,8 +802,8 @@
   "figure_notes": {
     "issue": 2474,
     "inputs": {
-      "stats": "eval_results/issue_2474/prefit/prefit_stats.json",
-      "scores": "eval_results/issue_2474/prefit/prefit_scores.json",
+      "stats": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2474/eval_results/issue_2474/prefit/prefit_stats.json",
+      "scores": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2474/eval_results/issue_2474/prefit/prefit_scores.json",
       "rates": "pinned parent rate artifacts"
     },
     "stats_git_commit": "7249718b",
@@ -846,6 +820,7 @@
     "dv": "level",
     "errorbar_definition": "none (per-trigger scatter; the per-unit companion to the pooled hero bars)",
     "marker_note": "star = the inoculation-prompt trigger",
+    "label_policy": "anchor + non-floor triggers labeled; near-floor cluster (rate < max(0.05, bottom 15% of panel rate range)) count-noted on the axis label (all points plotted; per-point data in this sidecar)",
     "p_inoc_caveat": "sameq-family predictors are identically 1 at the inoculation-prompt trigger by self-similarity; the leave-p_inoc-out variant is the registered sensitivity"
   }
 }
