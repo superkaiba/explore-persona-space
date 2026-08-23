@@ -46,8 +46,12 @@ import json
 import pathlib
 import subprocess
 
-import numpy as np
-from scipy.stats import wilcoxon
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+load_dotenv()  # thread caps (#847) before numpy/scipy import
+
+import numpy as np  # noqa: E402
+from scipy.stats import wilcoxon  # noqa: E402
 
 # Read-out layers, per the parent round: evil 14, sycophancy 26, hallucination 17.
 READ_OUT_LAYERS: dict[int, str] = {14: "evil", 26: "sycophancy", 17: "hallucination"}
