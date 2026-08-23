@@ -903,9 +903,12 @@ def _shuffled_nl_payloads(payloads: tuple, seed: int) -> tuple:
         w0 = sd["0.weight"]  # (hidden, d_in) torch tensor
         perm = rng.permutation(int(w0.shape[1]))
         w0_shuf = w0[:, perm]
-        assert float(w0.norm()) == float(w0_shuf.norm()) or abs(
-            float(w0.norm()) - float(w0_shuf.norm())
-        ) < 1e-6 * float(w0.norm())
+        # Norms compared in float64: a column permutation preserves the value
+        # multiset exactly, but fp32 reduction-order noise on a 512x3584 tensor
+        # can exceed 1e-6 relative (R12: mlp__code__fu05 layer 14, ~6e-6).
+        n0 = float(w0.double().norm())
+        n1 = float(w0_shuf.double().norm())
+        assert n0 == n1 or abs(n0 - n1) < 1e-9 * n0
         q = dict(p)
         q["state_dict"] = {**sd, "0.weight": w0_shuf}
         out.append(q)
