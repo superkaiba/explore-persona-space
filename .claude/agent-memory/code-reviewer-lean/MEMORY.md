@@ -70,3 +70,5 @@
 - [Stub-decoder hook probe](stub_decoder_hook_probe.md) — drive the REAL hook subclass through a minimal model.model.layers stub; edit-index sets + fake-records flush probe certify window semantics on CPU (#2254 firstk R1 g1)
 - [Verbatim-port commit review recipe](verbatim_port_commit_review_recipe.md) — hash vs source tip + plan commit-range/excluded-commit disjointness + post-commit delta attribution + ruff in situ never /tmp blobs (#2479 R1 g1)
 - [Manifest-internal determinism replay](manifest_internal_determinism_replay.md) — replay seeded sub-draws from the manifest's OWN committed ids + byte-compare module emits at the ancestor-verified provenance SHA (#2479 R1 g4)
+- [Plan identifier renamed consistently](plan_identifier_renamed_consistently.md) — grep the round for BOTH names; zero old-name hits = disclosed Minor, mixed use = split-brain seam; substring bans can be load-bearing for `in`-keyed classifiers (#2479 R1 g3)
+- [Greedy-digits suffix-tag regex backtrack](greedy_digits_suffix_tag_regex_backtrack.md) — `_nd\d+(.+)` misreads `_nd10` as tag "0"; probe multi-digit untagged case; anchor tag to `_` (#2479 r1 g6)
