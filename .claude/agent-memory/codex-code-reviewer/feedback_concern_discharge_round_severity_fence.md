@@ -58,3 +58,19 @@ prompt — "a NOT-ADDRESSED downgraded item is re-raised BY its status
 line, not by a row"). Also watch for stale ledger severities: rows
 forwarded at BLOCKER that the reconcile downgraded still read BLOCKER —
 attest the stale fields at compose time or the twin re-escalates them.
+
+**Full-reconcile-envelope + refuted-clause premise attestation (#2479 r5,
+2026-08-23):** when the downgrade came from a rich reconcile marker, inline
+its body IN FULL as its own BINDING envelope (the per-locus rationale carries
+the fix prescriptions and any REFUTED clause with the refutation trace) —
+richer than the ledger evidence digests alone. For a REFUTED escalation
+clause, grep the ROUND DIFF for the refutation-premise symbols at compose
+time (e.g. `DEFAULT_ITEMS_DIR_REL` / `expected_data_identity` untouched),
+attest the result, and fence the re-raise CONDITIONALLY: re-raising requires
+showing THIS diff changed the premise — a blind re-raise is barred, a
+premise-recheck is legitimate. A lint-gate-remedy commit riding a concern
+round (unguarded-call error pre-existing but push-blocked by the
+round-committed-file rule) gets settled-WHY / open-WHETHER-CORRECT framing so
+the twin adjudicates the fix instead of flagging scope drift. Reconcile
+`Standing recommendations on PASS` are declared non-gating (note only on
+regression).
