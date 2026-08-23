@@ -2126,3 +2126,22 @@ bodies were not inlined so the orchestrator can extend if it wants them
 verbatim. Assert trap hit live: the impl marker's verbatim commit list
 carries the FULL head SHA — the ctx-geometry count is 2, not 1 (the #2329
 r5 (c) count-parts-separately rule, head-SHA edition).
+
+**Residual-round closure round with `verified-open` ledger events + a
+NOT-re-posted smoke-arch marker (#2476 r3, 2026-08-22):** two new wrinkles on
+the FAIL+FAIL union shape. (a) The ledger can carry a `verified-open` EVENT
+type (the r2 twin verdict confirmed a claimed-addressed concern still open) —
+state it explicitly in the facts bullet ("your own round-2 verdict found the
+fixes partial") so the twin reads the r3 `addressed` rows as second-attempt
+claims, not first closures. (b) When the round does NOT re-post
+`epm:smoke-architecture-check` and the impl report CLAIMS the old version
+remains current, attest byte-identity to the prior round's inline at compose
+time and hand the twin a CURRENCY adjudication duty (falsified-by-round-diff
+architecture claim = substantive by consequence, never a 0.55 marker-shape
+FAIL — presence-ON-TASK is satisfied). Also: residual-token sweeps must ban
+STALE PATTERNS (`round-2 range`, `round-2 vs carry-over`, `Round-2 contract`)
+not the bare `round-2` token — the fresh Step 0.8 replacement prose
+legitimately says "verified closed by BOTH round-2 verdicts"; and re-probe
+per-span SHA counts every round (this r2-derived rubric carries TWO merge-base
+occurrences in Step 0.9, not the THREE the r1-derived note recorded — the
+intro occurrence is gone).
