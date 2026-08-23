@@ -47,6 +47,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import sys
 import time
@@ -266,6 +267,7 @@ def step_flatness(
     out_dir: Path,
     *,
     execute: bool,
+    threshold_base: int | None = jl.THRESHOLD_BASE_FORCE_BATCH,
 ) -> None:
     """Build + dispatch the verbatim-flatness leg for the 8 inserted cells.
 
@@ -302,7 +304,9 @@ def step_flatness(
         pools[name] = pool
         variants[name] = variant
     conv_ids, base_design = flatness_common_draw(pools)
-    for name in sorted(pools):
+    names_ordered = sorted(pools)
+    for k, name in enumerate(names_ordered, start=1):
+        t0 = time.time()
         tag = f"flat_{name}"
         sampled = [pools[name][cid] for cid in conv_ids]
         n_capped = sum(1 for x in sampled if jl.capped_of(x))
@@ -323,6 +327,12 @@ def step_flatness(
             execute=execute,
             design=design,
             capped_map=jl.capped_by_item(jl.LEG_AI_LIKENESS, tag, sampled),
+            threshold_base=threshold_base,
+        )
+        # Long-Batch-loop observability (r4 codex `p3-long-loop-progress-missing`).
+        print(
+            f"[p3_flatness] unit {k}/{len(names_ordered)} {tag} elapsed={time.time() - t0:.0f}s",
+            flush=True,
         )
 
 
@@ -333,9 +343,12 @@ def step_namemask(
     out_dir: Path,
     *,
     execute: bool,
+    threshold_base: int | None = jl.THRESHOLD_BASE_FORCE_BATCH,
 ) -> None:
     """Build + dispatch the name-mask leg for the 8 band-A/D characters."""
-    for r in extreme_rows(panel):
+    rows_sel = extreme_rows(panel)
+    for k, r in enumerate(rows_sel, start=1):
+        t0 = time.time()
         name, disp = r["name"], r["display_name"]
         items_path = Path(items_glob.format(name=name))
         if not items_path.is_file():
@@ -386,6 +399,12 @@ def step_namemask(
             execute=execute,
             design=design,
             capped_map=jl.capped_by_item(jl.LEG_AI_LIKENESS, tag, masked_rows),
+            threshold_base=threshold_base,
+        )
+        # Long-Batch-loop observability (r4 codex `p3-long-loop-progress-missing`).
+        print(
+            f"[p3_namemask] unit {k}/{len(rows_sel)} {tag} elapsed={time.time() - t0:.0f}s",
+            flush=True,
         )
 
 
@@ -569,6 +588,13 @@ def main() -> None:
         help="axis-family rule-26 pilot PASS report required for an --execute dispatch "
         "(default: eval_results/issue_2479/pilot_gate_axis.json)",
     )
+    ap.add_argument(
+        "--threshold-base",
+        type=int,
+        default=jl.THRESHOLD_BASE_FORCE_BATCH,
+        help="sync-vs-batch crossover passthrough to run_leg; 0 (default) FORCES the "
+        "production Batch path — a large value routes a tiny real smoke slice sync",
+    )
     ap.add_argument("--import-check", action="store_true")
     args = ap.parse_args()
 
@@ -595,9 +621,12 @@ def main() -> None:
         import issue2479_judge_pilots as jp
 
         require_pilot_pass = jp.require_pilot_pass
-        require_pilot_pass(
-            args.axis_pilot_report or (_REPO_ROOT / jp.PILOT_AXIS_REL), family="axis"
-        )
+        pilot_path = args.axis_pilot_report or (_REPO_ROOT / jp.PILOT_AXIS_REL)
+        require_pilot_pass(pilot_path, family="axis")
+        # Arm run_leg's own guard so every control leg re-checks the pilot at
+        # spend time AND records the licensing pilot's fingerprint in its
+        # report (r4 codex `p3-leg-resume-unvalidated` provenance binding).
+        os.environ[jp.REQUIRE_AXIS_PILOT_ENV] = str(pilot_path)
     panel = fz.load_panel(args.panel)
     assert args.legs_dir is not None, "--legs-dir is required"
     if args.step == "flatness":
@@ -605,7 +634,13 @@ def main() -> None:
         reservation = fz.load_reservation_ids(args.manifest)
         args.legs_dir.mkdir(parents=True, exist_ok=True)
         step_flatness(
-            panel, reservation, args.kept_glob, args.raw_glob, args.legs_dir, execute=args.execute
+            panel,
+            reservation,
+            args.kept_glob,
+            args.raw_glob,
+            args.legs_dir,
+            execute=args.execute,
+            threshold_base=args.threshold_base,
         )
     elif args.step == "namemask":
         assert args.items_glob and args.axis_raw_glob, (
@@ -613,7 +648,12 @@ def main() -> None:
         )
         args.legs_dir.mkdir(parents=True, exist_ok=True)
         step_namemask(
-            panel, args.items_glob, args.axis_raw_glob, args.legs_dir, execute=args.execute
+            panel,
+            args.items_glob,
+            args.axis_raw_glob,
+            args.legs_dir,
+            execute=args.execute,
+            threshold_base=args.threshold_base,
         )
     else:
         assert args.axis_raw_glob, "--step gates requires --axis-raw-glob"

@@ -89,6 +89,27 @@ MIN_EFFECTIVE_BY_FAMILY = {"axis": AXIS_MIN_EFFECTIVE, "ingen": INGEN_MIN_EFFECT
 # Opt-in env consumed by `jl.run_leg` (and exported by the P3 wrapper): a real
 # axis-leg spend refuses without a persisted axis-family pilot PASS at this path.
 REQUIRE_AXIS_PILOT_ENV = "EPM_I2479_REQUIRE_AXIS_PILOT_PASS"
+# Data-identity input resolution (r4 codex `judge-pilot-gates-missing`): the
+# SAME env names + defaults the P3 wrapper uses, so every spend path — the
+# wrapper's --require-pass gates, run_leg's env guard, and the control legs'
+# pilot reuse — recomputes the expected identity against the same files.
+PANEL_ENV = "EPM_I2479_CHAR_PANEL_JSON"
+MANIFEST_ENV = "EPM_I2479_PANEL_MANIFEST"
+ITEMS_DIR_ENV = "EPM_I2479_AXIS_ITEMS_DIR"
+DEFAULT_ITEMS_DIR_REL = "data/issue_2479/axis_items"
+
+
+def _resolve_input(env: str, default_rel: str) -> Path:
+    """Env-overridable input path; relative values resolve against the repo root."""
+    raw = os.environ.get(env, "").strip()
+    p = Path(raw) if raw else Path(default_rel)
+    return p if p.is_absolute() else (_REPO_ROOT / p)
+
+
+def _sha256_file(path: Path) -> str:
+    """Hex sha256 of a data-identity input file (fail-loud on a missing file)."""
+    assert path.is_file(), f"pilot data-identity input missing: {path}"
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def axis_instrument_fingerprint() -> dict:
@@ -140,6 +161,73 @@ def expected_instrument(family: str) -> dict:
     return axis_instrument_fingerprint() if family == "axis" else ingen_instrument_fingerprint()
 
 
+def axis_data_identity(
+    *,
+    panel_path: Path | None = None,
+    manifest_path: Path | None = None,
+    items_glob: str | None = None,
+) -> dict:
+    """The CURRENT axis-family DATA identity (r4 codex `judge-pilot-gates-missing`).
+
+    A rule-26 pilot PASS certifies the instrument ON the materialization it
+    sampled, so a PASS from an earlier materialization — older panel /
+    panel_manifest / emitted item pool — must not license today's spend even
+    when every instrument field matches. Hashes the panel + manifest BYTES and
+    the pooled emitted item CONTENT (the same `build_axis_arm` pool the pilot
+    judges, content-fingerprinted through the same helper `run_leg` records).
+    """
+    import issue2479_freeze_axis as fz
+
+    panel_p = Path(panel_path) if panel_path else _resolve_input(PANEL_ENV, fz.PANEL_REL)
+    manifest_p = (
+        Path(manifest_path) if manifest_path else _resolve_input(MANIFEST_ENV, fz.MANIFEST_REL)
+    )
+    glob = items_glob or str(
+        _resolve_input(ITEMS_DIR_ENV, DEFAULT_ITEMS_DIR_REL) / "axis_items_{name}.jsonl"
+    )
+    panel = fz.load_panel(panel_p)
+    items, present = build_axis_arm(panel, glob)
+    return {
+        "panel_sha256": _sha256_file(panel_p),
+        "panel_manifest_sha256": _sha256_file(manifest_p),
+        "items_content_sha256": jl.items_content_fingerprint(items),
+        "n_pooled_items": len(items),
+        "characters_pooled": sorted(present),
+    }
+
+
+def ingen_data_identity(
+    *, panel_path: Path | None = None, manifest_path: Path | None = None
+) -> dict:
+    """The CURRENT in-gen family DATA identity (name-INDEPENDENT).
+
+    The ingen pilot certifies the judge instrument on the story distribution
+    the CURRENT generation recipe produces over the CURRENT panel, so the
+    identity binds the panel + panel_manifest bytes plus the generation
+    module's SOURCE bytes (the name-independent generation-config identity —
+    the rendered story/judge templates embed the cell's character name at
+    import and therefore stay per-partial, like the rendered-prompt shas).
+    """
+    import issue1345_gen_stories_paired as gp
+    import issue2479_freeze_axis as fz
+
+    panel_p = Path(panel_path) if panel_path else _resolve_input(PANEL_ENV, fz.PANEL_REL)
+    manifest_p = (
+        Path(manifest_path) if manifest_path else _resolve_input(MANIFEST_ENV, fz.MANIFEST_REL)
+    )
+    return {
+        "panel_sha256": _sha256_file(panel_p),
+        "panel_manifest_sha256": _sha256_file(manifest_p),
+        "gen_module_sha256": _sha256_file(Path(gp.__file__)),
+    }
+
+
+def expected_data_identity(family: str) -> dict:
+    """The current-materialization data identity for a pilot family."""
+    assert family in FAMILIES, f"unknown pilot family {family!r}"
+    return axis_data_identity() if family == "axis" else ingen_data_identity()
+
+
 def _effective_draws(rep: dict, family: str) -> int:
     """Answered (non-transport-lost) draws of the family arm.
 
@@ -169,21 +257,28 @@ def require_pilot_pass(
     family: str | None = None,
     *,
     expected: dict | None = None,
+    expected_data: dict | None = None,
     min_effective_draws: int | None = None,
 ) -> dict:
     """Load a persisted pilot report; RAISE unless it is a PASS bound to the
-    CURRENT production instrument (returns it).
+    CURRENT production instrument AND the CURRENT data materialization
+    (returns it).
 
-    A rule-26 pilot PASS certifies ONLY the instrument it ran (llm-judging.md
-    rule 26), so when ``family`` is given this ALSO refuses (r2 codex
-    `judge-pilot-gates-missing` / g6): a report with NO persisted
-    ``instrument`` block; any field of the persisted instrument differing
-    from the current-production fingerprint (``expected`` override for
-    tests); and an effective-draw count below the family floor
-    (``MIN_EFFECTIVE_BY_FAMILY`` — the rule-26 satisfiability floor). Every
-    production spend path routes here: the P3 wrapper's `--require-pass`
-    gate, `jl.run_leg`'s env-armed axis guard, the P1 preamble's ingen gate,
-    and `issue2479_instrument_gates.py`'s flatness/name-mask pilot reuse.
+    A rule-26 pilot PASS certifies ONLY the instrument it ran, ON the data it
+    sampled (llm-judging.md rule 26), so when ``family`` is given this ALSO
+    refuses (r2 codex `judge-pilot-gates-missing` / g6; r4 data-identity
+    extension): a report with NO persisted ``instrument`` block; any field of
+    the persisted instrument differing from the current-production
+    fingerprint (``expected`` override for tests); a report with NO persisted
+    ``data_identity`` block; any field of the persisted data identity
+    differing from the current materialization — panel / panel_manifest bytes
+    + the pooled item content (axis) or the generation-module source (ingen)
+    (``expected_data`` override for tests); and an effective-draw count below
+    the family floor (``MIN_EFFECTIVE_BY_FAMILY`` — the rule-26
+    satisfiability floor). Every production spend path routes here: the P3
+    wrapper's `--require-pass` gate, `jl.run_leg`'s env-armed axis guard, the
+    P1 preamble's ingen gate, and `issue2479_instrument_gates.py`'s
+    flatness/name-mask pilot reuse.
     """
     report_path = Path(report_path)
     if not report_path.is_file():
@@ -221,6 +316,27 @@ def require_pilot_pass(
                 f"{report_path}: persisted pilot instrument does not match the CURRENT "
                 f"production instrument — stale PASS refused; re-pilot (--family {family} "
                 f"--execute). Mismatched fields: {mismatches}"
+            )
+        data_exp = expected_data if expected_data is not None else expected_data_identity(family)
+        data = rep.get("data_identity")
+        if not isinstance(data, dict):
+            raise RuntimeError(
+                f"{report_path}: pilot report persists NO data_identity block — a PASS "
+                "unbound to the current panel/manifest/item materialization certifies "
+                f"nothing (r4 judge-pilot-gates-missing); re-pilot (--family {family} "
+                "--execute)"
+            )
+        data_mismatches = sorted(
+            f"{k}: report={data.get(k)!r} != expected={data_exp[k]!r}"
+            for k in data_exp
+            if k not in data or data[k] != data_exp[k]
+        )
+        if data_mismatches:
+            raise RuntimeError(
+                f"{report_path}: persisted pilot DATA identity does not match the CURRENT "
+                f"materialization — stale PASS refused (a pilot from an earlier panel / "
+                f"manifest / item pool cannot license today's spend); re-pilot "
+                f"(--family {family} --execute). Mismatched fields: {data_mismatches}"
             )
         floor = (
             min_effective_draws
@@ -272,12 +388,18 @@ def build_axis_arm(panel: list[dict], items_glob: str) -> tuple[list[tuple[str, 
 
 
 def run_axis_pilot(
-    panel: list[dict], items_glob: str, report_path: Path, work_dir: Path, *, execute: bool
+    panel_path: Path, items_glob: str, report_path: Path, work_dir: Path, *, execute: bool
 ) -> dict:
     """Dispatch the axis-family pilot through eval.judge_pilot.judge_pilot_gate."""
+    import issue2479_freeze_axis as fz
+
     from explore_persona_space.eval.judge_pilot import judge_pilot_gate
 
     _spend_or_die(execute)
+    panel = fz.load_panel(panel_path)
+    # Computed BEFORE dispatch from the same files the arm pools, through the
+    # same code path `require_pilot_pass` recomputes at every spend seam.
+    data_identity = axis_data_identity(panel_path=panel_path, items_glob=items_glob)
     items, present = build_axis_arm(panel, items_glob)
     work_dir.mkdir(parents=True, exist_ok=True)
     rep = judge_pilot_gate(
@@ -302,6 +424,7 @@ def run_axis_pilot(
         "family": "axis",
         **rep.to_json(),
         "instrument": axis_instrument_fingerprint(),
+        "data_identity": data_identity,
         "characters_pooled": present,
         "n_pooled_items": len(items),
         "metadata": _metadata("scripts/issue2479_judge_pilots.py"),
@@ -421,6 +544,9 @@ def run_ingen_partial(
             ).hexdigest(),
             "judge_system_op_sha256": hashlib.sha256(gp.JUDGE_SYSTEM_OP.encode()).hexdigest(),
         },
+        # Name-INDEPENDENT by construction (panel/manifest/gen-source bytes),
+        # so the merge can require it identical across per-cell partials.
+        "data_identity": ingen_data_identity(),
         "outcomes": outcome_rows,
         "metadata": _metadata("scripts/issue2479_judge_pilots.py"),
     }
@@ -449,6 +575,7 @@ def merge_ingen_partials(
     outcomes: list[dict] = []
     characters: list[str] = []
     instruments: set[str] = set()
+    identities: set[str] = set()
     for p in partial_paths:
         part = json.loads(Path(p).read_text())
         assert part.get("family") == "ingen" and part.get("kind") == "partial", str(p)
@@ -458,9 +585,16 @@ def merge_ingen_partials(
         # per cell in the embedded name; builder/parser SOURCE shas do not).
         inst = {k: v for k, v in part["instrument"].items() if k not in _NAME_DEPENDENT}
         instruments.add(json.dumps(inst, sort_keys=True))
+        identities.add(json.dumps(part.get("data_identity"), sort_keys=True))
         outcomes.extend(part["outcomes"])
     assert len(instruments) == 1, f"partials pilot DIFFERENT instruments: {sorted(instruments)}"
     merged_instrument = json.loads(next(iter(instruments)))
+    assert len(identities) == 1, f"partials pilot DIFFERENT data identities: {sorted(identities)}"
+    merged_identity = json.loads(next(iter(identities)))
+    assert isinstance(merged_identity, dict), (
+        "ingen partials carry no data_identity block — regenerate the partials on current "
+        "code (r4 judge-pilot-gates-missing)"
+    )
 
     def _is_transport(o: dict) -> bool:
         return bool(o["error"]) and o["category"] in (
@@ -515,10 +649,12 @@ def merge_ingen_partials(
         },
         "parse_fail_threshold": PARSE_FAIL_MAX,
         "min_effective_draws": min_effective,
-        # The merged family report PERSISTS the name-independent instrument the
-        # partials proved identical, so `require_pilot_pass` can bind the PASS
-        # to the exact production instrument (r2 codex judge-pilot-gates).
+        # The merged family report PERSISTS the name-independent instrument +
+        # data identity the partials proved identical, so `require_pilot_pass`
+        # can bind the PASS to the exact production instrument AND the exact
+        # materialization (r2 codex judge-pilot-gates; r4 data extension).
         "instrument": merged_instrument,
+        "data_identity": merged_identity,
         "characters_pooled": characters,
         "partials": [str(p) for p in partial_paths],
         "metadata": _metadata("scripts/issue2479_judge_pilots.py"),
@@ -582,17 +718,22 @@ def main() -> None:
     report = args.report or (_REPO_ROOT / default_rel)
 
     if args.require_pass:
-        require_pilot_pass(report, family=args.family)
+        expected_data = None
+        if args.family == "axis" and args.items_glob:
+            # The wrapper passes its OWN items glob so the gate recomputes the
+            # expected identity against exactly the files it will dispatch on.
+            expected_data = axis_data_identity(panel_path=args.panel, items_glob=args.items_glob)
+        require_pilot_pass(report, family=args.family, expected_data=expected_data)
         print(f"[pilot] require-pass OK: family={args.family} report={report}", flush=True)
         return
 
     if args.family == "axis":
         import issue2479_freeze_axis as fz
 
-        panel = fz.load_panel(args.panel or (_REPO_ROOT / fz.PANEL_REL))
+        panel_path = args.panel or (_REPO_ROOT / fz.PANEL_REL)
         assert args.items_glob, "--family axis requires --items-glob"
         work_dir = args.work_dir or (_REPO_ROOT / "data/issue_2479/pilot_axis")
-        run_axis_pilot(panel, args.items_glob, report, work_dir, execute=args.execute)
+        run_axis_pilot(panel_path, args.items_glob, report, work_dir, execute=args.execute)
         return
 
     # ingen: either a per-cell partial (under the cell env) or the merge.

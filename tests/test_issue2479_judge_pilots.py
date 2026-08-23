@@ -4,11 +4,13 @@ Pins (hermetic — tmp_path fixtures, zero network / API calls):
 
 (a) `require_pilot_pass` semantics: missing report, FAIL report, family
     mismatch all RAISE; a PASS report bound to the CURRENT production
-    instrument returns; a PASS with NO persisted instrument block, ANY stale
-    instrument field (model / draws / temperature / max_tokens /
-    threshold_base / route / rubric / builder / parser sha), or an
-    effective-draw count under the family floor RAISES (r3 — r2 codex
-    `judge-pilot-gates-missing` + g6);
+    instrument AND the CURRENT data materialization returns; a PASS with NO
+    persisted instrument block, ANY stale instrument field (model / draws /
+    temperature / max_tokens / threshold_base / route / rubric / builder /
+    parser sha), NO persisted data_identity block, ANY stale data-identity
+    field (panel / manifest bytes, pooled item content), or an
+    effective-draw count under the family floor RAISES (r3 + r4 — r2/r4
+    codex `judge-pilot-gates-missing` + g6);
 (b) codex `judge-pilot-gates-missing` mechanization: a FAILED (or missing)
     pilot report BLOCKS a real `jl.run_leg` spend via the opt-in
     EPM_I2479_REQUIRE_AXIS_PILOT_PASS env — the guard fires BEFORE any API
@@ -49,12 +51,56 @@ def _report(family: str, verdict: str, failures: list[str] | None = None) -> dic
     }
 
 
-def _full_axis_report(*, n_draws: int = 150, lost: int = 0) -> dict:
-    """A PASS report bound to the CURRENT axis production instrument."""
+def _full_axis_report(
+    *, n_draws: int = 150, lost: int = 0, data_identity: dict | None = None
+) -> dict:
+    """A PASS report bound to the CURRENT axis production instrument.
+
+    ``data_identity`` is caller-supplied (r4): computing it requires the
+    scratch-env materialization, and the instrument-stage refusal tests raise
+    BEFORE the data stage, so they legitimately omit the block.
+    """
     rep = _report("axis", "PASS")
     rep["instrument"] = dict(jp.axis_instrument_fingerprint())
+    if data_identity is not None:
+        rep["data_identity"] = data_identity
     rep["arms"] = {"axis": {"n_draws": n_draws, "n_transport_lost": lost}}
     return rep
+
+
+def _scratch_env(tmp_path: Path, monkeypatch, name: str = "iris") -> Path:
+    """Scratch panel + manifest + items dir exported through the SAME env vars
+    every production spend path resolves data identity from (r4).
+
+    Returns the item file path (synthetic benign fixture rows — never
+    LMSYS-derived text)."""
+    panel = [
+        {
+            "name": name,
+            "variant_op": f"char_2479_{name}_op",
+            "variant_inserted": None,
+            "design_band": "A",
+            "display_name": name.capitalize(),
+        }
+    ]
+    (tmp_path / "panel.json").write_text(json.dumps(panel))
+    (tmp_path / "panel_manifest.json").write_text(
+        json.dumps({"axis_reservation_conv_ids": ["c1", "c2"], "n_reservation": 2})
+    )
+    items_dir = tmp_path / "axis_items"
+    items_dir.mkdir(exist_ok=True)
+    items_p = items_dir / f"axis_items_{name}.jsonl"
+    items_p.write_text(
+        "\n".join(
+            json.dumps({"conv_id": c, "question": f"q {c}", "answer": f"a benign answer {c}"})
+            for c in ("c1", "c2")
+        )
+        + "\n"
+    )
+    monkeypatch.setenv(jp.PANEL_ENV, str(tmp_path / "panel.json"))
+    monkeypatch.setenv(jp.MANIFEST_ENV, str(tmp_path / "panel_manifest.json"))
+    monkeypatch.setenv(jp.ITEMS_DIR_ENV, str(items_dir))
+    return items_p
 
 
 # ---------------------------------------------------------------------------
@@ -87,11 +133,76 @@ def test_require_pass_pass_without_instrument_raises(tmp_path: Path) -> None:
         jp.require_pilot_pass(p, family="axis")
 
 
-def test_require_pass_instrument_bound_pass_returns(tmp_path: Path) -> None:
+def test_require_pass_instrument_and_data_bound_pass_returns(tmp_path: Path, monkeypatch) -> None:
+    _scratch_env(tmp_path, monkeypatch)
     p = tmp_path / "r.json"
-    p.write_text(json.dumps(_full_axis_report()))
+    p.write_text(json.dumps(_full_axis_report(data_identity=jp.axis_data_identity())))
     rep = jp.require_pilot_pass(p, family="axis")
     assert rep["verdict"] == "PASS"
+
+
+def test_require_pass_pass_without_data_identity_raises(tmp_path: Path, monkeypatch) -> None:
+    """r4: a PASS unbound to the panel/manifest/item materialization certifies
+    nothing — the data-identity sibling of the NO-instrument-block refusal."""
+    _scratch_env(tmp_path, monkeypatch)
+    p = tmp_path / "r.json"
+    p.write_text(json.dumps(_full_axis_report()))  # instrument OK, no data block
+    with pytest.raises(RuntimeError, match="NO data_identity block"):
+        jp.require_pilot_pass(p, family="axis")
+
+
+@pytest.mark.parametrize(
+    "field",
+    [
+        "panel_sha256",
+        "panel_manifest_sha256",
+        "items_content_sha256",
+        "n_pooled_items",
+        "characters_pooled",
+    ],
+)
+def test_require_pass_refuses_each_stale_data_field(
+    tmp_path: Path, monkeypatch, field: str
+) -> None:
+    """r4 codex mechanization: every persisted data-identity field is binding —
+    a stale value refuses the spend even with EVERY instrument field current."""
+    _scratch_env(tmp_path, monkeypatch)
+    rep = _full_axis_report(data_identity=jp.axis_data_identity())
+    old = rep["data_identity"][field]
+    rep["data_identity"][field] = "STALE-VALUE" if isinstance(old, str) else -999
+    p = tmp_path / "r.json"
+    p.write_text(json.dumps(rep))
+    with pytest.raises(RuntimeError, match="DATA identity"):
+        jp.require_pilot_pass(p, family="axis")
+
+
+def test_require_pass_refuses_changed_manifest_bytes(tmp_path: Path, monkeypatch) -> None:
+    """r4 codex mechanization: mutate ONLY the manifest content while holding
+    every instrument field constant — the retained PASS is refused."""
+    _scratch_env(tmp_path, monkeypatch)
+    p = tmp_path / "r.json"
+    p.write_text(json.dumps(_full_axis_report(data_identity=jp.axis_data_identity())))
+    (tmp_path / "panel_manifest.json").write_text(
+        json.dumps({"axis_reservation_conv_ids": ["c1", "c2", "c3"], "n_reservation": 3})
+    )
+    with pytest.raises(RuntimeError, match="DATA identity"):
+        jp.require_pilot_pass(p, family="axis")
+
+
+def test_require_pass_refuses_changed_item_content(tmp_path: Path, monkeypatch) -> None:
+    """Same-ID item re-generation (changed answer text) invalidates the PASS."""
+    items_p = _scratch_env(tmp_path, monkeypatch)
+    p = tmp_path / "r.json"
+    p.write_text(json.dumps(_full_axis_report(data_identity=jp.axis_data_identity())))
+    items_p.write_text(
+        "\n".join(
+            json.dumps({"conv_id": c, "question": f"q {c}", "answer": f"REGENERATED {c}"})
+            for c in ("c1", "c2")
+        )
+        + "\n"
+    )
+    with pytest.raises(RuntimeError, match="DATA identity"):
+        jp.require_pilot_pass(p, family="axis")
 
 
 @pytest.mark.parametrize("field", sorted(jp.axis_instrument_fingerprint()))
@@ -116,21 +227,25 @@ def test_require_pass_refuses_missing_instrument_field(tmp_path: Path) -> None:
         jp.require_pilot_pass(p, family="axis")
 
 
-def test_require_pass_effective_draws_floor(tmp_path: Path) -> None:
+def test_require_pass_effective_draws_floor(tmp_path: Path, monkeypatch) -> None:
+    _scratch_env(tmp_path, monkeypatch)
+    identity = jp.axis_data_identity()
     # 60 - 20 = 40 answered < the 51-draw rule-26 satisfiability floor
     p = tmp_path / "under.json"
-    p.write_text(json.dumps(_full_axis_report(n_draws=60, lost=20)))
+    p.write_text(json.dumps(_full_axis_report(n_draws=60, lost=20, data_identity=identity)))
     with pytest.raises(RuntimeError, match="effective draws"):
         jp.require_pilot_pass(p, family="axis")
     # exactly at the floor passes
     p2 = tmp_path / "at.json"
-    p2.write_text(json.dumps(_full_axis_report(n_draws=60, lost=9)))
+    p2.write_text(json.dumps(_full_axis_report(n_draws=60, lost=9, data_identity=identity)))
     assert jp.require_pilot_pass(p2, family="axis")["verdict"] == "PASS"
 
 
-def test_require_pass_ingen_merged_instrument_and_floor(tmp_path: Path) -> None:
+def test_require_pass_ingen_merged_instrument_and_floor(tmp_path: Path, monkeypatch) -> None:
+    _scratch_env(tmp_path, monkeypatch)
     rep = _report("ingen", "PASS")
     rep["instrument"] = dict(jp.ingen_instrument_fingerprint())
+    rep["data_identity"] = jp.ingen_data_identity()
     rep["arms"] = {"ingen": {"effective_draws": 120, "n_transport_lost": 0}}
     p = tmp_path / "r.json"
     p.write_text(json.dumps(rep))
@@ -199,6 +314,32 @@ def test_stale_instrument_pass_blocks_run_leg_spend(
     assert not out_dir.exists()
 
 
+def test_stale_data_pass_blocks_run_leg_spend(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """r4: a PASS whose instrument is fully CURRENT but whose materialization
+    drifted (item content changed under the same conv_ids) blocks the spend
+    at run_leg's env guard — the exact channel the r3 fingerprint missed."""
+    items_p = _scratch_env(tmp_path, monkeypatch)
+    pilot = tmp_path / "pilot_gate_axis.json"
+    pilot.write_text(json.dumps(_full_axis_report(data_identity=jp.axis_data_identity())))
+    items_p.write_text(
+        json.dumps({"conv_id": "c1", "question": "q c1", "answer": "REGENERATED c1"}) + "\n"
+    )
+    monkeypatch.setenv(jl.SPEND_ACK_ENV, "1")
+    monkeypatch.setenv(jp.REQUIRE_AXIS_PILOT_ENV, str(pilot))
+    out_dir = tmp_path / "legs"
+    with pytest.raises(RuntimeError, match="DATA identity"):
+        jl.run_leg(
+            jl.LEG_AI_LIKENESS,
+            [("ail_t_c1", "What?", "an answer long enough")],
+            out_dir,
+            "t",
+            execute=True,
+        )
+    assert not out_dir.exists()
+
+
 def test_instrument_gates_execute_refuses_stale_pilot(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -228,6 +369,39 @@ def test_instrument_gates_execute_refuses_stale_pilot(
         ],
     )
     with pytest.raises(RuntimeError, match="stale PASS refused"):
+        ig.main()
+
+
+def test_instrument_gates_execute_refuses_stale_data_identity(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The controls-reuse spend path refuses a current-instrument PASS whose
+    materialization drifted (r4: manifest bytes changed after the pilot)."""
+    import issue2479_instrument_gates as ig
+
+    _scratch_env(tmp_path, monkeypatch)
+    pilot = tmp_path / "pilot.json"
+    pilot.write_text(json.dumps(_full_axis_report(data_identity=jp.axis_data_identity())))
+    (tmp_path / "panel_manifest.json").write_text(
+        json.dumps({"axis_reservation_conv_ids": ["c9"], "n_reservation": 1})
+    )
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "issue2479_instrument_gates.py",
+            "--step",
+            "flatness",
+            "--execute",
+            "--axis-pilot-report",
+            str(pilot),
+            "--legs-dir",
+            str(tmp_path / "legs"),
+            "--kept-glob",
+            str(tmp_path / "kept_{variant}.jsonl"),
+        ],
+    )
+    with pytest.raises(RuntimeError, match="DATA identity"):
         ig.main()
 
 
@@ -269,12 +443,20 @@ def test_pass_pilot_does_not_block_dry_run(tmp_path: Path, monkeypatch: pytest.M
 # ---------------------------------------------------------------------------
 # (c) in-gen family merge gate arithmetic
 # ---------------------------------------------------------------------------
+_PARTIAL_IDENTITY = {
+    "panel_sha256": "p" * 64,
+    "panel_manifest_sha256": "m" * 64,
+    "gen_module_sha256": "g" * 64,
+}
+
+
 def _partial(
     tmp_path: Path,
     name: str,
     outcomes: list[dict],
     *,
     max_tokens: int = 1024,
+    data_identity: dict | None = _PARTIAL_IDENTITY,
 ) -> Path:
     p = tmp_path / f"partial_{name}.json"
     p.write_text(
@@ -288,6 +470,7 @@ def _partial(
                     "max_tokens": max_tokens,
                     "temperature": 0.0,
                 },
+                "data_identity": data_identity,
                 "outcomes": outcomes,
             }
         )
@@ -373,6 +556,35 @@ def test_merge_mixed_instruments_refused(tmp_path: Path) -> None:
         jp.merge_ingen_partials(parts, tmp_path / "rep.json", min_effective=2)
 
 
+def test_merge_mixed_data_identities_refused(tmp_path: Path) -> None:
+    """r4: partials piloted over DIFFERENT materializations never merge."""
+    parts = [
+        _partial(tmp_path, "iris", _ok(2, "a")),
+        _partial(
+            tmp_path,
+            "vex",
+            _ok(2, "b"),
+            data_identity={**_PARTIAL_IDENTITY, "panel_sha256": "x" * 64},
+        ),
+    ]
+    with pytest.raises(AssertionError, match="DIFFERENT data identities"):
+        jp.merge_ingen_partials(parts, tmp_path / "rep.json", min_effective=2)
+
+
+def test_merge_partials_without_data_identity_refused(tmp_path: Path) -> None:
+    """r4: pre-r4 partials (no data_identity block) must be regenerated."""
+    parts = [_partial(tmp_path, "iris", _ok(2, "a"), data_identity=None)]
+    with pytest.raises(AssertionError, match="no data_identity block"):
+        jp.merge_ingen_partials(parts, tmp_path / "rep.json", min_effective=2)
+
+
+def test_merge_persists_data_identity(tmp_path: Path) -> None:
+    rep = jp.merge_ingen_partials(
+        [_partial(tmp_path, "iris", _ok(3, "a"))], tmp_path / "rep.json", min_effective=2
+    )
+    assert rep["data_identity"] == _PARTIAL_IDENTITY
+
+
 # ---------------------------------------------------------------------------
 # (d) run_ingen_partial production body (fake ONLY at the API boundary)
 # ---------------------------------------------------------------------------
@@ -383,6 +595,7 @@ def test_run_ingen_partial_body_real_builder_and_parser(
 
     from explore_persona_space.llm import api_dispatch as ad
 
+    _scratch_env(tmp_path, monkeypatch)  # hermetic ingen data-identity inputs (r4)
     monkeypatch.setenv(jl.SPEND_ACK_ENV, "1")
     raw = tmp_path / "raw_stories_paired_instruct.jsonl"
     rows = [
@@ -439,6 +652,8 @@ def test_run_ingen_partial_body_real_builder_and_parser(
     assert all(not o["error"] for o in payload["outcomes"])
     assert all(o["stop_reason"] == "end_turn" for o in payload["outcomes"])
     assert "judge_system_paired_sha256" in payload["instrument"]
+    # r4: the partial binds the materialization it piloted over.
+    assert payload["data_identity"] == jp.ingen_data_identity()
     # Content hygiene: the partial carries OUTCOMES only, never story text.
     assert "story" not in json.dumps(payload)
 

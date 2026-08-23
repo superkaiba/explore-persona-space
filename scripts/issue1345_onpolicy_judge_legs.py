@@ -372,6 +372,19 @@ def capped_by_item(leg: str, tag: str, rows: list[dict]) -> dict[str, bool]:
     return {item_id(leg, tag, str(r["conv_id"])): capped_of(r) for r in rows}
 
 
+def items_content_fingerprint(items: list[tuple[str, str, str]]) -> str:
+    """Order-independent sha256 over the dispatched (item_id, question, answer) triples.
+
+    Sorted by the full triple so any caller — or a resume validator recomputing
+    from a freshly emitted row file — hashes the same content regardless of
+    draw order. Recorded in every leg report as `items_content_sha256` (#2479
+    r4 `p3-leg-resume-unvalidated`: binds a retained report to the judged
+    CONTENT, not just its conv_id set).
+    """
+    canon = json.dumps(sorted(items), ensure_ascii=False, separators=(",", ":"))
+    return hashlib.sha256(canon.encode()).hexdigest()
+
+
 def _mean_block(values: list[float]) -> dict:
     """n + mean over a list of per-item scores (mean None on an empty list)."""
     return {
@@ -527,10 +540,22 @@ def run_leg(
     # unless the persisted axis-family pilot report is a PASS (plan §7 —
     # every >=5k-call wave family is pilot-gated before production dispatch).
     _pilot_gate = os.environ.get("EPM_I2479_REQUIRE_AXIS_PILOT_PASS", "")
+    licensing_pilot: dict | None = None
     if allowed and _pilot_gate:
         from issue2479_judge_pilots import require_pilot_pass
 
-        require_pilot_pass(Path(_pilot_gate), family="axis")
+        _pilot_rep = require_pilot_pass(Path(_pilot_gate), family="axis")
+        # Record WHICH pilot licensed this spend (#2479 r4
+        # `p3-leg-resume-unvalidated`): the resume validator proves a retained
+        # report was licensed by a pilot whose instrument + data identity
+        # match the CURRENT pilot, instead of trusting refresh ordering.
+        licensing_pilot = {
+            "report_path": _pilot_gate,
+            "family": "axis",
+            "instrument": _pilot_rep.get("instrument"),
+            "data_identity": _pilot_rep.get("data_identity"),
+            "created_utc": (_pilot_rep.get("metadata") or {}).get("created_utc"),
+        }
     out_dir.mkdir(parents=True, exist_ok=True)
     save_raw = out_dir / f"judge_raw_{LEG_SLUG[leg]}_{tag}.json"
     cache_dir = out_dir / "judge_cache" / f"{LEG_SLUG[leg]}_{tag}"
@@ -578,6 +603,11 @@ def run_leg(
         "threshold_base": threshold_base,
         "n_items": len(items),
         "rubric_sha256": hashlib.sha256(RUBRIC[leg].encode()).hexdigest(),
+        # Full input identity (#2479 r4): the judged CONTENT + the licensing
+        # pilot's fingerprint, so a resume can bind a retained report to the
+        # CURRENT inputs rather than to conv_ids alone.
+        "items_content_sha256": items_content_fingerprint(items),
+        "licensing_pilot": licensing_pilot,
         # Rule 24: content drops and transport losses are NEVER blended. The
         # three-way split is (content, of which REFUSAL is a subset) + transport.
         "n_dropped_draws_content": getattr(result, "n_dropped_draws", None),

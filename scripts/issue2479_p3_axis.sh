@@ -200,7 +200,8 @@ all_control_legs_valid() {
     rc=0
     uv run python scripts/issue2479_p3_leg_resume.py \
       --report "${LEGS_DIR}/judge_report_ail_${prefix}_${name}.json" \
-      --tag "${prefix}_${name}" --pilot-report "$PILOT_REPORT" || rc=$?
+      --tag "${prefix}_${name}" --expect-design "$prefix" \
+      --pilot-report "$PILOT_REPORT" || rc=$?
     if [ "$rc" = "3" ]; then return 1; fi
     if [ "$rc" != "0" ]; then
       echo "[i2479-p3] ${prefix}_${name}: leg-resume validator failed rc=${rc}" >&2
@@ -216,12 +217,12 @@ if [ "$DRY_RUN" = "1" ]; then
   echo "[dry-run] p3_stage: for each op cell: uv run python scripts/issue1345_stage_char_stories.py --variant <cell>   # panel cells resolve the recorded per-cell upload revision; parent cells keep STORIES_PIN"
   echo "[dry-run] p3_stage_inserted: for each inserted cell: uv run python scripts/issue1345_stage_char_stories.py --variant <inserted-cell>"
   echo "[dry-run] p3_items: uv run python scripts/issue2479_freeze_axis.py --emit-items --kept-glob '${KEPT_GLOB}' --items-out-dir ${ITEMS_DIR} --stats-out-dir ${STATS_DIR}"
-  echo "[dry-run] p3_pilot: uv run python scripts/issue2479_judge_pilots.py --family axis --items-glob '${ITEMS_DIR}/axis_items_{name}.jsonl' --report ${PILOT_REPORT} --work-dir ${PILOT_WORK} --execute   # skipped only on an instrument-bound PASS"
-  echo "[dry-run] p3_gate:  uv run python scripts/issue2479_judge_pilots.py --require-pass --family axis --report ${PILOT_REPORT}   # rc=48 on miss/FAIL/stale"
-  echo "[dry-run] p3_legs:  per character: issue2479_p3_leg_resume.py --report ${LEGS_DIR}/judge_report_ail_<name>.json --tag <name> --items ${ITEMS_DIR}/axis_items_<name>.jsonl --pilot-report ${PILOT_REPORT}; on rc=3: EPM_I2479_REQUIRE_AXIS_PILOT_PASS=${PILOT_REPORT} uv run python scripts/issue1345_onpolicy_judge_legs.py --leg ai_likeness --rows ${ITEMS_DIR}/axis_items_<name>.jsonl --character <name> --census --out-dir ${LEGS_DIR} --execute"
+  echo "[dry-run] p3_pilot: uv run python scripts/issue2479_judge_pilots.py --family axis --items-glob '${ITEMS_DIR}/axis_items_{name}.jsonl' --report ${PILOT_REPORT} --work-dir ${PILOT_WORK} --execute   # skipped only on an instrument+data-bound PASS"
+  echo "[dry-run] p3_gate:  uv run python scripts/issue2479_judge_pilots.py --require-pass --family axis --items-glob '${ITEMS_DIR}/axis_items_{name}.jsonl' --report ${PILOT_REPORT}   # rc=48 on miss/FAIL/stale instrument OR stale data identity"
+  echo "[dry-run] p3_legs:  per character: issue2479_p3_leg_resume.py --report ${LEGS_DIR}/judge_report_ail_<name>.json --tag <name> --items ${ITEMS_DIR}/axis_items_<name>.jsonl --expect-design axis-census --pilot-report ${PILOT_REPORT}; on rc=3: EPM_I2479_REQUIRE_AXIS_PILOT_PASS=${PILOT_REPORT} uv run python scripts/issue1345_onpolicy_judge_legs.py --leg ai_likeness --rows ${ITEMS_DIR}/axis_items_<name>.jsonl --character <name> --census --out-dir ${LEGS_DIR} --execute; per-unit '[p3_legs] unit k/N <name> elapsed=<s>s' lines in both branches"
   echo "[dry-run] p3_upload: upload_folder ${LEGS_DIR} -> issue2479_ai_likeness_gradient/judge_legs + scoped raising verify"
   echo "[dry-run] p3_freeze: uv run python scripts/issue2479_freeze_axis.py --legs-dir ${LEGS_DIR} --stats-dir ${STATS_DIR} --commit   # commits axis_freeze.json + axis_draws.json + axis_items_*.stats.json"
-  echo "[dry-run] p3_flatness: uv run python scripts/issue2479_instrument_gates.py --step flatness --kept-glob '${INSERTED_KEPT_GLOB}' --legs-dir ${LEGS_DIR} --axis-pilot-report ${PILOT_REPORT} --execute   # 8x100x5 draws; skipped when every flat_<name> leg passes the validated resume predicate"
+  echo "[dry-run] p3_flatness: uv run python scripts/issue2479_instrument_gates.py --step flatness --kept-glob '${INSERTED_KEPT_GLOB}' --legs-dir ${LEGS_DIR} --axis-pilot-report ${PILOT_REPORT} --execute   # 8x100x5 draws; skipped when every flat_<name> leg passes the validated resume predicate (--expect-design flat)"
   echo "[dry-run] p3_namemask: uv run python scripts/issue2479_instrument_gates.py --step namemask --items-glob '${ITEMS_DIR}/axis_items_{name}.jsonl' --axis-raw-glob '${LEGS_DIR}/judge_raw_ail_{name}.json' --legs-dir ${LEGS_DIR} --axis-pilot-report ${PILOT_REPORT} --execute   # 8x40x5 draws; same validated-resume skip"
   echo "[dry-run] p3_gates: uv run python scripts/issue2479_instrument_gates.py --step gates --axis-raw-glob '${LEGS_DIR}/judge_raw_ail_{name}.json' --legs-dir ${LEGS_DIR} --out ${GATES_OUT}; then explicit-path git commit of ${GATES_OUT} + bare rc-checked push"
   echo "[dry-run] p3_upload_controls: re-run upload_folder ${LEGS_DIR} -> issue2479_ai_likeness_gradient/judge_legs (publishes the flatness + name-mask legs)"
@@ -250,9 +251,13 @@ uv run python scripts/issue2479_freeze_axis.py --emit-items \
   --kept-glob "$KEPT_GLOB" --items-out-dir "$ITEMS_DIR" --stats-out-dir "$STATS_DIR"
 
 echo "[phase=p3_pilot]"
+# --items-glob arms the DATA-identity comparison (panel + manifest + pooled
+# item content vs the persisted PASS) alongside the instrument fingerprint
+# (r4 codex judge-pilot-gates-missing).
 if uv run python scripts/issue2479_judge_pilots.py --require-pass --family axis \
+    --items-glob "${ITEMS_DIR}/axis_items_{name}.jsonl" \
     --report "$PILOT_REPORT" >/dev/null 2>&1; then
-  echo "[i2479-p3] axis pilot PASS report present (instrument-bound) — pilot skipped (resume)"
+  echo "[i2479-p3] axis pilot PASS report present (instrument+data-bound) — pilot skipped (resume)"
 else
   uv run python scripts/issue2479_judge_pilots.py --family axis \
     --items-glob "${ITEMS_DIR}/axis_items_{name}.jsonl" \
@@ -261,6 +266,7 @@ fi
 
 echo "[phase=p3_gate]"
 uv run python scripts/issue2479_judge_pilots.py --require-pass --family axis \
+  --items-glob "${ITEMS_DIR}/axis_items_{name}.jsonl" \
   --report "$PILOT_REPORT" || {
   echo "[i2479-p3] axis-family rule-26 pilot gate not PASS — refusing the axis wave" >&2
   exit 48
@@ -268,6 +274,7 @@ uv run python scripts/issue2479_judge_pilots.py --require-pass --family axis \
 
 echo "[phase=p3_legs]"
 export EPM_I2479_REQUIRE_AXIS_PILOT_PASS="$PILOT_REPORT"
+p3_legs_t0=$(date +%s)
 for i in "${!NAMES[@]}"; do
   name="${NAMES[$i]}"
   items="${ITEMS_DIR}/axis_items_${name}.jsonl"
@@ -275,8 +282,10 @@ for i in "${!NAMES[@]}"; do
   resume_rc=0
   uv run python scripts/issue2479_p3_leg_resume.py \
     --report "${LEGS_DIR}/judge_report_ail_${name}.json" --tag "$name" \
-    --items "$items" --pilot-report "$PILOT_REPORT" || resume_rc=$?
+    --items "$items" --expect-design axis-census \
+    --pilot-report "$PILOT_REPORT" || resume_rc=$?
   if [ "$resume_rc" = "0" ]; then
+    echo "[p3_legs] unit $((i + 1))/${#NAMES[@]} ${name} (resume-skip) elapsed=$(( $(date +%s) - p3_legs_t0 ))s"
     continue
   elif [ "$resume_rc" != "3" ]; then
     echo "[i2479-p3] ${name}: leg-resume validator failed rc=${resume_rc}" >&2
@@ -285,6 +294,7 @@ for i in "${!NAMES[@]}"; do
   echo "[i2479-p3] axis leg: ${name}"
   uv run python scripts/issue1345_onpolicy_judge_legs.py --leg ai_likeness \
     --rows "$items" --character "$name" --census --out-dir "$LEGS_DIR" --execute
+  echo "[p3_legs] unit $((i + 1))/${#NAMES[@]} ${name} elapsed=$(( $(date +%s) - p3_legs_t0 ))s"
 done
 
 echo "[phase=p3_upload]"
