@@ -6,7 +6,7 @@ title: Base-model geometry under the inoculation prompt predicts EM re-elicitati
 kind: experiment
 tags: []
 created_at: '2026-08-22T19:38:42Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 2379
 origin_prompt: no i want to see if the re-elicitation AFTER inoculation prompting
   + finetuning can be predicted by PRE-finetuning quantities
