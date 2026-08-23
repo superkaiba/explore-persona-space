@@ -790,13 +790,18 @@ def _upload_means(cfg: dict) -> None:
     if not files:
         raise RuntimeError(f"upload: no means JSONs under {means_dir}")
     dest = f"{HF_POSTNORM_PREFIX}/trainref_means"
-    hub._upload(
+    base_url = hub._upload(
         means_dir,
         hub.DEFAULT_DATASET_REPO,
         "dataset",
         dest,
         raise_on_error=True,
     )
+    if not base_url:
+        # _upload is fail-soft by RETURN for missing HF_TOKEN / absent local
+        # path even under raise_on_error=True — an empty return is a silent
+        # durability loss, never warning-and-continue (upload-policy.md).
+        raise RuntimeError(f"upload returned no path for {means_dir} -> {dest}")
     missing = hub.verify_repo_paths_uploaded(
         HfApi(),
         hub.DEFAULT_DATASET_REPO,
