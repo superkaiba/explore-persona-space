@@ -10084,8 +10084,8 @@
     "2305": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/2305",
-      "status": "approved",
+      "path": "tasks/running/2305",
+      "status": "running",
       "title": "Non-atomic fresh claim-file write in run_claim_queue kills a concurrent worker with 'unparseable claim file'"
     },
     "2306": {
