@@ -1026,6 +1026,41 @@ def persist_bundle_paired(
         f"issue-1345: {mode_slug} story bundle ({model_key}, fp {fp})",
     )
     print(f"[gen] persisted {mode_slug} rollouts -> {prefix} (fp {fp})", flush=True)
+    if c.VARIANT.startswith(I2479_PANEL_PREFIX):
+        # #2479 r2 (hf-prefix bridge condition 4): record the data-repo revision
+        # AT-OR-AFTER this cell's upload so downstream staging (P3/P4/P5) can pin
+        # a revision that provably contains these bytes — the parent STORIES_PIN
+        # predates every panel cell (#2061 revision-pinning family). repo_info's
+        # main sha may include later concurrent commits; as a pin that is still
+        # a superset of this upload.
+        from huggingface_hub import HfApi
+
+        from explore_persona_space.orchestrate.hub import retry_transient
+
+        rev = retry_transient(
+            lambda: HfApi().repo_info(c.HF_DATA_REPO, repo_type="dataset").sha,
+            what=f"repo_info({c.HF_DATA_REPO})",
+        )
+        sidecar_name = f"upload_revision_{mode_slug}_{model_key}.json"
+        c.write_json(
+            out_dir / sidecar_name,
+            {
+                "metadata": c.metadata(c.GEN_SEED, 1, "scripts/issue1345_gen_stories_paired.py"),
+                "variant": c.VARIANT,
+                "mode": mode_slug,
+                "model": model_key,
+                "bundle_fingerprint": fp,
+                "hf_prefix": prefix,
+                "data_repo_revision_at_or_after_upload": rev,
+            },
+        )
+        g._hf_upload_folder(
+            out_dir,
+            prefix,
+            [sidecar_name],
+            f"issue-2479: upload-revision sidecar ({mode_slug}, {model_key})",
+        )
+        print(f"[gen] upload-revision sidecar -> {prefix}/{sidecar_name} rev={rev}", flush=True)
 
 
 def try_resume_paired(
@@ -1242,6 +1277,94 @@ def _write_yield_report(
 
 
 # ---------------------------------------------------------------------------
+# #2479 panel-manifest pool binding + per-mode gen-target resolution (r2 fixes)
+# ---------------------------------------------------------------------------
+I2479_PANEL_PREFIX = "char_2479_"
+I2479_MANIFEST_ENV = "EPM_I2479_PANEL_MANIFEST_JSON"
+
+
+def resolve_gen_targets(
+    op_powered: bool, n_stories: int | None, yield_floor: int | None
+) -> tuple[int, int]:
+    """(full kept target, yield floor) for the invoked mode; explicit CLI values BIND.
+
+    #2479 r2 fix (codex ``op-powered-cli-ignored``): ``--op-powered`` previously
+    pinned the parent constants (N_ONPOLICY_STORY_TARGET / ONPOLICY_STORY_YIELD_FLOOR)
+    regardless of CLI, silently ignoring the wrapper's ``--n-stories 1600
+    --yield-floor 800``. Mode constants stay the defaults, so parent invocations
+    (which pass neither flag) are byte-identical in BOTH modes.
+    """
+    if op_powered:
+        return (
+            n_stories if n_stories is not None else c.N_ONPOLICY_STORY_TARGET,
+            yield_floor if yield_floor is not None else c.ONPOLICY_STORY_YIELD_FLOOR,
+        )
+    return (
+        n_stories if n_stories is not None else c.N_STORIES_PAIRED_TARGET,
+        yield_floor if yield_floor is not None else c.STORY_PAIRED_YIELD_FLOOR,
+    )
+
+
+def _i2479_manifest_path() -> Path:
+    """Committed #2479 panel manifest (env-overridable; fail-loud when absent)."""
+    override = os.environ.get(I2479_MANIFEST_ENV, "").strip()
+    p = Path(override) if override else _REPO_ROOT / "eval_results/issue_2479/panel_manifest.json"
+    if not p.is_file():
+        raise FileNotFoundError(
+            f"panel cell {c.VARIANT!r} requires the committed panel manifest at {p} "
+            f"(override via {I2479_MANIFEST_ENV}) — production gen is bound to the "
+            "registered sample_conv_ids (plan §4 Step 1)"
+        )
+    return p
+
+
+def restrict_pool_to_manifest(pool: list[dict]) -> tuple[list[dict], dict | None]:
+    """#2479 panel cells: bind the gen pool to the manifest's registered conv_ids.
+
+    Non-panel variants return ``(pool, None)`` — byte-identical parent behavior.
+    Panel cells (EPM_I1345_VARIANT starting ``char_2479_``) load the committed
+    ``panel_manifest.json`` (schema-checked: n_sample count, id uniqueness),
+    restrict the pool to ``sample_conv_ids`` BEFORE the seeded permutation, and
+    FAIL LOUD when any registered id is absent from the eligible pool — the
+    manifest was sampled FROM this pool at seed 42, so a miss is recipe drift,
+    never a silent narrowing. Returns ``meta`` carrying the manifest sha256
+    (folded into the bundle fingerprint by the caller) + restriction counts.
+    """
+    if not c.VARIANT.startswith(I2479_PANEL_PREFIX):
+        return pool, None
+    mp = _i2479_manifest_path()
+    raw = mp.read_bytes()
+    m = json.loads(raw)
+    ids = m["sample_conv_ids"]
+    assert isinstance(ids, list) and ids, f"{mp}: empty/malformed sample_conv_ids"
+    id_set = {str(x) for x in ids}
+    assert len(id_set) == len(ids), f"{mp}: duplicate sample_conv_ids"
+    assert len(ids) == int(m["n_sample"]), f"{mp}: n_sample={m['n_sample']} != {len(ids)} ids"
+    pool_ids = {str(r["conv_id"]) for r in pool}
+    missing = sorted(id_set - pool_ids)
+    assert not missing, (
+        f"{mp}: {len(missing)} registered sample_conv_ids absent from the eligible pool "
+        f"(pool={len(pool)}) — e.g. {missing[:5]}"
+    )
+    restricted = [r for r in pool if str(r["conv_id"]) in id_set]
+    meta = {
+        "panel_manifest_path": str(mp),
+        "panel_manifest_sha256": hashlib.sha256(raw).hexdigest(),
+        "n_manifest_registered": len(ids),
+        "n_pool_before_manifest_restrict": len(pool),
+        "n_pool_after_manifest_restrict": len(restricted),
+    }
+    return restricted, meta
+
+
+def apply_manifest_fp_suffix(fp: str, manifest_meta: dict | None) -> str:
+    """Fold the panel-manifest identity into the bundle fingerprint (panel cells only)."""
+    if manifest_meta is None:
+        return fp
+    return f"{fp}-m{manifest_meta['panel_manifest_sha256'][:12]}"
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 def main() -> None:
@@ -1254,8 +1377,20 @@ def main() -> None:
     ap.add_argument("--out-dir", type=Path, default=c.STORIES_DIR)
     ap.add_argument("--dl-dir", type=Path, default=c.PARENT_DL_DIR)
     ap.add_argument("--matched-dir", type=Path, default=c.MATCHED_DIR)
-    ap.add_argument("--n-stories", type=int, default=c.N_STORIES_PAIRED_TARGET)
-    ap.add_argument("--yield-floor", type=int, default=c.STORY_PAIRED_YIELD_FLOOR)
+    ap.add_argument(
+        "--n-stories",
+        type=int,
+        default=None,
+        help="kept-target override; default = mode constant (paired: N_STORIES_PAIRED_TARGET; "
+        "--op-powered: N_ONPOLICY_STORY_TARGET) — explicit values bind in BOTH modes (r2 fix)",
+    )
+    ap.add_argument(
+        "--yield-floor",
+        type=int,
+        default=None,
+        help="yield-floor override; default = mode constant (paired: STORY_PAIRED_YIELD_FLOOR; "
+        "--op-powered: ONPOLICY_STORY_YIELD_FLOOR) — explicit values bind in BOTH modes (r2 fix)",
+    )
     ap.add_argument(
         "--op-companion",
         action="store_true",
@@ -1284,6 +1419,11 @@ def main() -> None:
         "--op-companion and --op-powered are mutually exclusive (companion = <=200 "
         "control from the TF-kept set; powered = pool-sourced primary regime)"
     )
+    if args.op_companion:
+        assert not c.VARIANT.startswith(I2479_PANEL_PREFIX), (
+            f"--op-companion is a parent-only control mode; #2479 panel cell {c.VARIANT!r} "
+            "is manifest-bound via the paired / --op-powered modes only (r2 fix)"
+        )
     if args.op_powered:
         assert c.HAS_ONPOLICY_STORY, (
             f"--op-powered requires EPM_I1345_VARIANT in {c.ONPOLICY_STORY_VARIANTS} "
@@ -1350,21 +1490,29 @@ def main() -> None:
         pool, pool_counts = load_paired_pool(args.matched_dir, args.dl_dir)
         pool, feas_counts = _filter_pool_feasible(pool, tokenizer, op_companion=True)
         pool_counts.update(feas_counts)
-        n_target = SMOKE_N_STORIES if args.smoke else c.N_ONPOLICY_STORY_TARGET
-        yield_floor = g.resolve_yield_floor(args.smoke, c.ONPOLICY_STORY_YIELD_FLOOR)
+        pool, manifest_meta = restrict_pool_to_manifest(pool)
+        if manifest_meta is not None:
+            pool_counts.update(manifest_meta)
+        n_target_full, floor_default = resolve_gen_targets(True, args.n_stories, args.yield_floor)
+        n_target = SMOKE_N_STORIES if args.smoke else n_target_full
+        yield_floor = g.resolve_yield_floor(args.smoke, floor_default)
         assert len(pool) >= n_target, f"on-policy pool {len(pool)} < target {n_target}"
         rng = np.random.default_rng(c.GEN_SEED)
         order = rng.permutation(len(pool))
         ordered = [pool[i] for i in order]
-        fp = paired_fingerprint(mode_slug, ordered)
+        fp = apply_manifest_fp_suffix(paired_fingerprint(mode_slug, ordered), manifest_meta)
         rows_main = ordered[:n_target]
         seeds_reserve = ordered[n_target:]
     else:
         pool, pool_counts = load_paired_pool(args.matched_dir, args.dl_dir)
         pool, feas_counts = _filter_pool_feasible(pool, tokenizer, op_companion=False)
         pool_counts.update(feas_counts)
-        n_target = SMOKE_N_STORIES if args.smoke else args.n_stories
-        yield_floor = g.resolve_yield_floor(args.smoke, args.yield_floor)
+        pool, manifest_meta = restrict_pool_to_manifest(pool)
+        if manifest_meta is not None:
+            pool_counts.update(manifest_meta)
+        n_target_full, floor_default = resolve_gen_targets(False, args.n_stories, args.yield_floor)
+        n_target = SMOKE_N_STORIES if args.smoke else n_target_full
+        yield_floor = g.resolve_yield_floor(args.smoke, floor_default)
         assert len(pool) >= n_target, f"paired pool {len(pool)} < target {n_target}"
         rng = np.random.default_rng(c.GEN_SEED)
         order = rng.permutation(len(pool))
@@ -1373,7 +1521,7 @@ def main() -> None:
         # the pre-fix rows_main + seeds_reserve set and CARRY-INDEPENDENT, so
         # a second relaunch (larger carry set) keys the SAME bundle and
         # generate_paired's per-row resume keeps working across relaunches.
-        fp = paired_fingerprint(mode_slug, ordered)
+        fp = apply_manifest_fp_suffix(paired_fingerprint(mode_slug, ordered), manifest_meta)
         kept_carry, carry_fp = load_kept_carryforward(
             mode_slug,
             model_key,
