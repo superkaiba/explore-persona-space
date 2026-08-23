@@ -346,13 +346,16 @@ def read_jsonl_manifest_first(base: pathlib.Path, stem: str) -> list[dict]:
                 got = hashlib.sha256(data).hexdigest()
                 if got != want:
                     raise RuntimeError(f"{pp}: sha256 {got} != manifest {want}")
-            lines.extend(data.decode("utf-8").splitlines())
-        logger.info("[stage] %s: reassembled %d parts (%d rows)", stem, len(parts), len(lines))
-        return [json.loads(ln) for ln in lines if ln.strip()]
+            # split("\n"), never splitlines(): real-corpus JSON strings carry raw
+            # U+2028/U+2029/NEL that splitlines() shreds (#950; gotchas.md).
+            lines.extend(data.decode("utf-8").split("\n"))
+        rows = [json.loads(ln) for ln in lines if ln.strip()]
+        logger.info("[stage] %s: reassembled %d parts (%d rows)", stem, len(parts), len(rows))
+        return rows
     plain = base / f"{stem}.jsonl"
     if not plain.exists():
         raise RuntimeError(f"neither {manifest_path.name} nor {plain.name} present under {base}")
-    return [json.loads(ln) for ln in plain.read_text(encoding="utf-8").splitlines() if ln.strip()]
+    return [json.loads(ln) for ln in plain.read_text(encoding="utf-8").split("\n") if ln.strip()]
 
 
 def stage_ext_gen_inputs(
