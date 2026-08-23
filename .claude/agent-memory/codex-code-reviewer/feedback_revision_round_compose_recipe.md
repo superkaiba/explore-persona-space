@@ -196,5 +196,27 @@ an earlier compose). Assert-guarded deltas fail loud instead.
   substance + 3.75 trigger + 4(b)); reword to LEG-level with the round's
   true file count.
 
+- CLOSING round (round == cap; #1739 a2fix r10, 2026-08-23): the cap head
+  stays calibration-neutral but gains a PRECISION duty — the required
+  class-termination header takes a mandatory grade clause
+  (`BLOCKER-GRADE — reaches a persisted/rendered surface ungated |
+  RESIDUAL NOTE — disclosed/gated/secondary-labeled`), and the Concerns
+  section adds: any non-blocking residual MUST still get a `CONCERN:: `
+  row (a prose-only residual dies with the final review). When the fix
+  introduces REGISTERED constants probed from committed artifacts (the
+  45-cell grid), the composer re-derives the digest over ALL units
+  (45/45/45 across three behaviors) at compose time, states it as a
+  composer-verified fact, and LICENSES bounded digest-only reads of those
+  artifacts in the content-safety block so the twin can re-ground one
+  itself. New-kwarg rounds make fail-pre-fix trivially true by SIGNATURE
+  (no `exact=` at base → TypeError) — instruct BEHAVIOR-level static
+  verification explicitly (the base's permissive read must contradict the
+  new assertions), or the V-duty proves nothing. A fix defending an
+  execution-derived axis (cross-seed fit-label union) gets its own
+  adjudication duty with the blocker-if condition split on EXPOSURE
+  (feeds a verdict/gate ⇒ Critical/Major; disclosed + withheld-aggregate
+  secondary ⇒ honesty-graded) — never composer-resolved. Duty roster may
+  grow past 5 (V6 here); grep the span for `V1-V5`/`(V5)` leftovers.
+
 Extends [[two-leg-single-label-round-compose]] (leg-suffixed filenames,
 leg-scoped sentinel, round-matching by leg).
