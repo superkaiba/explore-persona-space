@@ -1,13 +1,13 @@
 {
   "experiment": "issue2254_preimage",
   "base_model": "Qwen/Qwen2.5-7B-Instruct",
-  "ts": "2026-08-23T08:21:40Z",
+  "ts": "2026-08-23T09:39:28Z",
   "pass_b_revision": "037fcbb210bc52c459959b0746cc268fe08bae96",
-  "git_commit": "3df94964",
+  "git_commit": "91aaac03",
   "git_dirty": true,
   "git_dirty_paths": [
     "scripts/issue2254_first_k_steering.py",
-    "scripts/issue2254_firstk_figures.py"
+    "tests/test_issue2254_firstk_validators.py"
   ],
   "tiny_model": "Qwen/Qwen2.5-0.5B-Instruct",
   "hidden_size": 896,

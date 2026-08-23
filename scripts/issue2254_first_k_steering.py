@@ -897,6 +897,66 @@ def _gen_first_k_cell(
 STEER_PACK_FLUSH_EVERY = 8  # cells between incremental pack+upload flushes (durability cadence)
 STEER_PACK_MAX_FILES = 64  # bounded-plan ceiling per shard (pack shards + manifest, #2286)
 STEER_BYTES_PER_CELL = 2_500_000  # ~1 MB/cell at the 2048 cap; regen'd cells ~2x — sizing basis
+# Empty-draw regen-once escape (firstk-empty-completion-validator-wedge): the
+# retry seed block sits DISJOINT from the registered per-draw block
+# (seed_base..seed_base+draws-1), so the retry draws fresh samples instead of
+# deterministically reproducing the empty draw.
+EMPTY_DRAW_SEED_SHIFT = 1000
+
+
+def _empty_draw_slots(rec: dict) -> list[tuple[str, int, int]]:
+    """(seed, ctx_idx, draw_idx) slots whose completion is empty/non-str — the
+    exact predicate ``_validate_gen_record`` asserts on, evaluated at GEN time
+    so the wedge is caught before any judge/reduce invocation."""
+    out: list[tuple[str, int, int]] = []
+    for seed, sd in rec["seeds"].items():
+        for ci, draws in enumerate(sd["completions"]):
+            for di, t in enumerate(draws):
+                if not (isinstance(t, str) and t):
+                    out.append((seed, ci, di))
+    return out
+
+
+def _regen_empty_draw_cell(gen_fn, cid: str, rec: dict, *, seed_base: int) -> dict:
+    """Bounded validator-wedge escape (firstk-empty-completion-validator-wedge):
+    when a cell carries empty completion draws, regenerate the WHOLE cell ONCE
+    at a DISJOINT seed block (``seed_base + EMPTY_DRAW_SEED_SHIFT``) — the
+    per-draw seeds are deterministic, so a same-seed retry reproduces the empty
+    draw forever (``generate_batch`` has no ``min_new_tokens`` floor) and
+    ``_validate_gen_record`` wedges every downstream judge/reduce run.
+    Persisting empties is refused; a still-empty retry FAILS LOUD naming the
+    wedge. The retry is audited in the record (``empty_draw_regen``)."""
+    empty = _empty_draw_slots(rec)
+    if not empty:
+        return rec
+    retry_base = int(seed_base) + EMPTY_DRAW_SEED_SHIFT
+    logger.info(
+        "[%s] %s: %d empty completion draw(s) — one-shot shifted-seed regen "
+        "(seed_base %d -> %d; validator-wedge escape)",
+        SENTINEL_STEER,
+        cid,
+        len(empty),
+        int(seed_base),
+        retry_base,
+    )
+    rec2 = gen_fn(seed_base=retry_base)
+    still = _empty_draw_slots(rec2)
+    if still:
+        raise RuntimeError(
+            f"steer {cid}: {len(still)} empty completion draw(s) persist after the one-shot "
+            f"shifted-seed regen (seed_base {int(seed_base)} -> {retry_base}) — deterministic "
+            "per-draw seeds reproduce empty draws (generate_batch has no min_new_tokens "
+            "floor), so _validate_gen_record would wedge every judge/reduce run on this "
+            "cell; investigate the cell's steering dose before any relaunch"
+        )
+    if "regen" in rec:  # keep the cap-hit regen diagnostics from the initial record
+        rec2.setdefault("regen", rec["regen"])
+    rec2["empty_draw_regen"] = {
+        "n_empty_initial": len(empty),
+        "slots_initial": [list(s) for s in empty[:20]],
+        "seed_base_retry": retry_base,
+    }
+    return rec2
 
 
 def _steer_regime_fp(args, cell: dict, rho_pooled: dict) -> str:
@@ -1162,6 +1222,7 @@ def phase_steer(args) -> None:
 
     t0 = time.time()
     n_regen = 0
+    n_empty_regen = 0
     n_generated = 0
     for k, cell in enumerate(shard, 1):
         cid = _cell_id(cell)
@@ -1225,6 +1286,28 @@ def phase_steer(args) -> None:
             # Raw completions persist FULL-LENGTH at the regen cap; the §6
             # common-2048-horizon recompute truncates from these (plan §8).
             rec["regen"] = initial
+        # Empty-draw regen-once escape BEFORE persisting (deterministic seeds
+        # otherwise wedge _validate_gen_record forever — see helper docstring).
+        mnt = rec["max_new_tokens"]
+        rec = _regen_empty_draw_cell(
+            lambda seed_base: _gen_first_k_cell(
+                model,
+                tok,
+                cell,
+                contexts,
+                q_idx,
+                make,
+                n_draws=args.draws,
+                seed_base=seed_base,
+                max_new_tokens=mnt,
+                alphas=alphas,
+            ),
+            cid,
+            rec,
+            seed_base=args.seed_base,
+        )
+        if "empty_draw_regen" in rec:
+            n_empty_regen += 1
         rec["experiment"] = "issue2254_first_k_steering"
         rec["followup_label"] = FOLLOWUP_LABEL
         rec["regime_fp"] = fp
@@ -1238,8 +1321,15 @@ def phase_steer(args) -> None:
     # so a fully-cached resume still lands a complete pack before the sentinel.
     _flush_pack()
     tag = SENTINEL_STEER if args.num_shards == 1 else f"{SENTINEL_STEER}-shard{args.shard_id}"
-    i2254._write_sentinel(out_root, tag, "done", {"cells": len(shard), "regen_cells": n_regen})
-    i2254._breadcrumb(SENTINEL_STEER, status="done", regen_cells=n_regen)
+    i2254._write_sentinel(
+        out_root,
+        tag,
+        "done",
+        {"cells": len(shard), "regen_cells": n_regen, "empty_regen_cells": n_empty_regen},
+    )
+    i2254._breadcrumb(
+        SENTINEL_STEER, status="done", regen_cells=n_regen, empty_regen_cells=n_empty_regen
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -1291,79 +1381,156 @@ REDUCE_GIT_INPUTS = (
 # ---------------------------------------------------------------------------
 
 
-def _stage_round_completions(rroot: Path) -> Path:
-    """Local-first steer raw_completions; else stage + UNPACK the per-shard
-    JSONL pack shards the steer phase uploads (rw2220 line schema:
-    ``{"path": <cell file rel path>, "doc": <cell record>}``) from the round
-    HF prefix; else the legacy per-cell prefix (pre-pack artifacts). Scoped
-    list_repo_tree via retry_transient — never a bare full-repo listing on
-    the ~1M-file data repo. A fresh-VM judge/reduce can therefore rehydrate
-    the per-cell records from the packed upload (pack/unpack round-trip)."""
+def _hub_tree(prefix: str, *, recursive: bool = False) -> list:
+    """Scoped list_repo_tree via retry_transient — never a bare full-repo
+    listing on the ~1M-file data repo; [] when the prefix is absent. Module
+    seam (tests monkeypatch it — no-network staging tests)."""
     from huggingface_hub import HfApi
     from huggingface_hub.utils import EntryNotFoundError
 
     from explore_persona_space.orchestrate import hub
 
+    try:
+        return hub.retry_transient(
+            lambda: list(
+                # HUB_VERIFY_RETRY_EXEMPT: staging READ wrapped in hub.retry_transient
+                HfApi().list_repo_tree(
+                    HF_DATA_REPO,
+                    path_in_repo=prefix,
+                    repo_type="dataset",
+                    recursive=recursive,
+                )
+            ),
+            what=f"list_repo_tree({prefix})",
+        )
+    except EntryNotFoundError:  # prefix absent — caller falls through
+        return []
+
+
+def _hub_stage(path_in_repo: str, target: Path) -> None:
+    """Retried atomic fail-loud single-file staging download (test seam)."""
+    from explore_persona_space.orchestrate import hub
+
+    hub.stage_hub_file(HF_DATA_REPO, path_in_repo, target, repo_type="dataset")
+
+
+def _assert_staged_regime_fps(comp_root: Path, expected_fp: dict[str, str], src: str) -> None:
+    """Regime-fp cross-check on staged/local gen records BEFORE trusting them
+    (r2 concerns firstk-localfirst-stage-no-fp-check + the rehydration leg of
+    firstk-pack-manifest-stale-tail): every EXPECTED cell present under
+    comp_root must carry the invocation's regime_fp — a missing/mismatched fp
+    is a stale/mixed vintage and is REFUSED (regenerate via the steer phase),
+    never silently judged/reduced. Absent cells are the caller's
+    grid-completeness check, not this one."""
+    bad: list[str] = []
+    for cid, fp in sorted(expected_fp.items()):
+        p = comp_root / f"{cid}.json"
+        if not p.is_file():
+            continue
+        got = json.loads(p.read_text()).get("regime_fp")
+        if got != fp:
+            bad.append(f"{cid}: {got} != {fp}")
+    if bad:
+        raise RuntimeError(
+            f"firstk staging ({src}): {len(bad)} gen record(s) fail the regime_fp "
+            f"cross-check — stale/mixed vintage refused, regenerate via the steer "
+            f"phase (first: {bad[:4]})"
+        )
+
+
+def _stage_round_completions(rroot: Path, expected_fp: dict[str, str]) -> Path:
+    """Local-first steer raw_completions; else stage + UNPACK the per-shard
+    JSONL pack shards the steer phase uploads (rw2220 line schema:
+    ``{"path": <cell file rel path>, "doc": <cell record>}``) from the round
+    HF prefix, MANIFEST-DRIVEN (r2 concern firstk-pack-manifest-stale-tail:
+    exactly the shards each ``pack_manifest.json`` names are loaded — a
+    shrinking repack's stale remote tail shards are IGNORED, duplicate cell
+    paths across shards are REFUSED, and an un-manifested shard set is
+    refused outright); else the legacy per-cell prefix (pre-pack artifacts).
+    Every branch ends with the regime_fp cross-check against the invocation
+    (``_assert_staged_regime_fps``)."""
     comp_root = rroot / "steer" / "raw_completions"
     if comp_root.exists() and any(comp_root.glob("*.json")):
+        _assert_staged_regime_fps(comp_root, expected_fp, "local-first")
         return comp_root
-
-    def _tree(prefix: str, *, recursive: bool = False) -> list:
-        try:
-            return hub.retry_transient(
-                lambda: list(
-                    # HUB_VERIFY_RETRY_EXEMPT: staging READ wrapped in hub.retry_transient
-                    HfApi().list_repo_tree(
-                        HF_DATA_REPO,
-                        path_in_repo=prefix,
-                        repo_type="dataset",
-                        recursive=recursive,
-                    )
-                ),
-                what=f"list_repo_tree({prefix})",
-            )
-        except EntryNotFoundError:  # prefix absent — caller falls through
-            return []
 
     pack_prefix = f"{_round_hf_prefix()}/raw_completions/steer_pack"
-    shard_paths = sorted(
-        e.path for e in _tree(pack_prefix, recursive=True) if e.path.endswith(".jsonl")
-    )
-    if shard_paths:
-        n_cells = 0
+    entries = _hub_tree(pack_prefix, recursive=True)
+    manifest_paths = sorted(e.path for e in entries if Path(e.path).name == "pack_manifest.json")
+    remote_jsonl = {e.path for e in entries if e.path.endswith(".jsonl")}
+    if manifest_paths:
         dl_root = rroot / "steer" / "raw_completions_pack_dl"
-        for pth in shard_paths:
-            local = dl_root / Path(pth).relative_to(pack_prefix)
-            hub.stage_hub_file(HF_DATA_REPO, pth, local, repo_type="dataset")
-            for line in local.open(encoding="utf-8"):  # text-mode iteration, never splitlines
-                if not line.strip():
-                    continue
-                row = json.loads(line)
-                name = Path(row["path"]).name
-                assert name.endswith(".json"), row["path"]
-                i2254._write_json_atomic(comp_root / name, row["doc"])
-                n_cells += 1
+        seen: dict[str, str] = {}  # cell filename -> shard path (duplicate refusal)
+        named_paths: set[str] = set()
+        n_cells = 0
+        for mp in manifest_paths:
+            mlocal = dl_root / Path(mp).relative_to(pack_prefix)
+            _hub_stage(mp, mlocal)
+            manifest = json.loads(mlocal.read_text())
+            parent = str(Path(mp).parent)
+            n_rows = 0
+            for name in manifest["shards"]:
+                pth = f"{parent}/{name}"
+                if pth not in remote_jsonl:
+                    raise RuntimeError(
+                        f"firstk judge: manifest {mp} names shard {name} absent from the "
+                        "remote listing — partial/corrupt pack upload, refusing rehydration"
+                    )
+                named_paths.add(pth)
+                local = dl_root / Path(pth).relative_to(pack_prefix)
+                _hub_stage(pth, local)
+                for line in local.open(encoding="utf-8"):  # text-mode, never splitlines
+                    if not line.strip():
+                        continue
+                    row = json.loads(line)
+                    cname = Path(row["path"]).name
+                    assert cname.endswith(".json"), row["path"]
+                    if cname in seen:
+                        raise RuntimeError(
+                            f"firstk judge: duplicate cell record {cname} in {pth} (already "
+                            f"unpacked from {seen[cname]}) — overlapping packs refused "
+                            "(firstk-pack-manifest-stale-tail)"
+                        )
+                    seen[cname] = pth
+                    i2254._write_json_atomic(comp_root / cname, row["doc"])
+                    n_cells += 1
+                    n_rows += 1
+            if n_rows != int(manifest["n_files"]):
+                raise RuntimeError(
+                    f"firstk judge: manifest {mp} declares n_files={manifest['n_files']} but "
+                    f"its shards unpacked {n_rows} rows — corrupt pack refused"
+                )
         if not n_cells:
             raise RuntimeError(
-                f"firstk judge: pack shards under {pack_prefix} unpacked ZERO cell records"
+                f"firstk judge: pack manifests under {pack_prefix} unpacked ZERO cell records"
             )
+        stale_tail = sorted(remote_jsonl - named_paths)
         logger.info(
-            "[%s] staged %d cells from %d pack shards at %s",
+            "[%s] staged %d cells from %d manifest(s) at %s (%d stale tail shard(s) ignored)",
             SENTINEL_JUDGE,
             n_cells,
-            len(shard_paths),
+            len(manifest_paths),
             pack_prefix,
+            len(stale_tail),
         )
+        _assert_staged_regime_fps(comp_root, expected_fp, "pack-rehydration")
         return comp_root
+    if remote_jsonl:
+        raise RuntimeError(
+            f"firstk judge: {len(remote_jsonl)} pack shard(s) under {pack_prefix} with NO "
+            "pack_manifest.json — un-manifested rehydration refused (stale tail shards "
+            "would be indistinguishable; firstk-pack-manifest-stale-tail)"
+        )
 
     legacy_prefix = f"{_round_hf_prefix()}/raw_completions/steer"
-    paths = [e.path for e in _tree(legacy_prefix) if e.path.endswith(".json")]
+    paths = [e.path for e in _hub_tree(legacy_prefix) if e.path.endswith(".json")]
     if not paths:
         raise RuntimeError(
             f"firstk judge: no steer completions locally, at {pack_prefix}, or at {legacy_prefix}"
         )
     for pth in paths:
-        hub.stage_hub_file(HF_DATA_REPO, pth, comp_root / Path(pth).name, repo_type="dataset")
+        _hub_stage(pth, comp_root / Path(pth).name)
+    _assert_staged_regime_fps(comp_root, expected_fp, "legacy-percell")
     return comp_root
 
 
@@ -1388,6 +1555,36 @@ def _judge_ctx_id_firstk(cell: dict, seed: int, i: int) -> str:
     return out
 
 
+def _pilot_gen_hash(files: list[Path]) -> str:
+    """Content hash over one behavior's staged gen records (r2 concern
+    firstk-pilot-pass-input-fingerprint): file-byte shas, never recomputed
+    floats (the code-style float-hash rule) — any regen'd source cell changes
+    the hash and therefore the pilot-PASS fingerprint."""
+    return i2254._sha8({f.name: hashlib.sha256(f.read_bytes()).hexdigest()[:12] for f in files})
+
+
+def _judge_instrument_fp(rubric: str, n_draws: int) -> str:
+    """Judge-instrument fingerprint SHARED by the judged-checkpoint writer
+    (``_judge_firstk_cell``) and the reduce-side vintage assert
+    (``_assert_judged_vintage``, r2 Codex C3): rubric / model / max_tokens /
+    draws / temperature / transport pin."""
+    from explore_persona_space.experiments.issue_1739.constants import (
+        JUDGE_MODEL,
+        JUDGE_TEMPERATURE,
+    )
+
+    return i2254._sha8(
+        {
+            "rubric": rubric,
+            "model": JUDGE_MODEL,
+            "max_tokens": i2254.JUDGE_MAX_TOKENS_2254,
+            "n_draws": n_draws,
+            "temp": JUDGE_TEMPERATURE,
+            "tb": JUDGE_THRESHOLD_BASE_BATCH,
+        }
+    )
+
+
 def _run_firstk_pilot(args, rroot: Path, comp_root: Path, behavior: str, rubric, n_draws) -> None:
     """Rule-26 pilot gate at the EXACT production instrument + transport
     (plan §6): 4 arms per behavior — rb all-answer, random all-answer, one
@@ -1408,6 +1605,9 @@ def _run_firstk_pilot(args, rroot: Path, comp_root: Path, behavior: str, rubric,
 
     pilot_dir = rroot / "judge" / "pilot"
     pilot_dir.mkdir(parents=True, exist_ok=True)
+    files = sorted(comp_root.glob(f"{behavior}__*.json"))
+    if not files:
+        raise RuntimeError(f"firstk pilot: no {behavior} gen cells under {comp_root}")
     fp = i2254._sha8(
         {
             "behavior": behavior,
@@ -1416,16 +1616,21 @@ def _run_firstk_pilot(args, rroot: Path, comp_root: Path, behavior: str, rubric,
             "mt": i2254.JUDGE_MAX_TOKENS_2254,
             "tb": JUDGE_THRESHOLD_BASE_BATCH,
             "temp": JUDGE_TEMPERATURE,
+            # Source-generation content hash (r2 firstk-pilot-pass-input-
+            # fingerprint): a regenerated gen cell invalidates a prior pilot
+            # PASS + its cached positive-control replay.
+            "gen": _pilot_gen_hash(files),
         }
     )
     pass_path = pilot_dir / f"{behavior}.pass.json"
     if pass_path.exists() and not args.force:
         if json.loads(pass_path.read_text()).get("fingerprint") == fp:
-            logger.info("[%s] pilot %s: prior PASS, identical instrument", SENTINEL_JUDGE, behavior)
+            logger.info(
+                "[%s] pilot %s: prior PASS, identical instrument + inputs",
+                SENTINEL_JUDGE,
+                behavior,
+            )
             return
-    files = sorted(comp_root.glob(f"{behavior}__*.json"))
-    if not files:
-        raise RuntimeError(f"firstk pilot: no {behavior} gen cells under {comp_root}")
     items_per_arm = -(-PILOT_MIN_EFFECTIVE_FIRSTK // n_draws)  # ceil: >=55 draws/arm (§6)
     qs = i2254._eval_questions(behavior)
     used_by_arm: dict[str, list[str]] = {}
@@ -1606,16 +1811,7 @@ def _judge_firstk_cell(args, rroot: Path, gen_path: Path, rubric: str, n_draws: 
     # the horizon ckpt's exact discipline) + the judge-instrument fingerprint
     # (rubric/model/max_tokens/draws/temperature/transport). Mismatch = MISS.
     gen_sha = hashlib.sha256(raw).hexdigest()[:12]
-    judge_fp = i2254._sha8(
-        {
-            "rubric": rubric,
-            "model": JUDGE_MODEL,
-            "max_tokens": i2254.JUDGE_MAX_TOKENS_2254,
-            "n_draws": n_draws,
-            "temp": JUDGE_TEMPERATURE,
-            "tb": JUDGE_THRESHOLD_BASE_BATCH,
-        }
-    )
+    judge_fp = _judge_instrument_fp(rubric, n_draws)
     out_path = rroot / "judge" / "judged" / f"{cid}.json"
     if out_path.exists() and not args.force:
         cached = json.loads(out_path.read_text())
@@ -1755,12 +1951,40 @@ def _judge_firstk_cell(args, rroot: Path, gen_path: Path, rubric: str, n_draws: 
     return out
 
 
+def _upload_pilot_pack_firstk(rroot: Path) -> None:
+    """Pilot-scoped pack + upload (r2 BLOCKER firstk-pilot-pack-reachability):
+    the pilot evidence (raw/cache/report/pass sidecars) is the run's ONLY
+    product on the pilot-gate FAIL, refusal-rate kill, §7 positive-control
+    kill, and ``--pilot`` exits, so ``phase_judge`` invokes this on EVERY
+    exit from its pilot section (try/finally) — never only from the
+    post-wave full upload. Whole-tree pack (pattern='*'): the pilot's
+    raw/cache trees nest under <behavior>_raw/ + <behavior>_cache/ and hold
+    judge_raw_pilot_* + pc_replay_* files an fnmatch allow-list would miss
+    (HF allow_patterns match the FULL relative path) — packing the whole
+    tree uploads EVERY pilot artifact, so `discarded_artifacts: none` holds
+    (upload-policy: judge outputs upload always). Idempotent (re-pack +
+    re-upload); a pilot dir with no artifacts yet is a logged no-op."""
+    import scripts.issue2220_readwrite as rw2220
+
+    pilot = rroot / "judge" / "pilot"
+    if not pilot.exists() or not any(p.is_file() for p in pilot.rglob("*")):
+        logger.info("[%s] pilot pack: no pilot artifacts to upload yet", SENTINEL_JUDGE)
+        return
+    dest = rroot / "judge" / "pilot_pack"
+    rw2220._pack_tree_to_jsonl_shards(pilot, dest, group="firstk_pilot", pattern="*")
+    i2254._upload_folder_to_hf(
+        dest, f"{_round_hf_prefix()}/judge/pilot_pack", allow=["*.jsonl", "*.json"]
+    )
+
+
 def _upload_judge_outputs_firstk(rroot: Path) -> None:
     """Pack the per-cell judge trees (judged/cache/raw) into <=9 MB plain
     JSONL line-shards and upload ONLY the packed dirs — the shared data repo
     sits at the Hub's 1M-file ceiling (#2286), so per-cell uploads of O(100)
     files are rejected outright. save_raw writes bare-<cid> EXTENSIONLESS
-    files -> pattern='*' for raw (the parent wave-1 raw-drop lesson)."""
+    files -> pattern='*' for raw (the parent wave-1 raw-drop lesson). The
+    pilot tree delegates to ``_upload_pilot_pack_firstk`` (which ALSO runs on
+    every pilot-section exit — reachability, r2 BLOCKER)."""
     import scripts.issue2220_readwrite as rw2220
 
     base = rroot / "judge"
@@ -1774,19 +1998,7 @@ def _upload_judge_outputs_firstk(rroot: Path) -> None:
         i2254._upload_folder_to_hf(
             dest, f"{_round_hf_prefix()}/judge/{sub}_pack", allow=["*.jsonl", "*.json"]
         )
-    pilot = base / "pilot"
-    if pilot.exists():
-        # Whole-tree pack (pattern='*'): the pilot's raw/cache trees nest under
-        # <behavior>_raw/ + <behavior>_cache/ and hold judge_raw_pilot_* +
-        # pc_replay_* files the r1 fnmatch allow-list silently missed (HF
-        # allow_patterns match the FULL relative path) — packing the whole
-        # tree uploads EVERY pilot artifact, so `discarded_artifacts: none`
-        # holds (upload-policy: judge outputs upload always).
-        dest = base / "pilot_pack"
-        rw2220._pack_tree_to_jsonl_shards(pilot, dest, group="firstk_pilot", pattern="*")
-        i2254._upload_folder_to_hf(
-            dest, f"{_round_hf_prefix()}/judge/pilot_pack", allow=["*.jsonl", "*.json"]
-        )
+    _upload_pilot_pack_firstk(rroot)
 
 
 def _validate_gen_record(rec: dict, path: Path, *, n_q: int, n_draws: int) -> None:
@@ -1819,9 +2031,38 @@ def _validate_gen_record(rec: dict, path: Path, *, n_q: int, n_draws: int) -> No
                 f"{path.name} seed {seed} ctx {ci}: "
                 f"{len(draws) if isinstance(draws, list) else draws} draws != {n_draws}"
             )
-            assert all(isinstance(t, str) and t for t in draws), (path.name, seed, ci)
+            empty_slots = [di for di, t in enumerate(draws) if not (isinstance(t, str) and t)]
+            assert not empty_slots, (
+                f"{path.name} seed {seed} ctx {ci}: empty/non-str completion draw(s) "
+                f"{empty_slots} — deterministic per-draw seeds reproduce an empty draw on "
+                "re-run (generate_batch has no min_new_tokens floor), so this record wedges "
+                "every judge/reduce invocation; re-run the steer phase (its shifted-seed "
+                "regen-once escape rewrites the cell) or --force regenerate"
+            )
         assert "edit_traces" in sd, (path.name, seed)
     assert "cap_hit_fraction" in rec and "max_new_tokens" in rec, path.name
+
+
+def _assert_judged_vintage(j: dict, gen_path: Path, expected_judge_fp: str) -> None:
+    """Vintage gate on ONE judged checkpoint BEFORE any horizon/bootstrap work
+    (r2 Codex C3): the checkpoint must reference the CURRENT gen-file bytes
+    (``gen_sha``) and the invocation's judge instrument (``judge_fp``) — a
+    regen'd steer record or a re-instrumented judge run is REFUSED (re-run
+    the judge phase), never a silent mixed-vintage reduce."""
+    cid = j.get("cell_id")
+    cur = hashlib.sha256(gen_path.read_bytes()).hexdigest()[:12]
+    if j.get("gen_sha") != cur:
+        raise RuntimeError(
+            f"firstk reduce: judged checkpoint {cid} gen_sha {j.get('gen_sha')} != current "
+            f"gen-file sha {cur} — the steer record changed since judging; re-run the judge "
+            "phase (mixed vintages refused)"
+        )
+    if j.get("judge_fp") != expected_judge_fp:
+        raise RuntimeError(
+            f"firstk reduce: judged checkpoint {cid} judge_fp {j.get('judge_fp')} != the "
+            f"invoked instrument {expected_judge_fp} — re-judge at the current instrument "
+            "(mixed instruments refused)"
+        )
 
 
 def _validate_judged_record(j: dict, path: Path, *, n_q: int) -> None:
@@ -1970,8 +2211,10 @@ def phase_judge(args) -> None:
     ops = i2254._load_operating_points(INPUTS_ROOT)
     resolved = resolve_operating_points(ops, behaviors)
     cells = build_cells(args, resolved, behaviors)
-    comp_root = _stage_round_completions(rroot)
-    expected = {_cell_id(c) for c in cells}
+    rho_pooled, _ = i2254._load_rho(INPUTS_ROOT)
+    expected_fp = {_cell_id(c): _steer_regime_fp(args, c, rho_pooled) for c in cells}
+    comp_root = _stage_round_completions(rroot, expected_fp)
+    expected = set(expected_fp)
     staged = {f.stem for f in comp_root.glob("*.json")}
     missing = sorted(expected - staged)
     if missing:
@@ -1983,25 +2226,52 @@ def phase_judge(args) -> None:
     _validate_gen_grid(args, comp_root, expected, SENTINEL_JUDGE)
     n_draws = 2 if args.smoke else JUDGE_DRAWS_FIRSTK
     rubrics = {b: load_trait_rubric(b) for b in behaviors}
-    for b in behaviors:
-        _run_firstk_pilot(args, rroot, comp_root, b, rubrics[b], n_draws)
-    # §7 positive-control EARLY kill (mechanical): when EVERY behavior of a
-    # multi-behavior run has an assessable rb-vs-random early read and ALL
-    # fail (delta <= 0), HALT before any production wave spend (plan §7:
-    # halt-and-report, dispatch NO production judge wave). Single-behavior
-    # failure stays ADVISORY (logged + persisted in the pass sidecar).
-    pc_deltas: dict[str, float | None] = {}
-    for b in behaviors:
-        pp = rroot / "judge" / "pilot" / f"{b}.pass.json"
-        early = json.loads(pp.read_text()).get("positive_control_early") if pp.is_file() else None
-        pc_deltas[b] = None if not early else early.get("delta_rb_minus_random")
-    assessable = {b: d for b, d in pc_deltas.items() if d is not None}
-    if len(assessable) >= 2 and all(d <= 0.0 for d in assessable.values()):
-        raise RuntimeError(
-            "firstk judge: §7 positive-control EARLY kill — rb-vs-random pilot delta <= 0 "
-            f"for EVERY assessable behavior ({assessable}); halting before the production "
-            "judge wave (plan §7 halt-and-report)"
-        )
+    # Pilot section (r2 BLOCKER firstk-pilot-pack-reachability): the pilot
+    # evidence pack uploads on EVERY exit — pilot-gate FAIL / refusal-rate
+    # kill (raises inside _run_firstk_pilot), the §7 positive-control kill,
+    # the --pilot return below, AND the success fall-through to the wave
+    # (idempotent; the post-wave _upload_judge_outputs_firstk re-covers it).
+    pilot_exc: BaseException | None = None
+    try:
+        for b in behaviors:
+            _run_firstk_pilot(args, rroot, comp_root, b, rubrics[b], n_draws)
+        # §7 positive-control EARLY kill (mechanical): when EVERY behavior of
+        # a multi-behavior run has an assessable rb-vs-random early read and
+        # ALL fail (delta <= 0), HALT before any production wave spend (plan
+        # §7: halt-and-report, dispatch NO production judge wave).
+        # Single-behavior failure stays ADVISORY (logged + persisted in the
+        # pass sidecar).
+        pc_deltas: dict[str, float | None] = {}
+        for b in behaviors:
+            pp = rroot / "judge" / "pilot" / f"{b}.pass.json"
+            early = (
+                json.loads(pp.read_text()).get("positive_control_early") if pp.is_file() else None
+            )
+            pc_deltas[b] = None if not early else early.get("delta_rb_minus_random")
+        assessable = {b: d for b, d in pc_deltas.items() if d is not None}
+        if len(assessable) >= 2 and all(d <= 0.0 for d in assessable.values()):
+            raise RuntimeError(
+                "firstk judge: §7 positive-control EARLY kill — rb-vs-random pilot delta <= 0 "
+                f"for EVERY assessable behavior ({assessable}); halting before the production "
+                "judge wave (plan §7 halt-and-report)"
+            )
+    except BaseException as exc:
+        pilot_exc = exc
+        raise
+    finally:
+        try:
+            _upload_pilot_pack_firstk(rroot)
+        except Exception:
+            if pilot_exc is None:
+                raise
+            # Never mask the in-flight pilot kill with an upload error (the
+            # firstk-teardown-exception-mask class): log loud, let the
+            # original kill propagate.
+            logger.exception(
+                "[%s] pilot-pack upload failed during pilot-kill unwind "
+                "(original error propagates)",
+                SENTINEL_JUDGE,
+            )
     if args.pilot:
         i2254._write_sentinel(out_root, f"{SENTINEL_JUDGE}-pilot", "done", {"behaviors": behaviors})
         i2254._breadcrumb(SENTINEL_JUDGE, status="pilot-done", behaviors=len(behaviors))
@@ -2329,7 +2599,9 @@ def phase_reduce(args) -> None:
     ops = i2254._load_operating_points(INPUTS_ROOT)
     resolved = resolve_operating_points(ops, behaviors)
     cells = build_cells(args, resolved, behaviors)
-    comp_root = _stage_round_completions(rroot)
+    rho_pooled, _ = i2254._load_rho(INPUTS_ROOT)
+    expected_fp = {_cell_id(c): _steer_regime_fp(args, c, rho_pooled) for c in cells}
+    comp_root = _stage_round_completions(rroot, expected_fp)
     judged_dir = rroot / "judge" / "judged"
     missing = [c for c in cells if not (judged_dir / f"{_cell_id(c)}.json").is_file()]
     if missing:
@@ -2340,6 +2612,13 @@ def phase_reduce(args) -> None:
     # Producer-schema validation on BOTH input classes BEFORE the tokenizer
     # load / horizon recompute (plan §3/§6 — never a filename-only contract).
     _validate_gen_grid(args, comp_root, {_cell_id(c) for c in cells}, SENTINEL_REDUCE)
+    # Judged-vintage gate (r2 Codex C3), BEFORE any horizon/bootstrap work:
+    # every judged checkpoint must reference the CURRENT gen-file bytes AND
+    # the invocation's judge instrument — mixed vintages refused.
+    from explore_persona_space.experiments.issue_1739.judging import load_trait_rubric
+
+    n_draws_judge = 2 if args.smoke else JUDGE_DRAWS_FIRSTK
+    expected_jfp = {b: _judge_instrument_fp(load_trait_rubric(b), n_draws_judge) for b in behaviors}
     judged: dict[str, dict] = {}
     judged_sha: dict[str, str] = {}
     for cell in cells:
@@ -2348,6 +2627,7 @@ def phase_reduce(args) -> None:
         raw = jp.read_bytes()
         j = json.loads(raw)
         _validate_judged_record(j, jp, n_q=args.q_steer)
+        _assert_judged_vintage(j, comp_root / f"{cid}.json", expected_jfp[cell["behavior"]])
         judged[cid] = j
         judged_sha[cid] = hashlib.sha256(raw).hexdigest()[:12]
     n_qs = {j["n_questions"] for j in judged.values()}
@@ -3000,11 +3280,20 @@ def _cpu_smoke_hooks(args) -> dict:
 
 def _cpu_smoke_write_fixtures(sub, rroot: Path) -> list[dict]:
     """Synthesize gen + judged fixtures for the FULL 160-cell grid off the
-    committed operating points + alpha0 baseline (deterministic)."""
+    committed operating points + alpha0 baseline (deterministic). Fixtures
+    carry the PRODUCTION provenance fields — regime_fp (staging fp
+    cross-check), gen_sha + judge_fp (reduce vintage gate) — so the real
+    phase_reduce's r3 validators run at the exact production contract."""
+    from explore_persona_space.experiments.issue_1739.judging import load_trait_rubric
+
     ops = i2254._load_operating_points(INPUTS_ROOT)
     behaviors = list(ROUND_BEHAVIORS)
     cells = build_cells(sub, resolve_operating_points(ops, behaviors), behaviors)
     assert len(cells) == TOTAL_CELLS, len(cells)
+    rho_pooled, _ = i2254._load_rho(INPUTS_ROOT)
+    # sub.smoke is False (production-contract fixtures) -> the reduce expects
+    # the production judge-draw grain.
+    jfp = {b: _judge_instrument_fp(load_trait_rubric(b), JUDGE_DRAWS_FIRSTK) for b in behaviors}
     baseline = json.loads((_REPO_ROOT / BASELINE_PERCELL_REL).read_text())
     a0: dict[str, list[float]] = {}
     for b in behaviors:
@@ -3029,8 +3318,9 @@ def _cpu_smoke_write_fixtures(sub, rroot: Path) -> list[dict]:
         # Fixtures at PRODUCTION grain (n_q=20, DRAWS_DEFAULT=6 draws) so the
         # real phase_reduce's producer-schema validators run at the exact
         # production contract (never a fixture-only relaxed shape).
+        gp = comp_root / f"{cid}.json"
         i2254._write_json_atomic(
-            comp_root / f"{cid}.json",
+            gp,
             {
                 "cell_id": cid,
                 "cell": cell,
@@ -3046,15 +3336,19 @@ def _cpu_smoke_write_fixtures(sub, rroot: Path) -> list[dict]:
                 "max_new_tokens": i2254.GEN_MAX_NEW_TOKENS,
                 "cap_hit_fraction": 0.0,
                 "regen": False,
+                "regime_fp": _steer_regime_fp(sub, cell, rho_pooled),
                 "synthetic_fixture": True,
             },
         )
+        gen_sha = hashlib.sha256(gp.read_bytes()).hexdigest()[:12]
         i2254._write_json_atomic(
             judged_dir / f"{cid}.json",
             {
                 "cell_id": cid,
                 "cell": cell,
                 "n_questions": n_q,
+                "gen_sha": gen_sha,
+                "judge_fp": jfp[b],
                 "per_question_mean_score": per_q,
                 "per_question_rate": [0.5] * n_q,
                 "mean_score": float(np.mean(per_q)),
