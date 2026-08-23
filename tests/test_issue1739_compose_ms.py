@@ -16,6 +16,8 @@ import copy
 import hashlib
 import importlib.util
 import json
+import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -1207,3 +1209,74 @@ def test_fold_main_banked_empty_bank_and_empty_join(tmp_path):
     assert fold.main(_fold_argv(root, bank3, out, "--allow-partial")) == 0
     entry = json.loads(out.read_text())["behaviors"]["evil"]
     assert "banked-repro-empty-join" in entry["audit_failures"]
+
+
+# ---------------------------------------------------------------------------
+# wrapper VM-behavioral pins (cms-wrapper-guard-vm-test-gap): both run the
+# REAL wrapper's stage phase and exit BEFORE its first download (the disk
+# floor is checked first), so neither touches the network.
+# ---------------------------------------------------------------------------
+
+
+def _run_wrapper_stage(tmp_path, extra_env: dict[str, str]):
+    env = {
+        **os.environ,
+        "REPO_ROOT": str(REPO_ROOT),
+        "EPM_I1739_BEHAVIORS": "evil",
+        "EPM_I1739_CMS_HALF": "s02",
+        "EPM_I1739_CMS_SMOKE": "1",
+        "EPM_I1739_CMS_SMOKE_BASE": str(tmp_path / "smoke"),
+        # absurdly-high floor: the stage phase refuses before any network call
+        "EPM_I1739_CMS_MIN_DISK_GB": "999999",
+        **extra_env,
+    }
+    return subprocess.run(
+        ["bash", str(WRAPPER)],
+        cwd=REPO_ROOT,
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=300,
+    )
+
+
+def test_wrapper_disk_floor_refuses_before_download(tmp_path):
+    """VM-behavioral pin 1: the >=floor disk assert (EPM_I1739_CMS_MIN_DISK_GB)
+    runs at the stage-phase top, refuses with the designed rc=3 BEFORE the
+    first download, and the stage failure sentinel lands with status=fail
+    rc=3."""
+    proc = _run_wrapper_stage(tmp_path, {})
+    assert proc.returncode == 3, (proc.returncode, proc.stderr[-2000:])
+    assert "disk preflight" in proc.stderr and "refusing before download" in proc.stderr
+    assert "[phase=stage]" in proc.stdout
+    assert "[phase=stage_done]" not in proc.stdout
+    assert "[cms] store" not in proc.stdout  # no download attempt was reached
+    sent_dir = tmp_path / "smoke" / "sentinels"
+    hits = sorted(sent_dir.glob("issue-1739-epm_progress-cms_evil_s02_stage-*.json"))
+    assert hits, sorted(p.name for p in sent_dir.glob("*"))
+    payload = json.loads(hits[-1].read_text())
+    assert payload["status"] == "fail" and payload["rc"] == 3
+
+
+def test_wrapper_failure_sentinel_write_failure_preserves_phase_rc(tmp_path):
+    """VM-behavioral pin 2: when the FAILURE sentinel write itself fails
+    (read-only sentinel dir), the guarded `write_phase_sentinel ... || WARN`
+    still exits with the SAVED phase rc (3) — the sentinel-write rc must
+    never clobber it (an unguarded write under `set -e` would abort with the
+    wrong code)."""
+    ro_dir = tmp_path / "ro_sentinels"
+    ro_dir.mkdir()
+    ro_dir.chmod(0o555)
+    try:
+        proc = _run_wrapper_stage(
+            tmp_path,
+            {
+                "EPM_I1739_CMS_SENTINEL_DIR": str(ro_dir),
+                "EPM_I1739_CMS_PID_FILE": str(tmp_path / "cms.pid"),
+            },
+        )
+    finally:
+        ro_dir.chmod(0o755)
+    assert proc.returncode == 3, (proc.returncode, proc.stderr[-2000:])
+    assert "failure-sentinel write failed (phase rc preserved)" in proc.stderr
+    assert not list(ro_dir.glob("*.json"))  # the write really did fail
