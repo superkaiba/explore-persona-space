@@ -484,6 +484,15 @@ def test_enter_phase_regime_resume_across_code_sha_retains_outputs(tmp_path):
     assert json.loads((out / "regime.json").read_text())["code_sha"] == regime["code_sha"]
 
 
+def test_p6_complete_routes_encoding_corrupt_deliverable_to_recompute(tmp_path):
+    """workflow_lint json-guard-unicode (fixed this round): an encoding-corrupt
+    tier_tests_b.json returns False (recompute), never raises out of the resume
+    predicate. Fails pre-fix (UnicodeDecodeError escaped the except tuple)."""
+    tb = tmp_path / "tier_tests_b.json"
+    tb.write_bytes(b"\xff\xfe\x00corrupt")
+    assert D._p6_complete(tmp_path, [tb]) is False
+
+
 def test_resume_across_code_sha_never_bypasses_config_mismatch(tmp_path):
     args = _args(tmp_path, resume_across_code_sha=True)
     out = tmp_path / "phase"

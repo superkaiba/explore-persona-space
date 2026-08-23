@@ -3524,7 +3524,9 @@ def _p6_complete(out: Path, finals: list[Path]) -> bool:
         return False
     try:
         tb = json.loads((out / "tier_tests_b.json").read_text())
-    except (OSError, json.JSONDecodeError):
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
+        # UnicodeDecodeError: encoding-corrupt file must route to recompute,
+        # not crash the resume predicate (workflow_lint json-guard-unicode).
         return False
     return "bridge" in tb and "pile_exploratory" in tb
 
