@@ -55,6 +55,7 @@
 ## Codex code-review overreach (PASS-leaning calibration)
 
 - [Codex FAILs pre-existing resume metadata clobber](feedback_codex_fails_preexisting_resume_metadata_clobber.md) — real walls/fences clobber, zero consumers, verdict vs own CONCERN row; PASS + operational guard (#2378 r10)
+- [Codex validation-after-engine-init ordering blocker](feedback_codex_validation_after_engine_init_ordering.md) — gate topology decides: fail-louds before spend/verdict-write + strength≠ordering + parent-SHA the ordering; defer-concern the persisted BLOCKERs (#2378 r12)
 - [Codex blocker on unreachable exception path](feedback_codex_blocker_on_unreachable_exception_path.md) — code-real batched-retry coupling whose trigger can't fire (dof/trace bound); check reachability arithmetic + grid-superset before upholding (#2356 r4)
 - [Codex demands hardening beyond minimal-port contract](feedback_codex_hardening_beyond_minimal_port_contract.md) — registered change set + writer-reachability + execution-test the proposed fix; persist residue via raise+defer-concern (#556, #958)
 - [Codex Step 0.6 literal vs purpose](feedback_codex_step_06_literal_vs_purpose.md) — decisive variable = gate topology: PASS when a demonstrated pre-launch gate runs the changed code for real (#551, #560)
