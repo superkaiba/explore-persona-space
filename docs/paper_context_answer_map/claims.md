@@ -29,7 +29,8 @@ parked with its capping clean-result + frozen-replay round, #2333's prefill-vs-p
 Takeaways fold, #823's identity-baseline fold, and the #2394 jailbreak-mining pilot
 (adverse for the map). In-flight register refreshed: #2378 now blocked; #2388
 (answer correctness — stretch-goal item 6) and #2389 (patching on Qwen3.8-27B) are
-new running lanes; #823's inconsistent-origin persona ladder (rev-2 Gap 6) is running.
+new running lanes; #823's inconsistent-origin persona ladder (rev-2 Gap 6) LANDED 2026-08-20
+and is folded into the paper as of 2026-08-22 (Gap 6 below), with only its n/d caveat open.
 
 **Terminology guard (glossary duty, `docs/glossary_context_answer_map.md`):** two
 prefix-side objects exist — the query-averaged **prefix vector v_P** and the
@@ -464,11 +465,22 @@ substrate + 64 adapters are reusable for a retry with stronger manipulations.
 5. **C2 "map predicts the patching shift" wording** — evidence says it essentially
    does not (cosine 0.00 at L20 #1415; transport ≤0.16 #2094). Soften or wait for
    #2329's registered predicted-vs-realized result.
-6. **Off-policy inconsistent-origin arm (C1) — IN-FLIGHT since 2026-08-19:** running
-   as #823 same-issue follow-up `inconsistent-origin-persona-ladder` (single- vs
-   multi-persona Claude answers on matched LMSYS prompts, map quality vs # personas,
-   ~5 GPU-h; P-GEN amendment round dispatched 2026-08-20 — implementation not yet
-   landed).
+6. **Off-policy inconsistent-origin arm (C1) — LANDED 2026-08-20, folded into the paper
+   2026-08-22.** #823 follow-up `inconsistent-origin-persona-ladder`: refit R² falls
+   monotonically with source-persona count, 0.501/0.483/0.516 (k=1) → 0.345/0.281/0.366
+   (k=16) at layers 14/26/17. A denominator-free paired re-read
+   (`shared_persona_paired.json`, git main @ `84633d46c6`; producer
+   `scripts/issue823_shared_persona_paired.py` @ `d526008c67`) shows the decline is NOT
+   the scoring denominator: on contexts where the k=1 and k=16 arms draw the SAME
+   persona — identical targets, same held-out fold — the mixed-origin map's squared
+   error is 30% higher (85–87% of contexts, Wilcoxon p 4e-32..9e-36), and the
+   shared-map-plus-constant-offset explanation is excluded (measured excess 3.4–12.8×
+   the E/k it predicts, tracking full E instead, all 12 cells). Body + `app:origin-ladder`
+   written at Overleaf `6fc2495`. **Open caveat:** the fits sit at n/d = 1.033, so the
+   effect may be a near-interpolation artifact; the larger-context replication testing
+   that (`origin-ladder-more-contexts`, dispatched 2026-08-22) is the remaining gap.
+   **Do not re-cite #823's promoted Takeaway 4** — its "no evidence the map itself becomes
+   harder to learn" clause is refuted; correction filed as #2475.
 7. **#2162/#2329 claims unwritten** — both v2 TLDRs are "(Thomas fills in)"; C2's
    information-type story can't be cited until then. Thomas-only.
 8. **Finetuning optional section** — stays optional; #2247 proposed-only.
@@ -527,7 +539,8 @@ substrate + 64 adapters are reusable for a retry with stronger manipulations.
 | #2356 refuse/comply prediction vs judge | running — smoke/pilot-gate iteration r9 PASS_UNIFIED 2026-08-20 | C5 monitoring row + stretch item "LLM-judge comparator" |
 | #2388 answer-correctness from v_C / mapped answer (NEW 2026-08-19) | running — implementation waves landing | stretch item 6 → prospective C5/C3 row |
 | #2389 context-vector patching on Qwen3.8-27B, context-end only (NEW 2026-08-19) | running — implementation round | C2 model-scale patching |
-| #823 `inconsistent-origin-persona-ladder` follow-up + P-GEN amendment round | followups_running (dispatched 2026-08-19/20; pilot attribution JSON only so far) | C1 K4 inconsistent-origin cell |
+| #823 `inconsistent-origin-persona-ladder` follow-up | LANDED 2026-08-20; denominator-free paired re-read landed 2026-08-22 (`84633d46c6` / `d526008c67`); folded into the paper at Overleaf `6fc2495` | C1 K4 inconsistent-origin cell — CLOSED except the n/d caveat |
+| #823 `origin-ladder-more-contexts` follow-up (NEW 2026-08-22) | dispatched — session `cmt56svxpqhhgyl0umu9m35zi`; tests whether the 30% mixed-origin excess survives n/d >> 1 or collapses toward E/k | C1 K4 caveat in `app:origin-ladder` |
 | #2329 Qwen3.5-9B minimal-pair transfer (child of #2162) | followups_running — round 15 `q35_ladder_decay` implementing; report TLDR/claims still "(Thomas fills in)" | C2 cross-model row |
 | #1336 base-coherence validity round | in-flight subagent round (session-handoff note 2026-08-19) — Takeaways may be revised | C1 K3 (Llama Tülu ladder) |
 

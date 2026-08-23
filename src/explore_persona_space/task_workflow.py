@@ -2176,7 +2176,8 @@ def pre_split_review_gate(events: list[dict]) -> dict:
     ``{"verdict", "reason", "remaining", "breadcrumb_index",
     "unit_dispatch_index", "impl_index"}``. Verdicts:
 
-    - ``REVIEW-OK``: no pre-split state in flight, or an implementation marker
+    - ``REVIEW-OK``: an implementation-class marker EXISTS (#2294) AND either
+      no pre-split state is in flight or an implementation marker
       (``epm:experiment-implementation`` / ``epm:results``) POSTDATES (higher
       index) both arms.
     - ``PRE-SPLIT-INCOMPLETE``: the latest split signal has no later
@@ -2213,6 +2214,22 @@ def pre_split_review_gate(events: list[dict]) -> dict:
       #2061 fail-open shape). A live arm-B signal at a HIGHER index than the
       unparseable candidate supersedes it (max index wins ->
       PRE-SPLIT-INCOMPLETE, still nonzero at the CLI).
+
+    - ``IMPLEMENTER-MARKER-MISSING``: NO implementation-class marker
+      (``epm:experiment-implementation`` / ``epm:results``) exists anywhere in
+      the events (#2294; incident #2290 round 1: the Step 5 ensemble was
+      dispatched with 12 rows and zero ``epm:results`` — the reviewer FAILed
+      mechanical-contract-only and the round bought nothing but the absence).
+      PRESENCE-only by design: a task with no implementation marker has no
+      round to review, unconditionally; the stronger
+      marker-must-postdate-the-latest-``epm:code-review`` form is DECLINED
+      (plan #2294 §3 — it false-FAILs legitimate same-round re-dispatches:
+      the killed-Codex-wrapper ``--reattach`` recovery, a confirmed twin
+      no-show single-Claude round, reconciler re-runs). Evaluated AFTER both
+      pre-split arms, so the three verdicts above keep precedence; the check
+      guards the ENTIRE ``REVIEW-OK`` fall-through — both the
+      no-pre-split-signals branch AND the completed-split (empty-remaining
+      ``a_empty``) branch, where a branch-1-only placement would fail open.
 
     Incident-trace verdicts (plan v2 §12, measured 2026-08-17): #1336 — arm B
     FIRES at the v132 premature Unit-A review dispatch (the latest
@@ -2302,6 +2319,20 @@ def pre_split_review_gate(events: list[dict]) -> dict:
                 "arm B: unit-scoped implementing stage-dispatch at events index "
                 f"{unit_dispatch_index} has no later implementation marker"
             )
+        return result
+    # #2294: hoisted ABOVE the two-branch reason split so the presence check
+    # guards the WHOLE REVIEW-OK fall-through — including the completed-split
+    # (empty-remaining a_empty) branch, where a check inside the
+    # no-pre-split-signals branch alone would fail open (plan #2294 §2).
+    # Below the exit-3/exit-2 returns above, so those verdicts keep precedence.
+    if impl_index is None:
+        result["verdict"] = "IMPLEMENTER-MARKER-MISSING"
+        result["reason"] = (
+            "no implementation-class marker (epm:experiment-implementation / "
+            "epm:results) in canonical events — the round's implementer report "
+            "was never posted; post it from the implementer's returned report "
+            "FIRST, then re-run the guard"
+        )
         return result
     if breadcrumb_index is None and unit_dispatch_index is None:
         result["reason"] = "no pre-split signals in events"
