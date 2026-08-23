@@ -59,6 +59,27 @@ either way is substantive. Also: a brief may ORDER plan inlining even when
 the worktree copy probes identical to canonical — inline per the brief
 (belt-and-braces) and note the probe result in the return.
 
+**#2306 r1 (2026-08-23) sharpenings — SKILL.md fence-binding rounds (a
+lint-check diff whose payload is `.claude/skills/**` fence edits under a
+"no executable-logic drift" acceptance criterion):**
+
+- **Per-hunk classify duty:** compose an explicit walk of every skill-file
+  hunk — (a) pure binding/guard insertion (allowed) vs (b) ANY other
+  executable-logic change to fence bodies (substantive, Major+, quote the
+  hunk). Also: the FATAL guard must fire BEFORE the first `git -C "$WT"` /
+  `cd "$WT"` use in the fence (a guard after first use is hollow for it).
+- **Mutation-visibility bar for SHIPPED pin tests:** per test, would it
+  FAIL if the binding / guard / annotation token were removed, or the lint
+  check unregistered? A test asserting only on a synthetic fixture string
+  that does not track the LIVE SKILL.md fence pins nothing — name it.
+- **Parser FP/FN duty names concrete shapes:** file-scan scope, indented
+  fences, info-string variants, `${WT}` vs `"$WT"` forms, bind-after-use,
+  annotation-token honoring — plus the stakes-both-directions line (item 7).
+- **plan-verify version nuance:** attest the marker's recorded plan version
+  vs the CURRENT plan symlink version when they differ (#2306: PASS recorded
+  at v2, plan later amended to v3) — attest exactly what was found, never a
+  bare "PASS present".
+
 **Two #2291 r1 (2026-08-22) sharpenings:**
 
 6. **wf-fix detection is TAG-first, not title-first.** #2291's title had no
