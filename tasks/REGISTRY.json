@@ -11383,8 +11383,8 @@
       "goal": "Determine whether base-model (pre-fine-tuning) geometry under the inoculation prompt p_inoc predicts which eval triggers re-elicit inoculation-suppressed behavior after inoculated fine-tuning, versus the post-fine-tuning predictors of #2379.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/2474",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/2474",
+      "status": "followups_running",
       "title": "Pre-fine-tuning context geometry predicts emergent-misalignment re-elicitation but adds at most a marginal increment over surface-text similarity (MODERATE confidence)"
     },
     "2475": {
