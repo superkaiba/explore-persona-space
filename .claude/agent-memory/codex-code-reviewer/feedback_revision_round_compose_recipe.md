@@ -2349,3 +2349,33 @@ twin's own DEFERRED Critical (the adjudicated smoke shape) must spell out
 what NEW evidence means ("THIS commit deleting/breaking the registered
 smoke wiring — nothing less"), else an adversarial re-FAIL of its own r1
 item is predictable.
+
+**Post-close crash-fix with brief-pinned RESTART numbering (#823 ext-ladder
+crash-fix = brief "round 4", 2026-08-23):** a crash-fix dispatched AFTER the
+follow-up loop's PASS+PASS close (run-phase pod smoke rc=17) composes on the
+loop's donor template with five deltas: (a) the brief's round number may
+RESTART/diverge from the loop's sentinel sequence and even COLLIDE with an
+already-posted sentinel (here v4 == the loop's r4 verdict sentinel) — follow
+the brief (it is the extraction contract, and extraction is output-file-
+scoped so no operational collision), tell Codex "emit v<n> exactly; do not
+adjust it", and flag both divergence and collision in the return; (b) the
+fix commit's PARENT can be an UNREVIEWED intermediate run-phase DATA commit
+(Gate-A report/digest) — keep it out-of-round per the brief, route via Step
+0.9, flag the unreviewed commit in the return (the #2329 r4 rule generalizes
+from hot-fix commits to run-phase data commits); (c) when the dispatch note
+marks its root cause "orchestrator diagnosis, to be VERIFIED by the fix
+round" and the marker answers ADDRESSED-DIFFERENTLY with empirical
+refutation, compose a refinement-is-SANCTIONED instruction (verify the
+refinement against the producer code; do not demand the literal hypothesis)
+— else the twin flags an honest refinement as non-adherence; (d) a marker
+citing a plan pin by a NAME that does not literal-grep in the plan (here
+"TRUNC_CONVENTION") gets a compose-time absence attestation + the REAL
+clauses carrying the substance, with §(d)-paraphrase FAIRNESS handed to the
+twin as report-accuracy — never inherited, never resolved by the composer;
+(e) a dispatch-pinned NEVER-loosened constraint (floor/probe) becomes an
+explicit detection-power job with a no-new-tolerance hunt, and the producer
+seam facts are attested per the worktree-vintage rule with exact line
+windows (run_823.py :961-972 / :1158-1163 / :1259-1267). Ledger snapshot
+still pins at the crash-fix impl marker's ts; body-prose NITs and a
+reconciler-DEFERRED run-stage BLOCKER get fences (no status lines / one
+consistency line), not closure duties.

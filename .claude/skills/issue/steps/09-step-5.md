@@ -630,6 +630,25 @@ issue's src at fork-era content (scripts on main import other issues'
 `experiments.issue_<M>` packages): committing the pin-back keeps the widened
 sync from advancing the consumed dir mid-experiment.
 
+**Root-cause fix — bring the branch current (#2311).** A pair-revert restores
+the fork-era pair; it does NOT make `src/` and the synced sibling tests agree,
+so the skew recurs on every later round. The #2412-widened globs handle the
+issue-namespaced case automatically (src syncs WITH the pair, or the strict
+identity arm reverts it), so reach for this fallback when the automatic path
+cannot: a skew inside SHARED experiment src (routed lenient by design — content
+diffs alone never fail shared src) or a branch-side-edit skip holding a sibling
+pair stale. Then MERGE the fetched base into the issue branch IN THE WORKTREE —
+`git -C "$WT" merge origin/main` — so both sides sit at one revision. Do NOT
+rebase (the branch is already pushed, so rebasing needs a force-push — a
+user-ask, § Cost and safety rails) and never merge at the repo root (hook-blocked,
+#1128/#1090). Measured on #2303: a synced main-era
+`tests/test_issue2225_steer_hook.py` ran against fork-era
+`experiments/issue2225/steer_train.py`, COLLECTED cleanly, then failed at call
+time — `ValueError: unknown mask mode 'context_end'`, 2 nodes the Step 9c
+compare correctly classified NEW — costing a 1h26m gate run plus a re-gate;
+after the merge (`642a792d39fd89f7d21fb4e6a988b04bd08157f2`) the file passed
+14/14.
+
 The refresh touches the workflow surface PLUS sibling-issue experiment
 code: the #2412-widened globs above also sync issue-namespaced
 `src/explore_persona_space/experiments/issue*/` dirs (probe-guarded +
