@@ -93,3 +93,22 @@ round-committed-file rule) gets settled-WHY / open-WHETHER-CORRECT framing so
 the twin adjudicates the fix instead of flagging scope drift. Reconcile
 `Standing recommendations on PASS` are declared non-gating (note only on
 regression).
+
+**Consecutive discharge rounds + the Standing-recommendations flip (#2479 r6,
+2026-08-23):** when round n+1 discharges round n's reconciler downgrades, the
+round-n prompt is a SAME-SHAPE donor — extract the rubric between the
+`"\nFollow this protocol:\n"` / `"\n\nYou MUST emit your verdict"` anchors and
+regex-lift the verdict template's full `**Blocker tags:** [...]` bracket line
+for verbatim reuse (it already carries the task's 4.6-N/A-by-kind note);
+rewrite every round section fresh. Two adjudication deltas: (1) the same
+reconcile section flips meaning across rounds — r5 declared `Standing
+recommendations on PASS` NON-gating, while the r5 reconcile's recommendations
+RESTATE the persisted fix prescriptions, so in the r6 compose they ARE the
+round contract; attest the flip explicitly or the twin (trained by the prior
+round's non-gating text) under-reads them. (2) The per-locus severity fence
+includes NIT loci: a NOT-ADDRESSED NIT re-raises the same id at NIT, never
+auto-promoted to CONCERN — state the per-locus severities in both the fence
+paragraph and the Concerns-to-persist bracket. Also carry the reconcile's
+trigger-likelihood rationale with a BOTH-directions moot note ("moot once the
+check exists": no discounting a closure gap on unlikely-trigger grounds, no
+escalating a closed item on consequence grounds).

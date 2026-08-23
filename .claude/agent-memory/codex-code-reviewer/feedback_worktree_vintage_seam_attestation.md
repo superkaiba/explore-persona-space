@@ -35,3 +35,31 @@ with the orchestrator's `epm:progress` DECISION note as the round contract
 per-round impl marker (fetch + round-match as usual), and post-reconciler
 no-relitigate blocks from the PRIOR round's binding PASS. Related:
 [[revision-round compose recipe]], [[deferred event: two semantics]].
+
+**Abbreviated-cite extension (#2254 r5, 2026-08-23):** a reconciler
+ruling's src cite can be path-ABBREVIATED — the ruling said
+`issue_1739/constants.py:50`, but `src/explore_persona_space/issue_1739/`
+does not exist on the branch; the real file is
+`src/explore_persona_space/experiments/issue_1739/constants.py:50`.
+Resolve the cite on the WORKTREE at compose time (grep the constant, not
+the path) and ATTEST the resolution in the seam-facts block ("the ruling's
+abbreviated cite is the SAME file; do not flag it") — otherwise the twin
+false-flags the ruling/marker for a nonexistent path.
+
+**Reconciler-FAIL fix-round shape (#2254 r5 = codex v5, 2026-08-23):**
+when the prior round ended Claude-PASS / Codex-FAIL / reconciler BINDING
+FAIL with the twin's OWN Major UPHELD as the gating BLOCKER: (a) the
+reconciler ruling is inlined IN FULL as THE acceptance contract (replaces
+the prior round's decision-note envelope; its § fix-scope items become
+one Plan-Adherence table row each); (b) author-neutrality runs BOTH
+directions for an UPHELD author — "neither defend it by demanding MORE
+than the ruling's stated fix scope, nor wave the fix through because it
+answers you"; (c) severity fences SPLIT per concern: the upheld BLOCKER's
+NOT-ADDRESSED = substantive FAIL (the fix IS the round), the
+reconciler-DOWNGRADED concern's NOT-ADDRESSED = status-line re-raise at
+CONCERN only (false closure claims stay ordinary-bar substantive); (d) a
+fix-HALF the ruling ruled INERT (here `temperature=` at the gate seam)
+gets an explicit never-re-demand line, else the twin re-raises its own
+half-fix; (e) a contract-INTERNAL tension (ruling item 4 named a call
+site its own item 1 deletes) is handed as a DECLARED reconciliation to
+adjudicate JUSTIFIED/UNJUSTIFIED — the composer never resolves it.
