@@ -50,7 +50,13 @@ import sys
 import time
 from pathlib import Path
 
-import numpy as np
+from explore_persona_space.orchestrate.env import load_dotenv
+
+# Shared-VM thread caps (#847) bind in-process only when load_dotenv() runs
+# BEFORE the first heavy import (tests/test_shared_vm_thread_caps.py).
+load_dotenv()
+
+import numpy as np  # noqa: E402
 
 # --- pre-registered constants (plan SS3 / SS4 Step 6 / SS6) -----------------
 ISSUE = 2479
@@ -886,10 +892,6 @@ def build_verdict(
 
 def main(argv: list[str] | None = None) -> int:
     """CLI entrypoint: build gradient_verdict.json + figures."""
-    from explore_persona_space.orchestrate.env import load_dotenv
-
-    load_dotenv()
-
     ap = argparse.ArgumentParser(
         description="issue #2479 P6 gradient verdict (plan SS4 Step 6)",
     )
