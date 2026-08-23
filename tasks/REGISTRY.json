@@ -11412,8 +11412,8 @@
     "2478": {
       "has_clean_result": false,
       "kind": "analysis",
-      "path": "tasks/running/2478",
-      "status": "running",
+      "path": "tasks/completed/2478",
+      "status": "completed",
       "title": "Assemble qualitative-examples panels for the paper (discrimination + patching)"
     },
     "2479": {
