@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2490,
+  "highest_id": 2491,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11514,6 +11514,13 @@
       "path": "tasks/proposed/2490",
       "status": "proposed",
       "title": "workflow-fix: verify_plan checks plan-embedded new-script commands against the plan's own declared CLI choices (#2474 harvest-verify incident)"
+    },
+    "2491": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2491",
+      "status": "proposed",
+      "title": "workflow-fix: verify_plan WARNs on unqualified null-localization claims in plan prose (#2474 fine-tuning-localization incident)"
     },
     "25": {
       "has_clean_result": false,
