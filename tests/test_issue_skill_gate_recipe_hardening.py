@@ -470,7 +470,17 @@ def test_step9c_completion_read_attributes_list_shape():
     sec = _section_9c(_text())
     # Detection predicate: rc=126 conjunct + path-scoped Permission-denied grep.
     attr_idx = sec.index('"${PYTEST_RC:-}" = "126"')
-    assert "Permission denied" in sec[attr_idx : attr_idx + 400]
+    # Pin the LITERAL path-scoped grep fragment (round-1 Codex concern
+    # `path-scoped-attribution-pin`): a generic "Permission denied" substring
+    # check stays green if the recipe's predicate is weakened to a bare
+    # `grep 'Permission denied'`, which would fire on unrelated
+    # Permission-denied log lines (not per-test-path splice signatures).
+    path_scoped_grep = r"grep -qE 'tests/[^[:space:]]*\.py: Permission denied'"
+    assert path_scoped_grep in sec[attr_idx : attr_idx + 400], (
+        "completion-read detection predicate must keep the PATH-SCOPED "
+        "Permission-denied grep fragment (tests/...\\.py: scope), not a bare "
+        "'Permission denied' match"
+    )
     # The attribution names cause + remedy (wrap-tolerant via _norm):
     n = _norm(sec)
     assert "LIST-SHAPE failure, not a test failure" in n
