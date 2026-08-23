@@ -189,18 +189,46 @@ def main(argv: list[str] | None = None) -> int:
     # restrict_pool_to_manifest in the paired AND --op-powered cells.
     eligible_raw = args.eligible_ids.read_bytes()
     elig = json.loads(eligible_raw)
-    for key in ("eligible_paired", "eligible_op", "provenance"):
+    # C2 export-schema hardening (concern round, r8): the four emit keys are all
+    # REQUIRED; provenance must be a typed non-empty dict (a JSON null passes a
+    # bare `in` check and embeds an empty audit record); duplicate ids are
+    # REJECTED loud (a silent set-dedup would mask a producer bug); the counts
+    # fields are cross-checked against the arrays they claim to describe.
+    for key in ("eligible_paired", "eligible_op", "counts", "provenance"):
         if key not in elig:
             raise KeyError(
                 f"{args.eligible_ids}: missing {key!r} (top-level keys: {sorted(elig)}) — "
                 "regenerate via issue1345_gen_stories_paired.py --emit-eligible-ids"
             )
+    if not isinstance(elig["provenance"], dict) or not elig["provenance"]:
+        raise ValueError(
+            f"{args.eligible_ids}: provenance must be a non-empty dict "
+            f"(got {type(elig['provenance']).__name__}) — the manifest embeds it as the "
+            "export's audit record"
+        )
+    if not isinstance(elig["counts"], dict):
+        raise ValueError(
+            f"{args.eligible_ids}: counts must be a dict (got {type(elig['counts']).__name__})"
+        )
 
     def _id_set(key: str) -> set[str]:
         ids = elig[key]
         if not isinstance(ids, list) or not ids or not all(isinstance(x, str) and x for x in ids):
             raise ValueError(f"{args.eligible_ids}: {key} must be a non-empty list of str ids")
-        return set(ids)
+        uniq = set(ids)
+        if len(uniq) != len(ids):
+            raise ValueError(
+                f"{args.eligible_ids}: {key} contains {len(ids) - len(uniq)} duplicate ids — "
+                "rejecting loud (a silent set-dedup would mask a producer bug); regenerate "
+                "via issue1345_gen_stories_paired.py --emit-eligible-ids"
+            )
+        declared = elig["counts"].get(f"n_{key}")
+        if declared != len(ids):
+            raise ValueError(
+                f"{args.eligible_ids}: counts[n_{key}]={declared!r} does not match "
+                f"len({key})={len(ids)} — export internally inconsistent; regenerate"
+            )
+        return uniq
 
     eligible_paired_ids = _id_set("eligible_paired")
     eligible_op_ids = _id_set("eligible_op")

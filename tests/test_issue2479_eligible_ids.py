@@ -83,6 +83,20 @@ def test_filter_pool_feasible_regime_asymmetry():
 # --- (c) --emit-eligible-ids export -------------------------------------------
 
 
+def _write_panel(tmp_path: Path, desc: str = "a benign panel description") -> Path:
+    """Tmp #2479 character panel (the roster the invariance gate renders under)."""
+    panel = tmp_path / "panel.json"
+    panel.write_text(
+        json.dumps(
+            [
+                {"name": "x", "display_name": "X", "desc": desc},
+                {"name": "y", "display_name": "Y", "desc": "another benign desc"},
+            ]
+        )
+    )
+    return panel
+
+
 def _stage_emit_inputs(monkeypatch, tmp_path: Path) -> Path:
     """Tmp matched allowlist + track_s rows; stage_pinned_file faked to tmp."""
     matched_dir = tmp_path / "matched"
@@ -117,8 +131,9 @@ def _stage_emit_inputs(monkeypatch, tmp_path: Path) -> Path:
 
 def test_emit_eligible_ids_schema(monkeypatch, tmp_path):
     matched_dir = _stage_emit_inputs(monkeypatch, tmp_path)
+    panel = _write_panel(tmp_path)
     out = tmp_path / "sub" / "eligible_conv_ids.json"
-    gp.emit_eligible_ids(out, matched_dir, tmp_path / "dl", tokenizer=FakeTok())
+    gp.emit_eligible_ids(out, matched_dir, tmp_path / "dl", tokenizer=FakeTok(), panel_path=panel)
     payload = json.loads(out.read_text())
     for key in ("eligible_paired", "eligible_op", "counts", "provenance"):
         assert key in payload, key
@@ -142,6 +157,86 @@ def test_emit_eligible_ids_schema(monkeypatch, tmp_path):
     assert prov["budgets"]["answer_token_budget"] == gp.ANSWER_TOKEN_BUDGET
     assert prov["budgets"]["prompt_token_budget"] == gp.g.PROMPT_TOKEN_BUDGET
     assert prov["inputs"]["track_s_revision"] == gp.c.PIN_REV
+    # concern-round r8 residue: realized emit-config identity + input pins
+    assert prov["emit_config"] == {
+        "character_name": gp.c.STORY_CHARACTER_NAME,
+        "persona_desc": gp.PERSONA_DESC,
+        "variant": gp.c.VARIANT,
+    }
+    assert prov["tokenizer_revision"] is None
+    assert prov["tokenizer_revision_source"] == "injected"
+    matched = prov["inputs"]["matched_allowlist"]
+    assert matched["path"].endswith("matched_subsets_parent.json")
+    expected_sha = hashlib.sha256(
+        (matched_dir / "matched_subsets_parent.json").read_bytes()
+    ).hexdigest()
+    assert matched["sha256"] == expected_sha
+    assert matched["pinned_revision"] == gp.c.REUSE_REV
+    # panel-invariance record: benign panel -> delta 0; FakeTok counts no tokens
+    # in c1's prompt, so both regimes' min margin == the full prompt budget.
+    pi = prov["panel_invariance"]
+    assert pi["panel_sha256"] == hashlib.sha256(panel.read_bytes()).hexdigest()
+    assert pi["n_panel_configs"] == 2
+    assert pi["slack_tokens"] == gp.PANEL_MARGIN_SLACK_TOKENS
+    for regime in ("paired", "op"):
+        reg = pi["regimes"][regime]
+        assert reg["min_margin_tokens"] == gp.g.PROMPT_TOKEN_BUDGET
+        assert reg["max_panel_delta_tokens"] == 0
+        assert reg["min_margin_conv_id"] in ("c1", "c3")
+
+
+def test_panel_template_replicas_match_module_constants():
+    """Parametric replica drift pin: the gate's self-check inputs, asserted directly."""
+    assert (
+        gp._panel_paired_system(gp.c.STORY_CHARACTER_NAME, gp.PERSONA_DESC)
+        == gp.STORY_PAIRED_SYSTEM_TEMPLATE
+    )
+    assert (
+        gp._panel_op_system(gp.c.STORY_CHARACTER_NAME, gp.PERSONA_DESC)
+        == gp.STORY_OP_COMPANION_SYSTEM
+    )
+
+
+@pytest.mark.parametrize(
+    ("extra_desc_tokens", "fires"),
+    [
+        # min margin under FakeTok = PROMPT_TOKEN_BUDGET (c1's prompt holds no '§');
+        # the gate requires min_margin >= delta + slack, so the boundary sits at
+        # delta == budget - slack (passes) vs delta == budget - slack + 1 (fires).
+        (gp.g.PROMPT_TOKEN_BUDGET - gp.PANEL_MARGIN_SLACK_TOKENS, False),
+        (gp.g.PROMPT_TOKEN_BUDGET - gp.PANEL_MARGIN_SLACK_TOKENS + 1, True),
+    ],
+)
+def test_panel_invariance_boundary(monkeypatch, tmp_path, extra_desc_tokens, fires):
+    """Codex boundary test: emit-config prompt fits; a longer persona config exceeds."""
+    matched_dir = _stage_emit_inputs(monkeypatch, tmp_path)
+    panel = _write_panel(tmp_path, desc="§" * extra_desc_tokens)
+    out = tmp_path / "eligible_conv_ids.json"
+    if fires:
+        with pytest.raises(AssertionError, match="panel-invariance margin gate FAILED"):
+            gp.emit_eligible_ids(
+                out, matched_dir, tmp_path / "dl", tokenizer=FakeTok(), panel_path=panel
+            )
+        assert not out.exists(), "gate must fire BEFORE the export is written"
+    else:
+        gp.emit_eligible_ids(
+            out, matched_dir, tmp_path / "dl", tokenizer=FakeTok(), panel_path=panel
+        )
+        pi = json.loads(out.read_text())["provenance"]["panel_invariance"]
+        assert pi["regimes"]["paired"]["max_panel_delta_tokens"] == extra_desc_tokens
+        assert pi["regimes"]["paired"]["max_delta_config"] == "X"
+
+
+def test_emit_fails_loud_on_missing_panel(monkeypatch, tmp_path):
+    matched_dir = _stage_emit_inputs(monkeypatch, tmp_path)
+    with pytest.raises(FileNotFoundError, match="character panel"):
+        gp.emit_eligible_ids(
+            tmp_path / "o.json",
+            matched_dir,
+            tmp_path / "dl",
+            tokenizer=FakeTok(),
+            panel_path=tmp_path / "absent_panel.json",
+        )
 
 
 def test_emit_mode_refuses_combined_flags(monkeypatch, tmp_path):
@@ -279,3 +374,66 @@ def test_builder_fails_loud_on_export_missing_provenance(monkeypatch, tmp_path):
     eligf = _write_elig(tmp_path / "elig.json", paired=["c1"], op=["c1"], provenance=False)
     with pytest.raises(KeyError, match="provenance"):
         ps.main(_builder_argv(tmp_path, eligf, n_sample=1, n_reservation=1))
+
+
+# --- C2 export-schema hardening (concern round, r8) ---------------------------
+
+
+def _mut_drop_counts(p: dict) -> None:
+    del p["counts"]
+
+
+def _mut_null_provenance(p: dict) -> None:
+    p["provenance"] = None
+
+
+def _mut_empty_provenance(p: dict) -> None:
+    p["provenance"] = {}
+
+
+def _mut_counts_not_dict(p: dict) -> None:
+    p["counts"] = [1, 2]
+
+
+def _mut_dup_paired(p: dict) -> None:
+    p["eligible_paired"] = ["c1", "c1", "c2"]
+    p["counts"]["n_eligible_paired"] = 3  # counts consistent: the DUP check must fire
+
+
+def _mut_dup_op(p: dict) -> None:
+    p["eligible_op"] = ["c1", "c2", "c2"]
+    p["counts"]["n_eligible_op"] = 3
+
+
+def _mut_paired_count_mismatch(p: dict) -> None:
+    p["counts"]["n_eligible_paired"] = 99
+
+
+def _mut_op_count_missing(p: dict) -> None:
+    del p["counts"]["n_eligible_op"]
+
+
+@pytest.mark.parametrize(
+    ("mutate", "exc", "match"),
+    [
+        (_mut_drop_counts, KeyError, "counts"),
+        (_mut_null_provenance, ValueError, "provenance must be a non-empty dict"),
+        (_mut_empty_provenance, ValueError, "provenance must be a non-empty dict"),
+        (_mut_counts_not_dict, ValueError, "counts must be a dict"),
+        (_mut_dup_paired, ValueError, "duplicate ids"),
+        (_mut_dup_op, ValueError, "duplicate ids"),
+        (_mut_paired_count_mismatch, ValueError, "does not match"),
+        (_mut_op_count_missing, ValueError, "does not match"),
+    ],
+)
+def test_builder_rejects_malformed_export(monkeypatch, tmp_path, mutate, exc, match):
+    """Each C2 rejection fires loud — never a silent dedup / silent default."""
+    shared = ["c1", "c2"]
+    _setup_builder(monkeypatch, tmp_path, shared, r4op=shared, r4=shared)
+    eligf = _write_elig(tmp_path / "elig.json", paired=["c1", "c2"], op=["c1", "c2"])
+    payload = json.loads(eligf.read_text())
+    mutate(payload)
+    eligf.write_text(json.dumps(payload))
+    with pytest.raises(exc, match=match):
+        ps.main(_builder_argv(tmp_path, eligf, n_sample=1, n_reservation=1))
+    assert not (tmp_path / "panel_manifest.json").exists(), "no manifest on a rejected export"
