@@ -1,8 +1,6 @@
 ---
-title: Base-model geometry under the inoculation prompt predicts EM re-elicitation
-  with at most a marginal unique increment over surface-text similarity, and anti-predicts
-  re-elicitation in the capitalization trigger bank through an ordering shared with
-  plain similarity to neutral prompts (MODERATE confidence)
+title: Pre-fine-tuning context geometry predicts emergent-misalignment re-elicitation
+  but adds at most a marginal increment over surface-text similarity (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-08-22T19:38:42Z'
