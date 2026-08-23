@@ -7,13 +7,20 @@ disjoint dashed, both arms); (B) per-layer mean graded judge shift vs baseline
 per-pair judge shifts per layer (both arms, symlog y). Writes a per-arm
 per-layer summary JSON alongside.
 
+``--style iclr`` instead renders the CONDENSED context-answer-map paper
+variant (sections/results/c2_context_vector.tex): the context-arm behavioral
+layer profile alone, with the seed-43/44 layer-14 replication means overlaid,
+written to the MAIN checkout's figures/paper/c2_layer14_peak.*.
+
 Inputs: eval_results/issue_1415/{behavioral_judge_scores_layer_sweep,
-behavioral_judge_scores,disjoint_baseline_recount}.json
+behavioral_judge_scores,disjoint_baseline_recount}.json (+
+behavioral_judge_scores_rep{43,44}.json for the iclr variant).
 Output figure goes to the MAIN checkout's figures/issue_1415/ (committed to main).
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 import subprocess
 from collections import defaultdict
@@ -66,7 +73,78 @@ def _per_pair_means(items: dict, arm_key: str, alpha: float | None = None) -> di
     return {p: float(np.mean(s)) for p, s in acc.items()}
 
 
+def _rep_l14_context_shifts(seed: int) -> dict[str, float]:
+    """Per-pair layer-14 context-arm judge shift vs the SAME-seed baseline for
+    one replication round (mirrors issue1415_l14_replication_figure.py)."""
+    d = json.loads((EVAL / f"behavioral_judge_scores_rep{seed}.json").read_text())
+    cell: dict[tuple[str, str], list[float]] = defaultdict(list)
+    for v in d["per_item"].values():
+        if v["n_kept_draws"] > 0:
+            cell[(v["arm"], v["pair_id"])].append(v["graded_score"])
+    pairs = sorted({v["pair_id"] for v in d["per_item"].values()})
+    return {
+        p: float(np.mean(cell[("steered_L14_context", p)]) - np.mean(cell[("baseline", p)]))
+        for p in pairs
+    }
+
+
+def fig_iclr_layer14_peak(summary: dict) -> None:
+    """Condensed ICLR variant: context-arm behavioral layer profile (mean +/-
+    SE over 28 pairs) with the seed-43/44 layer-14 replication means overlaid.
+    Saved to the MAIN checkout's figures/paper/c2_layer14_peak.*."""
+    from explore_persona_space.analysis.paper_plots import figsize_iclr_full, paper_color
+
+    set_paper_style("iclr")
+    blue = paper_color("instruct")
+    fig, ax = plt.subplots(figsize=figsize_iclr_full(0.42), layout="constrained")
+    means = [summary[f"context_L{lyr}"]["mean_shift"] for lyr in LAYERS]
+    ses = [summary[f"context_L{lyr}"]["se"] for lyr in LAYERS]
+    ax.errorbar(
+        LAYERS,
+        means,
+        yerr=np.maximum(0.0, ses),
+        fmt="-o",
+        color=blue,
+        capsize=2,
+        markersize=4,
+        linewidth=1.1,
+        label="context-vector patch (seed 42)",
+    )
+    rep_stats = []
+    for seed, dx in ((43, -0.45), (44, 0.45)):
+        sh = np.array(list(_rep_l14_context_shifts(seed).values()))
+        assert sh.size == 28, (seed, sh.size)
+        rep_stats.append((seed, float(sh.mean())))
+        ax.errorbar(
+            [14 + dx],
+            [sh.mean()],
+            yerr=[max(0.0, sh.std(ddof=1) / np.sqrt(sh.size))],
+            fmt="o",
+            mfc="white",
+            mec=blue,
+            mew=1.0,
+            color=blue,
+            ecolor=blue,
+            capsize=2,
+            markersize=4,
+            label="layer-14 replication (fresh seed)" if seed == 43 else None,
+        )
+    # Pin the paper fragment's quoted numbers (+6.2 replicated at +6.6 / +5.0).
+    assert abs(summary["context_L14"]["mean_shift"] - 6.2) < 0.1, summary["context_L14"]
+    assert abs(rep_stats[0][1] - 6.6) < 0.1 and abs(rep_stats[1][1] - 5.0) < 0.1, rep_stats
+    ax.axhline(0.0, color="#AAAAAA", linewidth=0.6)
+    ax.set_xticks(LAYERS)
+    ax.set_xlabel("patched layer")
+    ax.set_ylabel("judged behavior shift\nvs baseline (points, 0-100)")
+    ax.legend(loc="upper right", handletextpad=0.4)
+    savefig_paper(fig, "c2_layer14_peak", dir=MAIN_ROOT / "figures" / "paper")
+    print(f"saved figure to {MAIN_ROOT / 'figures' / 'paper'}/c2_layer14_peak.*")
+
+
 def main() -> None:
+    ap = argparse.ArgumentParser(description="#1415 layer-sweep behavior figure")
+    ap.add_argument("--style", choices=("blog", "iclr"), default="blog")
+    args = ap.parse_args()
     sweep = json.loads((EVAL / "behavioral_judge_scores_layer_sweep.json").read_text())["per_item"]
     primary = json.loads((EVAL / "behavioral_judge_scores.json").read_text())["per_item"]
     rc = json.loads((EVAL / "disjoint_baseline_recount.json").read_text())
@@ -102,6 +180,10 @@ def main() -> None:
     out_json = EVAL / "layer_sweep_behavioral_summary.json"
     out_json.write_text(json.dumps(summary, indent=1))
     print(f"wrote {out_json}")
+
+    if args.style == "iclr":
+        fig_iclr_layer14_peak(summary)
+        return
 
     fig, axes = plt.subplots(1, 3, figsize=(13.5, 4.4))
 

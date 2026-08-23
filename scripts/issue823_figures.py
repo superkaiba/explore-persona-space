@@ -274,13 +274,84 @@ def fig4(identity: dict, out_dir: Path) -> None:
     plt.close(fig)
 
 
+def fig_paper_c1_offpolicy(data: dict, identity: dict, out_dir: Path) -> None:
+    """ICLR paper figure (c1_linear off-policy result): refit R^2 by answer-origin arm.
+
+    Grouped bars (mean over 5 CV folds, +/-1 SD whiskers) per behavior at its
+    read-out layer, with a black reference tick over the plain-style bar: the
+    own-answer -> plain-answer content-only map (identity_baseline.json), which
+    EXCEEDS the context -> plain refit — target-space content overlap alone
+    accounts for the plain-arm retention (2026-08-19 identity-baseline fold).
+    """
+    from explore_persona_space.analysis.paper_plots import figsize_iclr_full
+
+    paper_arm_color = {
+        "A_prime": "#0072B2",  # blue — the featured own-answer arm
+        "B2": "#56B4E9",  # sky blue — consistent-origin external (plain style)
+        "B1": "#CC79A7",  # purple — distinct-style external
+        "C": "#999999",  # gray — shuffled / null arm (PAPER_COLORS "null")
+    }
+    fig, ax = plt.subplots(figsize=figsize_iclr_full(height_frac=0.52))
+    n_arms = len(ARM_ORDER)
+    width = 0.19
+    xs = np.arange(len(TRAITS))
+    for j, arm in enumerate(ARM_ORDER):
+        means, sds = [], []
+        for t in TRAITS:
+            m, s = fold_stats(data, "refit", arm, t)
+            L = READOUT[t]
+            means.append(m[L])
+            sds.append(s[L])
+        pos = xs + (j - (n_arms - 1) / 2) * width
+        ax.bar(
+            pos,
+            means,
+            width=width * 0.92,
+            yerr=sds,
+            capsize=2,
+            color=paper_arm_color[arm],
+            label=ARM_LABEL[arm],
+            error_kw={"lw": 0.9, "ecolor": "#333333"},
+        )
+    # Content-only reference: own answer -> plain answer map at the read-out layer,
+    # drawn over the plain-style (B2) bar.
+    j_b2 = ARM_ORDER.index("B2")
+    for i, t in enumerate(TRAITS):
+        L = READOUT[t]
+        r2_id = identity["identity_baseline_r2"]["b2"][str(L)]["r2_mean"]
+        x_b2 = xs[i] + (j_b2 - (n_arms - 1) / 2) * width
+        ax.hlines(r2_id, x_b2 - 0.11, x_b2 + 0.11, color="black", lw=1.3)
+    ax.hlines([], [], [], color="black", lw=1.3, label="own answer $\\to$ plain answer map")
+    ax.set_xticks(xs)
+    ax.set_xticklabels([f"{t}\n(read-out layer {READOUT[t]})" for t in TRAITS])
+    ax.set_ylabel("held-out refit $R^2$")
+    ax.set_ylim(-0.05, 0.78)
+    ax.axhline(0.0, color="#888888", lw=0.7)
+    ax.legend(loc="lower center", bbox_to_anchor=(0.5, 1.0), ncol=2, handlelength=1.4)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    savefig_paper(fig, "c1_offpolicy_arms", dir=out_dir)
+    plt.close(fig)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--results", default="eval_results/issue_823/ridge_r2_by_arm.json")
     ap.add_argument("--identity-results", default="eval_results/issue_823/identity_baseline.json")
     ap.add_argument("--out", default="figures/issue_823")
     ap.add_argument("--figs", default="1,2,3,4", help="comma-separated subset of figures to build")
+    ap.add_argument("--style", choices=("blog", "iclr"), default="blog")
     args = ap.parse_args()
+    if args.style == "iclr":
+        # Paper pathway (#2094 precedent): ICLR-styled figure under a new stem in
+        # figures/paper/ — never overwrites the issue stems.
+        set_paper_style("iclr")
+        fig_paper_c1_offpolicy(
+            load(Path(args.results)),
+            load(Path(args.identity_results)),
+            Path(__file__).resolve().parents[1] / "figures" / "paper",
+        )
+        print("paper c1_offpolicy_arms regenerated.")
+        return
     set_paper_style()
     which = {f.strip() for f in args.figs.split(",") if f.strip()}
     out_dir = Path(args.out)

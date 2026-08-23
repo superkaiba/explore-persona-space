@@ -275,6 +275,7 @@ def verify_math(completion: str, item: dict) -> bool | None:
     pred = _extract_boxed(completion)
     if pred is None:
         return None
+    # PROD_IMPORT_LINT_EXEMPT: one-off pod-side install expected; failure must be loud (#2388)
     from math_verify import parse, verify  # hard dependency; install failure must be loud
 
     gold_parsed = parse(f"${item['gold']}$")
