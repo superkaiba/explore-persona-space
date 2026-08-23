@@ -351,7 +351,7 @@ else
   # turnstore has min(kept, 8) rows. Fail loud with the remedy BEFORE the fit.
   kept_n="$(wc -l < "data/issue_1345/char_2479_iris/stories/kept_stories_paired_instruct.jsonl" 2>/dev/null || echo 0)"
   if [ "${kept_n:-0}" -lt 4 ]; then
-    echo "[i2479-p1p4] toyfit floor: iris smoke kept=${kept_n} < 4 — raise EPM_I1345_SMOKE_N_STORIES (wrapper default 12), wipe the iris smoke bundle + HF smoke marker, and re-run P0" >&2
+    echo "[i2479-p1p4] toyfit floor: iris smoke kept=${kept_n} < 4 — raise EPM_I1345_SMOKE_N_STORIES (wrapper default 40), wipe the iris smoke bundle + HF smoke marker, and re-run P0" >&2
     write_sentinel "issue-2479-smoke-FAIL.json" "epm:smoke-result" "p0_smoke" 1 \
       "issue-2479 P0 toyfit floor: iris smoke kept=${kept_n} < 4 rows | telemetry: ${P0_TELEM}"
     exit 40

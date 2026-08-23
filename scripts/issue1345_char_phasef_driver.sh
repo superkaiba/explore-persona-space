@@ -405,6 +405,9 @@ PY
         out_eq="${OUT_DIR}/ladder_${src}__${v}__${model}_context_L${LAYER}_${BASIS}_s${SEED}_nd${ND}_rows${n_eq}.json"
         if [ -f "$out_eq" ]; then
           echo "[eqn] unit ${eq_unit}/${#eq_specs[@]} ${v}: exists — resume"
+          # Per-unit progress line fires on the resume branch too (g3 r2): a
+          # resumed pass must not look wedged to the poller between real units.
+          echo "[p5] eqn unit ${eq_unit}/${#eq_specs[@]} ${v} elapsed=$(( $(date +%s) - T_START ))s"
           continue
         fi
         if ! uv run python scripts/issue1345_story_char_ladder_fill.py \
