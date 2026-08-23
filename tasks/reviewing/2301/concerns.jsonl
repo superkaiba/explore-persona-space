@@ -1,0 +1,1 @@
+{"ts": "2026-08-23T04:18:20Z", "event": "raised", "concern_id": "guard5-trigger-pin-underconstrained", "severity": "NIT", "summary": "The test does not pin `[0-9]+` exactly or restrict extraction to the Guard 5 bash fence, allowing weakened future predicates to pass.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}

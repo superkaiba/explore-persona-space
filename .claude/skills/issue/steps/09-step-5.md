@@ -9,7 +9,10 @@ this step.
 
 Only if status is `running` and the appropriate implementation marker
 (`epm:experiment-implementation v<n>` for experiments, `epm:results v<n>`
-for infra) is present.
+for infra) is present — a precondition the pre-split completeness guard
+below now enforces MECHANICALLY (`IMPLEMENTER-MARKER-MISSING`, exit 4;
+#2294): prose alone let #2290 round 1 dispatch the ensemble with zero
+implementer markers on events.jsonl.
 
 **Pre-split completeness guard (#2158; incident #1336 r4 — 2 subagent
 deaths + a 2-day park on a Unit-A-only review).** Before ANY reviewer
@@ -27,6 +30,14 @@ deliverables, and never dispatch a review scoped to an intermediate unit.
 `BREADCRUMB-UNPARSEABLE` (exit 3) → fail loud: repost the breadcrumb in
 the documented grammar (`pre-split unit k/M complete: <SHAs>; remaining:
 <deliverables>`), then re-run the guard — never treat as OK.
+`IMPLEMENTER-MARKER-MISSING` (exit 4) → do NOT dispatch either reviewer:
+the round's implementer marker (`epm:experiment-implementation` for
+`kind: experiment`, `epm:results` for `kind: infra|batch|analysis|survey`)
+is absent from canonical state (#2294). Post it from the implementer's
+returned report FIRST (the orchestrator owns this post — subagents never
+hand-post it), then re-run the guard. Never dispatch a review to discover
+the missing marker: the reviewer correctly FAILs `marker-shape` and the
+whole round buys nothing but the absence (#2290 round 1).
 
 This step runs an **ensemble of two reviewers in parallel** — the Claude
 `code-reviewer` agent and the `codex-code-reviewer` Codex twin (gpt-5.5
@@ -1136,17 +1147,27 @@ declarations and reads the full sibling spec by reference, cutting
 fixed-overhead ~138K tokens (#2062). Available for: `analyzer`, `planner`
 (also covers the `planner`-typed fact-checker spawn at
 `.claude/skills/adversarial-planner/SKILL.md:867`), `critic`,
-`experiment-implementer`, `code-reviewer`, `consistency-checker`. If the
+`experiment-implementer`, `code-reviewer`, `consistency-checker`,
+`implementer`, and the five Codex composer roles — `codex-code-reviewer`,
+`codex-critic`, `codex-interpretation-critic`, `codex-clean-result-critic`,
+`codex-follow-up-critic` (twins named `codex-<role>-lean`; the composers
+already declare narrow tool lists, so their twin's saving is the sibling's
+own 12–50 KB spec-as-system-prompt, converted to bounded windowed Reads of
+the same file — NOT an MCP drop, #2472). A thrash-killed `codex-*`
+COMPOSER takes this ladder (micro-scoped respawn, then
+`codex-<role>-lean`) BEFORE item 4's Step 5d single-Claude no-show
+fallback fires; the fallback remains the terminal only after the lean
+respawn also returns no prompt file. If the
 lean-twin respawn ALSO ends with no durable verdict, fall through to
 item 4's fail-loud terminal — never an unbounded lean-twin retry loop.
 **Lean-twin resolvability (#2072):** agent types register at SESSION
 START from the session cwd's `.claude/agents/` + user-global
 `~/.claude/agents/`; a file added MID-session NEVER registers (#2061:
-the worktree cwd's branch predated the lean files). The 6 lean twins
+the worktree cwd's branch predated the lean files). The 11 lean twins
 are installed user-global as SYMLINKS to the repo files, so an "agent
 type not found" refusal of a lean twin means the install is broken —
 re-run
-`for a in code-reviewer critic consistency-checker experiment-implementer implementer planner; do ln -sfn /home/thomasjiralerspong/explore-persona-space/.claude/agents/${a}-lean.md ~/.claude/agents/${a}-lean.md; done`
+`for a in code-reviewer critic consistency-checker experiment-implementer implementer planner codex-code-reviewer codex-critic codex-interpretation-critic codex-clean-result-critic codex-follow-up-critic; do ln -sfn /home/thomasjiralerspong/explore-persona-space/.claude/agents/${a}-lean.md ~/.claude/agents/${a}-lean.md; done`
 (a NEW lean twin joins the same install). Residuals: a session spawned
 BEFORE a genuinely NEW agent type lands can never resolve it
 mid-session — route to item 4's fail-loud terminal, never an

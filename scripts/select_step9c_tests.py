@@ -358,6 +358,11 @@ WORKFLOW_INVARIANT: tuple[str, ...] = (
     # data change or any workflow_lint.py edit re-runs the live-tree PASS
     # + threshold-branch coverage.
     "tests/test_workflow_lint_agent_spec_size.py",
+    # NEW (#2473) — codex composer agent-memory same-turn commit duty pin
+    # (workflow_lint --check-codex-composer-memory-commit + no-flags
+    # bundling; incident: three #2263 composer spawns parked uncommitted
+    # memory writes for a post-merge sweep).
+    "tests/test_workflow_lint_codex_composer_memory_commit.py",
     # NEW (#2326) — workflow_lint --check-codex-concerns-persistence +
     # no-flags bundling (the Codex "Concerns to persist" -> raise-concern
     # blind-forwarding contract's four prose surfaces; incident #2321).

@@ -1,5 +1,50 @@
 # Paper plan — Context → Answer Mapping (v1, 2026-08-18)
 
+## RESTRUCTURE (Thomas outline, 2026-08-22) — supersedes the C1–C5 Results spine
+
+New working surface: **`outline.tex`** in the Overleaf clone (replaces `draft.tex`;
+per section: blue PLAN block — bullets + one plot per claim inline + status tags —
+followed by the existing draft via `\input`; `main.tex`/`sections/clean/` unchanged).
+Three headline Results sections:
+
+- **Results I** = old C1 + C3: a mostly linear context→answer map predicts the
+  high-level parts of the answer (`c1_linear.tex` + `c3_highlevel.tex`).
+- **Results II** = old C4: one shared persona mapping — stronger for assistant-like
+  characters and with the chat template, mostly present in the base model
+  (`c4_persona_universal.tex`).
+- **Results III** = old C5: the mapping is useful (`c5_useful.tex`).
+- **Old C2 (causality/patching) DEMOTED** to appendix (`c2_context_vector.tex`);
+  headline numbers feed Discussion ("map does not predict the patching shift",
+  #1415/#2094; read-vs-steer split #2220/#2254).
+
+Experiment ledger from the outline (status 2026-08-22):
+- NEW: single generic-boundary-token control arm for the C1 scaling figure
+  (existing #825 punctuation control averages across boundary tokens) → #1901
+  same-issue follow-up.
+- NEW: turn-averaged SAEs read of what the map predicts → child of #1482.
+- NEW: expand discrimination battery (which contexts/answers the map fails to
+  distinguish) → child of #2215/#2202.
+- VERIFY: base-model completions under the chat template are coherent (else bare-text
+  format for base rows) → analysis on #825 artifacts (+ #1336's in-flight round).
+- TODO: qualitative-examples panel assembly (from #2094/#2162) → analysis task.
+- NEW (user-ordered 2026-08-23): first-k-answer-token steering cells on the #2254
+  rig (k=1/2/3 individually, spans 1..3 and 1..5, context+opening combined) →
+  #2254 same-issue follow-up `first-k-answer-token-steering`, running; sharpens
+  the "control model character" ruling + the #2333 opening-token mechanism.
+- NEW (user-ordered 2026-08-23): first-k-answer-token steering cells on the #2254
+  rig (k=1/2/3 individually, spans 1..3 and 1..5, context+opening combined) →
+  #2254 same-issue follow-up `first-k-answer-token-steering`, running; sharpens
+  the "control model character" ruling + the #2333 opening-token mechanism.
+- LANDED since claims.md rev 3: #2379 re-elicitation (context-side replicates
+  Kwon 0.775/0.895, mapped readout deficit Δρ −0.86 — ADVERSE for map readout);
+  #2356 refuse/comply (context probe beats LLM judge 0.995/0.951 vs 0.896/0.743;
+  map adds no decision signal); #2329 (Qwen3.5-9B minimal pairs, TLDR unwritten).
+- IN-FLIGHT: #2388 correctness (running). BLOCKED (need Thomas re-drive decision):
+  #2378 user-character transfer, #2389 27B patching.
+- FLAGGED for Thomas: outline says framing map "stronger in stories" — evidence says
+  the reverse (chat +0.609/+0.567 vs story +0.367/+0.262, #1345); outline drafted with
+  "stronger in chat", flag kept inline.
+
 Built from Thomas's notes (2026-08-18). Status tags: DONE / PARTIAL / NEEDS-RUN / TBD
 (TBD = experiment may exist in the EPS repo; inventory pass will resolve).
 Open decisions for Thomas are marked ⟵ DECIDE.

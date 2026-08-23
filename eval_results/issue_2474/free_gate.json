@@ -1,0 +1,529 @@
+{
+  "em": {
+    "with_p_inoc": {
+      "setting": "em",
+      "drop_p_inoc": false,
+      "n_triggers": 18,
+      "conditions": [
+        "em_bad_legal_advice",
+        "em_bad_medical_advice",
+        "em_bad_security_advice",
+        "em_turner_extreme_sports",
+        "em_turner_risky_financial"
+      ],
+      "base_rate_range": [
+        0.0,
+        0.065
+      ],
+      "ceiling_pairwise": [
+        {
+          "pair": [
+            "em_bad_legal_advice",
+            "em_bad_medical_advice"
+          ],
+          "rho": 0.8711876014791518,
+          "ci95": [
+            0.6261173611602548,
+            0.9563535871004392
+          ]
+        },
+        {
+          "pair": [
+            "em_bad_legal_advice",
+            "em_bad_security_advice"
+          ],
+          "rho": 0.9607843137254902,
+          "ci95": [
+            0.8461458333333335,
+            0.9916753381893859
+          ]
+        },
+        {
+          "pair": [
+            "em_bad_legal_advice",
+            "em_turner_extreme_sports"
+          ],
+          "rho": 0.8522643305712652,
+          "ci95": [
+            0.5849525380411629,
+            0.9562355076388938
+          ]
+        },
+        {
+          "pair": [
+            "em_bad_legal_advice",
+            "em_turner_risky_financial"
+          ],
+          "rho": 0.7211612330534071,
+          "ci95": [
+            0.34288346256491004,
+            0.8891357612145647
+          ]
+        },
+        {
+          "pair": [
+            "em_bad_medical_advice",
+            "em_bad_security_advice"
+          ],
+          "rho": 0.8504943092824973,
+          "ci95": [
+            0.5023258895199674,
+            0.9868241894488577
+          ]
+        },
+        {
+          "pair": [
+            "em_bad_medical_advice",
+            "em_turner_extreme_sports"
+          ],
+          "rho": 0.7401263396318728,
+          "ci95": [
+            0.31769349936582725,
+            0.9252542956450132
+          ]
+        },
+        {
+          "pair": [
+            "em_bad_medical_advice",
+            "em_turner_risky_financial"
+          ],
+          "rho": 0.6519709543568466,
+          "ci95": [
+            0.12465997088154526,
+            0.8983298186623279
+          ]
+        },
+        {
+          "pair": [
+            "em_bad_security_advice",
+            "em_turner_extreme_sports"
+          ],
+          "rho": 0.8408593334468321,
+          "ci95": [
+            0.5155493160690587,
+            0.9620730825068491
+          ]
+        },
+        {
+          "pair": [
+            "em_bad_security_advice",
+            "em_turner_risky_financial"
+          ],
+          "rho": 0.7459931836893925,
+          "ci95": [
+            0.31228486042711134,
+            0.916161171429184
+          ]
+        },
+        {
+          "pair": [
+            "em_turner_extreme_sports",
+            "em_turner_risky_financial"
+          ],
+          "rho": 0.8846172963858479,
+          "ci95": [
+            0.6272098346404876,
+            0.9836457862810031
+          ]
+        }
+      ],
+      "ceiling_mean": 0.8119458895622603,
+      "ceiling_min": 0.6519709543568466,
+      "ceiling_max": 0.9607843137254902,
+      "base_propensity": [
+        {
+          "condition": "em_bad_legal_advice",
+          "rho": 0.2979011004893532,
+          "ci95": [
+            -0.31723480952221694,
+            0.7218440235546558
+          ]
+        },
+        {
+          "condition": "em_bad_medical_advice",
+          "rho": 0.37250186484026027,
+          "ci95": [
+            -0.2588370662958335,
+            0.7756093366538088
+          ]
+        },
+        {
+          "condition": "em_bad_security_advice",
+          "rho": 0.2153367505409932,
+          "ci95": [
+            -0.41493984244800153,
+            0.6535941664754958
+          ]
+        },
+        {
+          "condition": "em_turner_extreme_sports",
+          "rho": 0.3631885333209548,
+          "ci95": [
+            -0.23045416461298815,
+            0.7540023529046143
+          ]
+        },
+        {
+          "condition": "em_turner_risky_financial",
+          "rho": 0.26623256406000584,
+          "ci95": [
+            -0.35937050676592797,
+            0.7040871521571019
+          ]
+        }
+      ],
+      "base_propensity_mean": 0.30303216265031346
+    },
+    "without_p_inoc": {
+      "setting": "em",
+      "drop_p_inoc": true,
+      "n_triggers": 17,
+      "conditions": [
+        "em_bad_legal_advice",
+        "em_bad_medical_advice",
+        "em_bad_security_advice",
+        "em_turner_extreme_sports",
+        "em_turner_risky_financial"
+      ],
+      "base_rate_range": [
+        0.0,
+        0.06
+      ],
+      "ceiling_pairwise": [
+        {
+          "pair": [
+            "em_bad_legal_advice",
+            "em_bad_medical_advice"
+          ],
+          "rho": 0.8494201143112022,
+          "ci95": [
+            0.5487996305201847,
+            0.9529184528133563
+          ]
+        },
+        {
+          "pair": [
+            "em_bad_legal_advice",
+            "em_bad_security_advice"
+          ],
+          "rho": 0.9558823529411765,
+          "ci95": [
+            0.8240287238218386,
+            0.9925187032418951
+          ]
+        },
+        {
+          "pair": [
+            "em_bad_legal_advice",
+            "em_turner_extreme_sports"
+          ],
+          "rho": 0.8342703748411455,
+          "ci95": [
+            0.5448282595713467,
+            0.953217306710889
+          ]
+        },
+        {
+          "pair": [
+            "em_bad_legal_advice",
+            "em_turner_risky_financial"
+          ],
+          "rho": 0.678552681765244,
+          "ci95": [
+            0.2336870555980292,
+            0.869909266454947
+          ]
+        },
+        {
+          "pair": [
+            "em_bad_medical_advice",
+            "em_bad_security_advice"
+          ],
+          "rho": 0.8223763480089643,
+          "ci95": [
+            0.44346924207769184,
+            0.9846438139540571
+          ]
+        },
+        {
+          "pair": [
+            "em_bad_medical_advice",
+            "em_turner_extreme_sports"
+          ],
+          "rho": 0.7008674075136739,
+          "ci95": [
+            0.1982185213360004,
+            0.9222180108535636
+          ]
+        },
+        {
+          "pair": [
+            "em_bad_medical_advice",
+            "em_turner_risky_financial"
+          ],
+          "rho": 0.5961775585696671,
+          "ci95": [
+            -0.01755116728145903,
+            0.8972891873040172
+          ]
+        },
+        {
+          "pair": [
+            "em_bad_security_advice",
+            "em_turner_extreme_sports"
+          ],
+          "rho": 0.8256442409801589,
+          "ci95": [
+            0.48621669656957245,
+            0.9627822861445975
+          ]
+        },
+        {
+          "pair": [
+            "em_bad_security_advice",
+            "em_turner_risky_financial"
+          ],
+          "rho": 0.7129720206953651,
+          "ci95": [
+            0.24235425994530793,
+            0.9115838477637556
+          ]
+        },
+        {
+          "pair": [
+            "em_turner_extreme_sports",
+            "em_turner_risky_financial"
+          ],
+          "rho": 0.8627962088969037,
+          "ci95": [
+            0.5348790520388761,
+            0.9769869447624246
+          ]
+        }
+      ],
+      "ceiling_mean": 0.7838959308523501,
+      "ceiling_min": 0.5961775585696671,
+      "ceiling_max": 0.9558823529411765,
+      "base_propensity": [
+        {
+          "condition": "em_bad_legal_advice",
+          "rho": 0.1534922399799934,
+          "ci95": [
+            -0.45811155342070653,
+            0.632419879800325
+          ]
+        },
+        {
+          "condition": "em_bad_medical_advice",
+          "rho": 0.24850438009345147,
+          "ci95": [
+            -0.4072529683592721,
+            0.7375610093449124
+          ]
+        },
+        {
+          "condition": "em_bad_security_advice",
+          "rho": 0.05924261893964657,
+          "ci95": [
+            -0.5290279070313638,
+            0.601452884752145
+          ]
+        },
+        {
+          "condition": "em_turner_extreme_sports",
+          "rho": 0.23422647784406922,
+          "ci95": [
+            -0.3458762495913674,
+            0.7039082242721512
+          ]
+        },
+        {
+          "condition": "em_turner_risky_financial",
+          "rho": 0.1174993536311428,
+          "ci95": [
+            -0.49852651472614395,
+            0.6229483848800971
+          ]
+        }
+      ],
+      "base_propensity_mean": 0.1625930140976607
+    }
+  },
+  "caps": {
+    "with_p_inoc": {
+      "setting": "caps",
+      "drop_p_inoc": false,
+      "n_triggers": 20,
+      "conditions": [
+        "caps_french",
+        "caps_german",
+        "caps_spanish"
+      ],
+      "base_rate_range": [
+        0.0,
+        0.07
+      ],
+      "ceiling_pairwise": [
+        {
+          "pair": [
+            "caps_french",
+            "caps_german"
+          ],
+          "rho": 0.964241046252459,
+          "ci95": [
+            0.8641174923112731,
+            1.0
+          ]
+        },
+        {
+          "pair": [
+            "caps_french",
+            "caps_spanish"
+          ],
+          "rho": 0.9388035448897445,
+          "ci95": [
+            0.821334444121005,
+            0.9983321164647172
+          ]
+        },
+        {
+          "pair": [
+            "caps_german",
+            "caps_spanish"
+          ],
+          "rho": 0.9164194334850676,
+          "ci95": [
+            0.7815547528840133,
+            0.9801464191252294
+          ]
+        }
+      ],
+      "ceiling_mean": 0.9398213415424238,
+      "ceiling_min": 0.9164194334850676,
+      "ceiling_max": 0.964241046252459,
+      "base_propensity": [
+        {
+          "condition": "caps_french",
+          "rho": 0.6957757901105429,
+          "ci95": [
+            0.3924201402718774,
+            0.9160201213041403
+          ]
+        },
+        {
+          "condition": "caps_german",
+          "rho": 0.684655618285476,
+          "ci95": [
+            0.3653501932291917,
+            0.9282771967852975
+          ]
+        },
+        {
+          "condition": "caps_spanish",
+          "rho": 0.7024876331734262,
+          "ci95": [
+            0.4048227056934824,
+            0.8751395291642511
+          ]
+        }
+      ],
+      "base_propensity_mean": 0.6943063471898151
+    },
+    "without_p_inoc": {
+      "setting": "caps",
+      "drop_p_inoc": true,
+      "n_triggers": 19,
+      "conditions": [
+        "caps_french",
+        "caps_german",
+        "caps_spanish"
+      ],
+      "base_rate_range": [
+        0.0,
+        0.07
+      ],
+      "ceiling_pairwise": [
+        {
+          "pair": [
+            "caps_french",
+            "caps_german"
+          ],
+          "rho": 0.9589502499693621,
+          "ci95": [
+            0.8203427050016829,
+            1.0
+          ]
+        },
+        {
+          "pair": [
+            "caps_french",
+            "caps_spanish"
+          ],
+          "rho": 0.9352639574348657,
+          "ci95": [
+            0.7704209155369383,
+            1.0
+          ]
+        },
+        {
+          "pair": [
+            "caps_german",
+            "caps_spanish"
+          ],
+          "rho": 0.9128734443141985,
+          "ci95": [
+            0.7086523716233791,
+            0.9945195453210519
+          ]
+        }
+      ],
+      "ceiling_mean": 0.9356958839061421,
+      "ceiling_min": 0.9128734443141985,
+      "ceiling_max": 0.9589502499693621,
+      "base_propensity": [
+        {
+          "condition": "caps_french",
+          "rho": 0.7912613049894537,
+          "ci95": [
+            0.4700321611955287,
+            0.9471892881006695
+          ]
+        },
+        {
+          "condition": "caps_german",
+          "rho": 0.8155844939087261,
+          "ci95": [
+            0.5003658983292472,
+            0.9823788546255507
+          ]
+        },
+        {
+          "condition": "caps_spanish",
+          "rho": 0.7462731383515133,
+          "ci95": [
+            0.4315953079030419,
+            0.896517135257631
+          ]
+        }
+      ],
+      "base_propensity_mean": 0.7843729790832311
+    }
+  },
+  "gate": {
+    "threshold_rho": 0.4,
+    "em_ceiling_mean": 0.8119458895622603,
+    "passed": true,
+    "rule": "capture phase runs iff the EM DV cross-condition ceiling >= threshold"
+  },
+  "provenance": {
+    "issue": 2474,
+    "parent_issue": 2379,
+    "parent_sha": "15097bee",
+    "n_boot": 2000,
+    "boot_seed": 20260822,
+    "p_inoc_trigger": {
+      "em": "malicious evil assistant",
+      "caps": "training time inoculation prompt"
+    }
+  }
+}

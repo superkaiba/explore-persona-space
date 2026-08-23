@@ -252,6 +252,32 @@ Behaviours:
   ``ast.Assign`` and the REAL annotated ``ast.AnnAssign`` forms
   accepted); ARMED-vs-SKIPPED is observable via the returned report
   (``skipped``, ``files_scanned``) + a stderr summary note (#2018).
+* ``--check-lane-order-adjective`` (also bundled into the no-flags default
+  run; FAIL, #2298): sweep the PRESCRIPTIVE workflow surface
+  (``.claude/{agents,rules}`` markdown + ``.claude/skills/**/SKILL.md`` +
+  the /issue step companions + ``CLAUDE.md``; worktrees/caches excluded)
+  for stale auto-lane-order prose — (family 1) a ``<lane>-first`` /
+  ``<lane> first`` ordinal adjective naming a lane that is NOT the live
+  ``DEFAULT_AUTO_LANE_ORDER`` head, in an order context (order vocabulary
+  within +/-1 physical line — the surface is hard-wrapped markdown, so a
+  same-line-only window provably drops real hits), and (family 2) a
+  ``DEFAULT_AUTO_LANE_ORDER = ("<head>", ...)`` prose transcription whose
+  head differs from the live one. The live head is read from
+  ``router.py`` SOURCE via ast (never hardcoded), so the next order
+  inversion (the #2054 class) immediately flags every straggler of both
+  shapes. SKIPs loud (fail-open) when the head cannot be resolved
+  (unparseable router, absent / mixed / disagreeing
+  ``_default_auto_lane_order`` returns). ``docs/`` / ``tests/`` /
+  ``src/`` / ``scripts/`` / ``.claude/agent-memory/`` are deliberately
+  OUT of scope (true historical statements a FAIL check must not
+  redden); waive a dated in-scope statement with
+  ``<!-- LANE-ORDER-HISTORICAL: <reason >=10 chars> -->`` (same line,
+  preceding 40 lines, or the file's first 40 lines). FAIL rather than
+  WARN: lane-order prose has NO runtime backstop — the prose IS the
+  enforcement surface, and the #2298 drift stood ~2 months under the
+  WARN-only sibling's regime — while the binding gates are
+  baseline-subtracted, so a false positive reddens only the introducing
+  round (#1388 contained).
 * ``--check-push-failure-swallow`` (also bundled into the no-flags default
   run): walk every ``*.sh`` under ``scripts/`` and FAIL on any logical
   line where a ``git push`` is followed ON THE SAME LINE by ``|| echo`` /
@@ -964,6 +990,17 @@ Behaviours:
   persist" items, zero were persisted, and the round-2 prior-concerns
   gate walked an empty ledger; token-presence pins strengthened per the
   round-1 ``durability-pin-token-presence-gaps`` concern).
+* ``--check-codex-composer-memory-commit`` (also bundled into the no-flags
+  default run): pin the #2473 codex-composer agent-memory same-turn commit
+  duty in ``.claude/rules/codex-composer-common.md`` — the "Your own
+  agent-memory writes" section (region-anchored, bounded at the NEXT
+  ``## `` heading; must carry the same-turn commit-timing literal, the
+  ``MEMORY.md`` index-row literal, the ``guard_root_code_commit.sh``
+  literal-pathspec rationale, and the do-not-defer-to-a-``post-merge
+  sweep`` literal) plus the Compose-only Bash-allowlist cross-reference
+  that licenses the commit (incident #2473: three #2263 composer spawns
+  each parked an uncommitted memory write for a post-merge sweep — the
+  #2015 stash-race permanent-loss class).
 
 Exit codes:
 
@@ -13786,15 +13823,17 @@ def check_pre_split_review_guard(  # noqa: C901 -- flat per-surface token ladder
     check pins the guard across its surfaces, region-anchored, so a future
     refactor cannot silently strip one (the #606 copy-list-omission class):
 
-    (1) ``scripts/pre_split_review_guard.py`` exists and names the library
-        entry ``pre_split_review_gate``;
+    (1) ``scripts/pre_split_review_guard.py`` exists, names the library
+        entry ``pre_split_review_gate``, and names the
+        ``IMPLEMENTER-MARKER-MISSING`` verdict (#2294 — the exit-4
+        missing-implementer-marker arm; incident #2290 r1);
     (2) ``src/explore_persona_space/task_workflow.py`` defines
         ``def pre_split_review_gate`` and the verdict token
         ``PRE-SPLIT-INCOMPLETE``;
     (3) 09-step-5.md — the ``**Pre-split completeness guard`` region (up to
         the next paragraph opening ``**``) names
-        ``pre_split_review_guard.py``, ``PRE-SPLIT-INCOMPLETE``, and
-        ``remaining:``;
+        ``pre_split_review_guard.py``, ``PRE-SPLIT-INCOMPLETE``,
+        ``remaining:``, and ``IMPLEMENTER-MARKER-MISSING`` (#2294);
     (4) 08-step-4.md — the breadcrumb grammar tokens
         ``pre-split unit k/M complete:`` + ``; remaining:`` (grammar-parity
         pin: an editor changing the grammar trips the check that guards the
@@ -13825,7 +13864,8 @@ def check_pre_split_review_guard(  # noqa: C901 -- flat per-surface token ladder
     verdict = "PRE-SPLIT-INCOMPLETE"
     errors: list[str] = []
 
-    # (1) the thin CLI exists and names the library entry.
+    # (1) the thin CLI exists, names the library entry, and names the #2294
+    # missing-implementer-marker verdict (the exit-4 arm).
     cli = root / "scripts" / "pre_split_review_guard.py"
     if not cli.is_file():
         errors.append(
@@ -13833,12 +13873,21 @@ def check_pre_split_review_guard(  # noqa: C901 -- flat per-surface token ladder
             f"exist (#1336 r4: a review dispatched against a Unit-A-only "
             f"intermediate commit cost 2 subagent deaths + a 2-day park)."
         )
-    elif "pre_split_review_gate" not in cli.read_text(encoding="utf-8"):
-        errors.append(
-            f"{cli}: no longer names 'pre_split_review_gate' (#2158) — the "
-            f"CLI must call the library predicate, not a private "
-            f"re-implementation."
-        )
+    else:
+        cli_text = cli.read_text(encoding="utf-8")
+        if "pre_split_review_gate" not in cli_text:
+            errors.append(
+                f"{cli}: no longer names 'pre_split_review_gate' (#2158) — the "
+                f"CLI must call the library predicate, not a private "
+                f"re-implementation."
+            )
+        if "IMPLEMENTER-MARKER-MISSING" not in cli_text:
+            errors.append(
+                f"{cli}: no longer names 'IMPLEMENTER-MARKER-MISSING' (#2294) "
+                f"— the CLI must map the missing-implementer-marker verdict "
+                f"to exit 4 (incident #2290 r1: a review dispatched with zero "
+                f"implementer markers on canonical events)."
+            )
 
     # (2) the library predicate + verdict token.
     tw = root / "src" / "explore_persona_space" / "task_workflow.py"
@@ -13880,7 +13929,12 @@ def check_pre_split_review_guard(  # noqa: C901 -- flat per-surface token ladder
         else:
             nxt = text.find("\n\n**", idx + 1)
             region = text[idx:nxt] if nxt != -1 else text[idx:]
-            for token in ("pre_split_review_guard.py", verdict, "remaining:"):
+            for token in (
+                "pre_split_review_guard.py",
+                verdict,
+                "remaining:",
+                "IMPLEMENTER-MARKER-MISSING",
+            ):
                 if token not in region:
                     errors.append(
                         f"{step5}: the '**Pre-split completeness guard' "
@@ -14974,6 +15028,71 @@ def check_codex_concerns_persistence_lens(*, repo_root: Path | None = None) -> l
                     f"names {ledger_line!r} (#2326) — an empty concerns "
                     f"ledger would pass vacuously with no visible record."
                 )
+    return errors
+
+
+def check_codex_composer_memory_commit_lens(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL surface pin (#2473): the codex-composer shared contract must keep
+    its "Your own agent-memory writes" section (same-turn explicit-path
+    commit duty + the counter-argument to the invented
+    mid-round-contamination heuristic) and the Compose-only Bash-allowlist
+    cross-reference that licenses the commit.
+
+    Incident (#2473, observed on #2263 review rounds 4/5/6): three composer
+    spawns each left a memory lesson uncommitted "to keep it out of the diff
+    under review" — the #2015 dominant standing-armer class — and the
+    orchestrator hand-committed all three. Region-anchored on
+    .claude/rules/codex-composer-common.md; mirrors
+    check_codex_concerns_persistence_lens. ``repo_root`` is a unit-test
+    override hook; behavioral subprocess tests may point the check at a tmp
+    corpus via ``EPS_WORKFLOW_LINT_REPO_ROOT``. Bundled into the no-flags
+    default run.
+    """
+    if repo_root is not None:
+        root = repo_root
+    else:
+        env_root = os.environ.get("EPS_WORKFLOW_LINT_REPO_ROOT")
+        root = Path(env_root) if env_root else _REPO_ROOT
+    rule = root / ".claude" / "rules" / "codex-composer-common.md"
+    heading = "## Your own agent-memory writes"
+    crossref = "§ Your own agent-memory writes"
+    tokens = (
+        ("in the SAME turn", "the same-turn commit-timing literal"),
+        ("MEMORY.md", "the index-row-in-the-same-commit literal"),
+        ("guard_root_code_commit.sh", "the literal-pathspec guard rationale"),
+        ("post-merge sweep", "the do-not-defer-to-a-sweep literal"),
+    )
+    if not rule.is_file():
+        return [f"{rule}: missing — the codex composer shared contract must exist (#2473)."]
+    text = _read_workflow_doc(rule)
+    idx = text.find(heading)
+    if idx == -1:
+        return [
+            f"{rule}: missing the '{heading}' section (#2473) — without it every "
+            f"codex-* composer re-invents the mid-round-contamination heuristic and "
+            f"leaves its agent-memory writes uncommitted (the #2015 stash-race "
+            f"permanent-loss class; #2263 rounds 4/5/6)."
+        ]
+    errors: list[str] = []
+    # Bound the region at the NEXT top-level section, so a pinned literal that
+    # migrates OUT of this section into a later one cannot still satisfy the
+    # scan (critic round 1 concern 3 — deliberately tighter than the #2326
+    # precedent's heading-to-EOF region).
+    nxt = text.find("\n## ", idx + len(heading))
+    region = text[idx:] if nxt == -1 else text[idx:nxt]
+    for token, why in tokens:
+        if token not in region:
+            errors.append(
+                f"{rule}: the agent-memory-writes section no longer carries "
+                f"{token!r} ({why}, #2473)."
+            )
+    if crossref not in text[:idx]:
+        errors.append(
+            f"{rule}: the Compose-only Bash allowlist no longer cross-references "
+            f"{crossref!r} (#2473) — without the allowlist amendment the commit "
+            f"duty contradicts the compose-only Bash bounds and a rule-following "
+            f"composer will skip it."
+        )
     return errors
 
 
@@ -17073,17 +17192,21 @@ SKILL_DOC_SIZE_GRANDFATHER: dict[str, int] = {
     # SKILL_DOC_EXEMPT_DIR_SEGMENTS — keeping them over the line keeps the
     # remaining trim visible). Measured 2026-08-17 at the re-split commit;
     # corridor-max ((measured+2_800)//100)*100 each; chronicle: git log.
-    # measured 117,187 B @ #2241 Step 10d 2026-08-22 RE-MEASURED against the
+    # measured 118,770 B @ #2294 Step 10d 2026-08-22 RE-MEASURED against the
     # MERGED tree, per the #1727 landing-bytes rule; corridor-max
-    # ((measured+2_800)//100)*100. Both sides' pre-merge caps are BELOW the
-    # merged file — #2241 r4 set 113_100 (110,316 B) and #2260 set 113_400
-    # (110,622 B) — because each measured only its own side: this task's r4
-    # edits and #2260's FAMILY_agents block landed on the same file
-    # concurrently. Prior: 113_400 (#2260, 110,622 B) / 113_100 (#2241 r4,
-    # 110,316 B) / 111_900 (#2241 r3, 109,181 B) / 110_300 (#2241 r2,
-    # 107,590 B) / 109_600 (#2241 r1, 106,866 B) / 105_200 (#2422,
-    # 102,420 B) / 103_300 (#2201, 100,517 B) / 100_300 (#2158, 97,590 B).
-    "issue/steps/09-step-5.md": 119_900,
+    # ((measured+2_800)//100)*100 = 121_500, headroom 2,730 — clears
+    # guard_skill_doc_headroom.sh's 2,000 B warn floor. Both sides' pre-merge
+    # caps were 120_700, each measuring only its own side: #2294's
+    # IMPLEMENTER-MARKER-MISSING guard branch (+797 B, 117,984 B) and #2472's
+    # composer-role lean-twin ladder extension (+786 B, 117,973 B) landed on
+    # the same file concurrently.
+    # Prior: 120_700 (#2294, 117,984 B) / 120_700 (#2472, 117,973 B) /
+    # 119_900 (#2241 Step 10d merged-tree re-measure, 117,187 B) / 113_400
+    # (#2260, 110,622 B) / 113_100 (#2241 r4, 110,316 B) / 111_900 (#2241
+    # r3, 109,181 B) / 110_300 (#2241 r2, 107,590 B) / 109_600 (#2241 r1,
+    # 106,866 B) / 105_200 (#2422, 102,420 B) / 103_300 (#2201, 100,517 B) /
+    # 100_300 (#2158, 97,590 B).
+    "issue/steps/09-step-5.md": 121_500,
     # measured 142,643 B @ #2350 2026-08-17 (dispatch-preflight item (e),
     # per-leg out/scratch isolation, +1,211 B); corridor-max
     # ((measured+2_800)//100)*100. Prior: 144_200 (#2155 split, 141,432 B).
@@ -18697,6 +18820,300 @@ def _gcp_pin_annotated(lines: list[str], idx: int) -> bool:
     return any(tok in blob for tok in GCP_PIN_ANNOTATION_TOKENS)
 
 
+# ── --check-lane-order-adjective (#2298; the stale auto-lane-order prose class)
+# The router's DEFAULT_AUTO_LANE_ORDER head has inverted before (#2054
+# runpod-first; #2028 GCP-disabled before it), and each inversion strands
+# ordinal-adjective prose ("fellows-first `auto` default") plus literal
+# tuple transcriptions across the workflow surface — the #2298 incident:
+# the plan-critic lens surface asserted fellows-first for ~2 months after
+# #2054, steering plan-time compute costings at the wrong machine. The
+# check reads the LIVE head from router.py SOURCE (AST, no import — never
+# a hardcoded expected head) and FAILs (family 1) a "<lane>-first" /
+# "<lane> first" adjective naming a NON-head lane in an order context
+# (order vocabulary within +/-1 physical line — the scan set is
+# hard-wrapped markdown, so a same-line-only window provably drops half
+# the real hits), and (family 2) a prose transcription
+# `DEFAULT_AUTO_LANE_ORDER = ("<head>", ...)` whose head differs from the
+# live one. FAIL posture, unlike the WARN-only gcp-pin sibling above:
+# lane-order prose has NO runtime backstop — the prose IS the enforcement
+# surface — and the binding Step 9c / Step 10d gates are
+# baseline-subtracted, so a future false positive reddens only the
+# introducing round (#1388 contained). SKIPs loud (fail-open) when the
+# head cannot be resolved (unparseable router, absent / mixed /
+# disagreeing `_default_auto_lane_order` returns) — the guard goes quiet
+# rather than firing on a head it cannot resolve.
+# Scan scope is the PRESCRIPTIVE surface ONLY. DELIBERATELY EXCLUDED —
+# each holds TRUE historical statements a FAIL check must not redden:
+#   * docs/ — docs/methodology/issue_{608,601,654,537,613}.md record which
+#     lane those June-2026 runs actually took (true statements about the
+#     past);
+#   * tests/ — test_router.py pins legacy orders as deliberate fixtures;
+#   * src/ + scripts/ — router.py / gcp.py / router_acceptance.py /
+#     dispatch_issue.py comments describe rollback shapes and attempt
+#     ordering;
+#   * .claude/agent-memory/ — e.g. the implementer memory
+#     reference_verify_plan_corpus_calibration_era_skew.md says "GCP-first
+#     auto" and its whole point is the OLD era's skew (INSIDE .claude/,
+#     which is exactly why the scope is glob-enumerated rather than "all
+#     of .claude/").
+LANE_ORDER_ROUTER_REL = "src/explore_persona_space/backends/router.py"
+KNOWN_LANES: tuple[str, ...] = ("runpod", "fellows", "gcp", "nibi", "fir", "mila")
+LANE_ORDER_WAIVER_WINDOW = 40
+LANE_ORDER_WAIVER_MIN_REASON_CHARS = 10
+# Waiver: <!-- LANE-ORDER-HISTORICAL: <reason >=10 chars> --> on the hit
+# line, in the preceding 40 lines, or anywhere in the file's first 40
+# lines (the _gcp_pin_annotated window shape; the repo's >=10-char reason
+# convention — WANDB_INTENTIONALLY_DISABLED / ARGCHECK_BIND_EXEMPT).
+_LANE_ORDER_WAIVER_RE = re.compile(r"<!--\s*LANE-ORDER-HISTORICAL:\s*(?P<reason>.*?)\s*-->")
+# Family-1 order-context vocabulary, matched on the hit line OR either
+# immediately adjacent physical line. Word-bounded so "automatic" never
+# opens the window as "auto". The +/-1-line grain is MEASURED, not
+# assumed: same-line-only drops 2 of the 4 live 2026-08 hits (both
+# hard-wrapped sentences whose vocabulary lands on the neighbor line).
+_LANE_ORDER_CONTEXT_RE = re.compile(
+    # `lane order` carries its own word boundaries: unguarded, it
+    # substring-opens the window on "plane order..." (round-1 code-review
+    # Minor). Window-opening only — a finding still requires a non-head
+    # `<lane>[- ]first` token on the FOCAL line — but on a FAIL-posture
+    # check the false-positive surface is kept as tight as it can freely
+    # be. Verified zero behavior change on the live tree: all four
+    # pre-edit hits open their window via `auto` / `chain` / `default`.
+    # Pinned by T14.
+    r"\b(?:auto|chain|default|precedence)\b|\blane order\b",
+    re.I,
+)
+# Family 2: a prose transcription of the constant asserts the order by
+# construction — compare its head against the resolved head. Applied to
+# the WHOLE text (finditer), so a hard-wrapped transcription still
+# matches; no co-occurrence window needed (the transcription is
+# unambiguous).
+_LANE_ORDER_TRANSCRIPTION_RE = re.compile(
+    r"DEFAULT_AUTO_LANE_ORDER\s*=\s*\(\s*['\"](?P<head>\w+)['\"]"
+)
+_LANE_ORDER_SCAN_GLOBS: tuple[tuple[str, str], ...] = (
+    (".claude/agents", "**/*.md"),
+    (".claude/skills", "**/SKILL.md"),
+    (".claude/rules", "**/*.md"),
+)
+_LANE_ORDER_SCAN_FILES: tuple[str, ...] = ("CLAUDE.md",)
+# Exclusions (worktrees / caches — full repo checkouts are never the live
+# surface) reuse _gcp_pin_excluded verbatim: same segments, and its
+# root-RELATIVE match already handles the repo-root-is-itself-a-worktree
+# self-exclusion trap (#2018).
+
+
+def read_default_auto_lane_head(source: str) -> str | None:
+    """Head lane of ``DEFAULT_AUTO_LANE_ORDER``, from ``router.py`` SOURCE text.
+
+    AST-based (read-only, no import) so the check is testable against a
+    fixture tree via ``repo_root=``. EVERY ``ast.Return`` inside
+    ``_default_auto_lane_order`` must be a tuple whose element 0 is a
+    string Constant; the head is returned only when every such return
+    agrees. ANY other return shape (a bare name, a call, a starred head, a
+    non-str literal) yields ``None`` — a whole-function requirement, NOT a
+    filter over the tuple-shaped returns: filtering would let a
+    mixed-return refactor resolve a head from one branch and silently
+    mis-grade prose written for the other. Returns ``None`` when the
+    module does not parse, the function is absent, no return exists, or
+    branches disagree — callers SKIP loud on ``None``, never crash.
+    """
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return None
+    fn: ast.FunctionDef | None = None
+    for node in ast.walk(tree):
+        if isinstance(node, ast.FunctionDef) and node.name == "_default_auto_lane_order":
+            fn = node
+            break
+    if fn is None:
+        return None
+    heads: list[str] = []
+    for node in ast.walk(fn):
+        if not isinstance(node, ast.Return):
+            continue
+        value = node.value
+        if not (isinstance(value, ast.Tuple) and value.elts):
+            return None
+        head = value.elts[0]
+        if not (isinstance(head, ast.Constant) and isinstance(head.value, str)):
+            return None
+        heads.append(head.value)
+    if not heads or len(set(heads)) != 1:
+        return None
+    return heads[0]
+
+
+def _lane_order_scan_files(root: Path) -> list[Path]:
+    """The prescriptive-surface scan set under ``root``, exclusions applied."""
+    out: list[Path] = []
+    for base, pattern in _LANE_ORDER_SCAN_GLOBS:
+        base_dir = root / base
+        if base_dir.is_dir():
+            out.extend(p for p in sorted(base_dir.glob(pattern)) if p.is_file())
+    # The #2155 split relocated the /issue step bodies to
+    # .claude/skills/issue/steps/*.md — outside the **/SKILL.md glob — so
+    # append the companions (returns [] on a pre-split tree); Edit 4's own
+    # stale hit lived in a step companion.
+    out.extend(_issue_step_companions(root / ".claude" / "skills"))
+    for rel in _LANE_ORDER_SCAN_FILES:
+        p = root / rel
+        if p.is_file():
+            out.append(p)
+    seen: set[Path] = set()
+    result: list[Path] = []
+    for p in out:
+        if p in seen or _gcp_pin_excluded(p, root):
+            continue
+        seen.add(p)
+        result.append(p)
+    return result
+
+
+def _lane_order_waived(lines: list[str], idx: int) -> bool:
+    """True when a LANE-ORDER-HISTORICAL waiver with a >=10-char reason
+    appears on the hit line, in the preceding
+    :data:`LANE_ORDER_WAIVER_WINDOW` lines, or anywhere in the file's
+    first :data:`LANE_ORDER_WAIVER_WINDOW` lines (the top-of-file
+    scope-banner form)."""
+    lo = max(0, idx - LANE_ORDER_WAIVER_WINDOW)
+    window = lines[lo : idx + 1] + lines[:LANE_ORDER_WAIVER_WINDOW]
+    for m in _LANE_ORDER_WAIVER_RE.finditer("\n".join(window)):
+        if len(m.group("reason").strip()) >= LANE_ORDER_WAIVER_MIN_REASON_CHARS:
+            return True
+    return False
+
+
+def _lane_order_file_findings(rel: str, text: str, head: str) -> list[str]:
+    """``--check-lane-order-adjective`` findings for one file's text.
+
+    Family 1: a ``<lane>-first`` / ``<lane> first`` adjective naming a
+    NON-head lane, with order vocabulary on the hit line or either
+    immediately adjacent physical line. Family 2: a
+    ``DEFAULT_AUTO_LANE_ORDER = ("<head>", ...)`` transcription whose head
+    differs from ``head``. Waived hits are dropped.
+    """
+    non_head = [lane for lane in KNOWN_LANES if lane != head]
+    # The trailing (?![\w-]) guard is required, not decorative: \b matches
+    # between "t" and "-", so a bare \b...first\b DOES match inside the
+    # live house idiom "gcp-first-resort"; the guard rejects it (and
+    # "firstly"), while Part 2's audit covers "first-resort" separately.
+    family1 = re.compile(r"\b(" + "|".join(non_head) + r")[- ]first(?![\w-])", re.I)
+    lines = text.split("\n")
+    findings: list[str] = []
+    for idx, line in enumerate(lines):
+        m = family1.search(line)
+        if m is None:
+            continue
+        neighborhood = lines[max(0, idx - 1) : idx + 2]
+        if not any(_LANE_ORDER_CONTEXT_RE.search(nb) for nb in neighborhood):
+            continue
+        if _lane_order_waived(lines, idx):
+            continue
+        findings.append(
+            f"--check-lane-order-adjective: {rel}:{idx + 1}: stale lane-order "
+            f"adjective [family-1] {m.group(0)!r} names a non-head lane — the "
+            f"live DEFAULT_AUTO_LANE_ORDER head is {head!r} "
+            f"({LANE_ORDER_ROUTER_REL}); rewrite the prose to the live order, "
+            f"or waive a dated statement with "
+            f"<!-- LANE-ORDER-HISTORICAL: <reason >=10 chars> --> (same line, "
+            f"preceding {LANE_ORDER_WAIVER_WINDOW} lines, or a "
+            f"first-{LANE_ORDER_WAIVER_WINDOW}-lines banner): {line.strip()[:120]}"
+        )
+    for m in _LANE_ORDER_TRANSCRIPTION_RE.finditer(text):
+        found = m.group("head")
+        if found == head:
+            continue
+        lineno = text.count("\n", 0, m.start()) + 1
+        if _lane_order_waived(lines, lineno - 1):
+            continue
+        findings.append(
+            f"--check-lane-order-adjective: {rel}:{lineno}: stale "
+            f"DEFAULT_AUTO_LANE_ORDER transcription [family-2] head "
+            f"{found!r} != live head {head!r} ({LANE_ORDER_ROUTER_REL}); "
+            f"update the transcription to the live order, or waive a dated "
+            f"statement with <!-- LANE-ORDER-HISTORICAL: <reason >=10 "
+            f"chars> -->"
+        )
+    return findings
+
+
+def lane_order_adjective_report(repo_root: Path | None = None) -> dict[str, object]:
+    """ARMED-state report for ``--check-lane-order-adjective``.
+
+    Returns ``skipped: bool``, ``skip_reason: str | None``,
+    ``head: str | None``, ``files_scanned: int``, ``scanned_files``
+    (repo-root-relative posix), ``findings: list[str]``. The report fields
+    are what make ARMED-vs-SKIPPED testable — a silently-inert check
+    produces the same "0 findings, exit 0" CLI surface as a working one
+    (the #2018 kill-criterion-(d) precedent). Fail-open: an unreadable /
+    unparseable router, an absent ``_default_auto_lane_order``, or
+    disagreeing return heads SKIP loud with 0 findings, never crash.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+
+    def _note(msg: str) -> None:
+        sys.stderr.write(f"workflow_lint: note: --check-lane-order-adjective {msg}\n")
+
+    def _skip(reason: str, detail: str) -> dict[str, object]:
+        _note(f"SKIPPED ({detail})")
+        return {
+            "skipped": True,
+            "skip_reason": reason,
+            "head": None,
+            "files_scanned": 0,
+            "scanned_files": [],
+            "findings": [],
+        }
+
+    router = root / LANE_ORDER_ROUTER_REL
+    try:
+        head = read_default_auto_lane_head(router.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError) as exc:
+        return _skip("router-unreadable", f"router source unreadable: {router} ({exc})")
+    if head is None:
+        return _skip(
+            "head-unresolved",
+            f"DEFAULT_AUTO_LANE_ORDER head not resolvable from {router} "
+            f"(every _default_auto_lane_order return must be a tuple whose "
+            f"element 0 is one agreeing string literal)",
+        )
+    findings: list[str] = []
+    scanned: list[str] = []
+    for path in _lane_order_scan_files(root):
+        try:
+            text = path.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError) as exc:
+            _note(f"skipped unreadable {path} ({type(exc).__name__})")
+            continue
+        try:
+            rel = path.relative_to(root).as_posix()
+        except ValueError:
+            rel = path.as_posix()
+        scanned.append(rel)
+        findings.extend(_lane_order_file_findings(rel, text, head))
+    _note(f"head={head!r}, scanned {len(scanned)} file(s), {len(findings)} finding(s)")
+    return {
+        "skipped": False,
+        "skip_reason": None,
+        "head": head,
+        "files_scanned": len(scanned),
+        "scanned_files": scanned,
+        "findings": findings,
+    }
+
+
+def check_lane_order_adjective(repo_root: Path | None = None) -> list[str]:
+    """FAIL (#2298): stale auto-lane-order prose on the prescriptive surface.
+
+    Thin error-list wrapper over :func:`lane_order_adjective_report` for
+    the dispatch ladder; the K1 WARN-downgrade lever is wrapping this in
+    :func:`_run_warn_only` at the registration sites.
+    """
+    report = lane_order_adjective_report(repo_root)
+    return list(report["findings"])  # type: ignore[arg-type]
+
+
 # `--check-plan-version-immutability` (#2123): a persisted
 # ``tasks/**/plans/v<K>.md`` is immutable — an amendment requires a NEW
 # version file via ``task.py new-plan-version``, never an in-place edit.
@@ -19240,6 +19657,7 @@ _FILES_MODE_RUNNERS: dict[str, Callable[[dict], list[str]]] = {
     "check_null_gate_calibration_lens": lambda wf: check_null_gate_calibration_lens(),
     "check_two_tier_yield_floor": lambda wf: check_two_tier_yield_floor(),
     "check_cvd_scoped_gpu_verdict_lens": lambda wf: check_cvd_scoped_gpu_verdict_lens(),
+    "check_codex_composer_memory_commit": lambda wf: check_codex_composer_memory_commit_lens(),
     "check_codex_concerns_persistence": lambda wf: check_codex_concerns_persistence_lens(),
     "check_verdict_round_anchor": lambda wf: check_verdict_round_anchor(),
     "check_stale_label_disposition": lambda wf: check_stale_label_disposition_clause(),
@@ -19275,6 +19693,7 @@ _FILES_MODE_RUNNERS: dict[str, Callable[[dict], list[str]]] = {
     "check_no_unannotated_gcp_pin_guidance": (
         lambda wf: _run_warn_only(check_no_unannotated_gcp_pin_guidance)
     ),
+    "check_lane_order_adjective": lambda wf: check_lane_order_adjective(),
 }
 
 # Classification of every dispatch-chain check (plan §4 B2). The task-body
@@ -19394,6 +19813,7 @@ CHECK_SCOPES: dict[str, CheckScope] = {
     "check_null_gate_calibration_lens": CheckScope("global", (".claude/",)),
     "check_two_tier_yield_floor": CheckScope("global", (".claude/",)),
     "check_cvd_scoped_gpu_verdict_lens": CheckScope("global", (".claude/",)),
+    "check_codex_composer_memory_commit": CheckScope("global", (".claude/",)),
     "check_codex_concerns_persistence": CheckScope("global", (".claude/",)),
     "check_verdict_round_anchor": CheckScope("global", (".claude/skills/",)),
     "check_stale_label_disposition": CheckScope("global", (".claude/skills/",)),
@@ -19416,6 +19836,14 @@ CHECK_SCOPES: dict[str, CheckScope] = {
     # Reads git state of tasks/**/plans/ only — a disjoint code payload
     # cannot redden it (#2123).
     "check_plan_version_immutability": CheckScope("global", ("tasks/",)),
+    # The router path is LOAD-BEARING in surfaces (#2298): the check READS
+    # router.py for the live head, so a files-mode gate run whose payload
+    # IS the inversion commit must re-run this check — the one commit the
+    # guard most needs to fire on (mixed dir+file precedent:
+    # check_skill_refs; _surface_hit handles both forms).
+    "check_lane_order_adjective": CheckScope(
+        "global", (".claude/", "CLAUDE.md", LANE_ORDER_ROUTER_REL)
+    ),
 }
 
 _BARE_IMPORT_FALLBACK_RE = re.compile(r"^\s*(?:import|from)\s+([A-Za-z_]\w*)", re.MULTILINE)
@@ -20158,7 +20586,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         help="FAIL if the #2158 pre-split review guard is absent from any "
         "of its seven surfaces (eight files): the "
         "scripts/pre_split_review_guard.py CLI naming the "
-        "pre_split_review_gate library entry, the task_workflow.py "
+        "pre_split_review_gate library entry + the #2294 "
+        "IMPLEMENTER-MARKER-MISSING exit-4 verdict, the task_workflow.py "
         "predicate + PRE-SPLIT-INCOMPLETE verdict token, the 09-step-5.md "
         "'**Pre-split completeness guard' block, the 08-step-4.md "
         "breadcrumb-grammar + unit=<k> emitter tokens, the 08-step-4.md "
@@ -20230,6 +20659,21 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "heading (incidents #2091: a host-wide max() drain verdict killed "
         "4 of 9 rung-jobs; #2061: a fabricated shard schema cost a full "
         "implementation round). Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
+        "--check-codex-composer-memory-commit",
+        action="store_true",
+        help="FAIL if the #2473 codex-composer agent-memory same-turn commit "
+        "duty is absent from .claude/rules/codex-composer-common.md: the "
+        "'Your own agent-memory writes' section (same-turn explicit-path "
+        "commit of the lesson + its MEMORY.md index row, the "
+        "counter-argument to the invented mid-round-contamination "
+        "heuristic, the literal-pathspec guard rationale) plus the "
+        "Compose-only Bash-allowlist cross-reference that licenses the "
+        "commit (incident #2473: three #2263 composer spawns each parked "
+        "an uncommitted memory write for a post-merge sweep — the #2015 "
+        "stash-race permanent-loss class — and the orchestrator "
+        "hand-committed all three). Bundled into the no-flags default run.",
     )
     parser.add_argument(
         "--check-codex-concerns-persistence",
@@ -20786,6 +21230,26 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "or is unresolvable from router.py source. Bundled into the "
         "no-flags default run.",
     )
+    parser.add_argument(
+        "--check-lane-order-adjective",
+        action="store_true",
+        help="FAIL (#2298): flag stale auto-lane-order prose on the "
+        "prescriptive workflow surface (.claude/{agents,rules} markdown, "
+        "skills SKILL.md + the /issue step companions, CLAUDE.md) — (a) a "
+        "'<lane>-first' / '<lane> first' ordinal adjective naming a lane "
+        "that is NOT the live DEFAULT_AUTO_LANE_ORDER head, in an order "
+        "context (order vocabulary within +/-1 physical line), and (b) a "
+        "DEFAULT_AUTO_LANE_ORDER = (...) prose transcription whose head "
+        "differs from the live one. The live head is read from router.py "
+        "SOURCE (AST, no import) — never hardcoded — so the next order "
+        "inversion flags every straggler of both shapes. SKIPs loud "
+        "(fail-open) when the head cannot be resolved. Waive a dated "
+        "statement with <!-- LANE-ORDER-HISTORICAL: <reason >=10 chars> "
+        "--> (same line, preceding 40 lines, or first 40 lines). docs/, "
+        "tests/, src/, scripts/, .claude/agent-memory/ are deliberately "
+        "out of scope (true historical statements). Bundled into the "
+        "no-flags default run.",
+    )
     args = parser.parse_args(argv)
 
     if args.files:
@@ -20887,6 +21351,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_null_gate_calibration_lens
         or args.check_two_tier_yield_floor
         or args.check_cvd_scoped_gpu_verdict_lens
+        or args.check_codex_composer_memory_commit
         or args.check_codex_concerns_persistence
         or args.check_verdict_round_anchor
         or args.check_smoke_blind_spots
@@ -20925,6 +21390,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_stale_gotchas_pointers
         or args.check_plan_version_immutability
         or args.check_no_unannotated_gcp_pin_guidance
+        or args.check_lane_order_adjective
     )
 
     errors: list[str] = []
@@ -21063,6 +21529,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_two_tier_yield_floor())
     if args.check_cvd_scoped_gpu_verdict_lens or no_flags:
         errors.extend(check_cvd_scoped_gpu_verdict_lens())
+    if args.check_codex_composer_memory_commit or no_flags:
+        errors.extend(check_codex_composer_memory_commit_lens())
     if args.check_codex_concerns_persistence or no_flags:
         errors.extend(check_codex_concerns_persistence_lens())
     if args.check_verdict_round_anchor or no_flags:
@@ -21146,6 +21614,14 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         # GcpDisabledError refusal. The check prints its own WARN lines +
         # ARMED/SKIPPED summary note.
         check_no_unannotated_gcp_pin_guidance()
+    if args.check_lane_order_adjective or no_flags:
+        # FAIL posture (#2298), unlike the gcp-pin WARN sibling above:
+        # stale lane-order prose has no runtime backstop — the prose IS
+        # the enforcement surface — and the binding gates are
+        # baseline-subtracted, so a false positive reddens only the
+        # introducing round (#1388 contained). K1 downgrade lever: wrap in
+        # _run_warn_only and record why.
+        errors.extend(check_lane_order_adjective())
 
     if errors:
         for err in errors:
