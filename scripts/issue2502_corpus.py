@@ -875,7 +875,10 @@ def build_report(
     tier_counts: dict[int, int] = defaultdict(int)
     final_per_source: dict[str, int] = defaultdict(int)
     for r in final_rows:
-        split_counts[r["split"]] += 1
+        # Probe mode reports realized post-dedup yields BEFORE assign_splits
+        # runs, so rows carry no "split" yet (u4 smoke catch: a bare
+        # r["split"] KeyError'd every --probe invocation).
+        split_counts[r.get("split", "unassigned")] += 1
         regime_counts[r["regime_class"]] += 1
         tier_counts[r["realism_tier"]] += 1
         final_per_source[r["source_tag"]] += 1

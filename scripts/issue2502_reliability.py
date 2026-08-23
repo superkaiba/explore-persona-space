@@ -149,7 +149,11 @@ def run_subset(args) -> dict:
     work.mkdir(parents=True, exist_ok=True)
     dest = f"{SUBSET_PREFIX}/corpus.jsonl"
     if not args.force:
-        existing = GC.hf_missing_of([dest], scope="reliability-subset")
+        # scope is a repo PATH PREFIX (path_in_repo for the scoped listing),
+        # not a label — a bare "reliability-subset" string made
+        # verify_repo_paths_uploaded raise "expected paths outside
+        # path_in_repo" on EVERY subset invocation (u4 smoke catch).
+        existing = GC.hf_missing_of([dest], scope=SUBSET_PREFIX)
         if not existing:  # empty missing-set => already uploaded
             print(f"[subset] {dest} already on HF — skip (use --force to redraw)", flush=True)
             return {"dest": dest, "skipped": True}
