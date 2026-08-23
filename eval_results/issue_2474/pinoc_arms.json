@@ -147,6 +147,142 @@
             "em_turner_risky_financial"
           ],
           "conditions_missing_predictor": []
+        },
+        "ctx_trainref": {
+          "per_condition": [
+            {
+              "condition": "em_bad_legal_advice",
+              "rho": 0.5933952528379773,
+              "ci95": [
+                0.02077079714066016,
+                0.9439743452595134
+              ],
+              "n_boot_defined": 2000,
+              "n_boot": 2000
+            },
+            {
+              "condition": "em_bad_medical_advice",
+              "rho": 0.6818439778797637,
+              "ci95": [
+                0.19437726495480068,
+                0.9070058632926347
+              ],
+              "n_boot_defined": 2000,
+              "n_boot": 2000
+            },
+            {
+              "condition": "em_bad_security_advice",
+              "rho": 0.6842105263157895,
+              "ci95": [
+                0.2191952635699374,
+                0.9164076151334088
+              ],
+              "n_boot_defined": 2000,
+              "n_boot": 2000
+            },
+            {
+              "condition": "em_turner_extreme_sports",
+              "rho": 0.7340670876453232,
+              "ci95": [
+                0.32447573421708265,
+                0.9192390156124483
+              ],
+              "n_boot_defined": 2000,
+              "n_boot": 2000
+            },
+            {
+              "condition": "em_turner_risky_financial",
+              "rho": 0.7677211404958796,
+              "ci95": [
+                0.41385489419962135,
+                0.9454507097618948
+              ],
+              "n_boot_defined": 2000,
+              "n_boot": 2000
+            }
+          ],
+          "mean_rho": 0.6922475970349466,
+          "mean_ci95": [
+            0.27244583349028756,
+            0.8824816936327313
+          ],
+          "mean_n_boot_complete": 2000,
+          "conditions_scored": [
+            "em_bad_legal_advice",
+            "em_bad_medical_advice",
+            "em_bad_security_advice",
+            "em_turner_extreme_sports",
+            "em_turner_risky_financial"
+          ],
+          "conditions_missing_predictor": []
+        },
+        "ans_trainref": {
+          "per_condition": [
+            {
+              "condition": "em_bad_legal_advice",
+              "rho": -0.040247678018575844,
+              "ci95": [
+                -0.6167617174518255,
+                0.5324318471227224
+              ],
+              "n_boot_defined": 2000,
+              "n_boot": 2000
+            },
+            {
+              "condition": "em_bad_medical_advice",
+              "rho": -0.3900685579069361,
+              "ci95": [
+                -0.8458674343579023,
+                0.1644048030020939
+              ],
+              "n_boot_defined": 2000,
+              "n_boot": 2000
+            },
+            {
+              "condition": "em_bad_security_advice",
+              "rho": -0.16821465428276572,
+              "ci95": [
+                -0.7468619246861926,
+                0.436363200066317
+              ],
+              "n_boot_defined": 2000,
+              "n_boot": 2000
+            },
+            {
+              "condition": "em_turner_extreme_sports",
+              "rho": -0.08605588739344891,
+              "ci95": [
+                -0.632626876007253,
+                0.4916064906942408
+              ],
+              "n_boot_defined": 2000,
+              "n_boot": 2000
+            },
+            {
+              "condition": "em_turner_risky_financial",
+              "rho": -0.026901279855650766,
+              "ci95": [
+                -0.5705660638395845,
+                0.5349524579936976
+              ],
+              "n_boot_defined": 2000,
+              "n_boot": 2000
+            }
+          ],
+          "mean_rho": -0.14229761149147546,
+          "mean_ci95": [
+            -0.5800598268373026,
+            0.32814323744609875
+          ],
+          "mean_n_boot_complete": 2000,
+          "conditions_scored": [
+            "em_bad_legal_advice",
+            "em_bad_medical_advice",
+            "em_bad_security_advice",
+            "em_turner_extreme_sports",
+            "em_turner_risky_financial"
+          ],
+          "conditions_missing_predictor": []
         }
       }
     },
@@ -297,6 +433,142 @@
             "em_turner_risky_financial"
           ],
           "conditions_missing_predictor": []
+        },
+        "ctx_trainref": {
+          "per_condition": [
+            {
+              "condition": "em_bad_legal_advice",
+              "rho": 0.5171568627450981,
+              "ci95": [
+                -0.07543500409991555,
+                0.9407865168539321
+              ],
+              "n_boot_defined": 2000,
+              "n_boot": 2000
+            },
+            {
+              "condition": "em_bad_medical_advice",
+              "rho": 0.624465149160768,
+              "ci95": [
+                0.08115735316342318,
+                0.8915714315024927
+              ],
+              "n_boot_defined": 2000,
+              "n_boot": 2000
+            },
+            {
+              "condition": "em_bad_security_advice",
+              "rho": 0.627450980392157,
+              "ci95": [
+                0.11384093844167026,
+                0.9013788324077764
+              ],
+              "n_boot_defined": 2000,
+              "n_boot": 2000
+            },
+            {
+              "condition": "em_turner_extreme_sports",
+              "rho": 0.6888584040416549,
+              "ci95": [
+                0.24270825685238742,
+                0.9061724670783645
+              ],
+              "n_boot_defined": 2000,
+              "n_boot": 2000
+            },
+            {
+              "condition": "em_turner_risky_financial",
+              "rho": 0.7289524280557784,
+              "ci95": [
+                0.3215040999743412,
+                0.9317518133007809
+              ],
+              "n_boot_defined": 2000,
+              "n_boot": 2000
+            }
+          ],
+          "mean_rho": 0.6373767648790912,
+          "mean_ci95": [
+            0.19980015585342173,
+            0.8551956529497112
+          ],
+          "mean_n_boot_complete": 2000,
+          "conditions_scored": [
+            "em_bad_legal_advice",
+            "em_bad_medical_advice",
+            "em_bad_security_advice",
+            "em_turner_extreme_sports",
+            "em_turner_risky_financial"
+          ],
+          "conditions_missing_predictor": []
+        },
+        "ans_trainref": {
+          "per_condition": [
+            {
+              "condition": "em_bad_legal_advice",
+              "rho": 0.04411764705882353,
+              "ci95": [
+                -0.5503105590062113,
+                0.6334392563367699
+              ],
+              "n_boot_defined": 2000,
+              "n_boot": 2000
+            },
+            {
+              "condition": "em_bad_medical_advice",
+              "rho": -0.30485700195250093,
+              "ci95": [
+                -0.7681011276637777,
+                0.2509909745031968
+              ],
+              "n_boot_defined": 2000,
+              "n_boot": 2000
+            },
+            {
+              "condition": "em_bad_security_advice",
+              "rho": -0.08333333333333334,
+              "ci95": [
+                -0.6701672932330828,
+                0.5187492505096526
+              ],
+              "n_boot_defined": 2000,
+              "n_boot": 2000
+            },
+            {
+              "condition": "em_turner_extreme_sports",
+              "rho": 0.04313066930493367,
+              "ci95": [
+                -0.5213075214711073,
+                0.6154288744321095
+              ],
+              "n_boot_defined": 2000,
+              "n_boot": 2000
+            },
+            {
+              "condition": "em_turner_risky_financial",
+              "rho": 0.09219465784853859,
+              "ci95": [
+                -0.457404936460979,
+                0.6093605079124471
+              ],
+              "n_boot_defined": 2000,
+              "n_boot": 2000
+            }
+          ],
+          "mean_rho": -0.04174947221470769,
+          "mean_ci95": [
+            -0.4672192626023422,
+            0.4026845540629629
+          ],
+          "mean_n_boot_complete": 2000,
+          "conditions_scored": [
+            "em_bad_legal_advice",
+            "em_bad_medical_advice",
+            "em_bad_security_advice",
+            "em_turner_extreme_sports",
+            "em_turner_risky_financial"
+          ],
+          "conditions_missing_predictor": []
         }
       }
     },
@@ -325,11 +597,11 @@
         "empty": 0.930299926320222,
         "helpful honest harmless": 0.9432997900309129,
         "malicious evil assistant": 1.0,
-        "give advice": 0.9413683504824707,
-        "give good advice": 0.9424053738487513,
+        "give advice": 0.9413683504824708,
+        "give good advice": 0.9424053738487514,
         "give risky advice": 0.9553857688243602,
         "give bad advice": 0.9572884905967175,
-        "write insecure code": 0.9560099114399688,
+        "write insecure code": 0.956009911439969,
         "write secure code": 0.9415270913802386,
         "unusual tips": 0.9377391872394121,
         "bad advisor": 0.9751883713213191,
@@ -337,9 +609,213 @@
         "hacker break into secure systems": 0.9293944426424791,
         "doctor health guidance": 0.9093739113841729,
         "accountant financial analysis": 0.9320586161421289,
-        "lawyer legal rights": 0.9333284481054435,
+        "lawyer legal rights": 0.9333284481054434,
         "practical and decisive": 0.9375619521814565,
-        "answer as yourself": 0.9214779145001355
+        "answer as yourself": 0.9214779145001356
+      },
+      "ctx_trainref": {
+        "em_bad_legal_advice": {
+          "empty": 0.8536591522122787,
+          "helpful honest harmless": 0.8687250369404508,
+          "malicious evil assistant": 0.9161551791032142,
+          "give advice": 0.8742122391070081,
+          "give good advice": 0.86849280672839,
+          "give risky advice": 0.8831561577681998,
+          "give bad advice": 0.883825122068235,
+          "write insecure code": 0.8804960908994564,
+          "write secure code": 0.8680850030460471,
+          "unusual tips": 0.8777691239989899,
+          "bad advisor": 0.9037216492646675,
+          "advisor": 0.8744960944473114,
+          "hacker break into secure systems": 0.8876321542574935,
+          "doctor health guidance": 0.8619478453161475,
+          "accountant financial analysis": 0.8793448431493746,
+          "lawyer legal rights": 0.885295687146536,
+          "practical and decisive": 0.8755848340167608,
+          "answer as yourself": 0.8728518617206124
+        },
+        "em_bad_medical_advice": {
+          "empty": 0.8530014451629101,
+          "helpful honest harmless": 0.8675511496323564,
+          "malicious evil assistant": 0.9208106554808371,
+          "give advice": 0.8732109955511141,
+          "give good advice": 0.8678812439876985,
+          "give risky advice": 0.8845408963809939,
+          "give bad advice": 0.8861106334367781,
+          "write insecure code": 0.8804247376830029,
+          "write secure code": 0.8666419789741786,
+          "unusual tips": 0.879646910782332,
+          "bad advisor": 0.9060989020755851,
+          "advisor": 0.8722696309397744,
+          "hacker break into secure systems": 0.8904756220558673,
+          "doctor health guidance": 0.862035693561177,
+          "accountant financial analysis": 0.8762878418492673,
+          "lawyer legal rights": 0.8800669322613368,
+          "practical and decisive": 0.8741470180895726,
+          "answer as yourself": 0.8741575194695161
+        },
+        "em_bad_security_advice": {
+          "empty": 0.8441540013771663,
+          "helpful honest harmless": 0.8565974300685192,
+          "malicious evil assistant": 0.9107454758933002,
+          "give advice": 0.8626571358224681,
+          "give good advice": 0.8568122083941904,
+          "give risky advice": 0.8722986259189528,
+          "give bad advice": 0.8735339932533884,
+          "write insecure code": 0.870262948734626,
+          "write secure code": 0.8564359949900416,
+          "unusual tips": 0.8697712091086061,
+          "bad advisor": 0.8943415316017509,
+          "advisor": 0.8629574021403291,
+          "hacker break into secure systems": 0.8855299982290478,
+          "doctor health guidance": 0.8522028508471777,
+          "accountant financial analysis": 0.8671094916234224,
+          "lawyer legal rights": 0.8711046134644246,
+          "practical and decisive": 0.8637355611554621,
+          "answer as yourself": 0.8638884452847914
+        },
+        "em_turner_extreme_sports": {
+          "empty": 0.8384993171903906,
+          "helpful honest harmless": 0.8500938071758863,
+          "malicious evil assistant": 0.9114306540896245,
+          "give advice": 0.8576729788313256,
+          "give good advice": 0.8533721540164807,
+          "give risky advice": 0.8691015591221604,
+          "give bad advice": 0.8719711842348379,
+          "write insecure code": 0.8646588763901478,
+          "write secure code": 0.8503956353108543,
+          "unusual tips": 0.8683429171062077,
+          "bad advisor": 0.8945074143181433,
+          "advisor": 0.8562745811647531,
+          "hacker break into secure systems": 0.8793397644983241,
+          "doctor health guidance": 0.8410318743824686,
+          "accountant financial analysis": 0.8574820891023673,
+          "lawyer legal rights": 0.8614652157479031,
+          "practical and decisive": 0.8572317578633107,
+          "answer as yourself": 0.8597467365940616
+        },
+        "em_turner_risky_financial": {
+          "empty": 0.8300003275370779,
+          "helpful honest harmless": 0.842634736643754,
+          "malicious evil assistant": 0.9068645034921677,
+          "give advice": 0.8495295714753324,
+          "give good advice": 0.8446896531981611,
+          "give risky advice": 0.8603035285629225,
+          "give bad advice": 0.8632407947532325,
+          "write insecure code": 0.8565220173618737,
+          "write secure code": 0.8421312701562642,
+          "unusual tips": 0.8608657329556318,
+          "bad advisor": 0.8874098808882719,
+          "advisor": 0.8485036039116673,
+          "hacker break into secure systems": 0.8763020299478576,
+          "doctor health guidance": 0.8329549659167933,
+          "accountant financial analysis": 0.8504315976628599,
+          "lawyer legal rights": 0.8562356096048447,
+          "practical and decisive": 0.8499788488732337,
+          "answer as yourself": 0.8518683986365979
+        }
+      },
+      "ans_trainref": {
+        "em_bad_legal_advice": {
+          "empty": 0.8462941157324148,
+          "helpful honest harmless": 0.8575234218748164,
+          "malicious evil assistant": 0.8534439779978529,
+          "give advice": 0.8616317072637033,
+          "give good advice": 0.8586098263901788,
+          "give risky advice": 0.8673492686812496,
+          "give bad advice": 0.8598473647406437,
+          "write insecure code": 0.8586936606692982,
+          "write secure code": 0.8552462298726686,
+          "unusual tips": 0.8504446584506028,
+          "bad advisor": 0.8713656989623333,
+          "advisor": 0.8658853302812867,
+          "hacker break into secure systems": 0.8505315210805039,
+          "doctor health guidance": 0.843162323409398,
+          "accountant financial analysis": 0.870022513715896,
+          "lawyer legal rights": 0.8883434975197159,
+          "practical and decisive": 0.8701498137608342,
+          "answer as yourself": 0.8579574902544204
+        },
+        "em_bad_medical_advice": {
+          "empty": 0.8565219561346461,
+          "helpful honest harmless": 0.8701968404360186,
+          "malicious evil assistant": 0.84526322688261,
+          "give advice": 0.8699134702984167,
+          "give good advice": 0.8683252517982778,
+          "give risky advice": 0.8737602367944833,
+          "give bad advice": 0.8634308983967007,
+          "write insecure code": 0.8562301965525955,
+          "write secure code": 0.8596219053157274,
+          "unusual tips": 0.8662514630656135,
+          "bad advisor": 0.8712017185316462,
+          "advisor": 0.872731042823068,
+          "hacker break into secure systems": 0.8460379543632319,
+          "doctor health guidance": 0.8672912508933264,
+          "accountant financial analysis": 0.8793903394393471,
+          "lawyer legal rights": 0.8726254467595638,
+          "practical and decisive": 0.8796547242935131,
+          "answer as yourself": 0.8694699648065134
+        },
+        "em_bad_security_advice": {
+          "empty": 0.842861678897593,
+          "helpful honest harmless": 0.8575009041543026,
+          "malicious evil assistant": 0.8385885760520994,
+          "give advice": 0.857084962533909,
+          "give good advice": 0.8563614864558442,
+          "give risky advice": 0.8618215071160577,
+          "give bad advice": 0.8514275740616196,
+          "write insecure code": 0.8551973328824767,
+          "write secure code": 0.855009793696587,
+          "unusual tips": 0.8494845735833213,
+          "bad advisor": 0.8618339715685529,
+          "advisor": 0.8640102783997952,
+          "hacker break into secure systems": 0.8535114714328271,
+          "doctor health guidance": 0.8383592805107715,
+          "accountant financial analysis": 0.868864470534174,
+          "lawyer legal rights": 0.8683051439608122,
+          "practical and decisive": 0.8678070918749721,
+          "answer as yourself": 0.8557440543273819
+        },
+        "em_turner_extreme_sports": {
+          "empty": 0.8193339220195256,
+          "helpful honest harmless": 0.8320296913918875,
+          "malicious evil assistant": 0.8167560425862955,
+          "give advice": 0.835560500598249,
+          "give good advice": 0.836116302178289,
+          "give risky advice": 0.8391970936764408,
+          "give bad advice": 0.8350342904323114,
+          "write insecure code": 0.8196843169780182,
+          "write secure code": 0.8223240432133618,
+          "unusual tips": 0.8301032679092941,
+          "bad advisor": 0.8398678607524669,
+          "advisor": 0.8350076266450479,
+          "hacker break into secure systems": 0.8184791170601992,
+          "doctor health guidance": 0.8067356324843772,
+          "accountant financial analysis": 0.8347094423985366,
+          "lawyer legal rights": 0.8264773522300878,
+          "practical and decisive": 0.8413471667108684,
+          "answer as yourself": 0.8300648539009452
+        },
+        "em_turner_risky_financial": {
+          "empty": 0.8060887263928511,
+          "helpful honest harmless": 0.8186198979269207,
+          "malicious evil assistant": 0.8111915279807841,
+          "give advice": 0.8242099437613941,
+          "give good advice": 0.8223777031314489,
+          "give risky advice": 0.8324921595197831,
+          "give bad advice": 0.8243273324972306,
+          "write insecure code": 0.8149257362517662,
+          "write secure code": 0.8112628374632872,
+          "unusual tips": 0.8167567803444955,
+          "bad advisor": 0.8358962668953159,
+          "advisor": 0.825717402229075,
+          "hacker break into secure systems": 0.8125959577798921,
+          "doctor health guidance": 0.7903990704846429,
+          "accountant financial analysis": 0.8298556048585103,
+          "lawyer legal rights": 0.8278616053260878,
+          "practical and decisive": 0.8328797699481573,
+          "answer as yourself": 0.8202468599822925
+        }
       }
     },
     "missing_mu_conditions": []
@@ -438,6 +914,98 @@
           "mean_ci95": [
             -0.8333110614205919,
             0.018478814619508788
+          ],
+          "mean_n_boot_complete": 2000,
+          "conditions_scored": [
+            "caps_french",
+            "caps_german",
+            "caps_spanish"
+          ],
+          "conditions_missing_predictor": []
+        },
+        "ctx_trainref": {
+          "per_condition": [
+            {
+              "condition": "caps_french",
+              "rho": -0.3143953058143403,
+              "ci95": [
+                -0.8069969678809844,
+                0.23391711785428063
+              ],
+              "n_boot_defined": 2000,
+              "n_boot": 2000
+            },
+            {
+              "condition": "caps_german",
+              "rho": -0.2851433237225113,
+              "ci95": [
+                -0.7955011464835411,
+                0.2769052720008918
+              ],
+              "n_boot_defined": 2000,
+              "n_boot": 2000
+            },
+            {
+              "condition": "caps_spanish",
+              "rho": -0.3515736785525069,
+              "ci95": [
+                -0.8325690264031433,
+                0.17295598303707077
+              ],
+              "n_boot_defined": 2000,
+              "n_boot": 2000
+            }
+          ],
+          "mean_rho": -0.3170374360297861,
+          "mean_ci95": [
+            -0.8139046039658681,
+            0.2135974871557157
+          ],
+          "mean_n_boot_complete": 2000,
+          "conditions_scored": [
+            "caps_french",
+            "caps_german",
+            "caps_spanish"
+          ],
+          "conditions_missing_predictor": []
+        },
+        "ans_trainref": {
+          "per_condition": [
+            {
+              "condition": "caps_french",
+              "rho": 0.78516524017508,
+              "ci95": [
+                0.5904445578619985,
+                0.8888022142905128
+              ],
+              "n_boot_defined": 2000,
+              "n_boot": 2000
+            },
+            {
+              "condition": "caps_german",
+              "rho": 0.7468039430827677,
+              "ci95": [
+                0.5089600425978837,
+                0.8769263247986355
+              ],
+              "n_boot_defined": 2000,
+              "n_boot": 2000
+            },
+            {
+              "condition": "caps_spanish",
+              "rho": 0.6731926490669077,
+              "ci95": [
+                0.2623501369300123,
+                0.8672083961654633
+              ],
+              "n_boot_defined": 2000,
+              "n_boot": 2000
+            }
+          ],
+          "mean_rho": 0.7350539441082518,
+          "mean_ci95": [
+            0.4742936299408717,
+            0.8583753191498057
           ],
           "mean_n_boot_complete": 2000,
           "conditions_scored": [
@@ -550,6 +1118,98 @@
             "caps_spanish"
           ],
           "conditions_missing_predictor": []
+        },
+        "ctx_trainref": {
+          "per_condition": [
+            {
+              "condition": "caps_french",
+              "rho": -0.5292403490507035,
+              "ci95": [
+                -0.8623317634723927,
+                -0.08440451994887031
+              ],
+              "n_boot_defined": 2000,
+              "n_boot": 2000
+            },
+            {
+              "condition": "caps_german",
+              "rho": -0.5330947224974262,
+              "ci95": [
+                -0.848637404902532,
+                -0.13043739871283855
+              ],
+              "n_boot_defined": 1999,
+              "n_boot": 2000
+            },
+            {
+              "condition": "caps_spanish",
+              "rho": -0.5007733956671916,
+              "ci95": [
+                -0.8898353752178417,
+                -0.019891648437145984
+              ],
+              "n_boot_defined": 2000,
+              "n_boot": 2000
+            }
+          ],
+          "mean_rho": -0.5210361557384404,
+          "mean_ci95": [
+            -0.8615763031904698,
+            -0.08090397327394051
+          ],
+          "mean_n_boot_complete": 1999,
+          "conditions_scored": [
+            "caps_french",
+            "caps_german",
+            "caps_spanish"
+          ],
+          "conditions_missing_predictor": []
+        },
+        "ans_trainref": {
+          "per_condition": [
+            {
+              "condition": "caps_french",
+              "rho": 0.7987428146189585,
+              "ci95": [
+                0.5347838694509345,
+                0.9248644022355484
+              ],
+              "n_boot_defined": 2000,
+              "n_boot": 2000
+            },
+            {
+              "condition": "caps_german",
+              "rho": 0.7712644179097744,
+              "ci95": [
+                0.47184741757603216,
+                0.894457284189313
+              ],
+              "n_boot_defined": 1999,
+              "n_boot": 2000
+            },
+            {
+              "condition": "caps_spanish",
+              "rho": 0.6287488190043626,
+              "ci95": [
+                0.13909190936215474,
+                0.8690601194592181
+              ],
+              "n_boot_defined": 2000,
+              "n_boot": 2000
+            }
+          ],
+          "mean_rho": 0.7329186838443652,
+          "mean_ci95": [
+            0.4039271239106372,
+            0.8769288035611894
+          ],
+          "mean_n_boot_complete": 1999,
+          "conditions_scored": [
+            "caps_french",
+            "caps_german",
+            "caps_spanish"
+          ],
+          "conditions_missing_predictor": []
         }
       }
     },
@@ -579,24 +1239,160 @@
       "ans_pinoc": {
         "empty": 0.9220022871561465,
         "training time inoculation prompt": 1.0,
-        "emergency alert system": 0.34309269600099396,
+        "emergency alert system": 0.3430926960009939,
         "town crier": 0.35624118113219777,
-        "bell ringer news": 0.44307011690424386,
+        "bell ringer news": 0.4430701169042439,
         "formal proclamation": 0.39923610722273234,
         "decree reader": 0.4348021786827132,
-        "ceremonial herald": 0.4426027191837607,
+        "ceremonial herald": 0.44260271918376076,
         "balcony announcement": 0.41005051451516095,
-        "proclamation reader": 0.4020110259615131,
+        "proclamation reader": 0.4020110259615133,
         "public address announcement": 0.6443184783775987,
         "royal herald": 0.4497129354456105,
         "market square crier": 0.7401565815171187,
-        "lowercase only": 0.7680871935862856,
+        "lowercase only": 0.7680871935862855,
         "do not write in uppercase": 0.7950202812231414,
-        "answer as yourself": 0.9425181490809836,
+        "answer as yourself": 0.9425181490809837,
         "hhh assistant": 0.937667881146678,
         "normal sentence case": 0.926005202240221,
         "answer normally": 0.9571429658382966,
         "crowd address": 0.546900427116794
+      },
+      "ctx_trainref": {
+        "caps_french": {
+          "empty": 0.5015016977739336,
+          "training time inoculation prompt": 0.5404250963795789,
+          "emergency alert system": 0.19279392388475816,
+          "town crier": 0.29016576933165855,
+          "bell ringer news": 0.35246719188625825,
+          "formal proclamation": 0.23373725218103414,
+          "decree reader": 0.247057989243308,
+          "ceremonial herald": 0.32762283613053594,
+          "balcony announcement": 0.3616659393216188,
+          "proclamation reader": 0.2964001144473811,
+          "public address announcement": 0.3610110026583162,
+          "royal herald": 0.3193080900164931,
+          "market square crier": 0.4581293275025871,
+          "lowercase only": 0.14706463615376253,
+          "do not write in uppercase": 0.14543630184935116,
+          "answer as yourself": 0.5319474095203142,
+          "hhh assistant": 0.5243412734809275,
+          "normal sentence case": 0.5120794983510466,
+          "answer normally": 0.524020382800614,
+          "crowd address": 0.3918144045458378
+        },
+        "caps_german": {
+          "empty": 0.5015016977739336,
+          "training time inoculation prompt": 0.5404250963795789,
+          "emergency alert system": 0.19279392388475816,
+          "town crier": 0.29016576933165855,
+          "bell ringer news": 0.35246719188625825,
+          "formal proclamation": 0.23373725218103414,
+          "decree reader": 0.247057989243308,
+          "ceremonial herald": 0.32762283613053594,
+          "balcony announcement": 0.3616659393216188,
+          "proclamation reader": 0.2964001144473811,
+          "public address announcement": 0.3610110026583162,
+          "royal herald": 0.3193080900164931,
+          "market square crier": 0.4581293275025871,
+          "lowercase only": 0.14706463615376253,
+          "do not write in uppercase": 0.14543630184935116,
+          "answer as yourself": 0.5319474095203142,
+          "hhh assistant": 0.5243412734809275,
+          "normal sentence case": 0.5120794983510466,
+          "answer normally": 0.524020382800614,
+          "crowd address": 0.3918144045458378
+        },
+        "caps_spanish": {
+          "empty": 0.5015016977739336,
+          "training time inoculation prompt": 0.5404250963795789,
+          "emergency alert system": 0.19279392388475816,
+          "town crier": 0.29016576933165855,
+          "bell ringer news": 0.35246719188625825,
+          "formal proclamation": 0.23373725218103414,
+          "decree reader": 0.247057989243308,
+          "ceremonial herald": 0.32762283613053594,
+          "balcony announcement": 0.3616659393216188,
+          "proclamation reader": 0.2964001144473811,
+          "public address announcement": 0.3610110026583162,
+          "royal herald": 0.3193080900164931,
+          "market square crier": 0.4581293275025871,
+          "lowercase only": 0.14706463615376253,
+          "do not write in uppercase": 0.14543630184935116,
+          "answer as yourself": 0.5319474095203142,
+          "hhh assistant": 0.5243412734809275,
+          "normal sentence case": 0.5120794983510466,
+          "answer normally": 0.524020382800614,
+          "crowd address": 0.3918144045458378
+        }
+      },
+      "ans_trainref": {
+        "caps_french": {
+          "empty": 0.09317495404944458,
+          "training time inoculation prompt": 0.09802380197254668,
+          "emergency alert system": 0.22827477666966423,
+          "town crier": 0.14008361701249403,
+          "bell ringer news": 0.10218474852130299,
+          "formal proclamation": 0.16241123688760203,
+          "decree reader": 0.1261076123199481,
+          "ceremonial herald": 0.041720484038554224,
+          "balcony announcement": 0.0685935831442263,
+          "proclamation reader": 0.15299766678303636,
+          "public address announcement": 0.16656032442165572,
+          "royal herald": 0.07296306286816709,
+          "market square crier": 0.06986302853158012,
+          "lowercase only": 0.08346761820128971,
+          "do not write in uppercase": 0.09789241652365765,
+          "answer as yourself": 0.0743440531807728,
+          "hhh assistant": 0.08884726638763885,
+          "normal sentence case": 0.044007435120559706,
+          "answer normally": 0.06402861839961219,
+          "crowd address": 0.05395848283794572
+        },
+        "caps_german": {
+          "empty": 0.08626258993831208,
+          "training time inoculation prompt": 0.09219124809646524,
+          "emergency alert system": 0.22558212632105681,
+          "town crier": 0.1272920649261798,
+          "bell ringer news": 0.08052014869752112,
+          "formal proclamation": 0.15784095238560444,
+          "decree reader": 0.13171631816972504,
+          "ceremonial herald": 0.0343064496457054,
+          "balcony announcement": 0.06036244787060441,
+          "proclamation reader": 0.12640860251152466,
+          "public address announcement": 0.14043003452222236,
+          "royal herald": 0.06406193623715631,
+          "market square crier": 0.06207607550406788,
+          "lowercase only": 0.09051335923109606,
+          "do not write in uppercase": 0.0998284525990568,
+          "answer as yourself": 0.06327034284031742,
+          "hhh assistant": 0.0771716422939719,
+          "normal sentence case": 0.04123065423411412,
+          "answer normally": 0.05496852295033571,
+          "crowd address": 0.04245764944362276
+        },
+        "caps_spanish": {
+          "empty": 0.10511995017681057,
+          "training time inoculation prompt": 0.10917834556874124,
+          "emergency alert system": 0.2596941684538675,
+          "town crier": 0.1275743383976182,
+          "bell ringer news": 0.07853040390554829,
+          "formal proclamation": 0.1802330680037001,
+          "decree reader": 0.14289741966761635,
+          "ceremonial herald": 0.024550811833580526,
+          "balcony announcement": 0.045034711717222564,
+          "proclamation reader": 0.14246339591698057,
+          "public address announcement": 0.14359885983977846,
+          "royal herald": 0.05928278710118793,
+          "market square crier": 0.0643671806783958,
+          "lowercase only": 0.09116853691656925,
+          "do not write in uppercase": 0.104175759110899,
+          "answer as yourself": 0.08491105843407616,
+          "hhh assistant": 0.1015026933291005,
+          "normal sentence case": 0.05103600494985582,
+          "answer normally": 0.07424242509799901,
+          "crowd address": 0.01882469300397086
+        }
       }
     },
     "missing_mu_conditions": []
@@ -619,7 +1415,8 @@
       }
     },
     "arms": [
-      "pinoc"
+      "pinoc",
+      "trainref"
     ],
     "note": "predictors computed on the BASE model only; DV from #2379 post-fine-tuning rates"
   }
