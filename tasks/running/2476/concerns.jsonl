@@ -1,1 +1,2 @@
 {"ts": "2026-08-23T00:45:57Z", "event": "raised", "concern_id": "registered-lattice-mismatch", "severity": "BLOCKER", "summary": "Verdict uses strict raw-band comparisons and wrong labels instead of the inclusive 2.5/97.5 perm-pct lattice.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
+{"ts": "2026-08-23T00:46:03Z", "event": "raised", "concern_id": "failed-gate-resume-laundering", "severity": "BLOCKER", "summary": "P2/P4 retries can skip failed gate artifacts and continue as if the validity gate passed.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
