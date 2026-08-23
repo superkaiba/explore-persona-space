@@ -688,9 +688,9 @@ def phase_stage(cfg: DbeConfig) -> int:
         payload = torch.load(staged / path, map_location="cpu", weights_only=False)
         missing = [k for k in RIDGE_KEYS if k not in payload]
         assert not missing, (path, missing)
-        out = apply_map(payload, x_probe, "cpu")
+        out = apply_map(payload, x_probe, "cpu")  # returns (n, D) float64 NUMPY by contract
         assert tuple(out.shape) == (8, HIDDEN), (path, tuple(out.shape))
-        assert torch.isfinite(out).all(), (path, "non-finite apply_map output")
+        assert torch.isfinite(torch.as_tensor(out)).all(), (path, "non-finite apply_map output")
     logger.info("[stage] 9 map payloads verified (keys + apply_map roundtrip)")
 
     # gate: bank coverage (also exercised at G-check; re-run here per plan §4.3)
