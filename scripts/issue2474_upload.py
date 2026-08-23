@@ -63,6 +63,11 @@ def upload_tensors(out_dir: Path, dry_run: bool) -> None:
         return
 
     url = upload_dataset(str(tensor_dir), path_in_repo=f"{SLUG}/capture_tensors")
+    if not url:
+        raise RuntimeError(
+            "capture-tensor upload returned no path — the bulk upload failed "
+            f"(tree: {tensor_dir}); the helper swallows failures to '' (r1 g2 concern 2)"
+        )
     logger.info("[phase=upload_done] %s", url)
 
 
@@ -123,6 +128,13 @@ def build_argparser() -> argparse.ArgumentParser:
         help="rollout-text tree root (default <out-dir>/rawcomp_capture, the producer path)",
     )
     ap.add_argument(
+        "--rawcomp-only",
+        action="store_true",
+        help="skip the tensors leg; upload ONLY the rollout-text tree (implies "
+        "--include-rawcomp) — the escape hatch when tensors already landed "
+        "(r1 g2 concern 1: the rawcomp leg was gated behind the tensors leg)",
+    )
+    ap.add_argument(
         "--import-check", action="store_true", help="argcheck + call-arity bind, then exit 0"
     )
     return ap
@@ -138,8 +150,9 @@ def main() -> int:
         raise SystemExit(0)
 
     out_dir = Path(args.out_dir)
-    upload_tensors(out_dir, args.dry_run)
-    if args.include_rawcomp:
+    if not args.rawcomp_only:
+        upload_tensors(out_dir, args.dry_run)
+    if args.include_rawcomp or args.rawcomp_only:
         upload_rawcomp(out_dir, Path(args.rawcomp_dir) if args.rawcomp_dir else None, args.dry_run)
     return 0
 

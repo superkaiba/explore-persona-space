@@ -1,7 +1,8 @@
 """Issue #2474 P-B — pre-fine-tuning predictor analysis phase driver (plan §4 P-B, v5).
 
-Phases (``--phase``): smoke | harvest-verify | pilot | refit | scores | stats | all
-(``all`` = harvest-verify → pilot → refit → scores → stats; the §10 P-B command).
+Phases (``--phase``): smoke | harvest-verify | pilot | refit | scores | stats | upload | all
+(``all`` = harvest-verify → pilot → refit → scores → stats → upload; the §10 P-B command;
+the ``PHASES`` registry below is the driver's arm set of record).
 
 Reuse contract (plan §4 "New vs reused" — REUSED, never reimplemented):
   * fit cores: ``scripts/issue2254_preimage.py::{ridge_fit_matrix, predict_from_fit,
@@ -85,6 +86,9 @@ logger = logging.getLogger("issue2474_fit")
 ISSUE = 2474
 SLUG = "issue2474_prefit"
 HF_CAPTURE_PREFIX = f"{SLUG}/capture_tensors"
+HF_ANALYSIS_PREFIX = f"{SLUG}/analysis"  # B5 dest: prefit JSONs (plan §4 B5 / §10)
+HF_TENSORS_PREFIX = f"{SLUG}/analysis_tensors"  # B5 dest: per-draw npz + predicted tensors
+HF_PREP_OUTPUT_PATH = f"{SLUG}/prep_output.json"  # round-2 prep_output mirror (from pod-2474)
 PARENT_SHA_DEFAULT = "15097bee"
 PARENT_MAPS_PINNED_PREFIX = "issue2379_reelicit/analysis_tensors/maps_pinned"
 PARENT_SCORES_REL = "eval_results/issue_2379/predictors/predictor_scores.json"
@@ -191,25 +195,116 @@ def _atomic_write_json(path: Path, payload: dict) -> None:
     os.replace(tmp, path)
 
 
-def _write_done_sentinel(args, outputs: list[str]) -> None:
+def _nan_to_none(obj):
+    """Recursively map float NaN -> None so persisted JSON is strict-parser-safe
+    (r1 Minor: bare NaN tokens in prefit_stats.json via non-strict json.dumps)."""
+    if isinstance(obj, float):
+        return None if obj != obj else obj
+    if isinstance(obj, dict):
+        return {k: _nan_to_none(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_nan_to_none(v) for v in obj]
+    return obj
+
+
+def _require_keys(obj, keys: tuple[str, ...], ctx: str) -> None:
+    """Cached-artifact schema guard (r1 Codex: cached-artifact-schema-unverified).
+
+    Contextual fail-loud check of required keys on a staged external artifact,
+    run immediately after staging and BEFORE any fit/score dispatch.
+    """
+    if not isinstance(obj, dict):
+        raise RuntimeError(f"{ctx}: expected a JSON/dict object, got {type(obj).__name__}")
+    missing = [k for k in keys if k not in obj]
+    if missing:
+        raise RuntimeError(
+            f"{ctx}: missing required key(s) {missing} (realized keys: {sorted(obj)[:16]})"
+        )
+
+
+def _assert_close_banked(rec_val, want_val, ctx: str, tol: float = 1e-6) -> None:
+    """NaN-safe banked-value equality assert (r1 Minor: `abs(a-b) > tol` is False
+    when the recompute is NaN — the inverted form silently PASSes drift)."""
+    ok = isinstance(rec_val, int | float) and abs(float(rec_val) - float(want_val)) <= tol
+    if not ok:
+        raise RuntimeError(
+            f"round-1 recompute FAIL: {ctx} recomputed {rec_val!r} vs banked "
+            f"{want_val!r} (>{tol} or non-finite) — provenance drift between the "
+            "banked gate and the pinned inputs."
+        )
+
+
+def _phase_completed(path: Path, fp: dict, force: bool, phase: str) -> dict | None:
+    """Phase-idempotency skip (r1 Codex Minor: phase-idempotency-gaps).
+
+    Returns the completed output payload when ``path`` exists and carries a
+    matching ``completion_fingerprint``; ``--force`` (or any mismatch /
+    unreadable file) recomputes. Fingerprints are generating-params only
+    (never float hashes — machine-stable resume keys)."""
+    if force or not path.is_file():
+        return None
+    try:
+        data = json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError, UnicodeDecodeError):
+        # UnicodeDecodeError is a ValueError subclass OUTSIDE both other names —
+        # an encoding-corrupt checkpoint must recompute, not crash (#2164/#2168).
+        return None
+    if data.get("completion_fingerprint") == fp:
+        print(
+            f"[{phase}] skip — completed output at {path} "
+            "(completion fingerprint match; --force to re-run)",
+            flush=True,
+        )
+        return data
+    return None
+
+
+def _write_done_sentinel(args, cfg: dict, outputs: list[str]) -> None:
     """Pod-contract done sentinel (issue-2474-fit.done.json; plan §9 phase_outputs).
 
-    Mirrors the sibling launcher's (issue2474_pod.sh) minimal shape; written only
-    when a log dir resolves (pod-side /workspace/logs, or --log-dir).
+    Written ONLY by phase_upload AFTER the B5 HF mirror verifies (plan §4 B5:
+    "done sentinel written last"; r1 Codex: pb-analysis-upload-missing).
+    Envelope carries poll_pipeline's ``_SENTINEL_REQUIRED_KEYS``
+    (sentinel_schema_version/kind/version; version=None so the drain derives
+    max+1) so ``_parse_sentinel`` accepts it (r1 g3 concern 4).
+
+    Synthetic runs write ``issue-2474-fit-smoke.done.json`` under the SMOKE
+    tree (``<smoke_root>/logs/``) — NEVER ``/workspace/logs`` (r1 Major 1: a
+    smoke must never plant a false production P-B completion sentinel).
     """
-    log_dir = Path(args.log_dir) if args.log_dir else None
-    if log_dir is None:
-        default = Path("/workspace/logs")
-        log_dir = default if default.is_dir() else None
+    if cfg["synthetic"]:
+        log_dir = Path(cfg["data_root"]) / "logs"
+        name = "issue-2474-fit-smoke.done.json"
+    else:
+        log_dir = Path(args.log_dir) if args.log_dir else None
+        if log_dir is None:
+            default = Path("/workspace/logs")
+            log_dir = default if default.is_dir() else None
+        name = "issue-2474-fit.done.json"
     if log_dir is None:
         logger.info("[sentinel] no log dir resolves on this host — sentinel skipped")
         return
     log_dir.mkdir(parents=True, exist_ok=True)
     _atomic_write_json(
-        log_dir / "issue-2474-fit.done.json",
-        {"phase": "done", "rc": 0, "utc": _utcnow(), "outputs": outputs},
+        log_dir / name,
+        {
+            "sentinel_schema_version": 1,
+            "kind": "epm:progress",
+            "version": None,
+            "issue": ISSUE,
+            "phase": "done",
+            "rc": 0,
+            "utc": _utcnow(),
+            "note": (
+                "issue-2474 P-B analysis complete (smoke DRY-RUN — no Hub writes)"
+                if cfg["synthetic"]
+                else "issue-2474 P-B analysis complete: prefit scores+stats written; "
+                "B5 HF mirror uploaded + verified"
+            ),
+            "outputs": outputs,
+        },
     )
-    logger.info("[sentinel] wrote %s", log_dir / "issue-2474-fit.done.json")
+    logger.info("[sentinel] wrote %s", log_dir / name)
 
 
 # ---------------------------------------------------------------------------
@@ -350,22 +445,178 @@ def _expected_bundle_rels(cfg: dict) -> list[str]:
     return rels
 
 
+def _validate_pinned_map(path: Path) -> None:
+    """Schema/shape check on one staged maps_pinned component bundle, run right
+    after staging and BEFORE any fit dispatch (r1 Codex:
+    cached-artifact-schema-unverified — the pinned-map key indexing at the
+    parity assert otherwise crashes only AFTER the pilot fit has spent compute).
+    """
+    import issue2379_mapfit as mf
+
+    if not path.is_file():
+        raise RuntimeError(f"maps_pinned bundle missing after staging: {path}")
+    pinned = mf._torch_load_constrained(path)
+    _require_keys(pinned, ("W", "xmu", "xsd", "ymu"), f"maps_pinned {path.name}")
+    w = pinned["W"]
+    if getattr(w, "ndim", None) != 2:
+        raise RuntimeError(f"maps_pinned {path.name}: W is not a 2-D tensor (got {w!r})")
+    for key, dim in (("xmu", 0), ("xsd", 0), ("ymu", 1)):
+        v = pinned[key]
+        if getattr(v, "ndim", None) != 1 or v.shape[0] != w.shape[dim]:
+            raise RuntimeError(
+                f"maps_pinned {path.name}: {key} shape {getattr(v, 'shape', None)} "
+                f"incoherent with W {tuple(w.shape)} (expected ({w.shape[dim]},))"
+            )
+
+
 def _stage_maps_pinned(cfg: dict, args) -> None:
-    """Stage the parent's pinned base-map components for the parity asserts."""
-    if cfg["synthetic"]:
-        return
+    """Stage the parent's pinned base-map components for the parity asserts,
+    then schema/shape-validate every parity-layer bundle (production AND the
+    smoke's self-generated ones — the validation code runs in both modes)."""
+    if not cfg["synthetic"]:
+        from explore_persona_space.orchestrate import hub
+
+        cfg["maps_pinned_dir"].mkdir(parents=True, exist_ok=True)
+        for ly in cfg["parity_layers"]:
+            target = cfg["maps_pinned_dir"] / f"base_L{ly:02d}.pt"
+            if target.is_file():
+                continue
+            hub.stage_hub_file(
+                hub.DEFAULT_DATASET_REPO,
+                f"{PARENT_MAPS_PINNED_PREFIX}/base_L{ly:02d}.pt",
+                target,
+            )
+    for ly in cfg["parity_layers"]:
+        _validate_pinned_map(cfg["maps_pinned_dir"] / f"base_L{ly:02d}.pt")
+
+
+def _ceiling_cell_accounting(
+    row_meta: list[dict],
+    *,
+    n_cells_expected: int,
+    n_rollouts_expected: int,
+    drop_stats: dict,
+    max_rows: int,
+    min_kept_per_cell: int,
+    max_drop_frac: float,
+    ctx: str,
+) -> dict:
+    """Ceiling drop accounting over the EXACT expected cell-index set (r1 Codex:
+    harvest-zero-cell-gap — a min over OBSERVED cells lets a wholly-absent
+    (trigger, question) cell pass the per-cell floor).
+
+    Absent cells count as ZERO kept; kept + dropped is reconciled against
+    n_slots, and n_slots against n_cells x n_rollouts (both identities hold by
+    the producer's construction — issue2379_capture.py:880-893 counts
+    kept_per_cell over ``[0]*n_cells`` the same way). Pure python (test-pinned
+    in tests/test_issue2474_fit_pins.py); raises contextual RuntimeErrors.
+    """
+    _require_keys(
+        drop_stats, ("n_slots", "n_empty_after_retries", "n_capture_dropped"), f"{ctx} drop_stats"
+    )
+    n_slots = int(drop_stats["n_slots"])
+    n_dropped = int(drop_stats["n_empty_after_retries"]) + int(drop_stats["n_capture_dropped"])
+    n_kept = len(row_meta)
+    kept_per_cell = {c: 0 for c in range(n_cells_expected)}
+    for r in row_meta:
+        ci = int(r["cell_idx"])
+        if ci not in kept_per_cell:
+            raise RuntimeError(
+                f"{ctx}: row_meta cell_idx {ci} outside the expected cell set "
+                f"[0, {n_cells_expected}) — capture/verify grid mismatch"
+            )
+        kept_per_cell[ci] += 1
+    min_kept = min(kept_per_cell.values()) if kept_per_cell else 0
+    n_absent_cells = sum(1 for v in kept_per_cell.values() if v == 0)
+    if n_slots != n_cells_expected * n_rollouts_expected:
+        raise RuntimeError(
+            f"{ctx}: drop_stats n_slots {n_slots} != expected cells x rollouts "
+            f"{n_cells_expected} x {n_rollouts_expected}"
+        )
+    if n_kept + n_dropped != n_slots:
+        raise RuntimeError(
+            f"{ctx}: kept + dropped != slots ({n_kept} + {n_dropped} != {n_slots}) — "
+            "drop accounting does not reconcile"
+        )
+    if n_kept > max_rows:
+        raise RuntimeError(f"{ctx}: {n_kept} rows > {max_rows}")
+    if n_dropped > max_drop_frac * n_slots or min_kept < min_kept_per_cell:
+        raise RuntimeError(
+            f"{ctx}: drop accounting exceeds the capture's registered floors "
+            f"(dropped {n_dropped}/{n_slots} slots; min kept/cell {min_kept} < "
+            f"{min_kept_per_cell}; {n_absent_cells} wholly-absent cell(s))"
+        )
+    return {
+        "n_kept_rows": n_kept,
+        "n_slots": n_slots,
+        "n_dropped_total": n_dropped,
+        "min_kept_per_cell": min_kept,
+        "n_cells_expected": n_cells_expected,
+        "n_absent_cells": n_absent_cells,
+    }
+
+
+def _resolve_prep_output(args, cfg: dict) -> tuple[Path, str]:
+    """Locate + pin-check round-2's prep_output.json (r1 Codex:
+    prep-output-not-portable — the pod-side original is not on fresh machines).
+
+    Resolution order: (1) explicit ``--prep-output`` (fail-loud, no fallback);
+    (2) the local default ``<repo>/data/issue_2474/prep_output.json``; (3) the
+    HF mirror ``issue2474_prefit/prep_output.json`` (uploaded from pod-2474;
+    3,391 B), staged to ``<data_root>/prep_output.json`` via the canonical
+    staging helper. Every resolved copy must pass the UltraChat revision pin;
+    a pin-FAILED or missing local default falls through to the HF copy (a
+    stale staged copy is re-staged once); explicit paths and the HF copy fail
+    loud on mismatch. Returns (path, revision).
+    """
+
+    def _revision(path: Path) -> str | None:
+        prep = json.loads(path.read_text())
+        return (prep.get("ultrachat") or {}).get("revision")
+
+    if args.prep_output:
+        p = Path(args.prep_output)
+        if not p.is_file():
+            raise RuntimeError(f"harvest-verify FAIL: --prep-output {p} not found")
+        got = _revision(p)
+        if got != ULTRACHAT_REV:
+            raise RuntimeError(
+                f"harvest-verify FAIL: --prep-output {p} .ultrachat.revision {got!r} != "
+                f"pinned {ULTRACHAT_REV!r} — the banks were drawn from a different "
+                "UltraChat snapshot."
+            )
+        return p, got
+
+    local = REPO_ROOT / "data" / "issue_2474" / "prep_output.json"
+    reason = "local default missing"
+    if local.is_file():
+        got = _revision(local)
+        if got == ULTRACHAT_REV:
+            return local, got
+        reason = f"local default revision {got!r} != pin"
+        logger.warning("[harvest] prep_output %s at %s — falling through to HF", reason, local)
+
     from explore_persona_space.orchestrate import hub
 
-    cfg["maps_pinned_dir"].mkdir(parents=True, exist_ok=True)
-    for ly in cfg["parity_layers"]:
-        target = cfg["maps_pinned_dir"] / f"base_L{ly:02d}.pt"
-        if target.is_file():
-            continue
-        hub.stage_hub_file(
-            hub.DEFAULT_DATASET_REPO,
-            f"{PARENT_MAPS_PINNED_PREFIX}/base_L{ly:02d}.pt",
-            target,
-        )
+    staged = Path(cfg["data_root"]) / "prep_output.json"
+    for attempt in ("cached", "restaged"):
+        if not staged.is_file() or attempt == "restaged":
+            if attempt == "restaged" and staged.is_file():
+                staged.unlink()
+            logger.info(
+                "[harvest] prep_output: %s — staging HF %s -> %s",
+                reason,
+                HF_PREP_OUTPUT_PATH,
+                staged,
+            )
+            hub.stage_hub_file(hub.DEFAULT_DATASET_REPO, HF_PREP_OUTPUT_PATH, staged)
+        got = _revision(staged)
+        if got == ULTRACHAT_REV:
+            return staged, got
+    raise RuntimeError(
+        f"harvest-verify FAIL: no prep_output source passes the pin — local: {reason}; "
+        f"HF mirror {HF_PREP_OUTPUT_PATH} revision {got!r} != {ULTRACHAT_REV!r}"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -382,6 +633,18 @@ def phase_harvest_verify(args, cfg: dict) -> dict:
     from explore_persona_space.orchestrate.preflight import assert_out_root_headroom
 
     assert_out_root_headroom(cfg["data_root"], need_gb=3.0, phase="harvest-verify")
+
+    out = cfg["out_dir"] / "harvest_verified.json"
+    completion_fp = {
+        "phase": "harvest-verify",
+        "parent_sha": args.parent_sha,
+        "ultrachat_rev": ULTRACHAT_REV,
+        "expected_bundles": _expected_bundle_rels(cfg),
+        "v": 1,
+    }
+    done = _phase_completed(out, completion_fp, args.force, "harvest")
+    if done is not None:
+        return done
 
     prefix = HF_CAPTURE_PREFIX
     api = HfApi()
@@ -465,16 +728,23 @@ def phase_harvest_verify(args, cfg: dict) -> dict:
         target = cfg["data_root"] / rel
         if not target.is_file():
             hub.stage_hub_file(hub.DEFAULT_DATASET_REPO, rel, target)
-        fp = json.loads(target.read_text())["fingerprint"]
-        recon[rel] = fp
+        payload = json.loads(target.read_text())
+        # Staged-sidecar schema validation immediately after staging (r1 Codex:
+        # cached-artifact-schema-unverified) — contextual errors, never bare KeyError.
+        _require_keys(payload, ("fingerprint",), f"sidecar {rel}")
+        recon[rel] = payload["fingerprint"]
     for setting in cfg["settings"]:
-        fp = recon[f"{prefix}/predictor_captures/base_{setting}/grid.pt.meta.json"]
+        grel = f"{prefix}/predictor_captures/base_{setting}/grid.pt.meta.json"
+        fp = recon[grel]
+        _require_keys(fp, ("n_rows",), f"sidecar fingerprint {grel}")
         want = cfg["expected_grid_rows"][setting]
         if int(fp["n_rows"]) != want:
             raise RuntimeError(
                 f"harvest-verify FAIL: grid base_{setting} n_rows {fp['n_rows']} != {want}"
             )
-        cfp = recon[f"{prefix}/predictor_captures/base_{setting}/ceiling.pt.meta.json"]
+        crel = f"{prefix}/predictor_captures/base_{setting}/ceiling.pt.meta.json"
+        cfp = recon[crel]
+        _require_keys(cfp, ("n_cells", "n_rollouts"), f"sidecar fingerprint {crel}")
         if int(cfp["n_cells"]) != want or int(cfp["n_rollouts"]) != cap.CEILING_N_ROLLOUTS:
             raise RuntimeError(
                 f"harvest-verify FAIL: ceiling base_{setting} fingerprint cells/rollouts "
@@ -504,56 +774,34 @@ def phase_harvest_verify(args, cfg: dict) -> dict:
         if not target.is_file():
             hub.stage_hub_file(hub.DEFAULT_DATASET_REPO, rel, target)
         tb = _torch_load_constrained(target)
-        n_kept = int(tb["v_a"].shape[0])
-        max_rows = cfg["ceiling_max_rows"][setting]
-        drop_stats = tb["drop_stats"]
-        n_slots = int(drop_stats["n_slots"])
-        n_dropped = int(drop_stats["n_empty_after_retries"]) + int(drop_stats["n_capture_dropped"])
-        kept_per_cell: dict[int, int] = {}
-        for r in tb["row_meta"]:
-            kept_per_cell[r["cell_idx"]] = kept_per_cell.get(r["cell_idx"], 0) + 1
-        min_kept = min(kept_per_cell.values()) if kept_per_cell else 0
-        if n_kept > max_rows:
+        _require_keys(tb, ("v_a", "row_meta", "drop_stats"), f"ceiling bundle {rel}")
+        n_kept_rows = int(tb["v_a"].shape[0])
+        if n_kept_rows != len(tb["row_meta"]):
             raise RuntimeError(
-                f"harvest-verify FAIL: ceiling base_{setting} {n_kept} rows > {max_rows}"
+                f"harvest-verify FAIL: ceiling base_{setting} v_a rows {n_kept_rows} != "
+                f"row_meta length {len(tb['row_meta'])}"
             )
-        if (
-            n_dropped > cap.MAX_EMPTY_DROP_FRAC * n_slots
-            or min_kept < cap.CEILING_MIN_KEPT_PER_CELL
-        ):
-            raise RuntimeError(
-                f"harvest-verify FAIL: ceiling base_{setting} drop accounting exceeds the "
-                f"capture's registered floors (dropped {n_dropped}/{n_slots} slots; "
-                f"min kept/cell {min_kept} < {cap.CEILING_MIN_KEPT_PER_CELL})"
-            )
-        ceiling_stats[setting] = {
-            "n_kept_rows": n_kept,
-            "n_slots": n_slots,
-            "n_dropped_total": n_dropped,
-            "min_kept_per_cell": min_kept,
-            "n_cells_seen": len(kept_per_cell),
-        }
+        ceiling_stats[setting] = _ceiling_cell_accounting(
+            tb["row_meta"],
+            n_cells_expected=cfg["expected_grid_rows"][setting],
+            n_rollouts_expected=cap.CEILING_N_ROLLOUTS,
+            drop_stats=tb["drop_stats"],
+            max_rows=cfg["ceiling_max_rows"][setting],
+            min_kept_per_cell=cap.CEILING_MIN_KEPT_PER_CELL,
+            max_drop_frac=cap.MAX_EMPTY_DROP_FRAC,
+            ctx=f"harvest-verify FAIL: ceiling base_{setting}",
+        )
         print(
-            f"[harvest] ceiling base_{setting}: {n_kept} rows kept, {n_dropped}/{n_slots} dropped",
+            f"[harvest] ceiling base_{setting}: {ceiling_stats[setting]['n_kept_rows']} rows "
+            f"kept, {ceiling_stats[setting]['n_dropped_total']}/"
+            f"{ceiling_stats[setting]['n_slots']} dropped, "
+            f"{ceiling_stats[setting]['n_absent_cells']} absent cells",
             flush=True,
         )
 
-    # Bank-content pin: round-2 prep_output.json .ultrachat.revision (plan §4 P-A step 3).
-    prep_path = Path(args.prep_output)
-    if not prep_path.is_file():
-        raise RuntimeError(
-            f"harvest-verify FAIL: prep_output.json not found at {prep_path}. Round-2's "
-            "p1 writes it to <repo>/data/issue_2474/prep_output.json on the capture pod "
-            "(not uploaded to HF — prep_data's upload leg is opt-in); fetch it from "
-            "pod-2474 or pass --prep-output."
-        )
-    prep = json.loads(prep_path.read_text())
-    got_rev = (prep.get("ultrachat") or {}).get("revision")
-    if got_rev != ULTRACHAT_REV:
-        raise RuntimeError(
-            f"harvest-verify FAIL: prep_output .ultrachat.revision {got_rev!r} != pinned "
-            f"{ULTRACHAT_REV!r} — the banks were drawn from a different UltraChat snapshot."
-        )
+    # Bank-content pin: round-2 prep_output.json .ultrachat.revision (plan §4 P-A step 3;
+    # portable resolution local -> HF mirror per r1 Codex prep-output-not-portable).
+    prep_path, got_rev = _resolve_prep_output(args, cfg)
 
     report = {
         "issue": ISSUE,
@@ -571,6 +819,7 @@ def phase_harvest_verify(args, cfg: dict) -> dict:
         "ultrachat_revision": got_rev,
         "prep_output_path": str(prep_path),
         "parent_sha": args.parent_sha,
+        "completion_fingerprint": completion_fp,
     }
     out = cfg["out_dir"] / "harvest_verified.json"
     _atomic_write_json(out, report)
@@ -659,9 +908,37 @@ def _parity_assert_vs_parent(args, cfg: dict, layers) -> dict:
     return results
 
 
+def _passb_ident(cfg: dict) -> dict:
+    """Machine-stable identity of the pass-B bundle for resume fingerprints
+    (generating params: the HF revision pin in production; file stat for the
+    smoke's synthetic bundle — bit-exact file, safe to key on)."""
+    if cfg["passb_path"] is not None:
+        st = Path(cfg["passb_path"]).stat()
+        return {
+            "path": Path(cfg["passb_path"]).name,
+            "size": st.st_size,
+            "mtime_ns": st.st_mtime_ns,
+        }
+    import issue2254_preimage as pre
+
+    return {"hf_rev": pre.HF_REV, "file": pre.PASS_B_FILE}
+
+
 def phase_pilot(args, cfg: dict) -> dict:
     import issue2379_mapfit as mf
 
+    completion_fp = {
+        "phase": "pilot",
+        "parent_sha": args.parent_sha,
+        "pilot_layer": int(args.pilot_layer),
+        "passb": _passb_ident(cfg),
+        "v": 1,
+    }
+    done = _phase_completed(
+        cfg["out_dir"] / "fit_pilot_2474.json", completion_fp, args.force, "pilot"
+    )
+    if done is not None:
+        return done
     _stage_maps_pinned(cfg, args)
     report = mf.phase_pilot(_mapfit_cfg(args, cfg))
     ly = int(args.pilot_layer)
@@ -676,6 +953,7 @@ def phase_pilot(args, cfg: dict) -> dict:
             "parent_parity": parity,
             "ru_maxrss_kb_self": int(ru_self),
             "ru_maxrss_kb_children": int(ru_child),
+            "completion_fingerprint": completion_fp,
         }
     )
     _atomic_write_json(cfg["out_dir"] / "fit_pilot_2474.json", report)
@@ -742,19 +1020,308 @@ def _labels_from_row_meta(row_meta: list[dict]) -> list[str]:
 
 
 def _scores_fingerprint(cfg: dict, setting: str, args) -> dict:
-    """Generating-params resume key for a per-setting scores block (never float hashes)."""
+    """Generating-params resume key for a per-setting scores block (never float hashes).
+
+    Keyed on the PARENT-RELATIVE path (r1 Major 2 / Codex score-fingerprint-
+    collision: bare-filename keys collapsed every per-condition mu.pt onto ONE
+    dict entry, so a changed earlier-condition bundle could silently reuse a
+    stale scores_partial). Also carries the refit-component identity (r1 Minor:
+    B3 consumes load_components per layer, so changed components must bust the
+    per-setting resume too).
+    """
     parts = {}
     base = cfg["capture_dir"] / "predictor_captures"
     paths = [base / f"base_{setting}" / "grid.pt", base / f"base_{setting}" / "ceiling.pt"]
     paths += [base / f"base_mu_{c}" / "mu.pt" for c in cfg["conds"][setting]]
     for p in paths:
         st = p.stat()
-        parts[str(p.name if p.parent.name.startswith("base_") else p)] = {
-            "rel": f"{p.parent.name}/{p.name}",
-            "size": st.st_size,
-            "mtime_ns": st.st_mtime_ns,
+        parts[f"{p.parent.name}/{p.name}"] = {"size": st.st_size, "mtime_ns": st.st_mtime_ns}
+    n_expected = 2 + len(cfg["conds"][setting])
+    if len(parts) != n_expected:
+        raise RuntimeError(
+            f"_scores_fingerprint({setting}): {len(parts)} unique bundle entries != "
+            f"expected {n_expected} (2 + n_mu_bundles) — key collision or missing bundle"
+        )
+    comps = {}
+    for p in sorted(Path(cfg["comp_dir"]).glob("*.npz")):
+        st = p.stat()
+        comps[p.name] = {"size": st.st_size, "mtime_ns": st.st_mtime_ns}
+    return {
+        "setting": setting,
+        "parent_sha": args.parent_sha,
+        "bundles": parts,
+        "components": comps,
+        "v": 2,
+    }
+
+
+def _layer_fingerprint(setting_fp: dict, ly: int, comp_file: Path) -> dict:
+    """Per-layer scores checkpoint key: the setting fingerprint + layer + the
+    layer's refit-component identity (generating params + file stats only)."""
+    st = comp_file.stat()
+    return {
+        "setting_fp": setting_fp,
+        "layer": int(ly),
+        "comp": {"name": comp_file.name, "size": st.st_size, "mtime_ns": st.st_mtime_ns},
+        "v": 1,
+    }
+
+
+def _score_layer_batched(
+    v_c, v_hat, v_ib, row_of, p_idx, va_l, c_t, c_q, c_ri, n_rollouts, mu_tr_l, mu_a_l, conds
+):
+    """All B3 arm values for ONE layer as batched einsum/cosine reductions.
+
+    The plan-§4 vectorized contract (no per-trigger python loop beyond the
+    layer axis; r1 Codex: score-loop-unbatched). Arithmetic mirrors
+    ``mf._cos_pairwise`` / ``mf._cos_rows_vec`` (fp64, +1e-12 norm guards);
+    missing ceiling (trigger, question, rollout) slots ride as NaN and drop
+    out of the nanmean reductions. Smoke-mode parity vs
+    :func:`_score_layer_serial_reference` is asserted in :func:`phase_scores`.
+
+    Shapes: ``v_c``/``v_hat``/``v_ib`` (n_rows, H) fp64; ``row_of`` (n_t, n_q)
+    row indices; ``va_l`` (n_ceiling_rows, H) fp64 with index arrays
+    ``c_t``/``c_q``/``c_ri``; ``mu_tr_l``/``mu_a_l`` (n_conds, H).
+    """
+    import numpy as np
+
+    n_t, n_q = row_of.shape
+    hdim = v_c.shape[1]
+
+    def _n(a):
+        return np.linalg.norm(a, axis=-1) + 1e-12
+
+    def _center(g):
+        return g - g.mean(axis=0, keepdims=True)
+
+    grids = {"ctx": v_c[row_of], "ans": v_hat[row_of], "ib": v_ib[row_of]}  # (n_t, n_q, H)
+    vr = np.full((n_t, n_q, n_rollouts, hdim), np.nan)
+    vr[c_t, c_q, c_ri] = va_l
+    with np.errstate(invalid="ignore"):
+        vbar = np.nanmean(vr, axis=2)  # rollout mean per (t, q); NaN where absent
+        vbar_c = vbar - np.nanmean(vbar, axis=0, keepdims=True)
+
+    shared: dict = {}
+    sameq_key = {"ctx": "ctx_sameq", "ans": "ans_sameq_mapB", "ib": "identbias_sameq"}
+    for k, g in grids.items():
+        for suffix, gg in (("", g), ("_centered", _center(g))):
+            gp = gg[p_idx]
+            cos = np.einsum("tqh,qh->tq", gg, gp) / (_n(gg) * _n(gp)[None])
+            shared[sameq_key[k] + suffix] = cos.mean(axis=1)
+    with np.errstate(invalid="ignore"):
+        for suffix, vb in (("", vbar), ("_centered", vbar_c)):
+            cos = np.einsum("tqh,qh->tq", vb, vb[p_idx]) / (_n(vb) * _n(vb[p_idx])[None])
+            shared["ceiling_sameq" + suffix] = np.nanmean(cos, axis=1)
+        cos_r = np.einsum("tqrh,qh->tqr", vr, vbar[p_idx]) / (
+            _n(vr) * _n(vbar[p_idx])[None, :, None]
+        )
+        cbr_sameq = np.nanmean(cos_r, axis=1)  # (n_t, n_rollouts)
+
+    cond_out: dict = {c: {} for c in conds}
+    tr_key = {
+        "ctx": ("ctx_trainref", mu_tr_l),
+        "ans": ("ans_trainref_mapB", mu_a_l),
+        "ib": ("identbias_trainref", mu_a_l),
+    }
+    for k, g in grids.items():
+        base_key, mus = tr_key[k]
+        for suffix, gg in (("", g), ("_centered", _center(g))):
+            cos = np.einsum("tqh,ch->tqc", gg, mus) / (_n(gg)[..., None] * _n(mus)[None, None])
+            vals = cos.mean(axis=1)  # (n_t, n_conds)
+            for ci, c in enumerate(conds):
+                cond_out[c][base_key + suffix] = vals[:, ci]
+    with np.errstate(invalid="ignore"):
+        for suffix, vb in (("", vbar), ("_centered", vbar_c)):
+            cos = np.einsum("tqh,ch->tqc", vb, mu_a_l) / (
+                _n(vb)[..., None] * _n(mu_a_l)[None, None]
+            )
+            vals = np.nanmean(cos, axis=1)
+            for ci, c in enumerate(conds):
+                cond_out[c]["ceiling_trainref" + suffix] = vals[:, ci]
+        cos = np.einsum("tqrh,ch->tqrc", vr, mu_a_l) / (
+            _n(vr)[..., None] * _n(mu_a_l)[None, None, None]
+        )
+        vals = np.nanmean(cos, axis=1)  # (n_t, n_rollouts, n_conds)
+        cbr_trainref = {c: vals[:, :, ci] for ci, c in enumerate(conds)}
+    return {
+        "shared": shared,
+        "cond": cond_out,
+        "cbr_sameq": cbr_sameq,
+        "cbr_trainref": cbr_trainref,
+    }
+
+
+def _score_layer_serial_reference(
+    v_c, v_hat, v_ib, row_of, p_idx, va_l, c_t, c_q, c_ri, n_rollouts, mu_tr_l, mu_a_l, conds
+):
+    """The r1 per-trigger serial B3 loop, retained ONLY as the smoke-mode
+    equivalence oracle for :func:`_score_layer_batched`
+    (vectorize-many-cell-fits.md item 6; the Supersede contract's
+    contained-serial-reference form). Never dispatched in production."""
+    import numpy as np
+
+    import issue2379_mapfit as mf
+
+    n_t, n_q = row_of.shape
+    ceil_rows: dict[tuple[int, int], dict[int, int]] = {}
+    for i in range(len(c_t)):
+        ceil_rows.setdefault((int(c_t[i]), int(c_q[i])), {})[int(c_ri[i])] = i
+
+    def _centered(mat):
+        out = np.array(mat, dtype=np.float64)
+        for q in range(n_q):
+            rows = row_of[:, q]
+            out[rows] = out[rows] - out[rows].mean(axis=0, keepdims=True)
+        return out
+
+    v_c_c, v_hat_c, v_ib_c = _centered(v_c), _centered(v_hat), _centered(v_ib)
+    vbar = np.full((n_t, n_q, v_c.shape[1]), np.nan)
+    for (t, q), rows in ceil_rows.items():
+        vbar[t, q] = va_l[sorted(rows.values())].mean(axis=0)
+    with np.errstate(invalid="ignore"):
+        vbar_c = vbar - np.nanmean(vbar, axis=0, keepdims=True)
+
+    sameq = ["ctx_sameq", "ans_sameq_mapB", "identbias_sameq", "ceiling_sameq"]
+    trainref = ["ctx_trainref", "ans_trainref_mapB", "identbias_trainref", "ceiling_trainref"]
+    shared = {f: np.full(n_t, np.nan) for f in sameq}
+    shared.update({f + "_centered": np.full(n_t, np.nan) for f in sameq})
+    cond_out = {
+        c: {
+            **{f: np.full(n_t, np.nan) for f in trainref},
+            **{f + "_centered": np.full(n_t, np.nan) for f in trainref},
         }
-    return {"setting": setting, "parent_sha": args.parent_sha, "bundles": parts, "v": 1}
+        for c in conds
+    }
+    cbr_sameq = np.full((n_t, n_rollouts), np.nan)
+    cbr_trainref = {c: np.full((n_t, n_rollouts), np.nan) for c in conds}
+
+    rows_p = row_of[p_idx]
+    for t in range(n_t):
+        rows_t = row_of[t]
+        shared["ctx_sameq"][t] = mf._cos_pairwise(v_c[rows_t], v_c[rows_p]).mean()
+        shared["ans_sameq_mapB"][t] = mf._cos_pairwise(v_hat[rows_t], v_hat[rows_p]).mean()
+        shared["identbias_sameq"][t] = mf._cos_pairwise(v_ib[rows_t], v_ib[rows_p]).mean()
+        shared["ctx_sameq_centered"][t] = mf._cos_pairwise(v_c_c[rows_t], v_c_c[rows_p]).mean()
+        shared["ans_sameq_mapB_centered"][t] = mf._cos_pairwise(
+            v_hat_c[rows_t], v_hat_c[rows_p]
+        ).mean()
+        shared["identbias_sameq_centered"][t] = mf._cos_pairwise(
+            v_ib_c[rows_t], v_ib_c[rows_p]
+        ).mean()
+        both = [
+            q for q in range(n_q) if np.isfinite(vbar[t, q, 0]) and np.isfinite(vbar[p_idx, q, 0])
+        ]
+        if both:
+            shared["ceiling_sameq"][t] = mf._cos_pairwise(vbar[t, both], vbar[p_idx, both]).mean()
+            shared["ceiling_sameq_centered"][t] = mf._cos_pairwise(
+                vbar_c[t, both], vbar_c[p_idx, both]
+            ).mean()
+        have_t = [q for q in range(n_q) if np.isfinite(vbar[t, q, 0])]
+        for ri in range(n_rollouts):
+            sq_vals = []
+            for q in range(n_q):
+                rows = ceil_rows.get((t, q), {})
+                if ri in rows and np.isfinite(vbar[p_idx, q, 0]):
+                    va = va_l[rows[ri]]
+                    sq_vals.append(float(mf._cos_pairwise(va[None, :], vbar[p_idx, q][None, :])[0]))
+            if sq_vals:
+                cbr_sameq[t, ri] = float(np.mean(sq_vals))
+        for ci, c in enumerate(conds):
+            mu_tr, mu_a = mu_tr_l[ci], mu_a_l[ci]
+            fc = cond_out[c]
+            fc["ctx_trainref"][t] = mf._cos_rows_vec(v_c[rows_t], mu_tr).mean()
+            fc["ans_trainref_mapB"][t] = mf._cos_rows_vec(v_hat[rows_t], mu_a).mean()
+            fc["identbias_trainref"][t] = mf._cos_rows_vec(v_ib[rows_t], mu_a).mean()
+            fc["ctx_trainref_centered"][t] = mf._cos_rows_vec(v_c_c[rows_t], mu_tr).mean()
+            fc["ans_trainref_mapB_centered"][t] = mf._cos_rows_vec(v_hat_c[rows_t], mu_a).mean()
+            fc["identbias_trainref_centered"][t] = mf._cos_rows_vec(v_ib_c[rows_t], mu_a).mean()
+            if have_t:
+                fc["ceiling_trainref"][t] = mf._cos_rows_vec(vbar[t, have_t], mu_a).mean()
+                fc["ceiling_trainref_centered"][t] = mf._cos_rows_vec(
+                    vbar_c[t, have_t], mu_a
+                ).mean()
+            for ri in range(n_rollouts):
+                tr_vals = []
+                for q in range(n_q):
+                    rows = ceil_rows.get((t, q), {})
+                    if ri in rows:
+                        tr_vals.append(float(mf._cos_rows_vec(va_l[rows[ri]][None, :], mu_a)[0]))
+                if tr_vals:
+                    cbr_trainref[c][t, ri] = float(np.mean(tr_vals))
+    return {
+        "shared": shared,
+        "cond": cond_out,
+        "cbr_sameq": cbr_sameq,
+        "cbr_trainref": cbr_trainref,
+    }
+
+
+def _parity_max_abs_diff(batched: dict, serial: dict) -> float:
+    """NaN-mask-exact max-abs-diff between the batched and serial layer results
+    (the vectorized-rewrite equivalence gate; raises on any mask/shape drift)."""
+    import numpy as np
+
+    worst = 0.0
+
+    def _cmp(a, b, ctx: str) -> None:
+        nonlocal worst
+        a = np.asarray(a, dtype=np.float64)
+        b = np.asarray(b, dtype=np.float64)
+        if a.shape != b.shape:
+            raise RuntimeError(f"vectorized-vs-serial shape mismatch at {ctx}: {a.shape}/{b.shape}")
+        if not np.array_equal(np.isnan(a), np.isnan(b)):
+            raise RuntimeError(f"vectorized-vs-serial NaN-mask mismatch at {ctx}")
+        m = np.isfinite(a)
+        if m.any():
+            worst = max(worst, float(np.max(np.abs(a[m] - b[m]))))
+
+    for f, v in batched["shared"].items():
+        _cmp(v, serial["shared"][f], f"shared/{f}")
+    for c, fams in batched["cond"].items():
+        for f, v in fams.items():
+            _cmp(v, serial["cond"][c][f], f"{c}/{f}")
+    _cmp(batched["cbr_sameq"], serial["cbr_sameq"], "cbr_sameq")
+    for c, v in batched["cbr_trainref"].items():
+        _cmp(v, serial["cbr_trainref"][c], f"cbr_trainref/{c}")
+    return worst
+
+
+def _ckpt_from_layer(res: dict) -> dict:
+    """Serialize one layer's score arrays for the per-layer checkpoint (NaN->None)."""
+    import numpy as np
+
+    def _1d(a):
+        return [None if np.isnan(v) else float(v) for v in np.asarray(a)]
+
+    def _2d(a):
+        return [_1d(row) for row in np.asarray(a)]
+
+    return {
+        "shared": {f: _1d(v) for f, v in res["shared"].items()},
+        "cond": {c: {f: _1d(v) for f, v in fams.items()} for c, fams in res["cond"].items()},
+        "cbr_sameq": _2d(res["cbr_sameq"]),
+        "cbr_trainref": {c: _2d(v) for c, v in res["cbr_trainref"].items()},
+    }
+
+
+def _layer_from_ckpt(data: dict) -> dict:
+    """Inverse of :func:`_ckpt_from_layer` (None->NaN)."""
+    import numpy as np
+
+    def _a1(v):
+        return np.array([np.nan if x is None else float(x) for x in v], dtype=np.float64)
+
+    def _a2(v):
+        return np.array(
+            [[np.nan if x is None else float(x) for x in row] for row in v], dtype=np.float64
+        )
+
+    return {
+        "shared": {f: _a1(v) for f, v in data["shared"].items()},
+        "cond": {c: {f: _a1(v) for f, v in fams.items()} for c, fams in data["cond"].items()},
+        "cbr_sameq": _a2(data["cbr_sameq"]),
+        "cbr_trainref": {c: _a2(v) for c, v in data["cbr_trainref"].items()},
+    }
 
 
 def phase_scores(args, cfg: dict) -> dict:
@@ -770,15 +1337,19 @@ def phase_scores(args, cfg: dict) -> dict:
     p_inoc = _p_inoc_labels()
 
     partial_dir = cfg["out_dir"] / "scores_partial"
+    layers_dir = partial_dir / "layers"
     conditions: dict[str, dict] = {}
+    resume_info: dict = {"resumed_settings": [], "resumed_layers": {}}
+    parity_max: float | None = None
     t0 = time.time()
     for si, setting in enumerate(cfg["settings"]):
         fp = _scores_fingerprint(cfg, setting, args)
         ppath = partial_dir / f"{setting}.json"
-        if ppath.is_file():
+        if ppath.is_file() and not args.force:
             cached = json.loads(ppath.read_text())
             if cached.get("fingerprint") == fp:
                 conditions.update(cached["conditions"])
+                resume_info["resumed_settings"].append(setting)
                 print(
                     f"[scores] {setting}: resumed from scores_partial (fingerprint match)",
                     flush=True,
@@ -819,8 +1390,9 @@ def phase_scores(args, cfg: dict) -> dict:
         row_of[trig_of, q_of] = np.arange(len(meta))
         assert (row_of >= 0).all(), f"{setting}: grid rows missing for some (trigger, q) cells"
 
+        conds_list = list(cfg["conds"][setting])
         mu_by_cond = {}
-        for cond in cfg["conds"][setting]:
+        for cond in conds_list:
             tb = _load_bundle(base / f"base_mu_{cond}" / "mu.pt", "mu")
             mu_by_cond[cond] = (
                 np.asarray(tb["mu_train"], dtype=np.float64),
@@ -829,10 +1401,10 @@ def phase_scores(args, cfg: dict) -> dict:
 
         c_meta = ceil["row_meta"]
         c_va = ceil["v_a"]
-        ceil_rows: dict[tuple[int, int], dict[int, int]] = {}
-        for i, r in enumerate(c_meta):
-            ceil_rows.setdefault((r["trigger_idx"], r["q_sim_idx"]), {})[r["rollout_idx"]] = i
-        n_rollouts = 1 + max((max(d.keys()) for d in ceil_rows.values()), default=0)
+        c_t = np.array([r["trigger_idx"] for r in c_meta], dtype=int)
+        c_q = np.array([r["q_sim_idx"] for r in c_meta], dtype=int)
+        c_ri = np.array([r["rollout_idx"] for r in c_meta], dtype=int)
+        n_rollouts = int(c_ri.max()) + 1 if len(c_ri) else 1
 
         sameq_names = ["ctx_sameq", "ans_sameq_mapB", "identbias_sameq", "ceiling_sameq"]
         trainref_names = [
@@ -848,38 +1420,74 @@ def phase_scores(args, cfg: dict) -> dict:
                 **{f: np.full((n_l, n_t), np.nan) for f in trainref_names},
                 **{f + "_centered": np.full((n_l, n_t), np.nan) for f in trainref_names},
             }
-            for c in cfg["conds"][setting]
+            for c in conds_list
         }
         cbr_sameq = np.full((n_l, n_t, n_rollouts), np.nan)
-        cbr_trainref = {c: np.full((n_l, n_t, n_rollouts), np.nan) for c in cfg["conds"][setting]}
+        cbr_trainref = {c: np.full((n_l, n_t, n_rollouts), np.nan) for c in conds_list}
 
         predicted_dir = cfg["tensors_out"] / "predicted"
         pinned_save = {cfg["pinned_layer"][s] for s in cfg["settings"]}
 
+        def _fill_layer(ly: int, res: dict) -> None:
+            for f in fams_shared:
+                fams_shared[f][ly] = res["shared"][f]
+            for c in conds_list:
+                for f in fams_cond[c]:
+                    fams_cond[c][f][ly] = res["cond"][c][f]
+            cbr_sameq[ly] = res["cbr_sameq"]
+            for c in conds_list:
+                cbr_trainref[c][ly] = res["cbr_trainref"][c]
+
         for ly in range(n_l):
+            comp_file = mf.comp_path(cfg["comp_dir"], mf.BASE_MAPSET, ly)
+            lfp = _layer_fingerprint(fp, ly, comp_file)
+            lpath = layers_dir / f"{setting}_L{ly:02d}.json"
+            vhat_path = predicted_dir / f"base_{setting}_L{ly:02d}_vhat.pt"
+            if lpath.is_file() and not args.force:
+                cached = json.loads(lpath.read_text())
+                if cached.get("fingerprint") == lfp and (
+                    ly not in pinned_save or vhat_path.is_file()
+                ):
+                    _fill_layer(ly, _layer_from_ckpt(cached))
+                    resume_info["resumed_layers"].setdefault(setting, []).append(ly)
+                    print(
+                        f"[scores] unit {si * n_l + ly + 1}/{len(cfg['settings']) * n_l} "
+                        f"{setting}_L{ly:02d} resumed from layer checkpoint",
+                        flush=True,
+                    )
+                    continue
             v_c = np.asarray(v_c_all[:, ly, :], dtype=np.float64)
             comp_b = mf.load_components(cfg["comp_dir"], mf.BASE_MAPSET, ly)
             v_hat = mf.predict_affine(comp_b, v_c)
             v_ib = v_c + comp_b["ib_bias"]
-
-            def _centered(mat):
-                out = np.array(mat, dtype=np.float64)
-                for q in range(n_q):
-                    rows = row_of[:, q]
-                    out[rows] = out[rows] - out[rows].mean(axis=0, keepdims=True)
-                return out
-
-            v_c_c, v_hat_c, v_ib_c = _centered(v_c), _centered(v_hat), _centered(v_ib)
-
-            # Ceiling rollout means per (t, q) + trigger-centered companion matrices.
-            vbar = np.full((n_t, n_q, v_c.shape[1]), np.nan)
-            for (t, q), rows in ceil_rows.items():
-                vbar[t, q] = np.asarray(c_va[sorted(rows.values()), ly, :], dtype=np.float64).mean(
-                    axis=0
-                )
-            with np.errstate(invalid="ignore"):
-                vbar_c = vbar - np.nanmean(vbar, axis=0, keepdims=True)
-
+            va_l = np.asarray(c_va[:, ly, :], dtype=np.float64)
+            mu_tr_l = np.stack([mu_by_cond[c][0][ly] for c in conds_list])
+            mu_a_l = np.stack([mu_by_cond[c][1][ly] for c in conds_list])
+            score_args = (
+                v_c,
+                v_hat,
+                v_ib,
+                row_of,
+                p_idx,
+                va_l,
+                c_t,
+                c_q,
+                c_ri,
+                n_rollouts,
+                mu_tr_l,
+                mu_a_l,
+                conds_list,
+            )
+            res = _score_layer_batched(*score_args)
+            if cfg["synthetic"]:
+                ref = _score_layer_serial_reference(*score_args)
+                d = _parity_max_abs_diff(res, ref)
+                parity_max = d if parity_max is None else max(parity_max, d)
+                if d > 1e-9:
+                    raise RuntimeError(
+                        f"smoke FAIL: vectorized-vs-serial parity {d:.3e} > 1e-9 at "
+                        f"{setting}_L{ly:02d}"
+                    )
             if ly in pinned_save:
                 import torch
 
@@ -892,87 +1500,10 @@ def phase_scores(args, cfg: dict) -> dict:
                         "row_meta_order": "grid row order",
                         "git": _git_meta("scores"),
                     },
-                    predicted_dir / f"base_{setting}_L{ly:02d}_vhat.pt",
+                    vhat_path,
                 )
-
-            rows_p = row_of[p_idx]
-            for t in range(n_t):
-                rows_t = row_of[t]
-                fams_shared["ctx_sameq"][ly, t] = mf._cos_pairwise(v_c[rows_t], v_c[rows_p]).mean()
-                fams_shared["ans_sameq_mapB"][ly, t] = mf._cos_pairwise(
-                    v_hat[rows_t], v_hat[rows_p]
-                ).mean()
-                fams_shared["identbias_sameq"][ly, t] = mf._cos_pairwise(
-                    v_ib[rows_t], v_ib[rows_p]
-                ).mean()
-                fams_shared["ctx_sameq_centered"][ly, t] = mf._cos_pairwise(
-                    v_c_c[rows_t], v_c_c[rows_p]
-                ).mean()
-                fams_shared["ans_sameq_mapB_centered"][ly, t] = mf._cos_pairwise(
-                    v_hat_c[rows_t], v_hat_c[rows_p]
-                ).mean()
-                fams_shared["identbias_sameq_centered"][ly, t] = mf._cos_pairwise(
-                    v_ib_c[rows_t], v_ib_c[rows_p]
-                ).mean()
-                both = [
-                    q
-                    for q in range(n_q)
-                    if np.isfinite(vbar[t, q, 0]) and np.isfinite(vbar[p_idx, q, 0])
-                ]
-                if both:
-                    fams_shared["ceiling_sameq"][ly, t] = mf._cos_pairwise(
-                        vbar[t, both], vbar[p_idx, both]
-                    ).mean()
-                    fams_shared["ceiling_sameq_centered"][ly, t] = mf._cos_pairwise(
-                        vbar_c[t, both], vbar_c[p_idx, both]
-                    ).mean()
-                have_t = [q for q in range(n_q) if np.isfinite(vbar[t, q, 0])]
-                for ri in range(n_rollouts):
-                    sq_vals = []
-                    for q in range(n_q):
-                        rows = ceil_rows.get((t, q), {})
-                        if ri in rows and np.isfinite(vbar[p_idx, q, 0]):
-                            va = np.asarray(c_va[rows[ri], ly, :], dtype=np.float64)
-                            sq_vals.append(
-                                float(mf._cos_pairwise(va[None, :], vbar[p_idx, q][None, :])[0])
-                            )
-                    if sq_vals:
-                        cbr_sameq[ly, t, ri] = float(np.mean(sq_vals))
-                for cond in cfg["conds"][setting]:
-                    mu_tr, mu_a = mu_by_cond[cond]
-                    fc = fams_cond[cond]
-                    fc["ctx_trainref"][ly, t] = mf._cos_rows_vec(v_c[rows_t], mu_tr[ly]).mean()
-                    fc["ans_trainref_mapB"][ly, t] = mf._cos_rows_vec(
-                        v_hat[rows_t], mu_a[ly]
-                    ).mean()
-                    fc["identbias_trainref"][ly, t] = mf._cos_rows_vec(
-                        v_ib[rows_t], mu_a[ly]
-                    ).mean()
-                    fc["ctx_trainref_centered"][ly, t] = mf._cos_rows_vec(
-                        v_c_c[rows_t], mu_tr[ly]
-                    ).mean()
-                    fc["ans_trainref_mapB_centered"][ly, t] = mf._cos_rows_vec(
-                        v_hat_c[rows_t], mu_a[ly]
-                    ).mean()
-                    fc["identbias_trainref_centered"][ly, t] = mf._cos_rows_vec(
-                        v_ib_c[rows_t], mu_a[ly]
-                    ).mean()
-                    if have_t:
-                        fc["ceiling_trainref"][ly, t] = mf._cos_rows_vec(
-                            vbar[t, have_t], mu_a[ly]
-                        ).mean()
-                        fc["ceiling_trainref_centered"][ly, t] = mf._cos_rows_vec(
-                            vbar_c[t, have_t], mu_a[ly]
-                        ).mean()
-                    for ri in range(n_rollouts):
-                        tr_vals = []
-                        for q in range(n_q):
-                            rows = ceil_rows.get((t, q), {})
-                            if ri in rows:
-                                va = np.asarray(c_va[rows[ri], ly, :], dtype=np.float64)
-                                tr_vals.append(float(mf._cos_rows_vec(va[None, :], mu_a[ly])[0]))
-                        if tr_vals:
-                            cbr_trainref[cond][ly, t, ri] = float(np.mean(tr_vals))
+            _fill_layer(ly, res)
+            _atomic_write_json(lpath, {"fingerprint": lfp, **_ckpt_from_layer(res)})
             print(
                 f"[scores] unit {si * n_l + ly + 1}/{len(cfg['settings']) * n_l} "
                 f"{setting}_L{ly:02d} elapsed={time.time() - t0:.0f}s",
@@ -1029,8 +1560,12 @@ def phase_scores(args, cfg: dict) -> dict:
         "keeps per-rollout per-trigger means",
         "text_note": "families_text copied from the parent predictor_scores.json at the pin "
         "(model-independent trigger-text features; never recomputed)",
+        "resume_info": resume_info,
         "conditions": conditions,
     }
+    if parity_max is not None:
+        out["vectorized_serial_parity_max_abs_diff"] = float(parity_max)
+        print(f"[scores] vectorized-vs-serial parity max_abs_diff={parity_max:.3e}", flush=True)
     _atomic_write_json(cfg["out_dir"] / "prefit_scores.json", out)
     print(
         f"[scores] wrote {cfg['out_dir'] / 'prefit_scores.json'} ({len(conditions)} conditions)",
@@ -1122,12 +1657,9 @@ def _round1_recompute_assert(cfg: dict, rates_level: dict) -> dict:
             rec = fg.analyze(setting, rates_level[setting], drop_p_inoc=drop)
             want = banked[setting][variant]
             for key in ("ceiling_mean", "base_propensity_mean"):
-                if abs(rec[key] - want[key]) > 1e-6:
-                    raise RuntimeError(
-                        f"round-1 recompute FAIL: {setting}/{variant}/{key} recomputed "
-                        f"{rec[key]!r} vs banked {want[key]!r} (>1e-6) — provenance drift "
-                        "between the banked gate and the pinned inputs."
-                    )
+                # NaN-safe form (r1 Minor: `abs(a-b) > tol` is False on a NaN
+                # recompute, silently PASSing the very drift this detects).
+                _assert_close_banked(rec[key], want[key], f"{setting}/{variant}/{key}")
             out[f"{setting}/{variant}"] = {
                 "ceiling_mean": rec["ceiling_mean"],
                 "base_propensity_mean": rec["base_propensity_mean"],
@@ -1144,7 +1676,28 @@ def phase_stats(args, cfg: dict) -> dict:
     from explore_persona_space.orchestrate.preflight import assert_out_root_headroom
 
     assert_out_root_headroom(cfg["tensors_out"], need_gb=1.0, phase="stats")
-    scores = json.loads((cfg["out_dir"] / "prefit_scores.json").read_text())
+    scores_path = cfg["out_dir"] / "prefit_scores.json"
+    sstat = scores_path.stat()
+    gstat = Path(cfg["banked_free_gate_path"]).stat()
+    completion_fp = {
+        "phase": "stats",
+        "parent_sha": args.parent_sha,
+        "n_boot": args.n_boot,
+        "boot_seed": args.boot_seed,
+        "n_perm": args.n_perm,
+        "perm_seed": args.perm_seed,
+        "scores_size": sstat.st_size,
+        "scores_mtime_ns": sstat.st_mtime_ns,
+        "free_gate_size": gstat.st_size,
+        "free_gate_mtime_ns": gstat.st_mtime_ns,
+        "v": 1,
+    }
+    cached = _phase_completed(
+        cfg["out_dir"] / "prefit_stats.json", completion_fp, args.force, "stats"
+    )
+    if cached is not None:
+        return cached
+    scores = json.loads(scores_path.read_text())
     parent = _parent_scores(cfg, args)
     rates_level = _load_rates(cfg, "level")
     rates_cont = _load_rates(cfg, "cont")
@@ -1218,15 +1771,13 @@ def phase_stats(args, cfg: dict) -> dict:
             perm = _perm_indices(n_sel, args.n_perm, args.perm_seed)
 
             # Common valid-draw mask over EVERY correlate in the paired set.
-            correlate_rows = [prop[sel]]
-            correlate_rows += [text_vecs[f][sel] for f in TEXT_FAMS]
+            # (Arm rows enter via arm_stack below at per-layer grain — the r1
+            # flattened (n_l*n_sel,) appends were dead rows and are removed.)
+            correlates = [prop[sel]]
+            correlates += [text_vecs[f][sel] for f in TEXT_FAMS]
             for c in conds:
-                correlate_rows += [lvl[c][sel], chg[c][sel]]
-                correlate_rows += [postft[c][f][sel] for f in postft[c]]
-                for f in all_fams:
-                    correlate_rows.append(fam_mats[c][f][:, sel].reshape(-1))
-            # arm rows are (n_l * n_sel,) flattened — split back per layer:
-            correlates = [r for r in correlate_rows if r.ndim == 1 and r.size == n_sel]
+                correlates += [lvl[c][sel], chg[c][sel]]
+                correlates += [postft[c][f][sel] for f in postft[c]]
             arm_stack = np.concatenate(
                 [fam_mats[c][f][:, sel] for c in conds for f in all_fams], axis=0
             )
@@ -1355,12 +1906,29 @@ def phase_stats(args, cfg: dict) -> dict:
                         )
                         for ly in range(n_l)
                     ]
+                    pearson_curve = [
+                        float(
+                            np.mean(
+                                [
+                                    _point_corr(
+                                        fam_mats[c][f][ly, sel],
+                                        (lvl if dv == "level" else chg)[c][sel],
+                                        spearman=False,
+                                    )
+                                    for c in conds
+                                ]
+                            )
+                        )
+                        for ly in range(n_l)
+                    ]
                     fam_entry["pooled"][dv] = {
                         "rho_by_layer": point_curve,
+                        "pearson_by_layer": pearson_curve,
                         "ci95_by_layer": [_ci95(pooled_draws[ly]) for ly in range(n_l)],
                         "pinned": {
                             "layer": pin,
                             "rho": point_curve[pin],
+                            "pearson": pearson_curve[pin],
                             "ci95": _ci95(pooled_draws[pin]),
                         },
                     }
@@ -1389,6 +1957,7 @@ def phase_stats(args, cfg: dict) -> dict:
                     entry = {"per_condition": {}}
                     for ci, c in enumerate(conds):
                         y = lvl[c][sel]
+                        yc = chg[c][sel]
                         x = (
                             vals[sel]
                             if vals is not None
@@ -1396,9 +1965,14 @@ def phase_stats(args, cfg: dict) -> dict:
                         )
                         entry["per_condition"][c] = {
                             "level_rho": _point_corr(x, y, spearman=True),
+                            "level_pearson": _point_corr(x, y, spearman=False),
                             "level_ci95": _ci95(arr[ci, 0, valid]),
+                            "change_rho": _point_corr(x, yc, spearman=True),
+                            "change_pearson": _point_corr(x, yc, spearman=False),
+                            "change_ci95": _ci95(arr[ci, 1, valid]),
                         }
                     entry["pooled_level_ci95"] = _ci95(arr[:, 0, :].mean(axis=0)[valid])
+                    entry["pooled_change_ci95"] = _ci95(arr[:, 1, :].mean(axis=0)[valid])
                     block[k] = entry
                 vblock["competitors" if name == "competitors" else "postft_yardstick"] = block
 
@@ -1472,11 +2046,21 @@ def phase_stats(args, cfg: dict) -> dict:
                         for ly in range(n_l)
                     ]
                 )
+                # Selection-inherited bootstrap CI: the max-over-layers is re-taken
+                # INSIDE each bootstrap draw (pooled over conditions), so the CI
+                # inherits the layer-selection step instead of conditioning on the
+                # observed argmax layer (r1 Codex: stats-schema-incomplete).
+                max_draws = boot[f][:, :, 0, :].mean(axis=1).max(axis=0)[valid]
                 permb[f] = {
                     "observed_pooled_max_over_layers": float(np.nanmax(obs_curve)),
+                    "observed_max_ci95_selection_inherited": _ci95(max_draws),
                     "null_max_p50": float(np.percentile(null_max, 50)),
                     "null_max_p95": float(np.percentile(null_max, 95)),
                     "null_max_p975": float(np.percentile(null_max, 97.5)),
+                    "note": "observed_max_ci95_selection_inherited = 2.5/97.5 pct of "
+                    "per-draw max-over-layers of the condition-pooled bootstrap rho "
+                    "(level DV, valid draws only); null_max_* are permutation-band "
+                    "percentiles, not a bootstrap CI",
                 }
             vblock["permutation"] = permb
             setting_block["variants"][variant] = vblock
@@ -1522,8 +2106,12 @@ def phase_stats(args, cfg: dict) -> dict:
         },
         "round1_recompute": recompute,
         "lattice": lattice,
+        "completion_fingerprint": completion_fp,
         **stats_out,
     }
+    # NaN -> null before serialization (r1 g1 Minor: bare NaN tokens are not
+    # strict JSON and break strict downstream parsers).
+    out = _nan_to_none(out)
     _atomic_write_json(cfg["out_dir"] / "prefit_stats.json", out)
     print(f"[stats] wrote {cfg['out_dir'] / 'prefit_stats.json'}", flush=True)
     if cfg["synthetic"] and not smoke_saw_degenerate:
@@ -1531,11 +2119,125 @@ def phase_stats(args, cfg: dict) -> dict:
             "smoke FAIL: the constructed degenerate propensity vector produced ZERO "
             "invalid bootstrap draws — the valid-draw mask machinery is not engaging"
         )
+    # NOTE: the done sentinel is written by phase_upload ONLY, after the B5 HF
+    # mirror verifies (plan §4 B5 "done sentinel written last").
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Phase: upload (B5 — HF mirror of the prefit trees, THEN the done sentinel)
+# ---------------------------------------------------------------------------
+def phase_upload(args, cfg: dict) -> dict:
+    """B5 upload leg (plan §4 B5 / §10; r1 Codex Critical pb-analysis-upload-missing).
+
+    Mirrors the prefit JSON tree to ``issue2474_prefit/analysis/`` and the
+    per-draw npz + pinned-layer predicted tensors to
+    ``issue2474_prefit/analysis_tensors/`` — ONE bulk ``hub.upload_dataset``
+    (upload_folder) commit per tree — then verifies the EXACT expected remote
+    path set per prefix (scoped listing) and ONLY THEN writes the done
+    sentinel (g1 unaddressed concern: sentinel-vs-upload sequencing).
+
+    Fail-loud: missing prefit_scores/prefit_stats, an empty tensor set, an
+    empty-string helper return (hub's swallow-to-"" contract), or any missing
+    remote path each raise RuntimeError. Smoke (synthetic) and production
+    ``--upload-dry-run`` runs make NO Hub writes; only the synthetic path
+    writes its (smoke-tree) sentinel — a production dry-run skips the
+    sentinel LOUDLY because uploads did not verify.
+    """
+    out_dir = cfg["out_dir"]
+    tdir = cfg["tensors_out"]
+    for req in ("prefit_scores.json", "prefit_stats.json"):
+        if not (out_dir / req).is_file():
+            raise RuntimeError(
+                f"upload: required output {out_dir / req} missing — run scores/stats first"
+            )
+    json_files = sorted(p for p in out_dir.rglob("*.json") if p.name != "upload_report_2474.json")
+    tensor_files = sorted([*tdir.rglob("*.npz"), *tdir.rglob("*.pt")])
+    if not tensor_files:
+        raise RuntimeError(
+            f"upload: no tensor artifacts (*.npz / *.pt) under {tdir} — run scores/stats first"
+        )
+    expected_analysis = sorted(f"{HF_ANALYSIS_PREFIX}/{p.relative_to(out_dir)}" for p in json_files)
+    expected_tensors = sorted(f"{HF_TENSORS_PREFIX}/{p.relative_to(tdir)}" for p in tensor_files)
+    sentinel_outputs = [
+        str(out_dir / "prefit_scores.json"),
+        str(out_dir / "prefit_stats.json"),
+    ]
+
+    if cfg["synthetic"] or args.upload_dry_run:
+        mode = "smoke-synthetic" if cfg["synthetic"] else "production --upload-dry-run"
+        print(
+            f"[upload] DRY-RUN ({mode}): NO Hub writes. "
+            f"Would upload {len(expected_analysis)} JSONs -> {HF_ANALYSIS_PREFIX}/ and "
+            f"{len(expected_tensors)} tensors -> {HF_TENSORS_PREFIX}/",
+            flush=True,
+        )
+        for rel in expected_analysis + expected_tensors:
+            print(f"[upload]   would-upload {rel}", flush=True)
+        print("[upload] DRY-RUN: remote-path verify SKIPPED (loud)", flush=True)
+        if cfg["synthetic"]:
+            # The smoke chain still exercises the sentinel WRITER — routed to the
+            # smoke tree by _write_done_sentinel, never /workspace/logs (r1 Major 1).
+            _write_done_sentinel(args, cfg, sentinel_outputs)
+        else:
+            print(
+                "[upload] DRY-RUN: production done sentinel NOT written "
+                "(uploads did not run, so they cannot have verified)",
+                flush=True,
+            )
+        return {
+            "dry_run": True,
+            "n_analysis": len(expected_analysis),
+            "n_tensors": len(expected_tensors),
+        }
+
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate import hub
+
+    repo_id = hub.DEFAULT_DATASET_REPO
+    for local_dir, prefix in ((out_dir, HF_ANALYSIS_PREFIX), (tdir, HF_TENSORS_PREFIX)):
+        ret = hub.upload_dataset(str(local_dir), repo_id=repo_id, path_in_repo=prefix)
+        if not ret:
+            raise RuntimeError(
+                f"upload: hub.upload_dataset returned EMPTY for {local_dir} -> {prefix} "
+                "(the helper swallows failures to ''; see its log lines above)"
+            )
+        print(f"[upload] uploaded {local_dir} -> {ret}", flush=True)
+    api = HfApi()
+    for prefix, expected in (
+        (HF_ANALYSIS_PREFIX, expected_analysis),
+        (HF_TENSORS_PREFIX, expected_tensors),
+    ):
+        missing = hub.verify_repo_paths_uploaded(api, repo_id, expected, path_in_repo=prefix)
+        if missing:
+            raise RuntimeError(
+                f"upload: {len(missing)}/{len(expected)} expected remote paths MISSING "
+                f"under {prefix}: {missing[:10]}"
+            )
+        print(f"[upload] verified {len(expected)} remote paths under {prefix}", flush=True)
+    report = {
+        "issue": ISSUE,
+        "slug": SLUG,
+        "generated_utc": _utcnow(),
+        "git": _git_meta("upload"),
+        "repo_id": repo_id,
+        "analysis_paths": expected_analysis,
+        "tensor_paths": expected_tensors,
+    }
+    _atomic_write_json(out_dir / "upload_report_2474.json", report)
     _write_done_sentinel(
         args,
-        [str(cfg["out_dir"] / "prefit_scores.json"), str(cfg["out_dir"] / "prefit_stats.json")],
+        cfg,
+        sentinel_outputs
+        + [f"hf://{repo_id}/{HF_ANALYSIS_PREFIX}", f"hf://{repo_id}/{HF_TENSORS_PREFIX}"],
     )
-    return out
+    print(
+        f"[upload] B5 complete: {len(expected_analysis)} JSONs + {len(expected_tensors)} "
+        "tensors mirrored + verified; done sentinel written LAST",
+        flush=True,
+    )
+    return report
 
 
 # ---------------------------------------------------------------------------
@@ -1711,20 +2413,63 @@ def _gen_smoke_tree(root: Path) -> None:
     print(f"[smoke] synthetic tree generated under {root}", flush=True)
 
 
+def _workspace_sentinel_snapshot() -> dict:
+    """(size, mtime_ns) per /workspace/logs/issue-2474-* file — the r1 Major-1 pin
+    surface: a smoke run must leave the PRODUCTION sentinel glob byte-untouched."""
+    ws = Path("/workspace/logs")
+    if not ws.is_dir():
+        return {}
+    return {str(p): (p.stat().st_size, p.stat().st_mtime_ns) for p in ws.glob("issue-2474-*")}
+
+
 def phase_smoke(args) -> None:
     root = Path(args.smoke_dir)
+    ws_before = _workspace_sentinel_snapshot()
     _gen_smoke_tree(root)
     # Same dispatch shape as `all`: pilot + refit as BLAS=1 subprocess legs of THIS
-    # entrypoint, scores + stats in-process — against the synthetic root.
+    # entrypoint, scores + stats + upload in-process — against the synthetic root.
     ns = argparse.Namespace(**{**vars(args), "synthetic_root": str(root), "pilot_layer": 1})
     cfg = _cfg_from_args(ns)
     for ph in ("pilot", "refit"):
         _run_phase_subprocess(ph, ns)
-    phase_scores(ns, cfg)
+    out1 = phase_scores(ns, cfg)
     phase_stats(ns, cfg)
+    phase_upload(ns, cfg)
     for f in ("out/prefit_scores.json", "out/prefit_stats.json"):
         if not (root / f).is_file():
             raise RuntimeError(f"smoke FAIL: expected output {root / f} missing")
+
+    # Resume-replay leg 1 (resume-matrix): a full re-run resumes EVERY setting at
+    # SETTING grain and reproduces the conditions payload exactly.
+    out2 = phase_scores(ns, cfg)
+    if out2["resume_info"]["resumed_settings"] != list(cfg["settings"]):
+        raise RuntimeError(
+            "smoke FAIL: setting-grain resume replay resumed "
+            f"{out2['resume_info']['resumed_settings']} != {list(cfg['settings'])}"
+        )
+    if out2["conditions"] != out1["conditions"]:
+        raise RuntimeError("smoke FAIL: setting-grain resume replay changed the payload")
+    # Resume-replay leg 2: drop ONE per-setting partial -> the setting recomputes
+    # from its per-LAYER checkpoints (B3 restartability at layer grain).
+    (cfg["out_dir"] / "scores_partial" / "em.json").unlink()
+    out3 = phase_scores(ns, cfg)
+    if out3["resume_info"]["resumed_layers"].get("em") != [0, 1]:
+        raise RuntimeError(
+            "smoke FAIL: layer-grain resume replay resumed_layers="
+            f"{out3['resume_info']['resumed_layers']} (expected em: [0, 1])"
+        )
+    if out3["conditions"] != out1["conditions"]:
+        raise RuntimeError("smoke FAIL: layer-grain resume replay changed the payload")
+
+    smoke_sentinel = Path(cfg["data_root"]) / "logs" / "issue-2474-fit-smoke.done.json"
+    if not smoke_sentinel.is_file():
+        raise RuntimeError(f"smoke FAIL: smoke done sentinel missing at {smoke_sentinel}")
+    ws_after = _workspace_sentinel_snapshot()
+    if ws_after != ws_before:
+        raise RuntimeError(
+            "smoke FAIL: /workspace/logs/issue-2474-* CHANGED under a smoke run "
+            f"(r1 Major 1 pin): before={ws_before} after={ws_after}"
+        )
     print(f"[smoke] PASS — end-to-end outputs under {root / 'out'}", flush=True)
 
 
@@ -1771,6 +2516,8 @@ def _run_phase_subprocess(phase: str, args) -> None:
         argv += ["--tensors-out", str(args.tensors_out)]
     if args.synthetic_root:
         argv += ["--synthetic-root", str(args.synthetic_root)]
+    if args.force:
+        argv += ["--force"]
     env = {**os.environ, **{v: "1" for v in _FIT_BLAS_VARS}}
     print(f"[dispatch] subprocess phase={phase} (BLAS=1)", flush=True)
     subprocess.run(argv, check=True, env=env)
@@ -1782,12 +2529,26 @@ def _set_fit_blas_threads() -> None:
         os.environ[v] = "1"
 
 
+# Arm registry (string-constant keys — task.py check-smoke-arch-registry recomputes
+# the per-arm marker rows from `sorted(PHASES)` via AST extraction of this literal).
+PHASES = {
+    "smoke": "P0: synthetic tiny end-to-end, dispatch parity with 'all' (no downloads)",
+    "harvest-verify": "P-A: stage + schema-validate banked inputs -> harvest_verified.json",
+    "pilot": "B2 pilot: 1-layer refit wall measurement + fence (BLAS=1 subprocess leg)",
+    "refit": "B2: pinned-layer base-map refits (BLAS=1 subprocess leg)",
+    "scores": "B3: batched per-layer geometry-family scores + pinned vhat tensors",
+    "stats": "B4: bootstrap/permutation statistics -> prefit_stats.json",
+    "upload": "B5: HF mirror (analysis/ + analysis_tensors/) -> verify -> done sentinel",
+    "all": "harvest-verify -> pilot -> refit -> scores -> stats -> upload",
+}
+
+
 def build_argparser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument(
         "--phase",
-        choices=["smoke", "harvest-verify", "pilot", "refit", "scores", "stats", "all"],
-        help="pipeline phase (plan §4 P-B; 'all' = harvest-verify→pilot→refit→scores→stats)",
+        choices=sorted(PHASES),
+        help="pipeline phase (plan §4 P-B; 'all' = harvest-verify→pilot→refit→scores→stats→upload)",
     )
     ap.add_argument(
         "--import-check", action="store_true", help="argcheck + call-arity bind, then exit 0"
@@ -1816,8 +2577,21 @@ def build_argparser() -> argparse.ArgumentParser:
     )
     ap.add_argument(
         "--prep-output",
-        default=str(REPO_ROOT / "data" / "issue_2474" / "prep_output.json"),
-        help="round-2 prep_output.json for the UltraChat bank-content pin assert",
+        default=None,
+        help="round-2 prep_output.json for the UltraChat bank-content pin assert "
+        "(default: local data/issue_2474 copy when it passes the pin, else staged "
+        "from HF issue2474_prefit/prep_output.json — see _resolve_prep_output)",
+    )
+    ap.add_argument(
+        "--force",
+        action="store_true",
+        help="ignore completion fingerprints + partials; recompute every phase",
+    )
+    ap.add_argument(
+        "--upload-dry-run",
+        action="store_true",
+        help="phase upload: enumerate + print would-upload sets, NO Hub writes, "
+        "NO production sentinel",
     )
     ap.add_argument("--smoke-dir", default="/tmp/issue2474_smoke")
     ap.add_argument("--synthetic-root", default=None, help="internal: smoke synthetic input tree")
@@ -1857,12 +2631,15 @@ def main() -> int:
         phase_scores(args, cfg)
     elif args.phase == "stats":
         phase_stats(args, cfg)
+    elif args.phase == "upload":
+        phase_upload(args, cfg)
     elif args.phase == "all":
         phase_harvest_verify(args, cfg)
         for ph in ("pilot", "refit"):
             _run_phase_subprocess(ph, args)
         phase_scores(args, cfg)
         phase_stats(args, cfg)
+        phase_upload(args, cfg)
     return 0
 
 

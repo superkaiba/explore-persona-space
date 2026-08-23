@@ -515,9 +515,21 @@ def build_perm_band(ctx: dict) -> list[tuple[str, "plt.Figure", dict]]:
                 zorder=2,
             )
             ax.plot(b["null_max_p95"], yi, "|", color="0.35", ms=13, zorder=3)
-            ax.plot(
-                b["observed_pooled_max_over_layers"], yi, "o", color=ARM_COLORS[fam], ms=6, zorder=4
-            )
+            obs = b["observed_pooled_max_over_layers"]
+            ci = b.get("observed_max_ci95_selection_inherited")
+            if obs is not None and ci is not None and None not in ci:
+                ax.errorbar(
+                    obs,
+                    yi,
+                    xerr=_err_from_ci([obs], [ci]),
+                    fmt="none",
+                    ecolor=ARM_COLORS[fam],
+                    elinewidth=1.4,
+                    capsize=2.5,
+                    zorder=4,
+                )
+            if obs is not None:
+                ax.plot(obs, yi, "o", color=ARM_COLORS[fam], ms=6, zorder=5)
         ceiling = _ceiling_ref(ctx["stats"], s, "full")
         if ceiling is not None:
             ax.axvline(ceiling, ls="--", lw=1.2, color=NEUTRAL)
@@ -527,7 +539,7 @@ def build_perm_band(ctx: dict) -> list[tuple[str, "plt.Figure", dict]]:
         handles = [
             Line2D([], [], color="0.75", lw=7, label="Null max band (p50–p97.5)"),
             Line2D([], [], marker="|", ls="", color="0.35", ms=12, label="Null p95"),
-            Line2D([], [], marker="o", ls="", color="0.2", label="Observed max"),
+            Line2D([], [], marker="o", ls="", color="0.2", label="Observed max ± 95% boot CI"),
             Line2D([], [], ls="--", color=NEUTRAL, label="DV agreement ceiling"),
         ]
         ax.legend(handles=handles, fontsize=7, frameon=False, loc="best")
@@ -538,7 +550,10 @@ def build_perm_band(ctx: dict) -> list[tuple[str, "plt.Figure", dict]]:
             "trigger permutation (one permutation per draw shared across arms/layers/"
             "conditions; n_perm in prefit_stats.json .seeds) — the selection-symmetric "
             "read for any max-over-layer quote",
-            "errorbar_definition": "band percentiles, not a bootstrap CI",
+            "errorbar_definition": "grey band = permutation-null percentiles (p50–p97.5), "
+            "not a CI; colored bar on the observed point = selection-inherited 95% "
+            "bootstrap CI (2.5/97.5 pct of per-draw max-over-layers of the "
+            "condition-pooled rho, valid draws only)",
         }
         out.append((f"prefit_perm_band_{s}", fig, notes))
     return out

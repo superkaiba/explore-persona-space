@@ -1,0 +1,134 @@
+{
+  "issue": 2474,
+  "slug": "issue2474_prefit",
+  "generated_utc": "2026-08-23T08:58:12.420352+00:00",
+  "git": {
+    "git_commit": "6adad254",
+    "git_dirty": true,
+    "git_dirty_paths": [
+      ".claude/agent-memory/code-reviewer-lean/MEMORY.md",
+      "scripts/issue2474_figs.py",
+      "scripts/issue2474_fit.py",
+      "scripts/issue2474_upload.py"
+    ],
+    "git_argv0_state": "modified",
+    "git_argv0_path": "scripts/issue2474_fit.py",
+    "phase": "harvest-verify"
+  },
+  "verdict": "PASS",
+  "prefix": "issue2474_prefit/capture_tensors",
+  "n_files_listed": 26,
+  "expected_bundles": [
+    "issue2474_prefit/capture_tensors/predictor_captures/base_em/grid.pt",
+    "issue2474_prefit/capture_tensors/predictor_captures/base_em/ceiling.pt",
+    "issue2474_prefit/capture_tensors/predictor_captures/base_mu_em_bad_medical_advice/mu.pt",
+    "issue2474_prefit/capture_tensors/predictor_captures/base_mu_em_bad_legal_advice/mu.pt",
+    "issue2474_prefit/capture_tensors/predictor_captures/base_mu_em_bad_security_advice/mu.pt",
+    "issue2474_prefit/capture_tensors/predictor_captures/base_mu_em_turner_extreme_sports/mu.pt",
+    "issue2474_prefit/capture_tensors/predictor_captures/base_mu_em_turner_risky_financial/mu.pt",
+    "issue2474_prefit/capture_tensors/predictor_captures/base_caps/grid.pt",
+    "issue2474_prefit/capture_tensors/predictor_captures/base_caps/ceiling.pt",
+    "issue2474_prefit/capture_tensors/predictor_captures/base_mu_caps_french/mu.pt",
+    "issue2474_prefit/capture_tensors/predictor_captures/base_mu_caps_german/mu.pt",
+    "issue2474_prefit/capture_tensors/predictor_captures/base_mu_caps_spanish/mu.pt"
+  ],
+  "extras": [
+    "issue2474_prefit/capture_tensors/predictor_captures/base_caps/ceiling.rollouts.json",
+    "issue2474_prefit/capture_tensors/predictor_captures/base_em/ceiling.rollouts.json"
+  ],
+  "key_checks": [
+    {
+      "hf_path": "issue2474_prefit/capture_tensors/predictor_captures/base_em/grid.pt",
+      "keys": "v_c,row_meta",
+      "rc": 0,
+      "line": "PASS \u2014 realized keys are a superset of declared keys"
+    },
+    {
+      "hf_path": "issue2474_prefit/capture_tensors/predictor_captures/base_mu_em_bad_medical_advice/mu.pt",
+      "keys": "mu_train,mu_a_train,n_c,n_a",
+      "rc": 0,
+      "line": "PASS \u2014 realized keys are a superset of declared keys"
+    },
+    {
+      "hf_path": "issue2474_prefit/capture_tensors/predictor_captures/base_em/ceiling.pt",
+      "keys": "v_a,row_meta,drop_stats",
+      "rc": 0,
+      "line": "PASS \u2014 realized keys are a superset of declared keys"
+    }
+  ],
+  "mu_counts": {
+    "em_bad_medical_advice": {
+      "n_c": 32642,
+      "n_a": 32642
+    },
+    "em_bad_legal_advice": {
+      "n_c": 11972,
+      "n_a": 11972
+    },
+    "em_bad_security_advice": {
+      "n_c": 8821,
+      "n_a": 8821
+    },
+    "em_turner_extreme_sports": {
+      "n_c": 6000,
+      "n_a": 6000
+    },
+    "em_turner_risky_financial": {
+      "n_c": 6000,
+      "n_a": 6000
+    },
+    "caps_french": {
+      "n_c": 7473,
+      "n_a": 7473
+    },
+    "caps_german": {
+      "n_c": 7473,
+      "n_a": 7473
+    },
+    "caps_spanish": {
+      "n_c": 7473,
+      "n_a": 7473
+    }
+  },
+  "ceiling_stats": {
+    "em": {
+      "n_kept_rows": 2592,
+      "n_slots": 2592,
+      "n_dropped_total": 0,
+      "min_kept_per_cell": 3,
+      "n_cells_expected": 864,
+      "n_absent_cells": 0
+    },
+    "caps": {
+      "n_kept_rows": 2880,
+      "n_slots": 2880,
+      "n_dropped_total": 0,
+      "min_kept_per_cell": 3,
+      "n_cells_expected": 960,
+      "n_absent_cells": 0
+    }
+  },
+  "ultrachat_revision": "f220fe796ce3ed62fbe1681b45ce6cbc9c6cabe0",
+  "prep_output_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-2474/data/issue_2474/prep_output.json",
+  "parent_sha": "15097bee",
+  "completion_fingerprint": {
+    "phase": "harvest-verify",
+    "parent_sha": "15097bee",
+    "ultrachat_rev": "f220fe796ce3ed62fbe1681b45ce6cbc9c6cabe0",
+    "expected_bundles": [
+      "issue2474_prefit/capture_tensors/predictor_captures/base_em/grid.pt",
+      "issue2474_prefit/capture_tensors/predictor_captures/base_em/ceiling.pt",
+      "issue2474_prefit/capture_tensors/predictor_captures/base_mu_em_bad_medical_advice/mu.pt",
+      "issue2474_prefit/capture_tensors/predictor_captures/base_mu_em_bad_legal_advice/mu.pt",
+      "issue2474_prefit/capture_tensors/predictor_captures/base_mu_em_bad_security_advice/mu.pt",
+      "issue2474_prefit/capture_tensors/predictor_captures/base_mu_em_turner_extreme_sports/mu.pt",
+      "issue2474_prefit/capture_tensors/predictor_captures/base_mu_em_turner_risky_financial/mu.pt",
+      "issue2474_prefit/capture_tensors/predictor_captures/base_caps/grid.pt",
+      "issue2474_prefit/capture_tensors/predictor_captures/base_caps/ceiling.pt",
+      "issue2474_prefit/capture_tensors/predictor_captures/base_mu_caps_french/mu.pt",
+      "issue2474_prefit/capture_tensors/predictor_captures/base_mu_caps_german/mu.pt",
+      "issue2474_prefit/capture_tensors/predictor_captures/base_mu_caps_spanish/mu.pt"
+    ],
+    "v": 1
+  }
+}
