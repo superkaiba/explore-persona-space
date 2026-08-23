@@ -123,17 +123,20 @@ def _direction_block(ceiling, r2_4, r2_1, ib, null4, acc_ceiling=0.5, acc4=0.4):
             "ceiling": {"acc@1": [acc_ceiling], "chance@1": 0.01},
             "4_bias_refit": {"acc@1": [acc4], "chance@1": 0.01},
             "identity_bias": {"acc@1": [0.05], "chance@1": 0.01},
+            "identity_bias_cosine": {"metric": "cosine", "acc@1": [0.05], "chance@1": 0.01},
             "ceiling_cosine": {"metric": "cosine", "acc@1": [acc_ceiling], "chance@1": 0.01},
             "4_bias_refit_cosine": {"metric": "cosine", "acc@1": [acc4], "chance@1": 0.01},
         },
     }
 
 
-def _ladder_json(src_id, src_label, variant, ceiling, r2_4, *, r2_1=0.1, ib=0.02, null4=0.01):
+def _ladder_json(
+    src_id, src_label, variant, ceiling, r2_4, *, r2_1=0.1, ib=0.02, null4=0.01, source_means=None
+):
     """A minimal #1345 Phase-F ladder entry (both directions, reduced basis)."""
     fwd = f"{src_label}->{variant}"
     rev = f"{variant}->{src_label}"
-    return {
+    entry = {
         "regimes": [src_id, variant],
         "n_matched": 900,
         "metadata": {
@@ -149,10 +152,14 @@ def _ladder_json(src_id, src_label, variant, ceiling, r2_4, *, r2_1=0.1, ib=0.02
             "d": 3584,
         },
     }
+    if source_means is not None:
+        # r2 fill emits the source-side mean-activation vectors at ENTRY level
+        entry["source_means"] = source_means
+    return entry
 
 
-def _cell_json(variant, ceiling, ib, n):
-    return {
+def _cell_json(variant, ceiling, ib, n, *, mean_context_vec=None, mean_answer_vec=None):
+    cell = {
         "regime": variant,
         "arm": "context",
         "metadata": {"layer": 19, "seed": 0, "model": "instruct"},
@@ -163,6 +170,12 @@ def _cell_json(variant, ceiling, ib, n):
             "basis": "reduced",
         },
     }
+    # r2 fill emits the cell mean-activation vectors at ENTRY level
+    if mean_context_vec is not None:
+        cell["mean_context_vec"] = mean_context_vec
+    if mean_answer_vec is not None:
+        cell["mean_answer_vec"] = mean_answer_vec
+    return cell
 
 
 # fixture panel: 7 planned characters ->
@@ -244,15 +257,44 @@ def _write_fixture(tmp_path: Path) -> Path:
             )
         )
 
-    for name, (_score, ceiling, rung4, cell_n, inserted) in FIXTURE.items():
+    # Freeze-side per-draw sidecar (axis_draws.json) — the violin's data.
+    draws = {
+        "per_character": {
+            name: {
+                "conv_id_draws": {f"{name}_c{j}": [score - 3.0 + j, score + j] for j in range(2)}
+            }
+            for name, (score, ceiling, *_r) in FIXTURE.items()
+            if ceiling is not None
+        }
+    }
+    (eval_dir / "axis_draws.json").write_text(json.dumps(draws))
+
+    src_means = {"r4op": {"context": [1.0, 0.0, 0.0], "answer": [0.0, 1.0, 0.0]}}
+    for idx, (name, (_score, ceiling, rung4, cell_n, inserted)) in enumerate(FIXTURE.items()):
         if ceiling is None:  # fox: no fit outputs at all
             continue
         vop = f"char_2479_{name}_op"
-        lad = _ladder_json("r4op", STORY_ONPOLICY, vop, ceiling, rung4)
+        lad = _ladder_json("r4op", STORY_ONPOLICY, vop, ceiling, rung4, source_means=src_means)
         (grad / f"ladder_r4op__{vop}__instruct_context_L19_reduced_s0_nd2.json").write_text(
             json.dumps(lad, indent=1)
         )
-        cell = _cell_json(vop, ceiling, 0.02, cell_n)
+        # Equalized-n companion (tag `_rows650`) — one per fit-output character,
+        # so ONE common tag covers every survivor (the production coverage gate).
+        eqn = _ladder_json(
+            "r4op", STORY_ONPOLICY, vop, ceiling, rung4 * 0.95, source_means=src_means
+        )
+        (grad / f"ladder_r4op__{vop}__instruct_context_L19_reduced_s0_nd2_rows650.json").write_text(
+            json.dumps(eqn, indent=1)
+        )
+        cell = _cell_json(
+            vop,
+            ceiling,
+            0.02,
+            cell_n,
+            # per-char varying vectors -> non-degenerate closeness reads
+            mean_context_vec=[1.0, 0.1 * idx, 0.0],
+            mean_answer_vec=[0.1 * (5 - idx), 1.0, 0.0],
+        )
         (grad / f"cell_{vop}__instruct_context_L19_reduced_s0.json").write_text(
             json.dumps(cell, indent=1)
         )
@@ -263,6 +305,25 @@ def _write_fixture(tmp_path: Path) -> Path:
                 json.dumps(ins, indent=1)
             )
     return eval_dir
+
+
+def _strip_cell_vectors(eval_dir: Path, names=("ada",)) -> None:
+    """Simulate stale pre-r2 fit outputs: pop the cell mean-activation vectors."""
+    grad = eval_dir / "story_char_gradient"
+    for name in names:
+        p = grad / f"cell_char_2479_{name}_op__instruct_context_L19_reduced_s0.json"
+        d = json.loads(p.read_text())
+        d.pop("mean_context_vec", None)
+        d.pop("mean_answer_vec", None)
+        p.write_text(json.dumps(d))
+
+
+def _strip_ladder_source_means(eval_dir: Path) -> None:
+    """Simulate stale pre-r2 op-ladder outputs: pop entry-level source_means."""
+    for p in (eval_dir / "story_char_gradient").glob("ladder_r4op__*_nd2.json"):
+        d = json.loads(p.read_text())
+        d.pop("source_means", None)
+        p.write_text(json.dumps(d))
 
 
 N_PERM = 1000
@@ -341,8 +402,10 @@ def test_e2e_secondary_reads(verdict_payload):
     assert reads["inserted_mode_recovery"]["n"] == 2
     assert reads["kept_n_vs_axis"]["n"] == 5
     assert reads["null_gradient_matched_capacity"]["n"] == 4
-    # acc@1 identity+bias retrieval control over the 4 eligible characters
+    # acc@1 identity+bias retrieval control over the 4 eligible characters —
+    # BOTH metric spaces (euclidean + cosine, the standing kNN mandate)
     assert reads["acc1_identity_bias_recovery"]["n"] == 4
+    assert reads["acc1_identity_bias_recovery_cosine"]["n"] == 4
     # every computed read carries its own labeled permutation band
     for name, read in reads.items():
         if read.get("status") == "ok":
@@ -352,12 +415,20 @@ def test_e2e_secondary_reads(verdict_payload):
     # (the fixture writes them; length strictly decreasing in axis score)
     assert reads["answer_length_vs_axis"]["n"] == 5
     assert reads["answer_length_vs_axis"]["rho"] == pytest.approx(-1.0)
-    # closeness reads stay deferred: fixture fit outputs carry no mean vectors
-    assert reads["context_space_closeness_vs_axis"]["status"] == "deferred"
-    assert reads["answer_space_closeness_vs_axis"]["status"] == "deferred"
-    assert "mean-activation vectors" in reads["context_space_closeness_vs_axis"]["note"]
-    # equalized-n companions not yet produced in this fixture
-    assert verdict_payload["equalized_n"]["status"] == "not_produced"
+    # closeness reads REAL: the fixture fit outputs carry the r2-fill vectors
+    # (cell entry-level mean vecs + ladder source_means); all 5 fit-output
+    # survivors carry the scalar (no ceiling exclusion on closeness)
+    assert reads["context_space_closeness_vs_axis"]["n"] == 5
+    assert reads["answer_space_closeness_vs_axis"]["n"] == 5
+    # equalized-n companions: ONE common tag covers every fit-output survivor
+    eq = verdict_payload["equalized_n"]
+    assert eq["status"] == "ok"
+    blk = eq["companions"]["_rows650"]
+    assert blk["characters_covered"] == ["ada", "bee", "cat", "dog", "eel"]
+    assert blk["n"] == 4  # eel stays ceiling-excluded inside the companion too
+    # production completeness gate: zero registered-read input gaps recorded
+    assert verdict_payload["registered_input_gaps"] == []
+    assert verdict_payload["exploratory"] is False
 
 
 def test_e2e_figures_written(verdict_payload):
@@ -372,15 +443,20 @@ def test_e2e_figures_written(verdict_payload):
     assert "ceilings_identity_bias" in figs["written"]
     assert "gradient_hero_inserted" in figs["written"]
     assert "gradient_null_companion" in figs["written"]
-    # r2 additions: ladder curves (fixture ladders carry rung_order + per-rung
-    # R2), band agreement, kept/drop accounting all render; closeness scatters
-    # skip (no mean vecs in fixture); violins carry the data-driven skip reason.
-    for stem in ("ladder_curves", "band_agreement", "kept_drop_accounting"):
+    # r2/r3 additions: ladder curves (fixture ladders carry rung_order +
+    # per-rung R2), band agreement, kept/drop accounting, BOTH closeness
+    # scatters (r2-fill vectors present), and the axis-score violins
+    # (axis_draws.json present) all render.
+    for stem in (
+        "ladder_curves",
+        "band_agreement",
+        "kept_drop_accounting",
+        "closeness_context_vs_axis",
+        "closeness_answer_vs_axis",
+        "axis_score_violins",
+    ):
         assert stem in figs["written"], figs
         assert Path(figs["written"][stem]).is_file()
-    assert figs["skipped"]["closeness_context_vs_axis"] == "no characters with this read"
-    assert figs["skipped"]["closeness_answer_vs_axis"] == "no characters with this read"
-    assert "per-draw" in figs["skipped"]["axis_score_violins"]
 
 
 def test_primary_and_eqn_multidigit_nd_and_rows_tag(tmp_path):
@@ -459,6 +535,141 @@ def test_emit_items_stats_sidecar_carries_answer_lengths(tmp_path, monkeypatch):
     assert stats["mean_answer_len_chars_prepared"] == pytest.approx(3.0)
     assert stats["mean_answer_len_chars_axis"] == pytest.approx(4.0)
     assert stats["n_axis_items"] == 1 and stats["n_prepared"] == 2
+
+
+def _degrade_stats(eval_dir: Path) -> None:
+    for p in (eval_dir / "axis_items").glob("*.stats.json"):
+        p.unlink()
+
+
+def _degrade_draws(eval_dir: Path) -> None:
+    (eval_dir / "axis_draws.json").unlink()
+
+
+def _degrade_all_eqn(eval_dir: Path) -> None:
+    for p in (eval_dir / "story_char_gradient").glob("*_rows650.json"):
+        p.unlink()
+
+
+def _degrade_one_eqn(eval_dir: Path) -> None:
+    (
+        eval_dir
+        / "story_char_gradient"
+        / "ladder_r4op__char_2479_eel_op__instruct_context_L19_reduced_s0_nd2_rows650.json"
+    ).unlink()
+
+
+@pytest.mark.parametrize(
+    "degrade",
+    [
+        pytest.param(_degrade_stats, id="answer-length-stats-missing"),
+        pytest.param(_strip_cell_vectors, id="one-cell-vectors-stripped"),
+        pytest.param(_degrade_draws, id="axis-draws-missing"),
+        pytest.param(_degrade_all_eqn, id="equalized-companions-missing"),
+        pytest.param(_degrade_one_eqn, id="equalized-coverage-gap"),
+    ],
+)
+def test_e2e_production_refuses_on_registered_gap(tmp_path, degrade):
+    """Production mode (no --exploratory) exits 3 and writes NO verdict when any
+    plan-SS6 registered read's inputs are absent/stale (r2 codex
+    `registered-analysis-incomplete`): answer-length stats sidecars, closeness
+    vectors, the per-draw axis sidecar, or a complete equalized-n companion set
+    covering every surviving character under one common tag."""
+    eval_dir = _write_fixture(tmp_path)
+    degrade(eval_dir)
+    out = tmp_path / "verdict_refused.json"
+    rc = gv.main(
+        [
+            "--eval-dir",
+            str(eval_dir),
+            "--out",
+            str(out),
+            "--n-perm",
+            "100",
+            "--no-figures",
+        ]
+    )
+    assert rc == 3
+    assert not out.exists()  # refusal writes nothing
+
+
+def test_e2e_exploratory_records_gaps_and_writes(tmp_path):
+    """--exploratory permits gaps: rc 0, verdict written, gaps recorded."""
+    eval_dir = _write_fixture(tmp_path)
+    _degrade_draws(eval_dir)
+    out = tmp_path / "verdict_exploratory.json"
+    rc = gv.main(
+        [
+            "--eval-dir",
+            str(eval_dir),
+            "--out",
+            str(out),
+            "--n-perm",
+            "100",
+            "--no-figures",
+            "--exploratory",
+        ]
+    )
+    assert rc == 0
+    payload = json.loads(out.read_text())
+    assert payload["exploratory"] is True
+    assert any("axis draws" in g for g in payload["registered_input_gaps"])
+
+
+def test_e2e_stale_fit_outputs_status(tmp_path):
+    """Vectors absent from EVERY fit output -> the closeness reads carry the
+    distinct `stale-fit-outputs` status (not a bland `deferred`): the r2 fill
+    emits the vectors unconditionally, so absence means pre-r2 artifacts
+    needing a P5 re-run (g4 MINOR-1)."""
+    eval_dir = _write_fixture(tmp_path)
+    _strip_cell_vectors(eval_dir, names=("ada", "bee", "cat", "dog", "eel"))
+    _strip_ladder_source_means(eval_dir)
+    out = tmp_path / "verdict_stale.json"
+    rc = gv.main(
+        [
+            "--eval-dir",
+            str(eval_dir),
+            "--out",
+            str(out),
+            "--n-perm",
+            "100",
+            "--no-figures",
+            "--exploratory",
+        ]
+    )
+    assert rc == 0
+    payload = json.loads(out.read_text())
+    for key in ("context_space_closeness_vs_axis", "answer_space_closeness_vs_axis"):
+        read = payload["secondary_reads"][key]
+        assert read["status"] == "stale-fit-outputs"
+        assert "re-run P5" in read["note"]
+    assert any("stale pre-r2" in g for g in payload["registered_input_gaps"])
+
+
+def test_emit_items_stats_out_dir_separation(tmp_path, monkeypatch):
+    """emit-items routes the SMALL stats sidecars to a separate (commit-eligible
+    eval_results) dir while the row jsonls stay in the items dir (g4 MAJOR-2)."""
+    import issue2479_freeze_axis as fz
+
+    kept = tmp_path / "kept_char_2479_zed_op.jsonl"
+    kept.write_text('{"conv_id": "k1"}\n')
+    prepared = [
+        {"conv_id": "k1", "question": "q", "answer": "aaaa", "capped": False, "cell": "z"},
+    ]
+    monkeypatch.setattr(fz.prep_mod, "prepare", lambda rows, idx, cell: (prepared, {"n": 1}))
+    items_dir = tmp_path / "items"
+    stats_dir = tmp_path / "stats"
+    fz.emit_items(
+        panel=[{"name": "zed", "variant_op": "char_2479_zed_op"}],
+        reservation={"k1"},
+        kept_glob=str(tmp_path / "kept_{variant}.jsonl"),
+        raw_glob=None,
+        items_out_dir=items_dir,
+        stats_out_dir=stats_dir,
+    )
+    assert (items_dir / "axis_items_zed.jsonl").is_file()
+    assert (stats_dir / "axis_items_zed.stats.json").is_file()
+    assert not (items_dir / "axis_items_zed.stats.json").exists()
 
 
 def test_e2e_instrument_suspect_path(tmp_path):

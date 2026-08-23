@@ -423,6 +423,7 @@ def emit_items(
     kept_glob: str,
     raw_glob: str | None,
     items_out_dir: Path,
+    stats_out_dir: Path | None = None,
 ) -> None:
     """Per-character axis item lists: prepared kept ON-POLICY rows, reservation-filtered.
 
@@ -431,8 +432,19 @@ def emit_items(
     `finish_reason` (or the raw-file join when --raw-glob is given). Writes
     `axis_items_<name>.jsonl` + a counts sidecar per character; never prints
     row text.
+
+    ``stats_out_dir`` (default: ``items_out_dir``): where the SMALL
+    ``axis_items_<name>.stats.json`` sidecars land. The CLI defaults this to
+    ``eval_results/issue_2479/axis_items`` (counts only — no row text, so
+    commit-eligible) while the row jsonls stay under ``data/`` (gitignored
+    LMSYS-derived text): the sidecars feed the verdict's REGISTERED
+    answer-length read and must be durable (r2 g4 MAJOR-2 — the producer wrote
+    them to a gitignored, unuploaded dir while the consumer defaulted to
+    ``eval_results``, so the read silently re-deferred).
     """
     items_out_dir.mkdir(parents=True, exist_ok=True)
+    stats_dir = stats_out_dir or items_out_dir
+    stats_dir.mkdir(parents=True, exist_ok=True)
     for row in panel:
         name, variant = row["name"], row["variant_op"]
         kept_path = Path(kept_glob.format(variant=variant, name=name))
@@ -463,7 +475,7 @@ def emit_items(
         len_prep = [len(str(r["answer"])) for r in prepared]
         len_axis = [len(str(r["answer"])) for r in axis_rows]
         c.write_json(
-            items_out_dir / f"axis_items_{name}.stats.json",
+            stats_dir / f"axis_items_{name}.stats.json",
             {
                 "character": name,
                 "variant": variant,
@@ -509,6 +521,21 @@ def main() -> None:
         "(only needed when kept rows lack finish_reason/capped)",
     )
     ap.add_argument("--items-out-dir", type=Path, default=None)
+    ap.add_argument(
+        "--stats-out-dir",
+        type=Path,
+        default=_REPO_ROOT / "eval_results/issue_2479/axis_items",
+        help="emit-items: where the small axis_items_<name>.stats.json sidecars land "
+        "(counts only, commit-eligible; the verdict's answer-length read consumes them "
+        "at its <eval-dir>/axis_items default)",
+    )
+    ap.add_argument(
+        "--stats-dir",
+        type=Path,
+        default=_REPO_ROOT / "eval_results/issue_2479/axis_items",
+        help="freeze --commit: dir whose axis_items_*.stats.json sidecars ride the SAME "
+        "explicit-path freeze commit (durability for the registered answer-length read)",
+    )
     ap.add_argument("--import-check", action="store_true")
     args = ap.parse_args()
 
@@ -531,7 +558,14 @@ def main() -> None:
             "--emit-items requires --kept-glob and --items-out-dir"
         )
         reservation = load_reservation_ids(args.manifest)
-        emit_items(panel, reservation, args.kept_glob, args.raw_glob, args.items_out_dir)
+        emit_items(
+            panel,
+            reservation,
+            args.kept_glob,
+            args.raw_glob,
+            args.items_out_dir,
+            stats_out_dir=args.stats_out_dir,
+        )
         return
 
     assert args.legs_dir is not None, "--legs-dir is required (freeze mode)"
@@ -555,8 +589,12 @@ def main() -> None:
         flush=True,
     )
     if args.commit:
-        sha = commit_and_post(args.out, _REPO_ROOT, extra_paths=(draws_out,))
-        print(f"[freeze] axis-frozen commit={sha}", flush=True)
+        # The emit-items stats sidecars (counts only) ride the same commit —
+        # the verdict's REGISTERED answer-length read needs them durable
+        # (r2 g4 MAJOR-2); absent sidecars are the P6 production gate's job.
+        stats_files = tuple(sorted(args.stats_dir.glob("axis_items_*.stats.json")))
+        sha = commit_and_post(args.out, _REPO_ROOT, extra_paths=(draws_out, *stats_files))
+        print(f"[freeze] axis-frozen commit={sha} (+{len(stats_files)} stats sidecars)", flush=True)
     else:
         print(
             "[freeze] NOT committed (--commit absent) — the fit-driver guard will refuse",

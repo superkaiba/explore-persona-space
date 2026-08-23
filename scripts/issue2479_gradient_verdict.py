@@ -451,6 +451,7 @@ def collect_characters(
         rec["acc1_ceiling_cosine"], _ = _acc1(knn, "ceiling_cosine")
         rec["acc1_rung4_cosine"], _ = _acc1(knn, f"{HEADLINE_RUNG}_cosine")
         rec["acc1_identity_bias"], _ = _acc1(knn, "identity_bias")
+        rec["acc1_identity_bias_cosine"], _ = _acc1(knn, "identity_bias_cosine")
 
         # Full 9-rung curve (per-rung scalar R2 at the pinned layer) for the
         # ladder-curves figure; rung order from the entry's own metadata.
@@ -478,8 +479,19 @@ def collect_characters(
         # Closeness scalars: cosine(cell mean vec, r4op source mean) at the
         # pinned layer — cell vecs live at ENTRY level (r2 fill), r4op means in
         # the ladder entry's source_means. Scalars only; vectors never persist
-        # into the verdict payload.
+        # into the verdict payload. The r2 fill emits these vectors
+        # UNCONDITIONALLY, so a missing input means STALE (pre-r2) fit
+        # artifacts, not inapplicability — tracked per character so production
+        # mode can fail loud and exploratory mode can report a distinct
+        # `stale-fit-outputs` status (r2 g4 MINOR-1).
         src_means = (entry.get("source_means") or {}).get(SRC_OP) or {}
+        rec["closeness_missing_inputs"] = [
+            f"cell.{k}" for k in CLOSENESS_KEYS if not centry.get(k)
+        ] + [
+            f"ladder.source_means.{SRC_OP}.{w}"
+            for w in ("context", "answer")
+            if not src_means.get(w)
+        ]
         rec["context_closeness_to_r4op"] = _cosine(
             centry.get("mean_context_vec"), src_means.get("context")
         )
@@ -630,6 +642,21 @@ def build_secondary_reads(per_char: dict[str, dict], *, n_perm: int, seed: int) 
         n_perm=n_perm,
         seed=seed,
     )
+    # Cosine twin of the identity+bias retrieval control (the standing
+    # identity+bias/kNN mandate is euclidean + cosine; r2 g4 MAJOR-1 — the
+    # fill emits `identity_bias_cosine` beside `identity_bias`).
+    reads["acc1_identity_bias_recovery_cosine"] = _read_over(
+        per_char,
+        lambda r: (
+            _safe_ratio(r.get("acc1_identity_bias_cosine"), r.get("acc1_ceiling_cosine"))
+            if r["fraction_eligible"]
+            else None
+        ),
+        label="rho(axis, acc@1 identity+bias / acc@1 ceiling), cosine fold-0 — "
+        "trivial-baseline retrieval control",
+        n_perm=n_perm,
+        seed=seed,
+    )
     reads["ceiling_vs_axis"] = _read_over(
         per_char,
         lambda r: r["ceiling_r2"],
@@ -704,11 +731,24 @@ def build_secondary_reads(per_char: dict[str, dict], *, n_perm: int, seed: int) 
                 seed=seed,
             )
         else:
-            reads[read_key] = {
-                "status": "deferred",
-                "note": "requires fill-emitted mean-activation vectors (cell entry level) + "
-                "ladder source_means — absent from these fit outputs",
-            }
+            stale = sorted(n for n, rec in per_char.items() if rec.get("closeness_missing_inputs"))
+            if stale:
+                # Distinct from `deferred`: the r2 fill emits the vectors
+                # unconditionally, so absence = stale pre-r2 fit artifacts
+                # that need a P5 re-run on current code (r2 g4 MINOR-1).
+                reads[read_key] = {
+                    "status": "stale-fit-outputs",
+                    "note": "fit outputs lack the r2-fill mean-activation vectors (cell "
+                    "mean_context_vec/mean_answer_vec + ladder source_means) for "
+                    f"{len(stale)} character(s): {stale} — absence means STALE (pre-r2) "
+                    "fit artifacts; re-run P5 on current code",
+                }
+            else:
+                reads[read_key] = {
+                    "status": "deferred",
+                    "note": "requires fill-emitted mean-activation vectors (cell entry level) "
+                    "+ ladder source_means — absent from these fit outputs",
+                }
     return reads
 
 
@@ -732,14 +772,74 @@ def build_equalized_n(per_char: dict[str, dict], *, n_perm: int, seed: int) -> d
         return {"status": "not_produced", "note": "equalized-n companion not yet produced"}
     out: dict = {"status": "ok", "companions": {}}
     for tag, chars in sorted(by_tag.items()):
-        out["companions"][tag] = _read_over(
+        blk = _read_over(
             chars,
             lambda r: r["recovery_fraction"],
             label=f"equalized-n headline companion (tag {tag!r})",
             n_perm=n_perm,
             seed=seed,
         )
+        # Coverage record for the production completeness gate: the plan's
+        # UNCONDITIONAL equalized-n refit covers every surviving character
+        # under ONE common tag (registered_input_gaps checks this).
+        blk["characters_covered"] = sorted(chars)
+        out["companions"][tag] = blk
     return out
+
+
+def registered_input_gaps(payload: dict, axis_draws: dict | None) -> list[str]:
+    """Plan-§6 registered-read completeness gaps (production fail-loud).
+
+    Enumerates every REGISTERED read whose inputs are absent or stale — the
+    answer-length stats sidecars, both activation-closeness input sets, the
+    axis per-draw sidecar (the violin's data), and a complete equalized-n
+    companion set covering EVERY surviving character under ONE common tag.
+    Production mode (no ``--exploratory``) treats a non-empty list as fatal
+    (exit 3, no verdict written), so a silently-deferred registered read can
+    never ship as a clean verdict (r2 codex `registered-analysis-incomplete`).
+    """
+    gaps: list[str] = []
+    per_char = payload["per_character"]
+    for name in sorted(per_char):
+        rec = per_char[name]
+        if rec.get("mean_answer_len") is None:
+            gaps.append(
+                f"answer-length: {name} — axis_items_{name}.stats.json sidecar missing "
+                f"(or carries none of {ANSWER_LEN_KEYS}) under --axis-items-stats-dir"
+            )
+        for what in rec.get("closeness_missing_inputs") or []:
+            gaps.append(f"closeness: {name} — fit outputs lack {what} (stale pre-r2 artifacts)")
+    for key in (
+        "answer_length_vs_axis",
+        "context_space_closeness_vs_axis",
+        "answer_space_closeness_vs_axis",
+    ):
+        st = payload["secondary_reads"][key].get("status")
+        if st in ("deferred", "stale-fit-outputs"):
+            gaps.append(f"registered read {key}: status={st!r}")
+    if not axis_draws or not (axis_draws.get("per_character") or {}):
+        gaps.append(
+            "axis draws: axis_draws.json absent/empty — the registered per-draw axis-score "
+            "violin has no input (issue2479_freeze_axis.py emits it beside axis_freeze.json)"
+        )
+    eq = payload["equalized_n"]
+    if eq.get("status") != "ok":
+        gaps.append(
+            f"equalized-n: status={eq.get('status')!r} — the pre-registered UNCONDITIONAL "
+            "equalized-n companions are absent (phasef driver eqn pass)"
+        )
+    else:
+        survivors = set(per_char)
+        covered = {
+            tag: set(blk.get("characters_covered") or []) for tag, blk in eq["companions"].items()
+        }
+        if not any(survivors <= cov for cov in covered.values()):
+            gaps.append(
+                "equalized-n: no single companion tag covers every surviving character "
+                f"({sorted(survivors)}; per-tag coverage: "
+                f"{ {t: sorted(c) for t, c in covered.items()} })"
+            )
+    return gaps
 
 
 # --- figures -------------------------------------------------------------------
@@ -938,10 +1038,12 @@ def make_figures(per_char: dict[str, dict], fig_dir: Path, axis_draws: dict | No
                 (r for r in band_recs if r["design_band"] == band),
                 key=lambda q: q["axis_score"],
             )
+            # Color PER POINT (one color = one meaning): anchor color only on
+            # anchor points, never on a whole anchor-bearing band (g4 MINOR-2).
             ax.scatter(
                 [xi] * len(sub),
                 [r["axis_score"] for r in sub],
-                c=pp.paper_palette_role("accent" if any(r["anchor"] for r in sub) else "primary"),
+                c=[pp.paper_palette_role("accent" if r["anchor"] else "primary") for r in sub],
                 s=36,
                 zorder=3,
             )
@@ -975,7 +1077,9 @@ def make_figures(per_char: dict[str, dict], fig_dir: Path, axis_draws: dict | No
         ]
         width = 0.8 / len(series)
         for si, (key, lab, role) in enumerate(series):
-            vals = [float(r[key]) if r.get(key) is not None else 0.0 for r in acct_recs]
+            # A missing series value renders as NO bar (NaN), never a silent
+            # zero bar indistinguishable from a genuine zero (g4 MINOR-3).
+            vals = [float(r[key]) if r.get(key) is not None else float("nan") for r in acct_recs]
             ax.bar(
                 xs + (si - 1) * width,
                 vals,
@@ -1187,6 +1291,14 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--n-perm", type=int, default=N_PERM_DEFAULT)
     ap.add_argument("--perm-seed", type=int, default=PERM_SEED_DEFAULT)
     ap.add_argument("--no-figures", action="store_true", help="skip figure rendering")
+    ap.add_argument(
+        "--exploratory",
+        action="store_true",
+        help="permit absent/stale REGISTERED-read inputs (diagnostic reruns only): gaps are "
+        "recorded in the payload instead of refusing. PRODUCTION default: any registered "
+        "input gap (answer-length sidecars, closeness vectors, axis draws, complete "
+        "equalized-n companions) prints each gap and exits 3 WITHOUT writing the verdict.",
+    )
     args = ap.parse_args(argv)
 
     eval_dir: Path = args.eval_dir
@@ -1199,9 +1311,26 @@ def main(argv: list[str] | None = None) -> int:
         perm_seed=args.perm_seed,
         items_stats_dir=args.axis_items_stats_dir or eval_dir / "axis_items",
     )
+    # Registered-read completeness gate (production fail-loud; the axis-draws
+    # sidecar is a registered input regardless of --no-figures).
+    draws_path = args.axis_draws or eval_dir / "axis_draws.json"
+    axis_draws = json.loads(draws_path.read_text()) if draws_path.is_file() else None
+    gaps = registered_input_gaps(payload, axis_draws)
+    payload["registered_input_gaps"] = gaps
+    payload["exploratory"] = bool(args.exploratory)
+    if gaps:
+        for g in gaps:
+            print(f"[registered-gap] {g}", file=sys.stderr, flush=True)
+        if not args.exploratory:
+            print(
+                f"[verdict] REFUSED — {len(gaps)} registered-read input gap(s); production "
+                "mode requires every plan-SS6 registered read's inputs present (pass "
+                "--exploratory for a diagnostic run)",
+                file=sys.stderr,
+                flush=True,
+            )
+            return 3
     if not args.no_figures:
-        draws_path = args.axis_draws or eval_dir / "axis_draws.json"
-        axis_draws = json.loads(draws_path.read_text()) if draws_path.is_file() else None
         payload["figures"] = make_figures(
             payload["per_character"], args.fig_dir, axis_draws=axis_draws
         )
