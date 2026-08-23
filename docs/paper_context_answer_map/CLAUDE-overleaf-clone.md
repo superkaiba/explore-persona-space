@@ -20,22 +20,26 @@ Rules for any Claude session working in this repo (git clone of Overleaf project
   working plan blocks = `draft.tex`. No other planning doc lives here. Thomas reads
   it via Menu → Settings → Main document → `plan.tex`, Recompile (standalone article,
   no `style/` dependency).
-- STRUCTURE (renames 2026-08-23; spine 2026-08-22): THREE roots, no preamble file.
-  `clean.tex` (ex-main.tex) = the CLEAN curated paper (inputs `sections/clean/`
-  copies only; currently abstract + introduction). `draft.tex` (ex-outline.tex) =
+- STRUCTURE (names final 2026-08-23; spine 2026-08-22): THREE roots, no preamble
+  file. `main.tex` = the curated paper (inputs `sections/clean/` copies only;
+  currently abstract + introduction; the brief clean.tex rename was retired same
+  day on Thomas's order). `draft.tex` (ex-outline.tex) =
   the working surface: per section a blue PLAN block (bullets + one plot per claim
   inline + status tags [DONE #N]/[IN-FLIGHT #N]/[NEW]/[VERIFY]) followed by the
   draft via \input. `plan.tex` = the hand-edited simple skeleton (see below).
   `preamble.tex` was REMOVED (Thomas 2026-08-23): the shared header block
-  (packages/title/`\iclrfinalcopy`) is INLINED identically in clean.tex AND
-  draft.tex — edit it in BOTH or they drift. Draft text lives in
+  (packages/title/`\iclrfinalcopy`) is INLINED identically in main.tex AND
+  draft.tex — edit it in BOTH or they drift. Overleaf can RESURRECT a root that
+  its project settings still point at (commit a2ea028 restored stale pre-rename
+  main.tex/outline.tex): after any root rename, Thomas must reselect Menu →
+  Settings → Main document, and the next pull checks for resurrected stale roots. Draft text lives in
   `sections/NN_<name>.tex` + `sections/results/c{1..5}_*.tex` (edit those, not the
   draft skeleton); Results spine is 3 headline sections (I = c1+c3, II = c4,
   III = c5; old C2 causality demoted to appendix). `references.bib` = the
   bibliography; `style/` = template machinery — NEVER edit style/. Figures under
   `figures/paper/` (claim-named c1_*.pdf…c5_*.pdf); `poster/` stays (Thomas
   2026-08-23). Compile check after edits: pdflatex → bibtex → pdflatex ×2 on
-  clean.tex AND draft.tex (plan.tex: one pdflatex pass suffices, no bib).
+  main.tex AND draft.tex (plan.tex: one pdflatex pass suffices, no bib).
 - WRITING TELLS — STANDING RULE (Thomas, 2026-08-23). In ALL rendered text in this
   tree: (1) ZERO em dashes (`---` or —); rewrite with colon/comma/parentheses or
   restructure; en-dash `--` numeric ranges are fine; %-comments, references.bib
