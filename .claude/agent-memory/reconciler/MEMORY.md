@@ -66,6 +66,7 @@
 ## Codex code-review overreach (PASS-leaning calibration)
 
 - [Codex blocker on unreachable exception path](feedback_codex_blocker_on_unreachable_exception_path.md) — check reachability arithmetic + grid-superset (#2356 r4)
+- [Fenced-content blindness on plan-verbatim validator](feedback_codex_fenced_content_blindness_on_plan_verbatim_validator.md) — plan-registered regex + same-instrument zero-collision audit ⇒ demote (#2309 r1)
 - [Conjunction resume guards + argument-constant "independence"](feedback_codex_conjunction_guard_and_argument_constant_independence.md) — trace the FULL guard predicate; a record that can't DIFFER under the bug adds nothing; fabrication needs a claimed-but-absent test (#2215 r3)
 - [Codex demands hardening beyond minimal-port contract](feedback_codex_hardening_beyond_minimal_port_contract.md) — execution-test the proposed fix; raise+defer residue (#556, #958)
 - [Codex Step 0.6 literal vs purpose](feedback_codex_step_06_literal_vs_purpose.md) — PASS when a real pre-launch gate runs the changed code (#551, #560)
