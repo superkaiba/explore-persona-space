@@ -450,13 +450,13 @@ def fig_perpair_margins(ctx: dict, figures_dir: Path) -> str | None:
         ax.axvline(0.0, color="0.5", lw=0.7)
         ax.set_title(_tick(cell, ctx["benchmark"]), fontsize=9)
         if i // ncols == nrows - 1:
-            ax.set_xlabel("margin, direction a")
+            ax.set_xlabel("cosine margin, first scoring direction")
         if i % ncols == 0:
-            ax.set_ylabel("margin, direction b")
+            ax.set_ylabel("cosine margin,\nsecond scoring direction")
     for j in range(len(cells), nrows * ncols):
         axes[j // ncols][j % ncols].set_visible(False)
     fig.suptitle(
-        f"Per-pair cosine margins per type (single-turn map, context-end, layer {ctx['layer']})",
+        "Per-pair cosine margins per information type (positive = correct)",
         fontsize=11,
     )
     fig.tight_layout(rect=(0, 0, 1, 0.96))
