@@ -163,6 +163,23 @@ DECSENS_PAIR_SPECS = (
     ("bare_t07_minus_bare_t10", "arm_base_bare_t07", "arm_base_bare"),
     ("bare_t00_minus_bare_t10", "arm_base_bare_t00", "arm_base_bare"),
 )
+# Parent arms whose committed judge_raw files anchor the §3 cross-temperature comparisons.
+PARENT_COMPARATOR_ARMS = ("arm_base_chat", "arm_base_bare")
+
+
+def _registry_sampling_record(temp: float, stop: list[str]) -> dict:
+    """The per-row ``sampling`` record phase_gen writes for a registry row — the SINGLE
+    source for the gen writer AND the fresh-file recipe validation (no constant drift;
+    round-4 blocker decsens-fresh-recipe-unvalidated). Value-identical to the parent
+    round's inline literal (same keys, same order, same values at temp=1.0)."""
+    return {
+        "n": 1,
+        "temperature": temp,
+        "top_p": 0.95,
+        "max_tokens": 1024,
+        "seed": GEN_SEED,
+        "stop": stop,
+    }
 
 
 def _log(msg: str) -> None:
@@ -1252,6 +1269,28 @@ def _assert_gen_manifest_contract(manifest: dict, chat_items: list[dict], smoke:
         )
 
 
+def _upload_gen_outputs(paths: list[Path], dest_prefix: str) -> None:
+    """Per-file hub._upload of the gen outputs (plan C4). Attempts EVERY file BEFORE the
+    combined failure check — the parent round's u1/u2/u3-then-check semantics (round-4
+    blocker default-parent-upload-parity) — then raises naming every empty-url file."""
+    from explore_persona_space.orchestrate import hub
+
+    failed: list[str] = []
+    for p in paths:
+        url = hub._upload(
+            p,
+            hub.DEFAULT_DATASET_REPO,
+            "dataset",
+            f"{dest_prefix}/{p.name}",
+            upload_as_file=True,
+            raise_on_error=True,
+        )
+        if not url:
+            failed.append(p.name)
+    if failed:
+        raise RuntimeError(f"gen: uploads returned an empty url for: {', '.join(failed)}")
+
+
 def phase_gen(args: argparse.Namespace) -> None:
     smoke = bool(args.smoke)
     out_root = Path(args.out)
@@ -1361,14 +1400,7 @@ def phase_gen(args: argparse.Namespace) -> None:
                     "n_gen_tokens": len(comp.token_ids),
                     "arm": arm,
                     "model": MODEL_BASE,
-                    "sampling": {
-                        "n": 1,
-                        "temperature": temp,
-                        "top_p": 0.95,
-                        "max_tokens": 1024,
-                        "seed": GEN_SEED,
-                        "stop": stop,
-                    },
+                    "sampling": _registry_sampling_record(temp, stop),
                     "git_commit": meta_common["git_commit"],
                 }
             )
@@ -1427,17 +1459,7 @@ def phase_gen(args: argparse.Namespace) -> None:
     )
     jsonl_paths = [out_root / f"{arm}_{suffix}.jsonl" for arm, _r, _t, _s in cset]
     meta_path = out_root / "gen_meta.json"
-    for p in [*jsonl_paths, meta_path]:
-        url = hub._upload(
-            p,
-            hub.DEFAULT_DATASET_REPO,
-            "dataset",
-            f"{dest_prefix}/{p.name}",
-            upload_as_file=True,
-            raise_on_error=True,
-        )
-        if not url:
-            raise RuntimeError(f"gen: upload of {p.name} returned an empty url")
+    _upload_gen_outputs([*jsonl_paths, meta_path], dest_prefix)
     from huggingface_hub import HfApi
 
     expected = [f"{dest_prefix}/{p.name}" for p in [*jsonl_paths, meta_path]]
@@ -1540,13 +1562,48 @@ def _fresh_rows(name: str, manifest: dict, condition_set: str = "parent") -> lis
     return rows
 
 
+def _validate_row_recipe(arm_name: str, fname: str, p_idx, row: dict, expected: dict) -> None:
+    """Fail loud when a fresh row's recorded identity/recipe fields deviate from the registry
+    row (file/row/field named): a correct-panel file generated under the WRONG condition —
+    stale, swapped, or mis-generated — must never be silently judged under the filename's
+    label (round-4 blocker decsens-fresh-recipe-unvalidated)."""
+    for fld in ("arm", "model"):
+        got = row.get(fld)
+        if got != expected[fld]:
+            raise RuntimeError(
+                f"{arm_name}: {fname} row prompt_idx={p_idx} field {fld!r}: "
+                f"got {got!r}, want {expected[fld]!r} (registry recipe mismatch)"
+            )
+    samp = row.get("sampling")
+    if not isinstance(samp, dict):
+        raise RuntimeError(
+            f"{arm_name}: {fname} row prompt_idx={p_idx} field 'sampling': "
+            f"got {samp!r}, want a sampling record (registry recipe mismatch)"
+        )
+    for key, want in expected["sampling"].items():
+        got = samp.get(key)
+        if got != want:
+            raise RuntimeError(
+                f"{arm_name}: {fname} row prompt_idx={p_idx} field 'sampling.{key}': "
+                f"got {got!r}, want {want!r} (registry recipe mismatch)"
+            )
+
+
 def _fresh_arm(
-    arm_name: str, fname: str, manifest: dict, prompt_by_idx: dict, condition_set: str
+    arm_name: str,
+    fname: str,
+    manifest: dict,
+    prompt_by_idx: dict,
+    condition_set: str,
+    expected_recipe: dict | None = None,
 ) -> ArmData:
     """One fresh-completions arm: panel/prompt-hash asserts + cap-hit capture (plan B1).
 
     Factored verbatim from the parent build_arms fresh loop (same asserts, same messages);
-    condition_set threads only the _fresh_rows local-dir/Hub-prefix routing.
+    condition_set threads only the _fresh_rows local-dir/Hub-prefix routing. When
+    ``expected_recipe`` is given (the decoding-sensitivity set), every row's identity
+    fields (arm, model) + realized sampling record must match the registry row's recipe
+    — validated BEFORE any judge spend (round-4 fix; parent calls pass None, unchanged).
     """
     chat_items = manifest["chat_items"]
     a = ArmData(name=arm_name)
@@ -1558,6 +1615,8 @@ def _fresh_arm(
             raise RuntimeError(
                 f"{arm_name}: prompt text mismatch vs manifest at prompt_idx={p_idx}"
             )
+        if expected_recipe is not None:
+            _validate_row_recipe(arm_name, fname, p_idx, row, expected_recipe)
         iid = f"{arm_name}--{p_idx}"
         a.items.append((iid, row["prompt"], row["response"]))
         a.pair_key[iid] = p_idx
@@ -1584,10 +1643,19 @@ def build_arms(manifest: dict, condition_set: str = "parent") -> dict[str, ArmDa
     prompt_by_idx = {it["prompt_idx"]: it["prompt"] for it in chat_items}
 
     if condition_set == DECSENS:
-        for slug, _render, _temp, _stop in CONDITION_SETS[DECSENS]:
+        for slug, _render, temp, stop in CONDITION_SETS[DECSENS]:
             arm_name = f"arm_{slug}"
             arms[arm_name] = _fresh_arm(
-                arm_name, f"{slug}_seed42.jsonl", manifest, prompt_by_idx, DECSENS
+                arm_name,
+                f"{slug}_seed42.jsonl",
+                manifest,
+                prompt_by_idx,
+                DECSENS,
+                expected_recipe={
+                    "arm": slug,
+                    "model": MODEL_BASE,
+                    "sampling": _registry_sampling_record(temp, list(stop)),
+                },
             )
         for name in DECSENS_ARM_NAMES:
             if not arms[name].items:
@@ -1637,6 +1705,38 @@ def build_arms(manifest: dict, condition_set: str = "parent") -> dict[str, ArmDa
     return arms
 
 
+def _parent_recorded_judge_model() -> str:
+    """The judge model recorded in the committed parent judge_raw comparator files — the
+    instrument-identity anchor for the §3 cross-temperature paired deltas. Fails loud on
+    absence or disagreement (round-4 blocker decsens-judge-model-unpinned)."""
+    models = {
+        arm: _read_committed_json(f"eval_results/issue_2477/judge/judge_raw_{arm}.json").get(
+            "judge_model"
+        )
+        for arm in PARENT_COMPARATOR_ARMS
+    }
+    vals = set(models.values())
+    if len(vals) != 1 or None in vals:
+        raise RuntimeError(f"parent judge_raw judge_model missing/inconsistent: {models}")
+    return vals.pop()
+
+
+def _assert_decsens_judge_model_pinned() -> None:
+    """Refuse decoding-sensitivity judge spend when the RESOLVED judge model
+    (``DEFAULT_JUDGE_MODEL`` — env-overridable via ``JUDGE_MODEL``) differs from the parent
+    round's recorded instrument: the cross-temperature paired deltas compare fresh scores
+    against the parent comparators, so instrument identity is load-bearing (plan v5
+    'judge instrument ... inherit v4 verbatim'; round-4 blocker)."""
+    from explore_persona_space.eval import DEFAULT_JUDGE_MODEL
+
+    parent_model = _parent_recorded_judge_model()
+    if DEFAULT_JUDGE_MODEL != parent_model:
+        raise RuntimeError(
+            f"decoding-sensitivity judge: resolved judge model {DEFAULT_JUDGE_MODEL!r} != "
+            f"parent recorded {parent_model!r} (JUDGE_MODEL env override?) — refusing dispatch"
+        )
+
+
 # ---------------------------------------------------------------------------
 # Phase: judge-pilot (plan B4)
 # ---------------------------------------------------------------------------
@@ -1652,7 +1752,7 @@ def phase_judge_pilot(args: argparse.Namespace) -> None:
     pilot_path = judge_dir / "pilot_report.json"
     if not args.force and pilot_path.exists():
         prior = json.loads(pilot_path.read_text(encoding="utf-8"))
-        if prior.get("passed"):
+        if prior.get("passed") is True:  # strict: a truthy non-True never skips the pilot
             _log(
                 f"[phase=judge-pilot] SKIP (idempotent): {pilot_path} exists with passed=true — "
                 "pass --force to re-run"
@@ -1661,6 +1761,8 @@ def phase_judge_pilot(args: argparse.Namespace) -> None:
         _log(
             f"[phase=judge-pilot] prior pilot_report has passed={prior.get('passed')} — re-running"
         )
+    if decsens:
+        _assert_decsens_judge_model_pinned()  # before any paid pilot dispatch (round-4 fix)
     from explore_persona_space.eval.judge_pilot import judge_pilot_gate
 
     _log("[phase=judge-pilot] start")
@@ -1784,8 +1886,11 @@ def phase_judge_wave(args: argparse.Namespace) -> None:
     if not pilot_path.exists():
         raise RuntimeError("judge-wave: run --phase judge-pilot first (pilot_report.json missing)")
     pilot = json.loads(pilot_path.read_text(encoding="utf-8"))
-    if not pilot.get("passed"):
+    if pilot.get("passed") is not True:  # strict: only a literal true report gates the wave open
         raise RuntimeError("judge-wave: pilot gate did not PASS — fix + re-pilot before the wave")
+
+    if decsens:
+        _assert_decsens_judge_model_pinned()  # before any paid wave dispatch (round-4 fix)
 
     for name, arm in arms.items():
         save_raw = judge_dir / f"judge_raw_{name}.json"
@@ -2048,6 +2153,17 @@ def _aggregate_decsens_core(
     """Plan v5 B6': per-arm stats for the 4 fresh temperature arms + the four registered
     cross-temperature paired deltas against the parent's committed judge_raw (read-only) +
     the §3 verdict lattice keyed on frac_coherent(arm_base_chat_t07) vs the 0.80 floor."""
+    # Instrument identity FIRST (round-4 blocker decsens-judge-model-unpinned): every fresh
+    # raw file must record the SAME judge model as the committed parent comparators — the
+    # paired deltas are meaningless across instruments.
+    judge_model = _parent_recorded_judge_model()
+    for name in sorted(save_raw_paths):
+        got = json.loads(save_raw_paths[name].read_text(encoding="utf-8")).get("judge_model")
+        if got != judge_model:
+            raise RuntimeError(
+                f"aggregate: judge_raw_{name} records judge_model {got!r} != parent "
+                f"{judge_model!r} — cross-temperature paired deltas require one instrument"
+            )
     per_arm = {name: _arm_stats(arm, save_raw_paths[name]) for name, arm in arms.items()}
     missing_arms = [n for n in DECSENS_ARM_NAMES if n not in per_arm]
     if missing_arms:
@@ -2111,6 +2227,8 @@ def _aggregate_decsens_core(
             "threshold_base": 0,
             "coherent_threshold": COHERENT_THRESHOLD,
             "rubric_sha256": _sha(RUBRIC),
+            # The verified common instrument (parent comparators + all 4 fresh arms).
+            "judge_model": judge_model,
         },
         "arms": per_arm,
         "paired_deltas_vs_parent_t10": pairs,
@@ -2506,10 +2624,12 @@ def _render_figures_decsens(payload: dict, out_dir: Path) -> list[Path]:
         fb = _frac_block(name)
         lo, hi = fb["wilson_ci95"]
         ax.bar([x], [fb["value"]], color=colors[name], width=0.62, zorder=2)
+        # Clamp: at frac == 0.0 the Wilson lower bound is +2.8e-17 (FP roundoff), so the
+        # un-clamped lower yerr is negative and matplotlib raises (round-4 Major).
         ax.errorbar(
             [x],
             [fb["value"]],
-            yerr=[[fb["value"] - lo], [hi - fb["value"]]],
+            yerr=[[max(0.0, fb["value"] - lo)], [max(0.0, hi - fb["value"])]],
             fmt="none",
             ecolor="black",
             elinewidth=1.0,
@@ -2637,10 +2757,11 @@ def _render_figures_decsens(payload: dict, out_dir: Path) -> list[Path]:
             mean = arms_stats[name]["mean"]
             lo, hi = arms_stats[name]["mean_ci95"]
             if mean is not None and not (math.isnan(lo) or math.isnan(hi)):
+                # Same non-negativity clamp as the hero (bug-class sibling, round-4 sweep).
                 ax.errorbar(
                     [x],
                     [mean],
-                    yerr=[[mean - lo], [hi - mean]],
+                    yerr=[[max(0.0, mean - lo)], [max(0.0, hi - mean)]],
                     fmt="D",
                     color=colors[name],
                     markersize=7,
@@ -2735,7 +2856,9 @@ PHASES = {
 
 
 def _parse_args() -> argparse.Namespace:
-    ap = argparse.ArgumentParser(description="#2477 base-coherence driver (plan v4)")
+    ap = argparse.ArgumentParser(
+        description="#2477 base-coherence driver (plan v4 + v5 decoding-sensitivity delta)"
+    )
     ap.add_argument("--phase", choices=sorted(PHASES), help="phase to run")
     ap.add_argument(
         "--condition-set",
