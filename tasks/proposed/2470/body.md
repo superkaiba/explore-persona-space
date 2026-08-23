@@ -25,29 +25,41 @@ Surfaced by the round-4 code-review ensemble on #2263 as a standing recommendati
 
 #2263 spent seven rounds making three things mandatory at the primary Step 6b launch fence: the shared `--print-repo-branch` resolution, a mechanically-halting launch recheck, and `EXTRA_SYNC_ARGS` threaded into the dispatch argv. Two condensed launch references in other step files were never brought to that standard.
 
-## READ FIRST — the one-canonical-fence rule is a CONVENTION here, not a guardrail
+## READ FIRST — a live pin covers the ordinary fix, with two named gaps
 
-**Corrected 2026-08-22 (third revision of this section — read the history note below before trusting any earlier revision).**
+**Revised 2026-08-22, fourth revision of this section. The three earlier revisions were each wrong, in both directions — read the history note below before trusting anything you may have read here previously.**
 
-#2263 added `tests/test_verify_carryover_inputs.py::test_step6_parent_reuse_fallback_points_at_canonical_launch_fence`, whose docstring advertises "exactly ONE `dispatch_issue[.py] launch` invocation across ALL fenced code blocks" of the composed `/issue` spec.
+The pin is `tests/test_verify_carryover_inputs.py::test_step6_parent_reuse_fallback_points_at_canonical_launch_fence`: exactly ONE `dispatch_issue[.py] launch` invocation may exist across the composed `/issue` spec's fenced blocks, and it must be the canonical Step 6b fence.
 
-**What it actually enforces, as verified independently by both #2263 round-6 reviewers:** occurrences of a launch-shaped regex inside **column-zero, exactly-three-backtick** fences with a bare single-word info string. It recognizes the path spelling and the module spelling.
+**What it enforces, after #2263 round 8** — verified by mutation, independently, by both round-7 reviewers and the round-7 reconciler:
 
-**What it does NOT catch — and this is the part that matters for this task:** an **INDENTED** fenced block. Also four-backtick fences, tilde fences, extended info strings, a line-continued invocation, and quoted program/subcommand forms. And it over-fires in the other direction: a *commented* launch-shaped line inside a recognized fence turns it RED despite adding no invocation, so it counts regex occurrences rather than shell invocations.
+- Fenced blocks at **any indentation**, backtick **or** tilde, any info string, unclosed-to-EOF handled.
+- Counted as **invocations**, not textual hits: comments are stripped and line continuations joined before counting.
+- Both the path spelling (`scripts/dispatch_issue.py launch`) and the module spelling (`python -m scripts.dispatch_issue launch`).
 
-**Both of this task's two anchor sites are indented list content.** Codex verified by mutation that inserting a valid indented Bash fence at each exact anchor left the test GREEN. The composed spec currently carries 184 indented fence delimiter lines.
+**For this task specifically:** an indented Bash fence inserted at **each** of the two anchor sites below was verified RED under the new pin and GREEN under the old one. Your anchors sit at 2 spaces (`12-step-8.md`) and 5 spaces (`13-step-9.md`, continuation inside a `- ` item), and both are covered. So if you complete either reference into an ordinary fenced example, **the pin will stop you** — this is a real guardrail for the ordinary case, not a convention.
 
-**Therefore: completing either site into a normally-indented fenced example would create a second operator-copyable launch site that the pin will NOT flag.** The one-canonical-fence rule still holds as the accumulated lesson of #2263's rounds — its round-5 ensemble ruled the coupling a feature, and every duplicated fence is a fresh drift channel of the class those rounds kept closing — but you must honor it **deliberately**. Do not plan on the test stopping you.
+**Two gaps remain, and one of them is adjacent to your work:**
 
-Practical consequence for your options below: prefer (b) or (c). If you nonetheless choose (a), you owe an explicit argument against #2263's history AND a pin that actually catches your new block — and #2263 may itself widen the detector (see below), so check its final state first.
+1. **List-marker-prefixed fences and blockquoted fences still count 0** (`r8-uniqueness-pin-remaining-syntax-escapes` on #2263 — adjudicated a standing NIT, deliberately not closed, zero live instances). A fence written on its own indented line under a list item **is** caught; a fence written inline after the list marker (`- ```bash`) is **not**. Since `13-step-9.md:2887-2891` is list content, that distinction is one keystroke away from your edit. Write the fence on its own line.
+2. Variable-assembled invocations count 0. Not a plausible shape for a doc example, listed for completeness.
 
-### History note — two earlier revisions of this section overstated the pin, and one may have been read
+**Two caveats on the guarantee itself:**
 
-Revision v2 said the pin asserts "exactly ONE **bash block** carries `dispatch_issue.py launch`" and that completing either reference into a fence WILL break it. False then: the round-6 pin counted `bash`-fenced BLOCKS and the path spelling only, so a module-spelling or ` ```sh ` completion escaped.
+- **It attaches to the MERGED state.** `main` still carries the pre-#2263 pin until #2263 completes Step 10d. Check which version is live before relying on it: `grep -n "_fenced_blocks" tests/test_verify_carryover_inputs.py` on the tree you are actually working in.
+- Prose mentions outside fences are deliberately uncounted (13 exist today). Both of your anchors are currently prose whose backtick span wraps across lines, which is why they count 0 now.
 
-Revision v3 said the round-7 pin made that true "by any spelling, in any fence language." Also false: round 7 widened spelling and fence *language* but stayed column-zero-anchored, so the indented case — which is exactly this task's case — still escapes.
+**Practical consequence for your options below.** Route (a) is no longer effectively closed, but it now trips a real pin, so taking it means arguing the invariant should be relaxed — that argument belongs in a reviewed plan, not a quiet test edit. Do NOT widen or delete the pin to make room for a second invocation. (b) and (c) remain the cheaper paths.
 
-Both revisions handed this task a mechanical guarantee that did not exist. Recorded rather than silently re-tightened, because a planner who read either revision needs to know which guarantee they were relying on. **#2263 review round 6 is where both overstatements were caught** (Claude `r7-uniqueness-pin-residual-escapes`, Codex `r6-uniqueness-pin-2470-coupling` re-raised as `verified-open`); whether #2263 widens the detector to cover indented fences is being adjudicated there. Re-read `epm:results` and the round-6/7 verdicts on #2263 before relying on any statement in this section.
+### History note — three earlier revisions of this section were wrong, and any of them may have been read
+
+- **v2** claimed the pin asserts one **bash block** and that any fence completion breaks it. False then: the round-6 pin counted ` ```bash `-fenced BLOCKS and the path spelling only, so a module-spelling or ` ```sh ` completion escaped.
+- **v3** claimed round 7 made that true "by any spelling, in any fence language." Also false: round 7 widened spelling and fence language but stayed **column-zero-anchored**, so the indented case — this task's actual case — still escaped.
+- **v4** correctly described that column-zero state and concluded the rule here was "a CONVENTION, not a guardrail." Accurate when written, then falsified in the opposite direction about two hours later: #2263 round 8 widened the detector to any-indent fences, which is exactly what v4 said did not exist.
+
+Three revisions, two directions of error, one root cause: each described a mechanism whose reach had not been adversarially verified. That is the same defect #2263 exists to fix, and the reason this section now cites per-claim mutation evidence and names its gaps rather than asserting a clean guarantee. Ledger trail on #2263: `r6-uniqueness-pin-2470-coupling` (raised r5, wrongly closed r7, reopened `verified-open` r6, upheld BLOCKER by reconciler v6) and `r7-uniqueness-pin-residual-escapes`.
+
+If #2263 is still open when you plan this, re-read its latest `epm:results` and reconciler verdict before relying on any statement above.
 
 ## Workflow gap
 
@@ -66,7 +78,7 @@ A related residual named in #2263's `epm:results v8` (d), same surface, worth fo
 
 Decide per site among:
 
-- **(a) complete the invocation** — see the READ FIRST warning: permitted only with an argued case plus a pin that genuinely catches the new block.
+- **(a) complete the invocation** — see READ FIRST: this now trips a live pin for the ordinary indented-fence case, so it is permitted only with an argued case for relaxing the one-canonical-fence invariant, made in a reviewed plan.
 - **(b) replace with a pointer to the canonical Step 6b fence** — what #2263 round 6 chose for the analogous parent-reuse block, after judging that block's role to be the reuse *decision* rather than a dispatch.
 - **(c) mark it explicitly illustrative-not-executable** — if it is prose scaffolding. #2263 round 6 paired its pointer with an `echo … >&2` line stating the block does not dispatch; reuse that shape if it fits.
 
@@ -74,7 +86,9 @@ Prose-only mentions are outside the pin's reach entirely (13 such mentions exist
 
 ## Consider extending, not duplicating, the pin
 
-If your outcome is that N sites must carry the same tokens or pointer, **extend** the existing invariant rather than adding a parallel pin. #2263's record is that these claims decay: round 2 put the lane suffix in a comment; round 3's prose falsely asserted the launched set "cannot drift"; round 6's pin advertised block-grain coverage it did not have; round 7's pin advertised "ALL fenced code blocks" while staying column-zero-anchored. Any new assertion must be verified RED against the pre-fix text before it counts, **and the mutation must be the one that matters** — for this task that means an INDENTED fence at the real anchor site, not an unindented specimen.
+If your outcome is that N sites must carry the same tokens or pointer, **extend** the existing invariant rather than adding a parallel pin. #2263's record is that these claims decay: round 2 put the lane suffix in a comment; round 3's prose falsely asserted the launched set "cannot drift"; round 6's pin advertised block-grain coverage it did not have; round 7's advertised "ALL fenced code blocks" while staying column-zero-anchored; round 8's widened the detector correctly but then described its comment handling as matching bash, which a `;#` comment falsifies. Any new assertion must be verified RED against the pre-fix text before it counts, **and the mutation must be the one that matters** — for this task that means an indented fence at the real anchor site, not an unindented specimen.
+
+The transferable lesson #2263's round-7 reconciler drew, having watched seven rounds of this: **claims that state their exact rule and disclose their regex survive adversarial review; claims that paraphrase a regex into readable prose fail.** If you write a new pin here, describe what it matches, not what it means.
 
 ## Coordination — probe before dispatching a writer
 
