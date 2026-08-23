@@ -723,6 +723,15 @@ def arm2_sanity_band(committed_root: Path, behavior: str, rows: list[dict], seed
 # ---------------------------------------------------------------------------
 
 A2FIX_SERIES = ("arm2_new", "arm4_true", "arm7_true", "arm7_shufpair", "arm7_parity")
+# Registered adapter tags PER repaired arm (codex r2 blocker
+# arm2fix-mixed-adapter-provenance): the scorer's _adapter_tag_for emits
+# exactly these — anything else on a repaired arm's rows is foreign/mixed
+# provenance, never a configuration. Restricted-ness is decided from the
+# scorer's own ARM2_RESTRICTED_ADAPTERS (imported at resolve time).
+A2FIX_VALID_ADAPTER_TAGS: dict[str, frozenset[str]] = {
+    "arm2_ctx_native": frozenset({"v1", "v2-component-restricted"}),
+    "arm2q_ctx_native": frozenset({"v2-quantile", "v2-quantile-restricted"}),
+}
 # The amended §3 leg-2 lattice's verdict vocabulary — verbatim (plan v26).
 A2FIX_VERDICTS = (
     "INCONCLUSIVE-ADAPTER",
@@ -780,14 +789,34 @@ def a2fix_resolve_repairs(
                 f"[a2fix] COVERAGE ERROR: no arm2-family primary rows for behavior {b} "
                 "(the repaired lane did not run, or the wrong root was passed)"
             )
-        adapters = sorted({str(r.get("adapter")) for r in prim if r.get("arm") == repaired})
-        rows_restricted = bool(set(adapters) - {"v1", "None"})
+        # ONE canonical registered adapter tag per behavior (codex r2 blocker
+        # arm2fix-mixed-adapter-provenance): mixed tags across seeds/rungs
+        # would verdict an unregistered mixed estimator; a missing/foreign tag
+        # is invalid provenance. Both are loud exits, never a configuration.
+        from scripts.issue1739_r2v2_score import ARM2_RESTRICTED_ADAPTERS
+
+        tags = sorted({str(r.get("adapter")) for r in prim if r.get("arm") == repaired})
+        if len(tags) != 1:
+            raise SystemExit(
+                f"[a2fix] PROVENANCE ERROR: {b}'s repaired arm {repaired} carries "
+                f"{len(tags)} distinct adapter tags {tags} across its primary rows — one "
+                "behavior must be exactly ONE registered repair (mixed seed/rung "
+                "provenance is never a configuration)"
+            )
+        canonical = tags[0]
+        if canonical not in A2FIX_VALID_ADAPTER_TAGS[repaired]:
+            raise SystemExit(
+                f"[a2fix] PROVENANCE ERROR: {b}'s repaired arm {repaired} carries "
+                f"unregistered adapter tag {canonical!r} "
+                f"(valid: {sorted(A2FIX_VALID_ADAPTER_TAGS[repaired])})"
+            )
+        rows_restricted = canonical in ARM2_RESTRICTED_ADAPTERS
         parity_present = any(
             r.get("arm") == ARM_MAP and r.get("adapter") == "parity-row-matched" for r in prim
         )
         out[b] = {
             "repaired_arm": repaired,
-            "adapters": adapters,
+            "adapter": canonical,
             "rows_restricted": rows_restricted,
             "parity_present": parity_present,
             # HARD form (r2 blocker arm2fix-parity-partial-coverage): the §4
@@ -823,10 +852,18 @@ def a2fix_sanity_records(
     state is infra — the scorer emits sanity rows unconditionally on the
     arm2fix lane and missing seed summaries already fail the load — so a
     quiet pass=False here would feed the INCONCLUSIVE-ADAPTER kill verdict
-    with a coverage bug)."""
+    with a coverage bug). Non-finite sanity values / committed-band values are
+    VALIDITY errors caught BEFORE band containment (codex r2 blocker
+    arm2fix-nonfinite-sanity-mask: a NaN mean fails containment as
+    pass=False, misclassifying an invalid statistic as a MEASURED band miss),
+    and each consumed sanity row's adapter tag must match the behavior's
+    resolved canonical tag (foreign provenance never enters the mask)."""
+    import math
+
     out: dict = {}
     for b in behaviors:
         repaired_arm = resolution[b]["repaired_arm"]
+        canonical_tag = resolution[b]["adapter"]
         per_seed: dict[int, float] = {}
         for r in new_rows:
             if (
@@ -840,7 +877,20 @@ def a2fix_sanity_records(
                     raise SystemExit(
                         f"[a2fix] duplicate sanity row ({b}, seed {s}, {repaired_arm})"
                     )
-                per_seed[s] = float(r["rho_frozen"])
+                if str(r.get("adapter")) != canonical_tag:
+                    raise SystemExit(
+                        f"[a2fix] PROVENANCE ERROR: sanity row ({b}, seed {s}, "
+                        f"{repaired_arm}) carries adapter {r.get('adapter')!r} != the "
+                        f"behavior's resolved canonical tag {canonical_tag!r}"
+                    )
+                val = float(r["rho_frozen"])
+                if not math.isfinite(val):
+                    raise SystemExit(
+                        f"[a2fix] NON-FINITE STATISTIC: sanity row ({b}, seed {s}, "
+                        f"{repaired_arm}) carries rho {val!r} — invalid upstream statistic, "
+                        "never band-miss evidence"
+                    )
+                per_seed[s] = val
         vals = committed_band_vals(committed_root, b, ARM_CTXDIR)
         want = {int(s) for s in seeds}
         if not vals:
@@ -848,6 +898,12 @@ def a2fix_sanity_records(
                 f"[a2fix] COVERAGE ERROR: committed train-grid band unavailable for {b} "
                 f"under {committed_root} — the sanity mask cannot be evaluated "
                 "(infra gap, not a band miss)"
+            )
+        if any(not math.isfinite(float(v)) for v in vals):
+            raise SystemExit(
+                f"[a2fix] NON-FINITE STATISTIC: committed train-grid band for {b} carries "
+                "a non-finite cell value — invalid band instrument, never a containment "
+                "verdict input"
             )
         if set(per_seed) != want or len(per_seed) < n_seeds_required:
             raise SystemExit(
@@ -1389,7 +1445,7 @@ def build_arm2fix_table(args) -> dict:
 
     # PER-BEHAVIOR repair resolution (r1 sustained blocker
     # arm2fix-mixed-adapter-fold): the ladder runs per behavior, so
-    # {repaired_arm, adapters, rows_restricted, parity_required} resolve from
+    # {repaired_arm, adapter, rows_restricted, parity_required} resolve from
     # each behavior's OWN rows; --repaired-arm overrides per behavior.
     resolution = a2fix_resolve_repairs(new_rows, args.behaviors, args.repaired_arm_overrides)
     for b in sorted(resolution):
@@ -1488,7 +1544,7 @@ def write_arm2fix_markdown(table: dict, path: Path) -> None:
         f"- generated: {table['meta']['generated_ts']} @ {table['meta']['git_commit']}",
         "- per-behavior repair resolution: "
         + "; ".join(
-            f"{b}: `{res['repaired_arm']}` (adapters {res['adapters']}, "
+            f"{b}: `{res['repaired_arm']}` (adapter {res['adapter']}, "
             f"restricted={res['rows_restricted']}, parity={res['parity_present']})"
             for b, res in sorted(table["meta"]["resolution"].items())
         ),
@@ -1557,7 +1613,7 @@ def write_arm2fix_note(table: dict, path: Path) -> None:
         "",
         "- per-behavior repair resolution: "
         + "; ".join(
-            f"{b}: {res['repaired_arm']} (adapters {res['adapters']}, "
+            f"{b}: {res['repaired_arm']} (adapter {res['adapter']}, "
             f"restricted={res['rows_restricted']}, parity={res['parity_present']})"
             for b, res in sorted(m["resolution"].items())
         ),

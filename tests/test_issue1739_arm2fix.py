@@ -397,12 +397,27 @@ def test_seed_resume_predicate_keys_on_adapter(tmp_path):
     ok, _ = sc._seed_output_resume_ok(tmp_path, **kw)
     assert ok
     # preds-writing invocations require >=1 transfer_preds sidecar present
+    # (pre-manifest fallback floor for outputs whose meta lacks the manifest)
     ok, why = sc._seed_output_resume_ok(tmp_path, transfer_preds=True, **kw)
     assert not ok and "transfer_preds" in why
     (tmp_path / "transfer_preds").mkdir()
     (tmp_path / "transfer_preds" / "P-B-holdout-x.jsonl").write_text("")
     ok, _ = sc._seed_output_resume_ok(tmp_path, transfer_preds=True, **kw)
     assert ok
+    # MANIFEST verification (codex r2 minor): a meta-recorded sidecar manifest
+    # is checked file-by-file — one present-but-partial sidecar set can no
+    # longer read as resume-complete; an empty manifest is not a preds run.
+    meta4 = {**meta3, "transfer_preds_files": ["P-B-holdout-x.jsonl", "P-B-holdout-y.jsonl"]}
+    (tmp_path / "all_arms_spearman.json").write_text(json.dumps({"meta": meta4}))
+    ok, why = sc._seed_output_resume_ok(tmp_path, transfer_preds=True, **kw)
+    assert not ok and "manifest files absent" in why and "P-B-holdout-y.jsonl" in why
+    (tmp_path / "transfer_preds" / "P-B-holdout-y.jsonl").write_text("")
+    ok, _ = sc._seed_output_resume_ok(tmp_path, transfer_preds=True, **kw)
+    assert ok
+    meta5 = {**meta3, "transfer_preds_files": []}
+    (tmp_path / "all_arms_spearman.json").write_text(json.dumps({"meta": meta5}))
+    ok, why = sc._seed_output_resume_ok(tmp_path, transfer_preds=True, **kw)
+    assert not ok and "manifest empty" in why
     # legacy flagless resume is unchanged (no adapter on either side)
     meta_legacy = {
         "git_commit": "abc",
@@ -506,7 +521,7 @@ def _committed_root(tmp_path, bands):
     return tmp_path
 
 
-def _sanity_row(b, seed, rho, arm="arm2_ctx_native"):
+def _sanity_row(b, seed, rho, arm="arm2_ctx_native", adapter="v1"):
     return {
         "behavior": b,
         "seed": seed,
@@ -516,6 +531,7 @@ def _sanity_row(b, seed, rho, arm="arm2_ctx_native"):
         "protocol": "P-B",
         "fit": "sanity-elic-pool-cv",
         "eval_rung": "sanity_elic_pool_cv",
+        "adapter": adapter,
     }
 
 
@@ -538,10 +554,17 @@ def _prow(b, rung, seed, arm, rho, mv="true", adapter=None, sha=None, n_rows=Non
     return r
 
 
-def _res(arm="arm2_ctx_native", *, restricted=False, parity=False, adapters=None):
+def _res(arm="arm2_ctx_native", *, restricted=False, parity=False, adapter=None):
+    if adapter is None:
+        if not restricted:
+            adapter = "v1"
+        else:
+            adapter = "v2-quantile" if arm == "arm2q_ctx_native" else "v2-component-restricted"
     return {
         "repaired_arm": arm,
-        "adapters": adapters or (["v1"] if not restricted else ["v2-quantile"]),
+        # ONE canonical registered adapter tag per behavior (codex r2
+        # arm2fix-mixed-adapter-provenance)
+        "adapter": adapter,
         "rows_restricted": restricted,
         "parity_present": parity,
         # HARD form (r2 blocker arm2fix-parity-partial-coverage): the §4
@@ -584,7 +607,10 @@ def test_a2fix_sanity_records_pass_fail_and_coverage_exits(tmp_path):
         )
     # per-behavior arm filter: the mixed R-C shape (evil repaired arm2q, syco
     # arm2) reads each behavior's OWN sanity rows — complete on both sides
-    mixed_rows = [_sanity_row("evil", s, 0.55, arm="arm2q_ctx_native") for s in range(5)]
+    mixed_rows = [
+        _sanity_row("evil", s, 0.55, arm="arm2q_ctx_native", adapter="v2-quantile")
+        for s in range(5)
+    ]
     mixed_rows += [_sanity_row("evil", s, 0.10) for s in range(5)]  # unrepaired arm2 beside
     mixed_rows += [_sanity_row("sycophancy", s, 0.40) for s in range(5)]
     res_mixed = {"evil": _res("arm2q_ctx_native", restricted=True), "sycophancy": _res()}
@@ -593,6 +619,57 @@ def test_a2fix_sanity_records_pass_fail_and_coverage_exits(tmp_path):
     )
     assert recs_m["evil"]["arm"] == "arm2q_ctx_native" and recs_m["evil"]["pass"]
     assert recs_m["sycophancy"]["arm"] == "arm2_ctx_native" and recs_m["sycophancy"]["pass"]
+
+
+def test_a2fix_sanity_provenance_and_nonfinite_are_loud(tmp_path):
+    """codex r2 blockers: (a) a sanity row whose adapter tag differs from the
+    behavior's resolved canonical tag is foreign provenance — loud exit, never
+    mask input; (b) a NaN sanity value or committed-band value is a NON-FINITE
+    validity exit BEFORE band containment — never a measured band miss
+    (pre-fix: NaN mean failed containment as pass=False -> false
+    INDETERMINATE-ADAPTER)."""
+    root = _committed_root(tmp_path, {"evil": (0.40, 0.70)})
+    ok_rows = [_sanity_row("evil", s, 0.55) for s in range(5)]
+    # (a) adapter-tag mismatch on a consumed sanity row
+    bad_tag = list(ok_rows)
+    bad_tag[2] = _sanity_row("evil", 2, 0.55, adapter="v2-component-restricted")
+    with pytest.raises(SystemExit, match=r"PROVENANCE ERROR.*sanity row"):
+        fold.a2fix_sanity_records(bad_tag, ["evil"], range(5), {"evil": _res()}, root)
+    # (b1) NaN sanity value -> validity exit, not a band verdict
+    bad_val = list(ok_rows)
+    bad_val[1] = _sanity_row("evil", 1, float("nan"))
+    with pytest.raises(SystemExit, match=r"NON-FINITE STATISTIC.*sanity row"):
+        fold.a2fix_sanity_records(bad_val, ["evil"], range(5), {"evil": _res()}, root)
+    # (b2) NaN committed-band cell -> validity exit, not a containment input
+    root_nan = _committed_root(tmp_path / "nanband", {"evil": (0.40, float("nan"))})
+    with pytest.raises(SystemExit, match=r"NON-FINITE STATISTIC.*committed"):
+        fold.a2fix_sanity_records(ok_rows, ["evil"], range(5), {"evil": _res()}, root_nan)
+
+
+def test_a2fix_resolver_rejects_mixed_or_foreign_adapter_tags():
+    """codex r2 blocker arm2fix-mixed-adapter-provenance regression: seed 0
+    tagged v1 + seed 1 tagged v2-component-restricted within ONE behavior is
+    a loud provenance exit — never collapsed into one rows_restricted bool;
+    a missing/unregistered tag is equally loud. Fails pre-fix (the set was
+    silently reduced to configuration)."""
+    mixed = [
+        _prow("evil", "evil_pair", 0, "arm2_ctx_native", 0.3, adapter="v1"),
+        _prow("evil", "evil_pair", 1, "arm2_ctx_native", 0.3, adapter="v2-component-restricted"),
+    ]
+    with pytest.raises(SystemExit, match=r"PROVENANCE ERROR.*distinct adapter tags"):
+        fold.a2fix_resolve_repairs(mixed, ["evil"])
+    # missing tag (adapter key absent -> "None") is unregistered provenance
+    missing = [_prow("evil", "evil_pair", 0, "arm2_ctx_native", 0.3)]
+    with pytest.raises(SystemExit, match=r"PROVENANCE ERROR.*unregistered adapter tag"):
+        fold.a2fix_resolve_repairs(missing, ["evil"])
+    # a foreign tag on the repaired arm is unregistered too
+    foreign = [_prow("evil", "evil_pair", 0, "arm2q_ctx_native", 0.3, adapter="v1")]
+    with pytest.raises(SystemExit, match=r"PROVENANCE ERROR.*unregistered adapter tag"):
+        fold.a2fix_resolve_repairs(foreign, ["evil"])
+    # the canonical single-tag form resolves and records the tag
+    ok = [_prow("evil", "evil_pair", s, "arm2_ctx_native", 0.3, adapter="v1") for s in range(2)]
+    res = fold.a2fix_resolve_repairs(ok, ["evil"])
+    assert res["evil"]["adapter"] == "v1" and not res["evil"]["rows_restricted"]
 
 
 def test_a2fix_resolve_repairs_mixed_topology_and_overrides():

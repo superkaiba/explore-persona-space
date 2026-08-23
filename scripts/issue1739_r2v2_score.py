@@ -900,12 +900,24 @@ def _seed_output_resume_ok(
     for name in ("all_arms_spearman.json", "map_diagnostics.json", "readout_pools.json"):
         if not (out_dir / name).exists():
             return False, f"{name} absent"
-    if transfer_preds and not any((out_dir / "transfer_preds").glob("P-B-holdout-*.jsonl")):
-        return False, "transfer_preds sidecars absent (this invocation writes preds)"
     try:
         meta = json.loads((out_dir / "all_arms_spearman.json").read_text())["meta"]
     except (OSError, json.JSONDecodeError, UnicodeDecodeError, KeyError, TypeError) as exc:
         return False, f"summary meta unreadable ({type(exc).__name__}: {exc})"
+    if transfer_preds:
+        # preds-writing invocations verify the realized sidecar MANIFEST the
+        # summary recorded at completion (codex r2 minor: one stale/empty
+        # sidecar must not read as resume-complete); pre-manifest outputs
+        # (meta without the key) fall back to the >=1-sidecar floor.
+        manifest = meta.get("transfer_preds_files")
+        if isinstance(manifest, list):
+            if not manifest:
+                return False, "transfer_preds manifest empty (preds-writing invocation)"
+            missing = [n for n in manifest if not (out_dir / "transfer_preds" / n).exists()]
+            if missing:
+                return False, f"transfer_preds manifest files absent: {missing[:4]}"
+        elif not any((out_dir / "transfer_preds").glob("P-B-holdout-*.jsonl")):
+            return False, "transfer_preds sidecars absent (this invocation writes preds)"
     checks = {
         "git_commit": (meta.get("git_commit"), commit),
         "out_schema_version": (meta.get("out_schema_version"), SEED_OUT_SCHEMA_VERSION),
@@ -2707,6 +2719,22 @@ def main(argv: list[str] | None = None) -> int:
                             **(
                                 {"a2_sanity_folds": int(getattr(args, "a2_sanity_folds", 5))}
                                 if getattr(args, "arm2_adapter", None) is not None
+                                else {}
+                            ),
+                            # realized preds-sidecar MANIFEST (codex r2 minor):
+                            # the resume predicate verifies every listed file
+                            # exists — one stale/empty sidecar can no longer
+                            # satisfy a preds-writing invocation's resume.
+                            **(
+                                {
+                                    "transfer_preds_files": sorted(
+                                        p.name
+                                        for p in (out_path.parent / "transfer_preds").glob(
+                                            "*.jsonl"
+                                        )
+                                    )
+                                }
+                                if getattr(args, "transfer_preds", False)
                                 else {}
                             ),
                         }
