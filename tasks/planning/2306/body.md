@@ -3,7 +3,8 @@ title: /issue Step 10d merge fence never binds $WT — git -C '' retargets every
   op at the SHARED repo root (destroys a valid gate verdict; reaches a shared-root
   working-tree revert)
 kind: infra
-tags: []
+tags:
+- wf-fix
 created_at: '2026-08-14T23:41:14Z'
 has_clean_result: false
 origin_prompt: 'Surfaced by #2293 Step 10d: the extracted safe-case merge fence uses
