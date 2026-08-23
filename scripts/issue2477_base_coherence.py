@@ -2143,7 +2143,7 @@ def _render_figures(payload: dict, out_dir: Path) -> list[Path]:
         ax.set_xticks(range(len(cap_arms)))
         ax.set_xticklabels([ARM_LABELS[n] for n in cap_arms], rotation=18, ha="right")
         ax.set_ylabel("Cap-hit fraction")
-        ax.set_title('Cap-hit fraction by arm (finish_reason == "length"; recorded arms only)')
+        ax.set_title("Fraction ending at the 1,024-token cap")
         _save(fig, "cap_hit_by_arm")
 
     # --- distinct-3gram vs judge score scatter -------------------------------

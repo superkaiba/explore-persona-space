@@ -1,11 +1,23 @@
 {
-  "commit": "c1c8abb0",
-  "render_id": "4e69cff2b1604976",
-  "git_commit": "c1c8abb0b6e6e2043c716efad5a242f99789d012",
-  "git_dirty": false,
-  "git_argv0_state": "tracked",
+  "commit": "40fef8ec+dirty",
+  "render_id": "6012af19b1a849c0",
+  "git_commit": "40fef8ec5bb6b1879de494575f305c6e8a3cd5c9",
+  "git_dirty": true,
+  "git_dirty_paths": [
+    "figures/issue_2477/coherence_by_arm.meta.json",
+    "figures/issue_2477/coherence_by_arm.pdf",
+    "figures/issue_2477/coherence_by_arm.png",
+    "figures/issue_2477/item_mean_hist_by_arm.meta.json",
+    "figures/issue_2477/item_mean_hist_by_arm.pdf",
+    "figures/issue_2477/item_mean_hist_by_arm.png",
+    "figures/issue_2477/per_depth_lines_rawmt.meta.json",
+    "figures/issue_2477/per_depth_lines_rawmt.pdf",
+    "figures/issue_2477/per_depth_lines_rawmt.png",
+    "scripts/issue2477_base_coherence.py"
+  ],
+  "git_argv0_state": "modified",
   "git_argv0_path": "scripts/issue2477_base_coherence.py",
-  "created": "2026-08-23T02:31:08Z",
+  "created": "2026-08-23T03:25:29Z",
   "figsize": [
     5.6,
     3.6
@@ -39,7 +51,7 @@
     "fig_texts": [],
     "axes": [
       {
-        "title_left": "Cap-hit fraction by arm (finish_reason == \"length\"; recorded arms only)",
+        "title_left": "Fraction ending at the 1,024-token cap",
         "ylabel": "Cap-hit fraction",
         "xticklabels": [
           "Base, chat template (fresh)",
