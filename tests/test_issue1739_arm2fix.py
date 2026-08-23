@@ -360,6 +360,60 @@ def test_seed_resume_predicate_keys_on_adapter(tmp_path):
     )
     assert not ok and "arm2_adapter" in why
 
+    # r1 CONCERN arm2fix-resume-key-completeness: EVERY output-affecting lane
+    # key is in the resume identity — arms_only_extra, a2_sanity_folds (on the
+    # adapter lane), and the transfer_preds sidecar existence companion.
+    ok, why = sc._seed_output_resume_ok(
+        tmp_path,
+        commit="abc",
+        seed=0,
+        map_variants=["true"],
+        arm2_adapter="v2-component-restricted",
+        skip_map_fit=True,
+        arms_only_extra=True,
+    )
+    assert not ok and "arms_only_extra" in why
+    ok, why = sc._seed_output_resume_ok(
+        tmp_path,
+        commit="abc",
+        seed=0,
+        map_variants=["true"],
+        arm2_adapter="v2-component-restricted",
+        skip_map_fit=True,
+        a2_sanity_folds=5,
+    )
+    assert not ok and "a2_sanity_folds" in why
+    meta3 = {**meta2, "arms_only_extra": True, "a2_sanity_folds": 5}
+    (tmp_path / "all_arms_spearman.json").write_text(json.dumps({"meta": meta3}))
+    kw = dict(
+        commit="abc",
+        seed=0,
+        map_variants=["true"],
+        arm2_adapter="v2-component-restricted",
+        skip_map_fit=True,
+        arms_only_extra=True,
+        a2_sanity_folds=5,
+    )
+    ok, _ = sc._seed_output_resume_ok(tmp_path, **kw)
+    assert ok
+    # preds-writing invocations require >=1 transfer_preds sidecar present
+    ok, why = sc._seed_output_resume_ok(tmp_path, transfer_preds=True, **kw)
+    assert not ok and "transfer_preds" in why
+    (tmp_path / "transfer_preds").mkdir()
+    (tmp_path / "transfer_preds" / "P-B-holdout-x.jsonl").write_text("")
+    ok, _ = sc._seed_output_resume_ok(tmp_path, transfer_preds=True, **kw)
+    assert ok
+    # legacy flagless resume is unchanged (no adapter on either side)
+    meta_legacy = {
+        "git_commit": "abc",
+        "out_schema_version": sc.SEED_OUT_SCHEMA_VERSION,
+        "seed": 0,
+        "map_variants": ["true"],
+    }
+    (tmp_path / "all_arms_spearman.json").write_text(json.dumps({"meta": meta_legacy}))
+    ok, _ = sc._seed_output_resume_ok(tmp_path, commit="abc", seed=0, map_variants=["true"])
+    assert ok
+
 
 # ---------------------------------------------------------------------------
 # 6. matched-regime sanity read (real run_cell path on a synthetic pool)
@@ -484,27 +538,118 @@ def _prow(b, rung, seed, arm, rho, mv="true", adapter=None, sha=None, n_rows=Non
     return r
 
 
-def test_a2fix_sanity_records_pass_fail_and_incomplete(tmp_path):
-    """Single-behavior sanity FAIL -> exclusion recorded with miss side; a
-    missing seed is sanity-FAILED with the incompleteness named (plan §3)."""
+def _res(arm="arm2_ctx_native", *, restricted=False, parity=False, adapters=None):
+    return {
+        "repaired_arm": arm,
+        "adapters": adapters or (["v1"] if not restricted else ["v2-quantile"]),
+        "rows_restricted": restricted,
+        "parity_present": parity,
+        "parity_required": bool(restricted and parity),
+    }
+
+
+def test_a2fix_sanity_records_pass_fail_and_coverage_exits(tmp_path):
+    """Sanity PASS/FAIL is reserved for the MEASURED band read; every
+    incomplete/missing-band state is a LOUD infra coverage exit — never
+    pass=False evidence against the adapter (r1 sustained blocker
+    arm2fix-sanity-coverage-fail-open). Fails pre-fix: the pre-r2 code
+    converted a 3-of-5-seed record into pass=False."""
     root = _committed_root(tmp_path, {"evil": (0.40, 0.70), "sycophancy": (0.30, 0.53)})
+    res = {"evil": _res(), "sycophancy": _res()}
     rows = [_sanity_row("evil", s, 0.55) for s in range(5)]
     rows += [_sanity_row("sycophancy", s, 0.60) for s in range(5)]  # above band
-    recs = fold.a2fix_sanity_records(
-        rows, ["evil", "sycophancy"], range(5), "arm2_ctx_native", root
-    )
+    recs = fold.a2fix_sanity_records(rows, ["evil", "sycophancy"], range(5), res, root)
     assert recs["evil"]["pass"] and recs["evil"]["miss_side"] is None
     assert recs["evil"]["n_seeds"] == 5 and len(recs["evil"]["per_seed"]) == 5
     assert not recs["sycophancy"]["pass"] and recs["sycophancy"]["miss_side"] == "above"
-    # incomplete record (3 of 5 seeds) is FAIL with a named reason, never a mean
+    # incomplete record (3 of 5 seeds) is an INFRA coverage exit, never a verdict
     rows3 = [_sanity_row("evil", s, 0.55) for s in range(3)]
-    recs3 = fold.a2fix_sanity_records(rows3, ["evil"], range(5), "arm2_ctx_native", root)
-    assert not recs3["evil"]["pass"] and "incomplete" in recs3["evil"]["reason"]
+    with pytest.raises(SystemExit, match=r"COVERAGE ERROR.*incomplete"):
+        fold.a2fix_sanity_records(rows3, ["evil"], range(5), {"evil": _res()}, root)
+    # missing committed band is an INFRA coverage exit too
+    with pytest.raises(SystemExit, match=r"COVERAGE ERROR.*band"):
+        fold.a2fix_sanity_records(
+            [_sanity_row("hallucination", s, 0.5) for s in range(5)],
+            ["hallucination"],
+            range(5),
+            {"hallucination": _res()},
+            root,
+        )
     # duplicate sanity row fails loud
     with pytest.raises(SystemExit, match="duplicate sanity row"):
         fold.a2fix_sanity_records(
-            [*rows, _sanity_row("evil", 0, 0.5)], ["evil"], range(5), "arm2_ctx_native", root
+            [*rows, _sanity_row("evil", 0, 0.5)], ["evil"], range(5), {"evil": _res()}, root
         )
+    # per-behavior arm filter: the mixed R-C shape (evil repaired arm2q, syco
+    # arm2) reads each behavior's OWN sanity rows — complete on both sides
+    mixed_rows = [_sanity_row("evil", s, 0.55, arm="arm2q_ctx_native") for s in range(5)]
+    mixed_rows += [_sanity_row("evil", s, 0.10) for s in range(5)]  # unrepaired arm2 beside
+    mixed_rows += [_sanity_row("sycophancy", s, 0.40) for s in range(5)]
+    res_mixed = {"evil": _res("arm2q_ctx_native", restricted=True), "sycophancy": _res()}
+    recs_m = fold.a2fix_sanity_records(
+        mixed_rows, ["evil", "sycophancy"], range(5), res_mixed, root
+    )
+    assert recs_m["evil"]["arm"] == "arm2q_ctx_native" and recs_m["evil"]["pass"]
+    assert recs_m["sycophancy"]["arm"] == "arm2_ctx_native" and recs_m["sycophancy"]["pass"]
+
+
+def test_a2fix_resolve_repairs_mixed_topology_and_overrides():
+    """PER-BEHAVIOR resolution (r1 sustained blocker arm2fix-mixed-adapter-fold):
+    a behavior that ran the quantile repair resolves to arm2q while its
+    siblings stay on arm2 — one fold run, mixed topology. Fails pre-fix: the
+    pre-r2 fold resolved ONE global repaired_arm."""
+    new = [
+        _prow("evil", "evil_pair", 0, "arm2q_ctx_native", 0.5, adapter="v2-quantile"),
+        _prow("evil", "evil_pair", 0, "arm2_ctx_native", 0.1, adapter="v1"),
+        _prow("sycophancy", "sycomwe", 0, "arm2_ctx_native", 0.4, adapter="v1"),
+        _prow(
+            "evil",
+            "evil_pair",
+            0,
+            fold.ARM_MAP,
+            0.6,
+            adapter="parity-row-matched",
+            sha="h",
+            n_rows=9,
+        ),
+    ]
+    res = fold.a2fix_resolve_repairs(new, ["evil", "sycophancy"])
+    assert res["evil"]["repaired_arm"] == "arm2q_ctx_native"
+    assert res["evil"]["rows_restricted"] and res["evil"]["parity_present"]
+    assert res["evil"]["parity_required"]
+    assert res["sycophancy"]["repaired_arm"] == "arm2_ctx_native"
+    assert not res["sycophancy"]["rows_restricted"] and not res["sycophancy"]["parity_required"]
+    # per-behavior override honored; an override naming an absent arm exits loud
+    res_ov = fold.a2fix_resolve_repairs(new, ["evil"], {"evil": "arm2_ctx_native"})
+    assert res_ov["evil"]["repaired_arm"] == "arm2_ctx_native"
+    assert not res_ov["evil"]["rows_restricted"]  # v1 rows only under the override
+    with pytest.raises(SystemExit, match="no primary"):
+        fold.a2fix_resolve_repairs(new, ["sycophancy"], {"sycophancy": "arm2q_ctx_native"})
+    # a behavior with NO arm2-family primary rows is a loud coverage error
+    with pytest.raises(SystemExit, match="COVERAGE ERROR"):
+        fold.a2fix_resolve_repairs(new, ["hallucination"])
+
+
+def test_parse_repaired_arm_tokens():
+    behaviors = ["evil", "sycophancy"]
+    assert fold.parse_repaired_arm_tokens(["auto"], behaviors) == {}
+    assert fold.parse_repaired_arm_tokens(["arm2q_ctx_native"], behaviors) == {
+        "evil": "arm2q_ctx_native",
+        "sycophancy": "arm2q_ctx_native",
+    }
+    assert fold.parse_repaired_arm_tokens(["evil=arm2q_ctx_native"], behaviors) == {
+        "evil": "arm2q_ctx_native"
+    }
+    with pytest.raises(SystemExit, match="mixes"):
+        fold.parse_repaired_arm_tokens(["arm2_ctx_native", "evil=arm2q_ctx_native"], behaviors)
+    with pytest.raises(SystemExit, match="unknown behavior"):
+        fold.parse_repaired_arm_tokens(["nope=arm2_ctx_native"], behaviors)
+    with pytest.raises(SystemExit, match="unknown arm"):
+        fold.parse_repaired_arm_tokens(["evil=arm9_zzz"], behaviors)
+    with pytest.raises(SystemExit, match="duplicates"):
+        fold.parse_repaired_arm_tokens(["evil=arm2_ctx_native", "evil=arm2q_ctx_native"], behaviors)
+    with pytest.raises(SystemExit, match="exactly one"):
+        fold.parse_repaired_arm_tokens(["arm2_ctx_native", "arm2q_ctx_native"], behaviors)
 
 
 def _series_rows(behaviors_rungs, seeds, d=0.05, base=0.30):
@@ -524,10 +669,10 @@ def test_a2fix_join_restated_denominator_and_gap_exit():
     seeds = [0, 1]
     pairs = [("evil", "evil_pair"), ("evil", "toxicchat"), ("sycophancy", "sycomwe")]
     new, banked = _series_rows(pairs, seeds)
-    cells, meta = fold.a2fix_index_cells(new, banked, "arm2_ctx_native")
-    assert meta["rows_restricted"] is False and meta["parity_present"] is False
+    res = {"evil": _res(), "sycophancy": _res()}
+    cells = fold.a2fix_index_cells(new, banked, res)
     # passing set excludes sycophancy -> denominator RESTATED from 6 to 4
-    join = fold.a2fix_join_assert(cells, ["evil"], seeds, REG2)
+    join = fold.a2fix_join_assert(cells, ["evil"], seeds, REG2, resolution=res)
     assert join["expected_pairs"] == 4 and join["restated_from"] == 6
     assert join["realized_pairs"] == 4 and "4/4" in join["assert"]
     # a missing banked series cell on the passing set is a loud exit
@@ -536,12 +681,53 @@ def test_a2fix_join_restated_denominator_and_gap_exit():
         for r in banked
         if not (r["eval_rung"] == "evil_pair" and r["seed"] == 1 and r["arm"] == fold.ARM_MAP)
     ]
-    cells_gap, _ = fold.a2fix_index_cells(new, banked_gap, "arm2_ctx_native")
+    cells_gap = fold.a2fix_index_cells(new, banked_gap, res)
     with pytest.raises(SystemExit, match="join INCOMPLETE"):
-        fold.a2fix_join_assert(cells_gap, ["evil"], seeds, REG2)
+        fold.a2fix_join_assert(cells_gap, ["evil"], seeds, REG2, resolution=res)
     # duplicate join key fails loud at indexing time
     with pytest.raises(SystemExit, match="duplicate join key"):
-        fold.a2fix_index_cells([*new, new[0]], banked, "arm2_ctx_native")
+        fold.a2fix_index_cells([*new, new[0]], banked, res)
+
+
+def test_a2fix_join_mixed_parity_demand_is_per_behavior():
+    """The R-B/R-C mixed regression (r1 sustained blocker): parity series are
+    demanded ONLY for the behavior whose repair restricted rows — the pre-r2
+    global parity_required=True SystemExited on sycophancy's plan-conforming
+    ABSENT parity rows (the plan forbids refitting unrestricted behaviors)."""
+    seeds = [0, 1]
+    pairs = [("evil", "evil_pair"), ("evil", "toxicchat"), ("sycophancy", "sycomwe")]
+    new, banked = _series_rows(pairs, seeds)
+    # evil ran restricted + parity: add parity rows for evil ONLY
+    for rung in ("evil_pair", "toxicchat"):
+        for s in seeds:
+            new.append(
+                _prow(
+                    "evil",
+                    rung,
+                    s,
+                    fold.ARM_MAP,
+                    0.4,
+                    adapter="parity-row-matched",
+                    sha="h" * 8,
+                    n_rows=50,
+                )
+            )
+    res = {
+        "evil": _res(restricted=True, parity=True),
+        "sycophancy": _res(),
+    }
+    cells = fold.a2fix_index_cells(new, banked, res)
+    join = fold.a2fix_join_assert(cells, ["evil", "sycophancy"], seeds, REG2, resolution=res)
+    assert join["expected_pairs"] == 6
+    assert join["series_required_by_behavior"]["evil"][-1] == "arm7_parity"
+    assert "arm7_parity" not in join["series_required_by_behavior"]["sycophancy"]
+    # the OLD global demand (parity required for every behavior) would gap out
+    res_global = {
+        "evil": _res(restricted=True, parity=True),
+        "sycophancy": _res(restricted=True, parity=True),
+    }
+    with pytest.raises(SystemExit, match="join INCOMPLETE"):
+        fold.a2fix_join_assert(cells, ["evil", "sycophancy"], seeds, REG2, resolution=res_global)
 
 
 def test_a2fix_per_rung_d_read_and_parity_hash():
@@ -565,9 +751,9 @@ def test_a2fix_per_rung_d_read_and_parity_hash():
     for r in new:
         if r["arm"] == "arm2_ctx_native":
             r["train_row_ids_sha256"], r["train_rows_n"] = "h" * 8, 100
-    cells, meta = fold.a2fix_index_cells(new, banked, "arm2_ctx_native")
-    assert meta["parity_present"] is True
-    n = fold.a2fix_parity_hash_assert(cells, ["evil"], seeds, REG2)
+    res = {"evil": _res(restricted=True, parity=True)}
+    cells = fold.a2fix_index_cells(new, banked, res)
+    n = fold.a2fix_parity_hash_assert(cells, ["evil"], seeds, REG2, res)
     assert n == 3
     sanity = {"evil": {"pass": True}}
     table = fold.a2fix_per_rung(cells, ["evil"], seeds, sanity)
@@ -582,7 +768,15 @@ def test_a2fix_per_rung_d_read_and_parity_hash():
     key = ("evil", "evil_pair", 0, "arm7_parity")
     bad[key] = {**bad[key], "train_row_ids_sha256": "different"}
     with pytest.raises(SystemExit, match="PARITY VIOLATION"):
-        fold.a2fix_parity_hash_assert(bad, ["evil"], seeds, REG2)
+        fold.a2fix_parity_hash_assert(bad, ["evil"], seeds, REG2, res)
+    # a None-for-None hash match is NOT parity evidence (r1 CONCERN
+    # arm2fix-parity-currency-fail-open) — missing currency exits loud
+    bad2 = dict(cells)
+    bad2[key] = {k: v for k, v in bad2[key].items() if k != "train_row_ids_sha256"}
+    k2 = ("evil", "evil_pair", 0, "arm2_new")
+    bad2[k2] = {k: v for k, v in bad2[k2].items() if k != "train_row_ids_sha256"}
+    with pytest.raises(SystemExit, match="PARITY CURRENCY MISSING"):
+        fold.a2fix_parity_hash_assert(bad2, ["evil"], seeds, REG2, res)
 
 
 def _entry(b, rung, d_mean, tci, ctx_ci=None, d_parity=None, excl=False):
@@ -607,11 +801,11 @@ def test_a2fix_lattice_inconclusive_adapter_first():
         "sycophancy": {"pass": False},
         "hallucination": {"pass": True},
     }
+    res = {"evil": _res(), "sycophancy": _res(), "hallucination": _res()}
     v = fold.a2fix_lattice(
         [_entry("hallucination", "nqopen", 0.1, [0.05, 0.15], [0.02, 0.2])],
         sanity,
-        rows_restricted=False,
-        parity_present=False,
+        resolution=res,
     )
     assert v["verdict"] == "INCONCLUSIVE-ADAPTER"
     assert v["per_behavior_adapter_verdicts"] == {
@@ -635,7 +829,8 @@ def test_a2fix_lattice_map_advantage_not_shown_and_exclusion():
         # excluded behavior carries a large positive D that must NOT rescue the median
         _entry("hallucination", "nqopen", 0.5, [0.4, 0.6], [0.4, 0.6], excl=True),
     ]
-    v = fold.a2fix_lattice(rows, sanity, rows_restricted=False, parity_present=False)
+    res = {"evil": _res(), "sycophancy": _res(), "hallucination": _res()}
+    v = fold.a2fix_lattice(rows, sanity, resolution=res)
     assert v["verdict"] == "MAP-ADVANTAGE-NOT-SHOWN"
     assert "failure to demonstrate" in v["reason"]
     assert v["n_rungs_in_median"] == 2 and v["median_D_passing_set"] < 0
@@ -648,8 +843,12 @@ def test_a2fix_lattice_map_beats_requires_parity_when_restricted():
         _entry("evil", "evil_pair", 0.06, [0.02, 0.10], [0.01, 0.11], d_parity=0.05),
         _entry("sycophancy", "sycomwe", 0.04, [0.01, 0.07], [0.005, 0.08], d_parity=0.03),
     ]
+    res_all = {
+        "evil": _res(restricted=True, parity=True),
+        "sycophancy": _res(restricted=True, parity=True),
+    }
     # restricted + positive parity read -> MAP-BEATS
-    v = fold.a2fix_lattice(rows, sanity, rows_restricted=True, parity_present=True)
+    v = fold.a2fix_lattice(rows, sanity, resolution=res_all)
     assert v["verdict"] == "MAP-BEATS-CONTEXT-DIRECTION"
     assert v["parity_read"]["positive"] is True
     # restricted + NEGATIVE parity read -> WEAK-MIXED naming the parity duty
@@ -657,18 +856,69 @@ def test_a2fix_lattice_map_beats_requires_parity_when_restricted():
         _entry("evil", "evil_pair", 0.06, [0.02, 0.10], [0.01, 0.11], d_parity=-0.02),
         _entry("sycophancy", "sycomwe", 0.04, [0.01, 0.07], [0.005, 0.08], d_parity=-0.01),
     ]
-    v2 = fold.a2fix_lattice(rows_neg, sanity, rows_restricted=True, parity_present=True)
+    v2 = fold.a2fix_lattice(rows_neg, sanity, resolution=res_all)
     assert v2["verdict"] == "WEAK-MIXED" and "parity" in v2["reason"]
     # unrestricted (v1 repair was a no-op) needs no parity read
-    v3 = fold.a2fix_lattice(rows, sanity, rows_restricted=False, parity_present=False)
+    res_v1 = {"evil": _res(), "sycophancy": _res()}
+    v3 = fold.a2fix_lattice(rows, sanity, resolution=res_v1)
     assert v3["verdict"] == "MAP-BEATS-CONTEXT-DIRECTION"
+    assert "parity_read" not in v3
     # positive median but NO flagship with both CIs clear -> WEAK-MIXED
     rows_noflag = [
         _entry("evil", "evil_pair", 0.06, [-0.01, 0.13], [0.01, 0.11]),
         _entry("sycophancy", "sycomwe", 0.04, [0.01, 0.07], [-0.005, 0.08]),
     ]
-    v4 = fold.a2fix_lattice(rows_noflag, sanity, rows_restricted=False, parity_present=False)
+    v4 = fold.a2fix_lattice(rows_noflag, sanity, resolution=res_v1)
     assert v4["verdict"] == "WEAK-MIXED" and "flagship" in v4["reason"]
+
+
+def test_a2fix_lattice_mixed_parity_scoped_to_restricted_behaviors():
+    """Mixed topology (r1 sustained blocker): the parity read is computed over
+    exactly the ROWS-RESTRICTED passing behaviors' rungs — sycophancy's
+    (correctly) absent D_parity neither blocks MAP-BEATS nor dilutes the
+    parity median."""
+    sanity = {"evil": {"pass": True}, "sycophancy": {"pass": True}}
+    res = {"evil": _res("arm2q_ctx_native", restricted=True, parity=True), "sycophancy": _res()}
+    rows = [
+        _entry("evil", "evil_pair", 0.06, [0.02, 0.10], [0.01, 0.11], d_parity=0.05),
+        _entry("sycophancy", "sycomwe", 0.04, [0.01, 0.07], [0.005, 0.08]),  # no parity
+    ]
+    v = fold.a2fix_lattice(rows, sanity, resolution=res)
+    assert v["verdict"] == "MAP-BEATS-CONTEXT-DIRECTION"
+    assert v["rows_restricted_behaviors"] == ["evil"]
+    assert v["parity_read"]["behaviors"] == ["evil"] and v["parity_read"]["n_rungs"] == 1
+    # evil's parity read negative -> WEAK-MIXED even though syco carries no parity
+    rows_neg = [
+        _entry("evil", "evil_pair", 0.06, [0.02, 0.10], [0.01, 0.11], d_parity=-0.02),
+        _entry("sycophancy", "sycomwe", 0.04, [0.01, 0.07], [0.005, 0.08]),
+    ]
+    v2 = fold.a2fix_lattice(rows_neg, sanity, resolution=res)
+    assert v2["verdict"] == "WEAK-MIXED" and "parity" in v2["reason"]
+
+
+def test_a2fix_finite_and_ctx_gap_asserts():
+    """Hardening gates (r1 CONCERNs arm2fix-nonfinite-verdict +
+    arm2fix-context-bootstrap-gap): non-finite statistics and passing-set
+    ctx-CI gaps are loud exits BEFORE the lattice, never notes under a
+    rendered verdict."""
+    ok_rows = [_entry("evil", "evil_pair", 0.06, [0.02, 0.10], [0.01, 0.11])]
+    assert fold.a2fix_assert_finite(ok_rows) > 0
+    bad = [_entry("evil", "evil_pair", float("nan"), [0.02, 0.10], [0.01, 0.11])]
+    with pytest.raises(SystemExit, match="NON-FINITE"):
+        fold.a2fix_assert_finite(bad)
+    bad_ctx = [_entry("evil", "evil_pair", 0.06, [0.02, 0.10], [float("inf"), 0.11])]
+    with pytest.raises(SystemExit, match="NON-FINITE"):
+        fold.a2fix_assert_finite(bad_ctx)
+    # excluded rows are skipped (they never reach the median)
+    assert fold.a2fix_assert_finite([_entry("e", "r", float("nan"), None, excl=True)]) == 0
+    # ctx-CI gap on a complete passing-set rung is a loud exit ...
+    gap = [_entry("evil", "evil_pair", 0.06, [0.02, 0.10], None)]
+    gap[0]["ctx_bootstrap_note"] = "missing preds file: X"
+    with pytest.raises(SystemExit, match="CTX-BOOTSTRAP GAP"):
+        fold.a2fix_ctx_gap_assert(gap, skipped=False)
+    # ... unless the bootstrap was deliberately skipped or the row is excluded
+    fold.a2fix_ctx_gap_assert(gap, skipped=True)
+    fold.a2fix_ctx_gap_assert([_entry("e", "r", 0.1, None, None, excl=True)], skipped=False)
 
 
 def test_p4_directions_pure_core_recovers_plant():

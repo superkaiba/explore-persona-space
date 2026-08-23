@@ -732,23 +732,98 @@ A2FIX_VERDICTS = (
 )
 
 
+def _is_primary_pb_row(r: dict) -> bool:
+    return (
+        r.get("protocol") == "P-B"
+        and r.get("fit") == f"P-B-holdout-{r.get('eval_rung')}"
+        and r.get("map_variant") in (None, "true")
+    )
+
+
+def a2fix_resolve_repairs(
+    new_rows: list[dict], behaviors, overrides: dict[str, str] | None = None
+) -> dict[str, dict]:
+    """PER-BEHAVIOR repair resolution (code-review r1 sustained blocker
+    ``arm2fix-mixed-adapter-fold``): plan v26 §4/§7 run the R-A→R-B→R-C
+    ladder + the matched-budget parity duty PER BEHAVIOR, and the committed
+    D0 P2 evidence makes the MIXED topology the expected production shape
+    (degenerate midpoint split fires for evil only). One global
+    ``repaired_arm``/``rows_restricted``/``parity_required`` cannot express
+    that shape — it either crashes the join on plan-conforming input (R-B:
+    parity rows correctly absent on unrestricted behaviors) or silently
+    mints INCONCLUSIVE-ADAPTER (R-C: arm2q rows exist only where the
+    quantile adapter ran).
+
+    Resolution is MECHANICAL from each behavior's OWN rows: repaired_arm =
+    override if given, else arm2q when it has primary rows, else arm2;
+    adapters/rows_restricted from the repaired arm's own adapter tags;
+    parity_present from the behavior's own arm7 parity-row-matched rows. A
+    behavior with NO arm2-family primary rows is a loud coverage error."""
+    out: dict[str, dict] = {}
+    for b in behaviors:
+        prim = [r for r in new_rows if r.get("behavior") == b and _is_primary_pb_row(r)]
+        fam_present = {r.get("arm") for r in prim} & {ARM_CTXDIR, "arm2q_ctx_native"}
+        ov = (overrides or {}).get(b)
+        if ov is not None:
+            if ov not in fam_present:
+                raise SystemExit(
+                    f"[a2fix] --repaired-arm requests {b}={ov} but {b} carries no primary "
+                    f"{ov} rows (arm2-family arms present: {sorted(fam_present)})"
+                )
+            repaired = ov
+        elif "arm2q_ctx_native" in fam_present:
+            repaired = "arm2q_ctx_native"
+        elif ARM_CTXDIR in fam_present:
+            repaired = ARM_CTXDIR
+        else:
+            raise SystemExit(
+                f"[a2fix] COVERAGE ERROR: no arm2-family primary rows for behavior {b} "
+                "(the repaired lane did not run, or the wrong root was passed)"
+            )
+        adapters = sorted({str(r.get("adapter")) for r in prim if r.get("arm") == repaired})
+        rows_restricted = bool(set(adapters) - {"v1", "None"})
+        parity_present = any(
+            r.get("arm") == ARM_MAP and r.get("adapter") == "parity-row-matched" for r in prim
+        )
+        out[b] = {
+            "repaired_arm": repaired,
+            "adapters": adapters,
+            "rows_restricted": rows_restricted,
+            "parity_present": parity_present,
+            # the §4 parity duty binds where the repair restricted THIS
+            # behavior's fit rows; the join demands the rows only where they
+            # were actually emitted (a restricted behavior with NO parity rows
+            # degrades MAP-BEATS -> WEAK-MIXED at the lattice, never a crash
+            # on the plan-forbidden refit of unrestricted behaviors)
+            "parity_required": bool(rows_restricted and parity_present),
+        }
+    return out
+
+
 def a2fix_sanity_records(
     new_rows: list[dict],
     behaviors,
     seeds,
-    repaired_arm: str,
+    resolution: dict[str, dict],
     committed_root: Path,
     n_seeds_required: int = REGISTERED_SEED_COUNT,
 ) -> dict:
     """FINAL five-seed matched-regime sanity record per behavior (plan §3).
 
-    PASS ⇔ all ``n_seeds_required`` per-seed folded-CV values are present AND
-    the seed MEAN lies inside the committed arm2 train-grid band. Every
-    per-seed value + the miss side is reported; a missing record is
-    sanity-FAILED with the reason named (exclusion is the conservative arm —
-    never a silently-shrunken mask)."""
+    PASS ⇔ the seed MEAN over all ``n_seeds_required`` per-seed folded-CV
+    values lies inside the committed arm2 train-grid band; FAIL is reserved
+    for the MEASURED out-of-band miss (every per-seed value + the miss side
+    reported). An INCOMPLETE record — missing seeds, duplicate rows, or a
+    missing committed band — is an INFRA COVERAGE ERROR and a loud
+    SystemExit, NEVER evidence against the adapter (code-review r1 sustained
+    blocker ``arm2fix-sanity-coverage-fail-open``: every reachable incomplete
+    state is infra — the scorer emits sanity rows unconditionally on the
+    arm2fix lane and missing seed summaries already fail the load — so a
+    quiet pass=False here would feed the INCONCLUSIVE-ADAPTER kill verdict
+    with a coverage bug)."""
     out: dict = {}
     for b in behaviors:
+        repaired_arm = resolution[b]["repaired_arm"]
         per_seed: dict[int, float] = {}
         for r in new_rows:
             if (
@@ -764,7 +839,22 @@ def a2fix_sanity_records(
                     )
                 per_seed[s] = float(r["rho_frozen"])
         vals = committed_band_vals(committed_root, b, ARM_CTXDIR)
-        band = [min(vals), max(vals)] if vals else None
+        want = {int(s) for s in seeds}
+        if not vals:
+            raise SystemExit(
+                f"[a2fix] COVERAGE ERROR: committed train-grid band unavailable for {b} "
+                f"under {committed_root} — the sanity mask cannot be evaluated "
+                "(infra gap, not a band miss)"
+            )
+        if set(per_seed) != want or len(per_seed) < n_seeds_required:
+            raise SystemExit(
+                f"[a2fix] COVERAGE ERROR: sanity record incomplete for {b} "
+                f"({repaired_arm}): seeds {sorted(per_seed)} != required {sorted(want)} "
+                "— infra-incomplete, never a measured band miss (check --repaired-arm "
+                "resolution vs the adapter each behavior actually ran)"
+            )
+        band = [min(vals), max(vals)]
+        mean = sum(per_seed.values()) / len(per_seed)
         rec: dict = {
             "behavior": b,
             "arm": repaired_arm,
@@ -774,40 +864,25 @@ def a2fix_sanity_records(
             "per_seed": {s: per_seed[s] for s in sorted(per_seed)},
             "n_seeds": len(per_seed),
             "n_seeds_required": int(n_seeds_required),
+            "seed_mean": mean,
+            "pass": bool(band[0] <= mean <= band[1]),
         }
-        want = {int(s) for s in seeds}
-        if band is None:
-            rec.update({"pass": False, "reason": "committed band unavailable"})
-        elif set(per_seed) != want or len(per_seed) < n_seeds_required:
-            rec.update(
-                {
-                    "pass": False,
-                    "reason": f"sanity record incomplete: seeds {sorted(per_seed)} != "
-                    f"required {sorted(want)}",
-                }
-            )
-        else:
-            mean = sum(per_seed.values()) / len(per_seed)
-            rec["seed_mean"] = mean
-            rec["pass"] = bool(band[0] <= mean <= band[1])
-            rec["miss_side"] = None if rec["pass"] else ("below" if mean < band[0] else "above")
+        rec["miss_side"] = None if rec["pass"] else ("below" if mean < band[0] else "above")
         out[b] = rec
     return out
 
 
 def a2fix_index_cells(
-    new_rows: list[dict], banked_rows: list[dict], repaired_arm: str
-) -> tuple[dict, dict]:
+    new_rows: list[dict], banked_rows: list[dict], resolution: dict[str, dict]
+) -> dict:
     """Index the D-pair series on the join grain (behavior, eval_rung, seed).
 
-    Series: arm2_new (THIS round's repaired rows), arm4_true / arm7_true /
-    arm7_shufpair (BANKED), arm7_parity (this round's row-matched refit, when
-    run). A duplicate key fails loud — the join grain must be unique (plan §3
-    65/65 assert). Returns (cells, meta) where meta records the realized
-    adapter tags + parity presence."""
+    Series: arm2_new (THIS round's repaired rows — each behavior indexed under
+    ITS OWN resolved repaired arm, per-behavior resolution), arm4_true /
+    arm7_true / arm7_shufpair (BANKED), arm7_parity (this round's row-matched
+    refit, where run). A duplicate key fails loud — the join grain must be
+    unique (plan §3 65/65 assert)."""
     cells: dict[tuple, dict] = {}
-    adapters: set[str] = set()
-    parity_present = False
 
     def _put(series: str, r: dict) -> None:
         key = (str(r.get("behavior")), str(r.get("eval_rung")), int(r.get("seed")), series)
@@ -816,16 +891,16 @@ def a2fix_index_cells(
         cells[key] = r
 
     for r in new_rows:
-        if r.get("protocol") != "P-B" or r.get("fit") != f"P-B-holdout-{r.get('eval_rung')}":
+        if not _is_primary_pb_row(r):
             continue
-        if r.get("map_variant") not in (None, "true"):
+        b = str(r.get("behavior"))
+        res = resolution.get(b)
+        if res is None:
             continue
-        if r.get("arm") == repaired_arm:
+        if r.get("arm") == res["repaired_arm"]:
             _put("arm2_new", r)
-            adapters.add(str(r.get("adapter")))
         elif r.get("arm") == ARM_MAP and r.get("adapter") == "parity-row-matched":
             _put("arm7_parity", r)
-            parity_present = True
     for r in banked_rows:
         if r.get("protocol") != "P-B" or r.get("fit") != f"P-B-holdout-{r.get('eval_rung')}":
             continue
@@ -836,12 +911,7 @@ def a2fix_index_cells(
             _put("arm7_shufpair", r)
         elif arm == ARM_CTX and mv == "true":
             _put("arm4_true", r)
-    rows_restricted = bool(adapters - {"v1", "None"})
-    return cells, {
-        "realized_adapters": sorted(adapters),
-        "rows_restricted": rows_restricted,
-        "parity_present": parity_present,
-    }
+    return cells
 
 
 def a2fix_join_assert(
@@ -850,20 +920,27 @@ def a2fix_join_assert(
     seeds,
     registered: dict[str, frozenset[str]] = REGISTERED_PRIMARY_RUNGS,
     *,
-    parity_required: bool = False,
+    resolution: dict[str, dict] | None = None,
 ) -> dict:
     """The plan-§3 join assert ON THE PASSING SET, denominator restated.
 
     Every (behavior ∈ passing set, registered rung, seed) must carry the
-    arm2_new + arm7_true + arm7_shufpair series (+ arm7_parity when the
-    selected repair restricted rows); ANY gap is a loud SystemExit naming the
-    first offenders — never a shrunken-denominator verdict."""
-    need = ["arm2_new", "arm7_true", "arm7_shufpair"] + (["arm7_parity"] if parity_required else [])
+    arm2_new + arm7_true + arm7_shufpair series, PLUS arm7_parity for exactly
+    the behaviors whose OWN repair restricted rows and emitted parity rows
+    (per-behavior resolution — a global parity demand would SystemExit on
+    unrestricted behaviors whose parity refit the plan forbids); ANY gap is a
+    loud SystemExit naming the first offenders — never a shrunken-denominator
+    verdict."""
+    base = ["arm2_new", "arm7_true", "arm7_shufpair"]
+    need_by_b = {
+        b: base + (["arm7_parity"] if (resolution or {}).get(b, {}).get("parity_required") else [])
+        for b in passing_behaviors
+    }
     gaps = []
     for b in sorted(passing_behaviors):
         for rung in sorted(registered[b]):
             for s in seeds:
-                for series in need:
+                for series in need_by_b[b]:
                     if (b, rung, int(s), series) not in cells:
                         gaps.append((b, rung, int(s), series))
     full = sum(len(v) for v in registered.values()) * len(seeds)
@@ -871,39 +948,58 @@ def a2fix_join_assert(
     if gaps:
         raise SystemExit(
             f"[a2fix] passing-set join INCOMPLETE: {len(gaps)} missing series cells "
-            f"(expected {expected} keys x {need}); first offenders: {gaps[:6]}"
+            f"(expected {expected} keys x per-behavior series {need_by_b}); "
+            f"first offenders: {gaps[:6]}"
         )
     return {
         "expected_pairs": expected,
         "realized_pairs": expected,
         "restated_from": full,
-        "series_required": need,
+        "series_required_by_behavior": {b: need_by_b[b] for b in sorted(need_by_b)},
         "passing_behaviors": sorted(passing_behaviors),
         "assert": f"{expected}/{expected} join keys present + unique on "
         "(behavior, fit, eval_rung, seed)",
     }
 
 
-def a2fix_parity_hash_assert(cells: dict, passing_behaviors, seeds, registered) -> int:
+def a2fix_parity_hash_assert(
+    cells: dict, behaviors, seeds, registered, resolution: dict[str, dict] | None = None
+) -> int:
     """Matched-budget parity: the repaired-arm and arm7-parity rows must carry
-    IDENTICAL train-row id-hashes + counts per join key (plan §4 Must-Fix)."""
+    IDENTICAL train-row id-hashes + counts per join key (plan §4 Must-Fix).
+
+    Hardened (r1 CONCERN ``arm2fix-parity-currency-fail-open``): a parity
+    pair whose hash OR count is missing/None on EITHER side is a loud exit —
+    two absent hashes must never satisfy the equality. Scope: behaviors whose
+    resolution requires parity (all pairs incidentally present are still
+    checked when resolution is not supplied)."""
     n = 0
-    for b in sorted(passing_behaviors):
+    for b in sorted(behaviors):
+        if resolution is not None and not resolution.get(b, {}).get("parity_present"):
+            continue
         for rung in sorted(registered[b]):
             for s in seeds:
                 a2 = cells.get((b, rung, int(s), "arm2_new"))
                 a7 = cells.get((b, rung, int(s), "arm7_parity"))
                 if a2 is None or a7 is None:
                     continue
-                if a2.get("train_row_ids_sha256") != a7.get("train_row_ids_sha256") or a2.get(
-                    "train_rows_n"
-                ) != a7.get("train_rows_n"):
+                cur = [
+                    a2.get("train_row_ids_sha256"),
+                    a7.get("train_row_ids_sha256"),
+                    a2.get("train_rows_n"),
+                    a7.get("train_rows_n"),
+                ]
+                if any(c is None for c in cur):
+                    raise SystemExit(
+                        f"[a2fix] PARITY CURRENCY MISSING at ({b}, {rung}, seed {s}): "
+                        f"arm2 sha/n = {cur[0]}/{cur[2]}, arm7-parity sha/n = "
+                        f"{cur[1]}/{cur[3]} — a None-for-None match is not parity evidence"
+                    )
+                if cur[0] != cur[1] or cur[2] != cur[3]:
                     raise SystemExit(
                         f"[a2fix] PARITY VIOLATION at ({b}, {rung}, seed {s}): "
-                        f"arm2 {a2.get('train_rows_n')} rows / "
-                        f"{str(a2.get('train_row_ids_sha256'))[:12]} != arm7-parity "
-                        f"{a7.get('train_rows_n')} rows / "
-                        f"{str(a7.get('train_row_ids_sha256'))[:12]}"
+                        f"arm2 {cur[2]} rows / {str(cur[0])[:12]} != arm7-parity "
+                        f"{cur[3]} rows / {str(cur[1])[:12]}"
                     )
                 n += 1
     return n
@@ -1071,12 +1167,68 @@ def a2fix_ctx_ci(
     )
 
 
+def a2fix_assert_finite(per_rung: list[dict]) -> int:
+    """Every statistic the lattice consumes must be FINITE (r1 CONCERN
+    ``arm2fix-nonfinite-verdict``): a NaN/inf rho or D falling through the
+    median would mint MAP-ADVANTAGE-NOT-SHOWN with false reason prose — the
+    declared-exhaustive lattice is not NaN-exhaustive, so validate before
+    evaluation. Sanity-excluded rows are skipped (they never enter the
+    median). Returns the number of values checked."""
+    import math
+
+    n = 0
+    for r in per_rung:
+        if r.get("excluded_by_sanity"):
+            continue
+        loc = (r.get("behavior"), r.get("eval_rung"))
+        for key in ("arm2_repaired", "arm7_true", "arm7_shufpair", "arm4_true", "D", "D_parity"):
+            blk = r.get(key)
+            if not isinstance(blk, dict):
+                continue
+            vals = [blk.get("mean")] + list(blk.get("tci") or []) + list(blk.get("per_seed") or [])
+            for v in vals:
+                if v is None:
+                    continue
+                if not math.isfinite(float(v)):
+                    raise SystemExit(
+                        f"[a2fix] NON-FINITE STATISTIC at {loc}: {key} carries {v!r} — "
+                        "invalid input to the lattice (degenerate scores upstream), "
+                        "never a verdict"
+                    )
+                n += 1
+        for v in r.get("D_ctx_ci") or []:
+            if not math.isfinite(float(v)):
+                raise SystemExit(f"[a2fix] NON-FINITE STATISTIC at {loc}: D_ctx_ci carries {v!r}")
+            n += 1
+    return n
+
+
+def a2fix_ctx_gap_assert(per_rung: list[dict], *, skipped: bool) -> None:
+    """Loud exit on passing-set ctx-CI gaps (r1 CONCERN
+    ``arm2fix-context-bootstrap-gap`` fix-round rec): once the paired context
+    bootstrap is requested (not --skip-ctx-bootstrap), every complete
+    passing-set rung must carry its D_ctx_ci — a missing/ambiguous preds
+    input is a named infra gap, never a note under a rendered verdict."""
+    if skipped:
+        return
+    gaps = [
+        (r["behavior"], r["eval_rung"], r.get("ctx_bootstrap_note", "no note"))
+        for r in per_rung
+        if not r.get("excluded_by_sanity") and r.get("complete") and r.get("D_ctx_ci") is None
+    ]
+    if gaps:
+        raise SystemExit(
+            f"[a2fix] CTX-BOOTSTRAP GAP on the passing set: {len(gaps)} rung(s) missing "
+            f"the paired context CI — {gaps[:4]} (fix the preds inputs or pass "
+            "--skip-ctx-bootstrap deliberately)"
+        )
+
+
 def a2fix_lattice(
     per_rung: list[dict],
     sanity: dict,
     *,
-    rows_restricted: bool,
-    parity_present: bool,
+    resolution: dict[str, dict],
     flagships=FLAGSHIPS,
 ) -> dict:
     """The amended §3 leg-2 lattice — DISJOINT + exhaustive, evaluated over
@@ -1086,8 +1238,9 @@ def a2fix_lattice(
     - MAP-BEATS-CONTEXT-DIRECTION ⇔ sanity passes on ≥2 behaviors AND
       median D > 0 over the passing set AND ≥1 passing-set flagship rung has
       BOTH CIs (seed t-CI, paired group-level context CI) clear of 0 above
-      AND — when the selected repair restricted arm2's fit rows — the
-      row-matched parity read also shows D > 0 (median over the passing set).
+      AND — when ANY passing behavior's repair restricted its fit rows — the
+      row-matched parity read also shows D > 0 (median over exactly the
+      ROWS-RESTRICTED passing behaviors' rungs; per-behavior resolution).
     - MAP-ADVANTAGE-NOT-SHOWN ⇔ sanity passes on ≥2 behaviors AND
       median D ≤ 0 over the passing set (a FAILURE TO DEMONSTRATE the map's
       advantage — NOT evidence the context-side repair suffices; a bare
@@ -1101,12 +1254,17 @@ def a2fix_lattice(
     passing = sorted(b for b, rec in sanity.items() if rec.get("pass"))
     failing = sorted(b for b, rec in sanity.items() if not rec.get("pass"))
     per_behavior = {b: "INDETERMINATE-ADAPTER" for b in failing}
+    restricted_passing = sorted(b for b in passing if resolution.get(b, {}).get("rows_restricted"))
     out: dict = {
         "passing_behaviors": passing,
         "failing_behaviors": failing,
         "per_behavior_adapter_verdicts": per_behavior,
-        "rows_restricted": bool(rows_restricted),
-        "parity_present": bool(parity_present),
+        "resolution": {b: dict(resolution.get(b, {})) for b in sorted(resolution)},
+        "rows_restricted_behaviors": restricted_passing,
+        "rows_restricted": bool(restricted_passing),
+        "parity_present": bool(
+            any(resolution.get(b, {}).get("parity_present") for b in resolution)
+        ),
     }
     if len(passing) < 2:
         out["verdict"] = "INCONCLUSIVE-ADAPTER"
@@ -1146,14 +1304,20 @@ def a2fix_lattice(
         )
     out["flagships_in_passing_set"] = flag_ok
     parity_read = None
-    if rows_restricted:
-        dp = [r["D_parity"]["mean"] for r in rows if r.get("D_parity", {}).get("mean") is not None]
+    if restricted_passing:
+        dp = [
+            r["D_parity"]["mean"]
+            for r in rows
+            if r["behavior"] in restricted_passing and r.get("D_parity", {}).get("mean") is not None
+        ]
         parity_read = {
+            "behaviors": restricted_passing,
             "n_rungs": len(dp),
             "median_D_parity": float(np.median(dp)) if dp else None,
             "positive": bool(dp and float(np.median(dp)) > 0),
             "note": "estimand-parity read: arm7 refit on the IDENTICAL training-row ids "
-            "as the repaired arm2 (plan §4 matched-budget parity duty)",
+            "as the repaired arm2, over exactly the rows-restricted passing behaviors' "
+            "rungs (plan §4 matched-budget parity duty; per-behavior resolution)",
         }
         out["parity_read"] = parity_read
     if med is None:
@@ -1161,7 +1325,7 @@ def a2fix_lattice(
         out["reason"] = "no complete passing-set rungs carry a D read"
         return out
     if med > 0:
-        parity_ok = (not rows_restricted) or bool(parity_read and parity_read["positive"])
+        parity_ok = (not restricted_passing) or bool(parity_read and parity_read["positive"])
         if any(f["both_clear"] for f in flag_ok) and parity_ok:
             out["verdict"] = "MAP-BEATS-CONTEXT-DIRECTION"
             return out
@@ -1169,8 +1333,9 @@ def a2fix_lattice(
         out["reason"] = "median D > 0 but " + (
             "no passing-set flagship holds BOTH CIs clear of 0"
             if not any(f["both_clear"] for f in flag_ok)
-            else "the row-matched parity read does not show D > 0 "
-            "(required when the repair restricted arm2's fit rows)"
+            else "the row-matched parity read does not show D > 0 over the "
+            f"rows-restricted passing behaviors {restricted_passing} "
+            "(required when a repair restricted arm2's fit rows)"
         )
         return out
     out["verdict"] = "MAP-ADVANTAGE-NOT-SHOWN"
@@ -1194,32 +1359,24 @@ def build_arm2fix_table(args) -> dict:
     if banked_missing:
         raise SystemExit(f"[a2fix] missing BANKED seed summaries: {banked_missing[:4]}")
 
-    # repaired arm: explicit flag beats auto (arm2q primary rows present -> R-C)
-    if args.repaired_arm != "auto":
-        repaired_arm = args.repaired_arm
-    else:
-        has_q = any(
-            r.get("arm") == "arm2q_ctx_native"
-            and r.get("fit") == f"P-B-holdout-{r.get('eval_rung')}"
-            for r in new_rows
-        )
-        repaired_arm = "arm2q_ctx_native" if has_q else ARM_CTXDIR
+    # PER-BEHAVIOR repair resolution (r1 sustained blocker
+    # arm2fix-mixed-adapter-fold): the ladder runs per behavior, so
+    # {repaired_arm, adapters, rows_restricted, parity_required} resolve from
+    # each behavior's OWN rows; --repaired-arm overrides per behavior.
+    resolution = a2fix_resolve_repairs(new_rows, args.behaviors, args.repaired_arm_overrides)
+    for b in sorted(resolution):
+        _log(f"[a2fix resolve] {b}: {resolution[b]}")
 
     sanity = a2fix_sanity_records(
-        new_rows, args.behaviors, seeds, repaired_arm, args.committed_train_root
+        new_rows, args.behaviors, seeds, resolution, args.committed_train_root
     )
     passing = sorted(b for b, rec in sanity.items() if rec.get("pass"))
-    cells, cells_meta = a2fix_index_cells(new_rows, banked_rows, repaired_arm)
+    cells = a2fix_index_cells(new_rows, banked_rows, resolution)
     join = None
     if len(passing) >= 2:
-        join = a2fix_join_assert(
-            cells,
-            passing,
-            seeds,
-            parity_required=cells_meta["rows_restricted"] and cells_meta["parity_present"],
-        )
+        join = a2fix_join_assert(cells, passing, seeds, resolution=resolution)
     n_parity_checked = a2fix_parity_hash_assert(
-        cells, passing or args.behaviors, seeds, REGISTERED_PRIMARY_RUNGS
+        cells, passing or args.behaviors, seeds, REGISTERED_PRIMARY_RUNGS, resolution
     )
     per_rung = a2fix_per_rung(cells, args.behaviors, seeds, sanity)
 
@@ -1236,7 +1393,7 @@ def build_arm2fix_table(args) -> dict:
             b,
             rung,
             entry["seeds_used"],
-            repaired_arm,
+            resolution[b]["repaired_arm"],
             n_boot=args.n_boot,
             rng=rng,
         )
@@ -1247,12 +1404,12 @@ def build_arm2fix_table(args) -> dict:
             entry["ctx_bootstrap"] = {k: ci[k] for k in ("n_groups", "n_boot", "n_ctx")}
         _log(f"[a2fix ctx-boot] {b}/{rung}: {note}")
 
-    verdict = a2fix_lattice(
-        per_rung,
-        sanity,
-        rows_restricted=cells_meta["rows_restricted"],
-        parity_present=cells_meta["parity_present"],
-    )
+    # hardening gates BEFORE the lattice (r1 CONCERN fix-round recs): a
+    # passing-set ctx-CI gap and any non-finite statistic are loud exits.
+    a2fix_ctx_gap_assert(per_rung, skipped=bool(args.skip_ctx_bootstrap))
+    a2fix_assert_finite(per_rung)
+
+    verdict = a2fix_lattice(per_rung, sanity, resolution=resolution)
 
     # P4 direction-stability cosines ride NEXT TO any MAP-BEATS output
     p4 = None
@@ -1277,10 +1434,8 @@ def build_arm2fix_table(args) -> dict:
             "n_boot": args.n_boot,
             "arm2fix_root": str(args.arm2fix_root),
             "banked_root": str(args.claim4_root),
-            "repaired_arm": repaired_arm,
-            "realized_adapters": cells_meta["realized_adapters"],
-            "rows_restricted": cells_meta["rows_restricted"],
-            "parity_present": cells_meta["parity_present"],
+            "resolution": {b: dict(resolution[b]) for b in sorted(resolution)},
+            "repaired_arm_overrides": dict(args.repaired_arm_overrides or {}),
             "n_parity_hash_checks": n_parity_checked,
             "flagships": [list(f) for f in FLAGSHIPS],
         },
@@ -1303,8 +1458,12 @@ def write_arm2fix_markdown(table: dict, path: Path) -> None:
         "# arm2fix — repaired context-direction vs banked mapped-answer probe",
         "",
         f"- generated: {table['meta']['generated_ts']} @ {table['meta']['git_commit']}",
-        f"- repaired arm: `{table['meta']['repaired_arm']}` "
-        f"(adapters: {table['meta']['realized_adapters']})",
+        "- per-behavior repair resolution: "
+        + "; ".join(
+            f"{b}: `{res['repaired_arm']}` (adapters {res['adapters']}, "
+            f"restricted={res['rows_restricted']}, parity={res['parity_present']})"
+            for b, res in sorted(table["meta"]["resolution"].items())
+        ),
         f"- verdict: **{v.get('verdict')}**" + (f" — {v['reason']}" if v.get("reason") else ""),
         f"- passing set: {v.get('passing_behaviors')}; excluded: {v.get('failing_behaviors')}",
     ]
@@ -1368,8 +1527,12 @@ def write_arm2fix_note(table: dict, path: Path) -> None:
         "",
         "Numbers + coverage only; claims stay with the writeup author.",
         "",
-        f"- repaired arm: `{m['repaired_arm']}`; realized adapters: {m['realized_adapters']}; "
-        f"rows restricted: {m['rows_restricted']}; parity rows present: {m['parity_present']}",
+        "- per-behavior repair resolution: "
+        + "; ".join(
+            f"{b}: {res['repaired_arm']} (adapters {res['adapters']}, "
+            f"restricted={res['rows_restricted']}, parity={res['parity_present']})"
+            for b, res in sorted(m["resolution"].items())
+        ),
         f"- lattice verdict: **{v.get('verdict')}**"
         + (f" ({v['reason']})" if v.get("reason") else ""),
         f"- sanity passing set: {v.get('passing_behaviors')} "
@@ -1379,7 +1542,8 @@ def write_arm2fix_note(table: dict, path: Path) -> None:
     if join.get("expected_pairs") is not None:
         lines.append(
             f"- join denominator: {join['realized_pairs']}/{join['expected_pairs']} "
-            f"(restated from {join['restated_from']}; series {join['series_required']})"
+            f"(restated from {join['restated_from']}; per-behavior series "
+            f"{join['series_required_by_behavior']})"
         )
     if v.get("median_D_passing_set") is not None:
         lines.append(
@@ -2150,6 +2314,45 @@ def write_note(table: dict, path: Path) -> None:
     path.write_text("\n".join(lines) + "\n")
 
 
+A2_FAMILY_ARMS = (ARM_CTXDIR, "arm2q_ctx_native")
+
+
+def parse_repaired_arm_tokens(tokens, behaviors) -> dict[str, str]:
+    """``--repaired-arm`` token grammar → per-behavior override dict.
+
+    ``auto`` (alone) → {} (pure per-behavior auto resolution). A bare arm
+    name → that arm for EVERY behavior. ``<behavior>=<arm>`` tokens → named
+    overrides; unnamed behaviors stay on auto. Mixing forms, unknown
+    behaviors/arms, or a duplicate behavior are loud parse errors."""
+    toks = list(tokens or [])
+    if toks == ["auto"]:
+        return {}
+    pairs = [t for t in toks if "=" in t]
+    bare = [t for t in toks if "=" not in t]
+    if bare and pairs:
+        raise SystemExit(
+            f"[a2fix] --repaired-arm mixes a global arm with per-behavior pairs: {toks}"
+        )
+    if bare:
+        if len(bare) != 1 or bare[0] not in A2_FAMILY_ARMS:
+            raise SystemExit(
+                f"[a2fix] --repaired-arm global form takes exactly one of "
+                f"{A2_FAMILY_ARMS} (got {bare})"
+            )
+        return {b: bare[0] for b in behaviors}
+    out: dict[str, str] = {}
+    for t in pairs:
+        b, _, arm = t.partition("=")
+        if b not in behaviors:
+            raise SystemExit(f"[a2fix] --repaired-arm names unknown behavior {b!r} (of {toks})")
+        if arm not in A2_FAMILY_ARMS:
+            raise SystemExit(f"[a2fix] --repaired-arm names unknown arm {arm!r} (of {toks})")
+        if b in out:
+            raise SystemExit(f"[a2fix] --repaired-arm duplicates behavior {b!r} (of {toks})")
+        out[b] = arm
+    return out
+
+
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument(
@@ -2167,9 +2370,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     ap.add_argument(
         "--repaired-arm",
-        default="auto",
-        choices=("auto", "arm2_ctx_native", "arm2q_ctx_native"),
-        help="auto: arm2q_ctx_native when its primary rows are present (R-C ran), else arm2",
+        nargs="+",
+        default=["auto"],
+        help="PER-BEHAVIOR-capable override (the ladder runs per behavior — plan §4/§7): "
+        "'auto' (default; per behavior: arm2q_ctx_native when ITS primary rows are "
+        "present, else arm2_ctx_native), a global arm name applied to every behavior, "
+        "or '<behavior>=<arm>' tokens (e.g. evil=arm2q_ctx_native "
+        "sycophancy=arm2_ctx_native); unnamed behaviors stay on auto",
     )
     ap.add_argument(
         "--d0-p4",
@@ -2209,6 +2416,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             args.note_out = Path("docs/map_behavior_prediction_arm2fix_note.md")
         if args.fig_dir == ap.get_default("fig_dir"):
             args.fig_dir = Path("figures/issue_1739/claim4_controls/arm2fix")
+    args.repaired_arm_overrides = parse_repaired_arm_tokens(args.repaired_arm, args.behaviors)
     return args
 
 
@@ -2233,8 +2441,11 @@ def main(argv: list[str] | None = None) -> int:
         from explore_persona_space.orchestrate.hub import stage_hub_file  # noqa: F401
 
         # arm2fix-mode surface (plan §4 Leg 2 D2): assert the loaders/lattice
-        # resolve alongside the legacy fold surface.
+        # resolve alongside the legacy fold surface (incl. the r2 per-behavior
+        # resolver + hardening asserts).
         assert callable(build_arm2fix_table) and callable(a2fix_lattice)
+        assert callable(a2fix_resolve_repairs) and callable(parse_repaired_arm_tokens)
+        assert callable(a2fix_assert_finite) and callable(a2fix_ctx_gap_assert)
         assert set(A2FIX_VERDICTS) == {
             "INCONCLUSIVE-ADAPTER",
             "MAP-BEATS-CONTEXT-DIRECTION",

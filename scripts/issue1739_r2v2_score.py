@@ -878,22 +878,30 @@ def _seed_output_resume_ok(
     arm2_adapter: str | None = None,
     skip_map_fit: bool = False,
     parity_refit_arm7: bool = False,
+    arms_only_extra: bool = False,
+    a2_sanity_folds: int | None = None,
+    transfer_preds: bool = False,
 ) -> tuple[bool, str]:
     """True iff a prior (behavior, seed) output can satisfy THIS invocation.
 
     The resume predicate is keyed on code SHA + output schema version + seed
-    + map-variant set + the arm2fix lane keys (adapter / skip-map-fit /
-    parity — all recorded in the summary meta) AND requires every per-seed
-    artifact present — a stale, foreign, or partial output can never
-    silently satisfy it (a mismatch re-runs the seed, loudly). Banked
-    pre-arm2fix outputs carry none of the new keys: ``meta.get`` reads None /
-    False for them, which matches exactly the flagless invocation — so the
-    legacy claim4 lane's resume behavior is unchanged, while an arm2fix
-    invocation can never resume off a legacy output (adapter mismatch).
+    + map-variant set + EVERY output-affecting arm2fix lane key (adapter /
+    skip-map-fit / parity / arms-only-extra / sanity-fold count — all
+    recorded in the summary meta; r1 CONCERN arm2fix-resume-key-completeness)
+    AND requires every per-seed artifact present — including ≥1 transfer_preds
+    sidecar when this invocation writes preds — so a stale, foreign, or
+    partial output can never silently satisfy it (a mismatch re-runs the
+    seed, loudly). Banked pre-arm2fix outputs carry none of the new keys:
+    ``meta.get`` reads None / False for them, which matches exactly the
+    flagless invocation — so the legacy claim4 lane's resume behavior is
+    unchanged, while an arm2fix invocation can never resume off a legacy
+    output (adapter mismatch).
     """
     for name in ("all_arms_spearman.json", "map_diagnostics.json", "readout_pools.json"):
         if not (out_dir / name).exists():
             return False, f"{name} absent"
+    if transfer_preds and not any((out_dir / "transfer_preds").glob("P-B-holdout-*.jsonl")):
+        return False, "transfer_preds sidecars absent (this invocation writes preds)"
     try:
         meta = json.loads((out_dir / "all_arms_spearman.json").read_text())["meta"]
     except (OSError, json.JSONDecodeError, UnicodeDecodeError, KeyError, TypeError) as exc:
@@ -908,7 +916,13 @@ def _seed_output_resume_ok(
             bool(meta.get("parity_refit_arm7", False)),
             bool(parity_refit_arm7),
         ),
+        "arms_only_extra": (bool(meta.get("arms_only_extra", False)), bool(arms_only_extra)),
     }
+    # sanity-fold count matters only where a sanity read ran (adapter lane);
+    # legacy metas record no a2_sanity_folds and no adapter — .get(None) == None
+    # keeps them resumable under flagless invocations exactly as before.
+    if arm2_adapter is not None or meta.get("arm2_adapter") is not None:
+        checks["a2_sanity_folds"] = (meta.get("a2_sanity_folds"), a2_sanity_folds)
     for field, (got, want) in checks.items():
         if got != want:
             return False, f"{field} mismatch (recorded {got!r} != current {want!r})"
@@ -2626,6 +2640,13 @@ def main(argv: list[str] | None = None) -> int:
                 arm2_adapter=getattr(args, "arm2_adapter", None),
                 skip_map_fit=bool(getattr(args, "skip_map_fit", False)),
                 parity_refit_arm7=bool(getattr(args, "parity_refit_arm7", False)),
+                arms_only_extra=bool(getattr(args, "arms_only_extra", False)),
+                a2_sanity_folds=(
+                    int(getattr(args, "a2_sanity_folds", 5))
+                    if getattr(args, "arm2_adapter", None) is not None
+                    else None
+                ),
+                transfer_preds=bool(getattr(args, "transfer_preds", False)),
             )
             if ok:
                 _log(
@@ -2683,6 +2704,11 @@ def main(argv: list[str] | None = None) -> int:
                             "skip_map_fit": bool(getattr(args, "skip_map_fit", False)),
                             "arms_only_extra": bool(getattr(args, "arms_only_extra", False)),
                             "parity_refit_arm7": bool(getattr(args, "parity_refit_arm7", False)),
+                            **(
+                                {"a2_sanity_folds": int(getattr(args, "a2_sanity_folds", 5))}
+                                if getattr(args, "arm2_adapter", None) is not None
+                                else {}
+                            ),
                         }
                         if (seed_keyed or args.map_variants is not None)
                         else {}
