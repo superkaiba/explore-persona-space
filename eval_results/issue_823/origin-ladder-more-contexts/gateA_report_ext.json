@@ -1,0 +1,165 @@
+{
+ "gate": "A",
+ "n_pilot_pairs": 200,
+ "n_judged_contexts": 103,
+ "n_survived_contexts": 102,
+ "survival": 0.9902912621359223,
+ "survival_floor": 0.85,
+ "survival_pass": true,
+ "n_cap_hit_rows": 1,
+ "cap_hit_fraction": 0.005,
+ "cap_hit_max": 0.02,
+ "cap_hit_pass": true,
+ "dropped_context_ids": [
+  5030
+ ],
+ "per_persona": {
+  "0": {
+   "n_rows": 103,
+   "cap_hit": 0,
+   "ok": 103
+  },
+  "1": {
+   "n_rows": 6,
+   "cap_hit": 0,
+   "ok": 6
+  },
+  "2": {
+   "n_rows": 6,
+   "cap_hit": 0,
+   "ok": 6
+  },
+  "3": {
+   "n_rows": 6,
+   "cap_hit": 0,
+   "ok": 6
+  },
+  "4": {
+   "n_rows": 6,
+   "cap_hit": 0,
+   "ok": 6
+  },
+  "5": {
+   "n_rows": 6,
+   "cap_hit": 0,
+   "ok": 6
+  },
+  "6": {
+   "n_rows": 6,
+   "cap_hit": 0,
+   "ok": 5,
+   "refusal": 1
+  },
+  "7": {
+   "n_rows": 6,
+   "cap_hit": 0,
+   "ok": 6
+  },
+  "8": {
+   "n_rows": 7,
+   "cap_hit": 0,
+   "ok": 7
+  },
+  "9": {
+   "n_rows": 7,
+   "cap_hit": 1,
+   "ok": 7
+  },
+  "10": {
+   "n_rows": 7,
+   "cap_hit": 0,
+   "ok": 7
+  },
+  "11": {
+   "n_rows": 7,
+   "cap_hit": 0,
+   "ok": 7
+  },
+  "12": {
+   "n_rows": 7,
+   "cap_hit": 0,
+   "ok": 7
+  },
+  "13": {
+   "n_rows": 7,
+   "cap_hit": 0,
+   "ok": 7
+  },
+  "14": {
+   "n_rows": 7,
+   "cap_hit": 0,
+   "ok": 7
+  },
+  "15": {
+   "n_rows": 6,
+   "cap_hit": 0,
+   "ok": 6
+  }
+ },
+ "refusal_ranking": [
+  {
+   "persona": 6,
+   "n_refusals": 1
+  },
+  {
+   "persona": 0,
+   "n_refusals": 0
+  },
+  {
+   "persona": 1,
+   "n_refusals": 0
+  },
+  {
+   "persona": 2,
+   "n_refusals": 0
+  },
+  {
+   "persona": 3,
+   "n_refusals": 0
+  },
+  {
+   "persona": 4,
+   "n_refusals": 0
+  },
+  {
+   "persona": 5,
+   "n_refusals": 0
+  },
+  {
+   "persona": 7,
+   "n_refusals": 0
+  },
+  {
+   "persona": 8,
+   "n_refusals": 0
+  },
+  {
+   "persona": 9,
+   "n_refusals": 0
+  },
+  {
+   "persona": 10,
+   "n_refusals": 0
+  },
+  {
+   "persona": 11,
+   "n_refusals": 0
+  },
+  {
+   "persona": 12,
+   "n_refusals": 0
+  },
+  {
+   "persona": 13,
+   "n_refusals": 0
+  },
+  {
+   "persona": 14,
+   "n_refusals": 0
+  },
+  {
+   "persona": 15,
+   "n_refusals": 0
+  }
+ ]
+}
