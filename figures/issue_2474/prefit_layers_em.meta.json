@@ -1,0 +1,1663 @@
+{
+  "commit": "7249718b",
+  "render_id": "6cf407ae8c2a4dbf",
+  "git_commit": "7249718b",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2474_figs.py",
+  "created": "2026-08-23T11:56:38Z",
+  "figsize": [
+    7.6,
+    4.6
+  ],
+  "points": [
+    {
+      "Layer": 0.0,
+      "Pooled Spearman rho (level DV)": 0.5494472347902924,
+      "series": "Context state vs inoc. prompt",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 1.0,
+      "Pooled Spearman rho (level DV)": 0.44192137751531513,
+      "series": "Context state vs inoc. prompt",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 2.0,
+      "Pooled Spearman rho (level DV)": 0.4990119836728458,
+      "series": "Context state vs inoc. prompt",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 3.0,
+      "Pooled Spearman rho (level DV)": 0.460167590194124,
+      "series": "Context state vs inoc. prompt",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 4.0,
+      "Pooled Spearman rho (level DV)": 0.391939655780847,
+      "series": "Context state vs inoc. prompt",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 5.0,
+      "Pooled Spearman rho (level DV)": 0.29701830841858007,
+      "series": "Context state vs inoc. prompt",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 6.0,
+      "Pooled Spearman rho (level DV)": 0.3087903944140404,
+      "series": "Context state vs inoc. prompt",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 7.0,
+      "Pooled Spearman rho (level DV)": 0.3544718019516961,
+      "series": "Context state vs inoc. prompt",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 8.0,
+      "Pooled Spearman rho (level DV)": 0.3544718019516961,
+      "series": "Context state vs inoc. prompt",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 9.0,
+      "Pooled Spearman rho (level DV)": 0.4289135154355737,
+      "series": "Context state vs inoc. prompt",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 10.0,
+      "Pooled Spearman rho (level DV)": 0.42270249812382216,
+      "series": "Context state vs inoc. prompt",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 11.0,
+      "Pooled Spearman rho (level DV)": 0.4251893463064117,
+      "series": "Context state vs inoc. prompt",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 12.0,
+      "Pooled Spearman rho (level DV)": 0.43179664740520474,
+      "series": "Context state vs inoc. prompt",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 13.0,
+      "Pooled Spearman rho (level DV)": 0.5492668977936987,
+      "series": "Context state vs inoc. prompt",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 14.0,
+      "Pooled Spearman rho (level DV)": 0.622289185632083,
+      "series": "Context state vs inoc. prompt",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 15.0,
+      "Pooled Spearman rho (level DV)": 0.670893982108737,
+      "series": "Context state vs inoc. prompt",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 16.0,
+      "Pooled Spearman rho (level DV)": 0.7083372155369205,
+      "series": "Context state vs inoc. prompt",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 17.0,
+      "Pooled Spearman rho (level DV)": 0.7147536509442611,
+      "series": "Context state vs inoc. prompt",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 18.0,
+      "Pooled Spearman rho (level DV)": 0.717023067545939,
+      "series": "Context state vs inoc. prompt",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 19.0,
+      "Pooled Spearman rho (level DV)": 0.7484559945106191,
+      "series": "Context state vs inoc. prompt",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 20.0,
+      "Pooled Spearman rho (level DV)": 0.8559107178918524,
+      "series": "Context state vs inoc. prompt",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 21.0,
+      "Pooled Spearman rho (level DV)": 0.8358617006259734,
+      "series": "Context state vs inoc. prompt",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 22.0,
+      "Pooled Spearman rho (level DV)": 0.8300816705170186,
+      "series": "Context state vs inoc. prompt",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 23.0,
+      "Pooled Spearman rho (level DV)": 0.799908962251422,
+      "series": "Context state vs inoc. prompt",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 24.0,
+      "Pooled Spearman rho (level DV)": 0.7897820487948276,
+      "series": "Context state vs inoc. prompt",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 25.0,
+      "Pooled Spearman rho (level DV)": 0.7906074343680018,
+      "series": "Context state vs inoc. prompt",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 26.0,
+      "Pooled Spearman rho (level DV)": 0.7999060076884514,
+      "series": "Context state vs inoc. prompt",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 27.0,
+      "Pooled Spearman rho (level DV)": 0.7976333536119398,
+      "series": "Context state vs inoc. prompt",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 0.0,
+      "Pooled Spearman rho (level DV)": 0.485544280028666,
+      "series": "Predicted answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 1.0,
+      "Pooled Spearman rho (level DV)": 0.5420299468287324,
+      "series": "Predicted answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 2.0,
+      "Pooled Spearman rho (level DV)": 0.48618123613282116,
+      "series": "Predicted answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 3.0,
+      "Pooled Spearman rho (level DV)": 0.520928282269929,
+      "series": "Predicted answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 4.0,
+      "Pooled Spearman rho (level DV)": 0.5321331619764357,
+      "series": "Predicted answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 5.0,
+      "Pooled Spearman rho (level DV)": 0.3162547999028786,
+      "series": "Predicted answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 6.0,
+      "Pooled Spearman rho (level DV)": 0.4961586550675078,
+      "series": "Predicted answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 7.0,
+      "Pooled Spearman rho (level DV)": 0.49840621302706734,
+      "series": "Predicted answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 8.0,
+      "Pooled Spearman rho (level DV)": 0.3918985074513378,
+      "series": "Predicted answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 9.0,
+      "Pooled Spearman rho (level DV)": 0.538715619834226,
+      "series": "Predicted answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 10.0,
+      "Pooled Spearman rho (level DV)": 0.48950374570749455,
+      "series": "Predicted answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 11.0,
+      "Pooled Spearman rho (level DV)": 0.4696496779141734,
+      "series": "Predicted answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 12.0,
+      "Pooled Spearman rho (level DV)": 0.599747588843838,
+      "series": "Predicted answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 13.0,
+      "Pooled Spearman rho (level DV)": 0.605564698519154,
+      "series": "Predicted answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 14.0,
+      "Pooled Spearman rho (level DV)": 0.5784705023578603,
+      "series": "Predicted answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 15.0,
+      "Pooled Spearman rho (level DV)": 0.5714469592645284,
+      "series": "Predicted answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 16.0,
+      "Pooled Spearman rho (level DV)": 0.5916996869954968,
+      "series": "Predicted answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 17.0,
+      "Pooled Spearman rho (level DV)": 0.8025111823818479,
+      "series": "Predicted answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 18.0,
+      "Pooled Spearman rho (level DV)": 0.6686246105609298,
+      "series": "Predicted answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 19.0,
+      "Pooled Spearman rho (level DV)": 0.7265592234589192,
+      "series": "Predicted answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 20.0,
+      "Pooled Spearman rho (level DV)": 0.7451824152194216,
+      "series": "Predicted answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 21.0,
+      "Pooled Spearman rho (level DV)": 0.7059101969229522,
+      "series": "Predicted answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 22.0,
+      "Pooled Spearman rho (level DV)": 0.8439174144641954,
+      "series": "Predicted answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 23.0,
+      "Pooled Spearman rho (level DV)": 0.828617370762559,
+      "series": "Predicted answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 24.0,
+      "Pooled Spearman rho (level DV)": 0.8155837590637158,
+      "series": "Predicted answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 25.0,
+      "Pooled Spearman rho (level DV)": 0.7851524859056557,
+      "series": "Predicted answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 26.0,
+      "Pooled Spearman rho (level DV)": 0.82982924001985,
+      "series": "Predicted answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 27.0,
+      "Pooled Spearman rho (level DV)": 0.7841431552707674,
+      "series": "Predicted answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 0.0,
+      "Pooled Spearman rho (level DV)": 0.5494472347902924,
+      "series": "Shift-only answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 1.0,
+      "Pooled Spearman rho (level DV)": 0.41958473812463104,
+      "series": "Shift-only answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 2.0,
+      "Pooled Spearman rho (level DV)": 0.4990119836728458,
+      "series": "Shift-only answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 3.0,
+      "Pooled Spearman rho (level DV)": 0.460167590194124,
+      "series": "Shift-only answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 4.0,
+      "Pooled Spearman rho (level DV)": 0.391939655780847,
+      "series": "Shift-only answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 5.0,
+      "Pooled Spearman rho (level DV)": 0.29701830841858007,
+      "series": "Shift-only answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 6.0,
+      "Pooled Spearman rho (level DV)": 0.28811673245914926,
+      "series": "Shift-only answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 7.0,
+      "Pooled Spearman rho (level DV)": 0.3768084413423801,
+      "series": "Shift-only answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 8.0,
+      "Pooled Spearman rho (level DV)": 0.3544718019516961,
+      "series": "Shift-only answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 9.0,
+      "Pooled Spearman rho (level DV)": 0.45600018251884994,
+      "series": "Shift-only answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 10.0,
+      "Pooled Spearman rho (level DV)": 0.4282903555370252,
+      "series": "Shift-only answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 11.0,
+      "Pooled Spearman rho (level DV)": 0.43179664740520474,
+      "series": "Shift-only answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 12.0,
+      "Pooled Spearman rho (level DV)": 0.4359430277266748,
+      "series": "Shift-only answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 13.0,
+      "Pooled Spearman rho (level DV)": 0.5492668977936987,
+      "series": "Shift-only answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 14.0,
+      "Pooled Spearman rho (level DV)": 0.6241451670519419,
+      "series": "Shift-only answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 15.0,
+      "Pooled Spearman rho (level DV)": 0.648557342718053,
+      "series": "Shift-only answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 16.0,
+      "Pooled Spearman rho (level DV)": 0.7298435392670541,
+      "series": "Shift-only answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 17.0,
+      "Pooled Spearman rho (level DV)": 0.7399841438035567,
+      "series": "Shift-only answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 18.0,
+      "Pooled Spearman rho (level DV)": 0.7389550778012067,
+      "series": "Shift-only answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 19.0,
+      "Pooled Spearman rho (level DV)": 0.7658311438255684,
+      "series": "Shift-only answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 20.0,
+      "Pooled Spearman rho (level DV)": 0.8703733625349919,
+      "series": "Shift-only answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 21.0,
+      "Pooled Spearman rho (level DV)": 0.848894688858581,
+      "series": "Shift-only answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 22.0,
+      "Pooled Spearman rho (level DV)": 0.8453857979997601,
+      "series": "Shift-only answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 23.0,
+      "Pooled Spearman rho (level DV)": 0.799699490410642,
+      "series": "Shift-only answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 24.0,
+      "Pooled Spearman rho (level DV)": 0.7897820487948276,
+      "series": "Shift-only answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 25.0,
+      "Pooled Spearman rho (level DV)": 0.7897820487948276,
+      "series": "Shift-only answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 26.0,
+      "Pooled Spearman rho (level DV)": 0.8183111293838499,
+      "series": "Shift-only answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 27.0,
+      "Pooled Spearman rho (level DV)": 0.806927026880927,
+      "series": "Shift-only answer vs inoc. prompt",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 0.0,
+      "Pooled Spearman rho (level DV)": 0.5655263884303189,
+      "series": "Real answer vs inoc. prompt (ceiling)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 1.0,
+      "Pooled Spearman rho (level DV)": 0.5651283819948212,
+      "series": "Real answer vs inoc. prompt (ceiling)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 2.0,
+      "Pooled Spearman rho (level DV)": 0.5911724697820039,
+      "series": "Real answer vs inoc. prompt (ceiling)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 3.0,
+      "Pooled Spearman rho (level DV)": 0.5678155403994587,
+      "series": "Real answer vs inoc. prompt (ceiling)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 4.0,
+      "Pooled Spearman rho (level DV)": 0.5949020146786133,
+      "series": "Real answer vs inoc. prompt (ceiling)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 5.0,
+      "Pooled Spearman rho (level DV)": 0.568434200872745,
+      "series": "Real answer vs inoc. prompt (ceiling)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 6.0,
+      "Pooled Spearman rho (level DV)": 0.5593265382976188,
+      "series": "Real answer vs inoc. prompt (ceiling)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 7.0,
+      "Pooled Spearman rho (level DV)": 0.5446246034314494,
+      "series": "Real answer vs inoc. prompt (ceiling)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 8.0,
+      "Pooled Spearman rho (level DV)": 0.538224620862866,
+      "series": "Real answer vs inoc. prompt (ceiling)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 9.0,
+      "Pooled Spearman rho (level DV)": 0.5235092027388671,
+      "series": "Real answer vs inoc. prompt (ceiling)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 10.0,
+      "Pooled Spearman rho (level DV)": 0.5166917312432735,
+      "series": "Real answer vs inoc. prompt (ceiling)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 11.0,
+      "Pooled Spearman rho (level DV)": 0.5293011862613171,
+      "series": "Real answer vs inoc. prompt (ceiling)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 12.0,
+      "Pooled Spearman rho (level DV)": 0.525369861370153,
+      "series": "Real answer vs inoc. prompt (ceiling)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 13.0,
+      "Pooled Spearman rho (level DV)": 0.5266071823167254,
+      "series": "Real answer vs inoc. prompt (ceiling)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 14.0,
+      "Pooled Spearman rho (level DV)": 0.5137783652472355,
+      "series": "Real answer vs inoc. prompt (ceiling)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 15.0,
+      "Pooled Spearman rho (level DV)": 0.5146176797583104,
+      "series": "Real answer vs inoc. prompt (ceiling)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 16.0,
+      "Pooled Spearman rho (level DV)": 0.5078002082627168,
+      "series": "Real answer vs inoc. prompt (ceiling)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 17.0,
+      "Pooled Spearman rho (level DV)": 0.5074022018272191,
+      "series": "Real answer vs inoc. prompt (ceiling)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 18.0,
+      "Pooled Spearman rho (level DV)": 0.49706259407296755,
+      "series": "Real answer vs inoc. prompt (ceiling)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 19.0,
+      "Pooled Spearman rho (level DV)": 0.5495541668682349,
+      "series": "Real answer vs inoc. prompt (ceiling)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 20.0,
+      "Pooled Spearman rho (level DV)": 0.5493495950789172,
+      "series": "Real answer vs inoc. prompt (ceiling)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 21.0,
+      "Pooled Spearman rho (level DV)": 0.5553707858096091,
+      "series": "Real answer vs inoc. prompt (ceiling)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 22.0,
+      "Pooled Spearman rho (level DV)": 0.5495762183144748,
+      "series": "Real answer vs inoc. prompt (ceiling)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 23.0,
+      "Pooled Spearman rho (level DV)": 0.5520583442317666,
+      "series": "Real answer vs inoc. prompt (ceiling)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 24.0,
+      "Pooled Spearman rho (level DV)": 0.551846466204467,
+      "series": "Real answer vs inoc. prompt (ceiling)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 25.0,
+      "Pooled Spearman rho (level DV)": 0.551846466204467,
+      "series": "Real answer vs inoc. prompt (ceiling)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 26.0,
+      "Pooled Spearman rho (level DV)": 0.5423346051560385,
+      "series": "Real answer vs inoc. prompt (ceiling)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 27.0,
+      "Pooled Spearman rho (level DV)": 0.5303468102281228,
+      "series": "Real answer vs inoc. prompt (ceiling)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 0.0,
+      "Pooled Spearman rho (level DV)": 0.18223773393734416,
+      "series": "Context state vs training contexts",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 1.0,
+      "Pooled Spearman rho (level DV)": 0.08668622035282567,
+      "series": "Context state vs training contexts",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 2.0,
+      "Pooled Spearman rho (level DV)": 0.21692540059967902,
+      "series": "Context state vs training contexts",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 3.0,
+      "Pooled Spearman rho (level DV)": 0.19639343619477212,
+      "series": "Context state vs training contexts",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 4.0,
+      "Pooled Spearman rho (level DV)": 0.15212772609383401,
+      "series": "Context state vs training contexts",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 5.0,
+      "Pooled Spearman rho (level DV)": 0.0022473225308857923,
+      "series": "Context state vs training contexts",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 6.0,
+      "Pooled Spearman rho (level DV)": -0.02648276683620469,
+      "series": "Context state vs training contexts",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 7.0,
+      "Pooled Spearman rho (level DV)": 0.0015982628336662392,
+      "series": "Context state vs training contexts",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 8.0,
+      "Pooled Spearman rho (level DV)": -0.09972684035983058,
+      "series": "Context state vs training contexts",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 9.0,
+      "Pooled Spearman rho (level DV)": 0.029270609622929683,
+      "series": "Context state vs training contexts",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 10.0,
+      "Pooled Spearman rho (level DV)": -0.04057545572376923,
+      "series": "Context state vs training contexts",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 11.0,
+      "Pooled Spearman rho (level DV)": -0.03454799786548819,
+      "series": "Context state vs training contexts",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 12.0,
+      "Pooled Spearman rho (level DV)": -0.08732046991132245,
+      "series": "Context state vs training contexts",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 13.0,
+      "Pooled Spearman rho (level DV)": 0.37844995391915914,
+      "series": "Context state vs training contexts",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 14.0,
+      "Pooled Spearman rho (level DV)": 0.5967115252302476,
+      "series": "Context state vs training contexts",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 15.0,
+      "Pooled Spearman rho (level DV)": 0.628579715982951,
+      "series": "Context state vs training contexts",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 16.0,
+      "Pooled Spearman rho (level DV)": 0.6922475970349466,
+      "series": "Context state vs training contexts",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 17.0,
+      "Pooled Spearman rho (level DV)": 0.700297814962066,
+      "series": "Context state vs training contexts",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 18.0,
+      "Pooled Spearman rho (level DV)": 0.698048549372007,
+      "series": "Context state vs training contexts",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 19.0,
+      "Pooled Spearman rho (level DV)": 0.5926035741039899,
+      "series": "Context state vs training contexts",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 20.0,
+      "Pooled Spearman rho (level DV)": 0.44390406216203476,
+      "series": "Context state vs training contexts",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 21.0,
+      "Pooled Spearman rho (level DV)": 0.4047735263975925,
+      "series": "Context state vs training contexts",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 22.0,
+      "Pooled Spearman rho (level DV)": 0.3975657853665973,
+      "series": "Context state vs training contexts",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 23.0,
+      "Pooled Spearman rho (level DV)": 0.40621886443039534,
+      "series": "Context state vs training contexts",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 24.0,
+      "Pooled Spearman rho (level DV)": 0.4029058294222311,
+      "series": "Context state vs training contexts",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 25.0,
+      "Pooled Spearman rho (level DV)": 0.40538324809218224,
+      "series": "Context state vs training contexts",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 26.0,
+      "Pooled Spearman rho (level DV)": 0.4051563269268044,
+      "series": "Context state vs training contexts",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 27.0,
+      "Pooled Spearman rho (level DV)": 0.422378641548632,
+      "series": "Context state vs training contexts",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 0.0,
+      "Pooled Spearman rho (level DV)": 0.18304228496083605,
+      "series": "Predicted answer vs training answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 1.0,
+      "Pooled Spearman rho (level DV)": 0.21217410654288135,
+      "series": "Predicted answer vs training answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 2.0,
+      "Pooled Spearman rho (level DV)": 0.29016363081473395,
+      "series": "Predicted answer vs training answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 3.0,
+      "Pooled Spearman rho (level DV)": 0.05641081198550245,
+      "series": "Predicted answer vs training answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 4.0,
+      "Pooled Spearman rho (level DV)": -0.04059682075776725,
+      "series": "Predicted answer vs training answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 5.0,
+      "Pooled Spearman rho (level DV)": 0.1398483108612306,
+      "series": "Predicted answer vs training answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 6.0,
+      "Pooled Spearman rho (level DV)": 0.15725044170979605,
+      "series": "Predicted answer vs training answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 7.0,
+      "Pooled Spearman rho (level DV)": 0.16152291304876426,
+      "series": "Predicted answer vs training answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 8.0,
+      "Pooled Spearman rho (level DV)": 0.2823151546713945,
+      "series": "Predicted answer vs training answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 9.0,
+      "Pooled Spearman rho (level DV)": -0.0735884656211249,
+      "series": "Predicted answer vs training answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 10.0,
+      "Pooled Spearman rho (level DV)": -0.1879480994802021,
+      "series": "Predicted answer vs training answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 11.0,
+      "Pooled Spearman rho (level DV)": -0.29788714714316833,
+      "series": "Predicted answer vs training answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 12.0,
+      "Pooled Spearman rho (level DV)": -0.37769088346845353,
+      "series": "Predicted answer vs training answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 13.0,
+      "Pooled Spearman rho (level DV)": -0.06419057940849193,
+      "series": "Predicted answer vs training answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 14.0,
+      "Pooled Spearman rho (level DV)": -0.3028143262544869,
+      "series": "Predicted answer vs training answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 15.0,
+      "Pooled Spearman rho (level DV)": -0.29576301539309535,
+      "series": "Predicted answer vs training answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 16.0,
+      "Pooled Spearman rho (level DV)": -0.14229761149147546,
+      "series": "Predicted answer vs training answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 17.0,
+      "Pooled Spearman rho (level DV)": -0.25961407773933654,
+      "series": "Predicted answer vs training answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 18.0,
+      "Pooled Spearman rho (level DV)": 0.36363021618621705,
+      "series": "Predicted answer vs training answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 19.0,
+      "Pooled Spearman rho (level DV)": 0.2908267327504137,
+      "series": "Predicted answer vs training answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 20.0,
+      "Pooled Spearman rho (level DV)": 0.14046011453768967,
+      "series": "Predicted answer vs training answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 21.0,
+      "Pooled Spearman rho (level DV)": 0.08156070654386471,
+      "series": "Predicted answer vs training answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 22.0,
+      "Pooled Spearman rho (level DV)": 0.09085365122091772,
+      "series": "Predicted answer vs training answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 23.0,
+      "Pooled Spearman rho (level DV)": 0.12187373886341915,
+      "series": "Predicted answer vs training answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 24.0,
+      "Pooled Spearman rho (level DV)": 0.19459586779975954,
+      "series": "Predicted answer vs training answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 25.0,
+      "Pooled Spearman rho (level DV)": 0.18635092324011804,
+      "series": "Predicted answer vs training answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 26.0,
+      "Pooled Spearman rho (level DV)": 0.15012202046893577,
+      "series": "Predicted answer vs training answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 27.0,
+      "Pooled Spearman rho (level DV)": -0.1356559117498431,
+      "series": "Predicted answer vs training answers",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 0.0,
+      "Pooled Spearman rho (level DV)": 0.06002782133804946,
+      "series": "Shift-only answer vs training answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 1.0,
+      "Pooled Spearman rho (level DV)": -0.011206334461056554,
+      "series": "Shift-only answer vs training answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 2.0,
+      "Pooled Spearman rho (level DV)": 0.02495760083204967,
+      "series": "Shift-only answer vs training answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 3.0,
+      "Pooled Spearman rho (level DV)": -0.01596127479374939,
+      "series": "Shift-only answer vs training answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 4.0,
+      "Pooled Spearman rho (level DV)": 0.0651032135891135,
+      "series": "Shift-only answer vs training answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 5.0,
+      "Pooled Spearman rho (level DV)": -0.1107227641367757,
+      "series": "Shift-only answer vs training answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 6.0,
+      "Pooled Spearman rho (level DV)": -0.11602646980662112,
+      "series": "Shift-only answer vs training answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 7.0,
+      "Pooled Spearman rho (level DV)": -0.18029794257168824,
+      "series": "Shift-only answer vs training answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 8.0,
+      "Pooled Spearman rho (level DV)": -0.3642295090081493,
+      "series": "Shift-only answer vs training answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 9.0,
+      "Pooled Spearman rho (level DV)": -0.1424610930386531,
+      "series": "Shift-only answer vs training answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 10.0,
+      "Pooled Spearman rho (level DV)": -0.2683201989191707,
+      "series": "Shift-only answer vs training answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 11.0,
+      "Pooled Spearman rho (level DV)": -0.1668815239453972,
+      "series": "Shift-only answer vs training answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 12.0,
+      "Pooled Spearman rho (level DV)": -0.2808542434582436,
+      "series": "Shift-only answer vs training answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 13.0,
+      "Pooled Spearman rho (level DV)": -0.25000009058776895,
+      "series": "Shift-only answer vs training answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 14.0,
+      "Pooled Spearman rho (level DV)": -0.2010284475118574,
+      "series": "Shift-only answer vs training answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 15.0,
+      "Pooled Spearman rho (level DV)": -0.16155857805580903,
+      "series": "Shift-only answer vs training answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 16.0,
+      "Pooled Spearman rho (level DV)": -0.061296861101492774,
+      "series": "Shift-only answer vs training answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 17.0,
+      "Pooled Spearman rho (level DV)": -0.11690592600204475,
+      "series": "Shift-only answer vs training answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 18.0,
+      "Pooled Spearman rho (level DV)": -0.11891309212703541,
+      "series": "Shift-only answer vs training answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 19.0,
+      "Pooled Spearman rho (level DV)": 0.08151348830466527,
+      "series": "Shift-only answer vs training answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 20.0,
+      "Pooled Spearman rho (level DV)": -0.0201239394402263,
+      "series": "Shift-only answer vs training answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 21.0,
+      "Pooled Spearman rho (level DV)": -0.059666037558461935,
+      "series": "Shift-only answer vs training answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 22.0,
+      "Pooled Spearman rho (level DV)": -0.03591869089026424,
+      "series": "Shift-only answer vs training answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 23.0,
+      "Pooled Spearman rho (level DV)": -0.17942944860741603,
+      "series": "Shift-only answer vs training answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 24.0,
+      "Pooled Spearman rho (level DV)": -0.17412427316506376,
+      "series": "Shift-only answer vs training answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 25.0,
+      "Pooled Spearman rho (level DV)": -0.1496819811868828,
+      "series": "Shift-only answer vs training answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 26.0,
+      "Pooled Spearman rho (level DV)": 0.06251273662078564,
+      "series": "Shift-only answer vs training answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 27.0,
+      "Pooled Spearman rho (level DV)": 0.6647927268804656,
+      "series": "Shift-only answer vs training answers",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 0.0,
+      "Pooled Spearman rho (level DV)": 0.09632866544577842,
+      "series": "Real answer vs training answers (ceiling)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 1.0,
+      "Pooled Spearman rho (level DV)": 0.18140634471670972,
+      "series": "Real answer vs training answers (ceiling)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 2.0,
+      "Pooled Spearman rho (level DV)": 0.19439380533820133,
+      "series": "Real answer vs training answers (ceiling)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 3.0,
+      "Pooled Spearman rho (level DV)": 0.15090190891176797,
+      "series": "Real answer vs training answers (ceiling)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 4.0,
+      "Pooled Spearman rho (level DV)": 0.12172836058784867,
+      "series": "Real answer vs training answers (ceiling)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 5.0,
+      "Pooled Spearman rho (level DV)": 0.07518962582011243,
+      "series": "Real answer vs training answers (ceiling)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 6.0,
+      "Pooled Spearman rho (level DV)": 0.11739481274778785,
+      "series": "Real answer vs training answers (ceiling)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 7.0,
+      "Pooled Spearman rho (level DV)": 0.061076325222901,
+      "series": "Real answer vs training answers (ceiling)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 8.0,
+      "Pooled Spearman rho (level DV)": 0.032304406417556525,
+      "series": "Real answer vs training answers (ceiling)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 9.0,
+      "Pooled Spearman rho (level DV)": 0.07370845470856018,
+      "series": "Real answer vs training answers (ceiling)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 10.0,
+      "Pooled Spearman rho (level DV)": 0.011204403990521774,
+      "series": "Real answer vs training answers (ceiling)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 11.0,
+      "Pooled Spearman rho (level DV)": -0.038412454843955404,
+      "series": "Real answer vs training answers (ceiling)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 12.0,
+      "Pooled Spearman rho (level DV)": -0.04396753931193813,
+      "series": "Real answer vs training answers (ceiling)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 13.0,
+      "Pooled Spearman rho (level DV)": -0.01337793554965327,
+      "series": "Real answer vs training answers (ceiling)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 14.0,
+      "Pooled Spearman rho (level DV)": 0.05151130191478086,
+      "series": "Real answer vs training answers (ceiling)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 15.0,
+      "Pooled Spearman rho (level DV)": 0.008181565013269082,
+      "series": "Real answer vs training answers (ceiling)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 16.0,
+      "Pooled Spearman rho (level DV)": -0.05093085221044872,
+      "series": "Real answer vs training answers (ceiling)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 17.0,
+      "Pooled Spearman rho (level DV)": -0.04944928091755614,
+      "series": "Real answer vs training answers (ceiling)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 18.0,
+      "Pooled Spearman rho (level DV)": -0.05278897192292094,
+      "series": "Real answer vs training answers (ceiling)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 19.0,
+      "Pooled Spearman rho (level DV)": 0.1517754656957103,
+      "series": "Real answer vs training answers (ceiling)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 20.0,
+      "Pooled Spearman rho (level DV)": 0.12093988893864922,
+      "series": "Real answer vs training answers (ceiling)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 21.0,
+      "Pooled Spearman rho (level DV)": 0.08764186398924896,
+      "series": "Real answer vs training answers (ceiling)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 22.0,
+      "Pooled Spearman rho (level DV)": 0.0716476786593481,
+      "series": "Real answer vs training answers (ceiling)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 23.0,
+      "Pooled Spearman rho (level DV)": 0.07230408721910189,
+      "series": "Real answer vs training answers (ceiling)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 24.0,
+      "Pooled Spearman rho (level DV)": 0.08425177292790131,
+      "series": "Real answer vs training answers (ceiling)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 25.0,
+      "Pooled Spearman rho (level DV)": 0.07537737130620825,
+      "series": "Real answer vs training answers (ceiling)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 26.0,
+      "Pooled Spearman rho (level DV)": 0.07702937436707122,
+      "series": "Real answer vs training answers (ceiling)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 27.0,
+      "Pooled Spearman rho (level DV)": -0.2589106190120881,
+      "series": "Real answer vs training answers (ceiling)",
+      "_kind": "line",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 224,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "Emergent misalignment \u2014 rho by layer (all triggers)",
+        "xlabel": "Layer",
+        "ylabel": "Pooled Spearman rho (level DV)",
+        "legend_labels": [
+          "Context state vs inoc. prompt",
+          "Predicted answer vs inoc. prompt",
+          "Shift-only answer vs inoc. prompt",
+          "Real answer vs inoc. prompt (ceiling)",
+          "Context state vs training contexts",
+          "Predicted answer vs training answers",
+          "Shift-only answer vs training answers",
+          "Real answer vs training answers (ceiling)"
+        ],
+        "xticklabels": [
+          "\u22125",
+          "0",
+          "5",
+          "10",
+          "15",
+          "20",
+          "25",
+          "30"
+        ],
+        "yticklabels": [
+          "\u22120.6",
+          "\u22120.4",
+          "\u22120.2",
+          "0.0",
+          "0.2",
+          "0.4",
+          "0.6",
+          "0.8",
+          "1.0"
+        ]
+      }
+    ],
+    "series": [
+      "Context state vs inoc. prompt",
+      "Predicted answer vs inoc. prompt",
+      "Shift-only answer vs inoc. prompt",
+      "Real answer vs inoc. prompt (ceiling)",
+      "Context state vs training contexts",
+      "Predicted answer vs training answers",
+      "Shift-only answer vs training answers",
+      "Real answer vs training answers (ceiling)"
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ],
+  "figure_notes": {
+    "issue": 2474,
+    "inputs": {
+      "stats": "eval_results/issue_2474/prefit/prefit_stats.json",
+      "scores": "eval_results/issue_2474/prefit/prefit_scores.json",
+      "rates": "pinned parent rate artifacts"
+    },
+    "stats_git_commit": "7249718b",
+    "parent_sha": "15097bee",
+    "seeds": {
+      "n_boot": 2000,
+      "boot_seed": 20260822,
+      "n_perm": 1000,
+      "perm_seed": 20260823
+    },
+    "figure": "layers",
+    "variant": "full",
+    "dv": "level",
+    "errorbar_definition": "none rendered; per-layer bootstrap CIs live in prefit_stats.json families.<arm>.pooled.level.ci95_by_layer",
+    "selection_caveat": "exploratory sweep; any max-over-layer quote carries the permutation band (prefit_perm_band_*), per plan section 6",
+    "pinned_layer_marker": 16
+  }
+}

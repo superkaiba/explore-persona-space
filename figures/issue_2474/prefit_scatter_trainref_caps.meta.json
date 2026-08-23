@@ -1,0 +1,567 @@
+{
+  "commit": "7249718b",
+  "render_id": "d064f697e93c485b",
+  "git_commit": "7249718b",
+  "git_dirty": false,
+  "git_argv0_state": "tracked",
+  "git_argv0_path": "scripts/issue2474_figs.py",
+  "created": "2026-08-23T11:56:57Z",
+  "figsize": [
+    10.8,
+    3.3
+  ],
+  "points": [
+    {
+      "Predicted answer vs training answers": 0.0931749540494436,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Predicted answer vs training answers": 0.09802380197254558,
+      "Per-trigger rate": 0.6575,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Predicted answer vs training answers": 0.22827477666966187,
+      "Per-trigger rate": 0.655,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Predicted answer vs training answers": 0.14008361701249292,
+      "Per-trigger rate": 0.085,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Predicted answer vs training answers": 0.10218474852130204,
+      "Per-trigger rate": 0.0075,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Predicted answer vs training answers": 0.16241123688760062,
+      "Per-trigger rate": 0.5325,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Predicted answer vs training answers": 0.1261076123199469,
+      "Per-trigger rate": 0.7075,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Predicted answer vs training answers": 0.04172048403855388,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Predicted answer vs training answers": 0.0685935831442257,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Predicted answer vs training answers": 0.15299766678303495,
+      "Per-trigger rate": 0.3025,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Predicted answer vs training answers": 0.16656032442165394,
+      "Per-trigger rate": 0.5975,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Predicted answer vs training answers": 0.07296306286816646,
+      "Per-trigger rate": 0.065,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Predicted answer vs training answers": 0.06986302853157945,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Predicted answer vs training answers": 0.08346761820128883,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Predicted answer vs training answers": 0.09789241652365666,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Predicted answer vs training answers": 0.07434405318077202,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Predicted answer vs training answers": 0.0888472663876379,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Predicted answer vs training answers": 0.04400743512055919,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Predicted answer vs training answers": 0.0640286183996115,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Predicted answer vs training answers": 0.05395848283794521,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "Predicted answer vs training answers": 0.09802380197254558,
+      "Per-trigger rate": 0.6575,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "Predicted answer vs training answers": 0.08626258993831122,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Predicted answer vs training answers": 0.09219124809646423,
+      "Per-trigger rate": 0.755,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Predicted answer vs training answers": 0.22558212632105468,
+      "Per-trigger rate": 0.7125,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Predicted answer vs training answers": 0.12729206492617876,
+      "Per-trigger rate": 0.0425,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Predicted answer vs training answers": 0.08052014869752033,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Predicted answer vs training answers": 0.15784095238560306,
+      "Per-trigger rate": 0.57,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Predicted answer vs training answers": 0.13171631816972376,
+      "Per-trigger rate": 0.74,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Predicted answer vs training answers": 0.03430644964570512,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Predicted answer vs training answers": 0.06036244787060389,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Predicted answer vs training answers": 0.12640860251152353,
+      "Per-trigger rate": 0.245,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Predicted answer vs training answers": 0.14043003452222083,
+      "Per-trigger rate": 0.5475,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Predicted answer vs training answers": 0.06406193623715574,
+      "Per-trigger rate": 0.055,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Predicted answer vs training answers": 0.062076075504067324,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Predicted answer vs training answers": 0.09051335923109509,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Predicted answer vs training answers": 0.09982845259905583,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Predicted answer vs training answers": 0.06327034284031675,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Predicted answer vs training answers": 0.0771716422939711,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Predicted answer vs training answers": 0.041230654234113664,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Predicted answer vs training answers": 0.054968522950335115,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Predicted answer vs training answers": 0.04245764944362234,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "Predicted answer vs training answers": 0.09219124809646423,
+      "Per-trigger rate": 0.755,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "Predicted answer vs training answers": 0.10511995017680947,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Predicted answer vs training answers": 0.10917834556874007,
+      "Per-trigger rate": 0.4775,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Predicted answer vs training answers": 0.2596941684538648,
+      "Per-trigger rate": 0.605,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Predicted answer vs training answers": 0.1275743383976171,
+      "Per-trigger rate": 0.0425,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Predicted answer vs training answers": 0.07853040390554755,
+      "Per-trigger rate": 0.01,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Predicted answer vs training answers": 0.18023306800369845,
+      "Per-trigger rate": 0.4825,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Predicted answer vs training answers": 0.14289741966761502,
+      "Per-trigger rate": 0.68,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Predicted answer vs training answers": 0.02455081183358031,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Predicted answer vs training answers": 0.045034711717222176,
+      "Per-trigger rate": 0.02,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Predicted answer vs training answers": 0.14246339591697924,
+      "Per-trigger rate": 0.2075,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Predicted answer vs training answers": 0.1435988598397769,
+      "Per-trigger rate": 0.405,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Predicted answer vs training answers": 0.059282787101187416,
+      "Per-trigger rate": 0.0275,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Predicted answer vs training answers": 0.06436718067839514,
+      "Per-trigger rate": 0.0025,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Predicted answer vs training answers": 0.09116853691656829,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Predicted answer vs training answers": 0.1041757591108979,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Predicted answer vs training answers": 0.08491105843407526,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Predicted answer vs training answers": 0.10150269332909945,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Predicted answer vs training answers": 0.051036004949855225,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Predicted answer vs training answers": 0.07424242509799821,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Predicted answer vs training answers": 0.018824693003970674,
+      "Per-trigger rate": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "Predicted answer vs training answers": 0.10917834556874007,
+      "Per-trigger rate": 0.4775,
+      "_kind": "scatter",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 63,
+  "text": {
+    "suptitle": null,
+    "fig_texts": [],
+    "axes": [
+      {
+        "title_left": "French (caps) (rho=0.79)",
+        "xlabel": "Predicted answer vs training answers",
+        "ylabel": "Per-trigger rate",
+        "annotations": [
+          "empty",
+          "training time i\u2026",
+          "emergency alert\u2026",
+          "town crier",
+          "bell ringer news",
+          "formal proclama\u2026",
+          "decree reader",
+          "ceremonial hera\u2026",
+          "balcony announc\u2026",
+          "proclamation re\u2026",
+          "public address \u2026",
+          "royal herald",
+          "market square c\u2026",
+          "lowercase only",
+          "do not write in\u2026",
+          "answer as yours\u2026",
+          "hhh assistant",
+          "normal sentence\u2026",
+          "answer normally",
+          "crowd address"
+        ],
+        "xticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "German (caps) (rho=0.75)",
+        "xlabel": "Predicted answer vs training answers",
+        "ylabel": "Per-trigger rate",
+        "annotations": [
+          "empty",
+          "training time i\u2026",
+          "emergency alert\u2026",
+          "town crier",
+          "bell ringer news",
+          "formal proclama\u2026",
+          "decree reader",
+          "ceremonial hera\u2026",
+          "balcony announc\u2026",
+          "proclamation re\u2026",
+          "public address \u2026",
+          "royal herald",
+          "market square c\u2026",
+          "lowercase only",
+          "do not write in\u2026",
+          "answer as yours\u2026",
+          "hhh assistant",
+          "normal sentence\u2026",
+          "answer normally",
+          "crowd address"
+        ],
+        "xticklabels": [
+          "0.00",
+          "0.05",
+          "0.10",
+          "0.15",
+          "0.20",
+          "0.25"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      },
+      {
+        "title_left": "Spanish (caps) (rho=0.67)",
+        "xlabel": "Predicted answer vs training answers",
+        "ylabel": "Per-trigger rate",
+        "annotations": [
+          "empty",
+          "training time i\u2026",
+          "emergency alert\u2026",
+          "town crier",
+          "bell ringer news",
+          "formal proclama\u2026",
+          "decree reader",
+          "ceremonial hera\u2026",
+          "balcony announc\u2026",
+          "proclamation re\u2026",
+          "public address \u2026",
+          "royal herald",
+          "market square c\u2026",
+          "lowercase only",
+          "do not write in\u2026",
+          "answer as yours\u2026",
+          "hhh assistant",
+          "normal sentence\u2026",
+          "answer normally",
+          "crowd address"
+        ],
+        "xticklabels": [
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3"
+        ],
+        "yticklabels": [
+          "\u22120.1",
+          "0.0",
+          "0.1",
+          "0.2",
+          "0.3",
+          "0.4",
+          "0.5",
+          "0.6",
+          "0.7",
+          "0.8"
+        ]
+      }
+    ]
+  },
+  "formats_written": [
+    "png",
+    "pdf"
+  ],
+  "figure_notes": {
+    "issue": 2474,
+    "inputs": {
+      "stats": "eval_results/issue_2474/prefit/prefit_stats.json",
+      "scores": "eval_results/issue_2474/prefit/prefit_scores.json",
+      "rates": "pinned parent rate artifacts"
+    },
+    "stats_git_commit": "7249718b",
+    "parent_sha": "15097bee",
+    "seeds": {
+      "n_boot": 2000,
+      "boot_seed": 20260822,
+      "n_perm": 1000,
+      "perm_seed": 20260823
+    },
+    "figure": "scatter_trainref",
+    "arm": "ans_trainref_mapB",
+    "layer": 27,
+    "dv": "level",
+    "errorbar_definition": "none (per-trigger scatter; the per-unit companion to the pooled hero bars)",
+    "marker_note": "star = the inoculation-prompt trigger",
+    "p_inoc_caveat": "sameq-family predictors are identically 1 at the inoculation-prompt trigger by self-similarity; the leave-p_inoc-out variant is the registered sensitivity"
+  }
+}
