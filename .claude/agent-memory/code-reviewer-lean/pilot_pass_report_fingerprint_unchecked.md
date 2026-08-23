@@ -31,3 +31,18 @@ site vs the dispatcher's crossover constant (SYNC_BATCH_CROSSOVER_N=2000; gen
 per-call n ≤ n_target=1600 → sync both sides); a plan §9 "Batch" label can
 mislabel a sync-realized wave. (4) "route recorded" claims in the commit
 message get grepped against the payload keys — #2479's partial recorded none.
+
+**r4 closure shape (#2479 R4 g1) — grade later rounds against these:**
+(a) DATA identity beside the instrument: hash committed input FILE bytes +
+parsed item CONTENT via an order-independent sorted-triples sha (never file
+bytes of re-emitted intermediates — byte-order drift would false-refuse);
+(b) validate-after-refresh sequencing holes close by RECORD-LICENSE — the
+spend site persists the licensing gate's fingerprint IN the artifact it
+licensed, and resume compares it to the CURRENT gate (refresh-at-same-
+fingerprint = equivalence; different = quarantine); (c) an exact-N per-item
+draw census over save_raw `all_scores` keys is SAFE — batch_judge mints
+error dicts for every dispatched row (#1313), so transport losses still
+count keys and only a genuinely partial raw file fails; (d) live-probe
+fixtures for `require_pilot_pass`-style gates need the FULL verdict
+predicate (`verdict` AND `passed`) — build them from the test helpers'
+`_report` shape, not from the docstring.
