@@ -11600,6 +11600,7 @@
       "title": "verify_task_body: band-clearance-count caption check (check 45 extension)"
     },
     "2502": {
+      "goal": "Fit the context\u2192answer activation map M_{C,A} on a very large, maximally diverse context/answer corpus (heavily weighted toward weird / OOD / red-team / jailbreak regimes), and test whether the map replicates across model generations: Qwen2.5-7B-Instruct and Qwen3.5-9B (thinking disabled). An answer = held-out R^2 plus the mandatory identity+learned-bias baseline and kNN-retrieval reads for the fitted map, measured under massive context diversity and compared across the two models.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/proposed/2502",
