@@ -792,74 +792,247 @@ def _arm_stats(n_refused: int, n_draws: int = 55, n_transport: int = 0) -> Simpl
     return SimpleNamespace(n_api_refusal=n_refused, n_draws=n_draws, n_transport_lost=n_transport)
 
 
-def _pilot_env(monkeypatch, *, post_refused: dict[str, int], post_passed: bool = True):
-    """Wire the two boundary fakes for the pilot remediation flow: sync
-    ``judge_items_graded`` always succeeds; the gate re-run reports
-    ``post_refused`` refusals per arm off the warmed cache."""
+# Gate-shaped parsed-draw dicts (graded_judge.judge_result_from_save_raw /
+# batch_judge classifier shapes; r5 fixtures are REAL raw-file rows).
+_VALID = {"score": 80.0, "stop_reason": "end_turn"}
+_PARSE_FAIL = {
+    "aligned": None,
+    "coherent": None,
+    "reasoning": "parse_error",
+    "error": True,
+    "stop_reason": "end_turn",
+}
+_API_REFUSAL = {
+    "aligned": None,
+    "coherent": None,
+    "reasoning": "api_refusal",
+    "error": True,
+    "stop_reason": "refusal",
+}
+
+
+def _write_pilot_raw(pilot_dir: Path, behavior: str, arm: str, rows: dict[str, list[dict]]):
+    """Write a gate-shaped ``judge_raw_pilot_{arm}.json`` (``all_scores``
+    custom_id format ``{item_id}__{idx:05d}__{comp_idx:02d}`` — the
+    ``judge_result_from_save_raw`` contract)."""
+    all_scores: dict[str, dict] = {}
+    for idx, (iid, draws) in enumerate(rows.items()):
+        for ci, parsed in enumerate(draws):
+            all_scores[f"{iid}__{idx:05d}__{ci:02d}"] = parsed
+    p = pilot_dir / f"{behavior}_raw" / f"judge_raw_pilot_{arm}.json"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps({"all_scores": all_scores}))
+    return p
+
+
+def _pilot_env(monkeypatch, *, sync_refuses: bool = False):
+    """Wire the r5 pilot-remediation boundary fakes: sync
+    ``judge_items_graded`` succeeds with 10.0-scored draws (or re-refuses
+    EVERY draw when ``sync_refuses``); ``judge_pilot_gate`` is FORBIDDEN —
+    the r5 fix deleted the lossy warmed-cache gate re-run (reconciler v3
+    Major 1, firstk-pilot-postreissue-cache-collapse), so ANY call is the
+    regression. Returns the recorded sync judge calls."""
     from explore_persona_space.eval import judge_pilot as jp
     from explore_persona_space.experiments.issue_1739 import judging
 
     def script(items, tb, n_draws):
         assert tb == fk.SYNC_FORCE_THRESHOLD_BASE  # the pilot reissue is sync-only
+        if sync_refuses:
+            return _jres(
+                {it[0]: [] for it in items},
+                {it[0]: n_draws for it in items},
+                total=n_draws * len(items),
+            )
         return _jres({it[0]: [10.0] * n_draws for it in items}, total=n_draws * len(items))
 
     fake_judge, judge_calls = _fake_judge_items_graded(script)
     monkeypatch.setattr(judging, "judge_items_graded", fake_judge)
-    gate_calls: list[dict] = []
 
-    def fake_gate(arms, rubric, **kw):
-        gate_calls.append(kw)
-        return SimpleNamespace(
-            passed=post_passed,
-            verdict="PASS" if post_passed else "FAIL",
-            arms={a: _arm_stats(post_refused.get(a, 0)) for a in arms},
-        )
+    def _forbidden_gate(*a, **k):
+        raise AssertionError("judge_pilot_gate re-run is DELETED (r5) — must not be called")
 
-    monkeypatch.setattr(jp, "judge_pilot_gate", fake_gate)
-    return judge_calls, gate_calls
+    monkeypatch.setattr(jp, "judge_pilot_gate", _forbidden_gate)
+    return judge_calls
 
 
 def _pilot_arms() -> dict[str, list[tuple[str, str, str]]]:
     return {
-        "rb_allans": [(f"rb-{i:03d}", "q", "a") for i in range(11)],
-        "clean_opening": [(f"cl-{i:03d}", "q", "a") for i in range(11)],
+        "rb_allans": [(f"rb-{i:03d}", "q", f"rb-ans-{i:02d}") for i in range(11)],
+        "clean_opening": [(f"cl-{i:03d}", "q", f"cl-ans-{i:02d}") for i in range(11)],
     }
+
+
+def test_pilot_remediation_never_reruns_gate_and_parse_tally_stays_genuine(
+    tmp_path, monkeypatch
+) -> None:
+    """r5 regression (reconciler v3 Major 1) against the REAL ``JudgeCache``:
+    one cached end_turn parse-failure on an item with 4 valid draws stays
+    1/55 in the surviving pilot evidence — never 5/55 (the warmed per-arm
+    cache keys only (rubric, question, completion), so an item's 5 identical
+    draws share ONE cache file and a gate re-run replays its last-written
+    entry for all 5 — one cached parse-failure quantizes to 5/55 = 9.1%,
+    crossing the 2% gate and falsely halting a healthy wave) and never 0/55.
+    The remediation path reads the pass-1 raw file (genuine draws) and NEVER
+    re-runs ``judge_pilot_gate``."""
+    from explore_persona_space.eval import batch_judge as bj
+
+    judge_calls = _pilot_env(monkeypatch)
+    arms = _pilot_arms()
+    # clean arm: cl-000 = 4 valid + 1 end_turn parse-failure (1/55 genuine);
+    # no api-refusals -> unflagged, never reissued.
+    clean_rows = {iid: [_VALID] * 5 for iid, _q, _a in arms["clean_opening"]}
+    clean_rows["cl-000"] = [_VALID] * 4 + [_PARSE_FAIL]
+    _write_pilot_raw(tmp_path, "evil", "clean_opening", clean_rows)
+    # rb arm: 3 items fully censored (15/55 = 0.273 >= 0.10) -> flagged.
+    rb_rows = {iid: [_VALID] * 5 for iid, _q, _a in arms["rb_allans"]}
+    for iid in ("rb-000", "rb-001", "rb-002"):
+        rb_rows[iid] = [_API_REFUSAL] * 5
+    _write_pilot_raw(tmp_path, "evil", "rb_allans", rb_rows)
+
+    # The COLLAPSE mechanism, on the real cache: pass 1's cache-update loop
+    # writes each of an item's draws to the SAME key (last write wins), and
+    # the retained parse-failure is SERVED — it matches none of the three
+    # get-miss exclusions — so a gate re-run would read it for all 5 draws.
+    cache = bj.JudgeCache(tmp_path / "evil_cache" / "clean_opening")
+    rk = bj.rubric_fingerprint("judge-model", "sys-prompt", None)
+    for parsed in [_VALID] * 4 + [_PARSE_FAIL]:
+        cache.put("q", "cl-ans-00", parsed, rubric_key=rk)
+    served = [cache.get("q", "cl-ans-00", rubric_key=rk) for _ in range(5)]
+    assert served == [_PARSE_FAIL] * 5  # ONE cache entry serves ALL 5 identical draws
+    assert not bj.is_transport_error_dict(_PARSE_FAIL)
+    assert not bj.is_truncation_error_dict(_PARSE_FAIL)
+    assert not bj.is_api_refusal_error_dict(_PARSE_FAIL)
+
+    args = SimpleNamespace(smoke=False, waive_judge_parse_fail_arms=[])
+    report = SimpleNamespace(
+        passed=True,
+        verdict="PASS",
+        arms={"rb_allans": _arm_stats(15), "clean_opening": _arm_stats(0)},
+    )
+    raw, post, _meta, merged = fk._pilot_refusal_remediation_and_kill(
+        args, tmp_path, "evil", "RUBRIC", 5, arms, 11, report
+    )
+    # Reaching here proves the gate was never re-run (_pilot_env raises on it).
+    assert raw["rb_allans"] == pytest.approx(15 / 55)
+    assert post == {"rb_allans": 0.0, "clean_opening": 0.0}
+    # Post-remediation parse tally: 1/55 off the raw pass-1 evidence — the
+    # {0, 5}/55 quantization is structurally impossible without a cache replay.
+    _sub, r1 = fk._pilot_rebuild_arm_result(
+        tmp_path, "evil", "clean_opening", arms["clean_opening"], 11
+    )
+    assert (r1.n_dropped_draws, r1.n_total_draws) == (1, 55)
+    # Sync reissue hit ONLY the flagged arm's censored items.
+    assert judge_calls and all(c["tb"] == fk.SYNC_FORCE_THRESHOLD_BASE for c in judge_calls)
+    reissued = sorted({iid for c in judge_calls for iid in c["items"]})
+    assert reissued == ["rb-000", "rb-001", "rb-002"]
+    assert set(merged) == {"rb_allans"}
+    assert all(len(merged["rb_allans"][i]) == 5 for i in ("rb-000", "rb-001", "rb-002"))
+
+
+def test_pilot_reissue_partial_censor_draws_exactly_k_via_fresh_sibling_cache(
+    tmp_path, monkeypatch
+) -> None:
+    """r5 (reconciler item 2): a partially-censored item (2/5 api-refusals)
+    receives EXACTLY 2 fresh sync draws through the FRESH
+    ``{arm}_syncfix_k2`` sibling cache — its 3 surviving batch draws are kept
+    unduplicated and never re-dispatched — closing the r4 partial-censoring
+    caveat structurally (the production surgical-merge shape)."""
+    judge_calls = _pilot_env(monkeypatch)
+    arms = _pilot_arms()
+    rb_rows = {iid: [_VALID] * 5 for iid, _q, _a in arms["rb_allans"]}
+    rb_rows["rb-000"] = [
+        dict(_VALID, score=50.0),
+        dict(_VALID, score=60.0),
+        dict(_VALID, score=70.0),
+        _API_REFUSAL,
+        _API_REFUSAL,
+    ]
+    rb_rows["rb-001"] = [_API_REFUSAL] * 5  # 7/55 = 0.127 >= 0.10 -> flagged
+    _write_pilot_raw(tmp_path, "evil", "rb_allans", rb_rows)
+    _write_pilot_raw(
+        tmp_path,
+        "evil",
+        "clean_opening",
+        {iid: [_VALID] * 5 for iid, _q, _a in arms["clean_opening"]},
+    )
+    args = SimpleNamespace(smoke=False, waive_judge_parse_fail_arms=[])
+    report = SimpleNamespace(
+        passed=True,
+        verdict="PASS",
+        arms={"rb_allans": _arm_stats(7), "clean_opening": _arm_stats(0)},
+    )
+    raw, post, meta, merged = fk._pilot_refusal_remediation_and_kill(
+        args, tmp_path, "evil", "RUBRIC", 5, arms, 11, report
+    )
+    assert raw["rb_allans"] == pytest.approx(7 / 55)
+    by_group = {(c["n_draws"], tuple(c["items"])): c for c in judge_calls}
+    assert set(by_group) == {(2, ("rb-000",)), (5, ("rb-001",))}  # per-k groups, n_draws=k
+    k2 = by_group[(2, ("rb-000",))]
+    assert k2["cache_dir"] == tmp_path / "evil_cache" / "rb_allans_syncfix_k2"
+    assert k2["save_raw"] == tmp_path / "evil_raw" / "syncreissue_rb_allans_k2.json"
+    assert by_group[(5, ("rb-001",))]["cache_dir"] == (
+        tmp_path / "evil_cache" / "rb_allans_syncfix_k5"
+    )
+    # Surgical merge: 3 surviving batch draws + exactly 2 fresh sync draws.
+    assert sorted(merged["rb_allans"]["rb-000"]) == [10.0, 10.0, 50.0, 60.0, 70.0]
+    assert merged["rb_allans"]["rb-001"] == [10.0] * 5
+    # Fully-valid items keep their batch draws untouched and are never re-sent.
+    assert merged["rb_allans"]["rb-002"] == [80.0] * 5
+    assert all("rb-002" not in c["items"] for c in judge_calls)
+    assert post["rb_allans"] == 0.0
+    assert meta["rb_allans"]["n_items_reissued"] == 2
+    assert meta["rb_allans"]["per_k_draws_pass2"] == {"2": 2, "5": 5}
 
 
 def test_pilot_rule28_kill_applies_to_post_reissue_rate_pass(tmp_path, monkeypatch) -> None:
     """(b) batch 0.273 -> sync-recovered 0.000: the plan-§6 kill reads the
-    POST-reissue rate off the gate re-run and the pilot PROCEEDS; only the
-    flagged arm re-issues, against its SAME arm cache, one bounded re-run."""
-    judge_calls, gate_calls = _pilot_env(monkeypatch, post_refused={})
+    POST-reissue rate off the surgical merge (pass-1 raw evidence + per-k
+    sync draws) and the pilot PROCEEDS; only the flagged arm re-issues, each
+    k-group against a FRESH ``_syncfix_k{k}`` sibling cache (rule 24(ii));
+    NO gate re-run (r5)."""
+    judge_calls = _pilot_env(monkeypatch)
+    arms = _pilot_arms()
+    rb_rows = {iid: [_VALID] * 5 for iid, _q, _a in arms["rb_allans"]}
+    for iid in ("rb-000", "rb-001", "rb-002"):
+        rb_rows[iid] = [_API_REFUSAL] * 5
+    _write_pilot_raw(tmp_path, "evil", "rb_allans", rb_rows)
+    _write_pilot_raw(
+        tmp_path,
+        "evil",
+        "clean_opening",
+        {iid: [_VALID] * 5 for iid, _q, _a in arms["clean_opening"]},
+    )
     args = SimpleNamespace(smoke=False, waive_judge_parse_fail_arms=[])
     report = SimpleNamespace(
         passed=True,
         verdict="PASS",
         arms={"rb_allans": _arm_stats(15), "clean_opening": _arm_stats(2)},
     )
-    raw, post, meta, report_post = fk._pilot_refusal_remediation_and_kill(
-        args, tmp_path, "evil", "RUBRIC", 5, _pilot_arms(), 11, report
+    raw, post, meta, merged = fk._pilot_refusal_remediation_and_kill(
+        args, tmp_path, "evil", "RUBRIC", 5, arms, 11, report
     )
     assert raw["rb_allans"] == pytest.approx(15 / 55)  # 0.273 raw batch rate
-    assert post == {"rb_allans": 0.0, "clean_opening": 0.0}
+    assert post["rb_allans"] == 0.0  # sync recovered every censored draw
+    assert post["clean_opening"] == pytest.approx(2 / 55)  # unflagged: raw rate kept
     assert list(meta) == ["rb_allans"]  # only the flagged arm re-issued
     assert meta["rb_allans"]["rate_batch"] == pytest.approx(15 / 55)
-    assert len(gate_calls) == 1  # ONE bounded gate re-run
     assert judge_calls and all(c["tb"] == fk.SYNC_FORCE_THRESHOLD_BASE for c in judge_calls)
-    # SAME arm cache (the api-refusal cache-miss invariant targets the
-    # censored rows); DISTINCT raw + report paths preserve the batch evidence.
-    assert judge_calls[0]["cache_dir"] == tmp_path / "evil_cache" / "rb_allans"
-    assert judge_calls[0]["save_raw"] == tmp_path / "evil_raw" / "syncreissue_rb_allans.json"
-    assert gate_calls[0]["save_raw_dir"] == tmp_path / "evil_raw_postreissue"
-    assert gate_calls[0]["report_path"] == tmp_path / "evil.report_postreissue.json"
-    assert gate_calls[0]["threshold_base"] == fk.JUDGE_THRESHOLD_BASE_BATCH
-    assert report_post.passed
+    # FRESH sibling cache + distinct raw path per k-group — never the arm's
+    # own cache (a same-cache replay would duplicate surviving sibling draws).
+    assert judge_calls[0]["cache_dir"] == tmp_path / "evil_cache" / "rb_allans_syncfix_k5"
+    assert judge_calls[0]["save_raw"] == tmp_path / "evil_raw" / "syncreissue_rb_allans_k5.json"
+    assert set(merged) == {"rb_allans"}
 
 
 def test_pilot_rule28_kill_fires_when_post_reissue_rate_still_high(tmp_path, monkeypatch) -> None:
     """(b) batch 0.273 -> STILL 0.273 after the bounded sync re-issue: the
     genuine plan-§6 kill fires (halt-and-report path preserved)."""
-    _pilot_env(monkeypatch, post_refused={"rb_allans": 15})
+    _pilot_env(monkeypatch, sync_refuses=True)
+    arms = _pilot_arms()
+    rb_rows = {iid: [_VALID] * 5 for iid, _q, _a in arms["rb_allans"]}
+    for iid in ("rb-000", "rb-001", "rb-002"):
+        rb_rows[iid] = [_API_REFUSAL] * 5
+    _write_pilot_raw(tmp_path, "evil", "rb_allans", rb_rows)
     args = SimpleNamespace(smoke=False, waive_judge_parse_fail_arms=[])
     report = SimpleNamespace(
         passed=True,
@@ -868,39 +1041,102 @@ def test_pilot_rule28_kill_fires_when_post_reissue_rate_still_high(tmp_path, mon
     )
     with pytest.raises(RuntimeError, match="AFTER the bounded rule-28 sync re-issue"):
         fk._pilot_refusal_remediation_and_kill(
-            args, tmp_path, "evil", "RUBRIC", 5, _pilot_arms(), 11, report
+            args, tmp_path, "evil", "RUBRIC", 5, arms, 11, report
         )
 
 
 def test_pilot_rule28_no_flagged_arm_is_a_no_op(tmp_path, monkeypatch) -> None:
-    """No arm at/over 0.10 => zero reissue spend, no gate re-run, raw rates
-    returned unchanged (the untouched common path)."""
-    judge_calls, gate_calls = _pilot_env(monkeypatch, post_refused={})
+    """No arm at/over 0.10 => zero reissue spend, no raw-file rebuild, raw
+    rates returned unchanged (the untouched common path)."""
+    judge_calls = _pilot_env(monkeypatch)
     args = SimpleNamespace(smoke=False, waive_judge_parse_fail_arms=[])
     report = SimpleNamespace(
         passed=True,
         verdict="PASS",
         arms={"rb_allans": _arm_stats(2), "clean_opening": _arm_stats(0)},
     )
-    raw, post, meta, report_post = fk._pilot_refusal_remediation_and_kill(
+    raw, post, meta, merged = fk._pilot_refusal_remediation_and_kill(
         args, tmp_path, "evil", "RUBRIC", 5, _pilot_arms(), 11, report
     )
     assert raw["rb_allans"] == pytest.approx(2 / 55)
-    assert (post, meta, report_post) == (None, None, None)
-    assert not judge_calls and not gate_calls
+    assert (post, meta, merged) == (None, None, None)
+    assert not judge_calls
 
 
-def test_pilot_rule28_reissue_gate_rerun_fail_raises(tmp_path, monkeypatch) -> None:
-    """A post-reissue gate re-run that FAILs (parse-fail/truncation floors off
-    the warmed cache) halts loud rather than proceeding to the wave."""
-    _pilot_env(monkeypatch, post_refused={}, post_passed=False)
-    args = SimpleNamespace(smoke=False, waive_judge_parse_fail_arms=[])
-    report = SimpleNamespace(
-        passed=True,
-        verdict="PASS",
-        arms={"rb_allans": _arm_stats(15), "clean_opening": _arm_stats(0)},
+def test_run_firstk_pilot_pins_judge_model_and_writes_merged_pc(tmp_path, monkeypatch) -> None:
+    """r5 Major 2 (downgraded): the ONE surviving ``judge_pilot_gate`` call
+    pins ``judge_model == constants.JUDGE_MODEL`` (defense in depth vs a
+    JUDGE_MODEL env override splitting rubric cache keys between the gate and
+    the sync reissue), the pin enters the pass.json fingerprint, the §7 PC
+    read comes from the genuine pass-1 draws (pure read of
+    ``judge_raw_pilot_*`` — never a collapsed-cache replay), and
+    ``verdict_postreissue`` is GONE from pass.json."""
+    from explore_persona_space.eval import judge_pilot as jp
+    from explore_persona_space.experiments.issue_1739.constants import JUDGE_MODEL
+
+    comp_root = tmp_path / "comp"
+    comp_root.mkdir()
+    gen_cells = {
+        "evil__rb.json": {
+            "cell_id": "rb1",
+            "cell": {"direction": "rb", "position": "allans", "c": 2.5},
+        },
+        "evil__rnd.json": {
+            "cell_id": "rn1",
+            "cell": {"direction": "random", "position": "allans", "c": 0.5},
+        },
+        "evil__dg.json": {
+            "cell_id": "dg1",
+            "cell": {"direction": "rb", "position": "combined", "c": -2.5},
+        },
+        "evil__cl.json": {
+            "cell_id": "cl1",
+            "cell": {"direction": "rb", "position": "tok1", "c": 1.0},
+        },
+    }
+    for name, rec in gen_cells.items():
+        (comp_root / name).write_text(json.dumps(rec))
+    monkeypatch.setattr(fk.i2254, "_eval_questions", lambda b: ["q0", "q1", "q2"])
+    monkeypatch.setattr(
+        fk.i2254,
+        "_iter_gen_qa",
+        lambda rec: [(i % 3, 42, 0, i, f"t-{rec['cell_id']}-{i:02d}") for i in range(11)],
     )
-    with pytest.raises(RuntimeError, match="post-reissue gate re-run"):
-        fk._pilot_refusal_remediation_and_kill(
-            args, tmp_path, "evil", "RUBRIC", 5, _pilot_arms(), 11, report
-        )
+    monkeypatch.setattr(fk.i2254, "_coherence_rate", lambda rec: 0.5)
+    fp_calls: list[dict] = []
+    real_sha8 = fk.i2254._sha8
+
+    def _sha8_spy(d):
+        fp_calls.append(dict(d))
+        return real_sha8(d)
+
+    monkeypatch.setattr(fk.i2254, "_sha8", _sha8_spy)
+    gate_calls: list[dict] = []
+
+    def fake_gate(arms, rubric, **kw):
+        gate_calls.append(kw)
+        # Persist gate-shaped raw evidence per arm (the pure-read source the
+        # r5 PC read + any reissue rebuild consume).
+        arm_score = {"rb_allans": 80.0, "rnd_allans": 30.0}
+        for arm, items in arms.items():
+            rows = {
+                iid: [dict(_VALID, score=arm_score.get(arm, 55.0))] * 5 for iid, _q, _a in items
+            }
+            _write_pilot_raw(Path(kw["save_raw_dir"]).parent, "evil", arm, rows)
+        return SimpleNamespace(passed=True, verdict="PASS", arms={a: _arm_stats(0) for a in arms})
+
+    monkeypatch.setattr(jp, "judge_pilot_gate", fake_gate)
+    args = SimpleNamespace(smoke=False, force=False, waive_judge_parse_fail_arms=[])
+    rroot = tmp_path / "round"
+    fk._run_firstk_pilot(args, rroot, comp_root, "evil", "RUBRIC", 5)
+    assert len(gate_calls) == 1  # the ONE gate call — no post-reissue re-run
+    assert gate_calls[0]["judge_model"] == JUDGE_MODEL  # the r5 model pin
+    assert "temperature" not in gate_calls[0]  # ambient ContextVar is the channel
+    fp_dicts = [d for d in fp_calls if "judge_model" in d]
+    assert fp_dicts and fp_dicts[0]["judge_model"] == JUDGE_MODEL  # pin in the fingerprint
+    pass_json = json.loads((rroot / "judge" / "pilot" / "evil.pass.json").read_text())
+    assert "verdict_postreissue" not in pass_json  # r5: accounting replaces it
+    pc = pass_json["positive_control_early"]
+    assert pc["read"] == "merged-draws"
+    assert pc["rb_allans"]["n_kept"] == 55 and pc["rnd_allans"]["n_kept"] == 55
+    assert pc["delta_rb_minus_random"] == pytest.approx(50.0)
