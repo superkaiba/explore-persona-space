@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 2487,
+  "highest_id": 2488,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -11486,6 +11486,13 @@
       "path": "tasks/proposed/2487",
       "status": "proposed",
       "title": "main is RED: scripts/issue823_shared_persona_paired.py imports numpy/scipy before load_dotenv \u2014 reds test_no_new_torch_before_dotenv_vm_entrypoints fleet-wide (3rd instance)"
+    },
+    "2488": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/2488",
+      "status": "proposed",
+      "title": "workflow-fix: step9c compare's pristine oracle is cut at the merge-base, so Step 5a-synced current-main files yield systematic false-NEW verdicts (blames the innocent branch)"
     },
     "249": {
       "has_clean_result": false,
